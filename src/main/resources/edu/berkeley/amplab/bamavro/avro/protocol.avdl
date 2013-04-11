@@ -1,0 +1,22 @@
+protocol BamAvro {
+
+enum Base {
+    GUANINE,
+    THYMINE,
+    CYTOSINE,
+    ADENINE
+}
+
+record QualityBase {
+    Base base;
+    long phredQualityScore;
+}
+
+record SAMRecord {
+
+    array<QualityBase> bases;
+
+    long referenceIndex;
+}
+
+}
