@@ -1,4 +1,4 @@
-bam-avro
-========
+ADAM
+====
 
-BAM to Avro converter
+Avro Datafile for Alignment/Mapping (ADAM)
