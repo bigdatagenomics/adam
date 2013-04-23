@@ -1,55 +1,71 @@
 ADAM
 ====
 
-*[Avro](http://avro.apache.org/) Datafile for Alignment/Mapping (ADAM)*
+*ADAM: Datastore Alignment Map*
 
 # Introduction
 
-ADAM is a file format as well as a light-weight framework for doing Genome Analysis.
+Current genomic file formats are loosely defined and not designed for
+distributed processing. ADAM addresses these problems by explicitly defining data
+formats as [Apache Avro](http://avro.apache.org) objects and storing them in 
+[Parquet](http://parquet.io) files.
 
-## The ADAM framework
+## Explicitly defined format
 
-ADAM is written to be modular. To create a new module, simply extend the 
-[AdamModule](src/main/java/edu/berkeley/amplab/adam/modules/AdamModule.java) abstract
-class and define your module options using [args4j](http://args4j.kohsuke.org/). The
-[CountReads](src/main/java/edu/berkeley/amplab/adam/modules/CountReads.java) class
-is a good simple example to look at. Add your module to the `AdamMain` class and it
-will appear in the module list. In the future, ADAM will support dynamically loaded
-modules.
+For example, the [Sequencing Alignment Map (SAM) and Binary Alignment Map (BAM) 
+file specification](http://samtools.sourceforge.net/SAM1.pdf) defines a data format 
+for storing reads from aligners. The specification is well-written but provides
+no tools for developers to implement the format. Developers have to hand-craft 
+source code to encode and decode the records. 
 
-## ADAM File Format
+In contrast, the [ADAM specification for storing reads](src/main/resources/avro/adam.avdl) 
+is defined in the Avro Interface Description Language (IDL) which is directly converted
+into source code. Avro supports a number of computer languages. ADAM uses Java; you could 
+just as easily use this Avro IDL description as the basis for a Python project.
 
-The ADAM file format is an improvement on the SAM or BAM file formats in a number of ways:
+## Ready for distributed processing
 
-1. The ADAM file format is easily splittable for distributed processing with Hadoop
-2. The ADAM file format is completely self-contained. Each read includes the reference
-information.
-3. The ADAM file format is [defined in the Avro IDL](src/main/resources/avro/protocol.avdl) 
-that makes it easy to create implementations in many different computer languages. This schema
-is stored in the header of each ADAM file to ensure the data is self-descriptive.
-4. The ADAM file format is compact. It holds more information about each read (e.g. reference
-name, reference length) while still being about the same size as a BAM file. You can, of course, increase
-the compression level to make an ADAM file smaller than a BAM file at the cost of encoding time.
-5. The ADAM file has all the information needed to encode the data later as a SAM/BAM file if needed.
-The entire SAM header is stored in the Avro meta-data with key `sam.header`.
-6. The ADAM file format can be viewed in human-readable form as JSON using Avro tools
+The SAM/BAM format is record-oriented with a single record for each read. However,
+the typical data access pattern is column oriented, e.g. search for bases read at
+specific position in a reference genome. The BAM specification tries to support
+this pattern by defining a format for a separate index file. However, this index
+needs to be regenerated anytime your BAM file changes which is costly. The index
+does help cost down on file seeks but the columnar store ADAM uses reduces seek
+costs even more.
+
+ADAM stores data in a column-oriented format, [Parquet](http://parquet.io), which
+improves search performance and compression without an index. In addition, Parquet
+data is designed to be splittable and work well with distributed systems like
+Hadoop. ADAM supports Hadoop 1.x and Hadoop 2.x systems. 
+
+Once you convert your BAM file, it can be directly accessed by 
+[Hadoop Map-Reduce](http://hadoop.apache.org), [Spark](http://spark-project.org/), 
+[Shark](http://shark.cs.berkeley.edu), [Impala](https://github.com/cloudera/impala), 
+[Pig](http://pig.apache.org), [Hive](http://hive.apache.org), whatever. Using
+ADAM will unlock your genomic data and make it available to a broader range of
+systems.
 
 # Getting Started
 
 ## Installation
 
-You will need to have [Maven](http://maven.apache.org/) installed in order to build this project. 
-You will need to have [Hadoop](http://hadoop.apache.org/) or 
-[CDH](http://www.cloudera.com/content/cloudera/en/products/cdh.html) installed in order to run it.
-
+You will need to have [Maven](http://maven.apache.org/) installed in order to build ADAM.
 ```
 $ git clone git@github.com:massie/adam.git
 $ cd adam
-$ mvn package
+$ mvn clean package
+...
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 9.647s
+[INFO] Finished at: Thu May 23 15:50:42 PDT 2013
+[INFO] Final Memory: 19M/81M
+[INFO] ------------------------------------------------------------------------
 ```
-
-Maven will create a self-executing jar, e.g. adam-X.Y.jar, in the project root that is ready to be 
-used with Hadoop.
+Once successfully built, you'll see a single jar file named `adam-X.Y-SNAPSHOT.jar` in the root directory. This jar 
+can be used with any version of Hadoop and has the the dependencies you need in it. You could, for example, copy 
+this single jar file to other machines you want to launch ADAM jobs from.
 
 ## Running ADAM
 
@@ -66,84 +82,81 @@ run a module is:
 $ bin/hadoop jar adam-X.Y.jar [generic Hadoop options] moduleName [module options]
 ```
 
-For example, let's say we wanted to convert a SAM/BAM file to an ADAM file and upload it on-the-fly, you
-would use a commandline similar to the following:
+## Working Example
 
+Let's convert a FASTA and BAM file into the Avro/Parquet format using ADAM. For this example,
+we convert two files, `reference.fasta` and `reads.bam`.
+
+The command..
 ```
-$ bin/hadoop jar /workspace/adam/adam-0.1-SNAPSHOT.jar \
--conf ~/.whirr/testcluster/hadoop-site.xml \
-convert -input NA12878_chr20.bam -output /user/matt/NA12878_chr20.avro
+$ bin/hadoop jar adam-X.Y.jar import_fasta -fasta reference.fasta
 ```
+...will launch a Hadoop Map-Reduce job to convert your fasta file. When the job
+completes, you'll find all the ADAM data in a directory called
+`reference.fasta.adam1`. You should also see a zero-sized file called
+`_SUCCESS`.
 
-This will convert and `NA12878_chr20.bam` file and send it to `/user/matt/NA12878_chr20.avro` directly.
-To see all the options for the `convert` module, run the it without any options, e.g.
+NOTE: The hadoop command will use the `HADOOP_CONF_DIR` environment variable to find your
+Hadoop configuration files. Alternatively, you can just use the `-config` generic option, e.g.
+`hadoop jar -config /path/to/hadoop-site.xml import_fasta ...`. 
 
+It's just as easy to import a BAM file.
 ```
-$ bin/hadoop jar adam-X.Y.jar convert
+$ bin/hadoop jar adam-X.Y.jar import_bam -bam reads.bam
 ```
+This command also runs a Hadoop Map-Reduce job to convert the data. When the job completes,
+you'll find all the ADAM data in the directory `reads.bam.adam1` along with a file called `_SUCCESS`.
 
-## A step-by-step example
+The ADAM equivalent of a BAM file is currently about ~15% smaller for the same data. Columns data is 
+stored in contiguous chunks and compressed together. Since many columns contain redundant information, 
+e.g. reference name, mapq, the data compresses very well. As Parquet adds more feature like run-length 
+encoding and dictionary encoding (coming soon), you can expect the size of files to drop even more.
 
-This example will show you how to convert a BAM file to an ADAM file and then count the number of reads.
+NOTE: The default replication factor for Hadoop is 3 which means that each block you write is stored
+in three locations. This replication protects the data from machine/disk failures. For performance,
+you can use `hadoop jar adam-X.Y.jar -D dfs.replication=1 import_bam...`.
 
-First, we need to convert the BAM file to an ADAM file and upload it our Hadoop cluster.
-
+ADAM has a simple module for printing the contents of your data. For example, to view your fasta
+file as CSV, run the following:
 ```
-$ bin/hadoop jar /workspace/adam/adam-0.1-SNAPSHOT.jar \
-  -conf ~/.whirr/testcluster/hadoop-site.xml \
-  convert -input NA12878_chr20.bam -output /user/matt/NA12878_chr20.avro
+$ bin/hadoop jar adam-X.Y.jar print -input reference.fasta -output reference.csv
 ```
-Note that you can also use the `HADOOP_CONF_DIR` variable if you like instead of the `-config` generic option.
-
-ADAM will provide feedback about the reference being converted as well as the locus. When it finishes,
-you should see a message similar to `X secs to convert Y reads`.
-
-Now that your ADAM file stored in Hadoop, you can run analysis on it. Let's count the number
-of reads per reference in the ADAM file using the `count_reads` module.
-
+The `print` module has other options as well, e.g.
 ```
-$ bin/hadoop jar /workspace/adam/adam-0.1-SNAPSHOT.jar  \
--conf ~/.whirr/testcluster/hadoop-site.xml \
-count_reads -input /user/matt/NA12878_chr20.avro -output /user/matt/results
+ -column_delimiter DELIMITER : The record delimiter. Default is ','
+ -exclude COLUMN_NAME        : Columns to exclude in output. Default is none.
+ -include COLUMN_NAME        : Columns to include in output. Default is all.
 ```
+which allow you control which columns are materialized and what delimiter is used. Since ADAM
+store the data column-oriented, only the column you request are read from HDFS.
 
-The `results` directory will contain the output of the reducer, e.g.
+Of course, to really use this data, you'll want to use tools like Shark/Spark or Impala.
 
-```
-$ bin/hadoop fs -ls /user/matt/results
-/user/matt/results/_SUCCESS
-/user/matt/results/part-00000.avro
-```
-
-Let's look at the content of the results.
-
-```
-$ bin/hadoop fs -get /user/matt/results/part-00000.avro .
-$ avrotools tojson /tmp/results/part-00000.avro 
-{"key":"chr20","value":51554029}
-```
-
-This ADAM file had 51554029 reads on a single reference `chr20` (chromosome 20). Note that `avrotools` is
-included with the [Apache Avro](http://avro.apache.org/) distribution.
-
-The results are stored as an Avro file to make it easy to use as input to another job.
+TODO: Provide examples
 
 # License
 
 ADAM is released under an [Apache 2.0 license](LICENSE.txt).
 
+# Implementation Notes
+
+### Hadoop-BAM
+
+ADAM wouldn't be possible without [Hadoop-BAM](http://sourceforge.net/projects/hadoop-bam/). For now, Hadoop-BAM
+source is included as source in order work around some issues: a broken FASTA FileInput and Hadoop 1/2 API
+imcompatibilities. As luck would have it, one of the Hadoop-BAM authors works with me in the 
+[AMPLab](http://amplab.cs.berkeley.edu/). I'll work with him to submit the code back to Hadoop-BAM and change
+ADAM to depend on binary artifacts soon.
+
+### Parquet
+
+TODO: The SAM string header is not currently saved to the Parquet file metadata section.
+
 # Future Work
 
-If you're interested in helping with this project, here are things to do. Feel free to fork away and send
-me a pull request.
-
-* Add ability to run GATK walkers inside modules (I have a good idea how to do this. Protyping now.).
-* Write tests 
-* Support dynamically loaded modules
-* Possibly support side-loading reference information
-* Processing of optional attributes
+I'm planning on integrating ADAM with GATK. In particular, it should be straight-forward to create
+adapters for the base walkers (e.g. LocusWalker, ReadWalker) in GATK.
 
 # Support
 
 Feel free to contact me directly if you have any questions about ADAM. My email address is `massie@cs.berkeley.edu`.
-

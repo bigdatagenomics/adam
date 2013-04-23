@@ -24,25 +24,25 @@ import org.kohsuke.args4j.CmdLineParser;
 
 public abstract class AdamModule extends Configured implements Tool {
 
-  public abstract String getModuleName();
+    public abstract String getModuleName();
 
-  public abstract String getModuleDescription();
+    public abstract String getModuleDescription();
 
-  public abstract int moduleRun() throws Exception;
+    public abstract int moduleRun() throws Exception;
 
-  @Override
-  public int run(String[] args) throws Exception {
-    CmdLineParser parser = new CmdLineParser(this);
-    try {
-      parser.parseArgument(args);
-    } catch (CmdLineException e) {
-      System.err.println(AdamMain.HEADER + "\n");
-      System.err.println(e.getMessage());
-      System.err.println("\nList of valid options:\n");
-      parser.printUsage(System.err);
-      System.err.println("\n" + AdamMain.FOOTER);
-      return -1;
+    @Override
+    public int run(String[] args) throws Exception {
+        CmdLineParser parser = new CmdLineParser(this);
+        try {
+            parser.parseArgument(args);
+        } catch (CmdLineException e) {
+            System.err.println(AdamMain.HEADER + "\n");
+            System.err.println(e.getMessage());
+            System.err.println("\nList of valid options:\n");
+            parser.printUsage(System.err);
+            System.err.println("\n" + AdamMain.FOOTER);
+            return -1;
+        }
+        return moduleRun();
     }
-    return moduleRun();
-  }
 }

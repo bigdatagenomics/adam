@@ -1,0 +1,6 @@
+Hadoop-BAM depends on 0.76.0 of samtools and picard
+which are not published to Maven Central. 
+
+The 'create-hadoop-bam-repo.sh' script works around this
+problem (for now) by generating a local Maven repo to
+be included in the ADAM project. 

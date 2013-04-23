@@ -1,19 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>edu.berkeley.amplab</groupId>
     <artifactId>adam</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
+    <name>ADAM: Datastore Alignment Map</name>
+    <licenses>
+        <license>
+            <name>Apache License</name>
+            <url>https://raw.github.com/massie/adam/master/LICENSE.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <connection>scm:git:git@github.com:massie/adam.git</connection>
+        <developerConnection>scm:git:git@github.com:massie/adam.git</developerConnection>
+        <url>scm:git:git@github.com:massie/adam.git</url>
+        <tag>HEAD</tag>
+    </scm>
+    <developers>
+        <developer>
+            <id>massie</id>
+            <name>Matt Massie</name>
+            <email>massie@cs.berkeley.edu</email>
+            <url>http://www.cs.berkeley.edu/~massie</url>
+            <organization>U.C. Berkeley Computer Science</organization>
+            <organizationUrl>http://www.cs.berkeley.edu/</organizationUrl>
+        </developer>
+    </developers>
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/massie/adam/issues</url>
+    </issueManagement>
 
     <properties>
         <avro.version>1.7.4</avro.version>
-        <hadoop.version>1.1.2</hadoop.version>
+        <cdh.version>4.2.1</cdh.version>
+        <hadoop.version>2.0.0-mr1-cdh${cdh.version}</hadoop.version>
     </properties>
-
     <build>
         <plugins>
             <plugin>
@@ -39,13 +65,7 @@
                             <goal>idl-protocol</goal>
                         </goals>
                         <configuration>
-                            <sourceDirectory>${project.basedir}/src/main/resources/avro
-                            </sourceDirectory>
-                            <outputDirectory>${project.basedir}/src/main/java</outputDirectory>
-                            <!--
-                            <testSourceDirectory>${project.basedir}/src/test/avro/</testSourceDirectory>
-                            <testOutputDirectory>${project.basedir}/src/test/java/</testOutputDirectory>
-                            -->
+                            <sourceDirectory>${project.basedir}/src/main/resources/avro</sourceDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -67,7 +87,7 @@
                             <finalName>adam-${project.version}</finalName>
                             <outputDirectory>${project.build.directory}/../</outputDirectory>
                             <appendAssemblyId>false</appendAssemblyId>
-			    <attach>false</attach>
+                            <attach>false</attach>
                             <archive>
                                 <manifest>
                                     <mainClass>edu.berkeley.amplab.adam.AdamMain</mainClass>
@@ -79,15 +99,39 @@
             </plugin>
         </plugins>
     </build>
-
+    <repositories>
+        <repository>
+            <id>cloudera-repo</id>
+            <name>Cloudera Repository</name>
+            <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>adam-repo</id>
+            <url>file://${project.basedir}/repo</url>
+        </repository>
+        <repository>
+            <id>sonatype-nexus-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
     <dependencies>
-        <!-- Picard -->
         <dependency>
-            <groupId>org.utgenome.thirdparty</groupId>
-            <artifactId>picard</artifactId>
-            <version>1.86.0</version>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>${hadoop.version}</version>
         </dependency>
-        <!-- Avro -->
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
@@ -97,25 +141,33 @@
             <groupId>org.apache.avro</groupId>
             <artifactId>avro-mapred</artifactId>
             <version>${avro.version}</version>
+            <!-- This classifier uses the hadoop-client artifact that support 1.x versions of Hadoop too -->
+            <classifier>hadoop2</classifier>
         </dependency>
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-core</artifactId>
-            <version>1.1.0</version>
+            <groupId>com.twitter</groupId>
+            <artifactId>parquet-avro</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
-<dependency>
-	<groupId>args4j</groupId>
-	<artifactId>args4j</artifactId>
-	<version>2.0.23</version>
-</dependency>
-
-<!--
         <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-            <version>1.2</version>
+            <groupId>adam</groupId>
+            <artifactId>picard</artifactId>
+            <version>1.76</version>
         </dependency>
--->
+        <dependency>
+            <groupId>adam</groupId>
+            <artifactId>samtools</artifactId>
+            <version>1.76</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>14.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>args4j</groupId>
+            <artifactId>args4j</artifactId>
+            <version>2.0.23</version>
+        </dependency>
     </dependencies>
-
 </project>

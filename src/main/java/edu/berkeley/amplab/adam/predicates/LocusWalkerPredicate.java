@@ -14,28 +14,23 @@
  * limitations under the License.
  */
 
-package edu.berkeley.amplab.adam.modules;
+package edu.berkeley.amplab.adam.predicates;
 
-import java.util.Map;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import edu.berkeley.amplab.adam.avro.ADAMRecord;
 
-public class ConfigurationPrinter extends AdamModule {
+public class LocusWalkerPredicate implements Predicate<ADAMRecord> {
 
-  @Override
-  public String getModuleName() {
-    return "print_config";
-  }
+    Predicate<ADAMRecord> predicate = Predicates.or(
+            new DuplicateReadPredicate(),
+            new NotPrimaryAlignmentPredicate(),
+            new UnmappedReadPredicate(),
+            new VendorFailsQualityCheckPredicate());
 
-  @Override
-  public String getModuleDescription() {
-    return "Prints your current configuration. Useful for debugging.";
-  }
-
-  @Override
-  public int moduleRun() throws Exception {
-    for (Map.Entry<String, String> entry : getConf()) {
-      System.out.printf("%s=%s\n", entry.getKey(), entry.getValue());
+    @Override
+    public boolean apply(ADAMRecord input) {
+        return predicate.apply(input);
     }
-    return 0;
-  }
 
 }
