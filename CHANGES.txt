@@ -1,0 +1,52 @@
+ADAM Changes File
+
+Trunk (not yet released)
+
+  NEW FEATURES
+
+  IMPROVEMENTS
+
+  BUG FIXES
+
+
+0.3.0-SNAPSHOT
+
+  NEW FEATURES
+  
+    New pileup command that creates a reference-ordered data file sorted
+    by position with the reference base and pileup (including phred scores)
+    at each position
+
+  IMPROVEMENTS
+
+    The print command is simplified and no longer launches a map-reduce job.
+    Contents of files are now immediately streamed to console.
+
+    Added the unique record group identifier to ADAM read records
+
+  BUG FIXES
+
+    Fixed the read file format to use 0-based (instead of 1-based) offsets
+    for read positions. All ADAM files are 0-based.
+
+0.2.0-SNAPSHOT
+
+  NEW FEATURES
+
+    Hadoop-BAM integration
+
+    Records are stored in Parquet column-oriented data files
+
+    File conversion is accomplished using Map-Reduce
+
+    Support for FASTA Files
+
+    Optional BAM attributes are now processed
+
+0.1.0-SNAPSHOT
+
+  NEW FEATURES
+
+    Initial prototype that stored BAM file contents into Avro objects that
+    where stored in Avro datafiles.
+  

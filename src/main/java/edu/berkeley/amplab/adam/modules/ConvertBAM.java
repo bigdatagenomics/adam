@@ -32,20 +32,20 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.util.ToolRunner;
-import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.Argument;
 
 import java.io.IOException;
 
-public class BAMImport extends ImportSupport {
+public class ConvertBAM extends ImportSupport {
 
     @Override
     public String getModuleName() {
-        return "import_bam";
+        return "convert_bam";
     }
 
     @Override
     public String getModuleDescription() {
-        return "Imports a SAM/BAM file into a new ADAM datastore";
+        return "Converts a SAM/BAM file into a new ADAM read datafile";
     }
 
     public static class RecordMapper extends Mapper<LongWritable, SAMRecordWritable,
@@ -79,8 +79,7 @@ public class BAMImport extends ImportSupport {
         }
     }
 
-    @Option(name = "-bam", aliases = {"-sam"}, required = true,
-            usage = "The SAM or BAM file to import into a new ADAM datastore")
+    @Argument(required = true, metaVar = "FILE", usage = "The SAM or ADAM file to convert")
     public String inputFile;
 
     @Override
@@ -100,7 +99,7 @@ public class BAMImport extends ImportSupport {
     }
 
     public static void main(String[] args) throws Exception {
-        System.exit(ToolRunner.run(new BAMImport(), args));
+        System.exit(ToolRunner.run(new ConvertBAM(), args));
     }
 
 }

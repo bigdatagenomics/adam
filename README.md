@@ -16,17 +16,19 @@ For example, the [Sequencing Alignment Map (SAM) and Binary Alignment Map (BAM)
 file specification](http://samtools.sourceforge.net/SAM1.pdf) defines a data format 
 for storing reads from aligners. The specification is well-written but provides
 no tools for developers to implement the format. Developers have to hand-craft 
-source code to encode and decode the records. 
+source code to encode and decode the records. This error prone and an unneccesary
+hassle.
 
 In contrast, the [ADAM specification for storing reads](src/main/resources/avro/adam.avdl) 
 is defined in the Avro Interface Description Language (IDL) which is directly converted
 into source code. Avro supports a number of computer languages. ADAM uses Java; you could 
-just as easily use this Avro IDL description as the basis for a Python project.
+just as easily use this Avro IDL description as the basis for a Python project. Avro
+currently supports c, c++, csharp, java, javascript, php, python and ruby. 
 
 ## Ready for distributed processing
 
 The SAM/BAM format is record-oriented with a single record for each read. However,
-the typical data access pattern is column oriented, e.g. search for bases read at
+the typical data access pattern is column oriented, e.g. search for bases at a
 specific position in a reference genome. The BAM specification tries to support
 this pattern by defining a format for a separate index file. However, this index
 needs to be regenerated anytime your BAM file changes which is costly. The index
@@ -36,7 +38,7 @@ costs even more.
 ADAM stores data in a column-oriented format, [Parquet](http://parquet.io), which
 improves search performance and compression without an index. In addition, Parquet
 data is designed to be splittable and work well with distributed systems like
-Hadoop. ADAM supports Hadoop 1.x and Hadoop 2.x systems. 
+Hadoop. ADAM supports Hadoop 1.x and Hadoop 2.x systems out of the box.
 
 Once you convert your BAM file, it can be directly accessed by 
 [Hadoop Map-Reduce](http://hadoop.apache.org), [Spark](http://spark-project.org/), 
@@ -79,7 +81,7 @@ You will receive a listing of all modules and how to launch them. The commandlin
 run a module is:
 
 ```
-$ bin/hadoop jar adam-X.Y.jar [generic Hadoop options] moduleName [module options]
+$ bin/hadoop jar adam-X.Y.jar [generic Hadoop options] module_name [module options]
 ```
 
 ## Working Example
@@ -87,9 +89,11 @@ $ bin/hadoop jar adam-X.Y.jar [generic Hadoop options] moduleName [module option
 Let's convert a FASTA and BAM file into the Avro/Parquet format using ADAM. For this example,
 we convert two files, `reference.fasta` and `reads.bam`.
 
+### Convert a FASTA file
+
 The command..
 ```
-$ bin/hadoop jar adam-X.Y.jar import_fasta -fasta reference.fasta
+$ bin/hadoop jar adam-X.Y.jar convert_fasta reference.fasta
 ```
 ...will launch a Hadoop Map-Reduce job to convert your fasta file. When the job
 completes, you'll find all the ADAM data in a directory called
@@ -98,11 +102,13 @@ completes, you'll find all the ADAM data in a directory called
 
 NOTE: The hadoop command will use the `HADOOP_CONF_DIR` environment variable to find your
 Hadoop configuration files. Alternatively, you can just use the `-config` generic option, e.g.
-`hadoop jar -config /path/to/hadoop-site.xml import_fasta ...`. 
+`hadoop jar -config /path/to/hadoop-site.xml convert_fasta ...`. 
 
-It's just as easy to import a BAM file.
+### Convert a BAM file
+
+It's just as easy to convert a BAM file.
 ```
-$ bin/hadoop jar adam-X.Y.jar import_bam -bam reads.bam
+$ bin/hadoop jar adam-X.Y.jar convert_bam reads.bam
 ```
 This command also runs a Hadoop Map-Reduce job to convert the data. When the job completes,
 you'll find all the ADAM data in the directory `reads.bam.adam1` along with a file called `_SUCCESS`.
@@ -114,21 +120,63 @@ encoding and dictionary encoding (coming soon), you can expect the size of files
 
 NOTE: The default replication factor for Hadoop is 3 which means that each block you write is stored
 in three locations. This replication protects the data from machine/disk failures. For performance,
-you can use `hadoop jar adam-X.Y.jar -D dfs.replication=1 import_bam...`.
+you can use `hadoop jar adam-X.Y.jar -D dfs.replication=1 convert_bam...`.
 
-ADAM has a simple module for printing the contents of your data. For example, to view your fasta
-file as CSV, run the following:
+### Create an ADAM pileup file
+
+ADAM also allows you to join data from an ADAM reference and read file into a
+pileup datastore in a single Map-Reduce job. 
+
+The reads are filtered identically to the [GATK loci walker](http://www.broadinstitute.org/gatk/guide/article?id=1351). Reads that are unmapped, non-primary aligned,
+duplicates or fail vendor quality checks are dropped. You can also use the
+`-mapq` option to set the threshold for filtering reads with a low mapq value.
+By default, any reads with a mapq less than 30 are dropped.
+
+To create a pileup file, run the following command e.g.
+
 ```
-$ bin/hadoop jar adam-X.Y.jar print -input reference.fasta -output reference.csv
+$ bin/hadoop jar adam-X.Y.jar pileup -reference reference.fasta.adam1 -reads reads.bam.adam1 mypileup
 ```
-The `print` module has other options as well, e.g.
+When this command completes, you have a new pileup datastore called `mypileup`.
+
+In some cases, the reference names in your reads file don't perfectly match the reference names. In that case,
+you might see null values for the `referenceName` and `referenceBase`. To workaround this problem
+use the -rename_reference option, e.g. `-rename_reference 11=chr11 -rename_reference 12=chr12`. In 
+this example, any read with the reference `11` will be joined to `chr11` reference data and any read with
+reference `12` will be joined to the `chr12` reference.
+
+The `pileup` command uses the Hadoop `MultiInputs` input format in order to join the reference and read
+data in a single Map-Reduce job. For performance, the reference and read data are split
+into "buckets" at specific positions along the genome. The number of positions in each bucket is controlled
+by the `-step` option which defaults to 1000. This means that the genome is split into buckets that are
+are 1000 positions wide and contain all the read and reference data necessary for the reduce step. Increasing 
+this number will improve performance at the cost of memory. If you have limited memory, reducing the step 
+can reduce memory use.
+
+You can use the `print` command (explained below) to see the contents of the pileup file.
+
 ```
- -column_delimiter DELIMITER : The record delimiter. Default is ','
- -exclude COLUMN_NAME        : Columns to exclude in output. Default is none.
- -include COLUMN_NAME        : Columns to include in output. Default is all.
+$ bin/hadoop jar adam-X.Y.jar print mypileup
+...
+{"referenceName": "chr11", "position": 782372, "referenceBase": "G", "pileup": "GGGGGGGGGGG", "qualities": "8EAIK*EAI2%"}
+{"referenceName": "chr11", "position": 782373, "referenceBase": "T", "pileup": "TGTTTTTTTTC", "qualities": "\/J?F<14II=$"}
+{"referenceName": "chr11", "position": 782374, "referenceBase": "C", "pileup": "CCCCCCCCCCC", "qualities": "A@KAH5JIKI*"}
+{"referenceName": "chr11", "position": 782375, "referenceBase": "C", "pileup": "CGCCCCCCCCT", "qualities": "CK:KK.KKI-5"}
+{"referenceName": "chr11", "position": 782376, "referenceBase": "C", "pileup": "CGCCCCCCCCC", "qualities": "HKHMJIMHKJ%"}
+{"referenceName": "chr11", "position": 782377, "referenceBase": "A", "pileup": "AGAAAAAAAAC", "qualities": "AG?GGCIDJF."}
+{"referenceName": "chr11", "position": 782378, "referenceBase": "C", "pileup": "CTCCCCCCCCC", "qualities": "FKKHI@HFMK\/"}
+{"referenceName": "chr11", "position": 782379, "referenceBase": "A", "pileup": "ACAAAAAAAAT", "qualities": "EH4GI,=IAD8"}
 ```
-which allow you control which columns are materialized and what delimiter is used. Since ADAM
-store the data column-oriented, only the column you request are read from HDFS.
+The pileup field is a string with one character for each read. The characters represent
+the base aligned at that position for each read. The qualities string represents the
+phred quality scores for each of the bases in the pileup string.
+
+### Print the contents of ADAM data
+
+ADAM has a simple module for printing the contents of your data to console. For example, to view your fasta file, run the following:
+```
+$ bin/hadoop jar adam-X.Y.jar print reference.fasta.adam1
+```
 
 Of course, to really use this data, you'll want to use tools like Shark/Spark or Impala.
 
@@ -158,57 +206,7 @@ chr5	76236808	chr5	63658192
 chr6	75626876	chr6	63004588
 chr7	72840307	chr7	58128351
 chr8	63917066	chr8	53227910
-chr9	102178816	chr9	54825123
-chrM	163064	chrM	122442
-chrX	78315237	chrX	58536629
-chrY	1466505	chrY	131383
-chr10	63859164	chr10	54853408
-chr11	62488811	chr11	54323384
-chr12	62148753	chr12	48265330
-chr13	60153448	chr13	50737381
-chr14	62131272	chr14	47229276
-chr15	50375498	chr15	43728272
-chr16	47045132	chr16	40740844
-chr17	47566119	chr17	39706961
-chr18	44173724	chr18	38528221
-chr19	29935623	chr19	25853204
-chrUn_GL456239	72403	chrUn_GL456239	57619
-chrUn_GL456359	12874	chrUn_GL456359	9841
-chrUn_GL456360	15496	chrUn_GL456360	12709
-chrUn_GL456366	22058	chrUn_GL456366	15176
-chrUn_GL456367	27210	chrUn_GL456367	14398
-chrUn_GL456368	14015	chrUn_GL456368	6969
-chrUn_GL456370	43814	chrUn_GL456370	9682
-chrUn_GL456372	22615	chrUn_GL456372	6403
-chrUn_GL456378	24985	chrUn_GL456378	15049
-chrUn_GL456379	29944	chrUn_GL456379	24921
-chrUn_GL456381	11458	chrUn_GL456381	9352
-chrUn_GL456382	8492	chrUn_GL456382	5740
-chrUn_GL456383	37685	chrUn_GL456383	12333
-chrUn_GL456385	15814	chrUn_GL456385	10964
-chrUn_GL456387	21579	chrUn_GL456387	11640
-chrUn_GL456389	120899	chrUn_GL456389	11857
-chrUn_GL456390	18044	chrUn_GL456390	5366
-chrUn_GL456392	354634	chrUn_GL456392	20895
-chrUn_GL456393	36186	chrUn_GL456393	22781
-chrUn_GL456394	14680	chrUn_GL456394	11022
-chrUn_GL456396	39996	chrUn_GL456396	8321
-chrUn_JH584304	16855781	chrUn_JH584304	482761
-chr1_GL456210_random	183811	chr1_GL456210_random	25415
-chr1_GL456211_random	286558	chr1_GL456211_random	42625
-chr1_GL456212_random	238661	chr1_GL456212_random	26401
-chr1_GL456221_random	257674	chr1_GL456221_random	23334
-chr4_GL456216_random	28493	chr4_GL456216_random	23587
-chr4_GL456350_random	69348	chr4_GL456350_random	28
-chr4_JH584292_random	10539	chr4_JH584292_random	6399
-chr4_JH584293_random	64221	chr4_JH584293_random	103
-chr4_JH584295_random	442	chr4_JH584295_random	341
-chr5_GL456354_random	97776	chr5_GL456354_random	2071
-chr5_JH584296_random	85705	chr5_JH584296_random	795
-chr5_JH584297_random	92028	chr5_JH584297_random	953
-chr5_JH584298_random	89485	chr5_JH584298_random	24
-chr5_JH584299_random	502767	chr5_JH584299_random	27836
-chr7_GL456219_random	46743	chr7_GL456219_random	27
+...
 chrX_GL456233_random	135674	chrX_GL456233_random	117667
 ```
 The second column shows the total number of reads. The fourth shows the total

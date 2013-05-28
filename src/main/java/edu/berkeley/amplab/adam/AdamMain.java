@@ -17,9 +17,10 @@
 package edu.berkeley.amplab.adam;
 
 import edu.berkeley.amplab.adam.modules.AdamModule;
-import edu.berkeley.amplab.adam.modules.BAMImport;
-import edu.berkeley.amplab.adam.modules.FASTAImport;
-import edu.berkeley.amplab.adam.modules.PrintFile;
+import edu.berkeley.amplab.adam.modules.ConvertBAM;
+import edu.berkeley.amplab.adam.modules.ConvertFASTA;
+import edu.berkeley.amplab.adam.modules.PrintModule;
+import edu.berkeley.amplab.adam.modules.pileup.Pileup;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -36,9 +37,10 @@ public class AdamMain {
     public static List<AdamModule> MODULES = new LinkedList<AdamModule>();
 
     static {
-        MODULES.add(new PrintFile());
-        MODULES.add(new BAMImport());
-        MODULES.add(new FASTAImport());
+        MODULES.add(new PrintModule());
+        MODULES.add(new ConvertBAM());
+        MODULES.add(new ConvertFASTA());
+        MODULES.add(new Pileup());
     }
 
     private static void printHelpAndExit() {

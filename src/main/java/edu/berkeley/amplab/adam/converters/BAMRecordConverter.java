@@ -20,6 +20,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import edu.berkeley.amplab.adam.avro.ADAMRecord;
+import net.sf.samtools.SAMReadGroupRecord;
 import net.sf.samtools.SAMRecord;
 
 import java.util.Map;
@@ -31,8 +32,6 @@ public class BAMRecordConverter implements Function<SAMRecord, ADAMRecord> {
 
     @Override
     public ADAMRecord apply(SAMRecord samRecord) {
-        final int NOT_SET = -1;
-
         ADAMRecord.Builder builder = ADAMRecord.newBuilder()
                 .setReferenceName(samRecord.getReferenceName())
                 .setReadName(samRecord.getReadName())
@@ -41,22 +40,23 @@ public class BAMRecordConverter implements Function<SAMRecord, ADAMRecord> {
                 .setCigar(samRecord.getCigarString());
 
         int start = samRecord.getAlignmentStart();
-
-        if (start != NOT_SET) {
-            builder.setStart((long) start);
+        if (start != 0) {
+            // Alignment start is 1-based. Sigh.
+            builder.setStart((long) (start - 1));
         }
         int end = samRecord.getAlignmentEnd();
-        if (end != NOT_SET) {
-            builder.setEnd((long) end);
+        if (end != 0) {
+            // Alignment end is 1-based. Sigh.
+            builder.setEnd((long) (end - 1));
         }
         int mapq = samRecord.getMappingQuality();
-        if (mapq != NOT_SET) {
+        if (mapq != SAMRecord.UNKNOWN_MAPPING_QUALITY) {
             builder.setMapq((long) mapq);
         }
 
         // Position of the mate/next segment
         Integer mateReference = samRecord.getMateReferenceIndex();
-        if (mateReference != NOT_SET) {
+        if (mateReference != -1) {
             builder.setMateReference(samRecord.getMateReferenceName())
                     .setMateAlignmentStart((long) samRecord.getMateAlignmentStart());
         }
@@ -110,6 +110,10 @@ public class BAMRecordConverter implements Function<SAMRecord, ADAMRecord> {
             builder.setAttributes(attrJoiner.join(tagValueMap));
         }
 
+        SAMReadGroupRecord recordGroup = samRecord.getReadGroup();
+        if (recordGroup != null) {
+            builder.setRecordGroupId(recordGroup.getReadGroupId());
+        }
 
         return builder.build();
     }

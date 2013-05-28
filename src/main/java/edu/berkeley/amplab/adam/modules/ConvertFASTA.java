@@ -28,20 +28,20 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.util.ToolRunner;
-import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.Argument;
 
 import java.io.IOException;
 
-public class FASTAImport extends ImportSupport {
+public class ConvertFASTA extends ImportSupport {
 
     @Override
     public String getModuleName() {
-        return "import_fasta";
+        return "convert_fasta";
     }
 
     @Override
     public String getModuleDescription() {
-        return "Imports a FASTA file into a new ADAM datastore";
+        return "Converts a FASTA file into a new ADAM reference datafile";
     }
 
     public static class RecordMapper extends Mapper<Void, AvroValue<ADAMFastaFragment>,
@@ -70,8 +70,7 @@ public class FASTAImport extends ImportSupport {
         }
     }
 
-    @Option(name = "-fasta", required = true,
-            usage = "The FASTA file to import into a new ADAM datastore")
+    @Argument(required = true, metaVar = "FILE", usage = "The FASTA file to import into a new ADAM datastore")
     public String inputFile;
 
     @Override
@@ -90,7 +89,7 @@ public class FASTAImport extends ImportSupport {
     }
 
     public static void main(String[] args) throws Exception {
-        System.exit(ToolRunner.run(new FASTAImport(), args));
+        System.exit(ToolRunner.run(new ConvertFASTA(), args));
     }
 
 }

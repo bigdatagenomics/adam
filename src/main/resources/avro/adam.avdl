@@ -21,6 +21,8 @@ record ADAMRecord {
     union { null, string } cigar = null;
     // Phred-score quality strings
     union { null, string } qual = null;
+    // The record group identifier
+    union { null, string } recordGroupId = null;
 
     // Read flags
     union { null, boolean } readPairedFlag = null;
@@ -40,10 +42,19 @@ record ADAMRecord {
 }
 
 record ADAMFastaFragment {
-    union {null, string } description;
-    union {null, long } start;
-    union {null, long } end;
-    union {null, string } sequence;
+    union {null, string } description = null;
+    union {null, long } start = null;
+    union {null, long } end = null;
+    union {null, string } sequence = null;
 }
+
+record ADAMPileup {
+    union {null, string } referenceName = null;
+    union {null, long } position = null;
+    union {null, string } referenceBase = null;
+    union {null, string } pileup = null;
+    union {null, string } qualities = null;
+}
+
 
 }

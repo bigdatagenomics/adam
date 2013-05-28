@@ -26,6 +26,7 @@ import org.apache.avro.specific.SpecificRecordBase;
 /**
  * This class converters a flat specific record to a GenericRecord. Records with
  * nested complex types (e.g. arrays, records) are not supported
+ *
  * @param <T>
  */
 public class SpecificRecordConverter<T extends SpecificRecordBase> implements Function<T, GenericRecord> {
