@@ -21,7 +21,9 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import edu.berkeley.amplab.adam.avro.ADAMFastaFragment;
 import org.apache.avro.mapred.AvroValue;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -30,6 +32,11 @@ import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
 import java.io.IOException;
 
 public class FastaInputFormat extends FileInputFormat<Void, AvroValue<ADAMFastaFragment>> {
+
+    @Override
+    protected boolean isSplitable(JobContext context, Path filename) {
+        return false;
+    }
 
     @Override
     public RecordReader<Void, AvroValue<ADAMFastaFragment>> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
