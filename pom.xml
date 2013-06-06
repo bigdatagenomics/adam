@@ -2,11 +2,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>edu.berkeley.amplab</groupId>
-    <artifactId>adam</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
-    <name>ADAM: Datastore Alignment Map</name>
+    <groupId>edu.berkeley.cs.amplab.adam</groupId>
+    <artifactId>adam-parent</artifactId>
+    <version>0.4.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>ADAM: Genomic Data System</name>
+ 
+    <modules>
+      <module>adam-format</module>
+      <module>adam-convert</module>
+    </modules>
+
     <licenses>
         <license>
             <name>Apache License</name>
@@ -40,6 +46,7 @@
         <cdh.version>4.2.1</cdh.version>
         <hadoop.version>2.0.0-mr1-cdh${cdh.version}</hadoop.version>
     </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -50,52 +57,6 @@
                     <source>1.6</source>
                     <target>1.6</target>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro-maven-plugin</artifactId>
-                <version>${avro.version}</version>
-                <executions>
-                    <execution>
-                        <id>schemas</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>schema</goal>
-                            <goal>protocol</goal>
-                            <goal>idl-protocol</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirectory>${project.basedir}/src/main/resources/avro</sourceDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2.1</version>
-                <executions>
-                    <execution>
-                        <id>job</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/main/assembly/job.xml</descriptor>
-                            </descriptors>
-                            <finalName>adam-${project.version}</finalName>
-                            <outputDirectory>${project.build.directory}/../</outputDirectory>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <attach>false</attach>
-                            <archive>
-                                <manifest>
-                                    <mainClass>edu.berkeley.amplab.adam.AdamMain</mainClass>
-                                </manifest>
-                            </archive>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
@@ -126,7 +87,9 @@
             </snapshots>
         </repository>
     </repositories>
-    <dependencies>
+
+    <dependencyManagement>
+      <dependencies>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
@@ -169,5 +132,6 @@
             <artifactId>args4j</artifactId>
             <version>2.0.23</version>
         </dependency>
-    </dependencies>
+      </dependencies>
+    </dependencyManagement>
 </project>

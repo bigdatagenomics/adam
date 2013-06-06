@@ -1,0 +1,36 @@
+// This file hold intermediate objects
+// that are never stored in a file
+// e.g. used in Map-Reduce jobs
+
+@namespace("edu.berkeley.cs.amplab.adam.avro")
+
+protocol Intermediates {
+
+record PileupFragmentId {
+    string referenceName;
+    long bucketNum;
+}
+
+record SequenceFragment {
+    long start;
+    string fragment;
+}
+
+record ReadFragment {
+    string readName;
+    SequenceFragment sequence;
+    SequenceFragment baseQuals;
+}
+
+record ReferenceFragment {
+    SequenceFragment referenceSequence;
+}
+
+record PileupFragment {
+    // Data from the reference mapper
+    union { null, ReferenceFragment } referenceFragment = null;
+    // Data from the read mapper
+    union { null, ReadFragment } readFragment = null;
+}
+
+}
