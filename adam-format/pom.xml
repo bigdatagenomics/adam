@@ -3,14 +3,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-	<groupId>edu.berkeley.cs.amplab.adam</groupId>
-	<artifactId>adam-parent</artifactId>
-	<version>0.4.0-SNAPSHOT</version>
-	<relativePath>../pom.xml</relativePath>
-    </parent> 
+        <groupId>edu.berkeley.cs.amplab.adam</groupId>
+        <artifactId>adam-parent</artifactId>
+        <version>0.5.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
     <artifactId>adam-format</artifactId>
-    <version>0.4.0-SNAPSHOT</version>
+    <version>0.5.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>ADAM: Format Definitions</name>
 
@@ -60,9 +60,9 @@
     </repositories>
     <dependencies>
         <dependency>
-            <groupId>com.twitter</groupId>
-            <artifactId>parquet-avro</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>${avro.version}</version>
         </dependency>
     </dependencies>
 </project>

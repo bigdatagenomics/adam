@@ -8,7 +8,7 @@ ADAM
 Current genomic file formats are loosely defined and not designed for
 distributed processing. ADAM addresses these problems by explicitly defining data
 formats as [Apache Avro](http://avro.apache.org) objects and storing them in 
-[Parquet](http://parquet.io) files.
+[Parquet](http://parquet.io) files using [Apache Spark](http://spark.incubator.apache.org/).
 
 ## Explicitly defined format
 
@@ -40,7 +40,7 @@ improves search performance and compression without an index. In addition, Parqu
 data is designed to be splittable and work well with distributed systems like
 Hadoop. ADAM supports Hadoop 1.x and Hadoop 2.x systems out of the box.
 
-Once you convert your BAM file, it can be directly accessed by 
+Once you convert your BAM file to ADAM, it can be directly accessed by 
 [Hadoop Map-Reduce](http://hadoop.apache.org), [Spark](http://spark-project.org/), 
 [Shark](http://shark.cs.berkeley.edu), [Impala](https://github.com/cloudera/impala), 
 [Pig](http://pig.apache.org), [Hive](http://hive.apache.org), whatever. Using
@@ -65,152 +65,54 @@ $ mvn clean package
 [INFO] Final Memory: 19M/81M
 [INFO] ------------------------------------------------------------------------
 ```
-Once successfully built, you'll see a single jar file named `adam-X.Y-SNAPSHOT.jar` in the root directory. This jar 
-can be used with any version of Hadoop and has the the dependencies you need in it. You could, for example, copy 
-this single jar file to other machines you want to launch ADAM jobs from.
+Once successfully built, you'll see a single jar file named `adam-X.Y-SNAPSHOT.jar` in the `adam-commands/target` directory. This jar 
+has the the dependencies you need in it. You could, for example, copy this single jar file to other machines you want to launch ADAM jobs from.
 
 ## Running ADAM
 
-To see all the available ADAM modules, run the following command:
+The ADAM jar file is a self-executing jar file with all dependencies included.
+
+To run ADAM, use the following command:
 
 ```
-$ bin/hadoop jar adam-X.Y.jar
+$ java -jar adam-X.Y-SNAPSHOT.jar
+
+     e            888~-_              e                 e    e
+    d8b           888   \            d8b               d8b  d8b
+   /Y88b          888    |          /Y88b             d888bdY88b
+  /  Y88b         888    |         /  Y88b           / Y88Y Y888b
+ /____Y88b        888   /         /____Y88b         /   YY   Y888b
+/      Y88b       888_-~         /      Y88b       /          Y888b
+
+Choose one of the following commands:
+
+            bam2adam : Convert a SAM/BAM file to ADAM read-oriented format
+           reads2ref : Convert an ADAM read-oriented file to an ADAM reference-oriented file
+             mpileup : Output the samtool mpileup text from ADAM reference-oriented data
+               print : Print an ADAM formatted file
 ```
 
-You will receive a listing of all modules and how to launch them. The commandline syntax to
-run a module is:
+You could also add this command as an `alias` to your `.bashrc` e.g.,
 
 ```
-$ bin/hadoop jar adam-X.Y.jar [generic Hadoop options] module_name [module options]
+alias adam="java -Xmx2g -jar /workspace/adam/adam-commands/target/adam-X.Y-SNAPSHOT.jar"
 ```
 
-## Working Example
-
-Let's convert a FASTA and BAM file into the Avro/Parquet format using ADAM. For this example,
-we convert two files, `reference.fasta` and `reads.bam`.
-
-### Convert a FASTA file
-
-The command..
-```
-$ bin/hadoop jar adam-X.Y.jar convert_fasta reference.fasta
-```
-...will launch a Hadoop Map-Reduce job to convert your fasta file. When the job
-completes, you'll find all the ADAM data in a directory called
-`reference.fasta.adam1`. You should also see a zero-sized file called
-`_SUCCESS`.
-
-NOTE: The hadoop command will use the `HADOOP_CONF_DIR` environment variable to find your
-Hadoop configuration files. Alternatively, you can just use the `-config` generic option, e.g.
-`hadoop jar -config /path/to/hadoop-site.xml convert_fasta ...`. 
-
-### Convert a BAM file
-
-It's just as easy to convert a BAM file.
-```
-$ bin/hadoop jar adam-X.Y.jar convert_bam reads.bam
-```
-This command also runs a Hadoop Map-Reduce job to convert the data. When the job completes,
-you'll find all the ADAM data in the directory `reads.bam.adam1` along with a file called `_SUCCESS`.
-
-The ADAM equivalent of a BAM file is currently about ~15% smaller for the same data. Columns data is 
-stored in contiguous chunks and compressed together. Since many columns contain redundant information, 
-e.g. reference name, mapq, the data compresses very well. As Parquet adds more feature like run-length 
-encoding and dictionary encoding (coming soon), you can expect the size of files to drop even more.
-
-NOTE: The default replication factor for Hadoop is 3 which means that each block you write is stored
-in three locations. This replication protects the data from machine/disk failures. For performance,
-you can use `hadoop jar adam-X.Y.jar -D dfs.replication=1 convert_bam...`.
-
-### Create an ADAM pileup file
-
-ADAM also allows you to join data from an ADAM reference and read file into a
-pileup datastore in a single Map-Reduce job. 
-
-The reads are filtered identically to the [GATK loci walker](http://www.broadinstitute.org/gatk/guide/article?id=1351). Reads that are unmapped, non-primary aligned,
-duplicates or fail vendor quality checks are dropped. You can also use the
-`-mapq` option to set the threshold for filtering reads with a low mapq value.
-By default, any reads with a mapq less than 30 are dropped.
-
-To create a pileup file, run the following command e.g.
+As you can see, ADAM outputs all the commands that are available for you to run. To get
+help for a specific command, run `adam <command> -h`, e.g.
 
 ```
-$ bin/hadoop jar adam-X.Y.jar pileup -reference reference.fasta.adam1 -reads reads.bam.adam1 mypileup
-```
-When this command completes, you have a new pileup datastore called `mypileup`.
-
-In some cases, the reference names in your reads file don't perfectly match the reference names. In that case,
-you might see null values for the `referenceName` and `referenceBase`. To workaround this problem
-use the -rename_reference option, e.g. `-rename_reference 11=chr11 -rename_reference 12=chr12`. In 
-this example, any read with the reference `11` will be joined to `chr11` reference data and any read with
-reference `12` will be joined to the `chr12` reference.
-
-The `pileup` command uses the Hadoop `MultiInputs` input format in order to join the reference and read
-data in a single Map-Reduce job. For performance, the reference and read data are split
-into "buckets" at specific positions along the genome. The number of positions in each bucket is controlled
-by the `-step` option which defaults to 1000. This means that the genome is split into buckets that are
-are 1000 positions wide and contain all the read and reference data necessary for the reduce step. Increasing 
-this number will improve performance at the cost of memory. If you have limited memory, reducing the step 
-can reduce memory use.
-
-You can use the `print` command (explained below) to see the contents of the pileup file.
-
-```
-$ bin/hadoop jar adam-X.Y.jar print mypileup
-...
-{"referenceName": "chr11", "position": 782372, "referenceBase": "G", "pileup": "GGGGGGGGGGG", "qualities": "8EAIK*EAI2%"}
-{"referenceName": "chr11", "position": 782373, "referenceBase": "T", "pileup": "TGTTTTTTTTC", "qualities": "\/J?F<14II=$"}
-{"referenceName": "chr11", "position": 782374, "referenceBase": "C", "pileup": "CCCCCCCCCCC", "qualities": "A@KAH5JIKI*"}
-{"referenceName": "chr11", "position": 782375, "referenceBase": "C", "pileup": "CGCCCCCCCCT", "qualities": "CK:KK.KKI-5"}
-{"referenceName": "chr11", "position": 782376, "referenceBase": "C", "pileup": "CGCCCCCCCCC", "qualities": "HKHMJIMHKJ%"}
-{"referenceName": "chr11", "position": 782377, "referenceBase": "A", "pileup": "AGAAAAAAAAC", "qualities": "AG?GGCIDJF."}
-{"referenceName": "chr11", "position": 782378, "referenceBase": "C", "pileup": "CTCCCCCCCCC", "qualities": "FKKHI@HFMK\/"}
-{"referenceName": "chr11", "position": 782379, "referenceBase": "A", "pileup": "ACAAAAAAAAT", "qualities": "EH4GI,=IAD8"}
-```
-The pileup field is a string with one character for each read. The characters represent
-the base aligned at that position for each read. The qualities string represents the
-phred quality scores for each of the bases in the pileup string.
-
-### Print the contents of ADAM data
-
-ADAM has a simple module for printing the contents of your data to console. For example, to view your fasta file, run the following:
-```
-$ bin/hadoop jar adam-X.Y.jar print reference.fasta.adam1
-```
-
-Of course, to really use this data, you'll want to use tools like Shark/Spark or Impala.
-
-### Shark or Impala Example
-
-TODO: The Parquet Hive SerDe is nearly polished and ready to ship. When it is, I'll drop an example here.
-
-### Pig Example
-
-Parquet has support for Pig.
-
-You can find an [example of a Pig script](examples/good_reads.pig) in the `examples` directory of ADAM. This pig scripts generates the total number of reads per reference with the
-total number reads that were mapped with good quality. This isn't meant to be a
-general-purpose or even a well-written script (as it's the first pig script
-I've ever written).
-
-```
-$ pig -f examples/good_reads.pig
-```
-This scripts will output its results to a directory called `results` in your home directory. Here's the output for the ADAM1 file I processed.
-```
-chr1	95301810	chr1	81219513
-chr2	150651983	chr2	86589043
-chr3	76637966	chr3	65233010
-chr4	77756231	chr4	64257935
-chr5	76236808	chr5	63658192
-chr6	75626876	chr6	63004588
-chr7	72840307	chr7	58128351
-chr8	63917066	chr8	53227910
-...
-chrX_GL456233_random	135674	chrX_GL456233_random	117667
-```
-The second column shows the total number of reads. The fourth shows the total
-number of those reads that were mapped with good quality.
+$ adam bam2adam -h
+ BAM                            : The SAM or BAM file to convert
+ ADAM                           : Location to write ADAM data
+ -h (-help, --help, -?)         : print help
+ -parquet_block_size N          : Parquet block size (default=512mb)
+ -parquet_compress              : Parquet compress (default = true)
+ -parquet_compression_codec VAL : Parquet compression codec (default=gzip)
+ -parquet_disable_dictionary    : Disable dictionary encoding. (default = false)
+ -parquet_page_size N           : Parquet page size (default=1mb)
+ -spark_master VAL              : Spark Master (default=local)
+````
 
 # License
 
