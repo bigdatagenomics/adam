@@ -56,5 +56,15 @@ record ADAMPileup {
     union {null, string } qualities = null;
 }
 
+record ADAMVariant {
+    union {null, int} chromosome = null;
+    union {null, long} position = null;
+    union {null, string} Id = null;
+    union {null, Base} referenceBase = null;
+    union {null, string} alternate = null;
+    union {null, int} quality = null;
+    union {null, string} filter = null;
+    union {null, string} information = null;
+}
 
 }
