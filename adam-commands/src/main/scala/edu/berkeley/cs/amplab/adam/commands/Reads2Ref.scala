@@ -17,7 +17,7 @@ package edu.berkeley.cs.amplab.adam.commands
 
 import edu.berkeley.cs.amplab.adam.util._
 import net.sf.samtools.{CigarOperator, TextCigarCodec}
-import spark.{Partitioner, RDD, SparkContext}
+import spark.{RDD, SparkContext}
 import spark.SparkContext._
 import parquet.hadoop.util.ContextUtil
 import parquet.hadoop.{ParquetOutputFormat, ParquetInputFormat}
@@ -54,41 +54,9 @@ class Reads2RefArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var minMapq: Long = Reads2RefArgs.MIN_MAPQ_DEFAULT
 }
 
-class Reads2Ref extends AdamCommand with SparkCommand with ParquetCommand with Serializable {
-  val commandName: String = "reads2ref"
-  val commandDescription: String = "Convert an ADAM read-oriented file to an ADAM reference-oriented file"
+class ReadProcessor extends Serializable {
 
-  def commandExec(cmdLine: Array[String]) {
-    val args = Args4j[Reads2RefArgs](cmdLine)
-    val sc: SparkContext = createSparkContext(args)
-    val job = new Job()
-    setupParquetOutputFormat(args, job, ADAMPileup.SCHEMA$)
-
-    AvroWrapper.register(classOf[ADAMRecord])
-    AvroWrapper.register(classOf[ADAMPileup])
-
-    ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[ADAMRecord]])
-    ParquetInputFormat.setUnboundRecordFilter(job, classOf[LocusPredicate])
-    val reads = sc.newAPIHadoopFile(args.readInput,
-      classOf[ParquetInputFormat[ADAMRecord]], classOf[Void], classOf[ADAMRecord],
-      ContextUtil.getConfiguration(job))
-
-    val nonNullReads: RDD[AvroWrapper[ADAMRecord]] = reads filter (r => r._2 != null) map (r => r._2)
-
-    val pileups = nonNullReads.flatMap {
-      processRecord(_).map(p => (null, AvroWrapper(p)))
-    }
-
-    pileups.saveAsNewAPIHadoopFile(args.pileupOutput,
-      classOf[Void], classOf[ADAMPileup], classOf[ParquetOutputFormat[ADAMPileup]],
-      ContextUtil.getConfiguration(job))
-  }
-
-  def sangerQuality(qualities: String, index: Int) {
-    qualities charAt index - 33
-  }
-
-  def processRecord(record: ADAMRecord): List[ADAMPileup] = {
+  def readToPileups(record: ADAMRecord): List[ADAMPileup] = {
     if (record == null || record.getCigar == null || record.getMismatchingPositions == null) {
       // TODO: log this later... We can't create a pileup without the CIGAR and MD tag
       // in the future, we can also get reference information from a reference file
@@ -212,4 +180,42 @@ class Reads2Ref extends AdamCommand with SparkCommand with ParquetCommand with S
 
     pileupList
   }
+}
+
+class Reads2Ref extends AdamCommand with SparkCommand with ParquetCommand {
+  val commandName: String = "reads2ref"
+  val commandDescription: String = "Convert an ADAM read-oriented file to an ADAM reference-oriented file"
+
+  def commandExec(cmdLine: Array[String]) {
+    val args = Args4j[Reads2RefArgs](cmdLine)
+    val sc: SparkContext = createSparkContext(args)
+    val job = new Job()
+    setupParquetOutputFormat(args, job, ADAMPileup.SCHEMA$)
+
+    AvroWrapper.register(classOf[ADAMRecord])
+    AvroWrapper.register(classOf[ADAMPileup])
+
+    ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[ADAMRecord]])
+    ParquetInputFormat.setUnboundRecordFilter(job, classOf[LocusPredicate])
+    val reads = sc.newAPIHadoopFile(args.readInput,
+      classOf[ParquetInputFormat[ADAMRecord]], classOf[Void], classOf[ADAMRecord],
+      ContextUtil.getConfiguration(job))
+
+    val nonNullReads: RDD[AvroWrapper[ADAMRecord]] = reads filter (r => r._2 != null) map (r => r._2)
+
+    val readProcessor = new ReadProcessor
+    val pileups = nonNullReads.flatMap {
+      readProcessor.readToPileups(_).map(p => (null, AvroWrapper(p)))
+    }
+
+    pileups.saveAsNewAPIHadoopFile(args.pileupOutput,
+      classOf[Void], classOf[ADAMPileup], classOf[ParquetOutputFormat[ADAMPileup]],
+      ContextUtil.getConfiguration(job))
+  }
+
+  def sangerQuality(qualities: String, index: Int) {
+    qualities charAt index - 33
+  }
+
+
 }
