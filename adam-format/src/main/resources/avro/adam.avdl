@@ -70,6 +70,8 @@ record ADAMPileup {
     union {null, long } position = null;
     union {null, string } readName = null;
     union {null, ADAMPileupEvent } event = null;
+    union {null, int } eventOffset = null;
+    union {null, int } eventLength = null;
     union {null, Base } referenceBase = null;
     union {null, Base } readBase = null; // iff op = MISMATCH
     union {null, string } insertedSequence = null; // iff op = INSERTED
