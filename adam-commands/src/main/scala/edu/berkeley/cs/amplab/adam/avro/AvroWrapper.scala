@@ -67,5 +67,7 @@ class AvroWrapper[T <% SpecificRecord : Manifest](private var obj: T)
   def get(i: Int): AnyRef = obj.get(i)
 
   def getSchema: Schema = obj.getSchema
+
+  override def toString = obj.toString
 }
 

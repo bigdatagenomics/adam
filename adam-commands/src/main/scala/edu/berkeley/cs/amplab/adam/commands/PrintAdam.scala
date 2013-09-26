@@ -15,11 +15,9 @@
  */
 package edu.berkeley.cs.amplab.adam.commands
 
-import org.apache.hadoop.fs.{FileSystem, Path}
-import parquet.avro.AvroParquetReader
 import org.apache.avro.generic.IndexedRecord
 import scala.collection.JavaConversions._
-import edu.berkeley.cs.amplab.adam.util.{Args4jBase, Args4j}
+import edu.berkeley.cs.amplab.adam.util.{ParquetFileTraversable, Args4jBase, Args4j}
 import org.kohsuke.args4j.Argument
 import java.util
 
@@ -41,42 +39,12 @@ class PrintAdam extends AdamCommand with SparkCommand {
   def commandExec(cmdArgs: Array[String]) {
     val args = Args4j[PrintAdamArgs](cmdArgs)
     val sc = createSparkContext(args)
-    val fs = FileSystem.get(sc.hadoopConfiguration)
 
-    args.filesToPrint.foreach {
-      fileToPrint =>
-        val inputPath = new Path(fileToPrint)
-        if (!fs.exists(inputPath)) {
-          throw new IllegalArgumentException("The path %s does not exist".format(fileToPrint))
-        }
-        var paths = List[Path]()
-        if (fs.isDirectory(inputPath)) {
-          val files = fs.listStatus(inputPath)
-          files.foreach {
-            file =>
-              if (file.getPath.getName.startsWith("part-")) {
-                paths ::= file.getPath
-              }
-          }
-        }
-        else if (fs.isFile(inputPath)) {
-          paths ::= inputPath
-        } else {
-          throw new IllegalArgumentException("The path '%s' is neither file nor directory".format(fileToPrint))
-        }
-
-        paths.foreach {
-          path =>
-            val parquetReader = new AvroParquetReader(path)
-            var record: IndexedRecord = null
-            do {
-              record = parquetReader.read()
-              if (record != null) {
-                println(record)
-              }
-            } while (record != null)
-            parquetReader.close()
-        }
+    for (file <- args.filesToPrint) {
+      val it = new ParquetFileTraversable[IndexedRecord](sc, file)
+      for (pileup <- it) {
+        println(pileup)
+      }
     }
   }
 }

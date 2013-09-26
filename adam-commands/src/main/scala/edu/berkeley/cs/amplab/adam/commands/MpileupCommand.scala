@@ -16,19 +16,21 @@
 
 package edu.berkeley.cs.amplab.adam.commands
 
-import edu.berkeley.cs.amplab.adam.util.{Args4j, Args4jBase}
+import edu.berkeley.cs.amplab.adam.util.{ParquetFileTraversable, Args4j, Args4jBase}
 import org.kohsuke.args4j.Argument
-import parquet.hadoop.ParquetInputFormat
-import parquet.avro.AvroReadSupport
 import edu.berkeley.cs.amplab.adam.avro.ADAMPileup
-import parquet.hadoop.util.ContextUtil
-import org.apache.hadoop.mapreduce.Job
-import spark.SparkContext._
-import edu.berkeley.cs.amplab.adam.avro.AvroWrapper
+
+object Mpileup {
+  def main(args: Array[String]) {
+    new MpileupCommand().commandExec(args)
+  }
+}
 
 class MpileupArgs extends Args4jBase with SparkArgs {
-  @Argument(required = true, metaVar = "FILE", usage = "ADAM reference-oriented file")
+  @Argument(required = true, metaVar = "ADAMFILE", usage = "ADAM reference-oriented file", index = 0)
   var rodFile: String = _
+  @Argument(required = true, metaVar = "PILEUPFILE", usage = "The location of the pileup file", index = 1)
+  var pileupFile: String = _
 }
 
 class MpileupCommand extends AdamCommand with SparkCommand {
@@ -37,20 +39,12 @@ class MpileupCommand extends AdamCommand with SparkCommand {
 
   def commandExec(cmdLine: Array[String]) {
     var args = Args4j[MpileupArgs](cmdLine)
-    val sc = createSparkContext(args)
-    val job = new Job()
+    var sc = createSparkContext(args)
 
-    ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[ADAMPileup]])
-    val pileups = sc.newAPIHadoopFile(args.rodFile,
-      classOf[ParquetInputFormat[ADAMPileup]], classOf[Void], classOf[ADAMPileup],
-      ContextUtil.getConfiguration(job))
+    val parquetFile = new ParquetFileTraversable[ADAMPileup](sc, args.rodFile)
+    for (pileup <- parquetFile) {
+      println(pileup)
+    }
 
-    val sorted = pileups.map {
-      case (_, pileup: ADAMPileup) => {
-        ((pileup.getReferenceId, pileup.getPosition), AvroWrapper[ADAMPileup](pileup))
-      }
-    }.sortByKey(numPartitions = 10000)
-
-    sorted.foreach(println)
   }
 }
