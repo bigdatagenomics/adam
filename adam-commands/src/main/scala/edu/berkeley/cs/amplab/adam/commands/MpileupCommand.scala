@@ -16,9 +16,10 @@
 
 package edu.berkeley.cs.amplab.adam.commands
 
-import edu.berkeley.cs.amplab.adam.util.{ParquetFileTraversable, Args4j, Args4jBase}
+import edu.berkeley.cs.amplab.adam.util._
 import org.kohsuke.args4j.Argument
 import edu.berkeley.cs.amplab.adam.avro.ADAMPileup
+import scala.Some
 
 object Mpileup {
   def main(args: Array[String]) {
@@ -27,10 +28,8 @@ object Mpileup {
 }
 
 class MpileupArgs extends Args4jBase with SparkArgs {
-  @Argument(required = true, metaVar = "ADAMFILE", usage = "ADAM reference-oriented file", index = 0)
-  var rodFile: String = _
-  @Argument(required = true, metaVar = "PILEUPFILE", usage = "The location of the pileup file", index = 1)
-  var pileupFile: String = _
+  @Argument(required = true, metaVar = "ADAMFILE", usage = "ADAM file", index = 0)
+  var file: String = _
 }
 
 class MpileupCommand extends AdamCommand with SparkCommand {
@@ -38,12 +37,42 @@ class MpileupCommand extends AdamCommand with SparkCommand {
   val commandDescription: String = "Output the samtool mpileup text from ADAM reference-oriented data"
 
   def commandExec(cmdLine: Array[String]) {
-    var args = Args4j[MpileupArgs](cmdLine)
-    var sc = createSparkContext(args)
+    val args = Args4j[MpileupArgs](cmdLine)
+    val sc = createSparkContext(args)
 
-    val parquetFile = new ParquetFileTraversable[ADAMPileup](sc, args.rodFile)
-    for (pileup <- parquetFile) {
-      println(pileup)
+    val pileups = new PileupTraversable(sc, args.file)
+    for (pileup <- pileups) {
+      // Reference name and position
+      print("%s %s ".format(pileup.referenceName, pileup.referencePosition))
+
+      // The reference base
+      pileup.referenceBase match {
+        case Some(base) => print(base)
+        case None => print("?")
+      }
+
+      // The number of reads
+      print(" " + pileup.numReads + " ")
+
+      // Matches
+      for (matchEvent <- pileup.matches)
+        if (matchEvent.isReverseStrand) print(",") else print(".")
+
+      // Mismatches
+      for (mismatchEvent <- pileup.mismatches) {
+        val mismatchBase = mismatchEvent.mismatchedBase.toString
+        if (mismatchEvent.isReverseStrand) print(mismatchBase.toLowerCase) else print(mismatchBase)
+      }
+
+      // Deletes
+      for (deletedEvent <- pileup.deletes)
+        print("-1" + pileup.referenceBase.get)
+
+      // Inserts
+      for (insertEvent <- pileup.insertions)
+        print("+" + insertEvent.insertedSequence.length + insertEvent.insertedSequence)
+
+      println()
     }
 
   }
