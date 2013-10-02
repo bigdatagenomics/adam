@@ -27,6 +27,7 @@ import net.sf.samtools.{TextCigarCodec, CigarOperator}
 import scala.collection.mutable.ListBuffer
 import parquet.hadoop.util.ContextUtil
 import scala.collection.SortedMap
+import java.lang.Integer._
 
 object Base extends Enumeration with Serializable {
   val A, C, T, G, N = Value
@@ -37,20 +38,28 @@ abstract class PileupEvent(readName: String) extends Serializable
 case class MatchEvent(readName: String,
                       isReverseStrand: Boolean,
                       eventOffset: Int,
-                      eventLength: Int) extends PileupEvent(readName)
+                      eventLength: Int,
+		      mapQ: Int,
+		      qual: Int) extends PileupEvent(readName)
 
 case class MismatchEvent(readName: String,
                          mismatchedBase: Base.Value,
                          isReverseStrand: Boolean,
                          eventOffset: Int,
-                         eventLength: Int) extends PileupEvent(readName)
+                         eventLength: Int,
+		         mapQ: Int,
+		         qual: Int) extends PileupEvent(readName)
 
 case class InsertionEvent(readName: String,
-                          insertedSequence: String) extends PileupEvent(readName)
+                          insertedSequence: String,
+			  mapQ: Int,
+			  qual: Int) extends PileupEvent(readName)
 
 case class DeletionEvent(readName: String,
                          eventOffset: Int,
-                         eventLength: Int) extends PileupEvent(readName)
+                         eventLength: Int,
+                         mapQ: Int,
+                         qual: Int) extends PileupEvent(readName)
 
 class Pileup(val referenceId: Int,
              val referencePosition: Long,
@@ -82,6 +91,16 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
       ContextUtil.getConfiguration(job))
   })
 
+  def stringToQualitySanger(score: String): Int = {
+    try {
+      // quality score is padded by 33
+      return java.lang.Integer.parseInt(score) - 33
+    } catch {
+      // thrown if phred score is omitted
+      case nfe: NumberFormatException => return 0
+    }
+  }
+
   def readToPileups(record: ADAMRecord): List[Pileup] = {
     if (record == null || record.getCigar == null || record.getMismatchingPositions == null) {
       // TODO: log this later... We can't create a pileup without the CIGAR and MD tag
@@ -108,7 +127,8 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
 
         // INSERT
         case CigarOperator.I =>
-          val insertEvent = new InsertionEvent(record.getReadName.toString, record.getSequence.toString)
+          val insertEvent = new InsertionEvent(record.getReadName.toString, record.getSequence.toString,
+					       record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
           pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
             None, insertions = List(insertEvent))
           readPos += cigarElement.getLength
@@ -120,7 +140,8 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
 
             if (mdTag.isMatch(referencePos)) {
               // sequence match
-              val matchEvent = new MatchEvent(record.getReadName.toString, isReverseStrand, i, cigarElement.getLength)
+              val matchEvent = new MatchEvent(record.getReadName.toString, isReverseStrand, i, cigarElement.getLength,
+					      record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
               pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
                 Some(baseFromSequence(readPos)), matches = List(matchEvent))
             } else {
@@ -130,7 +151,8 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
                   + record.getCigar + " " + record.getMismatchingPositions)
               }
               val mismatchEvent = new MismatchEvent(record.getReadName.toString,
-                baseFromSequence(readPos), isReverseStrand, i, cigarElement.getLength)
+						    baseFromSequence(readPos), isReverseStrand, i, cigarElement.getLength,
+						    record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
               pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
                 Some(Base.withName(mismatchBase.get.toString)), mismatches = List(mismatchEvent))
             }
@@ -147,7 +169,8 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
             if (deletedBase.isEmpty) {
               throw new IllegalArgumentException("CIGAR delete but the MD tag is not a delete")
             }
-            val deleteEvent = new DeletionEvent(record.getReadName.toString, i, cigarElement.getLength)
+            val deleteEvent = new DeletionEvent(record.getReadName.toString, i, cigarElement.getLength,
+						record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
             pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
               Some(Base.withName(deletedBase.get.toString)), deletes = List(deleteEvent))
             // Consume reference bases but not read bases
