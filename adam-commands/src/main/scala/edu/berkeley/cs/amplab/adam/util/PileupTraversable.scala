@@ -27,7 +27,6 @@ import net.sf.samtools.{TextCigarCodec, CigarOperator}
 import scala.collection.mutable.ListBuffer
 import parquet.hadoop.util.ContextUtil
 import scala.collection.SortedMap
-import java.lang.Integer._
 
 object Base extends Enumeration with Serializable {
   val A, C, T, G, N = Value
@@ -39,21 +38,21 @@ case class MatchEvent(readName: String,
                       isReverseStrand: Boolean,
                       eventOffset: Int,
                       eventLength: Int,
-		      mapQ: Int,
-		      qual: Int) extends PileupEvent(readName)
+                      mapQ: Int,
+                      qual: Int) extends PileupEvent(readName)
 
 case class MismatchEvent(readName: String,
                          mismatchedBase: Base.Value,
                          isReverseStrand: Boolean,
                          eventOffset: Int,
                          eventLength: Int,
-		         mapQ: Int,
-		         qual: Int) extends PileupEvent(readName)
+                         mapQ: Int,
+                         qual: Int) extends PileupEvent(readName)
 
 case class InsertionEvent(readName: String,
                           insertedSequence: String,
-			  mapQ: Int,
-			  qual: Int) extends PileupEvent(readName)
+                          mapQ: Int,
+                          qual: Int) extends PileupEvent(readName)
 
 case class DeletionEvent(readName: String,
                          eventOffset: Int,
@@ -94,7 +93,7 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
   def stringToQualitySanger(score: String): Int = {
     try {
       // quality score is padded by 33
-      return java.lang.Integer.parseInt(score) - 33
+      score.toInt - 33
     } catch {
       // thrown if phred score is omitted
       case nfe: NumberFormatException => return 0
