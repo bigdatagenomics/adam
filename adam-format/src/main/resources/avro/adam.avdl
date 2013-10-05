@@ -37,6 +37,17 @@ record ADAMRecord {
 
     // Remaining optional attributes flattened into a string
     union { null, string } attributes = null;
+
+    union { null, string } recordGroupSequencingCenter = null;
+    union { null, string } recordGroupDescription = null;
+    union { null, long } recordGroupRunDateEpoch = null;
+    union { null, string } recordGroupFlowOrder = null;
+    union { null, string } recordGroupKeySequence = null;
+    union { null, string } recordGroupLibrary = null;
+    union { null, int } recordGroupPredictedMedianInsertSize = null;
+    union { null, string } recordGroupPlatform = null;
+    union { null, string } recordGroupPlatformUnit = null;
+    union { null, string } recordGroupSample = null;
 }
 
 record ADAMFastaFragment {

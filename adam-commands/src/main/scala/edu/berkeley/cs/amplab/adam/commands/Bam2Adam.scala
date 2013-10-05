@@ -100,7 +100,7 @@ class BamConverter extends Serializable {
     // Position of the mate/next segment
     val mateReference: Integer = samRecord.getMateReferenceIndex
 
-    if (mateReference != -1) {
+    if (mateReference.toInt != -1) {
       builder
         .setMateReference(samRecord.getMateReferenceName)
         .setMateAlignmentStart(samRecord.getMateAlignmentStart.asInstanceOf[Long])
@@ -158,7 +158,20 @@ class BamConverter extends Serializable {
 
     val recordGroup: SAMReadGroupRecord = samRecord.getReadGroup
     if (recordGroup != null) {
+      Option(recordGroup.getRunDate) match {
+        case Some(date) => builder.setRecordGroupRunDateEpoch(date.getTime)
+        case None =>
+      }
       builder.setRecordGroupId(recordGroup.getReadGroupId)
+        .setRecordGroupSequencingCenter(recordGroup.getSequencingCenter)
+        .setRecordGroupDescription(recordGroup.getDescription)
+        .setRecordGroupFlowOrder(recordGroup.getFlowOrder)
+        .setRecordGroupKeySequence(recordGroup.getKeySequence)
+        .setRecordGroupLibrary(recordGroup.getLibrary)
+        .setRecordGroupPredictedMedianInsertSize(recordGroup.getPredictedMedianInsertSize)
+        .setRecordGroupPlatform(recordGroup.getPlatform)
+        .setRecordGroupPlatformUnit(recordGroup.getPlatformUnit)
+        .setRecordGroupSample(recordGroup.getSample)
     }
 
     builder.build
