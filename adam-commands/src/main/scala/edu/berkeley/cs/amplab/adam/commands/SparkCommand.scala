@@ -21,9 +21,8 @@ import org.kohsuke.args4j.Option
 import edu.berkeley.cs.amplab.adam.util.Args4jBase
 
 trait SparkArgs extends Args4jBase {
-  @Option(required = false, name = "-spark_master", usage = "Spark Master (default=local)")
-  var master = "local"
-  // TODO: add more Spark options
+  @Option(required = false, name = "-spark_master", usage = "Spark Master (default=local[$total_cores])")
+  var master = "local[%d]".format(Runtime.getRuntime.availableProcessors())
 }
 
 trait SparkCommand extends AdamCommand {
