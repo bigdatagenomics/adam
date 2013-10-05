@@ -243,7 +243,7 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
 
     for ((_, read: ADAMRecord) <- nonNullReads) {
 
-      if (currentReference != Some(read.getReferenceId)) {
+      if (currentReference.get != read.getReferenceId.toInt) {
         // We're starting a new reference, flush all events from the previous reference
         flushPileups()
         currentReference = Some(read.getReferenceId)

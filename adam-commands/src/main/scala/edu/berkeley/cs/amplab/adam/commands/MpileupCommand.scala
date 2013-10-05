@@ -18,7 +18,6 @@ package edu.berkeley.cs.amplab.adam.commands
 
 import edu.berkeley.cs.amplab.adam.util._
 import org.kohsuke.args4j.Argument
-import edu.berkeley.cs.amplab.adam.avro.ADAMPileup
 import scala.Some
 
 object Mpileup {

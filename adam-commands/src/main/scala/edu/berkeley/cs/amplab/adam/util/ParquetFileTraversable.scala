@@ -54,10 +54,10 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
       var record = null.asInstanceOf[T]
       do {
         record = parquetReader.read()
-        if (record != null) {
+        if (record != null.asInstanceOf[T]) {
           f(record)
         }
-      } while (record != null)
+      } while (record != null.asInstanceOf[T])
       parquetReader.close()
     }
   }
