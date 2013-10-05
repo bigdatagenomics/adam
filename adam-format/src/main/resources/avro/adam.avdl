@@ -57,15 +57,6 @@ record ADAMFastaFragment {
     union {null, string } sequence = null;
 }
 
-enum ADAMPileupEvent {
-    MATCH,                   // match on the forward strand
-    MATCH_REVERSE_STRAND,    // match on the reverse strand
-    MISMATCH,                // mismatch on the forward strand
-    MISMATCH_REVERSE_STRAND, // mismatch on the reverse strand
-    INSERTION,               // insertion between this reference position and the next reference position
-    DELETION                 // deletion from the reference
-}
-
 enum Base {
     A,
     C,
@@ -74,31 +65,59 @@ enum Base {
     N
 }
 
-// TODO: add the read group ID stuff
 record ADAMPileup {
-    union {null, string } referenceName = null;
-    union {null, int } referenceId = null;
-    union {null, long } position = null;
-    union {null, string } readName = null;
-    union {null, ADAMPileupEvent } event = null;
-    union {null, int } eventOffset = null;
-    union {null, int } eventLength = null;
-    union {null, Base } referenceBase = null;
-    union {null, Base } readBase = null; // iff op = MISMATCH
-    union {null, string } insertedSequence = null; // iff op = INSERTED
-    union {null, int } sangerQuality = null;
-    union {null, int } mapQuality = null;
+    union { null, string } referenceName = null;
+    union { null, int } referenceId = null;
+    union { null, long } position = null;
+    union { null, int } rangeOffset = null;
+    union { null, int } rangeLength = null;
+    union { null, Base } referenceBase = null;
+    union { null, Base } readBase = null;
+    union { null, int } sangerQuality = null;
+    union { null, int } mapQuality = null;
+    union { null, int } numSoftClipped = null;
+    union { null, int } numReverseStrand = null;
+    union { null, int } countAtPosition = null;
+
+    union { null, string } recordGroupSequencingCenter = null;
+    union { null, string } recordGroupDescription = null;
+    union { null, long } recordGroupRunDateEpoch = null;
+    union { null, string } recordGroupFlowOrder = null;
+    union { null, string } recordGroupKeySequence = null;
+    union { null, string } recordGroupLibrary = null;
+    union { null, int } recordGroupPredictedMedianInsertSize = null;
+    union { null, string } recordGroupPlatform = null;
+    union { null, string } recordGroupPlatformUnit = null;
+    union { null, string } recordGroupSample = null;
 }
 
-record ADAMVariant {
-    union {null, int} chromosome = null;
-    union {null, long} position = null;
-    union {null, string} Id = null;
-    union {null, Base} referenceBase = null;
-    union {null, string} alternate = null;
-    union {null, int} quality = null;
-    union {null, string} filter = null;
-    union {null, string} information = null;
+record ADAMNestedPileup {
+     // nested pileup data type - contains reference to list of overlapping reads
+     // note: cannot be used with databases (e.g. hive/shark)
+     ADAMPileup pileup;
+     array<ADAMRecord> readEvidence;
+}
+
+record ADAMGenotype { // TODO: update with revised qual and likelihood
+    union { null, string } referenceName = null;
+    union { null, int } referenceId = null;
+    union { null, long } position = null;
+    union { null, Base } referenceBase = null;
+    union { null, string } genotype = null;
+    union { null, int } likelihood = null;
+    union { null, string } filter = null;
+    union { null, string } information = null;
+
+    union { null, string } recordGroupSequencingCenter = null;
+    union { null, string } recordGroupDescription = null;
+    union { null, long } recordGroupRunDateEpoch = null;
+    union { null, string } recordGroupFlowOrder = null;
+    union { null, string } recordGroupKeySequence = null;
+    union { null, string } recordGroupLibrary = null;
+    union { null, int } recordGroupPredictedMedianInsertSize = null;
+    union { null, string } recordGroupPlatform = null;
+    union { null, string } recordGroupPlatformUnit = null;
+    union { null, string } recordGroupSample = null;
 }
 
 }

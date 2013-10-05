@@ -21,12 +21,13 @@ import spark.{RDD, SparkContext}
 import spark.SparkContext._
 import parquet.hadoop.util.ContextUtil
 import parquet.hadoop.{ParquetOutputFormat, ParquetInputFormat}
-import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileupEvent, ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
 import org.apache.hadoop.mapreduce.Job
 import parquet.avro.AvroReadSupport
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
 import scala.collection.JavaConversions._
-import org.kohsuke.args4j.{Option, Argument}
+import org.kohsuke.args4j.{Option => option, Argument}
+import scala.collection.immutable.StringOps
 
 import edu.berkeley.cs.amplab.adam.avro.AvroWrapper._
 import edu.berkeley.cs.amplab.adam.avro.AvroWrapper
@@ -50,7 +51,7 @@ class Reads2RefArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @Argument(metaVar = "DIR", required = true, usage = "Location to create reference-oriented ADAM data", index = 1)
   var pileupOutput: String = _
 
-  @Option(name = "-mapq", usage = "Minimal mapq value allowed for a read (default = 30)")
+  @option(name = "-mapq", usage = "Minimal mapq value allowed for a read (default = 30)")
   var minMapq: Long = Reads2RefArgs.MIN_MAPQ_DEFAULT
 }
 
@@ -67,8 +68,39 @@ class ReadProcessor extends Serializable {
       Base.valueOf(record.getSequence.subSequence(pos, pos + 1).toString)
     }
 
+    def sangerScoreToInt(score: String): Int = score(0).toInt - 33
+
+    def populatePileupFromReference(record: ADAMRecord, referencePos: Long, isReverseStrand: Boolean): ADAMPileup.Builder = {
+
+      var reverseStrandCount = 0
+
+      if (isReverseStrand) {
+        reverseStrandCount = 1
+      }
+
+      ADAMPileup.newBuilder()
+        .setReferenceName(record.getReferenceName)
+        .setReferenceId(record.getReferenceId)
+        .setMapQuality(record.getMapq)
+        .setPosition(referencePos)
+        .setRecordGroupSequencingCenter(record.getRecordGroupSequencingCenter)
+        .setRecordGroupDescription(record.getRecordGroupDescription)
+        .setRecordGroupRunDateEpoch(record.getRecordGroupRunDateEpoch)
+        .setRecordGroupFlowOrder(record.getRecordGroupFlowOrder)
+        .setRecordGroupKeySequence(record.getRecordGroupKeySequence)
+        .setRecordGroupLibrary(record.getRecordGroupLibrary)
+        .setRecordGroupPredictedMedianInsertSize(record.getRecordGroupPredictedMedianInsertSize)
+        .setRecordGroupPlatform(record.getRecordGroupPlatform)
+        .setRecordGroupPlatformUnit(record.getRecordGroupPlatformUnit)
+        .setRecordGroupSample(record.getRecordGroupSample)
+        .setSangerQuality(sangerScoreToInt(record.getQual.toString))
+        .setNumReverseStrand(reverseStrandCount)
+        .setNumSoftClipped(0)
+        .setCountAtPosition(1)
+    }
+
     var referencePos = record.getStart
-    var isReverseStrand = record.getReadNegativeStrand
+    val isReverseStrand = record.getReadNegativeStrand
     var readPos = 0
 
     val cigar = Reads2Ref.CIGAR_CODEC.decode(record.getCigar.toString)
@@ -81,64 +113,42 @@ class ReadProcessor extends Serializable {
 
         // INSERT
         case CigarOperator.I =>
-          val pileup = ADAMPileup.newBuilder()
-            .setReferenceName(record.getReferenceName)
-            .setReferenceId(record.getReferenceId)
-            .setMapQuality(record.getMapq)
-            .setPosition(referencePos)
-            .setInsertedSequence(record.getSequence)
-            .setEvent(ADAMPileupEvent.INSERTION)
-            .setEventOffset(0)
-            .setEventLength(cigarElement.getLength)
-            .setReferenceBase(null)
-            .setSangerQuality(42) // TODO: we need to send all qualities
-            .build()
-          pileupList ::= pileup
-          // Consumes the read bases but NOT the reference bases
-          readPos += cigarElement.getLength
+          var insertPos = 0
 
+          for (b <- new StringOps(record.getSequence.toString.substring(readPos, readPos + cigarElement.getLength - 1))) {
+            val insertBase = Base.valueOf(b.toString)
+
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand)
+              .setReadBase(insertBase)
+              .setRangeOffset(insertPos)
+              .setRangeLength(cigarElement.getLength)
+              .setReferenceBase(null)
+              .build()
+            pileupList ::= pileup
+            // Consumes the read bases but NOT the reference bases
+            readPos += 1
+            insertPos += 1
+          }
         // MATCH (sequence match or mismatch)
         case CigarOperator.M =>
 
           for (i <- 0 until cigarElement.getLength) {
 
-            if (mdTag.isMatch(referencePos)) {
-              // sequence match
-              val mdTagEvent = if (isReverseStrand) ADAMPileupEvent.MATCH_REVERSE_STRAND else ADAMPileupEvent.MATCH
-              val pileup = ADAMPileup.newBuilder()
-                .setReadName(record.getReadName)
-                .setReferenceName(record.getReferenceName)
-                .setReferenceId(record.getReferenceId)
-                .setEvent(mdTagEvent)
-                .setEventOffset(i)
-                .setEventLength(cigarElement.getLength)
-                .setPosition(referencePos)
-                .setReferenceBase(baseFromSequence(readPos))
-                .build()
-              pileupList ::= pileup
-
+            val readBase = if (mdTag.isMatch(referencePos)) {
+              baseFromSequence(readPos)
             } else {
-              val mismatchBase = mdTag.mismatchedBase(referencePos)
-              if (mismatchBase.isEmpty) {
-                throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions)
+              mdTag.mismatchedBase(referencePos) match {
+                case None => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace()
+                case Some(read) => Base.valueOf(read.toString)
               }
-              // sequence mismatch
-              val mdTagEvent = if (isReverseStrand) ADAMPileupEvent.MISMATCH_REVERSE_STRAND else ADAMPileupEvent.MISMATCH
-              val pileup = ADAMPileup.newBuilder()
-                .setReadName(record.getReadName)
-                .setReferenceName(record.getReferenceName)
-                .setReferenceId(record.getReferenceId)
-                .setEvent(mdTagEvent)
-                .setEventOffset(i)
-                .setEventLength(cigarElement.getLength)
-                .setPosition(referencePos)
-                .setReferenceBase(Base.valueOf(mismatchBase.get.toString))
-                .setReadBase(baseFromSequence(readPos))
-                .build()
-
-              pileupList ::= pileup
-
             }
+
+            // sequence match
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand)
+              .setReadBase(readBase)
+              .setReferenceBase(baseFromSequence(readPos))
+              .build()
+            pileupList ::= pileup
 
             readPos += 1
             referencePos += 1
@@ -151,20 +161,36 @@ class ReadProcessor extends Serializable {
             if (deletedBase.isEmpty) {
               throw new IllegalArgumentException("CIGAR delete but the MD tag is not a delete")
             }
-            val pileup = ADAMPileup.newBuilder()
-              .setReadName(record.getReadName)
-              .setReferenceName(record.getReferenceName)
-              .setReferenceId(record.getReferenceId)
-              .setPosition(referencePos)
-              .setEvent(ADAMPileupEvent.DELETION)
-              .setEventOffset(i)
-              .setEventLength(cigarElement.getLength)
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand)
               .setReferenceBase(Base.valueOf(deletedBase.get.toString))
+              .setReadBase(Base.N)
               .build()
 
             pileupList ::= pileup
             // Consume reference bases but not read bases
             referencePos += 1
+          }
+
+        // Soft clip
+        case CigarOperator.S =>
+
+          var clipPos = 0
+
+          for (i <- 0 until cigarElement.getLength) {
+            val readBase = baseFromSequence(readPos)
+
+            // sequence match
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand)
+              .setReadBase(readBase)
+              .setNumSoftClipped(1)
+              .setRangeOffset(clipPos)
+              .setRangeLength(cigarElement.getLength)
+              .setReferenceBase(null)
+              .build()
+            pileupList ::= pileup
+
+            readPos += 1
+            clipPos += 1
           }
 
         // All other cases (TODO: add X and EQ?)
@@ -178,7 +204,32 @@ class ReadProcessor extends Serializable {
       }
     )
 
-    pileupList
+    def mapPileup(a: ADAMPileup): (Option[Long], Option[Base], Option[java.lang.Integer], Option[CharSequence]) = {
+      (Option(a.getPosition), Option(a.getReadBase), Option(a.getRangeOffset), Option(a.getRecordGroupSample))
+    }
+
+    def combineEvidence(pileupGroup: List[ADAMPileup]): ADAMPileup = {
+
+      val pileup = pileupGroup.reduce((a: ADAMPileup, b: ADAMPileup) => {
+        a.setMapQuality(a.getMapQuality + b.getMapQuality)
+        a.setSangerQuality(a.getSangerQuality + b.getSangerQuality)
+        a.setCountAtPosition(a.getCountAtPosition + b.getCountAtPosition)
+        a.setNumSoftClipped(a.getNumSoftClipped + b.getNumSoftClipped)
+        a.setNumReverseStrand(a.getNumReverseStrand + b.getNumReverseStrand)
+
+        a
+      })
+
+      val num = pileup.getCountAtPosition
+
+      pileup.setMapQuality(pileup.getMapQuality / num)
+      pileup.setSangerQuality(pileup.getSangerQuality / num)
+
+      pileup
+    }
+
+    pileupList.groupBy(mapPileup)
+      .map((kv: ((Option[Long], Option[Base], Option[java.lang.Integer], Option[CharSequence]), List[ADAMPileup])) => combineEvidence(kv._2)).toList
   }
 }
 
