@@ -1,0 +1,43 @@
+#!/usr/bin/env bash -e -x
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT=$DIR/..
+
+VERSION=$(grep "<version>" $PROJECT_ROOT/pom.xml  | head -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')
+echo "Testing ADAM version $VERSION"
+
+ADAM_TMP_DIR=$(mktemp -d -t "adamTest")
+# Just to be paranoid.. use a directory internal to the ADAM_TMP_DIR
+ADAM_TMP_DIR="$ADAM_TMP_DIR/deleteMePleaseThisIsNoLongerNeeded"
+mkdir $ADAM_TMP_DIR
+
+pushd $PROJECT_ROOT
+# Create the jar file and stage it
+
+mvn clean package
+mv adam-commands/target/adam-$VERSION.jar $ADAM_TMP_DIR
+popd
+
+ADAM="java -Xmx1g -jar adam-$VERSION.jar "
+
+pushd $ADAM_TMP_DIR
+echo "Fetching BAM file"
+BAM=mouse_chrM.bam
+READS=$BAM.reads
+PILEUPS=$BAM.pileup
+wget http://www.cs.berkeley.edu/~massie/bams/$BAM
+echo "Converting BAM to ADAM read format"
+$ADAM bam2adam $BAM $READS
+echo "Converting read file to pileup format"
+$ADAM reads2ref $READS $PILEUPS
+echo "Reading reads"
+$ADAM print $READS 1>/dev/null 2>/dev/null
+echo "Reading pileups"
+$ADAM print $READS 1>/dev/null 2>/dev/null
+
+rm -rf $ADAM_TMP_DIR
+popd
+
+echo
+echo "All the tests passed"
+echo
