@@ -23,7 +23,7 @@ import scala.Left
 import scala.Right
 
 class Args4jBase {
-  @Option(name = "-h", aliases = Array("-help", "--help", "-?"), usage = "print help")
+  @Option(name = "-h", aliases = Array("-help", "--help", "-?"), usage = "Print help")
   var doPrintUsage: Boolean = false
 }
 
