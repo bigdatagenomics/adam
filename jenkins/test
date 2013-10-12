@@ -15,7 +15,7 @@ pushd $PROJECT_ROOT
 # Create the jar file and stage it
 
 mvn clean package
-mv adam-commands/target/adam-$VERSION.jar $ADAM_TMP_DIR
+cp adam-commands/target/adam-$VERSION.jar $ADAM_TMP_DIR
 popd
 
 ADAM="java -Xmx1g -jar adam-$VERSION.jar "
@@ -32,9 +32,6 @@ echo "Converting read file to pileup format"
 $ADAM reads2ref $READS $PILEUPS
 echo "Reading reads"
 $ADAM print $READS 1>/dev/null 2>/dev/null
-echo "Reading pileups"
-$ADAM print $READS 1>/dev/null 2>/dev/null
-
 rm -rf $ADAM_TMP_DIR
 popd
 

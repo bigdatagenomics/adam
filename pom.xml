@@ -162,7 +162,7 @@
             <dependency>
                 <groupId>com.twitter</groupId>
                 <artifactId>parquet-avro</artifactId>
-                <version>1.0.0</version>
+                <version>1.2.4</version>
             </dependency>
             <dependency>
                 <groupId>adam</groupId>
