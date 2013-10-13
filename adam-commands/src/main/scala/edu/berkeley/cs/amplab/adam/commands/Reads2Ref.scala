@@ -32,11 +32,13 @@ import scala.collection.immutable.StringOps
 import edu.berkeley.cs.amplab.adam.avro.AvroWrapper._
 import edu.berkeley.cs.amplab.adam.avro.AvroWrapper
 
-object Reads2Ref {
+object Reads2Ref extends AdamCommandCompanion {
+  val commandName: String = "reads2ref"
+  val commandDescription: String = "Convert an ADAM read-oriented file to an ADAM reference-oriented file"
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
 
-  def main(cmdLine: Array[String]) {
-    new Reads2Ref().commandExec(cmdLine)
+  def apply(cmdLine: Array[String]) = {
+    new Reads2Ref(Args4j[Reads2RefArgs](cmdLine))
   }
 }
 
@@ -233,12 +235,10 @@ class ReadProcessor extends Serializable {
   }
 }
 
-class Reads2Ref extends AdamCommand with SparkCommand with ParquetCommand {
-  val commandName: String = "reads2ref"
-  val commandDescription: String = "Convert an ADAM read-oriented file to an ADAM reference-oriented file"
+class Reads2Ref(args: Reads2RefArgs) extends AdamCommand with SparkCommand with ParquetCommand {
+  val companion = Reads2Ref
 
-  def commandExec(cmdLine: Array[String]) {
-    val args = Args4j[Reads2RefArgs](cmdLine)
+  def run() {
     val sc: SparkContext = createSparkContext(args)
     val job = new Job()
     setupParquetOutputFormat(args, job, ADAMPileup.SCHEMA$)

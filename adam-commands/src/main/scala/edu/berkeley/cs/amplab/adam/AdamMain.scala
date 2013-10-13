@@ -19,9 +19,9 @@ import edu.berkeley.cs.amplab.adam.commands.{MpileupCommand, Reads2Ref, PrintAda
 
 object AdamMain {
 
-  private val commands = List(new Bam2Adam, new Reads2Ref, new MpileupCommand, new PrintAdam)
+  private val commands = List(Bam2Adam, Reads2Ref, MpileupCommand, PrintAdam)
 
-  private def printModules() {
+  private def printCommands() {
     println("\n")
     println( """     e            888~-_              e                 e    e
                |    d8b           888   \            d8b               d8b  d8b
@@ -38,13 +38,11 @@ object AdamMain {
 
   def main(args: Array[String]) {
     if (args.size < 1) {
-      printModules()
+      printCommands()
     } else {
-      val cmd = commands.find(_.commandName == args(0))
-      if (cmd.isEmpty) {
-        printModules()
-      } else {
-        cmd.get.commandExec(args drop 1)
+      commands.find(_.commandName == args(0)) match {
+        case None => printCommands()
+        case Some(cmd) => cmd.apply(args drop 1).run()
       }
     }
   }

@@ -36,7 +36,7 @@ trait SparkArgs extends Args4jBase {
 trait SparkCommand extends AdamCommand {
 
   def createSparkContext(args: SparkArgs): SparkContext = {
-    val appName = "adam: " + commandName
+    val appName = "adam: " + companion.commandName
     val environment: Map[String, String] = if (args.spark_env_vars.isEmpty) {
       Map()
     } else {

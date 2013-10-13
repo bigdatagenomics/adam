@@ -21,9 +21,12 @@ import edu.berkeley.cs.amplab.adam.util.{ParquetFileTraversable, Args4jBase, Arg
 import org.kohsuke.args4j.Argument
 import java.util
 
-object PrintAdam {
-  def main(args: Array[String]) {
-    new PrintAdam().commandExec(args)
+object PrintAdam extends AdamCommandCompanion {
+  val commandName: String = "print"
+  val commandDescription: String = "Print an ADAM formatted file"
+
+  def apply(cmdLine: Array[String]) = {
+    new PrintAdam(Args4j[PrintAdamArgs](cmdLine))
   }
 }
 
@@ -32,12 +35,10 @@ class PrintAdamArgs extends Args4jBase with SparkArgs {
   var filesToPrint = new util.ArrayList[String]()
 }
 
-class PrintAdam extends AdamCommand with SparkCommand {
-  val commandName: String = "print"
-  val commandDescription: String = "Print an ADAM formatted file"
+class PrintAdam(args: PrintAdamArgs) extends AdamCommand with SparkCommand {
+  val companion = PrintAdam
 
-  def commandExec(cmdArgs: Array[String]) {
-    val args = Args4j[PrintAdamArgs](cmdArgs)
+  def run() {
     val sc = createSparkContext(args)
 
     for (file <- args.filesToPrint) {

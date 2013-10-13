@@ -16,9 +16,18 @@
 
 package edu.berkeley.cs.amplab.adam.commands
 
-trait AdamCommand {
+trait AdamCommandCompanion {
   val commandName: String
   val commandDescription: String
 
-  def commandExec(args: Array[String])
+  def apply(cmdLine: Array[String]): AdamCommand
+
+  // Make running an ADAM command easier from an IDE
+  def main(cmdLine: Array[String]) {
+    apply(cmdLine).run()
+  }
+}
+
+trait AdamCommand extends Runnable {
+  val companion: AdamCommandCompanion
 }

@@ -28,11 +28,13 @@ import java.lang.Integer
 import edu.berkeley.cs.amplab.adam.util.{Args4jBase, Args4j}
 import org.kohsuke.args4j.Argument
 
-//import edu.berkeley.cs.amplab.adam.serializable.Conversions._
+object Bam2Adam extends AdamCommandCompanion {
 
-object Bam2Adam {
-  def main(args: Array[String]) {
-    new Bam2Adam().commandExec(args)
+  val commandName = "bam2adam"
+  val commandDescription = "Convert a SAM/BAM file to ADAM read-oriented format"
+
+  def apply(cmdLine: Array[String]) = {
+    new Bam2Adam(Args4j[Bam2AdamArgs](cmdLine))
   }
 
 }
@@ -44,12 +46,10 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var outputPath: String = null
 }
 
-class Bam2Adam extends AdamCommand with SparkCommand with ParquetCommand {
-  val commandName = "bam2adam"
-  val commandDescription = "Convert a SAM/BAM file to ADAM read-oriented format"
+class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand with SparkCommand with ParquetCommand {
+  val companion = Bam2Adam
 
-  def commandExec(cmdLine: Array[String]) {
-    val args = Args4j[Bam2AdamArgs](cmdLine)
+  def run() {
     val sc = createSparkContext(args)
     val job = new Job()
     setupParquetOutputFormat(args, job, ADAMRecord.SCHEMA$)
