@@ -127,7 +127,7 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
         // INSERT
         case CigarOperator.I =>
           val insertEvent = new InsertionEvent(record.getReadName.toString, record.getSequence.toString,
-					       record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
+            record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
           pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
             None, insertions = List(insertEvent))
           readPos += cigarElement.getLength
@@ -140,7 +140,7 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
             if (mdTag.isMatch(referencePos)) {
               // sequence match
               val matchEvent = new MatchEvent(record.getReadName.toString, isReverseStrand, i, cigarElement.getLength,
-					      record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
+                record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
               pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
                 Some(baseFromSequence(readPos)), matches = List(matchEvent))
             } else {
@@ -150,8 +150,8 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
                   + record.getCigar + " " + record.getMismatchingPositions)
               }
               val mismatchEvent = new MismatchEvent(record.getReadName.toString,
-						    baseFromSequence(readPos), isReverseStrand, i, cigarElement.getLength,
-						    record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
+                baseFromSequence(readPos), isReverseStrand, i, cigarElement.getLength,
+                record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
               pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
                 Some(Base.withName(mismatchBase.get.toString)), mismatches = List(mismatchEvent))
             }
@@ -169,7 +169,7 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
               throw new IllegalArgumentException("CIGAR delete but the MD tag is not a delete")
             }
             val deleteEvent = new DeletionEvent(record.getReadName.toString, i, cigarElement.getLength,
-						record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
+              record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
             pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
               Some(Base.withName(deletedBase.get.toString)), deletes = List(deleteEvent))
             // Consume reference bases but not read bases
@@ -243,14 +243,23 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
 
     for ((_, read: ADAMRecord) <- nonNullReads) {
 
-      if (currentReference.get != read.getReferenceId.toInt) {
-        // We're starting a new reference, flush all events from the previous reference
-        flushPileups()
+      def updateCurrentInfo(read: ADAMRecord) = {
         currentReference = Some(read.getReferenceId)
         currentReferencePosition = Some(read.getStart)
-      } else {
-        // We're process the same reference, make sure that the reads are arriving sorted
-        assert(read.getStart >= currentReferencePosition.get, "You can only create pileups on sorted BAM/ADAM files")
+      }
+
+      currentReference match {
+        case Some(reference) =>
+          if (reference != read.getReferenceId.toInt) {
+            // We're starting a new reference, flush all events from the previous reference
+            flushPileups()
+            updateCurrentInfo(read)
+          } else {
+            // We're process the same reference, make sure that the reads are arriving sorted
+            assert(read.getStart >= currentReferencePosition.get, "You can only create pileups on sorted BAM/ADAM files")
+          }
+        case None =>
+          updateCurrentInfo(read)
       }
 
       for (pileup <- readToPileups(read)) {

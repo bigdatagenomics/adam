@@ -38,6 +38,10 @@ class MpileupCommand(args: MpileupArgs) extends AdamCommand with SparkCommand {
   val companion = MpileupCommand
 
   def run() {
+    // If run locally, only use a single thread.
+    if (args.spark_master.startsWith("local")) {
+      args.spark_master = "local"
+    }
     val sc = createSparkContext(args)
 
     val pileups = new PileupTraversable(sc, args.file)
