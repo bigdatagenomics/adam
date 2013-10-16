@@ -2,7 +2,6 @@ package edu.berkeley.cs.amplab.adam.projection
 
 import org.apache.avro.Schema
 import scala.collection.JavaConversions._
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 
 /**
  * Avro utility object to create a projection of a Schema, e.g.
