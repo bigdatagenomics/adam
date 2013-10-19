@@ -15,18 +15,20 @@
  */
 package edu.berkeley.cs.amplab.adam.commands
 
-import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, BAMInputFormat}
+import fi.tkk.ics.hadoop.bam.{AnySAMInputFormat, SAMRecordWritable}
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
-import spark.SparkContext._
-import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.util.ContextUtil
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import scala.collection.JavaConverters._
 import net.sf.samtools.{SAMReadGroupRecord, SAMRecord}
 import java.lang.Integer
 import edu.berkeley.cs.amplab.adam.util.{Args4jBase, Args4j}
-import org.kohsuke.args4j.Argument
+import org.kohsuke.args4j.{Argument, Option => Args4jOption}
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import spark.Partitioner
+import spark.SparkContext._
+import parquet.hadoop.ParquetOutputFormat
+import edu.berkeley.cs.amplab.adam.models.ReferencePosition
 
 object Bam2Adam extends AdamCommandCompanion {
 
@@ -44,6 +46,10 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var bamFile: String = null
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM data", index = 1)
   var outputPath: String = null
+  @Args4jOption(required = false, name = "-sort", usage = "Sort the reads by referenceId and read position")
+  val sortReads: Boolean = false
+  @Args4jOption(required = false, name = "-single_partition", usage = "Write a single partition")
+  val singlePartition: Boolean = false
 }
 
 class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand with SparkCommand with ParquetCommand {
@@ -51,18 +57,36 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand with SparkCommand with Pa
 
   def run() {
     val sc = createSparkContext(args)
-    val job = new Job()
+    val job = new Job(sc.hadoopConfiguration)
     setupParquetOutputFormat(args, job, ADAMRecord.SCHEMA$)
 
-    val file = sc.newAPIHadoopFile(args.bamFile, classOf[BAMInputFormat],
-      classOf[LongWritable], classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+    val samRecords = sc.newAPIHadoopFile[LongWritable, SAMRecordWritable, AnySAMInputFormat](args.bamFile)
 
     val converter = new BamConverter
-    val convertedRecords =
-      file.map {
-        case (l: LongWritable, record: SAMRecordWritable) => (null, converter.convert(record.get))
-      }
-    convertedRecords.saveAsNewAPIHadoopFile(args.outputPath, classOf[Void], classOf[ADAMRecord],
+    val adamRecords = if (args.sortReads) {
+      // Sorting reads requested
+      samRecords.map {
+        p =>
+          val adamRecord = converter.convert(p._2.get)
+          (ReferencePosition(adamRecord), adamRecord)
+      }.sortByKey().map(p => (null, p._2))
+    } else {
+      // No sorting of reads requested
+      samRecords.map(p => (null, converter.convert(p._2.get)))
+    }
+
+    if (args.singlePartition) {
+      adamRecords.partitionBy(new Partitioner {
+
+        def numPartitions: Int = 1
+
+        def getPartition(key: Any): Int = 0
+
+      })
+    }
+
+    adamRecords.saveAsNewAPIHadoopFile(args.outputPath,
+      classOf[java.lang.Void], classOf[ADAMRecord],
       classOf[ParquetOutputFormat[ADAMRecord]], ContextUtil.getConfiguration(job))
   }
 

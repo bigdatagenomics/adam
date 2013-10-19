@@ -17,7 +17,6 @@
 package edu.berkeley.cs.amplab.adam.util
 
 import spark.{RDD, SparkContext}
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import parquet.hadoop.ParquetInputFormat
 import parquet.avro.AvroReadSupport
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
@@ -27,6 +26,7 @@ import net.sf.samtools.{TextCigarCodec, CigarOperator}
 import scala.collection.mutable.ListBuffer
 import parquet.hadoop.util.ContextUtil
 import scala.collection.SortedMap
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 
 object Base extends Enumeration with Serializable {
   val A, C, T, G, N = Value
@@ -263,11 +263,10 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
       }
 
       for (pileup <- readToPileups(read)) {
-        val pileupsAtLocation = pileups.get(pileup.referencePosition)
-        if (pileupsAtLocation.isDefined) {
-          pileupsAtLocation.get += pileup
-        } else {
-          pileups += (pileup.referencePosition -> ListBuffer(pileup))
+        pileups.get(pileup.referencePosition) match {
+          case Some(pileupsFound) => pileupsFound += pileup
+          case None =>
+            pileups += (pileup.referencePosition -> ListBuffer(pileup))
         }
       }
 

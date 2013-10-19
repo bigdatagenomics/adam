@@ -74,7 +74,7 @@ class MdTag(mdTagInput: String, referenceStart: Long) {
         }
       }
       MdTag.basesPattern.findPrefixOf(mdTag.substring(offset)) match {
-        case None => throw new IllegalArgumentException("Failed to find deleted or mismatched bases after a match")
+        case None => throw new IllegalArgumentException("Failed to find deleted or mismatched bases after a match: %s".format(mdTagInput))
         case Some(bases) =>
           mdTagType match {
             case MdTagEvent.Delete =>
