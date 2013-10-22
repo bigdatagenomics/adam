@@ -21,7 +21,6 @@ import spark.{RDD, SparkContext}
 import spark.SparkContext._
 import parquet.hadoop.util.ContextUtil
 import parquet.hadoop.{ParquetOutputFormat, ParquetInputFormat}
-import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
 import org.apache.hadoop.mapreduce.Job
 import parquet.avro.AvroReadSupport
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
@@ -29,8 +28,7 @@ import scala.collection.JavaConversions._
 import org.kohsuke.args4j.{Option => option, Argument}
 import scala.collection.immutable.StringOps
 
-import edu.berkeley.cs.amplab.adam.avro.AvroWrapper._
-import edu.berkeley.cs.amplab.adam.avro.AvroWrapper
+import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
 
 object Reads2Ref extends AdamCommandCompanion {
   val commandName: String = "reads2ref"
@@ -243,20 +241,17 @@ class Reads2Ref(args: Reads2RefArgs) extends AdamCommand with SparkCommand with 
     val job = new Job()
     setupParquetOutputFormat(args, job, ADAMPileup.SCHEMA$)
 
-    AvroWrapper.register(classOf[ADAMRecord])
-    AvroWrapper.register(classOf[ADAMPileup])
-
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[ADAMRecord]])
     ParquetInputFormat.setUnboundRecordFilter(job, classOf[LocusPredicate])
     val reads = sc.newAPIHadoopFile(args.readInput,
       classOf[ParquetInputFormat[ADAMRecord]], classOf[Void], classOf[ADAMRecord],
       ContextUtil.getConfiguration(job))
 
-    val nonNullReads: RDD[AvroWrapper[ADAMRecord]] = reads filter (r => r._2 != null) map (r => r._2)
+    val nonNullReads: RDD[ADAMRecord] = reads filter (r => r._2 != null) map (r => r._2)
 
     val readProcessor = new ReadProcessor
     val pileups = nonNullReads.flatMap {
-      readProcessor.readToPileups(_).map(p => (null, AvroWrapper(p)))
+      readProcessor.readToPileups(_).map(p => (null, p))
     }
 
     pileups.saveAsNewAPIHadoopFile(args.pileupOutput,

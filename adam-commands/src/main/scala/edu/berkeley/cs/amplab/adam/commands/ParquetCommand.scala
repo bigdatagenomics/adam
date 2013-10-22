@@ -29,11 +29,9 @@ trait ParquetArgs extends Args4jBase {
   var blockSize = 512 * 1024 * 1024
   @Option(required = false, name = "-parquet_page_size", usage = "Parquet page size (default = 1mb)")
   var pageSize = 1 * 1024 * 1024
-  @Option(name = "-parquet_compress", usage = "Parquet compress (default = true)")
-  var compress = true
   @Option(required = false, name = "-parquet_compression_codec", usage = "Parquet compression codec (default = gzip)")
   var compressionCodec = CompressionCodecName.GZIP.toString
-  @Option(name = "-parquet_disable_dictionary", usage = "Disable dictionary encoding. (default = false)")
+  @Option(name = "-parquet_disable_dictionary", usage = "Disable dictionary encoding")
   var disableDictionary = false
 }
 

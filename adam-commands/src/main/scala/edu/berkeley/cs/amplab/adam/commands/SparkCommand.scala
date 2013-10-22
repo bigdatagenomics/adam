@@ -36,6 +36,12 @@ trait SparkArgs extends Args4jBase {
 trait SparkCommand extends AdamCommand {
 
   def createSparkContext(args: SparkArgs): SparkContext = {
+
+    System.setProperty("spark.serializer", "spark.KryoSerializer")
+    System.setProperty("spark.kryo.registrator", "edu.berkeley.cs.amplab.adam.serialization.AdamKryoRegistrator")
+    System.setProperty("spark.kryoserializer.buffer.mb", "4")
+    System.setProperty("spark.kryo.referenceTracking", "false")
+
     val appName = "adam: " + companion.commandName
     val environment: Map[String, String] = if (args.spark_env_vars.isEmpty) {
       Map()
@@ -49,6 +55,7 @@ trait SparkCommand extends AdamCommand {
           (kvSplit(0), kvSplit(1))
       }.toMap
     }
+
     val jars: Seq[String] = if (args.spark_jars.isEmpty) Nil else args.spark_jars
     new SparkContext(args.spark_master, appName, args.spark_home, jars, environment)
   }

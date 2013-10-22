@@ -1,4 +1,4 @@
-package edu.berkeley.cs.amplab.adam.projection
+package edu.berkeley.cs.amplab.adam.projections
 
 import org.apache.avro.Schema
 import scala.collection.JavaConversions._
