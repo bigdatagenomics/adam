@@ -25,7 +25,7 @@ import java.lang.Integer
 import edu.berkeley.cs.amplab.adam.util.{Args4jBase, Args4j}
 import org.kohsuke.args4j.{Argument, Option => Args4jOption}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import spark.Partitioner
+import spark.{Logging, Partitioner}
 import spark.SparkContext._
 import parquet.hadoop.ParquetOutputFormat
 import edu.berkeley.cs.amplab.adam.models.ReferencePosition
@@ -52,8 +52,10 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
   val singlePartition: Boolean = false
 }
 
-class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand with SparkCommand with ParquetCommand {
+class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand with SparkCommand with ParquetCommand with Logging {
   val companion = Bam2Adam
+
+  initLogging()
 
   def run() {
     val sc = createSparkContext(args)
@@ -64,28 +66,28 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand with SparkCommand with Pa
 
     val converter = new BamConverter
     val adamRecords = if (args.sortReads) {
-      // Sorting reads requested
+      log.info("Sorting reads by reference ID and reference position")
       samRecords.map {
         p =>
           val adamRecord = converter.convert(p._2.get)
           (ReferencePosition(adamRecord), adamRecord)
       }.sortByKey().map(p => (null, p._2))
     } else {
-      // No sorting of reads requested
+      // No sorting reads requested
       samRecords.map(p => (null, converter.convert(p._2.get)))
     }
 
     if (args.singlePartition) {
+      log.info("Writing output to a single partition")
       adamRecords.partitionBy(new Partitioner {
-
         def numPartitions: Int = 1
 
         def getPartition(key: Any): Int = 0
-
       })
-    }
-
-    adamRecords.saveAsNewAPIHadoopFile(args.outputPath,
+    } else {
+      // No re-partitioning
+      adamRecords
+    }.saveAsNewAPIHadoopFile(args.outputPath,
       classOf[java.lang.Void], classOf[ADAMRecord],
       classOf[ParquetOutputFormat[ADAMRecord]], ContextUtil.getConfiguration(job))
   }
