@@ -233,12 +233,10 @@ class ReadProcessor extends Serializable {
   }
 }
 
-class Reads2Ref(args: Reads2RefArgs) extends AdamCommand with SparkCommand with ParquetCommand {
+class Reads2Ref(protected val args: Reads2RefArgs) extends AdamSparkCommand[Reads2RefArgs] with ParquetCommand {
   val companion = Reads2Ref
 
-  def run() {
-    val sc: SparkContext = createSparkContext(args)
-    val job = new Job()
+  def run(sc: SparkContext, job: Job) {
     setupParquetOutputFormat(args, job, ADAMPileup.SCHEMA$)
 
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[ADAMRecord]])

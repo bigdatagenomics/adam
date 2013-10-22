@@ -19,6 +19,8 @@ package edu.berkeley.cs.amplab.adam.commands
 import edu.berkeley.cs.amplab.adam.util._
 import org.kohsuke.args4j.Argument
 import scala.Some
+import org.apache.hadoop.mapreduce.Job
+import spark.SparkContext
 
 object MpileupCommand extends AdamCommandCompanion {
   val commandName: String = "mpileup"
@@ -34,10 +36,10 @@ class MpileupArgs extends Args4jBase with SparkArgs {
   var file: String = _
 }
 
-class MpileupCommand(args: MpileupArgs) extends AdamCommand with SparkCommand {
+class MpileupCommand(protected val args: MpileupArgs) extends AdamSparkCommand[MpileupArgs] {
   val companion = MpileupCommand
 
-  def run() {
+  def run(sc: SparkContext, job: Job) {
     // If run locally, only use a single thread.
     if (args.spark_master.startsWith("local")) {
       args.spark_master = "local"

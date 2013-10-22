@@ -18,6 +18,7 @@ package edu.berkeley.cs.amplab.adam.commands
 import fi.tkk.ics.hadoop.bam.{AnySAMInputFormat, SAMRecordWritable}
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
+import spark.SparkContext
 import parquet.hadoop.util.ContextUtil
 import scala.collection.JavaConverters._
 import net.sf.samtools.{SAMReadGroupRecord, SAMRecord}
@@ -52,14 +53,12 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
   val singlePartition: Boolean = false
 }
 
-class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand with SparkCommand with ParquetCommand with Logging {
+class Bam2Adam(protected val args: Bam2AdamArgs) extends AdamSparkCommand[Bam2AdamArgs] with ParquetCommand with Logging {
   val companion = Bam2Adam
 
   initLogging()
 
-  def run() {
-    val sc = createSparkContext(args)
-    val job = new Job(sc.hadoopConfiguration)
+  def run(sc: SparkContext, job: Job) {
     setupParquetOutputFormat(args, job, ADAMRecord.SCHEMA$)
 
     val samRecords = sc.newAPIHadoopFile[LongWritable, SAMRecordWritable, AnySAMInputFormat](args.bamFile)

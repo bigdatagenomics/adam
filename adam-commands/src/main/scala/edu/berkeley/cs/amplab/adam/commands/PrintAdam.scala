@@ -20,6 +20,8 @@ import scala.collection.JavaConversions._
 import edu.berkeley.cs.amplab.adam.util.{ParquetFileTraversable, Args4jBase, Args4j}
 import org.kohsuke.args4j.Argument
 import java.util
+import spark.SparkContext
+import org.apache.hadoop.mapreduce.Job
 
 object PrintAdam extends AdamCommandCompanion {
   val commandName: String = "print"
@@ -35,12 +37,10 @@ class PrintAdamArgs extends Args4jBase with SparkArgs {
   var filesToPrint = new util.ArrayList[String]()
 }
 
-class PrintAdam(args: PrintAdamArgs) extends AdamCommand with SparkCommand {
+class PrintAdam(protected val args: PrintAdamArgs) extends AdamSparkCommand[PrintAdamArgs] {
   val companion = PrintAdam
 
-  def run() {
-    val sc = createSparkContext(args)
-
+  def run(sc: SparkContext, job: Job) {
     for (file <- args.filesToPrint) {
       val it = new ParquetFileTraversable[IndexedRecord](sc, file)
       for (pileup <- it) {

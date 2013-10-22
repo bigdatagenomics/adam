@@ -16,6 +16,10 @@
 
 package edu.berkeley.cs.amplab.adam.commands
 
+import spark.SparkContext
+import org.apache.hadoop.mapreduce.Job
+import edu.berkeley.cs.amplab.adam.util.Args4jBase
+
 trait AdamCommandCompanion {
   val commandName: String
   val commandDescription: String
@@ -30,4 +34,18 @@ trait AdamCommandCompanion {
 
 trait AdamCommand extends Runnable {
   val companion: AdamCommandCompanion
+}
+
+trait AdamSparkCommand[A <: Args4jBase with SparkArgs] extends AdamCommand with SparkCommand {
+
+  protected val args: A
+
+  def run(sc: SparkContext, job: Job)
+
+  def run() {
+    val sc: SparkContext = createSparkContext(args)
+    val job = new Job()
+
+    run (sc, job)
+  }
 }
