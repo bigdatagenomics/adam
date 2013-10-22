@@ -17,21 +17,16 @@ package edu.berkeley.cs.amplab.adam.commands
  */
 
 import edu.berkeley.cs.amplab.adam.util.{Args4jBase, Args4j}
-import net.sf.samtools.TextCigarCodec
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup, Base}
+import edu.berkeley.cs.amplab.adam.avro.ADAMPileup
 import org.kohsuke.args4j.Argument
 import spark.{RDD, SparkContext}
-import spark.SparkContext._
 import org.apache.hadoop.mapreduce.Job
-import parquet.hadoop.{ParquetOutputFormat, ParquetInputFormat}
-import parquet.avro.AvroReadSupport
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
-import parquet.hadoop.util.ContextUtil
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 
 object PileupAggregator extends AdamCommandCompanion {
   val commandName: String = "aggregate_pileups"
   val commandDescription: String = "Aggregates pileups in an ADAM reference-oriented file"
-  val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
 
   def apply(cmdLine: Array[String]) = {
     new PileupAggregator(Args4j[PileupAggregatorArgs](cmdLine))
@@ -47,68 +42,14 @@ class PileupAggregatorArgs extends Args4jBase with SparkArgs with ParquetArgs {
   var pileupOutput: String = _
 }
 
-class PileupAggregatorHelper extends Serializable {
-
-  def mapPileup(a: ADAMPileup): (Option[Long], Option[Base], Option[java.lang.Integer], Option[CharSequence]) = {
-    (Option(a.getPosition), Option(a.getReadBase), Option(a.getRangeOffset), Option(a.getRecordGroupSample))
-  }
-
-  def aggregatePileup(pileupList: List[ADAMPileup]): List[ADAMPileup] = {
-
-    def combineEvidence(pileupGroup: List[ADAMPileup]): ADAMPileup = {
-      val pileup = pileupGroup.reduce((a: ADAMPileup, b: ADAMPileup) => {
-        a.setMapQuality(a.getMapQuality + b.getMapQuality)
-        a.setSangerQuality(a.getSangerQuality + b.getSangerQuality)
-        a.setCountAtPosition(a.getCountAtPosition + b.getCountAtPosition)
-        a.setNumSoftClipped(a.getNumSoftClipped + b.getNumSoftClipped)
-        a.setNumReverseStrand(a.getNumReverseStrand + b.getNumReverseStrand)
-
-        a
-      })
-
-      val num = pileup.getCountAtPosition
-
-      pileup.setMapQuality(pileup.getMapQuality / num)
-      pileup.setSangerQuality(pileup.getSangerQuality / num)
-
-      pileup
-    }
-
-    List(combineEvidence(pileupList))
-  }
-
-  def aggregate(pileups: RDD[ADAMPileup]): RDD[ADAMPileup] = {
-    def flatten(kv: ((Option[Long], Option[Base], Option[java.lang.Integer], Option[CharSequence]), Seq[ADAMPileup])): List[ADAMPileup] = {
-      aggregatePileup(kv._2.toList)
-    }
-
-    pileups.groupBy(mapPileup).flatMap(flatten)
-  }
-}
-
 class PileupAggregator(protected val args: PileupAggregatorArgs)
-  extends AdamSparkCommand[PileupAggregatorArgs] with ParquetCommand {
+  extends AdamSparkCommand[PileupAggregatorArgs] {
 
   val companion = PileupAggregator
 
   def run(sc: SparkContext, job: Job) {
-    setupParquetOutputFormat(args, job, ADAMPileup.SCHEMA$)
-
-    ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[ADAMRecord]])
-    ParquetInputFormat.setUnboundRecordFilter(job, classOf[LocusPredicate])
-    val reads = sc.newAPIHadoopFile(args.readInput,
-      classOf[ParquetInputFormat[ADAMPileup]], classOf[Void], classOf[ADAMPileup],
-      ContextUtil.getConfiguration(job))
-
-    val nonNullReads: RDD[ADAMPileup] = reads filter (r => r._2 != null) map (r => r._2)
-
-    val worker = new PileupAggregatorHelper
-
-    val pileups = worker.aggregate(nonNullReads).map(p => (null, p))
-
-    pileups.saveAsNewAPIHadoopFile(args.pileupOutput,
-      classOf[Void], classOf[ADAMPileup], classOf[ParquetOutputFormat[ADAMPileup]],
-      ContextUtil.getConfiguration(job))
+    val pileups: RDD[ADAMPileup] = sc.adamLoad(args.readInput, predicate = Some(classOf[LocusPredicate]))
+    pileups.adamAggregatePileups().adamSave(args.pileupOutput, args)
   }
 
 }

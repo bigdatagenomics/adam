@@ -18,15 +18,12 @@ package edu.berkeley.cs.amplab.adam.commands
 import edu.berkeley.cs.amplab.adam.util._
 import net.sf.samtools.{CigarOperator, TextCigarCodec}
 import spark.{RDD, SparkContext}
-import spark.SparkContext._
-import parquet.hadoop.util.ContextUtil
-import parquet.hadoop.{ParquetOutputFormat, ParquetInputFormat}
 import org.apache.hadoop.mapreduce.Job
-import parquet.avro.AvroReadSupport
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
 import scala.collection.JavaConversions._
 import org.kohsuke.args4j.{Option => option, Argument}
 import scala.collection.immutable.StringOps
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
 
@@ -211,36 +208,21 @@ class ReadProcessor extends Serializable {
   }
 }
 
-class Reads2Ref(protected val args: Reads2RefArgs) extends AdamSparkCommand[Reads2RefArgs] with ParquetCommand {
+class Reads2Ref(protected val args: Reads2RefArgs) extends AdamSparkCommand[Reads2RefArgs] {
   val companion = Reads2Ref
 
   def run(sc: SparkContext, job: Job) {
-    setupParquetOutputFormat(args, job, ADAMPileup.SCHEMA$)
-
-    ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[ADAMRecord]])
-    ParquetInputFormat.setUnboundRecordFilter(job, classOf[LocusPredicate])
-    val reads = sc.newAPIHadoopFile(args.readInput,
-      classOf[ParquetInputFormat[ADAMRecord]], classOf[Void], classOf[ADAMRecord],
-      ContextUtil.getConfiguration(job))
-
-    val nonNullReads: RDD[ADAMRecord] = reads filter (r => r._2 != null) map (r => r._2)
+    val reads: RDD[ADAMRecord] = sc.adamLoad(args.readInput, Some(classOf[LocusPredicate]))
 
     val readProcessor = new ReadProcessor
-    val pileups = nonNullReads.flatMap {
+    val pileups: RDD[ADAMPileup] = reads.flatMap {
       readProcessor.readToPileups
     }
 
     if (args.aggregate) {
-      val aggregator = new PileupAggregatorHelper
-      val aggregatedPileups = aggregator.aggregate(pileups).map(p => (null, p))
-
-      aggregatedPileups.saveAsNewAPIHadoopFile(args.pileupOutput,
-        classOf[Void], classOf[ADAMPileup], classOf[ParquetOutputFormat[ADAMPileup]],
-        ContextUtil.getConfiguration(job))
+      pileups.adamAggregatePileups().adamSave(args.pileupOutput, args)
     } else {
-      pileups.map(p => (null, p)).saveAsNewAPIHadoopFile(args.pileupOutput,
-        classOf[Void], classOf[ADAMPileup], classOf[ParquetOutputFormat[ADAMPileup]],
-        ContextUtil.getConfiguration(job))
+      pileups.adamSave(args.pileupOutput)
     }
   }
 

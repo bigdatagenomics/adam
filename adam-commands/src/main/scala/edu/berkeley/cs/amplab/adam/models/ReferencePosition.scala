@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package edu.berkeley.cs.amplab.adam.models
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import com.esotericsoftware.kryo.{Kryo, Serializer}
+import com.esotericsoftware.kryo.io.{Input, Output}
 
 object ReferencePosition {
 
@@ -37,4 +40,18 @@ class ReferencePosition(val refId: Int, val pos: Long) extends Ordered[Reference
     pos.compare(that.pos)
   }
 
+}
+
+// Used by the KryoSerializer
+class ReferencePositionSerializer extends Serializer[ReferencePosition] {
+  def write(kryo: Kryo, output: Output, obj: ReferencePosition) = {
+    output.writeInt(obj.refId)
+    output.writeLong(obj.pos)
+  }
+
+  def read(kryo: Kryo, input: Input, klazz: Class[ReferencePosition]): ReferencePosition = {
+    val refId = input.readInt()
+    val pos = input.readLong()
+    new ReferencePosition(refId, pos)
+  }
 }

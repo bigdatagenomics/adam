@@ -9,7 +9,6 @@ record ADAMRecord {
     // 0-based reference position start
     union { null, long } start = null;
     // 0-based reference position end
-    union { null, long } end = null;
     union { null, int } mapq = null;
     union { null, string } readName = null;
     union { null, string } sequence = null;
@@ -48,6 +47,8 @@ record ADAMRecord {
     union { null, string } recordGroupPlatform = null;
     union { null, string } recordGroupPlatformUnit = null;
     union { null, string } recordGroupSample = null;
+
+    union { null, int } mateReferenceId = null;
 }
 
 record ADAMFastaFragment {

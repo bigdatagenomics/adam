@@ -29,11 +29,11 @@ object SparkBAMOutputFormat {
    * associated with the SAM file before the file can be written; if a header is not attached, the write will
    * throw an exception. To work around this, we use a static method to initialize the header.
    */
-  def setHeader (head: SAMFileHeader) {
+  def setHeader(head: SAMFileHeader) {
     header = head
   }
 
-  def getHeader () = header
+  def getHeader = header
 }
 
 class SparkBAMOutputFormat[K] extends KeyIgnoringBAMOutputFormat[K] {

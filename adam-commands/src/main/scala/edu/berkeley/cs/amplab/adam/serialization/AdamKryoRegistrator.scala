@@ -21,20 +21,7 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.avro.io.{BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory}
 import spark.KryoRegistrator
 import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMPileup, ADAMRecord}
-import edu.berkeley.cs.amplab.adam.models.ReferencePosition
-
-class RefPositionSerializer extends Serializer[ReferencePosition] {
-  def write(kryo: Kryo, output: Output, obj: ReferencePosition) = {
-    output.writeInt(obj.refId)
-    output.writeLong(obj.pos)
-  }
-
-  def read(kryo: Kryo, input: Input, klazz: Class[ReferencePosition]): ReferencePosition = {
-    val refId = input.readInt()
-    val pos = input.readLong()
-    new ReferencePosition(refId, pos)
-  }
-}
+import edu.berkeley.cs.amplab.adam.models.{MatedReferencePositionSerializer, MatedReferencePosition, ReferencePositionSerializer, ReferencePosition}
 
 class AvroSerializer[T <: SpecificRecord : ClassManifest] extends Serializer[T] {
   val reader = new SpecificDatumReader[T](classManifest[T].erasure.asInstanceOf[Class[T]])
@@ -60,6 +47,7 @@ class AdamKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[ADAMRecord], new AvroSerializer[ADAMRecord]())
     kryo.register(classOf[ADAMPileup], new AvroSerializer[ADAMPileup]())
     kryo.register(classOf[ADAMGenotype], new AvroSerializer[ADAMGenotype]())
-    kryo.register(classOf[ReferencePosition], new RefPositionSerializer)
+    kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
+    kryo.register(classOf[MatedReferencePosition], new MatedReferencePositionSerializer)
   }
 }

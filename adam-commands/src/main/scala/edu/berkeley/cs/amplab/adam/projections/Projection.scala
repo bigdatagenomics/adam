@@ -1,8 +1,8 @@
 package edu.berkeley.cs.amplab.adam.projections
 
 import org.apache.avro.Schema
-import org.apache.avro.Schema.Field
 import scala.collection.JavaConversions._
+import org.apache.avro.Schema.Field
 
 /**
  * Avro utility object to create a projection of a Schema, e.g.
@@ -13,7 +13,7 @@ object Projection {
 
   def apply(fullSchema: Schema, includedFields: Set[String]): Schema = {
     val projectedSchema = Schema.createRecord(fullSchema.getName, fullSchema.getDoc, fullSchema.getNamespace, fullSchema.isError)
-    projectedSchema.setFields(fullSchema.getFields.filter(p => includedFields.contains(p.name)).map(p => new Field (p.name, p.schema, p.doc, p.defaultValue, p.order)))
+    projectedSchema.setFields(fullSchema.getFields.filter(p => includedFields.contains(p.name)).map(p => new Field(p.name, p.schema, p.doc, p.defaultValue, p.order)))
     projectedSchema
   }
 

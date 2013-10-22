@@ -19,10 +19,6 @@ package edu.berkeley.cs.amplab.adam.commands
 import edu.berkeley.cs.amplab.adam.util.Args4jBase
 import org.kohsuke.args4j.Option
 import parquet.hadoop.metadata.CompressionCodecName
-import org.apache.hadoop.mapreduce.Job
-import org.apache.avro.Schema
-import parquet.hadoop.ParquetOutputFormat
-import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
 
 trait ParquetArgs extends Args4jBase {
   @Option(required = false, name = "-parquet_block_size", usage = "Parquet block size (default = 512mb)")
@@ -35,16 +31,4 @@ trait ParquetArgs extends Args4jBase {
   var disableDictionary = false
 }
 
-trait ParquetCommand extends AdamCommand {
 
-  def setupParquetOutputFormat(args: ParquetArgs, job: Job, schema: Schema) {
-    ParquetOutputFormat.setWriteSupportClass(job, classOf[AvroWriteSupport])
-    ParquetOutputFormat.setCompression(job, CompressionCodecName.fromConf(args.compressionCodec))
-    ParquetOutputFormat.setEnableDictionary(job, !args.disableDictionary)
-    ParquetOutputFormat.setBlockSize(job, args.blockSize)
-    ParquetOutputFormat.setPageSize(job, args.pageSize)
-    AvroParquetOutputFormat.setSchema(job, schema)
-  }
-
-
-}
