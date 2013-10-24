@@ -21,6 +21,14 @@ import net.sf.samtools.SAMFileHeader
 object SparkBAMOutputFormat {
   var header = new SAMFileHeader
 
+  /**
+   * SMELL justification:
+   * This class is passed to the Spark RDD-->Hadoop file writer, which creates a class instance by calling the
+   * default constructor from inside of the writer. As a result, we cannot pass any parameters to the constructor,
+   * or call any setters after the constructor. However, Hadoop-BAM wraps Picard which requires a header to be
+   * associated with the SAM file before the file can be written; if a header is not attached, the write will
+   * throw an exception. To work around this, we use a static method to initialize the header.
+   */
   def setHeader (head: SAMFileHeader) {
     header = head
   }
@@ -29,5 +37,6 @@ object SparkBAMOutputFormat {
 }
 
 class SparkBAMOutputFormat[K] extends KeyIgnoringBAMOutputFormat[K] {
+  /* SMELL: see accompanying note in companion object */
   setSAMHeader(SparkBAMOutputFormat.getHeader)
 }
