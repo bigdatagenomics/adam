@@ -53,6 +53,9 @@ class Reads2RefArgs extends Args4jBase with ParquetArgs with SparkArgs {
 
   @option(name = "-mapq", usage = "Minimal mapq value allowed for a read (default = 30)")
   var minMapq: Long = Reads2RefArgs.MIN_MAPQ_DEFAULT
+
+  @option(name = "-aggregate", usage = "Aggregates data at each pileup position, to reduce storage cost.")
+  var aggregate: Boolean = false
 }
 
 class ReadProcessor extends Serializable {
@@ -68,9 +71,9 @@ class ReadProcessor extends Serializable {
       Base.valueOf(record.getSequence.subSequence(pos, pos + 1).toString)
     }
 
-    def sangerScoreToInt(score: String): Int = score(0).toInt - 33
+    def sangerScoreToInt(score: String, position: Int): Int = score(position).toInt - 33
 
-    def populatePileupFromReference(record: ADAMRecord, referencePos: Long, isReverseStrand: Boolean): ADAMPileup.Builder = {
+    def populatePileupFromReference(record: ADAMRecord, referencePos: Long, isReverseStrand: Boolean, readPos: Int): ADAMPileup.Builder = {
 
       var reverseStrandCount = 0
 
@@ -93,7 +96,7 @@ class ReadProcessor extends Serializable {
         .setRecordGroupPlatform(record.getRecordGroupPlatform)
         .setRecordGroupPlatformUnit(record.getRecordGroupPlatformUnit)
         .setRecordGroupSample(record.getRecordGroupSample)
-        .setSangerQuality(sangerScoreToInt(record.getQual.toString))
+        .setSangerQuality(sangerScoreToInt(record.getQual.toString, readPos))
         .setNumReverseStrand(reverseStrandCount)
         .setNumSoftClipped(0)
         .setCountAtPosition(1)
@@ -118,7 +121,7 @@ class ReadProcessor extends Serializable {
           for (b <- new StringOps(record.getSequence.toString.substring(readPos, readPos + cigarElement.getLength - 1))) {
             val insertBase = Base.valueOf(b.toString)
 
-            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand)
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
               .setReadBase(insertBase)
               .setRangeOffset(insertPos)
               .setRangeLength(cigarElement.getLength)
@@ -144,7 +147,7 @@ class ReadProcessor extends Serializable {
             }
 
             // sequence match
-            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand)
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
               .setReadBase(readBase)
               .setReferenceBase(baseFromSequence(readPos))
               .build()
@@ -161,7 +164,7 @@ class ReadProcessor extends Serializable {
             if (deletedBase.isEmpty) {
               throw new IllegalArgumentException("CIGAR delete but the MD tag is not a delete")
             }
-            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand)
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
               .setReferenceBase(Base.valueOf(deletedBase.get.toString))
               .setReadBase(Base.N)
               .build()
@@ -180,7 +183,7 @@ class ReadProcessor extends Serializable {
             val readBase = baseFromSequence(readPos)
 
             // sequence match
-            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand)
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
               .setReadBase(readBase)
               .setNumSoftClipped(1)
               .setRangeOffset(clipPos)
@@ -204,32 +207,7 @@ class ReadProcessor extends Serializable {
       }
     )
 
-    def mapPileup(a: ADAMPileup): (Option[Long], Option[Base], Option[java.lang.Integer], Option[CharSequence]) = {
-      (Option(a.getPosition), Option(a.getReadBase), Option(a.getRangeOffset), Option(a.getRecordGroupSample))
-    }
-
-    def combineEvidence(pileupGroup: List[ADAMPileup]): ADAMPileup = {
-
-      val pileup = pileupGroup.reduce((a: ADAMPileup, b: ADAMPileup) => {
-        a.setMapQuality(a.getMapQuality + b.getMapQuality)
-        a.setSangerQuality(a.getSangerQuality + b.getSangerQuality)
-        a.setCountAtPosition(a.getCountAtPosition + b.getCountAtPosition)
-        a.setNumSoftClipped(a.getNumSoftClipped + b.getNumSoftClipped)
-        a.setNumReverseStrand(a.getNumReverseStrand + b.getNumReverseStrand)
-
-        a
-      })
-
-      val num = pileup.getCountAtPosition
-
-      pileup.setMapQuality(pileup.getMapQuality / num)
-      pileup.setSangerQuality(pileup.getSangerQuality / num)
-
-      pileup
-    }
-
-    pileupList.groupBy(mapPileup)
-      .map((kv: ((Option[Long], Option[Base], Option[java.lang.Integer], Option[CharSequence]), List[ADAMPileup])) => combineEvidence(kv._2)).toList
+    pileupList
   }
 }
 
@@ -249,12 +227,21 @@ class Reads2Ref(protected val args: Reads2RefArgs) extends AdamSparkCommand[Read
 
     val readProcessor = new ReadProcessor
     val pileups = nonNullReads.flatMap {
-      readProcessor.readToPileups(_).map(p => (null, p))
+      readProcessor.readToPileups
     }
 
-    pileups.saveAsNewAPIHadoopFile(args.pileupOutput,
-      classOf[Void], classOf[ADAMPileup], classOf[ParquetOutputFormat[ADAMPileup]],
-      ContextUtil.getConfiguration(job))
+    if (args.aggregate) {
+      val aggregator = new PileupAggregatorHelper
+      val aggregatedPileups = aggregator.aggregate(pileups).map(p => (null, p))
+
+      aggregatedPileups.saveAsNewAPIHadoopFile(args.pileupOutput,
+        classOf[Void], classOf[ADAMPileup], classOf[ParquetOutputFormat[ADAMPileup]],
+        ContextUtil.getConfiguration(job))
+    } else {
+      pileups.map(p => (null, p)).saveAsNewAPIHadoopFile(args.pileupOutput,
+        classOf[Void], classOf[ADAMPileup], classOf[ParquetOutputFormat[ADAMPileup]],
+        ContextUtil.getConfiguration(job))
+    }
   }
 
   def sangerQuality(qualities: String, index: Int) {

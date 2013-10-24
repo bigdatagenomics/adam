@@ -15,11 +15,12 @@
  */
 package edu.berkeley.cs.amplab.adam
 
-import edu.berkeley.cs.amplab.adam.commands.{MpileupCommand, Reads2Ref, PrintAdam, Bam2Adam}
+import edu.berkeley.cs.amplab.adam.commands._
+import scala.Some
 
 object AdamMain {
 
-  private val commands = List(Bam2Adam, Reads2Ref, MpileupCommand, PrintAdam)
+  private val commands = List(Bam2Adam, Reads2Ref, MpileupCommand, PrintAdam, PileupAggregator)
 
   private def printCommands() {
     println("\n")
