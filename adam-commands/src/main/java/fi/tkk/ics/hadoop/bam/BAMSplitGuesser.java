@@ -22,20 +22,27 @@
 
 package fi.tkk.ics.hadoop.bam;
 
+import java.io.InputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.util.GenericOptionsParser;
+
 import net.sf.samtools.BAMRecordCodec;
 import net.sf.samtools.FileTruncatedException;
 import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMFormatException;
+import net.sf.samtools.seekablestream.SeekableStream;
 import net.sf.samtools.util.BlockCompressedInputStream;
 import net.sf.samtools.util.RuntimeEOFException;
-import net.sf.samtools.util.SeekableStream;
 
 import fi.tkk.ics.hadoop.bam.util.SeekableArrayStream;
+import fi.tkk.ics.hadoop.bam.util.WrapSeekable;
+import parquet.hadoop.util.ContextUtil;
 
 /** A class for heuristically finding BAM record positions inside an area of
  * a BAM file.
@@ -51,20 +58,43 @@ public class BAMSplitGuesser {
 	// contain valid BAM records, when guessing a BAM record position.
 	private final static byte BLOCKS_NEEDED_FOR_GUESS = 2;
 
+	// Since the max size of a BGZF block is 0xffff (64K), and we might be just
+	// one byte off from the start of the previous one, we need 0xfffe bytes for
+	// the start, and then 0xffff times the number of blocks we want to go
+	// through.
+	private final static int MAX_BYTES_READ =
+		BLOCKS_NEEDED_FOR_GUESS * 0xffff + 0xfffe;
+
 	private final static int BGZF_MAGIC     = 0x04088b1f;
 	private final static int BGZF_MAGIC_SUB = 0x00024342;
 	private final static int BGZF_SUB_SIZE  = 4 + 2;
 
 	private final static int SHORTEST_POSSIBLE_BAM_RECORD = 4*9 + 1 + 1 + 1;
 
-	public BAMSplitGuesser(SeekableStream ss) {
+	/** The stream must point to a valid BAM file, because the header is read
+	 * from it.
+	 */
+	public BAMSplitGuesser(SeekableStream ss) throws IOException {
+		this(ss, ss);
+
+		// Secondary check that the header points to a BAM file: Picard can get
+		// things wrong due to its autodetection.
+		ss.seek(0);
+		if (ss.read(buf.array(), 0, 4) != 4 || buf.getInt(0) != BGZF_MAGIC)
+			throw new SAMFormatException("Does not seem like a BAM file");
+	}
+
+	public BAMSplitGuesser(SeekableStream ss, InputStream headerStream)
+		throws IOException
+	{
 		inFile = ss;
 
 		buf = ByteBuffer.allocate(8);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 
 		referenceSequenceCount =
-			new SAMFileReader(ss).getFileHeader().getSequenceDictionary().size();
+			new SAMFileReader(headerStream).getFileHeader()
+			.getSequenceDictionary().size();
 
 		bamCodec = new BAMRecordCodec(null, new LazyBAMRecordFactory());
 	}
@@ -75,16 +105,20 @@ public class BAMSplitGuesser {
 	public long guessNextBAMRecordStart(long beg, long end)
 		throws IOException
 	{
-		// Buffer what we need to go through. Since the max size of a BGZF block
-		// is 0xffff (64K), and we might be just one byte off from the start of
-		// the previous one, we need 0xfffe bytes for the start, and then 0xffff
-		// times the number of blocks we want to go through.
+		// Buffer what we need to go through.
 
-		byte[] arr = new byte[(BLOCKS_NEEDED_FOR_GUESS + 1) * 0xffff - 1];
+		byte[] arr = new byte[MAX_BYTES_READ];
 
 		this.inFile.seek(beg);
-		arr = Arrays.copyOf(arr, inFile.read(arr, 0, Math.min((int)(end - beg),
-		                                                      arr.length)));
+		int totalRead = 0;
+		for (int left = Math.min((int)(end - beg), arr.length); left > 0;) {
+			final int r = inFile.read(arr, totalRead, left);
+			if (r < 0)
+				break;
+			totalRead += r;
+			left -= r;
+		}
+		arr = Arrays.copyOf(arr, totalRead);
 
 		this.in = new SeekableArrayStream(arr);
 
@@ -101,7 +135,7 @@ public class BAMSplitGuesser {
 			if (psz == null)
 				return end;
 
-			final int cp0      = cp = psz.pos;
+			final int  cp0     = cp = psz.pos;
 			final long cp0Virt = (long)cp0 << 16;
 			try {
 				bgzf.seek(cp0Virt);
@@ -117,29 +151,53 @@ public class BAMSplitGuesser {
 			for (int up = 0;; ++up) {
 				final int up0 = up = guessNextBAMPos(cp0Virt, up, psz.size);
 
-				if (up < 0) {
+				if (up0 < 0) {
 					// No BAM records found in the BGZF block: try the next BGZF
 					// block.
 					break;
 				}
 
-				bgzf.seek(cp0Virt | up);
-				cp = cp0;
+				// Verify that we can actually decode BLOCKS_NEEDED_FOR_GUESS worth
+				// of records starting at (cp0,up0).
+				bgzf.seek(cp0Virt | up0);
+				boolean decodedAny = false;
 				try {
-					for (byte b = 0; cp < arr.length & b < BLOCKS_NEEDED_FOR_GUESS;)
+					byte b = 0;
+					int prevCP = cp0;
+					while (b < BLOCKS_NEEDED_FOR_GUESS && bamCodec.decode() != null)
 					{
-						bamCodec.decode();
+						decodedAny = true;
+
 						final int cp2 = (int)(bgzf.getFilePointer() >>> 16);
-						if (cp2 != cp) {
-							assert cp2 > cp;
-							cp = cp2;
+						if (cp2 != prevCP) {
+							// The compressed position changed so we must be in a new
+							// block.
+							assert cp2 > prevCP;
+							prevCP = cp2;
 							++b;
 						}
 					}
+
+					// Running out of records to verify is fine as long as we
+					// verified at least something. It should only happen if we
+					// couldn't fill the array.
+					if (b < BLOCKS_NEEDED_FOR_GUESS) {
+						assert arr.length < MAX_BYTES_READ;
+						if (!decodedAny)
+							continue;
+					}
 				} catch (SAMFormatException     e) { continue; }
-				  catch (RuntimeEOFException    e) { continue; }
 				  catch (FileTruncatedException e) { continue; }
 				  catch (OutOfMemoryError       e) { continue; }
+				  catch (RuntimeEOFException    e) {
+					// This can happen legitimately if the [beg,end) range is too
+					// small to accommodate BLOCKS_NEEDED_FOR_GUESS and we get cut
+					// off in the middle of a record. In that case, our stream
+					// should have hit EOF as well. If we've then verified at least
+					// something, go ahead with it and hope for the best.
+					if (!decodedAny && this.in.eof())
+						continue;
+				}
 
 				return beg+cp0 << 16 | up0;
 			}
@@ -265,7 +323,7 @@ public class BAMSplitGuesser {
 				bgzf.read(buf.array(), 0, 8);
 
 				final int nid  = buf.getInt(0);
-				final int npos = buf.getInt(0);
+				final int npos = buf.getInt(4);
 				if (nid < -1 || nid > referenceSequenceCount || npos < -1) {
 					++up;
 					continue;
@@ -333,5 +391,66 @@ public class BAMSplitGuesser {
 	}
 	private int getUShort(final int idx) {
 		return (int)buf.getShort(idx) & 0xffff;
+	}
+
+	public static void main(String[] args) throws IOException {
+		final GenericOptionsParser parser;
+		try {
+			parser = new GenericOptionsParser(args);
+
+		// This should be IOException but Hadoop 0.20.2 doesn't throw it...
+		} catch (Exception e) {
+			System.err.printf("Error in Hadoop arguments: %s\n", e.getMessage());
+			System.exit(1);
+
+			// Hooray for javac
+			return;
+		}
+
+		args = parser.getRemainingArgs();
+		final Configuration conf = parser.getConfiguration();
+
+		long beg = 0;
+
+		if (args.length < 2 || args.length > 3) {
+			System.err.println(
+				"Usage: BAMSplitGuesser path-or-uri header-path-or-uri [beg]");
+			System.exit(2);
+		}
+
+		try {
+			if (args.length > 2) beg = Long.decode(args[2]);
+		} catch (NumberFormatException e) {
+			System.err.println("Invalid beg offset.");
+			if (e.getMessage() != null)
+				System.err.println(e.getMessage());
+			System.exit(2);
+		}
+
+		SeekableStream ss = WrapSeekable.openPath(conf, new Path(args[0]));
+		SeekableStream hs = WrapSeekable.openPath(conf, new Path(args[1]));
+
+		final long end = beg + MAX_BYTES_READ;
+
+		System.out.printf(
+			"Will look for a BGZF block within: [%1$#x,%2$#x) = [%1$d,%2$d)\n"+
+			"Will then verify BAM data within:  [%1$#x,%3$#x) = [%1$d,%3$d)\n",
+			beg, beg + 0xffff, end);
+
+		final long g =
+			new BAMSplitGuesser(ss, hs).guessNextBAMRecordStart(beg, end);
+
+		ss.close();
+
+		if (g == end) {
+			System.out.println(
+				"Didn't find any acceptable BAM record in any BGZF block.");
+			System.exit(1);
+		}
+
+		System.out.printf(
+			"Accepted BGZF block at offset %1$#x (%1$d).\n"+
+			"Accepted BAM record at offset %2$#x (%2$d) therein.\n",
+			g >> 16, g & 0xffff);
 	}
 }

@@ -40,6 +40,7 @@ import org.apache.hadoop.util.Progressable;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import fi.tkk.ics.hadoop.bam.FormatConstants.BaseQualityEncoding;
+import parquet.hadoop.util.ContextUtil;
 
 /**
  * Output format for the fastq format.
@@ -146,7 +147,7 @@ public class FastqOutputFormat extends TextOutputFormat<Text, SequencedFragment>
   public RecordWriter<Text,SequencedFragment> getRecordWriter(TaskAttemptContext task)
 	  throws IOException
 	{
-		Configuration conf = task.getConfiguration();
+		Configuration conf = ContextUtil.getConfiguration(task);
 		boolean isCompressed = getCompressOutput(task);
 
 		CompressionCodec codec = null;

@@ -39,7 +39,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-import net.sf.samtools.util.SeekableStream;
+import net.sf.samtools.seekablestream.SeekableStream;
 
 import fi.tkk.ics.hadoop.bam.util.WrapSeekable;
 import parquet.hadoop.util.ContextUtil;

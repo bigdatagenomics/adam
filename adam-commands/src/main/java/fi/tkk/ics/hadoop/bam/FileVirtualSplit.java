@@ -41,9 +41,9 @@ public class FileVirtualSplit extends InputSplit implements Writable {
 	private long vEnd;
 	private final String[] locations;
 
-	public FileVirtualSplit() {
-		locations = null;
-	}
+	private static final String[] NO_LOCATIONS = {};
+
+	public FileVirtualSplit() { locations = NO_LOCATIONS; }
 
 	public FileVirtualSplit(Path f, long vs, long ve, String[] locs) {
 		file      = f;

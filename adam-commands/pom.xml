@@ -59,20 +59,11 @@
             </plugin>
         </plugins>
     </build>
+
     <repositories>
         <repository>
-            <id>adam-repo</id>
-            <url>file://${project.basedir}/repo</url>
-        </repository>
-        <repository>
-            <id>sonatype-nexus-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
+            <id>massie-mvn</id>
+            <url>http://www.cs.berkeley.edu/~massie/maven/</url>
         </repository>
     </repositories>
     <dependencies>
@@ -94,11 +85,11 @@
             <artifactId>parquet-avro</artifactId>
         </dependency>
         <dependency>
-            <groupId>adam</groupId>
+            <groupId>picard</groupId>
             <artifactId>picard</artifactId>
         </dependency>
         <dependency>
-            <groupId>adam</groupId>
+            <groupId>samtools</groupId>
             <artifactId>samtools</artifactId>
         </dependency>
         <dependency>

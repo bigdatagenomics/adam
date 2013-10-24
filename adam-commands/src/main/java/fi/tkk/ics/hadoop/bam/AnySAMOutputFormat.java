@@ -36,7 +36,7 @@ public abstract class AnySAMOutputFormat<K>
 	 * directly by {@link SAMFormat#valueOf}.
 	 */
 	public static final String OUTPUT_SAM_FORMAT_PROPERTY =
-		"hadoop.anysam.output-format";
+		"hadoopbam.anysam.output-format";
 
 	protected SAMFormat format;
 

@@ -24,7 +24,6 @@ package fi.tkk.ics.hadoop.bam;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +40,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 import net.sf.samtools.SAMFileReader;
+import parquet.hadoop.util.ContextUtil;
 
 /** An {@link org.apache.hadoop.mapreduce.InputFormat} for SAM and BAM files.
  * Values are the individual records; see {@link BAMRecordReader} for the
@@ -70,7 +70,6 @@ public class AnySAMInputFormat
 
 	private Configuration conf;
 	private boolean trustExts;
-
 
 	/** Creates a new input format, which will use the
 	 * <code>Configuration</code> from the first public method called. Thus this
@@ -177,7 +176,7 @@ public class AnySAMInputFormat
 				"split '"+split+"' has unknown type: cannot extract path");
 
 		if (this.conf == null)
-			this.conf = ctx.getConfiguration();
+			this.conf = ContextUtil.getConfiguration(ctx);
 
 		final SAMFormat fmt = getFormat(path);
 		if (fmt == null)
@@ -196,7 +195,7 @@ public class AnySAMInputFormat
 	 */
 	@Override public boolean isSplitable(JobContext job, Path path) {
 		if (this.conf == null)
-			this.conf = job.getConfiguration();
+			this.conf = ContextUtil.getConfiguration(job);
 
 		final SAMFormat fmt = getFormat(path);
 		if (fmt == null)
@@ -217,7 +216,7 @@ public class AnySAMInputFormat
 		throws IOException
 	{
 		if (this.conf == null)
-			this.conf = job.getConfiguration();
+			this.conf = ContextUtil.getConfiguration(job);
 
 		final List<InputSplit> origSplits = super.getSplits(job);
 
@@ -240,7 +239,7 @@ public class AnySAMInputFormat
 			else
 				newSplits.add(split);
 		}
-		newSplits.addAll(bamIF.getSplits(bamOrigSplits, job.getConfiguration()));
+		newSplits.addAll(bamIF.getSplits(bamOrigSplits, ContextUtil.getConfiguration(job)));
 		return newSplits;
 	}
 }

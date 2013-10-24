@@ -40,6 +40,7 @@ import org.apache.hadoop.util.Progressable;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import fi.tkk.ics.hadoop.bam.FormatConstants.BaseQualityEncoding;
+import parquet.hadoop.util.ContextUtil;
 
 /**
  * Output format for Illumina qseq format.
@@ -106,7 +107,14 @@ public class QseqOutputFormat extends TextOutputFormat<Text, SequencedFragment>
 			sBuilder.append( seq.getTile() == null ? "" : seq.getTile().toString() ).append(delim);
 			sBuilder.append( seq.getXpos() == null ? "" : seq.getXpos().toString() ).append(delim);
 			sBuilder.append( seq.getYpos() == null ? "" : seq.getYpos().toString() ).append(delim);
-			sBuilder.append( seq.getIndexSequence() == null ? "" : seq.getIndexSequence().replace('N', '.') ).append(delim);
+
+			String index;
+			if (seq.getIndexSequence() == null || seq.getIndexSequence().isEmpty())
+				index = "0";
+			else
+				index = seq.getIndexSequence().replace('N', '.');
+			sBuilder.append( index ).append(delim);
+
 			sBuilder.append( seq.getRead() == null ? "" : seq.getRead().toString() ).append(delim);
 			// here we also replace 'N' with '.'
 			sBuilder.append( seq.getSequence() == null ? "" : seq.getSequence().toString().replace('N', '.')).append(delim);
@@ -160,7 +168,7 @@ public class QseqOutputFormat extends TextOutputFormat<Text, SequencedFragment>
   public RecordWriter<Text,SequencedFragment> getRecordWriter(TaskAttemptContext task)
 	  throws IOException
 	{
-		Configuration conf = task.getConfiguration();
+		Configuration conf = ContextUtil.getConfiguration(task);
 		boolean isCompressed = getCompressOutput(task);
 
 		CompressionCodec codec = null;

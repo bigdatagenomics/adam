@@ -34,6 +34,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import parquet.hadoop.util.ContextUtil;
 
 /** An {@link org.apache.hadoop.mapreduce.InputFormat} for BGZF-compressed
  * files.
@@ -67,7 +68,7 @@ public abstract class BGZFSplitFileInputFormat<K,V>
 		final List<InputSplit> newSplits =
 			new ArrayList<InputSplit>(splits.size());
 
-		final Configuration cfg = job.getConfiguration();
+		final Configuration cfg = ContextUtil.getConfiguration(job);
 
 		for (int i = 0; i < splits.size();) {
 			try {

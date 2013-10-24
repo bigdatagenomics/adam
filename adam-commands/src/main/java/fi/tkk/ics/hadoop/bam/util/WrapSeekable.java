@@ -31,7 +31,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.Seekable;
 
-import net.sf.samtools.util.SeekableStream;
+import net.sf.samtools.seekablestream.SeekableStream;
 
 /** Wraps Hadoop's "seekable stream" abstraction so that we can give such a one
  * to BlockCompressedInputStream and retain seekability.
@@ -68,6 +68,7 @@ public class WrapSeekable<S extends InputStream & Seekable>
 	@Override public String getSource() { return path.toString(); }
 	@Override public long   length   () { return len; }
 
+	@Override public long position() throws IOException { return stm.getPos(); }
 	@Override public void    close() throws IOException { stm.close(); }
 	@Override public boolean eof  () throws IOException {
 		return stm.getPos() == length();

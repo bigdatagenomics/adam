@@ -44,6 +44,9 @@ import fi.tkk.ics.hadoop.bam.util.DataOutputWrapper;
  * #readFields}.</p>
  */
 public class SAMRecordWritable implements Writable {
+	private static final BAMRecordCodec lazyCodec =
+		new BAMRecordCodec(null, new LazyBAMRecordFactory());
+
 	private SAMRecord record;
 
 	public SAMRecord get()            { return record; }
@@ -61,9 +64,7 @@ public class SAMRecordWritable implements Writable {
 		codec.encode(record);
 	}
 	@Override public void readFields(DataInput in) throws IOException {
-		final BAMRecordCodec codec =
-			new BAMRecordCodec(null, new LazyBAMRecordFactory());
-		codec.setInputStream(new DataInputWrapper(in));
-		record = codec.decode();
+		lazyCodec.setInputStream(new DataInputWrapper(in));
+		record = lazyCodec.decode();
 	}
 }

@@ -41,6 +41,7 @@ import net.sf.samtools.SAMSequenceRecord;
 import net.sf.samtools.SAMTextHeaderCodec;
 import net.sf.samtools.util.BinaryCodec;
 import net.sf.samtools.util.BlockCompressedOutputStream;
+import parquet.hadoop.util.ContextUtil;
 
 /** A base {@link RecordWriter} for BAM records.
  *
@@ -60,7 +61,7 @@ public abstract class BAMRecordWriter<K>
 		throws IOException
 	{
 		final SAMFileReader r = new SAMFileReader(
-			input.getFileSystem(ctx.getConfiguration()).open(input));
+			input.getFileSystem(ContextUtil.getConfiguration(ctx)).open(input));
 
 		final SAMFileHeader hdr = r.getFileHeader();
 		r.close();
@@ -72,7 +73,7 @@ public abstract class BAMRecordWriter<K>
 		throws IOException
 	{
 		init(
-			output.getFileSystem(ctx.getConfiguration()).create(output),
+			output.getFileSystem(ContextUtil.getConfiguration(ctx)).create(output),
 			header, writeHeader);
 	}
 	public BAMRecordWriter(
@@ -90,7 +91,7 @@ public abstract class BAMRecordWriter<K>
 		throws IOException
 	{
 		init(
-			output.getFileSystem(ctx.getConfiguration()).create(output),
+			output.getFileSystem(ContextUtil.getConfiguration(ctx)).create(output),
 			header, writeHeader);
 	}
 	private void init(

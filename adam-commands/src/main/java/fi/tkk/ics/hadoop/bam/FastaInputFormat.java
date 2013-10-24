@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.io.compress.*;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -35,20 +36,113 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import parquet.hadoop.util.ContextUtil;
 
 import java.io.InputStream;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
-
-// based on QseqqInputFormat
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
- * Reads the Illumina qseq sequence format.
- * Key: instrument, run number, lane, tile, xpos, ypos, read number, delimited by ':' characters.
+ * Reads the FASTA reference sequence format.
+ * Key: sequence description and position offset, delimited by ':' characters.
  * Value:  a ReferenceFragment object representing the entry.
+ *
+ * Note: here sections in the input file are assumed to be delimited by single
+ * line descriptions that start with '>'.
  */
 public class FastaInputFormat extends FileInputFormat<Text,ReferenceFragment>
 {
+
+    @Override public List<InputSplit> getSplits(JobContext job) throws IOException
+	{
+
+	    // Note: We generate splits that correspond to different sections in the FASTA
+	    // input (which here are called "chromosomes", delimited by '>' and
+	    // followed by a single line description.
+	    // Some locality is preserved since the locations are formed from the input
+	    // splits, although no special attention is given to this issues (FASTA files
+	    // are assumed to be smallish).
+	    // The splits are generated on the client. In the future the split generation
+	    // should be only performed once and an index file stored inside HDFS for
+	    // peformance reasons. Currently this is not attempted (again: FASTA files
+	    // aren't all that big).
+
+	    // we first make sure we are given only a single file
+
+            List<InputSplit> splits = super.getSplits(job);
+            
+            // first sort by input path
+            Collections.sort(splits, new Comparator<InputSplit>()
+                             {
+                                 public int compare(InputSplit a, InputSplit b) {
+                                     FileSplit fa = (FileSplit)a, fb = (FileSplit)b;
+                                     return fa.getPath().compareTo(fb.getPath());
+                                 }
+                             });
+
+            for (int i = 0; i < splits.size()-1;) {
+                FileSplit fa = (FileSplit)splits.get(i);
+                FileSplit fb = (FileSplit)splits.get(i+1);
+                    
+                if(fa.getPath().compareTo(fb.getPath()) != 0)
+                    throw new IOException("FastaInputFormat assumes single FASTA input file!");
+            }
+
+            // now we are sure we only have one FASTA input file
+
+	    final List<InputSplit> newSplits = new ArrayList<InputSplit>(splits.size());
+	    FileSplit fileSplit = (FileSplit)splits.get(0);
+	    Path path = fileSplit.getPath();
+
+	    FileSystem fs = path.getFileSystem(ContextUtil.getConfiguration(job));
+	    FSDataInputStream fis = fs.open(path);
+	    byte[] buffer = new byte[1024];
+
+	    long byte_counter = 0;
+	    long prev_chromosome_byte_offset = 0;
+	    boolean first_chromosome = true;
+
+	    for(int j = 0; j < splits.size(); j++) {
+		FileSplit origsplit = (FileSplit)splits.get(j);
+
+		while(byte_counter < origsplit.getStart()+origsplit.getLength()) {
+		    long bytes_read = fis.read(byte_counter, buffer, 0, (int)Math.min(buffer.length,
+										      origsplit.getStart()+origsplit.getLength()- byte_counter));
+		    //System.err.println("bytes_read: "+Integer.toString((int)bytes_read)+" of "+Integer.toString(splits.size())+" splits");
+		    if(bytes_read > 0) {
+			for(int i=0;i<bytes_read;i++) {
+			    if(buffer[i] == (byte)'>') {
+				//System.err.println("found chromosome at position "+Integer.toString((int)byte_counter+i));
+				
+				if(!first_chromosome) {
+				    FileSplit fsplit = new FileSplit(path, prev_chromosome_byte_offset, byte_counter + i-1 - prev_chromosome_byte_offset, origsplit.getLocations());
+				    //System.err.println("adding split: start: "+Integer.toString((int)fsplit.getStart())+" length: "+Integer.toString((int)fsplit.getLength()));
+				    
+				    newSplits.add(fsplit);
+				}
+				first_chromosome = false;
+				prev_chromosome_byte_offset = byte_counter + i;
+			    }
+			}
+			byte_counter += bytes_read;
+		    }
+		}
+
+		if(j == splits.size()-1) {
+		    //System.err.println("EOF");
+		    FileSplit fsplit = new FileSplit(path, prev_chromosome_byte_offset, byte_counter - prev_chromosome_byte_offset, origsplit.getLocations());
+		    newSplits.add(fsplit); //conf));
+		    //System.err.println("adding split: "+fsplit.toString());
+		    break;
+		}
+	    }
+	    
+	    return newSplits;
+	}
 
 	public static class FastaRecordReader extends RecordReader<Text,ReferenceFragment>
 	{
@@ -62,20 +156,19 @@ public class FastaInputFormat extends FileInputFormat<Text,ReferenceFragment>
 		// file:  the file being read
 		private Path file;
 
+		// current_split_pos: the current (chromosome) position within the split
+		private int current_split_pos;
+		// current_split_indexseq: the description/chromosome name
+		private String current_split_indexseq = null;
+
 		private LineReader lineReader;
 		private InputStream inputStream;
 		private Text currentKey = new Text();
 		private ReferenceFragment currentValue = new ReferenceFragment();
 
 		private Text buffer = new Text();
-		private static final int NUM_QSEQ_COLS = 3;
-		// for these, we have one per qseq field
-		private int[] fieldPositions = new int[NUM_QSEQ_COLS];
-		private int[] fieldLengths = new int[NUM_QSEQ_COLS];
 
-		private static final String Delim = "\t";
-
-		// How long can a qseq line get?
+		// How long can a FASTA line get?
 		public static final int MAX_LINE_LENGTH = 20000;
 
 		public FastaRecordReader(Configuration conf, FileSplit split) throws IOException
@@ -84,6 +177,7 @@ public class FastaInputFormat extends FileInputFormat<Text,ReferenceFragment>
 			file = split.getPath();
 			start = split.getStart();
 			end = start + split.getLength();
+			current_split_pos = 1;
 
 			FileSystem fs = file.getFileSystem(conf);
 			FSDataInputStream fileIn = fs.open(file);
@@ -113,23 +207,29 @@ public class FastaInputFormat extends FileInputFormat<Text,ReferenceFragment>
 		 */
 		private void positionAtFirstRecord(FSDataInputStream stream) throws IOException
 		{
-			if (start > 0)
+		    if (start > 0)
 			{
-				// Advance to the start of the first line in our slice.
-				// We use a temporary LineReader to read a partial line and find the
-				// start of the first one on or after our starting position.
-				// In case our slice starts right at the beginning of a line, we need to back
-				// up by one position and then discard the first line.
-				start -= 1;
-				stream.seek(start);
-				LineReader reader = new LineReader(stream);
-				int bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
-				start = start + bytesRead;
-				stream.seek(start);
+			    stream.seek(start);
 			}
-			// else
-			//	if start == 0 we're starting at the beginning of a line
-			pos = start;
+
+		    // we are now in a new chromosome/fragment, so read its name/index sequence
+		    // and reset position counter
+
+		    // index sequence
+		    LineReader reader = new LineReader(stream);
+		    int bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
+
+		    current_split_indexseq = buffer.toString();
+		    // now get rid of '>' character
+		    current_split_indexseq = current_split_indexseq.substring(1,current_split_indexseq.length());
+		    
+		    // initialize position counter
+		    current_split_pos = 1;
+		    
+		    //System.err.println("read index sequence: "+current_split_indexseq);
+		    start = start + bytesRead;
+		    stream.seek(start);
+		    pos = start;
 		}
 
 		protected void setConf(Configuration conf)
@@ -234,71 +334,37 @@ public class FastaInputFormat extends FileInputFormat<Text,ReferenceFragment>
 			else
 			{
 				scanFastaLine(buffer, key, value);
+				current_split_pos += bytesRead;
 				return true;
 			}
 		}
 
-		private void setPositionsAndLengths(Text line)
-		{
-			int pos = 0; // the byte position within the record
-			int fieldno = 0; // the field index within the record
-			while (pos < line.getLength() && fieldno < NUM_QSEQ_COLS) // iterate over each field
-			{
-				int endpos = line.find(Delim, pos); // the field's end position
-				if (endpos < 0)
-					endpos = line.getLength();
-
-				fieldPositions[fieldno] = pos;
-				fieldLengths[fieldno] = endpos - pos;
-
-				pos = endpos + 1; // the next starting position is the current end + 1
-				fieldno += 1;
-			}
-
-/*
-			if (fieldno != NUM_QSEQ_COLS)
-				throw new FormatException("found " + fieldno + " fields instead of 3 at " + makePositionMessage(this.pos - line.getLength()) + ". Line: " + line);*/
-		}
-
 		private void scanFastaLine(Text line, Text key, ReferenceFragment fragment)
 		{
-			setPositionsAndLengths(line);
-
-			// Build the key.  We concatenate all fields from 0 to 5 (machine to y-pos)
-			// and then the read number, replacing the tabs with colons.
-			key.clear();
-			// append up and including field[5]
-			key.append(line.getBytes(), 0, fieldPositions[1] + fieldLengths[1]);
-			// replace tabs with :
-			byte[] bytes = key.getBytes();
-			int temporaryEnd = key.getLength();
-			for (int i = 0; i < temporaryEnd; ++i)
-				if (bytes[i] == '\t')
-					bytes[i] = ':';
-			// append the read number
-			//key.append(line.getBytes(), fieldPositions[7] - 1, fieldLengths[7] + 1); // +/- 1 to catch the preceding tab.
-			// convert the tab preceding the read number into a :
-			//key.getBytes()[temporaryEnd] = ':';
-
-			// now the fragment
-			try
-			{
-			    fragment.clear();
-			    fragment.setPosition( Integer.parseInt(Text.decode(line.getBytes(), fieldPositions[1], fieldLengths[1])) );
-			    fragment.setIndexSequence(Text.decode(line.getBytes(), fieldPositions[0], fieldLengths[0]));
-			}
-			catch (CharacterCodingException e) {
-				throw new FormatException("Invalid character format at " + makePositionMessage(this.pos - line.getLength()) + "; line: " + line);
-			}
-
-			fragment.getSequence().append(line.getBytes(), fieldPositions[2], fieldLengths[2]);
+		    // Build the key.  We concatenate the chromosome/fragment descripion and
+		    // the start position of the FASTA sequence line, replacing the tabs with colons.
+		    key.clear();
+		    
+		    key.append(current_split_indexseq.getBytes(), 0, current_split_indexseq.getBytes().length);
+		    key.append(Integer.toString(current_split_pos).getBytes(), 0, Integer.toString(current_split_pos).getBytes().length);
+		    // replace tabs with :
+		    byte[] bytes = key.getBytes();
+		    int temporaryEnd = key.getLength();
+		    for (int i = 0; i < temporaryEnd; ++i)
+			if (bytes[i] == '\t')
+			    bytes[i] = ':';
+		    
+		    fragment.clear();
+		    fragment.setPosition(current_split_pos);
+		    fragment.setIndexSequence(current_split_indexseq);
+		    fragment.getSequence().append(line.getBytes(), 0, line.getBytes().length);
 		}
 	}
 
 	@Override
 	public boolean isSplitable(JobContext context, Path path)
 	{
-		CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(path);
+		CompressionCodec codec = new CompressionCodecFactory(ContextUtil.getConfiguration(context)).getCodec(path);
 		return codec == null;
 	}
 
@@ -307,6 +373,6 @@ public class FastaInputFormat extends FileInputFormat<Text,ReferenceFragment>
 	                                        TaskAttemptContext context) throws IOException, InterruptedException
 	{
 		context.setStatus(genericSplit.toString());
-		return new FastaRecordReader(context.getConfiguration(), (FileSplit)genericSplit); // cast as per example in TextInputFormat
+		return new FastaRecordReader(ContextUtil.getConfiguration(context), (FileSplit)genericSplit); // cast as per example in TextInputFormat
 	}
 }

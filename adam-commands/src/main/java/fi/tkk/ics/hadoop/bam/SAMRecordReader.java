@@ -46,6 +46,7 @@ import net.sf.samtools.SAMFormatException;
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.SAMRecordIterator;
 import net.sf.samtools.SAMTextHeaderCodec;
+import parquet.hadoop.util.ContextUtil;
 
 /** See {@link BAMRecordReader} for the meaning of the key. */
 public class SAMRecordReader
@@ -68,7 +69,7 @@ public class SAMRecordReader
 		this.start =         split.getStart();
 		this.end   = start + split.getLength();
 
-		final Configuration conf = ctx.getConfiguration();
+		final Configuration conf = ContextUtil.getConfiguration(ctx);
 
 		final Path file = split.getPath();
 		final FileSystem fs = file.getFileSystem(conf);
@@ -208,12 +209,19 @@ class WorkaroundingStream extends InputStream {
 		if (!headerRemaining)
 			return streamRead(buf, off, len);
 
-		final int h;
+		int h;
 		if (strippingAts)
 			h = 0;
 		else {
 			h = headerStream.read(buf, off, len);
-			if (h < headerLength && h != -1) {
+			if (h == -1) {
+				// This should only happen when there was no header at all, in
+				// which case Picard doesn't throw an error until trying to read
+				// a record, for some reason. (Perhaps an oversight.) Thus we
+				// need to handle that case here.
+				assert (headerLength == 0);
+				h = 0;
+			} else if (h < headerLength) {
 				headerLength -= h;
 				return h;
 			}

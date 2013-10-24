@@ -34,6 +34,7 @@ import net.sf.samtools.SAMFileHeader;
 import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.SAMTextWriter;
+import parquet.hadoop.util.ContextUtil;
 
 /** A base {@link RecordWriter} for SAM records.
  *
@@ -52,7 +53,7 @@ public abstract class SAMRecordWriter<K>
 		throws IOException
 	{
 		final SAMFileReader r = new SAMFileReader(
-			input.getFileSystem(ctx.getConfiguration()).open(input));
+			input.getFileSystem(ContextUtil.getConfiguration(ctx)).open(input));
 
 		final SAMFileHeader hdr = r.getFileHeader();
 		r.close();
@@ -64,7 +65,7 @@ public abstract class SAMRecordWriter<K>
 		throws IOException
 	{
 		init(
-			output.getFileSystem(ctx.getConfiguration()).create(output),
+			output.getFileSystem(ContextUtil.getConfiguration(ctx)).create(output),
 			header, writeHeader);
 	}
 	public SAMRecordWriter(
@@ -80,7 +81,7 @@ public abstract class SAMRecordWriter<K>
 		throws IOException
 	{
 		init(
-			output.getFileSystem(ctx.getConfiguration()).create(output),
+			output.getFileSystem(ContextUtil.getConfiguration(ctx)).create(output),
 			header, writeHeader);
 	}
 	private void init(

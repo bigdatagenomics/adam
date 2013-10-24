@@ -41,6 +41,8 @@ import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 
 import fi.tkk.ics.hadoop.bam.FormatConstants.BaseQualityEncoding;
+import fi.tkk.ics.hadoop.bam.util.ConfHelper;
+import parquet.hadoop.util.ContextUtil;
 
 /**
  * Reads the Illumina qseq sequence format.
@@ -50,6 +52,7 @@ import fi.tkk.ics.hadoop.bam.FormatConstants.BaseQualityEncoding;
 public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 {
 	public static final String CONF_BASE_QUALITY_ENCODING = "hbam.qseq-input.base-quality-encoding";
+	public static final String CONF_FILTER_FAILED_QC      = "hbam.qseq-input.filter-failed-qc";
 	public static final String CONF_BASE_QUALITY_ENCODING_DEFAULT = "illumina";
 
 	public static class QseqRecordReader extends RecordReader<Text,SequencedFragment>
@@ -91,6 +94,7 @@ public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 		private int[] fieldLengths = new int[NUM_QSEQ_COLS];
 
 		private BaseQualityEncoding qualityEncoding;
+		private boolean filterFailedQC = false;
 
 		private static final String Delim = "\t";
 
@@ -153,14 +157,22 @@ public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 
 		protected void setConf(Configuration conf)
 		{
-			String encoding = conf.get(QseqInputFormat.CONF_BASE_QUALITY_ENCODING, CONF_BASE_QUALITY_ENCODING_DEFAULT);
+			String encoding =
+			  conf.get(QseqInputFormat.CONF_BASE_QUALITY_ENCODING,
+			    conf.get(FormatConstants.CONF_INPUT_BASE_QUALITY_ENCODING,
+			      CONF_BASE_QUALITY_ENCODING_DEFAULT));
 
 			if ("illumina".equals(encoding))
 				qualityEncoding = BaseQualityEncoding.Illumina;
 			else if ("sanger".equals(encoding))
 				qualityEncoding = BaseQualityEncoding.Sanger;
 			else
-				throw new RuntimeException("Unknown " + QseqInputFormat.CONF_BASE_QUALITY_ENCODING + " value " + encoding);
+				throw new RuntimeException("Unknown input base quality encoding value " + encoding);
+
+			filterFailedQC = ConfHelper.parseBoolean(
+			  conf.get(QseqInputFormat.CONF_FILTER_FAILED_QC,
+			    conf.get(FormatConstants.CONF_INPUT_FILTER_FAILED_QC)),
+			      false);
 		}
 
 		/**
@@ -244,6 +256,35 @@ public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 			return file.toString() + ":" + pos;
 		}
 
+		/*
+		 * Read a single record.
+		 *
+		 * Reads a single line of input and scans it with scanQseqLine, which
+		 * sets key and value accordingly.  The method updates this.pos.
+		 *
+		 * @return The number of bytes read.  If no bytes were read, the EOF was reached.
+		 */
+		private int lowLevelQseqRead(Text key, SequencedFragment value) throws IOException
+		{
+			int bytesRead = lineReader.readLine(buffer, MAX_LINE_LENGTH);
+			pos += bytesRead;
+			if (bytesRead >= MAX_LINE_LENGTH)
+			{
+				String line;
+				try {
+					line = Text.decode(buffer.getBytes(), 0, 500);
+				} catch (java.nio.charset.CharacterCodingException e) {
+					line = "(line not convertible to printable format)";
+				}
+				throw new RuntimeException("found abnormally large line (length " + bytesRead + ") at " +
+				            makePositionMessage(pos - bytesRead) + ": " + line);
+			}
+			else if (bytesRead > 0)
+				scanQseqLine(buffer, key, value);
+
+			return bytesRead;
+		}
+
 		/**
 		 * Reads the next key/value pair from the input for processing.
 		 */
@@ -252,20 +293,34 @@ public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 			if (pos >= end)
 				return false; // past end of slice
 
-			int bytesRead = lineReader.readLine(buffer, MAX_LINE_LENGTH);
-			pos += bytesRead;
-			if (bytesRead >= MAX_LINE_LENGTH)
-				throw new RuntimeException("found abnormally large line (length " + bytesRead + ") at " + makePositionMessage(pos - bytesRead) + ": " + Text.decode(buffer.getBytes(), 0, 500));
-			else if (bytesRead <= 0)
-				return false; // EOF
-			else
+			int bytesRead = 0;
+			boolean goodRecord;
+			do {
+				bytesRead = lowLevelQseqRead(key, value); // if bytesRead <= 0 EOF has been reached
+				goodRecord = (bytesRead > 0) && (!filterFailedQC || value.getFilterPassed() == null || value.getFilterPassed());
+			} while (bytesRead > 0 && !goodRecord);
+
+			if (goodRecord) // post process the record only if it's going to be used
 			{
-				scanQseqLine(buffer, key, value);
-				return true;
+				try {
+					postProcessSequencedFragment(value);
+				} catch (FormatException e) {
+					throw new FormatException(e.getMessage() + " Position: " + makePositionMessage(this.pos - bytesRead) +
+					            "; line: " + buffer); // last line read is still in the buffer
+				}
 			}
+
+			return goodRecord;
 		}
 
-		private void setPositionsAndLengths(Text line)
+		/*
+		 * Scans the text line to find the position and the lengths of the fields
+		 * within it. The positions and lengths are saved into the instance arrays
+		 * 'fieldPositions' and 'fieldLengths'.
+		 *
+		 * @exception FormatException Line doesn't have the expected number of fields.
+		 */
+		private void setFieldPositionsAndLengths(Text line)
 		{
 			int pos = 0; // the byte position within the record
 			int fieldno = 0; // the field index within the record
@@ -283,12 +338,13 @@ public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 			}
 
 			if (fieldno != NUM_QSEQ_COLS)
-				throw new FormatException("found " + fieldno + " fields instead of 11 at " + makePositionMessage(this.pos - line.getLength()) + ". Line: " + line);
+				throw new FormatException("found " + fieldno + " fields instead of 11 at " +
+				            makePositionMessage(this.pos - line.getLength()) + ". Line: " + line);
 		}
 
 		private void scanQseqLine(Text line, Text key, SequencedFragment fragment)
 		{
-			setPositionsAndLengths(line);
+			setFieldPositionsAndLengths(line);
 
 			// Build the key.  We concatenate all fields from 0 to 5 (machine to y-pos)
 			// and then the read number, replacing the tabs with colons.
@@ -320,29 +376,43 @@ public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 				fragment.setRead( Integer.parseInt(Text.decode(line.getBytes(), fieldPositions[7], fieldLengths[7])) );
 				fragment.setFilterPassed( line.getBytes()[fieldPositions[10]] != '0' );
 				//fragment.setControlNumber();
-				fragment.setIndexSequence(Text.decode(line.getBytes(), fieldPositions[6], fieldLengths[6]).replace('.', 'N'));
+				if (fieldLengths[6] > 0 && line.getBytes()[fieldPositions[6]] == '0') // 0 is a null index sequence
+					fragment.setIndexSequence(null);
+				else
+					fragment.setIndexSequence(Text.decode(line.getBytes(), fieldPositions[6], fieldLengths[6]).replace('.', 'N'));
 			}
 			catch (CharacterCodingException e) {
 				throw new FormatException("Invalid character format at " + makePositionMessage(this.pos - line.getLength()) + "; line: " + line);
 			}
 
 			fragment.getSequence().append(line.getBytes(), fieldPositions[8], fieldLengths[8]);
-			bytes = fragment.getSequence().getBytes();
+			fragment.getQuality().append(line.getBytes(), fieldPositions[9], fieldLengths[9]);
+		}
+
+		/*
+		 * This method applies some transformations to the read and quality data.
+		 *
+		 * <ul>
+		 *   <li>'.' in the read are converted to 'N'</li>
+		 *   <li>the base quality encoding is converted to 'sanger', unless otherwise
+		 *   requested by the configuration.</li>
+		 * </ul>
+		 *
+		 * @exception FormatException Thrown if the record contains base quality scores
+		 * outside the range allowed by the format.
+		 */
+		private void postProcessSequencedFragment(SequencedFragment fragment)
+		{
+			byte[] bytes = fragment.getSequence().getBytes();
 			// replace . with N
 			for (int i = 0; i < fieldLengths[8]; ++i)
 				if (bytes[i] == '.')
 					bytes[i] = 'N';
 
-			fragment.getQuality().append(line.getBytes(), fieldPositions[9], fieldLengths[9]);
 			if (qualityEncoding == BaseQualityEncoding.Illumina)
 			{
-				try
-				{
-					// convert illumina to sanger scale
-					SequencedFragment.convertQuality(fragment.getQuality(), BaseQualityEncoding.Illumina, BaseQualityEncoding.Sanger);
-				} catch (FormatException e) {
-					throw new FormatException(e.getMessage() + " Position: " + makePositionMessage(this.pos - line.getLength()) + "; line: " + line);
-				}
+				// convert illumina to sanger scale
+				SequencedFragment.convertQuality(fragment.getQuality(), BaseQualityEncoding.Illumina, BaseQualityEncoding.Sanger);
 			}
 			else // sanger qualities.
 			{
@@ -351,8 +421,7 @@ public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 				{
 					throw new FormatException("qseq base quality score out of range for Sanger Phred+33 format (found " +
 					    (fragment.getQuality().getBytes()[outOfRangeElement] - FormatConstants.SANGER_OFFSET) + ").\n" +
-					    "Although Sanger format has been requested, maybe qualities are in Illumina Phred+64 format?\n" +
-					    "Position: " + makePositionMessage(this.pos - line.getLength()) + "; line: " + line);
+					    "Although Sanger format has been requested, maybe qualities are in Illumina Phred+64 format?\n");
 				}
 			}
 		}
@@ -361,7 +430,7 @@ public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 	@Override
 	public boolean isSplitable(JobContext context, Path path)
 	{
-		CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(path);
+		CompressionCodec codec = new CompressionCodecFactory(ContextUtil.getConfiguration(context)).getCodec(path);
 		return codec == null;
 	}
 
@@ -370,6 +439,6 @@ public class QseqInputFormat extends FileInputFormat<Text,SequencedFragment>
 	                                        TaskAttemptContext context) throws IOException, InterruptedException
 	{
 		context.setStatus(genericSplit.toString());
-		return new QseqRecordReader(context.getConfiguration(), (FileSplit)genericSplit); // cast as per example in TextInputFormat
+		return new QseqRecordReader(ContextUtil.getConfiguration(context), (FileSplit)genericSplit); // cast as per example in TextInputFormat
 	}
 }

@@ -24,7 +24,7 @@ package fi.tkk.ics.hadoop.bam.util;
 
 import java.io.IOException;
 
-import net.sf.samtools.util.SeekableStream;
+import net.sf.samtools.seekablestream.SeekableStream;
 
 public class SeekableArrayStream extends SeekableStream {
 	private final byte[] arr;
@@ -32,9 +32,10 @@ public class SeekableArrayStream extends SeekableStream {
 
 	public SeekableArrayStream(byte[] a) { this.arr = a; this.pos = 0; }
 
-	@Override public void    close () {}
-	@Override public long    length() { return arr.length; }
-	@Override public boolean eof   () { return pos == length(); }
+	@Override public void    close   () {}
+	@Override public long    length  () { return arr.length; }
+	@Override public long    position() { return pos; }
+	@Override public boolean eof     () { return pos == length(); }
 
 	@Override public void seek(long lp) throws IOException {
 		final int p = (int)lp;
@@ -44,6 +45,8 @@ public class SeekableArrayStream extends SeekableStream {
 	}
 
 	@Override public int read(byte[] b, int off, int len) {
+		if (eof())
+			return -1;
 		len = Math.min(len, arr.length - pos);
 		System.arraycopy(arr, pos, b, off, len);
 		pos += len;

@@ -22,9 +22,6 @@
 
 package fi.tkk.ics.hadoop.bam;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.commons.logging.Log;
-
 public class FormatConstants
 {
 	/**
@@ -53,4 +50,7 @@ public class FormatConstants
 	public enum BaseQualityEncoding { Illumina, Sanger };
 
 	private FormatConstants() {} // no instantiation
+
+	public static final String CONF_INPUT_BASE_QUALITY_ENCODING = "hbam.input.base-quality-encoding";
+	public static final String CONF_INPUT_FILTER_FAILED_QC      = "hbam.input.filter-failed-qc";
 }
