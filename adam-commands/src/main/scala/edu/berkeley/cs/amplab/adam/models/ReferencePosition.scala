@@ -35,9 +35,9 @@ object ReferencePosition {
 class ReferencePosition(val refId: Int, val pos: Long) extends Ordered[ReferencePosition] with Serializable {
 
   def compare(that: ReferencePosition): Int = {
-    val refCompare = refId.compare(that.refId)
-    if (refCompare != 0) return refCompare
-    pos.compare(that.pos)
+    val posCompare = pos.compare(that.pos)
+    if (posCompare != 0) return posCompare
+    refId.compareTo(that.refId)
   }
 
 }
