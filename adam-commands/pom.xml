@@ -43,6 +43,7 @@
                     </filters>
                     <artifactSet>
                         <excludes>
+                            <exclude>org.eclipse.jdt:*</exclude>
                             <exclude>org.scalatest:*</exclude>
                             <exclude>org.apache.maven:lib:tests</exclude>
                         </excludes>
