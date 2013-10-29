@@ -27,9 +27,9 @@ READS=$BAM.reads
 PILEUPS=$BAM.pileup
 wget http://www.cs.berkeley.edu/~massie/bams/$BAM
 echo "Converting BAM to ADAM read format"
-$ADAM bam2adam $BAM $READS
+$ADAM bam2adam -samtools_validation lenient $BAM $READS
 echo "Converting BAM to ADAM read format with sorting"
-$ADAM bam2adam -sort $BAM $READS.sorted
+$ADAM transform -sort_reads $READS $READS.sorted
 echo "Converting read file to pileup format"
 $ADAM reads2ref $READS $PILEUPS
 echo "Reading reads"

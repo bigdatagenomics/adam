@@ -80,16 +80,7 @@
             <artifactId>parquet-avro</artifactId>
         </dependency>
         <dependency>
-            <groupId>fi.tkk.ics.hadoop.bam</groupId>
-            <artifactId>hadoop-bam</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>picard</groupId>
-            <artifactId>picard</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>samtools</groupId>
+            <groupId>net.sf</groupId>
             <artifactId>samtools</artifactId>
         </dependency>
         <dependency>

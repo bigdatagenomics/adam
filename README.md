@@ -86,10 +86,12 @@ $ java -jar adam-X.Y-SNAPSHOT.jar
 
 Choose one of the following commands:
 
-            bam2adam : Convert a SAM/BAM file to ADAM read-oriented format
+            bam2adam : Converts a local BAM file to ADAM/Parquet and writes locally or to HDFS, S3, etc
+           transform : Apply one of more transforms to an ADAM file and save the results to another ADAM file
            reads2ref : Convert an ADAM read-oriented file to an ADAM reference-oriented file
              mpileup : Output the samtool mpileup text from ADAM reference-oriented data
                print : Print an ADAM formatted file
+   aggregate_pileups : Aggregates pileups in an ADAM reference-oriented file
 ```
 
 You could also add this command as an `alias` to your `.bashrc` e.g.,
@@ -103,39 +105,21 @@ help for a specific command, run `adam <command> -h`, e.g.
 
 ```
 $ adam bam2adam -h
- BAM                            : The SAM or BAM file to convert
- ADAM                           : Location to write ADAM data
- -h (-help, --help, -?)         : print help
- -parquet_block_size N          : Parquet block size (default=512mb)
- -parquet_compress              : Parquet compress (default = true)
- -parquet_compression_codec VAL : Parquet compression codec (default=gzip)
- -parquet_disable_dictionary    : Disable dictionary encoding. (default = false)
- -parquet_page_size N           : Parquet page size (default=1mb)
- -spark_master VAL              : Spark Master (default=local)
+ BAM                                    : The SAM or BAM file to convert
+ ADAM                                   : Location to write ADAM data
+ -h (-help, --help, -?)                 : Print help
+ -parquet_block_size N                  : Parquet block size (default = 512mb)
+ -parquet_compression_codec [UNCOMPRESS : Parquet compression codec
+ ED | SNAPPY | GZIP | LZO]              :  
+ -parquet_disable_dictionary            : Disable dictionary encoding
+ -parquet_page_size N                   : Parquet page size (default = 1mb)
+ -samtools_validation [STRICT |         : SAM tools validation level
+ LENIENT | SILENT]                      :  
 ````
 
 # License
 
 ADAM is released under an [Apache 2.0 license](LICENSE.txt).
-
-# Implementation Notes
-
-### Hadoop-BAM
-
-ADAM wouldn't be possible without [Hadoop-BAM](http://sourceforge.net/projects/hadoop-bam/). For now, Hadoop-BAM
-source is included as source in order work around some issues: a broken FASTA FileInput and Hadoop 1/2 API
-imcompatibilities. As luck would have it, one of the Hadoop-BAM authors works with me in the 
-[AMPLab](http://amplab.cs.berkeley.edu/). I'll work with him to submit the code back to Hadoop-BAM and change
-ADAM to depend on binary artifacts soon.
-
-### Parquet
-
-TODO: The SAM string header is not currently saved to the Parquet file metadata section.
-
-# Future Work
-
-I'm planning on integrating ADAM with GATK. In particular, it should be straight-forward to create
-adapters for the base walkers (e.g. LocusWalker, ReadWalker) in GATK.
 
 # Support
 

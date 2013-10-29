@@ -19,7 +19,6 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
 import scala.collection.JavaConversions._
 import edu.berkeley.cs.amplab.adam.models.{MatedReferencePosition, ReferencePosition}
-import spark.Logging
 
 object RichAdamRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
@@ -28,6 +27,7 @@ object RichAdamRecord {
   def apply(record: ADAMRecord) = {
     new RichAdamRecord(record)
   }
+
   implicit def recordToRichRecord(record: ADAMRecord): RichAdamRecord = new RichAdamRecord(record)
 }
 

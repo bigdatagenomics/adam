@@ -25,15 +25,16 @@ import spark.SparkContext._
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.commands.ParquetArgs
+import parquet.format.CompressionCodec
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 
   def adamSave(filePath: String, blockSize: Int = 512 * 1024 * 1024,
-               pageSize: Int = 1 * 1024 * 1024, compressCodec: String = "gzip",
+               pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                disableDictionaryEncoding: Boolean = false): RDD[T] = {
     val job = new Job(rdd.context.hadoopConfiguration)
     ParquetOutputFormat.setWriteSupportClass(job, classOf[AvroWriteSupport])
-    ParquetOutputFormat.setCompression(job, CompressionCodecName.fromConf(compressCodec))
+    ParquetOutputFormat.setCompression(job, compressCodec)
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
     ParquetOutputFormat.setBlockSize(job, blockSize)
     ParquetOutputFormat.setPageSize(job, pageSize)

@@ -20,7 +20,7 @@ import scala.Some
 
 object AdamMain {
 
-  private val commands = List(Bam2Adam, Reads2Ref, MpileupCommand, PrintAdam, PileupAggregator)
+  private val commands = List(Bam2Adam, Transform, Reads2Ref, MpileupCommand, PrintAdam, PileupAggregator)
 
   private def printCommands() {
     println("\n")
