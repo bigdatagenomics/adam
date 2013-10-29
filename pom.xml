@@ -121,8 +121,8 @@
 
     <repositories>
         <repository>
-            <id>massie-maven</id>
-            <url>http://www.cs.berkeley.edu/~massie/maven/</url>
+            <id>hadoop-bam</id>
+            <url>http://hadoop-bam.sourceforge.net/maven/</url>
         </repository>
     </repositories>
 
@@ -142,6 +142,11 @@
                 <groupId>com.twitter</groupId>
                 <artifactId>parquet-avro</artifactId>
                 <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fi.tkk.ics.hadoop.bam</groupId>
+                <artifactId>hadoop-bam</artifactId>
+                <version>6.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>picard</groupId>
