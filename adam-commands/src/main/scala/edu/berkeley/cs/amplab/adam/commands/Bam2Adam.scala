@@ -43,7 +43,7 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM data", index = 1)
   var outputPath: String = null
   @Args4jOption(required = false, name = "-samtools_validation", usage = "SAM tools validation level")
-  val validationStringency = SAMFileReader.ValidationStringency.DEFAULT_STRINGENCY
+  val validationStringency = SAMFileReader.ValidationStringency.LENIENT
 }
 
 class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
