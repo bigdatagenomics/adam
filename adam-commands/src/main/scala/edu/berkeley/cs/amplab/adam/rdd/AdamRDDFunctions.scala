@@ -25,7 +25,6 @@ import spark.SparkContext._
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.commands.ParquetArgs
-import parquet.format.CompressionCodec
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 

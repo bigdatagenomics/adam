@@ -23,10 +23,10 @@ import java.lang.Integer
 import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 import java.io.File
-import scala.Some
 import parquet.avro.AvroParquetWriter
 import org.apache.hadoop.fs.Path
-import parquet.hadoop.metadata.CompressionCodecName
+import java.util.concurrent._
+import scala.Some
 
 object Bam2Adam extends AdamCommandCompanion {
   val commandName: String = "bam2adam"
@@ -44,34 +44,70 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs {
   var outputPath: String = null
   @Args4jOption(required = false, name = "-samtools_validation", usage = "SAM tools validation level")
   val validationStringency = SAMFileReader.ValidationStringency.LENIENT
+  @Args4jOption(required = false, name = "-num_threads", usage = "Number of threads/partitions to use (default=4)")
+  val numThreads = 4
+  @Args4jOption(required = false, name = "-queue_size", usage = "Queue size (default = 10,000)")
+  val qSize = 10000
 }
 
 class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
   val companion = Bam2Adam
+  val blockingQueue = new ArrayBlockingQueue[Option[SAMRecord]](args.qSize)
 
-  def createSamReader(eagerDecode: Boolean = false) = {
-    val samReader = new SAMFileReader(new File(args.bamFile), null, eagerDecode)
-    samReader.setValidationStringency(args.validationStringency)
-    samReader
+  val writerThreads = (0 until args.numThreads).foldLeft(List[Thread]()) {
+    (list, threadNum) => {
+      val writerThread = new Thread(new Runnable {
+
+        val parquetWriter = new AvroParquetWriter[ADAMRecord](
+          new Path(args.outputPath + "/part%d".format(threadNum)),
+          ADAMRecord.SCHEMA$, args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
+
+        def run(): Unit = {
+          try {
+            while (true) {
+              blockingQueue.take() match {
+                // Poison Pill
+                case None =>
+                  // Close my parquet writer
+                  parquetWriter.close()
+                  // Notify other threads
+                  blockingQueue.add(None)
+                  // Exit
+                  return
+                case Some(samRecord) =>
+                  parquetWriter.write(convert(samRecord))
+              }
+            }
+          } catch {
+            case ie: InterruptedException =>
+              Thread.interrupted()
+              return
+          }
+        }
+      })
+      writerThread.setName("AdamWriter%d".format(threadNum))
+      writerThread
+    } :: list
   }
 
   def run() = {
-    val parquetWriter = new AvroParquetWriter[ADAMRecord](new Path(args.outputPath), ADAMRecord.SCHEMA$,
-      args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
 
+    val samReader = new SAMFileReader(new File(args.bamFile), null, true)
+    samReader.setValidationStringency(args.validationStringency)
+    writerThreads.foreach(_.start())
     var i = 0
-    val samReader = createSamReader(eagerDecode = true)
     for (samRecord <- samReader) {
-      val adamRecord = convert(samRecord)
-      parquetWriter.write(adamRecord)
       i += 1
-      if (i % 10000 == 0) {
-        println("Converted %d reads and saved them to %s".format(i, args.outputPath))
+      blockingQueue.put(Some(samRecord))
+      if (i % 1000000 == 0) {
+        println("***** Read %d million reads from SAM/BAM file (queue=%d) *****".format(i / 1000000, blockingQueue.size()))
       }
     }
-    println("Finished! Converted %d reads.".format(i))
-    parquetWriter.close()
+    blockingQueue.put(None)
     samReader.close()
+    println("Waiting for writers to finish")
+    writerThreads.foreach(_.join())
+    println("\n\nFinished! Converted %d reads total.".format(i))
   }
 
   def convert(samRecord: SAMRecord): ADAMRecord = {
@@ -181,5 +217,6 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
 
     builder.build
   }
+
 }
 

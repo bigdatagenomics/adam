@@ -35,7 +35,7 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
       val files = fs.listStatus(file)
       files.foreach {
         file =>
-          if (file.getPath.getName.contains("parquet")) {
+          if (file.getPath.getName.contains("part")) {
             paths ::= file.getPath
           }
       }
