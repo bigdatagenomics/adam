@@ -19,6 +19,7 @@ package edu.berkeley.cs.amplab.adam.models
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
+import java.lang.{Integer => jInt, Long => jLong}
 
 object ReferencePosition {
 
@@ -26,13 +27,15 @@ object ReferencePosition {
     new ReferencePosition(record.getReferenceId, record.getStart)
   }
 
-  def apply(refId: Int, pos: Long): ReferencePosition = {
+  def apply(refId: jInt, pos: jLong): ReferencePosition = {
     new ReferencePosition(refId, pos)
   }
 
 }
 
-class ReferencePosition(val refId: Int, val pos: Long) extends Ordered[ReferencePosition] with Serializable {
+class ReferencePosition(refIdIn: jInt, val posIn: jLong) extends Ordered[ReferencePosition] with Serializable {
+  val refId: Int = if (refIdIn == null.asInstanceOf[jInt]) Int.MaxValue else refIdIn
+  val pos: Long = if (posIn == null.asInstanceOf[jLong]) Long.MaxValue else posIn
 
   def compare(that: ReferencePosition): Int = {
     val posCompare = pos.compare(that.pos)
