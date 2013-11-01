@@ -43,11 +43,11 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM data", index = 1)
   var outputPath: String = null
   @Args4jOption(required = false, name = "-samtools_validation", usage = "SAM tools validation level")
-  val validationStringency = SAMFileReader.ValidationStringency.LENIENT
+  var validationStringency = SAMFileReader.ValidationStringency.LENIENT
   @Args4jOption(required = false, name = "-num_threads", usage = "Number of threads/partitions to use (default=4)")
-  val numThreads = 4
+  var numThreads = 4
   @Args4jOption(required = false, name = "-queue_size", usage = "Queue size (default = 10,000)")
-  val qSize = 10000
+  var qSize = 10000
 }
 
 class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
@@ -107,7 +107,9 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
     samReader.close()
     println("Waiting for writers to finish")
     writerThreads.foreach(_.join())
-    println("\n\nFinished! Converted %d reads total.".format(i))
+    System.err.flush()
+    System.out.flush()
+    println("\nFinished! Converted %d reads total.".format(i))
   }
 
   def convert(samRecord: SAMRecord): ADAMRecord = {
