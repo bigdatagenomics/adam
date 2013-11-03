@@ -73,7 +73,7 @@ class FlagStat(protected val args: FlagStatArgs) extends AdamSparkCommand[FlagSt
                |%d + %d with itself and mate mapped
                |%d + %d singletons (%.2f%%:%.2f%%)
                |%d + %d with mate mapped to a different chr
-               |%d + %d with mate mapped to a different chr (mapQ>=5) /
+               |%d + %d with mate mapped to a different chr (mapQ>=5)
              """.stripMargin('|').format(
       passedVendorQuality.total, failedVendorQuality.total,
       passedVendorQuality.duplicates, failedVendorQuality.duplicates,
