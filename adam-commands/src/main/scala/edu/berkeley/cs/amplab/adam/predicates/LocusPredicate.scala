@@ -17,6 +17,7 @@
 package edu.berkeley.cs.amplab.adam.predicates
 
 import parquet.filter.{RecordFilter, UnboundRecordFilter}
+
 import java.lang.Iterable
 import parquet.column.ColumnReader
 import parquet.filter.AndRecordFilter.and
@@ -25,9 +26,9 @@ import parquet.filter.ColumnRecordFilter.column
 
 class LocusPredicate extends UnboundRecordFilter {
   def bind(readers: Iterable[ColumnReader]): RecordFilter = {
-    and(column("readMapped", equalTo(true)),
-      and(column("primaryAlignment", equalTo(true)),
-        and(column("failedVendorQualityChecks", equalTo(false)),
-          column("duplicateRead", equalTo(false))))).bind(readers)
+    and(column(ADAMRecordField.readMapped.toString, equalTo(true)),
+      and(column(ADAMRecordField.primaryAlignment.toString, equalTo(true)),
+        and(column(ADAMRecordField.failedVendorQualityChecks.toString, equalTo(false)),
+          column(ADAMRecordField.duplicateRead.toString, equalTo(false))))).bind(readers)
   }
 }

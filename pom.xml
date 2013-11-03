@@ -13,7 +13,7 @@
         <scala.version>2.9.3</scala.version>
         <avro.version>1.7.4</avro.version>
         <spark.version>0.7.3</spark.version>
-        <parquet.version>1.2.4</parquet.version>
+        <parquet.version>1.2.5</parquet.version>
     </properties>
 
     <modules>

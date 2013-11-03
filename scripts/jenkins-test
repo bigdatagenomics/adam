@@ -34,6 +34,7 @@ echo "Converting read file to pileup format"
 $ADAM reads2ref $READS $PILEUPS
 echo "Reading reads"
 $ADAM print $READS 1>/dev/null 2>/dev/null
+$ADAM flagstat $READS
 rm -rf $ADAM_TMP_DIR
 popd
 

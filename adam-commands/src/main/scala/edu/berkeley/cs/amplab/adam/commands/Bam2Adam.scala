@@ -19,7 +19,6 @@ import edu.berkeley.cs.amplab.adam.util.{Args4j, Args4jBase}
 import org.kohsuke.args4j.{Option => Args4jOption, Argument}
 import net.sf.samtools._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import java.lang.Integer
 import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 import java.io.File
@@ -116,7 +115,7 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
 
     val builder: ADAMRecord.Builder = ADAMRecord.newBuilder
       .setReferenceName(samRecord.getReferenceName)
-      .setReferenceId(samRecord.getMateReferenceIndex)
+      .setReferenceId(samRecord.getReferenceIndex)
       .setReadName(samRecord.getReadName)
       .setSequence(samRecord.getReadString)
       .setCigar(samRecord.getCigarString)
@@ -135,9 +134,9 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
     }
 
     // Position of the mate/next segment
-    val mateReference: Integer = samRecord.getMateReferenceIndex
+    val mateReference: Int = samRecord.getMateReferenceIndex
 
-    if (mateReference.toInt != -1) {
+    if (mateReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
       builder
         .setMateReferenceId(mateReference)
         .setMateReference(samRecord.getMateReferenceName)

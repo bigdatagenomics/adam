@@ -65,6 +65,12 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable {
     MarkDuplicates(rdd)
   }
 
+  // Returns a tuple of (failedQualityMetrics, passedQualityMetrics)
+  def adamFlagStat(): (FlagStatMetrics, FlagStatMetrics) = {
+    FlagStat(rdd)
+  }
+
+
 }
 
 class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable {
