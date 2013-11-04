@@ -5,18 +5,18 @@ A genomics processing engine and specialized file format built using [Apache Avr
 
 # Introduction
 
-Current genomic file formats are loosely defined and not designed for
+Current genomic file formats are not designed for
 distributed processing. ADAM addresses these problems by explicitly defining data
 formats as [Apache Avro](http://avro.apache.org) objects and storing them in 
 [Parquet](http://parquet.io) files using [Apache Spark](http://spark.incubator.apache.org/).
 
 ## Explicitly defined format
 
-For example, the [Sequencing Alignment Map (SAM) and Binary Alignment Map (BAM) 
+The [Sequencing Alignment Map (SAM) and Binary Alignment Map (BAM)
 file specification](http://samtools.sourceforge.net/SAM1.pdf) defines a data format 
 for storing reads from aligners. The specification is well-written but provides
 no tools for developers to implement the format. Developers have to hand-craft 
-source code to encode and decode the records. This error prone and an unneccesary
+source code to encode and decode the records which is error prone and an unneccesary
 hassle.
 
 In contrast, the [ADAM specification for storing reads](adam-format/src/main/resources/avro/adam.avdl) 
