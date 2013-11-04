@@ -8,7 +8,7 @@ A genomics processing engine and specialized file format built using [Apache Avr
 Current genomic file formats are not designed for
 distributed processing. ADAM addresses this by explicitly defining data
 formats as [Apache Avro](http://avro.apache.org) objects and storing them in 
-[Parquet](http://parquet.io) files using [Apache Spark](http://spark.incubator.apache.org/).
+[Parquet](http://parquet.io) files. [Apache Spark](http://spark.incubator.apache.org/).
 
 ## Explicitly defined format
 
@@ -191,9 +191,8 @@ In practice, you'll find that the ADAM `flagstat` command takes orders of magnit
 time than samtools to compute these statistics. For example, on my MacBook Pro the command 
 above took 17 seconds to run while `samtools flagstat NA12878_chr20.bam` took 55 secs.
 On larger files, the difference in speed is even more dramatic. ADAM is faster because
-it's multi-threaded and distributed and uses a columnar storage format with a projected
-schema to only materializes the read flags. In addition, the flags can be read without
-any bit-twiddling.
+it's multi-threaded and distributed and uses a columnar storage format (with a projected
+schema that only materializes the read flags instead of the whole read). 
 
 # Mailing List
 
