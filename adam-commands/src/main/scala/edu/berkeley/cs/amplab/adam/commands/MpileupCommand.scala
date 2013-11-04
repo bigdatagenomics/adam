@@ -19,8 +19,6 @@ package edu.berkeley.cs.amplab.adam.commands
 import edu.berkeley.cs.amplab.adam.util._
 import org.kohsuke.args4j.Argument
 import scala.Some
-import org.apache.hadoop.mapreduce.Job
-import spark.SparkContext
 
 object MpileupCommand extends AdamCommandCompanion {
   val commandName: String = "mpileup"

@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.commands
 
-import edu.berkeley.cs.amplab.adam.util.{Args4j, Args4jBase}
+import edu.berkeley.cs.amplab.adam.util.{ParquetLogger, Args4j, Args4jBase}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import org.kohsuke.args4j.Argument
 import spark.{RDD, SparkContext}
@@ -24,7 +24,7 @@ import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.projections.Projection
 import edu.berkeley.cs.amplab.adam.predicates.ADAMRecordField
-import java.util.logging.{Level, Logger}
+import java.util.logging.Level
 
 object FlagStat extends AdamCommandCompanion {
   val commandName: String = "flagstat"
@@ -43,14 +43,14 @@ class FlagStatArgs extends Args4jBase with SparkArgs with ParquetArgs {
 class FlagStat(protected val args: FlagStatArgs) extends AdamSparkCommand[FlagStatArgs] {
   val companion: AdamCommandCompanion = FlagStat
 
-  val parquetHadoopLogger = Logger.getLogger("parquet.hadoop")
-  parquetHadoopLogger.setLevel(Level.SEVERE)
-
   def run(sc: SparkContext, job: Job): Unit = {
+    // Quiet parquet logging...
+    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val projection = Projection(
       ADAMRecordField.readMapped, ADAMRecordField.mateMapped, ADAMRecordField.readPaired,
       ADAMRecordField.referenceId, ADAMRecordField.mateReferenceId,
+      ADAMRecordField.primaryAlignment,
       ADAMRecordField.duplicateRead, ADAMRecordField.readMapped, ADAMRecordField.mateMapped,
       ADAMRecordField.firstOfPair, ADAMRecordField.secondOfPair,
       ADAMRecordField.properPair, ADAMRecordField.mapq,
@@ -64,7 +64,14 @@ class FlagStat(protected val args: FlagStatArgs) extends AdamSparkCommand[FlagSt
 
     println( """
                |%d + %d in total (QC-passed reads + QC-failed reads)
-               |%d + %d duplicates
+               |%d + %d primary duplicates
+               |%d + %d primary duplicates - both read and mate mapped
+               |%d + %d primary duplicates - only read mapped
+               |%d + %d primary duplicates - cross chromosome
+               |%d + %d secondary duplicates
+               |%d + %d secondary duplicates - both read and mate mapped
+               |%d + %d secondary duplicates - only read mapped
+               |%d + %d secondary duplicates - cross chromosome
                |%d + %d mapped (%.2f%%:%.2f%%)
                |%d + %d paired in sequencing
                |%d + %d read1
@@ -76,7 +83,14 @@ class FlagStat(protected val args: FlagStatArgs) extends AdamSparkCommand[FlagSt
                |%d + %d with mate mapped to a different chr (mapQ>=5)
              """.stripMargin('|').format(
       passedVendorQuality.total, failedVendorQuality.total,
-      passedVendorQuality.duplicates, failedVendorQuality.duplicates,
+      passedVendorQuality.duplicatesPrimary.total, failedVendorQuality.duplicatesPrimary.total,
+      passedVendorQuality.duplicatesPrimary.bothMapped, failedVendorQuality.duplicatesPrimary.bothMapped,
+      passedVendorQuality.duplicatesPrimary.onlyReadMapped, failedVendorQuality.duplicatesPrimary.onlyReadMapped,
+      passedVendorQuality.duplicatesPrimary.crossChromosome, failedVendorQuality.duplicatesPrimary.crossChromosome,
+      passedVendorQuality.duplicatesSecondary.total, failedVendorQuality.duplicatesSecondary.total,
+      passedVendorQuality.duplicatesSecondary.bothMapped, failedVendorQuality.duplicatesSecondary.bothMapped,
+      passedVendorQuality.duplicatesSecondary.onlyReadMapped, failedVendorQuality.duplicatesSecondary.onlyReadMapped,
+      passedVendorQuality.duplicatesSecondary.crossChromosome, failedVendorQuality.duplicatesSecondary.crossChromosome,
       passedVendorQuality.mapped, failedVendorQuality.mapped,
       percent(passedVendorQuality.mapped, passedVendorQuality.total),
       percent(failedVendorQuality.mapped, failedVendorQuality.total),

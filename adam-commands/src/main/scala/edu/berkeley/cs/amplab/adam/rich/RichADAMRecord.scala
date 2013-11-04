@@ -18,49 +18,33 @@ package edu.berkeley.cs.amplab.adam.rich
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
 import scala.collection.JavaConversions._
-import edu.berkeley.cs.amplab.adam.models.{MatedReferencePosition, ReferencePosition}
 
-object RichAdamRecord {
+object RichADAMRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
   val ILLUMINA_READNAME_REGEX = "[a-zA-Z0-9]+:[0-9]:([0-9]+):([0-9]+):([0-9]+).*".r
 
   def apply(record: ADAMRecord) = {
-    new RichAdamRecord(record)
+    new RichADAMRecord(record)
   }
 
-  implicit def recordToRichRecord(record: ADAMRecord): RichAdamRecord = new RichAdamRecord(record)
+  implicit def recordToRichRecord(record: ADAMRecord): RichADAMRecord = new RichADAMRecord(record)
 }
 
 class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 
-class RichAdamRecord(record: ADAMRecord) {
+class RichADAMRecord(record: ADAMRecord) {
 
-  // NOTE: A first and second read of a pair MUST create the same mated reference position
-  lazy val matedReferencePosition: MatedReferencePosition = {
-    val matePos = record.getMateAlignmentStart
-    val mateRef = record.getMateReferenceId
-    if (record.getMateMapped) {
-      if (record.getFirstOfPair) {
-        new MatedReferencePosition(ReferencePosition(record), Some(ReferencePosition(mateRef, matePos)))
-      } else if (record.getSecondOfPair) {
-        new MatedReferencePosition(ReferencePosition(mateRef, matePos), Some(ReferencePosition(record)))
-      } else {
-        throw new IllegalStateException("Mated read that is not the first OR second read of pair")
-      }
-    } else {
-      new MatedReferencePosition(ReferencePosition(record), None)
-    }
+  lazy val phredQuals = {
+    record.getQual.toString.map(p => p - 33)
   }
 
-  // Calculates the sum of the phred scores that are over a specified cutoff (default = 15)
-  lazy val score = record.getQual.toString.filter(_ >= 15).foldLeft(0) {
-    _ + _
-  }
+  // Calculates the sum of the phred scores that are greater than or equal to 15
+  lazy val score = phredQuals.filter(15 <=).sum
 
   // Parses the readname to Illumina optics information
   lazy val illuminaOptics: Option[IlluminaOptics] = {
     try {
-      val RichAdamRecord.ILLUMINA_READNAME_REGEX(tile, x, y) = record.getReadName
+      val RichADAMRecord.ILLUMINA_READNAME_REGEX(tile, x, y) = record.getReadName
       Some(new IlluminaOptics(tile.toInt, x.toInt, y.toInt))
     } catch {
       case e: MatchError => None
@@ -68,7 +52,7 @@ class RichAdamRecord(record: ADAMRecord) {
   }
 
   lazy val samtoolsCigar: Cigar = {
-    RichAdamRecord.CIGAR_CODEC.decode(record.getCigar.toString)
+    RichADAMRecord.CIGAR_CODEC.decode(record.getCigar.toString)
   }
 
   private def isClipped(el: CigarElement) = {
@@ -83,7 +67,7 @@ class RichAdamRecord(record: ADAMRecord) {
         .filter(p => p.getOperator.consumesReferenceBases())
         .foldLeft(record.getStart) {
         (pos, cigarEl) => pos + cigarEl.getLength
-      }.toLong)
+      })
     } else {
       None
     }
@@ -92,10 +76,9 @@ class RichAdamRecord(record: ADAMRecord) {
   // Returns the position of the unclipped end if the read is mapped, None otherwise
   lazy val unclippedEnd: Option[Long] = {
     if (record.getReadMapped) {
-      Some(samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped)
-        .foldLeft(end.get) {
+      Some(samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(end.get) {
         (pos, cigarEl) => pos + cigarEl.getLength
-      }.toLong)
+      })
     } else {
       None
     }
@@ -104,12 +87,21 @@ class RichAdamRecord(record: ADAMRecord) {
   // Returns the position of the unclipped start if the read is mapped, None otherwise.
   lazy val unclippedStart: Option[Long] = {
     if (record.getReadMapped) {
-      Some(samtoolsCigar.getCigarElements.takeWhile(isClipped)
-        .foldLeft(record.getStart) {
+      Some(samtoolsCigar.getCigarElements.takeWhile(isClipped).foldLeft(record.getStart) {
         (pos, cigarEl) => pos - cigarEl.getLength
-      }.toLong)
+      })
     } else {
       None
     }
   }
+
+  // Return the 5 prime position.
+  def fivePrimePosition: Option[Long] = {
+    if (record.getReadMapped) {
+      if (record.getReadNegativeStrand) unclippedEnd else unclippedStart
+    } else {
+      None
+    }
+  }
+
 }

@@ -24,7 +24,7 @@ import org.apache.hadoop.mapreduce.Job
 import parquet.filter.UnboundRecordFilter
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
-import edu.berkeley.cs.amplab.adam.rich.RichAdamRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 
 object AdamContext {
   // Add ADAM Spark context methods
@@ -40,7 +40,7 @@ object AdamContext {
   implicit def rddToAdamRDD[T <% SpecificRecord : Manifest](rdd: RDD[T]) = new AdamRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
-  implicit def recordToRichRecord(record: ADAMRecord): RichAdamRecord = new RichAdamRecord(record)
+  implicit def recordToRichRecord(record: ADAMRecord): RichADAMRecord = new RichADAMRecord(record)
 }
 
 class AdamContext(sc: SparkContext) extends Serializable with Logging {

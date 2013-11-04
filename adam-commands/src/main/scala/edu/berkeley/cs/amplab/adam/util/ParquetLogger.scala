@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.berkeley.cs.amplab.adam.util
 
-package edu.berkeley.cs.amplab.adam.rdd
+import java.util.logging.{Level, Logger}
 
-import org.scalatest.FunSuite
+object ParquetLogger {
 
-class MarkDuplicatesSuite extends FunSuite {
-
-    test("Empty Sequence") {
-    }
+  val hadoopLoggerLevel = (level: Level) => {
+    val parquetHadoopLogger = Logger.getLogger("parquet.hadoop")
+    parquetHadoopLogger.setLevel(level)
+  }
 
 }

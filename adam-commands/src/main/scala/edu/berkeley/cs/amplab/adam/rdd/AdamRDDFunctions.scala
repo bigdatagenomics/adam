@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import spark.RDD
+import spark.{Logging, RDD}
 import parquet.hadoop.metadata.CompressionCodecName
 import org.apache.hadoop.mapreduce.Job
 import parquet.hadoop.ParquetOutputFormat
@@ -25,10 +25,11 @@ import spark.SparkContext._
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.commands.ParquetArgs
+import edu.berkeley.cs.amplab.adam.models.{SingleReadBucket, ReferencePosition}
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 
-  def adamSave(filePath: String, blockSize: Int = 512 * 1024 * 1024,
+  def adamSave(filePath: String, blockSize: Int = 128 * 1024 * 1024,
                pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                disableDictionaryEncoding: Boolean = false): RDD[T] = {
     val job = new Job(rdd.context.hadoopConfiguration)
@@ -55,10 +56,12 @@ class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Seri
 
 }
 
-class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable {
+class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Logging {
+  initLogging()
 
   def adamSortReadsByReferencePosition(): RDD[ADAMRecord] = {
-    SortReads(rdd)
+    log.info("Sorting reads by reference position")
+    rdd.groupBy(ReferencePosition(_)).sortByKey().flatMap(_._2)
   }
 
   def adamMarkDuplicates(): RDD[ADAMRecord] = {
@@ -70,7 +73,13 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable {
     FlagStat(rdd)
   }
 
-
+  /**
+   * Groups all reads by record group and read name
+   * @return SingleReadBuckets with primary, secondary and unmapped reads
+   */
+  def adamSingleReadBuckets(): RDD[SingleReadBucket] = {
+    SingleReadBucket(rdd)
+  }
 }
 
 class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable {

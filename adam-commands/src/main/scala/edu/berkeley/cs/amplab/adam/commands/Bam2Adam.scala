@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.commands
 
-import edu.berkeley.cs.amplab.adam.util.{Args4j, Args4jBase}
+import edu.berkeley.cs.amplab.adam.util.{ParquetLogger, Args4j, Args4jBase}
 import org.kohsuke.args4j.{Option => Args4jOption, Argument}
 import net.sf.samtools._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
@@ -26,6 +26,7 @@ import parquet.avro.AvroParquetWriter
 import org.apache.hadoop.fs.Path
 import java.util.concurrent._
 import scala.Some
+import java.util.logging.Level
 
 object Bam2Adam extends AdamCommandCompanion {
   val commandName: String = "bam2adam"
@@ -56,6 +57,9 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
   val writerThreads = (0 until args.numThreads).foldLeft(List[Thread]()) {
     (list, threadNum) => {
       val writerThread = new Thread(new Runnable {
+
+        // Quiet parquet...
+        ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
         val parquetWriter = new AvroParquetWriter[ADAMRecord](
           new Path(args.outputPath + "/part%d".format(threadNum)),

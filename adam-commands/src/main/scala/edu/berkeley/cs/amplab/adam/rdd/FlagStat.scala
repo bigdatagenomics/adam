@@ -19,18 +19,52 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import spark.RDD
 
 object FlagStatMetrics {
-  val emptyFailedQuality = new FlagStatMetrics(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, true)
-  val emptyPassedQuality = new FlagStatMetrics(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false)
+  val emptyFailedQuality = new FlagStatMetrics(0, DuplicateMetrics.empty, DuplicateMetrics.empty, 0, 0, 0, 0, 0, 0, 0, 0, 0, true)
+  val emptyPassedQuality = new FlagStatMetrics(0, DuplicateMetrics.empty, DuplicateMetrics.empty, 0, 0, 0, 0, 0, 0, 0, 0, 0, false)
 }
 
-case class FlagStatMetrics(total: Long, duplicates: Long, mapped: Long, pairedInSequencing: Long,
+object DuplicateMetrics {
+  val empty = new DuplicateMetrics(0, 0, 0, 0)
+
+  def apply(record: ADAMRecord): (DuplicateMetrics, DuplicateMetrics) = {
+    import FlagStat.b2i
+
+    def isPrimary(record: ADAMRecord): Boolean = {
+      record.getDuplicateRead && record.getPrimaryAlignment
+    }
+    def isSecondary(record: ADAMRecord): Boolean = {
+      record.getDuplicateRead && !record.getPrimaryAlignment
+    }
+
+    def duplicateMetrics(f: (ADAMRecord) => Boolean) = {
+      new DuplicateMetrics(b2i(f(record)),
+        b2i(f(record) && record.getReadMapped && record.getMateMapped),
+        b2i(f(record) && record.getReadMapped && !record.getMateMapped),
+        b2i(f(record) && (record.getReferenceId != record.getMateReferenceId)))
+    }
+    (duplicateMetrics(isPrimary), duplicateMetrics(isSecondary))
+  }
+}
+
+case class DuplicateMetrics(total: Long, bothMapped: Long, onlyReadMapped: Long, crossChromosome: Long) {
+  def +(that: DuplicateMetrics): DuplicateMetrics = {
+    new DuplicateMetrics(total + that.total,
+      bothMapped + that.bothMapped,
+      onlyReadMapped + that.onlyReadMapped,
+      crossChromosome + that.crossChromosome)
+  }
+}
+
+case class FlagStatMetrics(total: Long, duplicatesPrimary: DuplicateMetrics, duplicatesSecondary: DuplicateMetrics,
+                           mapped: Long, pairedInSequencing: Long,
                            read1: Long, read2: Long, properlyPaired: Long, withSelfAndMateMapped: Long,
                            singleton: Long, withMateMappedToDiffChromosome: Long,
                            withMateMappedToDiffChromosomeMapQ5: Long, failedQuality: Boolean) {
   def +(that: FlagStatMetrics): FlagStatMetrics = {
     assert(failedQuality == that.failedQuality, "Can't reduce passedVendorQuality with different failedQuality values")
     new FlagStatMetrics(total + that.total,
-      duplicates + that.duplicates,
+      duplicatesPrimary + that.duplicatesPrimary,
+      duplicatesSecondary + that.duplicatesSecondary,
       mapped + that.mapped,
       pairedInSequencing + that.pairedInSequencing,
       read1 + that.read1,
@@ -46,15 +80,17 @@ case class FlagStatMetrics(total: Long, duplicates: Long, mapped: Long, pairedIn
 
 object FlagStat {
 
+  def b2i(boolean: Boolean) = if (boolean) 1 else 0
+
   def apply(rdd: RDD[ADAMRecord]) = {
     rdd.map {
       p =>
         val mateMappedToDiffChromosome = p.getReadPaired && p.getReadMapped && p.getMateMapped && (p.getReferenceId != p.getMateReferenceId)
-        def b2i(boolean: Boolean) = if (boolean) 1 else 0
+        val (primaryDuplicates, secondaryDuplicates) = DuplicateMetrics(p)
         new FlagStatMetrics(1,
-          b2i(p.getDuplicateRead),
+          primaryDuplicates, secondaryDuplicates,
           b2i(p.getReadMapped),
-          b2i(p.getReadPaired && p.getReadPaired),
+          b2i(p.getReadPaired),
           b2i(p.getReadPaired && p.getFirstOfPair),
           b2i(p.getReadPaired && p.getSecondOfPair),
           b2i(p.getReadPaired && p.getProperPair),

@@ -17,17 +17,17 @@ package edu.berkeley.cs.amplab.adam.rich
 
 import org.scalatest.FunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import RichAdamRecord._
+import RichADAMRecord._
 
-class RichAdamRecordSuite extends FunSuite {
+class RichADAMRecordSuite extends FunSuite {
 
   test("Unclipped Start") {
     val recordWithoutClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(42).build()
     val recordWithClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("2S8M").setStart(42).build()
     val recordWithHardClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("3H2S5M4S").setStart(42).build()
-    assert(recordWithoutClipping.unclippedStart.get == 42L)
-    assert(recordWithClipping.unclippedStart.get == 40L)
-    assert(recordWithHardClipping.unclippedStart.get == 37L)
+    assert(recordWithoutClipping.unclippedStart == 42L)
+    assert(recordWithClipping.unclippedStart == 40L)
+    assert(recordWithHardClipping.unclippedStart == 37L)
   }
 
   test("Unclipped End") {
@@ -35,10 +35,16 @@ class RichAdamRecordSuite extends FunSuite {
     val recordWithoutClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10).build()
     val recordWithClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("8M2S").setStart(10).build()
     val recordWithHardClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("6M2S2H").setStart(10).build()
-    assert(unmappedRead.unclippedEnd == None)
-    assert(recordWithoutClipping.unclippedEnd.get == 20L)
-    assert(recordWithClipping.unclippedEnd.get == 20L)
-    assert(recordWithHardClipping.unclippedEnd.get == 20L)
+    try {
+      unmappedRead.unclippedEnd
+      assert(false, "Expected illegal state exception")
+    } catch {
+      case e: IllegalStateException =>
+    }
+
+    assert(recordWithoutClipping.unclippedEnd == 20L)
+    assert(recordWithClipping.unclippedEnd == 20L)
+    assert(recordWithHardClipping.unclippedEnd == 20L)
   }
 
   test("Illumina Optics") {
