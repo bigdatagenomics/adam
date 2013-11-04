@@ -6,7 +6,7 @@ A genomics processing engine and specialized file format built using [Apache Avr
 # Introduction
 
 Current genomic file formats are not designed for
-distributed processing. ADAM addresses these problems by explicitly defining data
+distributed processing. ADAM addresses this by explicitly defining data
 formats as [Apache Avro](http://avro.apache.org) objects and storing them in 
 [Parquet](http://parquet.io) files using [Apache Spark](http://spark.incubator.apache.org/).
 
