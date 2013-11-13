@@ -36,10 +36,10 @@ class MpileupArgs extends Args4jBase with SparkArgs {
   var file: String = _
 }
 
-class MpileupCommand(protected val args: MpileupArgs) extends AdamSparkCommand[MpileupArgs] {
+class MpileupCommand(protected val args: MpileupArgs) extends AdamCommand with SparkCommand {
   val companion = MpileupCommand
 
-  def run(sc: SparkContext, job: Job) {
+  def run() {
     // If run locally, only use a single thread.
     if (args.spark_master.startsWith("local")) {
       args.spark_master = "local"
