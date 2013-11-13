@@ -4,11 +4,13 @@ protocol ADAM {
 record ADAMRecord {
     // Reference name
     union { null, string } referenceName = null;
+
     // Reference id
     union { null, int } referenceId = null;
+
     // 0-based reference position start
     union { null, long } start = null;
-    // 0-based reference position end
+
     union { null, int } mapq = null;
     union { null, string } readName = null;
     union { null, string } sequence = null;
@@ -79,6 +81,10 @@ record ADAMPileup {
     union { null, int } numSoftClipped = null;
     union { null, int } numReverseStrand = null;
     union { null, int } countAtPosition = null;
+
+    union { null, string } readName = null;
+    union { null, long } readStart = null;
+    union { null, long } readEnd = null;
 
     union { null, string } recordGroupSequencingCenter = null;
     union { null, string } recordGroupDescription = null;

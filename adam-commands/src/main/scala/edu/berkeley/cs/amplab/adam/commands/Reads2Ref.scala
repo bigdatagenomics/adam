@@ -24,8 +24,8 @@ import scala.collection.JavaConversions._
 import org.kohsuke.args4j.{Option => option, Argument}
 import scala.collection.immutable.StringOps
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.rich.RichAdamRecord
 
 object Reads2Ref extends AdamCommandCompanion {
   val commandName: String = "reads2ref"
@@ -73,11 +73,21 @@ class ReadProcessor extends Serializable {
     def populatePileupFromReference(record: ADAMRecord, referencePos: Long, isReverseStrand: Boolean, readPos: Int): ADAMPileup.Builder = {
 
       var reverseStrandCount = 0
-
+      
       if (isReverseStrand) {
         reverseStrandCount = 1
       }
-
+      
+      // check read mapping locations
+      assert (record.getStart != null, "Read is mapped but has a null start position.")
+      
+      val end: Long = record.end match {
+        case Some(o) => o.asInstanceOf[Long]
+        case None => -1L
+      }
+      
+      assert (end != -1L, "Read is mapped but has a null end position.")
+      
       ADAMPileup.newBuilder()
         .setReferenceName(record.getReferenceName)
         .setReferenceId(record.getReferenceId)
@@ -96,7 +106,11 @@ class ReadProcessor extends Serializable {
         .setSangerQuality(sangerScoreToInt(record.getQual.toString, readPos))
         .setNumReverseStrand(reverseStrandCount)
         .setNumSoftClipped(0)
+        .setReadName(record.getReadName)
+        .setReadStart(record.getStart)
+        .setReadEnd(end)
         .setCountAtPosition(1)
+      
     }
 
     var referencePos = record.getStart
@@ -163,7 +177,8 @@ class ReadProcessor extends Serializable {
             }
             val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
               .setReferenceBase(Base.valueOf(deletedBase.get.toString))
-              .setReadBase(Base.N)
+              .setRangeOffset(i)
+              .setRangeLength(cigarElement.getLength)
               .build()
 
             pileupList ::= pileup
@@ -215,7 +230,7 @@ class Reads2Ref(protected val args: Reads2RefArgs) extends AdamSparkCommand[Read
     val reads: RDD[ADAMRecord] = sc.adamLoad(args.readInput, Some(classOf[LocusPredicate]))
 
     val readProcessor = new ReadProcessor
-    val pileups: RDD[ADAMPileup] = reads.flatMap {
+    val pileups: RDD[ADAMPileup] = reads.filter(_.getReadMapped).flatMap {
       readProcessor.readToPileups
     }
 
