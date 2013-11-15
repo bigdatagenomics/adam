@@ -50,6 +50,8 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var dbsnpSitesFile: String = null
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
+  @Args4jOption(required = false, name = "-realignIndels", usage = "Locally realign indels present in reads.")
+  var locallyRealign: Boolean = false
 }
 
 class Transform(protected val args: TransformArgs) extends AdamSparkCommand[TransformArgs] with Logging {
@@ -77,6 +79,11 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
       log.info("Recalibrating base qualities")
       val dbSNP = loadSnpTable(sc)
       adamRecords = adamRecords.adamBQSR(dbSNP)
+    }
+
+    if (args.locallyRealign) {
+      log.info("Locally realigning indels.")
+      adamRecords = adamRecords.adamRealignIndels()
     }
 
     // NOTE: For now, sorting needs to be the last transform

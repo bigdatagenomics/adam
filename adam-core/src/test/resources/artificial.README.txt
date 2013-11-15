@@ -1,0 +1,26 @@
+
+Description
+
+artificial.fa and artificial.sam are hand crafted. The idea is that
+there are two candiate indel contensus locations (deletions) but
+the reads support one strictly more than the other one.
+
+Relevant commands:
+
+After changing the sam do (to fix the MD tags):
+
+samtools view -bS artificial.sam | samtools calmd - /home/andre/biotools/artificial.fa | samtools view -bS - > artificial.bam
+
+Observe pileup via:
+
+samtools mpileup -BIf artificial.fa artificial.bam | less
+
+For comparison with GATK:
+
+a) (only if new reads were added use Picard to add missing readgroup data):
+java -jar AddOrReplaceReadGroups.jar I= artificial.bam O= artificial.fixed.bam SORT_ORDER=coordinate RGID="read_group_id" RGLB="library" RGPL="illumina" RGPU="platform_unit" RGSM="sequencing_center" CREATE_INDEX=True;
+
+b) java -jar GenomeAnalysisTK.jar -T RealignerTargetCreator -R artificial.fa -I artificial.fixed.bam -o target.intervals 
+
+c) java -jar /home/andre/biotools/gatk/GenomeAnalysisTK.jar -T IndelRealigner -R /home/andre/biotools/artificial.fa -I artificial.fixed.bam -o artificial.realigned.bam -targetIntervals target.intervals
+
