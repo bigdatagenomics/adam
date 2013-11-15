@@ -29,6 +29,7 @@ import org.apache.hadoop.io.LongWritable
 import edu.berkeley.cs.amplab.adam.commands.SAMRecordConverter
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
+import scala.collection.JavaConversions._
 
 object AdamContext {
   // Add ADAM Spark context methods
@@ -45,6 +46,20 @@ object AdamContext {
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: ADAMRecord): RichADAMRecord = new RichADAMRecord(record)
+
+  // implicit java to scala type conversions
+  implicit def listToJavaList[A](list: List[A]): java.util.List[A] = seqAsJavaList(list)
+
+  implicit def javaListToList[A](list: java.util.List[A]): List[A] = asScalaBuffer(list).toList
+
+  implicit def intListToJavaIntegerList(list: List[Int]): java.util.List[java.lang.Integer] = {
+    seqAsJavaList(list.map(i => i: java.lang.Integer))
+  }
+
+  implicit def charSequenceToString(cs: CharSequence): String = cs.toString
+
+  implicit def charSequenceToList(cs: CharSequence): List[Char] = cs.toCharArray.toList
+
 }
 
 class AdamContext(sc: SparkContext) extends Serializable with Logging {

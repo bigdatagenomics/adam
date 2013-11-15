@@ -105,7 +105,7 @@ class RichADAMRecord(record: ADAMRecord) {
   }
 
   lazy val mdEvent: Option[MdTag] = if (record.getMismatchingPositions != null) {
-    Some(MdTag(record.getMismatchingPositions, record.getStart))
+    Some(MdTag(record.getMismatchingPositions.toString, record.getStart))
   } else {
     None
   }

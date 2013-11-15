@@ -17,7 +17,6 @@ package edu.berkeley.cs.amplab.adam.commands
 
 import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
-import scala.collection.JavaConversions._
 import org.kohsuke.args4j.{Option => option, Argument}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
