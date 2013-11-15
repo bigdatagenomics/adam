@@ -34,8 +34,6 @@ object MdTag {
   def apply(mdTag: String): MdTag = {
     apply(mdTag, 0L)
   }
-
-  def apply(mdTag: CharSequence, start: Long): MdTag = apply(mdTag.asInstanceOf[String], start)
 }
 
 class MdTag(mdTagInput: String, referenceStart: Long) {

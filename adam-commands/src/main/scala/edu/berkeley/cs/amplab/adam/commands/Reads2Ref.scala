@@ -17,15 +17,15 @@ package edu.berkeley.cs.amplab.adam.commands
 
 import edu.berkeley.cs.amplab.adam.util._
 import net.sf.samtools.{CigarOperator, TextCigarCodec}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
-import scala.collection.JavaConversions._
 import org.kohsuke.args4j.{Option => option, Argument}
 import scala.collection.immutable.StringOps
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
-import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 
 object Reads2Ref extends AdamCommandCompanion {
   val commandName: String = "reads2ref"
@@ -118,7 +118,7 @@ class ReadProcessor extends Serializable {
     var readPos = 0
 
     val cigar = Reads2Ref.CIGAR_CODEC.decode(record.getCigar.toString)
-    val mdTag = MdTag(record.getMismatchingPositions.toString, referencePos)
+    val mdTag = MdTag(record.getMismatchingPositions, referencePos)
 
     var pileupList = List[ADAMPileup]()
 
@@ -129,7 +129,7 @@ class ReadProcessor extends Serializable {
         case CigarOperator.I =>
           var insertPos = 0
 
-          for (b <- new StringOps(record.getSequence.toString.substring(readPos, readPos + cigarElement.getLength - 1))) {
+          for (b <- new StringOps(record.getSequence.substring(readPos, readPos + cigarElement.getLength - 1))) {
             val insertBase = Base.valueOf(b.toString)
 
             val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
