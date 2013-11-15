@@ -25,7 +25,7 @@ import org.kohsuke.args4j.{Option => option, Argument}
 import scala.collection.immutable.StringOps
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
-import edu.berkeley.cs.amplab.adam.rich.RichAdamRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 
 object Reads2Ref extends AdamCommandCompanion {
   val commandName: String = "reads2ref"
