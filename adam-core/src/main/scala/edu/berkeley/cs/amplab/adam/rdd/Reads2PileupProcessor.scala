@@ -103,7 +103,7 @@ private[rdd] class Reads2PileupProcessor extends Serializable with Logging {
         case CigarOperator.I =>
           var insertPos = 0
 
-          for (b <- new StringOps(record.getSequence.toString.substring(readPos, readPos + cigarElement.getLength - 1))) {
+          for (b <- new StringOps(record.getSequence.toString.substring(readPos, readPos + cigarElement.getLength))) {
             val insertBase = Base.valueOf(b.toString)
 
             val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
