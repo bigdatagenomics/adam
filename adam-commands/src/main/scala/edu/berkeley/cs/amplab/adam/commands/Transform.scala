@@ -32,9 +32,9 @@ object Transform extends AdamCommandCompanion {
 }
 
 class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
-  @Argument(required = true, metaVar = "INPUT", usage = "The ADAM file to apply the transforms to", index = 0)
+  @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to apply the transforms to", index = 0)
   var inputPath: String = null
-  @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data", index = 1)
+  @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
   var outputPath: String = null
   @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
   val sortReads: Boolean = false

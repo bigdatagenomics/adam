@@ -54,7 +54,7 @@ class MdTagSuite extends FunSuite {
     for (i <- 0 until 100) {
       assert(md2.isMatch(i))
     }
-    assert(! md2.isMatch(-1))
+    assert(!md2.isMatch(-1))
 
     val md3 = MdTag("100C2")
     for (i <- 0 until 100) {

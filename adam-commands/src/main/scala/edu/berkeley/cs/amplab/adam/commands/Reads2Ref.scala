@@ -25,7 +25,6 @@ import org.kohsuke.args4j.{Option => option, Argument}
 import scala.collection.immutable.StringOps
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
-import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 
 object Reads2Ref extends AdamCommandCompanion {
   val commandName: String = "reads2ref"
@@ -73,21 +72,21 @@ class ReadProcessor extends Serializable {
     def populatePileupFromReference(record: ADAMRecord, referencePos: Long, isReverseStrand: Boolean, readPos: Int): ADAMPileup.Builder = {
 
       var reverseStrandCount = 0
-      
+
       if (isReverseStrand) {
         reverseStrandCount = 1
       }
-      
+
       // check read mapping locations
-      assert (record.getStart != null, "Read is mapped but has a null start position.")
-      
+      assert(record.getStart != null, "Read is mapped but has a null start position.")
+
       val end: Long = record.end match {
         case Some(o) => o.asInstanceOf[Long]
         case None => -1L
       }
-      
-      assert (end != -1L, "Read is mapped but has a null end position.")
-      
+
+      assert(end != -1L, "Read is mapped but has a null end position.")
+
       ADAMPileup.newBuilder()
         .setReferenceName(record.getReferenceName)
         .setReferenceId(record.getReferenceId)
@@ -110,7 +109,7 @@ class ReadProcessor extends Serializable {
         .setReadStart(record.getStart)
         .setReadEnd(end)
         .setCountAtPosition(1)
-      
+
     }
 
     var referencePos = record.getStart

@@ -25,6 +25,9 @@ import parquet.filter.UnboundRecordFilter
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat}
+import org.apache.hadoop.io.LongWritable
+import edu.berkeley.cs.amplab.adam.commands.SAMRecordConverter
 
 object AdamContext {
   // Add ADAM Spark context methods
@@ -45,15 +48,16 @@ object AdamContext {
 
 class AdamContext(sc: SparkContext) extends Serializable with Logging {
 
-  /**
-   * This method will create a new RDD.
-   * @param filePath The path to the input data
-   * @param predicate An optional pushdown predicate to use when reading the data
-   * @param projection An option projection schema to use when reading the data
-   * @tparam T The type of records to return
-   * @return An RDD with records of the specified type
-   */
-  def adamLoad[T <% SpecificRecord : Manifest, U <: UnboundRecordFilter]
+  private def adamBamLoad(filePath: String): RDD[ADAMRecord] = {
+    log.info("Reading legacy BAM file format %s to create RDD".format(filePath))
+    val job = new Job(sc.hadoopConfiguration)
+    val records = sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],
+      classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+    val samRecordConverter = new SAMRecordConverter
+    records.map(p => samRecordConverter.convert(p._2.get))
+  }
+
+  private def adamParquetLoad[T <% SpecificRecord : Manifest, U <: UnboundRecordFilter]
   (filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
     log.info("Reading the ADAM file at %s to create RDD".format(filePath))
     val job = new Job(sc.hadoopConfiguration)
@@ -74,6 +78,29 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
       records.filter(p => p != null.asInstanceOf[T])
     } else {
       records
+    }
+  }
+
+  /**
+   * This method will create a new RDD.
+   * @param filePath The path to the input data
+   * @param predicate An optional pushdown predicate to use when reading the data
+   * @param projection An option projection schema to use when reading the data
+   * @tparam T The type of records to return
+   * @return An RDD with records of the specified type
+   */
+  def adamLoad[T <% SpecificRecord : Manifest, U <: UnboundRecordFilter]
+  (filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
+    if (filePath.endsWith(".bam") || filePath.endsWith(".sam") && manifest[T].erasure.isInstanceOf[ADAMRecord]) {
+      if (predicate.isDefined) {
+        log.warn("Predicate is ignored when loading a BAM file")
+      }
+      if (projection.isDefined) {
+        log.warn("Project is ignored when loading a BAM file")
+      }
+      adamBamLoad(filePath).asInstanceOf[RDD[T]]
+    } else {
+      adamParquetLoad(filePath, predicate, projection)
     }
   }
 }

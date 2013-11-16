@@ -121,8 +121,8 @@
 
     <repositories>
         <repository>
-            <id>massie-mvn</id>
-            <url>http://cs.berkeley.edu/~massie/maven/</url>
+            <id>hadoop-bam</id>
+            <url>http://hadoop-bam.sourceforge.net/maven/</url>
         </repository>
     </repositories>
 
@@ -144,9 +144,19 @@
                 <version>${parquet.version}</version>
             </dependency>
             <dependency>
-                <groupId>net.sf</groupId>
-                <artifactId>samtools</artifactId>
-                <version>1.96-1534</version>
+                <groupId>fi.tkk.ics.hadoop.bam</groupId>
+                <artifactId>hadoop-bam</artifactId>
+                <version>6.1-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>picard</groupId>
+                <artifactId>picard</artifactId>
+                <version>1.93</version>
+            </dependency>
+            <dependency>
+                <groupId>samtools</groupId>
+                 <artifactId>samtools</artifactId>
+                <version>1.93</version>
             </dependency>
             <dependency>
                 <groupId>args4j</groupId>
