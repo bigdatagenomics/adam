@@ -96,7 +96,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
         log.warn("Predicate is ignored when loading a BAM file")
       }
       if (projection.isDefined) {
-        log.warn("Project is ignored when loading a BAM file")
+        log.warn("Projection is ignored when loading a BAM file")
       }
       adamBamLoad(filePath).asInstanceOf[RDD[T]]
     } else {
