@@ -27,6 +27,7 @@ import edu.berkeley.cs.amplab.adam.models.{SingleReadBucket, ReferencePosition}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
+import java.io.File
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -75,6 +76,21 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 
   def adamMarkDuplicates(): RDD[ADAMRecord] = {
     MarkDuplicates(rdd)
+  }
+
+  def adamBQSR(dbSNP: File): RDD[ADAMRecord] = {
+    val dbsnpMap = scala.io.Source.fromFile(dbSNP).getLines().map(posLine => {
+      val split = posLine.split("\t")
+      val contig = split(0)
+      val pos = split(1).toInt
+      (contig, pos)
+    }).foldLeft(Map[String, Set[Int]]())((dbMap, pair) => {
+      dbMap + (pair._1 -> (dbMap.getOrElse(pair._1, Set[Int]()) + pair._2))
+    })
+
+    val broadcastDbSNP = rdd.context.broadcast(dbsnpMap)
+
+    RecalibrateBaseQualities(rdd, broadcastDbSNP)
   }
 
   // Returns a tuple of (failedQualityMetrics, passedQualityMetrics)

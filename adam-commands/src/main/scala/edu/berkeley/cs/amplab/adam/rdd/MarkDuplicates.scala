@@ -48,8 +48,8 @@ private[rdd] class MarkDuplicates extends Serializable with Logging {
     }
 
     def scoreAndMarkReads(buckets: Seq[SingleReadBucket]): Seq[SingleReadBucket] = {
-      val scoredBuckets = buckets.map(p => (p.primaryMapped.map(_.score).sum, p))
-      val sortedBuckets = scoredBuckets.sortBy(_._1)(Ordering[Int].reverse)
+      val scoredBuckets = buckets.map(p => (p.primaryMapped.map(_.markDuplicatesScore).sum, p))
+      val sortedBuckets = scoredBuckets.sortBy(_._1)(Ordering[Byte].reverse)
       for (((score, bucket), i) <- sortedBuckets.zipWithIndex) {
         for (read <- bucket.primaryMapped) {
           read.setDuplicateRead(i != 0)

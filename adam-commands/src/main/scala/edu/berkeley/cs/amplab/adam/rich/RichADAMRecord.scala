@@ -18,6 +18,7 @@ package edu.berkeley.cs.amplab.adam.rich
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
 import scala.collection.JavaConversions._
+import edu.berkeley.cs.amplab.adam.util.MdTag
 
 object RichADAMRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
@@ -34,12 +35,11 @@ class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 
 class RichADAMRecord(record: ADAMRecord) {
 
-  lazy val phredQuals = {
-    record.getQual.toString.map(p => p - 33)
-  }
+  // Returns the quality scores as a list of bytes
+  lazy val qualityScores: Array[Byte] = record.getQual.toString.toCharArray.map(q => (q - 33).toByte)
 
   // Calculates the sum of the phred scores that are greater than or equal to 15
-  lazy val score = phredQuals.filter(15 <=).sum
+  lazy val markDuplicatesScore = qualityScores.filter(15 <=).sum
 
   // Parses the readname to Illumina optics information
   lazy val illuminaOptics: Option[IlluminaOptics] = {
@@ -104,4 +104,73 @@ class RichADAMRecord(record: ADAMRecord) {
     }
   }
 
+  lazy val mdEvent: Option[MdTag] = if (record.getMismatchingPositions != null) {
+    Some(MdTag(record.getMismatchingPositions, record.getStart))
+  } else {
+    None
+  }
+
+  def overlapsPosition(pos: Long): Option[Boolean] = {
+    if (record.getReadMapped) {
+      Some(record.getStart <= pos && end.get > pos)
+    } else {
+      None
+    }
+  }
+
+  def isMismatchBase(pos: Long): Option[Boolean] = {
+    if (mdEvent.isEmpty || !overlapsPosition(pos).get)
+      None
+    else
+      Some(!mdEvent.get.isMatch(pos))
+  }
+
+  def isMismatchBase(offset: Int): Option[Boolean] = {
+    // careful about offsets that are within an insertion!
+    if (referencePositions.isEmpty) {
+      None
+    } else {
+      val pos = referencePositions(offset)
+      if (pos.isEmpty)
+        None
+      else
+        isMismatchBase(pos.get)
+    }
+  }
+
+  lazy val referencePositions: Seq[Option[Long]] = {
+    if (record.getReadMapped) {
+      samtoolsCigar.getCigarElements.foldLeft((unclippedStart.get, List[Option[Long]]()))((runningPos, elem) => {
+        // runningPos is a tuple, the first element holds the starting position of the next CigarOperator
+        // and the second element is the list of positions up to this point
+        val posAtCigar = runningPos._1
+        val basePositions = runningPos._2
+        elem.getOperator match {
+          case CigarOperator.M |
+               CigarOperator.X |
+               CigarOperator.EQ |
+               CigarOperator.S => {
+            val positions = Range(posAtCigar.toInt, posAtCigar.toInt + elem.getLength)
+            (positions.last, basePositions ++ positions.map(t => Some(t.toLong)))
+          }
+          case CigarOperator.H => {
+            runningPos /* do nothing */
+          }
+          case CigarOperator.D |
+               CigarOperator.P |
+               CigarOperator.N => {
+            (posAtCigar + elem.getLength, basePositions)
+          }
+          case CigarOperator.I => {
+            (posAtCigar, basePositions ++ (1 to elem.getLength).map(t => None))
+          }
+        }
+      })._2
+    } else {
+      qualityScores.map(t => None)
+    }
+  }
+
+  // get the reference position of an offset within the read
+  def getPosition(offset: Int): Option[Long] = if (record.getReadMapped) referencePositions(offset) else None
 }
