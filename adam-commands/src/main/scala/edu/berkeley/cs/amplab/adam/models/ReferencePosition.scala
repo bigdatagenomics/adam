@@ -81,7 +81,7 @@ object ReferencePosition {
 
 case class ReferencePosition(refId: Int, pos: Long) extends Ordered[ReferencePosition] {
 
-  override def compare(that: ReferencePosition): Int = {
+  def compare(that: ReferencePosition): Int = {
     // Note: important to compare by reference first for coordinate ordering
     val refCompare = refId.compare(that.refId)
     if (refCompare != 0) {

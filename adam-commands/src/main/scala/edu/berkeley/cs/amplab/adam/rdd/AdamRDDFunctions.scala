@@ -61,7 +61,15 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 
   def adamSortReadsByReferencePosition(): RDD[ADAMRecord] = {
     log.info("Sorting reads by reference position")
-    rdd.groupBy(ReferencePosition(_)).sortByKey().flatMap(_._2)
+    rdd.map(p => {
+      val referencePos = ReferencePosition(p) match {
+        case None =>
+          // Move unmapped reads to the end
+          ReferencePosition(Int.MaxValue, Long.MaxValue)
+        case Some(pos) => pos
+      }
+      (referencePos, p)
+    }).sortByKey().map(p => p._2)
   }
 
   def adamMarkDuplicates(): RDD[ADAMRecord] = {
