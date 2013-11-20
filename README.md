@@ -8,7 +8,8 @@ A genomics processing engine and specialized file format built using [Apache Avr
 Current genomic file formats are not designed for
 distributed processing. ADAM addresses this by explicitly defining data
 formats as [Apache Avro](http://avro.apache.org) objects and storing them in 
-[Parquet](http://parquet.io) files. [Apache Spark](http://spark.incubator.apache.org/).
+[Parquet](http://parquet.io) files. [Apache Spark](http://spark.incubator.apache.org/)
+is used as the cluster execution system.
 
 ## Explicitly defined format
 
@@ -48,7 +49,7 @@ systems.
 
 You will need to have [Maven](http://maven.apache.org/) installed in order to build ADAM.
 ```
-$ git clone git@github.com:massie/adam.git
+$ git clone git@github.com:bigdatagenomics/adam.git
 $ cd adam
 $ mvn clean package
 ...
@@ -204,7 +205,3 @@ the [web forum page](https://groups.google.com/forum/#!forum/adam-developers).
 # License
 
 ADAM is released under an [Apache 2.0 license](LICENSE.txt).
-
-# Support
-
-Feel free to contact me directly if you have any questions about ADAM. My email address is `massie@cs.berkeley.edu`.

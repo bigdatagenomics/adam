@@ -24,14 +24,14 @@
     <licenses>
         <license>
             <name>Apache License</name>
-            <url>https://raw.github.com/massie/adam/master/LICENSE.txt</url>
+            <url>https://raw.github.com/bigdatagenomics/adam/master/LICENSE.txt</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:git@github.com:massie/adam.git</connection>
-        <developerConnection>scm:git:git@github.com:massie/adam.git</developerConnection>
-        <url>scm:git:git@github.com:massie/adam.git</url>
+        <connection>scm:git:git@github.com:bigdatagenomics/adam.git</connection>
+        <developerConnection>scm:git:git@github.com:bigdatagenomics/adam.git</developerConnection>
+        <url>scm:git:git@github.com:bigdatagenomics/adam.git</url>
         <tag>HEAD</tag>
     </scm>
     <developers>
@@ -46,7 +46,7 @@
     </developers>
     <issueManagement>
         <system>github</system>
-        <url>https://github.com/massie/adam/issues</url>
+        <url>https://github.com/bigdatagenomics/adam/issues</url>
     </issueManagement>
 
     <build>
