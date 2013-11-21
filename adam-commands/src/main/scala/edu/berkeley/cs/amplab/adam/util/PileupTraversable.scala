@@ -16,7 +16,6 @@
 
 package edu.berkeley.cs.amplab.adam.util
 
-import spark.{RDD, SparkContext}
 import parquet.hadoop.ParquetInputFormat
 import parquet.avro.AvroReadSupport
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
@@ -27,6 +26,8 @@ import scala.collection.mutable.ListBuffer
 import parquet.hadoop.util.ContextUtil
 import scala.collection.SortedMap
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 object Base extends Enumeration with Serializable {
   val A, C, T, G, N = Value

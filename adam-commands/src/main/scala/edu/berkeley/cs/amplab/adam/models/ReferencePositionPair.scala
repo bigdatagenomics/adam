@@ -1,8 +1,8 @@
 package edu.berkeley.cs.amplab.adam.models
 
-import spark.Logging
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
+import org.apache.spark.Logging
 
 object ReferencePositionPair extends Logging {
   initLogging()

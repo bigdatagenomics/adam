@@ -18,8 +18,9 @@ package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import spark.{Logging, RDD}
 import edu.berkeley.cs.amplab.adam.models.{SingleReadBucket, ReferencePositionPair, ReferencePositionWithOrientation}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.Logging
 
 private[rdd] object MarkDuplicates {
 

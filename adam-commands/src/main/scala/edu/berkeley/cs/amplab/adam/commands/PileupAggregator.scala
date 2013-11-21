@@ -18,11 +18,12 @@ package edu.berkeley.cs.amplab.adam.commands
 
 import edu.berkeley.cs.amplab.adam.util.{Args4jBase, Args4j}
 import edu.berkeley.cs.amplab.adam.avro.ADAMPileup
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import org.kohsuke.args4j.Argument
-import spark.{RDD, SparkContext}
 import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 object PileupAggregator extends AdamCommandCompanion {
   val commandName: String = "aggregate_pileups"

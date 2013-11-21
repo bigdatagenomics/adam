@@ -16,9 +16,9 @@
 package edu.berkeley.cs.amplab.adam.util
 
 import org.apache.hadoop.fs.{FileSystem, Path}
-import spark.SparkContext
 import parquet.avro.AvroParquetReader
 import org.apache.avro.generic.IndexedRecord
+import org.apache.spark.SparkContext
 
 class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) extends Traversable[T] {
   def this(sc: SparkContext, file: String) = this(sc, new Path(file))

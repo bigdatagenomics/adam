@@ -19,10 +19,10 @@ import org.apache.avro.specific.{SpecificDatumWriter, SpecificDatumReader, Speci
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.avro.io.{BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory}
-import spark.KryoRegistrator
 import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMPileup, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.models._
 import it.unimi.dsi.fastutil.io.{FastByteArrayInputStream, FastByteArrayOutputStream}
+import org.apache.spark.serializer.KryoRegistrator
 
 case class InputStreamWithDecoder(size: Int) {
   val buffer = new Array[Byte](size)

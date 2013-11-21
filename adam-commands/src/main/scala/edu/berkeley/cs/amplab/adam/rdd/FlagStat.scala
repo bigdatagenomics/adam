@@ -16,7 +16,7 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import spark.RDD
+import org.apache.spark.rdd.RDD
 
 object FlagStatMetrics {
   val emptyFailedQuality = new FlagStatMetrics(0, DuplicateMetrics.empty, DuplicateMetrics.empty, 0, 0, 0, 0, 0, 0, 0, 0, 0, true)
