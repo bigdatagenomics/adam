@@ -17,7 +17,7 @@ package edu.berkeley.cs.amplab.adam.rich
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
-import scala.collection.JavaConversions._
+import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
 
 object RichADAMRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
@@ -35,7 +35,7 @@ class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 class RichADAMRecord(record: ADAMRecord) {
 
   lazy val phredQuals = {
-    record.getQual.toString.map(p => p - 33)
+    record.getQual.map(p => p - 33)
   }
 
   // Calculates the sum of the phred scores that are greater than or equal to 15
@@ -52,7 +52,7 @@ class RichADAMRecord(record: ADAMRecord) {
   }
 
   lazy val samtoolsCigar: Cigar = {
-    RichADAMRecord.CIGAR_CODEC.decode(record.getCigar.toString)
+    RichADAMRecord.CIGAR_CODEC.decode(record.getCigar)
   }
 
   private def isClipped(el: CigarElement) = {

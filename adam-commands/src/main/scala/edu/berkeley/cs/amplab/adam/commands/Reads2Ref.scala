@@ -20,11 +20,12 @@ import net.sf.samtools.{CigarOperator, TextCigarCodec}
 import spark.{RDD, SparkContext}
 import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
-import scala.collection.JavaConversions._
 import org.kohsuke.args4j.{Option => option, Argument}
 import scala.collection.immutable.StringOps
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
 
 object Reads2Ref extends AdamCommandCompanion {
   val commandName: String = "reads2ref"
@@ -128,7 +129,7 @@ class ReadProcessor extends Serializable {
         case CigarOperator.I =>
           var insertPos = 0
 
-          for (b <- new StringOps(record.getSequence.toString.substring(readPos, readPos + cigarElement.getLength - 1))) {
+          for (b <- new StringOps(record.getSequence.substring(readPos, readPos + cigarElement.getLength - 1))) {
             val insertBase = Base.valueOf(b.toString)
 
             val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
