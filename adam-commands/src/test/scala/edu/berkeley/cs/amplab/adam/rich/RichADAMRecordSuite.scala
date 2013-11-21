@@ -25,9 +25,9 @@ class RichADAMRecordSuite extends FunSuite {
     val recordWithoutClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(42).build()
     val recordWithClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("2S8M").setStart(42).build()
     val recordWithHardClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("3H2S5M4S").setStart(42).build()
-    assert(recordWithoutClipping.unclippedStart == 42L)
-    assert(recordWithClipping.unclippedStart == 40L)
-    assert(recordWithHardClipping.unclippedStart == 37L)
+    assert(recordWithoutClipping.unclippedStart == Some(42L))
+    assert(recordWithClipping.unclippedStart == Some(40L))
+    assert(recordWithHardClipping.unclippedStart == Some(37L))
   }
 
   test("Unclipped End") {
@@ -35,16 +35,10 @@ class RichADAMRecordSuite extends FunSuite {
     val recordWithoutClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10).build()
     val recordWithClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("8M2S").setStart(10).build()
     val recordWithHardClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("6M2S2H").setStart(10).build()
-    try {
-      unmappedRead.unclippedEnd
-      assert(false, "Expected illegal state exception")
-    } catch {
-      case e: IllegalStateException =>
-    }
-
-    assert(recordWithoutClipping.unclippedEnd == 20L)
-    assert(recordWithClipping.unclippedEnd == 20L)
-    assert(recordWithHardClipping.unclippedEnd == 20L)
+    assert(unmappedRead.unclippedEnd == None)
+    assert(recordWithoutClipping.unclippedEnd == Some(20L))
+    assert(recordWithClipping.unclippedEnd == Some(20L))
+    assert(recordWithHardClipping.unclippedEnd == Some(20L))
   }
 
   test("Illumina Optics") {
