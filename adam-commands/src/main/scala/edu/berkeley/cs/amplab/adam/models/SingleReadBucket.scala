@@ -21,7 +21,8 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Output, Input}
 import edu.berkeley.cs.amplab.adam.serialization.AvroSerializer
-import spark.{RDD, Logging}
+import org.apache.spark.Logging
+import org.apache.spark.rdd.RDD
 
 object SingleReadBucket extends Logging {
   initLogging()

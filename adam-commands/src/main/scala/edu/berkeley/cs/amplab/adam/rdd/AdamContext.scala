@@ -15,7 +15,6 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import spark.{Logging, RDD, SparkContext}
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
 import parquet.hadoop.ParquetInputFormat
 import parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
@@ -28,6 +27,8 @@ import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat}
 import org.apache.hadoop.io.LongWritable
 import edu.berkeley.cs.amplab.adam.commands.SAMRecordConverter
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{Logging, SparkContext}
 
 object AdamContext {
   // Add ADAM Spark context methods

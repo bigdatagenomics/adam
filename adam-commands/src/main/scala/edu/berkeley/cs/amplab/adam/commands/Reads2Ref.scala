@@ -17,7 +17,6 @@ package edu.berkeley.cs.amplab.adam.commands
 
 import edu.berkeley.cs.amplab.adam.util._
 import net.sf.samtools.{CigarOperator, TextCigarCodec}
-import spark.{RDD, SparkContext}
 import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
 import scala.collection.JavaConversions._
@@ -25,6 +24,8 @@ import org.kohsuke.args4j.{Option => option, Argument}
 import scala.collection.immutable.StringOps
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 object Reads2Ref extends AdamCommandCompanion {
   val commandName: String = "reads2ref"

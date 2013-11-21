@@ -16,11 +16,11 @@
 
 package edu.berkeley.cs.amplab.adam.commands
 
-import spark.SparkContext
 import org.kohsuke.args4j.{Option => Args4jOption}
 import edu.berkeley.cs.amplab.adam.util.Args4jBase
 import java.util
 import scala.collection.JavaConversions._
+import org.apache.spark.SparkContext
 
 trait SparkArgs extends Args4jBase {
   @Args4jOption(required = false, name = "-spark_master", usage = "Spark Master (default = \"local[#cores]\")")
@@ -37,7 +37,7 @@ trait SparkCommand extends AdamCommand {
 
   def createSparkContext(args: SparkArgs): SparkContext = {
 
-    System.setProperty("spark.serializer", "spark.KryoSerializer")
+    System.setProperty("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     System.setProperty("spark.kryo.registrator", "edu.berkeley.cs.amplab.adam.serialization.AdamKryoRegistrator")
     System.setProperty("spark.kryoserializer.buffer.mb", "4")
     System.setProperty("spark.kryo.referenceTracking", "false")

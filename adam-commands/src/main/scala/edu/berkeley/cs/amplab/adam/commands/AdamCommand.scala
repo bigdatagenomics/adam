@@ -16,9 +16,9 @@
 
 package edu.berkeley.cs.amplab.adam.commands
 
-import spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.util.Args4jBase
+import org.apache.spark.SparkContext
 
 trait AdamCommandCompanion {
   val commandName: String

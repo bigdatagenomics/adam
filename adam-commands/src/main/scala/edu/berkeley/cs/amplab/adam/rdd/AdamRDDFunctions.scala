@@ -15,17 +15,18 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import spark.{Logging, RDD}
 import parquet.hadoop.metadata.CompressionCodecName
 import org.apache.hadoop.mapreduce.Job
 import parquet.hadoop.ParquetOutputFormat
 import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
 import parquet.hadoop.util.ContextUtil
-import spark.SparkContext._
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.commands.ParquetArgs
 import edu.berkeley.cs.amplab.adam.models.{SingleReadBucket, ReferencePosition}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.SparkContext._
+import org.apache.spark.Logging
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 

@@ -1,7 +1,7 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup}
-import spark.RDD
+import org.apache.spark.rdd.RDD
 
 private[rdd] class PileupAggregator extends Serializable {
 

@@ -16,11 +16,12 @@
 package edu.berkeley.cs.amplab.adam.commands
 
 import org.apache.hadoop.mapreduce.Job
-import spark.{RDD, SparkContext, Logging}
 import edu.berkeley.cs.amplab.adam.util.{Args4jBase, Args4j}
 import org.kohsuke.args4j.{Argument, Option => Args4jOption}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import org.apache.spark.{SparkContext, Logging}
+import org.apache.spark.rdd.RDD
 
 object Transform extends AdamCommandCompanion {
   val commandName = "transform"

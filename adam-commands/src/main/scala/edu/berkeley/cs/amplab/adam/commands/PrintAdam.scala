@@ -20,8 +20,8 @@ import scala.collection.JavaConversions._
 import edu.berkeley.cs.amplab.adam.util.{ParquetFileTraversable, Args4jBase, Args4j}
 import org.kohsuke.args4j.Argument
 import java.util
-import spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.SparkContext
 
 object PrintAdam extends AdamCommandCompanion {
   val commandName: String = "print"
