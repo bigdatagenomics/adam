@@ -1,20 +1,18 @@
 #!/usr/bin/env bash -e -x
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT=$DIR/..
+PROJECT_ROOT="$DIR/.."
 
-VERSION=$(grep "<version>" $PROJECT_ROOT/pom.xml  | head -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')
+VERSION=$(grep "<version>" "$PROJECT_ROOT/pom.xml"  | head -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')
 echo "Testing ADAM version $VERSION"
 
-ADAM_TMP_DIR=$(mktemp -d -t "adamTest")
+ADAM_TMP_DIR=$(mktemp -d -t "adamTestXXXXXXX")
 # Just to be paranoid.. use a directory internal to the ADAM_TMP_DIR
 ADAM_TMP_DIR="$ADAM_TMP_DIR/deleteMePleaseThisIsNoLongerNeeded"
 mkdir $ADAM_TMP_DIR
 
-pushd $PROJECT_ROOT
-# Create the jar file and stage it
-
-mvn clean package
+pushd "$PROJECT_ROOT"
+# Copy the jar into our temp space for testing
 cp adam-commands/target/adam-$VERSION.jar $ADAM_TMP_DIR
 popd
 
