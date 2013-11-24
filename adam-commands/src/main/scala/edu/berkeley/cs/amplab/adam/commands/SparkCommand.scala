@@ -33,15 +33,20 @@ trait SparkArgs extends Args4jBase {
   var spark_env_vars = new util.ArrayList[String]()
 }
 
-trait SparkCommand extends AdamCommand {
-
-  def createSparkContext(args: SparkArgs): SparkContext = {
-
+object SparkCommand {
+  // This method sets the system properties we need before creating a context. Also used for tests.
+  def setupContextProperties() = {
     System.setProperty("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     System.setProperty("spark.kryo.registrator", "edu.berkeley.cs.amplab.adam.serialization.AdamKryoRegistrator")
     System.setProperty("spark.kryoserializer.buffer.mb", "4")
     System.setProperty("spark.kryo.referenceTracking", "false")
+  }
+}
 
+trait SparkCommand extends AdamCommand {
+
+  def createSparkContext(args: SparkArgs): SparkContext = {
+    SparkCommand.setupContextProperties()
     val appName = "adam: " + companion.commandName
     val environment: Map[String, String] = if (args.spark_env_vars.isEmpty) {
       Map()
