@@ -168,6 +168,21 @@
                 <version>6.1-SNAPSHOT</version>
             </dependency>
             <dependency>
+                <groupId>variant</groupId>
+                <artifactId>variant</artifactId>
+                <version>1.93</version>
+            </dependency>
+            <dependency>
+                <groupId>tribble</groupId>
+                <artifactId>tribble</artifactId>
+                <version>1.93</version>
+            </dependency>
+            <dependency>
+                <groupId>cofoja</groupId>
+                <artifactId>cofoja</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
                 <groupId>picard</groupId>
                 <artifactId>picard</artifactId>
                 <version>1.93</version>
