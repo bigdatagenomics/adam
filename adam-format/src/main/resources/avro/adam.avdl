@@ -81,11 +81,9 @@ record ADAMPileup {
     union { null, int } numSoftClipped = null;
     union { null, int } numReverseStrand = null;
     union { null, int } countAtPosition = null;
-
     union { null, string } readName = null;
     union { null, long } readStart = null;
     union { null, long } readEnd = null;
-
     union { null, string } recordGroupSequencingCenter = null;
     union { null, string } recordGroupDescription = null;
     union { null, long } recordGroupRunDateEpoch = null;
@@ -105,26 +103,93 @@ record ADAMNestedPileup {
      array<ADAMRecord> readEvidence;
 }
 
-record ADAMGenotype { // TODO: update with revised qual and likelihood
-    union { null, string } referenceName = null;
-    union { null, int } referenceId = null;
-    union { null, long } position = null;
-    union { null, Base } referenceBase = null;
-    union { null, string } genotype = null;
-    union { null, int } likelihood = null;
-    union { null, string } filter = null;
-    union { null, string } information = null;
+enum VariantType {
+    SNP,
+    MNP,
+    Insertion,
+    Deletion,
+    Complex,
+    SV
+}
 
-    union { null, string } recordGroupSequencingCenter = null;
-    union { null, string } recordGroupDescription = null;
-    union { null, long } recordGroupRunDateEpoch = null;
-    union { null, string } recordGroupFlowOrder = null;
-    union { null, string } recordGroupKeySequence = null;
-    union { null, string } recordGroupLibrary = null;
-    union { null, int } recordGroupPredictedMedianInsertSize = null;
-    union { null, string } recordGroupPlatform = null;
-    union { null, string } recordGroupPlatformUnit = null;
-    union { null, string } recordGroupSample = null;
+record ADAMVariant {
+  union { null, string } domainIds;                      // the domain of the samples (e.g. 1000G or 'Hapmap,1000G' etc)
+  union { null, int } referenceId = null;
+  union { null, string } referenceName = null;
+  union { null, long } startPosition = null;
+  union { null, string } siteId = null;
+  union { null, double } siteQuality = null;
+  union { null, string } siteFilter = null;
+  union { null, string } ancestralAllele = null;
+  union { null, int } alleleCount = null;
+  union { null, string } alleleFrequency = null;
+  union { null, int } alleleNumber = null;
+  union { null, double } rmsBaseQuality = null;
+  union { null, string } allelicAlignments = null;
+  union { null, boolean } inDbSNP = null;
+  union { null, boolean } inHM2 = null;
+  union { null, boolean } inHM3 = null;
+  union { null, boolean } in1000G = null;
+  union { null, double } siteRmsMappingQuality = null;
+  union { null, int } siteMapQZeroCounts = null;
+  union { null, int } numberOfSamplesWithData = null;
+  union { null, double } strandBias = null;
+  union { null, boolean } isSomatic = null;
+  union { null, boolean } validated = null;
+  union { null, string } referenceAllele = null;
+  union { null, string } alternateAlleles = null;
+  union { null, VariantType } type;
+  union { null, string } variantId;
+
+  /* ** site level information -- convenience fields ** */
+  union { null, string } callsetIds = null;
+  union { null, int } callsetsPresent = null;
+  union { null, int } callsetsFiltered = null;
+  union { null, string } geneIds = null;
+  union { null, string } transcriptIds = null;
+
+}
+
+record ADAMGenotype {
+
+  union { null, string } genotype = null;
+  union { null, long } position = null;
+  union { null, string } sampleId = null;
+  union { null, string } referenceAllele = null;
+  union { null, string } siteAlleles = null;
+  union { null, string } allele1 = null;
+  union { null, string } allele2 = null;
+  union { null, double } expectedAllele1Dosage = null;
+  union { null, double } expectedAllele2Dosage = null;
+  union { null, int } genotypeQuality = null;
+  union { null, string } phredLikelihoods = null;
+  union { null, string } phredPosteriorLikelihoods = null;
+  union { null, string } ploidyStateGenotypeLikelihoods = null;
+  union { boolean, null } isPhased = false;
+  union { null, boolean } isPhaseSwitch = false;
+  union { null, string } phaseSetId = null;
+  union { null, double } phaseLikelihood = null;
+  union { null, int } haplotype1Quality = null;
+  union { null, int } haplotype2Quality = null;
+  union { null, double } rmsMappingQuality = null;
+  union { null, int } depth = null;
+  union { null, string } format = null;
+
+  /* ** sample level information -- convenience fields ** */
+  union { null, string } sampleEthnicity = null;
+  union { null, string } sampleCohort = null;
+  
+  union { null, string } recordGroupSequencingCenter = null;
+  union { null, string } recordGroupDescription = null;
+  union { null, long } recordGroupRunDateEpoch = null;
+  union { null, string } recordGroupFlowOrder = null;
+  union { null, string } recordGroupKeySequence = null;
+  union { null, string } recordGroupLibrary = null;
+  union { null, int } recordGroupPredictedMedianInsertSize = null;
+  union { null, string } recordGroupPlatform = null;
+  union { null, string } recordGroupPlatformUnit = null;
+  union { null, string } recordGroupSample = null;
+
 }
 
 }
