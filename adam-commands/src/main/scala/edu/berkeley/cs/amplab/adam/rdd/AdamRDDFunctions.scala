@@ -105,13 +105,22 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
   def adamSingleReadBuckets(): RDD[SingleReadBucket] = {
     SingleReadBucket(rdd)
   }
+
+  /**
+   * Groups all reads by reference position and returns a non-aggregated pileup RDD.
+   * @return ADAMPileup without aggregation
+   */
+  def adamRecords2Pileup(): RDD[ADAMPileup] = {
+    val helper = new Reads2PileupProcessor
+    helper.process(rdd)
+  }
 }
 
 class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable {
 
-  def adamAggregatePileups(): RDD[ADAMPileup] = {
+  def adamAggregatePileups(coverage: Int = 30): RDD[ADAMPileup] = {
     val helper = new PileupAggregator
-    helper.aggregate(rdd)
+    helper.aggregate(rdd, coverage)
   }
 
 }
