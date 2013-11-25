@@ -3,3 +3,8 @@
 target
 adam*.jar
 build
+*~
+#*
+*.bam*
+*.adam*
+*.vcf*
