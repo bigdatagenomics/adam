@@ -21,13 +21,17 @@ import parquet.hadoop.ParquetOutputFormat
 import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
 import parquet.hadoop.util.ContextUtil
 import org.apache.avro.specific.SpecificRecord
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMVariant, ADAMGenotype, ADAMVariantDomain}
 import edu.berkeley.cs.amplab.adam.commands.ParquetArgs
 import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, ReferencePosition}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
 import java.io.File
+import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext._
+import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.projections.ADAMVariantAnnotations
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -128,4 +132,66 @@ class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable {
     helper.aggregate(rdd, coverage)
   }
 
+}
+
+class AdamVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Serializable {
+
+  /**
+   * Save function for variant contexts. Disaggregates internal fields of variant context
+   * and saves to Parquet files.
+   *
+   * @param[in] filePath Master file path for parquet files.
+   * @param[in] blockSize Parquet block size.
+   * @param[in] pageSize Parquet page size.
+   * @param[in] compressCodec Parquet compression codec.
+   * @param[in] disableDictionaryEncoding If true, disables dictionary encoding in Parquet.
+   * @return Returns the initial RDD.
+   */
+  def adamSave(filePath: String, blockSize: Int = 128 * 1024 * 1024,
+               pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+               disableDictionaryEncoding: Boolean = false): RDD[ADAMVariantContext] = {
+
+    // Add the Void Key
+    val variantToSave: RDD[ADAMVariant] = rdd.flatMap(p => p.variants)
+    val genotypeToSave: RDD[ADAMGenotype] = rdd.flatMap(p => p.genotypes)
+    val domainsToSave: RDD[ADAMVariantDomain] = rdd.flatMap(p => p.domains)
+
+    // save records
+    variantToSave.adamSave(filePath + ".v", 
+                           blockSize, 
+                           pageSize, 
+                           compressCodec, 
+                           disableDictionaryEncoding)
+    genotypeToSave.adamSave(filePath + ".g", 
+                            blockSize, 
+                            pageSize, 
+                            compressCodec, 
+                            disableDictionaryEncoding)
+    
+    // check if we have domains to save or not
+    if (domainsToSave.count() != 0) {
+      val fileExtension = ADAMVariantAnnotations.fileExtensions(ADAMVariantAnnotations.ADAMVariantDomain)
+
+      domainsToSave.adamSave(filePath + fileExtension,
+                             blockSize, 
+                             pageSize, 
+                             compressCodec, 
+                             disableDictionaryEncoding)
+    }
+
+    rdd
+  }
+
+  /**
+   * Save function for variant contexts. Disaggregates internal fields of variant context
+   * and saves to Parquet files.
+   *
+   * @param[in] filePath Master file path for parquet files.
+   * @param[in] parquetArgs Argument object for parquet.
+   * @return Returns the initial RDD.
+   */
+  def adamSave(filePath: String, parquetArgs: ParquetArgs): RDD[ADAMVariantContext] = {
+    adamSave(filePath, parquetArgs.blockSize, parquetArgs.pageSize,
+      parquetArgs.compressionCodec, parquetArgs.disableDictionary)
+  }
 }

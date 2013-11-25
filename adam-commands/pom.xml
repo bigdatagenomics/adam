@@ -117,6 +117,18 @@
             <artifactId>picard</artifactId>
         </dependency>
         <dependency>
+            <groupId>cofoja</groupId>
+            <artifactId>cofoja</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tribble</groupId>
+            <artifactId>tribble</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>variant</groupId>
+            <artifactId>variant</artifactId>
+        </dependency>
+        <dependency>
             <groupId>samtools</groupId>
             <artifactId>samtools</artifactId>
         </dependency>

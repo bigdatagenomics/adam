@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. The Broad Institute of MIT/Harvard
+ * Copyright (c) 2013. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package edu.berkeley.cs.amplab.adam.commands
 import edu.berkeley.cs.amplab.adam.util.{Args4j, Args4jBase}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
+import org.apache.spark.SparkContext._
 import org.kohsuke.args4j.{Argument, Option => Args4jOption}
 import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMGenotype}
 import java.io.{ByteArrayInputStream, BufferedInputStream, FileInputStream}
@@ -32,35 +33,50 @@ import java.lang.{Integer => JInt}
 import parquet.avro.{AvroReadSupport, AvroWriteSupport}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import org.apache.hadoop.io.LongWritable
+import fi.tkk.ics.hadoop.bam.{VariantContextWritable, VCFOutputFormat}
 
-object Vcf2Adam extends AdamCommandCompanion {
+object Adam2Vcf extends AdamCommandCompanion {
 
-  val commandName = "vcf2adam"
-  val commandDescription = "Convert a VCF file to the corresponding ADAM format"
+  val commandName = "adam2vcf"
+  val commandDescription = "Convert an ADAM variant to the VCF ADAM format"
 
   def apply(cmdLine: Array[String]) = {
-    new Vcf2Adam(Args4j[Vcf2AdamArgs](cmdLine))
+    new Adam2Vcf(Args4j[Adam2VcfArgs](cmdLine))
   }
 }
 
-class Vcf2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
-  @Argument(required=true, metaVar="VCF", usage="The VCF file to convert", index=0)
-  var vcfFile: String = _
-  @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM Variant data", index = 1)
+class Adam2VcfArgs extends Args4jBase with ParquetArgs with SparkArgs {
+  @Argument(required=true, metaVar="ADAM", usage="The ADAM variant files to convert", index=0)
+  var adamFile: String = _
+  @Argument(required = true, metaVar = "VCF", usage = "Location to write VCF data", index = 1)
   var outputPath: String = null
- }
+}
 
-class Vcf2Adam(val args: Vcf2AdamArgs) extends AdamSparkCommand[Vcf2AdamArgs] with Logging {
-  val companion = Vcf2Adam
+class Adam2Vcf(val args: Adam2VcfArgs) extends AdamSparkCommand[Adam2VcfArgs] with Logging {
+  val companion = Adam2Vcf
 
   def run(sc: SparkContext, job: Job) {
 
-    if (args.vcfFile.endsWith(".vcf") || args.vcfFile.endsWith(".bcf")) {
-      val adamVC: RDD[ADAMVariantContext] = sc.adamVariantContextLoad(args.vcfFile)
-      
-      adamVC.adamSave(args.outputPath, args)
-    } else {
-      println ("File does not end with *.vcf or *.bcf, so not converting.")
-    }
+    val adamVC: RDD[ADAMVariantContext] = sc.adamVariantContextLoad(args.adamFile)
+    
+    val converter = new VariantContextConverter
+
+    // convert all variant contexts
+    val variantContexts: RDD[VariantContextWritable] = adamVC.map(r => {
+      // create new variant context writable
+      val vcw = new VariantContextWritable
+      val vc = converter.convert(r)
+      vcw.set(vc)
+
+      vcw
+    })
+
+    // add index for writing output format
+    val mapIndex = variantContexts.keyBy(r => new LongWritable(r.get.getStart))
+
+    // write out
+    mapIndex.saveAsNewAPIHadoopFile(args.outputPath, classOf[LongWritable], classOf[VariantContextWritable],
+                                    classOf[VCFOutputFormat[LongWritable]])
   }
 }
