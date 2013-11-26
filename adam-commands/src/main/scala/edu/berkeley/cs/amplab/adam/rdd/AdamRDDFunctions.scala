@@ -23,7 +23,7 @@ import parquet.hadoop.util.ContextUtil
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.commands.ParquetArgs
-import edu.berkeley.cs.amplab.adam.models.{SingleReadBucket, ReferencePosition}
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, ReferencePosition}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
@@ -73,6 +73,11 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
       (referencePos, p)
     }).sortByKey().map(p => p._2)
   }
+
+  def sequenceDictionary() : SequenceDictionary =
+    rdd.distinct().aggregate(SequenceDictionary())(
+      (dict : SequenceDictionary, rec : ADAMRecord) => dict ++ SequenceRecord.fromADAMRecord(rec),
+      (dict1 : SequenceDictionary, dict2 : SequenceDictionary) => dict1 ++ dict2)
 
   def adamMarkDuplicates(): RDD[ADAMRecord] = {
     MarkDuplicates(rdd)
