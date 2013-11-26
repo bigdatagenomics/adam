@@ -20,6 +20,7 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
+import Ordering.Option
 
 object ReferencePositionWithOrientation {
 
@@ -57,8 +58,8 @@ case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition], n
 object ReferencePosition {
 
   def mappedPositionCheck(record: ADAMRecord): Boolean = {
-    val referenceId = Option(record.getReferenceId)
-    val start = Option(record.getStart)
+    val referenceId = Some(record.getReferenceId)
+    val start = Some(record.getStart)
     record.getReadMapped && referenceId.isDefined && start.isDefined
   }
 
