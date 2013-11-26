@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.Path
 import java.util.concurrent._
 import scala.Some
 import java.util.logging.Level
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary}
 
 object Bam2Adam extends AdamCommandCompanion {
   val commandName: String = "bam2adam"
@@ -51,7 +52,7 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs {
 
 class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
   val companion = Bam2Adam
-  val blockingQueue = new ArrayBlockingQueue[Option[SAMRecord]](args.qSize)
+  val blockingQueue = new ArrayBlockingQueue[Option[(SAMRecord, SequenceDictionary)]](args.qSize)
 
   val writerThreads = (0 until args.numThreads).foldLeft(List[Thread]()) {
     (list, threadNum) => {
@@ -78,8 +79,8 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
                   blockingQueue.add(None)
                   // Exit
                   return
-                case Some(samRecord) =>
-                  parquetWriter.write(samRecordConverter.convert(samRecord))
+                case Some((samRecord, seqDict)) =>
+                  parquetWriter.write(samRecordConverter.convert(samRecord, seqDict))
               }
             }
           } catch {
@@ -98,11 +99,16 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
 
     val samReader = new SAMFileReader(new File(args.bamFile), null, true)
     samReader.setValidationStringency(args.validationStringency)
+
+    val seqDict = SequenceDictionary.fromSAMReader(samReader)
+
+    println(seqDict)
+
     writerThreads.foreach(_.start())
     var i = 0
     for (samRecord <- samReader) {
       i += 1
-      blockingQueue.put(Some(samRecord))
+      blockingQueue.put(Some((samRecord, seqDict)))
       if (i % 1000000 == 0) {
         println("***** Read %d million reads from SAM/BAM file (queue=%d) *****".format(i / 1000000, blockingQueue.size()))
       }

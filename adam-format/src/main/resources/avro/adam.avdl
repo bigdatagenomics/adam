@@ -2,10 +2,15 @@
 protocol ADAM {
 
 record ADAMRecord {
-    // Reference name
-    union { null, string } referenceName = null;
 
-    // Reference id
+    /**
+     * These two fields, along with the two
+     * reference{Length, Url} fields at the bottom
+     * of the schema, collectively form the contents
+     * of the Sequence Dictionary embedded in the these
+     * records from the BAM / SAM itself.
+     */
+    union { null, string } referenceName = null;
     union { null, int } referenceId = null;
 
     // 0-based reference position start
@@ -51,6 +56,13 @@ record ADAMRecord {
     union { null, string } recordGroupSample = null;
 
     union { null, int } mateReferenceId = null;
+
+    // See note, above.
+    union { null, long }   referenceLength = null;
+    union { null, string } referenceUrl = null;
+
+    union { null, long } mateReferenceLength = null;
+    union { null, string } mateReferenceUrl = null;
 }
 
 record ADAMFastaFragment {

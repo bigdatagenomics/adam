@@ -19,13 +19,16 @@ import net.sf.samtools.{SAMReadGroupRecord, SAMRecord}
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import scala.collection.JavaConverters._
+import edu.berkeley.cs.amplab.adam.models.SequenceDictionary
 
 class SAMRecordConverter extends Serializable {
-  def convert(samRecord: SAMRecord): ADAMRecord = {
+  def convert(samRecord: SAMRecord, dict : SequenceDictionary): ADAMRecord = {
 
     val builder: ADAMRecord.Builder = ADAMRecord.newBuilder
       .setReferenceName(samRecord.getReferenceName)
       .setReferenceId(samRecord.getReferenceIndex)
+      .setReferenceLength(dict(samRecord.getReferenceIndex).length)
+      .setReferenceUrl(dict(samRecord.getReferenceIndex).url)
       .setReadName(samRecord.getReadName)
       .setSequence(samRecord.getReadString)
       .setCigar(samRecord.getCigarString)
@@ -50,6 +53,9 @@ class SAMRecordConverter extends Serializable {
       builder
         .setMateReferenceId(mateReference)
         .setMateReference(samRecord.getMateReferenceName)
+        .setMateReferenceLength(dict(samRecord.getMateReferenceName).length)
+        .setMateReferenceUrl(dict(samRecord.getMateReferenceName).url)
+
       val mateStart = samRecord.getMateAlignmentStart
       if (mateStart > 0) {
         // We subtract one here to be 0-based offset

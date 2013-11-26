@@ -26,6 +26,8 @@ package edu.berkeley.cs.amplab.adam.projections
 object ADAMRecordField extends Enumeration {
   val referenceName,
   referenceId,
+  referenceLength,
+  referenceUrl,
   start,
   mapq,
   readName,
@@ -58,5 +60,8 @@ object ADAMRecordField extends Enumeration {
   recordGroupPlatform,
   recordGroupPlatformUnit,
   recordGroupSample,
-  mateReferenceId = Value
+  mateReferenceId,
+  mateReferenceLength,
+  mateReferenceUrl
+  = Value
 }
