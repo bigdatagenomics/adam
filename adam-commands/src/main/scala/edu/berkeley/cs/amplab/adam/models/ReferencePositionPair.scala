@@ -3,6 +3,7 @@ package edu.berkeley.cs.amplab.adam.models
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.spark.Logging
+import Ordering.Option
 
 object ReferencePositionPair extends Logging {
   initLogging()
