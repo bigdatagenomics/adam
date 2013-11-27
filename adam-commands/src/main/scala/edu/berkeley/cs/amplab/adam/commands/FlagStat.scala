@@ -21,8 +21,7 @@ import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import org.kohsuke.args4j.Argument
 import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.projections.Projection
-import edu.berkeley.cs.amplab.adam.predicates.ADAMRecordField
+import edu.berkeley.cs.amplab.adam.projections.{Projection, ADAMRecordField}
 import java.util.logging.Level
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD

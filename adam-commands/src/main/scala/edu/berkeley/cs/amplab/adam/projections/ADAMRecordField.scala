@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.berkeley.cs.amplab.adam.predicates
+package edu.berkeley.cs.amplab.adam.projections
 
 /**
  * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
