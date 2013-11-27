@@ -23,6 +23,7 @@ import parquet.column.ColumnReader
 import parquet.filter.AndRecordFilter.and
 import parquet.filter.ColumnPredicates.equalTo
 import parquet.filter.ColumnRecordFilter.column
+import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField
 
 class LocusPredicate extends UnboundRecordFilter {
   def bind(readers: Iterable[ColumnReader]): RecordFilter = {
