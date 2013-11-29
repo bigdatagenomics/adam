@@ -79,7 +79,7 @@ class VcfConverter(val header: Array[String]) extends Serializable {
       .setReferenceAllele(fields(3))
       .setAlternateAlleles(fields(4))
       .setSiteFilter(fields(6))
-      .setType(getType(fields(3), fields(4)))
+      .setType(VcfConverter.getType(fields(3), fields(4)))
 
     // TODO: add back .setInfo(fields(7))
 
@@ -126,23 +126,28 @@ class VcfConverter(val header: Array[String]) extends Serializable {
     (variant.build(), records)
   }
 
+}
+
+object VcfConverter {
+
   def getType(ref: String, alt: String): VariantType = {
     val altAlleles = alt.split(",")
     if (altAlleles.forall(_.startsWith("<"))) {
       VariantType.SV
-    }
-    val altSize = altAlleles.map(_.size)
-    val matches = altSize.forall(_ == ref.size)
-    if (matches) {
-      if (ref.size == 1) VariantType.SNP else VariantType.MNP
     } else {
-      val isInsert = altAlleles.forall(_.startsWith(ref))
-      if (isInsert) {
-        VariantType.Insertion
-      } else if (altAlleles.forall(ref.startsWith)) {
-        VariantType.Deletion
+      val altSize = altAlleles.map(_.size)
+      val matches = altSize.forall(_ == ref.size)
+      if (matches) {
+        if (ref.size == 1) VariantType.SNP else VariantType.MNP
       } else {
-        VariantType.Complex
+        val isInsert = altAlleles.forall(_.startsWith(ref))
+        if (isInsert) {
+          VariantType.Insertion
+        } else if (altAlleles.forall(ref.startsWith)) {
+          VariantType.Deletion
+        } else {
+          VariantType.Complex
+        }
       }
     }
   }
