@@ -107,7 +107,8 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
    */
   def adamLoad[T <% SpecificRecord : Manifest, U <: UnboundRecordFilter]
   (filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
-    if (filePath.endsWith(".bam") || filePath.endsWith(".sam") && manifest[T].erasure.isInstanceOf[ADAMRecord]) {
+
+    if (filePath.endsWith(".bam") || filePath.endsWith(".sam") && classOf[ADAMRecord].isAssignableFrom(manifest[T].erasure)) {
       if (predicate.isDefined) {
         log.warn("Predicate is ignored when loading a BAM file")
       }
