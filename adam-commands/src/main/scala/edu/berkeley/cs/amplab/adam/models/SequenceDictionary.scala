@@ -21,7 +21,7 @@ class SequenceDictionary(recordsIn : Iterable[SequenceRecord]) extends Serializa
 
   // Intermediate value used to ensure that no referenceName or referenceId is listed twice with a different
   // referenceId or referenceName (respectively).  Notice the "toSet", which means it's okay to pass an Iterable
-  // that lists the _same_ ADAMSequenceRecord twice.
+  // that lists the _same_ SequenceRecord twice.
   private val idNamePairs = recordsIn.map( rec => ( rec.id, rec.name.toString )).toSet
 
   // check that no referenceId value is listed twice, to two different referenceNames
@@ -37,13 +37,13 @@ class SequenceDictionary(recordsIn : Iterable[SequenceRecord]) extends Serializa
     ( hash : Int, p : (Int, CharSequence)) => 37 * (hash + p._1) + p._2.hashCode
   }
 
-  // Maps referenceId -> ADAMSequenceRecord
+  // Maps referenceId -> SequenceRecord
   private val recordIndices : mutable.Map[Int,SequenceRecord] =
     mutable.Map(recordsIn.map {
       rec => ( rec.id, rec )
     }.toSeq : _*)
 
-  // Maps referenceName -> ADAMSequenceRecord
+  // Maps referenceName -> SequenceRecord
   private val recordNames : mutable.Map[CharSequence,SequenceRecord] =
     mutable.Map(recordsIn.map {
       rec => ( rec.name, rec )
@@ -253,7 +253,7 @@ object SequenceDictionary {
 }
 
 /**
- * Replaces the old Avro-based ADAMSequenceRecord, as a utility class within the SequenceDictionary
+ * Utility class within the SequenceDictionary; represents unique reference name-to-id correspondence
  *
  * @param id
  * @param name
