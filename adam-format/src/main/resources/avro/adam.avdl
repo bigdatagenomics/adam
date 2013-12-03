@@ -204,4 +204,46 @@ record ADAMGenotype {
 
 }
 
+// A simplified, flattened version of Genotype / Variants
+//
+// I'm trying to remove aggregated values (allele counts, total sets of
+// alleles, etc) because I'm assuming most of those will have to
+// be re-computed on the fly anyway.
+//
+record ADAMCall {
+
+    // These four fields contain the contents of a SequenceRecord,
+    // in parallel to the flattened representation in ADAMRecord.
+    //
+    union { null, string } referenceName = null;
+    union { null, int }    referenceId = null;
+    union { null, long }   referenceLength = null;
+    union { null, string } referenceUrl = null;
+
+    // The start position along the referenceName sequence
+    //
+    union { null, long }   start = null;
+
+    union { null, string } referenceAllele = null;
+    union { null, string } siteId = null;
+    union { null, string } siteFilter = null;
+    union { null, double } siteQuality = null;
+
+    // Assuming diploid organisms. I've also experimented with
+    // flattening these alleles out into an allele_value and and
+    // allele_index
+    //
+    union { null, string } sampleId = null;
+    union { null, string } allele1 = null;
+    union { null, string } allele2 = null;
+    union { boolean, null } isPhased = false;
+
+    // GT:AD:DP:GQ:PL
+
+    union { null, string }  alleleDepths = null;
+    union { null, int }     depth = null;
+    union { null, double }     genotypeQuality = null;
+    union { null, string }  likelihoods = null;
+}
+
 }
