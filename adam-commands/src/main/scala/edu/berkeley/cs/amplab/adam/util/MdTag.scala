@@ -25,7 +25,8 @@ object MdTagEvent extends Enumeration {
 object MdTag {
 
   val digitPattern = new Regex("\\d+")
-  val basesPattern = new Regex("[AGCTN]+")
+  // for description, see base enum in adam schema
+  val basesPattern = new Regex("[AaGgCcTtNnUuKkMmRrSsWwBbVvHhDdXx]+")
 
   def apply(mdTag: String, referenceStart: Long): MdTag = {
     new MdTag(mdTag, referenceStart)

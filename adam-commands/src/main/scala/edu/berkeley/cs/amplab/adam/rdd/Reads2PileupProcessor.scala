@@ -123,7 +123,7 @@ private[rdd] class Reads2PileupProcessor extends Serializable with Logging {
 
           for (i <- 0 until cigarElement.getLength) {
 
-            val readBase = if (mdTag.isMatch(referencePos)) {
+            val referenceBase = if (mdTag.isMatch(referencePos)) {
               baseFromSequence(readPos)
             } else {
               mdTag.mismatchedBase(referencePos) match {
@@ -134,8 +134,8 @@ private[rdd] class Reads2PileupProcessor extends Serializable with Logging {
 
             // sequence match
             val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
-              .setReadBase(readBase)
-              .setReferenceBase(baseFromSequence(readPos))
+              .setReadBase(baseFromSequence(readPos))
+              .setReferenceBase(referenceBase)
               .build()
             pileupList ::= pileup
 
