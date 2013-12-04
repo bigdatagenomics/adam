@@ -52,7 +52,7 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs {
 
 class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
   val companion = Bam2Adam
-  val blockingQueue = new ArrayBlockingQueue[Option[(SAMRecord, SequenceDictionary)]](args.qSize)
+  val blockingQueue = new LinkedBlockingQueue[Option[(SAMRecord, SequenceDictionary)]](args.qSize)
 
   val writerThreads = (0 until args.numThreads).foldLeft(List[Thread]()) {
     (list, threadNum) => {
