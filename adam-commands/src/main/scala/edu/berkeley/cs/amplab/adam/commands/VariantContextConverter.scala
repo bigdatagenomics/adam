@@ -129,14 +129,14 @@ class VariantContextConverter extends Serializable {
 
     // variant ID
     val id = if (vc.hasID) {
-      Option(vc.getID)
+      Some(vc.getID)
     } else {
       None
     }
 
     // filters applied to variant, IFF variant failed a filter and was filtered out
     val filters = if (vc.isFiltered) {
-      Option(vc.getFilters)
+      Some(vc.getFilters)
     } else {
       None
     }
@@ -189,19 +189,19 @@ class VariantContextConverter extends Serializable {
       def convertType (v: VariantContext): Option[VariantType] = {
         if (v.isSymbolicOrSV) {
           if (v.isSymbolic) {
-            Option(VariantType.Complex)
+            Some(VariantType.Complex)
           } else {
-            Option(VariantType.SV)
+            Some(VariantType.SV)
           }
         } else {
           v.getType match {
-            case VariantContext.Type.SNP => Option(VariantType.SNP)
-            case VariantContext.Type.MNP => Option(VariantType.MNP)
+            case VariantContext.Type.SNP => Some(VariantType.SNP)
+            case VariantContext.Type.MNP => Some(VariantType.MNP)
             case VariantContext.Type.INDEL => {
               if (v.isSimpleDeletion) {
-                Option(VariantType.Insertion)
+                Some(VariantType.Insertion)
               } else {
-                Option(VariantType.Deletion)
+                Some(VariantType.Deletion)
               }
             }
             case _ => None
@@ -515,6 +515,6 @@ class VariantContextConverter extends Serializable {
     }
 
     // assemble a variant context from the variants, genotypes, and domains (if seen)
-    new ADAMVariantContext(vc.getStart - 1, variants, genotypes, Option(domains))
+    new ADAMVariantContext(vc.getStart - 1, variants, genotypes, Some(domains))
   }
 }
