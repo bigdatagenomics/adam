@@ -1,4 +1,6 @@
-#!/usr/bin/env bash -e -x
+#!/usr/bin/env bash
+
+set -e -x
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$DIR/.."
