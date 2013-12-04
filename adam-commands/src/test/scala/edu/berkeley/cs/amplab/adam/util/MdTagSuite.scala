@@ -90,6 +90,20 @@ class MdTagSuite extends FunSuite {
       assert(md6.isMatch(i))
     }
 
+    // seen in 1000G, causes errors in 9c05baa2e0e9c59cbf56e241b8ae3a7b87402fa2
+    val md7 = MdTag("39r36c23")
+    for (i <- 0 until 39) {
+      assert (md7.isMatch(i))
+    }    
+    assert(md7.mismatchedBase(39) == Some('R'))
+    for (i <- 40 until 40 + 36) {
+      assert (md7.isMatch(i))
+    }
+    assert(md7.mismatchedBase(40 + 36) == Some('C'))
+    for (i <- 40 + 37 until 40 + 37 + 23) {
+      assert (md7.isMatch(i))
+    }
+
   }
 
 }

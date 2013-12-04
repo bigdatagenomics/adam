@@ -77,7 +77,19 @@ enum Base {
     C,
     T,
     G,
-    N
+    U,
+    N, // any
+    X, // any
+    K, // keto: G/T
+    M, // aMino: A/C
+    R, // puRine: A/G
+    Y, // pYriminidine: C/T
+    S, // Strong: C/G
+    W, // Weak: A/T
+    B, // not A
+    V, // not T
+    H, // not G
+    D  // not C
 }
 
 record ADAMPileup {
