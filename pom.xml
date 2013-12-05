@@ -12,6 +12,7 @@
         <java.version>1.6</java.version>
         <scala.version>2.9.3</scala.version>
         <avro.version>1.7.4</avro.version>
+        <hadoop.version>2.2.0</hadoop.version>
         <spark.version>0.8.0-incubating</spark.version>
         <parquet.version>1.2.5</parquet.version>
     </properties>
@@ -123,6 +124,29 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client</artifactId>
+                <version>${hadoop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>asm</groupId>
+                        <artifactId>asm</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.netty</groupId>
+                        <artifactId>netty</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.jackson</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.sonatype.sisu.inject</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-core_${scala.version}</artifactId>
