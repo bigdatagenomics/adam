@@ -63,11 +63,30 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 
   def adamSortReadsByReferencePosition(): RDD[ADAMRecord] = {
     log.info("Sorting reads by reference position")
+
+    // NOTE: In order to keep unmapped reads from swamping a single partition
+    // we place them in a range of referenceIds at the end of the file.
+    // The referenceId is an Int and typical only a few dozen values are even used.
+    // These referenceId values are not stored; they are only used during sorting.
+    val unmappedReferenceIds = new Iterator[Int] with Serializable {
+      var currentOffsetFromEnd = 0
+
+      def hasNext: Boolean = true
+
+      def next(): Int = {
+        currentOffsetFromEnd += 1
+        if (currentOffsetFromEnd > 10000) {
+          currentOffsetFromEnd = 0
+        }
+        Int.MaxValue - currentOffsetFromEnd
+      }
+    }
+
     rdd.map(p => {
       val referencePos = ReferencePosition(p) match {
         case None =>
-          // Move unmapped reads to the end
-          ReferencePosition(Int.MaxValue, Long.MaxValue)
+          // Move unmapped reads to the end of the file
+          ReferencePosition(unmappedReferenceIds.next(), Long.MaxValue)
         case Some(pos) => pos
       }
       (referencePos, p)
