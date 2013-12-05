@@ -16,13 +16,14 @@
 package edu.berkeley.cs.amplab.adam.commands
 
 import org.apache.hadoop.mapreduce.Job
-import edu.berkeley.cs.amplab.adam.util.{Args4jBase, Args4j}
+import edu.berkeley.cs.amplab.adam.util.{ParquetLogger, Args4jBase, Args4j}
 import org.kohsuke.args4j.{Argument, Option => Args4jOption}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import org.apache.spark.{SparkContext, Logging}
 import org.apache.spark.rdd.RDD
 import java.io.File
+import java.util.logging.Level
 
 object Transform extends AdamCommandCompanion {
   val commandName = "transform"
@@ -39,14 +40,15 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
   var outputPath: String = null
   @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
-  val sortReads: Boolean = false
+  var sortReads: Boolean = false
   @Args4jOption(required = false, name = "-mark_duplicate_reads", usage = "Mark duplicate reads")
-  val markDuplicates: Boolean = false
+  var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
-  val recalibrateBaseQualities: Boolean = false
+  var recalibrateBaseQualities: Boolean = false
   @Args4jOption(required = false, name = "-dbsnp_sites", usage = "dbsnp sites file")
-  val dbsnpSitesFile: File = null
-
+  var dbsnpSitesFile: File = null
+  @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
+  var coalesce: Int = -1
 }
 
 class Transform(protected val args: TransformArgs) extends AdamSparkCommand[TransformArgs] with Logging {
@@ -55,13 +57,23 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
   initLogging()
 
   def run(sc: SparkContext, job: Job) {
+
+    // Quiet Parquet...
+    ParquetLogger.hadoopLoggerLevel(Level.WARNING)
+
     var adamRecords: RDD[ADAMRecord] = sc.adamLoad(args.inputPath)
+    if (args.coalesce != -1) {
+      log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
+      adamRecords = adamRecords.coalesce(args.coalesce, shuffle = true)
+    }
+
     if (args.markDuplicates) {
       log.info("Marking duplicates")
       adamRecords = adamRecords.adamMarkDuplicates()
     }
 
     if (args.recalibrateBaseQualities) {
+      log.info("Recalibrating base qualities")
       adamRecords = adamRecords.adamBQSR(args.dbsnpSitesFile)
     }
 
@@ -70,6 +82,7 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
       log.info("Sorting reads")
       adamRecords = adamRecords.adamSortReadsByReferencePosition()
     }
+
     adamRecords.adamSave(args.outputPath, args)
   }
 
