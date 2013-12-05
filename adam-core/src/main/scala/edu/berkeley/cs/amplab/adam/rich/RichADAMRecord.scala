@@ -63,7 +63,7 @@ class RichADAMRecord(record: ADAMRecord) {
       Some(samtoolsCigar.getCigarElements
         .filter(p => p.getOperator.consumesReferenceBases())
         .foldLeft(record.getStart) {
-        (pos, cigarEl) => pos + cigarEl.getLength
+          (pos, cigarEl) => pos + cigarEl.getLength
       })
     } else {
       None
@@ -101,37 +101,39 @@ class RichADAMRecord(record: ADAMRecord) {
     }
   }
 
-  lazy val mdEvent: Option[MdTag] = if (record.getMismatchingPositions != null) {
-    Some(MdTag(record.getMismatchingPositions.toString, record.getStart))
-  } else {
-    None
-  }
-
-  def overlapsPosition(pos: Long): Option[Boolean] = {
-    if (record.getReadMapped) {
-      Some(record.getStart <= pos && end.get > pos)
+  lazy val mdEvent: Option[MdTag] = {
+    if (record.getMismatchingPositions != null) {
+      Some(MdTag(record.getMismatchingPositions.toString, record.getStart))
     } else {
       None
     }
   }
 
-  def isMismatchBase(pos: Long): Option[Boolean] = {
-    if (mdEvent.isEmpty || !overlapsPosition(pos).get)
+  // does this read overlap with the given position?
+  def overlapsPosition(pos: Long): Option[Boolean] = {
+    if (record.getReadMapped) {
+      Some(record.getStart <= pos && pos < end.get)
+    } else {
       None
-    else
-      Some(!mdEvent.get.isMatch(pos))
+    }
   }
 
-  def isMismatchBase(offset: Int): Option[Boolean] = {
+  // does this read mismatch the reference at the given *reference* position?
+  def isMismatchAtPosition(pos: Long): Option[Boolean] = {
+    if (mdEvent.isEmpty || !overlapsPosition(pos).get) {
+      None
+    } else {
+      Some(!mdEvent.get.isMatch(pos))
+    }
+  }
+
+  // does this read mismatch the reference at the given offset within the read?
+  def isMismatchAtOffset(offset: Int): Option[Boolean] = {
     // careful about offsets that are within an insertion!
     if (referencePositions.isEmpty) {
       None
     } else {
-      val pos = referencePositions(offset)
-      if (pos.isEmpty)
-        None
-      else
-        isMismatchBase(pos.get)
+      offsetToPosition(offset).flatMap(isMismatchAtPosition)
     }
   }
 
@@ -169,5 +171,11 @@ class RichADAMRecord(record: ADAMRecord) {
   }
 
   // get the reference position of an offset within the read
-  def getPosition(offset: Int): Option[Long] = if (record.getReadMapped) referencePositions(offset) else None
+  def offsetToPosition(offset: Int): Option[Long] = {
+    if (record.getReadMapped) {
+      referencePositions(offset)
+    } else {
+      None
+    }
+  }
 }

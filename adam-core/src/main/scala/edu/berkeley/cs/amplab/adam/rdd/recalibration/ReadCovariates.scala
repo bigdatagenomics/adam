@@ -38,15 +38,15 @@ class ReadCovariates(val read: ADAMRecord, qualByRG: QualByRG, covars: List[Stan
   override def hasNext: Boolean = iter_position < endOffset
 
   override def next(): BaseCovariates = {
-    val idx = (iter_position - startOffset).toInt
-    val position = read.getPosition(idx)
+    val offset = (iter_position - startOffset).toInt
+    val position = read.offsetToPosition(offset)
     val isMasked = dbsnp == null || position.isEmpty ||
       dbsnp.value(read.getReferenceName.toString).contains(position.get.toInt) ||
-      read.isMismatchBase(idx).isEmpty
-    val isMisMatch = read.isMismatchBase(idx).getOrElse(false) // getOrElse because reads without an MD tag can appear during *application* of recal table
+      read.isMismatchAtOffset(offset).isEmpty
+    val isMisMatch = read.isMismatchAtOffset(offset).getOrElse(false) // getOrElse because reads without an MD tag can appear during *application* of recal table
     iter_position += 1
-    new BaseCovariates(qualCovar(idx), requestedCovars.map(v => v(idx)).toArray,
-      read.qualityScores(idx), isMisMatch, isMasked)
+    new BaseCovariates(qualCovar(offset), requestedCovars.map(v => v(offset)).toArray,
+      read.qualityScores(offset), isMisMatch, isMasked)
   }
 
 }
