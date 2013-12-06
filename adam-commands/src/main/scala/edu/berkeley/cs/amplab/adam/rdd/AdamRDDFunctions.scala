@@ -23,7 +23,7 @@ import parquet.hadoop.util.ContextUtil
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMVariant, ADAMGenotype, ADAMVariantDomain}
 import edu.berkeley.cs.amplab.adam.commands.ParquetArgs
-import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, ReferencePosition}
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, ReferencePosition, ADAMRod}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
@@ -144,13 +144,89 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
   }
 }
 
-class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable {
+class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Logging {
+  initLogging()
 
+  /**
+   * Aggregates pileup bases together.
+   *
+   * @param coverage Coverage value is used to increase number of reducer operators.
+   * @return RDD with aggregated bases.
+   *
+   * @see AdamRodRDDFunctions#adamAggregateRods
+   */
   def adamAggregatePileups(coverage: Int = 30): RDD[ADAMPileup] = {
     val helper = new PileupAggregator
     helper.aggregate(rdd, coverage)
   }
 
+  /**
+   * Converts ungrouped pileup bases into reference grouped bases.
+   *
+   * @param coverage Coverage value is used to increase number of reducer operators.
+   * @return RDD with rods grouped by reference position.
+   */
+  def adamPileupsToRods(coverage: Int = 30): RDD[ADAMRod] = {
+    val groups = rdd.groupBy((p: ADAMPileup) => p.getPosition, coverage)
+    
+    groups.map(kv => ADAMRod(kv._1, kv._2.toList))
+  }
+
+}
+
+class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
+  initLogging()
+
+  /**
+   * Given an RDD of rods, splits the rods up by the specific sample they correspond to.
+   * Returns a flat RDD.
+   *
+   * @return Rods split up by samples and _not_ grouped together.
+   */
+  def adamSplitRodsBySamples(): RDD[ADAMRod] = {
+    rdd.flatMap(_.splitBySamples)
+  }
+
+  /**
+   * Given an RDD of rods, splits the rods up by the specific sample they correspond to.
+   * Returns an RDD where the samples are grouped by the reference position.
+   *
+   * @return Rods split up by samples and grouped together by position.
+   */
+  def adamDivideRodsBySamples(): RDD[(Long, List[ADAMRod])] = {
+    rdd.keyBy(_.position).map(r => (r._1, r._2.splitBySamples))
+  }
+
+  /**
+   * Inside of a rod, aggregates pileup bases together.
+   * 
+   * @return RDD with aggregated rods.
+   *
+   * @see AdamPileupRDDFunctions#adamAggregatePileups
+   */
+  def adamAggregateRods(): RDD[ADAMRod] = {
+    val helper = new PileupAggregator
+    rdd.map(r => (r.position, r.pileups))
+      .map(kv => (kv._1, helper.flatten(kv._2)))
+      .map(kv => new ADAMRod(kv._1, kv._2))
+  }
+
+  /**
+   * Returns the average coverage for all pileups.
+   *
+   * @note Coverage value does not include locus positions where no reads are mapped, as no rods exist for these positions.
+   * @note If running on an RDD with multiple samples where the rods have been split by sample, will return the average
+   * coverage per sample, _averaged_ over all samples. If the RDD contains multiple samples and the rods have _not_ been split,
+   * this will return the average coverage per sample, _summed_ over all samples.
+   *
+   * @return Average coverage across mapped loci.
+   */
+  def adamRodCoverage(): Double = {
+    val totalBases: Long = rdd.map(_.pileups.length.toLong).reduce(_ + _)
+    
+    // coverage is the total count of bases, over the total number of loci
+    totalBases.toDouble / rdd.count.toDouble
+  }
 }
 
 class AdamVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Serializable {

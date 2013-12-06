@@ -30,7 +30,7 @@ import edu.berkeley.cs.amplab.adam.commands.{SAMRecordConverter, VariantContextC
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
 import scala.collection.JavaConversions._
-import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary}
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, ADAMRod}
 import org.apache.hadoop.fs.Path
 import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
 import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, Projection}
@@ -53,6 +53,9 @@ object AdamContext {
 
   // Add methods specific to ADAMVariantContext RDDs
   implicit def rddToAdamVariantContextRDD(rdd: RDD[ADAMVariantContext]) = new AdamVariantContextRDDFunctions(rdd)
+
+  // Add methods specific to the ADAMRod RDDs
+  implicit def rddToAdamRodRDD(rdd: RDD[ADAMRod]) = new AdamRodRDDFunctions(rdd)
 
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToAdamRDD[T <% SpecificRecord : Manifest](rdd: RDD[T]) = new AdamRDDFunctions(rdd)
