@@ -18,6 +18,7 @@ package edu.berkeley.cs.amplab.adam.rdd
 import org.apache.spark.Logging
 import org.apache.spark.broadcast.{Broadcast => SparkBroadcast}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.models.SnpTable
 import edu.berkeley.cs.amplab.adam.rdd.recalibration._
 import org.apache.spark.rdd.RDD
 
@@ -28,7 +29,7 @@ private[rdd] object RecalibrateBaseQualities extends Serializable with Logging {
     read.getReadMapped && read.getPrimaryAlignment && !read.getDuplicateRead && (read.getMismatchingPositions != null)
   }
 
-  def apply(rdd: RDD[ADAMRecord], dbsnp: SparkBroadcast[Map[String, Set[Int]]]): RDD[ADAMRecord] = {
+  def apply(rdd: RDD[ADAMRecord], dbsnp: SparkBroadcast[SnpTable]): RDD[ADAMRecord] = {
     // initialize the covariates
     println("Instantiating covariates...")
     val qualByRG = new QualByRG(rdd)
@@ -45,7 +46,7 @@ private[rdd] object RecalibrateBaseQualities extends Serializable with Logging {
 private[rdd] class RecalibrateBaseQualities(val qualCovar: QualByRG, val covars: List[StandardCovariate]) extends Serializable with Logging {
   initLogging()
 
-  def computeTable(rdd: RDD[ADAMRecord], dbsnp: SparkBroadcast[Map[String, Set[Int]]]): RecalTable = {
+  def computeTable(rdd: RDD[ADAMRecord], dbsnp: SparkBroadcast[SnpTable]): RecalTable = {
 
     def addCovariates(table: RecalTable, covar: ReadCovariates): RecalTable = {
       //log.info("Aggregating covarates for read "+covar.read.record.getReadName.toString)
@@ -57,7 +58,7 @@ private[rdd] class RecalibrateBaseQualities(val qualCovar: QualByRG, val covars:
       table1 ++ table2
     }
 
-    rdd.map(r => ReadCovariates(r, qualCovar, covars, dbsnp)).aggregate(new RecalTable)(addCovariates, mergeTables)
+    rdd.map(r => ReadCovariates(r, qualCovar, covars, dbsnp.value)).aggregate(new RecalTable)(addCovariates, mergeTables)
   }
 
   def applyTable(table: RecalTable, rdd: RDD[ADAMRecord], qualCovar: QualByRG, covars: List[StandardCovariate]): RDD[ADAMRecord] = {

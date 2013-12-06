@@ -20,6 +20,7 @@ import edu.berkeley.cs.amplab.adam.util.ParquetLogger
 import org.kohsuke.args4j.{Argument, Option => Args4jOption}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.models.SnpTable
 import org.apache.spark.{SparkContext, Logging}
 import org.apache.spark.rdd.RDD
 import java.io.File
@@ -46,7 +47,7 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
   var recalibrateBaseQualities: Boolean = false
   @Args4jOption(required = false, name = "-dbsnp_sites", usage = "dbsnp sites file")
-  var dbsnpSitesFile: File = null
+  var dbsnpSitesFile: String = null
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
 }
@@ -74,7 +75,8 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
 
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
-      adamRecords = adamRecords.adamBQSR(args.dbsnpSitesFile)
+      val dbSNP = loadSnpTable(sc)
+      adamRecords = adamRecords.adamBQSR(dbSNP)
     }
 
     // NOTE: For now, sorting needs to be the last transform
@@ -85,6 +87,17 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
 
     adamRecords.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
       compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
+  }
+
+  // FIXME: why doesn't this complain if the file doesn't exist?
+  def loadSnpTable(sc: SparkContext): SnpTable = {
+    if(args.dbsnpSitesFile != null) {
+      log.info("Loading SNP table")
+      //SnpTable(sc.textFile(args.dbsnpSitesFile))
+      SnpTable(new File(args.dbsnpSitesFile))
+    } else {
+      SnpTable()
+    }
   }
 
 }

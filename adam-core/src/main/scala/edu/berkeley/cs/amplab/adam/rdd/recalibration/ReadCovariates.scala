@@ -17,16 +17,17 @@ package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import org.apache.spark.broadcast.{Broadcast => SparkBroadcast}
+import edu.berkeley.cs.amplab.adam.models.SnpTable
 
 object ReadCovariates {
-  def apply(rec: ADAMRecord, qualRG: QualByRG, covars: List[StandardCovariate], dbsnp: SparkBroadcast[Map[String, Set[Int]]] = null): ReadCovariates = {
+  def apply(rec: ADAMRecord, qualRG: QualByRG, covars: List[StandardCovariate],
+            dbsnp: SnpTable = SnpTable()): ReadCovariates = {
     new ReadCovariates(rec, qualRG, covars, dbsnp)
   }
 }
 
 class ReadCovariates(val read: ADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate],
-                     val dbsnp: SparkBroadcast[Map[String, Set[Int]]] = null) extends Iterator[BaseCovariates] with Serializable {
+                     val dbSNP: SnpTable) extends Iterator[BaseCovariates] with Serializable {
 
   val startOffset = read.qualityScores.takeWhile(_ <= 2).size
   val endOffset = read.qualityScores.size - read.qualityScores.reverseIterator.takeWhile(_ <= 2).size
@@ -39,14 +40,14 @@ class ReadCovariates(val read: ADAMRecord, qualByRG: QualByRG, covars: List[Stan
 
   override def next(): BaseCovariates = {
     val offset = (iter_position - startOffset).toInt
-    val position = read.offsetToPosition(offset)
-    val isMasked = dbsnp == null || position.isEmpty ||
-      dbsnp.value(read.getReferenceName.toString).contains(position.get.toInt) ||
-      read.isMismatchAtOffset(offset).isEmpty
-    val isMisMatch = read.isMismatchAtOffset(offset).getOrElse(false) // getOrElse because reads without an MD tag can appear during *application* of recal table
+    val mismatch = read.isMismatchAtOffset(offset)
+    // FIXME: why does empty mismatch mean it should be masked?
+    val isMasked = dbSNP.isMaskedAtOffset(read, offset) || mismatch.isEmpty
+    // getOrElse because reads without an MD tag can appear during *application* of recal table
+    val isMismatch = mismatch.getOrElse(false)
     iter_position += 1
     new BaseCovariates(qualCovar(offset), requestedCovars.map(v => v(offset)).toArray,
-      read.qualityScores(offset), isMisMatch, isMasked)
+      read.qualityScores(offset), isMismatch, isMasked)
   }
 
 }
