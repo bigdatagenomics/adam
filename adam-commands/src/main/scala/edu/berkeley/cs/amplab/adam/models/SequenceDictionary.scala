@@ -212,6 +212,8 @@ class SequenceDictionary(recordsIn : Iterable[SequenceRecord]) extends Serializa
   def nonoverlappingHash(x : CharSequence) : Int =
     SequenceDictionary.nonoverlappingHash(x, idx => recordIndices.contains(idx))
 
+  def hasSequence(referenceName : CharSequence) : Boolean = recordNames.contains(referenceName)
+
   override def equals(x : Any) : Boolean = {
     x match {
       case d : SequenceDictionary =>
