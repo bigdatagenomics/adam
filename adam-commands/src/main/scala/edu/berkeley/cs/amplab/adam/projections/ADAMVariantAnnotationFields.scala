@@ -16,6 +16,8 @@
 
 package edu.berkeley.cs.amplab.adam.projections
 
+import edu.berkeley.cs.amplab.adam.avro.ADAMVariantDomain
+
 object ADAMVariantAnnotations extends Enumeration {
   val ADAMVariantDomain = Value
 
@@ -33,11 +35,11 @@ object ADAMVariantAnnotations extends Enumeration {
  * for predicates and projections.
  */
 
-object ADAMVariantDomainField extends Enumeration {
+object ADAMVariantDomainField extends FieldEnumeration(ADAMVariantDomain.SCHEMA$) {
   val position,
   variant,
   inDbSNP,
   inHM2,
   inHM3,
-  in1000G = Value
+  in1000G = SchemaValue
 }
