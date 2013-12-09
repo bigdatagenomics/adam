@@ -8,3 +8,4 @@ build
 *.bam*
 *.adam*
 *.vcf*
+*.log
