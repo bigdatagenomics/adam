@@ -1,0 +1,4 @@
+The "Contracts for Java" (aka cofoja) package included in ADAM is released
+under the LGPL v3 license.
+
+All other code released under Apache 2 or compatible license.

@@ -28,7 +28,8 @@ object AdamMain {
     PrintAdam,
     PileupAggregator,
     ListDict,
-    CompareAdam)
+    CompareAdam,
+    ComputeVariants)
 
   private def printCommands() {
     println("\n")
