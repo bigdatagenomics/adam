@@ -19,6 +19,7 @@ import parquet.filter.UnboundRecordFilter
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
 import org.apache.spark.rdd.RDD
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.util.PhredUtils._
@@ -49,5 +50,4 @@ class AdamContextSuite extends SparkFunSuite {
   }
 
 }
-
 
