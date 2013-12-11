@@ -22,48 +22,42 @@ import edu.berkeley.cs.amplab.adam.models.{SingleReadBucket, ReferencePositionPa
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 
-private[rdd] object MarkDuplicates {
+private[rdd] object MarkDuplicates extends Serializable {
 
-  def apply(rdd: RDD[ADAMRecord]): RDD[ADAMRecord] = {
-    new MarkDuplicates().markDuplicates(rdd)
+  def markReads(buckets: Seq[SingleReadBucket], areDups: Boolean): Seq[SingleReadBucket] = {
+    for (bucket <- buckets; read <- bucket.primaryMapped ++ bucket.secondaryMapped) {
+      read.setDuplicateRead(areDups)
+    }
+    for (bucket <- buckets; read <- bucket.unmapped) {
+      read.setDuplicateRead(false)
+    }
+    buckets
   }
-}
 
-private[rdd] class MarkDuplicates extends Serializable with Logging {
-  initLogging()
+  // Calculates the sum of the phred scores that are greater than or equal to 15
+  def score(record: ADAMRecord): Int = {
+    record.qualityScores.map(p => p.toInt).filter(15 <=).sum
+  }
 
-  // This method makes no assumptions about the order of the incoming records. Be warned
-  // that this method does *not* preserve the order of the records (that would be costly
-  // and require a join again the original rdd).
-  def markDuplicates(rdd: RDD[ADAMRecord], deleteDuplicates: Boolean = false): RDD[ADAMRecord] = {
+  def scoreAndMarkReads(buckets: Seq[SingleReadBucket]): Seq[SingleReadBucket] = {
+    val scoredBuckets = buckets.map(p => (p.primaryMapped.map(score).sum, p))
+    val sortedBuckets = scoredBuckets.sortBy(_._1)(Ordering[Int].reverse)
 
-    def markReads(buckets: Seq[SingleReadBucket], areDups: Boolean): Seq[SingleReadBucket] = {
-      for (bucket <- buckets; read <- bucket.primaryMapped ++ bucket.secondaryMapped) {
-        read.setDuplicateRead(areDups)
+    for (((score, bucket), i) <- sortedBuckets.zipWithIndex) {
+      for (read <- bucket.primaryMapped) {
+        read.setDuplicateRead(i != 0)
       }
-      for (bucket <- buckets; read <- bucket.unmapped) {
+      for (read <- bucket.secondaryMapped) {
+        read.setDuplicateRead(true)
+      }
+      for (read <- bucket.unmapped) {
         read.setDuplicateRead(false)
       }
-      buckets
     }
+    buckets
+  }
 
-    def scoreAndMarkReads(buckets: Seq[SingleReadBucket]): Seq[SingleReadBucket] = {
-      val scoredBuckets = buckets.map(p => (p.primaryMapped.map(_.markDuplicatesScore).sum, p))
-      val sortedBuckets = scoredBuckets.sortBy(_._1)(Ordering[Byte].reverse)
-      for (((score, bucket), i) <- sortedBuckets.zipWithIndex) {
-        for (read <- bucket.primaryMapped) {
-          read.setDuplicateRead(i != 0)
-        }
-        for (read <- bucket.secondaryMapped) {
-          read.setDuplicateRead(true)
-        }
-        for (read <- bucket.unmapped) {
-          read.setDuplicateRead(false)
-        }
-      }
-      buckets
-    }
-
+  def apply(rdd: RDD[ADAMRecord]): RDD[ADAMRecord] = {
     // Group by library and left position
     def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket)): (Option[ReferencePositionWithOrientation], CharSequence) = {
       (p._1.read1refPos, p._2.allReads(0).getRecordGroupLibrary)
@@ -114,6 +108,5 @@ private[rdd] class MarkDuplicates extends Serializable with Logging {
          };
          read <- buckets.allReads) yield read
   }
-
 }
 
