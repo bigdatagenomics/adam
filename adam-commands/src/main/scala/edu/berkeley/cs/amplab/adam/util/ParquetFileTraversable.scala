@@ -31,7 +31,7 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
     }
     val status = fs.getFileStatus(file)
     var paths = List[Path]()
-    if (status.isDir) {
+    if (status.isDirectory) {
       val files = fs.listStatus(file)
       files.foreach {
         file =>
@@ -39,8 +39,7 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
             paths ::= file.getPath
           }
       }
-    }
-    else if (fs.isFile(file)) {
+    } else if (status.isFile) {
       paths ::= file
     } else {
       throw new IllegalArgumentException("The path '%s' is neither file nor directory".format(file))

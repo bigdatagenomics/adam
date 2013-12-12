@@ -319,6 +319,31 @@ class VariantContextConverter extends Serializable {
     vc
   }
 
+  def getAttributeAsString(g: Genotype, attribute: String, default: String = ""): String = {
+    if (g.hasExtendedAttribute(attribute)) {
+      g.getExtendedAttribute(attribute) match {
+        case null => default
+        case s : String => s
+        case o : AnyRef => String.valueOf(o)
+      }
+    } else {
+      default
+    }
+  }
+
+  def getAttributeAsInt(g: Genotype, attribute: String, default: Int = 0): Int = {
+    if (g.hasExtendedAttribute(attribute)) {
+      g.getExtendedAttribute(attribute) match {
+        case null => default
+        case i : java.lang.Integer => i
+        case o : AnyRef => Integer.valueOf(String.valueOf(o))
+      }
+    } else {
+      default
+    }
+  }
+
+
   /**
    * Converts a GATK variant context into a set of genotypes. Genotype numbering corresponds
    * to allele numbering of variants at same locus.
@@ -345,7 +370,7 @@ class VariantContextConverter extends Serializable {
       var haplotype = 0
 
       val haplotypeQual = if (g.hasExtendedAttribute("HQ")) {
-        vcfListToInts(g.getAttributeAsString("HQ", ""))
+        vcfListToInts(getAttributeAsString(g, "HQ"))
       } else {
         List[Int]()
       }
@@ -375,11 +400,11 @@ class VariantContextConverter extends Serializable {
         // set phasing specific fields
         if (g.isPhased) {
           if (g.hasExtendedAttribute("PQ")) {
-            builder.setPhaseQuality(g.getAttributeAsInt("PQ", 0))
+            builder.setPhaseQuality(getAttributeAsInt(g, "PQ"))
           }
         
           if (g.hasExtendedAttribute("PS")) {
-            builder.setPhaseSetId(g.getAttributeAsString("PS", ""))
+            builder.setPhaseSetId(getAttributeAsString(g, "PS"))
           }
         }
 
@@ -392,15 +417,15 @@ class VariantContextConverter extends Serializable {
         }
 
         if (g.hasExtendedAttribute("GP")) {
-          builder.setPhredPosteriorLikelihoods(g.getAttributeAsString("GP", ""))
+          builder.setPhredPosteriorLikelihoods(getAttributeAsString(g, "GP"))
         }
 
         if (g.hasExtendedAttribute("MQ")) {
-          builder.setRmsMappingQuality(g.getAttributeAsInt("MQ", 0))
+          builder.setRmsMappingQuality(getAttributeAsInt(g, "MQ"))
         }
 
         if (g.hasExtendedAttribute("GQL")) {
-          builder.setPloidyStateGenotypeLikelihoods(g.getAttributeAsString("GQL", ""))
+          builder.setPloidyStateGenotypeLikelihoods(getAttributeAsString(g, "GQL"))
         }
 
         // increment haplotype count

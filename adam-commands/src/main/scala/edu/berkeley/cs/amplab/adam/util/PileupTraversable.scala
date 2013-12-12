@@ -83,7 +83,7 @@ object PileupTraversable {
 class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extends Traversable[Pileup] with Serializable {
 
   def this(sc: SparkContext, file: String) = this(sc, {
-    val job = new Job()
+    val job = Job.getInstance()
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[ADAMRecord]])
     ParquetInputFormat.setUnboundRecordFilter(job, classOf[LocusPredicate])
     sc.newAPIHadoopFile(file,

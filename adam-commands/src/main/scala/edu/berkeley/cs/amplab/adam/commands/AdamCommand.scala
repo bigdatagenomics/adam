@@ -44,7 +44,7 @@ trait AdamSparkCommand[A <: Args4jBase with SparkArgs] extends AdamCommand with 
 
   def run() {
     val sc: SparkContext = createSparkContext(args)
-    val job = new Job()
+    val job = Job.getInstance()
 
     run(sc, job)
   }

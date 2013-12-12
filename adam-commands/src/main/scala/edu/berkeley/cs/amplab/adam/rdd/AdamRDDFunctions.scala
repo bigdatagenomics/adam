@@ -38,7 +38,7 @@ class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Seri
   def adamSave(filePath: String, blockSize: Int = 128 * 1024 * 1024,
                pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                disableDictionaryEncoding: Boolean = false): RDD[T] = {
-    val job = new Job(rdd.context.hadoopConfiguration)
+    val job = Job.getInstance(rdd.context.hadoopConfiguration)
     ParquetOutputFormat.setWriteSupportClass(job, classOf[AvroWriteSupport])
     ParquetOutputFormat.setCompression(job, compressCodec)
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
