@@ -25,25 +25,31 @@ class SAMRecordConverter extends Serializable {
   def convert(samRecord: SAMRecord, dict : SequenceDictionary): ADAMRecord = {
 
     val builder: ADAMRecord.Builder = ADAMRecord.newBuilder
-      .setReferenceName(samRecord.getReferenceName)
-      .setReferenceId(samRecord.getReferenceIndex)
-      .setReferenceLength(dict(samRecord.getReferenceIndex).length)
-      .setReferenceUrl(dict(samRecord.getReferenceIndex).url)
       .setReadName(samRecord.getReadName)
       .setSequence(samRecord.getReadString)
       .setCigar(samRecord.getCigarString)
       .setQual(samRecord.getBaseQualityString)
 
-    val start: Int = samRecord.getAlignmentStart
+    // Only set the reference information if the read is aligned, matching the mate reference
+    // This prevents looking up a -1 in the sequence dictionary
+    val readReference: Int = samRecord.getReferenceIndex
+    if (readReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
+      builder
+        .setReferenceId(readReference)
+        .setReferenceName(samRecord.getReferenceName)
+        .setReferenceLength(dict(samRecord.getReferenceIndex).length)
+        .setReferenceUrl(dict(samRecord.getReferenceIndex).url)
 
-    if (start != 0) {
-      builder.setStart((start - 1).asInstanceOf[Long])
-    }
+      val start: Int = samRecord.getAlignmentStart
+      if (start != 0) {
+        builder.setStart((start - 1).asInstanceOf[Long])
+      }
 
-    val mapq: Int = samRecord.getMappingQuality
+      val mapq: Int = samRecord.getMappingQuality
 
-    if (mapq != SAMRecord.UNKNOWN_MAPPING_QUALITY) {
-      builder.setMapq(mapq)
+      if (mapq != SAMRecord.UNKNOWN_MAPPING_QUALITY) {
+        builder.setMapq(mapq)
+      }
     }
 
     // Position of the mate/next segment
