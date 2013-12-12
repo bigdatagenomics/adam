@@ -16,6 +16,8 @@
 
 package edu.berkeley.cs.amplab.adam.projections
 
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+
 /**
  * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
  * in sync with any changes to ADAMRecord.
@@ -23,7 +25,8 @@ package edu.berkeley.cs.amplab.adam.projections
  * This enumeration is necessary because Parquet needs the field string names
  * for predicates and projections.
  */
-object ADAMRecordField extends Enumeration {
+object ADAMRecordField extends FieldEnumeration(ADAMRecord.SCHEMA$) {
+
   val referenceName,
   referenceId,
   referenceLength,
@@ -63,5 +66,5 @@ object ADAMRecordField extends Enumeration {
   mateReferenceId,
   mateReferenceLength,
   mateReferenceUrl
-  = Value
+  = SchemaValue
 }

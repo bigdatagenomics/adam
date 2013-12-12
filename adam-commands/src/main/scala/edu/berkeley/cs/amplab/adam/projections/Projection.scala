@@ -16,8 +16,10 @@ object Projection {
     projectedSchema
   }
 
-  def apply(includedFields: ADAMRecordField.Value*): Schema = {
-    createProjection(ADAMRecord.SCHEMA$, includedFields.map(_.toString).toSet)
+  def apply(includedFields: FieldValue*): Schema = {
+    assert( !includedFields.isEmpty, "Can't project down to zero fields!" )
+    val baseSchema = includedFields.head.schema
+    createProjection(baseSchema, includedFields.map(_.toString).toSet)
   }
 
 }

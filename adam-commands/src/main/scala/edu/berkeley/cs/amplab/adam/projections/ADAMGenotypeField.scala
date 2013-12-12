@@ -16,6 +16,8 @@
 
 package edu.berkeley.cs.amplab.adam.projections
 
+import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
+
 /**
  * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
  * in sync with any changes to ADAMGenotype.
@@ -23,7 +25,7 @@ package edu.berkeley.cs.amplab.adam.projections
  * This enumeration is necessary because Parquet needs the field string names
  * for predicates and projections.
  */
-object ADAMGenotypeField extends Enumeration {
+object ADAMGenotypeField extends FieldEnumeration(ADAMGenotype.SCHEMA$) {
   val referenceId,
   referenceName,
   position,
@@ -56,5 +58,5 @@ object ADAMGenotypeField extends Enumeration {
   svConfidenceIntervalStartLow,
   svConfidenceIntervalStartHigh,
   svConfidenceIntervalEndLow,
-  svConfidenceIntervalEndHigh = Value
+  svConfidenceIntervalEndHigh = SchemaValue
 }
