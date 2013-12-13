@@ -141,16 +141,24 @@ class VariantContextConverter extends Serializable {
       None
     }
 
+    def getIntOrDoubleAttributeAsInt (key: String): Option[Int] = {
+      vc.getAttribute(key) match {
+        case (d: java.lang.Double) => Some(d.toInt)
+        case (i: java.lang.Integer) => Some(i)
+        case _ => None
+      }
+    }
+
     // RMS quality of bases mapped to site
-    val baseQuality = if (vc.hasAttribute("BQ")) {
-      Some(vc.getAttributeAsInt("BQ", 0))
+    val baseQuality: Option[Int] = if (vc.hasAttribute("BQ")) {
+      getIntOrDoubleAttributeAsInt("BQ")
     } else {
       None
     }
 
     // RMS mapping quality of reads mapped to site
-    val mapQuality = if (vc.hasAttribute("MQ")) {
-      Some(vc.getAttributeAsInt("MQ", 0))
+    val mapQuality: Option[Int] = if (vc.hasAttribute("MQ")) {
+      getIntOrDoubleAttributeAsInt("MQ")
     } else {
       None
     }
@@ -421,7 +429,13 @@ class VariantContextConverter extends Serializable {
         }
 
         if (g.hasExtendedAttribute("MQ")) {
-          builder.setRmsMappingQuality(getAttributeAsInt(g, "MQ"))
+          val mq: Option[Int] = g.getExtendedAttribute("MQ") match {
+            case (d: java.lang.Double) => Some(d.toInt)
+            case (i: java.lang.Integer) => Some(i)
+            case _ => None
+          }
+
+          mq.foreach(builder.setRmsMappingQuality(_))
         }
 
         if (g.hasExtendedAttribute("GQL")) {

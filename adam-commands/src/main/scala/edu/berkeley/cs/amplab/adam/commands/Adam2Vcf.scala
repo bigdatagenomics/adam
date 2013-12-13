@@ -31,8 +31,9 @@ import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
 import parquet.hadoop.{ParquetOutputFormat, ParquetInputFormat}
 import parquet.avro.{AvroReadSupport, AvroWriteSupport}
 import org.apache.hadoop.mapreduce.Job
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.LongWritable
-import fi.tkk.ics.hadoop.bam.{VariantContextWritable, VCFOutputFormat}
+import fi.tkk.ics.hadoop.bam.{VariantContextWritable, VCFOutputFormat, VCFFormat}
 
 object Adam2Vcf extends AdamCommandCompanion {
 
@@ -72,6 +73,14 @@ class Adam2Vcf(val args: Adam2VcfArgs) extends AdamSparkCommand[Adam2VcfArgs] wi
 
     // add index for writing output format
     val mapIndex = variantContexts.keyBy(r => new LongWritable(r.get.getStart))
+
+    log.info("Counted " + variantContexts.count + " variants.")
+
+    // new context
+    val conf = sc.hadoopConfiguration
+    val vcfFormat = VCFFormat.valueOf("VCF")
+    conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY,
+             vcfFormat.toString)
 
     // write out
     mapIndex.saveAsNewAPIHadoopFile(args.outputPath, classOf[LongWritable], classOf[VariantContextWritable],

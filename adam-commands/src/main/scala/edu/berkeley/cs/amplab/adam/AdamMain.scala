@@ -29,7 +29,9 @@ object AdamMain {
     PileupAggregator,
     ListDict,
     CompareAdam,
-    ComputeVariants)
+    ComputeVariants,
+    Adam2Vcf,
+    Vcf2Adam)
 
   private def printCommands() {
     println("\n")
