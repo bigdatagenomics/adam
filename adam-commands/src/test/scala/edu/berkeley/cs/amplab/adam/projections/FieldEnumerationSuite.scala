@@ -15,12 +15,13 @@
  */
 package edu.berkeley.cs.amplab.adam.projections
 
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
+import edu.berkeley.cs.amplab.adam.util.{ParquetLogger, SparkFunSuite}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMRecord}
 import org.apache.spark.rdd.RDD
 import java.io.File
 import org.scalatest.BeforeAndAfter
+import java.util.logging.Level
 
 class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
 
@@ -29,6 +30,8 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
   var variantsParquetFile : File = null
 
   sparkBefore("fieldenumerationsuite_before") {
+    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
+
     readsFilepath = ClassLoader.getSystemClassLoader.getResource("reads12.sam").getFile
     val file = new File(readsFilepath)
 
