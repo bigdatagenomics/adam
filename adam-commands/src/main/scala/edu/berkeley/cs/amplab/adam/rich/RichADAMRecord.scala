@@ -38,9 +38,6 @@ class RichADAMRecord(record: ADAMRecord) {
   // Returns the quality scores as a list of bytes
   lazy val qualityScores: Array[Byte] = record.getQual.toString.toCharArray.map(q => (q - 33).toByte)
 
-  // Calculates the sum of the phred scores that are greater than or equal to 15
-  lazy val markDuplicatesScore = qualityScores.filter(15 <=).sum
-
   // Parses the readname to Illumina optics information
   lazy val illuminaOptics: Option[IlluminaOptics] = {
     try {
