@@ -103,7 +103,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
     // below).
     val seqDict = adamBamDictionaryLoad(filePath)
 
-    val job = new Job(sc.hadoopConfiguration)
+    val job = Job.getInstance(sc.hadoopConfiguration)
     val records = sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],
       classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
     val samRecordConverter = new SAMRecordConverter
@@ -113,7 +113,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
   private def adamParquetLoad[T <% SpecificRecord : Manifest, U <: UnboundRecordFilter]
   (filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
     log.info("Reading the ADAM file at %s to create RDD".format(filePath))
-    val job = new Job(sc.hadoopConfiguration)
+    val job = Job.getInstance(sc.hadoopConfiguration)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])
     if (predicate.isDefined) {
       log.info("Using the specified push-down predicate")
@@ -207,7 +207,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
    */
   private def adamVcfLoad (filePath: String): RDD[ADAMVariantContext] = {
     log.info("Reading legacy VCF file format %s to create RDD".format(filePath))
-    val job = new Job(sc.hadoopConfiguration)
+    val job = Job.getInstance(sc.hadoopConfiguration)
     val records = sc.newAPIHadoopFile(filePath, classOf[VCFInputFormat], classOf[LongWritable],
                                       classOf[VariantContextWritable], ContextUtil.getConfiguration(job))
       .map(_._2)
