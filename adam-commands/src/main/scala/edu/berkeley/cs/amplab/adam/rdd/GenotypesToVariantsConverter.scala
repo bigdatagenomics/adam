@@ -24,7 +24,7 @@ import edu.berkeley.cs.amplab.adam.projections.ADAMVariantField
 import scala.math.{pow, sqrt}
 
 private[rdd] class GenotypesToVariantsConverter (validateSamples: Boolean = false,
-                                                 failOnValidationError: Boolean = false) {
+                                                 failOnValidationError: Boolean = false) extends Serializable {
 
   /**
    * Validates consistency between genotypes of a single sample at a single loci. Checks to see that per-sample genotype
@@ -108,7 +108,11 @@ private[rdd] class GenotypesToVariantsConverter (validateSamples: Boolean = fals
    * @return The RMS of this series.
    */
   def rms(values: Seq[Double]): Double = {
-    sqrt(values.map(pow(_, 2.0)).reduce(_ + _) / values.length.toDouble)
+    if (values.length > 0) {
+      sqrt(values.map(pow(_, 2.0)).reduce(_ + _) / values.length.toDouble)
+    } else {
+      0.0
+    }
   }
 
   /**
@@ -118,7 +122,11 @@ private[rdd] class GenotypesToVariantsConverter (validateSamples: Boolean = fals
    * @return The RMS of this series.
    */
   def rms(values: Seq[Int]): Int = {
-    PhredUtils.doubleToPhred(rms(values.map(PhredUtils.phredToDouble(_))))
+    if (values.length > 0) {
+      PhredUtils.doubleToPhred(rms(values.map(PhredUtils.phredToDouble(_))))
+    } else {
+      0
+    }
   }
 
   /**
@@ -387,17 +395,23 @@ private[rdd] class GenotypesToVariantsConverter (validateSamples: Boolean = fals
     if(takeFromVariant(ADAMVariantField.siteMapQZeroCounts)) {
       builder.setSiteMapQZeroCounts(wrappedVariant.get.getSiteMapQZeroCounts)
     } else {
-      builder.setSiteMapQZeroCounts(genotypes.map(_.getReadsMappedMapQ0)
-                                      .filter(_ != null)
-                                      .reduce(_ + _))
+      val mq0 = genotypes.map(_.getReadsMappedMapQ0)
+        .filter(_ != null)
+      
+      if (mq0.length > 0) {
+        builder.setSiteMapQZeroCounts(mq0.reduce(_ + _))
+      }
     }
 
     if(takeFromVariant(ADAMVariantField.totalSiteMapCounts)) {
       builder.setTotalSiteMapCounts(wrappedVariant.get.getTotalSiteMapCounts)
     } else {
-      builder.setTotalSiteMapCounts(genotypes.map(_.getDepth)
-                                      .filter(_ != null)
-                                      .reduce(_ + _))
+      val mc = genotypes.map(_.getDepth)
+        .filter(_ != null)
+
+      if (mc.length > 0) {
+        builder.setTotalSiteMapCounts(mc.reduce(_ + _))
+      }
     }
 
     if(takeFromVariant(ADAMVariantField.numberOfSamplesWithData)) {
@@ -410,11 +424,14 @@ private[rdd] class GenotypesToVariantsConverter (validateSamples: Boolean = fals
       builder.setStrandBias(wrappedVariant.get.getStrandBias)
     } else {
       val g = genotypes.filter(r => r.getDepth != null && r.getReadsMappedForwardStrand != null)
-      val total = g.map(_.getDepth).reduce(_ + _)
-      val forward = g.map(_.getReadsMappedForwardStrand).reduce(_ + _)
 
-      // bias is forward / rev, rev = total - forward
-      builder.setStrandBias(forward.toDouble / (total - forward).toDouble)
+      if (g.length > 0) {
+        val total = g.map(_.getDepth).reduce(_ + _)
+        val forward = g.map(_.getReadsMappedForwardStrand).reduce(_ + _)
+        
+        // bias is forward / rev, rev = total - forward
+        builder.setStrandBias(forward.toDouble / (total - forward).toDouble)
+      }
     }
 
     // build and return
@@ -440,24 +457,24 @@ private[rdd] class GenotypesToVariantsConverter (validateSamples: Boolean = fals
                ): Seq[ADAMVariant] = {
     
     // group by allele and reference genome
-    val genotypeGroups: Map[(Int, String), List[ADAMGenotype]] = genotypes.groupBy(g => {
+    val genotypeGroups: Map[(Int, String), Seq[ADAMGenotype]] = genotypes.groupBy(g => {
       val k: (Int, String) = (g.getReferenceId, g.getAllele)
       k
-    }).asInstanceOf[Map[(Int, String), List[ADAMGenotype]]]
-    val variantGroups: Map[(Int, String), List[ADAMVariant]] = variant match {
+    })
+    val variantGroups: Map[(Int, String), Seq[ADAMVariant]] = variant match {
       case Some(o) => o.asInstanceOf[Seq[ADAMVariant]].groupBy(g => {
         val k: (Int, String) = (g.getReferenceId, g.getVariant)
         k
-      }).asInstanceOf[Map[(Int, String), List[ADAMVariant]]]
-      case None => Map[(Int, String), List[ADAMVariant]]()
+      })
+      case None => Map[(Int, String), Seq[ADAMVariant]]()
     }
 
     // should not have multiply mapped variants
     assert(variantGroups.forall(_._2.length == 1))
     
     // generate new set of variants
-    val variants: List[ADAMVariant] = genotypeGroups.map(kv => {
-      val (key, genotypes): ((Int, String), List[ADAMGenotype]) = kv
+    val variants: Seq[ADAMVariant] = genotypeGroups.map(kv => {
+      val (key, genotypes): ((Int, String), Seq[ADAMGenotype]) = kv
 
       // get variant if it exists
       val variant: Option[ADAMVariant] = if (variantGroups.contains(key)) {
@@ -466,13 +483,13 @@ private[rdd] class GenotypesToVariantsConverter (validateSamples: Boolean = fals
         None
       }
 
-      convertGenotypes(genotypes,
+      convertGenotypes(genotypes.toList,
                        key,
                        variant,
                        takeFromExisting,
                        genotypes.length,
                        genotypes.map(_.getSampleId).distinct.length)
-    }).toList
+    }).toSeq
 
     variants
   }
