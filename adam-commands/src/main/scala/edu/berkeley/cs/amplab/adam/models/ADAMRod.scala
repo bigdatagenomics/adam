@@ -21,7 +21,7 @@ import org.apache.spark.rdd.RDD
 /**
  * Class representing a set of pileup bases at a specific locus.
  *
- * @param position Position on the reference genome.
+ * @param position Position on the reference genome. Coordinate system is 0 based.
  * @param pileups A list representing the bases at this locus.
  */
 case class ADAMRod (position: Long, pileups: List[ADAMPileup]) {

@@ -13,7 +13,7 @@ record ADAMRecord {
     union { null, string } referenceName = null;
     union { null, int } referenceId = null;
 
-    // 0-based reference position start
+    // 0-based reference position start - this is different from SAM, and consistent with BAM
     union { null, long } start = null;
 
     union { null, int } mapq = null;
@@ -96,6 +96,8 @@ enum Base {
 record ADAMPileup {
     union { null, string } referenceName = null;
     union { null, int } referenceId = null;
+
+    // 0-based reference position
     union { null, long } position = null;
     union { null, int } rangeOffset = null;
     union { null, int } rangeLength = null;
@@ -158,7 +160,7 @@ record ADAMVariant {
   union { null, long } referenceLength = null;
   union { null, string } referenceUrl = null;
 
-  // start position of variant against reference
+  // start position of variant against reference - is 0-based
   union { null, long } position = null;
   // base pair string describing reference allele at locus
   union { null, string } referenceAllele = null;
@@ -202,7 +204,7 @@ record ADAMVariant {
   union { null, long } svLength = null;
   // indicates whether start/end of SV is known precisely
   union { null, boolean } svIsPrecise = null;
-  // end position of SV - for imprecise variants, best guess for end
+  // end position of SV - for imprecise variants, best guess for end - 0-based reference scheme
   union { null, long } svEnd = null;
   
   // for imprecise variants, these fields represent the svConfidence interval upper/lower bounds for the SV start/end
@@ -220,7 +222,7 @@ record ADAMGenotype {
   union { null, long } referenceLength = null;
   union { null, string } referenceUrl = null;
 
-  // start position of genotype call against reference
+  // start position of genotype call against reference - coordinate system is 0 based
   union { null, long } position = null;
   // identifier for sample in call set
   union { null, string } sampleId = null;
@@ -275,7 +277,7 @@ record ADAMGenotype {
   union { null, long } svLength = null;
   // indicates whether start/end of SV is known precisely
   union { null, boolean } svIsPrecise = null;
-  // end position of SV - for imprecise variants, best guess for end
+  // end position of SV - for imprecise variants, best guess for end - coordinate system is 0 based
   union { null, long } svEnd = null;
   
   // for imprecise variants, these fields represent the svConfidence interval upper/lower bounds for the SV start/end
@@ -305,7 +307,7 @@ record ADAMGenotype {
  */
 
 record ADAMVariantDomain {
-  // position of variant site
+  // position of variant site - coordinate system is 0-based
   union { null, long } position = null;
 
   // fields denote whether variant has been seen in dbSNP, Hapmap2/3, or 1000 genomes
