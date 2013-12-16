@@ -57,7 +57,7 @@ class RichADAMRecord(record: ADAMRecord) {
       el.getOperator == CigarOperator.HARD_CLIP
   }
 
-  // Returns the end position if the read is mapped, None otherwise
+  // Returns the end position if the read is mapped, None otherwise - coordinate system is 0 based
   lazy val end: Option[Long] = {
     if (record.getReadMapped) {
       Some(samtoolsCigar.getCigarElements
@@ -70,7 +70,7 @@ class RichADAMRecord(record: ADAMRecord) {
     }
   }
 
-  // Returns the position of the unclipped end if the read is mapped, None otherwise
+  // Returns the position of the unclipped end if the read is mapped, None otherwise - coordinate system is 0 based
   lazy val unclippedEnd: Option[Long] = {
     if (record.getReadMapped) {
       Some(samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(end.get) {
@@ -81,7 +81,7 @@ class RichADAMRecord(record: ADAMRecord) {
     }
   }
 
-  // Returns the position of the unclipped start if the read is mapped, None otherwise.
+  // Returns the position of the unclipped start if the read is mapped, None otherwise - coordinate system is 0 based
   lazy val unclippedStart: Option[Long] = {
     if (record.getReadMapped) {
       Some(samtoolsCigar.getCigarElements.takeWhile(isClipped).foldLeft(record.getStart) {
@@ -92,7 +92,7 @@ class RichADAMRecord(record: ADAMRecord) {
     }
   }
 
-  // Return the 5 prime position.
+  // Return the 5 prime position - coordinate system is 0 based
   def fivePrimePosition: Option[Long] = {
     if (record.getReadMapped) {
       if (record.getReadNegativeStrand) unclippedEnd else unclippedStart
