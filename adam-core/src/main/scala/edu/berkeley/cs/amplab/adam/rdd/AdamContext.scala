@@ -35,14 +35,12 @@ import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
 import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, Projection}
 import edu.berkeley.cs.amplab.adam.projections.ADAMVariantAnnotations
 import edu.berkeley.cs.amplab.adam.converters.{SAMRecordConverter, VariantContextConverter}
-import edu.berkeley.cs.amplab.adam.rdd.compare.CompareAdam
 import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
 
 import scala.collection.Map
 import scala.Some
 import edu.berkeley.cs.amplab.adam.models.ADAMRod
 import net.sf.samtools.SAMFileHeader
-import scala.util.matching.Regex
 import java.util.regex.Pattern
 
 object AdamContext {
@@ -304,11 +302,6 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
     } else {
       adamParquetLoad(filePath, predicate, projection)
     }
-  }
-
-  def adamCompareFiles(file1Path: String, file2Path: String,
-                       predicateFactory: (Map[Int, Int]) => (SingleReadBucket, SingleReadBucket) => Boolean) = {
-    CompareAdam.compareADAM(sc, file1Path, file2Path, predicateFactory)
   }
 
   /**
