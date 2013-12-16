@@ -5,7 +5,7 @@ set -e -x
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$DIR/.."
 
-VERSION=$(grep "<version>" "$PROJECT_ROOT/pom.xml"  | head -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')
+VERSION=$(grep "<version>" "$PROJECT_ROOT/pom.xml"  | head -2 | tail -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')
 echo "Testing ADAM version $VERSION"
 
 ADAM_TMP_DIR=$(mktemp -d -t "adamTestXXXXXXX")
