@@ -57,6 +57,13 @@ case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition], n
 
 object ReferencePosition {
 
+  /**
+   * The UNMAPPED value is a convenience value, which can be used to indicate a position
+   * which is not located anywhere along the reference sequences (see, e.g. its use in
+   * GenomicRegionPartitioner).
+   */
+  val UNMAPPED = new ReferencePosition(-1, -1)
+
   def mappedPositionCheck(record: ADAMRecord): Boolean = {
     val referenceId = Some(record.getReferenceId)
     val start = Some(record.getStart)
