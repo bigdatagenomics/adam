@@ -15,9 +15,10 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
+import org.apache.spark.Logging
 import scala.Some
 
-object AdamMain {
+object AdamMain extends Logging {
 
   private val commands = List(Bam2Adam,
     Transform,
@@ -48,6 +49,7 @@ object AdamMain {
   }
 
   def main(args: Array[String]) {
+    log.info("ADAM invoked with args: %s".format(argsToString(args)))
     if (args.size < 1) {
       printCommands()
     } else {
@@ -56,5 +58,12 @@ object AdamMain {
         case Some(cmd) => cmd.apply(args drop 1).run()
       }
     }
+  }
+
+  // Attempts to format the `args` array into a string in a way
+  // suitable for copying and pasting back into the shell.
+  private def argsToString(args: Array[String]): String = {
+    def escapeArg(s: String) = "\"" + s.replaceAll("\\\"", "\\\\\"") + "\""
+    args.map(escapeArg).mkString(" ")
   }
 }
