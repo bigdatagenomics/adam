@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>edu.berkeley.cs.amplab.adam</groupId>
     <artifactId>adam-parent</artifactId>
-    <version>0.5.0-SNAPSHOT</version>
+    <version>0.6.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>ADAM: Genomic Data System</name>
 
@@ -25,7 +25,8 @@
 
     <modules>
         <module>adam-format</module>
-        <module>adam-commands</module>
+        <module>adam-core</module>
+        <module>adam-cli</module>
     </modules>
 
     <licenses>
@@ -131,6 +132,18 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>edu.berkeley.cs.amplab.adam</groupId>
+                <artifactId>adam-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>edu.berkeley.cs.amplab.adam</groupId>
+                <artifactId>adam-core</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client</artifactId>
                 <version>${hadoop.version}</version>
@@ -208,6 +221,11 @@
                 <artifactId>scalatest_${scala.version}</artifactId>
                 <version>1.9.2</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>1.7.5</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

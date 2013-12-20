@@ -15,7 +15,7 @@ mkdir $ADAM_TMP_DIR
 
 pushd "$PROJECT_ROOT"
 # Copy the jar into our temp space for testing
-cp adam-commands/target/adam-$VERSION.jar $ADAM_TMP_DIR
+cp adam-cli/target/adam-$VERSION.jar $ADAM_TMP_DIR
 popd
 
 ADAM="java -Xmx1g -jar adam-$VERSION.jar "
