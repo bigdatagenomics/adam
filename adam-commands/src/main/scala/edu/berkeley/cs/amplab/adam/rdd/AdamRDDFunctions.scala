@@ -107,12 +107,17 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
   }
 
   def adamBQSR(dbSNP: File): RDD[ADAMRecord] = {
+    // Construct a map of chromosome to a set of SNP locations on that
+    // chromosome.
     val dbsnpMap = scala.io.Source.fromFile(dbSNP).getLines().map(posLine => {
       val split = posLine.split("\t")
       val contig = split(0)
       val pos = split(1).toInt
       (contig, pos)
     }).foldLeft(Map[String, Set[Int]]())((dbMap, pair) => {
+      // Add a key to the dbMap that's either the existing set + the
+      // next DBSNP variant, or a new set if the chromosome doesn't
+      // already exist in the map.
       dbMap + (pair._1 -> (dbMap.getOrElse(pair._1, Set[Int]()) + pair._2))
     })
 
