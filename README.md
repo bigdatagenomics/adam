@@ -61,7 +61,7 @@ $ mvn clean package
 [INFO] Final Memory: 19M/81M
 [INFO] ------------------------------------------------------------------------
 ```
-Once successfully built, you'll see a single jar file named `adam-X.Y-SNAPSHOT.jar` in the `adam-commands/target` directory. This single jar 
+Once successfully built, you'll see a single jar file named `adam-X.Y-SNAPSHOT.jar` in the `adam-cli/target` directory. This single jar
 has all the dependencies you need in it. You can copy this single jar file to any machine you want to launch ADAM jobs from.
 
 You might want to take a peek at the `scripts/jenkins-test` script and give it a run. It will fetch a mouse chromosome, encode it to ADAM
@@ -74,7 +74,7 @@ The ADAM jar file is a self-executing jar file with all dependencies included.
 You might want to add the following to your `.bashrc` to make running `adam` easier:
 
 ```
-adam_jar="/workspace/adam/adam-commands/target/adam-0.5.0-SNAPSHOT.jar"
+adam_jar="/workspace/adam/adam-cli/target/adam-0.6.0-SNAPSHOT.jar"
 alias adam="java -Xmx4g -jar $adam_jar"
 ```
 

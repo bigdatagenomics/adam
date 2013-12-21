@@ -5,14 +5,13 @@
     <parent>
         <groupId>edu.berkeley.cs.amplab.adam</groupId>
         <artifactId>adam-parent</artifactId>
-        <version>0.5.0-SNAPSHOT</version>
+        <version>0.6.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>adam-format</artifactId>
-    <version>0.5.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>ADAM: Format Definitions</name>
+    <name>ADAM: Schemas</name>
 
     <build>
         <plugins>
