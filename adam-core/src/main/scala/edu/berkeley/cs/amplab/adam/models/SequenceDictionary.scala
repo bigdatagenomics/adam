@@ -19,7 +19,7 @@ import scala.collection.JavaConversions._
 import scala.math.Ordering.Implicits._
 
 import scala.collection._
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.avro.{ADAMReferenceRecord, ADAMReferenceDictionary, ADAMRecord}
 import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord}
 import org.apache.avro.specific.SpecificRecord
 
@@ -255,6 +255,15 @@ object SequenceDictionary {
 
   def fromSAMReader(samReader: SAMFileReader): SequenceDictionary =
     fromSAMHeader(samReader.getFileHeader)
+
+  def fromADAMReferenceDictionary(dictionary: ADAMReferenceDictionary): SequenceDictionary = {
+    SequenceDictionary(dictionary.getReferenceRecords.map {
+      seqRecord: ADAMReferenceRecord =>
+        SequenceRecord(seqRecord.getReferenceId, seqRecord.getReferenceName,  seqRecord.getReferenceLength, seqRecord.getReferenceUrl)
+    }: _*)
+
+  }
+
 
   def nonoverlappingHash(x: CharSequence, conflicts: Int => Boolean): Int = {
     var hash = x.hashCode
