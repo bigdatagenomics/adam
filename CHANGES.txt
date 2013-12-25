@@ -66,6 +66,10 @@ Trunk (not yet released)
     fail for some datasets. This was addressed in PR#56. This change was propegated more widely across the
     API by PR#48.
 
+  * ISSUE 103: Added a call to clearProperty('spark.driver.port') in the cleanup from a sparkTest, so that 
+    we correctly clean up the test Spark workers and avoid errors about attempting to bind to a port that's
+	already in use.
+
   BREAKING CHANGES
 
   * ADAMFasta was changed to ADAMNucleotideContig, and internal field types and names were changed in PR #79.
