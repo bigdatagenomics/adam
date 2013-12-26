@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"
+        encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -30,6 +31,12 @@
                     </transformers>
                     <finalName>adam-${project.version}</finalName>
                     <filters>
+                        <filter>
+                            <artifact>org.apache.hadoop:hadoop-common</artifact>
+                            <excludes>
+                                <exclude>META-INF/services/org.apache.hadoop.fs.FileSystem</exclude>
+                            </excludes>
+                        </filter>
                         <filter>
                             <artifact>*:*</artifact>
                             <excludes>
@@ -99,6 +106,22 @@
         <dependency>
             <groupId>edu.berkeley.cs.amplab.adam</groupId>
             <artifactId>adam-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${akka.group}</groupId>
+            <artifactId>akka-actor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${akka.group}</groupId>
+            <artifactId>akka-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${akka.group}</groupId>
+            <artifactId>akka-slf4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${akka.group}</groupId>
+            <artifactId>akka-zeromq</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
