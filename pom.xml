@@ -19,8 +19,11 @@
         <scala.version>2.9.3</scala.version>
         <avro.version>1.7.4</avro.version>
         <hadoop.version>2.2.0</hadoop.version>
-        <spark.version>0.8.0-incubating</spark.version>
+        <spark.version>0.8.1-incubating</spark.version>
         <parquet.version>1.2.5</parquet.version>
+        <protobuf.version>2.4.1</protobuf.version>
+        <akka.version>2.0.5</akka.version>
+        <akka.group>com.typesafe.akka</akka.group>
     </properties>
 
     <modules>
@@ -124,6 +127,10 @@
 
     <repositories>
         <repository>
+            <id>akka.repo</id>
+            <url>http://repo.akka.io/releases/</url>
+        </repository>
+        <repository>
             <id>hadoop-bam</id>
             <url>http://hadoop-bam.sourceforge.net/maven/</url>
         </repository>
@@ -132,9 +139,57 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.1</version>
+            </dependency>
+            <dependency>
+                <groupId>${akka.group}</groupId>
+                <artifactId>akka-actor</artifactId>
+                <version>${akka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${akka.group}</groupId>
+                <artifactId>akka-remote</artifactId>
+                <version>${akka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${akka.group}</groupId>
+                <artifactId>akka-slf4j</artifactId>
+                <version>${akka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${akka.group}</groupId>
+                <artifactId>akka-zeromq</artifactId>
+                <version>${akka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>edu.berkeley.cs.amplab.adam</groupId>
                 <artifactId>adam-core</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.typesafe.akka</groupId>
+                        <artifactId>akka-actor</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.typesafe.akka</groupId>
+                        <artifactId>akka-remote</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.typesafe.akka</groupId>
+                        <artifactId>akka-slf4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.typesafe.akka</groupId>
+                        <artifactId>akka-zeromq</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>edu.berkeley.cs.amplab.adam</groupId>
@@ -229,5 +284,14 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    <profiles>
+        <profile>
+            <id>hadoop22</id>
+            <properties>
+                <protobuf.version>2.5.0</protobuf.version>
+                <akka.version>2.0.5-protobuf-2.5-java-1.5</akka.version>
+                <akka.group>org.spark-project</akka.group>
+            </properties>
+        </profile>
+    </profiles>
 </project>
