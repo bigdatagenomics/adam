@@ -29,11 +29,12 @@ object RichADAMRecord {
   }
 
   implicit def recordToRichRecord(record: ADAMRecord): RichADAMRecord = new RichADAMRecord(record)
+  implicit def richRecordToRecord(record: RichADAMRecord): ADAMRecord = record.record
 }
 
 class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 
-class RichADAMRecord(record: ADAMRecord) {
+class RichADAMRecord(val record: ADAMRecord) {
 
   // Returns the quality scores as a list of bytes
   lazy val qualityScores: Array[Byte] = record.getQual.toString.toCharArray.map(q => (q - 33).toByte)

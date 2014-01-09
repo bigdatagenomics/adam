@@ -16,6 +16,8 @@
 package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 
 object RecalUtil extends Serializable {
 
@@ -29,7 +31,7 @@ object RecalUtil extends Serializable {
 
   def errorProbToQual(d: Double): Byte = (-10 * math.log10(d)).toInt.toByte
 
-  def recalibrate(read: ADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate], table: RecalTable): ADAMRecord = {
+  def recalibrate(read: RichADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate], table: RecalTable): ADAMRecord = {
     // get the covariates
     val readCovariates = ReadCovariates(read, qualByRG, covars)
     val toQual = errorProbToQual _

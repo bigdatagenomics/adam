@@ -16,17 +16,18 @@
 package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.models.SnpTable
 
 object ReadCovariates {
-  def apply(rec: ADAMRecord, qualRG: QualByRG, covars: List[StandardCovariate],
+  def apply(rec: RichADAMRecord, qualRG: QualByRG, covars: List[StandardCovariate],
             dbsnp: SnpTable = SnpTable()): ReadCovariates = {
     new ReadCovariates(rec, qualRG, covars, dbsnp)
   }
 }
 
-class ReadCovariates(val read: ADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate],
+class ReadCovariates(val read: RichADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate],
                      val dbSNP: SnpTable) extends Iterator[BaseCovariates] with Serializable {
 
   val startOffset = read.qualityScores.takeWhile(_ <= 2).size

@@ -20,6 +20,8 @@ import edu.berkeley.cs.amplab.adam.rdd.recalibration._
 import scala.collection.mutable
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 
 class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
   val RANDOM = new Random("RecalibrationSuite".hashCode)
@@ -389,7 +391,7 @@ class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
     val rec2 = ADAMRecord.newBuilder().setRecordGroupId(rg2).setQual(qualStr(qual2)).build()
     val rec3 = ADAMRecord.newBuilder().setRecordGroupId(rg3).setQual(qualStr(qual3)).build()
     val records = List(rec1, rec2, rec3)
-    val recRDD = sc.makeRDD(records, 1)
+    val recRDD = sc.makeRDD(records, 1).map(new RichADAMRecord(_))
     System.out.println(recRDD.first())
     val qualByRG = new QualByRG(recRDD)
     val intervals = List((0, 29), (6, 29), (0, 21), (0, 20))
