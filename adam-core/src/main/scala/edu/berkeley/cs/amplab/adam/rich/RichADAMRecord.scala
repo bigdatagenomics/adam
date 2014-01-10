@@ -148,7 +148,7 @@ class RichADAMRecord(record: ADAMRecord) {
                CigarOperator.EQ |
                CigarOperator.S => {
             val positions = Range(posAtCigar.toInt, posAtCigar.toInt + elem.getLength)
-            (positions.last, basePositions ++ positions.map(t => Some(t.toLong)))
+            (positions.last + 1, basePositions ++ positions.map(t => Some(t.toLong)))
           }
           case CigarOperator.H => {
             runningPos /* do nothing */
