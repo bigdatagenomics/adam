@@ -41,9 +41,9 @@ class ReadCovariates(val read: RichADAMRecord, qualByRG: QualByRG, covars: List[
 
   override def next(): BaseCovariates = {
     val offset = (iter_position - startOffset).toInt
-    val mismatch = read.isMismatchAtOffset(offset)
+    val mismatch = read.isMismatchAtReadOffset(offset)
     // FIXME: why does empty mismatch mean it should be masked?
-    val isMasked = dbSNP.isMaskedAtOffset(read, offset) || mismatch.isEmpty
+    val isMasked = dbSNP.isMaskedAtReadOffset(read, offset) || mismatch.isEmpty
     // getOrElse because reads without an MD tag can appear during *application* of recal table
     val isMismatch = mismatch.getOrElse(false)
     iter_position += 1

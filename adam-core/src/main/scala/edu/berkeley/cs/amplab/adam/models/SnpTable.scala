@@ -12,8 +12,8 @@ import java.io.File
 class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable with Logging {
   log.info("SNP table has %s contigs and %s entries".format(table.size, table.values.map(_.size).sum))
 
-  def isMaskedAtOffset(read: ADAMRecord, offset: Int): Boolean = {
-    val position = read.offsetToPosition(offset)
+  def isMaskedAtReadOffset(read: ADAMRecord, offset: Int): Boolean = {
+    val position = read.readOffsetToReferencePosition(offset)
     try {
       position.isEmpty || table(read.getReferenceName.toString).contains(position.get)
     } catch {

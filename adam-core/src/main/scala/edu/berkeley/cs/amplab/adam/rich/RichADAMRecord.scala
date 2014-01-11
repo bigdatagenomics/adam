@@ -110,8 +110,8 @@ class RichADAMRecord(val record: ADAMRecord) {
     }
   }
 
-  // does this read overlap with the given position?
-  def overlapsPosition(pos: Long): Option[Boolean] = {
+  // Does this read overlap with the given reference position?
+  def overlapsReferencePosition(pos: Long): Option[Boolean] = {
     if (record.getReadMapped) {
       Some(record.getStart <= pos && pos < end.get)
     } else {
@@ -119,22 +119,22 @@ class RichADAMRecord(val record: ADAMRecord) {
     }
   }
 
-  // does this read mismatch the reference at the given *reference* position?
-  def isMismatchAtPosition(pos: Long): Option[Boolean] = {
-    if (mdEvent.isEmpty || !overlapsPosition(pos).get) {
+  // Does this read mismatch the reference at the given reference position?
+  def isMismatchAtReferencePosition(pos: Long): Option[Boolean] = {
+    if (mdEvent.isEmpty || !overlapsReferencePosition(pos).get) {
       None
     } else {
       Some(!mdEvent.get.isMatch(pos))
     }
   }
 
-  // does this read mismatch the reference at the given offset within the read?
-  def isMismatchAtOffset(offset: Int): Option[Boolean] = {
+  // Does this read mismatch the reference at the given offset within the read?
+  def isMismatchAtReadOffset(offset: Int): Option[Boolean] = {
     // careful about offsets that are within an insertion!
     if (referencePositions.isEmpty) {
       None
     } else {
-      offsetToPosition(offset).flatMap(isMismatchAtPosition)
+      readOffsetToReferencePosition(offset).flatMap(isMismatchAtReferencePosition)
     }
   }
 
@@ -171,8 +171,7 @@ class RichADAMRecord(val record: ADAMRecord) {
     }
   }
 
-  // get the reference position of an offset within the read
-  def offsetToPosition(offset: Int): Option[Long] = {
+  def readOffsetToReferencePosition(offset: Int): Option[Long] = {
     if (record.getReadMapped) {
       referencePositions(offset)
     } else {
