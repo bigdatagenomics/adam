@@ -56,7 +56,9 @@ class SequenceDictionary(recordsIn: Iterable[SequenceRecord]) extends Serializab
   // Maps referenceName -> SequenceRecord
   private val recordNames: mutable.Map[CharSequence, SequenceRecord] =
     mutable.Map(recordsIn.map {
-      rec => (rec.name, rec)
+      // Call toString explicitly, since otherwise we were picking up an Avro-specific Utf8 value here,
+      // which was making the containsRefName method below fail in a hard-to-understand way.
+      rec => (rec.name.toString, rec)
     }.toSeq: _*)
 
   def assignments: Map[Int, CharSequence] = recordIndices.map {
@@ -67,6 +69,8 @@ class SequenceDictionary(recordsIn: Iterable[SequenceRecord]) extends Serializab
   def apply(id: Int): SequenceRecord = recordIndices(id)
 
   def apply(name: CharSequence): SequenceRecord = recordNames(name)
+
+  def containsRefName(name : CharSequence) : Boolean = recordNames.contains(name)
 
   /**
    * Produces a Map of Int -> Int which maps the referenceIds from this SequenceDictionary
