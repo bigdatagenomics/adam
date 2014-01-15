@@ -96,7 +96,6 @@ $ adam
 
 Choose one of the following commands:
 
-            bam2adam : Converts a local BAM file to ADAM/Parquet and writes locally or to HDFS, S3, etc
            transform : Apply one of more transforms to an ADAM file and save the results to another ADAM file
             flagstat : Prints statistics for ADAM data similar to samtools flagstat
            reads2ref : Convert an ADAM read-oriented file to an ADAM reference-oriented file
@@ -110,63 +109,39 @@ ADAM outputs all the commands that are available for you to run. To get
 help for a specific command, run `adam <command> -h`, e.g.
 
 ````
-$ adam bam2adam --help
- BAM                                    : The SAM or BAM file to convert
- ADAM                                   : Location to write ADAM data
+$ adam transform --help
+ INPUT                                  : The ADAM, BAM or SAM file to apply
+                                          the transforms to
+ OUTPUT                                 : Location to write the transformed
+                                          data in ADAM/Parquet format
+ -coalesce N                            : Set the number of partitions written
+                                          to the ADAM output directory
+ -dbsnp_sites VAL                       : dbsnp sites file
  -h (-help, --help, -?)                 : Print help
- -num_threads N                         : Number of threads/partitions to use
-                                          (default=4)
+ -mark_duplicate_reads                  : Mark duplicate reads
  -parquet_block_size N                  : Parquet block size (default = 128mb)
  -parquet_compression_codec [UNCOMPRESS : Parquet compression codec
  ED | SNAPPY | GZIP | LZO]              :  
  -parquet_disable_dictionary            : Disable dictionary encoding
  -parquet_page_size N                   : Parquet page size (default = 1mb)
- -queue_size N                          : Queue size (default = 10,000)
- -samtools_validation [STRICT |         : SAM tools validation level
- LENIENT | SILENT]                      :  
+ -recalibrate_base_qualities            : Recalibrate the base quality scores
+                                          (ILLUMINA only)
+ -sort_reads                            : Sort the reads by referenceId and
+                                          read position
+ -spark_env KEY=VALUE                   : Add Spark environment variable
+ -spark_home PATH                       : Spark home
+ -spark_jar JAR                         : Add Spark jar
+ -spark_master VAL                      : Spark Master (default = "local[#cores]
+                                          ")
 ````
 
-# bam2adam
+# transform
 
 Example
 ````
-$ adam bam2adam NA12878_chr20.bam hdfs://user/genomics/NA12878_chr20.adam
+$ adam transform NA12878_chr20.bam hdfs://user/genomics/NA12878_chr20.adam
 ````
-
-The `bam2adam` command converts a BAM file into ADAM format. This command
-will create `-num_threads` threads with each writing to a separate partition on the target filesystem.
-For example, if you run with 4 threads and choose to write location `NA12878_chr20.adam`,
-then the `bam2adam` command will create four files, e.g.
-
-````
-$ ls NA12878_chr20.adam/
-part0   part1   part2   part3
-````
-
-Partitioning isn't required (you could set `-num_threads` to `1` for example); however, it
-will improve your write performance significantly. Each thread does the SAMRecord to ADAMRecord
-conversion using its own ParquetWriter to cache, organize and sync blocks of data. In general,
-doubling the number of threads will cut the conversion time in half.
-
-Keep in mind that each thread you request needed enough memory to run effectively. With the
-default block size (128mb), you should budget for at least 512mb per thread. For example, if
-you ran `bam2adam` with 16 threads, they will need about 8gb of memory. If you increase the
-`-parquet_block_size`, then you will need proportionally more.
-
-A good way to check that you're using good command-line options is to run `top` while you
-run `bam2adam`. You should see that all threads are constantly running near 100% cpu. If
-you see the CPU usage drop for long periods of time, it's very likely that you haven't 
-provided ADAM with enough memory (check your `-Xmx` flag) and garbage collection is hurting
-your performance.
-
-Note that the `bam2adam` command does not currently guarantee that read ordering is maintained.
-
-ADAM files are typically around 20% smaller than BAM files without any loss of information.
-In practice, it takes an 'm2.4xlarge' ec2 node about 4 hours to convert a high-coverage, 
-full-genome and write it to HDFS. Low coverage bams can
-take just a few minutes. You can experiment with Snappy compression, using 
-`-parquet_compression_codec snappy`, to reduce the time to convert to ADAM. However, the size
-of the ADAM file will likely be 10% larger than BAM.
+**TODO FIXME:** describe `transform`.
 
 # flagstat
 
