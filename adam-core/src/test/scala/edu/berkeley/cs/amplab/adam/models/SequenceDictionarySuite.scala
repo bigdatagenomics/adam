@@ -25,6 +25,14 @@ class SequenceDictionarySuite extends FunSuite {
     assert(SequenceDictionary(rec1, rec2)(rec1.id) === rec1)
   }
 
+  test("containsRefName works as expected") {
+    val rec1 = record(0, "foo")
+    val rec2 = record(1, "bar")
+    assert(SequenceDictionary(rec1, rec2).containsRefName("foo"))
+    assert(SequenceDictionary(rec1, rec2).containsRefName("bar"))
+    assert(!SequenceDictionary(rec1, rec2).containsRefName("foo "))
+  }
+
   test("Can retrieve sequence by Name") {
     val rec1 = record(0, "foo")
     val rec2 = record(1, "bar")
