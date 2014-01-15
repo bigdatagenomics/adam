@@ -116,7 +116,7 @@ class SAMRecordConverter extends Serializable {
             attrs ::= attr.tag + "=" + attr.value
           }
       }
-      builder.setAttributes(attrs.mkString(","))
+      builder.setAttributes(attrs.mkString("\t"))
     }
 
     val recordGroup: SAMReadGroupRecord = samRecord.getReadGroup
