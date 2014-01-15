@@ -18,12 +18,26 @@
         <java.version>1.6</java.version>
         <scala.version>2.9.3</scala.version>
         <avro.version>1.7.4</avro.version>
-        <hadoop.version>2.2.0</hadoop.version>
         <spark.version>0.8.1-incubating</spark.version>
         <parquet.version>1.2.5</parquet.version>
-        <protobuf.version>2.4.1</protobuf.version>
-        <akka.version>2.0.5</akka.version>
-        <akka.group>com.typesafe.akka</akka.group>
+
+        <!--
+          NOTE: The default configuration here is to build with Hadoop 2.2.0.
+          If using an earlier version of hadoop, comment out the first block
+          below, uncomment the second block, and replace the text "FIXME" with
+          your Hadoop version.
+        -->
+        <!-- if hadoop.version == 2.2.0 -->
+          <hadoop.version>2.2.0</hadoop.version>
+          <protobuf.version>2.5.0</protobuf.version>
+          <akka.version>2.0.5-protobuf-2.5-java-1.5</akka.version>
+          <akka.group>org.spark-project</akka.group>
+        <!-- else if hadoop.version < 2.2.0:
+          <hadoop.version>FIXME</hadoop.version>
+          <protobuf.version>2.4.1</protobuf.version>
+          <akka.version>2.0.5</akka.version>
+          <akka.group>com.typesafe.akka</akka.group>
+        -->
     </properties>
 
     <modules>
@@ -284,14 +298,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    <profiles>
-        <profile>
-            <id>hadoop22</id>
-            <properties>
-                <protobuf.version>2.5.0</protobuf.version>
-                <akka.version>2.0.5-protobuf-2.5-java-1.5</akka.version>
-                <akka.group>org.spark-project</akka.group>
-            </properties>
-        </profile>
-    </profiles>
 </project>
