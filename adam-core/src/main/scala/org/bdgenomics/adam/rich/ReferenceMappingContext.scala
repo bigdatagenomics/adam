@@ -36,7 +36,7 @@ object ReferenceMappingContext {
       value.getContig.getContigName.toString
 
     def getReferenceRegion(value: ADAMRecord): ReferenceRegion =
-      ReferenceRegion(value).getOrElse(null)
+      ReferenceRegion(value).orNull
   }
 
   implicit object ReferenceRegionReferenceMapping extends ReferenceMapping[ReferenceRegion] with Serializable {
