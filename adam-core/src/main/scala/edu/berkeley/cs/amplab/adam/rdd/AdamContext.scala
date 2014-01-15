@@ -39,6 +39,7 @@ import edu.berkeley.cs.amplab.adam.rdd.compare.CompareAdam
 import scala.collection.Map
 import scala.Some
 import edu.berkeley.cs.amplab.adam.models.ADAMRod
+import net.sf.samtools.SAMFileHeader
 
 object AdamContext {
   // Add ADAM Spark context methods
@@ -92,9 +93,16 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
 
   private def adamBamDictionaryLoad(filePath: String): SequenceDictionary = {
     val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
-    val seqDict = SequenceDictionary.fromSAMHeader(samHeader)
+    adamBamDictionaryLoad(samHeader)
+  }
 
-    seqDict
+  private def adamBamDictionaryLoad(samHeader : SAMFileHeader): SequenceDictionary = {
+    SequenceDictionary.fromSAMHeader(samHeader)
+
+  }
+
+  private def adamBamLoadReadGroups(samHeader : SAMFileHeader) : RecordGroupDictionary = {
+    RecordGroupDictionary.fromSAMHeader(samHeader)
   }
 
   private def adamBamLoad(filePath: String): RDD[ADAMRecord] = {
@@ -103,13 +111,15 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
     // We need to separately read the header, so that we can inject the sequence dictionary
     // data into each individual ADAMRecord (see the argument to samRecordConverter.convert,
     // below).
-    val seqDict = adamBamDictionaryLoad(filePath)
+    val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
+    val seqDict = adamBamDictionaryLoad(samHeader)
+    val readGroups =  adamBamLoadReadGroups(samHeader)
 
     val job = new Job(sc.hadoopConfiguration)
     val records = sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],
       classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
     val samRecordConverter = new SAMRecordConverter
-    records.map(p => samRecordConverter.convert(p._2.get, seqDict))
+    records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
   }
 
   private def adamParquetLoad[T <% SpecificRecord : Manifest, U <: UnboundRecordFilter]
