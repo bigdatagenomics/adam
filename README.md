@@ -48,6 +48,11 @@ systems.
 ## Installation
 
 You will need to have [Maven](http://maven.apache.org/) installed in order to build ADAM.
+
+> **Note:** The default configuration is for Hadoop 2.2.0. If building against a different
+> version of Hadoop, please edit the build configuration in the `<properties>` section of
+> the `pom.xml` file.
+
 ```
 $ git clone git@github.com:bigdatagenomics/adam.git
 $ cd adam
