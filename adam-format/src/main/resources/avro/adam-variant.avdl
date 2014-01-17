@@ -1,4 +1,4 @@
-@namespace("edu.berkeley.cs.amplab.adam.avro")
+@namespace("edu.berkeley.cs.amplab.adam.avro.variant2")
 protocol ADAM {
 
 record ADAMReferenceRecord {
