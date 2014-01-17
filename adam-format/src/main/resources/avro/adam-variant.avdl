@@ -1,0 +1,58 @@
+@namespace("edu.berkeley.cs.amplab.adam.avro")
+protocol ADAM {
+
+record ADAMReferenceRecord {
+  union { null, int }    referenceId;
+  union { null, string } referenceName;
+  union { null, long }   referenceLength = null;
+  union { null, string } referenceURL = null;
+  union { null, string } referenceMD5 = null;
+}
+
+record ADAMReferenceDictionary {
+  array <ADAMReferenceRecord> referenceRecords = null;
+}
+
+record ADAMContig {
+  union { null, string } contigName;
+  union { null, int }    contigId = null;
+  union { null, ADAMReferenceDictionary } referenceDictionary = null;
+}
+
+record ADAMVariant {
+  union { null, ADAMContig } contig;
+  union { null, long }       position;
+  union { null, string }     referenceAllele;
+  union { null, string }     variantAllele = null;
+}
+
+enum ADAMGenotypeAllele {
+  Ref, Alt, NoCall
+}
+
+record ADAMGenotype {
+  union { null, ADAMVariant } variant;
+
+  // Variant-level "provenance" data, i.e. data shared amongst all concurrently genotyped samples
+
+  union { null, boolean } varIsFiltered = null;  // "null" implies no filters were applied
+  array <string> varFilters = null;
+
+  // Sample-level data, i.e. data specific to this particular sample
+  union { null, string } sampleId = null;
+
+  array <ADAMGenotypeAllele> alleles = null;
+
+  union { null, boolean } isPhased = null;
+  union { null, string }  phaseSetId = null;
+  union { null, int }     phaseQuality = null;
+}
+
+record ADAMDatabaseVariantAnnotation {
+  union { null, ADAMVariant } variant;
+
+  union { null, int } dbsnpId = null;
+}
+
+
+}
