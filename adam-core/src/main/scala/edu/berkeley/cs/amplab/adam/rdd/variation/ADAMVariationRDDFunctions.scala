@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.rdd.variation
 
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.models2.ADAMVariantContext
 import edu.berkeley.cs.amplab.adam.avro.variant2.{ADAMVariant, ADAMGenotype, ADAMDatabaseVariantAnnotation}
 import org.apache.spark.SparkContext._
 

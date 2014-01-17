@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Mount Sinai School of Medicine
+ * Copyright (c) 2013. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.berkeley.cs.amplab.adam.models2
 
-package edu.berkeley.cs.amplab.adam.rdd.variation
+import edu.berkeley.cs.amplab.adam.avro.variant2.{ADAMGenotype, ADAMVariant, ADAMDatabaseVariantAnnotation}
+import org.apache.avro.specific.SpecificRecord
+import scala.Option
 
-import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.models2.ADAMVariantContext
+object ADAMVariantContext {
 
-object ADAMVariationContext {
-
-  implicit def rddToADAMVariantContextRDD(rdd: RDD[ADAMVariantContext]) = new ADAMVariantContextRDDFunctions(rdd)
 
 }
 
+case class ADAMVariantContext(variant: ADAMVariant,
+                              genotypes: Seq[ADAMGenotype] = Seq(),
+                              databases: Option[ADAMDatabaseVariantAnnotation] = None) {
+}
 
