@@ -185,4 +185,52 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(expectedSortedReads === mapped)
   }
 
+  sparkTest("convert an RDD of reads into rods") {
+    val r0 = ADAMRecord.newBuilder
+      .setStart(1L)
+      .setSequence("ACG")
+      .setMapq(30)
+      .setCigar("3M")
+      .setMismatchingPositions("3")
+      .setReadNegativeStrand(false)
+      .setReadMapped(true)
+      .setQual("!#$")
+      .build()
+    val r1 = ADAMRecord.newBuilder
+      .setStart(2L)
+      .setSequence("CG")
+      .setMapq(40)
+      .setCigar("2M")
+      .setMismatchingPositions("2")
+      .setReadNegativeStrand(false)
+      .setReadMapped(true)
+      .setQual("%&")
+      .build()
+    val r2 = ADAMRecord.newBuilder
+      .setStart(3L)
+      .setSequence("G")
+      .setMapq(50)
+      .setCigar("1M")
+      .setMismatchingPositions("1")
+      .setReadNegativeStrand(false)
+      .setReadMapped(true)
+      .setQual("%")
+      .build()
+    
+    val reads = sc.parallelize(List(r0, r1, r2))
+
+    val rods = reads.adamRecords2Rods()
+    
+    assert(rods.count === 3)
+    assert(rods.filter(_.position == 1L).count === 1)
+    assert(rods.filter(_.position == 1L).first.pileups.length === 1)
+    assert(rods.filter(_.position == 1L).first.pileups.forall(_.getReadBase == Base.A))
+    assert(rods.filter(_.position == 2L).count === 1)
+    assert(rods.filter(_.position == 2L).first.pileups.length === 2)
+    assert(rods.filter(_.position == 2L).first.pileups.forall(_.getReadBase == Base.C))
+    assert(rods.filter(_.position == 3L).count === 1)
+    assert(rods.filter(_.position == 3L).first.pileups.length === 3)
+    assert(rods.filter(_.position == 3L).first.pileups.forall(_.getReadBase == Base.G))
+  }
+
 }

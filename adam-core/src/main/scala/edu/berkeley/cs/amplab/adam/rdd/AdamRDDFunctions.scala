@@ -129,6 +129,63 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
     val helper = new Reads2PileupProcessor
     helper.process(rdd)
   }
+
+  /**
+   * Groups all reads by reference position, with all reference position bases grouped
+   * into a rod.
+   *
+   * @param bucketSize Size in basepairs of buckets. Larger buckets take more time per
+   * bucket to convert, but have lower skew. Default is 1000.
+   * 
+   * @returns RDD of ADAMRods.
+   */
+  def adamRecords2Rods (bucketSize: Int = 1000): RDD[ADAMRod] = {
+    
+    /**
+     * Maps a read to one or two buckets. A read maps to a single bucket if both
+     * it's start and end are in a single bucket.
+     *
+     * @param r Read to map.
+     * @return List containing one or two mapping key/value pairs.
+     */
+    def mapToBucket (r: ADAMRecord): List[(Long, ADAMRecord)] = {
+      val s = r.getStart / bucketSize
+      val e = r.end.get / bucketSize
+
+      if (s == e) {
+        List((s, r))
+      } else {
+        List((s, r), (e, r))
+      }
+    }
+
+    println("Putting reads in buckets.")
+
+    val bucketedReads = rdd.filter(_.getStart != null)
+      .flatMap(mapToBucket)
+      .groupByKey
+
+    println ("Have reads in buckets.")
+
+    val pp = new Reads2PileupProcessor
+    
+    /**
+     * Converts all reads in a bucket into rods.
+     *
+     * @param bucket Tuple of (bucket number, reads in bucket).
+     * @return A sequence containing the rods in this bucket.
+     */
+    def bucketedReadsToRods (bucket: (Long, Seq[ADAMRecord])): Seq[ADAMRod] = {
+      val (bucketNumber, bucketReads) = bucket
+
+      bucketReads.flatMap(pp.readToPileups)
+        .groupBy(_.getPosition)
+        .toList
+        .map(g => ADAMRod(g._1, g._2.toList)).toSeq
+    }
+
+    bucketedReads.flatMap(bucketedReadsToRods)
+  }
 }
 
 class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Logging {
