@@ -27,7 +27,7 @@ object MdTag {
 
   private val digitPattern = new Regex("\\d+")
   // for description, see base enum in adam schema
-  private val basesPattern = new Regex("[AaGgCcTtNnUuKkMmRrSsWwBbVvHhDdXx]+")
+  private val basesPattern = new Regex("[AaGgCcTtNnUuKkMmRrSsWwBbVvHhDdXxYy]+")
 
   def apply(mdTagInput: String, referenceStart: Long): MdTag = {
     var matches = List[NumericRange[Long]]()
