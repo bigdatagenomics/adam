@@ -16,14 +16,27 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import parquet.filter.UnboundRecordFilter
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.models.{ReferenceRegion, ADAMVariantContext}
 import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.util.PhredUtils._
+import java.io.File
+import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField
 
 class AdamContextSuite extends SparkFunSuite {
+
+  test("referenceLengthFromCigar") {
+    import AdamContext._
+    assert( referenceLengthFromCigar("3M") === 3 )
+    assert( referenceLengthFromCigar("30M") === 30 )
+    assert( referenceLengthFromCigar("10Y") === 0 ) // should abort when it hits an illegal operator
+    assert( referenceLengthFromCigar("10M1Y" ) === 10 ) // same
+    assert( referenceLengthFromCigar("10M1I10M" ) === 20 )
+    assert( referenceLengthFromCigar("10M1D10M" ) === 21 )
+    assert( referenceLengthFromCigar("1S10M1S") === 10 )
+  }
 
   sparkTest("sc.adamLoad should not fail on unmapped reads") {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("unmapped.sam").getFile
@@ -54,6 +67,22 @@ class AdamContextSuite extends SparkFunSuite {
     // result is floating point, so apply tolerance
     assert(phredToDouble(10) > 0.89 && phredToDouble(10) < 0.91)
     assert(phredToDouble(50) > 0.99998 && phredToDouble(50) < 0.999999)
+  }
+
+  sparkTest("adamRecordsRegionParquetLoad can retrieve a simple subset of reads") {
+    val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
+    val dict = sc.adamDictionaryLoad[ADAMRecord](path)
+    val pathReads : RDD[ADAMRecord] = sc.adamLoad(path)
+
+    val tempFile = File.createTempFile("adam", "small.sam")
+    val tmpAdamPath = new File(tempFile.getParent, tempFile.getName + ".1").getAbsolutePath
+    pathReads.adamSave(tmpAdamPath)
+
+    val region = ReferenceRegion(dict("1").id, 37577446, 57577446)
+
+    val filteredLoadedReads = sc.adamRecordsRegionParquetLoad(tmpAdamPath, region, Set(ADAMRecordField.readName))
+
+    assert( filteredLoadedReads.count() === 2 )
   }
 
 }

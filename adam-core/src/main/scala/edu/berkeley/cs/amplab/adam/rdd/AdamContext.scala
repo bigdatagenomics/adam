@@ -20,7 +20,7 @@ import parquet.hadoop.ParquetInputFormat
 import parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
 import parquet.hadoop.util.ContextUtil
 import org.apache.hadoop.mapreduce.Job
-import parquet.filter.UnboundRecordFilter
+import parquet.filter.{RecordFilter, UnboundRecordFilter}
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
@@ -30,15 +30,23 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
 import scala.collection.JavaConversions._
 import edu.berkeley.cs.amplab.adam.models._
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileSystem, Path}
 import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
-import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, Projection}
-import edu.berkeley.cs.amplab.adam.projections.ADAMVariantAnnotations
+import edu.berkeley.cs.amplab.adam.projections.{FieldValue, ADAMRecordField, Projection, ADAMVariantAnnotations}
 import edu.berkeley.cs.amplab.adam.converters.{SAMRecordConverter, VariantContextConverter}
-import edu.berkeley.cs.amplab.adam.rdd.compare.CompareAdam
+
+import parquet.filter.AndRecordFilter.and
+import parquet.filter.OrRecordFilter.or
+import parquet.filter.ColumnPredicates.equalTo
+import parquet.filter.ColumnRecordFilter.column
+import parquet.column.ColumnReader
+import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
+
 import scala.collection.Map
 import scala.Some
 import edu.berkeley.cs.amplab.adam.models.ADAMRod
+import java.util.regex.Pattern
+import java.lang
 
 object AdamContext {
   // Add ADAM Spark context methods
@@ -86,6 +94,26 @@ object AdamContext {
   implicit def mapToJavaMap[A, B](map: Map[A, B]): java.util.Map[A, B] = mapAsJavaMap(map)
 
   implicit def iterableToJavaCollection[A](i: Iterable[A]): java.util.Collection[A] = asJavaCollection(i)
+
+  val pattern = Pattern.compile("([0-9]+)([MIDNSHPX=])")
+
+  def referenceLengthFromCigar(cigar : String) : Int = {
+    val m = pattern.matcher(cigar)
+    var i = 0
+    var len : Int = 0
+    while(i < cigar.length) {
+      if(m.find(i)) {
+        val op = m.group(2)
+        if("MDNX=".indexOf(op) != -1) {
+          len += m.group(1).toInt
+        }
+      } else {
+        return len
+      }
+      i = m.end()
+    }
+    len
+  }
 }
 
 class AdamContext(sc: SparkContext) extends Serializable with Logging {
@@ -292,9 +320,45 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
     }
   }
 
-  def adamCompareFiles(file1Path: String, file2Path: String,
-                       predicateFactory: (Map[Int, Int]) => (SingleReadBucket, SingleReadBucket) => Boolean) = {
-    CompareAdam.compareADAM(sc, file1Path, file2Path, predicateFactory)
+  /**
+   * Load ADAMRecords from an ADAMFile, but only the records with a location that overlaps the
+   * given region.
+   *
+   * @param filePath The path to load the ADAM (parquet) file from.
+   * @param region The region which must overlap the given record alignments.
+   * @param fields Additional fields to project into the ADAMRecords.
+   * @return
+   */
+  def adamRecordsRegionParquetLoad(filePath : String, region : ReferenceRegion, fields : Set[FieldValue]) : RDD[ADAMRecord] = {
+
+    val projection = Projection((fields ++ Seq(
+      ADAMRecordField.referenceId,
+      ADAMRecordField.start,
+      ADAMRecordField.cigar)).toSeq: _*)
+
+    class OverlapsPredicate extends UnboundRecordFilter {
+      def bind(readers: lang.Iterable[ColumnReader]): RecordFilter = {
+        val readerMap = Map(readers.map(reader => (reader.getDescriptor.getPath.apply(0), reader)).toSeq : _*)
+        new RecordFilter() {
+          def isMatch: Boolean = {
+            val start = readerMap("start").getLong
+            val end = start + AdamContext.referenceLengthFromCigar(readerMap("cigar").getBinary.toStringUsingUTF8).toLong
+
+            // TODO check this for off-by-one errors at the start/end
+            start < region.end && end > region.start
+          }
+        }
+      }
+    }
+
+    class NewRegionPredicate extends UnboundRecordFilter {
+      def bind(readers: lang.Iterable[ColumnReader]): RecordFilter =
+        and(new LocusPredicate(),
+          and(column(ADAMRecordField.referenceId.toString(), equalTo(region.refId)),
+            new OverlapsPredicate())).bind(readers)
+    }
+
+    adamParquetLoad(filePath, projection=Some(projection), predicate=Some(classOf[NewRegionPredicate]))
   }
 }
 
