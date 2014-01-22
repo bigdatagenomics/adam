@@ -23,19 +23,12 @@ import org.apache.spark.rdd.RDD
 
 // this class is required, not just standard. Baked in to recalibration.
 class QualByRG(rdd: RDD[RichADAMRecord]) extends Serializable {
-  // need to get the unique read groups todo --- this is surprisingly slow
-  //val readGroups = rdd.map(_.getRecordGroupId.toString).distinct().collect().sorted.zipWithIndex.toMap
-  var readGroups = Map[String, Int]()
 
   def apply(read: RichADAMRecord, start: Int, end: Int): Array[Int] = {
-    if (!readGroups.contains(read.getRecordGroupId.asInstanceOf[String])) {
-      readGroups += (read.getRecordGroupId.asInstanceOf[String] -> readGroups.size)
-    }
-    val rg_offset = RecalUtil.Constants.MAX_REASONABLE_QSCORE * readGroups(read.getRecordGroupId.toString)
+    val rg_offset = RecalUtil.Constants.MAX_REASONABLE_QSCORE * read.getRecordGroupId
     read.qualityScores.slice(start, end).map(_.toInt + rg_offset)
   }
 
-  def numPartitions = RecalUtil.Constants.MAX_REASONABLE_QSCORE * (1 + readGroups.size)
 }
 
 trait StandardCovariate extends Serializable {

@@ -19,10 +19,10 @@ import net.sf.samtools.{SAMReadGroupRecord, SAMRecord}
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import scala.collection.JavaConverters._
-import edu.berkeley.cs.amplab.adam.models.SequenceDictionary
+import edu.berkeley.cs.amplab.adam.models.{RecordGroupDictionary, SequenceDictionary}
 
 class SAMRecordConverter extends Serializable {
-  def convert(samRecord: SAMRecord, dict: SequenceDictionary): ADAMRecord = {
+  def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): ADAMRecord = {
 
     val builder: ADAMRecord.Builder = ADAMRecord.newBuilder
       .setReadName(samRecord.getReadName)
@@ -126,7 +126,8 @@ class SAMRecordConverter extends Serializable {
         case None =>
       }
       recordGroup.getId
-      builder.setRecordGroupId(recordGroup.getReadGroupId)
+      builder.setRecordGroupId(readGroups(recordGroup.getReadGroupId))
+        .setRecordGroupName(recordGroup.getReadGroupId)
         .setRecordGroupSequencingCenter(recordGroup.getSequencingCenter)
         .setRecordGroupDescription(recordGroup.getDescription)
         .setRecordGroupFlowOrder(recordGroup.getFlowOrder)

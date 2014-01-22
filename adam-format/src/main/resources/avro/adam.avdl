@@ -23,7 +23,8 @@ record ADAMRecord {
     union { null, long } mateAlignmentStart = null;
     union { null, string } cigar = null;
     union { null, string } qual = null;
-    union { null, string } recordGroupId = null;
+    union { null, string } recordGroupName = null;
+    union { null, int } recordGroupId = null;
 
     // Read flags (all default to false)
     union { boolean, null } readPaired = false;
