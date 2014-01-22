@@ -237,4 +237,40 @@ record ADAMDatabaseVariantAnnotation {
   union { null, int } dbsnpId = null;
 }
 
+enum Strand {
+  Plus,
+  Minus
+}
+
+record ADAMAnnotation {
+  // the name of this annotation/track (e.g., centipede, conservation, etc.)
+  union { null, string } name = null;
+
+  // identifier for the particular annotation object
+  // if provided, then preferably unique within a given track
+  union { null, string } id = null;
+
+  // reference identifiers
+  union { null, ADAMContig } contig = null;
+
+  // position
+  union { null, long } start = null;
+  union { null, long } end = null;
+  union { null, Strand } strand = null;
+
+  // the primary observation
+  // at most one of these should be non-null
+  union { null, string} stringVal  = null;
+  union { null, long} longVal = null;
+  union { null, double} doubleVal = null;
+
+  // other information (possibly derived from name or other fields)
+  union { null, string } experimentId = null;
+  union { null, string } sampleId = null;
+  union { null, double } pValue = null;
+  union { null, double } qValue = null;
+  union { null, long } score = null;
+  union { null, long } peak = null;
+}
+
 }
