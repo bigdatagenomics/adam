@@ -22,7 +22,7 @@ import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import org.apache.spark.rdd.RDD
 
 // this class is required, not just standard. Baked in to recalibration.
-class QualByRG(rdd: RDD[RichADAMRecord]) extends Serializable {
+class QualByRG() extends Serializable {
 
   def apply(read: RichADAMRecord, start: Int, end: Int): Array[Int] = {
     val rg_offset = RecalUtil.Constants.MAX_REASONABLE_QSCORE * read.getRecordGroupId
@@ -33,9 +33,10 @@ class QualByRG(rdd: RDD[RichADAMRecord]) extends Serializable {
 
 trait StandardCovariate extends Serializable {
   def apply(read: RichADAMRecord, start: Int, end: Int): Array[Int] // get the covariate for all the bases of the read
+
 }
 
-case class DiscreteCycle(args: RDD[RichADAMRecord]) extends StandardCovariate {
+case class DiscreteCycle() extends StandardCovariate {
   // this is a special-case of the GATK's Cycle covariate for discrete technologies.
   // Not to be used for 454 or ion torrent (which are flow cycles)
   def apply(read: RichADAMRecord, startOffset: Int, endOffset: Int): Array[Int] = {
@@ -46,10 +47,7 @@ case class DiscreteCycle(args: RDD[RichADAMRecord]) extends StandardCovariate {
   }
 }
 
-case class BaseContext(records: RDD[RichADAMRecord], size: Int) extends StandardCovariate {
-  def this(_s: Int) = this(null, _s)
-
-  def this(_r: RDD[RichADAMRecord]) = this(_r, 2)
+case class BaseContext(size: Int = 2) extends StandardCovariate {
 
   val BASES = Array('A'.toByte, 'C'.toByte, 'G'.toByte, 'T'.toByte)
   val COMPL = Array('T'.toByte, 'G'.toByte, 'C'.toByte, 'A'.toByte)

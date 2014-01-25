@@ -35,8 +35,8 @@ private[rdd] object RecalibrateBaseQualities extends Serializable with Logging {
     val rdd = poorRdd.map(new RichADAMRecord(_))
     // initialize the covariates
     println("Instantiating covariates...")
-    val qualByRG = new QualByRG(rdd)
-    val otherCovars = List(new DiscreteCycle(rdd), new BaseContext(rdd))
+    val qualByRG = new QualByRG()
+    val otherCovars = List(new DiscreteCycle(), new BaseContext())
     println("Creating object...")
     val recalibrator = new RecalibrateBaseQualities(qualByRG, otherCovars)
     println("Computing table...")
@@ -52,7 +52,6 @@ private[rdd] class RecalibrateBaseQualities(val qualCovar: QualByRG, val covars:
   def computeTable(rdd: RDD[RichADAMRecord], dbsnp: SparkBroadcast[SnpTable]): RecalTable = {
 
     def addCovariates(table: RecalTable, covar: ReadCovariates): RecalTable = {
-      //log.info("Aggregating covarates for read "+covar.read.record.getReadName.toString)
       table + covar
     }
 

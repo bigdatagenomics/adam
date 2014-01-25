@@ -391,9 +391,8 @@ class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
     val rec2 = ADAMRecord.newBuilder().setRecordGroupId(rg2).setQual(qualStr(qual2)).build()
     val rec3 = ADAMRecord.newBuilder().setRecordGroupId(rg3).setQual(qualStr(qual3)).build()
     val records = List(rec1, rec2, rec3)
-    val recRDD = sc.makeRDD(records, 1).map(new RichADAMRecord(_))
-    System.out.println(recRDD.first())
-    val qualByRG = new QualByRG(recRDD)
+
+    val qualByRG = new QualByRG()
     val intervals = List((0, 29), (6, 29), (0, 21), (0, 20))
     for (interval <- intervals) {
       assert(qualByRG(rec1, interval._1, interval._2).deep == qual1.slice(interval._1, interval._2).toArray.deep)
