@@ -111,6 +111,35 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
     assert(first2.getReadMapped === true)
   }
 
+  sparkTest("Simple filter on ADAMRecord works") {
+
+    val fullReads: RDD[ADAMRecord] = sc.adamLoad(readsParquetFile.getAbsolutePath)
+    val firstFull = fullReads.first()
+    assert(firstFull.getReadName === "simread:1:26472783:false")
+    assert(firstFull.getReadMapped === true)
+    assert(firstFull.getReferenceName === "1")
+    assert(firstFull.getSequence != null)
+
+    val p1 = Filter(ADAMRecordField.referenceName, ADAMRecordField.referenceUrl, ADAMRecordField.referenceLength)
+    val reads1: RDD[ADAMRecord] = sc.adamLoad(readsParquetFile.getAbsolutePath, projection = Some(p1))
+
+    assert(reads1.count() === 200)
+
+    val first1 = reads1.first()
+    assert(first1.getReadName === "simread:1:26472783:false")
+    assert(first1.getReferenceName === null)
+
+    val p2 = Filter(ADAMRecordField.sequence)
+
+    val reads2: RDD[ADAMRecord] = sc.adamLoad(readsParquetFile.getAbsolutePath, projection = Some(p2))
+
+    assert(reads2.count() === 200)
+
+    val first2 = reads2.first()
+    assert(first2.getReadName === "simread:1:26472783:false")
+    assert(first2.getSequence === null)
+  }
+
   sparkTest("Simple projection on ADAMVariant works") {
 
     val p1 = Projection(ADAMVariantField.referenceId, ADAMVariantField.referenceName, ADAMVariantField.position)

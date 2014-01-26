@@ -40,6 +40,7 @@ object ADAMRecordField extends FieldEnumeration(ADAMRecord.SCHEMA$) {
   cigar,
   qual,
   recordGroupId,
+  recordGroupName,
   readPaired,
   properPair,
   readMapped,
