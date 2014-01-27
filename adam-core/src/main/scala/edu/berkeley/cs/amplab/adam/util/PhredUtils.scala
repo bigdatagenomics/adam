@@ -19,9 +19,24 @@ import scala.math.{pow, log10}
 
 object PhredUtils {
 
-  // conversion methods going to/from phred
-  def phredToDouble(phred: Int): Double = 1.0 - pow(10.0, -(phred.toDouble) / 10.0)
+  lazy val phredToErrorProbabilityCache: Array[Double] = {
+    (0 until 256).map{p => pow(10.0, -p / 10.0)}.toArray
+  }
 
-  def doubleToPhred(p: Double): Int = (-10.0 * log10(1.0 - p)).toInt
+  lazy val phredToSuccessProbabilityCache: Array[Double] = {
+    phredToErrorProbabilityCache.map{p => 1.0 - p}
+  }
+
+  def phredToSuccessProbability(phred: Int): Double = phredToSuccessProbabilityCache(phred)
+
+  private def probabilityToPhred(p: Double): Int = (-10.0 * log10(p)).toInt
+
+  def successProbabilityToPhred(p: Double): Int = probabilityToPhred(1.0 - p)
+
+  def errorProbabilityToPhred(p: Double): Int = probabilityToPhred(p)
+
+  def main(args: Array[String]) = {
+    phredToErrorProbabilityCache.zipWithIndex.foreach(p => println("%3d = %f".format(p._2, p._1)))
+  }
 
 }

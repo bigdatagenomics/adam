@@ -23,7 +23,7 @@ class GenotypesToVariantsConverterSuite extends FunSuite {
 
   test("Simple test of integer RMS") {
     val v = new GenotypesToVariantsConverter
-    assert(v.rms(List(1, -1)) === 1)
+    assert(v.rms(List(1, 1)) === 1)
   }
 
   test("Simple test of floating point RMS") {

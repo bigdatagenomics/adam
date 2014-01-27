@@ -46,14 +46,14 @@ class AdamContextSuite extends SparkFunSuite {
   }
 
   test("Can convert to phred") {
-    assert(doubleToPhred(0.9) === 10)
-    assert(doubleToPhred(0.99999) === 50)
+    assert(successProbabilityToPhred(0.9) === 10)
+    assert(successProbabilityToPhred(0.99999) === 50)
   }
 
   test("Can convert from phred") {
     // result is floating point, so apply tolerance
-    assert(phredToDouble(10) > 0.89 && phredToDouble(10) < 0.91)
-    assert(phredToDouble(50) > 0.99998 && phredToDouble(50) < 0.999999)
+    assert(phredToSuccessProbability(10) > 0.89 && phredToSuccessProbability(10) < 0.91)
+    assert(phredToSuccessProbability(50) > 0.99998 && phredToSuccessProbability(50) < 0.999999)
   }
 
 }

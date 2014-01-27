@@ -121,7 +121,7 @@ private[adam] class GenotypesToVariantsConverter(validateSamples: Boolean = fals
    */
   def rms(values: Seq[Int]): Int = {
     if (values.length > 0) {
-      PhredUtils.doubleToPhred(rms(values.map(PhredUtils.phredToDouble(_))))
+      PhredUtils.successProbabilityToPhred(rms(values.map(PhredUtils.phredToSuccessProbability)))
     } else {
       0
     }
@@ -344,10 +344,10 @@ private[adam] class GenotypesToVariantsConverter(validateSamples: Boolean = fals
     } else {
       val quals = genotypes.map(_.getGenotypeQuality)
         .filter(_ != null)
-        .map(PhredUtils.phredToDouble(_))
+        .map(PhredUtils.phredToSuccessProbability(_))
 
       if (quals.length != 0) {
-        builder.setQuality(PhredUtils.doubleToPhred(variantQualityFromGenotypes(quals)))
+        builder.setQuality(PhredUtils.successProbabilityToPhred(variantQualityFromGenotypes(quals)))
       }
     }
 
