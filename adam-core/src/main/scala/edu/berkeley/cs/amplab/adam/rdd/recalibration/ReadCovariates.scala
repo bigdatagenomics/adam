@@ -28,27 +28,35 @@ object ReadCovariates {
 }
 
 class ReadCovariates(val read: RichADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate],
-                     val dbSNP: SnpTable) extends Iterator[BaseCovariates] with Serializable {
+                     val dbSNP: SnpTable, val minQuality:Int = 2) extends Iterator[BaseCovariates] with Serializable {
 
-  val startOffset = read.qualityScores.takeWhile(_ <= 2).size
-  val endOffset = read.qualityScores.size - read.qualityScores.reverseIterator.takeWhile(_ <= 2).size
-  val qualCovar: Array[Int] = qualByRG(read, startOffset, endOffset)
-  val requestedCovars: List[Array[Int]] = covars.map(covar => covar(read, startOffset, endOffset))
+  def isLowQualityBase(qual : Byte) : Boolean = {
+    qual.toInt <=  minQuality
+  }
 
-  var iter_position = startOffset
+  val qualityStartOffset = read.qualityScores.takeWhile(isLowQualityBase).size
+  val qualityEndOffset = read.qualityScores.size - read.qualityScores.reverseIterator.takeWhile(isLowQualityBase).size
 
-  override def hasNext: Boolean = iter_position < endOffset
+
+  val qualCovar: Array[Int] = qualByRG(read, qualityStartOffset, qualityEndOffset)
+  val requestedCovars: List[Array[Int]] = covars.map(covar => covar(read, qualityStartOffset, qualityEndOffset))
+
+  var readOffset = qualityStartOffset
+
+
+  override def hasNext: Boolean = readOffset < qualityEndOffset
 
   override def next(): BaseCovariates = {
-    val offset = (iter_position - startOffset).toInt
-    val mismatch = read.isMismatchAtReadOffset(offset)
+    val baseCovarOffset = readOffset - qualityStartOffset
+    val mismatch = read.isMismatchAtReadOffset(readOffset)
     // FIXME: why does empty mismatch mean it should be masked?
-    val isMasked = dbSNP.isMaskedAtReadOffset(read, offset) || mismatch.isEmpty
+    val isMasked = dbSNP.isMaskedAtReadOffset(read, readOffset) || mismatch.isEmpty
     // getOrElse because reads without an MD tag can appear during *application* of recal table
     val isMismatch = mismatch.getOrElse(false)
-    iter_position += 1
-    new BaseCovariates(qualCovar(offset), requestedCovars.map(v => v(offset)).toArray,
-      read.qualityScores(offset), isMismatch, isMasked)
+    val qualityScore = read.qualityScores(readOffset)
+    readOffset += 1
+    new BaseCovariates(qualCovar(baseCovarOffset), requestedCovars.map(v => v(baseCovarOffset)).toArray,
+      qualityScore, isMismatch, isMasked)
   }
 
 }
