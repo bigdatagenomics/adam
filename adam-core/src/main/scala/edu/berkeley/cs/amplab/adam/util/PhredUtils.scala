@@ -29,6 +29,8 @@ object PhredUtils {
 
   def phredToSuccessProbability(phred: Int): Double = phredToSuccessProbabilityCache(phred)
 
+  def phredToErrorProbability(phred: Int): Double = phredToErrorProbabilityCache(phred)
+
   private def probabilityToPhred(p: Double): Int = (-10.0 * log10(p)).toInt
 
   def successProbabilityToPhred(p: Double): Int = probabilityToPhred(1.0 - p)

@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.rdd
 import scala.util.Random
 import edu.berkeley.cs.amplab.adam.rdd.recalibration._
 import scala.collection.mutable
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
+import edu.berkeley.cs.amplab.adam.util.{PhredUtils, SparkFunSuite}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
@@ -232,7 +232,7 @@ class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
         for (covarIdx <- Range(0, covars.size)) {
           val bc = newBaseCovar(isMM = true, isMask = false)
           counts(covarIdx)(covars(covarIdx)) += bc
-          expMM += RecalUtil.qualToErrorProb(bc.qual)
+          expMM += PhredUtils.phredToErrorProbability(bc.qual)
         }
       }
       (qual, counts)
@@ -336,7 +336,7 @@ class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
               counts(covarIdx)(covar) += bc
             }
           }
-          expMM += RecalUtil.qualToErrorProb(bc.qual) * (1 + covarMax.head)
+          expMM += PhredUtils.phredToErrorProbability(bc.qual) * (1 + covarMax.head)
         })
         (mm + 1 to obs).foreach(t => {
           val rg = qual / (1 + RecalUtil.Constants.MAX_REASONABLE_QSCORE)
@@ -347,7 +347,7 @@ class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
               counts(covarIdx)(covar) += bc
             }
           }
-          expMM += RecalUtil.qualToErrorProb(bc.qual) * (1 + covarMax.head)
+          expMM += PhredUtils.phredToErrorProbability(bc.qual) * (1 + covarMax.head)
         })
 
         (qual, counts)
@@ -363,7 +363,7 @@ class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
       for (covar <- cartesian(Array(2, 2, 2))) {
         val baseC = new BaseCovariates(qual, covar, (qual % 60).toByte, false, false) // isMM doesn't matter - this is a lookup
         val expectedCounts = (1 to 60).map(t => 10000 * 3 * 2).sum
-        val expectedMismatches = (1 to 60).map(t => 30000 * 2 * RecalUtil.qualToErrorProb(t.toByte)).sum
+        val expectedMismatches = (1 to 60).map(t => 30000 * 2 * PhredUtils.phredToErrorProbability(t.toByte)).sum
         val expectedMismatchRate = expectedMismatches / expectedCounts
         val expectedReadGroupShift = 10.0 / 10000 - expectedMismatchRate
         assert(table.globalCounts.basesObserved == expectedCounts)
@@ -371,7 +371,7 @@ class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
         assert(table.readGroupCounts(1).mismatches == 30 * 60)
         assert(table.qualByRGCounts(22).basesObserved == 30000)
         assert(math.abs(expectedReadGroupShift - table.getReadGroupDelta(baseC)) < 1e-12)
-        //val expectedShift = RecalUtil.qualToErrorProb(30) - (10000*RecalUtil.qualToErrorProb(baseC.qual).toInt)/10000.0
+        //val expectedShift = PhredUtils.phredToErrorProbability(30) - (10000*PhredUtils.phredToErrorProbability(baseC.qual).toInt)/10000.0
         //assert(table.getQualScoreDelta())
       }
     }
