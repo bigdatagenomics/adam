@@ -18,24 +18,21 @@ package edu.berkeley.cs.amplab.adam.rdd.recalibration
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
+import edu.berkeley.cs.amplab.adam.util.PhredUtils
 
 object RecalUtil extends Serializable {
 
   object Constants {
     val MAX_REASONABLE_QSCORE = 60
-    val MIN_REASONABLE_ERROR = math.pow(10.0, -MAX_REASONABLE_QSCORE / 10)
+    val MIN_REASONABLE_ERROR = PhredUtils.phredToErrorProbability(MAX_REASONABLE_QSCORE)
     val MAX_NUMBER_OF_OBSERVATIONS = Int.MaxValue
   }
-
-  def qualToErrorProb(q: Byte): Double = math.pow(10.0, -q / 10)
-
-  def errorProbToQual(d: Double): Byte = (-10 * math.log10(d)).toInt.toByte
 
   def recalibrate(read: RichADAMRecord, qualByRG: QualByRG, covars: List[StandardCovariate], table: RecalTable): ADAMRecord = {
     // get the covariates
     val readCovariates = ReadCovariates(read, qualByRG, covars)
-    val toQual = errorProbToQual _
-    val toErr = qualToErrorProb _
+    val toQual = PhredUtils.errorProbabilityToPhred( _ )
+    val toErr = PhredUtils.phredToErrorProbability( _ )
     val newQuals = readCovariates.map(b => {
       toQual(table.getErrorRateShifts(b).foldLeft(toErr(b.qual))(_ + _))
     }).toArray

@@ -17,6 +17,7 @@ package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import scala.collection.immutable.Map
 import scala.collection.mutable
+import edu.berkeley.cs.amplab.adam.util.PhredUtils
 
 
 class RecalTable(_counts: mutable.HashMap[Int, Array[ErrorCounts]], _expectedMM: Double) extends Serializable {
@@ -57,7 +58,7 @@ class RecalTable(_counts: mutable.HashMap[Int, Array[ErrorCounts]], _expectedMM:
     errorCounts zip info.covar foreach (errorCovar => {
       errorCovar._1(errorCovar._2) += info
     })
-    expectedMismatch += RecalUtil.qualToErrorProb(info.qual)
+    expectedMismatch += PhredUtils.phredToErrorProbability(info.qual)
   }
 
   /*val BASES = "ACGT".toCharArray.map(_.toByte)
@@ -132,13 +133,13 @@ class RecalTable(_counts: mutable.HashMap[Int, Array[ErrorCounts]], _expectedMM:
   def getQualScoreDelta(baseCovar: BaseCovariates): Double = {
     val readGroupDelta = getReadGroupDelta(baseCovar)
     val empiricalCounts = qualByRGCounts(baseCovar.qualByRG)
-    val reportedErr = RecalUtil.qualToErrorProb(baseCovar.qual)
+    val reportedErr = PhredUtils.phredToErrorProbability(baseCovar.qual)
     val errAdjusted = reportedErr + readGroupDelta
     empiricalCounts.getErrorProb.getOrElse(errAdjusted) - errAdjusted
   }
 
   def getCovariateDelta(baseCovar: BaseCovariates): Seq[Double] = {
-    val errAdjusted = RecalUtil.qualToErrorProb(baseCovar.qual) + getReadGroupDelta(baseCovar) + getQualScoreDelta(baseCovar)
+    val errAdjusted = PhredUtils.phredToErrorProbability(baseCovar.qual) + getReadGroupDelta(baseCovar) + getQualScoreDelta(baseCovar)
     val errs = this.lookup(baseCovar.qualByRG, baseCovar.covar.size).zip(baseCovar.covar).map(t => t._1(t._2).getErrorProb)
     errs.map(_.getOrElse(errAdjusted) - errAdjusted)
   }
