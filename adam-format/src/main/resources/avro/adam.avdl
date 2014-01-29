@@ -132,6 +132,24 @@ record ADAMNestedPileup {
      array<ADAMRecord> readEvidence;
 }
 
+record ADAMReferenceRecord {
+  union { null, int }    referenceId;
+  union { null, string } referenceName;
+  union { null, long }   referenceLength = null;
+  union { null, string } referenceUrl = null;
+  union { null, string } referenceMD5 = null;
+}
+
+record ADAMReferenceDictionary {
+  array <ADAMReferenceRecord> referenceRecords = null;
+}
+
+record ADAMContig {
+  union { null, string } contigName;
+  union { null, int } contigId;
+  union { null, ADAMReferenceDictionary } referenceDictionary = null;
+}
+
 enum StructuralVariantType {
     Deletion,
     Insertion,

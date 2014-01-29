@@ -16,6 +16,8 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import org.scalatest._
+import edu.berkeley.cs.amplab.adam.avro.{ADAMReferenceRecord, ADAMReferenceDictionary}
+import scala.collection.JavaConversions._
 
 class SequenceDictionarySuite extends FunSuite {
 
@@ -176,6 +178,17 @@ class SequenceDictionarySuite extends FunSuite {
     s1 ++= s3
     assert(s1 === s3)
   }
+
+  test("Can create sequence dictionary from ADAMReferenceDictionary") {
+    val rd = ADAMReferenceDictionary.newBuilder().setReferenceRecords(List(
+      ADAMReferenceRecord.newBuilder().setReferenceId(0).setReferenceName("1").setReferenceLength(249250621).build()
+    )).build()
+
+    val sd = SequenceDictionary(record(0, "1", 249250621))
+
+    assert(SequenceDictionary.fromADAMReferenceDictionary(rd) === sd)
+  }
+
 
   def record(id: Int, name: String, length: Int = 1000, url: String = null): SequenceRecord =
     SequenceRecord(id, name, length, url)

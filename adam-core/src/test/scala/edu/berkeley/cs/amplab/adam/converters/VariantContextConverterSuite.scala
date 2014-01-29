@@ -15,174 +15,29 @@
  */
 package edu.berkeley.cs.amplab.adam.converters
 
-import org.broadinstitute.variant.variantcontext.{Allele, VariantContextBuilder, GenotypeBuilder}
-import edu.berkeley.cs.amplab.adam.avro.VariantType
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import scala.collection.JavaConverters._
 import org.scalatest.FunSuite
+import org.broadinstitute.variant.variantcontext.{Allele, VariantContextBuilder}
 
 class VariantContextConverterSuite extends FunSuite {
-
-  test("Test variant unpacking from simple variant context with 1 allele") {
-    val Aref = Allele.create("A", true)
-
-    // make variant at locus position 1 with allele "A" which is reference, and passes filters
-    val vc = new VariantContextBuilder().alleles(List(Aref))
-      .id("MyID")
-      .passFilters()
+  test("Convert site-only SNV") {
+    val vc = new VariantContextBuilder()
+      .alleles(List(Allele.create("A",true), Allele.create("T")).asJavaCollection)
       .start(1L)
       .stop(1L)
-      .chr("A")
+      .chr("1")
       .make()
 
     val converter = new VariantContextConverter
 
-    val adamVariants = converter.convertVariants(vc)
-    val variant = adamVariants.head
+    val adamVCs = converter.convert(vc)
+    assert(adamVCs.length === 1)
 
-    assert(adamVariants.length === 1)
+    val adamVC = adamVCs.head
+    assert(adamVC.genotypes.length === 0)
+
+    val variant = adamVC.variant
     assert(variant.getReferenceAllele === "A")
-    assert(variant.getIsReference)
-    assert(variant.getId === "MyID")
-    assert(variant.getFiltersRun)
-    assert(variant.getFilters === null)
     assert(variant.getPosition === 0L)
   }
-
-  test("Test variant unpacking from context with reference allele and SNP") {
-    val Aref = Allele.create("A", true)
-    val Tsnp = Allele.create("T", false)
-
-    // make variant at locus position 1 with allele "A" which is reference
-    val vc = new VariantContextBuilder().alleles(List(Aref, Tsnp))
-      .id("MyID")
-      .passFilters()
-      .start(1L)
-      .stop(1L)
-      .chr("A")
-      .make()
-
-    val converter = new VariantContextConverter
-
-    val adamVariants = converter.convertVariants(vc)
-    val ref = adamVariants(1)
-    val variant = adamVariants(0)
-
-    assert(adamVariants.length === 2)
-    assert(ref.getReferenceAllele === "A")
-    assert(ref.getIsReference)
-    assert(ref.getId === "MyID")
-    assert(ref.getFiltersRun)
-    assert(ref.getFilters === null)
-    assert(ref.getPosition === 0L)
-    assert(ref.getVariantType === VariantType.SNP)
-    assert(variant.getReferenceAllele === "A")
-    assert(!variant.getIsReference)
-    assert(variant.getVariant === "T")
-    assert(variant.getId === "MyID")
-    assert(variant.getFiltersRun)
-    assert(variant.getFilters === null)
-    assert(variant.getPosition === 0L)
-    assert(variant.getVariantType === VariantType.SNP)
-  }
-
-  test("Test variant unpacking from simple variant context with 1 allele and 1 genotype") {
-    val Aref = Allele.create("A", true)
-    val g = GenotypeBuilder.create("mySample", List(Aref))
-
-    // make variant at locus position 1 with allele "A" which is reference, and passes filters
-    val vc = new VariantContextBuilder().alleles(List(Aref))
-      .id("MyID")
-      .passFilters()
-      .start(1L)
-      .stop(1L)
-      .chr("A")
-      .genotypes(List(g))
-      .make()
-
-    val converter = new VariantContextConverter
-
-    val adamVariants = converter.convertVariants(vc)
-    val variant = adamVariants.head
-
-    assert(adamVariants.length === 1)
-    assert(variant.getReferenceAllele === "A")
-    assert(variant.getIsReference)
-    assert(variant.getId === "MyID")
-    assert(variant.getFiltersRun)
-    assert(variant.getFilters === null)
-    assert(variant.getPosition === 0L)
-
-    val adamGenotypes = converter.convertGenotypes(vc)
-    val genotype = adamGenotypes.head
-
-    assert(adamGenotypes.length === 1)
-    assert(genotype.getIsReference)
-    assert(genotype.getAllele === "A")
-    assert(genotype.getPosition === 0L)
-  }
-
-  test("Test variant unpacking from simple variant context with 1 allele and 1 diploid genotype") {
-    val Aref = Allele.create("A", true)
-    val g = GenotypeBuilder.create("mySample", List(Aref, Aref))
-
-    // make variant at locus position 1 with allele "A" which is reference, and passes filters
-    val vc = new VariantContextBuilder().alleles(List(Aref))
-      .id("MyID")
-      .passFilters()
-      .start(1L)
-      .stop(1L)
-      .chr("A")
-      .genotypes(List(g))
-      .make()
-
-    val converter = new VariantContextConverter
-
-    val adamVariants = converter.convertVariants(vc)
-    val variant = adamVariants.head
-
-    assert(adamVariants.length === 1)
-    assert(variant.getReferenceAllele === "A")
-    assert(variant.getIsReference)
-    assert(variant.getId === "MyID")
-    assert(variant.getFiltersRun)
-    assert(variant.getFilters === null)
-    assert(variant.getPosition === 0L)
-
-    val adamGenotypes = converter.convertGenotypes(vc)
-
-    assert(adamGenotypes.length === 2)
-    assert(adamGenotypes.forall(_.getIsReference))
-    assert(adamGenotypes.forall(_.getAllele == "A"))
-    assert(adamGenotypes.forall(_.getPosition == 0L))
-  }
-
-  test("Test VCF->ADAM->VCF conversion with 1 allele and 1 genotype") {
-    val Aref = Allele.create("A", true)
-    val g = GenotypeBuilder.create("mySample", List(Aref))
-
-    // make variant at locus position 1 with allele "A" which is reference, and passes filters
-    val vc = new VariantContextBuilder().alleles(List(Aref))
-      .id("MyID")
-      .passFilters()
-      .start(1L)
-      .stop(1L)
-      .chr("A")
-      .genotypes(List(g))
-      .make()
-
-    val converter = new VariantContextConverter
-
-    val adamVC = converter.convert(vc)
-
-    assert(adamVC.position === 0L)
-    assert(adamVC.variants.length === 1)
-    assert(adamVC.genotypes.length === 1)
-
-    val vcfVC = converter.convert(adamVC)
-
-    assert(vcfVC.hasSameAllelesAs(vc))
-    assert(vcfVC.getStart == vc.getStart)
-    assert(vcfVC.getEnd == vc.getEnd)
-  }
-
 }
