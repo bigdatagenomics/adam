@@ -113,8 +113,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
   }
 
   def adamBQSR(dbSNP: SnpTable): RDD[ADAMRecord] = {
-    val broadcastDbSNP = rdd.context.broadcast(dbSNP)
-    RecalibrateBaseQualities(rdd, broadcastDbSNP)
+    throw new RuntimeException("not implemented")
   }
 
   def adamRealignIndels(): RDD[ADAMRecord] = {
