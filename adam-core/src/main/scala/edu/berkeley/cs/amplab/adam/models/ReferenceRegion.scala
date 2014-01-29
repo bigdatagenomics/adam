@@ -38,7 +38,15 @@ object ReferenceRegion {
       None
     }
   }
-  
+
+  /**
+   * Generates a region from a given position -- the region will have a length of 1.
+   * @param pos The position to convert
+   * @return A 1-wide region at the same location as pos
+   */
+  def apply(pos : ReferencePosition) : ReferenceRegion =
+    ReferenceRegion(pos.refId, pos.pos, pos.pos+1)
+
 }
 
 /**

@@ -22,6 +22,7 @@ object AdamMain extends Logging {
 
   private val commands = List(Transform,
     PrintTags,
+    CalculateDepth,
     FlagStat,
     Reads2Ref,
     MpileupCommand,

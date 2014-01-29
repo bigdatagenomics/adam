@@ -19,4 +19,6 @@ trait ReferenceMapping[T] {
 
   def getReferenceId( value : T ) : Int
   def remapReferenceId( value : T, newId : Int) : T
+
+  def getReferenceRegion( value : T ) : ReferenceRegion
 }

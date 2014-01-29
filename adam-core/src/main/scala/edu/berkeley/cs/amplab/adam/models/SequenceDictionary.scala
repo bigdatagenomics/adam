@@ -91,6 +91,15 @@ class SequenceDictionary(recordsIn: Iterable[SequenceRecord]) extends Serializab
   }
 
   /**
+   * Returns true if this sequence dictionary contains a reference with the specified (integer) ID.
+   * @param id refId to look for
+   * @return True if the refId is in this dictionary
+   */
+  def containsRefId(id : Int) : Boolean = {
+    recordIndices.contains(id)
+  }
+
+  /**
    * Produces a Map of Int -> Int which maps the referenceIds from this SequenceDictionary
    * into referenceIds compatible with the argument SequenceDictionary ('dict').
    *
