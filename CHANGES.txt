@@ -1,0 +1,12 @@
+ADAM Changelog
+
+Trunk (not yet released)
+
+  NEW FEATURES
+
+  OPTIMIZATIONS
+
+  IMPROVEMENTS
+
+  BUG FIXES
+
