@@ -3,6 +3,7 @@ ADAM Changelog
 Trunk (not yet released)
 
   NEW FEATURES
+  * Added ability to load and merge multiple ADAM files into a single RDD. 
 
   OPTIMIZATIONS
 
