@@ -104,6 +104,9 @@ class MdTagSuite extends FunSuite {
       assert(md7.isMatch(i))
     }
 
+    val mdy = MdTag("34Y18G46")
+    assert(mdy.mismatchedBase(34) == Some('Y'))
+
   }
 
 }

@@ -20,6 +20,8 @@ import edu.berkeley.cs.amplab.adam.rdd.recalibration._
 import scala.collection.mutable
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 
 class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
   val RANDOM = new Random("RecalibrationSuite".hashCode)
@@ -378,9 +380,9 @@ class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
   sparkTest("Covariate :: QualByRg :: Example") {
     val registrator = System.getProperty("spark.kryo.registrator", "noneFound")
     System.out.println(registrator)
-    val rg1 = "readGroup1"
-    val rg2 = "readGroup2"
-    val rg3 = "readGroup3"
+    val rg1 = 0
+    val rg2 = 1
+    val rg3 = 2
     val qual1 = List(2, 2, 2, 2, 2, 2, 25, 32, 27, 22, 33, 35, 37, 33, 37, 38, 32, 26, 28, 24, 23, 22, 37, 38, 33, 33, 33, 33, 33, 33)
     val qual2 = List(25, 25, 25, 25, 25, 26, 26, 26, 26, 25, 26, 26, 26, 27, 27, 27, 27, 27, 27, 27, 29, 29, 2, 2, 2, 2, 2, 2, 2, 2)
     val qual3 = List(32, 32, 32, 33, 33, 33, 33, 35, 35, 32, 33, 28, 29, 29, 29, 29, 29, 29, 29, 29, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
@@ -389,7 +391,7 @@ class RecalibrateBaseQualitiesSuite extends SparkFunSuite {
     val rec2 = ADAMRecord.newBuilder().setRecordGroupId(rg2).setQual(qualStr(qual2)).build()
     val rec3 = ADAMRecord.newBuilder().setRecordGroupId(rg3).setQual(qualStr(qual3)).build()
     val records = List(rec1, rec2, rec3)
-    val recRDD = sc.makeRDD(records, 1)
+    val recRDD = sc.makeRDD(records, 1).map(new RichADAMRecord(_))
     System.out.println(recRDD.first())
     val qualByRG = new QualByRG(recRDD)
     val intervals = List((0, 29), (6, 29), (0, 21), (0, 20))

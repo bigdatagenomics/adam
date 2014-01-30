@@ -22,7 +22,7 @@ import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
 import parquet.hadoop.util.ContextUtil
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMVariant, ADAMGenotype, ADAMVariantDomain}
-import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, ReferencePosition, ADAMRod}
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, SnpTable, ReferencePosition, ADAMRod}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
@@ -31,6 +31,8 @@ import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
 import edu.berkeley.cs.amplab.adam.projections.{ADAMVariantAnnotations, ADAMVariantField}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
+import edu.berkeley.cs.amplab.adam.util.ParquetLogger
+import java.util.logging.Level
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -38,6 +40,7 @@ class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Seri
                pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                disableDictionaryEncoding: Boolean = false): RDD[T] = {
     val job = new Job(rdd.context.hadoopConfiguration)
+    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
     ParquetOutputFormat.setWriteSupportClass(job, classOf[AvroWriteSupport])
     ParquetOutputFormat.setCompression(job, compressCodec)
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
@@ -100,23 +103,8 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
     MarkDuplicates(rdd)
   }
 
-  def adamBQSR(dbSNP: File): RDD[ADAMRecord] = {
-    // Construct a map of chromosome to a set of SNP locations on that
-    // chromosome.
-    // The aggregate operation combines the sets of chromosome -> SNP locations.
-    val dbsnpMap = scala.io.Source.fromFile(dbSNP).getLines().map(posLine => {
-      val split = posLine.split("\t")
-      val contig = split(0)
-      val pos = split(1).toInt
-      (contig, pos)
-    }).aggregate(Map[String, Set[Int]]())((dbMap, pair) => {
-      dbMap + (pair._1 -> (dbMap.getOrElse(pair._1, Set[Int]()) + pair._2))
-    }, (map1 : Map[String, Set[Int]], map2 : Map[String, Set[Int]]) => {
-      map1 ++ map2.map{ case (k,v) => k -> (v ++ map1.getOrElse(k, v.empty)) }
-    })
-
-    val broadcastDbSNP = rdd.context.broadcast(dbsnpMap)
-
+  def adamBQSR(dbSNP: SnpTable): RDD[ADAMRecord] = {
+    val broadcastDbSNP = rdd.context.broadcast(dbSNP)
     RecalibrateBaseQualities(rdd, broadcastDbSNP)
   }
 
@@ -140,6 +128,63 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
   def adamRecords2Pileup(): RDD[ADAMPileup] = {
     val helper = new Reads2PileupProcessor
     helper.process(rdd)
+  }
+
+  /**
+   * Groups all reads by reference position, with all reference position bases grouped
+   * into a rod.
+   *
+   * @param bucketSize Size in basepairs of buckets. Larger buckets take more time per
+   * bucket to convert, but have lower skew. Default is 1000.
+   * 
+   * @returns RDD of ADAMRods.
+   */
+  def adamRecords2Rods (bucketSize: Int = 1000): RDD[ADAMRod] = {
+    
+    /**
+     * Maps a read to one or two buckets. A read maps to a single bucket if both
+     * it's start and end are in a single bucket.
+     *
+     * @param r Read to map.
+     * @return List containing one or two mapping key/value pairs.
+     */
+    def mapToBucket (r: ADAMRecord): List[(Long, ADAMRecord)] = {
+      val s = r.getStart / bucketSize
+      val e = r.end.get / bucketSize
+
+      if (s == e) {
+        List((s, r))
+      } else {
+        List((s, r), (e, r))
+      }
+    }
+
+    println("Putting reads in buckets.")
+
+    val bucketedReads = rdd.filter(_.getStart != null)
+      .flatMap(mapToBucket)
+      .groupByKey
+
+    println ("Have reads in buckets.")
+
+    val pp = new Reads2PileupProcessor
+    
+    /**
+     * Converts all reads in a bucket into rods.
+     *
+     * @param bucket Tuple of (bucket number, reads in bucket).
+     * @return A sequence containing the rods in this bucket.
+     */
+    def bucketedReadsToRods (bucket: (Long, Seq[ADAMRecord])): Seq[ADAMRod] = {
+      val (bucketNumber, bucketReads) = bucket
+
+      bucketReads.flatMap(pp.readToPileups)
+        .groupBy(_.getPosition)
+        .toList
+        .map(g => ADAMRod(g._1, g._2.toList)).toSeq
+    }
+
+    bucketedReads.flatMap(bucketedReadsToRods)
   }
 }
 

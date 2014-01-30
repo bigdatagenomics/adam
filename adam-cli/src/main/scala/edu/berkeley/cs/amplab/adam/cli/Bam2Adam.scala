@@ -26,7 +26,7 @@ import org.apache.hadoop.fs.Path
 import java.util.concurrent._
 import scala.Some
 import java.util.logging.Level
-import edu.berkeley.cs.amplab.adam.models.SequenceDictionary
+import edu.berkeley.cs.amplab.adam.models.{RecordGroupDictionary, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.converters.SAMRecordConverter
 
 object Bam2Adam extends AdamCommandCompanion {
@@ -53,7 +53,7 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs {
 
 class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
   val companion = Bam2Adam
-  val blockingQueue = new LinkedBlockingQueue[Option[(SAMRecord, SequenceDictionary)]](args.qSize)
+  val blockingQueue = new LinkedBlockingQueue[Option[(SAMRecord, SequenceDictionary, RecordGroupDictionary)]](args.qSize)
 
   val writerThreads = (0 until args.numThreads).foldLeft(List[Thread]()) {
     (list, threadNum) => {
@@ -80,8 +80,8 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
                   blockingQueue.add(None)
                   // Exit
                   return
-                case Some((samRecord, seqDict)) =>
-                  parquetWriter.write(samRecordConverter.convert(samRecord, seqDict))
+                case Some((samRecord, seqDict, rgDict)) =>
+                  parquetWriter.write(samRecordConverter.convert(samRecord, seqDict, rgDict))
               }
             }
           } catch {
@@ -102,6 +102,7 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
     samReader.setValidationStringency(args.validationStringency)
 
     val seqDict = SequenceDictionary.fromSAMReader(samReader)
+    val rgDict = RecordGroupDictionary.fromSAMReader(samReader)
 
     println(seqDict)
 
@@ -109,7 +110,7 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
     var i = 0
     for (samRecord <- samReader) {
       i += 1
-      blockingQueue.put(Some((samRecord, seqDict)))
+      blockingQueue.put(Some((samRecord, seqDict, rgDict)))
       if (i % 1000000 == 0) {
         println("***** Read %d million reads from SAM/BAM file (queue=%d) *****".format(i / 1000000, blockingQueue.size()))
       }
