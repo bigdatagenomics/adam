@@ -23,23 +23,27 @@ import org.apache.hadoop.mapreduce.Job
 import parquet.filter.UnboundRecordFilter
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
-import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.{RichRDDReferenceRecords, RichADAMRecord}
 import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat, VariantContextWritable, VCFInputFormat}
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
 import scala.collection.JavaConversions._
 import edu.berkeley.cs.amplab.adam.models._
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileSystem, Path}
 import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
 import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, Projection}
 import edu.berkeley.cs.amplab.adam.projections.ADAMVariantAnnotations
 import edu.berkeley.cs.amplab.adam.converters.{SAMRecordConverter, VariantContextConverter}
 import edu.berkeley.cs.amplab.adam.rdd.compare.CompareAdam
+import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
+
 import scala.collection.Map
 import scala.Some
 import edu.berkeley.cs.amplab.adam.models.ADAMRod
 import net.sf.samtools.SAMFileHeader
+import scala.util.matching.Regex
+import java.util.regex.Pattern
 
 object AdamContext {
   // Add ADAM Spark context methods
@@ -305,6 +309,57 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
   def adamCompareFiles(file1Path: String, file2Path: String,
                        predicateFactory: (Map[Int, Int]) => (SingleReadBucket, SingleReadBucket) => Boolean) = {
     CompareAdam.compareADAM(sc, file1Path, file2Path, predicateFactory)
+  }
+
+  /**
+   * Searches a path recursively, returning the names of all directories in the tree whose
+   * name matches the given regex.
+   *
+   * @param path The path to begin the search at
+   * @param regex A regular expression
+   * @return A sequence of Path objects corresponding to the identified directories.
+   */
+  def findFiles(path: Path, regex: String): Seq[Path] = {
+    if (regex == null) {
+      Seq(path)
+    } else {
+      val statuses = FileSystem.get(sc.hadoopConfiguration).listStatus(path)
+      val r = Pattern.compile(regex)
+      val (matches, recurse) = statuses.filter(s => s.isDirectory).map(s => s.getPath).partition(p => r.matcher(p.getName).matches())
+      matches.toSeq ++ recurse.flatMap(p => findFiles(p, regex))
+    }
+  }
+
+  /**
+   * Takes a sequence of Path objects (e.g. the return value of findFiles).  Treats each path as
+   * corresponding to a ADAMRecord set -- loads each ADAMRecord set, converts each set to use the
+   * same SequenceDictionary, and returns the union of the RDDs.
+   *
+   * (GenomeBridge is using this to load BAMs that have been split into multiple files per sample,
+   * for example, one-BAM-per-chromosome.)
+   *
+   * @param paths The locations of the parquet files to load
+   * @return a single RDD[ADAMRecord] that contains the union of the ADAMRecords in the argument paths.
+   */
+  def loadAdamFromPaths(paths: Seq[Path]): RDD[ADAMRecord] = {
+    def loadAdams(path: Path): (SequenceDictionary, RDD[ADAMRecord]) = {
+      val dict = adamDictionaryLoad[ADAMRecord](path.toString)
+      val rdd =adamLoad[ADAMRecord, UnboundRecordFilter](path.toString)
+      (dict, rdd)
+    }
+
+    def remap(adams: Seq[(SequenceDictionary, RDD[ADAMRecord])]): Seq[RDD[ADAMRecord]] = {
+      adams.headOption match {
+        case None => Seq()
+        case Some(head) =>
+          head._2 +: adams.tail.map(v => {
+            if (v._1.equals(head._1)) v._2
+            else v._2.remapReferenceId(v._1.mapTo(head._1).toMap)(sc)
+          })
+      }
+    }
+
+    sc.union(remap(paths.map(loadAdams)))
   }
 }
 
