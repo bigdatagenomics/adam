@@ -40,7 +40,7 @@ class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 class RichADAMRecord(val record: ADAMRecord) {
 
   // Returns the quality scores as a list of bytes
-  lazy val qualityScores: Array[Byte] = record.getQual.toString.toCharArray.map(q => (q - 33).toByte)
+  lazy val qualityScores: Array[Int] = record.getQual.toString.toCharArray.map(q => (q - 33))
 
   // Parse the tags ("key:type:value" triples)
   lazy val tags: Seq[Attribute] = AttributeUtils.parseAttributes(record.getAttributes.toString)
