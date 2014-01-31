@@ -325,7 +325,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
     } else {
       val statuses = FileSystem.get(sc.hadoopConfiguration).listStatus(path)
       val r = Pattern.compile(regex)
-      val (matches, recurse) = statuses.filter(s => s.isDirectory).map(s => s.getPath).partition(p => r.matcher(p.getName).matches())
+      val (matches, recurse) = statuses.filter(s => s.isDir).map(s => s.getPath).partition(p => r.matcher(p.getName).matches())
       matches.toSeq ++ recurse.flatMap(p => findFiles(p, regex))
     }
   }
