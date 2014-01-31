@@ -250,8 +250,7 @@ object SequenceDictionary {
       SequenceDictionary(
         samDict.getSequences.map {
           seqRecord: SAMSequenceRecord =>
-            SequenceRecord(seqRecord.getSequenceIndex, seqRecord.getSequenceName,
-              seqRecord.getSequenceLength, null)
+            SequenceRecord(seqRecord.getSequenceIndex, seqRecord.getSequenceName, seqRecord.getSequenceLength, null, null)
         }: _*)
 
     seqDict
@@ -259,6 +258,7 @@ object SequenceDictionary {
 
   def fromSAMReader(samReader: SAMFileReader): SequenceDictionary =
     fromSAMHeader(samReader.getFileHeader)
+
 
   def nonoverlappingHash(x: CharSequence, conflicts: Int => Boolean): Int = {
     var hash = x.hashCode
@@ -276,20 +276,21 @@ object SequenceDictionary {
  * @param name
  * @param length
  * @param url
+ * @param md5
  */
-class SequenceRecord(val id: Int, val name: CharSequence, val length: Long, val url: CharSequence) extends Serializable {
+class SequenceRecord(val id: Int, val name: CharSequence, val length: Long, val url: CharSequence, val md5: CharSequence) extends Serializable {
 
   assert(name != null, "SequenceRecord.name is null")
   assert(name.length > 0, "SequenceRecord.name has length 0")
   assert(length > 0, "SequenceRecord.length <= 0")
 
   def withReferenceId(newId: Int): SequenceRecord =
-    new SequenceRecord(newId, name, length, url)
+    new SequenceRecord(newId, name, length, url, md5)
 
   override def equals(x: Any): Boolean = {
     x match {
       case y: SequenceRecord =>
-        id == y.id && name == y.name && length == y.length && url == y.url
+        id == y.id && name == y.name && length == y.length && url == y.url && md5 == y.md5
       case _ => false
     }
   }
@@ -301,8 +302,8 @@ class SequenceRecord(val id: Int, val name: CharSequence, val length: Long, val 
 
 object SequenceRecord {
 
-  def apply(id: Int, name: CharSequence, length: Long, url: CharSequence = null): SequenceRecord =
-    new SequenceRecord(id, name, length, url)
+  def apply(id: Int, name: CharSequence, length: Long, url: CharSequence = null, md5: CharSequence = null): SequenceRecord =
+    new SequenceRecord(id, name, length, url, md5)
 
   /**
    * Convert an ADAMRecord into one or more SequenceRecords.
@@ -355,12 +356,12 @@ object SequenceRecord {
 
     val schema = rec.getSchema
 
-    new SequenceRecord(
+    SequenceRecord(
       rec.get(schema.getField("referenceId").pos()).asInstanceOf[Int],
       rec.get(schema.getField("referenceName").pos()).asInstanceOf[CharSequence],
       rec.get(schema.getField("referenceLength").pos()).asInstanceOf[Long],
-      rec.get(schema.getField("referenceUrl").pos()).asInstanceOf[CharSequence])
-
+      rec.get(schema.getField("referenceUrl").pos()).asInstanceOf[CharSequence]
+    )
   }
 
 }

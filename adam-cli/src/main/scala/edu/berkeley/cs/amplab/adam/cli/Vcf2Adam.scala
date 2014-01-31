@@ -16,12 +16,17 @@
 
 package edu.berkeley.cs.amplab.adam.cli
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.{Logging, SparkContext}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import java.io.File;
+
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
-import org.kohsuke.args4j.Argument
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
+import edu.berkeley.cs.amplab.adam.util.ParquetLogger
+import java.util.logging.Level
 import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.{Logging, SparkContext}
+import org.apache.spark.rdd.RDD
+import org.kohsuke.args4j.Argument
 
 object Vcf2Adam extends AdamCommandCompanion {
 
@@ -44,14 +49,9 @@ class Vcf2Adam(val args: Vcf2AdamArgs) extends AdamSparkCommand[Vcf2AdamArgs] wi
   val companion = Vcf2Adam
 
   def run(sc: SparkContext, job: Job) {
-
-    if (args.vcfFile.endsWith(".vcf") || args.vcfFile.endsWith(".bcf")) {
-      val adamVC: RDD[ADAMVariantContext] = sc.adamVariantContextLoad(args.vcfFile)
-
-      adamVC.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
-        compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
-    } else {
-      println("File does not end with *.vcf or *.bcf, so not converting.")
-    }
+    
+    var adamVariants : RDD[ADAMVariantContext] = sc.adamVCFLoad(args.vcfFile)
+    adamVariants.flatMap(p => p.genotypes).adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
+      compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
   }
 }
