@@ -366,8 +366,6 @@ class RangeAccumulator[T <: GenericRange] (val data : List[T], val previous : T)
 
 class IndelRealignmentTarget(val indelSet: Set[IndelRange], val snpSet: Set[SNPRange]) extends Logging {
 
-  initLogging()
-
   // the maximum range covered by either snps or indels
   def readRange : NumericRange.Inclusive[Long] = {
     (

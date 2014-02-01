@@ -47,8 +47,6 @@ private[rdd] object RecalibrateBaseQualities extends Serializable with Logging {
 }
 
 private[rdd] class RecalibrateBaseQualities(val qualCovar: QualByRG, val covars: List[StandardCovariate]) extends Serializable with Logging {
-  initLogging()
-
   def computeTable(rdd: RDD[RichADAMRecord], dbsnp: SparkBroadcast[SnpTable]): RecalTable = {
 
     def addCovariates(table: RecalTable, covar: ReadCovariates): RecalTable = {
