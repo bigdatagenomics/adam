@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,13 @@
  */
 package edu.berkeley.cs.amplab.adam.converters
 
-import org.broadinstitute.variant.variantcontext.{VariantContext, Allele, VariantContextBuilder, GenotypeBuilder, Genotype}
 import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMGenotype, VariantType, ADAMVariantDomain}
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary, ReferencePosition}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.util.VcfStringUtils._
 import fi.tkk.ics.hadoop.bam.VariantContextWritable
+import org.broadinstitute.variant.variantcontext.{VariantContext, Allele, VariantContextBuilder, GenotypeBuilder, Genotype}
+import org.broadinstitute.variant.vcf.VCFHeader
 
 /**
  * This class converts VCF data to and from ADAM. This translation occurs at the abstraction level
@@ -45,7 +46,7 @@ class VariantContextConverter extends Serializable {
     var tagMap = Map[java.lang.String, java.lang.Object]()
 
     // get start, end, and reference
-    val contig = v.filter(_.getIsReference).head.getVariant
+    val contig = v.head.getReferenceName
     val start = v.head.getPosition
     val end = v.map(r => {
       if (r.getVariantType == VariantType.SV) {
@@ -63,10 +64,17 @@ class VariantContextConverter extends Serializable {
     // for each variant, create an allele
     val alleleList = v.map(variant => {
       Allele.create(variant.getVariant, variant.getIsReference)
-    })
+    }).distinct
+
+    // add reference if it doesn't exist
+    val alleleListWRef = if (alleleList.forall(!_.isReference)) {
+      (Allele.create(v.head.getReferenceAllele, true) :: alleleList.toList).toSeq
+    } else {
+      alleleList
+    }
 
     // set alleles in variant context
-    vc.alleles(alleleList)
+    vc.alleles(alleleListWRef)
 
     // get fields - most can be taken from head variant
     val variant = v.head
@@ -111,9 +119,11 @@ class VariantContextConverter extends Serializable {
    * Converts a GATK variant context into a list of ADAMVariants.
    *
    * @param vc GATK variant context describing VCF data
+   * @param contigName Name of the contig this is on.
+   * @param contigId ID of the contig this is on.
    * @return A list of ADAMVariant records
    */
-  def convertVariants(vc: VariantContext): List[ADAMVariant] = {
+  def convertVariants(vc: VariantContext, contigName: String, contigId: Int): List[ADAMVariant] = {
 
     var variants = List[ADAMVariant]()
     var allele = 0
@@ -224,7 +234,9 @@ class VariantContextConverter extends Serializable {
         .setIsReference(a.isReference)
         .setQuality(vc.getPhredScaledQual.toInt)
         .setFiltersRun(vc.filtersWereApplied)
-        .setReferenceName(vc.getSource)
+        .setReferenceName(contigName)
+        .setReferenceId(contigId)
+        .setReferenceLength(1) // this is clearly a bogus value, however, cannot recover info from vcf
 
       // get variant type and convert to ADAM variant type
       val variantType = convertType(vc)
@@ -332,9 +344,11 @@ class VariantContextConverter extends Serializable {
    * to allele numbering of variants at same locus.
    *
    * @param vc GATK variant context to convert.
+   * @param contigName Name of the contig this is on.
+   * @param contigId ID of the contig this is on.
    * @return List of ADAMGenotypes.
    */
-  def convertGenotypes(vc: VariantContext): List[ADAMGenotype] = {
+  def convertGenotypes(vc: VariantContext, contigName: String, contigId: Int): List[ADAMGenotype] = {
 
     var genotypes = List[ADAMGenotype]()
 
@@ -370,7 +384,9 @@ class VariantContextConverter extends Serializable {
           .setPloidy(allele.length)
           .setIsPhased(g.isPhased)
           .setIsReference(allele.isReference)
-          .setReferenceName(vc.getSource)
+          .setReferenceName(contigName)
+          .setReferenceId(contigId)
+          .setReferenceLength(1) // see earlier note - can't be recovered from vcf
 
         if (g.hasGQ) {
           builder.setGenotypeQuality(g.getGQ)
@@ -451,11 +467,15 @@ class VariantContextConverter extends Serializable {
    * seen in.
    *
    * @param vc GATK variant context to convert.
+   * @param contigName Name of the contig this is on.
+   * @param contigId ID of the contig this is on.
    * @return ADAM variant domain object indiciating which databases contain this variant.
    */
-  def convertDomains(vc: VariantContext): ADAMVariantDomain = {
+  def convertDomains(vc: VariantContext, contigName: String, contigId: Int): ADAMVariantDomain = {
     val builder: ADAMVariantDomain.Builder = ADAMVariantDomain.newBuilder
       .setPosition(vc.getStart - 1)
+      .setReferenceName(contigName)
+      .setReferenceId(contigId)
 
     if (vc.hasAttribute("DB")) {
       builder.setInDbSNP(true)
@@ -515,23 +535,28 @@ class VariantContextConverter extends Serializable {
    * - Variant domain data
    *
    * @param vc GATK Variant context to convert.
+   * @param sequenceDict Sequence dictionary mapping reference contigs to IDs.
    * @return ADAM variant context containing allele, genotype, and domain data.
    */
-  def convert(vc: VariantContext): ADAMVariantContext = {
+  def convert(vc: VariantContext, sequenceDict: SequenceDictionary): ADAMVariantContext = {
 
-    val variants = convertVariants(vc)
-    val domains = convertDomains(vc)
+    val contigName: String = vc.getChr()
+    val contigId: Int = sequenceDict(contigName).id
+    val referencePosition = ReferencePosition(vc.getStart - 1, contigId)
+
+    val variants = convertVariants(vc, contigName, contigId)
+    val domains = convertDomains(vc, contigName, contigId)
 
     // if GATK variant context contains genotypes, convert them
     // if not, then return empty list of genotypes
     val genotypes = if (vc.hasGenotypes) {
-      convertGenotypes(vc)
+      convertGenotypes(vc, contigName, contigId)
     } else {
       List[ADAMGenotype]()
     }
 
     // assemble a variant context from the variants, genotypes, and domains (if seen)
-    new ADAMVariantContext(vc.getStart - 1, variants, genotypes, Some(domains))
+    new ADAMVariantContext(referencePosition, variants, genotypes, Some(domains))
   }
 
   /**
@@ -544,7 +569,7 @@ class VariantContextConverter extends Serializable {
    * @param vc Hadoop-BAM Variant context to convert.
    * @return ADAM variant context containing allele, genotype, and domain data.
    */
-  def convert(vc: VariantContextWritable): ADAMVariantContext = {
-    convert(vc.get)
+  def convert(vc: VariantContextWritable, seqDict: SequenceDictionary): ADAMVariantContext = {
+    convert(vc.get, seqDict)
   }
 }

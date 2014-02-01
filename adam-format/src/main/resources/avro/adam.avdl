@@ -308,6 +308,12 @@ record ADAMGenotype {
  */
 
 record ADAMVariantDomain {
+  // reference identifiers
+  union { null, int } referenceId = null;
+  union { null, string } referenceName = null;
+  union { null, long } referenceLength = null;
+  union { null, string } referenceUrl = null;
+
   // position of variant site
   union { null, long } position = null;
 

@@ -17,7 +17,7 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMGenotype}
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, ReferencePosition}
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 
 class ADAMVariantContextSuite extends SparkFunSuite {
@@ -25,9 +25,13 @@ class ADAMVariantContextSuite extends SparkFunSuite {
   sparkTest("Merge 1 variant and 1 genotype.") {
     val variant = ADAMVariant.newBuilder()
       .setPosition(0L)
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
     val genotype = ADAMGenotype.newBuilder()
       .setPosition(0L)
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
 
     val variantRDD = sc.parallelize(List(variant))
@@ -44,18 +48,26 @@ class ADAMVariantContextSuite extends SparkFunSuite {
     val variant0 = ADAMVariant.newBuilder()
       .setPosition(0L)
       .setVariant("A")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
     val variant1 = ADAMVariant.newBuilder()
       .setPosition(0L)
       .setVariant("C")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
     val genotype0 = ADAMGenotype.newBuilder()
       .setPosition(0L)
       .setAllele("A")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
     val genotype1 = ADAMGenotype.newBuilder()
       .setPosition(0L)
       .setAllele("C")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
 
     val variantRDD = sc.parallelize(List(variant0, variant1))
@@ -72,18 +84,26 @@ class ADAMVariantContextSuite extends SparkFunSuite {
     val variant0 = ADAMVariant.newBuilder()
       .setPosition(0L)
       .setVariant("A")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
     val variant1 = ADAMVariant.newBuilder()
       .setPosition(1L)
       .setVariant("C")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
     val genotype0 = ADAMGenotype.newBuilder()
       .setPosition(0L)
       .setAllele("A")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
     val genotype1 = ADAMGenotype.newBuilder()
       .setPosition(1L)
       .setAllele("C")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
 
     val variantRDD = sc.parallelize(List(variant0, variant1))
@@ -99,9 +119,13 @@ class ADAMVariantContextSuite extends SparkFunSuite {
   sparkTest("Merge 1 variant and 1 genotype at disjoint locations.") {
     val variant = ADAMVariant.newBuilder()
       .setPosition(0L)
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
     val genotype = ADAMGenotype.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
+      .setReferenceName("chr0")
       .build()
 
     val variantRDD = sc.parallelize(List(variant))
@@ -133,7 +157,7 @@ class ADAMVariantContextSuite extends SparkFunSuite {
 
     val vc = ADAMVariantContext.buildFromGenotypes(gtSeq)
 
-    assert(vc.position === 0L)
+    assert(vc.position == ReferencePosition(1, 0L))
     assert(vc.variants.length === 1L)
   }
 
@@ -173,7 +197,7 @@ class ADAMVariantContextSuite extends SparkFunSuite {
 
     val vc = ADAMVariantContext.buildFromGenotypes(gtSeq)
 
-    assert(vc.position === 0L)
+    assert(vc.position == ReferencePosition(1, 0L))
     assert(vc.variants.length === 1L)
   }
 
@@ -213,7 +237,7 @@ class ADAMVariantContextSuite extends SparkFunSuite {
 
     val vc = ADAMVariantContext.buildFromGenotypes(gtSeq)
 
-    assert(vc.position === 0L)
+    assert(vc.position == ReferencePosition(1, 0L))
     assert(vc.variants.length === 2L)
   }
 

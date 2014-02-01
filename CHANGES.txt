@@ -16,9 +16,14 @@ Trunk (not yet released)
     sequences to be imported into an efficient record where bases are stored as a list of enums. Additionally,
     convenience values are calculated. This feature was introduced in PR #79.
 
+  * Added helper functions for properly generating VCF headers for VCF export. This streamlines the process
+    of converting ADAM Variant Calls to the legacy VCF format. This was added in PR#85.
+
   OPTIMIZATIONS
 
   IMPROVEMENTS
 
   BUG FIXES
 
+  * Fixed issues where VCF header was not being written correctly. This prevented variant calls from being
+    written after conversion. This was fixed in PR#85.

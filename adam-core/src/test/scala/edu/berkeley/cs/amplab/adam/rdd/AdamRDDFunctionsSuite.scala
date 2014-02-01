@@ -15,11 +15,17 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup, Base, ADAMNucleotideContig}
-import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary}
+
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, 
+                                         ADAMPileup, 
+                                         Base, 
+                                         ADAMNucleotideContig, 
+                                         ADAMGenotype, 
+                                         ADAMVariant}
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceRecord, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import org.apache.spark.rdd.RDD
 import scala.util.Random
 
 class AdamRDDFunctionsSuite extends SparkFunSuite {
@@ -396,6 +402,84 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(dict.containsRefName("chr1"))
     assert(dict("chr1").id === 2)
     assert(dict("chr1").length === 900L)
+  }
+
+  sparkTest("recover samples from variant context") {
+    val variant0 = ADAMVariant.newBuilder()
+      .setPosition(0L)
+      .setVariant("A")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
+      .build()
+    val variant1 = ADAMVariant.newBuilder()
+      .setPosition(0L)
+      .setVariant("C")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
+      .build()
+    val genotype0 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setAllele("A")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
+      .setSampleId("me")
+      .build()
+    val genotype1 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setAllele("C")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
+      .setSampleId("you")
+      .build()
+
+    val variantRDD = sc.parallelize(List(variant0, variant1))
+    val genotypeRDD = sc.parallelize(List(genotype0, genotype1))
+
+    val vc = ADAMVariantContext.mergeVariantsAndGenotypes(variantRDD, genotypeRDD)
+    val samples = vc.adamGetCallsetSamples()
+
+    assert(samples.filter(_ == "you").length === 1)
+    assert(samples.filter(_ == "me").length === 1)
+  }
+
+  sparkTest("get sequence dictionary from variant context") {
+    val variant0 = ADAMVariant.newBuilder()
+      .setPosition(0L)
+      .setVariant("A")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
+      .setReferenceLength(1000)
+      .build()
+    val variant1 = ADAMVariant.newBuilder()
+      .setPosition(0L)
+      .setVariant("C")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
+      .setReferenceLength(1000)
+      .build()
+    val genotype0 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setAllele("A")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
+      .setReferenceLength(1000)
+      .build()
+    val genotype1 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setAllele("C")
+      .setReferenceId(0)
+      .setReferenceName("chr0")
+      .setReferenceLength(1000)
+      .build()
+
+    val variantRDD = sc.parallelize(List(variant0, variant1))
+    val genotypeRDD = sc.parallelize(List(genotype0, genotype1))
+
+    val vc = ADAMVariantContext.mergeVariantsAndGenotypes(variantRDD, genotypeRDD)
+    val sequenceDict = vc.adamGetSequenceDictionary()
+
+    assert(sequenceDict("chr0").id === 0)
+    assert(sequenceDict(0).name === "chr0")
   }
 
 }

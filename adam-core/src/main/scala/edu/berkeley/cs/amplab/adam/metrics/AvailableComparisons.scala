@@ -21,7 +21,6 @@ import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import scala.collection.Map
 import edu.berkeley.cs.amplab.adam.models.ReadBucket
-import edu.berkeley.cs.amplab.adam.metrics.{PointComparisons, LongComparisons, BooleanComparisons, BucketComparisons}
 
 object DefaultComparisons {
 
