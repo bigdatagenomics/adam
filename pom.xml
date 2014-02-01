@@ -15,27 +15,13 @@
 
     <properties>
         <java.version>1.6</java.version>
-        <scala.version>2.9.3</scala.version>
+        <scala.version>2.10.3</scala.version>
+        <scala.artifact.suffix>2.10</scala.artifact.suffix>
         <avro.version>1.7.4</avro.version>
-        <spark.version>0.8.1-incubating</spark.version>
+        <spark.version>0.9.0-incubating</spark.version>
         <parquet.version>1.2.5</parquet.version>
-
-        <!--
-          NOTE: The default configuration here is to build with Hadoop 2.2.0.
-          If using an earlier version of hadoop, comment out the first block
-          below, uncomment the second block, and replace the text "FIXME" with
-          your Hadoop version.
-        -->
-        <!-- if hadoop.version == 2.2.0 -->
-          <hadoop.version>2.2.0</hadoop.version>
-          <protobuf.version>2.5.0</protobuf.version>
-          <akka.version>2.0.5-protobuf-2.5-java-1.5</akka.version>
-          <akka.group>org.spark-project</akka.group>
-        <!-- else if hadoop.version < 2.2.0: <hadoop.version>FIXME</hadoop.version>
-          <protobuf.version>2.4.1</protobuf.version>
-          <akka.version>2.0.5</akka.version>
-          <akka.group>com.typesafe.akka</akka.group>
-        -->
+        <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
+        <hadoop.version>2.2.0</hadoop.version>
     </properties>
 
     <modules>
@@ -232,10 +218,6 @@
 
     <repositories>
         <repository>
-            <id>akka.repo</id>
-            <url>http://repo.akka.io/releases/</url>
-        </repository>
-        <repository>
             <id>hadoop-bam</id>
             <url>http://hadoop-bam.sourceforge.net/maven/</url>
         </repository>
@@ -246,60 +228,12 @@
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
-                <version>2.9.3</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>2.1</version>
-            </dependency>
-            <dependency>
-                <groupId>${akka.group}</groupId>
-                <artifactId>akka-actor</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${akka.group}</groupId>
-                <artifactId>akka-remote</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${akka.group}</groupId>
-                <artifactId>akka-slf4j</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${akka.group}</groupId>
-                <artifactId>akka-zeromq</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>${protobuf.version}</version>
+                <version>${scala.version}</version>
             </dependency>
             <dependency>
                 <groupId>edu.berkeley.cs.amplab.adam</groupId>
                 <artifactId>adam-core</artifactId>
                 <version>${project.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.typesafe.akka</groupId>
-                        <artifactId>akka-actor</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.typesafe.akka</groupId>
-                        <artifactId>akka-remote</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.typesafe.akka</groupId>
-                        <artifactId>akka-slf4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.typesafe.akka</groupId>
-                        <artifactId>akka-zeromq</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>edu.berkeley.cs.amplab.adam</groupId>
@@ -309,39 +243,31 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client</artifactId>
-                <version>${hadoop.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>asm</groupId>
-                        <artifactId>asm</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jboss.netty</groupId>
-                        <artifactId>netty</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.jackson</groupId>
-                        <artifactId>jackson-core-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.jackson</groupId>
-                        <artifactId>jackson-jaxrs</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.jackson</groupId>
-                        <artifactId>jackson-mapper-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.jackson</groupId>
-                        <artifactId>jackson-xc</artifactId>
-                    </exclusion>
-                </exclusions>
+              <groupId>org.apache.hadoop</groupId>
+              <artifactId>hadoop-client</artifactId>
+              <version>${hadoop.version}</version>
+              <exclusions>
+                <exclusion>
+                  <groupId>asm</groupId>
+                  <artifactId>asm</artifactId>
+                </exclusion>
+                <exclusion>
+                  <groupId>org.jboss.netty</groupId>
+                  <artifactId>netty</artifactId>
+                </exclusion>
+                <exclusion>
+                  <groupId>org.codehaus.jackson</groupId>
+                  <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                  <groupId>org.sonatype.sisu.inject</groupId>
+                  <artifactId>*</artifactId>
+                </exclusion>
+              </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.spark</groupId>
-                <artifactId>spark-core_${scala.version}</artifactId>
+                <artifactId>spark-core_${scala.artifact.suffix}</artifactId>
                 <version>${spark.version}</version>
             </dependency>
             <dependency>
@@ -391,7 +317,7 @@
             </dependency>
             <dependency>
                 <groupId>org.scalatest</groupId>
-                <artifactId>scalatest_${scala.version}</artifactId>
+                <artifactId>scalatest_${scala.artifact.suffix}</artifactId>
                 <version>1.9.2</version>
                 <scope>test</scope>
             </dependency>
