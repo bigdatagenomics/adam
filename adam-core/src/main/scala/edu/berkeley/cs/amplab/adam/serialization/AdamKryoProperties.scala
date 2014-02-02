@@ -21,7 +21,7 @@ object AdamKryoProperties {
   def setupContextProperties() = {
     System.setProperty("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     System.setProperty("spark.kryo.registrator", "edu.berkeley.cs.amplab.adam.serialization.AdamKryoRegistrator")
-    System.setProperty("spark.kryoserializer.buffer.mb", "4")
+    if(System.getProperty("spark.kryoserializer.buffer.mb") == null) System.setProperty("spark.kryoserializer.buffer.mb", "4")
     System.setProperty("spark.kryo.referenceTracking", "false")
   }
 }

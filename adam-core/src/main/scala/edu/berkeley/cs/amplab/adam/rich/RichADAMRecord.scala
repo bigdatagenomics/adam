@@ -126,6 +126,7 @@ class RichADAMRecord(val record: ADAMRecord) {
   }
 
   // Does this read overlap with the given reference position?
+  // FIXME: doesn't check contig! should use ReferenceLocation, not Long
   def overlapsReferencePosition(pos: Long): Option[Boolean] = {
     if (record.getReadMapped) {
       Some(record.getStart <= pos && pos < end.get)

@@ -101,8 +101,8 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
     MarkDuplicates(rdd)
   }
 
-  def adamBQSR(dbSNP: SnpTable): RDD[ADAMRecord] = {
-    throw new RuntimeException("not implemented")
+  def adamBQSR(knownSnps: SnpTable): RDD[ADAMRecord] = {
+    BaseQualityRecalibration(rdd, knownSnps)
   }
 
   def adamRealignIndels(): RDD[ADAMRecord] = {
