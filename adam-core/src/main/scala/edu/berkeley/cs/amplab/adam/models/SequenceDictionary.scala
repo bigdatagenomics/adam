@@ -19,7 +19,7 @@ import scala.collection.JavaConversions._
 import scala.math.Ordering.Implicits._
 
 import scala.collection._
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMNucleotideContig}
 import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord}
 import org.apache.avro.specific.SpecificRecord
 
@@ -68,9 +68,27 @@ class SequenceDictionary(recordsIn: Iterable[SequenceRecord]) extends Serializab
 
   def apply(id: Int): SequenceRecord = recordIndices(id)
 
-  def apply(name: CharSequence): SequenceRecord = recordNames(name)
+  /**
+   * Returns the sequence record associated with a specific contig name.
+   *
+   * @param name Name to search for.
+   * @return SequenceRecord associated with this record.
+   */
+  def apply(name: CharSequence): SequenceRecord = {
+    // must explicitly call toString - see note at recordNames creation RE: Avro & Utf8
+    recordNames(name.toString)
+  }
 
-  def containsRefName(name : CharSequence) : Boolean = recordNames.contains(name)
+  /**
+   * Returns true if this sequence dictionary contains a reference with a specific name.
+   *
+   * @param name Reference name to look for.
+   * @return True if reference is in this dictionary.
+   */
+  def containsRefName(name : CharSequence) : Boolean = {
+    // must explicitly call toString - see note at recordNames creation RE: Avro & Utf8
+    recordNames.contains(name.toString)
+  }
 
   /**
    * Produces a Map of Int -> Int which maps the referenceIds from this SequenceDictionary
@@ -303,6 +321,16 @@ object SequenceRecord {
 
   def apply(id: Int, name: CharSequence, length: Long, url: CharSequence = null): SequenceRecord =
     new SequenceRecord(id, name, length, url)
+
+  /**
+   * Converts an ADAM contig into a sequence record.
+   *
+   * @param ctg Contig to convert.
+   * @return Contig expressed as a sequence record.
+   */
+  def fromADAMContig (ctg: ADAMNucleotideContig): SequenceRecord = {
+    apply(ctg.getContigId, ctg.getContigName, ctg.getSequenceLength, ctg.getUrl)
+  }
 
   /**
    * Convert an ADAMRecord into one or more SequenceRecords.
