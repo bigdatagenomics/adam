@@ -34,7 +34,7 @@ class PhredQualityScore(val value: Int) extends Ordered[PhredQualityScore] with 
     case _ => false
   }
 
-  override def hashCode: Int = 0x26C2E0BA ^ value.hashCode
+  override def hashCode: Int = Util.hashCombine(0x26C2E0BA, value.hashCode)
 }
 
 object PhredQualityScore {

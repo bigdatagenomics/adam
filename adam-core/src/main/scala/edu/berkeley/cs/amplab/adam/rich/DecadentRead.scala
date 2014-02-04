@@ -21,6 +21,7 @@ import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util.MdTag
 import edu.berkeley.cs.amplab.adam.util.PhredQualityScore
+import edu.berkeley.cs.amplab.adam.util.Util
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 
@@ -119,5 +120,5 @@ class ReferenceLocation(val contig: String, val offset: Long) {
     case _ => false
   }
 
-  override def hashCode = 0x922927F8 ^ contig.hashCode ^ offset.hashCode
+  override def hashCode = Util.hashCombine(0x922927F8, contig.hashCode, offset.hashCode)
 }

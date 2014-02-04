@@ -18,6 +18,7 @@ package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
+import edu.berkeley.cs.amplab.adam.util.Util
 import scala.collection.mutable
 
 // FIXME: This should really be an inner class of CovariateSpace
@@ -31,7 +32,7 @@ class CovariateKey(val parts: Seq[Covariate#Value]) extends Serializable {
     case _ => false
   }
 
-  override def hashCode = 0xD20D1E51 ^ parts.hashCode
+  override def hashCode = Util.hashCombine(0xD20D1E51, parts.hashCode)
 }
 
 class CovariateSpace(val covariates: IndexedSeq[Covariate]) extends Serializable {
