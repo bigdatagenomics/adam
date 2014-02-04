@@ -28,7 +28,7 @@ import org.apache.spark.rdd.RDD
 
 object FlagStat extends AdamCommandCompanion {
   val commandName: String = "flagstat"
-  val commandDescription: String = "Prints statistics for ADAM data similar to samtools flagstat"
+  val commandDescription: String = "Print statistics on reads in an ADAM file (similar to samtools flagstat)"
 
   def apply(cmdLine: Array[String]): AdamCommand = {
     new FlagStat(Args4j[FlagStatArgs](cmdLine))

@@ -26,7 +26,7 @@ import edu.berkeley.cs.amplab.adam.models.SequenceRecord
 
 object ListDict extends AdamCommandCompanion {
   val commandName: String = "listdict"
-  val commandDescription: String = "Prints the contents of an ADAM sequence dictionary"
+  val commandDescription: String = "Print the contents of an ADAM sequence dictionary"
 
   def apply(cmdLine: Array[String]): AdamCommand = {
     new ListDict(Args4j[ListDictArgs](cmdLine))

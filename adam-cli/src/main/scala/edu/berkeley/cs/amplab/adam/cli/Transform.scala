@@ -28,7 +28,7 @@ import java.util.logging.Level
 
 object Transform extends AdamCommandCompanion {
   val commandName = "transform"
-  val commandDescription = "Apply one of more transforms to an ADAM file and save the results to another ADAM file"
+  val commandDescription = "Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations"
 
   def apply(cmdLine: Array[String]) = {
     new Transform(Args4j[TransformArgs](cmdLine))

@@ -20,8 +20,7 @@ import scala.Some
 
 object AdamMain extends Logging {
 
-  private val commands = List(Bam2Adam,
-    Transform,
+  private val commands = List(Transform,
     FlagStat,
     Reads2Ref,
     MpileupCommand,
@@ -30,6 +29,7 @@ object AdamMain extends Logging {
     ListDict,
     CompareAdam,
     ComputeVariants,
+    Bam2Adam,
     Adam2Vcf,
     Vcf2Adam)
 
