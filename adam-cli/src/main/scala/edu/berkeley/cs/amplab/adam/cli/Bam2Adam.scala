@@ -31,7 +31,7 @@ import edu.berkeley.cs.amplab.adam.converters.SAMRecordConverter
 
 object Bam2Adam extends AdamCommandCompanion {
   val commandName: String = "bam2adam"
-  val commandDescription: String = "Converts a local BAM file to ADAM/Parquet and writes locally or to HDFS, S3, etc"
+  val commandDescription: String = "Single-node BAM to ADAM converter (Note: the 'transform' command can take SAM or BAM as input)"
 
   def apply(cmdLine: Array[String]): AdamCommand = {
     new Bam2Adam(Args4j[Bam2AdamArgs](cmdLine))

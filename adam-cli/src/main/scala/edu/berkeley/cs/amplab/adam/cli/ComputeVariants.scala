@@ -24,8 +24,8 @@ import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMVariant}
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
 
 object ComputeVariants extends AdamCommandCompanion {
-  val commandName: String = "computeVariants"
-  val commandDescription: String = "Compute variant data from genotypes."
+  val commandName: String = "compute_variants"
+  val commandDescription: String = "Compute variant data from genotypes"
 
   def apply(cmdLine: Array[String]) = {
     new ComputeVariants(Args4j[ComputeVariantsArgs](cmdLine))

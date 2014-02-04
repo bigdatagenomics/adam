@@ -25,7 +25,7 @@ import edu.berkeley.cs.amplab.adam.rdd.compare.{CompareAdam => CoreCompareAdam}
 
 object CompareAdam extends AdamCommandCompanion with Serializable {
   val commandName: String = "compare"
-  val commandDescription: String = "Compares two ADAM files based on read name"
+  val commandDescription: String = "Compare two ADAM files based on read name"
 
   def apply(cmdLine: Array[String]): AdamCommand = {
     new CompareAdam(Args4j[CompareAdamArgs](cmdLine))

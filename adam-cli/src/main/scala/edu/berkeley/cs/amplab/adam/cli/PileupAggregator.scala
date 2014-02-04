@@ -26,7 +26,7 @@ import org.apache.spark.rdd.RDD
 
 object PileupAggregator extends AdamCommandCompanion {
   val commandName: String = "aggregate_pileups"
-  val commandDescription: String = "Aggregates pileups in an ADAM reference-oriented file"
+  val commandDescription: String = "Aggregate pileups in an ADAM reference-oriented file"
 
   def apply(cmdLine: Array[String]) = {
     new PileupAggregator(Args4j[PileupAggregatorArgs](cmdLine))
