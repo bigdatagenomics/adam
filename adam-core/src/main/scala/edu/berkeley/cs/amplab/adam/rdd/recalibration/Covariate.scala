@@ -38,8 +38,22 @@ abstract class AbstractCovariate[ValueT <% Ordered[ValueT]] extends Covariate wi
 
 class ReadGroupCovariate extends AbstractCovariate[String] {
   override def compute(residue: Residue) = residue.read.readGroup
+
+  override def equals(other: Any): Boolean = other match {
+    case that: ReadGroupCovariate => true
+    case _ => false
+  }
+
+  override def hashCode = 0xFF972A0B
 }
 
 class QualityScoreCovariate extends AbstractCovariate[PhredQualityScore] {
   override def compute(residue: Residue) = residue.quality
+
+  override def equals(other: Any): Boolean = other match {
+    case that: QualityScoreCovariate => true
+    case _ => false
+  }
+
+  override def hashCode = 0xC5354788
 }
