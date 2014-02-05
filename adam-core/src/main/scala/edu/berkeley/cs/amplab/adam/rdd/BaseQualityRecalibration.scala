@@ -23,7 +23,6 @@ import edu.berkeley.cs.amplab.adam.rdd.recalibration._
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.util.PhredQualityScore
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 
@@ -41,7 +40,8 @@ import org.apache.spark.rdd.RDD
  */
 class BaseQualityRecalibration(
     val reads: RDD[DecadentRead],
-    val knownSnpBcast: Broadcast[SnpTable]) extends Serializable with Logging {
+    val knownSnps: SnpTable)
+extends Serializable with Logging {
 
   // Covariates to use when computing the correction
   val covariates = CovariateSpace(new ReadGroupCovariate, new QualityScoreCovariate)
@@ -60,8 +60,6 @@ class BaseQualityRecalibration(
 
   // Computes observation table for a single read
   private def observe(read: DecadentRead): ObservationTable = {
-    val knownSnps = knownSnpBcast.value
-
     // FIXME: should insertions be skipped or not?
     def shouldIncludeResidue(residue: Residue) =
       residue.quality >= minAcceptableQuality &&
@@ -75,7 +73,6 @@ class BaseQualityRecalibration(
 
 object BaseQualityRecalibration {
   def apply(rdd: RDD[ADAMRecord], knownSnps: SnpTable): RDD[ADAMRecord] = {
-    val sc = rdd.context
-    new BaseQualityRecalibration(cloy(rdd), sc.broadcast(knownSnps)).apply()
+    new BaseQualityRecalibration(cloy(rdd), knownSnps).apply()
   }
 }
