@@ -51,14 +51,15 @@ class BaseQualityRecalibration(
 
   // Compute and apply recalibration
   def apply(): RDD[ADAMRecord] = {
-    val readCovariates = reads.filter(_.isCanonicalRecord).map(computeReadCovariates)
-    val observed: ObservationTable = readCovariates.fold(ObservationTable.empty(covariates))(_ += _)
+    val observed: ObservationTable = reads.
+      filter(_.isCanonicalRecord).map(observe).
+      fold(ObservationTable.empty(covariates))(_ += _)
     observed.entries.foreach{ case (k, v) => println("%s\t%s".format(k, v)) }
     throw new RuntimeException("unimplemented")
   }
 
   // Computes observation table for a single read
-  private def computeReadCovariates(read: DecadentRead): ObservationTable = {
+  private def observe(read: DecadentRead): ObservationTable = {
     val knownSnps = knownSnpBcast.value
 
     // FIXME: should insertions be skipped or not?
