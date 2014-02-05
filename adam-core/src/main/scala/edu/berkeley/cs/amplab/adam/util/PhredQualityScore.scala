@@ -39,4 +39,7 @@ class PhredQualityScore(val value: Int) extends Ordered[PhredQualityScore] with 
 
 object PhredQualityScore {
   def apply(value: Int) = new PhredQualityScore(value)
+
+  def fromErrorProbability(p: Double) =
+    new PhredQualityScore(PhredUtils.errorProbabilityToPhred(p))
 }

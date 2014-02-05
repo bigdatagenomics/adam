@@ -18,6 +18,7 @@ package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
+import edu.berkeley.cs.amplab.adam.util.PhredQualityScore
 import edu.berkeley.cs.amplab.adam.util.Util
 import scala.collection.mutable
 
@@ -59,21 +60,27 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   def +(that: Observation) =
     new Observation(this.total + that.total, this.mismatches + that.mismatches)
 
-  // Estimates the probability of a mismatch under a model with Binomial likelihood
-  // and Beta(1, 1) prior distribution. Also known as "Laplace's rule of succession".
-  // TODO: Beta(1, 1) is a safe choice, but maybe Beta(1/2, 1/2) is better?
-  def estimatedErrorProbability: Double =
-    (1.0 + mismatches) / (2.0 + total)
+  def empiricalQuality: PhredQualityScore = bayesianQualityEstimate
+
+  // Estimates the probability of a mismatch under a Bayesian model with Binomial likelihood
+  // and Beta(α, β) prior. When α = β = 1, this is also known as "Laplace's rule of succession".
+  // TODO: Beta(1, 1) is the safest choice, but maybe Beta(1/2, 1/2) is more accurate?
+  def bayesianQualityEstimate: PhredQualityScore = bayesianQualityEstimate(1, 1)
+  def bayesianQualityEstimate(α: Double, β: Double): PhredQualityScore =
+    PhredQualityScore.fromErrorProbability((α + mismatches) / (α + β + total))
 
   // GATK 1.6 uses the following, which they describe as "Yates's correction". However,
   // this doesn't match the Wikipedia entry which describes a different formula that's
   // for correction of chi-squared independence tests on contingency tables.
-  // TODO: Figure out what's going on.
-  def gatkEstimatedErrorProbability(smoothing: Int = 1): Double =
-    (smoothing + mismatches) / (smoothing + total)
+  // TODO: Figure out this discrepancy.
+  def gatkQualityEstimate: PhredQualityScore = gatkQualityEstimate(1)
+  def gatkQualityEstimate(smoothing: Int): PhredQualityScore =
+    Seq(PhredQualityScore(50), gatkQualityEstimateUnclipped(smoothing)).min
+  def gatkQualityEstimateUnclipped(smoothing: Int): PhredQualityScore =
+    PhredQualityScore.fromErrorProbability((smoothing + mismatches) / (smoothing + total))
 
   override def toString: String =
-    "%s / %s (%.2f%%)".format(mismatches, total, 100 * estimatedErrorProbability)
+    "%s / %s (%s)".format(mismatches, total, empiricalQuality)
 
   override def equals(other: Any): Boolean = other match {
     case that: Observation =>
