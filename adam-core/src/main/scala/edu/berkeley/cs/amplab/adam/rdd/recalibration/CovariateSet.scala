@@ -53,7 +53,29 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   def +(that: Observation) =
     new Observation(this.total + that.total, this.mismatches + that.mismatches)
 
+  // Estimates the probability of a mismatch under a model with Binomial likelihood
+  // and Beta(1, 1) prior distribution. Also known as "Laplace's rule of succession".
+  // TODO: Beta(1, 1) is a safe choice, but maybe Beta(1/2, 1/2) is better?
+  def estimatedErrorProbability: Double =
+    (1.0 + mismatches) / (2.0 + total)
+
+  // GATK 1.6 uses the following, which they describe as "Yates's correction". However,
+  // this doesn't match the Wikipedia entry which describes a different formula that's
+  // for correction of chi-squared independence tests on contingency tables.
+  // TODO: Figure out what's going on.
+  def gatkEstimatedErrorProbability(smoothing: Int = 1): Double =
+    (smoothing + mismatches) / (smoothing + total)
+
   override def toString: String = "%s / %s (%.2f%%)".format(mismatches, total, (100.0 * mismatches) / total)
+
+  override def equals(other: Any) = other match {
+    case that: Observation =>
+      this.total == that.total && this.mismatches == that.mismatches
+
+    case _ => false
+  }
+
+  override def hashCode = Util.hashCombine(0x634DAED9, total.hashCode, mismatches.hashCode)
 }
 
 object Observation {
