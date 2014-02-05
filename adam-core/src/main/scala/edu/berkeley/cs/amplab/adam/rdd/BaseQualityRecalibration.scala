@@ -69,8 +69,7 @@ class BaseQualityRecalibration(
         !knownSnps.isMasked(residue)
 
     val residues = read.sequence.filter(shouldIncludeResidue)
-    val entries = residues.map(residue => (covariates(residue), Observation(residue.isSNP)))
-    ObservationTable(covariates, entries)
+    ObservationTable(covariates, residues)
   }
 }
 

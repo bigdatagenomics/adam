@@ -21,7 +21,6 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.util.Util
 import scala.collection.mutable
 
-// FIXME: This should really be an inner class of CovariateSpace
 class CovariateKey(val parts: Seq[Covariate#Value]) extends Serializable {
   override def toString: String = "[" + parts.mkString(", ") + "]"
 
@@ -88,7 +87,7 @@ object Observation {
   def apply(isMismatch: Boolean) = new Observation(1, if(isMismatch) 1 else 0)
 }
 
-class ObservationTable(val covariates: CovariateSpace, initialEntries: Seq[(CovariateKey, Observation)]) extends Serializable {
+class ObservationTable private(val covariates: CovariateSpace, initialEntries: Seq[(CovariateKey, Observation)]) extends Serializable {
   val entries = mutable.HashMap[CovariateKey, Observation](initialEntries: _*)
 
   def += (that: Seq[(CovariateKey, Observation)]): ObservationTable = {
@@ -106,7 +105,8 @@ object ObservationTable {
     new ObservationTable(covariates, Seq.empty)
   }
 
-  def apply(covariates: CovariateSpace, entries: Seq[(CovariateKey, Observation)]): ObservationTable = {
+  def apply(covariates: CovariateSpace, residues: Seq[Residue]): ObservationTable = {
+    val entries = residues.map(residue => (covariates(residue), Observation(residue.isSNP)))
     new ObservationTable(covariates, entries)
   }
 }
