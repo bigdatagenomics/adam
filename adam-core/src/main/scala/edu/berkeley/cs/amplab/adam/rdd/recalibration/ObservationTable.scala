@@ -39,6 +39,13 @@ class CovariateSpace(val covariates: IndexedSeq[Covariate]) extends Serializable
 
   def apply(residue: Residue): CovariateKey =
     new CovariateKey(covariates.map(_.compute(residue)))
+
+  override def equals(other: Any): Boolean = other match {
+    case that: CovariateSpace => this.covariates == that.covariates
+    case _ => false
+  }
+
+  override def hashCode = Util.hashCombine(0x48C35799, covariates.hashCode)
 }
 
 object CovariateSpace {
@@ -65,9 +72,10 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   def gatkEstimatedErrorProbability(smoothing: Int = 1): Double =
     (smoothing + mismatches) / (smoothing + total)
 
-  override def toString: String = "%s / %s (%.2f%%)".format(mismatches, total, (100.0 * mismatches) / total)
+  override def toString: String =
+    "%s / %s (%.2f%%)".format(mismatches, total, 100 * estimatedErrorProbability)
 
-  override def equals(other: Any) = other match {
+  override def equals(other: Any): Boolean = other match {
     case that: Observation =>
       this.total == that.total && this.mismatches == that.mismatches
 
@@ -80,24 +88,24 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
 object Observation {
   val empty = new Observation(0, 0)
 
-  val match_ = new Observation(1, 0)
-
-  val mismatch = new Observation(1, 1)
-
   def apply(isMismatch: Boolean) = new Observation(1, if(isMismatch) 1 else 0)
 }
 
-class ObservationTable private(val covariates: CovariateSpace, initialEntries: Seq[(CovariateKey, Observation)]) extends Serializable {
-  val entries = mutable.HashMap[CovariateKey, Observation](initialEntries: _*)
+class ObservationTable private(
+    val covariates: CovariateSpace,
+    initialEntries: Seq[(CovariateKey, Observation)])
+  extends Serializable {
 
-  def += (that: Seq[(CovariateKey, Observation)]): ObservationTable = {
-    that.foreach{ case (key, value) => this.entries(key) = this.entries.getOrElse(key, Observation.empty) + value }
+  private val entries = mutable.HashMap[CovariateKey, Observation](initialEntries: _*)
+
+  def += (that: ObservationTable): ObservationTable = {
+    if(this.covariates != that.covariates)
+      throw new IllegalArgumentException("Can only combine ObservationTables with compatible CovariateSpaces")
+    that.entries.foreach { case (k, v) => this.entries(k) = this.entries.getOrElse(k, Observation.empty) + v }
     this
   }
 
-  def += (that: ObservationTable): ObservationTable = {
-    this += that.entries.toSeq
-  }
+  override def toString = entries.map{ case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
 }
 
 object ObservationTable {

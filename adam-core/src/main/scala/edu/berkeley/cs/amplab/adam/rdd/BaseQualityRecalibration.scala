@@ -54,7 +54,7 @@ class BaseQualityRecalibration(
     val observed: ObservationTable = reads.
       filter(_.isCanonicalRecord).map(observe).
       fold(ObservationTable.empty(covariates))(_ += _)
-    observed.entries.foreach{ case (k, v) => println("%s\t%s".format(k, v)) }
+    println(observed)
     throw new RuntimeException("unimplemented")
   }
 
