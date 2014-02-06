@@ -20,15 +20,14 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.util.PhredQualityScore
 import edu.berkeley.cs.amplab.adam.util.Util
+import scala.collection.immutable.{SortedMap, TreeMap}
 import scala.collection.mutable
 
 class CovariateKey(val parts: Seq[Covariate#Value]) extends Serializable {
   override def toString: String = "[" + parts.mkString(", ") + "]"
 
   override def equals(other: Any) = other match {
-    case that: CovariateKey =>
-      this.parts == that.parts
-
+    case that: CovariateKey => this.parts == that.parts
     case _ => false
   }
 
@@ -47,6 +46,31 @@ class CovariateSpace(val covariates: IndexedSeq[Covariate]) extends Serializable
   }
 
   override def hashCode = Util.hashCombine(0x48C35799, covariates.hashCode)
+
+  // This whole thing is disgusting, but it works and I don't know how to fix it.
+  @transient
+  lazy val ordering: Ordering[CovariateKey] = new Ordering[CovariateKey] {
+    def compare(left: CovariateKey, right: CovariateKey): Int = {
+      recursiveCompare(covariates, left.parts, right.parts)
+    }
+
+    def recursiveCompare(covars: Seq[Covariate], left: Seq[Covariate#Value], right: Seq[Covariate#Value]): Int = {
+      if(covars == Nil) {
+        assert(left == Nil && right == Nil)
+        0
+      } else {
+        val cov = covars.head
+        val curLeft = left.head.asInstanceOf[cov.Value] // ugh
+        val curRight = right.head.asInstanceOf[cov.Value] // ugh
+        val result = cov.compare(curLeft, curRight)
+
+        if(result == 0)
+          recursiveCompare(covars.tail, left.tail, right.tail)
+        else
+          result
+      }
+    }
+  }
 }
 
 object CovariateSpace {
@@ -110,6 +134,11 @@ class ObservationTable private(
       throw new IllegalArgumentException("Can only combine ObservationTables with compatible CovariateSpaces")
     that.entries.foreach { case (k, v) => this.entries(k) = this.entries.getOrElse(k, Observation.empty) + v }
     this
+  }
+
+  def toSortedMap: SortedMap[CovariateKey, Observation] = {
+    implicit val ordering: Ordering[CovariateKey] = covariates.ordering
+    (TreeMap.newBuilder[CovariateKey, Observation] ++= entries).result
   }
 
   override def toString = entries.map{ case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
