@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
-import edu.berkeley.cs.amplab.adam.util.PhredQualityScore
+import edu.berkeley.cs.amplab.adam.util.QualityScore
 import scala.math.Ordering.Implicits._
 
 trait Covariate {
@@ -54,7 +54,7 @@ class ReadGroupCovariate extends AbstractCovariate[String] {
   override def hashCode = 0xFF972A0B
 }
 
-class QualityScoreCovariate extends AbstractCovariate[PhredQualityScore] {
+class QualityScoreCovariate extends AbstractCovariate[QualityScore] {
   override def compute(residue: Residue) = residue.quality
 
   override def equals(other: Any): Boolean = other match {

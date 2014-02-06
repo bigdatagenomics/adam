@@ -20,7 +20,7 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util.MdTag
-import edu.berkeley.cs.amplab.adam.util.PhredQualityScore
+import edu.berkeley.cs.amplab.adam.util.QualityScore
 import edu.berkeley.cs.amplab.adam.util.Util
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
@@ -60,7 +60,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
 
     def value: Char = read.baseSequence(position)
 
-    def quality = PhredQualityScore(record.qualityScores(position))
+    def quality = QualityScore(record.qualityScores(position))
 
     def isMismatch(includeInsertions: Boolean = true): Boolean =
       assumingAligned(record.isMismatchAtReadOffset(position).getOrElse(includeInsertions))
