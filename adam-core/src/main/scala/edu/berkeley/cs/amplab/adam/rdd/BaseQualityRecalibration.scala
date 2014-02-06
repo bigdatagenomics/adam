@@ -22,7 +22,7 @@ import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rdd.recalibration._
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
-import edu.berkeley.cs.amplab.adam.util.PhredQualityScore
+import edu.berkeley.cs.amplab.adam.util.QualityScore
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 
@@ -47,7 +47,7 @@ extends Serializable with Logging {
   val covariates = CovariateSpace(new ReadGroupCovariate, new QualityScoreCovariate)
 
   // Bases with quality less than this will be ignored in Phase 1
-  val minAcceptableQuality = PhredQualityScore(6)
+  val minAcceptableQuality = QualityScore(6)
 
   // Compute and apply recalibration
   def apply(): RDD[ADAMRecord] = {

@@ -16,19 +16,19 @@
 
 package edu.berkeley.cs.amplab.adam.util
 
-class PhredQualityScore(val value: Int) extends Ordered[PhredQualityScore] with Serializable {
+class QualityScore(val value: Int) extends Ordered[QualityScore] with Serializable {
   require(value >= 0 && value < 256)
 
   def successProbability = PhredUtils.phredToSuccessProbability(value)
 
   def errorProbability = PhredUtils.phredToErrorProbability(value)
 
-  override def compare(that: PhredQualityScore) = this.value compare that.value
+  override def compare(that: QualityScore) = this.value compare that.value
 
   override def toString = "Q%02d".format(value)
 
   override def equals(other: Any): Boolean = other match {
-    case that: PhredQualityScore =>
+    case that: QualityScore =>
       this.value == that.value
 
     case _ => false
@@ -37,9 +37,9 @@ class PhredQualityScore(val value: Int) extends Ordered[PhredQualityScore] with 
   override def hashCode: Int = Util.hashCombine(0x26C2E0BA, value.hashCode)
 }
 
-object PhredQualityScore {
-  def apply(value: Int) = new PhredQualityScore(value)
+object QualityScore {
+  def apply(value: Int) = new QualityScore(value)
 
   def fromErrorProbability(p: Double) =
-    new PhredQualityScore(PhredUtils.errorProbabilityToPhred(p))
+    new QualityScore(PhredUtils.errorProbabilityToPhred(p))
 }
