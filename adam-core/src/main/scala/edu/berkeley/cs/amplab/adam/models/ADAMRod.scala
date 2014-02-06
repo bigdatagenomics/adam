@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMPileup
  * @param position Position on the reference genome.
  * @param pileups A list representing the bases at this locus.
  */
-case class ADAMRod(position: Long, pileups: List[ADAMPileup]) {
+case class ADAMRod(position: ReferencePosition, pileups: List[ADAMPileup]) {
   // all bases must be at the same position
-  require(pileups.forall(_.getPosition.toLong == position))
+  require(pileups.forall(ReferencePosition(_) == position))
 
   lazy val isSingleSample: Boolean = pileups.map(_.getRecordGroupSample).distinct.length == 1
 

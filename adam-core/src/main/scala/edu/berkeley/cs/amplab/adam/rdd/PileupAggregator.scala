@@ -17,6 +17,7 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup}
+import edu.berkeley.cs.amplab.adam.models.ReferencePosition
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
@@ -204,7 +205,8 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
      * if this is not set, then you will encounter out-of-memory errors, as the working set for each reducer becomes very large.
      * as a first order approximation, we use coverage as a proxy for setting the number of reducers needed.
      */
-    val grouping = pileups.groupBy((p: ADAMPileup) => p.getPosition, pileups.partitions.length * coverage / 2)
+    val grouping = pileups.groupBy((p: ADAMPileup) => ReferencePosition(p),
+                                   pileups.partitions.length * coverage / 2)
 
     log.info("Pileups grouped into " + grouping.count + " positions.")
 

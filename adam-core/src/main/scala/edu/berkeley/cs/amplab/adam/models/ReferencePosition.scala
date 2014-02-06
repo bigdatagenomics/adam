@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
@@ -84,6 +84,17 @@ object ReferencePosition {
     } else {
       None
     }
+  }
+
+  /**
+   * Generates a reference position from a pileup base. Pileups are mapped by definition, so no
+   * option wrapper is required.
+   *
+   * @param pileup A single pileup base.
+   * @return The reference position of this pileup.
+   */
+  def apply (pileup: ADAMPileup): ReferencePosition = {
+    new ReferencePosition(pileup.getReferenceId, pileup.getPosition)
   }
 }
 
