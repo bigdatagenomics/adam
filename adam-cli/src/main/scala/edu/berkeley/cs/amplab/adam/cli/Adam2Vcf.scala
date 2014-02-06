@@ -50,33 +50,33 @@ class Adam2Vcf(val args: Adam2VcfArgs) extends AdamSparkCommand[Adam2VcfArgs] wi
 
   def run(sc: SparkContext, job: Job) {
 
-    val adamVC: RDD[ADAMVariantContext] = sc.adamVariantContextLoad(args.adamFile)
+    // val adamVC: RDD[ADAMVariantContext] = sc.adamVariantContextLoad(args.adamFile)
 
-    val converter = new VariantContextConverter
+    // val converter = new VariantContextConverter
 
-    // convert all variant contexts
-    val variantContexts: RDD[VariantContextWritable] = adamVC.map(r => {
-      // create new variant context writable
-      val vcw = new VariantContextWritable
-      val vc = converter.convert(r)
-      vcw.set(vc)
+    // // convert all variant contexts
+    // val variantContexts: RDD[VariantContextWritable] = adamVC.map(r => {
+    //   // create new variant context writable
+    //   val vcw = new VariantContextWritable
+    //   val vc = converter.convert(r)
+    //   vcw.set(vc)
 
-      vcw
-    })
+    //   vcw
+    // })
 
-    // add index for writing output format
-    val mapIndex = variantContexts.keyBy(r => new LongWritable(r.get.getStart))
+    // // add index for writing output format
+    // val mapIndex = variantContexts.keyBy(r => new LongWritable(r.get.getStart))
 
-    log.info("Counted " + variantContexts.count + " variants.")
+    // log.info("Counted " + variantContexts.count + " variants.")
 
-    // new context
-    val conf = sc.hadoopConfiguration
-    val vcfFormat = VCFFormat.valueOf("VCF")
-    conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY,
-      vcfFormat.toString)
+    // // new context
+    // val conf = sc.hadoopConfiguration
+    // val vcfFormat = VCFFormat.valueOf("VCF")
+    // conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY,
+    //   vcfFormat.toString)
 
-    // write out
-    mapIndex.saveAsNewAPIHadoopFile(args.outputPath, classOf[LongWritable], classOf[VariantContextWritable],
-      classOf[VCFOutputFormat[LongWritable]])
+    // // write out
+    // mapIndex.saveAsNewAPIHadoopFile(args.outputPath, classOf[LongWritable], classOf[VariantContextWritable],
+    //   classOf[VCFOutputFormat[LongWritable]])
   }
 }

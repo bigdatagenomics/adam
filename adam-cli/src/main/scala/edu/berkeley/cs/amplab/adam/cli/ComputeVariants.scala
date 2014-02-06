@@ -17,11 +17,7 @@ package edu.berkeley.cs.amplab.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 import org.kohsuke.args4j.{Option => option, Argument}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMVariant}
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
 
 object ComputeVariants extends AdamCommandCompanion {
   val commandName: String = "compute_variants"
@@ -53,21 +49,7 @@ class ComputeVariants(protected val args: ComputeVariantsArgs) extends AdamSpark
   val companion = ComputeVariants
 
   def run(sc: SparkContext, job: Job) {
-    val genotypes: RDD[ADAMGenotype] = sc.adamLoad(args.input)
 
-    // convert to variants
-    val variants: RDD[ADAMVariant] = genotypes.adamConvertGenotypes(performValidation = args.validation || args.strictValidation,
-      failOnValidationError = args.strictValidation)
 
-    // save to disk
-    if (args.variantsOnly) {
-      variants.adamSave(args.output, blockSize = args.blockSize, pageSize = args.pageSize,
-        compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
-    } else {
-      // convert to variant context, _then_ save
-      val vc = ADAMVariantContext.mergeVariantsAndGenotypes(variants, genotypes)
-      vc.adamSave(args.output, blockSize = args.blockSize, pageSize = args.pageSize,
-        compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
-    }
   }
 }

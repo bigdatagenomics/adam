@@ -15,6 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
+import edu.berkeley.cs.amplab.adam.avro.{Base => AvroBase}
 
 object VcfStringUtils {
 
@@ -73,4 +74,12 @@ object VcfStringUtils {
   }
 
   def stringToList(s: String): List[String] = s.split(",").toList
+
+  def strToEnumList[T <: Enum[T]](values: Iterable[Char])(implicit m: Manifest[T]): List[T] = {
+    values.map(x => Enum.valueOf(m.erasure.asInstanceOf[Class[T]], x.toString)).toList
+  }
+
+  def baseStringToEnumList(values: Iterable[Char]) : List[AvroBase] = {
+    strToEnumList(values)
+  }
 }
