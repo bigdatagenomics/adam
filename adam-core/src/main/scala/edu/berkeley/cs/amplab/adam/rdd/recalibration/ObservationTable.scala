@@ -64,10 +64,8 @@ class CovariateSpace(val covariates: IndexedSeq[Covariate]) extends Serializable
         val curRight = right.head.asInstanceOf[cov.Value] // ugh
         val result = cov.compare(curLeft, curRight)
 
-        if(result == 0)
-          recursiveCompare(covars.tail, left.tail, right.tail)
-        else
-          result
+        if(result == 0) recursiveCompare(covars.tail, left.tail, right.tail)
+        else result
       }
     }
   }
@@ -94,7 +92,7 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
     QualityScore.fromErrorProbability((α + mismatches) / (α + β + total))
 
   // GATK 1.6 uses the following, which they describe as "Yates's correction". However,
-  // this doesn't match the Wikipedia entry which describes a different formula that's
+  // it doesn't match the Wikipedia entry which describes a different formula used
   // for correction of chi-squared independence tests on contingency tables.
   // TODO: Figure out this discrepancy.
   def gatkQualityEstimate: QualityScore = gatkQualityEstimate(1)
@@ -107,9 +105,7 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
     "%s / %s (%s)".format(mismatches, total, empiricalQuality)
 
   override def equals(other: Any): Boolean = other match {
-    case that: Observation =>
-      this.total == that.total && this.mismatches == that.mismatches
-
+    case that: Observation => this.total == that.total && this.mismatches == that.mismatches
     case _ => false
   }
 
@@ -122,35 +118,41 @@ object Observation {
   def apply(isMismatch: Boolean) = new Observation(1, if(isMismatch) 1 else 0)
 }
 
-class ObservationTable private(
+class ObservationTable(
     val covariates: CovariateSpace,
-    initialEntries: Seq[(CovariateKey, Observation)])
-  extends Serializable {
-
-  private val entries = mutable.HashMap[CovariateKey, Observation](initialEntries: _*)
-
-  def += (that: ObservationTable): ObservationTable = {
-    if(this.covariates != that.covariates)
-      throw new IllegalArgumentException("Can only combine ObservationTables with compatible CovariateSpaces")
-    that.entries.foreach { case (k, v) => this.entries(k) = this.entries.getOrElse(k, Observation.empty) + v }
-    this
-  }
-
-  def toSortedMap: SortedMap[CovariateKey, Observation] = {
-    implicit val ordering: Ordering[CovariateKey] = covariates.ordering
-    (TreeMap.newBuilder[CovariateKey, Observation] ++= entries).result
-  }
+    val entries: SortedMap[CovariateKey, Observation]
+  ) extends Serializable {
 
   override def toString = entries.map{ case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
 }
 
-object ObservationTable {
-  def empty(covariates: CovariateSpace): ObservationTable = {
-    new ObservationTable(covariates, Seq.empty)
+class ObservationAccumulator(val covariates: CovariateSpace) extends Serializable {
+  private val entries = mutable.HashMap[CovariateKey, Observation]()
+
+  def ++= (that: Seq[(CovariateKey, Observation)]): ObservationAccumulator = {
+    that.foreach { case (k, v) => accum(k, v) }
+    this
   }
 
-  def apply(covariates: CovariateSpace, residues: Seq[Residue]): ObservationTable = {
-    val entries = residues.map(residue => (covariates(residue), Observation(residue.isSNP)))
-    new ObservationTable(covariates, entries)
+  def += (that: ObservationAccumulator): ObservationAccumulator = {
+    if(this.covariates != that.covariates)
+      throw new IllegalArgumentException("Can only combine observations with matching CovariateSpaces")
+    that.entries.foreach { case (k, v) =>  accum(k, v) }
+    this
   }
+
+  def accum(key: CovariateKey, value: Observation): ObservationAccumulator = {
+    entries(key) = value + entries.getOrElse(key, Observation.empty)
+    this
+  }
+
+  def result: ObservationTable = {
+    implicit val ordering: Ordering[CovariateKey] = covariates.ordering
+    val sortedMap = (TreeMap.newBuilder[CovariateKey, Observation] ++= entries).result
+    new ObservationTable(covariates, sortedMap)
+  }
+}
+
+object ObservationAccumulator {
+  def apply(covariates: CovariateSpace) = new ObservationAccumulator(covariates)
 }

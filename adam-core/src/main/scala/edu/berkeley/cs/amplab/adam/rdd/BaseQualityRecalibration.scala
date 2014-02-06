@@ -54,7 +54,7 @@ extends Serializable with Logging {
     // first phase
     val observed: ObservationTable = reads.
       filter(_.isCanonicalRecord).map(observe).
-      fold(ObservationTable.empty(covariates))(_ += _)
+      aggregate(ObservationAccumulator(covariates))(_ ++= _, _ += _).result
 
     // second phase
     val recalibrator = Recalibrator(observed)
@@ -62,7 +62,7 @@ extends Serializable with Logging {
   }
 
   // Compute observation table for a single read
-  private def observe(read: DecadentRead): ObservationTable = {
+  private def observe(read: DecadentRead): Seq[(CovariateKey, Observation)] = {
     // FIXME: should insertions be skipped or not?
     def shouldIncludeResidue(residue: Residue) =
       residue.quality >= minAcceptableQuality &&
@@ -70,7 +70,7 @@ extends Serializable with Logging {
         !knownSnps.isMasked(residue)
 
     val residues = read.sequence.filter(shouldIncludeResidue)
-    ObservationTable(covariates, residues)
+    residues.map(residue => (covariates(residue), Observation(residue.isSNP)))
   }
 }
 
