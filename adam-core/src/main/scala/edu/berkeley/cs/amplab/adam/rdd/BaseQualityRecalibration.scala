@@ -51,14 +51,17 @@ extends Serializable with Logging {
 
   // Compute and apply recalibration
   def apply(): RDD[ADAMRecord] = {
+    // first phase
     val observed: ObservationTable = reads.
       filter(_.isCanonicalRecord).map(observe).
       fold(ObservationTable.empty(covariates))(_ += _)
-    println(observed)
-    throw new RuntimeException("unimplemented")
+
+    // second phase
+    val recalibrator = Recalibrator(observed)
+    reads.map(recalibrator)
   }
 
-  // Computes observation table for a single read
+  // Compute observation table for a single read
   private def observe(read: DecadentRead): ObservationTable = {
     // FIXME: should insertions be skipped or not?
     def shouldIncludeResidue(residue: Residue) =
