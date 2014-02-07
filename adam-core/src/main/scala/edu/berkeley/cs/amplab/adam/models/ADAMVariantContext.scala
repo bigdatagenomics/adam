@@ -16,6 +16,7 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMGenotype, ADAMVariantDomain}
+import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
@@ -76,6 +77,25 @@ object ADAMVariantContext {
   private def apply(kv: (Long, (Seq[ADAMVariant], Seq[ADAMGenotype], Option[ADAMVariantDomain]))
                      ): ADAMVariantContext = {
     new ADAMVariantContext(kv._1, kv._2._1, kv._2._2, kv._2._3)
+  }
+
+  /**
+   * Builds a variant context off of a set of genotypes. Builds variants from the genotypes.
+   *
+   * @note Genotypes must be at the same position.
+   *
+   * @param genotypes List of genotypes to build variant context from.
+   * @return A variant context corresponding to the variants and genotypes at this site.
+   */
+  def buildFromGenotypes(genotypes: Seq[ADAMGenotype]): ADAMVariantContext = {
+    val position = genotypes.head.getPosition
+    assert(genotypes.map(_.getPosition).forall(_ == position), "Genotypes do not all have the same position.")
+
+    val converter = new GenotypesToVariantsConverter(false, false)
+    
+    val variants = converter.convert(genotypes)
+
+    new ADAMVariantContext(position, variants, genotypes, None)
   }
 }
 
