@@ -22,44 +22,6 @@ import edu.berkeley.cs.amplab.adam.util.QualityScore
 import edu.berkeley.cs.amplab.adam.util.Util
 import scala.collection.mutable
 
-class CovariateKey(
-    val readGroup: String,
-    val quality: QualityScore,
-    val extras: Seq[Covariate#Value]
-) extends Serializable {
-
-  def parts: Seq[Any] = Seq(readGroup, quality) ++ extras
-
-  override def toString: String = "[" + parts.mkString(", ") + "]"
-
-  override def equals(other: Any) = other match {
-    case that: CovariateKey =>
-      this.readGroup == that.readGroup && this.quality == that.quality && this.extras == that.extras
-    case _ => false
-  }
-
-  override def hashCode = Util.hashCombine(0xD20D1E51, parts.hashCode)
-}
-
-class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
-  require(extras.length > 0)
-
-  def apply(residue: Residue): CovariateKey =
-    new CovariateKey(residue.read.readGroup, residue.quality, extras.map(_.compute(residue)))
-
-  override def equals(other: Any): Boolean = other match {
-    case that: CovariateSpace => this.extras == that.extras
-    case _ => false
-  }
-
-  override def hashCode = Util.hashCombine(0x48C35799, extras.hashCode)
-}
-
-object CovariateSpace {
-  def apply(extras: Covariate*): CovariateSpace =
-    new CovariateSpace(extras.toIndexedSeq)
-}
-
 class Observation(val total: Long, val mismatches: Long) extends Serializable {
   require(mismatches >= 0 && mismatches <= total)
 

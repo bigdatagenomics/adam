@@ -19,6 +19,7 @@ package edu.berkeley.cs.amplab.adam.rdd.recalibration
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.util.QualityScore
+import edu.berkeley.cs.amplab.adam.util.Util
 
 trait Covariate {
   type Value
@@ -32,24 +33,40 @@ abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
   override type Value = ValueT
 }
 
-class ReadGroupCovariate extends AbstractCovariate[String] {
-  override def compute(residue: Residue) = residue.read.readGroup
+class CovariateKey(
+    val readGroup: String,
+    val quality: QualityScore,
+    val extras: Seq[Covariate#Value]
+) extends Serializable {
 
-  override def equals(other: Any): Boolean = other match {
-    case that: ReadGroupCovariate => true
+  def parts: Seq[Any] = Seq(readGroup, quality) ++ extras
+
+  override def toString: String = "[" + parts.mkString(", ") + "]"
+
+  override def equals(other: Any) = other match {
+    case that: CovariateKey =>
+      this.readGroup == that.readGroup && this.quality == that.quality && this.extras == that.extras
     case _ => false
   }
 
-  override def hashCode = 0xFF972A0B
+  override def hashCode = Util.hashCombine(0xD20D1E51, parts.hashCode)
 }
 
-class QualityScoreCovariate extends AbstractCovariate[QualityScore] {
-  override def compute(residue: Residue) = residue.quality
+class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
+  require(extras.length > 0)
+
+  def apply(residue: Residue): CovariateKey =
+    new CovariateKey(residue.read.readGroup, residue.quality, extras.map(_.compute(residue)))
 
   override def equals(other: Any): Boolean = other match {
-    case that: QualityScoreCovariate => true
+    case that: CovariateSpace => this.extras == that.extras
     case _ => false
   }
 
-  override def hashCode = 0xC5354788
+  override def hashCode = Util.hashCombine(0x48C35799, extras.hashCode)
+}
+
+object CovariateSpace {
+  def apply(extras: Covariate*): CovariateSpace =
+    new CovariateSpace(extras.toIndexedSeq)
 }
