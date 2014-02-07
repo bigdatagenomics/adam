@@ -22,7 +22,6 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
-import scala.collection.immutable.SortedMap
 
 class Recalibrator(val covariates: CovariateSpace, val table: RecalibrationTable)
   extends (DecadentRead => ADAMRecord) with Serializable {

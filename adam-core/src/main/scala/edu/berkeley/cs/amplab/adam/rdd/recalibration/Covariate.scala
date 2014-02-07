@@ -19,28 +19,17 @@ package edu.berkeley.cs.amplab.adam.rdd.recalibration
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.util.QualityScore
-import scala.math.Ordering.Implicits._
 
 trait Covariate {
   type Value
 
-  implicit def ordering: Ordering[Value]
-
   def compute(residue: Residue): Value
 
   def apply(residue: Residue): Value = compute(residue)
-
-  def compare(left: Value, right: Value): Int
 }
 
-abstract class AbstractCovariate[ValueT](implicit val ordering: Ordering[ValueT])
-  extends Covariate with Serializable {
-
+abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
   override type Value = ValueT
-
-  override def compare(left: Value, right: Value): Int = {
-    ordering.compare(left, right)
-  }
 }
 
 class ReadGroupCovariate extends AbstractCovariate[String] {
