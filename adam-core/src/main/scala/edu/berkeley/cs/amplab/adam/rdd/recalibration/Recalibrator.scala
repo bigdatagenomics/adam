@@ -23,7 +23,7 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 
-class Recalibrator(val covariates: CovariateSpace, val table: RecalibrationTable)
+class Recalibrator(val space: CovariateSpace, val table: RecalibrationTable)
   extends (DecadentRead => ADAMRecord) with Serializable {
 
   def apply(read: DecadentRead): ADAMRecord = {
@@ -34,7 +34,7 @@ class Recalibrator(val covariates: CovariateSpace, val table: RecalibrationTable
 
 object Recalibrator {
   def apply(observed: ObservationTable): Recalibrator = {
-    new Recalibrator(observed.covariates, RecalibrationTable(observed))
+    new Recalibrator(observed.space, RecalibrationTable(observed))
   }
 }
 
