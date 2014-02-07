@@ -43,8 +43,8 @@ class BaseQualityRecalibration(
     val knownSnps: SnpTable)
 extends Serializable with Logging {
 
-  // Covariates to use when computing the correction
-  val covariates = CovariateSpace(new ReadGroupCovariate, new QualityScoreCovariate)
+  // Additional covariates to use when computing the correction
+  val covariates = CovariateSpace()
 
   // Bases with quality less than this will be ignored in Phase 1
   val minAcceptableQuality = QualityScore(6)
