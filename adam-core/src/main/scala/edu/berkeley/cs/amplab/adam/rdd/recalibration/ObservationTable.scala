@@ -95,14 +95,14 @@ object Observation {
 }
 
 class ObservationTable(
-    val covariates: CovariateSpace,
+    val space: CovariateSpace,
     val entries: Map[CovariateKey, Observation]
   ) extends Serializable {
 
   override def toString = entries.map{ case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
 }
 
-class ObservationAccumulator(val covariates: CovariateSpace) extends Serializable {
+class ObservationAccumulator(val space: CovariateSpace) extends Serializable {
   private val entries = mutable.HashMap[CovariateKey, Observation]()
 
   def ++= (that: Seq[(CovariateKey, Observation)]): ObservationAccumulator = {
@@ -111,7 +111,7 @@ class ObservationAccumulator(val covariates: CovariateSpace) extends Serializabl
   }
 
   def += (that: ObservationAccumulator): ObservationAccumulator = {
-    if(this.covariates != that.covariates)
+    if(this.space != that.space)
       throw new IllegalArgumentException("Can only combine observations with matching CovariateSpaces")
     that.entries.foreach { case (k, v) =>  accum(k, v) }
     this
@@ -122,9 +122,9 @@ class ObservationAccumulator(val covariates: CovariateSpace) extends Serializabl
     this
   }
 
-  def result: ObservationTable = new ObservationTable(covariates, entries.toMap)
+  def result: ObservationTable = new ObservationTable(space, entries.toMap)
 }
 
 object ObservationAccumulator {
-  def apply(covariates: CovariateSpace) = new ObservationAccumulator(covariates)
+  def apply(space: CovariateSpace) = new ObservationAccumulator(space)
 }
