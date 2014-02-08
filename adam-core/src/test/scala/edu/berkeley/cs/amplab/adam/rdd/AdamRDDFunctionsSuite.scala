@@ -23,13 +23,15 @@ import scala.util.Random
 
 class AdamRDDFunctionsSuite extends SparkFunSuite {
 
-  sparkTest("can convert pileups to rods, bases at different pos") {
+  sparkTest("can convert pileups to rods, bases at different pos, same reference") {
     val p0 = ADAMPileup.newBuilder()
       .setPosition(0L)
+      .setReferenceId(0)
       .setReadBase(Base.A)
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.C)
       .build()
 
@@ -38,19 +40,44 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val rods = pileups.adamPileupsToRods(1)
 
     assert(rods.count === 2)
-    assert(rods.filter(_.position == 0L).count === 1)
-    assert(rods.filter(_.position == 0L).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
-    assert(rods.filter(_.position == 1L).count === 1)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
+    assert(rods.filter(_.position.pos == 0L).count === 1)
+    assert(rods.filter(_.position.pos == 0L).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
+    assert(rods.filter(_.position.pos == 1L).count === 1)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
+  }
+
+  sparkTest("can convert pileups to rods, bases at same pos, different reference") {
+    val p0 = ADAMPileup.newBuilder()
+      .setPosition(0L)
+      .setReferenceId(0)
+      .setReadBase(Base.A)
+      .build()
+    val p1 = ADAMPileup.newBuilder()
+      .setPosition(0L)
+      .setReferenceId(1)
+      .setReadBase(Base.C)
+      .build()
+
+    val pileups: RDD[ADAMPileup] = sc.parallelize(List(p0, p1))
+
+    val rods = pileups.adamPileupsToRods(1)
+
+    assert(rods.count === 2)
+    assert(rods.filter(_.position.refId == 0).count === 1)
+    assert(rods.filter(_.position.refId == 0).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
+    assert(rods.filter(_.position.refId == 1).count === 1)
+    assert(rods.filter(_.position.refId == 1).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
   }
 
   sparkTest("can convert pileups to rods, bases at same pos") {
     val p0 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.A)
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.C)
       .build()
 
@@ -59,20 +86,22 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val rods = pileups.adamPileupsToRods(1)
 
     assert(rods.count === 1)
-    assert(rods.filter(_.position == 1L).count === 1)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).count === 2)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
+    assert(rods.filter(_.position.pos == 1L).count === 1)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).count === 2)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
   }
 
   sparkTest("can convert pileups to rods, bases at same pos, split by different sample") {
     val p0 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.A)
       .setRecordGroupSample("0")
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.C)
       .setRecordGroupSample("1")
       .build()
@@ -82,27 +111,29 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val rods = pileups.adamPileupsToRods(1)
 
     assert(rods.count === 1)
-    assert(rods.filter(_.position == 1L).count === 1)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).count === 2)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
+    assert(rods.filter(_.position.pos == 1L).count === 1)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).count === 2)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
     assert(rods.filter(_.isSingleSample).count === 0)
 
     val split = rods.adamSplitRodsBySamples()
 
     assert(split.count === 2)
-    assert(split.filter(_.position == 1L).count === 2)
+    assert(split.filter(_.position.pos == 1L).count === 2)
     assert(split.filter(_.isSingleSample).count === 2)
   }
 
   sparkTest("can convert pileups to rods, bases at same pos, split by same sample") {
     val p0 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.A)
       .setRecordGroupSample("1")
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.C)
       .setRecordGroupSample("1")
       .build()
@@ -112,10 +143,10 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val rods = pileups.adamPileupsToRods(1)
 
     assert(rods.count === 1)
-    assert(rods.filter(_.position == 1L).count === 1)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).count === 2)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
-    assert(rods.filter(_.position == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
+    assert(rods.filter(_.position.pos == 1L).count === 1)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).count === 2)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
+    assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
     assert(rods.filter(_.isSingleSample).count === 1)
 
     val split = rods.adamSplitRodsBySamples()
@@ -128,10 +159,12 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
   sparkTest("check coverage, bases at different pos") {
     val p0 = ADAMPileup.newBuilder()
       .setPosition(0L)
+      .setReferenceId(0)
       .setReadBase(Base.A)
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.C)
       .build()
 
@@ -147,10 +180,12 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
   sparkTest("check coverage, bases at same pos") {
     val p0 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.A)
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
+      .setReferenceId(0)
       .setReadBase(Base.C)
       .build()
 
@@ -188,6 +223,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
   sparkTest("convert an RDD of reads into rods") {
     val r0 = ADAMRecord.newBuilder
       .setStart(1L)
+      .setReferenceId(0)
       .setSequence("ACG")
       .setMapq(30)
       .setCigar("3M")
@@ -198,6 +234,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .build()
     val r1 = ADAMRecord.newBuilder
       .setStart(2L)
+      .setReferenceId(0)
       .setSequence("CG")
       .setMapq(40)
       .setCigar("2M")
@@ -208,6 +245,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .build()
     val r2 = ADAMRecord.newBuilder
       .setStart(3L)
+      .setReferenceId(0)
       .setSequence("G")
       .setMapq(50)
       .setCigar("1M")
@@ -222,15 +260,69 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val rods = reads.adamRecords2Rods()
     
     assert(rods.count === 3)
-    assert(rods.filter(_.position == 1L).count === 1)
-    assert(rods.filter(_.position == 1L).first.pileups.length === 1)
-    assert(rods.filter(_.position == 1L).first.pileups.forall(_.getReadBase == Base.A))
-    assert(rods.filter(_.position == 2L).count === 1)
-    assert(rods.filter(_.position == 2L).first.pileups.length === 2)
-    assert(rods.filter(_.position == 2L).first.pileups.forall(_.getReadBase == Base.C))
-    assert(rods.filter(_.position == 3L).count === 1)
-    assert(rods.filter(_.position == 3L).first.pileups.length === 3)
-    assert(rods.filter(_.position == 3L).first.pileups.forall(_.getReadBase == Base.G))
+    assert(rods.collect.forall(_.position.refId == 0))
+    assert(rods.filter(_.position.pos == 1L).count === 1)
+    assert(rods.filter(_.position.pos == 1L).first.pileups.length === 1)
+    assert(rods.filter(_.position.pos == 1L).first.pileups.forall(_.getReadBase == Base.A))
+    assert(rods.filter(_.position.pos == 2L).count === 1)
+    assert(rods.filter(_.position.pos == 2L).first.pileups.length === 2)
+    assert(rods.filter(_.position.pos == 2L).first.pileups.forall(_.getReadBase == Base.C))
+    assert(rods.filter(_.position.pos == 3L).count === 1)
+    assert(rods.filter(_.position.pos == 3L).first.pileups.length === 3)
+    assert(rods.filter(_.position.pos == 3L).first.pileups.forall(_.getReadBase == Base.G))
+  }
+
+  sparkTest("convert an RDD of reads into rods, different references") {
+    val r0 = ADAMRecord.newBuilder
+      .setStart(1L)
+      .setReferenceId(0)
+      .setSequence("AC")
+      .setMapq(30)
+      .setCigar("2M")
+      .setMismatchingPositions("2")
+      .setReadNegativeStrand(false)
+      .setReadMapped(true)
+      .setQual("!#$")
+      .build()
+    val r1 = ADAMRecord.newBuilder
+      .setStart(2L)
+      .setReferenceId(0)
+      .setSequence("C")
+      .setMapq(40)
+      .setCigar("1M")
+      .setMismatchingPositions("1")
+      .setReadNegativeStrand(false)
+      .setReadMapped(true)
+      .setQual("%&")
+      .build()
+    val r2 = ADAMRecord.newBuilder
+      .setStart(2L)
+      .setReferenceId(1)
+      .setSequence("G")
+      .setMapq(50)
+      .setCigar("1M")
+      .setMismatchingPositions("1")
+      .setReadNegativeStrand(false)
+      .setReadMapped(true)
+      .setQual("%")
+      .build()
+    
+    val reads = sc.parallelize(List(r0, r1, r2))
+
+    val rods = reads.adamRecords2Rods()
+    
+    assert(rods.count === 3)
+    assert(rods.filter(_.position.refId == 0).count === 2)
+    assert(rods.filter(_.position.refId == 1).count === 1)
+    assert(rods.filter(_.position.pos == 1L).filter(_.position.refId == 0).count === 1)
+    assert(rods.filter(_.position.pos == 1L).filter(_.position.refId == 0).first.pileups.length === 1)
+    assert(rods.filter(_.position.pos == 1L).filter(_.position.refId == 0).first.pileups.forall(_.getReadBase == Base.A))
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 0).count === 1)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 0).first.pileups.length === 2)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 0).first.pileups.forall(_.getReadBase == Base.C))
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).count === 1)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.length === 1)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.forall(_.getReadBase == Base.G))
   }
 
 }
