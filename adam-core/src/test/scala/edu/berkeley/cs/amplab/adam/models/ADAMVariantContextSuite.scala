@@ -112,4 +112,148 @@ class ADAMVariantContextSuite extends SparkFunSuite {
     assert(vc.count === 0)
   }
 
+  test("build a variant context from a single genotype") {
+    val genotype0 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setSampleId("mySample0")
+      .setAllele("A")
+      .setReferenceAllele("A")
+      .setIsReference(true)
+      .setRmsMappingQuality(40)
+      .setRmsBaseQuality(30)
+      .setDepth(2)
+      .setReferenceId(1)
+      .setReferenceName("myRef")
+      .setGenotypeQuality(50)
+      .setReadsMappedMapQ0(0)
+      .setReadsMappedForwardStrand(1)
+      .build()
+
+    val gtSeq = Seq(genotype0)
+
+    val vc = ADAMVariantContext.buildFromGenotypes(gtSeq)
+
+    assert(vc.position === 0L)
+    assert(vc.variants.length === 1L)
+  }
+
+  test("build a variant context from multiple genotypes that represent the same variant") {
+    val genotype0 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setSampleId("mySample0")
+      .setAllele("A")
+      .setReferenceAllele("A")
+      .setIsReference(true)
+      .setRmsMappingQuality(40)
+      .setRmsBaseQuality(30)
+      .setDepth(2)
+      .setReferenceId(1)
+      .setReferenceName("myRef")
+      .setGenotypeQuality(50)
+      .setReadsMappedMapQ0(0)
+      .setReadsMappedForwardStrand(1)
+      .build()
+    val genotype1 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setSampleId("mySample1")
+      .setAllele("A")
+      .setReferenceAllele("A")
+      .setIsReference(true)
+      .setRmsMappingQuality(40)
+      .setRmsBaseQuality(30)
+      .setDepth(2)
+      .setReferenceId(1)
+      .setReferenceName("myRef")
+      .setGenotypeQuality(50)
+      .setReadsMappedMapQ0(0)
+      .setReadsMappedForwardStrand(1)
+      .build()
+
+    val gtSeq = Seq(genotype0, genotype1)
+
+    val vc = ADAMVariantContext.buildFromGenotypes(gtSeq)
+
+    assert(vc.position === 0L)
+    assert(vc.variants.length === 1L)
+  }
+
+  test("build a variant context from multiple genotypes that represent different variants") {
+    val genotype0 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setSampleId("mySample0")
+      .setAllele("A")
+      .setReferenceAllele("A")
+      .setIsReference(true)
+      .setRmsMappingQuality(40)
+      .setRmsBaseQuality(30)
+      .setDepth(2)
+      .setReferenceId(1)
+      .setReferenceName("myRef")
+      .setGenotypeQuality(50)
+      .setReadsMappedMapQ0(0)
+      .setReadsMappedForwardStrand(1)
+      .build()
+    val genotype1 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setSampleId("mySample1")
+      .setAllele("T")
+      .setReferenceAllele("A")
+      .setIsReference(true)
+      .setRmsMappingQuality(40)
+      .setRmsBaseQuality(30)
+      .setDepth(2)
+      .setReferenceId(1)
+      .setReferenceName("myRef")
+      .setGenotypeQuality(50)
+      .setReadsMappedMapQ0(0)
+      .setReadsMappedForwardStrand(1)
+      .build()
+
+    val gtSeq = Seq(genotype0, genotype1)
+
+    val vc = ADAMVariantContext.buildFromGenotypes(gtSeq)
+
+    assert(vc.position === 0L)
+    assert(vc.variants.length === 2L)
+  }
+
+  test("cannot build a variant context from variants at different sites") {
+    val genotype0 = ADAMGenotype.newBuilder()
+      .setPosition(0L)
+      .setSampleId("mySample0")
+      .setAllele("A")
+      .setReferenceAllele("A")
+      .setIsReference(true)
+      .setRmsMappingQuality(40)
+      .setRmsBaseQuality(30)
+      .setDepth(2)
+      .setReferenceId(1)
+      .setReferenceName("myRef")
+      .setGenotypeQuality(50)
+      .setReadsMappedMapQ0(0)
+      .setReadsMappedForwardStrand(1)
+      .build()
+    val genotype1 = ADAMGenotype.newBuilder()
+      .setPosition(1L)
+      .setSampleId("mySample1")
+      .setAllele("A")
+      .setReferenceAllele("A")
+      .setIsReference(true)
+      .setRmsMappingQuality(40)
+      .setRmsBaseQuality(30)
+      .setDepth(2)
+      .setReferenceId(1)
+      .setReferenceName("myRef")
+      .setGenotypeQuality(50)
+      .setReadsMappedMapQ0(0)
+      .setReadsMappedForwardStrand(1)
+      .build()
+
+    val gtSeq = Seq(genotype0, genotype1)
+
+    intercept[AssertionError] {
+      ADAMVariantContext.buildFromGenotypes(gtSeq)
+    }
+  }
+
 }
