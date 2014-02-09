@@ -51,8 +51,6 @@ record VariantCallingAnnotations {
   union { null, float }   fisherStrandBiasPValue = null; // Phred-scaled.
   union { null, float }   haplotypeScore = null;
   union { null, float }   inbreedingCoefficient = null;
-  array<int>              alleleCountMLE;
-  array<int>              alleleFrequencyMLE;
   union { null, float }   rmsMapQ = null;
   union { null, int }     mapq0Reads = null;
   union { null, float }   mqRankSum = null;
