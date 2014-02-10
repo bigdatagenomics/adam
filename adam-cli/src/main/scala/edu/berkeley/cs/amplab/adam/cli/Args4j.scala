@@ -33,6 +33,7 @@ object Args4j {
   def apply[T <% Args4jBase : Manifest](args: Array[String]): T = {
     val args4j: T = manifest[T].erasure.asInstanceOf[Class[T]].newInstance()
     val parser = new CmdLineParser(args4j)
+    parser.setUsageWidth(150);
 
     def displayHelp(exitCode: Int = 0) = {
       parser.printUsage(System.out)
