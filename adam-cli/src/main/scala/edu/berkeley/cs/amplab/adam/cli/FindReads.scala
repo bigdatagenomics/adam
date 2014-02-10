@@ -79,7 +79,7 @@ object FindReads extends AdamCommandCompanion {
     val matcher = filterRegex.matcher(filterString)
     if(!matcher.matches()) { throw new IllegalArgumentException(filterString) }
 
-    val generator : BucketComparisons[Any] = DefaultComparisons.findGenerator(matcher.group(1))
+    val generator : BucketComparisons[Any] = DefaultComparisons.findComparison(matcher.group(1))
     val filterDef = matcher.group(2)
 
     generator.createFilter(filterDef)
@@ -120,7 +120,7 @@ class FindReads(protected val args: FindReadsArgs) extends AdamSparkCommand[Find
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val filter = FindReads.parseFilters(args.filter)
-    val generator = filter.generator
+    val generator = filter.comparison
 
     val engine = CompareAdam.setupTraversalEngine(sc, args.input1Path, args.recurse1, args.input2Path, args.recurse2, generator)
 

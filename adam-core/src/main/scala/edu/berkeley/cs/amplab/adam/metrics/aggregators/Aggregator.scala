@@ -22,14 +22,24 @@ import edu.berkeley.cs.amplab.adam.metrics
 trait Aggregator[SingleType, AggType <: Aggregated[SingleType]] extends Serializable {
 
   /**
-   * An initial value for the aggregation
+   * @return An initial value for the aggregation
    */
   def initialValue: AggType
 
+  /**
+   * Aggregates a single sequence of values (which are produced by a single record-pair)
+   *
+   * @param value The Seq[SingleType] produced by a Comparisons invocation on a ReadBucket
+   * @return The aggregation of that sequence.
+   */
   def lift(value : Seq[SingleType]) : AggType
 
   /**
    * Aggregation function to combine the result of a computation with prior results.
+   *
+   * @param first The first aggregation
+   * @param second The second aggregation
+   * @return An aggregation combining the values in the first and second aggregations.
    */
   def combine(first: AggType, second: AggType): AggType
 

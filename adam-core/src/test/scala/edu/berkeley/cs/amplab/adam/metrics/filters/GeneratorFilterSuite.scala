@@ -17,6 +17,32 @@ package edu.berkeley.cs.amplab.adam.metrics.filters
 
 import org.scalatest._
 
+import edu.berkeley.cs.amplab.adam.metrics
+
 class GeneratorFilterSuite extends FunSuite {
 
+  test("CombinedFilter combines two independent filters") {
+    val f1 = new ComparisonsFilter[Int](null) {
+      def passesFilter(value: Any): Boolean = value.asInstanceOf[Int] > 5
+    }
+    val f2 = new ComparisonsFilter[Int](null) {
+      def passesFilter(value: Any): Boolean = value.asInstanceOf[Int] > 10
+    }
+
+    val pass1 = 10
+    val fail1 = 5
+    val pass2 = 20
+
+    assert(f1.passesFilter(pass1))
+    assert(!f1.passesFilter(fail1))
+    assert(f2.passesFilter(pass2))
+
+    val pass = metrics.Collection(Seq(Seq(pass1), Seq(pass2)))
+    val fail = metrics.Collection(Seq(Seq(fail1), Seq(pass2)))
+
+    val f12 = new CombinedFilter[Int](Seq(f1, f2))
+
+    assert(f12.passesFilter(pass))
+    assert(!f12.passesFilter(fail))
+  }
 }

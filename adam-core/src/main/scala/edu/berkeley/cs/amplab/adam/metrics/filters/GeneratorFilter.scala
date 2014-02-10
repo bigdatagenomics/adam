@@ -18,13 +18,36 @@ package edu.berkeley.cs.amplab.adam.metrics.filters
 import edu.berkeley.cs.amplab.adam.metrics.{CombinedComparisons, BucketComparisons}
 import edu.berkeley.cs.amplab.adam.metrics
 
+/**
+ * Used by FindReads, a GeneratorFilter is a predicate on values, which also wraps a particular
+ * BucketComparisons object (the thing that produces those values).
+ *
+ * BucketComparisons will generate a Seq[T] for each ReadBucket it's given -- FindReads then filters
+ * the ReadBuckets based on whether <i>any</i> element of the Seq[T] passes the GeneratorFilter (this
+ * allows us to handle both read-level and base-level comparison metrics and filters, e.g. 'find all
+ * matched ReadBuckets for which <i>some</i> base quality score doesn't match').
+ *
+ * @tparam T
+ */
 trait GeneratorFilter[+T] extends Serializable {
   def passesFilter(value : Any) : Boolean
-  def generator : BucketComparisons[T]
+  def comparison : BucketComparisons[T]
 }
 
-abstract class ComparisonsFilter[+T](val generator : BucketComparisons[T]) extends GeneratorFilter[T] {}
+/**
+ * A utility class, so we only have to extend the 'passesFilter' method in subclasses.
+ *
+ * @param comparison The BucketComparisons value to wrap.
+ * @tparam T The type of value produced by the 'generator' argument, and filtered by this class.
+ */
+abstract class ComparisonsFilter[+T](val comparison : BucketComparisons[T]) extends GeneratorFilter[T] {}
 
+/**
+ * CombinedFilter lifts a Sequence of GeneratorFilter[T] filters into a single GeneratorFilter (which filters
+ * a vector, here reified as a metrics.Collection value, of Seq[T]).
+ * @param filters
+ * @tparam T
+ */
 class CombinedFilter[T](val filters : Seq[GeneratorFilter[T]]) extends GeneratorFilter[metrics.Collection[Seq[T]]] {
 
   def passesFilter(value: Any): Boolean = {
@@ -37,5 +60,5 @@ class CombinedFilter[T](val filters : Seq[GeneratorFilter[T]]) extends Generator
     }
   }
 
-  def generator: BucketComparisons[metrics.Collection[Seq[T]]] = new CombinedComparisons[T](filters.map(_.generator))
+  def comparison: BucketComparisons[metrics.Collection[Seq[T]]] = new CombinedComparisons[T](filters.map(_.comparison))
 }

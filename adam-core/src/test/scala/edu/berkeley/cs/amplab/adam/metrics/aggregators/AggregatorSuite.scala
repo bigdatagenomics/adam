@@ -21,7 +21,7 @@ class AggregatorSuite extends FunSuite {
 
   test("UniqueAggregator only collects unique values") {
     val agg = new UniqueAggregator[String]()
-    val vals : Seq[String] = Seq("x", "x", "y")
+    val vals : Seq[String] = Seq("x", "x", "y", "x")
     val aggregated = vals.map( x => agg.lift(Seq(x)) ).reduce(agg.combine)
 
     assert( aggregated.values.size === 2 )

@@ -15,10 +15,9 @@
  */
 package edu.berkeley.cs.amplab.adam.metrics
 
-import edu.berkeley.cs.amplab.adam.util.{Histogram, SparkFunSuite}
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.models.SingleReadBucket
-import edu.berkeley.cs.amplab.adam.metrics.{BaseQualityScores, MapQualityScores, MappedPosition, DupeMismatch}
 
 class ComparisonsSuite extends SparkFunSuite {
   var bucket: SingleReadBucket = null

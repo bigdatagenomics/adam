@@ -15,8 +15,6 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.predicates._
 import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField._
 import edu.berkeley.cs.amplab.adam.projections.FieldValue
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
@@ -25,13 +23,12 @@ import org.apache.hadoop.fs.{Path, FileSystem}
 
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.kohsuke.args4j.{Option => Args4jOption, Argument}
 
 import scala.collection.Seq
 import java.util.logging.Level
-import java.io.{PrintWriter, Writer, OutputStreamWriter}
+import java.io.{PrintWriter, OutputStreamWriter}
 import edu.berkeley.cs.amplab.adam.rdd.comparisons.ComparisonTraversalEngine
 import edu.berkeley.cs.amplab.adam.metrics.{DefaultComparisons, CombinedComparisons, Collection, BucketComparisons}
 import edu.berkeley.cs.amplab.adam.metrics.aggregators.{HistogramAggregator, CombinedAggregator, AggregatedCollection, Writable}
@@ -65,7 +62,7 @@ object CompareAdam extends AdamCommandCompanion with Serializable {
     new CompareAdam(Args4j[CompareAdamArgs](cmdLine))
   }
 
-  type GeneratedResults[A] = RDD[(CharSequence,Seq[A])]
+  type GeneratedResults[A] = RDD[(CharSequence, Seq[A])]
 
   /**
    * @see CompareAdamArgs.recurse1, CompareAdamArgs.recurse2
@@ -90,13 +87,13 @@ object CompareAdam extends AdamCommandCompanion with Serializable {
 
   def parseGenerators(nameList : String) : Seq[BucketComparisons[Any]] = {
     nameList match {
-      case null => DefaultComparisons.generators
+      case null => DefaultComparisons.comparisons
       case s => parseGenerators(s.split(","))
     }
   }
 
   def parseGenerators(names : Seq[String]) : Seq[BucketComparisons[Any]] =
-    names.map(DefaultComparisons.findGenerator)
+    names.map(DefaultComparisons.findComparison)
 }
 
 class CompareAdamArgs extends Args4jBase with SparkArgs with ParquetArgs with Serializable {
@@ -107,12 +104,12 @@ class CompareAdamArgs extends Args4jBase with SparkArgs with ParquetArgs with Se
   @Argument(required = true, metaVar = "INPUT2", usage = "The second ADAM file to compare", index = 1)
   val input2Path: String = null
 
-  @Args4jOption(required = false, name = "-recurse1",
+  @Args4jOption(required = false, name = "-recurse1", metaVar="REGEX",
     usage = "Optional regex; if specified, INPUT1 is recursively searched for directories matching this " +
       "pattern, whose contents are loaded and merged prior to running the comparison")
   val recurse1: String = null
 
-  @Args4jOption(required = false, name = "-recurse2",
+  @Args4jOption(required = false, name = "-recurse2", metaVar="REGEX",
     usage = "Optional regex; if specified, INPUT2 is recursively searched for directories matching this " +
       "pattern, whose contents are loaded and merged prior to running the comparison")
   val recurse2: String = null
@@ -120,13 +117,12 @@ class CompareAdamArgs extends Args4jBase with SparkArgs with ParquetArgs with Se
   @Args4jOption(required = false, name = "-comparisons", usage = "Comma-separated list of comparisons to run")
   val comparisons: String = null
 
-  @Args4jOption(required = false, name = "-aggregate", usage = "Aggregator to use (default: histogram)")
-  val aggregator: String = null
+  @Args4jOption(required = false, name = "-list_comparisons",
+    usage = "If specified, lists all the comparisons that are available")
+  val listComparisons: Boolean = false
 
-  @Args4jOption(required = false, name = "-list", usage = "Options to list, e.g. \"comparisons\" for a list of available comparisons")
-  val list: String = null
-
-  @Args4jOption(required = false, name = "-directory", usage = "Directory to generate the comparison output files")
+  @Args4jOption(required = false, name = "-output", metaVar = "DIRECTORY",
+    usage = "Directory to generate the comparison output files (default: output to STDOUT)")
   val directory: String = null
 }
 
@@ -180,13 +176,11 @@ class CompareAdam(protected val args: CompareAdamArgs) extends AdamSparkCommand[
 
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
-    if(args.list != null) {
-      if(args.list == "comparisons") {
-        println("\nAvailable comparisons:")
-        DefaultComparisons.generators.foreach {
-          generator =>
-            println("\t%10s : %s".format(generator.name, generator.description))
-        }
+    if(args.listComparisons) {
+      println("\nAvailable comparisons:")
+      DefaultComparisons.comparisons.foreach {
+        generator =>
+          println("\t%10s : %s".format(generator.name, generator.description))
       }
 
       return

@@ -15,17 +15,10 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd.comparisons
 
-import parquet.filter.UnboundRecordFilter
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
 import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.util.{Histogram, ParquetLogger, SparkFunSuite}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.util.PhredUtils._
-import java.io.File
-import org.apache.hadoop.fs.Path
+import edu.berkeley.cs.amplab.adam.util.{Histogram, SparkFunSuite}
 import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField
-import java.util.logging.Level
 import edu.berkeley.cs.amplab.adam.metrics.aggregators.HistogramAggregator
 import edu.berkeley.cs.amplab.adam.metrics.MappedPosition
 

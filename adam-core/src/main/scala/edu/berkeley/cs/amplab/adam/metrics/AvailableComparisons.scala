@@ -21,12 +21,11 @@ import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import scala.collection.Map
 import edu.berkeley.cs.amplab.adam.models.ReadBucket
-import java.util.regex.Pattern
 import edu.berkeley.cs.amplab.adam.metrics.{PointComparisons, LongComparisons, BooleanComparisons, BucketComparisons}
 
 object DefaultComparisons {
 
-  val generators : Seq[BucketComparisons[Any]] = Seq[BucketComparisons[Any]](
+  val comparisons : Seq[BucketComparisons[Any]] = Seq[BucketComparisons[Any]](
     OverMatched,
     DupeMismatch,
     MappedPosition,
@@ -34,12 +33,13 @@ object DefaultComparisons {
     BaseQualityScores)
 
   private val map =
-    generators.foldLeft(
+    comparisons.foldLeft(
       Map[String, BucketComparisons[Any]]())(
       (a: Map[String, BucketComparisons[Any]], b: BucketComparisons[Any]) => a + ((b.name, b)))
 
-  def findGenerator(k : String) : BucketComparisons[Any] =
-    map.getOrElse(k, throw new ArrayIndexOutOfBoundsException(String.format("Could not find generator %s", k)))
+  def findComparison(k : String) : BucketComparisons[Any] =
+    map.getOrElse(k, throw new ArrayIndexOutOfBoundsException(
+      String.format("Could not find comparison %s", k)))
 }
 
 object OverMatched extends BooleanComparisons with Serializable {

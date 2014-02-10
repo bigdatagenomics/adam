@@ -16,14 +16,12 @@
 package edu.berkeley.cs.amplab.adam.rdd.comparisons
 
 import edu.berkeley.cs.amplab.adam.models.ReadBucket
-import edu.berkeley.cs.amplab.adam.predicates._
 import edu.berkeley.cs.amplab.adam.projections.{FieldValue, Projection}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
 import scala.Some
 import org.apache.hadoop.fs.Path
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
@@ -31,14 +29,18 @@ import edu.berkeley.cs.amplab.adam.metrics.BucketComparisons
 import edu.berkeley.cs.amplab.adam.metrics.aggregators.{Aggregated, Aggregator}
 import edu.berkeley.cs.amplab.adam.metrics.filters.GeneratorFilter
 
-class ComparisonTraversalEngine(schema: Seq[FieldValue], input1 : RDD[ADAMRecord], input2 : RDD[ADAMRecord])(implicit sc : SparkContext) {
-  def this(schema : Seq[FieldValue], input1Paths : Seq[Path], input2Paths : Seq[Path])(implicit sc : SparkContext) =
+class ComparisonTraversalEngine(schema: Seq[FieldValue], input1 : RDD[ADAMRecord], input2 : RDD[ADAMRecord])
+                               (implicit sc : SparkContext) {
+  def this(schema : Seq[FieldValue], input1Paths : Seq[Path], input2Paths : Seq[Path])
+          (implicit sc : SparkContext) =
     this(schema, sc.loadAdamFromPaths(input1Paths), sc.loadAdamFromPaths(input2Paths))(sc)
 
   lazy val projection = Projection(schema: _*)
 
-  lazy val named1 = input1.adamSingleReadBuckets().map(ReadBucket.singleReadBucketToReadBucket).keyBy(_.allReads.head.getReadName)
-  lazy val named2 = input2.adamSingleReadBuckets().map(ReadBucket.singleReadBucketToReadBucket).keyBy(_.allReads.head.getReadName)
+  lazy val named1 = input1.adamSingleReadBuckets()
+    .map(ReadBucket.singleReadBucketToReadBucket).keyBy(_.allReads.head.getReadName)
+  lazy val named2 = input2.adamSingleReadBuckets()
+    .map(ReadBucket.singleReadBucketToReadBucket).keyBy(_.allReads.head.getReadName)
 
   lazy val joined = named1.join(named2)
 
@@ -77,7 +79,7 @@ object ComparisonTraversalEngine {
   def find[T](joined : JoinedType, filter : GeneratorFilter[T]) : RDD[CharSequence] =
     joined.filter {
       case (name, (bucket1, bucket2)) =>
-        filter.generator.matchedByName(bucket1, bucket2).exists(filter.passesFilter)
+        filter.comparison.matchedByName(bucket1, bucket2).exists(filter.passesFilter)
     }.map(_._1)
 
   def combine[T,A <: Aggregated[T] : ClassManifest](generated : GeneratedType[T], aggregator : Aggregator[T,A]) : A =
