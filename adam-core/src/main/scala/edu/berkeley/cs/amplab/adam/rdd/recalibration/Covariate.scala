@@ -53,8 +53,6 @@ class CovariateKey(
 }
 
 class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
-  require(extras.length > 0)
-
   def apply(residue: Residue): CovariateKey =
     new CovariateKey(residue.read.readGroup, residue.quality, extras.map(_.compute(residue)))
 

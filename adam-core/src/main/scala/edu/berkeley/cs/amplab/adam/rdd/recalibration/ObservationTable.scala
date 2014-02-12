@@ -25,6 +25,8 @@ import scala.collection.mutable
 class Observation(val total: Long, val mismatches: Long) extends Serializable {
   require(mismatches >= 0 && mismatches <= total)
 
+  def this(that: Observation) = this(that.total, that.mismatches)
+
   def +(that: Observation) =
     new Observation(this.total + that.total, this.mismatches + that.mismatches)
 
@@ -64,12 +66,44 @@ object Observation {
   def apply(isMismatch: Boolean) = new Observation(1, if(isMismatch) 1 else 0)
 }
 
+class Aggregate private(
+    total: Long,        // number of total observations
+    mismatches: Long,   // number of mismatches observed
+    val expectedMismatches: Double  // expected number of mismatches based on reported quality scores
+  ) extends Observation(total, mismatches) {
+
+  def this(quality: QualityScore, obs: Observation) =
+    this(obs.total, obs.mismatches, quality.errorProbability * obs.mismatches)
+
+  def reportedQuality: QualityScore =
+    QualityScore.fromErrorProbability(mismatches.toDouble / total.toDouble)
+
+  def +(that: Aggregate): Aggregate =
+    new Aggregate(
+      this.total + that.total,
+      this.mismatches + that.mismatches,
+      this.expectedMismatches + that.expectedMismatches)
+}
+
+object Aggregate {
+  def apply(key: CovariateKey, value: Observation) =
+    new Aggregate(key.quality, value)
+}
+
 class ObservationTable(
     val space: CovariateSpace,
     val entries: Map[CovariateKey, Observation]
   ) extends Serializable {
 
   override def toString = entries.map{ case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
+
+  // `func' computes the aggregation key
+  def aggregate[K](func: (CovariateKey, Observation) => K): Map[K, Aggregate] = {
+    val grouped = entries.groupBy{ case (key, value) => func(key, value) }
+    val newEntries = grouped.mapValues(bucket =>
+      bucket.map{ case (oldKey, obs) => Aggregate(oldKey, obs) }.reduce(_ + _))
+    newEntries.toMap
+  }
 }
 
 class ObservationAccumulator(val space: CovariateSpace) extends Serializable {

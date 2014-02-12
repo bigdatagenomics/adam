@@ -23,14 +23,23 @@ class QualityScore(val value: Int) extends Ordered[QualityScore] with Serializab
 
   def errorProbability = PhredUtils.phredToErrorProbability(value)
 
+  def logSuccessProb = math.log(successProbability)
+
+  def logErrorProb = math.log(errorProbability)
+
+  def toChar: Char = {
+    val result: Int = value + 33
+    // valid range of result is described by regex "[!-~]"
+    assert(result >= '!'.toInt && result <= '~'.toInt)
+    result.toChar
+  }
+
   override def compare(that: QualityScore) = this.value compare that.value
 
   override def toString = "Q%02d".format(value)
 
   override def equals(other: Any): Boolean = other match {
-    case that: QualityScore =>
-      this.value == that.value
-
+    case that: QualityScore => this.value == that.value
     case _ => false
   }
 
@@ -39,6 +48,9 @@ class QualityScore(val value: Int) extends Ordered[QualityScore] with Serializab
 
 object QualityScore {
   def apply(value: Int) = new QualityScore(value)
+
+  def toString(quals: Seq[QualityScore]): String =
+    String.valueOf(quals.map(_.toChar))
 
   def fromErrorProbability(p: Double) =
     new QualityScore(PhredUtils.errorProbabilityToPhred(p))
