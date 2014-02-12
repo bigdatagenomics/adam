@@ -32,7 +32,6 @@ import java.util
  * GATK VariantContext should be implemented in this class.
  */
 private[adam] class VariantContextConverter extends Serializable with Logging {
-  initLogging()
 
   private def convertAllele(allele: Allele): ADAMGenotypeAllele = {
     if (allele.isNoCall) ADAMGenotypeAllele.NoCall
@@ -48,8 +47,8 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
    */
   def convert(vc: VariantContext): Seq[ADAMVariantContext] = {
 
-    val contig: ADAMContig.Builder = ADAMContig.newBuilder()
-      .setContigName(vc.getChr)
+    val contig: ADAMContig = ADAMContig.newBuilder()
+      .setContigName(vc.getChr).build
 
     // TODO: Handle multi-allelic sites
     // We need to split the alleles (easy) and split and subset the PLs (harder)/update the genotype
@@ -58,7 +57,7 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
     }
 
     val variant: ADAMVariant = ADAMVariant.newBuilder
-      .setContig(contig.build)
+      .setContig(contig)
       .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */)
       .setReferenceAllele(vc.getReference.getBaseString)
       .setVariantAllele(vc.getAlternateAllele(0).getBaseString)
