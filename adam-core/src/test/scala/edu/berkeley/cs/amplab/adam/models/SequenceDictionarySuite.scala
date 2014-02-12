@@ -177,6 +177,38 @@ class SequenceDictionarySuite extends FunSuite {
     assert(s1 === s3)
   }
 
+  test("containsRefName works correctly") {
+    val dict = SequenceDictionary(record(0, "chr0"),
+                                  record(1, "chr1"),
+                                  record(2, "chr2"),
+                                  record(3, "chr3"))
+    val str0: String = "chr0"
+    val str1: java.lang.String = "chr1"
+    val str2: CharSequence = "chr2"
+    val str3: java.lang.CharSequence = "chr3"
+
+    assert(dict.containsRefName(str0))
+    assert(dict.containsRefName(str1))
+    assert(dict.containsRefName(str2))
+    assert(dict.containsRefName(str3))
+  }
+
+  test("apply on name works correctly") {
+    val dict = SequenceDictionary(record(0, "chr0"),
+                                  record(1, "chr1"),
+                                  record(2, "chr2"),
+                                  record(3, "chr3"))
+    val str0: String = "chr0"
+    val str1: java.lang.String = "chr1"
+    val str2: CharSequence = "chr2"
+    val str3: java.lang.CharSequence = "chr3"
+
+    assert(dict(str0).id === 0)
+    assert(dict(str1).id === 1)
+    assert(dict(str2).id === 2)
+    assert(dict(str3).id === 3)
+  }
+
   def record(id: Int, name: String, length: Int = 1000, url: String = null): SequenceRecord =
     SequenceRecord(id, name, length, url)
 }

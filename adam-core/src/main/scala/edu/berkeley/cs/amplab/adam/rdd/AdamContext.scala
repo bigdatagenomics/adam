@@ -15,7 +15,12 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMGenotype, ADAMVariant, ADAMVariantDomain}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, 
+                                         ADAMRecord, 
+                                         ADAMGenotype, 
+                                         ADAMVariant, 
+                                         ADAMVariantDomain, 
+                                         ADAMNucleotideContig}
 import parquet.hadoop.ParquetInputFormat
 import parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
 import parquet.hadoop.util.ContextUtil
@@ -32,7 +37,7 @@ import scala.collection.JavaConversions._
 import edu.berkeley.cs.amplab.adam.models._
 import org.apache.hadoop.fs.{FileSystem, Path}
 import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
-import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, Projection}
+import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, Projection, ADAMNucleotideContigField}
 import edu.berkeley.cs.amplab.adam.projections.ADAMVariantAnnotations
 import edu.berkeley.cs.amplab.adam.converters.{SAMRecordConverter, VariantContextConverter}
 import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
@@ -64,6 +69,9 @@ object AdamContext {
 
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToAdamRDD[T <% SpecificRecord : Manifest](rdd: RDD[T]) = new AdamRDDFunctions(rdd)
+
+  // Add methods specific to the ADAMNucleotideContig RDDs
+  implicit def rddToAdamRDD(rdd: RDD[ADAMNucleotideContig]) = new AdamNucleotideContigRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: ADAMRecord): RichADAMRecord = new RichADAMRecord(record)
@@ -166,9 +174,10 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
     // other flattened schema, and (b) because the SequenceRecord.fromADAMRecord, below, is going
     // to be called through a flatMap rather than through a map tranformation on the underlying record RDD.
     val isAdamRecord = classOf[ADAMRecord].isAssignableFrom(manifest[T].erasure)
-
+    val isAdamContig = classOf[ADAMNucleotideContig].isAssignableFrom(manifest[T].erasure)
+    
     val projection =
-      if (isAdamRecord)
+      if (isAdamRecord) {
         Projection(
           ADAMRecordField.referenceId,
           ADAMRecordField.referenceName,
@@ -183,12 +192,18 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
           ADAMRecordField.readMapped,
           ADAMRecordField.mateMapped
         )
-      else
+      } else if (isAdamContig) {
+        Projection(ADAMNucleotideContigField.contigName,
+                   ADAMNucleotideContigField.contigId,
+                   ADAMNucleotideContigField.sequenceLength,
+                   ADAMNucleotideContigField.url)
+      } else {
         Projection(
           ADAMRecordField.referenceId,
           ADAMRecordField.referenceName,
           ADAMRecordField.referenceLength,
           ADAMRecordField.referenceUrl)
+      }
 
     if (filePath.endsWith(".bam") || filePath.endsWith(".sam")) {
       if (isAdamRecord)
@@ -200,10 +215,13 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
       val projected: RDD[T] = adamParquetLoad[T, UnboundRecordFilter](filePath, None, projection = Some(projection))
 
       val recs: RDD[SequenceRecord] =
-        if (isAdamRecord)
+        if (isAdamRecord) {
           projected.asInstanceOf[RDD[ADAMRecord]].distinct().flatMap(rec => SequenceRecord.fromADAMRecord(rec))
-        else
+        } else if (isAdamContig) {
+          projected.asInstanceOf[RDD[ADAMNucleotideContig]].distinct().map(ctg => SequenceRecord.fromADAMContig(ctg))
+        } else {
           projected.distinct().map(SequenceRecord.fromSpecificRecord(_))
+        }
 
       val dict = recs.aggregate(SequenceDictionary())(
         (dict: SequenceDictionary, rec: SequenceRecord) => dict + rec,

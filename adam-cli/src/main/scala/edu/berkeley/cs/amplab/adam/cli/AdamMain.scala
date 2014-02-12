@@ -32,7 +32,8 @@ object AdamMain extends Logging {
     Bam2Adam,
     Adam2Vcf,
     Vcf2Adam,
-    FindReads)
+    FindReads,
+    Fasta2Adam)
 
   private def printCommands() {
     println("\n")

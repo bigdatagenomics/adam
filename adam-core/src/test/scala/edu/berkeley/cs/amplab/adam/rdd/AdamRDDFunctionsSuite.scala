@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Genome Bridge LLC
+ * Copyright 2013-2014. Genome Bridge LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup, Base}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup, Base, ADAMNucleotideContig}
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import scala.util.Random
@@ -323,6 +324,78 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).count === 1)
     assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.length === 1)
     assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.forall(_.getReadBase == Base.G))
+  }
+
+  sparkTest ("can remap contig ids") {
+    val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
+                                  SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
+    val ctg0 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr0")
+      .setContigId(1)
+      .setSequenceLength(1000L)
+      .build()
+    val ctg1 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr1")
+      .setContigId(2)
+      .setSequenceLength(1000L)
+      .build()
+
+    val rdd = sc.parallelize(List(ctg0, ctg1))
+
+    val remapped = rdd.adamRewriteContigIds(dict)
+    
+    assert(remapped.count === 2)
+    assert(remapped.filter(_.getContigName.toString == "chr0").first.getContigId === 0)
+    assert(remapped.filter(_.getContigName.toString == "chr1").first.getContigId === 1)
+  }
+
+  sparkTest ("can remap contig ids while filtering out contigs that aren't in dict") {
+    val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
+                                  SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
+    val ctg0 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr0")
+      .setContigId(1)
+      .setSequenceLength(1000L)
+      .build()
+    val ctg1 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr2")
+      .setContigId(2)
+      .setSequenceLength(1000L)
+      .build()
+
+    val rdd = sc.parallelize(List(ctg0, ctg1))
+
+    val remapped = rdd.adamRewriteContigIds(dict)
+
+    assert(remapped.count === 1)
+    assert(remapped.filter(_.getContigName.toString == "chr0").first.getContigId === 0)
+    assert(remapped.filter(_.getContigName.toString == "chr2").count === 0)
+  }
+
+  sparkTest ("generate sequence dict from fasta") {
+    val ctg0 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr0")
+      .setContigId(1)
+      .setSequenceLength(1000L)
+      .setUrl("http://bigdatagenomics.github.io/chr0.fa")
+      .build()
+    val ctg1 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr1")
+      .setContigId(2)
+      .setSequenceLength(900L)
+      .build()
+
+    val rdd = sc.parallelize(List(ctg0, ctg1))
+
+    val dict = rdd.adamGetSequenceDictionary()
+
+    assert(dict.containsRefName("chr0"))
+    assert(dict("chr0").id === 1)
+    assert(dict("chr0").length === 1000L)
+    assert(dict("chr0").url.toString == "http://bigdatagenomics.github.io/chr0.fa")
+    assert(dict.containsRefName("chr1"))
+    assert(dict("chr1").id === 2)
+    assert(dict("chr1").length === 900L)
   }
 
 }
