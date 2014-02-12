@@ -39,6 +39,9 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
     else ADAMGenotypeAllele.Alt
   }
 
+  implicit def gatkAllelesToADAMAlleles(gatkAlleles : util.List[Allele]) : util.List[ADAMGenotypeAllele] = {
+    gatkAlleles.asScala.map(convertAllele(_)).asJava
+  }
   /**
    * Converts a single GATK variant into ADAMVariantContext(s).
    *
@@ -67,19 +70,22 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
       val genotype: ADAMGenotype.Builder = ADAMGenotype.newBuilder
         .setVariant(variant)
         .setSampleId(g.getSampleName)
-        .setAlleles(g.getAlleles.asScala.map(convertAllele(_)).asJava)
+        .setAlleles(gatkAllelesToADAMAlleles(g.getAlleles))
         .setIsPhased(g.isPhased)
 
       if (vc.isFiltered) {
-        genotype.setVarIsFiltered(vc.isFiltered)
-        genotype.setVarFilters(new util.ArrayList(vc.getFilters))
+        val annotations : VariantCallingAnnotations.Builder = 
+          VariantCallingAnnotations.newBuilder
+            .setVariantIsPassing(!vc.isFiltered)
+            .setVariantFilters(new util.ArrayList(vc.getFilters))
+        genotype.setVariantCallingAnnotations(annotations.build)
       }
 
       if (g.hasExtendedAttribute(VCFConstants.PHASE_QUALITY_KEY))
         genotype.setPhaseQuality(g.getExtendedAttribute(VCFConstants.PHASE_QUALITY_KEY).asInstanceOf[java.lang.Integer])
 
       if (g.hasExtendedAttribute(VCFConstants.PHASE_SET_KEY))
-        genotype.setPhaseSetId(g.getExtendedAttribute(VCFConstants.PHASE_SET_KEY).asInstanceOf[CharSequence])
+        genotype.setPhaseSetId(g.getExtendedAttribute(VCFConstants.PHASE_SET_KEY).asInstanceOf[Integer])
 
       genotype.build
     }).toSeq
