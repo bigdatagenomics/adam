@@ -21,32 +21,33 @@ import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup,
                                          ADAMVariant, 
                                          ADAMVariantDomain, 
                                          ADAMNucleotideContig}
-import parquet.hadoop.ParquetInputFormat
-import parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
-import parquet.hadoop.util.ContextUtil
-import org.apache.hadoop.mapreduce.Job
-import parquet.filter.UnboundRecordFilter
+import edu.berkeley.cs.amplab.adam.converters.{SAMRecordConverter, VariantContextConverter}
+import edu.berkeley.cs.amplab.adam.models._
+import edu.berkeley.cs.amplab.adam.models.ADAMRod
+import edu.berkeley.cs.amplab.adam.rich.{RichRDDReferenceRecords, RichADAMRecord}
+import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
+import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, 
+                                                Projection, 
+                                                ADAMVariantAnnotations,
+                                                ADAMNucleotideContigField}
+import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat, VariantContextWritable, VCFInputFormat}
+import fi.tkk.ics.hadoop.bam.util.{SAMHeaderReader, VCFHeaderReader, WrapSeekable}
+import java.util.regex.Pattern
+import net.sf.samtools.SAMFileHeader
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
-import edu.berkeley.cs.amplab.adam.rich.{RichRDDReferenceRecords, RichADAMRecord}
-import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat, VariantContextWritable, VCFInputFormat}
-import org.apache.hadoop.io.LongWritable
-import org.apache.spark.rdd.RDD
-import org.apache.spark.{Logging, SparkContext}
-import scala.collection.JavaConversions._
-import edu.berkeley.cs.amplab.adam.models._
 import org.apache.hadoop.fs.{FileSystem, Path}
-import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
-import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, Projection, ADAMNucleotideContigField}
-import edu.berkeley.cs.amplab.adam.projections.ADAMVariantAnnotations
-import edu.berkeley.cs.amplab.adam.converters.{SAMRecordConverter, VariantContextConverter}
-import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
-
+import org.apache.hadoop.io.LongWritable
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.{Logging, SparkContext}
+import org.apache.spark.rdd.RDD
+import parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
+import parquet.filter.UnboundRecordFilter
+import parquet.hadoop.ParquetInputFormat
+import parquet.hadoop.util.ContextUtil
 import scala.collection.Map
+import scala.collection.JavaConversions._
 import scala.Some
-import edu.berkeley.cs.amplab.adam.models.ADAMRod
-import net.sf.samtools.SAMFileHeader
-import java.util.regex.Pattern
 
 object AdamContext {
   // Add ADAM Spark context methods
@@ -97,6 +98,9 @@ object AdamContext {
   implicit def mapToJavaMap[A, B](map: Map[A, B]): java.util.Map[A, B] = mapAsJavaMap(map)
 
   implicit def iterableToJavaCollection[A](i: Iterable[A]): java.util.Collection[A] = asJavaCollection(i)
+
+  implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
+
 }
 
 class AdamContext(sc: SparkContext) extends Serializable with Logging {
@@ -245,8 +249,13 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
       .map(_._2)
       .filter(_ != null)
 
+    val seekable = WrapSeekable.openPath(sc.hadoopConfiguration, new Path(filePath))
+    val vcfHeader = VCFHeaderReader.readHeaderFrom(seekable)
+    val seqDict = SequenceDictionary.fromVCFHeader(vcfHeader)
+    val bcast = sc.broadcast(seqDict)
+
     val vcfRecordConverter = new VariantContextConverter
-    records.map(vcfRecordConverter.convert)
+    records.map((vcw: VariantContextWritable) => vcfRecordConverter.convert(vcw, bcast.value))
   }
 
   /**

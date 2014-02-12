@@ -16,17 +16,18 @@
 
 package edu.berkeley.cs.amplab.adam.cli
 
-import java.lang.{Integer => JInt}
-import org.kohsuke.args4j.{Argument, Option => Args4jOption}
-import org.apache.spark.rdd.RDD
+
+import edu.berkeley.cs.amplab.adam.converters.VariantContextConverter
+import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.util.{AdamVCFOutputFormat, VcfHeaderUtils}
+import fi.tkk.ics.hadoop.bam.VariantContextWritable
+import org.apache.hadoop.io.LongWritable
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Logging, SparkContext}
 import org.apache.spark.SparkContext._
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
-import org.apache.hadoop.mapreduce.Job
-import org.apache.hadoop.io.LongWritable
-import fi.tkk.ics.hadoop.bam.{VariantContextWritable, VCFOutputFormat, VCFFormat}
-import edu.berkeley.cs.amplab.adam.converters.VariantContextConverter
+import org.apache.spark.rdd.RDD
+import org.kohsuke.args4j.{Argument, Option => Args4jOption}
 
 object Adam2Vcf extends AdamCommandCompanion {
 
@@ -64,19 +65,19 @@ class Adam2Vcf(val args: Adam2VcfArgs) extends AdamSparkCommand[Adam2VcfArgs] wi
       vcw
     })
 
+    // get header
+    val header = VcfHeaderUtils.makeHeader(adamVC)
+
     // add index for writing output format
     val mapIndex = variantContexts.keyBy(r => new LongWritable(r.get.getStart))
 
-    log.info("Counted " + variantContexts.count + " variants.")
-
-    // new context
-    val conf = sc.hadoopConfiguration
-    val vcfFormat = VCFFormat.valueOf("VCF")
-    conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY,
-      vcfFormat.toString)
+    // attach header
+    AdamVCFOutputFormat.addHeader(header)
 
     // write out
-    mapIndex.saveAsNewAPIHadoopFile(args.outputPath, classOf[LongWritable], classOf[VariantContextWritable],
-      classOf[VCFOutputFormat[LongWritable]])
+    mapIndex.saveAsNewAPIHadoopFile(args.outputPath, 
+                                    classOf[LongWritable], 
+                                    classOf[VariantContextWritable],
+                                    classOf[AdamVCFOutputFormat[LongWritable]])
   }
 }

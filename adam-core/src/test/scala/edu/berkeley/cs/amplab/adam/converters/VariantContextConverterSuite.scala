@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,16 @@
  */
 package edu.berkeley.cs.amplab.adam.converters
 
-import org.broadinstitute.variant.variantcontext.{Allele, VariantContextBuilder, GenotypeBuilder}
 import edu.berkeley.cs.amplab.adam.avro.VariantType
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import org.broadinstitute.variant.variantcontext.{Allele, VariantContextBuilder, GenotypeBuilder}
 import org.scalatest.FunSuite
 
 class VariantContextConverterSuite extends FunSuite {
+
+  val dict = SequenceDictionary(SequenceRecord(0, "A", 1000, null),
+                                SequenceRecord(1, "B", 1000, null))
 
   test("Test variant unpacking from simple variant context with 1 allele") {
     val Aref = Allele.create("A", true)
@@ -36,7 +40,7 @@ class VariantContextConverterSuite extends FunSuite {
 
     val converter = new VariantContextConverter
 
-    val adamVariants = converter.convertVariants(vc)
+    val adamVariants = converter.convertVariants(vc, "A", 0)
     val variant = adamVariants.head
 
     assert(adamVariants.length === 1)
@@ -46,6 +50,8 @@ class VariantContextConverterSuite extends FunSuite {
     assert(variant.getFiltersRun)
     assert(variant.getFilters === null)
     assert(variant.getPosition === 0L)
+    assert(variant.getReferenceId === 0)
+    assert(variant.getReferenceName === "A")
   }
 
   test("Test variant unpacking from context with reference allele and SNP") {
@@ -63,7 +69,7 @@ class VariantContextConverterSuite extends FunSuite {
 
     val converter = new VariantContextConverter
 
-    val adamVariants = converter.convertVariants(vc)
+    val adamVariants = converter.convertVariants(vc, "A", 0)
     val ref = adamVariants(1)
     val variant = adamVariants(0)
 
@@ -75,7 +81,9 @@ class VariantContextConverterSuite extends FunSuite {
     assert(ref.getFilters === null)
     assert(ref.getPosition === 0L)
     assert(ref.getVariantType === VariantType.SNP)
-    assert(variant.getReferenceAllele === "A")
+    assert(ref.getReferenceId === 0)
+    assert(ref.getReferenceName === "A")
+    assert(ref.getReferenceAllele === "A")
     assert(!variant.getIsReference)
     assert(variant.getVariant === "T")
     assert(variant.getId === "MyID")
@@ -83,6 +91,8 @@ class VariantContextConverterSuite extends FunSuite {
     assert(variant.getFilters === null)
     assert(variant.getPosition === 0L)
     assert(variant.getVariantType === VariantType.SNP)
+    assert(variant.getReferenceId === 0)
+    assert(variant.getReferenceName === "A")
   }
 
   test("Test variant unpacking from simple variant context with 1 allele and 1 genotype") {
@@ -95,13 +105,13 @@ class VariantContextConverterSuite extends FunSuite {
       .passFilters()
       .start(1L)
       .stop(1L)
-      .chr("A")
+      .chr("B")
       .genotypes(List(g))
       .make()
 
     val converter = new VariantContextConverter
 
-    val adamVariants = converter.convertVariants(vc)
+    val adamVariants = converter.convertVariants(vc, "B", 1)
     val variant = adamVariants.head
 
     assert(adamVariants.length === 1)
@@ -111,8 +121,10 @@ class VariantContextConverterSuite extends FunSuite {
     assert(variant.getFiltersRun)
     assert(variant.getFilters === null)
     assert(variant.getPosition === 0L)
+    assert(variant.getReferenceId === 1)
+    assert(variant.getReferenceName === "B")
 
-    val adamGenotypes = converter.convertGenotypes(vc)
+    val adamGenotypes = converter.convertGenotypes(vc, "B", 1)
     val genotype = adamGenotypes.head
 
     assert(adamGenotypes.length === 1)
@@ -137,7 +149,7 @@ class VariantContextConverterSuite extends FunSuite {
 
     val converter = new VariantContextConverter
 
-    val adamVariants = converter.convertVariants(vc)
+    val adamVariants = converter.convertVariants(vc, "A", 0)
     val variant = adamVariants.head
 
     assert(adamVariants.length === 1)
@@ -148,7 +160,7 @@ class VariantContextConverterSuite extends FunSuite {
     assert(variant.getFilters === null)
     assert(variant.getPosition === 0L)
 
-    val adamGenotypes = converter.convertGenotypes(vc)
+    val adamGenotypes = converter.convertGenotypes(vc, "A", 0)
 
     assert(adamGenotypes.length === 2)
     assert(adamGenotypes.forall(_.getIsReference))
@@ -172,9 +184,10 @@ class VariantContextConverterSuite extends FunSuite {
 
     val converter = new VariantContextConverter
 
-    val adamVC = converter.convert(vc)
+    val adamVC = converter.convert(vc, dict)
 
-    assert(adamVC.position === 0L)
+    assert(adamVC.position.refId === 0)
+    assert(adamVC.position.pos === 0L)
     assert(adamVC.variants.length === 1)
     assert(adamVC.genotypes.length === 1)
 

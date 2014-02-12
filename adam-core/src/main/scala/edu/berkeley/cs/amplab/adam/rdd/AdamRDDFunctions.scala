@@ -326,6 +326,30 @@ class AdamVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Seria
     rdd
   }
 
+  /**
+   * Extracts a sequence dictionary from an rdd of variant contexts.
+   *
+   * @see ADAMRecordRDDFunctions#sequenceDictionary
+   *
+   * @return A sequence dictionary containing the contigs in this callset.
+   */
+  def adamGetSequenceDictionary(): SequenceDictionary =
+    rdd.map(_.variants).distinct().aggregate(SequenceDictionary())(
+      (dict: SequenceDictionary, rec: Seq[ADAMVariant]) => dict ++ rec.map(SequenceRecord.fromSpecificRecord(_)),
+      (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
+
+  /**
+   * Returns a list of the samples in a variant callset.
+   *
+   * @return A list of strings that contains all of the sample IDs in this callset.
+   */
+  def adamGetCallsetSamples(): List[String] = {
+    rdd.flatMap(c => c.genotypes.map(_.getSampleId).distinct)
+      .distinct
+      .map(_.toString)
+      .collect()
+      .toList
+  }
 }
 
 class AdamGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable {
