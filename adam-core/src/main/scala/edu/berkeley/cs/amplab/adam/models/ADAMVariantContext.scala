@@ -16,11 +16,8 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant}
-import scala.Option
 
 object ADAMVariantContext {
-
-
 }
 
 case class ADAMVariantContext(variant: ADAMVariant,
