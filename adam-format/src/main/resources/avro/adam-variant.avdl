@@ -1,0 +1,107 @@
+
+@namespace("edu.berkeley.cs.amplab.adam.avro")
+protocol ADAM {
+
+record ADAMContig {
+  union { null, string } contigName;
+  union { null, long }   referenceLength = null;
+  union { null, string } referenceURL = null;
+  union { null, string } referenceMD5 = null;
+}
+
+record ADAMVariant {
+  union { null, ADAMContig } contig;
+  union { null, long }       position;
+  union { null, string }     referenceAllele;
+  union { null, string }     variantAllele;
+}
+
+enum ADAMGenotypeAllele {
+  Ref,   // Genotype is the reference allele
+  Alt,   // Genotype is the alternate allele
+  NoCall // Genotype could not be called (e.g., reads did not provide
+	 // enough information or had low quality)
+}
+
+// This record represents all stats that, inside a VCF, are stored outside of the
+// sample but are computed based on the samples.  For instance,  MAPQ0 is an aggregate
+// stat computed from all samples and stored inside the INFO line.
+record VariantCallingAnnotations {
+  union { null, int }     readDepth = null;
+  // Was this downsampled?
+  union { null, boolean } downsampled = null;
+
+  // Base quality rank sum. 
+  union { null, float }   baseQRankSum = null;
+  union { null, float }   clippingRankSum = null;
+  union { null, float }   fisherStrandBiasPValue = null; // Phred-scaled.
+  union { null, float }   haplotypeScore = null;
+  union { null, float }   inbreedingCoefficient = null;
+  array<int>              alleleCountMLE;
+  array<int>              alleleFrequencyMLE;
+  union { null, float }   rmsMapQ = null;
+  union { null, int }     mapq0Reads = null;
+  union { null, float }   mqRankSum = null;
+  union { null, boolean } usedForNegativeTrainingSet = null;
+  union { null, boolean } usedForPositiveTrainingSet = null;
+  union { null, float }   variantQualityByDepth = null;
+  union { null, float }   readPositionRankSum = null;
+  // Log-odds ratio of being a true vs false variant under trained
+  // Gaussian mixture model.
+  union { null, float }   vqslod = null;
+  union { null, string }  culprit = null;
+  // Phred-scaled probability of error for this variant call.
+  union { null, float }   variantCallErrorProbability = null;
+  // "null" implies no filters were applied.  True implies filters
+  // were applied and the variant passed those filters. False implies
+  // filters were applied the variant did not pass.
+  union { null, boolean } variantIsPassing = null;
+  // A list of filters applied.
+  array <string>          variantFilters = null;
+}
+
+record ADAMGenotype {
+  union { null, ADAMVariant }               variant;
+  union { null, VariantCallingAnnotations } variantCallingAnnotations = null;
+
+  // Sample-level data, i.e. data specific to this particular sample
+  union { null, string }  sampleId = null;
+  union { null, string }  sampleDescription = null;
+  union { null, string }  processingDescription = null;
+
+  // Length is equal to the ploidy
+  array <ADAMGenotypeAllele> alleles = null;
+
+  // How many reads consider this allele to be the reference
+  union { null, int }     referenceReadDepth = null;
+  // How many reads consider this allele to be the alternate
+  union { null, int }     alternateReadDepth = null;
+  // How many total reads at this position
+  union { null, int }     readDepth = null;
+  // The phred-scaled probability that we're correct for this genotype
+  // call.
+  union { null, int }     genotypeQuality = null;
+
+  // Phred-scaled. Always length 3 since we are not multiallelic.
+  array<int>              genotypeLikelihoods = null; 
+
+  // In the ADAM world we split multiallelic VCF lines into multiple
+  // single-alternate records.  This bit is set if that happened for this
+  // record.
+  boolean                 splitFromMultiAllelic = false;
+  // Whether this is a phased genotype
+  union { null, boolean } isPhased = null;
+  // And if so, what is the phase id
+  union { null, int }     phaseSetId = null;
+  // The quality of the phasing.  This isn't precisely defined in v4.2
+  // of the spec.
+  union { null, int }     phaseQuality = null;
+}
+
+record ADAMDatabaseVariantAnnotation {
+  union { null, ADAMVariant } variant;
+  union { null, int } dbsnpId = null;
+}
+
+
+}
