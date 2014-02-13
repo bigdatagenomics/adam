@@ -15,13 +15,14 @@
  */
 package edu.berkeley.cs.amplab.adam.converters
 
-import scala.collection.JavaConverters._
-import org.apache.spark.Logging
-import org.broadinstitute.variant.variantcontext.{Allele, Genotype, VariantContext}
 import edu.berkeley.cs.amplab.adam.avro._
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
-import org.broadinstitute.variant.vcf.VCFConstants
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import java.util
+import org.apache.spark.Logging
+import org.broadinstitute.variant.variantcontext.{Allele, Genotype, VariantContext}
+import org.broadinstitute.variant.vcf.VCFConstants
+import scala.collection.JavaConverters._
 
 /**
  * This class converts VCF data to and from ADAM. This translation occurs at the abstraction level
@@ -40,8 +41,9 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
   }
 
   implicit def gatkAllelesToADAMAlleles(gatkAlleles : util.List[Allele]) : util.List[ADAMGenotypeAllele] = {
-    gatkAlleles.asScala.map(convertAllele(_)).asJava
+    gatkAlleles.map(convertAllele(_))
   }
+
   /**
    * Converts a single GATK variant into ADAMVariantContext(s).
    *
