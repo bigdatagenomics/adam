@@ -28,7 +28,9 @@ object AdamMain extends Logging {
     PileupAggregator,
     ListDict,
     CompareAdam,
-    ComputeVariants,
+    /* TODO (nealsid): Reimplement in terms of new schema
+    ComputeVariants, 
+     */
     Bam2Adam,
     Adam2Vcf,
     Vcf2Adam,
