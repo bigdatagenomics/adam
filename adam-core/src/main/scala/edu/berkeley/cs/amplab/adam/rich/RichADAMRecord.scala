@@ -17,9 +17,11 @@ package edu.berkeley.cs.amplab.adam.rich
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
-import edu.berkeley.cs.amplab.adam.util.MdTag
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.util.MdTag
+import edu.berkeley.cs.amplab.adam.util._
+import scala.Some
+import scala.concurrent.JavaConversions._
+import edu.berkeley.cs.amplab.adam.models.Attribute
 
 object RichADAMRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
@@ -39,6 +41,9 @@ class RichADAMRecord(val record: ADAMRecord) {
 
   // Returns the quality scores as a list of bytes
   lazy val qualityScores: Array[Byte] = record.getQual.toString.toCharArray.map(q => (q - 33).toByte)
+
+  // Parse the tags ("key:type:value" triples)
+  lazy val tags: Seq[Attribute] = AttributeUtils.parseAttributes(record.getAttributes.toString)
 
   // Parses the readname to Illumina optics information
   lazy val illuminaOptics: Option[IlluminaOptics] = {

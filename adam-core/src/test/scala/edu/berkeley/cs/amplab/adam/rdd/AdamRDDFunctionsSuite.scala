@@ -482,4 +482,68 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(sequenceDict(0).name === "chr0")
   }
 
+  sparkTest("characterizeTags counts integer tag values correctly") {
+    val tagCounts : Map[String,Long] = Map("XT" -> 10L, "XU" -> 9L, "XV" -> 8L)
+    val readItr : Iterable[ADAMRecord] =
+      for( (tagName, tagCount) <- tagCounts ; i <- 0 until tagCount.toInt  )
+      yield ADAMRecord.newBuilder().setAttributes("%s:i:%d".format(tagName, i)).build()
+
+    val reads = sc.parallelize(readItr.toSeq)
+    val mapCounts : Map[String,Long] = Map(reads.adamCharacterizeTags().collect() : _*)
+
+    assert(mapCounts === tagCounts)
+  }
+
+  sparkTest("withTag returns only those records which have the appropriate tag") {
+    val r1 = ADAMRecord.newBuilder().setAttributes("XX:i:3").build()
+    val r2 = ADAMRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
+    val r3 = ADAMRecord.newBuilder().setAttributes("YY:i:20").build()
+
+    val rdd = sc.parallelize(Seq(r1, r2, r3))
+    assert(rdd.count() === 3)
+
+    val rddXX = rdd.adamFilterRecordsWithTag("XX")
+    assert(rddXX.count() === 2)
+
+    val collected = rddXX.collect()
+    assert(collected.contains(r1))
+    assert(collected.contains(r2))
+  }
+
+  sparkTest("withTag, when given a tag name that doesn't exist in the input, returns an empty RDD") {
+    val r1 = ADAMRecord.newBuilder().setAttributes("XX:i:3").build()
+    val r2 = ADAMRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
+    val r3 = ADAMRecord.newBuilder().setAttributes("YY:i:20").build()
+
+    val rdd = sc.parallelize(Seq(r1, r2, r3))
+    assert(rdd.count() === 3)
+
+    val rddXX = rdd.adamFilterRecordsWithTag("ZZ")
+    assert(rddXX.count() === 0)
+  }
+
+  sparkTest("characterizeTagValues counts distinct values of a tag") {
+    val r1 = ADAMRecord.newBuilder().setAttributes("XX:i:3").build()
+    val r2 = ADAMRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
+    val r3 = ADAMRecord.newBuilder().setAttributes("YY:i:20").build()
+    val r4 = ADAMRecord.newBuilder().setAttributes("XX:i:4").build()
+
+    val rdd = sc.parallelize(Seq(r1, r2, r3, r4))
+    val tagValues = rdd.adamCharacterizeTagValues("XX")
+
+    assert(tagValues.keys.size === 2)
+    assert(tagValues(4) === 2)
+    assert(tagValues(3) === 1)
+  }
+
+  sparkTest("characterizeTags counts tags in a SAM file correctly") {
+    val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
+    val sam : RDD[ADAMRecord] = sc.adamLoad(filePath)
+
+    val mapCounts : Map[String,Long] = Map(sam.adamCharacterizeTags().collect() : _*)
+    assert(mapCounts("NM") === 200)
+    assert(mapCounts("AS") === 200)
+    assert(mapCounts("XS") === 200)
+  }
+
 }

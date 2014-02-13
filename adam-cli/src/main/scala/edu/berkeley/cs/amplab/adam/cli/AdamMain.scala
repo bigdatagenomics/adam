@@ -21,6 +21,7 @@ import scala.Some
 object AdamMain extends Logging {
 
   private val commands = List(Transform,
+    PrintTags,
     FlagStat,
     Reads2Ref,
     MpileupCommand,

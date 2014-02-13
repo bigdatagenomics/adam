@@ -23,6 +23,10 @@ Trunk (not yet released)
 
   IMPROVEMENTS
 
+  * ISSUE 92: improved the representation of the types of 'optional' fields from the BAM, and their encoding
+    in the 'attributes' field of ADAMRecord.  This encoding now includes the type, and should no longer be 
+	lossy, therefore making it possible to write code to re-export a BAM from the ADAM file in the future.
+
   BUG FIXES
 
   * Fixed issues where VCF header was not being written correctly. This prevented variant calls from being
