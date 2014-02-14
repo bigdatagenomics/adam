@@ -15,23 +15,22 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import parquet.hadoop.metadata.CompressionCodecName
-import org.apache.hadoop.mapreduce.Job
-import parquet.hadoop.ParquetOutputFormat
-import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
-import parquet.hadoop.util.ContextUtil
-import org.apache.avro.specific.SpecificRecord
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMVariant, ADAMGenotype, ADAMVariantDomain}
-import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, SnpTable, ReferencePosition, ADAMRod}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
-import org.apache.spark.Logging
-import java.io.File
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMGenotypeAllele, ADAMPileup, ADAMRecord, ADAMVariant, ADAMVariantDomain}
+import edu.berkeley.cs.amplab.adam.converters.{GenotypesToVariantsConverter, VariantContextConverter}
+import edu.berkeley.cs.amplab.adam.models.{ADAMRod, ADAMVariantContext, ReferencePosition, SequenceDictionary, SequenceRecord, SingleReadBucket, SnpTable}
 import edu.berkeley.cs.amplab.adam.projections.{ADAMVariantAnnotations, ADAMVariantField}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
 import edu.berkeley.cs.amplab.adam.util.ParquetLogger
+import org.apache.avro.specific.SpecificRecord
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.Logging
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
+import org.broadinstitute.variant.variantcontext.{Allele, VariantContext}
+import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
+import parquet.hadoop.ParquetOutputFormat
+import parquet.hadoop.metadata.CompressionCodecName
+import parquet.hadoop.util.ContextUtil
 import java.util.logging.Level
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
@@ -342,6 +341,14 @@ class AdamGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable {
     groupedGenotypes.map(_._2.toList).foreach(validator.validateGenotypes)
 
     true
+  }
+
+  /**
+   *  Converts an RDD of GATK Variants to an RDD of ADAMVariantContext objects
+   */
+  def gatkVariantsToADAMVariants(gatkAlleles : RDD[VariantContext]) : RDD[ADAMVariantContext] = {
+    val vcc : VariantContextConverter = new VariantContextConverter
+    gatkAlleles.flatMap(vcc.convert(_))
   }
 
   /**
