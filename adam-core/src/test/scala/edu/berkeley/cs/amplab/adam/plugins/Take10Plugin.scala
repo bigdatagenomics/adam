@@ -22,7 +22,7 @@ import org.apache.spark.SparkContext
 
 class Take10Plugin extends AdamPlugin[ADAMRecord, ADAMRecord] with Serializable {
    override def projection: Option[Schema] = None
-   override def predicate: (ADAMRecord) => Boolean = _ => true
+   override def predicate: Option[(ADAMRecord) => Boolean] = None
 
    override def run(sc: SparkContext, recs: RDD[ADAMRecord]): RDD[ADAMRecord] = {
      sc.parallelize(recs.take(10))

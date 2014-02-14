@@ -19,9 +19,26 @@ import org.apache.avro.Schema
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 
+/**
+ * This is a plugin that can be run from the plugin main command
+ */
 trait AdamPlugin[Input, Output] {
+  /**
+   * The projection to push down into Parquet
+   * @return If all fields are required or the specific projection is not known, None
+   *         If a subset of fields on Input are required, an Avro schema with those fields
+   */
   def projection : Option[Schema]
+
+  /**
+   * The records that are applicable to this Plugin
+   * @return If there is no filter for this plugin, None
+   *         If a filter is applicable, a true response means record is included; a false means record is excluded
+   */
   def predicate : Option[Input => Boolean]
 
+  /**
+   * Method to create the transformations on the RDD.
+   */
   def run(sc: SparkContext, recs: RDD[Input]): RDD[Output]
 }

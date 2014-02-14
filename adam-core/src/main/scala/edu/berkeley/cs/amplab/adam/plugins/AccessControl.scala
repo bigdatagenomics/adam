@@ -15,6 +15,14 @@
  */
 package edu.berkeley.cs.amplab.adam.plugins
 
+/**
+ * This allows filtering based on an input type.
+ */
 trait AccessControl[Input] {
+  /**
+   * The predicate associated with the current AccessControl.
+   * @return If there is no filter for AccessControl, None
+   *         If a filter is provided, a true response means access is granted; a false means access is denied.
+   */
   def predicate: Option[Input => Boolean]
 }

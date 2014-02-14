@@ -30,7 +30,7 @@ Trunk (not yet released)
     advantage of locality for data that is already sorted. This was introduced in PR#36.
 
   * ISSUE 101: Adding ability to call plugins from the command line not defined in the main Adam jar and included
-    in the classpath.x
+    in the classpath.
 
   OPTIMIZATIONS
 

@@ -27,7 +27,7 @@ import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 
 object PluginExecutor extends AdamCommandCompanion {
-  val commandName: String = "plugin_executor"
+  val commandName: String = "plugin"
   val commandDescription: String = "Executes an AdamPlugin"
 
   def apply(cmdLine: Array[String]): AdamCommand = {
@@ -96,11 +96,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends AdamSparkCo
       case Some(filterFunc) => firstRdd.filter(filterFunc)
     }
 
-    println("# Input records: %d".format(input.count()))
-
     val results = plugin.run(sc, input)
-
-    println("# Output records: %d".format(results.count()))
 
     output(sc, results)
   }
