@@ -27,10 +27,10 @@
           your Hadoop version.
         -->
         <!-- if hadoop.version == 2.2.0 -->
-        <hadoop.version>2.2.0</hadoop.version>
-        <protobuf.version>2.5.0</protobuf.version>
-        <akka.version>2.0.5-protobuf-2.5-java-1.5</akka.version>
-        <akka.group>org.spark-project</akka.group>
+          <hadoop.version>2.2.0</hadoop.version>
+          <protobuf.version>2.5.0</protobuf.version>
+          <akka.version>2.0.5-protobuf-2.5-java-1.5</akka.version>
+          <akka.group>org.spark-project</akka.group>
         <!-- else if hadoop.version < 2.2.0: <hadoop.version>FIXME</hadoop.version>
           <protobuf.version>2.4.1</protobuf.version>
           <akka.version>2.0.5</akka.version>
