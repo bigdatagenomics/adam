@@ -18,6 +18,7 @@ package edu.berkeley.cs.amplab.adam.rich
 import org.scalatest.FunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import RichADAMRecord._
+import edu.berkeley.cs.amplab.adam.models.{TagType, Attribute}
 
 class RichADAMRecordSuite extends FunSuite {
 
@@ -72,6 +73,13 @@ class RichADAMRecordSuite extends FunSuite {
     assert( softClippedRead.referencePositions(0) == Some(90L))
 
 
+  }
+
+  test("tags contains optional fields") {
+    val rec = ADAMRecord.newBuilder().setAttributes("XX:i:3\tYY:Z:foo").build()
+    assert(rec.tags.size === 2)
+    assert(rec.tags(0) === Attribute("XX", TagType.Integer, 3))
+    assert(rec.tags(1) === Attribute("YY", TagType.String, "foo"))
   }
 
   test("Reference Positions") {
