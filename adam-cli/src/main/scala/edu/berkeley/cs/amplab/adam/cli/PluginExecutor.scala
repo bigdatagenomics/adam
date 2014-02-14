@@ -26,6 +26,15 @@ import parquet.filter.UnboundRecordFilter
 import org.apache.avro.specific.SpecificRecord
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 
+/**
+ * This set of classes executes a plugin along with the associated input location.
+ *
+ * Example usage:
+ *   adam plugin edu.berkeley.cs.amplab.adam.plugins.Take10Plugin reads12.sam
+ *
+ * The [[edu.berkeley.cs.amplab.adam.plugins.Take10Plugin]] is a simple example plugin. The
+ * [[edu.berkeley.cs.amplab.adam.plugins.AdamPlugin]] interface defines the class that will run using this command.
+ */
 object PluginExecutor extends AdamCommandCompanion {
   val commandName: String = "plugin"
   val commandDescription: String = "Executes an AdamPlugin"
@@ -39,7 +48,8 @@ class PluginExecutorArgs extends Args4jBase with SparkArgs with ParquetArgs {
   @Argument(required = true, metaVar = "PLUGIN", usage = "The AdamPlugin to run", index = 0)
   var plugin: String = null
 
-  @Argument(required = true, metaVar = "INPUT", usage = "The input locations", index = 1)
+  // Currently, this *must* be an ADAMRecord file, and it is only one.
+  @Argument(required = true, metaVar = "INPUT", usage = "The input location", index = 1)
   var input: String = null
 
   @Args4jOption(name = "-access_control", usage = "Class for access control")
@@ -78,6 +88,11 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends AdamSparkCo
     val accessControl = loadAccessControl[ADAMRecord](args.accessControl)
 
     // Create an optional combined filter so that pass-through is not penalized
+    //
+    // Eventually, these filters should be passed down through to the adamLoad instead of operating on the RDDs.
+    // This would prevent unnecessary loading from disk; for instance, if you are attempting to access multiple ADAM
+    // files, but only permissioned for one, you could save a lot of IO by only loading the ones you are permissioned to
+    // see. This is related to Issue #62: Predicate to filter conversion.
     val filter = accessControl.predicate match {
       case None => plugin.predicate match {
         case None => None

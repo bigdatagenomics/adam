@@ -34,15 +34,12 @@ class PluginExecutorSuite extends FunSuite {
 
     val pluginExecutor = new PluginExecutor(args)
 
-    val pipeIn = new PipedInputStream()
-    val ps = new PrintStream(new PipedOutputStream(pipeIn))
-    //scala.Console.withOut(ps)(() => pluginExecutor.run())
-    pluginExecutor.run()
-    ps.close()
+    val bytesWritten = new ByteArrayOutputStream()
+    scala.Console.withOut(bytesWritten)(pluginExecutor.run())
 
-    val reader = new BufferedReader(new InputStreamReader(pipeIn))
-    val outputString = reader.readLine()
-    //assert(outputString === "foo bar")
+    val outputString = bytesWritten.toString
 
+    // Make sure that 10 lines are output
+    assert(outputString.lines.size === 10)
   }
 }

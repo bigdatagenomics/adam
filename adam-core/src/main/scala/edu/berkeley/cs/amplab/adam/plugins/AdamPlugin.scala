@@ -20,7 +20,9 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 
 /**
- * This is a plugin that can be run from the plugin main command
+ * Defines the interface for a Plugin for the AdamSystem.
+ *
+ * A simple interface is available in [[edu.berkeley.cs.amplab.adam.plugins.Take10Plugin]]
  */
 trait AdamPlugin[Input, Output] {
   /**
