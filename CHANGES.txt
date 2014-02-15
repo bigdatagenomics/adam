@@ -29,6 +29,9 @@ Trunk (not yet released)
   * Added ADAMRod model and Reads2Rods transformation; this is a pileup generation function that better takes
     advantage of locality for data that is already sorted. This was introduced in PR#36.
 
+  * ISSUE 101: Adding ability to call plugins from the command line not defined in the main Adam jar and included
+    in the classpath.
+
   OPTIMIZATIONS
 
   * Transformed phred --> double calculation into a LUT, which improves performance. This change was introduced

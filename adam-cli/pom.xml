@@ -97,6 +97,12 @@
             <artifactId>adam-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>edu.berkeley.cs.amplab.adam</groupId>
+            <artifactId>adam-core</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
         </dependency>
