@@ -24,9 +24,9 @@ import edu.berkeley.cs.amplab.adam.util.Util
 trait Covariate {
   type Value
 
-  def compute(residue: Residue): Value
+  def compute(read: DecadentRead): Seq[Value]
 
-  def apply(residue: Residue): Value = compute(residue)
+  def apply(read: DecadentRead): Seq[Value] = compute(read)
 }
 
 abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
@@ -53,8 +53,16 @@ class CovariateKey(
 }
 
 class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
-  def apply(residue: Residue): CovariateKey =
-    new CovariateKey(residue.read.readGroup, residue.quality, extras.map(_.compute(residue)))
+  // Computes the covariate values for all residues in this read
+  def apply(read: DecadentRead): Seq[(CovariateKey, Residue)] = {
+    // Ask each 'extra' covariate to compute its values for this read
+    val extraVals = extras.map(cov => cov(read))
+    // Construct the CovariateKeys
+    read.sequence.zipWithIndex.map(Function.tupled((residue, residueIdx) => {
+      val residueExtras = extraVals.map(_(residueIdx))
+      (new CovariateKey(read.readGroup, residue.quality, residueExtras), residue)
+    }))
+  }
 
   override def equals(other: Any): Boolean = other match {
     case that: CovariateSpace => this.extras == that.extras

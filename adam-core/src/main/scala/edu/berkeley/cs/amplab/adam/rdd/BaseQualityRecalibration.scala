@@ -69,8 +69,11 @@ extends Serializable with Logging {
         !residue.isInsertion &&
         !knownSnps.isMasked(residue)
 
-    val residues = read.sequence.filter(shouldIncludeResidue)
-    residues.map(residue => (covariates(residue), Observation(residue.isSNP)))
+    // Compute keys and filter out skipped residues
+    val keys: Seq[(CovariateKey, Residue)] = covariates(read).filter(x => shouldIncludeResidue(x._2))
+
+    // Construct result
+    keys.map(Function.tupled((key, residue) => (key, Observation(residue.isSNP))))
   }
 }
 
