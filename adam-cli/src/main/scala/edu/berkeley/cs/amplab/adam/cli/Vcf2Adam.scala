@@ -16,15 +16,15 @@
 
 package edu.berkeley.cs.amplab.adam.cli
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.{Logging, SparkContext}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
-import org.kohsuke.args4j.Argument
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
+import org.kohsuke.args4j.Argument
 
 object Vcf2Adam extends AdamCommandCompanion {
-
   val commandName = "vcf2adam"
   val commandDescription = "Convert a VCF file to the corresponding ADAM format"
 
@@ -34,24 +34,22 @@ object Vcf2Adam extends AdamCommandCompanion {
 }
 
 class Vcf2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
-  @Argument(required = true, metaVar = "VCF", usage = "The VCF file to convert", index = 0)
+  @Argument(required = true, metaVar = "VCF", 
+    usage = "The VCF file to convert", index = 0)
   var vcfFile: String = _
-  @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM Variant data", index = 1)
+  @Argument(required = true, metaVar = "ADAM", 
+    usage = "Location to write ADAM Variant data", index = 1)
   var outputPath: String = null
 }
 
-class Vcf2Adam(val args: Vcf2AdamArgs) extends AdamSparkCommand[Vcf2AdamArgs] with Logging {
+class Vcf2Adam(val args: Vcf2AdamArgs) extends AdamSparkCommand[Vcf2AdamArgs] {
   val companion = Vcf2Adam
 
   def run(sc: SparkContext, job: Job) {
-
-    if (args.vcfFile.endsWith(".vcf") || args.vcfFile.endsWith(".bcf")) {
-      val adamVC: RDD[ADAMVariantContext] = sc.adamVariantContextLoad(args.vcfFile)
-
-      adamVC.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
-        compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
-    } else {
-      println("File does not end with *.vcf or *.bcf, so not converting.")
-    }
+    var adamVariants : RDD[ADAMVariantContext] = sc.adamVCFLoad(args.vcfFile)
+    adamVariants.flatMap(p => p.genotypes).adamSave(args.outputPath, 
+      blockSize = args.blockSize, pageSize = args.pageSize,
+      compressCodec = args.compressionCodec, 
+      disableDictionaryEncoding = args.disableDictionary)
   }
 }
