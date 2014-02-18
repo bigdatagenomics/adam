@@ -15,7 +15,9 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, 
+                                         ADAMRecord,
+                                         ADAMNucleotideContig}
 import edu.berkeley.cs.amplab.adam.converters.SAMRecordConverter
 import edu.berkeley.cs.amplab.adam.models._
 import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, 

@@ -21,7 +21,7 @@ import parquet.hadoop.ParquetOutputFormat
 import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
 import parquet.hadoop.util.ContextUtil
 import org.apache.avro.specific.SpecificRecord
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMNucleotideContig}
 import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, SnpTable, ReferencePosition, ADAMRod}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
@@ -306,4 +306,58 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
     // coverage is the total count of bases, over the total number of loci
     totalBases.toDouble / rdd.count.toDouble
   }
+}
+
+class AdamNucleotideContigRDDFunctions(rdd: RDD[ADAMNucleotideContig]) extends Serializable with Logging {
+  
+  /**
+   * Rewrites the contig IDs of a FASTA reference set to match the contig IDs present in a
+   * different sequence dictionary. Sequences are matched by name.
+   *
+   * @note Contigs with names that aren't present in the provided dictionary are filtered out of the RDD.
+   *
+   * @param sequenceDict A sequence dictionary containing the preferred IDs for the contigs.
+   * @return New set of contigs with IDs rewritten.
+   */
+  def adamRewriteContigIds (sequenceDict: SequenceDictionary): RDD[ADAMNucleotideContig] = {
+    // broadcast sequence dictionary
+    val bcastDict = rdd.context.broadcast(sequenceDict)
+
+    /**
+     * Remaps a single contig.
+     *
+     * @param contig Contig to remap.
+     * @param dictionary A sequence dictionary containing the IDs to use for remapping.
+     * @return An option containing the remapped contig if it's sequence name was found in the dictionary.
+     */
+    def remapContig (contig: ADAMNucleotideContig, dictionary: SequenceDictionary): Option[ADAMNucleotideContig] = {
+      val name: CharSequence = contig.getContigName
+      
+      if (dictionary.containsRefName(name)) {
+        val newId = dictionary(contig.getContigName).id
+        val newContig = ADAMNucleotideContig.newBuilder(contig)
+          .setContigId(newId)
+          .build()
+        
+        Some(newContig)
+      } else {
+        None
+      }
+    }
+
+    // remap all contigs
+    rdd.flatMap(c => remapContig(c, bcastDict.value))
+  }
+
+  /**
+   * From this set of contigs, returns a sequence dictionary.
+   *
+   * @see AdamRecordRDDFunctions#sequenceDictionary
+   * 
+   * @return Sequence dictionary representing this reference.
+   */
+  def adamGetSequenceDictionary(): SequenceDictionary =
+    rdd.distinct().aggregate(SequenceDictionary())(
+      (dict: SequenceDictionary, ctg: ADAMNucleotideContig) => dict ++ Seq(SequenceRecord.fromADAMContig(ctg)),
+      (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
 }
