@@ -75,7 +75,8 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 
 		private LineReader lineReader;
 		private InputStream inputStream;
-		private Text currentValue = new Text();
+		private Text currentValue;
+		private byte[] newline = "\n".getBytes();
 
 		// How long can a read get?
 		private static final int MAX_LINE_LENGTH = 10000;
@@ -117,9 +118,9 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 		{
 			Text buffer = new Text();
 
-			if (start > 0)
+			if (true) // (start > 0) // use start>0 to assume that files start with valid data
 			{
-				// Advance to the start of the first record
+				// Advance to the start of the first record that ends with /1
 				// We use a temporary LineReader to read lines until we find the
 				// position of the right one.  We then seek the file to that position.
 				stream.seek(start);
@@ -129,8 +130,16 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 				do
 			 	{
 					bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
-					if (bytesRead > 0 && (buffer.getLength() <= 0 || buffer.getBytes()[0] != '@'))
+					if (bytesRead > 0 && (
+							      buffer.getLength() <= 0 ||
+							      buffer.getBytes()[0] != '@' || 
+							      buffer.getBytes()[buffer.getLength()-2] != '/' ||
+							      buffer.getBytes()[buffer.getLength()-1] != '1'
+							      )
+					    )
+					{
 						start += bytesRead;
+					}
 					else
 					{
 						// line starts with @.  Read two more and verify that it starts with a +
@@ -154,8 +163,7 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 
 				stream.seek(start);
 			}
-			// else
-			//	if start == 0 we presume it starts with a valid fastq record
+
 			pos = start;
 		}
 
@@ -187,6 +195,8 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 		 */
 		public boolean nextKeyValue() throws IOException, InterruptedException
 		{
+			currentValue = new Text();
+
 			return next(currentValue);
 		}
 
@@ -201,9 +211,9 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 		/**
 		 * Create an object of the appropriate type to be used as a key.
 		 */
-		public Void createKey()
+		public Text createKey()
 		{
-			return null;
+			return new Text();
 		}
 
 		/**
@@ -239,7 +249,7 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 		{
 			// ID line
 			readName.clear();
-			long skipped = readLineInto(readName, true);
+			long skipped = appendLineInto(readName, true);
 			pos += skipped;
 			if (skipped == 0)
 				return false; // EOF
@@ -249,13 +259,13 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 			value.append(readName.getBytes(), 0, readName.getLength());
 
 			// sequence
-			readLineInto(value, false);
+			appendLineInto(value, false);
 
 			// separator line
-			readLineInto(value, false);
+			appendLineInto(value, false);
 
 			// quality
-			readLineInto(value, false);
+			appendLineInto(value, false);
 
 			return true;
 		}
@@ -281,13 +291,13 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 				if (!gotData)
 					return false;
 
+				
+
 				// second read of the pair
 				gotData = lowLevelFastqRead(readName2, value);
 
 				if (!gotData)
 					return false;
-
-				// TODO: make sure read one ends with /1, the other ends with /2
 
 				return true;
 			}
@@ -297,12 +307,18 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 		}
 
 
-		private int readLineInto(Text dest, boolean eofOk) throws EOFException, IOException
+		private int appendLineInto(Text dest, boolean eofOk) throws EOFException, IOException
 		{
-			int bytesRead = lineReader.readLine(dest, MAX_LINE_LENGTH);
+			Text buf = new Text();
+			int bytesRead = lineReader.readLine(buf, MAX_LINE_LENGTH);
+
 			if (bytesRead < 0 || (bytesRead == 0 && !eofOk))
 				throw new EOFException();
+
+			dest.append(buf.getBytes(), 0, buf.getLength());
+			dest.append(newline, 0, 1);
 			pos += bytesRead;
+
 			return bytesRead;
 		}
 	}
