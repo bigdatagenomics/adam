@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMNucleotideContig, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMNucleotideContigFragment, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.converters.FastaConverter
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import org.apache.hadoop.io.{LongWritable, Text}
@@ -43,6 +43,8 @@ class Fasta2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var verbose: Boolean = false
   @Args4jOption(required = false, name = "-reads", usage = "Maps contig IDs to match contig IDs of reads.")
   var reads: String = ""
+  @Args4jOption(required = false, name = "-fragment_length", usage = "Sets maximum fragment length. Default value is 10,000. Values greater than 1e9 should be avoided.")
+  var fragmentLength: Long = 10000L
 }
 
 class Fasta2Adam(protected val args: Fasta2AdamArgs) extends AdamSparkCommand[Fasta2AdamArgs] with Logging {
@@ -58,7 +60,7 @@ class Fasta2Adam(protected val args: Fasta2AdamArgs) extends AdamSparkCommand[Fa
     val remapData = fastaData.map(kv => (kv._1.get.toInt, kv._2.toString.toString))
 
     log.info("Converting FASTA to ADAM.")
-    val adamFasta = FastaConverter(remapData)
+    val adamFasta = FastaConverter(remapData, args.fragmentLength)
 
     if (args.verbose) {
       println("FASTA contains:")

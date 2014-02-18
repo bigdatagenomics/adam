@@ -88,7 +88,10 @@ Trunk (not yet released)
 
   * ISSUE 103: Added a call to clearProperty('spark.driver.port') in the cleanup from a sparkTest, so that 
     we correctly clean up the test Spark workers and avoid errors about attempting to bind to a port that's
-	already in use.
+    already in use.
+
+  * ISSUE 109: Added code that splits very large assemblies into fragments. This improves a performance
+    bottleneck when running on machines with finite memory. This fix was added in PR#160.
 
   BREAKING CHANGES
 

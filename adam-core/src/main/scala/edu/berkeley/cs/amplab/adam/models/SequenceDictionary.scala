@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMNucleotideContig, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMNucleotideContigFragment, ADAMContig}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary}
 import org.apache.avro.specific.SpecificRecord
@@ -422,8 +422,8 @@ object SequenceRecord {
    * @param ctg Contig to convert.
    * @return Contig expressed as a sequence record.
    */
-  def fromADAMContig (ctg: ADAMNucleotideContig): SequenceRecord = {
-    apply(ctg.getContigId, ctg.getContigName, ctg.getSequenceLength, ctg.getUrl)
+  def fromADAMContigFragment (ctg: ADAMNucleotideContigFragment): SequenceRecord = {
+    apply(ctg.getContigId, ctg.getContigName, ctg.getContigLength, ctg.getUrl)
   }
 
   /*
