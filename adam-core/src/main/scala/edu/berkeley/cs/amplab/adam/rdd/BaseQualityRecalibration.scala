@@ -63,7 +63,6 @@ extends Serializable with Logging {
 
   // Compute observation table for a single read
   private def observe(read: DecadentRead): Seq[(CovariateKey, Observation)] = {
-    // FIXME: should insertions be skipped or not?
     def shouldIncludeResidue(residue: Residue) =
       residue.quality >= minAcceptableQuality &&
         !residue.isInsertion &&
@@ -73,7 +72,7 @@ extends Serializable with Logging {
     val keys: Seq[(CovariateKey, Residue)] = covariates(read).filter(x => shouldIncludeResidue(x._2))
 
     // Construct result
-    keys.map(Function.tupled((key, residue) => (key, Observation(residue.isSNP))))
+    keys.map{ case (key, residue) => (key, Observation(residue.isSNP)) }
   }
 }
 

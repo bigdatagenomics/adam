@@ -17,22 +17,14 @@
 package edu.berkeley.cs.amplab.adam.util
 
 class QualityScore(val value: Int) extends Ordered[QualityScore] with Serializable {
-  require(value >= 0 && value < 256)
+  // Valid range of value + 33 is described by the regex "[!-~]".
+  require(value + 33 >= '!'.toInt && value + 33 <= '~'.toInt)
 
   def successProbability = PhredUtils.phredToSuccessProbability(value)
 
   def errorProbability = PhredUtils.phredToErrorProbability(value)
 
-  def logSuccessProb = math.log(successProbability)
-
-  def logErrorProb = math.log(errorProbability)
-
-  def toChar: Char = {
-    val result: Int = value + 33
-    // valid range of result is described by regex "[!-~]"
-    assert(result >= '!'.toInt && result <= '~'.toInt)
-    result.toChar
-  }
+  def toChar: Char = (value + 33).toChar
 
   override def compare(that: QualityScore) = this.value compare that.value
 

@@ -33,11 +33,11 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   def empiricalQuality: QualityScore = bayesianQualityEstimate
 
   // Estimates the probability of a mismatch under a Bayesian model with Binomial likelihood
-  // and Beta(α, β) prior. When α = β = 1, this is also known as "Laplace's rule of succession".
+  // and Beta(a, b) prior. When a = b = 1, this is also known as "Laplace's rule of succession".
   // TODO: Beta(1, 1) is the safest choice, but maybe Beta(1/2, 1/2) is more accurate?
   def bayesianQualityEstimate: QualityScore = bayesianQualityEstimate(1, 1)
-  def bayesianQualityEstimate(α: Double, β: Double): QualityScore =
-    QualityScore.fromErrorProbability((α + mismatches) / (α + β + total))
+  def bayesianQualityEstimate(a: Double, b: Double): QualityScore =
+    QualityScore.fromErrorProbability((a + mismatches) / (a + b + total))
 
   // GATK 1.6 uses the following, which they describe as "Yates's correction". However,
   // it doesn't match the Wikipedia entry which describes a different formula used

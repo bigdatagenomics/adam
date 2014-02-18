@@ -23,12 +23,12 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util.QualityScore
+import math.log
 
 class Recalibrator(val table: RecalibrationTable)
   extends (DecadentRead => ADAMRecord) with Serializable {
 
   def apply(read: DecadentRead): ADAMRecord = {
-    // TODO: recalibrate
     val record: ADAMRecord = read.record
     ADAMRecord.newBuilder(record).
       setQual(computeQual(read)).
@@ -60,28 +60,35 @@ class RecalibrationTable(
   // Compute updated QualityScore for this Residue
   def apply(residue: Residue): QualityScore = {
     val readGroup = residue.read.readGroup
-    val residueLogP = residue.quality.logErrorProb
+    val residueLogP = log(residue.quality.errorProbability)
     val globalDelta = computeGlobalDelta(readGroup)
-    val qualityDelta = qualityMarginal(readGroup, residue.quality).map(_ - residueLogP - globalDelta).getOrElse(0.0)
-    val covariatesDelta = 0 // TODO: handle extra covariates
-    val correctedLogP = residueLogP + globalDelta + qualityDelta + covariatesDelta
+    val qualityDelta = computeQualityDelta(readGroup, residue.quality, residueLogP + globalDelta)
+    val extrasDelta = 0 // TODO: handle extra covariates
+    val correctedLogP = residueLogP + globalDelta + qualityDelta + extrasDelta
     QualityScore.fromErrorProbability(math.exp(correctedLogP))
   }
 
   def computeGlobalDelta(readGroup: String): Double = {
-    val bucket = globalTable(readGroup)
-    bucket.empiricalQuality.logErrorProb - bucket.reportedQuality.logErrorProb
+    globalTable.get(readGroup).
+      map(bucket => log(bucket.empiricalQuality.errorProbability) - log(bucket.reportedQuality.errorProbability)).
+      getOrElse(0.0)
   }
 
-  def qualityMarginal(readGroup: String, quality: QualityScore): Option[Double] =
-    qualityTable.get((readGroup, quality)).map(_.empiricalQuality.logErrorProb)
+  def computeQualityDelta(readGroup: String, quality: QualityScore, offset: Double): Double = {
+    qualityTable.get((readGroup, quality)).
+      map(aggregate => log(aggregate.empiricalQuality.errorProbability)).
+      map(_ - offset).
+      getOrElse(0.0)
+  }
 }
 
 object RecalibrationTable {
   def apply(observed: ObservationTable): RecalibrationTable = {
     // The ".map(identity)" calls are needed to force the result to be serializable.
     // See https://issues.scala-lang.org/browse/SI-7005
-    def aggregateExtra(idx: Int) = observed.aggregate((k, v) => (k.readGroup, k.quality, k.extras(idx))).map(identity)
+    def aggregateExtra(idx: Int) = observed.
+      aggregate((k, v) => (k.readGroup, k.quality, k.extras(idx))).
+      map(identity)
     val globalTables = observed.aggregate((k, v) => k.readGroup).map(identity)
     val qualityTables = observed.aggregate((k, v) => (k.readGroup, k.quality)).map(identity)
     val extrasTables = Range(0, observed.space.extras.length).map(aggregateExtra)

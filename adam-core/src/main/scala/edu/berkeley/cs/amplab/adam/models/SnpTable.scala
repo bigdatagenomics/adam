@@ -15,9 +15,15 @@ import java.io.File
 class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable with Logging {
   log.info("SNP table has %s contigs and %s entries".format(table.size, table.values.map(_.size).sum))
 
+  /**
+   * Is there a known SNP at the reference location of this Residue?
+   */
   def isMasked(residue: Residue): Boolean =
     isMasked(residue.referenceLocation)
 
+  /**
+   * Is there a known SNP at the given reference location?
+   */
   def isMasked(location: ReferenceLocation): Boolean = {
     val bucket = table.get(location.contig)
     if(bucket.isEmpty) unknownContigWarning(location.contig)
@@ -27,6 +33,9 @@ class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable w
   private val unknownContigs = new mutable.HashSet[String]
 
   private def unknownContigWarning(contig: String) = {
+    // This is synchronized to avoid a data race. Multiple threads may
+    // race to update `unknownContigs`, e.g. when running with a Spark
+    // master of `local[N]`.
     synchronized {
       if(!unknownContigs.contains(contig)) {
         unknownContigs += contig
