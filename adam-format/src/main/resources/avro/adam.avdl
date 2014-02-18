@@ -65,6 +65,8 @@ record ADAMRecord {
 
     union { null, long } mateReferenceLength = null;
     union { null, string } mateReferenceUrl = null;
+
+    union { null, string } origQual = null;
 }
 
 enum Base {

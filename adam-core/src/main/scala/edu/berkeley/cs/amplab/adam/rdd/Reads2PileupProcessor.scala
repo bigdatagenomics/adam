@@ -77,7 +77,7 @@ private[rdd] class Reads2PileupProcessor extends Serializable with Logging {
         .setRecordGroupPlatform(record.getRecordGroupPlatform)
         .setRecordGroupPlatformUnit(record.getRecordGroupPlatformUnit)
         .setRecordGroupSample(record.getRecordGroupSample)
-        .setSangerQuality(record.qualityScores(readPos).toInt)
+        .setSangerQuality(record.qualityScores(readPos))
         .setNumReverseStrand(reverseStrandCount)
         .setNumSoftClipped(0)
         .setReadName(record.getReadName)

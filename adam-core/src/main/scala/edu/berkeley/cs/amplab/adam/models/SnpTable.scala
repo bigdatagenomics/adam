@@ -1,7 +1,10 @@
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rich.DecadentRead
+import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
+import edu.berkeley.cs.amplab.adam.rich.ReferenceLocation
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
@@ -12,13 +15,23 @@ import java.io.File
 class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable with Logging {
   log.info("SNP table has %s contigs and %s entries".format(table.size, table.values.map(_.size).sum))
 
-  def isMaskedAtReadOffset(read: ADAMRecord, offset: Int): Boolean = {
-    val position = read.readOffsetToReferencePosition(offset)
-    try {
-      position.isEmpty || table(read.getReferenceName.toString).contains(position.get)
-    } catch {
-      case e: java.util.NoSuchElementException =>
-        false
+  def isMasked(residue: Residue): Boolean =
+    isMasked(residue.referenceLocation)
+
+  def isMasked(location: ReferenceLocation): Boolean = {
+    val bucket = table.get(location.contig)
+    if(bucket.isEmpty) unknownContigWarning(location.contig)
+    bucket.map(_.contains(location.offset)).getOrElse(false)
+  }
+
+  private val unknownContigs = new mutable.HashSet[String]
+
+  private def unknownContigWarning(contig: String) = {
+    synchronized {
+      if(!unknownContigs.contains(contig)) {
+        unknownContigs += contig
+        log.warn("Contig has no entries in known SNPs table: %s".format(contig))
+      }
     }
   }
 }
@@ -28,10 +41,10 @@ object SnpTable {
     new SnpTable(Map[String, Set[Long]]())
   }
 
-  // `dbSNP` is expected to be a sites-only VCF
-  def apply(dbSNP: File): SnpTable = {
+  // `knownSnpsFile` is expected to be a sites-only VCF
+  def apply(knownSnpsFile: File): SnpTable = {
     // parse into tuples of (contig, position)
-    val lines = scala.io.Source.fromFile(dbSNP).getLines()
+    val lines = scala.io.Source.fromFile(knownSnpsFile).getLines()
     val tuples = lines.filter(line => !line.startsWith("#")).map(line => {
       val split = line.split("\t")
       val contig = split(0)

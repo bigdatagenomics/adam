@@ -101,9 +101,8 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
     MarkDuplicates(rdd)
   }
 
-  def adamBQSR(dbSNP: SnpTable): RDD[ADAMRecord] = {
-    val broadcastDbSNP = rdd.context.broadcast(dbSNP)
-    RecalibrateBaseQualities(rdd, broadcastDbSNP)
+  def adamBQSR(knownSnps: SnpTable): RDD[ADAMRecord] = {
+    BaseQualityRecalibration(rdd, knownSnps)
   }
 
   def adamRealignIndels(): RDD[ADAMRecord] = {

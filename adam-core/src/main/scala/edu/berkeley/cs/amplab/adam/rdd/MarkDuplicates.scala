@@ -35,7 +35,7 @@ private[rdd] object MarkDuplicates extends Serializable {
 
   // Calculates the sum of the phred scores that are greater than or equal to 15
   def score(record: ADAMRecord): Int = {
-    record.qualityScores.map(p => p.toInt).filter(15 <=).sum
+    record.qualityScores.filter(15 <=).sum
   }
 
   def scoreAndMarkReads(buckets: Seq[SingleReadBucket]): Seq[SingleReadBucket] = {
