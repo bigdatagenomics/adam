@@ -15,23 +15,21 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMGenotypeAllele, ADAMPileup, ADAMRecord, ADAMVariant, ADAMVariantDomain}
-import edu.berkeley.cs.amplab.adam.converters.{GenotypesToVariantsConverter, VariantContextConverter}
-import edu.berkeley.cs.amplab.adam.models.{ADAMRod, ADAMVariantContext, ReferencePosition, SequenceDictionary, SequenceRecord, SingleReadBucket, SnpTable}
-import edu.berkeley.cs.amplab.adam.projections.{ADAMVariantAnnotations, ADAMVariantField}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.util.ParquetLogger
-import org.apache.avro.specific.SpecificRecord
-import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.Logging
-import org.apache.spark.SparkContext._
-import org.apache.spark.rdd.RDD
-import org.broadinstitute.variant.variantcontext.{Allele, VariantContext}
-import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
-import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
+import org.apache.hadoop.mapreduce.Job
+import parquet.hadoop.ParquetOutputFormat
+import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
 import parquet.hadoop.util.ContextUtil
+import org.apache.avro.specific.SpecificRecord
+import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, SnpTable, ReferencePosition, ADAMRod}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.SparkContext._
+import org.apache.spark.Logging
+import java.io.File
+import edu.berkeley.cs.amplab.adam.util.ParquetLogger
 import java.util.logging.Level
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -107,10 +105,6 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
     RecalibrateBaseQualities(rdd, broadcastDbSNP)
   }
 
-  def adamRealignIndels(): RDD[ADAMRecord] = {
-    RealignIndels(rdd)
-  }
-
   // Returns a tuple of (failedQualityMetrics, passedQualityMetrics)
   def adamFlagStat(): (FlagStatMetrics, FlagStatMetrics) = {
     FlagStat(rdd)
@@ -151,15 +145,14 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
      * @param r Read to map.
      * @return List containing one or two mapping key/value pairs.
      */
-    def mapToBucket (r: ADAMRecord): List[(ReferencePosition, ADAMRecord)] = {
+    def mapToBucket (r: ADAMRecord): List[(Long, ADAMRecord)] = {
       val s = r.getStart / bucketSize
       val e = r.end.get / bucketSize
-      val id = r.getReferenceId
 
       if (s == e) {
-        List((new ReferencePosition(id, s), r))
+        List((s, r))
       } else {
-        List((new ReferencePosition(id, s), r), (new ReferencePosition(id, e), r))
+        List((s, r), (e, r))
       }
     }
 
@@ -179,11 +172,11 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
      * @param bucket Tuple of (bucket number, reads in bucket).
      * @return A sequence containing the rods in this bucket.
      */
-    def bucketedReadsToRods (bucket: (ReferencePosition, Seq[ADAMRecord])): Seq[ADAMRod] = {
-      val (bucketStart, bucketReads) = bucket
+    def bucketedReadsToRods (bucket: (Long, Seq[ADAMRecord])): Seq[ADAMRod] = {
+      val (bucketNumber, bucketReads) = bucket
 
       bucketReads.flatMap(pp.readToPileups)
-        .groupBy(ReferencePosition(_))
+        .groupBy(_.getPosition)
         .toList
         .map(g => ADAMRod(g._1, g._2.toList)).toSeq
     }
@@ -215,7 +208,7 @@ class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Log
    * @return RDD with rods grouped by reference position.
    */
   def adamPileupsToRods(coverage: Int = 30): RDD[ADAMRod] = {
-    val groups = rdd.groupBy((p: ADAMPileup) => ReferencePosition(p), coverage)
+    val groups = rdd.groupBy((p: ADAMPileup) => p.getPosition, coverage)
 
     groups.map(kv => ADAMRod(kv._1, kv._2.toList))
   }
@@ -241,7 +234,7 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
    *
    * @return Rods split up by samples and grouped together by position.
    */
-  def adamDivideRodsBySamples(): RDD[(ReferencePosition, List[ADAMRod])] = {
+  def adamDivideRodsBySamples(): RDD[(Long, List[ADAMRod])] = {
     rdd.keyBy(_.position).map(r => (r._1, r._2.splitBySamples))
   }
 
@@ -274,109 +267,5 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
 
     // coverage is the total count of bases, over the total number of loci
     totalBases.toDouble / rdd.count.toDouble
-  }
-}
-
-class AdamVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Serializable {
-
-  /**
-   * Save function for variant contexts. Disaggregates internal fields of variant context
-   * and saves to Parquet files.
-   *
-   * @param filePath Master file path for parquet files.
-   * @param blockSize Parquet block size.
-   * @param pageSize Parquet page size.
-   * @param compressCodec Parquet compression codec.
-   * @param disableDictionaryEncoding If true, disables dictionary encoding in Parquet.
-   * @return Returns the initial RDD.
-   */
-  def adamSave(filePath: String, blockSize: Int = 128 * 1024 * 1024,
-               pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
-               disableDictionaryEncoding: Boolean = false): RDD[ADAMVariantContext] = {
-
-    // Add the Void Key
-    val variantToSave: RDD[ADAMVariant] = rdd.flatMap(p => p.variants)
-    val genotypeToSave: RDD[ADAMGenotype] = rdd.flatMap(p => p.genotypes)
-    val domainsToSave: RDD[ADAMVariantDomain] = rdd.flatMap(p => p.domains)
-
-    // save records
-    variantToSave.adamSave(filePath + ".v",
-      blockSize,
-      pageSize,
-      compressCodec,
-      disableDictionaryEncoding)
-    genotypeToSave.adamSave(filePath + ".g",
-      blockSize,
-      pageSize,
-      compressCodec,
-      disableDictionaryEncoding)
-
-    // check if we have domains to save or not
-    if (domainsToSave.count() != 0) {
-      val fileExtension = ADAMVariantAnnotations.fileExtensions(ADAMVariantAnnotations.ADAMVariantDomain)
-
-      domainsToSave.adamSave(filePath + fileExtension,
-        blockSize,
-        pageSize,
-        compressCodec,
-        disableDictionaryEncoding)
-    }
-
-    rdd
-  }
-
-}
-
-class AdamGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable {
-
-  /**
-   * Validates that an RDD of genotypes is correctly formed.
-   *
-   * @return True if RDD is correctly formed.
-   * @throws IllegalArgumentException Throws exception if RDD is not correctly formed.
-   */
-  def adamValidateGenotypes(): Boolean = {
-    val validator = new GenotypesToVariantsConverter(true, true)
-    val groupedGenotypes = rdd.groupBy(g => (g.getPosition, g.getSampleId))
-    groupedGenotypes.map(_._2.toList).foreach(validator.validateGenotypes)
-
-    true
-  }
-
-  /**
-   *  Converts an RDD of GATK Variants to an RDD of ADAMVariantContext objects
-   */
-  def gatkVariantsToADAMVariants(gatkAlleles : RDD[VariantContext]) : RDD[ADAMVariantContext] = {
-    val vcc : VariantContextConverter = new VariantContextConverter
-    gatkAlleles.flatMap(vcc.convert(_))
-  }
-
-  /**
-   * Calculates Variants from an RDD of genotypes. This allows for on-the-fly creation of variant
-   * data from a subset of a population. This function also allows an RDD of variant data to be provided.
-   * Data can be taken from this RDD by adding to the projection set.
-   *
-   * @param variants Optional RDD of variant data to supplement genotype info.
-   * @param variantProjection The set of fields to copy from the variant data, if this is provided.
-   * @param performValidation Whether to validate that the genotype data is well formed.
-   * @param failOnValidationError If validation is performed and failOnValidationError is true, an exception will
-   *                              be thrown if an error is encountered.
-   * @return An RDD containing variant data.
-   *
-   * @throws IllegalArgumentException Throws an exception if performValidation and failOnValidationError are true
-   *                                  and the RDD of genotypes has bad data.
-   */
-  def adamConvertGenotypes(variants: Option[RDD[ADAMVariant]] = None,
-                           variantProjection: Set[ADAMVariantField.Value] = Set[ADAMVariantField.Value](),
-                           performValidation: Boolean = false,
-                           failOnValidationError: Boolean = false): RDD[ADAMVariant] = {
-    val computer = new GenotypesToVariantsConverter(performValidation, failOnValidationError)
-    val groupedGenotypes = rdd.groupBy(g => g.getPosition)
-    val groupedGenotypesWithVariants: RDD[(java.lang.Long, (Seq[ADAMGenotype], Option[Seq[ADAMVariant]]))] = variants match {
-      case Some(o) => groupedGenotypes.leftOuterJoin(o.asInstanceOf[RDD[ADAMVariant]].groupBy(_.getPosition))
-      case None => groupedGenotypes.map(kv => (kv._1, (kv._2, None.asInstanceOf[Option[Seq[ADAMVariant]]])))
-    }
-
-    groupedGenotypesWithVariants.map(_._2).flatMap(vg => computer.convert(vg._1, vg._2, variantProjection))
   }
 }
