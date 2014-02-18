@@ -16,7 +16,7 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import org.scalatest.FunSuite
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup, ADAMVariant, ADAMGenotype}
 
 class ReferencePositionSuite extends FunSuite {
 
@@ -57,5 +57,29 @@ class ReferencePositionSuite extends FunSuite {
     
     assert(refPos.refId === 2)
     assert(refPos.pos === 2L)
+  }
+
+  test("create reference position from variant") {
+    val variant = ADAMVariant.newBuilder()
+      .setPosition(10L)
+      .setReferenceId(10)
+      .build()
+
+    val refPos = ReferencePosition(variant)
+    
+    assert(refPos.refId === 10)
+    assert(refPos.pos === 10L)
+  }
+
+  test("create reference position from genotype") {
+    val genotype = ADAMGenotype.newBuilder()
+      .setPosition(100L)
+      .setReferenceId(100)
+      .build()
+
+    val refPos = ReferencePosition(genotype)
+    
+    assert(refPos.refId === 100)
+    assert(refPos.pos === 100L)
   }
 }

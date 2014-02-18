@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
    * @return ADAM variant contexts
    */
   def convert(vc: VariantContext): Seq[ADAMVariantContext] = {
-
     val contig: ADAMContig = ADAMContig.newBuilder()
       .setContigName(vc.getChr).build
 
@@ -94,5 +93,4 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
 
     Seq(ADAMVariantContext(variant, genotypes = genotypes))
   }
-
 }

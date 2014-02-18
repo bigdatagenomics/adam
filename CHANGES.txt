@@ -12,9 +12,70 @@ Trunk (not yet released)
     pipelines based on their read-by-read concordance across a number of fields: position, alignment,
     mapping and base quality scores, and can be extended to support new metrics or aggregations.
 
+  * Added FASTA import, and RDD convenience functions for remapping contig IDs. This allows for reference
+    sequences to be imported into an efficient record where bases are stored as a list of enums. Additionally,
+    convenience values are calculated. This feature was introduced in PR #79 and is a breaking change.
+
+  * Added helper functions for properly generating VCF headers for VCF export. This streamlines the process
+    of converting ADAM Variant Calls to the legacy VCF format. This was added in PR#85.
+
+  * Added functions to the ADAMVariantContext which allows a Variant context to be built directly from genotypes.
+    Previously, this operation could only be done at the RDD level. This was introduced in PR#88.
+
+  * Added API functions and CLI tools for merging multiple ADAM files. This code performs a smart merge and
+    ensures that there are no collisions between reference IDs or read group IDs. These features were added
+    in PR#73.
+
+  * Added ADAMRod model and Reads2Rods transformation; this is a pileup generation function that better takes
+    advantage of locality for data that is already sorted. This was introduced in PR#36.
+
+  * ISSUE 101: Adding ability to call plugins from the command line not defined in the main Adam jar and included
+    in the classpath.
+
   OPTIMIZATIONS
+
+  * Transformed phred --> double calculation into a LUT, which improves performance. This change was introduced
+    into the API in PR#65 and was a breaking change. This change was then propegated into BQSR by PR#71.
 
   IMPROVEMENTS
 
+  * ISSUE 92: improved the representation of the types of 'optional' fields from the BAM, and their encoding
+    in the 'attributes' field of ADAMRecord.  This encoding now includes the type, and should no longer be 
+    lossy, therefore making it possible to write code to re-export a BAM from the ADAM file in the future.
+
+  * Added code to reference region model that allowed for the creation of regions from individual reads, and
+    that allowed for adjacent non-overlapping regions to merge together. This was added in PR#73.
+
+  * Added code to the projection package which allows for the creation of an inverse projection from a given
+    projection. This was added in PR#61.
+
+  * CLI option printout width was increased to 150 characters to improve display on large monitors. This was
+    added by PR#91.
+
+  * Various build improvements were added by PR#68 and PR#66.
+
   BUG FIXES
 
+  * Fixed issues where VCF header was not being written correctly. This prevented variant calls from being
+    written after conversion. This was fixed in PR#85.
+
+  * Fixed a possible issue where pileup generation may have been ignoring reference ID when grouping pileups
+    into rods. This was in PR#86. This necessitated changing the ADAMRod model which was introduced in PR#36;
+    however, this is not an API breaking change as ADAMRod did not show up in a previous release.
+
+  * Fixed code which performed Hadoop 1 incompatible HDFS access. This was fixed in PR#76.
+
+  * Added Y as a valid base inside of the MdTag utility. The omission of this base caused BAM file import to
+    fail for some datasets. This was addressed in PR#56. This change was propegated more widely across the
+    API by PR#48.
+
+  * ISSUE 103: Added a call to clearProperty('spark.driver.port') in the cleanup from a sparkTest, so that 
+    we correctly clean up the test Spark workers and avoid errors about attempting to bind to a port that's
+	already in use.
+
+  BREAKING CHANGES
+
+  * ADAMFasta was changed to ADAMNucleotideContig, and internal field types and names were changed in PR #79.
+
+  * When optimizing phred --> double calculation, several public methods in the PhredUtils were renamed to clarify
+    their operations.

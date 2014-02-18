@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Genome Bridge LLC
+ * Copyright 2013-2014. Genome Bridge LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,14 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import scala.collection.JavaConversions._
-import scala.math.Ordering.Implicits._
-
-import scala.collection._
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMNucleotideContig}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord}
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary}
 import org.apache.avro.specific.SpecificRecord
+import org.broadinstitute.variant.vcf.{VCFHeader, VCFContigHeaderLine}
+import scala.collection._
+import scala.math.Ordering.Implicits._
 
 /**
  * SequenceDictionary contains the (bijective) map between Ints (the referenceId) and Strings (the referenceName)
@@ -68,9 +69,27 @@ class SequenceDictionary(recordsIn: Iterable[SequenceRecord]) extends Serializab
 
   def apply(id: Int): SequenceRecord = recordIndices(id)
 
-  def apply(name: CharSequence): SequenceRecord = recordNames(name)
+  /**
+   * Returns the sequence record associated with a specific contig name.
+   *
+   * @param name Name to search for.
+   * @return SequenceRecord associated with this record.
+   */
+  def apply(name: CharSequence): SequenceRecord = {
+    // must explicitly call toString - see note at recordNames creation RE: Avro & Utf8
+    recordNames(name.toString)
+  }
 
-  def containsRefName(name : CharSequence) : Boolean = recordNames.contains(name)
+  /**
+   * Returns true if this sequence dictionary contains a reference with a specific name.
+   *
+   * @param name Reference name to look for.
+   * @return True if reference is in this dictionary.
+   */
+  def containsRefName(name : CharSequence) : Boolean = {
+    // must explicitly call toString - see note at recordNames creation RE: Avro & Utf8
+    recordNames.contains(name.toString)
+  }
 
   /**
    * Produces a Map of Int -> Int which maps the referenceIds from this SequenceDictionary
@@ -238,20 +257,85 @@ class SequenceDictionary(recordsIn: Iterable[SequenceRecord]) extends Serializab
   override def hashCode(): Int = _hashCode
 
   override def toString: String = idNamePairs.toString()
+
+  /**
+   * Converts this ADAM style sequence dictionary into a SAM style sequence dictionary.
+   *
+   * @return Returns a SAM formatted sequence dictionary.
+   */
+  def toSAMSequenceDictionary(): SAMSequenceDictionary = {
+    new SAMSequenceDictionary(recordsIn.map(_.toSAMSequenceRecord).toList)
+  }
+
+  /**
+   * Returns the reference names stored in this dictionary.
+   *
+   * @return Returns the reference names in this dictionary.
+   */
+  def getReferenceNames (): Iterable[String] = {
+    recordsIn.map(_.name.toString)
+  }
 }
 
 object SequenceDictionary {
 
   def apply(recordsIn: SequenceRecord*) = new SequenceDictionary(recordsIn)
 
+  /**
+   * Extracts a SAM sequence dictionary from a SAM file header and returns an
+   * ADAM sequence dictionary.
+   *
+   * @see fromSAMSequenceDictionary
+   *
+   * @param header SAM file header.
+   * @return Returns an ADAM style sequence dictionary.
+   */
   def fromSAMHeader(header: SAMFileHeader): SequenceDictionary = {
     val samDict = header.getSequenceDictionary
+
+    fromSAMSequenceDictionary(samDict)
+  }
+
+  /**
+   * Extracts a SAM sequence dictionary from a VCF header and returns an
+   * ADAM sequence dictionary.
+   *
+   * @see fromSAMSequenceDictionary
+   *
+   * @param header SAM file header.
+   * @return Returns an ADAM style sequence dictionary.
+   */
+  def fromVCFHeader(header: VCFHeader): SequenceDictionary = {
+    val contigLines: List[VCFContigHeaderLine] = header.getContigLines()
+
+    // map over contig lines, 
+    apply(contigLines.map(l => {
+      val name = l.getID()
+      val index = l.getContigIndex()
+
+      // TODO: this is clearly not correct. however, the picard version we are currently using does _not_ have a way
+      // to report contig length from a vcf. we can't fix this without an update being made to hadoop-bam first, so
+      // i've flagged the hadoop-bam team to let them know -- FAN, 2/5/2014
+      val length = 1
+
+      SequenceRecord(index, name, length.toLong, null)
+    }): _*)
+  }
+
+  /**
+   * Converts a picard/samtools SAMSequenceDictionary into an ADAM sequence dictionary.
+   *
+   * @see fromSAMHeader
+   * @see fromVCFHeader
+   * 
+   * @param samDict SAM style sequence dictionary.
+   * @return Returns an ADAM style sequence dictionary.
+   */
+  def fromSAMSequenceDictionary(samDict: SAMSequenceDictionary): SequenceDictionary = {
+    val samDictRecords: List[SAMSequenceRecord] = samDict.getSequences
     val seqDict: SequenceDictionary =
-      SequenceDictionary(
-        samDict.getSequences.map {
-          seqRecord: SAMSequenceRecord =>
-            SequenceRecord(seqRecord.getSequenceIndex, seqRecord.getSequenceName,
-              seqRecord.getSequenceLength, null)
+      SequenceDictionary(samDictRecords.map {
+          seqRecord: SAMSequenceRecord => SequenceRecord.fromSamSequenceRecord(seqRecord)
         }: _*)
 
     seqDict
@@ -297,12 +381,50 @@ class SequenceRecord(val id: Int, val name: CharSequence, val length: Long, val 
   override def hashCode: Int = ((id + name.hashCode) * 37 + length.hashCode) * 37
 
   override def toString: String = "%s->%s=%d".format(id, name, length)
+
+  /**
+   * Converts this sequence record into a SAM sequence record.
+   *
+   * @return A SAM formatted sequence record.
+   */
+  def toSAMSequenceRecord (): SAMSequenceRecord = {
+    val rec = new SAMSequenceRecord(name.toString, length.toInt)
+
+    // NOTE: we should set the sam sequence record's id here, but, that is private inside of samtools - FAN, 2/5/2014
+
+    // if url is defined, set it
+    if (url != null) {
+      rec.setAssembly(url)
+    }
+
+    rec
+  }
 }
 
 object SequenceRecord {
 
   def apply(id: Int, name: CharSequence, length: Long, url: CharSequence = null): SequenceRecord =
     new SequenceRecord(id, name, length, url)
+
+  /**
+   * Converts an ADAM contig into a sequence record.
+   *
+   * @param ctg Contig to convert.
+   * @return Contig expressed as a sequence record.
+   */
+  def fromADAMContig (ctg: ADAMNucleotideContig): SequenceRecord = {
+    apply(ctg.getContigId, ctg.getContigName, ctg.getSequenceLength, ctg.getUrl)
+  }
+
+  /*
+   * Generates a sequence record from a SAMSequence record.
+   *
+   * @param seqRecord SAM Sequence record input.
+   * @return A new ADAM sequence record.
+   */
+  def fromSamSequenceRecord(seqRecord: SAMSequenceRecord): SequenceRecord = {
+    apply(seqRecord.getSequenceIndex, seqRecord.getSequenceName, seqRecord.getSequenceLength, seqRecord.getAssembly)
+  }
 
   /**
    * Convert an ADAMRecord into one or more SequenceRecords.

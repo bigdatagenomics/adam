@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
    * @param bucketSize Size in basepairs of buckets. Larger buckets take more time per
    * bucket to convert, but have lower skew. Default is 1000.
    * 
-   * @returns RDD of ADAMRods.
+   * @return RDD of ADAMRods.
    */
   def adamRecords2Rods (bucketSize: Int = 1000): RDD[ADAMRod] = {
     
@@ -160,7 +160,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 
     val bucketedReads = rdd.filter(_.getStart != null)
       .flatMap(mapToBucket)
-      .groupByKey
+      .groupByKey()
 
     println ("Have reads in buckets.")
 
@@ -182,6 +182,44 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
     }
 
     bucketedReads.flatMap(bucketedReadsToRods)
+  }
+
+  /**
+   * Converts a set of records into an RDD containing the pairs of all unique tagStrings
+   * within the records, along with the count (number of records) which have that particular
+   * attribute.
+   *
+   * @return An RDD of attribute name / count pairs.
+   */
+  def adamCharacterizeTags() : RDD[(String,Long)] = {
+    rdd.flatMap(_.tags.map( attr => (attr.tag, 1L) )).reduceByKey( _ + _ )
+  }
+
+  /**
+   * Calculates the set of unique attribute <i>values</i> that occur for the given 
+   * tag, and the number of time each value occurs.  
+   * 
+   * @param tag The name of the optional field whose values are to be counted.
+   * @return A Map whose keys are the values of the tag, and whose values are the number of time each tag-value occurs.
+   */
+  def adamCharacterizeTagValues(tag : String) : Map[Any,Long] = {
+    adamFilterRecordsWithTag(tag).flatMap(_.tags.find(_.tag == tag)).map(
+      attr => Map(attr.value -> 1L)
+    ).reduce {
+      (map1 : Map[Any,Long], map2 : Map[Any,Long]) =>
+        MapTools.add(map1, map2)
+    }
+  }
+
+  /**
+   * Returns the subset of the ADAMRecords which have an attribute with the given name.
+   * @param tagName The name of the attribute to filter on (should be length 2)
+   * @return An RDD[ADAMRecord] containing the subset of records with a tag that matches the given name.
+   */
+  def adamFilterRecordsWithTag(tagName : String) : RDD[ADAMRecord] = {
+    assert( tagName.length == 2,
+      "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName))
+    rdd.filter(_.tags.exists(_.tag == tagName))
   }
 }
 
