@@ -77,15 +77,6 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 		private InputStream inputStream;
 		private Text currentValue = new Text();
 
-		/* If true, will scan the identifier for read data as specified in the Casava
-		 * users' guide v1.8:
-		 * @<instrument>:<run number>:<flowcell ID>:<lane>:<tile>:<x-pos>:<y-pos> <read>:<is filtered>:<control number>:<index sequence>
-		 * After the first name that doesn't match lookForIlluminaIdentifier will be
-		 * set to false and no further scanning will be done.
-		 */
-		private boolean lookForIlluminaIdentifier = true;
-		private static final Pattern ILLUMINA_PATTERN = Pattern.compile("([^:]+):(\\d+):([^:]*):(\\d+):(\\d+):(-?\\d+):(-?\\d+)\\s+([123]):([YN]):(\\d+):(.*)");
-
 		// How long can a read get?
 		private static final int MAX_LINE_LENGTH = 10000;
 
