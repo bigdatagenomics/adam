@@ -32,7 +32,7 @@ class RichADAMVariant(val variant: ADAMVariant) {
 
   private def isSameContig(left: ADAMContig, right: ADAMContig): Boolean = {
     left.getContigName == right.getContigName && (
-      left.getReferenceMD5 == null || right.getReferenceMD5 == null || left.getReferenceMD5 == right.getReferenceMD5
+      left.getContigMD5 == null || right.contigMD5 == null || left.getContigMD5 == right.getContigMD5
     )
   }
 
