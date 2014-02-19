@@ -44,7 +44,7 @@ class BaseQualityRecalibration(
 extends Serializable with Logging {
 
   // Additional covariates to use when computing the correction
-  val covariates = CovariateSpace()
+  val covariates = CovariateSpace(new DinucCovariate)
 
   // Bases with quality less than this will be ignored in Phase 1
   val minAcceptableQuality = QualityScore(6)
