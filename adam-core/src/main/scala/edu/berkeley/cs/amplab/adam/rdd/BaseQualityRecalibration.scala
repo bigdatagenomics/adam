@@ -69,7 +69,8 @@ extends Serializable with Logging {
         !knownSnps.isMasked(residue)
 
     // Compute keys and filter out skipped residues
-    val keys: Seq[(CovariateKey, Residue)] = covariates(read).filter(x => shouldIncludeResidue(x._2))
+    val keys: Seq[(CovariateKey, Residue)] =
+      covariates(read).zip(read.sequence).filter(x => shouldIncludeResidue(x._2))
 
     // Construct result
     keys.map{ case (key, residue) => (key, Observation(residue.isSNP)) }

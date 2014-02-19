@@ -42,7 +42,7 @@ object QualityScore {
   def apply(value: Int) = new QualityScore(value)
 
   def toString(quals: Seq[QualityScore]): String =
-    String.valueOf(quals.map(_.toChar))
+    String.valueOf(quals.map(_.toChar).toArray)
 
   def fromErrorProbability(p: Double) =
     new QualityScore(PhredUtils.errorProbabilityToPhred(p))

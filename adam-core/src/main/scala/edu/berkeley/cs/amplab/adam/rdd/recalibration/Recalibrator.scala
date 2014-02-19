@@ -31,13 +31,10 @@ class Recalibrator(val table: RecalibrationTable)
   def apply(read: DecadentRead): ADAMRecord = {
     val record: ADAMRecord = read.record
     ADAMRecord.newBuilder(record).
-      setQual(computeQual(read)).
+      setQual(QualityScore.toString(table(read))).
       setOrigQual(record.getQual()).
       build()
   }
-
-  private def computeQual(read: DecadentRead): CharSequence =
-    QualityScore.toString(read.sequence.map(table))
 }
 
 object Recalibrator {
@@ -48,37 +45,47 @@ object Recalibrator {
 
 class RecalibrationTable(
     // covariates for this recalibration
-    val space: CovariateSpace,
+    val covariates: CovariateSpace,
     // marginal by read group
     val globalTable: Map[String, Aggregate],
     // marginal by read group and quality
     val qualityTable: Map[(String, QualityScore), Aggregate],
     // marginals for each optional covariate by read group and quality
     val extraTables: IndexedSeq[Map[(String, QualityScore, Covariate#Value), Aggregate]])
-  extends (Residue => QualityScore) with Serializable {
+  extends (DecadentRead => Seq[QualityScore]) with Serializable {
 
-  // Compute updated QualityScore for this Residue
-  def apply(residue: Residue): QualityScore = {
-    val readGroup = residue.read.readGroup
-    val residueLogP = log(residue.quality.errorProbability)
-    val globalDelta = computeGlobalDelta(readGroup)
-    val qualityDelta = computeQualityDelta(readGroup, residue.quality, residueLogP + globalDelta)
-    val extrasDelta = 0 // TODO: handle extra covariates
+  def apply(read: DecadentRead): Seq[QualityScore] =
+    covariates(read).map(lookup)
+
+  def lookup(key: CovariateKey): QualityScore = {
+    val residueLogP = log(key.quality.errorProbability)
+    val globalDelta = computeGlobalDelta(key)
+    val qualityDelta = computeQualityDelta(key, residueLogP + globalDelta)
+    val extrasDelta = computeExtrasDelta(key, residueLogP + globalDelta + qualityDelta)
     val correctedLogP = residueLogP + globalDelta + qualityDelta + extrasDelta
     QualityScore.fromErrorProbability(math.exp(correctedLogP))
   }
 
-  def computeGlobalDelta(readGroup: String): Double = {
-    globalTable.get(readGroup).
+  def computeGlobalDelta(key: CovariateKey): Double = {
+    globalTable.get(key.readGroup).
       map(bucket => log(bucket.empiricalQuality.errorProbability) - log(bucket.reportedQuality.errorProbability)).
       getOrElse(0.0)
   }
 
-  def computeQualityDelta(readGroup: String, quality: QualityScore, offset: Double): Double = {
-    qualityTable.get((readGroup, quality)).
-      map(aggregate => log(aggregate.empiricalQuality.errorProbability)).
-      map(_ - offset).
+  def computeQualityDelta(key: CovariateKey, offset: Double): Double = {
+    qualityTable.get((key.readGroup, key.quality)).
+      map(aggregate => log(aggregate.empiricalQuality.errorProbability) - offset).
       getOrElse(0.0)
+  }
+
+  def computeExtrasDelta(key: CovariateKey, offset: Double): Double = {
+    // Returns sum(delta for each extra covariate)
+    assert(extraTables.size == key.extras.size)
+    extraTables.zip(key.extras).map{ case (table, value) =>
+      table.get((key.readGroup, key.quality, value)).
+        map(aggregate => log(aggregate.empiricalQuality.errorProbability) - offset).
+        getOrElse(0.0)
+    }.reduce(_ + _)
   }
 }
 

@@ -58,7 +58,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   class Residue private[DecadentRead](val position: Int) {
     def read = DecadentRead.this
 
-    def value: Char = read.baseSequence(position)
+    def base: Char = read.baseSequence(position)
 
     def quality = QualityScore(record.qualityScores(position))
 
@@ -94,6 +94,8 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   def isPrimaryAlignment: Boolean = isAligned && record.getPrimaryAlignment
 
   def isDuplicate: Boolean = record.getDuplicateRead
+
+  def isNegativeRead: Boolean = record.getReadNegativeStrand
 
   // Is this the most representative record for this read?
   def isCanonicalRecord: Boolean = isPrimaryAlignment && !isDuplicate
