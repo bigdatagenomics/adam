@@ -105,6 +105,10 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
     RecalibrateBaseQualities(rdd, broadcastDbSNP)
   }
 
+  def adamRealignIndels(): RDD[ADAMRecord] = {
+    RealignIndels(rdd)
+  }
+
   // Returns a tuple of (failedQualityMetrics, passedQualityMetrics)
   def adamFlagStat(): (FlagStatMetrics, FlagStatMetrics) = {
     FlagStat(rdd)
@@ -134,7 +138,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
    * @param bucketSize Size in basepairs of buckets. Larger buckets take more time per
    * bucket to convert, but have lower skew. Default is 1000.
    * 
-   * @returns RDD of ADAMRods.
+   * @return RDD of ADAMRods.
    */
   def adamRecords2Rods (bucketSize: Int = 1000): RDD[ADAMRod] = {
     
@@ -145,14 +149,15 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
      * @param r Read to map.
      * @return List containing one or two mapping key/value pairs.
      */
-    def mapToBucket (r: ADAMRecord): List[(Long, ADAMRecord)] = {
+    def mapToBucket (r: ADAMRecord): List[(ReferencePosition, ADAMRecord)] = {
       val s = r.getStart / bucketSize
       val e = r.end.get / bucketSize
+      val id = r.getReferenceId
 
       if (s == e) {
-        List((s, r))
+        List((new ReferencePosition(id, s), r))
       } else {
-        List((s, r), (e, r))
+        List((new ReferencePosition(id, s), r), (new ReferencePosition(id, e), r))
       }
     }
 
@@ -160,7 +165,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 
     val bucketedReads = rdd.filter(_.getStart != null)
       .flatMap(mapToBucket)
-      .groupByKey
+      .groupByKey()
 
     println ("Have reads in buckets.")
 
@@ -172,11 +177,11 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
      * @param bucket Tuple of (bucket number, reads in bucket).
      * @return A sequence containing the rods in this bucket.
      */
-    def bucketedReadsToRods (bucket: (Long, Seq[ADAMRecord])): Seq[ADAMRod] = {
-      val (bucketNumber, bucketReads) = bucket
+    def bucketedReadsToRods (bucket: (ReferencePosition, Seq[ADAMRecord])): Seq[ADAMRod] = {
+      val (bucketStart, bucketReads) = bucket
 
       bucketReads.flatMap(pp.readToPileups)
-        .groupBy(_.getPosition)
+        .groupBy(ReferencePosition(_))
         .toList
         .map(g => ADAMRod(g._1, g._2.toList)).toSeq
     }
@@ -208,7 +213,7 @@ class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Log
    * @return RDD with rods grouped by reference position.
    */
   def adamPileupsToRods(coverage: Int = 30): RDD[ADAMRod] = {
-    val groups = rdd.groupBy((p: ADAMPileup) => p.getPosition, coverage)
+    val groups = rdd.groupBy((p: ADAMPileup) => ReferencePosition(p), coverage)
 
     groups.map(kv => ADAMRod(kv._1, kv._2.toList))
   }
@@ -234,7 +239,7 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
    *
    * @return Rods split up by samples and grouped together by position.
    */
-  def adamDivideRodsBySamples(): RDD[(Long, List[ADAMRod])] = {
+  def adamDivideRodsBySamples(): RDD[(ReferencePosition, List[ADAMRod])] = {
     rdd.keyBy(_.position).map(r => (r._1, r._2.splitBySamples))
   }
 

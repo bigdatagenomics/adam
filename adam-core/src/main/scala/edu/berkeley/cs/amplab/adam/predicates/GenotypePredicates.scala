@@ -25,6 +25,6 @@ import parquet.filter.ColumnPredicates.equalTo
 
 class GenotypeVarFilterPASSPredicate extends UnboundRecordFilter {
   def bind(readers: Iterable[ColumnReader]): RecordFilter = {
-    or(column("varIsFiltered", equalTo(null.asInstanceOf[Boolean])), column("varIsFiltered", equalTo(false))).bind(readers)
+    column("variantCallingAnnotations.variantIsPassing", equalTo(true)).bind(readers)
   }
 }
