@@ -20,7 +20,10 @@ import edu.berkeley.cs.amplab.adam.util.{ParquetLogger, SparkFunSuite}
 import org.scalatest.BeforeAndAfter
 import java.util.logging.Level
 import java.io.File
-import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMVariant, ADAMGenotype}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, 
+                                         ADAMVariant,
+                                         ADAMGenotype,
+                                         VariantCallingAnnotations}
 import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import com.google.common.io.Files
@@ -40,9 +43,17 @@ class GenotypePredicatesSuite extends SparkFunSuite with BeforeAndAfter {
       .setVariantAllele("C")
       .build
 
+    val passFilterAnnotation = 
+      VariantCallingAnnotations.newBuilder().setVariantIsPassing(true).build()
+    val failFilterAnnotation =
+      VariantCallingAnnotations.newBuilder().setVariantIsPassing(false).build()
+
     val genotypes = sc.parallelize(List(
-      ADAMGenotype.newBuilder().setVariant(v0).setVarIsFiltered(true).build(),
-      ADAMGenotype.newBuilder().setVariant(v0).build()
+      ADAMGenotype.newBuilder().setVariant(v0)
+        .setVariantCallingAnnotations(passFilterAnnotation).build(),
+      ADAMGenotype.newBuilder()
+        .setVariant(v0)
+        .setVariantCallingAnnotations(failFilterAnnotation).build()
     ))
 
     genotypesParquetFile = new File(Files.createTempDir(), "genotypes")

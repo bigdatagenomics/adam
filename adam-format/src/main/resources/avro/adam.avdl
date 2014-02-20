@@ -167,8 +167,8 @@ record VariantCallingAnnotations {
   union { null, float }   fisherStrandBiasPValue = null; // Phred-scaled.
   union { null, float }   haplotypeScore = null;
   union { null, float }   inbreedingCoefficient = null;
-  array<int>              alleleCountMLE;
-  array<int>              alleleFrequencyMLE;
+  array<int>              alleleCountMLE = null;
+  array<int>              alleleFrequencyMLE = null;
   union { null, float }   rmsMapQ = null;
   union { null, int }     mapq0Reads = null;
   union { null, float }   mqRankSum = null;
@@ -182,10 +182,10 @@ record VariantCallingAnnotations {
   union { null, string }  culprit = null;
   // Phred-scaled probability of error for this variant call.
   union { null, float }   variantCallErrorProbability = null;
-  // "null" implies no filters were applied.  True implies filters
-  // were applied and the variant passed those filters. False implies
-  // filters were applied the variant did not pass.
-  union { null, boolean } variantIsPassing = null;
+  // True implies either filters were applied and the variant passed
+  // those filters, or no filters were applied.  False implies filters
+  // were applied the variant did not pass.
+  boolean                 variantIsPassing = true;
   // A list of filters applied.
   array <string>          variantFilters = null;
 }

@@ -20,7 +20,6 @@ import edu.berkeley.cs.amplab.adam.converters.SAMRecordConverter
 import edu.berkeley.cs.amplab.adam.models._
 import org.apache.hadoop.fs.FileSystem
 import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, Projection}
-import edu.berkeley.cs.amplab.adam.rdd.compare.CompareAdam
 import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
 import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat}
 import org.apache.avro.Schema
@@ -230,11 +229,6 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
     } else {
       adamParquetLoad(filePath, predicate, projection)
     }
-  }
-
-  def adamCompareFiles(file1Path: String, file2Path: String,
-                       predicateFactory: (Map[Int, Int]) => (SingleReadBucket, SingleReadBucket) => Boolean) = {
-    CompareAdam.compareADAM(sc, file1Path, file2Path, predicateFactory)
   }
 
   /**
