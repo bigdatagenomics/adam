@@ -57,7 +57,8 @@ object SnpTable {
     val tuples = lines.filter(line => !line.startsWith("#")).map(line => {
       val split = line.split("\t")
       val contig = split(0)
-      val pos = split(1).toLong
+      val pos = split(1).toLong - 1
+      assert(pos >= 0)
       (contig, pos)
     })
     // construct map from contig to set of positions
@@ -67,19 +68,4 @@ object SnpTable {
     // construct SnpTable from immutable copy of `table`
     new SnpTable(table.mapValues(_.toSet).toMap)
   }
-
-  /*
-  def apply(lines: RDD[String]): SnpTable = {
-    // parse into tuples of (contig, position)
-    val tuples = lines.filter(line => !line.startsWith("#")).map(line => {
-      val split = line.split("\t")
-      val contig = split(0)
-      val pos = split(1).toLong
-      (contig, pos)
-    })
-    // construct map from contig to set of positions
-    val table = tuples.groupByKey.collect.toMap.mapValues(_.toSet)
-    new SnpTable(table)
-  }
-  */
 }
