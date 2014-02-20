@@ -77,7 +77,7 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
       if (vc.isFiltered) {
         val annotations : VariantCallingAnnotations.Builder = 
           VariantCallingAnnotations.newBuilder
-            .setVariantIsPassing(!vc.isFiltered)
+            .setVariantIsPassing(!vc.isFiltered.booleanValue)
             .setVariantFilters(new util.ArrayList(vc.getFilters))
         genotype.setVariantCallingAnnotations(annotations.build)
       }
@@ -86,7 +86,7 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
         genotype.setPhaseQuality(g.getExtendedAttribute(VCFConstants.PHASE_QUALITY_KEY).asInstanceOf[java.lang.Integer])
 
       if (g.hasExtendedAttribute(VCFConstants.PHASE_SET_KEY))
-        genotype.setPhaseSetId(g.getExtendedAttribute(VCFConstants.PHASE_SET_KEY).asInstanceOf[Integer])
+        genotype.setPhaseSetId(Integer.parseInt(g.getExtendedAttribute(VCFConstants.PHASE_SET_KEY).asInstanceOf[java.lang.String]))
 
       genotype.build
     }).toSeq
