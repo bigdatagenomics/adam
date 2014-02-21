@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.ADAMVariant
+import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMContig}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary}
 import org.apache.avro.specific.SpecificRecord
@@ -224,11 +224,14 @@ class SequenceDictionarySuite extends FunSuite {
   }
     
   test("get record from variant using specific record") {
+    val contig = ADAMContig.newBuilder()
+      .setContigName("chr0")
+      .setContigLength(100L)
+      .setReferenceURL("http://bigdatagenomics.github.io/chr0")
+      .build()
+
     val variant = ADAMVariant.newBuilder()
-      .setReferenceId(0)
-      .setReferenceName("chr0")
-      .setReferenceLength(1000L)
-      .setReferenceUrl("http://bigdatagenomics.github.io/chr0")
+      .setContig(contig)
       .build()
 
     val rec = SequenceRecord.fromSpecificRecord(variant)

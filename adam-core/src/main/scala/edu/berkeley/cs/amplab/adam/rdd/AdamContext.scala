@@ -23,7 +23,8 @@ import edu.berkeley.cs.amplab.adam.models._
 import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, 
                                                 Projection,
                                                 ADAMNucleotideContigField}
-import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.{RichRDDReferenceRecords, RichADAMRecord}
+import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
 import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat}
 import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
 import java.util.regex.Pattern

@@ -33,20 +33,20 @@ import scala.math._
  * @param seqLengths a map relating sequence name-to-length and indicating the set and length of all extant
  *                   sequences in the genome.
  */
-class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[Int, Long]) extends Partitioner {
+class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[String, Long]) extends Partitioner {
 
   def this(numParts: Int, seqDict: SequenceDictionary) =
     this(numParts, GenomicRegionPartitioner.extractLengthMap(seqDict))
 
-  val ids: Seq[Int] = seqLengths.keys.toSeq.sortWith(_ < _)
+  val ids: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
   val lengths: Seq[Long] = ids.map(seqLengths(_))
   private val cumuls: Seq[Long] = lengths.scan(0L)(_ + _)
 
   // total # of bases in the sequence dictionary
   val totalLength: Long = lengths.reduce(_ + _)
 
-  // referenceId -> cumulative length before this sequence (using seqDict.records as the implicit ordering)
-  val cumulativeLengths: Map[Int, Long] = Map(
+  // referenceName -> cumulative length before this sequence (using seqDict.records as the implicit ordering)
+  val cumulativeLengths: Map[String, Long] = Map(
     ids.zip(cumuls)
       : _*)
 
@@ -63,8 +63,8 @@ class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[Int, Long]
 
     // This allows partitions that cross chromosome boundaries.
     // The computation is slightly more complicated if you want to avoid this.
-    def getPart(refId: Int, pos: Long): Int = {
-      val totalOffset = cumulativeLengths(refId) + pos
+    def getPart(referenceName: String, pos: Long): Int = {
+      val totalOffset = cumulativeLengths(referenceName) + pos
       val totalFraction: Double = totalOffset.toDouble / totalLength
 
       // Need to use 'parts' here, rather than 'numPartitions' -- see the note
@@ -77,7 +77,7 @@ class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[Int, Long]
       case ReferencePosition.UNMAPPED => parts
 
       // everything else gets assigned normally.
-      case refpos: ReferencePosition => getPart(refpos.refId, refpos.pos)
+      case refpos: ReferencePosition => getPart(refpos.referenceName, refpos.pos)
 
       // only ReferencePosition values are partitioned using this partitioner
       case _ => throw new IllegalArgumentException("Only ReferencePosition values can be partitioned by GenomicRegionPartitioner")
@@ -97,10 +97,10 @@ class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[Int, Long]
 
 object GenomicRegionPartitioner {
 
-  def apply(N: Int, lengths: Map[Int, Long]) = new GenomicRegionPartitioner(N, lengths)
+  def apply(N: Int, lengths: Map[String, Long]) = new GenomicRegionPartitioner(N, lengths)
 
-  def extractLengthMap(seqDict: SequenceDictionary): Map[Int, Long] =
-    Map(seqDict.records.map(rec => (rec.id, rec.length)): _*)
+  def extractLengthMap(seqDict: SequenceDictionary): Map[String, Long] =
+    Map(seqDict.records.map(rec => (rec.name.asInstanceOf[String], rec.length)): _*)
 }
 
 

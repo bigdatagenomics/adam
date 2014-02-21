@@ -22,6 +22,11 @@ import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
 import Ordering.Option
 
+// We seem to have two concurrently-evolving ways of representing a
+// position in the genome - one is ADAMContig defined in the adam.avdl
+// file and the other is this class, with conversions from various
+// record types defined. It seems to me (nealsid) that having
+// RichADAMContig would be more consistent with the rest of the code
 object ReferencePositionWithOrientation {
 
   def apply(record: ADAMRecord): Option[ReferencePositionWithOrientation] = {
@@ -62,7 +67,7 @@ object ReferencePosition {
    * which is not located anywhere along the reference sequences (see, e.g. its use in
    * GenomicRegionPartitioner).
    */
-  val UNMAPPED = new ReferencePosition(-1, -1)
+  val UNMAPPED = new ReferencePosition(null, -1)
 
   /**
    * Checks to see if a read is mapped with a valid position.
@@ -94,6 +99,7 @@ object ReferencePosition {
     }
   }
 
+
   /**
    * Generates a reference position from a called variant.
    *
@@ -105,7 +111,7 @@ object ReferencePosition {
    * @return The reference position of this variant.
    */
   def apply (variant: ADAMVariant): ReferencePosition = {
-    new ReferencePosition(variant.getReferenceId, variant.getPosition)
+    new ReferencePosition(variant.getContig.getContigName, variant.getPosition)
   }
 
   /**
@@ -118,11 +124,12 @@ object ReferencePosition {
    * @return The reference position of this genotype.
    */
   def apply (genotype: ADAMGenotype): ReferencePosition = {
-    new ReferencePosition(genotype.getReferenceId, genotype.getPosition)
+    val variant = genotype.getVariant
+    new ReferencePosition(variant.getContig.getContigName, variant.getPosition)
   }
 
   /**
-   * Generates a reference position from the five prime end of a read. This
+  * Generates a reference position from the five prime end of a read. This
    * will be different from the start mapping position of a read if this
    * read is a reverse strand read.
    *
@@ -152,11 +159,12 @@ object ReferencePosition {
   }
 }
 
-case class ReferencePosition(refId: Int, pos: Long) extends Ordered[ReferencePosition] {
+case class ReferencePosition(referenceName: String, pos: Long) extends Ordered[ReferencePosition] {
+  def this(referenceId: Int, pos: Long) = this(referenceId.asInstanceOf[String], pos)
 
   def compare(that: ReferencePosition): Int = {
     // Note: important to compare by reference first for coordinate ordering
-    val refCompare = refId.compare(that.refId)
+    val refCompare = referenceName.compare(that.referenceName)
     if (refCompare != 0) {
       refCompare
     } else {
@@ -194,13 +202,13 @@ class ReferencePositionWithOrientationSerializer extends Serializer[ReferencePos
 
 class ReferencePositionSerializer extends Serializer[ReferencePosition] {
   def write(kryo: Kryo, output: Output, obj: ReferencePosition) = {
-    output.writeInt(obj.refId)
+    output.writeString(obj.referenceName)
     output.writeLong(obj.pos)
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[ReferencePosition]): ReferencePosition = {
-    val refId = input.readInt()
+    val referenceName = input.readString()
     val pos = input.readLong()
-    new ReferencePosition(refId, pos)
+    new ReferencePosition(referenceName, pos)
   }
 }

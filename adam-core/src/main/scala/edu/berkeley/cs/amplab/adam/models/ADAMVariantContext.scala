@@ -16,12 +16,60 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant}
+import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
 
 object ADAMVariantContext {
+
+  /**
+   * Constructs an ADAMVariantContext from locus data. Used in merger process.
+   *
+   * @param kv Nested tuple containing (locus on reference, (variants at site, genotypes at site,
+   *           optional domain annotation at site))
+   * @return ADAMVariantContext corresponding to the data above.
+   */
+  def apply(kv: (ReferencePosition, ADAMVariant, Seq[ADAMGenotype]))
+      : ADAMVariantContext = {
+    new ADAMVariantContext(kv._1, kv._2, kv._3)
+  }
+
+  /**
+   * Constructs an ADAMVariantContext from an ADAMVariant
+   *
+   * @param v ADAMVariant which is used to construct the ReferencePosition
+   * @return ADAMVariantContext corresponding to the ADAMVariant
+   */
+  def apply(v : ADAMVariant) : ADAMVariantContext = {
+    apply((ReferencePosition(v), v, Seq()))
+  }
+
+  /**
+   * Builds a variant context off of a set of genotypes. Builds variants from the genotypes.
+   *
+   * @note Genotypes must be at the same position.
+   *
+   * @param genotypes List of genotypes to build variant context from.
+   * @return A variant context corresponding to the variants and genotypes at this site.
+   */
+  def buildFromGenotypes(genotypes: Seq[ADAMGenotype]): ADAMVariantContext = {
+    val position = ReferencePosition(genotypes.head)
+    assert(genotypes.map(ReferencePosition(_)).forall(_ == position), 
+      "Genotypes do not all have the same position.")
+
+    val variant = genotypes.head.variant
+
+    new ADAMVariantContext(position, variant, genotypes, None)
+  }
 }
 
-case class ADAMVariantContext(variant: ADAMVariant,
-                              genotypes: Seq[ADAMGenotype] = Seq(),
-                              databases: Option[ADAMDatabaseVariantAnnotation] = None) {
+class ADAMVariantContext(
+  val position: ReferencePosition,
+  val variant: ADAMVariant,
+  val genotypes: Seq[ADAMGenotype],
+  val databases: Option[ADAMDatabaseVariantAnnotation] = None) {
+  def this(variant : ADAMVariant, genotypes : Seq[ADAMGenotype], database : Option[ADAMDatabaseVariantAnnotation] = None) = {
+    this(ReferencePosition(variant), variant, genotypes, database)
+  }
 }
 

@@ -27,7 +27,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
 import java.io.File
-import edu.berkeley.cs.amplab.adam.util.ParquetLogger
+import edu.berkeley.cs.amplab.adam.util.{MapTools, ParquetLogger}
 import java.util.logging.Level
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 
@@ -84,7 +84,8 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
       val referencePos = ReferencePosition(p) match {
         case None =>
           // Move unmapped reads to the end of the file
-          ReferencePosition(unmappedReferenceIds.next(), Long.MaxValue)
+          ReferencePosition(
+            unmappedReferenceIds.next().asInstanceOf[String], Long.MaxValue)
         case Some(pos) => pos
       }
       (referencePos, p)

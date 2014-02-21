@@ -16,7 +16,7 @@
 package edu.berkeley.cs.amplab.adam.converters
 
 import edu.berkeley.cs.amplab.adam.avro._
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, ReferencePosition}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import java.util
 import org.apache.spark.Logging
@@ -91,6 +91,7 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
       genotype.build
     }).toSeq
 
-    Seq(ADAMVariantContext(variant, genotypes = genotypes))
+    val referencePosition = new ReferencePosition(contig.getContigName, variant.getPosition)
+    Seq(ADAMVariantContext((referencePosition, variant, genotypes)))
   }
 }
