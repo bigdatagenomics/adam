@@ -37,6 +37,9 @@ Trunk (not yet released)
   * Transformed phred --> double calculation into a LUT, which improves performance. This change was introduced
     into the API in PR#65 and was a breaking change. This change was then propegated into BQSR by PR#71.
 
+  * Removed unnecessary count during pileup conversion; this count substantially increased the time it took to
+    do pileup conversion. This was introduced in PR#125 which came out of issue #121.
+
   IMPROVEMENTS
 
   * ISSUE 92: improved the representation of the types of 'optional' fields from the BAM, and their encoding
@@ -53,6 +56,11 @@ Trunk (not yet released)
     added by PR#91.
 
   * Various build improvements were added by PR#68 and PR#66.
+
+  * Added option to pileup transformations to set whether reads that are not at their primary alignment positions
+    should be converted into pileups. By default, we only convert reads at a primary mapping location. This
+    is does not introduce incompatible changes to the API, but changes the APIs functionality. This change was
+    introduced in PR#125 which came out of issue #121.
 
   BUG FIXES
 

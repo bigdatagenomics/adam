@@ -29,12 +29,34 @@ private[rdd] object Reads2PileupProcessor {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
 }
 
-private[rdd] class Reads2PileupProcessor extends Serializable with Logging {
+/**
+ * Class that converts reads into pileups.
+ *
+ * @param createSecondaryAlignments If true, we process reads that are not at their primary alignment.
+ * If false, we only process reads that are at their primary alignment. Default is false.
+ */
+private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = false) 
+             extends Serializable with Logging {
 
+  /**
+   * Converts a single read into a list of pileups.
+   *
+   * @param record Read to convert.
+   * @return A list of pileups.
+   */
   def readToPileups(record: ADAMRecord): List[ADAMPileup] = {
-    if (record == null || record.getCigar == null || record.getMismatchingPositions == null) {
+    if (record == null || 
+        record.getCigar == null || 
+        record.getMismatchingPositions == null ||
+        record.getReadMapped == null ||
+        !record.getReadMapped ||
+        record.getPrimaryAlignment == null) {
       // TODO: log this later... We can't create a pileup without the CIGAR and MD tag
       // in the future, we can also get reference information from a reference file
+      return List.empty
+    }
+
+    if (!(createSecondaryAlignments || record.getPrimaryAlignment)) {
       return List.empty
     }
 
@@ -60,7 +82,7 @@ private[rdd] class Reads2PileupProcessor extends Serializable with Logging {
         case None => -1L
       }
 
-      assert(end != -1L, "Read is mapped but has a null end position.")
+      assert(end != -1L, "Read is mapped but has a null end position. Read:\n" + record)
 
       ADAMPileup.newBuilder()
         .setReferenceName(record.getReferenceName)
@@ -196,13 +218,13 @@ private[rdd] class Reads2PileupProcessor extends Serializable with Logging {
     pileupList
   }
 
+  /**
+   * Converts an rdd of reads into pileups.
+   *
+   * @param reads An RDD of reads to convert into pileups.
+   * @return An RDD of pileups without known grouping.
+   */
   def process(reads: RDD[ADAMRecord]): RDD[ADAMPileup] = {
-    log.info("Converting " + reads.count + " reads into pileups.")
-
-    val pileups: RDD[ADAMPileup] = reads.flatMap(readToPileups(_))
-
-    log.info("Total of " + pileups.count + " pileups after conversion.")
-
-    pileups
+    reads.flatMap(readToPileups(_))
   }
 }
