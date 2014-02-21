@@ -46,7 +46,7 @@ extends Serializable with Logging {
   // Additional covariates to use when computing the correction
   val covariates = CovariateSpace(new DinucCovariate)
 
-  // Bases with quality less than this will be ignored in Phase 1
+  // Bases with quality less than this will be skipped and left alone
   val minAcceptableQuality = QualityScore(6)
 
   // Compute and apply recalibration
@@ -57,7 +57,7 @@ extends Serializable with Logging {
       aggregate(ObservationAccumulator(covariates))(_ ++= _, _ += _).result
 
     // second phase
-    val recalibrator = Recalibrator(observed)
+    val recalibrator = Recalibrator(observed, minAcceptableQuality)
     reads.map(recalibrator)
   }
 
