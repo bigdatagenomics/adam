@@ -16,30 +16,30 @@
 
 package edu.berkeley.cs.amplab.adam.util
 
-class QualityScore(val value: Int) extends Ordered[QualityScore] with Serializable {
-  // Valid range of value + 33 is described by the regex "[!-~]".
-  require(value + 33 >= '!'.toInt && value + 33 <= '~'.toInt)
+class QualityScore(val phred: Int) extends Ordered[QualityScore] with Serializable {
+  // Valid range of phred + 33 is described by the regex "[!-~]".
+  require(phred + 33 >= '!'.toInt && phred + 33 <= '~'.toInt)
 
-  def successProbability = PhredUtils.phredToSuccessProbability(value)
+  def successProbability = PhredUtils.phredToSuccessProbability(phred)
 
-  def errorProbability = PhredUtils.phredToErrorProbability(value)
+  def errorProbability = PhredUtils.phredToErrorProbability(phred)
 
-  def toChar: Char = (value + 33).toChar
+  def toChar: Char = (phred + 33).toChar
 
-  override def compare(that: QualityScore) = this.value compare that.value
+  override def compare(that: QualityScore) = this.phred compare that.phred
 
-  override def toString = "Q%02d".format(value)
+  override def toString = "Q%02d".format(phred)
 
   override def equals(other: Any): Boolean = other match {
-    case that: QualityScore => this.value == that.value
+    case that: QualityScore => this.phred == that.phred
     case _ => false
   }
 
-  override def hashCode: Int = Util.hashCombine(0x26C2E0BA, value.hashCode)
+  override def hashCode: Int = Util.hashCombine(0x26C2E0BA, phred.hashCode)
 }
 
 object QualityScore {
-  def apply(value: Int) = new QualityScore(value)
+  def apply(phred: Int) = new QualityScore(phred)
 
   def toString(quals: Seq[QualityScore]): String =
     String.valueOf(quals.map(_.toChar).toArray)
