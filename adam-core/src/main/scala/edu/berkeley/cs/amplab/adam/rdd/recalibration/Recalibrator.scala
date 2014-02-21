@@ -93,7 +93,7 @@ class RecalibrationTable(
       table.get((key.readGroup, key.quality, value)).
         map(aggregate => aggregate.empiricalQuality.phred - offset).
         getOrElse(0)
-    }.reduce(_ + _)
+    }.fold(0)(_ + _)
   }
 }
 

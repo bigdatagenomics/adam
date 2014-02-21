@@ -86,6 +86,8 @@ class Aggregate private(
 }
 
 object Aggregate {
+  val empty: Aggregate = new Aggregate(0, 0, 0)
+
   def apply(key: CovariateKey, value: Observation) =
     new Aggregate(key.quality, value)
 }
@@ -101,7 +103,7 @@ class ObservationTable(
   def aggregate[K](func: (CovariateKey, Observation) => K): Map[K, Aggregate] = {
     val grouped = entries.groupBy{ case (key, value) => func(key, value) }
     val newEntries = grouped.mapValues(bucket =>
-      bucket.map{ case (oldKey, obs) => Aggregate(oldKey, obs) }.reduce(_ + _))
+      bucket.map{ case (oldKey, obs) => Aggregate(oldKey, obs) }.fold(Aggregate.empty)(_ + _))
     newEntries.toMap
   }
 }
