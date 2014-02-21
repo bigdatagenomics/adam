@@ -16,11 +16,7 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import org.scalatest.FunSuite
-import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, 
-                                         ADAMGenotype, 
-                                         ADAMPileup,
-                                         ADAMRecord,
-                                         ADAMVariant}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMGenotype, ADAMPileup, ADAMRecord, ADAMVariant}
 
 class ReferencePositionSuite extends FunSuite {
 
@@ -37,7 +33,7 @@ class ReferencePositionSuite extends FunSuite {
     
     val refPos = refPosOpt.get
 
-    assert(refPos.referenceName === "1")
+    assert(refPos.refId === 1)
     assert(refPos.pos === 1L)
   }
 
@@ -59,37 +55,46 @@ class ReferencePositionSuite extends FunSuite {
 
     val refPos = ReferencePosition(pileup)
     
-    assert(refPos.referenceName === "2")
+    assert(refPos.refId === 2)
     assert(refPos.pos === 2L)
   }
 
   test("create reference position from variant") {
     val contig = ADAMContig.newBuilder()
-      .setContigName("10").build
+      .setContigId(10)
+      .setContigName("chr10")
+      .build()
     val variant = ADAMVariant.newBuilder()
-      .setPosition(10L)
       .setContig(contig)
+      .setReferenceAllele("A")
+      .setVariantAllele("T")
+      .setPosition(10L)
       .build()
 
     val refPos = ReferencePosition(variant)
     
+    assert(refPos.refId === 10)
     assert(refPos.pos === 10L)
   }
 
   test("create reference position from genotype") {
     val contig = ADAMContig.newBuilder()
-      .setContigName("100").build
+      .setContigId(10)
+      .setContigName("chr10")
+      .build()
     val variant = ADAMVariant.newBuilder()
       .setPosition(100L)
       .setContig(contig)
-      .build
+      .setReferenceAllele("A")
+      .setVariantAllele("T")
+      .build()
     val genotype = ADAMGenotype.newBuilder()
       .setVariant(variant)
       .build()
 
     val refPos = ReferencePosition(genotype)
     
-    assert(refPos.referenceName === "100")
+    assert(refPos.refId === 10)
     assert(refPos.pos === 100L)
   }
 }

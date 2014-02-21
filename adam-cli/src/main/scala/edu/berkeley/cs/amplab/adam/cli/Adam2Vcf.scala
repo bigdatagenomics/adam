@@ -50,7 +50,5 @@ class Adam2Vcf(val args: Adam2VcfArgs) extends AdamSparkCommand[Adam2VcfArgs] wi
   val companion = Adam2Vcf
 
   def run(sc: SparkContext, job: Job) {
-    val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
-    sc.adamVCFSave(args.outputPath, adamGTs.toADAMVariantContext)
   }
 }

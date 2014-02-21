@@ -135,17 +135,18 @@ record ADAMNestedPileup {
 }
 
 record ADAMContig {
-  union { null, string } contigName;
+  union { null, int }    contigId = null;
+  union { null, string } contigName = null;
   union { null, long }   contigLength = null;
   union { null, string } contigMD5 = null;
   union { null, string } referenceURL = null;
 }
 
 record ADAMVariant {
-  union { null, ADAMContig } contig;
-  union { null, long }       position;
-  union { null, string }     referenceAllele;
-  union { null, string }     variantAllele;
+  union { null, ADAMContig } contig = null;
+  union { null, long }       position = null;
+  string                     referenceAllele;
+  string                     variantAllele;
 }
 
 enum ADAMGenotypeAllele {

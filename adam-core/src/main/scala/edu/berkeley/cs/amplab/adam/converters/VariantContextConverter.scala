@@ -18,6 +18,7 @@ package edu.berkeley.cs.amplab.adam.converters
 import edu.berkeley.cs.amplab.adam.avro._
 import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, ReferencePosition}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import java.lang.NumberFormatException
 import java.util
 import org.apache.spark.Logging
 import org.broadinstitute.variant.variantcontext.{Allele, Genotype, VariantContext}
@@ -51,8 +52,19 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
    * @return ADAM variant contexts
    */
   def convert(vc: VariantContext): Seq[ADAMVariantContext] = {
+    var contigId = 0;
+    // This is really ugly - only temporary until we remove numeric
+    // IDs from our representation of contigs.
+    try {
+      contigId = vc.getID.toInt
+    } catch {
+      case ex:NumberFormatException => {
+      }
+    }
     val contig: ADAMContig = ADAMContig.newBuilder()
-      .setContigName(vc.getChr).build
+      .setContigId(contigId)
+      .setContigName(vc.getChr)
+      .build
 
     // TODO: Handle multi-allelic sites
     // We need to split the alleles (easy) and split and subset the PLs (harder)/update the genotype
@@ -91,7 +103,7 @@ private[adam] class VariantContextConverter extends Serializable with Logging {
       genotype.build
     }).toSeq
 
-    val referencePosition = new ReferencePosition(contig.getContigName, variant.getPosition)
+    val referencePosition = new ReferencePosition(contig.getContigId, variant.getPosition)
     Seq(ADAMVariantContext((referencePosition, variant, genotypes)))
   }
 }

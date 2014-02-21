@@ -34,13 +34,13 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Seria
     rdd.keyBy(_.variant)
       .leftOuterJoin(ann.keyBy(_.getVariant))
       .values
-      .map { case (v:ADAMVariantContext, a) => new ADAMVariantContext(v.variant, v.genotypes, v.databases) }
+      .map { case (v:ADAMVariantContext, a) => new ADAMVariantContext(v.variant, v.genotypes, a) }
 
   }
 
   def adamGetSequenceDictionary(): SequenceDictionary =
     rdd.map(_.genotypes).distinct().aggregate(SequenceDictionary())(
-      (dict: SequenceDictionary, rec: Seq[ADAMGenotype]) => dict ++ rec.map(SequenceRecord.fromSpecificRecord(_)),
+      (dict: SequenceDictionary, rec: Seq[ADAMGenotype]) => dict ++ rec.map((genotype : ADAMGenotype) => SequenceRecord.fromSpecificRecord(genotype.getVariant)),
       (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
 
   def adamGetCallsetSamples(): List[String] = {

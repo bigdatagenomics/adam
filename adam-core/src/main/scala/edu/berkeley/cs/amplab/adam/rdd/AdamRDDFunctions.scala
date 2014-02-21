@@ -85,7 +85,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
         case None =>
           // Move unmapped reads to the end of the file
           ReferencePosition(
-            unmappedReferenceIds.next().asInstanceOf[String], Long.MaxValue)
+            unmappedReferenceIds.next(), Long.MaxValue)
         case Some(pos) => pos
       }
       (referencePos, p)

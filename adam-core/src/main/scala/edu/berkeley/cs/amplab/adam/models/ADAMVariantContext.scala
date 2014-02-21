@@ -17,6 +17,8 @@ package edu.berkeley.cs.amplab.adam.models
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant}
 import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
+import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant
+import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
@@ -65,10 +67,10 @@ object ADAMVariantContext {
 
 class ADAMVariantContext(
   val position: ReferencePosition,
-  val variant: ADAMVariant,
+  val variant: RichADAMVariant,
   val genotypes: Seq[ADAMGenotype],
   val databases: Option[ADAMDatabaseVariantAnnotation] = None) {
-  def this(variant : ADAMVariant, genotypes : Seq[ADAMGenotype], database : Option[ADAMDatabaseVariantAnnotation] = None) = {
+  def this(variant : RichADAMVariant, genotypes : Seq[ADAMGenotype], database : Option[ADAMDatabaseVariantAnnotation] = None) = {
     this(ReferencePosition(variant), variant, genotypes, database)
   }
 }

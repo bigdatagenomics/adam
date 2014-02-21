@@ -21,32 +21,32 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 class ReferenceRegionSuite extends FunSuite {
 
   test("contains(: ReferenceRegion)") {
-    assert(region("chr0", 10, 100).contains(region("chr0", 50, 70)))
-    assert(region("chr0", 10, 100).contains(region("chr0", 10, 100)))
-    assert(!region("chr0", 10, 100).contains(region("chr1", 50, 70)))
-    assert(region("chr0", 10, 100).contains(region("chr0", 50, 100)))
-    assert(!region("chr0", 10, 100).contains(region("chr0", 50, 101)))
+    assert(region(0, 10, 100).contains(region(0, 50, 70)))
+    assert(region(0, 10, 100).contains(region(0, 10, 100)))
+    assert(!region(0, 10, 100).contains(region(1, 50, 70)))
+    assert(region(0, 10, 100).contains(region(0, 50, 100)))
+    assert(!region(0, 10, 100).contains(region(0, 50, 101)))
   }
 
   test("contains(: ReferencePosition)") {
-    assert(region("chr0", 10, 100).contains(point("chr0", 50)))
-    assert(region("chr0", 10, 100).contains(point("chr0", 10)))
-    assert(region("chr0", 10, 100).contains(point("chr0", 99)))
-    assert(!region("chr0", 10, 100).contains(point("chr0", 100)))
-    assert(!region("chr0", 10, 100).contains(point("chr1", 50)))
+    assert(region(0, 10, 100).contains(point(0, 50)))
+    assert(region(0, 10, 100).contains(point(0, 10)))
+    assert(region(0, 10, 100).contains(point(0, 99)))
+    assert(!region(0, 10, 100).contains(point(0, 100)))
+    assert(!region(0, 10, 100).contains(point(1, 50)))
   }
 
   test("merge") {
     intercept[AssertionError] {
-      region("chr0", 10, 100).merge(region("chr1", 10, 100))
+      region(0, 10, 100).merge(region(1, 10, 100))
     }
 
-    val r1 = region("chr0", 10, 100)
-    val r2 = region("chr0", 0, 15)
-    val r3 = region("chr0", 50, 150)
+    val r1 = region(0, 10, 100)
+    val r2 = region(0, 0, 15)
+    val r3 = region(0, 50, 150)
 
-    val r12 = region("chr0", 0, 100)
-    val r13 = region("chr0", 10, 150)
+    val r12 = region(0, 0, 100)
+    val r13 = region(0, 10, 150)
 
     assert(r1.merge(r1) === r1)
     assert(r1.merge(r2) === r12)
@@ -56,66 +56,66 @@ class ReferenceRegionSuite extends FunSuite {
   test("overlaps") {
 
     // contained
-    assert(region("chr0", 10, 100).overlaps(region("chr0", 20, 50)))
+    assert(region(0, 10, 100).overlaps(region(0, 20, 50)))
 
     // right side
-    assert(region("chr0", 10, 100).overlaps(region("chr0", 50, 250)))
+    assert(region(0, 10, 100).overlaps(region(0, 50, 250)))
 
     // left side
-    assert(region("chr0", 10, 100).overlaps(region("chr0", 5, 15)))
+    assert(region(0, 10, 100).overlaps(region(0, 5, 15)))
 
     // left edge
-    assert(region("chr0", 10, 100).overlaps(region("chr0", 5, 11)))
-    assert(!region("chr0", 10, 100).overlaps(region("chr0", 5, 10)))
+    assert(region(0, 10, 100).overlaps(region(0, 5, 11)))
+    assert(!region(0, 10, 100).overlaps(region(0, 5, 10)))
 
     // right edge
-    assert(region("chr0", 10, 100).overlaps(region("chr0", 99, 200)))
-    assert(!region("chr0", 10, 100).overlaps(region("chr0", 100, 200)))
+    assert(region(0, 10, 100).overlaps(region(0, 99, 200)))
+    assert(!region(0, 10, 100).overlaps(region(0, 100, 200)))
 
     // different sequences
-    assert(!region("chr0", 10, 100).overlaps(region("chr1", 50, 200)))
+    assert(!region(0, 10, 100).overlaps(region(1, 50, 200)))
   }
 
   test("distance(: ReferenceRegion)") {
 
     // distance on the right
-    assert(region("chr0", 10, 100).distance(region("chr0", 200, 300)) === Some(101))
+    assert(region(0, 10, 100).distance(region(0, 200, 300)) === Some(101))
 
     // distance on the left
-    assert(region("chr0", 100, 200).distance(region("chr0", 10, 50)) === Some(51))
+    assert(region(0, 100, 200).distance(region(0, 10, 50)) === Some(51))
 
     // different sequences
-    assert(region("chr0", 100, 200).distance(region("chr1", 10, 50)) === None)
+    assert(region(0, 100, 200).distance(region(1, 10, 50)) === None)
 
     // touches on the right
-    assert(region("chr0", 10, 100).distance(region("chr0", 100, 200)) === Some(1))
+    assert(region(0, 10, 100).distance(region(0, 100, 200)) === Some(1))
 
     // overlaps
-    assert(region("chr0", 10, 100).distance(region("chr0", 50, 150)) === Some(0))
+    assert(region(0, 10, 100).distance(region(0, 50, 150)) === Some(0))
 
     // touches on the left
-    assert(region("chr0", 10, 100).distance(region("chr0", 0, 10)) === Some(1))
+    assert(region(0, 10, 100).distance(region(0, 0, 10)) === Some(1))
   }
 
   test("distance(: ReferencePosition)") {
 
     // middle
-    assert(region("chr0", 10, 100).distance(point("chr0", 50)) === Some(0))
+    assert(region(0, 10, 100).distance(point(0, 50)) === Some(0))
 
     // left edge
-    assert(region("chr0", 10, 100).distance(point("chr0", 10)) === Some(0))
+    assert(region(0, 10, 100).distance(point(0, 10)) === Some(0))
 
     // right edge
-    assert(region("chr0", 10, 100).distance(point("chr0", 100)) === Some(1))
+    assert(region(0, 10, 100).distance(point(0, 100)) === Some(1))
 
     // right
-    assert(region("chr0", 10, 100).distance(point("chr0", 150)) === Some(51))
+    assert(region(0, 10, 100).distance(point(0, 150)) === Some(51))
 
     // left
-    assert(region("chr0", 100, 200).distance(point("chr0", 50)) === Some(50))
+    assert(region(0, 100, 200).distance(point(0, 50)) === Some(50))
 
     // different sequences
-    assert(region("chr0", 100, 200).distance(point("chr1", 50)) === None)
+    assert(region(0, 100, 200).distance(point(1, 50)) === None)
 
   }
 
@@ -137,22 +137,22 @@ class ReferenceRegionSuite extends FunSuite {
       .build()
 
     assert(ReferenceRegion(read).isDefined)
-    assert(ReferenceRegion(read).get.contains(point("chr1", 1L)))
-    assert(ReferenceRegion(read).get.contains(point("chr1", 5L)))
+    assert(ReferenceRegion(read).get.contains(point(1, 1L)))
+    assert(ReferenceRegion(read).get.contains(point(1, 5L)))
   }
 
   test("validate that adjacent regions can be merged") {
-    val r1 = region("chr1", 0L, 6L)
-    val r2 = region("chr1", 6L, 10L)
+    val r1 = region(1, 0L, 6L)
+    val r2 = region(1, 6L, 10L)
 
     assert(r1.distance(r2).get === 1)
     assert(r1.isAdjacent(r2))
-    assert(r1.merge(r2) == region("chr1", 0L, 10L))
+    assert(r1.merge(r2) == region(1, 0L, 10L))
   }
 
   test("validate that non-adjacent regions cannot be merged") {
-    val r1 = region("chr1", 0L, 5L)
-    val r2 = region("chr1", 7L, 10L)
+    val r1 = region(1, 0L, 5L)
+    val r2 = region(1, 7L, 10L)
 
     assert(!r1.isAdjacent(r2))
 
@@ -162,8 +162,8 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("compute convex hull of two sets") {
-    val r1 = region("chr1", 0L, 5L)
-    val r2 = region("chr1", 7L, 10L)
+    val r1 = region(1, 0L, 5L)
+    val r2 = region(1, 7L, 10L)
 
     assert(!r1.isAdjacent(r2))
 
@@ -177,9 +177,9 @@ class ReferenceRegionSuite extends FunSuite {
     assert(hull1.end == 10L)
   }
 
-  def region(referenceName: String, start: Long, end: Long): ReferenceRegion =
-    ReferenceRegion(referenceName, start, end)
+  def region(refId: Int, start: Long, end: Long): ReferenceRegion =
+    ReferenceRegion(refId, start, end)
 
-  def point(referenceName: String, pos: Long): ReferencePosition =
-    ReferencePosition(referenceName, pos)
+  def point(refId: Int, pos: Long): ReferencePosition =
+    ReferencePosition(refId, pos)
 }

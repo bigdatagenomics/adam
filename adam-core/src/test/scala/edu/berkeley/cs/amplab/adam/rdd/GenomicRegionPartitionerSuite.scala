@@ -42,29 +42,29 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
 
   test("correctly partitions a single dummy sequence into two pieces") {
     val parter = new GenomicRegionPartitioner(2, SequenceDictionary(record(0, "foo", 10)))
-    assert(parter.getPartition(ReferencePosition("chr0", 3)) === 0)
-    assert(parter.getPartition(ReferencePosition("chr0", 7)) === 1)
+    assert(parter.getPartition(ReferencePosition(0, 3)) === 0)
+    assert(parter.getPartition(ReferencePosition(0, 7)) === 1)
   }
 
   test("correctly counts cumulative lengths") {
     val parter = new GenomicRegionPartitioner(3, SequenceDictionary(record(0, "foo", 20), record(1, "bar", 10)))
 
-    assert(parter.cumulativeLengths("0") === 0)
-    assert(parter.cumulativeLengths("1") === 20)
+    assert(parter.cumulativeLengths(0) === 0)
+    assert(parter.cumulativeLengths(1) === 20)
   }
 
   test("correctly partitions positions across two dummy sequences") {
     val parter = new GenomicRegionPartitioner(3, SequenceDictionary(record(0, "foo", 20), record(1, "bar", 10)))
 
     // check easy examples
-    assert(parter.getPartition(ReferencePosition("chr0", 8)) === 0)
-    assert(parter.getPartition(ReferencePosition("chr0", 18)) === 1)
-    assert(parter.getPartition(ReferencePosition("chr1", 8)) === 2)
+    assert(parter.getPartition(ReferencePosition(0, 8)) === 0)
+    assert(parter.getPartition(ReferencePosition(0, 18)) === 1)
+    assert(parter.getPartition(ReferencePosition(1, 8)) === 2)
 
     // check edge cases
-    assert(parter.getPartition(ReferencePosition("chr0", 0)) === 0)
-    assert(parter.getPartition(ReferencePosition("chr0", 10)) === 1)
-    assert(parter.getPartition(ReferencePosition("chr1", 0)) === 2)
+    assert(parter.getPartition(ReferencePosition(0, 0)) === 0)
+    assert(parter.getPartition(ReferencePosition(0, 10)) === 1)
+    assert(parter.getPartition(ReferencePosition(1, 0)) === 2)
   }
 
   sparkTest("test that we can range partition ADAMRecords") {
@@ -72,7 +72,7 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
     val count = 1000
     val pos = sc.parallelize((1 to count).map(i => adamRecord(0, "1", "read_%d".format(i), rand.nextInt(100), readMapped = true)))
     val parts = 200
-    val pairs = pos.map(p => (ReferencePosition(p.getReferenceName, p.getStart), p))
+    val pairs = pos.map(p => (ReferencePosition(p.getReferenceId, p.getStart), p))
     val parter = new RangePartitioner(parts, pairs)
     val partitioned = pairs.sortByKey().partitionBy(parter)
 
@@ -102,7 +102,7 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
     assert(rdd.count() === 200)
 
     val keyed =
-      rdd.map(rec => (ReferencePosition(rec.getReferenceName, rec.getStart), rec)).sortByKey()
+      rdd.map(rec => (ReferencePosition(rec.getReferenceId, rec.getStart), rec)).sortByKey()
 
     val keys = keyed.map(_._1).collect()
     assert(!keys.exists(rp => parter.getPartition(rp) < 0 || parter.getPartition(rp) >= parts))

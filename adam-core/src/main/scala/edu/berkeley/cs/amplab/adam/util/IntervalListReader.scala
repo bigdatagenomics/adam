@@ -62,7 +62,7 @@ class IntervalListReader(file: File) extends Traversable[(ReferenceRegion, Strin
 
         assert(strand == "+")
 
-        f((ReferenceRegion(refId.asInstanceOf[String], start, end), name))
+        f((ReferenceRegion(refId, start, end), name))
     }
   }
 

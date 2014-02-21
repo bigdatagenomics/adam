@@ -73,10 +73,10 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val rods = pileups.adamPileupsToRods(1)
 
     assert(rods.count === 2)
-    assert(rods.filter(_.position.referenceName == "0").count === 1)
-    assert(rods.filter(_.position.referenceName == "0").flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
-    assert(rods.filter(_.position.referenceName == "1").count === 1)
-    assert(rods.filter(_.position.referenceName == "1").flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
+    assert(rods.filter(_.position.refId == 0).count === 1)
+    assert(rods.filter(_.position.refId == 0).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
+    assert(rods.filter(_.position.refId == 1).count === 1)
+    assert(rods.filter(_.position.refId == 1).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
   }
 
   sparkTest("can convert pileups to rods, bases at same pos") {
@@ -270,7 +270,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val rods = reads.adamRecords2Rods()
     
     assert(rods.count === 3)
-    assert(rods.collect.forall(_.position.referenceName == "0"))
+    assert(rods.collect.forall(_.position.refId == 0))
     assert(rods.filter(_.position.pos == 1L).count === 1)
     assert(rods.filter(_.position.pos == 1L).first.pileups.length === 1)
     assert(rods.filter(_.position.pos == 1L).first.pileups.forall(_.getReadBase == Base.A))
@@ -322,17 +322,17 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val rods = reads.adamRecords2Rods()
     
     assert(rods.count === 3)
-    assert(rods.filter(_.position.referenceName == "0").count === 2)
-    assert(rods.filter(_.position.referenceName == "1").count === 1)
-    assert(rods.filter(_.position.pos == 1L).filter(_.position.referenceName == "0").count === 1)
-    assert(rods.filter(_.position.pos == 1L).filter(_.position.referenceName == "0").first.pileups.length === 1)
-    assert(rods.filter(_.position.pos == 1L).filter(_.position.referenceName == "0").first.pileups.forall(_.getReadBase == Base.A))
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "0").count === 1)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "0").first.pileups.length === 2)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "0").first.pileups.forall(_.getReadBase == Base.C))
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "1").count === 1)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "1").first.pileups.length === 1)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "1").first.pileups.forall(_.getReadBase == Base.G))
+    assert(rods.filter(_.position.refId == 0).count === 2)
+    assert(rods.filter(_.position.refId == 1).count === 1)
+    assert(rods.filter(_.position.pos == 1L).filter(_.position.refId == 0).count === 1)
+    assert(rods.filter(_.position.pos == 1L).filter(_.position.refId == 0).first.pileups.length === 1)
+    assert(rods.filter(_.position.pos == 1L).filter(_.position.refId == 0).first.pileups.forall(_.getReadBase == Base.A))
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 0).count === 1)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 0).first.pileups.length === 2)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 0).first.pileups.forall(_.getReadBase == Base.C))
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).count === 1)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.length === 1)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.forall(_.getReadBase == Base.G))
   }
 
   sparkTest ("can remap contig ids") {
@@ -409,16 +409,19 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("recover samples from variant context") {
     val contig0 = ADAMContig.newBuilder()
+      .setContigId(1)
       .setContigName("chr0")
       .build
     val variant0 = ADAMVariant.newBuilder()
       .setPosition(0L)
       .setVariantAllele("A")
+      .setReferenceAllele("T")
       .setContig(contig0)
       .build()
     val variant1 = ADAMVariant.newBuilder()
       .setPosition(0L)
       .setVariantAllele("C")
+      .setReferenceAllele("T")
       .setContig(contig0)
       .build()
     val genotype0 = ADAMGenotype.newBuilder()
@@ -441,16 +444,19 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
   sparkTest("get sequence dictionary from variant context") {
     val contig0 = ADAMContig.newBuilder()
       .setContigName("chr0")
+      .setContigId(0)
       .setContigLength(1000)
       .build
     val variant0 = ADAMVariant.newBuilder()
       .setPosition(0L)
       .setVariantAllele("A")
+      .setReferenceAllele("T")
       .setContig(contig0)
       .build()
     val variant1 = ADAMVariant.newBuilder()
       .setPosition(0L)
       .setVariantAllele("C")
+      .setReferenceAllele("T")
       .setContig(contig0)
       .build()
     val genotype0 = ADAMGenotype.newBuilder()
@@ -466,7 +472,8 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val sequenceDict = sc.parallelize(List(vc)).adamGetSequenceDictionary()
 
     assert(sequenceDict("chr0").id === 0)
-    assert(sequenceDict(0).name === "chr0")
+    println(sequenceDict(0).name.getClass)
+    assert(sequenceDict(0).name.toString === "chr0")
   }
 
   sparkTest("characterizeTags counts integer tag values correctly") {

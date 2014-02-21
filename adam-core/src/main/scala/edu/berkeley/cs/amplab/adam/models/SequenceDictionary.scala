@@ -15,8 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMNucleotideContig}
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMNucleotideContig, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary}
 import org.apache.avro.specific.SpecificRecord
@@ -81,11 +80,11 @@ class SequenceDictionary(recordsIn: Iterable[SequenceRecord]) extends Serializab
   }
 
   /**
-   * Returns true if this sequence dictionary contains a reference with a specific name.
-   *
-   * @param name Reference name to look for.
-   * @return True if reference is in this dictionary.
-   */
+    * Returns true if this sequence dictionary contains a reference with a specific name.
+    *
+    * @param name Reference name to look for.
+    * @return True if reference is in this dictionary.
+    */
   def containsRefName(name : CharSequence) : Boolean = {
     // must explicitly call toString - see note at recordNames creation RE: Avro & Utf8
     recordNames.contains(name.toString)
@@ -182,7 +181,7 @@ class SequenceDictionary(recordsIn: Iterable[SequenceRecord]) extends Serializab
    *                    mapTo.
    * @return A new SequenceDictionary with just the referenceIds mapped through the given Map argument.
    */
-  def remap(idTransform: Map[Int, Int]): SequenceDictionary = {
+ def remap(idTransform: Map[Int, Int]): SequenceDictionary = {
     def remapIndex(i: Int): Int =
       if (idTransform.contains(i)) idTransform(i) else i
 
@@ -308,7 +307,7 @@ object SequenceDictionary {
   def fromVCFHeader(header: VCFHeader): SequenceDictionary = {
     val contigLines: List[VCFContigHeaderLine] = header.getContigLines()
 
-    // map over contig lines, 
+    // map over contig lines,
     apply(contigLines.map(l => {
       val name = l.getID()
       val index = l.getContigIndex()
@@ -476,13 +475,23 @@ object SequenceRecord {
   def fromSpecificRecord(rec: SpecificRecord): SequenceRecord = {
 
     val schema = rec.getSchema
-
-    new SequenceRecord(
-      rec.get(schema.getField("referenceId").pos()).asInstanceOf[Int],
-      rec.get(schema.getField("referenceName").pos()).asInstanceOf[CharSequence],
-      rec.get(schema.getField("referenceLength").pos()).asInstanceOf[Long],
-      rec.get(schema.getField("referenceUrl").pos()).asInstanceOf[CharSequence])
-
+    if (schema.getField("referenceId") != null) {
+      new SequenceRecord(
+        rec.get(schema.getField("referenceId").pos()).asInstanceOf[Int],
+        rec.get(schema.getField("referenceName").pos()).asInstanceOf[CharSequence],
+        rec.get(schema.getField("referenceLength").pos()).asInstanceOf[Long],
+        rec.get(schema.getField("referenceUrl").pos()).asInstanceOf[CharSequence])
+    } else if (schema.getField("contig") != null) {
+      val pos = schema.getField("contig").pos()
+      val contig = rec.get(pos).asInstanceOf[ADAMContig]
+      val contigSchema = contig.getSchema
+      new SequenceRecord(
+        contig.get(contigSchema.getField("contigId").pos()).asInstanceOf[Int],
+        contig.get(contigSchema.getField("contigName").pos()).asInstanceOf[CharSequence],
+        contig.get(contigSchema.getField("contigLength").pos()).asInstanceOf[Long],
+        contig.get(contigSchema.getField("referenceURL").pos()).asInstanceOf[CharSequence])
+    } else {
+      null
+    }
   }
-
 }
