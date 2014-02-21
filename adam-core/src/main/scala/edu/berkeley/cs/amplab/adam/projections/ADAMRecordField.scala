@@ -66,6 +66,7 @@ object ADAMRecordField extends FieldEnumeration(ADAMRecord.SCHEMA$) {
   recordGroupSample,
   mateReferenceId,
   mateReferenceLength,
-  mateReferenceUrl
+  mateReferenceUrl,
+  origQual
   = SchemaValue
 }
