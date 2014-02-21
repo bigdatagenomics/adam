@@ -27,6 +27,9 @@ trait Covariate {
   def compute(read: DecadentRead): Seq[Value]
 
   def apply(read: DecadentRead): Seq[Value] = compute(read)
+
+  // Format the provided Value to be compatible with GATK's CSV output
+  def toCSV(value: Value): String = value.toString
 }
 
 abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
@@ -68,6 +71,13 @@ class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
       val residueExtras = extraVals.map(_(residueIdx))
       new CovariateKey(read.readGroup, residue.quality, residueExtras)
     }
+  }
+
+  // Format the provided key to be compatible with GATK's CSV output
+  def toCSV(key: CovariateKey): String = {
+    val extraFields: Seq[String] = extras.zip(key.extras).map{ case (cov, value) => cov.toCSV(value.asInstanceOf[cov.Value]) }
+    val allFields: Seq[String] = Seq(key.readGroup, key.quality.phred.toString) ++ extraFields
+    allFields.mkString(",")
   }
 
   override def equals(other: Any): Boolean = other match {

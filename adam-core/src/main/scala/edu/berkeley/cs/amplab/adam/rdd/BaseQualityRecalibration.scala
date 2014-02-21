@@ -44,9 +44,13 @@ class BaseQualityRecalibration(
 extends Serializable with Logging {
 
   // Additional covariates to use when computing the correction
-  val covariates = CovariateSpace(new DinucCovariate)
+  // TODO: parameterize
+  val covariates = CovariateSpace(
+    //new DinucCovariate
+  )
 
   // Bases with quality less than this will be skipped and left alone
+  // TODO: parameterize
   val minAcceptableQuality = QualityScore(6)
 
   // Compute and apply recalibration
@@ -55,6 +59,8 @@ extends Serializable with Logging {
     val observed: ObservationTable = reads.
       filter(_.isCanonicalRecord).map(observe).
       aggregate(ObservationAccumulator(covariates))(_ ++= _, _ += _).result
+
+    println("ObservationTable:\n%s".format(observed.toCSV))
 
     // second phase
     val recalibrator = Recalibrator(observed, minAcceptableQuality)

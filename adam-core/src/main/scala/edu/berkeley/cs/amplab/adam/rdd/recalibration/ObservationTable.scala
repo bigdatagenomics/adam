@@ -49,6 +49,9 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   def gatkQualityEstimateUnclipped(smoothing: Int): QualityScore =
     QualityScore.fromErrorProbability((smoothing + mismatches) / (smoothing + total))
 
+  // Format as string compatible with GATK's CSV output
+  def toCSV: String = "%s,%s,%s".format(total, mismatches, empiricalQuality.phred)
+
   override def toString: String =
     "%s / %s (%s)".format(mismatches, total, empiricalQuality)
 
@@ -98,6 +101,9 @@ class ObservationTable(
   ) extends Serializable {
 
   override def toString = entries.map{ case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
+
+  // Format as CSV compatible with GATK's output
+  def toCSV = entries.map{ case (k, v) => "%s,%s".format(space.toCSV(k), v.toCSV) }.mkString("\n")
 
   // `func' computes the aggregation key
   def aggregate[K](func: (CovariateKey, Observation) => K): Map[K, Aggregate] = {
