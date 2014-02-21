@@ -60,7 +60,7 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
   def run(sc: SparkContext, job: Job) {
 
     // Quiet Parquet...
-    ParquetLogger.hadoopLoggerLevel(Level.WARNING)
+    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     var adamRecords: RDD[ADAMRecord] = sc.adamLoad(args.inputPath)
     if (args.coalesce != -1) {
