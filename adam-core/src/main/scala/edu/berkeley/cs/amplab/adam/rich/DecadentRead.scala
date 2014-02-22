@@ -25,12 +25,21 @@ import edu.berkeley.cs.amplab.adam.util.Util
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 
-object DecadentRead {
+object DecadentRead extends Logging {
   type Residue = DecadentRead#Residue
 
   // Constructors
-  def apply(record: RichADAMRecord) = new DecadentRead(record)
-  def apply(record: ADAMRecord) = new DecadentRead(RichADAMRecord(record))
+  def apply(record: ADAMRecord): DecadentRead = DecadentRead(RichADAMRecord(record))
+
+  def apply(rich: RichADAMRecord): DecadentRead = {
+    try {
+      new DecadentRead(rich)
+    } catch {
+      case exc: Exception =>
+        val msg = "Error \"%s\" while constructing DecadentRead from ADAMRecord(%s)".format(exc.getMessage, rich.record)
+        throw new IllegalArgumentException(msg, exc)
+    }
+  }
 
   /**
    * cloy (verb)
@@ -49,10 +58,10 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   //
   // FIXME: This is currently unenforceable; SAMRecordConverter currently
   // sets PrimaryAlignment by default even on unmapped reads
-  //require(!record.getPrimaryAlignment || record.getReadMapped)
+  //require(!record.getPrimaryAlignment || record.getReadMapped, "Unaligned read can't be a primary alignment")
 
   // Should have quality scores for all residues
-  require(record.getSequence.length == record.qualityScores.length)
+  require(record.getSequence.length == record.qualityScores.length, "sequence and qualityScores must be same length")
 
   // A "residue" is an individual monomer in a polymeric chain, such as DNA.
   class Residue private[DecadentRead](val position: Int) {
