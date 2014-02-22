@@ -25,7 +25,7 @@ import edu.berkeley.cs.amplab.adam.util.Util
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 
-object DecadentRead extends Logging {
+object DecadentRead {
   type Residue = DecadentRead#Residue
 
   // Constructors
@@ -63,6 +63,9 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   // Should have quality scores for all residues
   require(record.getSequence.length == record.qualityScores.length, "sequence and qualityScores must be same length")
 
+  // MapQ should be valid
+  require(record.getMapq >= 0 && record.getMapq <= 255, "MapQ must be in [0, 255]")
+
   // A "residue" is an individual monomer in a polymeric chain, such as DNA.
   class Residue private[DecadentRead](val position: Int) {
     def read = DecadentRead.this
@@ -96,6 +99,10 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   lazy val sequence: IndexedSeq[Residue] = Range(0, baseSequence.length).map(new Residue(_))
 
   def isAligned: Boolean = record.getReadMapped
+
+  def alignmentQuality: Option[QualityScore] = assumingAligned {
+    if(record.getMapq == 255) None else Some(QualityScore(record.getMapq))
+  }
 
   def ensureAligned: Boolean =
     isAligned || (throw new IllegalArgumentException("Read has not been aligned to a reference"))

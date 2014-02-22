@@ -55,9 +55,12 @@ extends Serializable with Logging {
 
   // Compute and apply recalibration
   def apply(): RDD[ADAMRecord] = {
+    def shouldIncludeRead(read: DecadentRead) =
+      read.isCanonicalRecord && read.alignmentQuality.exists(_ > QualityScore(0))
+
     // first phase
     val observed: ObservationTable = reads.
-      filter(_.isCanonicalRecord).map(observe).
+      filter(shouldIncludeRead).map(observe).
       aggregate(ObservationAccumulator(covariates))(_ ++= _, _ += _).result
 
     println("ObservationTable:\n%s".format(observed.toCSV))
