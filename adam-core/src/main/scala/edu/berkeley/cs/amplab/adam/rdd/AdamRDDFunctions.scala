@@ -58,8 +58,6 @@ class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Seri
 }
 
 class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Logging {
-  initLogging()
-
   def adamSortReadsByReferencePosition(): RDD[ADAMRecord] = {
     log.info("Sorting reads by reference position")
 
@@ -125,10 +123,12 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 
   /**
    * Groups all reads by reference position and returns a non-aggregated pileup RDD.
+   *
+   * @param secondaryAlignments Creates pileups for non-primary aligned reads. Default is false.
    * @return ADAMPileup without aggregation
    */
-  def adamRecords2Pileup(): RDD[ADAMPileup] = {
-    val helper = new Reads2PileupProcessor
+  def adamRecords2Pileup(secondaryAlignments: Boolean = false): RDD[ADAMPileup] = {
+    val helper = new Reads2PileupProcessor(secondaryAlignments)
     helper.process(rdd)
   }
 
@@ -138,10 +138,11 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
    *
    * @param bucketSize Size in basepairs of buckets. Larger buckets take more time per
    * bucket to convert, but have lower skew. Default is 1000.
-   * 
+   * @param secondaryAlignments Creates rods for non-primary aligned reads. Default is false.
    * @return RDD of ADAMRods.
    */
-  def adamRecords2Rods (bucketSize: Int = 1000): RDD[ADAMRod] = {
+  def adamRecords2Rods (bucketSize: Int = 1000,
+                        secondaryAlignments: Boolean = false): RDD[ADAMRod] = {
     
     /**
      * Maps a read to one or two buckets. A read maps to a single bucket if both
@@ -170,7 +171,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 
     println ("Have reads in buckets.")
 
-    val pp = new Reads2PileupProcessor
+    val pp = new Reads2PileupProcessor(secondaryAlignments)
     
     /**
      * Converts all reads in a bucket into rods.
@@ -230,8 +231,6 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 }
 
 class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Logging {
-  initLogging()
-
   /**
    * Aggregates pileup bases together.
    *
@@ -260,8 +259,6 @@ class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Log
 }
 
 class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
-  initLogging()
-
   /**
    * Given an RDD of rods, splits the rods up by the specific sample they correspond to.
    * Returns a flat RDD.

@@ -237,6 +237,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .setMismatchingPositions("3")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
+      .setPrimaryAlignment(true)
       .setQual("!#$")
       .build()
     val r1 = ADAMRecord.newBuilder
@@ -248,6 +249,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .setMismatchingPositions("2")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
+      .setPrimaryAlignment(true)
       .setQual("%&")
       .build()
     val r2 = ADAMRecord.newBuilder
@@ -259,6 +261,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .setMismatchingPositions("1")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
+      .setPrimaryAlignment(true)
       .setQual("%")
       .build()
     
@@ -289,6 +292,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .setMismatchingPositions("2")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
+      .setPrimaryAlignment(true)
       .setQual("!#$")
       .build()
     val r1 = ADAMRecord.newBuilder
@@ -300,6 +304,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .setMismatchingPositions("1")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
+      .setPrimaryAlignment(true)
       .setQual("%&")
       .build()
     val r2 = ADAMRecord.newBuilder
@@ -311,6 +316,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .setMismatchingPositions("1")
       .setReadNegativeStrand(false)
       .setReadMapped(true)
+      .setPrimaryAlignment(true)
       .setQual("%")
       .build()
     
