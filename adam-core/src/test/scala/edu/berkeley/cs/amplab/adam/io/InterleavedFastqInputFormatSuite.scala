@@ -16,24 +16,19 @@
  * Author: Jeremy Elson (jelson@microsoft.com) Feb 2014
  */
 
-package edu.berkeley.cs.amplab.adam.rdd
+package edu.berkeley.cs.amplab.adam.io
 
-import edu.berkeley.cs.amplab.adam.io._
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import parquet.filter.UnboundRecordFilter
-import org.scalatest.exceptions.TestFailedException
 import org.apache.hadoop.io.Text
 
 
 class InterleavedFastqInputFormatSuite extends SparkFunSuite {
   (1 to 4) foreach { testNumber =>
-    val inputName = "interleaved_fastq_sample%d.fq".format(testNumber);
-    val expectedOutputName = inputName + ".output";
-    val expectedOutputPath = ClassLoader.getSystemClassLoader.getResource(expectedOutputName).getFile;
-    val expectedOutputData = scala.io.Source.fromFile(expectedOutputPath).mkString;
+    val inputName = "interleaved_fastq_sample%d.fq".format(testNumber)
+    val expectedOutputName = inputName + ".output"
+    val expectedOutputPath = ClassLoader.getSystemClassLoader.getResource(expectedOutputName).getFile
+    val expectedOutputData = scala.io.Source.fromFile(expectedOutputPath).mkString
 
     sparkTest("interleaved FASTQ hadoop reader: %s->%s".format(inputName, expectedOutputName)) {
       def ifq_reader: RDD[(Void, Text)] = {
@@ -46,16 +41,15 @@ class InterleavedFastqInputFormatSuite extends SparkFunSuite {
 
       val ifq_reads = ifq_reader.collect()
 
-      val testOutput = new StringBuilder();
+      val testOutput = new StringBuilder()
 
       ifq_reads.foreach(pair => {
-        testOutput.append(">>>interleaved fastq record start>>>\n");
-        testOutput.append(pair._2);
-        testOutput.append("<<<interleaved fastq record end<<<\n");
-      });
+        testOutput.append(">>>interleaved fastq record start>>>\n")
+        testOutput.append(pair._2)
+        testOutput.append("<<<interleaved fastq record end<<<\n")
+      })
 
-      assert(testOutput.toString() == expectedOutputData);
-      // System.out.println("%s result:\n".format(inputName) + testOutput.toString());
+      assert(testOutput.toString() == expectedOutputData)
     }
   }
 }
