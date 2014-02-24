@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Genome Bridge LLC
+ * Copyright 2013-2014. Genome Bridge LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,20 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup, Base}
+
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, 
+                                         ADAMContig,
+                                         ADAMPileup, 
+                                         Base, 
+                                         ADAMNucleotideContig, 
+                                         ADAMGenotype, 
+                                         ADAMVariant}
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceRecord, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariantContextRDDFunctions
+import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
+import org.apache.spark.rdd.RDD
 import scala.util.Random
 
 class AdamRDDFunctionsSuite extends SparkFunSuite {
@@ -323,6 +333,211 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).count === 1)
     assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.length === 1)
     assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.forall(_.getReadBase == Base.G))
+  }
+
+  sparkTest ("can remap contig ids") {
+    val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
+                                  SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
+    val ctg0 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr0")
+      .setContigId(1)
+      .setSequenceLength(1000L)
+      .build()
+    val ctg1 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr1")
+      .setContigId(2)
+      .setSequenceLength(1000L)
+      .build()
+
+    val rdd = sc.parallelize(List(ctg0, ctg1))
+
+    val remapped = rdd.adamRewriteContigIds(dict)
+    
+    assert(remapped.count === 2)
+    assert(remapped.filter(_.getContigName.toString == "chr0").first.getContigId === 0)
+    assert(remapped.filter(_.getContigName.toString == "chr1").first.getContigId === 1)
+  }
+
+  sparkTest ("can remap contig ids while filtering out contigs that aren't in dict") {
+    val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
+                                  SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
+    val ctg0 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr0")
+      .setContigId(1)
+      .setSequenceLength(1000L)
+      .build()
+    val ctg1 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr2")
+      .setContigId(2)
+      .setSequenceLength(1000L)
+      .build()
+
+    val rdd = sc.parallelize(List(ctg0, ctg1))
+
+    val remapped = rdd.adamRewriteContigIds(dict)
+
+    assert(remapped.count === 1)
+    assert(remapped.filter(_.getContigName.toString == "chr0").first.getContigId === 0)
+    assert(remapped.filter(_.getContigName.toString == "chr2").count === 0)
+  }
+
+  sparkTest ("generate sequence dict from fasta") {
+    val ctg0 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr0")
+      .setContigId(1)
+      .setSequenceLength(1000L)
+      .setUrl("http://bigdatagenomics.github.io/chr0.fa")
+      .build()
+    val ctg1 = ADAMNucleotideContig.newBuilder()
+      .setContigName("chr1")
+      .setContigId(2)
+      .setSequenceLength(900L)
+      .build()
+
+    val rdd = sc.parallelize(List(ctg0, ctg1))
+
+    val dict = rdd.adamGetSequenceDictionary()
+
+    assert(dict.containsRefName("chr0"))
+    assert(dict("chr0").id === 1)
+    assert(dict("chr0").length === 1000L)
+    assert(dict("chr0").url.toString == "http://bigdatagenomics.github.io/chr0.fa")
+    assert(dict.containsRefName("chr1"))
+    assert(dict("chr1").id === 2)
+    assert(dict("chr1").length === 900L)
+  }
+
+  sparkTest("recover samples from variant context") {
+    val contig0 = ADAMContig.newBuilder()
+      .setContigId(1)
+      .setContigName("chr0")
+      .build
+    val variant0 = ADAMVariant.newBuilder()
+      .setPosition(0L)
+      .setVariantAllele("A")
+      .setReferenceAllele("T")
+      .setContig(contig0)
+      .build()
+    val variant1 = ADAMVariant.newBuilder()
+      .setPosition(0L)
+      .setVariantAllele("C")
+      .setReferenceAllele("T")
+      .setContig(contig0)
+      .build()
+    val genotype0 = ADAMGenotype.newBuilder()
+      .setVariant(variant0)
+      .setSampleId("me")
+      .build()
+    val genotype1 = ADAMGenotype.newBuilder()
+      .setVariant(variant1)
+      .setSampleId("you")
+      .build()
+
+    val vc = ADAMVariantContext.buildFromGenotypes(List(genotype0, genotype1))
+    val samples = sc.parallelize(List(vc)).adamGetCallsetSamples()
+
+    assert(samples.filter(_ == "you").length === 1)
+    assert(samples.filter(_ == "me").length === 1)
+  }
+
+
+  sparkTest("get sequence dictionary from variant context") {
+    val contig0 = ADAMContig.newBuilder()
+      .setContigName("chr0")
+      .setContigId(0)
+      .setContigLength(1000)
+      .build
+    val variant0 = ADAMVariant.newBuilder()
+      .setPosition(0L)
+      .setVariantAllele("A")
+      .setReferenceAllele("T")
+      .setContig(contig0)
+      .build()
+    val variant1 = ADAMVariant.newBuilder()
+      .setPosition(0L)
+      .setVariantAllele("C")
+      .setReferenceAllele("T")
+      .setContig(contig0)
+      .build()
+    val genotype0 = ADAMGenotype.newBuilder()
+      .setVariant(variant0)
+      .build()
+    val genotype1 = ADAMGenotype.newBuilder()
+      .setVariant(variant1)
+      .build()
+
+    val genotypeSeq = List(genotype0, genotype1)
+
+    val vc = ADAMVariantContext.buildFromGenotypes(genotypeSeq)
+    val sequenceDict = sc.parallelize(List(vc)).adamGetSequenceDictionary()
+
+    assert(sequenceDict("chr0").id === 0)
+    println(sequenceDict(0).name.getClass)
+    assert(sequenceDict(0).name.toString === "chr0")
+  }
+
+  sparkTest("characterizeTags counts integer tag values correctly") {
+    val tagCounts : Map[String,Long] = Map("XT" -> 10L, "XU" -> 9L, "XV" -> 8L)
+    val readItr : Iterable[ADAMRecord] =
+      for( (tagName, tagCount) <- tagCounts ; i <- 0 until tagCount.toInt  )
+      yield ADAMRecord.newBuilder().setAttributes("%s:i:%d".format(tagName, i)).build()
+
+    val reads = sc.parallelize(readItr.toSeq)
+    val mapCounts : Map[String,Long] = Map(reads.adamCharacterizeTags().collect() : _*)
+
+    assert(mapCounts === tagCounts)
+  }
+
+  sparkTest("withTag returns only those records which have the appropriate tag") {
+    val r1 = ADAMRecord.newBuilder().setAttributes("XX:i:3").build()
+    val r2 = ADAMRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
+    val r3 = ADAMRecord.newBuilder().setAttributes("YY:i:20").build()
+
+    val rdd = sc.parallelize(Seq(r1, r2, r3))
+    assert(rdd.count() === 3)
+
+    val rddXX = rdd.adamFilterRecordsWithTag("XX")
+    assert(rddXX.count() === 2)
+
+    val collected = rddXX.collect()
+    assert(collected.contains(r1))
+    assert(collected.contains(r2))
+  }
+
+  sparkTest("withTag, when given a tag name that doesn't exist in the input, returns an empty RDD") {
+    val r1 = ADAMRecord.newBuilder().setAttributes("XX:i:3").build()
+    val r2 = ADAMRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
+    val r3 = ADAMRecord.newBuilder().setAttributes("YY:i:20").build()
+
+    val rdd = sc.parallelize(Seq(r1, r2, r3))
+    assert(rdd.count() === 3)
+
+    val rddXX = rdd.adamFilterRecordsWithTag("ZZ")
+    assert(rddXX.count() === 0)
+  }
+
+  sparkTest("characterizeTagValues counts distinct values of a tag") {
+    val r1 = ADAMRecord.newBuilder().setAttributes("XX:i:3").build()
+    val r2 = ADAMRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
+    val r3 = ADAMRecord.newBuilder().setAttributes("YY:i:20").build()
+    val r4 = ADAMRecord.newBuilder().setAttributes("XX:i:4").build()
+
+    val rdd = sc.parallelize(Seq(r1, r2, r3, r4))
+    val tagValues = rdd.adamCharacterizeTagValues("XX")
+
+    assert(tagValues.keys.size === 2)
+    assert(tagValues(4) === 2)
+    assert(tagValues(3) === 1)
+  }
+
+  sparkTest("characterizeTags counts tags in a SAM file correctly") {
+    val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
+    val sam : RDD[ADAMRecord] = sc.adamLoad(filePath)
+
+    val mapCounts : Map[String,Long] = Map(sam.adamCharacterizeTags().collect() : _*)
+    assert(mapCounts("NM") === 200)
+    assert(mapCounts("AS") === 200)
+    assert(mapCounts("XS") === 200)
   }
 
 }

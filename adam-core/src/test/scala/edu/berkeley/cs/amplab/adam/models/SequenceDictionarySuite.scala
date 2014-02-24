@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Genome Bridge LLC
+ * Copyright 2013-2014. Genome Bridge LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,12 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import org.scalatest._
+import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMVariant}
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary}
+import org.apache.avro.specific.SpecificRecord
+import org.broadinstitute.variant.vcf.{VCFHeader, VCFContigHeaderLine}
+import org.scalatest.FunSuite
 
 class SequenceDictionarySuite extends FunSuite {
 
@@ -25,12 +30,21 @@ class SequenceDictionarySuite extends FunSuite {
     assert(SequenceDictionary(rec1, rec2)(rec1.id) === rec1)
   }
 
-  test("containsRefName works as expected") {
+  test("containsRefName works as expected 1") {
     val rec1 = record(0, "foo")
     val rec2 = record(1, "bar")
     assert(SequenceDictionary(rec1, rec2).containsRefName("foo"))
     assert(SequenceDictionary(rec1, rec2).containsRefName("bar"))
     assert(!SequenceDictionary(rec1, rec2).containsRefName("foo "))
+  }
+
+  test("containsRefName works as expected 2") {
+    val rec1 = record(0, "foo")
+    val rec2 = record(1, "bar")
+    val sd = SequenceDictionary(rec1, rec2)
+    val names = sd.getReferenceNames()
+    assert(names.toList.filter(_ == "foo").length === 1)
+    assert(names.toList.filter(_ == "bar").length === 1)
   }
 
   test("Can retrieve sequence by Name") {
@@ -177,6 +191,93 @@ class SequenceDictionarySuite extends FunSuite {
     assert(s1 === s3)
   }
 
+  test("containsRefName works correctly") {
+    val dict = SequenceDictionary(record(0, "chr0"),
+                                  record(1, "chr1"),
+                                  record(2, "chr2"),
+                                  record(3, "chr3"))
+    val str0: String = "chr0"
+    val str1: java.lang.String = "chr1"
+    val str2: CharSequence = "chr2"
+    val str3: java.lang.CharSequence = "chr3"
+
+    assert(dict.containsRefName(str0))
+    assert(dict.containsRefName(str1))
+    assert(dict.containsRefName(str2))
+    assert(dict.containsRefName(str3))
+  }
+
+  test("apply on name works correctly") {
+    val dict = SequenceDictionary(record(0, "chr0"),
+                                  record(1, "chr1"),
+                                  record(2, "chr2"),
+                                  record(3, "chr3"))
+    val str0: String = "chr0"
+    val str1: java.lang.String = "chr1"
+    val str2: CharSequence = "chr2"
+    val str3: java.lang.CharSequence = "chr3"
+
+    assert(dict(str0).id === 0)
+    assert(dict(str1).id === 1)
+    assert(dict(str2).id === 2)
+    assert(dict(str3).id === 3)
+  }
+    
+  // TODO (nealsid): Update this test case once we move ADAMRecord
+  // over to using ADAMContig for it's location and fromSpecificRecord
+  // is also updated.
+  // test("get record from variant using specific record") {
+  //   val contig = ADAMContig.newBuilder
+  //     .setContigId(0)
+  //     .setContigName("chr0")
+  //     .setContigLength(1000)
+  //     .setReferenceURL("http://bigdatagenomics.github.io/chr0")
+  //     .build()
+  //   val variant = ADAMVariant.newBuilder()
+  //     .setContig(contig)
+  //     .setReferenceAllele("A")
+  //     .setVariantAllele("T")
+  //     .build()
+
+  //   val rec = SequenceRecord.fromSpecificRecord(variant)
+
+  //   assert(rec.id === 0)
+  //   assert(rec.name === "chr0")
+  //   assert(rec.length === 1000L)
+  //   assert(rec.url === "http://bigdatagenomics.github.io/chr0")
+  // }
+
+  test("convert from sam sequence record and back") {
+    val sr = new SAMSequenceRecord("chr0", 1000)
+
+    sr.setAssembly("http://bigdatagenomics.github.io/chr0")
+
+    val conv = SequenceRecord.fromSamSequenceRecord(sr)
+
+    assert(conv.name === "chr0")
+    assert(conv.length === 1000L)
+    assert(conv.url === "http://bigdatagenomics.github.io/chr0")
+    assert(conv.id === -1)
+
+    val convSr = conv.toSAMSequenceRecord
+    
+    assert(convSr.isSameSequence(sr))
+  }
+
+  test("convert from sam sequence dictionary") {
+    val sr0 = new SAMSequenceRecord("chr0", 1000)
+    println (sr0.getSequenceIndex)
+    val srs = List(sr0)
+
+    val ssd = new SAMSequenceDictionary(srs)
+
+    val asd = SequenceDictionary.fromSAMSequenceDictionary(ssd)
+
+    assert(asd(0).name === "chr0")
+    assert(asd("chr0").id === 0)
+  }
+
   def record(id: Int, name: String, length: Int = 1000, url: String = null): SequenceRecord =
     SequenceRecord(id, name, length, url)
+
 }

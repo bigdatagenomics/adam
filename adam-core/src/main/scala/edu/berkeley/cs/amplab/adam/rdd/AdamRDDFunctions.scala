@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import parquet.hadoop.ParquetOutputFormat
 import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
 import parquet.hadoop.util.ContextUtil
 import org.apache.avro.specific.SpecificRecord
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMNucleotideContig}
 import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, SnpTable, ReferencePosition, ADAMRod}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
 import java.io.File
-import edu.berkeley.cs.amplab.adam.util.ParquetLogger
+import edu.berkeley.cs.amplab.adam.util.{MapTools, ParquetLogger}
 import java.util.logging.Level
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 
@@ -84,7 +84,8 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
       val referencePos = ReferencePosition(p) match {
         case None =>
           // Move unmapped reads to the end of the file
-          ReferencePosition(unmappedReferenceIds.next(), Long.MaxValue)
+          ReferencePosition(
+            unmappedReferenceIds.next(), Long.MaxValue)
         case Some(pos) => pos
       }
       (referencePos, p)
@@ -188,6 +189,44 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
 
     bucketedReads.flatMap(bucketedReadsToRods)
   }
+
+  /**
+   * Converts a set of records into an RDD containing the pairs of all unique tagStrings
+   * within the records, along with the count (number of records) which have that particular
+   * attribute.
+   *
+   * @return An RDD of attribute name / count pairs.
+   */
+  def adamCharacterizeTags() : RDD[(String,Long)] = {
+    rdd.flatMap(_.tags.map( attr => (attr.tag, 1L) )).reduceByKey( _ + _ )
+  }
+
+  /**
+   * Calculates the set of unique attribute <i>values</i> that occur for the given 
+   * tag, and the number of time each value occurs.  
+   * 
+   * @param tag The name of the optional field whose values are to be counted.
+   * @return A Map whose keys are the values of the tag, and whose values are the number of time each tag-value occurs.
+   */
+  def adamCharacterizeTagValues(tag : String) : Map[Any,Long] = {
+    adamFilterRecordsWithTag(tag).flatMap(_.tags.find(_.tag == tag)).map(
+      attr => Map(attr.value -> 1L)
+    ).reduce {
+      (map1 : Map[Any,Long], map2 : Map[Any,Long]) =>
+        MapTools.add(map1, map2)
+    }
+  }
+
+  /**
+   * Returns the subset of the ADAMRecords which have an attribute with the given name.
+   * @param tagName The name of the attribute to filter on (should be length 2)
+   * @return An RDD[ADAMRecord] containing the subset of records with a tag that matches the given name.
+   */
+  def adamFilterRecordsWithTag(tagName : String) : RDD[ADAMRecord] = {
+    assert( tagName.length == 2,
+      "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName))
+    rdd.filter(_.tags.exists(_.tag == tagName))
+  }
 }
 
 class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Logging {
@@ -273,4 +312,58 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
     // coverage is the total count of bases, over the total number of loci
     totalBases.toDouble / rdd.count.toDouble
   }
+}
+
+class AdamNucleotideContigRDDFunctions(rdd: RDD[ADAMNucleotideContig]) extends Serializable with Logging {
+  
+  /**
+   * Rewrites the contig IDs of a FASTA reference set to match the contig IDs present in a
+   * different sequence dictionary. Sequences are matched by name.
+   *
+   * @note Contigs with names that aren't present in the provided dictionary are filtered out of the RDD.
+   *
+   * @param sequenceDict A sequence dictionary containing the preferred IDs for the contigs.
+   * @return New set of contigs with IDs rewritten.
+   */
+  def adamRewriteContigIds (sequenceDict: SequenceDictionary): RDD[ADAMNucleotideContig] = {
+    // broadcast sequence dictionary
+    val bcastDict = rdd.context.broadcast(sequenceDict)
+
+    /**
+     * Remaps a single contig.
+     *
+     * @param contig Contig to remap.
+     * @param dictionary A sequence dictionary containing the IDs to use for remapping.
+     * @return An option containing the remapped contig if it's sequence name was found in the dictionary.
+     */
+    def remapContig (contig: ADAMNucleotideContig, dictionary: SequenceDictionary): Option[ADAMNucleotideContig] = {
+      val name: CharSequence = contig.getContigName
+      
+      if (dictionary.containsRefName(name)) {
+        val newId = dictionary(contig.getContigName).id
+        val newContig = ADAMNucleotideContig.newBuilder(contig)
+          .setContigId(newId)
+          .build()
+        
+        Some(newContig)
+      } else {
+        None
+      }
+    }
+
+    // remap all contigs
+    rdd.flatMap(c => remapContig(c, bcastDict.value))
+  }
+
+  /**
+   * From this set of contigs, returns a sequence dictionary.
+   *
+   * @see AdamRecordRDDFunctions#sequenceDictionary
+   * 
+   * @return Sequence dictionary representing this reference.
+   */
+  def adamGetSequenceDictionary(): SequenceDictionary =
+    rdd.distinct().aggregate(SequenceDictionary())(
+      (dict: SequenceDictionary, ctg: ADAMNucleotideContig) => dict ++ Seq(SequenceRecord.fromADAMContig(ctg)),
+      (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
 }

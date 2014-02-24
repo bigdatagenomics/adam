@@ -26,6 +26,7 @@ object SparkTest extends org.scalatest.Tag("edu.berkeley.cs.amplab.util.SparkFun
 trait SparkFunSuite extends FunSuite with BeforeAndAfter {
 
   val sparkPortProperty = "spark.driver.port"
+
   var sc: SparkContext = _
   var maybeLevels: Option[Map[String, Level]] = None
 
@@ -40,6 +41,7 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
       System.setProperty(sparkPortProperty, s.getLocalPort.toString)
       // Allow Spark to take the port we just discovered
       s.close()
+
       // Create a spark context
       new SparkContext("local[4]", sparkName)
     }
@@ -49,6 +51,14 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
     // Stop the context
     sc.stop()
     sc = null
+
+    // See notes at:
+    // http://blog.quantifind.com/posts/spark-unit-test/
+    // That post calls for clearing 'spark.master.port', but this thread
+    // https://groups.google.com/forum/#!topic/spark-users/MeVzgoJXm8I
+    // suggests that the property was renamed 'spark.driver.port'
+    System.clearProperty(sparkPortProperty)
+
     maybeLevels match {
       case None =>
       case Some(levels) =>

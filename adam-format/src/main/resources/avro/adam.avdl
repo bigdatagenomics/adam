@@ -67,13 +67,6 @@ record ADAMRecord {
     union { null, string } mateReferenceUrl = null;
 }
 
-record ADAMFastaFragment {
-    union {null, string } description = null;
-    union {null, long } start = null;
-    union {null, long } end = null;
-    union {null, string } sequence = null;
-}
-
 enum Base {
     A,
     C,
@@ -92,6 +85,15 @@ enum Base {
     V, // not T
     H, // not G
     D  // not C
+}
+
+record ADAMNucleotideContig {
+    union { null, string } contigName = null;
+    union { null, int } contigId = null;
+    union { null, string } description = null;
+    array<Base> sequence = [];
+    union { null, long } sequenceLength = null;
+    union { null, string } url = null;
 }
 
 record ADAMPileup {
@@ -133,17 +135,18 @@ record ADAMNestedPileup {
 }
 
 record ADAMContig {
-  union { null, string } contigName;
+  union { null, int }    contigId = null;
+  union { null, string } contigName = null;
   union { null, long }   contigLength = null;
   union { null, string } contigMD5 = null;
   union { null, string } referenceURL = null;
 }
 
 record ADAMVariant {
-  union { null, ADAMContig } contig;
-  union { null, long }       position;
-  union { null, string }     referenceAllele;
-  union { null, string }     variantAllele;
+  union { null, ADAMContig } contig = null;
+  union { null, long }       position = null;
+  string                     referenceAllele;
+  string                     variantAllele;
 }
 
 enum ADAMGenotypeAllele {

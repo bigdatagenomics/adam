@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMGenotype, ADAMVariant, ADAMPileup}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
@@ -64,12 +64,28 @@ object ReferencePosition {
    */
   val UNMAPPED = new ReferencePosition(-1, -1)
 
+  /**
+   * Checks to see if a read is mapped with a valid position.
+   *
+   * @param record Read to check for mapping.
+   * @return True if read is mapped and has a valid position, else false.
+   */
   def mappedPositionCheck(record: ADAMRecord): Boolean = {
     val referenceId = Some(record.getReferenceId)
     val start = Some(record.getStart)
     record.getReadMapped && referenceId.isDefined && start.isDefined
   }
 
+  /**
+   * Generates a reference position from a read. This function generates the
+   * position from the start mapping position of the read.
+   *
+   * @param record Read from which to generate a reference position.
+   * @return Reference position wrapped inside of an option. If the read is
+   * mapped, the option will be stuffed, else it will be empty (None).
+   *
+   * @see fivePrime
+   */
   def apply(record: ADAMRecord): Option[ReferencePosition] = {
     if (mappedPositionCheck(record)) {
       Some(new ReferencePosition(record.getReferenceId, record.getStart))
@@ -78,6 +94,45 @@ object ReferencePosition {
     }
   }
 
+  /**
+   * Generates a reference position from a called variant.
+   *
+   * @note An invariant of variants is that they have a defined position,
+   * therefore we do not wrap them in an option.
+   *
+   * @param variant Called variant from which to generate a
+   * reference position.
+   * @return The reference position of this variant.
+   */
+  def apply (variant: ADAMVariant): ReferencePosition = {
+    new ReferencePosition(variant.getContig.getContigId, variant.getPosition)
+  }
+
+  /**
+   * Generates a reference position from a genotype.
+   *
+   * @note An invariant of genotypes is that they have a defined position,
+   * therefore we do not wrap them in an option.
+   *
+   * @param genotype Genotype from which to generate a reference position.
+   * @return The reference position of this genotype.
+   */
+  def apply (genotype: ADAMGenotype): ReferencePosition = {
+    val variant = genotype.getVariant()
+    new ReferencePosition(variant.getContig.getContigId, variant.getPosition)
+  }
+
+  /**
+   * Generates a reference position from the five prime end of a read. This
+   * will be different from the start mapping position of a read if this
+   * read is a reverse strand read.
+   *
+   * @param record Read from which to generate a reference position.
+   * @return Reference position wrapped inside of an option. If the read is
+   * mapped, the option will be stuffed, else it will be empty (None).
+   *
+   * @see apply(record: ADAMRecord)
+   */
   def fivePrime(record: ADAMRecord): Option[ReferencePosition] = {
     if (mappedPositionCheck(record)) {
       Some(new ReferencePosition(record.getReferenceId, record.fivePrimePosition.get))

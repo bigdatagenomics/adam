@@ -16,12 +16,12 @@
 
 package edu.berkeley.cs.amplab.adam.rdd.variation
 
+import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMDatabaseVariantAnnotation}
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary, SequenceRecord}
+import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMDatabaseVariantAnnotation}
 import org.apache.spark.SparkContext._
-import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant
 
 class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Serializable with Logging {
   initLogging()
@@ -34,7 +34,21 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Seria
     rdd.keyBy(_.variant)
       .leftOuterJoin(ann.keyBy(_.getVariant))
       .values
-      .map { case (v:ADAMVariantContext, a) => new ADAMVariantContext(v.variant, v.genotypes, databases = a) }
+      .map { case (v:ADAMVariantContext, a) => new ADAMVariantContext(v.variant, v.genotypes, a) }
+
+  }
+
+  def adamGetSequenceDictionary(): SequenceDictionary =
+    rdd.map(_.genotypes).distinct().aggregate(SequenceDictionary())(
+      (dict: SequenceDictionary, rec: Seq[ADAMGenotype]) => dict ++ rec.map((genotype : ADAMGenotype) => SequenceRecord.fromSpecificRecord(genotype.getVariant)),
+      (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
+
+  def adamGetCallsetSamples(): List[String] = {
+    rdd.flatMap(c => c.genotypes.map(_.getSampleId).distinct)
+      .distinct
+      .map(_.toString)
+      .collect()
+      .toList
   }
 }
 
@@ -44,6 +58,6 @@ class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with
   def toADAMVariantContext(): RDD[ADAMVariantContext] = {
     rdd.keyBy({ g => RichADAMVariant.variantToRichVariant(g.getVariant) })
       .groupByKey
-      .map { case (v:RichADAMVariant, g) => new ADAMVariantContext(v, genotypes = g) }
+      .map { case (v:RichADAMVariant, g) => new ADAMVariantContext(v, g, None) }
   }
 }

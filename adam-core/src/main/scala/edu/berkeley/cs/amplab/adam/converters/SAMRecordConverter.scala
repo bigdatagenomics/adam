@@ -19,7 +19,8 @@ import net.sf.samtools.{SAMReadGroupRecord, SAMRecord}
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import scala.collection.JavaConverters._
-import edu.berkeley.cs.amplab.adam.models.{RecordGroupDictionary, SequenceDictionary}
+import edu.berkeley.cs.amplab.adam.models.{Attribute, RecordGroupDictionary, SequenceDictionary}
+import edu.berkeley.cs.amplab.adam.util.AttributeUtils
 
 class SAMRecordConverter extends Serializable {
   def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): ADAMRecord = {
@@ -107,16 +108,16 @@ class SAMRecordConverter extends Serializable {
     }
 
     if (samRecord.getAttributes != null) {
-      var attrs = List[String]()
+      var tags = List[Attribute]()
       samRecord.getAttributes.asScala.foreach {
         attr =>
           if (attr.tag == "MD") {
             builder.setMismatchingPositions(attr.value.toString)
           } else {
-            attrs ::= attr.tag + "=" + attr.value
+            tags ::= AttributeUtils.convertSAMTagAndValue(attr)
           }
       }
-      builder.setAttributes(attrs.mkString("\t"))
+      builder.setAttributes(tags.mkString("\t"))
     }
 
     val recordGroup: SAMReadGroupRecord = samRecord.getReadGroup

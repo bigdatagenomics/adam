@@ -26,7 +26,7 @@ class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("joins SNV database annotation") {
     val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("11").build)
+      .setContig(ADAMContig.newBuilder.setContigName("11").setContigId(11).build)
       .setPosition(17409572)
       .setReferenceAllele("T")
       .setVariantAllele("C")
@@ -47,6 +47,8 @@ class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
 
     // TODO: implicit conversion to ADAMVariantContextRDD
     val annotated = vc.joinDatabaseVariantAnnotation(vda)
+    println("nealsid: " + annotated.count())
+    println("nealsid: " + annotated.first.databases.isDefined)
     assert( annotated.map(_.databases.isDefined).reduce { (a,b) => a && b } )
   }
 

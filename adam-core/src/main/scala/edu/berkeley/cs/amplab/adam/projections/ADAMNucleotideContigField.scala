@@ -14,9 +14,23 @@
  * limitations under the License.
  */
 
-package edu.berkeley.cs.amplab.adam.rdd
+package edu.berkeley.cs.amplab.adam.projections
 
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
+import edu.berkeley.cs.amplab.adam.avro.ADAMNucleotideContig
 
-class ADAMVariantContextSuite extends SparkFunSuite {
+/**
+ * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
+ * in sync with any changes to ADAMRecord.
+ *
+ * This enumeration is necessary because Parquet needs the field string names
+ * for predicates and projections.
+ */
+object ADAMNucleotideContigField extends FieldEnumeration(ADAMNucleotideContig.SCHEMA$) {
+
+  val contigName,
+  contigId,
+  description,
+  sequence,
+  sequenceLength,
+  url = SchemaValue
 }
