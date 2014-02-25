@@ -79,7 +79,7 @@ object VariantContextConverter {
     AttrKey("gtFilters", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_FILTER_KEY)),
     AttrKey("genotypeLikelihoods", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_PL_KEY)),
     AttrKey("phaseQuality", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_QUALITY_KEY, 1, VCFHeaderLineType.Float, "Read-backed phasing quality")),
-    AttrKey("phaseSetId", attrAsLong _, new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY, 1, VCFHeaderLineType.Integer, "Phase set"))
+    AttrKey("phaseSetId", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY, 1, VCFHeaderLineType.Integer, "Phase set"))
   )
   
   lazy val infoHeaderLines : Seq[VCFCompoundHeaderLine] = INFO_KEYS.map(_.hdrLine)
