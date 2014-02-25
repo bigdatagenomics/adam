@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,9 @@ object VariantContextConverter {
     call
   }
 
+  // One conversion method for each way of representing an Allele that
+  // GATK has, plus to convert based on actual alleles vs. the calls
+  // (ref/alt/nocall) in the genotypes.
   private def convertAllele(allele: Allele): ADAMGenotypeAllele = {
     if (allele.isNoCall) ADAMGenotypeAllele.NoCall
     else if (allele.isReference) ADAMGenotypeAllele.Ref
@@ -140,7 +143,6 @@ object VariantContextConverter {
  * GATK VariantContext should be implemented in this class.
  */
 private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable {
-  import VariantContextConverter._
 
   private def convertAllele(allele: Allele): ADAMGenotypeAllele = {
     if (allele.isNoCall) ADAMGenotypeAllele.NoCall
