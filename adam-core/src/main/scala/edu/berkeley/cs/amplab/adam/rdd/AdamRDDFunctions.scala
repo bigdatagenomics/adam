@@ -28,6 +28,7 @@ import edu.berkeley.cs.amplab.adam.models.{SequenceRecord,
                                            ReferenceRegion,
                                            ADAMRod}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.recalibration.BaseQualityRecalibration
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.util.{MapTools, ParquetLogger}

@@ -56,8 +56,7 @@ object DecadentRead {
 class DecadentRead(val record: RichADAMRecord) extends Logging {
   // Can't be a primary alignment unless it has been aligned
   //
-  // FIXME: This is currently unenforceable; SAMRecordConverter currently
-  // sets PrimaryAlignment by default even on unmapped reads
+  // FIXME(#112): This is currently unenforceable; SAMRecordConverter sets PrimaryAlignment on unmapped reads
   //require(!record.getPrimaryAlignment || record.getReadMapped, "Unaligned read can't be a primary alignment")
 
   // Should have quality scores for all residues
@@ -66,10 +65,17 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   // MapQ should be valid
   require(record.getMapq >= 0 && record.getMapq <= 255, "MapQ must be in [0, 255]")
 
-  // A "residue" is an individual monomer in a polymeric chain, such as DNA.
+  /**
+   * A "residue" is an individual monomer of a polymeric chain, such as DNA.
+   */
   class Residue private[DecadentRead](val position: Int) {
     def read = DecadentRead.this
 
+    /**
+     * Nucleotide at this position.
+     *
+     * TODO: Return values of meaningful type, e.g. `DNABase' or `Deoxyribonucleotide'.
+     */
     def base: Char = read.baseSequence(position)
 
     def quality = QualityScore(record.qualityScores(position))

@@ -19,12 +19,12 @@ class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable w
    * Is there a known SNP at the reference location of this Residue?
    */
   def isMasked(residue: Residue): Boolean =
-    isMasked(residue.referenceLocation)
+    contains(residue.referenceLocation)
 
   /**
    * Is there a known SNP at the given reference location?
    */
-  def isMasked(location: ReferenceLocation): Boolean = {
+  def contains(location: ReferenceLocation): Boolean = {
     val bucket = table.get(location.contig)
     if(bucket.isEmpty) unknownContigWarning(location.contig)
     bucket.map(_.contains(location.offset)).getOrElse(false)

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.berkeley.cs.amplab.adam.rdd
+package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.models.SnpTable
