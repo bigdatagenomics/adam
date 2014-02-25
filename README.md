@@ -54,9 +54,10 @@ You will need to have [Maven](http://maven.apache.org/) installed in order to bu
 > the `pom.xml` file.
 
 ```
-$ git clone git@github.com:bigdatagenomics/adam.git
+$ git clone https://github.com/bigdatagenomics/adam.git
 $ cd adam
-$ mvn clean package
+$ export "MAVEN_OPTS=-Xmx512m -XX:MaxPermSize=128m"
+$ mvn clean package -DskipTests
 ...
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
@@ -175,12 +176,19 @@ On larger files, the difference in speed is even more dramatic. ADAM is faster b
 it's multi-threaded and distributed and uses a columnar storage format (with a projected
 schema that only materializes the read flags instead of the whole read). 
 
-# Mailing List
+# Getting In Touch
+
+## Mailing List
 
 [The ADAM mailing list](https://groups.google.com/forum/#!forum/adam-developers) is a good
 way to sync up with other people who use ADAM including the core developers. You can subscribe
 by sending an email to `adam-developers+subscribe@googlegroups.com` or just post using
 the [web forum page](https://groups.google.com/forum/#!forum/adam-developers).
+
+## IRC Channel
+
+A lot of the developers are hanging on the [#adamdev](http://webchat.freenode.net/?channels=adamdev)
+freenode.net channel. Come join us and ask questions.
 
 # License
 

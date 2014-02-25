@@ -35,6 +35,7 @@ class PileupConversionSuite extends FunSuite {
       .setMismatchingPositions("5")
       .setQual(qualString)
       .setReadMapped(true)
+      .setPrimaryAlignment(true)
       .build()
 
     val converter = new Reads2PileupProcessor
@@ -70,6 +71,7 @@ class PileupConversionSuite extends FunSuite {
       .setMismatchingPositions("4A0")
       .setQual(qualString)
       .setReadMapped(true)
+      .setPrimaryAlignment(true)
       .build()
 
     val converter = new Reads2PileupProcessor

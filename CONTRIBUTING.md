@@ -3,11 +3,13 @@ How to contribute to ADAM
 
 Thank you for sharing your code with the ADAM project. We appreciate your contribution!
 
-## Join the mailing list
+## Join the mailing list and our IRC channel
 
 If you're not already on the ADAM developers list, [take a minute to join](http://bigdatagenomics.github.io/mail/).
 It would be great if you'd introduce yourself to the group but it's not required. You can just
 let your code do the talking for you if you like.
+
+You can find us on Freenode IRC in the #adamdev room.
 
 ## Check the issue tracker
 
@@ -25,8 +27,12 @@ Shoot us a quick email on the mailing list letting us know what you're working o
 will likely be people on the list who can give you tips about where to find relevant 
 source or alert you to other planned changes that might effect your work.
 
-When in doubt, send an email to the ADAM developers list. It's better to over communicate
-than to quietly toil away on code that no one knows about.
+If the work you're proposing makes substantive changes to ADAM, you may be asked to attach a design document
+to your issue in the issue tracker. This document should provide a high-level explanation of your design, clearly define the goal
+of the new design and explain the expected effects on performance, APIs, etc. This document is meant to save you time
+as it allows the team a chance to provide feedback on the proposes changes. It's likely we can help you find a way
+to achieve your goals with less work. The document also allows the team to prepare for large changes to the code
+base. We welcome change but also want to ensure that code quality is kept high.
 
 ## Submit your pull request
 
@@ -39,9 +45,6 @@ Some general rules to follow:
 or "topic" branches.
 * Use your feature branch in the pull request. Any changes that you push to your feature branch will automatically
 be shown in the pull request.
-* Don't rebase your pull request feature branch while it's being reviewed; you'll destroy history and break the 
-associate between code and comments. Once the review process is finished, the branch may be rebased to allow for
-a cleaner commit history.
 * If your pull request fixes an issue, reference the issue so that it will [be closed when your pull request is merged](https://github.com/blog/1506-closing-issues-via-pull-requests)
 * Keep your pull requests as small as possible. Large pull requests are hard to review. Try to break up your changes
 into self-contained and incremental pull requests, if need be, and reference dependent pull requests, e.g. "This pull
