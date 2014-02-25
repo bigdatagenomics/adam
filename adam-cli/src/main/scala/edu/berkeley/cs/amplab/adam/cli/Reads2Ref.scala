@@ -48,6 +48,9 @@ class Reads2RefArgs extends Args4jBase with ParquetArgs with SparkArgs {
 
   @option(name = "-aggregate", usage = "Aggregates data at each pileup position, to reduce storage cost.")
   var aggregate: Boolean = false
+
+  @option(name = "-allowNonPrimaryAlignments", usage = "Converts reads that are not at their primary alignment positions to pileups.")
+  var nonPrimary: Boolean = true
 }
 
 class Reads2Ref(protected val args: Reads2RefArgs) extends AdamSparkCommand[Reads2RefArgs] {
@@ -58,7 +61,7 @@ class Reads2Ref(protected val args: Reads2RefArgs) extends AdamSparkCommand[Read
 
     val readCount = reads.count()
 
-    val pileups: RDD[ADAMPileup] = reads.adamRecords2Pileup()
+    val pileups: RDD[ADAMPileup] = reads.adamRecords2Pileup(args.nonPrimary)
 
     val pileupCount = pileups.count()
 
