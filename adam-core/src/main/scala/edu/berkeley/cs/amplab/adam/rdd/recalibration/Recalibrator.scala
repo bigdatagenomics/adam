@@ -23,6 +23,7 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util.QualityScore
+import math.log
 
 class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)
   extends (DecadentRead => ADAMRecord) with Serializable {
@@ -66,34 +67,34 @@ class RecalibrationTable(
     covariates(read).map(lookup)
 
   def lookup(key: CovariateKey): QualityScore = {
-    val residuePhred = key.quality.phred
+    val residueLogP = log(key.quality.errorProbability)
     val globalDelta = computeGlobalDelta(key)
-    val qualityDelta = computeQualityDelta(key, residuePhred + globalDelta)
-    val extrasDelta = computeExtrasDelta(key, residuePhred + globalDelta + qualityDelta)
-    val correctedPhred = residuePhred + globalDelta + qualityDelta + extrasDelta
-    QualityScore(correctedPhred)
+    val qualityDelta = computeQualityDelta(key, residueLogP + globalDelta)
+    val extrasDelta = computeExtrasDelta(key, residueLogP + globalDelta + qualityDelta)
+    val correctedLogP = residueLogP + globalDelta + qualityDelta + extrasDelta
+    QualityScore.fromErrorProbability(math.exp(correctedLogP))
   }
 
-  def computeGlobalDelta(key: CovariateKey): Int = {
+  def computeGlobalDelta(key: CovariateKey): Double = {
     globalTable.get(key.readGroup).
-      map(bucket => bucket.empiricalQuality.phred - bucket.reportedQuality.phred).
-      getOrElse(0)
+      map(bucket => log(bucket.empiricalQuality.errorProbability) - log(bucket.reportedQuality.errorProbability)).
+      getOrElse(0.0)
   }
 
-  def computeQualityDelta(key: CovariateKey, offset: Int): Int = {
+  def computeQualityDelta(key: CovariateKey, offset: Double): Double = {
     qualityTable.get((key.readGroup, key.quality)).
-      map(aggregate => aggregate.empiricalQuality.phred - offset).
-      getOrElse(0)
+      map(aggregate => log(aggregate.empiricalQuality.errorProbability) - offset).
+      getOrElse(0.0)
   }
 
-  def computeExtrasDelta(key: CovariateKey, offset: Int): Int = {
+  def computeExtrasDelta(key: CovariateKey, offset: Double): Double = {
     // Returns sum(delta for each extra covariate)
     assert(extraTables.size == key.extras.size)
     extraTables.zip(key.extras).map{ case (table, value) =>
       table.get((key.readGroup, key.quality, value)).
-        map(aggregate => aggregate.empiricalQuality.phred - offset).
-        getOrElse(0)
-    }.fold(0)(_ + _)
+        map(aggregate => log(aggregate.empiricalQuality.errorProbability) - offset).
+        getOrElse(0.0)
+    }.fold(0.0)(_ + _)
   }
 }
 
