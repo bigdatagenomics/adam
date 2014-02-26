@@ -131,7 +131,6 @@ object VariantContextConverter {
       case ADAMGenotypeAllele.Alt => Allele.create(g.getVariant.getVariantAllele.toString)
     })
   }
-
 }
 
 /**
@@ -142,7 +141,7 @@ object VariantContextConverter {
  * If an annotation has a corresponding set of fields in the VCF standard, a conversion to/from the
  * GATK VariantContext should be implemented in this class.
  */
-private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable {
+class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable {
 
   private def convertAllele(allele: Allele): ADAMGenotypeAllele = {
     if (allele.isNoCall) ADAMGenotypeAllele.NoCall
@@ -215,7 +214,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
        * filters were appled */
       call.setVariantIsPassing(true)
     }
-    shared_genotype_builder.setVariantCallingAnnotations(convertAttributes(vc, call.build()))
+    shared_genotype_builder.setVariantCallingAnnotations(VariantContextConverter.convertAttributes(vc, call.build()))
 
     // VCF Genotypes
     val shared_genotype = shared_genotype_builder.build
@@ -236,7 +235,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
 
 
       val built_genotype = genotype.build
-      for ((v,a) <- VCF2GTAnnos) { // Add extended attributes if present
+      for ((v,a) <- VariantContextConverter.VCF2GTAnnos) { // Add extended attributes if present
         val attr = g.getExtendedAttribute(v)
         if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {
           built_genotype.put(a._1, a._2(attr))
@@ -259,13 +258,13 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
       .chr(variant.getContig.getContigName.toString)
       .start(variant.getPosition + 1 /* Recall ADAM is 0-indexed */)
       .stop(variant.getPosition + 1 + variant.getReferenceAllele.length - 1)
-      .alleles(convertAlleles(variant))
+      .alleles(VariantContextConverter.convertAlleles(variant))
 
     vc.databases.flatMap(d => Option(d.getDbsnpId)).foreach(d => vcb.id("rs" + d))
 
     // TODO: Extract provenance INFO fields
     vcb.genotypes(vc.genotypes.map(g => {
-      val gb = new GenotypeBuilder(g.getSampleId.toString, convertAlleles(g))
+      val gb = new GenotypeBuilder(g.getSampleId.toString, VariantContextConverter.convertAlleles(g))
 
       Option(g.getIsPhased).foreach(gb.phased(_))
       Option(g.getGenotypeQuality).foreach(gb.GQ(_))
