@@ -63,7 +63,8 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   }
 
   // Format as string compatible with GATK's CSV output
-  def toCSV: String = "%s,%s,%s".format(total, mismatches, empiricalQuality.phred)
+  def toCSV: String = "%s,%s,%s".format(total, mismatches, empiricalQualityForCSV.phred)
+  def empiricalQualityForCSV: QualityScore = QualityScore.fromErrorProbability(gatkErrorProbability(0))
 
   override def toString: String =
     "%s / %s (%s)".format(mismatches, total, empiricalQuality)
