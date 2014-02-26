@@ -60,7 +60,7 @@ class RecalibrationTable(
     // marginal by read group and quality
     val qualityTable: Map[(String, QualityScore), Aggregate],
     // marginals for each optional covariate by read group and quality
-    val extraTables: IndexedSeq[Map[(String, QualityScore, Covariate#Value), Aggregate]])
+    val extraTables: IndexedSeq[Map[(String, QualityScore, Option[Covariate#Value]), Aggregate]])
   extends (DecadentRead => Seq[QualityScore]) with Serializable {
 
   def apply(read: DecadentRead): Seq[QualityScore] =
@@ -90,10 +90,12 @@ class RecalibrationTable(
   def computeExtrasDelta(key: CovariateKey, offset: Double): Double = {
     // Returns sum(delta for each extra covariate)
     assert(extraTables.size == key.extras.size)
-    extraTables.zip(key.extras).map{ case (table, value) =>
-      table.get((key.readGroup, key.quality, value)).
-        map(aggregate => log(aggregate.empiricalErrorProbability) - offset).
-        getOrElse(0.0)
+    extraTables.zip(key.extras).map{
+      case (_, None) => 0.0
+      case (table, Some(value)) =>
+        table.get((key.readGroup, key.quality, Some(value))).
+          map(aggregate => log(aggregate.empiricalErrorProbability) - offset).
+          getOrElse(0.0)
     }.fold(0.0)(_ + _)
   }
 }

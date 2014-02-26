@@ -25,7 +25,7 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
   // instead of reversing the sense of the strand? or is the machine's chemistry such that
   // this is what makes the most sense?
 
-  def compute(read: DecadentRead): Seq[(Char, Char)] = {
+  def compute(read: DecadentRead): Seq[Option[(Char, Char)]] = {
     val origSequence = read.sequence.map(_.base)
 
     if(read.isNegativeRead) {
@@ -35,12 +35,12 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
     }
   }
 
-  private def computeDinucs(sequence: Seq[Char]): Seq[(Char, Char)] = {
+  private def computeDinucs(sequence: Seq[Char]): Seq[Option[(Char, Char)]] = {
     sequence.zipWithIndex.map{ case (current, index) =>
       if(index > 0 && sequence(index - 1) != 'N') {
-        (sequence(index - 1), current)
+        Some((sequence(index - 1), current))
       } else {
-        ('N', 'N')
+        None
       }
     }
   }
@@ -55,7 +55,10 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
     }
   }
 
-  override def toCSV(value: Value): String = "%s%s".format(value._1, value._2)
+  override def toCSV(option: Option[Value]): String = option match {
+    case None => "NN"
+    case Some(value) => "%s%s".format(value._1, value._2)
+  }
 
   override def equals(other: Any) = other match {
     case that: DinucCovariate => true
