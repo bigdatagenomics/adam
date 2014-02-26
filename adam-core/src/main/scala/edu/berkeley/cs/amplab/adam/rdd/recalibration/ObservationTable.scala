@@ -25,6 +25,11 @@ import scala.collection.mutable
 class Observation(val total: Long, val mismatches: Long) extends Serializable {
   require(mismatches >= 0 && mismatches <= total)
 
+  /**
+   * Whether to emulate GATK's calculations.
+   */
+  val emulateGATK: Boolean = true
+
   def this(that: Observation) = this(that.total, that.mismatches)
 
   def +(that: Observation) =
@@ -33,7 +38,8 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   /**
    * Empirically estimated probability of a mismatch.
    */
-  def empiricalErrorProbability: Double = gatkErrorProbability
+  def empiricalErrorProbability: Double =
+    if(!emulateGATK) bayesianErrorProbability else gatkErrorProbability
 
   /**
    * Empirically estimated probability of a mismatch, as a QualityScore.
@@ -64,7 +70,9 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
 
   // Format as string compatible with GATK's CSV output
   def toCSV: Seq[String] = Seq(total.toString, mismatches.toString, empiricalQualityForCSV.phred.toString)
-  def empiricalQualityForCSV: QualityScore = QualityScore.fromErrorProbability(gatkErrorProbability(0))
+
+  def empiricalQualityForCSV: QualityScore =
+    if(!emulateGATK) empiricalQuality else QualityScore.fromErrorProbability(gatkErrorProbability(0))
 
   override def toString: String =
     "%s / %s (%s)".format(mismatches, total, empiricalQuality)
