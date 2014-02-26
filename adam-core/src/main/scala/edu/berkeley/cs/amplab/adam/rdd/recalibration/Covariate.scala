@@ -75,7 +75,7 @@ class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
     })
 
     // Construct the CovariateKeys
-    read.sequence.zipWithIndex.map{ case (residue, residueIdx) =>
+    read.sequence.zipWithIndex.map { case (residue, residueIdx) =>
       val residueExtras = extraVals.map(_(residueIdx))
       new CovariateKey(read.readGroup, residue.quality, residueExtras)
     }
@@ -83,7 +83,7 @@ class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
 
   // Format the provided key to be compatible with GATK's CSV output
   def toCSV(key: CovariateKey): Seq[String] = {
-    val extraFields: Seq[String] = extras.zip(key.extras).map{
+    val extraFields: Seq[String] = extras.zip(key.extras).map {
       case (cov, value) => cov.toCSV(value.asInstanceOf[Option[cov.Value]])
     }
     Seq(key.readGroup, key.quality.phred.toString) ++ extraFields

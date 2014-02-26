@@ -39,7 +39,7 @@ class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: Qual
   def computeQual(read: DecadentRead): Seq[QualityScore] = {
     val origQuals = read.sequence.map(_.quality)
     val newQuals = table(read)
-    origQuals.zip(newQuals).map{ case (origQ, newQ) =>
+    origQuals.zip(newQuals).map { case (origQ, newQ) =>
       // Keep original quality score if below recalibration threshold
       if(origQ >= minAcceptableQuality) newQ else origQ
     }
@@ -90,7 +90,7 @@ class RecalibrationTable(
   def computeExtrasDelta(key: CovariateKey, offset: Double): Double = {
     // Returns sum(delta for each extra covariate)
     assert(extraTables.size == key.extras.size)
-    extraTables.zip(key.extras).map{
+    extraTables.zip(key.extras).map {
       case (_, None) => 0.0
       case (table, Some(value)) =>
         table.get((key.readGroup, key.quality, Some(value))).

@@ -26,19 +26,19 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
   // this is what makes the most sense?
 
   def compute(read: DecadentRead): Seq[Option[(Char, Char)]] = {
-    val origSequence = read.sequence.map(_.base)
-
+    val sequence = read.sequence.map(_.base)
     if(read.isNegativeRead) {
-      computeDinucs(complement(origSequence.reverse)).reverse
+      dinucs(complement(sequence.reverse)).reverse
     } else {
-      computeDinucs(origSequence)
+      dinucs(sequence)
     }
   }
 
-  private def computeDinucs(sequence: Seq[Char]): Seq[Option[(Char, Char)]] = {
-    sequence.zipWithIndex.map{ case (current, index) =>
-      if(index > 0 && sequence(index - 1) != 'N') {
-        Some((sequence(index - 1), current))
+  private def dinucs(sequence: Seq[Char]): Seq[Option[(Char, Char)]] = {
+    sequence.zipWithIndex.map { case (current, index) =>
+      def previous = sequence(index - 1)
+      if(index > 0 && previous != 'N' && current != 'N') {
+        Some((previous, current))
       } else {
         None
       }
@@ -46,7 +46,7 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
   }
 
   private def complement(sequence: Seq[Char]): Seq[Char] = {
-    sequence.map{
+    sequence.map {
       case 'A' => 'T'
       case 'T' => 'A'
       case 'C' => 'G'

@@ -87,7 +87,7 @@ extends Serializable with Logging {
       covariates(read).zip(read.sequence).filter(x => shouldIncludeResidue(x._2))
 
     // Construct result
-    keys.map{ case (key, residue) => (key, Observation(residue.isSNP)) }
+    keys.map { case (key, residue) => (key, Observation(residue.isSNP)) }
   }
 }
 
