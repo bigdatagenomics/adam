@@ -51,7 +51,7 @@ extends Serializable with Logging {
 
   // Bases with quality less than this will be skipped and left alone
   // TODO: parameterize
-  val minAcceptableQuality = QualityScore(6)
+  val minAcceptableQuality = QualityScore(5)
 
   // Compute and apply recalibration
   def apply(): RDD[ADAMRecord] = {
