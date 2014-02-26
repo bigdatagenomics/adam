@@ -19,16 +19,55 @@ package edu.berkeley.cs.amplab.adam.rdd.variation
 import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
+import com.google.common.io.Files
+import java.io.File
+import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeAllele, ADAMGenotype, ADAMContig, ADAMVariant}
+import scala.collection.JavaConversions._
+
 
 class ADAMVariationContextSuite extends SparkFunSuite {
-  sparkTest("can read a small .vcf file") {
-    val path = ClassLoader.getSystemClassLoader.getResource("small.vcf").getFile
-    // TODO: Why doesn't implict work here?
-    val VCs: RDD[ADAMVariantContext] = ADAMVariationContext.sparkContextToADAMVariationContext(sc).adamVCFLoad(path)
-    assert(VCs.count === 5)
+  val tempDir = Files.createTempDir()
 
-    val VC = VCs.first
-    assert(VC.genotypes.length === 3)
+  def variants: RDD[ADAMVariantContext] = {
+    val v0 = ADAMVariant.newBuilder
+      .setContig(ADAMContig.newBuilder.setContigId(1).setContigName("chr11").build)
+      .setPosition(17409572)
+      .setReferenceAllele("T")
+      .setVariantAllele("C")
+      .build
+
+    val g0 = ADAMGenotype.newBuilder().setVariant(v0)
+      .setSampleId("NA12878")
+      .setAlleles(List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Alt))
+      .build
+
+    sc.parallelize(List(
+      ADAMVariantContext(v0, Seq(g0))
+    ))
   }
 
+
+  sparkTest("can read a small .vcf file") {
+    val path = ClassLoader.getSystemClassLoader.getResource("small.vcf").getFile
+
+    val vcs: RDD[ADAMVariantContext] = sc.adamVCFLoad(path)
+    assert(vcs.count === 5)
+
+    val vc = vcs.first
+    assert(vc.genotypes.length === 3)
+
+    val gt = vc.genotypes.head
+    assert(gt.getVariantCallingAnnotations != null)
+    assert(gt.getVariantCallingAnnotations.getReadDepth === 69)
+    // Recall we are testing parsing, so we assert that our value is
+    // the same as should have been parsed
+    assert(gt.getVariantCallingAnnotations.getClippingRankSum === java.lang.Float.valueOf("0.138"))
+  }
+
+  sparkTest("can write, then read in .vcf file") {
+    val path = new File(tempDir, "test.vcf")
+    sc.adamVCFSave(path.getAbsolutePath, variants)
+    assert(path.exists)
+  }
 }

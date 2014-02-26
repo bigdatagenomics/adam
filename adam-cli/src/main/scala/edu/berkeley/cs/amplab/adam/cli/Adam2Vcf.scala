@@ -16,18 +16,13 @@
 
 package edu.berkeley.cs.amplab.adam.cli
 
-import edu.berkeley.cs.amplab.adam.converters.VariantContextConverter
-import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
+import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
-import edu.berkeley.cs.amplab.adam.util.{AdamVCFOutputFormat, VcfHeaderUtils}
-import fi.tkk.ics.hadoop.bam.VariantContextWritable
-import org.apache.hadoop.io.LongWritable
-import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{Logging, SparkContext}
-import org.apache.spark.SparkContext._
+import org.kohsuke.args4j.Argument
 import org.apache.spark.rdd.RDD
-import org.kohsuke.args4j.{Argument, Option => Args4jOption}
+import org.apache.spark.{Logging, SparkContext}
+import org.apache.hadoop.mapreduce.Job
 
 object Adam2Vcf extends AdamCommandCompanion {
 
@@ -50,5 +45,7 @@ class Adam2Vcf(val args: Adam2VcfArgs) extends AdamSparkCommand[Adam2VcfArgs] wi
   val companion = Adam2Vcf
 
   def run(sc: SparkContext, job: Job) {
+    val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
+    sc.adamVCFSave(args.outputPath, adamGTs.toADAMVariantContext)
   }
 }
