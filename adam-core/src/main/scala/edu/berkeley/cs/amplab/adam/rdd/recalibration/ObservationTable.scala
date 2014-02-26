@@ -33,7 +33,7 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   /**
    * Empirically estimated probability of a mismatch.
    */
-  def empiricalErrorProbability: Double = bayesianErrorProbability
+  def empiricalErrorProbability: Double = gatkErrorProbability
 
   /**
    * Empirically estimated probability of a mismatch, as a QualityScore.
@@ -51,6 +51,16 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
    */
   def bayesianErrorProbability: Double = bayesianErrorProbability(1, 1)
   def bayesianErrorProbability(a: Double, b: Double): Double = (a + mismatches) / (a + b + total)
+
+  // GATK 1.6 uses the following, which they describe as "Yates's correction". However,
+  // it doesn't match the Wikipedia entry which describes a different formula used
+  // for correction of chi-squared independence tests on contingency tables.
+  // TODO: Figure out this discrepancy.
+  def gatkErrorProbability: Double = gatkErrorProbability(1)
+  def gatkErrorProbability(smoothing: Double): Double = {
+    val errProb = (mismatches + smoothing) / (total + smoothing)
+    Seq(QualityScore(50).errorProbability, errProb + 0.0001).max
+  }
 
   // Format as string compatible with GATK's CSV output
   def toCSV: String = "%s,%s,%s".format(total, mismatches, empiricalQuality.phred)
