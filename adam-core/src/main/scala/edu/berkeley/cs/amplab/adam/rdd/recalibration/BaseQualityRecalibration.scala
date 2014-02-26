@@ -46,7 +46,7 @@ extends Serializable with Logging {
   // Additional covariates to use when computing the correction
   // TODO: parameterize
   val covariates = CovariateSpace(
-    //new DinucCovariate
+    new DinucCovariate
   )
 
   // Bases with quality less than this will be skipped and left alone
@@ -56,7 +56,9 @@ extends Serializable with Logging {
   // Compute and apply recalibration
   def apply(): RDD[ADAMRecord] = {
     def shouldIncludeRead(read: DecadentRead) =
-      read.isCanonicalRecord && read.alignmentQuality.exists(_ > QualityScore(0))
+      read.isCanonicalRecord &&
+        read.alignmentQuality.exists(_ > QualityScore.zero) &&
+        read.passedQualityChecks
 
     // first phase
     val observed: ObservationTable = reads.
@@ -73,7 +75,8 @@ extends Serializable with Logging {
   // Compute observation table for a single read
   private def observe(read: DecadentRead): Seq[(CovariateKey, Observation)] = {
     def shouldIncludeResidue(residue: Residue) =
-      residue.quality >= minAcceptableQuality &&
+      residue.quality > QualityScore.zero &&
+        residue.isRegularBase &&
         !residue.isInsertion &&
         !knownSnps.isMasked(residue)
 

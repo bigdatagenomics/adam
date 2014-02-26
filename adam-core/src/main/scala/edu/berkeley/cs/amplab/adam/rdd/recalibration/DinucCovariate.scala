@@ -27,18 +27,26 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
 
   def compute(read: DecadentRead): Seq[(Char, Char)] = {
     val origSequence = read.sequence.map(_.base)
-    val sequence = if(read.isNegativeRead) complement(origSequence) else origSequence
+
+    if(read.isNegativeRead) {
+      computeDinucs(complement(origSequence.reverse)).reverse
+    } else {
+      computeDinucs(origSequence)
+    }
+  }
+
+  private def computeDinucs(sequence: Seq[Char]): Seq[(Char, Char)] = {
     sequence.zipWithIndex.map{ case (current, index) =>
-      if(index == 0) {
-        (' ', current)
-      } else {
+      if(index > 0 && sequence(index - 1) != 'N') {
         (sequence(index - 1), current)
+      } else {
+        ('N', 'N')
       }
     }
   }
 
   private def complement(sequence: Seq[Char]): Seq[Char] = {
-    sequence.reverse.map{
+    sequence.map{
       case 'A' => 'T'
       case 'T' => 'A'
       case 'C' => 'G'
@@ -46,6 +54,8 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
       case 'N' => 'N'
     }
   }
+
+  override def toCSV(value: Value): String = "%s%s".format(value._1, value._2)
 
   override def equals(other: Any) = other match {
     case that: DinucCovariate => true

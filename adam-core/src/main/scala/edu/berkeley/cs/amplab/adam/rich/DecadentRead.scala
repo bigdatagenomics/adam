@@ -65,6 +65,9 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   // MapQ should be valid
   require(record.getMapq >= 0 && record.getMapq <= 255, "MapQ must be in [0, 255]")
 
+  // Alignment must be valid
+  require(!record.getReadMapped || record.getStart >= 0, "Invalid alignment start index")
+
   /**
    * A "residue" is an individual monomer of a polymeric chain, such as DNA.
    */
@@ -79,6 +82,15 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
     def base: Char = read.baseSequence(position)
 
     def quality = QualityScore(record.qualityScores(position))
+
+    def isRegularBase: Boolean = base match {
+      case 'A' => true
+      case 'C' => true
+      case 'T' => true
+      case 'G' => true
+      case 'N' => false
+      case unk => throw new IllegalArgumentException("Encountered unexpected base '%s'".format(unk))
+    }
 
     def isMismatch(includeInsertions: Boolean = true): Boolean =
       assumingAligned(record.isMismatchAtReadOffset(position).getOrElse(includeInsertions))
@@ -121,6 +133,8 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
 
   // Is this the most representative record for this read?
   def isCanonicalRecord: Boolean = isPrimaryAlignment && !isDuplicate
+
+  def passedQualityChecks: Boolean = !record.getFailedVendorQualityChecks
 
   def mismatchesOption: Option[MdTag] = record.mdEvent
 

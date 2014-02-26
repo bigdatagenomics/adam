@@ -39,6 +39,8 @@ class QualityScore(val phred: Int) extends Ordered[QualityScore] with Serializab
 }
 
 object QualityScore {
+  val zero = new QualityScore(0)
+
   def apply(phred: Int) = new QualityScore(phred)
 
   def toString(quals: Seq[QualityScore]): String =
