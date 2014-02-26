@@ -76,7 +76,7 @@ class Aggregate private(
     this(obs.total, obs.mismatches, quality.errorProbability * obs.mismatches)
 
   def reportedQuality: QualityScore =
-    QualityScore.fromErrorProbability(mismatches.toDouble / total.toDouble)
+    QualityScore.fromErrorProbability(expectedMismatches.toDouble / total.toDouble)
 
   def +(that: Aggregate): Aggregate =
     new Aggregate(

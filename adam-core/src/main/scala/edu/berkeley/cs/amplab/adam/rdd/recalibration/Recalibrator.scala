@@ -77,7 +77,7 @@ class RecalibrationTable(
 
   def computeGlobalDelta(key: CovariateKey): Double = {
     globalTable.get(key.readGroup).
-      map(bucket => log(bucket.empiricalQuality.errorProbability) - log(bucket.reportedQuality.errorProbability)).
+      map(bucket => log(bucket.reportedQuality.errorProbability) - log(bucket.empiricalQuality.errorProbability)).
       getOrElse(0.0)
   }
 
