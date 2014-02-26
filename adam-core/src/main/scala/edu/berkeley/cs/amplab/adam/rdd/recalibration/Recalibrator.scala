@@ -23,7 +23,7 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util.QualityScore
-import math.log
+import math.{exp, log}
 
 class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)
   extends (DecadentRead => ADAMRecord) with Serializable {
@@ -72,18 +72,18 @@ class RecalibrationTable(
     val qualityDelta = computeQualityDelta(key, residueLogP + globalDelta)
     val extrasDelta = computeExtrasDelta(key, residueLogP + globalDelta + qualityDelta)
     val correctedLogP = residueLogP + globalDelta + qualityDelta + extrasDelta
-    QualityScore.fromErrorProbability(math.exp(correctedLogP))
+    QualityScore.fromErrorProbability(exp(correctedLogP))
   }
 
   def computeGlobalDelta(key: CovariateKey): Double = {
     globalTable.get(key.readGroup).
-      map(bucket => log(bucket.reportedQuality.errorProbability) - log(bucket.empiricalQuality.errorProbability)).
+      map(bucket => log(bucket.reportedErrorProbability) - log(bucket.empiricalErrorProbability)).
       getOrElse(0.0)
   }
 
   def computeQualityDelta(key: CovariateKey, offset: Double): Double = {
     qualityTable.get((key.readGroup, key.quality)).
-      map(aggregate => log(aggregate.empiricalQuality.errorProbability) - offset).
+      map(aggregate => log(aggregate.empiricalErrorProbability) - offset).
       getOrElse(0.0)
   }
 
@@ -92,7 +92,7 @@ class RecalibrationTable(
     assert(extraTables.size == key.extras.size)
     extraTables.zip(key.extras).map{ case (table, value) =>
       table.get((key.readGroup, key.quality, value)).
-        map(aggregate => log(aggregate.empiricalQuality.errorProbability) - offset).
+        map(aggregate => log(aggregate.empiricalErrorProbability) - offset).
         getOrElse(0.0)
     }.fold(0.0)(_ + _)
   }

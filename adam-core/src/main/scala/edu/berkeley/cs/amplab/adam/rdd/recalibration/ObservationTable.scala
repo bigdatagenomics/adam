@@ -33,7 +33,13 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   /**
    * Empirically estimated probability of a mismatch.
    */
-  def empiricalQuality: QualityScore = empiricalQuality(1, 1)
+  def empiricalErrorProbability: Double = bayesianErrorProbability
+
+  /**
+   * Empirically estimated probability of a mismatch, as a QualityScore.
+   */
+  def empiricalQuality: QualityScore =
+    QualityScore.fromErrorProbability(empiricalErrorProbability)
 
   /**
    * Estimates the probability of a mismatch under a Bayesian model with
@@ -43,8 +49,8 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
    * TODO: Beta(1, 1) is the safest choice, but maybe Beta(1/2, 1/2) is more
    * accurate?
    */
-  def empiricalQuality(a: Double, b: Double): QualityScore =
-    QualityScore.fromErrorProbability((a + mismatches) / (a + b + total))
+  def bayesianErrorProbability: Double = bayesianErrorProbability(1, 1)
+  def bayesianErrorProbability(a: Double, b: Double): Double = (a + mismatches) / (a + b + total)
 
   // Format as string compatible with GATK's CSV output
   def toCSV: String = "%s,%s,%s".format(total, mismatches, empiricalQuality.phred)
@@ -72,11 +78,9 @@ class Aggregate private(
     val expectedMismatches: Double  // expected number of mismatches based on reported quality scores
   ) extends Observation(total, mismatches) {
 
-  def this(quality: QualityScore, obs: Observation) =
-    this(obs.total, obs.mismatches, quality.errorProbability * obs.mismatches)
+  require(expectedMismatches <= total)
 
-  def reportedQuality: QualityScore =
-    QualityScore.fromErrorProbability(expectedMismatches.toDouble / total.toDouble)
+  def reportedErrorProbability: Double = expectedMismatches / total.toDouble
 
   def +(that: Aggregate): Aggregate =
     new Aggregate(
@@ -89,7 +93,7 @@ object Aggregate {
   val empty: Aggregate = new Aggregate(0, 0, 0)
 
   def apply(key: CovariateKey, value: Observation) =
-    new Aggregate(key.quality, value)
+    new Aggregate(value.total, value.mismatches, key.quality.errorProbability * value.mismatches)
 }
 
 class ObservationTable(
