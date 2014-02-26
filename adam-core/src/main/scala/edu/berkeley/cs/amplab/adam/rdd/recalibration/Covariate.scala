@@ -33,6 +33,9 @@ trait Covariate {
     case None => "(none)"
     case Some(value) => value.toString
   }
+
+  // A short name for this covariate, used in CSV output header
+  def csvFieldName: String
 }
 
 abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
@@ -46,6 +49,8 @@ class CovariateKey(
 ) extends Serializable {
 
   def parts: Seq[Any] = Seq(readGroup, quality) ++ extras
+
+  def containsNone: Boolean = extras.exists(_.isEmpty)
 
   override def toString: String = "[" + parts.mkString(", ") + "]"
 
@@ -77,13 +82,14 @@ class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
   }
 
   // Format the provided key to be compatible with GATK's CSV output
-  def toCSV(key: CovariateKey): String = {
+  def toCSV(key: CovariateKey): Seq[String] = {
     val extraFields: Seq[String] = extras.zip(key.extras).map{
       case (cov, value) => cov.toCSV(value.asInstanceOf[Option[cov.Value]])
     }
-    val allFields: Seq[String] = Seq(key.readGroup, key.quality.phred.toString) ++ extraFields
-    allFields.mkString(",")
+    Seq(key.readGroup, key.quality.phred.toString) ++ extraFields
   }
+
+  def csvHeader: Seq[String] = Seq("ReadGroup", "ReportedQ") ++ extras.map(_.csvFieldName)
 
   override def equals(other: Any): Boolean = other match {
     case that: CovariateSpace => this.extras == that.extras

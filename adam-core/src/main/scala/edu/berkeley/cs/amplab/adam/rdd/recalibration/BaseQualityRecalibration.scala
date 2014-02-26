@@ -60,14 +60,16 @@ extends Serializable with Logging {
         read.alignmentQuality.exists(_ > QualityScore.zero) &&
         read.passedQualityChecks
 
-    // first phase
+    // First phase
     val observed: ObservationTable = reads.
       filter(shouldIncludeRead).map(observe).
       aggregate(ObservationAccumulator(covariates))(_ ++= _, _ += _).result
 
-    println("ObservationTable:\n%s".format(observed.toCSV))
+    // Log the ObservationTable
+    // TODO: delete once unneeded; temporarily added for creating plots
+    println(observed.toCSV)
 
-    // second phase
+    // Second phase
     val recalibrator = Recalibrator(observed, minAcceptableQuality)
     reads.map(recalibrator)
   }

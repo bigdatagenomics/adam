@@ -63,7 +63,7 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   }
 
   // Format as string compatible with GATK's CSV output
-  def toCSV: String = "%s,%s,%s".format(total, mismatches, empiricalQualityForCSV.phred)
+  def toCSV: Seq[String] = Seq(total.toString, mismatches.toString, empiricalQualityForCSV.phred.toString)
   def empiricalQualityForCSV: QualityScore = QualityScore.fromErrorProbability(gatkErrorProbability(0))
 
   override def toString: String =
@@ -115,7 +115,14 @@ class ObservationTable(
   override def toString = entries.map{ case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
 
   // Format as CSV compatible with GATK's output
-  def toCSV = entries.map{ case (k, v) => "%s,%s".format(space.toCSV(k), v.toCSV) }.mkString("\n")
+  def toCSV: String = {
+    val rows = entries.map{ case (key, obs) =>
+      space.toCSV(key) ++ obs.toCSV ++ (if(key.containsNone) Seq("**") else Seq())
+    }
+    (Seq(csvHeader) ++ rows).map(_.mkString(",")).mkString("\n")
+  }
+
+  def csvHeader: Seq[String] = space.csvHeader ++ Seq("TotalCount", "MismatchCount", "EmpiricalQ", "IsSkipped")
 
   // `func' computes the aggregation key
   def aggregate[K](func: (CovariateKey, Observation) => K): Map[K, Aggregate] = {

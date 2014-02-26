@@ -60,6 +60,8 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
     case Some(value) => "%s%s".format(value._1, value._2)
   }
 
+  override def csvFieldName: String = "Dinuc"
+
   override def equals(other: Any) = other match {
     case that: DinucCovariate => true
     case _ => false
