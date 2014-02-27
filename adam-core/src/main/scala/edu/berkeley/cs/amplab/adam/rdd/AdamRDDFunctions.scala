@@ -70,7 +70,76 @@ class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Seri
 
 }
 
-class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Logging {
+/**
+ * A class that provides functions to recover a sequence dictionary from a generic RDD of records.
+ *
+ * @tparam T Type contained in this RDD.
+ * @param rdd RDD over which aggregation is supported.
+ */
+abstract class AdamSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Serializable with Logging {
+  /**
+   * For a single RDD element, returns 0+ sequence record elements.
+   *
+   * @param elem Element from which to extract sequence records.
+   * @return A seq of sequence records.
+   */
+  def getSequenceRecordsFromElement (elem: T): scala.collection.Set[SequenceRecord]
+
+  /**
+   * Aggregates together a sequence dictionary from the different individual reference sequences
+   * used in this dataset.
+   *
+   * @return A sequence dictionary describing the reference contigs in this dataset.
+   */
+  def adamGetSequenceDictionary (): SequenceDictionary = {
+    def mergeRecords(l: List[SequenceRecord], rec: T): List[SequenceRecord] = {
+      val recs = getSequenceRecordsFromElement(rec)
+      
+      recs.foldLeft(l)((li: List[SequenceRecord], r: SequenceRecord) => {
+        if (!li.contains(r)) {
+          r :: li
+        } else {
+          li
+        }
+      })
+    }
+
+    def foldIterator(iter: Iterator[T]): SequenceDictionary = {
+      val recs = iter.foldLeft(List[SequenceRecord]())(mergeRecords)
+      new SequenceDictionary(recs.toArray)
+    }
+    
+    rdd.mapPartitions(iter => Iterator(foldIterator(iter)), true)
+      .reduce(_ ++ _)
+  }
+
+}
+
+/**
+ * A class that provides functions to recover a sequence dictionary from a generic RDD of records
+ * that are defined in Avro. This class assumes that the reference identification fields are
+ * defined inside of the given type.
+ *
+ * @note Avro classes that have specific constraints around sequence dictionary contents should
+ * not use this class. Examples include ADAMRecords and ADAMNucleotideContigs
+ *
+ * @tparam T A type defined in Avro that contains the reference identification fields.
+ * @param rdd RDD over which aggregation is supported.
+ */
+class AdamSpecificRecordSequenceDictionaryRDDAggregator[T <% SpecificRecord : Manifest](rdd: RDD[T])
+  extends AdamSequenceDictionaryRDDAggregator[T](rdd) {
+
+  def getSequenceRecordsFromElement (elem: T): Set[SequenceRecord] = {
+    Set(SequenceRecord.fromSpecificRecord(elem))
+  }
+}
+
+class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends AdamSequenceDictionaryRDDAggregator[ADAMRecord](rdd) {
+
+  def getSequenceRecordsFromElement (elem: ADAMRecord): scala.collection.Set[SequenceRecord] = {
+    SequenceRecord.fromADAMRecord(elem)
+  }
+
   def adamSortReadsByReferencePosition(): RDD[ADAMRecord] = {
     log.info("Sorting reads by reference position")
 
@@ -103,11 +172,6 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
       (referencePos, p)
     }).sortByKey().map(p => p._2)
   }
-
-  def sequenceDictionary(): SequenceDictionary =
-    rdd.distinct().aggregate(SequenceDictionary())(
-      (dict: SequenceDictionary, rec: ADAMRecord) => dict ++ SequenceRecord.fromADAMRecord(rec),
-      (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
 
   def adamMarkDuplicates(): RDD[ADAMRecord] = {
     MarkDuplicates(rdd)
@@ -324,7 +388,7 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
   }
 }
 
-class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFragment]) extends Serializable with Logging {
+class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFragment]) extends AdamSequenceDictionaryRDDAggregator[ADAMNucleotideContigFragment](rdd) {
   
   /**
    * Rewrites the contig IDs of a FASTA reference set to match the contig IDs present in a
@@ -364,19 +428,6 @@ class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
     // remap all contigs
     rdd.flatMap(c => remapContig(c, bcastDict.value))
   }
-
-  /**
-   * From this set of contigs, returns a sequence dictionary.
-   *
-   * @see AdamRecordRDDFunctions#sequenceDictionary
-   * 
-   * @return Sequence dictionary representing this reference.
-   */
-  def adamGetSequenceDictionary (): SequenceDictionary =
-    rdd.map(ctg => SequenceRecord.fromADAMContigFragment(ctg))
-      .distinct()
-      .aggregate(SequenceDictionary())((dict: SequenceDictionary, rec: SequenceRecord) => dict ++ Seq(rec),
-                                       (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
 
   /**
    * From a set of contigs, returns the base sequence that corresponds to a region of the reference.
@@ -435,4 +486,10 @@ class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
       }
     }
   }
+
+  def getSequenceRecordsFromElement (elem: ADAMNucleotideContigFragment): Set[SequenceRecord] = {
+    // variant context contains a single locus
+    Set(SequenceRecord.fromADAMContigFragment(elem))
+  }
+
 }

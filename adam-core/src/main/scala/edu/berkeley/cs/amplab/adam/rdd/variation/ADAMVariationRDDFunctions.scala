@@ -20,13 +20,25 @@ import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeType, ADAMGenotype, ADAMDat
 import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext,
                                            SequenceDictionary,
                                            SequenceRecord}
+import edu.berkeley.cs.amplab.adam.rdd.AdamSequenceDictionaryRDDAggregator
 import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant
 import edu.berkeley.cs.amplab.adam.rich.RichADAMGenotype._
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 
-class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Serializable with Logging {
+class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends AdamSequenceDictionaryRDDAggregator[ADAMVariantContext](rdd) {
+
+  /**
+   * For a single variant context, returns sequence record elements.
+   *
+   * @param elem Element from which to extract sequence records.
+   * @return A seq of sequence records.
+   */
+  def getSequenceRecordsFromElement (elem: ADAMVariantContext): scala.collection.Set[SequenceRecord] = {
+    elem.genotypes.map(gt => SequenceRecord.fromSpecificRecord(gt.getVariant)).toSet
+  }
+
   /**
    * Left outer join database variant annotations
    *
@@ -38,11 +50,6 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Seria
       .map { case (v:ADAMVariantContext, a) => new ADAMVariantContext(v.variant, v.genotypes, a) }
 
   }
-
-  def adamGetSequenceDictionary(): SequenceDictionary =
-    rdd.map(_.genotypes).distinct().aggregate(SequenceDictionary())(
-      (dict: SequenceDictionary, rec: Seq[ADAMGenotype]) => dict ++ rec.map((genotype : ADAMGenotype) => SequenceRecord.fromSpecificRecord(genotype.getVariant)),
-      (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
 
   def adamGetCallsetSamples(): List[String] = {
     rdd.flatMap(c => c.genotypes.map(_.getSampleId).distinct)

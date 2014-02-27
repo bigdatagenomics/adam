@@ -46,7 +46,8 @@ class ListDict(protected val args: ListDictArgs) extends AdamSparkCommand[ListDi
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val dict = sc.adamDictionaryLoad[ADAMRecord](args.inputPath)
-    dict.records.toList.sortBy(_.id).foreach {
+
+    dict.recordsIn.sortBy(_.id).foreach {
       rec: SequenceRecord =>
         println("%d\t%s\t%d".format(rec.id, rec.name, rec.length))
     }

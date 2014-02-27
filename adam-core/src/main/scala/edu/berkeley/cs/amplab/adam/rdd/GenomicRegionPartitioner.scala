@@ -100,7 +100,7 @@ object GenomicRegionPartitioner {
   def apply(N: Int, lengths: Map[Int, Long]) = new GenomicRegionPartitioner(N, lengths)
 
   def extractLengthMap(seqDict: SequenceDictionary): Map[Int, Long] =
-    Map(seqDict.records.map(rec => (rec.id, rec.length)): _*)
+    Map(seqDict.records.toSeq.map(rec => (rec.id, rec.length)): _*)
 }
 
 
