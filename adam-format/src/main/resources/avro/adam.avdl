@@ -9,6 +9,7 @@ record ADAMRecord {
      * of the schema, collectively form the contents
      * of the Sequence Dictionary embedded in the these
      * records from the BAM / SAM itself.
+     * TODO: this should be moved to ADAMContig
      */
     union { null, string } referenceName = null;
     union { null, int } referenceId = null;
