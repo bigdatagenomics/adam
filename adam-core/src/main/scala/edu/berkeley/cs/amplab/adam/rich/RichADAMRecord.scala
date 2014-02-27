@@ -21,6 +21,7 @@ import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.util._
 import scala.Some
 import scala.concurrent.JavaConversions._
+import scala.collection.immutable.NumericRange
 import edu.berkeley.cs.amplab.adam.models.Attribute
 
 object RichADAMRecord {
@@ -156,32 +157,27 @@ class RichADAMRecord(val record: ADAMRecord) {
 
   lazy val referencePositions: Seq[Option[Long]] = {
     if (record.getReadMapped) {
-      samtoolsCigar.getCigarElements.foldLeft((unclippedStart.get, List[Option[Long]]()))((runningPos, elem) => {
+      val resultTuple = samtoolsCigar.getCigarElements.foldLeft((unclippedStart.get, List[Option[Long]]()))((runningPos, elem) => {
         // runningPos is a tuple, the first element holds the starting position of the next CigarOperator
         // and the second element is the list of positions up to this point
-        val posAtCigar = runningPos._1
-        val basePositions = runningPos._2
-        elem.getOperator match {
-          case CigarOperator.M |
-               CigarOperator.X |
-               CigarOperator.EQ |
-               CigarOperator.S => {
-            val positions = Range(posAtCigar.toInt, posAtCigar.toInt + elem.getLength)
-            (positions.last + 1, basePositions ++ positions.map(t => Some(t.toLong)))
+        val op = elem.getOperator
+        val currentRefPos = runningPos._1
+        val resultAccum = runningPos._2
+        val advanceReference = op.consumesReferenceBases || op == CigarOperator.S
+        val newRefPos = currentRefPos + (if(advanceReference) elem.getLength else 0)
+        val resultParts: Seq[Option[Long]] =
+          if(op.consumesReadBases) {
+            val range = NumericRange(currentRefPos, currentRefPos + elem.getLength, 1L)
+            range.map(pos => if(advanceReference) Some(pos) else None)
+          } else {
+            Seq.empty
           }
-          case CigarOperator.H => {
-            runningPos /* do nothing */
-          }
-          case CigarOperator.D |
-               CigarOperator.P |
-               CigarOperator.N => {
-            (posAtCigar + elem.getLength, basePositions)
-          }
-          case CigarOperator.I => {
-            (posAtCigar, basePositions ++ (1 to elem.getLength).map(t => None))
-          }
-        }
-      })._2
+        (newRefPos, resultAccum ++ resultParts)
+      })
+
+      val endRefPos = resultTuple._1
+      val results = resultTuple._2
+      results.toIndexedSeq
     } else {
       qualityScores.map(t => None)
     }

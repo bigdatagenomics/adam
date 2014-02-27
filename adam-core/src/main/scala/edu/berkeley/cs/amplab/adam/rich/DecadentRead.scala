@@ -68,6 +68,9 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   // Alignment must be valid
   require(!record.getReadMapped || record.getStart >= 0, "Invalid alignment start index")
 
+  // Sanity check on referencePositions
+  require(record.referencePositions.length == record.getSequence.length)
+
   /**
    * A "residue" is an individual monomer of a polymeric chain, such as DNA.
    */
