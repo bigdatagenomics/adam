@@ -24,6 +24,7 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.util.QualityScore
 import org.apache.spark.Logging
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 
 /**
@@ -40,7 +41,7 @@ import org.apache.spark.rdd.RDD
  */
 class BaseQualityRecalibration(
     val reads: RDD[DecadentRead],
-    val knownSnps: SnpTable)
+    val knownSnps: Broadcast[SnpTable])
 extends Serializable with Logging {
 
   // Additional covariates to use when computing the correction
@@ -80,7 +81,7 @@ extends Serializable with Logging {
       residue.quality > QualityScore.zero &&
         residue.isRegularBase &&
         !residue.isInsertion &&
-        !knownSnps.isMasked(residue)
+        !knownSnps.value.isMasked(residue)
 
     // Compute keys and filter out skipped residues
     val keys: Seq[(CovariateKey, Residue)] =
@@ -93,6 +94,7 @@ extends Serializable with Logging {
 
 object BaseQualityRecalibration {
   def apply(rdd: RDD[ADAMRecord], knownSnps: SnpTable): RDD[ADAMRecord] = {
-    new BaseQualityRecalibration(cloy(rdd), knownSnps).apply()
+    val sc = rdd.context
+    new BaseQualityRecalibration(cloy(rdd), sc.broadcast(knownSnps)).apply()
   }
 }
