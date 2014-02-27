@@ -63,7 +63,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   require(record.getSequence.length == record.qualityScores.length, "sequence and qualityScores must be same length")
 
   // MapQ should be valid
-  require(record.getMapq >= 0 && record.getMapq <= 255, "MapQ must be in [0, 255]")
+  require(record.getMapq == null || (record.getMapq >= 0 && record.getMapq <= 255), "MapQ must be in [0, 255]")
 
   // Alignment must be valid
   require(!record.getReadMapped || record.getStart >= 0, "Invalid alignment start index")
@@ -119,7 +119,11 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   def isAligned: Boolean = record.getReadMapped
 
   def alignmentQuality: Option[QualityScore] = assumingAligned {
-    if(record.getMapq == 255) None else Some(QualityScore(record.getMapq))
+    if(record.getMapq == null || record.getMapq == 255) {
+      None
+    } else {
+      Some(QualityScore(record.getMapq))
+    }
   }
 
   def ensureAligned: Boolean =
