@@ -17,8 +17,12 @@
 package edu.berkeley.cs.amplab.adam.rdd.variation
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMDatabaseVariantAnnotation}
-import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary, SequenceRecord}
-import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext,
+                                           ConcordanceTable,
+                                           SequenceDictionary,
+                                           SequenceRecord}
+import edu.berkeley.cs.amplab.adam.rich.{GenotypeType, RichADAMVariant}
+import edu.berkeley.cs.amplab.adam.rich.RichADAMGenotype._
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
@@ -59,5 +63,27 @@ class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with
     rdd.keyBy({ g => RichADAMVariant.variantToRichVariant(g.getVariant) })
       .groupByKey
       .map { case (v:RichADAMVariant, g) => new ADAMVariantContext(v, g, None) }
+  }
+
+  def concordanceWith(truth: RDD[ADAMGenotype]) : RDD[(String, ConcordanceTable)] = {
+    val keyedTest  =   rdd.keyBy(g => (g.getVariant, g.getSampleId.toString) : (RichADAMVariant, String))
+    val keyedTruth = truth.keyBy(g => (g.getVariant, g.getSampleId.toString) : (RichADAMVariant, String))
+
+    val inTest = keyedTest.leftOuterJoin(keyedTruth)
+    val justInTruth = keyedTruth.subtractByKey(inTest)
+
+    // Compute RDD[sample -> ConcordanceTable] across variants/samples
+    val bySample = inTest.map({
+      case ((_, sample), (l, Some(r))) => sample -> (l.getType, r.getType)
+      case ((_, sample), (l, None))    => sample -> (l.getType, GenotypeType.NO_CALL)
+    }).union(justInTruth.map({ // add in "truth-only" entries
+      case ((_, sample), r) => sample -> (GenotypeType.NO_CALL, r.getType)
+    })).combineByKey(
+      ConcordanceTable.create,
+      ConcordanceTable.addComparison,
+      ConcordanceTable.mergeTable
+    )
+
+    bySample
   }
 }
