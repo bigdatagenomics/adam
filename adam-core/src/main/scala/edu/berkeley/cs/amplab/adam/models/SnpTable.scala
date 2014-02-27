@@ -54,12 +54,17 @@ object SnpTable {
   def apply(knownSnpsFile: File): SnpTable = {
     // parse into tuples of (contig, position)
     val lines = scala.io.Source.fromFile(knownSnpsFile).getLines()
-    val tuples = lines.filter(line => !line.startsWith("#")).map(line => {
+    val tuples = lines.filter(line => !line.startsWith("#")).flatMap(line => {
       val split = line.split("\t")
       val contig = split(0)
       val pos = split(1).toLong - 1
+      val ref = split(3)
       assert(pos >= 0)
-      (contig, pos)
+      assert(!ref.isEmpty)
+      ref.zipWithIndex.map { case (base, idx) =>
+        assert(Seq('A', 'C', 'T', 'G', 'N').contains(base))
+        (contig, pos + idx)
+      }
     })
     // construct map from contig to set of positions
     // this is done in-place to reduce overhead
