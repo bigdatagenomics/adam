@@ -1,4 +1,5 @@
 # ADAM #
+* ISSUE [148](https://github.com/bigdatagenomics/adam/issues/148): Moving createSparkContext into core
 * ISSUE [101](https://github.com/bigdatagenomics/adam/issues/101): Add ability to call 'plugins' from the command-line
 * ISSUE [99](https://github.com/bigdatagenomics/adam/pull/99): Encoding tag types in the ADAMRecord attributes, adding the 'tags' command
 * ISSUE [105](https://github.com/bigdatagenomics/adam/pull/105): Add initial documentation on contributing

@@ -42,6 +42,9 @@ Trunk (not yet released)
 
   IMPROVEMENTS
 
+  * ISSUE 148: Moved SparkContext creation code for ADAM to the adam-core module instead of adam-cli. This allows downstream
+    users to only depend on adam-core instead of adam-cli
+
   * ISSUE 92: improved the representation of the types of 'optional' fields from the BAM, and their encoding
     in the 'attributes' field of ADAMRecord.  This encoding now includes the type, and should no longer be 
     lossy, therefore making it possible to write code to re-export a BAM from the ADAM file in the future.

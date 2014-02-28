@@ -25,6 +25,7 @@ import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField,
                                                 ADAMNucleotideContigField}
 import edu.berkeley.cs.amplab.adam.rich.{RichRDDReferenceRecords, RichADAMRecord}
 import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
+import edu.berkeley.cs.amplab.adam.serialization.AdamKryoProperties
 import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat}
 import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
 import java.util.regex.Pattern
@@ -92,6 +93,29 @@ object AdamContext {
 
   implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
 
+  def createSparkContext(name: String,
+                         master: String,
+                         sparkHome: String,
+                         sparkJars: Seq[String],
+                         sparkEnvVars: Seq[String]): SparkContext = {
+    AdamKryoProperties.setupContextProperties()
+    val appName = "adam: " + name
+    val environment: Map[String, String] = if (sparkEnvVars.isEmpty) {
+      Map()
+    } else {
+      sparkEnvVars.map {
+        kv =>
+          val kvSplit = kv.split("=")
+          if (kvSplit.size != 2) {
+            throw new IllegalArgumentException("Env variables should be key=value syntax, e.g. -spark_env foo=bar")
+          }
+          (kvSplit(0), kvSplit(1))
+      }.toMap
+    }
+
+    val jars: Seq[String] = if (sparkJars.isEmpty) Nil else sparkJars
+    new SparkContext(master, appName, sparkHome, jars, environment)
+  }
 }
 
 class AdamContext(sc: SparkContext) extends Serializable with Logging {
