@@ -47,6 +47,18 @@ object ADAMVariantContext {
   }
 
   /**
+   * Constructs an ADAMVariantContext from an ADAMVariant and Seq[ADAMGenotype]
+   *
+   * @param v ADAMVariant which is used to construct the ReferencePosition
+   * @param genotypes Seq[ADAMGenotype]  
+   * @return ADAMVariantContext corresponding to the ADAMVariant
+   */
+  def apply(v : ADAMVariant, genotypes : Seq[ADAMGenotype]) 
+      : ADAMVariantContext = {
+    apply((ReferencePosition(v), v, genotypes))
+  }
+
+  /**
    * Builds a variant context off of a set of genotypes. Builds variants from the genotypes.
    *
    * @note Genotypes must be at the same position.
