@@ -42,7 +42,6 @@ object VariantContextConverter {
   private def attrAsString(attr: Object):Object = attr match {
     case a: String => a
   }
-  // Recall that the mere
   private def attrAsBoolean(attr: Object):Object = attr match {
     case a: java.lang.Boolean => a
     case a: String => java.lang.Boolean.valueOf(a)
@@ -94,8 +93,6 @@ object VariantContextConverter {
       var avro_field = ADAMGenotype.getClassSchema.getField(field.adamKey)
       field.vcfKey -> (avro_field.pos, field.attrConverter)
     })(collection.breakOut)
-
-
 
   private def convertAttributes(vc: VariantContext, call : VariantCallingAnnotations): VariantCallingAnnotations = {
     for ((v,a) <- VCF2VarCallAnnos) {
