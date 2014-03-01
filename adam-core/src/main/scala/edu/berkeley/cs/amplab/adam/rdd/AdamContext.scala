@@ -23,7 +23,6 @@ import edu.berkeley.cs.amplab.adam.models._
 import edu.berkeley.cs.amplab.adam.models.ADAMRod
 import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField,
                                                 Projection, 
-                                                ADAMVariantAnnotations,
                                                 ADAMNucleotideContigField}
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
