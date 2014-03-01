@@ -15,73 +15,14 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMGenotype, ADAMVariantDomain}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant}
 import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
+import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant
+import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMGenotype, ADAMVariantDomain}
 
 object ADAMVariantContext {
-
-  /**
-   * Merges RDDs containing ADAMVariant, ADAMGenotype, and ADAMVariantDomain records. Variant domain
-   * records are an optional variant site annotation and are omitted by default. This merger produces
-   * an RDD of ADAMVariantContexts, which unifies all the variation/genotype data for a specific locus.
-   *
-   * @param variants RDD containing ADAMVariant records (allele data).
-   * @param genotypes RDD containing ADAMGenotype records (genotype data).
-   * @param variantDomains Option[RDD] containing annotated variant domain data. Provide None if omitted.
-   * @return An RDD containing variant domains, which are separated by locus.
-   */
-  def mergeVariantsAndGenotypes(variants: RDD[ADAMVariant],
-                                genotypes: RDD[ADAMGenotype],
-                                variantDomains: Option[RDD[ADAMVariantDomain]] = None
-                                 ): RDD[ADAMVariantContext] = {
-    // group variants and genotypes by locus
-    val groupedVariants = variants.keyBy(v => {
-      val pos = v.getPosition.toLong
-      val refId = v.getReferenceId
-
-      new ReferencePosition(refId, pos)}).groupByKey
-
-    val groupedGenotypes = genotypes.keyBy(v => {
-      val pos = v.getPosition.toLong
-      val refId = v.getReferenceId
-
-      new ReferencePosition(refId, pos)
-    }).groupByKey
-
-    // perform initial merger of variants and genotypes
-    val initialMerge = groupedVariants.join(groupedGenotypes)
-      .filter(kv => !kv._2._1.isEmpty)
-
-    // merge in variant domain
-    val mergeAfterDomain: RDD[(ReferencePosition, (Seq[ADAMVariant], Seq[ADAMGenotype], Option[ADAMVariantDomain]))] = variantDomains match {
-      case Some(o) => {
-        // if domains are present, group by locus
-        val groupedDomains = o.asInstanceOf[RDD[ADAMVariantDomain]].keyBy(d => {
-          val pos = d.getPosition
-          val refId = d.getReferenceId
-
-          new ReferencePosition(refId, pos)
-        })
-
-        // join with variant/genotype data and then flatten tuple
-        initialMerge.join(groupedDomains)
-          .map((kv: (ReferencePosition, ((Seq[ADAMVariant], Seq[ADAMGenotype]), ADAMVariantDomain))) => {
-          (kv._1, (kv._2._1._1, kv._2._1._2, Option(kv._2._2)))
-        })
-      }
-      case None => {
-        initialMerge.map((kv: (ReferencePosition, (Seq[ADAMVariant], Seq[ADAMGenotype]))) => {
-          (kv._1, (kv._2._1, kv._2._2, None.asInstanceOf[Option[ADAMVariantDomain]]))
-        })
-      }
-    }
-
-    // map variant contexts
-    mergeAfterDomain.map(ADAMVariantContext(_))
-  }
 
   /**
    * Constructs an ADAMVariantContext from locus data. Used in merger process.
@@ -90,9 +31,31 @@ object ADAMVariantContext {
    *           optional domain annotation at site))
    * @return ADAMVariantContext corresponding to the data above.
    */
-  private def apply(kv: (ReferencePosition, (Seq[ADAMVariant], Seq[ADAMGenotype], Option[ADAMVariantDomain]))
-                     ): ADAMVariantContext = {
-    new ADAMVariantContext(kv._1, kv._2._1, kv._2._2, kv._2._3)
+  def apply(kv: (ReferencePosition, ADAMVariant, Seq[ADAMGenotype]))
+      : ADAMVariantContext = {
+    new ADAMVariantContext(kv._1, kv._2, kv._3)
+  }
+
+  /**
+   * Constructs an ADAMVariantContext from an ADAMVariant
+   *
+   * @param v ADAMVariant which is used to construct the ReferencePosition
+   * @return ADAMVariantContext corresponding to the ADAMVariant
+   */
+  def apply(v : ADAMVariant) : ADAMVariantContext = {
+    apply((ReferencePosition(v), v, Seq()))
+  }
+
+  /**
+   * Constructs an ADAMVariantContext from an ADAMVariant and Seq[ADAMGenotype]
+   *
+   * @param v ADAMVariant which is used to construct the ReferencePosition
+   * @param genotypes Seq[ADAMGenotype]  
+   * @return ADAMVariantContext corresponding to the ADAMVariant
+   */
+  def apply(v : ADAMVariant, genotypes : Seq[ADAMGenotype]) 
+      : ADAMVariantContext = {
+    apply((ReferencePosition(v), v, genotypes))
   }
 
   /**
@@ -105,34 +68,22 @@ object ADAMVariantContext {
    */
   def buildFromGenotypes(genotypes: Seq[ADAMGenotype]): ADAMVariantContext = {
     val position = ReferencePosition(genotypes.head)
-    assert(genotypes.map(ReferencePosition(_)).forall(_ == position), "Genotypes do not all have the same position.")
+    assert(genotypes.map(ReferencePosition(_)).forall(_ == position), 
+      "Genotypes do not all have the same position.")
 
-    val converter = new GenotypesToVariantsConverter(false, false)
-    
-    val variants = converter.convert(genotypes)
+    val variant = genotypes.head.variant
 
-    new ADAMVariantContext(position, variants, genotypes, None)
+    new ADAMVariantContext(position, variant, genotypes, None)
   }
 }
 
-/**
- * Container class for variant contexts. Provides no methods, or anything of the like, just direct access
- * to the data contained within.
- *
- * Of note: this class is meant to organize variants, genotypes, and their annotated data. If annotated data
- * is specific to the locus, but not to a specific variant/genotype, it should exist as field wrapped in an
- * option. If an annotation is specific to a genotype, variant, or the combined genotype of a sample, it should
- * be implemented as a map. This is because the map can be left empty, and because the map provides associative
- * access.
- *
- * Any updates that add annotations should impact three or four files:
- * - adam-format/.../adam.avdl
- * - this file
- * - rdd/AdamContext.scala --> adamVariantLoad function
- * - If there is a corresponding conversion of that data between VCF and ADAM, commands/VariantContextConverter.scala
- */
-case class ADAMVariantContext(position: ReferencePosition,
-                              variants: Seq[ADAMVariant],
-                              genotypes: Seq[ADAMGenotype],
-                              domains: Option[ADAMVariantDomain]) {
+class ADAMVariantContext(
+  val position: ReferencePosition,
+  val variant: RichADAMVariant,
+  val genotypes: Seq[ADAMGenotype],
+  val databases: Option[ADAMDatabaseVariantAnnotation] = None) {
+  def this(variant : RichADAMVariant, genotypes : Seq[ADAMGenotype], database : Option[ADAMDatabaseVariantAnnotation] = None) = {
+    this(ReferencePosition(variant), variant, genotypes, database)
+  }
 }
+

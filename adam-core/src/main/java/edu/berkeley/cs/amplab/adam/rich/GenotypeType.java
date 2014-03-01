@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2014. Mount Sinai School of Medicine
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package edu.berkeley.cs.amplab.adam.rdd
+package edu.berkeley.cs.amplab.adam.rich;
 
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
-
-class ADAMVariantContextSuite extends SparkFunSuite {
+public enum GenotypeType {
+    HOM_REF, HET, HOM_ALT, NO_CALL
 }

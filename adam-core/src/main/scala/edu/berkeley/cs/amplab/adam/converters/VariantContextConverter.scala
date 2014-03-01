@@ -15,13 +15,120 @@
  */
 package edu.berkeley.cs.amplab.adam.converters
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMGenotype, VariantType, ADAMVariantDomain}
+import edu.berkeley.cs.amplab.adam.avro._
 import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary, ReferencePosition}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.util.VcfStringUtils._
-import fi.tkk.ics.hadoop.bam.VariantContextWritable
-import org.broadinstitute.variant.variantcontext.{VariantContext, Allele, VariantContextBuilder, GenotypeBuilder, Genotype}
-import org.broadinstitute.variant.vcf.VCFHeader
+import org.broadinstitute.variant.vcf._
+import org.broadinstitute.variant.variantcontext._
+import org.broadinstitute.variant.vcf.VCFConstants
+import scala.collection.JavaConversions._
+
+object VariantContextConverter {
+  private def attrAsInt(attr: Object):Object = attr match {
+    case a: String => java.lang.Integer.valueOf(a)
+    case a: java.lang.Integer => a
+    case a: java.lang.Number => java.lang.Integer.valueOf(a.intValue)
+  }
+  private def attrAsLong(attr: Object):Object = attr match {
+    case a: String => java.lang.Integer.valueOf(a)
+    case a: java.lang.Long => a
+    case a: java.lang.Number => java.lang.Long.valueOf(a.longValue)
+  }
+  private def attrAsFloat(attr: Object):Object = attr match {
+    case a: String => java.lang.Float.valueOf(a)
+    case a: java.lang.Float => a
+    case a: java.lang.Number => java.lang.Float.valueOf(a.floatValue)
+  }
+  private def attrAsString(attr: Object):Object = attr match {
+    case a: String => a
+  }
+  private def attrAsBoolean(attr: Object):Object = attr match {
+    case a: java.lang.Boolean => a
+    case a: String => java.lang.Boolean.valueOf(a)
+  }
+
+
+  private case class AttrKey(adamKey: String, attrConverter: (Object => Object), hdrLine: VCFCompoundHeaderLine) {
+    val vcfKey: String = hdrLine.getID
+  }
+
+  private val INFO_KEYS: Seq[AttrKey] = Seq(
+    AttrKey("clippingRankSum", attrAsFloat _, new VCFInfoHeaderLine("ClippingRankSum", 1, VCFHeaderLineType.Float, "Z-score From Wilcoxon rank sum test of Alt vs. Ref number of hard clipped bases")),
+    AttrKey("readDepth", attrAsInt _, VCFStandardHeaderLines.getInfoLine(VCFConstants.DEPTH_KEY)),
+    AttrKey("downsampled", attrAsBoolean _, VCFStandardHeaderLines.getInfoLine(VCFConstants.DOWNSAMPLED_KEY)),
+    AttrKey("fisherStrandBiasPValue", attrAsFloat _, VCFStandardHeaderLines.getInfoLine(VCFConstants.STRAND_BIAS_KEY)),
+    AttrKey("haplotypeScore", attrAsFloat _, new VCFInfoHeaderLine("HaplotypeScore", 1, VCFHeaderLineType.Float, "Consistency of the site with at most two segregating haplotypes")),
+    AttrKey("inbreedingCoefficient", attrAsFloat _, new VCFInfoHeaderLine("InbreedingCoeff", 1, VCFHeaderLineType.Float, "Inbreeding coefficient as estimated from the genotype likelihoods per-sample when compared against the Hardy-Weinberg expectation")),
+    AttrKey("rmsMapQ", attrAsFloat _, VCFStandardHeaderLines.getInfoLine(VCFConstants.RMS_MAPPING_QUALITY_KEY)),
+    AttrKey("mapq0Reads", attrAsInt _, VCFStandardHeaderLines.getInfoLine(VCFConstants.MAPPING_QUALITY_ZERO_KEY)),
+    AttrKey("mqRankSum", attrAsFloat _, new VCFInfoHeaderLine("MQRankSum", 1, VCFHeaderLineType.Float, "Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities")),
+    AttrKey("usedForNegativeTrainingSet", attrAsBoolean _, new VCFInfoHeaderLine("NEGATIVE_TRAIN_SITE", 1, VCFHeaderLineType.Flag, "This variant was used to build the negative training set of bad variants")),
+    AttrKey("usedForPositiveTrainingSet", attrAsBoolean _, new VCFInfoHeaderLine("POSITIVE_TRAIN_SITE", 1, VCFHeaderLineType.Flag, "This variant was used to build the positive training set of good variants")),
+    AttrKey("variantQualityByDepth", attrAsFloat _, new VCFInfoHeaderLine("QD", 1, VCFHeaderLineType.Float, "Variant Confidence/Quality by Depth")),
+    AttrKey("readPositionRankSum", attrAsFloat _, new VCFInfoHeaderLine("ReadPosRankSum", 1, VCFHeaderLineType.Float, "Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias")),
+    AttrKey("vqslod", attrAsFloat _, new VCFInfoHeaderLine("VQSLOD", 1, VCFHeaderLineType.Float, "Log odds ratio of being a true variant versus being false under the trained gaussian mixture model")),
+    AttrKey("culprit", attrAsString _, new VCFInfoHeaderLine("culprit", 1, VCFHeaderLineType.String, "The annotation which was the worst performing in the Gaussian mixture model, likely the reason why the variant was filtered out"))
+  )
+
+  private val FORMAT_KEYS: Seq[AttrKey] = Seq(
+    AttrKey("alleles", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_KEY)),
+    AttrKey("gtQuality", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_QUALITY_KEY)),
+    AttrKey("readDepth", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.DEPTH_KEY)),
+    AttrKey("alleleDepths", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_ALLELE_DEPTHS)),
+    AttrKey("gtFilters", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_FILTER_KEY)),
+    AttrKey("genotypeLikelihoods", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_PL_KEY)),
+    AttrKey("phaseQuality", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_QUALITY_KEY, 1, VCFHeaderLineType.Float, "Read-backed phasing quality")),
+    AttrKey("phaseSetId", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY, 1, VCFHeaderLineType.Integer, "Phase set"))
+  )
+  
+  lazy val infoHeaderLines : Seq[VCFCompoundHeaderLine] = INFO_KEYS.map(_.hdrLine)
+  lazy val formatHeaderLines : Seq[VCFCompoundHeaderLine] = FORMAT_KEYS.map(_.hdrLine)
+
+  lazy val VCF2VarCallAnnos : Map[String,(Int,Object => Object)] = INFO_KEYS.map(field => {
+    var avro_field = VariantCallingAnnotations.getClassSchema.getField(field.adamKey)
+    field.vcfKey -> (avro_field.pos, field.attrConverter)
+  })(collection.breakOut)
+
+  lazy val VCF2GTAnnos : Map[String,(Int,Object => Object)] = FORMAT_KEYS.filter(_.attrConverter != null).map(field => {
+      var avro_field = ADAMGenotype.getClassSchema.getField(field.adamKey)
+      field.vcfKey -> (avro_field.pos, field.attrConverter)
+    })(collection.breakOut)
+
+  private def convertAttributes(vc: VariantContext, call : VariantCallingAnnotations): VariantCallingAnnotations = {
+    for ((v,a) <- VCF2VarCallAnnos) {
+      val attr = vc.getAttribute(v)
+      if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {
+        call.put(a._1, a._2(attr))
+      }
+    }
+    call
+  }
+
+  // One conversion method for each way of representing an Allele that
+  // GATK has, plus to convert based on actual alleles vs. the calls
+  // (ref/alt/nocall) in the genotypes.
+  private def convertAllele(allele: Allele): ADAMGenotypeAllele = {
+    if (allele.isNoCall) ADAMGenotypeAllele.NoCall
+    else if (allele.isReference) ADAMGenotypeAllele.Ref
+    else ADAMGenotypeAllele.Alt
+  }
+
+  private def convertAllele(allele: CharSequence, isRef: Boolean = false): Seq[Allele] = {
+    if (allele == null) Seq() else Seq(Allele.create(allele.toString, isRef))
+  }
+
+  private def convertAlleles(v: ADAMVariant): java.util.Collection[Allele] = {
+    convertAllele(v.getReferenceAllele, true) ++ convertAllele(v.getVariantAllele)
+  }
+
+  private def convertAlleles(g: ADAMGenotype): java.util.List[Allele] = {
+    g.getAlleles.map(a => a match {
+      case ADAMGenotypeAllele.NoCall => Allele.NO_CALL
+      case ADAMGenotypeAllele.Ref => Allele.create(g.getVariant.getReferenceAllele.toString, true)
+      case ADAMGenotypeAllele.Alt => Allele.create(g.getVariant.getVariantAllele.toString)
+    })
+  }
+}
 
 /**
  * This class converts VCF data to and from ADAM. This translation occurs at the abstraction level
@@ -31,545 +138,149 @@ import org.broadinstitute.variant.vcf.VCFHeader
  * If an annotation has a corresponding set of fields in the VCF standard, a conversion to/from the
  * GATK VariantContext should be implemented in this class.
  */
-class VariantContextConverter extends Serializable {
+class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable {
 
-  /**
-   * Converts a list of ADAMVariants into a list of alleles, and a set of tags. Adds to a
-   * provided GATK VariantContext.
-   *
-   * @param v List of ADAMVariants.
-   * @param vc VariantContext builder to modify.
-   * @return A GATK VariantContextBuilder.
-   */
-  def convertVariants(v: Seq[ADAMVariant], vc: VariantContextBuilder): VariantContextBuilder = {
+  private def convertAllele(allele: Allele): ADAMGenotypeAllele = {
+    if (allele.isNoCall) ADAMGenotypeAllele.NoCall
+    else if (allele.isReference) ADAMGenotypeAllele.Ref
+    else ADAMGenotypeAllele.Alt
+  }
 
-    var tagMap = Map[java.lang.String, java.lang.Object]()
-
-    // get start, end, and reference
-    val contig = v.head.getReferenceName
-    val start = v.head.getPosition
-    val end = v.map(r => {
-      if (r.getVariantType == VariantType.SV) {
-        r.getSvEnd.toLong
-      } else {
-        r.getPosition.toLong + r.getVariant.length.toLong - 1
-      }
-    }).reduce(_ max _)
-
-    vc.loc(contig, start + 1, end + 1)
-
-    // if defined, get reference
-    Option(v.head.getReferenceName).foreach(vc.source(_))
-
-    // for each variant, create an allele
-    val alleleList = v.map(variant => {
-      Allele.create(variant.getVariant, variant.getIsReference)
-    }).distinct
-
-    // add reference if it doesn't exist
-    val alleleListWRef = if (alleleList.forall(!_.isReference)) {
-      (Allele.create(v.head.getReferenceAllele, true) :: alleleList.toList).toSeq
-    } else {
-      alleleList
-    }
-
-    // set alleles in variant context
-    vc.alleles(alleleListWRef)
-
-    // get fields - most can be taken from head variant
-    val variant = v.head
-
-    vc.start(variant.getPosition + 1)
-
-    Option(variant.getFiltersRun) match {
-      case Some(o) => {
-        // if field set and is false, set unfiltered flag
-        if (!o.asInstanceOf[Boolean]) {
-          vc.unfiltered
-        } else {
-          // if filters were run and filters field is pop'ed, we failed a filter
-          // if null, we ran and passed
-          Option(variant.getFilters) match {
-            case Some(o) => {
-              // loop and add filters
-              stringToList(o.asInstanceOf[String]).foreach(s => {
-                vc.filter(s)
-              })
-            }
-            case None => vc.passFilters
-          }
-        }
-      }
-      case None => vc.unfiltered
-    }
-
-    Option(variant.getAlleleFrequency).foreach(r => tagMap += ("AF" -> r))
-    Option(variant.getRmsBaseQuality).foreach(r => tagMap += ("BQ" -> r))
-    Option(variant.getSiteRmsMappingQuality).foreach(r => tagMap += ("MQ" -> r))
-    Option(variant.getSiteMapQZeroCounts).foreach(r => tagMap += ("MQ0" -> r))
-    Option(variant.getTotalSiteMapCounts).foreach(r => tagMap += ("DP" -> r))
-    Option(variant.getNumberOfSamplesWithData).foreach(r => tagMap += ("NS" -> r))
-
-    vc.attributes(tagMap)
-
-    vc
+  implicit def gatkAllelesToADAMAlleles(gatkAlleles : java.util.List[Allele]) 
+      : java.util.List[ADAMGenotypeAllele] = {
+    gatkAlleles.map(convertAllele(_))
   }
 
   /**
-   * Converts a GATK variant context into a list of ADAMVariants.
-   *
-   * @param vc GATK variant context describing VCF data
-   * @param contigName Name of the contig this is on.
-   * @param contigId ID of the contig this is on.
-   * @return A list of ADAMVariant records
-   */
-  def convertVariants(vc: VariantContext, contigName: String, contigId: Int): List[ADAMVariant] = {
-
-    var variants = List[ADAMVariant]()
-    var allele = 0
-
-    // get necessary fields from variant context
-    // allele frequency in population
-    val alleleFrequency = if (vc.hasAttribute("AF")) {
-      val afString = vc.getAttributeAsString("AF", "")
-      vcfListToDoubles(afString)
-    } else {
-      List[Double]()
-    }
-
-    // variant ID
-    val id = if (vc.hasID) {
-      Some(vc.getID)
-    } else {
-      None
-    }
-
-    // filters applied to variant, IFF variant failed a filter and was filtered out
-    val filters = if (vc.isFiltered) {
-      Some(vc.getFilters)
-    } else {
-      None
-    }
-
-    def getIntOrDoubleAttributeAsInt(key: String): Option[Int] = {
-      vc.getAttribute(key) match {
-        case (d: java.lang.Double) => Some(d.toInt)
-        case (i: java.lang.Integer) => Some(i)
-        case _ => None
-      }
-    }
-
-    // RMS quality of bases mapped to site
-    val baseQuality: Option[Int] = if (vc.hasAttribute("BQ")) {
-      getIntOrDoubleAttributeAsInt("BQ")
-    } else {
-      None
-    }
-
-    // RMS mapping quality of reads mapped to site
-    val mapQuality: Option[Int] = if (vc.hasAttribute("MQ")) {
-      getIntOrDoubleAttributeAsInt("MQ")
-    } else {
-      None
-    }
-
-    // count of reads mapped to site with mapping quality == 0
-    val mapQ0Count = if (vc.hasAttribute("MQ0")) {
-      Some(vc.getAttributeAsInt("MQ0", 0))
-    } else {
-      None
-    }
-
-    // total number of reads mapped to site
-    val totalMapCount = if (vc.hasAttribute("DP")) {
-      Some(vc.getAttributeAsInt("DP", 0))
-    } else {
-      None
-    }
-
-    // total number of samples where at least one read mapped to site
-    val samplesWithData = if (vc.hasAttribute("NS")) {
-      Some(vc.getAttributeAsInt("NS", 0))
-    } else {
-      None
-    }
-
-    // loop over alleles and create variants
-    for (a <- vc.getAlleles) {
-
-      /**
-       * Method to convert a GATK variant context into an ADAM variant type, if the
-       * type can be determined from the VariantContext.
-       *
-       * @param v VariantContext to convert.
-       * @return Some(type) if context expresses variant type, else None
-       */
-      def convertType(v: VariantContext): Option[VariantType] = {
-        if (v.isSymbolicOrSV) {
-          if (v.isSymbolic) {
-            Some(VariantType.Complex)
-          } else {
-            Some(VariantType.SV)
-          }
-        } else {
-          v.getType match {
-            case VariantContext.Type.SNP => Some(VariantType.SNP)
-            case VariantContext.Type.MNP => Some(VariantType.MNP)
-            case VariantContext.Type.INDEL => {
-              if (v.isSimpleDeletion) {
-                Some(VariantType.Insertion)
-              } else {
-                Some(VariantType.Deletion)
-              }
-            }
-            case _ => None
-          }
-        }
-      }
-
-      // start building new variant
-      val builder: ADAMVariant.Builder = ADAMVariant.newBuilder
-        .setPosition(vc.getStart - 1)
-        .setReferenceAllele(vc.getReference.getBaseString)
-        .setIsReference(a.isReference)
-        .setQuality(vc.getPhredScaledQual.toInt)
-        .setFiltersRun(vc.filtersWereApplied)
-        .setReferenceName(contigName)
-        .setReferenceId(contigId)
-        .setReferenceLength(1) // this is clearly a bogus value, however, cannot recover info from vcf
-
-      // get variant type and convert to ADAM variant type
-      val variantType = convertType(vc)
-      if (!variantType.isEmpty) {
-        builder.setVariantType(variantType.get)
-
-        // if variant is not complex, get sequence
-        if (variantType.get != VariantType.Complex) {
-          builder.setVariant(a.getBaseString)
-        }
-      } else {
-        // no variant, simply reference
-        builder.setVariant(a.getBaseString)
-      }
-
-      if (!alleleFrequency.isEmpty) {
-        builder.setAlleleFrequency(alleleFrequency(allele))
-      }
-
-      if (!id.isEmpty) {
-        builder.setId(id.get)
-      }
-
-      if (!filters.isEmpty) {
-        builder.setFilters(listToString(filters.get.map(i => i: String).toList))
-      }
-
-      if (!baseQuality.isEmpty) {
-        builder.setRmsBaseQuality(baseQuality.get)
-      }
-
-      if (!mapQuality.isEmpty) {
-        builder.setSiteRmsMappingQuality(mapQuality.get)
-      }
-
-      if (!mapQ0Count.isEmpty) {
-        builder.setSiteMapQZeroCounts(mapQ0Count.get)
-      }
-
-      if (!totalMapCount.isEmpty) {
-        builder.setTotalSiteMapCounts(totalMapCount.get)
-      }
-
-      if (!samplesWithData.isEmpty) {
-        builder.setNumberOfSamplesWithData(samplesWithData.get)
-      }
-
-      // prepend to list
-      variants = builder.build :: variants
-    }
-
-    variants
-  }
-
-  /**
-   * Converts a list of ADAMGenotypes to a set of genotypes inside of a GATK VariantContext
-   * by way of a VariantContextBuilder.
-   *
-   * @param g List of ADAMGenotypes to convert.
-   * @param vc Variant context builder to use during conversion.
-   * @return Variant context builder from "conversion".
-   */
-  def convertGenotypes(g: Seq[ADAMGenotype], vc: VariantContextBuilder): VariantContextBuilder = {
-
-    // group by sample ID and sort by haplotype
-    val bySample: Map[java.lang.CharSequence, Seq[ADAMGenotype]] = g.groupBy(_.getSampleId)
-      .map(r => (r._1, r._2.sortBy(_.getHaplotypeNumber)))
-
-    // per sample, generate initial copy of builder
-    val genotypeBuilders: Map[ADAMGenotype, GenotypeBuilder] = bySample.map(r => {
-      (r._2.head, new GenotypeBuilder(r._1, r._2.map(g => Allele.create(g.getAllele, g.getIsReference)).toList))
-    })
-
-    // per genotype, populate fields and build genotypes
-    val builtGenotypes: List[Genotype] = genotypeBuilders.map(r => {
-      val (g, b) = r
-
-      if (g.getIsPhased) {
-        b.phased(true)
-      } else {
-        b.phased(false)
-      }
-
-      Option(g.getGenotypeQuality) match {
-        case Some(o) => b.GQ(o.asInstanceOf[java.lang.Integer])
-        case None => b.noGQ
-      }
-
-      Option(g.getDepth) match {
-        case Some(o) => b.DP(o.asInstanceOf[java.lang.Integer])
-        case None => b.noDP
-      }
-
-      b.make()
-    }).toList
-
-    // add genotypes
-    vc.genotypes(builtGenotypes)
-
-    vc
-  }
-
-  /**
-   * Converts a GATK variant context into a set of genotypes. Genotype numbering corresponds
-   * to allele numbering of variants at same locus.
-   *
-   * @param vc GATK variant context to convert.
-   * @param contigName Name of the contig this is on.
-   * @param contigId ID of the contig this is on.
-   * @return List of ADAMGenotypes.
-   */
-  def convertGenotypes(vc: VariantContext, contigName: String, contigId: Int): List[ADAMGenotype] = {
-
-    var genotypes = List[ADAMGenotype]()
-
-    // get genotype sample names
-    val samples = vc.getSampleNames.toList
-
-    // loop over samples
-    for (s <- samples) {
-      // get genotypes from variant context
-      val g = vc.getGenotype(s)
-
-      // get alleles from genotype
-      val a = g.getAlleles.toList
-
-      // initialize haplotype being called to 0
-      var haplotype = 0
-
-      val haplotypeQual = if (g.hasExtendedAttribute("HQ")) {
-        vcfListToInts(g.getAttributeAsString("HQ", ""))
-      } else {
-        List[Int]()
-      }
-
-      // loop over called alleles in genotype
-      for (allele <- a) {
-        // start building new genotype
-        val builder = ADAMGenotype.newBuilder
-          .setPosition(vc.getStart - 1)
-          .setSampleId(s)
-          .setPloidy(g.getPloidy)
-          .setAllele(allele.getBaseString)
-          .setHaplotypeNumber(haplotype)
-          .setPloidy(allele.length)
-          .setIsPhased(g.isPhased)
-          .setIsReference(allele.isReference)
-          .setReferenceName(contigName)
-          .setReferenceId(contigId)
-          .setReferenceLength(1) // see earlier note - can't be recovered from vcf
-
-        if (g.hasGQ) {
-          builder.setGenotypeQuality(g.getGQ)
-        }
-
-        if (g.hasDP) {
-          builder.setDepth(g.getDP)
-        }
-
-        // set phasing specific fields
-        if (g.isPhased) {
-          if (g.hasExtendedAttribute("PQ")) {
-            builder.setPhaseQuality(g.getAttributeAsInt("PQ", 0))
-          }
-
-          if (g.hasExtendedAttribute("PS")) {
-            builder.setPhaseSetId(g.getAttributeAsString("PS", ""))
-          }
-        }
-
-        if (haplotypeQual.length != 0) {
-          builder.setHaplotypeQuality(haplotypeQual(haplotype))
-        }
-
-        if (g.hasPL) {
-          builder.setPhredLikelihoods(listToString(g.getPL.toList))
-        }
-
-        if (g.hasExtendedAttribute("GP")) {
-          builder.setPhredPosteriorLikelihoods(g.getAttributeAsString("GP", ""))
-        }
-
-        if (g.hasExtendedAttribute("MQ")) {
-          val mq: Option[Int] = g.getExtendedAttribute("MQ") match {
-            case (d: java.lang.Double) => Some(d.toInt)
-            case (i: java.lang.Integer) => Some(i)
-            case _ => None
-          }
-
-          mq.foreach(builder.setRmsMappingQuality(_))
-        }
-
-        if (g.hasExtendedAttribute("GQL")) {
-          builder.setPloidyStateGenotypeLikelihoods(g.getAttributeAsString("GQL", ""))
-        }
-
-        // increment haplotype count
-        haplotype += 1
-
-        // finish building genotype and append to list
-        genotypes = builder.build :: genotypes
-      }
-    }
-
-    genotypes
-  }
-
-  /**
-   * "Converts" ADAMVariantDomain objects into GATK VariantDomain objects by applying these
-   * attributes to a VariantDomainBuilder object.
-   *
-   * @param vd ADAMVariantDomain object to convert.
-   * @param vc GATK variant domain builder to add to.
-   * @return The "converted" variant domain builder.
-   */
-  def convertDomains(vd: ADAMVariantDomain, vc: VariantContextBuilder): VariantContextBuilder = {
-    if (vd.getInDbSNP) vc.attribute("DB", true)
-    if (vd.getInHM2) vc.attribute("H2", true)
-    if (vd.getInHM3) vc.attribute("H3", true)
-    if (vd.getIn1000G) vc.attribute("1000G", true)
-
-    vc
-  }
-
-  /**
-   * Converts GATK Variant Context into ADAMVariantDomain objects. ADAMVariantDomains are a
-   * variant specific annotation that describes which variant databases a variant site has been
-   * seen in.
-   *
-   * @param vc GATK variant context to convert.
-   * @param contigName Name of the contig this is on.
-   * @param contigId ID of the contig this is on.
-   * @return ADAM variant domain object indiciating which databases contain this variant.
-   */
-  def convertDomains(vc: VariantContext, contigName: String, contigId: Int): ADAMVariantDomain = {
-    val builder: ADAMVariantDomain.Builder = ADAMVariantDomain.newBuilder
-      .setPosition(vc.getStart - 1)
-      .setReferenceName(contigName)
-      .setReferenceId(contigId)
-
-    if (vc.hasAttribute("DB")) {
-      builder.setInDbSNP(true)
-    }
-
-    if (vc.hasAttribute("H2")) {
-      builder.setInHM2(true)
-    }
-
-    if (vc.hasAttribute("H3")) {
-      builder.setInHM3(true)
-    }
-
-    if (vc.hasAttribute("1000G")) {
-      builder.setIn1000G(true)
-    }
-
-    builder.build()
-  }
-
-  /**
-   * Converts a single ADAMVariantContext into a GATK variant context. Performs the opposite
-   * process of the GATK-->ADAM method.
-   *
-   * @param vc ADAM variant context to convert.
-   * @return GATK Variant context post conversion.
-   */
-  def convert(vc: ADAMVariantContext): VariantContext = {
-
-    val vcb = new VariantContextBuilder()
-
-    // convert variant data
-    val vcbWithVariants = convertVariants(vc.variants, vcb)
-
-    // if we have genotypes, convert genotype data
-    val vcbWithGenotypes = if (vc.genotypes.length != 0) {
-      convertGenotypes(vc.genotypes, vcbWithVariants)
-    } else {
-      vcbWithVariants
-    }
-
-    // if domains are stuffed, convert domain data
-    val vcbWithDomains = vc.domains match {
-      case Some(o) => convertDomains(o.asInstanceOf[ADAMVariantDomain], vcbWithVariants)
-      case None => vcbWithVariants
-    }
-
-    // build and return
-    vcbWithDomains.make()
-  }
-
-  /**
-   * Converts a single GATK variant into an ADAMVariantContext. This involves converting:
-   *
-   * - Alleles seen segregating at site
-   * - Genotypes of samples
-   * - Variant domain data
+   * Converts a single GATK variant into ADAMVariantContext(s).
    *
    * @param vc GATK Variant context to convert.
-   * @param sequenceDict Sequence dictionary mapping reference contigs to IDs.
-   * @return ADAM variant context containing allele, genotype, and domain data.
+   * @return ADAM variant contexts
    */
-  def convert(vc: VariantContext, sequenceDict: SequenceDictionary): ADAMVariantContext = {
+  def convert(vc:VariantContext): Seq[ADAMVariantContext] = {
 
-    val contigName: String = vc.getChr()
-    val contigId: Int = sequenceDict(contigName).id
-    val referencePosition = ReferencePosition(vc.getStart - 1, contigId)
-
-    val variants = convertVariants(vc, contigName, contigId)
-    val domains = convertDomains(vc, contigName, contigId)
-
-    // if GATK variant context contains genotypes, convert them
-    // if not, then return empty list of genotypes
-    val genotypes = if (vc.hasGenotypes) {
-      convertGenotypes(vc, contigName, contigId)
-    } else {
-      List[ADAMGenotype]()
+    var contigId = 0;
+    // This is really ugly - only temporary until we remove numeric
+    // IDs from our representation of contigs.
+    try {
+      contigId = vc.getID.toInt
+    } catch {
+      case ex:NumberFormatException => {
+      }
     }
 
-    // assemble a variant context from the variants, genotypes, and domains (if seen)
-    new ADAMVariantContext(referencePosition, variants, genotypes, Some(domains))
+    val contig: ADAMContig.Builder = ADAMContig.newBuilder()
+      .setContigName(vc.getChr)
+      .setContigId(contigId)
+
+    if (dict.isDefined) {
+      val sr = (dict.get)(vc.getChr)
+      contig.setContigLength(sr.length).setReferenceURL(sr.url).setContigMD5(sr.md5)
+    }
+
+    // TODO: Handle multi-allelic sites
+    // We need to split the alleles (easy) and split and subset the PLs (harder)/update the genotype
+    if (!vc.isBiallelic) {
+      return Seq()
+    }
+
+    // VCF CHROM, POS, REF and ALT
+    val variant: ADAMVariant = ADAMVariant.newBuilder
+      .setContig(contig.build)
+      .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */)
+      .setReferenceAllele(vc.getReference.getBaseString)
+      .setVariantAllele(vc.getAlternateAllele(0).getBaseString)
+      .build
+
+    val shared_genotype_builder: ADAMGenotype.Builder = ADAMGenotype.newBuilder
+      .setVariant(variant)
+
+    val call : VariantCallingAnnotations.Builder =
+      VariantCallingAnnotations.newBuilder
+
+    // VCF QUAL, FILTER and INFO fields
+    if (vc.hasLog10PError) {
+      call.setVariantCallErrorProbability(vc.getPhredScaledQual.asInstanceOf[Float])
+    }
+
+    if (vc.isFiltered) { // not PASSing
+      call.setVariantIsPassing(!vc.isFiltered.booleanValue)
+        .setVariantFilters(new java.util.ArrayList(vc.getFilters))
+    } else { 
+      /* otherwise, filters were applied and the variant passed, or no
+       * filters were appled */
+      call.setVariantIsPassing(true)
+    }
+    shared_genotype_builder.setVariantCallingAnnotations(VariantContextConverter.convertAttributes(vc, call.build()))
+
+    // VCF Genotypes
+    val shared_genotype = shared_genotype_builder.build
+    val genotypes: Seq[ADAMGenotype] = vc.getGenotypes.map((g: Genotype) => {
+      val genotype: ADAMGenotype.Builder = ADAMGenotype.newBuilder(shared_genotype)
+        .setSampleId(g.getSampleName)
+        .setAlleles(g.getAlleles.map(convertAllele(_)))
+        .setIsPhased(g.isPhased)
+
+      if (g.hasGQ) genotype.setGenotypeQuality(g.getGQ)
+      if (g.hasDP) genotype.setReadDepth(g.getDP)
+      if (g.hasAD) {
+        val ad = g.getAD
+        assert(ad.length == 2, "Unexpected number of allele depths for bi-allelic variant")
+        genotype.setReferenceReadDepth(ad(0)).setAlternateReadDepth(ad(1))
+      }
+      if (g.hasPL) genotype.setGenotypeLikelihoods(g.getPL.toList.map(p => p:java.lang.Integer))
+
+
+      val built_genotype = genotype.build
+      for ((v,a) <- VariantContextConverter.VCF2GTAnnos) { // Add extended attributes if present
+        val attr = g.getExtendedAttribute(v)
+        if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {
+          built_genotype.put(a._1, a._2(attr))
+        }
+      }
+      built_genotype
+    }).toSeq
+
+    Seq(ADAMVariantContext((ReferencePosition(variant), variant, genotypes)))
   }
 
   /**
-   * Converts a single Hadoop-BAM variant into an ADAMVariantContext. This involves converting:
-   *
-   * - Alleles seen segregating at site
-   * - Genotypes of samples
-   * - Variant domain data
-   *
-   * @param vc Hadoop-BAM Variant context to convert.
-   * @return ADAM variant context containing allele, genotype, and domain data.
+   * Convert an ADAMVariantContext into the equivalent GATK VariantContext
+   * @param vc
+   * @return GATK VariantContext
    */
-  def convert(vc: VariantContextWritable, seqDict: SequenceDictionary): ADAMVariantContext = {
-    convert(vc.get, seqDict)
+  def convert(vc:ADAMVariantContext):VariantContext = {
+    val variant : ADAMVariant = vc.variant
+    val vcb = new VariantContextBuilder()
+      .chr(variant.getContig.getContigName.toString)
+      .start(variant.getPosition + 1 /* Recall ADAM is 0-indexed */)
+      .stop(variant.getPosition + 1 + variant.getReferenceAllele.length - 1)
+      .alleles(VariantContextConverter.convertAlleles(variant))
+
+    vc.databases.flatMap(d => Option(d.getDbsnpId)).foreach(d => vcb.id("rs" + d))
+
+    // TODO: Extract provenance INFO fields
+    vcb.genotypes(vc.genotypes.map(g => {
+      val gb = new GenotypeBuilder(g.getSampleId.toString, VariantContextConverter.convertAlleles(g))
+
+      Option(g.getIsPhased).foreach(gb.phased(_))
+      Option(g.getGenotypeQuality).foreach(gb.GQ(_))
+      Option(g.getReadDepth).foreach(gb.DP(_))
+      if (g.getReferenceReadDepth != null && g.getAlternateReadDepth != null)
+        gb.AD(Array(g.getReferenceReadDepth, g.getAlternateReadDepth))
+      if (g.variantCallingAnnotations != null) {
+        val callAnnotations = g.getVariantCallingAnnotations()
+        if (callAnnotations.variantFilters != null)
+          gb.filters(callAnnotations.variantFilters.map(_.toString))
+      }
+
+      if (g.getGenotypeLikelihoods.nonEmpty)
+        gb.PL(g.getGenotypeLikelihoods.map(p => p:Int).toArray)
+
+      gb.make
+    }))
+
+    vcb.make
   }
+
 }

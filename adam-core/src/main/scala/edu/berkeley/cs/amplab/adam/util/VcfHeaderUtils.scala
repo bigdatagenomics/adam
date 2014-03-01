@@ -18,6 +18,8 @@ package edu.berkeley.cs.amplab.adam.util
 import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rdd.AdamRDDFunctions
+import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
+import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariantContextRDDFunctions
 import org.apache.spark.rdd.RDD
 import org.broadinstitute.variant.vcf.{VCFHeader, 
                                        VCFHeaderLine, 

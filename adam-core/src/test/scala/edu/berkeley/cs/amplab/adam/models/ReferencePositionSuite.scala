@@ -16,7 +16,7 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import org.scalatest.FunSuite
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMPileup, ADAMVariant, ADAMGenotype}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMGenotype, ADAMPileup, ADAMRecord, ADAMVariant}
 
 class ReferencePositionSuite extends FunSuite {
 
@@ -60,9 +60,15 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from variant") {
+    val contig = ADAMContig.newBuilder()
+      .setContigId(10)
+      .setContigName("chr10")
+      .build()
     val variant = ADAMVariant.newBuilder()
+      .setContig(contig)
+      .setReferenceAllele("A")
+      .setVariantAllele("T")
       .setPosition(10L)
-      .setReferenceId(10)
       .build()
 
     val refPos = ReferencePosition(variant)
@@ -72,14 +78,23 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from genotype") {
-    val genotype = ADAMGenotype.newBuilder()
+    val contig = ADAMContig.newBuilder()
+      .setContigId(10)
+      .setContigName("chr10")
+      .build()
+    val variant = ADAMVariant.newBuilder()
       .setPosition(100L)
-      .setReferenceId(100)
+      .setContig(contig)
+      .setReferenceAllele("A")
+      .setVariantAllele("T")
+      .build()
+    val genotype = ADAMGenotype.newBuilder()
+      .setVariant(variant)
       .build()
 
     val refPos = ReferencePosition(genotype)
     
-    assert(refPos.refId === 100)
+    assert(refPos.refId === 10)
     assert(refPos.pos === 100L)
   }
 }

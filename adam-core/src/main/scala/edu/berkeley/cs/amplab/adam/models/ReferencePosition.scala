@@ -105,7 +105,7 @@ object ReferencePosition {
    * @return The reference position of this variant.
    */
   def apply (variant: ADAMVariant): ReferencePosition = {
-    new ReferencePosition(variant.getReferenceId, variant.getPosition)
+    new ReferencePosition(variant.getContig.getContigId, variant.getPosition)
   }
 
   /**
@@ -118,7 +118,8 @@ object ReferencePosition {
    * @return The reference position of this genotype.
    */
   def apply (genotype: ADAMGenotype): ReferencePosition = {
-    new ReferencePosition(genotype.getReferenceId, genotype.getPosition)
+    val variant = genotype.getVariant()
+    new ReferencePosition(variant.getContig.getContigId, variant.getPosition)
   }
 
   /**
