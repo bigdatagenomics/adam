@@ -17,6 +17,7 @@ package edu.berkeley.cs.amplab.adam.rich
 
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.ReferenceMappingContext.ADAMRecordReferenceMapping
 
 class ADAMRecordReferenceMappingSuite extends SparkFunSuite {
 

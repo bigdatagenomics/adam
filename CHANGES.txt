@@ -32,6 +32,8 @@ Trunk (not yet released)
   * ISSUE 101: Adding ability to call plugins from the command line not defined in the main Adam jar and included
     in the classpath.
 
+  * ISSUE 83: Add ability to perform a "region join" to RDDs of ADAMRecords.
+
   OPTIMIZATIONS
 
   * Transformed phred --> double calculation into a LUT, which improves performance. This change was introduced
