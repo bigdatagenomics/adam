@@ -53,6 +53,30 @@ object VariantAnnotationConverter extends Serializable {
     val vcfKey: String = hdrLine.getID
   }
 
+  private val COSMIC_KEYS: List[AttrKey] = List(
+    AttrKey("geneSymbol", attrAsString _, new VCFInfoHeaderLine("GENE,", 1, VCFHeaderLineType.String,"Gene name")),
+    AttrKey("strand", attrAsString _, new VCFInfoHeaderLine("STRAND,", 1, VCFHeaderLineType.String,"Gene strand")),
+    AttrKey("cds", attrAsString _, new VCFInfoHeaderLine("CDS,", 1, VCFHeaderLineType.String,"CDS annotation")),
+    AttrKey("cnt", attrAsString _, new VCFInfoHeaderLine("CNT,", 1, VCFHeaderLineType.Integer,"How many samples have this mutation"))
+  )
+
+  private val DBNSFP_KEYS: List[AttrKey] = List(
+    AttrKey("phylop", attrAsFloat _,new VCFInfoHeaderLine("PHYLOP", 1, VCFHeaderLineType.Float,"PhyloP score. The larger the score, the more conserved the site.")),
+    AttrKey("siftPred", attrAsString _,new VCFInfoHeaderLine("SIFT_PRED", 1, VCFHeaderLineType.Character,"SIFT Prediction: D (damaging), T (tolerated)")),
+    AttrKey("siftScore", attrAsFloat _,new VCFInfoHeaderLine("SIFT_SCORE", 1, VCFHeaderLineType.Float,"SIFT Score")),
+    AttrKey("ancestralAllele", attrAsString _,new VCFInfoHeaderLine("AA", 1, VCFHeaderLineType.String,"Ancestral allele"))
+
+  )
+
+  private val CLINVAR_KEYS: List[AttrKey] = List(
+    AttrKey("dbSnpId", attrAsInt _, new VCFInfoHeaderLine("dbSNP ID", 1, VCFHeaderLineType.Integer, "dbSNP ID")),
+    AttrKey("geneSymbol", attrAsString _, new VCFInfoHeaderLine("GENEINFO", 1, VCFHeaderLineType.String, "Pairs each of gene symbol:gene id.  The gene symbol and id are delimited by a colon (:) and each pair is delimited by a vertical bar"))
+  )
+
+  private val OMIM_KEYS: List[AttrKey] = List(
+    AttrKey("omimId", attrAsString _, new VCFInfoHeaderLine("VAR", 1, VCFHeaderLineType.String, "MIM entry with variant mapped to rsID"))
+  )
+
   private val INFO_KEYS: Seq[AttrKey] = Seq(
     AttrKey("clippingRankSum", attrAsFloat _, new VCFInfoHeaderLine("ClippingRankSum", 1, VCFHeaderLineType.Float, "Z-score From Wilcoxon rank sum test of Alt vs. Ref number of hard clipped bases")),
     AttrKey("readDepth", attrAsInt _, VCFStandardHeaderLines.getInfoLine(VCFConstants.DEPTH_KEY)),
@@ -88,6 +112,10 @@ object VariantAnnotationConverter extends Serializable {
   lazy val VCF2VarCallAnnotations : Map[String,(Int,Object => Object)] = createFieldMap(INFO_KEYS,VariantCallingAnnotations.getClassSchema )
   lazy val VCF2GTAnnotations : Map[String,(Int,Object => Object)] = createFieldMap(FORMAT_KEYS, ADAMGenotype.getClassSchema)
 
+  private lazy val EXTERNAL_DATABASE_KEYS : Seq[AttrKey] =  OMIM_KEYS ::: CLINVAR_KEYS ::: DBNSFP_KEYS // ::: COSMIC_KEYS
+  lazy val VCF2DatabaseAnnotations : Map[String,(Int,Object => Object)] = createFieldMap(EXTERNAL_DATABASE_KEYS, ADAMDatabaseVariantAnnotation.getClassSchema)
+
+
   private def createFieldMap( keys : Seq[AttrKey], schema : Schema ) : Map[String,(Int,Object => Object)] = {
     keys.filter(_.attrConverter != null).map(
       field => {
@@ -111,9 +139,30 @@ object VariantAnnotationConverter extends Serializable {
     fillRecord(createFieldMap(keys, record.getSchema), vc, record)
   }
 
+  def convert(vc : VariantContext, annotation : ADAMDatabaseVariantAnnotation) : ADAMDatabaseVariantAnnotation  = {
+    fillRecord(VCF2DatabaseAnnotations, vc, annotation)
+  }
+
   def convert(vc : VariantContext, call : VariantCallingAnnotations) : VariantCallingAnnotations  = {
     fillRecord(VCF2VarCallAnnotations, vc, call)
   }
 
+  def mergeAnnotations(leftRecord : ADAMDatabaseVariantAnnotation, rightRecord : ADAMDatabaseVariantAnnotation) : ADAMDatabaseVariantAnnotation = {
+    val mergedAnnotation = ADAMDatabaseVariantAnnotation.newBuilder(leftRecord).build()
+    val numFields = ADAMDatabaseVariantAnnotation.getClassSchema.getFields.size
+
+    def insertField( fieldIdx : Int) =
+    {
+      val value = rightRecord.get(fieldIdx)
+      if (value != null)
+      {
+        mergedAnnotation.put(fieldIdx, value)
+      }
+    }
+    (0 until numFields).foreach(insertField(_))
+
+    mergedAnnotation
+
+  }
 
 }

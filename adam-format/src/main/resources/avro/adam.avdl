@@ -264,9 +264,52 @@ record ADAMGenotype {
   union { null, int }     phaseQuality = null;
 }
 
+record VariantEffect
+{
+  union { null, string} hgvs = null;
+  union { null, string } referenceAminoAcid = null;
+  union { null, string } alternateAminoAcid = null;
+  union {null, string} geneId = null;
+  union {null, string} transcriptId = null;
+}
+
 record ADAMDatabaseVariantAnnotation {
   union { null, ADAMVariant } variant;
-  union { null, int } dbsnpId = null;
+
+  union { null, int } dbSnpId = null;
+
+  //domain information
+  union {null, string} geneSymbol = null;
+
+  //clinical fields
+  union {null, string} omimId  = null;
+  union {null, string} cosmicId = null;
+  union {null, string} clinvarId  = null;
+  union {null, string} clinicalSignificance  = null;
+
+  //conservation
+  union { null, string } gerpNr  = null;
+  union { null, string } gerpRs  = null;
+  union { null, float } phylop  = null;
+  union { null, string } ancestralAllele  = null;
+
+  //population statistics
+  union {null, int} thousandGenomesAlleleCount = null;
+  union {null, float} thousandGenomesAlleleFrequency = null;
+
+  //effect
+  //TODO(arahuja): Parse into array
+  //array<VariantEffect> effects = null;
+
+  //predicted effects
+  union { null, float } siftScore = null;
+  union { null, float } siftScoreConverted = null;
+  union { null, string } siftPred = null;
+
+  union { null, float } mutationTasterScore = null;
+  union { null, float } mutationTasterScoreConverted = null;
+  union { null, string } mutationTasterPred = null;
+
 }
 
 }
