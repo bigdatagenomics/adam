@@ -32,6 +32,10 @@ trait SparkArgs extends Args4jBase {
   var spark_jars = new util.ArrayList[String]()
   @Args4jOption(required = false, name = "-spark_env", metaVar = "KEY=VALUE", usage = "Add Spark environment variable")
   var spark_env_vars = new util.ArrayList[String]()
+  @Args4jOption(required = false, name = "-spark_kryo_buffer_size", usage = "Set the size of the buffer used for serialization in MB. Default size is 4MB.")
+  var spark_kryo_buffer_size = 4
+  @Args4jOption(required = false, name = "-spark_add_stats_listener", usage = "Register job stat reporter, which is useful for debug/profiling.")
+  var spark_add_stats_listener = false
 }
 
 trait SparkCommand extends AdamCommand {
@@ -42,7 +46,9 @@ trait SparkCommand extends AdamCommand {
       args.spark_master,
       args.spark_home,
       args.spark_jars,
-      args.spark_env_vars)
+      args.spark_env_vars,
+      args.spark_add_stats_listener,
+      args.spark_kryo_buffer_size)
   }
 
 }

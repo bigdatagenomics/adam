@@ -37,8 +37,9 @@ import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.scheduler.StatsReportListener
 import parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -94,12 +95,28 @@ object AdamContext {
 
   implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
 
+  /**
+   * Creates a SparkContext that is configured for use with ADAM. Applies default serialization
+   * settings.
+   *
+   * @param name Context name.
+   * @param master URL for master.
+   * @param sparkHome Path to Spark.
+   * @param sparkJars JAR files to import into context.
+   * @param sparkEnvVars Environment variables to set.
+   * @param sparkAddStatsListener Disabled by default; true enables. If enabled, a job status
+   *                              listener is registered. This can be useful for performance debug.
+   * @param sparkKryoBufferSize Size of the object serialization buffer. Default setting is 4MB.
+   * @return Returns a properly configured Spark Context.
+   */
   def createSparkContext(name: String,
                          master: String,
                          sparkHome: String,
                          sparkJars: Seq[String],
-                         sparkEnvVars: Seq[String]): SparkContext = {
-    AdamKryoProperties.setupContextProperties()
+                         sparkEnvVars: Seq[String],
+                         sparkAddStatsListener: Boolean = false,
+                         sparkKryoBufferSize: Int = 4): SparkContext = {
+    AdamKryoProperties.setupContextProperties(sparkKryoBufferSize)
     val appName = "adam: " + name
     val environment: Map[String, String] = if (sparkEnvVars.isEmpty) {
       Map()
@@ -115,7 +132,13 @@ object AdamContext {
     }
 
     val jars: Seq[String] = if (sparkJars.isEmpty) Nil else sparkJars
-    new SparkContext(master, appName, sparkHome, jars, environment)
+    val sc = new SparkContext(master, appName, sparkHome, jars, environment)
+
+    if (sparkAddStatsListener) {
+      sc.addSparkListener(new StatsReportListener)
+    }
+
+    sc
   }
 }
 

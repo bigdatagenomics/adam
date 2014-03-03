@@ -67,6 +67,10 @@ Trunk (not yet released)
     is does not introduce incompatible changes to the API, but changes the APIs functionality. This change was
     introduced in PR#125 which came out of issue #121.
 
+  * Added switches to AdamContext creation code to allow for configuration of Kryo buffer size, and to allow
+    registration of job statistics listener for profiling. This change was introduced in PR#161 which came out
+    of issue #149.
+
   BUG FIXES
 
   * Fixed issues where VCF header was not being written correctly. This prevented variant calls from being
