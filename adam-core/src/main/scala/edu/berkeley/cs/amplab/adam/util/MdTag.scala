@@ -303,7 +303,7 @@ class MdTag(
    * @param read A read for which one desires the reference sequence.
    * @return A string corresponding to the reference overlapping this read.
    */
-  def getReference (read: ADAMRecord): String = {
+  def getReference (read: RichADAMRecord): String = {
     getReference (read.getSequence, read.samtoolsCigar, read.getStart)
   }
 

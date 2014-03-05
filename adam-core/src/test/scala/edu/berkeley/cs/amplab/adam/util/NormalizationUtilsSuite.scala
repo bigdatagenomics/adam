@@ -54,7 +54,7 @@ class NormalizationUtilsSuite extends FunSuite {
   }
 
   test("moving a simple read with single deletion that cannot shift") {
-    val read = ADAMRecord.newBuilder()
+    val read: RichADAMRecord = ADAMRecord.newBuilder()
       .setReadMapped(true)
       .setSequence("AAAAACCCCCGGGGGTTTTT")
       .setStart(0)
