@@ -14,7 +14,7 @@
     <name>ADAM: Genomic Data System</name>
 
     <properties>
-        <java.version>1.6</java.version>
+        <java.version>1.7</java.version>
         <scala.version>2.10.3</scala.version>
         <scala.artifact.suffix>2.10</scala.artifact.suffix>
         <avro.version>1.7.4</avro.version>
@@ -109,8 +109,8 @@
                                         <message>ADAM requires Maven 3.1.1 or greater</message>
                                     </requireMavenVersion>
                                     <requireJavaVersion>
-                                        <version>[1.6,)</version>
-                                        <message>ADAM requires Java 1.6 or greater</message>
+                                        <version>[1.7,)</version>
+                                        <message>ADAM requires Java 1.7 or greater</message>
                                     </requireJavaVersion>
                                 </rules>
                             </configuration>
