@@ -21,13 +21,16 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 
 // TODO: should inherit from something like AbstractCovariate[(DNABase, DNABase)]
 class DinucCovariate extends AbstractCovariate[(Char, Char)] {
-  // TODO: does this covariate even make sense? why not (isNegative: Boolean, (Char, Char))
-  // instead of reversing the sense of the strand? or is the machine's chemistry such that
-  // this is what makes the most sense?
-
   def compute(read: DecadentRead): Seq[Option[(Char, Char)]] = {
     val sequence = read.sequence.map(_.base)
     if(read.isNegativeRead) {
+      /* Use the reverse-complement of the sequence to get back the original
+       * sequence as it was read by the sequencing machine. The sequencer
+       * always reads from the 5' to the 3' end of each strand, but the output
+       * from the aligner is always in the same sense as the reference, so we
+       * use the reverse-complement if this read was originally from the
+       * complementary strand.
+       */
       dinucs(complement(sequence.reverse)).reverse
     } else {
       dinucs(sequence)

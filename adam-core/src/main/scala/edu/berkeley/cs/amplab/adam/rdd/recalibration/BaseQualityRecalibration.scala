@@ -63,12 +63,11 @@ extends Serializable with Logging {
 
     // First phase
     val observed: ObservationTable = reads.
-      filter(shouldIncludeRead).map(observe).
-      aggregate(ObservationAccumulator(covariates))(_ ++= _, _ += _).result
+      filter(shouldIncludeRead).flatMap(observe).
+      aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
 
-    // Log the ObservationTable
-    // TODO: delete once unneeded; temporarily added for creating plots
-    println(observed.toCSV)
+    // Log the ObservationTable (for debugging and generating plots)
+    //println(observed.toCSV)
 
     // Second phase
     val recalibrator = Recalibrator(observed, minAcceptableQuality)

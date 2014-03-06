@@ -22,6 +22,11 @@ import edu.berkeley.cs.amplab.adam.util.QualityScore
 import edu.berkeley.cs.amplab.adam.util.Util
 import scala.collection.mutable
 
+/**
+ * An empirical frequency count of mismatches from the reference.
+ *
+ * This is used in ObservationTable, which maps from CovariateKey to Observation.
+ */
 class Observation(val total: Long, val mismatches: Long) extends Serializable {
   require(mismatches >= 0 && mismatches <= total)
 
@@ -115,10 +120,21 @@ object Aggregate {
     new Aggregate(value.total, value.mismatches, key.quality.errorProbability * value.mismatches)
 }
 
+/**
+ * Table containing the empirical frequency of mismatches for each set of covariate values.
+ */
 class ObservationTable(
     val space: CovariateSpace,
     val entries: Map[CovariateKey, Observation]
   ) extends Serializable {
+
+  // `func' computes the aggregation key
+  def aggregate[K](func: (CovariateKey, Observation) => K): Map[K, Aggregate] = {
+    val grouped = entries.groupBy { case (key, value) => func(key, value) }
+    val newEntries = grouped.mapValues(bucket =>
+      bucket.map { case (oldKey, obs) => Aggregate(oldKey, obs) }.fold(Aggregate.empty)(_ + _))
+    newEntries.toMap
+  }
 
   override def toString = entries.map { case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
 
@@ -131,25 +147,15 @@ class ObservationTable(
   }
 
   def csvHeader: Seq[String] = space.csvHeader ++ Seq("TotalCount", "MismatchCount", "EmpiricalQ", "IsSkipped")
-
-  // `func' computes the aggregation key
-  def aggregate[K](func: (CovariateKey, Observation) => K): Map[K, Aggregate] = {
-    val grouped = entries.groupBy { case (key, value) => func(key, value) }
-    val newEntries = grouped.mapValues(bucket =>
-      bucket.map { case (oldKey, obs) => Aggregate(oldKey, obs) }.fold(Aggregate.empty)(_ + _))
-    newEntries.toMap
-  }
 }
 
 class ObservationAccumulator(val space: CovariateSpace) extends Serializable {
   private val entries = mutable.HashMap[CovariateKey, Observation]()
 
-  def ++= (that: Seq[(CovariateKey, Observation)]): ObservationAccumulator = {
-    that.foreach { case (k, v) => accum(k, v) }
-    this
-  }
+  def += (that: (CovariateKey, Observation)): ObservationAccumulator =
+    accum(that._1, that._2)
 
-  def += (that: ObservationAccumulator): ObservationAccumulator = {
+  def ++= (that: ObservationAccumulator): ObservationAccumulator = {
     if(this.space != that.space)
       throw new IllegalArgumentException("Can only combine observations with matching CovariateSpaces")
     that.entries.foreach { case (k, v) =>  accum(k, v) }

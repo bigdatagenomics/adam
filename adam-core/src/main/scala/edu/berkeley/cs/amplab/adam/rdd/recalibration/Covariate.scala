@@ -21,9 +21,26 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.util.QualityScore
 import edu.berkeley.cs.amplab.adam.util.Util
 
+/**
+ * A Covariate represents a predictor, also known as a "feature" or
+ * "independent variable".
+ *
+ * @note Concrete implementations of Covariate should inherit from
+ * AbstractCovariate, not Covariate.
+ */
 trait Covariate {
   type Value
 
+  /**
+   * Given a read, computes the value of this covariate for each residue in the
+   * read.
+   *
+   * The returned values must be in the same order as the residues. A value
+   * of None means this covariate does not apply to the corresponding residue.
+   *
+   * Example: The DinucCovariate returns a pair of bases for each residue,
+   * except for bases at the start of a read, for which it returns None.
+   */
   def compute(read: DecadentRead): Seq[Option[Value]]
 
   def apply(read: DecadentRead): Seq[Option[Value]] = compute(read)
@@ -42,6 +59,12 @@ abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
   override type Value = ValueT
 }
 
+/**
+ * Represents a tuple containing a value for each covariate.
+ *
+ * The values for mandatory covariates are stored in member fields and optional
+ * covariate valuess are in `extras`.
+ */
 class CovariateKey(
     val readGroup: String,
     val quality: QualityScore,
@@ -63,6 +86,10 @@ class CovariateKey(
   override def hashCode = Util.hashCombine(0xD20D1E51, parts.hashCode)
 }
 
+/**
+ * Represents the abstract space of all possible CovariateKeys for the given set
+ * of Covariates.
+ */
 class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
   // Computes the covariate values for all residues in this read
   def apply(read: DecadentRead): Seq[CovariateKey] = {
