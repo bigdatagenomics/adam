@@ -57,8 +57,6 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
 class Transform(protected val args: TransformArgs) extends AdamSparkCommand[TransformArgs] with Logging {
   val companion = Transform
 
-  initLogging()
-
   def run(sc: SparkContext, job: Job) {
 
     // Quiet Parquet...

@@ -25,8 +25,6 @@ import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 
 object SingleReadBucket extends Logging {
-  initLogging()
-
   def apply(rdd: RDD[ADAMRecord]): RDD[SingleReadBucket] = {
     for (((recordGroup, readName), reads) <- rdd.groupBy(p => (p.getRecordGroupId, p.getReadName))) yield {
       val (mapped, unmapped) = reads.partition(_.getReadMapped)

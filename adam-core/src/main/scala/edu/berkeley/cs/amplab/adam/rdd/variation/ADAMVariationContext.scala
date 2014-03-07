@@ -65,8 +65,6 @@ object ADAMVariationContext {
 }
 
 class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
-  initLogging()
-
   /**
   * This method will create a new RDD of VariantContext objects
   * @param filePath: input VCF file to read

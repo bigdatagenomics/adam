@@ -39,8 +39,6 @@ object RealignmentTargetFinder {
 
 class RealignmentTargetFinder extends Serializable with Logging {
 
-  initLogging()
-
   /**
    * Joins two sorted sets of targets together. Is tail call recursive.
    *
