@@ -17,13 +17,13 @@ package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, 
                                          ADAMRecord,
-                                         ADAMNucleotideContig}
+                                         ADAMNucleotideContigFragment}
 import edu.berkeley.cs.amplab.adam.converters.SAMRecordConverter
 import edu.berkeley.cs.amplab.adam.models._
 import edu.berkeley.cs.amplab.adam.models.ADAMRod
 import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField,
                                                 Projection, 
-                                                ADAMNucleotideContigField}
+                                                ADAMNucleotideContigFragmentField}
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
 import edu.berkeley.cs.amplab.adam.serialization.AdamKryoProperties
@@ -66,7 +66,7 @@ object AdamContext {
   implicit def rddToAdamRDD[T <% SpecificRecord : Manifest](rdd: RDD[T]) = new AdamRDDFunctions(rdd)
 
   // Add methods specific to the ADAMNucleotideContig RDDs
-  implicit def rddToAdamRDD(rdd: RDD[ADAMNucleotideContig]) = new AdamNucleotideContigRDDFunctions(rdd)
+  implicit def rddToAdamRDD(rdd: RDD[ADAMNucleotideContigFragment]) = new AdamNucleotideContigFragmentRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: ADAMRecord): RichADAMRecord = new RichADAMRecord(record)
@@ -218,7 +218,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
     // other flattened schema, and (b) because the SequenceRecord.fromADAMRecord, below, is going
     // to be called through a flatMap rather than through a map tranformation on the underlying record RDD.
     val isAdamRecord = classOf[ADAMRecord].isAssignableFrom(manifest[T].erasure)
-    val isAdamContig = classOf[ADAMNucleotideContig].isAssignableFrom(manifest[T].erasure)
+    val isAdamContig = classOf[ADAMNucleotideContigFragment].isAssignableFrom(manifest[T].erasure)
     
     val projection =
       if (isAdamRecord) {
@@ -237,10 +237,10 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
           ADAMRecordField.mateMapped
         )
       } else if (isAdamContig) {
-        Projection(ADAMNucleotideContigField.contigName,
-                   ADAMNucleotideContigField.contigId,
-                   ADAMNucleotideContigField.sequenceLength,
-                   ADAMNucleotideContigField.url)
+        Projection(ADAMNucleotideContigFragmentField.contigName,
+                   ADAMNucleotideContigFragmentField.contigId,
+                   ADAMNucleotideContigFragmentField.contigLength,
+                   ADAMNucleotideContigFragmentField.url)
       } else {
         Projection(
           ADAMRecordField.referenceId,
@@ -262,7 +262,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
         if (isAdamRecord) {
           projected.asInstanceOf[RDD[ADAMRecord]].distinct().flatMap(rec => SequenceRecord.fromADAMRecord(rec))
         } else if (isAdamContig) {
-          projected.asInstanceOf[RDD[ADAMNucleotideContig]].distinct().map(ctg => SequenceRecord.fromADAMContig(ctg))
+          projected.asInstanceOf[RDD[ADAMNucleotideContigFragment]].distinct().map(ctg => SequenceRecord.fromADAMContigFragment(ctg))
         } else {
           projected.distinct().map(SequenceRecord.fromSpecificRecord(_))
         }

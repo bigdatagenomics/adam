@@ -88,13 +88,19 @@ enum Base {
     D  // not C
 }
 
-record ADAMNucleotideContig {
+record ADAMNucleotideContigFragment {
+    // stores a contig of nucleotides; this may be a reference chromosome, may be an
+    // assembly, may be a BAC. very long contigs (>1Mbp) need to be split into fragments.
+    // it seems that they are too long to load in a single go.
     union { null, string } contigName = null;
     union { null, int } contigId = null;
     union { null, string } description = null;
-    array<Base> sequence = [];
-    union { null, long } sequenceLength = null;
-    union { null, string } url = null;
+    union { null, string } url = null; 
+    union { null, string } fragmentSequence = null; // sequence of bases in this fragment
+    union { null, long } contigLength = null; // length of the total contig (all fragments)
+    union { null, int } fragmentNumber = null; // ordered number for this fragment
+    union { null, long } fragmentStartPosition = null; // position of first base of fragment in contig
+    union { null, int } numberOfFragmentsInContig = null; // total number of fragments in contig
 }
 
 record ADAMPileup {

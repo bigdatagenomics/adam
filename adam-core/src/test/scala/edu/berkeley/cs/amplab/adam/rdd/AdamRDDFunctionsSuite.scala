@@ -15,15 +15,17 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, 
-                                         ADAMContig,
+import edu.berkeley.cs.amplab.adam.avro.{ADAMContig,
+                                         ADAMGenotype,
+                                         ADAMNucleotideContigFragment,
                                          ADAMPileup, 
-                                         Base, 
-                                         ADAMNucleotideContig, 
-                                         ADAMGenotype, 
-                                         ADAMVariant}
-import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceRecord, SequenceDictionary}
+                                         ADAMVariant,
+                                         ADAMRecord,
+                                         Base}
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext,
+                                           ReferenceRegion,
+                                           SequenceDictionary, 
+                                           SequenceRecord}
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariantContextRDDFunctions
@@ -344,15 +346,15 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
   sparkTest ("can remap contig ids") {
     val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
                                   SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
-    val ctg0 = ADAMNucleotideContig.newBuilder()
+    val ctg0 = ADAMNucleotideContigFragment.newBuilder()
       .setContigName("chr0")
       .setContigId(1)
-      .setSequenceLength(1000L)
+      .setContigLength(1000L)
       .build()
-    val ctg1 = ADAMNucleotideContig.newBuilder()
+    val ctg1 = ADAMNucleotideContigFragment.newBuilder()
       .setContigName("chr1")
       .setContigId(2)
-      .setSequenceLength(1000L)
+      .setContigLength(1000L)
       .build()
 
     val rdd = sc.parallelize(List(ctg0, ctg1))
@@ -367,15 +369,15 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
   sparkTest ("can remap contig ids while filtering out contigs that aren't in dict") {
     val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
                                   SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
-    val ctg0 = ADAMNucleotideContig.newBuilder()
+    val ctg0 = ADAMNucleotideContigFragment.newBuilder()
       .setContigName("chr0")
       .setContigId(1)
-      .setSequenceLength(1000L)
+      .setContigLength(1000L)
       .build()
-    val ctg1 = ADAMNucleotideContig.newBuilder()
+    val ctg1 = ADAMNucleotideContigFragment.newBuilder()
       .setContigName("chr2")
       .setContigId(2)
-      .setSequenceLength(1000L)
+      .setContigLength(1000L)
       .build()
 
     val rdd = sc.parallelize(List(ctg0, ctg1))
@@ -388,16 +390,16 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest ("generate sequence dict from fasta") {
-    val ctg0 = ADAMNucleotideContig.newBuilder()
+    val ctg0 = ADAMNucleotideContigFragment.newBuilder()
       .setContigName("chr0")
       .setContigId(1)
-      .setSequenceLength(1000L)
+      .setContigLength(1000L)
       .setUrl("http://bigdatagenomics.github.io/chr0.fa")
       .build()
-    val ctg1 = ADAMNucleotideContig.newBuilder()
+    val ctg1 = ADAMNucleotideContigFragment.newBuilder()
       .setContigName("chr1")
       .setContigId(2)
-      .setSequenceLength(900L)
+      .setContigLength(900L)
       .build()
 
     val rdd = sc.parallelize(List(ctg0, ctg1))
@@ -544,6 +546,124 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(mapCounts("NM") === 200)
     assert(mapCounts("AS") === 200)
     assert(mapCounts("XS") === 200)
+  }
+
+  sparkTest("recover reference string from a single contig fragment") {
+    val sequence = "ACTGTAC"
+    val fragment = ADAMNucleotideContigFragment.newBuilder()
+      .setContigId(1)
+      .setContigName("chr1")
+      .setFragmentSequence(sequence)
+      .setContigLength(7L)
+      .setFragmentNumber(0)
+      .setFragmentStartPosition(0L)
+      .setNumberOfFragmentsInContig(1)
+      .build()
+    val region = ReferenceRegion(fragment).get
+
+    val rdd = sc.parallelize(List(fragment))
+    
+    assert(rdd.adamGetReferenceString(region) === "ACTGTAC")
+  }
+
+  sparkTest("recover trimmed reference string from a single contig fragment") {
+    val sequence = "ACTGTAC"
+    val fragment = ADAMNucleotideContigFragment.newBuilder()
+      .setContigId(1)
+      .setContigName("chr1")
+      .setFragmentSequence(sequence)
+      .setContigLength(7L)
+      .setFragmentNumber(0)
+      .setFragmentStartPosition(0L)
+      .setNumberOfFragmentsInContig(1)
+      .build()
+    val region = new ReferenceRegion(1, 1L, 6L)
+
+    val rdd = sc.parallelize(List(fragment))
+    
+    assert(rdd.adamGetReferenceString(region) === "CTGTA")
+  }
+
+  sparkTest("recover reference string from multiple contig fragments") {
+    val sequence = "ACTGTACTC"
+    val sequence0 = sequence.take(7) // ACTGTAC
+    val sequence1 = sequence.drop(3).take(5) // GTACT 
+    val sequence2 = sequence.takeRight(6).reverse // CTCATG
+    val fragment0 = ADAMNucleotideContigFragment.newBuilder()
+      .setContigId(1)
+      .setContigName("chr1")
+      .setFragmentSequence(sequence0)
+      .setContigLength(7L)
+      .setFragmentNumber(0)
+      .setFragmentStartPosition(0L)
+      .setNumberOfFragmentsInContig(1)
+      .build()
+    val fragment1 = ADAMNucleotideContigFragment.newBuilder()
+      .setContigId(2)
+      .setContigName("chr2")
+      .setFragmentSequence(sequence1)
+      .setContigLength(11L)
+      .setFragmentNumber(0)
+      .setFragmentStartPosition(0L)
+      .setNumberOfFragmentsInContig(2)
+      .build()
+    val fragment2 = ADAMNucleotideContigFragment.newBuilder()
+      .setContigId(2)
+      .setContigName("chr2")
+      .setFragmentSequence(sequence2)
+      .setContigLength(11L)
+      .setFragmentNumber(1)
+      .setFragmentStartPosition(5L)
+      .setNumberOfFragmentsInContig(2)
+      .build()
+    val region0 = ReferenceRegion(fragment0).get
+    val region1 = ReferenceRegion(fragment1).get.merge(ReferenceRegion(fragment2).get)
+
+    val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
+    
+    assert(rdd.adamGetReferenceString(region0) === "ACTGTAC")
+    assert(rdd.adamGetReferenceString(region1) === "GTACTCTCATG")
+  }
+
+  sparkTest("recover trimmed reference string from multiple contig fragments") {
+    val sequence = "ACTGTACTC"
+    val sequence0 = sequence.take(7) // ACTGTAC
+    val sequence1 = sequence.drop(3).take(5) // GTACT 
+    val sequence2 = sequence.takeRight(6).reverse // CTCATG
+    val fragment0 = ADAMNucleotideContigFragment.newBuilder()
+      .setContigId(1)
+      .setContigName("chr1")
+      .setFragmentSequence(sequence0)
+      .setContigLength(7L)
+      .setFragmentNumber(0)
+      .setFragmentStartPosition(0L)
+      .setNumberOfFragmentsInContig(1)
+      .build()
+    val fragment1 = ADAMNucleotideContigFragment.newBuilder()
+      .setContigId(2)
+      .setContigName("chr2")
+      .setFragmentSequence(sequence1)
+      .setContigLength(11L)
+      .setFragmentNumber(0)
+      .setFragmentStartPosition(0L)
+      .setNumberOfFragmentsInContig(2)
+      .build()
+    val fragment2 = ADAMNucleotideContigFragment.newBuilder()
+      .setContigId(2)
+      .setContigName("chr2")
+      .setFragmentSequence(sequence2)
+      .setContigLength(11L)
+      .setFragmentNumber(1)
+      .setFragmentStartPosition(5L)
+      .setNumberOfFragmentsInContig(2)
+      .build()
+    val region0 = new ReferenceRegion(1, 1L, 6L)
+    val region1 = new ReferenceRegion(2, 3L, 9L)
+
+    val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
+    
+    assert(rdd.adamGetReferenceString(region0) === "CTGTA")
+    assert(rdd.adamGetReferenceString(region1) === "CTCTCA")
   }
 
 }

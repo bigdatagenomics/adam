@@ -19,7 +19,10 @@ import org.apache.avro.specific.{SpecificDatumWriter, SpecificDatumReader, Speci
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.avro.io.{BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory}
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMPileup, ADAMRecord, ADAMNucleotideContig}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, 
+                                         ADAMPileup, 
+                                         ADAMRecord, 
+                                         ADAMNucleotideContigFragment}
 import edu.berkeley.cs.amplab.adam.models._
 import it.unimi.dsi.fastutil.io.{FastByteArrayInputStream, FastByteArrayOutputStream}
 import org.apache.spark.serializer.KryoRegistrator
@@ -67,8 +70,10 @@ class AdamKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[ADAMRecord], new AvroSerializer[ADAMRecord]())
     kryo.register(classOf[ADAMPileup], new AvroSerializer[ADAMPileup]())
     kryo.register(classOf[ADAMGenotype], new AvroSerializer[ADAMGenotype]())
-    kryo.register(classOf[ADAMNucleotideContig], new AvroSerializer[ADAMNucleotideContig]())
-    kryo.register(classOf[ReferencePositionWithOrientation], new ReferencePositionWithOrientationSerializer)
+    kryo.register(classOf[ADAMNucleotideContigFragment], 
+                  new AvroSerializer[ADAMNucleotideContigFragment]())
+    kryo.register(classOf[ReferencePositionWithOrientation],
+                  new ReferencePositionWithOrientationSerializer)
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)
     kryo.register(classOf[SingleReadBucket], new SingleReadBucketSerializer)

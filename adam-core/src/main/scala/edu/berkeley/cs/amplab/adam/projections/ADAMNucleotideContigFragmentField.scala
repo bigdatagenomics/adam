@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.projections
 
-import edu.berkeley.cs.amplab.adam.avro.ADAMNucleotideContig
+import edu.berkeley.cs.amplab.adam.avro.ADAMNucleotideContigFragment
 
 /**
  * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
@@ -25,12 +25,15 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMNucleotideContig
  * This enumeration is necessary because Parquet needs the field string names
  * for predicates and projections.
  */
-object ADAMNucleotideContigField extends FieldEnumeration(ADAMNucleotideContig.SCHEMA$) {
+object ADAMNucleotideContigFragmentField extends FieldEnumeration(ADAMNucleotideContigFragment.SCHEMA$) {
 
   val contigName,
   contigId,
   description,
-  sequence,
-  sequenceLength,
+  fragmentSequence,
+  contigLength,
+  fragmentNumber,
+  fragmentStartPosition,
+  numberOfFragmentsInContig,
   url = SchemaValue
 }
