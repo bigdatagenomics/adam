@@ -32,7 +32,7 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
  * Example usage:
  *   adam plugin edu.berkeley.cs.amplab.adam.plugins.Take10Plugin reads12.sam
  *
- * The [[edu.berkeley.cs.amplab.adam.plugins.Take10Plugin]] is a simple example plugin. The
+ * <code>edu.berkeley.cs.amplab.adam.plugins.Take10Plugin</code> is a simple example plugin. The
  * [[edu.berkeley.cs.amplab.adam.plugins.AdamPlugin]] interface defines the class that will run using this command.
  */
 object PluginExecutor extends AdamCommandCompanion {
@@ -40,7 +40,7 @@ object PluginExecutor extends AdamCommandCompanion {
   val commandDescription: String = "Executes an AdamPlugin"
 
   def apply(cmdLine: Array[String]): AdamCommand = {
-    new ListDict(Args4j[ListDictArgs](cmdLine))
+    new PluginExecutor(Args4j[PluginExecutorArgs](cmdLine))
   }
 }
 
