@@ -18,10 +18,15 @@ package edu.berkeley.cs.amplab.adam.serialization
 
 object AdamKryoProperties {
 
-  def setupContextProperties() = {
+  /**
+   * Sets up serialization properties for ADAM.
+   *
+   * @param kryoBufferSize Buffer size in MB to allocate for object serialization. Default is 4MB.
+   */
+  def setupContextProperties(kryoBufferSize: Int = 4) = {
     System.setProperty("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     System.setProperty("spark.kryo.registrator", "edu.berkeley.cs.amplab.adam.serialization.AdamKryoRegistrator")
-    System.setProperty("spark.kryoserializer.buffer.mb", "4")
+    System.setProperty("spark.kryoserializer.buffer.mb", kryoBufferSize.toString)
     System.setProperty("spark.kryo.referenceTracking", "false")
   }
 }

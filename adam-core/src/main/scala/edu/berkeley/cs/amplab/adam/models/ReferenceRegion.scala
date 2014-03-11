@@ -17,7 +17,8 @@ package edu.berkeley.cs.amplab.adam.models
 
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMNucleotideContigFragment, Base}
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import scala.math.{min, max}
@@ -33,7 +34,7 @@ object ReferenceRegion {
    */
   def apply (record: ADAMRecord): Option[ReferenceRegion] = {
     if (record.getReadMapped) {
-      Some(ReferenceRegion(record.getReferenceId, record.getStart, record.end.get + 1))
+      Some(ReferenceRegion(record.getReferenceId, record.getStart, RichADAMRecord(record).end.get + 1))
     } else {
       None
     }
@@ -47,6 +48,23 @@ object ReferenceRegion {
   def apply(pos : ReferencePosition) : ReferenceRegion =
     ReferenceRegion(pos.refId, pos.pos, pos.pos+1)
 
+  /**
+   * Generates a reference region from assembly data. Returns None if the assembly does not
+   * have an ID or a start position.
+   *
+   * @param fragment Assembly fragment from which to generate data.
+   * @return Region corresponding to inclusive region of contig fragment.
+   */
+  def apply (fragment: ADAMNucleotideContigFragment): Option[ReferenceRegion] = {
+    if (fragment.getContigId != null && fragment.getFragmentStartPosition != null) {
+      val fragmentSequence = fragment.getFragmentSequence
+      Some(ReferenceRegion(fragment.getContigId, 
+                           fragment.getFragmentStartPosition,
+                           fragment.getFragmentStartPosition + fragmentSequence.length))
+    } else {
+      None
+    }
+  }  
 }
 
 /**
@@ -89,7 +107,7 @@ case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[R
    * @param region Other region to compute hull of with this region.
    * @return The convex hull of both unions.
    *
-   * @see hull
+   * @see merge
    */
   def hull(region: ReferenceRegion): ReferenceRegion = {
     assert(refId == region.refId, "Cannot compute convex hull of regions on different references.")

@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.converters
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMNucleotideContig, Base}
+import edu.berkeley.cs.amplab.adam.avro.ADAMNucleotideContigFragment
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
@@ -27,7 +27,8 @@ import scala.math.Ordering._
 private[adam] object FastaConverter {
 
   /**
-   * Converts an RDD containing ints and strings into an RDD containing ADAM nucleotide contig assemblies.
+   * Converts an RDD containing ints and strings into an RDD containing ADAM nucleotide
+   * contig fragments.
    *
    * @note Input dataset is assumed to have come in from a Hadoop TextInputFormat reader. This sets
    * a specific format for the RDD's Key-Value pairs.
@@ -38,15 +39,18 @@ private[adam] object FastaConverter {
    * 
    * @param rdd RDD containing Int,String tuples, where the Int corresponds to the number
    * of the file line, and the String is the line of the file.
+   * @param maxFragmentLength The maximum length of fragments in the contig.
    * @return An RDD of ADAM FASTA data.
    */
-  def apply (rdd: RDD[(Int, String)]): RDD[ADAMNucleotideContig] = {
+  def apply (rdd: RDD[(Int, String)], 
+             maxFragmentLength: Long = 10000L): RDD[ADAMNucleotideContigFragment] = {
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
       .filter((kv: (Int, String)) => !kv._2.startsWith(";"))
 
-    val indices: Map[Int, Int] = rdd.filter(kv => kv._2.startsWith(">"))
-      .map(kv => kv._1)
-      .collect()
+    val indices: Map[Int, Int] = rdd.filter((kv: (Int, String)) => kv._2.startsWith(">"))
+      .map((kv: (Int, String)) => kv._1)
+      .collect
+      .toList
       .sortWith(_ < _)
       .zipWithIndex
       .reverse
@@ -62,9 +66,9 @@ private[adam] object FastaConverter {
         .groupByKey()
     }
     
-    val converter = new FastaConverter
+    val converter = new FastaConverter(maxFragmentLength)
 
-    val convertedData = groupedContigs.map(kv => {
+    val convertedData = groupedContigs.flatMap(kv => {
       val (id, lines) = kv
 
       val descriptionLine = lines.filter(kv => kv._2.startsWith(">"))
@@ -91,12 +95,11 @@ private[adam] object FastaConverter {
         id
       }
       
-      val sequenceLines = lines.filter(kv => !kv._2.startsWith(">"))
+      val sequenceLines: Seq[(Int, String)] = lines.filter(kv => !kv._2.startsWith(">"))
       assert(sequenceLines.length != 0, "Sequence " + seqId + " has no sequence data.")
 
-      val sequence = sequenceLines.sortBy(kv => kv._1)
+      val sequence: Seq[String] = sequenceLines.sortBy(kv => kv._1)
           .map(kv => kv._2.stripSuffix("*"))
-          .reduce(_ + _)
 
       converter.convert(name, seqId, sequence, comment)
     })
@@ -108,27 +111,45 @@ private[adam] object FastaConverter {
 /**
  * Conversion methods for single FASTA sequences into ADAM FASTA data.
  */
-private[converters] class FastaConverter extends Serializable {
+private[converters] class FastaConverter (fragmentLength: Long) extends Serializable {
 
   /**
-   * Converts a string of nucleotides into an array of Base.
+   * Remaps the fragments that we get coming in into our expected fragment size.
    *
-   * @see Base
-   * @throws IllegalArgumentException Thrown if sequence contains an illegal character.
-   *
-   * @param sequence Nucleotide string.
-   * @return An array of Base enums.
+   * @param sequences Fragments coming in.
+   * @return A sequence of strings "recut" to the proper fragment size.
    */
-  def convertSequence (sequence: String): List[Base] = {
-    sequence.toList.map((c: Char) => {
-      try {
-        Base.valueOf(c.toString.toUpperCase)
-      } catch {
-        case iae: java.lang.IllegalArgumentException => {
-          throw new IllegalArgumentException(c + " in FASTA is an invalid base.")
-        }
+  def mapFragments (sequences: Seq[String]): Seq[String] = {
+    // internal "fsm" variables
+    var sequence: String = ""
+    var sequenceSeq: List[String] = List()
+
+    /**
+     * Adds a string fragment to our accumulator. If this string fragment causes the accumulator
+     * to grow longer than our max fragment size, we split the accumulator and add it to the end
+     * of our list of fragments.
+     *
+     * @param seq Fragment string to add.
+     */
+    def addFragment (seq: String) {
+      sequence += seq
+      
+      if (sequence.length > fragmentLength) {
+        sequenceSeq ::= sequence.take(fragmentLength.toInt)
+        sequence = sequence.drop(fragmentLength.toInt)
       }
-    })
+    }
+    
+    // run addFragment on all fragments
+    sequences.foreach(addFragment(_))
+
+    // if we still have a remaining sequence that is not part of a fragment, add it
+    if (sequence.length != 0) {
+      sequenceSeq ::= sequence
+    }
+
+    // return our fragments
+    sequenceSeq.toSeq
   }
 
   /**
@@ -144,23 +165,39 @@ private[converters] class FastaConverter extends Serializable {
    */
   def convert (name: Option[String], 
                id: Int, 
-               sequence: String,
-               description: Option[String]): ADAMNucleotideContig = {
-
-    // convert sequence to sequence array
-    val bases = convertSequence(sequence)
+               sequence: Seq[String],
+               description: Option[String]): Seq[ADAMNucleotideContigFragment] = {
     
+    // get sequence length
+    val sequenceLength = sequence.map(_.length).reduce(_ + _)
+
+    // map sequences into fragments
+    val sequencesAsFragments = mapFragments(sequence)
+
+    // get number of fragments
+    val fragmentCount = sequencesAsFragments.length
+
     // make new builder and set up non-optional fields
-    val builder = ADAMNucleotideContig.newBuilder()
-      .setContigId(id)
-      .setSequence(bases)
-      .setSequenceLength(sequence.length)
-
-    // map over optional fields
-    name.foreach((n: String) => builder.setContigName(n))
-    description.foreach(builder.setDescription(_))
+    val fragments = sequencesAsFragments.zipWithIndex
+      .map(si => {
+        val (bases, index) = si
+        
+        val builder = ADAMNucleotideContigFragment.newBuilder()
+          .setContigId(id)
+          .setFragmentSequence(bases)
+          .setContigLength(sequenceLength)
+          .setFragmentNumber(index)
+          .setFragmentStartPosition(index * fragmentLength)
+          .setNumberOfFragmentsInContig(fragmentCount)
+        
+        // map over optional fields
+        name.foreach(builder.setContigName(_))
+        description.foreach(builder.setDescription(_))
+        
+        // build and return
+        builder.build()
+      })
     
-    // build and return
-    builder.build()
+    fragments
   }
 }

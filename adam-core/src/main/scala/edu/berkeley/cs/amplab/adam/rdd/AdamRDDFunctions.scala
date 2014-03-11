@@ -15,21 +15,34 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import parquet.hadoop.metadata.CompressionCodecName
-import org.apache.hadoop.mapreduce.Job
-import parquet.hadoop.ParquetOutputFormat
-import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
-import parquet.hadoop.util.ContextUtil
-import org.apache.avro.specific.SpecificRecord
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMNucleotideContig}
-import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, SnpTable, ReferencePosition, ADAMRod}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
-import org.apache.spark.Logging
-import java.io.File
-import edu.berkeley.cs.amplab.adam.util.{MapTools, ParquetLogger}
-import java.util.logging.Level
+import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, 
+                                         ADAMRecord, 
+                                         ADAMNucleotideContigFragment,
+                                         Base}
+import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord,
+                                           SequenceDictionary,
+                                           SingleReadBucket, 
+                                           SnpTable, 
+                                           ReferencePosition, 
+                                           ReferenceRegion,
+                                           ADAMRod}
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.util.{MapTools, ParquetLogger}
+import java.io.File
+import java.util.logging.Level
+import org.apache.avro.specific.SpecificRecord
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.Logging
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
+import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
+import parquet.hadoop.ParquetOutputFormat
+import parquet.hadoop.metadata.CompressionCodecName
+import parquet.hadoop.util.ContextUtil
+import scala.math.{min, max}
 
 class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -153,7 +166,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
      */
     def mapToBucket (r: ADAMRecord): List[(ReferencePosition, ADAMRecord)] = {
       val s = r.getStart / bucketSize
-      val e = r.end.get / bucketSize
+      val e = RichADAMRecord(r).end.get / bucketSize
       val id = r.getReferenceId
 
       if (s == e) {
@@ -199,7 +212,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
    * @return An RDD of attribute name / count pairs.
    */
   def adamCharacterizeTags() : RDD[(String,Long)] = {
-    rdd.flatMap(_.tags.map( attr => (attr.tag, 1L) )).reduceByKey( _ + _ )
+    rdd.flatMap(RichADAMRecord(_).tags.map( attr => (attr.tag, 1L) )).reduceByKey( _ + _ )
   }
 
   /**
@@ -210,7 +223,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
    * @return A Map whose keys are the values of the tag, and whose values are the number of time each tag-value occurs.
    */
   def adamCharacterizeTagValues(tag : String) : Map[Any,Long] = {
-    adamFilterRecordsWithTag(tag).flatMap(_.tags.find(_.tag == tag)).map(
+    adamFilterRecordsWithTag(tag).flatMap(RichADAMRecord(_).tags.find(_.tag == tag)).map(
       attr => Map(attr.value -> 1L)
     ).reduce {
       (map1 : Map[Any,Long], map2 : Map[Any,Long]) =>
@@ -226,7 +239,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
   def adamFilterRecordsWithTag(tagName : String) : RDD[ADAMRecord] = {
     assert( tagName.length == 2,
       "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName))
-    rdd.filter(_.tags.exists(_.tag == tagName))
+    rdd.filter(RichADAMRecord(_).tags.exists(_.tag == tagName))
   }
 }
 
@@ -311,7 +324,7 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
   }
 }
 
-class AdamNucleotideContigRDDFunctions(rdd: RDD[ADAMNucleotideContig]) extends Serializable with Logging {
+class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFragment]) extends Serializable with Logging {
   
   /**
    * Rewrites the contig IDs of a FASTA reference set to match the contig IDs present in a
@@ -322,7 +335,7 @@ class AdamNucleotideContigRDDFunctions(rdd: RDD[ADAMNucleotideContig]) extends S
    * @param sequenceDict A sequence dictionary containing the preferred IDs for the contigs.
    * @return New set of contigs with IDs rewritten.
    */
-  def adamRewriteContigIds (sequenceDict: SequenceDictionary): RDD[ADAMNucleotideContig] = {
+  def adamRewriteContigIds (sequenceDict: SequenceDictionary): RDD[ADAMNucleotideContigFragment] = {
     // broadcast sequence dictionary
     val bcastDict = rdd.context.broadcast(sequenceDict)
 
@@ -333,12 +346,12 @@ class AdamNucleotideContigRDDFunctions(rdd: RDD[ADAMNucleotideContig]) extends S
      * @param dictionary A sequence dictionary containing the IDs to use for remapping.
      * @return An option containing the remapped contig if it's sequence name was found in the dictionary.
      */
-    def remapContig (contig: ADAMNucleotideContig, dictionary: SequenceDictionary): Option[ADAMNucleotideContig] = {
+    def remapContig (contig: ADAMNucleotideContigFragment, dictionary: SequenceDictionary): Option[ADAMNucleotideContigFragment] = {
       val name: CharSequence = contig.getContigName
       
       if (dictionary.containsRefName(name)) {
         val newId = dictionary(contig.getContigName).id
-        val newContig = ADAMNucleotideContig.newBuilder(contig)
+        val newContig = ADAMNucleotideContigFragment.newBuilder(contig)
           .setContigId(newId)
           .build()
         
@@ -359,8 +372,67 @@ class AdamNucleotideContigRDDFunctions(rdd: RDD[ADAMNucleotideContig]) extends S
    * 
    * @return Sequence dictionary representing this reference.
    */
-  def adamGetSequenceDictionary(): SequenceDictionary =
-    rdd.distinct().aggregate(SequenceDictionary())(
-      (dict: SequenceDictionary, ctg: ADAMNucleotideContig) => dict ++ Seq(SequenceRecord.fromADAMContig(ctg)),
-      (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
+  def adamGetSequenceDictionary (): SequenceDictionary =
+    rdd.map(ctg => SequenceRecord.fromADAMContigFragment(ctg))
+      .distinct()
+      .aggregate(SequenceDictionary())((dict: SequenceDictionary, rec: SequenceRecord) => dict ++ Seq(rec),
+                                       (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
+
+  /**
+   * From a set of contigs, returns the base sequence that corresponds to a region of the reference.
+   *
+   * @throws UnsupportedOperationException Throws exception if query region is not found.
+   * 
+   * @param region Reference region over which to get sequence.
+   * @return String of bases corresponding to reference sequence.
+   */
+  def adamGetReferenceString (region: ReferenceRegion): String = {
+    def getString(fragment: (ReferenceRegion, ADAMNucleotideContigFragment)): (ReferenceRegion, String) = {
+      val trimStart = max(0, region.start - fragment._1.start).toInt
+      val trimEnd = max(0, fragment._1.end - region.end).toInt
+
+      val fragmentSequence: String = fragment._2.getFragmentSequence
+
+      val str = fragmentSequence.drop(trimStart)
+        .dropRight(trimEnd)
+      
+      val reg = new ReferenceRegion(fragment._1.refId,
+                                    fragment._1.start + trimStart,
+                                    fragment._1.end - trimEnd)
+
+      (reg, str)
+    }
+
+    def reducePairs(kv1: (ReferenceRegion, String), 
+                    kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
+      assert(kv1._1.isAdjacent(kv2._1), "Regions being joined must be adjacent. For: " + 
+             kv1 + ", " + kv2)
+
+      
+      (kv1._1.merge(kv2._1), if(kv1._1.compare(kv2._1) <= 0) {
+        kv1._2 + kv2._2
+      } else {
+        kv2._2 + kv1._2
+      })
+    }
+
+    try {
+      val pair: (ReferenceRegion, String) = rdd.keyBy(ReferenceRegion(_))
+        .filter(kv => kv._1.isDefined)
+        .map(kv => (kv._1.get, kv._2))
+        .filter(kv => kv._1.overlaps(region))
+        .sortByKey()
+        .map(kv => getString(kv))
+        .reduce(reducePairs)
+
+      assert(pair._1.compare(region) == 0,
+             "Merging fragments returned a different region than requested.")
+
+      pair._2
+    } catch {
+      case (uoe: UnsupportedOperationException) => {
+        throw new UnsupportedOperationException("Could not find " + region + "in reference RDD.")
+      }
+    }
+  }
 }

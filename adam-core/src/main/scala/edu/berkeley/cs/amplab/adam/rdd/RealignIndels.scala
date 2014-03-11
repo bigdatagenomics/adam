@@ -170,7 +170,6 @@ private[rdd] object RealignIndels {
 import RealignIndels._
 
 private[rdd] class RealignIndels extends Serializable with Logging {
-  initLogging()
 
   // parameter for longest indel to realign
   val maxIndelSize = 3000

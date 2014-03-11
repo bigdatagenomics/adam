@@ -6,8 +6,6 @@ import org.apache.spark.Logging
 import Ordering.Option
 
 object ReferencePositionPair extends Logging {
-  initLogging()
-
   def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = {
     singleReadBucket.primaryMapped.lift(0) match {
       case None =>

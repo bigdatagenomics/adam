@@ -28,8 +28,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 
 class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Serializable with Logging {
-  initLogging()
-
   /**
    * Left outer join database variant annotations
    *
@@ -57,8 +55,6 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Seria
 }
 
 class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with Logging {
-  initLogging()
-
   def toADAMVariantContext(): RDD[ADAMVariantContext] = {
     rdd.keyBy({ g => RichADAMVariant.variantToRichVariant(g.getVariant) })
       .groupByKey

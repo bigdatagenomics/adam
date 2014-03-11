@@ -1,4 +1,6 @@
 # ADAM #
+* ISSUE [161](https://github.com/bigdatagenomics/adam/pull/161): Added switches to spark context creation code
+* ISSUE [160](https://github.com/bigdatagenomics/adam/pull/160): Refactoring FASTA work to break contig sizes.
 * ISSUE [148](https://github.com/bigdatagenomics/adam/issues/148): Moving createSparkContext into core
 * ISSUE [83](https://github.com/bigdatagenomics/adam/issues/83): Add ability to perform a "region join" to RDDs of ADAMRecords
 * ISSUE [101](https://github.com/bigdatagenomics/adam/issues/101): Add ability to call 'plugins' from the command-line
