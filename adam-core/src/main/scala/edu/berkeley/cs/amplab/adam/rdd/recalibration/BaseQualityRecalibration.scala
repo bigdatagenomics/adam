@@ -54,22 +54,18 @@ extends Serializable with Logging {
   // TODO: parameterize
   val minAcceptableQuality = QualityScore(5)
 
-  // Compute and apply recalibration
-  def apply(): RDD[ADAMRecord] = {
+  val observed: ObservationTable = {
     def shouldIncludeRead(read: DecadentRead) =
       read.isCanonicalRecord &&
         read.alignmentQuality.exists(_ > QualityScore.zero) &&
         read.passedQualityChecks
 
-    // First phase
-    val observed: ObservationTable = reads.
+    reads.
       filter(shouldIncludeRead).flatMap(observe).
       aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
+  }
 
-    // Log the ObservationTable (for debugging and generating plots)
-    //println(observed.toCSV)
-
-    // Second phase
+  val result: RDD[ADAMRecord] = {
     val recalibrator = Recalibrator(observed, minAcceptableQuality)
     reads.map(recalibrator)
   }
@@ -94,6 +90,6 @@ extends Serializable with Logging {
 object BaseQualityRecalibration {
   def apply(rdd: RDD[ADAMRecord], knownSnps: SnpTable): RDD[ADAMRecord] = {
     val sc = rdd.context
-    new BaseQualityRecalibration(cloy(rdd), sc.broadcast(knownSnps)).apply()
+    new BaseQualityRecalibration(cloy(rdd), sc.broadcast(knownSnps)).result
   }
 }
