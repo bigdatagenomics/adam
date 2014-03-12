@@ -5,7 +5,7 @@
         <groupId>edu.berkeley.cs.amplab.adam</groupId>
         <artifactId>adam-parent</artifactId>
         <version>0.6.1-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+<!--        <relativePath>../pom.xml</relativePath> -->
     </parent>
 
     <artifactId>adam-plugins</artifactId>
@@ -47,32 +47,37 @@
         </plugins>
     </build>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>edu.berkeley.cs.amplab.adam</groupId>
+                <artifactId>adam-cli</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>edu.berkeley.cs.amplab.adam</groupId>
             <artifactId>adam-cli</artifactId>
-            <!-- todo: not sure why project version is not being picked up from parent here... -->
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>edu.berkeley.cs.amplab.adam</groupId>
             <artifactId>adam-core</artifactId>
-            <!-- works ok here... -->
-            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>edu.berkeley.cs.amplab.adam</groupId>
             <artifactId>adam-core</artifactId>
-            <!-- and here... -->
-            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.version}</artifactId>
+            <artifactId>scalatest_${scala.artifact.suffix}</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
