@@ -240,7 +240,6 @@
                 <artifactId>adam-core</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
-                <scope>test</scope>
             </dependency>
             <dependency>
               <groupId>org.apache.hadoop</groupId>
@@ -319,7 +318,6 @@
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.artifact.suffix}</artifactId>
                 <version>1.9.2</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
