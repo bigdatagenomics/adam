@@ -151,11 +151,22 @@ record ADAMContig {
   union { null, string } referenceURL = null;
 }
 
+enum VariantType {
+    SNP,
+    MNP,
+    Insertion,
+    Deletion,
+    Complex,
+    SV
+}
+
 record ADAMVariant {
   union { null, ADAMContig } contig = null;
   union { null, long }       position = null;
   string                     referenceAllele;
   string                     variantAllele;
+  // enum to describe type of variant called
+  union { null, VariantType } variantType = null;
 }
 
 enum ADAMGenotypeAllele {
@@ -226,6 +237,12 @@ record ADAMGenotype {
 
   // Phred-scaled. Always length 3 since we are not multiallelic.
   array<int>              genotypeLikelihoods = null; 
+
+  // Allele dosage
+  union { null, float }    expectedAlleleDosage = null;
+
+  // number of reads mapped at site on forward strand
+  union { null, int } readsMappedForwardStrand = null;
 
   // In the ADAM world we split multiallelic VCF lines into multiple
   // single-alternate records.  This bit is set if that happened for this
