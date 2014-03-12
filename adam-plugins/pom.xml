@@ -5,7 +5,6 @@
         <groupId>edu.berkeley.cs.amplab.adam</groupId>
         <artifactId>adam-parent</artifactId>
         <version>0.6.1-SNAPSHOT</version>
-<!--        <relativePath>../pom.xml</relativePath> -->
     </parent>
 
     <artifactId>adam-plugins</artifactId>
