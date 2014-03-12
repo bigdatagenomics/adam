@@ -28,6 +28,7 @@ import edu.berkeley.cs.amplab.adam.models.{SequenceRecord,
                                            ReferenceRegion,
                                            ADAMRod}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.recalibration.BaseQualityRecalibration
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.util.{MapTools, ParquetLogger}
@@ -112,9 +113,8 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
     MarkDuplicates(rdd)
   }
 
-  def adamBQSR(dbSNP: SnpTable): RDD[ADAMRecord] = {
-    val broadcastDbSNP = rdd.context.broadcast(dbSNP)
-    RecalibrateBaseQualities(rdd, broadcastDbSNP)
+  def adamBQSR(knownSnps: SnpTable): RDD[ADAMRecord] = {
+    BaseQualityRecalibration(rdd, knownSnps)
   }
 
   def adamRealignIndels(): RDD[ADAMRecord] = {
