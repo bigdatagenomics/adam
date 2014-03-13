@@ -49,7 +49,7 @@ class FlagStat(protected val args: FlagStatArgs) extends ADAMSparkCommand[FlagSt
 
     val projection = Projection(
       ADAMRecordField.readMapped, ADAMRecordField.mateMapped, ADAMRecordField.readPaired,
-      ADAMRecordField.referenceId, ADAMRecordField.mateReferenceId,
+      ADAMRecordField.contig, ADAMRecordField.mateContig,
       ADAMRecordField.primaryAlignment,
       ADAMRecordField.duplicateRead, ADAMRecordField.readMapped, ADAMRecordField.mateMapped,
       ADAMRecordField.firstOfPair, ADAMRecordField.secondOfPair,

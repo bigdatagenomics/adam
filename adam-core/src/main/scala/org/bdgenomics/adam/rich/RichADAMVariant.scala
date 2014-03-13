@@ -17,6 +17,7 @@
 package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.avro.{ ADAMContig, ADAMVariant }
+import org.bdgenomics.adam.util.Util._
 import java.util.Arrays
 
 object RichADAMVariant {
@@ -29,11 +30,6 @@ class RichADAMVariant(val variant: ADAMVariant) {
   val hashObjects = Array[Object](variant.getContig.getContigName,
     variant.getPosition, variant.getReferenceAllele, variant.getVariantAllele)
   override def hashCode = Arrays.hashCode(hashObjects)
-
-  private def isSameContig(left: ADAMContig, right: ADAMContig): Boolean = {
-    left.getContigName == right.getContigName && (
-      left.getContigMD5 == null || right.contigMD5 == null || left.getContigMD5 == right.getContigMD5)
-  }
 
   override def equals(o: Any) = o match {
     case that: RichADAMVariant => {

@@ -17,7 +17,7 @@ package org.bdgenomics.adam.converters
 
 import net.sf.samtools.{ SAMReadGroupRecord, SAMRecord }
 
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
 import scala.collection.JavaConverters._
 import org.bdgenomics.adam.models.{ Attribute, RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.util.AttributeUtils
@@ -36,10 +36,10 @@ class SAMRecordConverter extends Serializable {
     val readReference: Int = samRecord.getReferenceIndex
     if (readReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
       builder
-        .setReferenceId(readReference)
-        .setReferenceName(samRecord.getReferenceName)
-        .setReferenceLength(dict(samRecord.getReferenceIndex).length)
-        .setReferenceUrl(dict(samRecord.getReferenceIndex).url)
+        .setContig(ADAMContig.newBuilder
+          .setContigName(samRecord.getReferenceName)
+          .setContigLength(dict(samRecord.getReferenceName).length)
+          .setReferenceURL(dict(samRecord.getReferenceName).url).build)
 
       val start: Int = samRecord.getAlignmentStart
       if (start != 0) {
@@ -58,10 +58,10 @@ class SAMRecordConverter extends Serializable {
 
     if (mateReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
       builder
-        .setMateReferenceId(mateReference)
-        .setMateReference(samRecord.getMateReferenceName)
-        .setMateReferenceLength(dict(samRecord.getMateReferenceName).length)
-        .setMateReferenceUrl(dict(samRecord.getMateReferenceName).url)
+        .setMateContig(ADAMContig.newBuilder
+          .setContigName(samRecord.getMateReferenceName)
+          .setContigLength(dict(samRecord.getMateReferenceName).length)
+          .setReferenceURL(dict(samRecord.getMateReferenceName).url).build)
 
       val mateStart = samRecord.getMateAlignmentStart
       if (mateStart > 0) {

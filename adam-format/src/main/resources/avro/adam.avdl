@@ -1,6 +1,13 @@
 @namespace("org.bdgenomics.adam.avro")
 protocol ADAM {
 
+record ADAMContig {
+  union { null, string } contigName = null;
+  union { null, long }   contigLength = null;
+  union { null, string } contigMD5 = null;
+  union { null, string } referenceURL = null;
+}
+
 record ADAMRecord {
 
     /**
@@ -9,10 +16,8 @@ record ADAMRecord {
      * of the schema, collectively form the contents
      * of the Sequence Dictionary embedded in the these
      * records from the BAM / SAM itself.
-     * TODO: this should be moved to ADAMContig
      */
-    union { null, string } referenceName = null;
-    union { null, int } referenceId = null;
+    union { null, ADAMContig } contig = null;
 
     // 0-based reference position start
     union { null, long } start = null;
@@ -59,14 +64,7 @@ record ADAMRecord {
     union { null, string } recordGroupPlatformUnit = null;
     union { null, string } recordGroupSample = null;
 
-    union { null, int } mateReferenceId = null;
-
-    // See note, above.
-    union { null, long }   referenceLength = null;
-    union { null, string } referenceUrl = null;
-
-    union { null, long } mateReferenceLength = null;
-    union { null, string } mateReferenceUrl = null;
+    union { null, ADAMContig} mateContig = null;
 }
 
 enum Base {
@@ -93,10 +91,8 @@ record ADAMNucleotideContigFragment {
     // stores a contig of nucleotides; this may be a reference chromosome, may be an
     // assembly, may be a BAC. very long contigs (>1Mbp) need to be split into fragments.
     // it seems that they are too long to load in a single go.
-    union { null, string } contigName = null;
-    union { null, int } contigId = null;
+    union { null, ADAMContig } contig = null;
     union { null, string } description = null;
-    union { null, string } url = null;
     union { null, string } fragmentSequence = null; // sequence of bases in this fragment
     union { null, long } contigLength = null; // length of the total contig (all fragments)
     union { null, int } fragmentNumber = null; // ordered number for this fragment
@@ -105,8 +101,7 @@ record ADAMNucleotideContigFragment {
 }
 
 record ADAMPileup {
-    union { null, string } referenceName = null;
-    union { null, int } referenceId = null;
+    union { null, ADAMContig } contig = null;
     union { null, long } position = null;
     union { null, int } rangeOffset = null;
     union { null, int } rangeLength = null;
@@ -142,13 +137,6 @@ record ADAMNestedPileup {
      array<ADAMRecord> readEvidence;
 }
 
-record ADAMContig {
-  union { null, int }    contigId = null;
-  union { null, string } contigName = null;
-  union { null, long }   contigLength = null;
-  union { null, string } contigMD5 = null;
-  union { null, string } referenceURL = null;
-}
 
 record ADAMVariant {
   union { null, ADAMContig } contig = null;

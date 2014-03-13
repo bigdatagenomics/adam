@@ -16,7 +16,7 @@
 
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.avro.{ Base, ADAMPileup, ADAMRecord }
+import org.bdgenomics.adam.avro.{ Base, ADAMContig, ADAMPileup, ADAMRecord }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 import org.bdgenomics.adam.rich.RichADAMRecord._
@@ -83,8 +83,7 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
       assert(end != -1L, "Read is mapped but has a null end position. Read:\n" + record)
 
       ADAMPileup.newBuilder()
-        .setReferenceName(record.getReferenceName)
-        .setReferenceId(record.getReferenceId)
+        .setContig(record.getContig)
         .setMapQuality(record.getMapq)
         .setPosition(referencePos)
         .setRecordGroupSequencingCenter(record.getRecordGroupSequencingCenter)

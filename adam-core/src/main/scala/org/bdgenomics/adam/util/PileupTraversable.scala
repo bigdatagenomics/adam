@@ -61,9 +61,8 @@ case class DeletionEvent(readName: String,
                          mapQ: Int,
                          qual: Int) extends PileupEvent(readName)
 
-class Pileup(val referenceId: Int,
+class Pileup(val referenceName: String,
              val referencePosition: Long,
-             val referenceName: String,
              val referenceBase: Option[Base.Value],
              val matches: List[MatchEvent] = List.empty,
              val mismatches: List[MismatchEvent] = List.empty,
@@ -120,7 +119,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
         case CigarOperator.I =>
           val insertEvent = new InsertionEvent(record.getReadName.toString, record.getSequence.toString,
             record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
-          pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
+          pileupList ::= new Pileup(record.getContig.getContigName.toString, referencePos,
             None, insertions = List(insertEvent))
           readPos += cigarElement.getLength
 
@@ -133,7 +132,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
               // sequence match
               val matchEvent = new MatchEvent(record.getReadName.toString, isReverseStrand, i, cigarElement.getLength,
                 record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
-              pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
+              pileupList ::= new Pileup(record.getContig.getContigName.toString, referencePos,
                 Some(baseFromSequence(readPos)), matches = List(matchEvent))
             } else {
               val mismatchBase = mdTag.mismatchedBase(referencePos)
@@ -144,7 +143,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
               val mismatchEvent = new MismatchEvent(record.getReadName.toString,
                 baseFromSequence(readPos), isReverseStrand, i, cigarElement.getLength,
                 record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
-              pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
+              pileupList ::= new Pileup(record.getContig.getContigName.toString, referencePos,
                 Some(Base.withName(mismatchBase.get.toString)), mismatches = List(mismatchEvent))
             }
 
@@ -162,7 +161,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
             }
             val deleteEvent = new DeletionEvent(record.getReadName.toString, i, cigarElement.getLength,
               record.getMapq.toInt, stringToQualitySanger(record.getQual.toString))
-            pileupList ::= new Pileup(record.getReferenceId, referencePos, record.getReferenceName.toString,
+            pileupList ::= new Pileup(record.getContig.getContigName.toString, referencePos,
               Some(Base.withName(deletedBase.get.toString)), deletes = List(deleteEvent))
             // Consume reference bases but not read bases
             referencePos += 1
@@ -187,7 +186,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
     // val queue = new collection.mutable.PriorityQueue[(Int, Long)]()
     var pileups = SortedMap[Long, ListBuffer[Pileup]]()
 
-    var currentReference: Option[Int] = None
+    var currentReference: Option[String] = None
     var currentReferencePosition: Option[Long] = None
 
     def flushPileups(beforePosition: Option[Long] = None) {
@@ -207,7 +206,6 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
         var referenceBase: Option[Base.Value] = None
         pileupsAtLocation foreach {
           pileup =>
-            assert(pileup.referenceId == currentReference.get)
             assert(pileup.referencePosition == location)
             matches ++= pileup.matches
             mismatches ++= pileup.mismatches
@@ -224,7 +222,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
               referenceBase = pileup.referenceBase
             }
         }
-        f(new Pileup(currentReference.get, location, referenceName.get, referenceBase,
+        f(new Pileup(referenceName.get, location, referenceBase,
           matches.toList, mismatches.toList, inserts.toList, deletes.toList))
       }
       pileups --= locationsToFlush
@@ -233,13 +231,13 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
     for (read: ADAMRecord <- reads) {
 
       def updateCurrentInfo(read: ADAMRecord) = {
-        currentReference = Some(read.getReferenceId)
+        currentReference = Some(read.getContig.getContigName.toString)
         currentReferencePosition = Some(read.getStart)
       }
 
       currentReference match {
         case Some(reference) =>
-          if (reference != read.getReferenceId.toInt) {
+          if (reference != read.getContig.getContigName.toString) {
             // We're starting a new reference, flush all events from the previous reference
             flushPileups()
             updateCurrentInfo(read)

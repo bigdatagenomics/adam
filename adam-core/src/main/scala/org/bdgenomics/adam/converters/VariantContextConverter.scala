@@ -140,7 +140,6 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
 
     val contig: ADAMContig.Builder = ADAMContig.newBuilder()
       .setContigName(vc.getChr)
-      .setContigId(contigId)
 
     if (dict.isDefined) {
       val sr = (dict.get)(vc.getChr)

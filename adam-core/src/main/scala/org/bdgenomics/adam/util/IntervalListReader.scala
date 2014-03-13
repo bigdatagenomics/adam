@@ -54,15 +54,14 @@ class IntervalListReader(file: File) extends Traversable[(ReferenceRegion, Strin
     lines.filter(!_.startsWith("@")).foreach {
       line =>
         val array = line.split("\t")
-        val refId = array(0).toInt
+        val refname = array(0).toString
         val start = array(1).toLong
         val end = array(2).toLong
         val strand = array(3)
         val name = array(4)
-
         assert(strand == "+")
 
-        f((ReferenceRegion(refId, start, end), name))
+        f((ReferenceRegion(refname, start, end), name))
     }
   }
 
@@ -70,7 +69,6 @@ class IntervalListReader(file: File) extends Traversable[(ReferenceRegion, Strin
 
     val sequenceRecords = mutable.ListBuffer[SequenceRecord]()
     val regex = Pattern.compile("(\\w{2}):(.*)")
-    var nextSequenceId = 0
 
     def sequenceDictionary: SequenceDictionary = SequenceDictionary(sequenceRecords: _*)
 
@@ -98,8 +96,7 @@ class IntervalListReader(file: File) extends Traversable[(ReferenceRegion, Strin
             }
         }
 
-        sequenceRecords ++= List(SequenceRecord(nextSequenceId, name, length, url))
-        nextSequenceId += 1
+        sequenceRecords ++= List(SequenceRecord(name, length, url))
       }
 
     }

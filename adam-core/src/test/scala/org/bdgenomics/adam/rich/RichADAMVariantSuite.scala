@@ -22,12 +22,10 @@ import org.bdgenomics.adam.avro.{ ADAMVariant, ADAMContig }
 class RichADAMVariantSuite extends FunSuite {
   test("Equality without reference MD5") {
     val c1 = ADAMContig.newBuilder()
-      .setContigId(0)
       .setContigName("chr1")
       .setContigMD5("1b22b98cdeb4a9304cb5d48026a85128")
       .build
     val c2 = ADAMContig.newBuilder()
-      .setContigId(0)
       .setContigName("chr1")
       .build()
 
@@ -52,12 +50,10 @@ class RichADAMVariantSuite extends FunSuite {
 
   test("Equality with reference MD5") {
     val c1 = ADAMContig.newBuilder()
-      .setContigId(0)
       .setContigName("chr1")
       .setContigMD5("1b22b98cdeb4a9304cb5d48026a85128")
       .build
     val c2 = ADAMContig.newBuilder()
-      .setContigId(0)
       .setContigName("chr1")
       .setContigMD5("1b22b98cdeb4a9304cb5d48026a85127")
       .build

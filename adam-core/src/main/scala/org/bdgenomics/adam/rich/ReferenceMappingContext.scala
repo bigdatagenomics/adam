@@ -24,20 +24,16 @@ import org.bdgenomics.adam.avro.ADAMRecord
 object ReferenceMappingContext {
 
   implicit object ADAMRecordReferenceMapping extends ReferenceMapping[ADAMRecord] with Serializable {
-    def getReferenceId(value: ADAMRecord): Int = value.getReferenceId
-
-    def remapReferenceId(value: ADAMRecord, newId: Int): ADAMRecord =
-      ADAMRecord.newBuilder(value).setReferenceId(newId).build()
+    def getReferenceName(value: ADAMRecord): String =
+      value.getContig.getContigName.toString
 
     def getReferenceRegion(value: ADAMRecord): ReferenceRegion =
       ReferenceRegion(value).getOrElse(null)
   }
 
   implicit object ReferenceRegionReferenceMapping extends ReferenceMapping[ReferenceRegion] with Serializable {
-    def getReferenceId(value: ReferenceRegion): Int = value.refId
-
-    def remapReferenceId(value: ReferenceRegion, newId: Int): ReferenceRegion =
-      ReferenceRegion(newId, value.start, value.end)
+    def getReferenceName(value: ReferenceRegion): String =
+      value.referenceName.toString
 
     def getReferenceRegion(value: ReferenceRegion): ReferenceRegion = value
   }

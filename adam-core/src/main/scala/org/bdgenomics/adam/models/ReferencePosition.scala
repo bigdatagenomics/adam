@@ -44,8 +44,18 @@ object ReferencePositionWithOrientation {
 
 case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition], negativeStrand: Boolean)
     extends Ordered[ReferencePositionWithOrientation] {
+
   override def compare(that: ReferencePositionWithOrientation): Int = {
-    val posCompare = refPos.compare(that.refPos)
+    if (refPos.isEmpty && that.refPos.isEmpty) {
+      return 0
+    }
+    if (refPos.isEmpty) {
+      return -1
+    }
+    if (that.refPos.isEmpty) {
+      return 1
+    }
+    val posCompare = refPos.get.compare(that.refPos.get)
     if (posCompare != 0) {
       posCompare
     } else {
@@ -61,7 +71,7 @@ object ReferencePosition {
    * which is not located anywhere along the reference sequences (see, e.g. its use in
    * GenomicRegionPartitioner).
    */
-  val UNMAPPED = new ReferencePosition(-1, -1)
+  val UNMAPPED = new ReferencePosition("", -1)
 
   /**
    * Checks to see if a read is mapped with a valid position.
@@ -70,9 +80,9 @@ object ReferencePosition {
    * @return True if read is mapped and has a valid position, else false.
    */
   def mappedPositionCheck(record: ADAMRecord): Boolean = {
-    val referenceId = Some(record.getReferenceId)
+    val contig = Some(record.getContig)
     val start = Some(record.getStart)
-    record.getReadMapped && referenceId.isDefined && start.isDefined
+    record.getReadMapped && (contig.isDefined && Some(contig.get.getContigName).isDefined) && start.isDefined
   }
 
   /**
@@ -87,7 +97,7 @@ object ReferencePosition {
    */
   def apply(record: ADAMRecord): Option[ReferencePosition] = {
     if (mappedPositionCheck(record)) {
-      Some(new ReferencePosition(record.getReferenceId, record.getStart))
+      Some(new ReferencePosition(record.getContig.getContigName, record.getStart))
     } else {
       None
     }
@@ -104,7 +114,7 @@ object ReferencePosition {
    * @return The reference position of this variant.
    */
   def apply(variant: ADAMVariant): ReferencePosition = {
-    new ReferencePosition(variant.getContig.getContigId, variant.getPosition)
+    new ReferencePosition(variant.getContig.getContigName, variant.getPosition)
   }
 
   /**
@@ -118,7 +128,7 @@ object ReferencePosition {
    */
   def apply(genotype: ADAMGenotype): ReferencePosition = {
     val variant = genotype.getVariant()
-    new ReferencePosition(variant.getContig.getContigId, variant.getPosition)
+    new ReferencePosition(variant.getContig.getContigName, variant.getPosition)
   }
 
   /**
@@ -134,7 +144,7 @@ object ReferencePosition {
    */
   def fivePrime(record: ADAMRecord): Option[ReferencePosition] = {
     if (mappedPositionCheck(record)) {
-      Some(new ReferencePosition(record.getReferenceId, record.fivePrimePosition.get))
+      Some(new ReferencePosition(record.getContig.getContigName, record.fivePrimePosition.get))
     } else {
       None
     }
@@ -148,15 +158,15 @@ object ReferencePosition {
    * @return The reference position of this pileup.
    */
   def apply(pileup: ADAMPileup): ReferencePosition = {
-    new ReferencePosition(pileup.getReferenceId, pileup.getPosition)
+    new ReferencePosition(pileup.getContig.getContigName, pileup.getPosition)
   }
 }
 
-case class ReferencePosition(refId: Int, pos: Long) extends Ordered[ReferencePosition] {
+case class ReferencePosition(referenceName: String, pos: Long) extends Ordered[ReferencePosition] {
 
-  def compare(that: ReferencePosition): Int = {
+  override def compare(that: ReferencePosition): Int = {
     // Note: important to compare by reference first for coordinate ordering
-    val refCompare = refId.compare(that.refId)
+    val refCompare = referenceName.compare(that.referenceName)
     if (refCompare != 0) {
       refCompare
     } else {
@@ -194,13 +204,13 @@ class ReferencePositionWithOrientationSerializer extends Serializer[ReferencePos
 
 class ReferencePositionSerializer extends Serializer[ReferencePosition] {
   def write(kryo: Kryo, output: Output, obj: ReferencePosition) = {
-    output.writeInt(obj.refId)
+    output.writeString(obj.referenceName)
     output.writeLong(obj.pos)
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[ReferencePosition]): ReferencePosition = {
-    val refId = input.readInt()
+    val refName = input.readString()
     val pos = input.readLong()
-    new ReferencePosition(refId, pos)
+    new ReferencePosition(refName, pos)
   }
 }

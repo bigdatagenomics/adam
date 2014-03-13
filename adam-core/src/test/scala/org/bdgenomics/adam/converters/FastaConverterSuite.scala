@@ -41,20 +41,18 @@ class FastaConverterSuite extends SparkFunSuite {
   test("convert a single record without naming information") {
     val contig = converter.convert(None, 0, Seq("AAATTTGCGC"), None)
 
-    assert(contig.head.getContigId === 0)
     assert(contig.head.getFragmentSequence.map(_.toString).reduce(_ + _) === "AAATTTGCGC")
-    assert(contig.head.getContigLength === 10)
-    assert(contig.head.getContigName === null)
+    assert(contig.head.getContig.getContigLength === 10)
+    assert(contig.head.getContig.getContigName === null)
     assert(contig.head.getDescription === null)
   }
 
   test("convert a single record with naming information") {
     val contig = converter.convert(Some("chr2"), 1, Seq("NNNN"), Some("hg19"))
 
-    assert(contig.head.getContigId === 1)
     assert(contig.head.getFragmentSequence.map(_.toString).reduce(_ + _) === "NNNN")
-    assert(contig.head.getContigLength === 4)
-    assert(contig.head.getContigName === "chr2")
+    assert(contig.head.getContig.getContigLength === 4)
+    assert(contig.head.getContig.getContigName === "chr2")
     assert(contig.head.getDescription === "hg19")
   }
 
@@ -84,10 +82,9 @@ class FastaConverterSuite extends SparkFunSuite {
     val fastaFragmentSequence = fasta.map(_._2).reduce(_ + _)
     val convertedFragmentSequence = fastaElement.getFragmentSequence.map(_.toString).reduce(_ + _)
 
-    assert(fastaElement.getContigId() === 0)
     assert(convertedFragmentSequence === fastaFragmentSequence)
-    assert(fastaElement.getContigLength() == fastaFragmentSequence.length)
-    assert(fastaElement.getContigName === null)
+    assert(fastaElement.getContig.getContigLength() == fastaFragmentSequence.length)
+    assert(fastaElement.getContig.getContigName === null)
     assert(fastaElement.getDescription === null)
   }
 
@@ -132,24 +129,22 @@ class FastaConverterSuite extends SparkFunSuite {
     val adamFasta = FastaConverter(rdd)
     assert(adamFasta.count === 2)
 
-    val fastaElement1 = adamFasta.filter(_.getContigName == "chr1").first()
+    val fastaElement1 = adamFasta.filter(_.getContig.getContigName == "chr1").first()
     val fastaFragmentSequence1 = fasta1.drop(1).map(_._2).reduce(_ + _)
     val convertedFragmentSequence1 = fastaElement1.getFragmentSequence.map(_.toString).reduce(_ + _)
 
-    assert(fastaElement1.getContigId() === 0)
     assert(convertedFragmentSequence1 === fastaFragmentSequence1)
-    assert(fastaElement1.getContigLength() == fastaFragmentSequence1.length)
-    assert(fastaElement1.getContigName().toString === "chr1")
+    assert(fastaElement1.getContig.getContigLength() == fastaFragmentSequence1.length)
+    assert(fastaElement1.getContig.getContigName().toString === "chr1")
     assert(fastaElement1.getDescription === null)
 
-    val fastaElement2 = adamFasta.filter(_.getContigName == "chr2").first()
+    val fastaElement2 = adamFasta.filter(_.getContig.getContigName == "chr2").first()
     val fastaFragmentSequence2 = fasta2.drop(1).map(_._2).reduce(_ + _)
     val convertedFragmentSequence2 = fastaElement2.getFragmentSequence.map(_.toString).reduce(_ + _)
 
-    assert(fastaElement2.getContigId() === 1)
     assert(convertedFragmentSequence2 === fastaFragmentSequence2)
-    assert(fastaElement2.getContigLength() == fastaFragmentSequence2.length)
-    assert(fastaElement2.getContigName().toString === "chr2")
+    assert(fastaElement2.getContig.getContigLength() == fastaFragmentSequence2.length)
+    assert(fastaElement2.getContig.getContigName().toString === "chr2")
     assert(fastaElement2.getDescription === null)
   }
 

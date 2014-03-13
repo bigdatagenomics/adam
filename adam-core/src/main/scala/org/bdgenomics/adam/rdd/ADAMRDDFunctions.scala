@@ -15,7 +15,17 @@
  */
 package org.bdgenomics.adam.rdd
 
+import java.io.File
+import java.util.logging.Level
+import java.util.UUID
+import org.apache.avro.specific.SpecificRecord
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.Logging
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.avro.{
+  ADAMContig,
   ADAMPileup,
   ADAMRecord,
   ADAMNucleotideContigFragment,
@@ -36,14 +46,6 @@ import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.util.{ HadoopUtil, MapTools, ParquetLogger }
-import java.io.File
-import java.util.logging.Level
-import org.apache.avro.specific.SpecificRecord
-import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.Logging
-import org.apache.spark.SparkContext._
-import org.apache.spark.rdd.RDD
 import parquet.avro.{ AvroParquetOutputFormat, AvroWriteSupport }
 import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
@@ -152,17 +154,20 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
     // we place them in a range of referenceIds at the end of the file.
     // The referenceId is an Int and typical only a few dozen values are even used.
     // These referenceId values are not stored; they are only used during sorting.
-    val unmappedReferenceIds = new Iterator[Int] with Serializable {
+    val unmappedReferenceNames = new Iterator[String] with Serializable {
       var currentOffsetFromEnd = 0
 
       def hasNext: Boolean = true
 
-      def next(): Int = {
+      def next(): String = {
         currentOffsetFromEnd += 1
         if (currentOffsetFromEnd > 10000) {
           currentOffsetFromEnd = 0
         }
-        Int.MaxValue - currentOffsetFromEnd
+        // NB : this is really ugly - any better way to manufacture
+        // string values that are greater than anything else we care
+        // about?
+        "unmapped" + (Int.MaxValue - currentOffsetFromEnd).toString
       }
     }
 
@@ -171,7 +176,7 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
         case None =>
           // Move unmapped reads to the end of the file
           ReferencePosition(
-            unmappedReferenceIds.next(), Long.MaxValue)
+            unmappedReferenceNames.next(), Long.MaxValue)
         case Some(pos) => pos
       }
       (referencePos, p)
@@ -236,12 +241,12 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
     def mapToBucket(r: ADAMRecord): List[(ReferencePosition, ADAMRecord)] = {
       val s = r.getStart / bucketSize
       val e = RichADAMRecord(r).end.get / bucketSize
-      val id = r.getReferenceId
+      val name = r.getContig.getContigName
 
       if (s == e) {
-        List((new ReferencePosition(id, s), r))
+        List((new ReferencePosition(name, s), r))
       } else {
-        List((new ReferencePosition(id, s), r), (new ReferencePosition(id, e), r))
+        List((new ReferencePosition(name, s), r), (new ReferencePosition(name, e), r))
       }
     }
 
@@ -414,16 +419,15 @@ class ADAMNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
      * @param dictionary A sequence dictionary containing the IDs to use for remapping.
      * @return An option containing the remapped contig if it's sequence name was found in the dictionary.
      */
-    def remapContig(contig: ADAMNucleotideContigFragment, dictionary: SequenceDictionary): Option[ADAMNucleotideContigFragment] = {
-      val name: CharSequence = contig.getContigName
+    def remapContig(fragment: ADAMNucleotideContigFragment, dictionary: SequenceDictionary): Option[ADAMNucleotideContigFragment] = {
+      val name: CharSequence = fragment.getContig.getContigName
 
       if (dictionary.containsRefName(name)) {
-        val newId = dictionary(contig.getContigName).id
-        val newContig = ADAMNucleotideContigFragment.newBuilder(contig)
-          .setContigId(newId)
+        // NB : this is a no-op in the non-ref-id world. Should we delete it?
+        val newFragment = ADAMNucleotideContigFragment.newBuilder(fragment)
+          .setContig(fragment.getContig)
           .build()
-
-        Some(newContig)
+        Some(newFragment)
       } else {
         None
       }
@@ -450,11 +454,9 @@ class ADAMNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
 
       val str = fragmentSequence.drop(trimStart)
         .dropRight(trimEnd)
-
-      val reg = new ReferenceRegion(fragment._1.refId,
+      val reg = new ReferenceRegion(fragment._1.referenceName,
         fragment._1.start + trimStart,
         fragment._1.end - trimEnd)
-
       (reg, str)
     }
 

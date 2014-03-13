@@ -17,7 +17,7 @@ package org.bdgenomics.adam.rdd
 
 import parquet.filter.UnboundRecordFilter
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
@@ -53,13 +53,16 @@ class ADAMContextSuite extends SparkFunSuite {
   }
 
   sparkTest("loadADAMFromPaths can load simple RDDs that have just been saved") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("abc")
+      .setContigLength(1000000)
+      .setReferenceURL("http://abc")
+      .build
+
     val a0 = ADAMRecord.newBuilder()
       .setRecordGroupName("group0")
       .setReadName("read0")
-      .setReferenceId(0)
-      .setReferenceName("abc")
-      .setReferenceUrl("http://abc")
-      .setReferenceLength(1000000)
+      .setContig(contig)
       .setStart(100)
       .setPrimaryAlignment(true)
       .setReadPaired(false)
