@@ -133,13 +133,12 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     }
 
     // VCF CHROM, POS, REF and ALT
-    val variant: ADAMVariant = ADAMVariant.newBuilder
+    ADAMVariant.newBuilder
       .setContig(contig.build)
       .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */)
       .setReferenceAllele(vc.getReference.getBaseString)
       .setVariantAllele(vc.getAlternateAllele(0).getBaseString)
       .build
-    variant
   }
 
   private def extractVariantDatabaseAnnotation(variant : ADAMVariant, vc : VariantContext) : ADAMDatabaseVariantAnnotation = {
