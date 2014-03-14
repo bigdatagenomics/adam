@@ -17,7 +17,7 @@
 package edu.berkeley.cs.amplab.adam.rdd.variation
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
-import edu.berkeley.cs.amplab.adam.converters.VariantContextConverter
+import edu.berkeley.cs.amplab.adam.converters.{VariantAnnotationConverter, VariantContextConverter}
 import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import fi.tkk.ics.hadoop.bam._
@@ -41,7 +41,7 @@ private object ADAMVCFOutputFormat {
 
   def setHeader(samples: Seq[String]) : VCFHeader = {
     header = Some(new VCFHeader(
-      (VariantContextConverter.infoHeaderLines ++ VariantContextConverter.formatHeaderLines).toSet : Set[VCFHeaderLine],
+      (VariantAnnotationConverter.infoHeaderLines ++ VariantAnnotationConverter.formatHeaderLines).toSet : Set[VCFHeaderLine],
       samples
     ))
     header.get
