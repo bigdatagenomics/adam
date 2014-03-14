@@ -19,18 +19,18 @@ import fi.tkk.ics.hadoop.bam.{KeyIgnoringVCFOutputFormat, VCFFormat}
 import org.broadinstitute.variant.vcf.VCFHeader
 
 /**
- * A static object for attaching a header to the accompanying AdamVCFOutputFormat hadoop writer.
+ * A static object for attaching a header to the accompanying ADAMVCFOutputFormat hadoop writer.
  * Categorically, this static attachment method is not good, and makes me feel unclean. Alack, there
  * appears to be no workaround. Hadoop-BAM will not write a VCF to disk unless a header is attached,
  * and Hadoop-BAM itself does not have a static way of attaching a header that works with the Spark
  * Hadoop API writer.
  */
-object AdamVCFOutputFormat {
+object ADAMVCFOutputFormat {
 
   private[util] var header: Option[VCFHeader] = None
 
   /**
-   * Attaches a header to the AdamVCFOutputFormat Hadoop writer. If a header has previously
+   * Attaches a header to the ADAMVCFOutputFormat Hadoop writer. If a header has previously
    * been attached, the header must be cleared first.
    *
    * @throws Exception Exception thrown if a VCF header has previously been attached, and not cleared.
@@ -64,9 +64,9 @@ object AdamVCFOutputFormat {
   }
 }
 
-class AdamVCFOutputFormat[K]
+class ADAMVCFOutputFormat[K]
   extends KeyIgnoringVCFOutputFormat[K](VCFFormat.valueOf("VCF")) {
 
-  setHeader(AdamVCFOutputFormat.getHeader)
+  setHeader(ADAMVCFOutputFormat.getHeader)
 }
 

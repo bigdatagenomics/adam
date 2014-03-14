@@ -15,31 +15,27 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, 
-                                         ADAMRecord,
-                                         ADAMNucleotideContigFragment}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMNucleotideContigFragment}
 import edu.berkeley.cs.amplab.adam.converters.SAMRecordConverter
-import edu.berkeley.cs.amplab.adam.models._
 import edu.berkeley.cs.amplab.adam.models.ADAMRod
-import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField,
-                                                Projection, 
-                                                ADAMNucleotideContigFragmentField}
+import edu.berkeley.cs.amplab.adam.models._
+import edu.berkeley.cs.amplab.adam.projections.{ADAMRecordField, Projection,ADAMNucleotideContigFragmentField}
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichRDDReferenceRecords._
-import edu.berkeley.cs.amplab.adam.serialization.AdamKryoProperties
-import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat, VariantContextWritable, VCFInputFormat}
+import edu.berkeley.cs.amplab.adam.serialization.ADAMKryoProperties
 import fi.tkk.ics.hadoop.bam.util.{SAMHeaderReader, VCFHeaderReader, WrapSeekable}
+import fi.tkk.ics.hadoop.bam.{SAMRecordWritable, AnySAMInputFormat, VariantContextWritable, VCFInputFormat}
 import java.util.regex.Pattern
 import net.sf.samtools.SAMFileHeader
-import org.apache.hadoop.fs.FileSystem
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
+import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{Logging, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.StatsReportListener
+import org.apache.spark.{Logging, SparkContext}
 import parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -48,25 +44,24 @@ import scala.Some
 import scala.collection.JavaConversions._
 import scala.collection.Map
 
-
-object AdamContext {
+object ADAMContext {
   // Add ADAM Spark context methods
-  implicit def sparkContextToAdamContext(sc: SparkContext): AdamContext = new AdamContext(sc)
+  implicit def sparkContextToADAMContext(sc: SparkContext): ADAMContext = new ADAMContext(sc)
 
   // Add methods specific to ADAMRecord RDDs
-  implicit def rddToAdamRecordRDD(rdd: RDD[ADAMRecord]) = new AdamRecordRDDFunctions(rdd)
+  implicit def rddToADAMRecordRDD(rdd: RDD[ADAMRecord]) = new ADAMRecordRDDFunctions(rdd)
 
   // Add methods specific to the ADAMPileup RDDs
-  implicit def rddToAdamPileupRDD(rdd: RDD[ADAMPileup]) = new AdamPileupRDDFunctions(rdd)
+  implicit def rddToADAMPileupRDD(rdd: RDD[ADAMPileup]) = new ADAMPileupRDDFunctions(rdd)
 
   // Add methods specific to the ADAMRod RDDs
-  implicit def rddToAdamRodRDD(rdd: RDD[ADAMRod]) = new AdamRodRDDFunctions(rdd)
+  implicit def rddToADAMRodRDD(rdd: RDD[ADAMRod]) = new ADAMRodRDDFunctions(rdd)
 
   // Add generic RDD methods for all types of ADAM RDDs
-  implicit def rddToAdamRDD[T <% SpecificRecord : Manifest](rdd: RDD[T]) = new AdamRDDFunctions(rdd)
+  implicit def rddToADAMRDD[T <% SpecificRecord : Manifest](rdd: RDD[T]) = new ADAMRDDFunctions(rdd)
 
   // Add methods specific to the ADAMNucleotideContig RDDs
-  implicit def rddToAdamRDD(rdd: RDD[ADAMNucleotideContigFragment]) = new AdamNucleotideContigFragmentRDDFunctions(rdd)
+  implicit def rddToADAMRDD(rdd: RDD[ADAMNucleotideContigFragment]) = new ADAMNucleotideContigFragmentRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: ADAMRecord): RichADAMRecord = new RichADAMRecord(record)
@@ -116,7 +111,7 @@ object AdamContext {
                          sparkEnvVars: Seq[String],
                          sparkAddStatsListener: Boolean = false,
                          sparkKryoBufferSize: Int = 4): SparkContext = {
-    AdamKryoProperties.setupContextProperties(sparkKryoBufferSize)
+    ADAMKryoProperties.setupContextProperties(sparkKryoBufferSize)
     val appName = "adam: " + name
     val environment: Map[String, String] = if (sparkEnvVars.isEmpty) {
       Map()
@@ -142,7 +137,7 @@ object AdamContext {
   }
 }
 
-class AdamContext(sc: SparkContext) extends Serializable with Logging {
+class ADAMContext(sc: SparkContext) extends Serializable with Logging {
 
   private def adamBamDictionaryLoad(filePath: String): SequenceDictionary = {
     val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
@@ -217,11 +212,11 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
     // This funkiness is required because (a) ADAMRecords require a different projection from any
     // other flattened schema, and (b) because the SequenceRecord.fromADAMRecord, below, is going
     // to be called through a flatMap rather than through a map tranformation on the underlying record RDD.
-    val isAdamRecord = classOf[ADAMRecord].isAssignableFrom(manifest[T].erasure)
-    val isAdamContig = classOf[ADAMNucleotideContigFragment].isAssignableFrom(manifest[T].erasure)
+    val isADAMRecord = classOf[ADAMRecord].isAssignableFrom(manifest[T].erasure)
+    val isADAMContig = classOf[ADAMNucleotideContigFragment].isAssignableFrom(manifest[T].erasure)
     
     val projection =
-      if (isAdamRecord) {
+      if (isADAMRecord) {
         Projection(
           ADAMRecordField.referenceId,
           ADAMRecordField.referenceName,
@@ -236,7 +231,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
           ADAMRecordField.readMapped,
           ADAMRecordField.mateMapped
         )
-      } else if (isAdamContig) {
+      } else if (isADAMContig) {
         Projection(ADAMNucleotideContigFragmentField.contigName,
                    ADAMNucleotideContigFragmentField.contigId,
                    ADAMNucleotideContigFragmentField.contigLength,
@@ -250,7 +245,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
       }
 
     if (filePath.endsWith(".bam") || filePath.endsWith(".sam")) {
-      if (isAdamRecord)
+      if (isADAMRecord)
         adamBamDictionaryLoad(filePath)
       else
         throw new IllegalArgumentException("If you're reading a BAM/SAM file, the record type must be ADAMRecord")
@@ -259,9 +254,9 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
       val projected: RDD[T] = adamParquetLoad[T, UnboundRecordFilter](filePath, None, projection = Some(projection))
 
       val recs: RDD[SequenceRecord] =
-        if (isAdamRecord) {
+        if (isADAMRecord) {
           projected.asInstanceOf[RDD[ADAMRecord]].distinct().flatMap(rec => SequenceRecord.fromADAMRecord(rec))
-        } else if (isAdamContig) {
+        } else if (isADAMContig) {
           projected.asInstanceOf[RDD[ADAMNucleotideContigFragment]].distinct().map(ctg => SequenceRecord.fromADAMContigFragment(ctg))
         } else {
           projected.distinct().map(SequenceRecord.fromSpecificRecord(_))
@@ -329,8 +324,8 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
    * @param paths The locations of the parquet files to load
    * @return a single RDD[ADAMRecord] that contains the union of the ADAMRecords in the argument paths.
    */
-  def loadAdamFromPaths(paths: Seq[Path]): RDD[ADAMRecord] = {
-    def loadAdams(path: Path): (SequenceDictionary, RDD[ADAMRecord]) = {
+  def loadADAMFromPaths(paths: Seq[Path]): RDD[ADAMRecord] = {
+    def loadADAMs(path: Path): (SequenceDictionary, RDD[ADAMRecord]) = {
       val dict = adamDictionaryLoad[ADAMRecord](path.toString)
       val rdd =adamLoad[ADAMRecord, UnboundRecordFilter](path.toString)
       (dict, rdd)
@@ -347,7 +342,7 @@ class AdamContext(sc: SparkContext) extends Serializable with Logging {
       }
     }
 
-    sc.union(remap(paths.map(loadAdams)))
+    sc.union(remap(paths.map(loadADAMs)))
   }
 }
 

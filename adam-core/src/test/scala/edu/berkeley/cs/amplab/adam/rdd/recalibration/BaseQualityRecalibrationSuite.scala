@@ -16,13 +16,13 @@
 
 package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
-import edu.berkeley.cs.amplab.adam.models.SnpTable
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.models.SnpTable
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
-import org.apache.spark.rdd.RDD
 import java.io.File
+import org.apache.spark.rdd.RDD
 
 class BaseQualityRecalibrationSuite extends SparkFunSuite {
   sparkTest("BQSR Test Input #1") {

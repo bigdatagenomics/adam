@@ -15,8 +15,8 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import org.scalatest.FunSuite
 import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMGenotype, ADAMPileup, ADAMRecord, ADAMVariant}
+import org.scalatest.FunSuite
 
 class ReferencePositionSuite extends FunSuite {
 

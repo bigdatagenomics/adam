@@ -15,9 +15,9 @@
  */
 package edu.berkeley.cs.amplab.adam.metrics
 
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.models.SingleReadBucket
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 
 class ComparisonsSuite extends SparkFunSuite {
   var bucket: SingleReadBucket = null

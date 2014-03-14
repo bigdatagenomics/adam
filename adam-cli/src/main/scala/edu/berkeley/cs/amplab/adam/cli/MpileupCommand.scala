@@ -20,7 +20,7 @@ import edu.berkeley.cs.amplab.adam.util._
 import org.kohsuke.args4j.Argument
 import scala.Some
 
-object MpileupCommand extends AdamCommandCompanion {
+object MpileupCommand extends ADAMCommandCompanion {
   val commandName: String = "mpileup"
   val commandDescription: String = "Output the samtool mpileup text from ADAM reference-oriented data"
 
@@ -34,7 +34,7 @@ class MpileupArgs extends Args4jBase with SparkArgs {
   var file: String = _
 }
 
-class MpileupCommand(protected val args: MpileupArgs) extends AdamCommand with SparkCommand {
+class MpileupCommand(protected val args: MpileupArgs) extends ADAMCommand with SparkCommand {
   val companion = MpileupCommand
 
   def run() {

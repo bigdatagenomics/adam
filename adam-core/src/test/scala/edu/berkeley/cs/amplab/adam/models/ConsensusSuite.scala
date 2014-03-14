@@ -16,8 +16,8 @@
 
 package edu.berkeley.cs.amplab.adam.models
 
-import org.scalatest.FunSuite
 import net.sf.samtools.{Cigar, TextCigarCodec}
+import org.scalatest.FunSuite
 
 class ConsensusSuite extends FunSuite {
 

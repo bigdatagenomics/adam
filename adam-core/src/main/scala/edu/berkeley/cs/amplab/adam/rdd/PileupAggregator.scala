@@ -18,9 +18,9 @@ package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup}
 import edu.berkeley.cs.amplab.adam.models.ReferencePosition
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import org.apache.spark.rdd.RDD
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import org.apache.spark.Logging
+import org.apache.spark.rdd.RDD
 
 private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializable with Logging {
 

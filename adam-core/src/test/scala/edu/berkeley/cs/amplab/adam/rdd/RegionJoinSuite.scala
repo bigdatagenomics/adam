@@ -16,10 +16,10 @@
 
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, ReferenceRegion, ReferenceMapping}
+import edu.berkeley.cs.amplab.adam.models.{ SequenceRecord, SequenceDictionary, ReferenceRegion, ReferenceMapping }
 import edu.berkeley.cs.amplab.adam.rich.ReferenceMappingContext._
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import org.apache.spark.SparkContext._
 
 class RegionJoinSuite extends SparkFunSuite {
@@ -34,20 +34,20 @@ class RegionJoinSuite extends SparkFunSuite {
   test("alternating returns an alternating seq of items") {
     import NonoverlappingRegions._
 
-    assert( alternating(Seq(), true) === Seq() )
-    assert( alternating(Seq(1), true) === Seq(1) )
-    assert( alternating(Seq(1, 2), true) === Seq(1) )
-    assert( alternating(Seq(1, 2, 3), true) === Seq(1, 3) )
-    assert( alternating(Seq(1, 2, 3, 4), true) === Seq(1, 3) )
-    assert( alternating(Seq(1, 2, 3, 4, 5), true) === Seq(1, 3, 5) )
+    assert(alternating(Seq(), true) === Seq())
+    assert(alternating(Seq(1), true) === Seq(1))
+    assert(alternating(Seq(1, 2), true) === Seq(1))
+    assert(alternating(Seq(1, 2, 3), true) === Seq(1, 3))
+    assert(alternating(Seq(1, 2, 3, 4), true) === Seq(1, 3))
+    assert(alternating(Seq(1, 2, 3, 4, 5), true) === Seq(1, 3, 5))
 
-    assert( alternating(Seq(), false) === Seq() )
-    assert( alternating(Seq(1), false) === Seq() )
-    assert( alternating(Seq(1, 2), false) === Seq(2) )
-    assert( alternating(Seq(1, 2, 3), false) === Seq(2) )
-    assert( alternating(Seq(1, 2, 3, 4), false) === Seq(2, 4) )
-    assert( alternating(Seq(1, 2, 3, 4, 5), false) === Seq(2, 4) )
-    assert( alternating(Seq(1, 2, 3, 4, 5, 6), false) === Seq(2, 4, 6) )
+    assert(alternating(Seq(), false) === Seq())
+    assert(alternating(Seq(1), false) === Seq())
+    assert(alternating(Seq(1, 2), false) === Seq(2))
+    assert(alternating(Seq(1, 2, 3), false) === Seq(2))
+    assert(alternating(Seq(1, 2, 3, 4), false) === Seq(2, 4))
+    assert(alternating(Seq(1, 2, 3, 4, 5), false) === Seq(2, 4))
+    assert(alternating(Seq(1, 2, 3, 4, 5, 6), false) === Seq(2, 4, 6))
   }
 
   test("Single region returns itself") {
@@ -183,7 +183,6 @@ class RegionJoinSuite extends SparkFunSuite {
       recordsRdd).count() === 2)
   }
 
-
   sparkTest("Multiple reference regions do not throw exception") {
     val builtRef1 = ADAMRecord.newBuilder()
       .setReferenceId(1)
@@ -262,18 +261,18 @@ class RegionJoinSuite extends SparkFunSuite {
       baseRdd,
       recordsRdd)
       .leftOuterJoin(
-      RegionJoin.partitionAndJoin(
-        sc,
-        seqDict,
-        baseRdd,
-        recordsRdd))
+        RegionJoin.partitionAndJoin(
+          sc,
+          seqDict,
+          baseRdd,
+          recordsRdd))
       .filter({
-      case ((_: ADAMRecord, (cartesian: ADAMRecord, region: Option[ADAMRecord]))) =>
-        region match {
-          case None => false
-          case Some(record) => cartesian == record
-        }
-    })
+        case ((_: ADAMRecord, (cartesian: ADAMRecord, region: Option[ADAMRecord]))) =>
+          region match {
+            case None => false
+            case Some(record) => cartesian == record
+          }
+      })
       .count() === 3)
   }
 }

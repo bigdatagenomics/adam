@@ -17,14 +17,14 @@ package edu.berkeley.cs.amplab.adam.cli
  */
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMPileup
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import org.kohsuke.args4j.Argument
-import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.kohsuke.args4j.Argument
 
-object PileupAggregator extends AdamCommandCompanion {
+object PileupAggregator extends ADAMCommandCompanion {
   val commandName: String = "aggregate_pileups"
   val commandDescription: String = "Aggregate pileups in an ADAM reference-oriented file"
 
@@ -43,7 +43,7 @@ class PileupAggregatorArgs extends Args4jBase with SparkArgs with ParquetArgs {
 }
 
 class PileupAggregator(protected val args: PileupAggregatorArgs)
-  extends AdamSparkCommand[PileupAggregatorArgs] {
+  extends ADAMSparkCommand[PileupAggregatorArgs] {
 
   val companion = PileupAggregator
 

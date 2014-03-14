@@ -15,9 +15,9 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-import org.scalatest._
+import edu.berkeley.cs.amplab.adam.models.{ Attribute, TagType }
 import net.sf.samtools.SAMRecord.SAMTagAndValue
-import edu.berkeley.cs.amplab.adam.models.{Attribute, TagType}
+import org.scalatest._
 
 class AttributeUtilsSuite extends FunSuite {
 
@@ -66,7 +66,7 @@ class AttributeSuite extends FunSuite {
     assert(convertSAMTagAndValue(new SAMTagAndValue("XY", 3.0f)) === Attribute("XY", TagType.Float, 3.0f))
     assert(convertSAMTagAndValue(new SAMTagAndValue("XY", 'a')) === Attribute("XY", TagType.Character, 'a'))
 
-    val byteArray : Array[java.lang.Byte] = Seq(java.lang.Byte.valueOf("0"), java.lang.Byte.valueOf("1")).toArray
-    assert(convertSAMTagAndValue(new SAMTagAndValue("XY", byteArray))=== Attribute("XY", TagType.ByteSequence, byteArray))
+    val byteArray: Array[java.lang.Byte] = Seq(java.lang.Byte.valueOf("0"), java.lang.Byte.valueOf("1")).toArray
+    assert(convertSAMTagAndValue(new SAMTagAndValue("XY", byteArray)) === Attribute("XY", TagType.ByteSequence, byteArray))
   }
 }

@@ -17,13 +17,13 @@
 package edu.berkeley.cs.amplab.adam.rich
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util.MdTag
 import edu.berkeley.cs.amplab.adam.util.QualityScore
 import edu.berkeley.cs.amplab.adam.util.Util
-import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
+import org.apache.spark.rdd.RDD
 
 object DecadentRead {
   type Residue = DecadentRead#Residue

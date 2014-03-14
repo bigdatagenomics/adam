@@ -16,15 +16,14 @@
 
 package edu.berkeley.cs.amplab.adam.rdd.variation
 
-import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
+import com.google.common.io.Files
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMGenotypeAllele, ADAMGenotype, ADAMContig, ADAMVariant }
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
-import com.google.common.io.Files
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import java.io.File
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeAllele, ADAMGenotype, ADAMContig, ADAMVariant}
+import org.apache.spark.rdd.RDD
 import scala.collection.JavaConversions._
-
 
 class ADAMVariationContextSuite extends SparkFunSuite {
   val tempDir = Files.createTempDir()
@@ -43,10 +42,8 @@ class ADAMVariationContextSuite extends SparkFunSuite {
       .build
 
     sc.parallelize(List(
-      ADAMVariantContext(v0, Seq(g0))
-    ))
+      ADAMVariantContext(v0, Seq(g0))))
   }
-
 
   sparkTest("can read a small .vcf file") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.vcf").getFile

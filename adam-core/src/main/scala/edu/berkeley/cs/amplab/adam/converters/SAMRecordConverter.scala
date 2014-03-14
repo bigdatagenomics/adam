@@ -15,12 +15,11 @@
  */
 package edu.berkeley.cs.amplab.adam.converters
 
-import net.sf.samtools.{SAMReadGroupRecord, SAMRecord}
-
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import scala.collection.JavaConverters._
 import edu.berkeley.cs.amplab.adam.models.{Attribute, RecordGroupDictionary, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.util.AttributeUtils
+import net.sf.samtools.{SAMReadGroupRecord, SAMRecord}
+import scala.collection.JavaConverters._
 
 class SAMRecordConverter extends Serializable {
   def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): ADAMRecord = {

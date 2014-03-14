@@ -15,12 +15,12 @@
  */
 package edu.berkeley.cs.amplab.adam.metrics
 
-import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
-import edu.berkeley.cs.amplab.adam.projections.FieldValue
-import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import scala.collection.Map
 import edu.berkeley.cs.amplab.adam.models.ReadBucket
+import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField._
+import edu.berkeley.cs.amplab.adam.projections.FieldValue
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
+import scala.collection.Map
 
 object DefaultComparisons {
 

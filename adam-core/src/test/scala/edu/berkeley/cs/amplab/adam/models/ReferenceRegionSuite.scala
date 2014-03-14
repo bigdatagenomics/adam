@@ -15,8 +15,8 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import org.scalatest._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import org.scalatest._
 
 class ReferenceRegionSuite extends FunSuite {
 

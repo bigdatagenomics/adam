@@ -16,14 +16,13 @@
 
 package edu.berkeley.cs.amplab.adam.predicates
 
-import parquet.filter.{RecordFilter, UnboundRecordFilter}
-
+import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField
 import java.lang.Iterable
 import parquet.column.ColumnReader
 import parquet.filter.AndRecordFilter.and
 import parquet.filter.ColumnPredicates.equalTo
 import parquet.filter.ColumnRecordFilter.column
-import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField
+import parquet.filter.{RecordFilter, UnboundRecordFilter}
 
 class LocusPredicate extends UnboundRecordFilter {
 

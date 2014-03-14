@@ -15,8 +15,8 @@
  */
 package edu.berkeley.cs.amplab.adam.metrics.filters
 
-import edu.berkeley.cs.amplab.adam.metrics.{CombinedComparisons, BucketComparisons}
 import edu.berkeley.cs.amplab.adam.metrics
+import edu.berkeley.cs.amplab.adam.metrics.{CombinedComparisons, BucketComparisons}
 
 /**
  * Used by FindReads, a GeneratorFilter is a predicate on values, which also wraps a particular

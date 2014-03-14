@@ -15,13 +15,13 @@
  */
 package edu.berkeley.cs.amplab.adam.projections
 
-import edu.berkeley.cs.amplab.adam.util.{ParquetLogger, SparkFunSuite}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import org.apache.spark.rdd.RDD
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.util.{ParquetLogger, SparkFunSuite}
 import java.io.File
-import org.scalatest.BeforeAndAfter
 import java.util.logging.Level
+import org.apache.spark.rdd.RDD
+import org.scalatest.BeforeAndAfter
 
 class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
 

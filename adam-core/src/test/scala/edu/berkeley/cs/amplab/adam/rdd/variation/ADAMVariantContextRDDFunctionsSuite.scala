@@ -16,11 +16,11 @@
 
 package edu.berkeley.cs.amplab.adam.rdd.variation
 
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro._
-import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
+import org.apache.spark.rdd.RDD
 
 class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
 
@@ -33,8 +33,7 @@ class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
       .build
 
     val vc: RDD[ADAMVariantContext] = sc.parallelize(List(
-      ADAMVariantContext(v0)
-    ))
+      ADAMVariantContext(v0)))
 
     val a0 = ADAMDatabaseVariantAnnotation.newBuilder
       .setVariant(v0)
@@ -42,12 +41,11 @@ class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
       .build
 
     val vda: RDD[ADAMDatabaseVariantAnnotation] = sc.parallelize(List(
-      a0
-    ))
+      a0))
 
     // TODO: implicit conversion to ADAMVariantContextRDD
     val annotated = vc.joinDatabaseVariantAnnotation(vda)
-    assert( annotated.map(_.databases.isDefined).reduce { (a,b) => a && b } )
+    assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
   }
 
 }

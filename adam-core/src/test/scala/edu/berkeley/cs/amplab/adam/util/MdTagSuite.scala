@@ -16,11 +16,11 @@
 
 package edu.berkeley.cs.amplab.adam.util
 
-import org.scalatest.FunSuite
-import net.sf.samtools.{Cigar, TextCigarCodec}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
+import net.sf.samtools.{ Cigar, TextCigarCodec }
+import org.scalatest.FunSuite
 
 class MdTagSuite extends FunSuite {
 
@@ -170,7 +170,7 @@ class MdTagSuite extends FunSuite {
 
   test("get correct string out of mdtag with mismatches at start") {
     val tag = MdTag("0A0C10", 100L)
-    
+
     assert(tag.toString === "0A0C10")
   }
 
@@ -225,7 +225,7 @@ class MdTagSuite extends FunSuite {
       .build()
 
     val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
-      
+
     val newCigar = CIGAR_CODEC.decode("27M10D33M")
 
     val newTag = MdTag.moveAlignment(read, newCigar)
@@ -243,7 +243,7 @@ class MdTagSuite extends FunSuite {
       .build()
 
     val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
-      
+
     val newCigar = CIGAR_CODEC.decode("60M")
 
     val newTag = MdTag.moveAlignment(read, newCigar, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
@@ -263,7 +263,7 @@ class MdTagSuite extends FunSuite {
       .build()
 
     val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
-      
+
     val newCigar = CIGAR_CODEC.decode("60M")
 
     val newTag = MdTag.moveAlignment(read, newCigar, "GGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
@@ -283,7 +283,7 @@ class MdTagSuite extends FunSuite {
       .build()
 
     val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
-      
+
     val newCigar = CIGAR_CODEC.decode("10M10D50M")
 
     val newTag = MdTag.moveAlignment(read, newCigar, "AAAAAAAAAAGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
@@ -303,7 +303,7 @@ class MdTagSuite extends FunSuite {
       .build()
 
     val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
-      
+
     val newCigar = CIGAR_CODEC.decode("10I50M")
 
     val newTag = MdTag.moveAlignment(read, newCigar, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)

@@ -15,11 +15,11 @@
  */
 package edu.berkeley.cs.amplab.adam.rich
 
-import org.scalatest.FunSuite
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import RichADAMRecord._
-import net.sf.samtools.Cigar
 import RichCigar._
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import net.sf.samtools.Cigar
+import org.scalatest.FunSuite
 
 class RichCigarSuite extends FunSuite {
 

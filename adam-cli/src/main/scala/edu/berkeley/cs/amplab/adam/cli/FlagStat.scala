@@ -16,21 +16,21 @@
 
 package edu.berkeley.cs.amplab.adam.cli
 
-import edu.berkeley.cs.amplab.adam.util.ParquetLogger
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import org.kohsuke.args4j.Argument
-import org.apache.hadoop.mapreduce.Job
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.projections.{Projection, ADAMRecordField}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.util.ParquetLogger
 import java.util.logging.Level
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.kohsuke.args4j.Argument
 
-object FlagStat extends AdamCommandCompanion {
+object FlagStat extends ADAMCommandCompanion {
   val commandName: String = "flagstat"
   val commandDescription: String = "Print statistics on reads in an ADAM file (similar to samtools flagstat)"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
+  def apply(cmdLine: Array[String]): ADAMCommand = {
     new FlagStat(Args4j[FlagStatArgs](cmdLine))
   }
 }
@@ -40,8 +40,8 @@ class FlagStatArgs extends Args4jBase with SparkArgs with ParquetArgs {
   val inputPath: String = null
 }
 
-class FlagStat(protected val args: FlagStatArgs) extends AdamSparkCommand[FlagStatArgs] {
-  val companion: AdamCommandCompanion = FlagStat
+class FlagStat(protected val args: FlagStatArgs) extends ADAMSparkCommand[FlagStatArgs] {
+  val companion: ADAMCommandCompanion = FlagStat
 
   def run(sc: SparkContext, job: Job): Unit = {
     // Quiet parquet logging...

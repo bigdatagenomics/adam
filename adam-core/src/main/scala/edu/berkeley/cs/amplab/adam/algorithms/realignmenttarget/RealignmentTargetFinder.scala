@@ -16,13 +16,13 @@
  
 package edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
-import org.apache.spark.Logging
 import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord,ADAMPileup}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import org.apache.spark.Logging
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
 import scala.annotation.tailrec
 import scala.collection.immutable.TreeSet
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 
 object RealignmentTargetFinder {
 

@@ -16,9 +16,9 @@
 package edu.berkeley.cs.amplab.adam.converters
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMNucleotideContigFragment
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import org.apache.spark.rdd.RDD
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
 import scala.math.Ordering._
 
 /**

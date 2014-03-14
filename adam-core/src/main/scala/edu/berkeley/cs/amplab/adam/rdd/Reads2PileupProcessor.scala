@@ -17,11 +17,11 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.Logging
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util._
 import net.sf.samtools.{CigarOperator, TextCigarCodec}
+import org.apache.spark.Logging
+import org.apache.spark.rdd.RDD
 import scala.collection.JavaConverters._
 import scala.collection.immutable.StringOps
 

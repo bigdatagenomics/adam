@@ -16,8 +16,8 @@
 
 package edu.berkeley.cs.amplab.adam.util
 
-import java.io.{StringWriter, Writer}
 import edu.berkeley.cs.amplab.adam.metrics.aggregators.Aggregated
+import java.io.{StringWriter, Writer}
 
 class Histogram[T](val valueToCount: Map[T, Int]) extends Aggregated[T] with Serializable {
 

@@ -1,16 +1,16 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.rich.ReferenceLocation
+import java.io.File
 import org.apache.spark.Logging
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
 import scala.collection.immutable._
 import scala.collection.mutable
-import java.io.File
 
 class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable with Logging {
   log.info("SNP table has %s contigs and %s entries".format(table.size, table.values.map(_.size).sum))

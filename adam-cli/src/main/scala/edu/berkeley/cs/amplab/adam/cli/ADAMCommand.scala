@@ -19,11 +19,11 @@ package edu.berkeley.cs.amplab.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 
-trait AdamCommandCompanion {
+trait ADAMCommandCompanion {
   val commandName: String
   val commandDescription: String
 
-  def apply(cmdLine: Array[String]): AdamCommand
+  def apply(cmdLine: Array[String]): ADAMCommand
 
   // Make running an ADAM command easier from an IDE
   def main(cmdLine: Array[String]) {
@@ -31,11 +31,11 @@ trait AdamCommandCompanion {
   }
 }
 
-trait AdamCommand extends Runnable {
-  val companion: AdamCommandCompanion
+trait ADAMCommand extends Runnable {
+  val companion: ADAMCommandCompanion
 }
 
-trait AdamSparkCommand[A <: Args4jBase with SparkArgs] extends AdamCommand with SparkCommand {
+trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with SparkCommand {
 
   protected val args: A
 

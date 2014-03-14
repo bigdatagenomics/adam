@@ -16,8 +16,8 @@
 
 package edu.berkeley.cs.amplab.adam.rdd
 
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMPileup, Base }
 import org.scalatest.FunSuite
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, Base}
 
 class PileupAggregationSuite extends FunSuite {
 

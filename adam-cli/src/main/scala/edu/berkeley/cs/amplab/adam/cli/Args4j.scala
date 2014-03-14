@@ -17,10 +17,10 @@
 package edu.berkeley.cs.amplab.adam.cli
 
 import org.kohsuke.args4j.{CmdLineException, CmdLineParser, Option}
-import scala.collection.JavaConversions._
-import scala.util.control.Exception._
 import scala.Left
 import scala.Right
+import scala.collection.JavaConversions._
+import scala.util.control.Exception._
 
 class Args4jBase {
   @Option(name = "-h", aliases = Array("-help", "--help", "-?"), usage = "Print help")

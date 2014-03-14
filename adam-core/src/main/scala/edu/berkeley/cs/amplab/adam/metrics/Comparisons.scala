@@ -15,11 +15,11 @@
  */
 package edu.berkeley.cs.amplab.adam.metrics
 
+import edu.berkeley.cs.amplab.adam.metrics.filters.ComparisonsFilter
 import edu.berkeley.cs.amplab.adam.models.ReadBucket
 import edu.berkeley.cs.amplab.adam.projections.FieldValue
-import java.util.regex.Pattern
 import java.io.Writer
-import edu.berkeley.cs.amplab.adam.metrics.filters.ComparisonsFilter
+import java.util.regex.Pattern
 
 trait BucketComparisons[+T] {
   /**

@@ -17,15 +17,12 @@
 package edu.berkeley.cs.amplab.adam.rdd.variation
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMDatabaseVariantAnnotation}
-import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext,
-                                           ConcordanceTable,
-                                           SequenceDictionary,
-                                           SequenceRecord}
-import edu.berkeley.cs.amplab.adam.rich.{GenotypeType, RichADAMVariant}
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, ConcordanceTable, SequenceDictionary, SequenceRecord}
 import edu.berkeley.cs.amplab.adam.rich.RichADAMGenotype._
+import edu.berkeley.cs.amplab.adam.rich.{GenotypeType, RichADAMVariant}
 import org.apache.spark.Logging
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
 
 class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends Serializable with Logging {
   /**

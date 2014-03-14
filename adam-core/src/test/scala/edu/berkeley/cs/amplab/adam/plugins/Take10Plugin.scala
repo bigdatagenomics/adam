@@ -17,10 +17,10 @@ package edu.berkeley.cs.amplab.adam.plugins
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import org.apache.avro.Schema
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
-class Take10Plugin extends AdamPlugin[ADAMRecord, ADAMRecord] with Serializable {
+class Take10Plugin extends ADAMPlugin[ADAMRecord, ADAMRecord] with Serializable {
    override def projection: Option[Schema] = None
    override def predicate: Option[(ADAMRecord) => Boolean] = None
 

@@ -15,30 +15,30 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import org.apache.avro.generic.IndexedRecord
-import scala.collection.JavaConversions._
 import edu.berkeley.cs.amplab.adam.util.ParquetFileTraversable
-import org.kohsuke.args4j.Argument
 import java.util
+import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
+import org.kohsuke.args4j.Argument
+import scala.collection.JavaConversions._
 
-object PrintAdam extends AdamCommandCompanion {
+object PrintADAM extends ADAMCommandCompanion {
   val commandName: String = "print"
   val commandDescription: String = "Print an ADAM formatted file"
 
   def apply(cmdLine: Array[String]) = {
-    new PrintAdam(Args4j[PrintAdamArgs](cmdLine))
+    new PrintADAM(Args4j[PrintADAMArgs](cmdLine))
   }
 }
 
-class PrintAdamArgs extends Args4jBase with SparkArgs {
+class PrintADAMArgs extends Args4jBase with SparkArgs {
   @Argument(required = true, metaVar = "FILE(S)", multiValued = true, usage = "One or more files to print")
   var filesToPrint = new util.ArrayList[String]()
 }
 
-class PrintAdam(protected val args: PrintAdamArgs) extends AdamSparkCommand[PrintAdamArgs] {
-  val companion = PrintAdam
+class PrintADAM(protected val args: PrintADAMArgs) extends ADAMSparkCommand[PrintADAMArgs] {
+  val companion = PrintADAM
 
   def run(sc: SparkContext, job: Job) {
     for (file <- args.filesToPrint) {

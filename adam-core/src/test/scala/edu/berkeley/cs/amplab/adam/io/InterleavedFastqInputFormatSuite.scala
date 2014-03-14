@@ -19,9 +19,8 @@
 package edu.berkeley.cs.amplab.adam.io
 
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
-import org.apache.spark.rdd.RDD
 import org.apache.hadoop.io.Text
-
+import org.apache.spark.rdd.RDD
 
 class InterleavedFastqInputFormatSuite extends SparkFunSuite {
   (1 to 4) foreach { testNumber =>

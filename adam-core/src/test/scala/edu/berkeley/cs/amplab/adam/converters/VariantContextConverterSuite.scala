@@ -15,13 +15,13 @@
  */
 package edu.berkeley.cs.amplab.adam.converters
 
-import scala.collection.JavaConversions._
-import org.scalatest.FunSuite
-import org.broadinstitute.variant.variantcontext.{GenotypeType, Allele, VariantContextBuilder, GenotypeBuilder}
-import java.lang.Integer
-import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceRecord, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.avro._
+import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceRecord, SequenceDictionary}
+import java.lang.Integer
+import org.broadinstitute.variant.variantcontext.{GenotypeType, Allele, VariantContextBuilder, GenotypeBuilder}
+import org.scalatest.FunSuite
 import scala.Some
+import scala.collection.JavaConversions._
 
 class VariantContextConverterSuite extends FunSuite {
   val dictionary = SequenceDictionary(SequenceRecord(1, "chr1", 249250621, "file://ucsc.hg19.fasta", "1b22b98cdeb4a9304cb5d48026a85128"))

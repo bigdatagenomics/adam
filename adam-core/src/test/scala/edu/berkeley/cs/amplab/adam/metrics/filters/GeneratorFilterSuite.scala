@@ -15,9 +15,8 @@
  */
 package edu.berkeley.cs.amplab.adam.metrics.filters
 
-import org.scalatest._
-
 import edu.berkeley.cs.amplab.adam.metrics
+import org.scalatest._
 
 class GeneratorFilterSuite extends FunSuite {
 

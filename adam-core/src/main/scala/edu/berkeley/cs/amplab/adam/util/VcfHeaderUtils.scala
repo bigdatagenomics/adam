@@ -16,19 +16,12 @@
 package edu.berkeley.cs.amplab.adam.util
 
 import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.rdd.AdamRDDFunctions
-import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMRDDFunctions
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariantContextRDDFunctions
+import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.apache.spark.rdd.RDD
-import org.broadinstitute.variant.vcf.{VCFHeader, 
-                                       VCFHeaderLine, 
-                                       VCFInfoHeaderLine,
-                                       VCFContigHeaderLine, 
-                                       VCFConstants,
-                                       VCFStandardHeaderLines,
-                                       VCFHeaderLineCount,
-                                       VCFHeaderLineType}
+import org.broadinstitute.variant.vcf.{VCFHeader, VCFHeaderLine, VCFInfoHeaderLine, VCFContigHeaderLine, VCFConstants, VCFStandardHeaderLines, VCFHeaderLineCount, VCFHeaderLineType}
 
 /**
  * Convenience object for building a VCF header from sequence data.

@@ -16,8 +16,8 @@
 
 package edu.berkeley.cs.amplab.adam.rich
 
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMVariant, ADAMContig }
 import org.scalatest.FunSuite
-import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMContig}
 
 class RichADAMVariantSuite extends FunSuite {
   test("Equality without reference MD5") {

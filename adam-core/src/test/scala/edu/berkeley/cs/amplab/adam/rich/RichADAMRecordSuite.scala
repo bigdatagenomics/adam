@@ -15,10 +15,10 @@
  */
 package edu.berkeley.cs.amplab.adam.rich
 
-import org.scalatest.FunSuite
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import RichADAMRecord._
-import edu.berkeley.cs.amplab.adam.models.{TagType, Attribute}
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.models.{ TagType, Attribute }
+import org.scalatest.FunSuite
 
 class RichADAMRecordSuite extends FunSuite {
 
@@ -42,8 +42,7 @@ class RichADAMRecordSuite extends FunSuite {
     assert(recordWithHardClipping.unclippedEnd == Some(20L))
   }
 
-  test( "Reference End Position")
-  {
+  test("Reference End Position") {
     val unmappedRead = ADAMRecord.newBuilder().setReadMapped(false).setStart(0).setCigar("10M").build()
     val recordWithoutClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10).build()
     val recordWithClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("8M2S").setStart(10).build()
@@ -70,8 +69,7 @@ class RichADAMRecordSuite extends FunSuite {
 
   test("Cigar Clipping Sequence") {
     val softClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(100).setCigar("10S90M").build()
-    assert( softClippedRead.referencePositions(0) == Some(90L))
-
+    assert(softClippedRead.referencePositions(0) == Some(90L))
 
   }
 
@@ -85,43 +83,43 @@ class RichADAMRecordSuite extends FunSuite {
   test("Reference Positions") {
 
     val hardClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("90M10H").build()
-    assert( hardClippedRead.referencePositions.length == 90)
-    assert( hardClippedRead.referencePositions(0) == Some(1000L))
+    assert(hardClippedRead.referencePositions.length == 90)
+    assert(hardClippedRead.referencePositions(0) == Some(1000L))
 
     val softClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10S90M").build()
-    assert( softClippedRead.referencePositions.length == 100)
-    assert( softClippedRead.referencePositions(0) == Some(990L))
-    assert( softClippedRead.referencePositions(10) == Some(1000L))
+    assert(softClippedRead.referencePositions.length == 100)
+    assert(softClippedRead.referencePositions(0) == Some(990L))
+    assert(softClippedRead.referencePositions(10) == Some(1000L))
 
     val doubleMatchNonsenseRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M10M").build()
-    Range(0,20).foreach(  i => assert( doubleMatchNonsenseRead.referencePositions(i) == Some(1000 + i) ))
+    Range(0, 20).foreach(i => assert(doubleMatchNonsenseRead.referencePositions(i) == Some(1000 + i)))
 
     val deletionRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("5M5D10M").build()
-    assert( deletionRead.referencePositions.length == 15)
-    assert( deletionRead.referencePositions(0) == Some(1000L))
-    assert( deletionRead.referencePositions(5) == Some(1010L))
+    assert(deletionRead.referencePositions.length == 15)
+    assert(deletionRead.referencePositions(0) == Some(1000L))
+    assert(deletionRead.referencePositions(5) == Some(1010L))
 
     val insertionRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M2I10M").build()
-    assert( insertionRead.referencePositions.length == 22)
-    assert( insertionRead.referencePositions(0) == Some(1000L))
-    assert( insertionRead.referencePositions(10) == None)
-    assert( insertionRead.referencePositions(12) == Some(1010L))
+    assert(insertionRead.referencePositions.length == 22)
+    assert(insertionRead.referencePositions(0) == Some(1000L))
+    assert(insertionRead.referencePositions(10) == None)
+    assert(insertionRead.referencePositions(12) == Some(1010L))
 
     val indelRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M3D10M2I").build()
-    assert( indelRead.referencePositions.length == 22)
-    assert( indelRead.referencePositions(0) == Some(1000L))
-    assert( indelRead.referencePositions(10) == Some(1013L))
-    assert( indelRead.referencePositions(20)  == None )
+    assert(indelRead.referencePositions.length == 22)
+    assert(indelRead.referencePositions(0) == Some(1000L))
+    assert(indelRead.referencePositions(10) == Some(1013L))
+    assert(indelRead.referencePositions(20) == None)
 
     val hg00096read = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("1S28M1D32M1I15M1D23M").build()
-    assert( hg00096read.referencePositions.length == 100)
-    assert( hg00096read.referencePositions(0) == Some(999L))
-    assert( hg00096read.referencePositions(1) == Some(1000L))
-    assert( hg00096read.referencePositions(29)  == Some(1029L) )
-    assert( hg00096read.referencePositions(61)  == None )
-    assert( hg00096read.referencePositions(62)  == Some(1061L) )
-    assert( hg00096read.referencePositions(78)  == Some(1078L) )
-    assert( hg00096read.referencePositions(99)  == Some(1099L) )
+    assert(hg00096read.referencePositions.length == 100)
+    assert(hg00096read.referencePositions(0) == Some(999L))
+    assert(hg00096read.referencePositions(1) == Some(1000L))
+    assert(hg00096read.referencePositions(29) == Some(1029L))
+    assert(hg00096read.referencePositions(61) == None)
+    assert(hg00096read.referencePositions(62) == Some(1061L))
+    assert(hg00096read.referencePositions(78) == Some(1078L))
+    assert(hg00096read.referencePositions(99) == Some(1099L))
 
   }
 

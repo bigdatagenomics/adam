@@ -15,18 +15,15 @@
  */
 package edu.berkeley.cs.amplab.adam.serialization
 
-import org.apache.avro.specific.{SpecificDatumWriter, SpecificDatumReader, SpecificRecord}
-import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
-import org.apache.avro.io.{BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory}
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, 
-                                         ADAMPileup, 
-                                         ADAMRecord, 
-                                         ADAMNucleotideContigFragment}
+import com.esotericsoftware.kryo.{Kryo, Serializer}
+import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget._
+import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMPileup, ADAMRecord, ADAMNucleotideContigFragment}
 import edu.berkeley.cs.amplab.adam.models._
 import it.unimi.dsi.fastutil.io.{FastByteArrayInputStream, FastByteArrayOutputStream}
+import org.apache.avro.io.{BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory}
+import org.apache.avro.specific.{SpecificDatumWriter, SpecificDatumReader, SpecificRecord}
 import org.apache.spark.serializer.KryoRegistrator
-import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget._
 import scala.collection.immutable.{TreeSet, NumericRange}
 
 case class InputStreamWithDecoder(size: Int) {
@@ -65,7 +62,7 @@ class AvroSerializer[T <: SpecificRecord : ClassManifest] extends Serializer[T] 
   }
 }
 
-class AdamKryoRegistrator extends KryoRegistrator {
+class ADAMKryoRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo) {
     kryo.register(classOf[ADAMRecord], new AvroSerializer[ADAMRecord]())
     kryo.register(classOf[ADAMPileup], new AvroSerializer[ADAMPileup]())

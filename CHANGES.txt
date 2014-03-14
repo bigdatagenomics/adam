@@ -17,7 +17,7 @@ ADAM 0.7.0
 
   * Added ability to load and merge multiple ADAM files into a single RDD.
 
-  * Pairwise, quantitative ADAM file comparisons: the CompareAdam command has been extended to calculate
+  * Pairwise, quantitative ADAM file comparisons: the CompareADAM command has been extended to calculate
     metrics on pairs of ADAM files which contain the same reads processed in two different ways (e.g.
     two different implementations of a pre-processing pipeline).  This can be used to compare different
     pipelines based on their read-by-read concordance across a number of fields: position, alignment,
@@ -40,7 +40,7 @@ ADAM 0.7.0
   * Added ADAMRod model and Reads2Rods transformation; this is a pileup generation function that better takes
     advantage of locality for data that is already sorted. This was introduced in PR#36.
 
-  * ISSUE 101: Adding ability to call plugins from the command line not defined in the main Adam jar and included
+  * ISSUE 101: Adding ability to call plugins from the command line not defined in the main ADAM jar and included
     in the classpath.
 
   * ISSUE 83: Add ability to perform a "region join" to RDDs of ADAMRecords.
@@ -78,7 +78,7 @@ ADAM 0.7.0
     is does not introduce incompatible changes to the API, but changes the APIs functionality. This change was
     introduced in PR#125 which came out of issue #121.
 
-  * Added switches to AdamContext creation code to allow for configuration of Kryo buffer size, and to allow
+  * Added switches to ADAMContext creation code to allow for configuration of Kryo buffer size, and to allow
     registration of job statistics listener for profiling. This change was introduced in PR#161 which came out
     of issue #149.
 
