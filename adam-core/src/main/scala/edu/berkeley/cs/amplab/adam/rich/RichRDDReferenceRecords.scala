@@ -16,12 +16,12 @@
 
 package edu.berkeley.cs.amplab.adam.rich
 
+import ReferenceMappingContext._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.models.ReferenceMapping
-import ReferenceMappingContext._
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext
 import org.apache.avro.specific.SpecificRecord
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 class RichRDDReferenceRecords[T <: SpecificRecord : ClassManifest](rdd: RDD[T],
                                                                    mapping : ReferenceMapping[T])

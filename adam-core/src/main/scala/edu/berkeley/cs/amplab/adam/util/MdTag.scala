@@ -15,15 +15,15 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
+import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
 import scala.collection.immutable
 import scala.collection.immutable.NumericRange
 import scala.util.matching.Regex
-import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 //import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
-import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 
 object MdTagEvent extends Enumeration {
   val Match, Mismatch, Delete = Value

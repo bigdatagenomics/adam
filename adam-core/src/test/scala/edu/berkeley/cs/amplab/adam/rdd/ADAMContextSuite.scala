@@ -15,17 +15,17 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import parquet.filter.UnboundRecordFilter
-import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.util.PhredUtils._
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import java.io.File
-import org.apache.hadoop.fs.Path
 import java.util.UUID
+import org.apache.hadoop.fs.Path
+import org.apache.spark.rdd.RDD
+import parquet.filter.UnboundRecordFilter
 
-class AdamContextSuite extends SparkFunSuite {
+class ADAMContextSuite extends SparkFunSuite {
 
   sparkTest("sc.adamLoad should not fail on unmapped reads") {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("unmapped.sam").getFile
@@ -52,7 +52,7 @@ class AdamContextSuite extends SparkFunSuite {
     assert(phredToSuccessProbability(50) > 0.99998 && phredToSuccessProbability(50) < 0.999999)
   }
 
-  sparkTest("loadAdamFromPaths can load simple RDDs that have just been saved") {
+  sparkTest("loadADAMFromPaths can load simple RDDs that have just been saved") {
     val a0 = ADAMRecord.newBuilder()
       .setRecordGroupName("group0")
       .setReadName("read0")
@@ -76,7 +76,7 @@ class AdamContextSuite extends SparkFunSuite {
 
     saved.adamSave(loc)
     try {
-      val loaded = sc.loadAdamFromPaths(Seq(path))
+      val loaded = sc.loadADAMFromPaths(Seq(path))
 
 
     assert(loaded.count() === saved.count())
@@ -105,7 +105,7 @@ class AdamContextSuite extends SparkFunSuite {
      *     └── nomatch6/
      */
 
-    val tempDir = File.createTempFile("AdamContextSuite", "").getParentFile
+    val tempDir = File.createTempFile("ADAMContextSuite", "").getParentFile
 
     def createDir(dir : File, name : String) : File = {
       val dirFile = new File(dir, name)
@@ -147,7 +147,7 @@ class AdamContextSuite extends SparkFunSuite {
   should be suitable for adamSave().
    */
   def tempLocation(suffix : String = "adam") : String = {
-    val tempFile = File.createTempFile("AdamContextSuite", "")
+    val tempFile = File.createTempFile("ADAMContextSuite", "")
     val tempDir = tempFile.getParentFile
     new File(tempDir, tempFile.getName + suffix).getAbsolutePath
   }

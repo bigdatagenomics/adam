@@ -15,11 +15,11 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-import java.io.File
-import scala.io._
-import scala.collection._
-import java.util.regex._
 import edu.berkeley.cs.amplab.adam.models.{SequenceDictionary, SequenceRecord, ReferenceRegion}
+import java.io.File
+import java.util.regex._
+import scala.collection._
+import scala.io._
 
 /**
  * Reads GATK-style interval list files

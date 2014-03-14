@@ -15,10 +15,10 @@
  */
 package edu.berkeley.cs.amplab.adam.core.util
 
-import scala.collection.JavaConversions._
-import scala.Some
-import scala.collection.JavaConverters._
 import java.util.Properties
+import scala.Some
+import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 /** A static object that gets the resource "git.properties" and renders the
  * build-information in different formats. The parsing is “lazy”, it parses

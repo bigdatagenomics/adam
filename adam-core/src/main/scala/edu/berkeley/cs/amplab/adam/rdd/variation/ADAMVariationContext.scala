@@ -23,13 +23,12 @@ import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import fi.tkk.ics.hadoop.bam._
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{SparkContext, Logging}
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.{SparkContext, Logging}
 import org.broadinstitute.variant.vcf.{VCFHeaderLine, VCFHeader}
 import parquet.hadoop.util.ContextUtil
 import scala.collection.JavaConversions._
-
 
 private object ADAMVCFOutputFormat {
   private var header : Option[VCFHeader] = None

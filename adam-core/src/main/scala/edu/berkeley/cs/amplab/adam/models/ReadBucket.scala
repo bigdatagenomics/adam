@@ -15,10 +15,10 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
+import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.{Kryo, Serializer}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.serialization.AvroSerializer
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Input, Output}
 
 /**
  * This class is similar to SingleReadBucket, except it breaks the reads down further.

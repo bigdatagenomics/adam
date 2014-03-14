@@ -15,8 +15,8 @@
  */
 package edu.berkeley.cs.amplab.adam.rich
 
-import edu.berkeley.cs.amplab.adam.models.{ReferenceRegion, ReferenceMapping}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.models.{ReferenceRegion, ReferenceMapping}
 
 /**
  * A common location in which to drop some ReferenceMapping implementations.

@@ -15,25 +15,24 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd.comparisons
 
-import edu.berkeley.cs.amplab.adam.models.ReadBucket
-import edu.berkeley.cs.amplab.adam.projections.{FieldValue, Projection}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
-import org.apache.spark.rdd.RDD
-import scala.Some
-import org.apache.hadoop.fs.Path
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.metrics.BucketComparisons
 import edu.berkeley.cs.amplab.adam.metrics.aggregators.{Aggregated, Aggregator}
 import edu.berkeley.cs.amplab.adam.metrics.filters.GeneratorFilter
+import edu.berkeley.cs.amplab.adam.models.ReadBucket
+import edu.berkeley.cs.amplab.adam.projections.{FieldValue, Projection}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import org.apache.hadoop.fs.Path
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
+import scala.Some
 
 class ComparisonTraversalEngine(schema: Seq[FieldValue], input1 : RDD[ADAMRecord], input2 : RDD[ADAMRecord])
                                (implicit sc : SparkContext) {
   def this(schema : Seq[FieldValue], input1Paths : Seq[Path], input2Paths : Seq[Path])
           (implicit sc : SparkContext) =
-    this(schema, sc.loadAdamFromPaths(input1Paths), sc.loadAdamFromPaths(input2Paths))(sc)
+    this(schema, sc.loadADAMFromPaths(input1Paths), sc.loadADAMFromPaths(input2Paths))(sc)
 
   lazy val projection = Projection(schema: _*)
 

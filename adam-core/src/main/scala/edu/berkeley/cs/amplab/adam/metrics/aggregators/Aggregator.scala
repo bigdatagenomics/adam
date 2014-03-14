@@ -15,9 +15,9 @@
  */
 package edu.berkeley.cs.amplab.adam.metrics.aggregators
 
-import java.io.Writer
-import edu.berkeley.cs.amplab.adam.util.Histogram
 import edu.berkeley.cs.amplab.adam.metrics
+import edu.berkeley.cs.amplab.adam.util.Histogram
+import java.io.Writer
 
 trait Aggregator[SingleType, AggType <: Aggregated[SingleType]] extends Serializable {
 

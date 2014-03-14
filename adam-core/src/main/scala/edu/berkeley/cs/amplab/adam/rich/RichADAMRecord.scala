@@ -16,13 +16,13 @@
 package edu.berkeley.cs.amplab.adam.rich
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.util._
-import scala.Some
-import scala.concurrent.JavaConversions._
-import scala.collection.immutable.NumericRange
 import edu.berkeley.cs.amplab.adam.models.Attribute
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.util._
+import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
+import scala.Some
+import scala.collection.immutable.NumericRange
+import scala.concurrent.JavaConversions._
 
 object RichADAMRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton

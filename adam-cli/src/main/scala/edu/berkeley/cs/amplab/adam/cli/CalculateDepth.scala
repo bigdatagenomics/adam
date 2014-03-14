@@ -15,24 +15,22 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.models.{SequenceDictionary, ReferenceRegion}
+import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField._
+import edu.berkeley.cs.amplab.adam.projections.Projection
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.rdd.RegionJoin
+import edu.berkeley.cs.amplab.adam.rich.ReferenceMappingContext._
+import edu.berkeley.cs.amplab.adam.util.ParquetLogger
 import java.util.logging.Level
-import scala.io._
-
-import org.kohsuke.args4j.{Argument,Option=>Args4jOption}
-import org.kohsuke.args4j.spi.BooleanOptionHandler
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.models.{SequenceDictionary, ReferenceRegion}
-import edu.berkeley.cs.amplab.adam.projections.Projection
-import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField._
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.rdd.RegionJoin
-import edu.berkeley.cs.amplab.adam.rich.ReferenceMappingContext._
-import edu.berkeley.cs.amplab.adam.util.ParquetLogger
+import org.kohsuke.args4j.spi.BooleanOptionHandler
+import org.kohsuke.args4j.{Argument,Option=>Args4jOption}
+import scala.io._
 
 /**
  * CalculateDepth (accessible as the command 'depth' through the CLI) takes two arguments,
@@ -41,12 +39,12 @@ import edu.berkeley.cs.amplab.adam.util.ParquetLogger
  * It then reports, on standard out, the location and name of each variant along with the
  * calculated depth.
  */
-object CalculateDepth extends AdamCommandCompanion {
+object CalculateDepth extends ADAMCommandCompanion {
   val commandName: String = "depth"
   val commandDescription: String = "Calculate the depth from a given ADAM file, " +
     "at each variant in a VCF"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
+  def apply(cmdLine: Array[String]): ADAMCommand = {
     new CalculateDepth(Args4j[CalculateDepthArgs](cmdLine))
   }
 }
@@ -62,8 +60,8 @@ class CalculateDepthArgs extends Args4jBase with SparkArgs with ParquetArgs {
   val cartesian: Boolean = false
 }
 
-class CalculateDepth(protected val args: CalculateDepthArgs) extends AdamSparkCommand[CalculateDepthArgs] {
-  val companion: AdamCommandCompanion = CalculateDepth
+class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCommand[CalculateDepthArgs] {
+  val companion: ADAMCommandCompanion = CalculateDepth
 
   def run(sc: SparkContext, job: Job): Unit = {
     // Quiet parquet logging...

@@ -15,9 +15,9 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-import org.scalatest._
-import java.io.File
 import edu.berkeley.cs.amplab.adam.models.ReferenceRegion
+import java.io.File
+import org.scalatest._
 
 class IntervalListReaderSuite extends FunSuite {
 

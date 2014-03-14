@@ -16,29 +16,27 @@
 
 package edu.berkeley.cs.amplab.adam.rdd
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
-import org.apache.spark.Logging
+import RealignIndels._
+import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget.{RealignmentTargetFinder, IndelRealignmentTarget, TargetOrdering, ZippedTargetOrdering}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget.{RealignmentTargetFinder,
-                                                                 IndelRealignmentTarget,
-                                                                 TargetOrdering,
-                                                                 ZippedTargetOrdering}
-import org.apache.spark.broadcast.Broadcast
-import scala.collection.immutable.TreeSet
-import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions
-import scala.annotation.tailrec
-import scala.collection.mutable.Map
-import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
-import scala.collection.immutable.NumericRange
 import edu.berkeley.cs.amplab.adam.models.Consensus
-import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.rich.RichCigar
 import edu.berkeley.cs.amplab.adam.rich.RichCigar._
+import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions
+import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
 import edu.berkeley.cs.amplab.adam.util.MdTag
 import edu.berkeley.cs.amplab.adam.util.NormalizationUtils._
+import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
+import org.apache.spark.Logging
+import org.apache.spark.SparkContext._
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
+import scala.annotation.tailrec
+import scala.collection.immutable.NumericRange
+import scala.collection.immutable.TreeSet
+import scala.collection.mutable.Map
 
 private[rdd] object RealignIndels {
 

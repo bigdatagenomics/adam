@@ -18,9 +18,9 @@ package edu.berkeley.cs.amplab.adam.converters
 import edu.berkeley.cs.amplab.adam.avro._
 import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary, ReferencePosition}
 import edu.berkeley.cs.amplab.adam.util.VcfStringUtils._
-import org.broadinstitute.variant.vcf._
 import org.broadinstitute.variant.variantcontext._
 import org.broadinstitute.variant.vcf.VCFConstants
+import org.broadinstitute.variant.vcf._
 import scala.collection.JavaConversions._
 
 object VariantContextConverter {

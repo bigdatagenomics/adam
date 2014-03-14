@@ -15,8 +15,8 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-import net.sf.samtools.SAMRecord.SAMTagAndValue
 import edu.berkeley.cs.amplab.adam.models.{TagType, Attribute}
+import net.sf.samtools.SAMRecord.SAMTagAndValue
 
 /**
  * AttributeUtils is a utility object for parsing optional fields from a BAM file, or

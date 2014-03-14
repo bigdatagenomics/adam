@@ -16,7 +16,7 @@
 package edu.berkeley.cs.amplab.adam.converters
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMNucleotideContigFragment, Base}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import org.apache.spark.rdd.RDD
 import org.scalatest.FunSuite

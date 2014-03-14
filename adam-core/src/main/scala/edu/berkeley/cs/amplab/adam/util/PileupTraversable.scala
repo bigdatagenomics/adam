@@ -16,18 +16,18 @@
 
 package edu.berkeley.cs.amplab.adam.util
 
-import parquet.hadoop.ParquetInputFormat
-import parquet.avro.AvroReadSupport
-import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
-import org.apache.hadoop.mapreduce.Job
-import scala.collection.JavaConversions._
-import net.sf.samtools.{TextCigarCodec, CigarOperator}
-import scala.collection.mutable.ListBuffer
-import parquet.hadoop.util.ContextUtil
-import scala.collection.SortedMap
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
+import net.sf.samtools.{TextCigarCodec, CigarOperator}
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import parquet.avro.AvroReadSupport
+import parquet.hadoop.ParquetInputFormat
+import parquet.hadoop.util.ContextUtil
+import scala.collection.JavaConversions._
+import scala.collection.SortedMap
+import scala.collection.mutable.ListBuffer
 
 object Base extends Enumeration with Serializable {
   val A, C, T, G, N = Value

@@ -15,32 +15,30 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
+import edu.berkeley.cs.amplab.adam.metrics.aggregators.{HistogramAggregator, CombinedAggregator, AggregatedCollection, Writable}
+import edu.berkeley.cs.amplab.adam.metrics.{DefaultComparisons, CombinedComparisons, Collection, BucketComparisons}
 import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField._
 import edu.berkeley.cs.amplab.adam.projections.FieldValue
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.rdd.comparisons.ComparisonTraversalEngine
 import edu.berkeley.cs.amplab.adam.util._
+import java.io.{PrintWriter, OutputStreamWriter}
+import java.util.logging.Level
 import org.apache.hadoop.fs.{Path, FileSystem}
-
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.kohsuke.args4j.{Option => Args4jOption, Argument}
-
 import scala.collection.Seq
-import java.util.logging.Level
-import java.io.{PrintWriter, OutputStreamWriter}
-import edu.berkeley.cs.amplab.adam.rdd.comparisons.ComparisonTraversalEngine
-import edu.berkeley.cs.amplab.adam.metrics.{DefaultComparisons, CombinedComparisons, Collection, BucketComparisons}
-import edu.berkeley.cs.amplab.adam.metrics.aggregators.{HistogramAggregator, CombinedAggregator, AggregatedCollection, Writable}
 
 /**
- * CompareAdam is a tool for pairwise comparison of ADAM files (or merged sets of ADAM files, see the
+ * CompareADAM is a tool for pairwise comparison of ADAM files (or merged sets of ADAM files, see the
  * note on the -recurse{1,2} optional parameters, below).
  *
- * The canonical use-case for CompareAdam involves a single input file run through (for example) two
+ * The canonical use-case for CompareADAM involves a single input file run through (for example) two
  * different implementations of the same pipeline, producing two comparable ADAM files at the end.
  *
- * CompareAdam will load these ADAM files and perform a read-name-based equi-join.  It then computes
+ * CompareADAM will load these ADAM files and perform a read-name-based equi-join.  It then computes
  * one or more metrics (embodied as BucketComparisons values) across the joined records, as specified
  * on the command-line, and aggregates each metric into a histogram (although, this can be modified if
  * other aggregations are required in the future) and outputs the resulting histograms to a specified
@@ -53,19 +51,19 @@ import edu.berkeley.cs.amplab.adam.metrics.aggregators.{HistogramAggregator, Com
  * A subsequent tool like FindReads can be used to track down which reads give rise to particular aggregated
  * bins in the output histograms, if further diagnosis is needed.
  */
-object CompareAdam extends AdamCommandCompanion with Serializable {
+object CompareADAM extends ADAMCommandCompanion with Serializable {
 
   val commandName: String = "compare"
   val commandDescription: String = "Compare two ADAM files based on read name"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
-    new CompareAdam(Args4j[CompareAdamArgs](cmdLine))
+  def apply(cmdLine: Array[String]): ADAMCommand = {
+    new CompareADAM(Args4j[CompareADAMArgs](cmdLine))
   }
 
   type GeneratedResults[A] = RDD[(CharSequence, Seq[A])]
 
   /**
-   * @see CompareAdamArgs.recurse1, CompareAdamArgs.recurse2
+   * @see CompareADAMArgs.recurse1, CompareADAMArgs.recurse2
    */
   def setupTraversalEngine(sc: SparkContext,
                            input1Path: String,
@@ -96,7 +94,7 @@ object CompareAdam extends AdamCommandCompanion with Serializable {
     names.map(DefaultComparisons.findComparison)
 }
 
-class CompareAdamArgs extends Args4jBase with SparkArgs with ParquetArgs with Serializable {
+class CompareADAMArgs extends Args4jBase with SparkArgs with ParquetArgs with Serializable {
 
   @Argument(required = true, metaVar = "INPUT1", usage = "The first ADAM file to compare", index = 0)
   val input1Path: String = null
@@ -126,9 +124,9 @@ class CompareAdamArgs extends Args4jBase with SparkArgs with ParquetArgs with Se
   val directory: String = null
 }
 
-class CompareAdam(protected val args: CompareAdamArgs) extends AdamSparkCommand[CompareAdamArgs] with Serializable {
+class CompareADAM(protected val args: CompareADAMArgs) extends ADAMSparkCommand[CompareADAMArgs] with Serializable {
 
-  val companion: AdamCommandCompanion = CompareAdam
+  val companion: ADAMCommandCompanion = CompareADAM
 
   /**
    * prints out a high-level summary of the compared files, including
@@ -186,7 +184,7 @@ class CompareAdam(protected val args: CompareAdamArgs) extends AdamSparkCommand[
       return
     }
 
-    val generators: Seq[BucketComparisons[Any]] = CompareAdam.parseGenerators(args.comparisons)
+    val generators: Seq[BucketComparisons[Any]] = CompareADAM.parseGenerators(args.comparisons)
     val aggregators = (0 until generators.size).map( i => new HistogramAggregator[Any]() )
 
     val generator = new CombinedComparisons(generators)
@@ -194,7 +192,7 @@ class CompareAdam(protected val args: CompareAdamArgs) extends AdamSparkCommand[
 
     // Separately constructing the traversal engine, since we'll need it to generate the aggregated values
     // and the summary statistics separately.
-    val engine = CompareAdam.setupTraversalEngine(sc,
+    val engine = CompareADAM.setupTraversalEngine(sc,
       args.input1Path,
       args.recurse1,
       args.input2Path,
@@ -202,7 +200,7 @@ class CompareAdam(protected val args: CompareAdamArgs) extends AdamSparkCommand[
       generator)
 
     // generate the raw values...
-    val generated : CompareAdam.GeneratedResults[Collection[Seq[Any]]] = engine.generate(generator)
+    val generated : CompareADAM.GeneratedResults[Collection[Seq[Any]]] = engine.generate(generator)
 
     // ... and aggregate them.
     val values : AggregatedCollection[Any,Histogram[Any]] = ComparisonTraversalEngine.combine(generated, aggregator)

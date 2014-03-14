@@ -30,6 +30,9 @@
 
 package edu.berkeley.cs.amplab.adam.io;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -44,10 +47,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.util.LineReader;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
 
 public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text>
 {

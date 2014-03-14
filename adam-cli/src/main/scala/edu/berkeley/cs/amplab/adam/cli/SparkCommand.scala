@@ -16,12 +16,12 @@
 
 package edu.berkeley.cs.amplab.adam.cli
 
-import org.kohsuke.args4j.{Option => Args4jOption}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext
+import edu.berkeley.cs.amplab.adam.serialization.ADAMKryoProperties
 import java.util
-import scala.collection.JavaConversions._
 import org.apache.spark.SparkContext
-import edu.berkeley.cs.amplab.adam.serialization.AdamKryoProperties
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext
+import org.kohsuke.args4j.{Option => Args4jOption}
+import scala.collection.JavaConversions._
 
 trait SparkArgs extends Args4jBase {
   @Args4jOption(required = false, name = "-spark_master", usage = "Spark Master (default = \"local[#cores]\")")
@@ -38,10 +38,10 @@ trait SparkArgs extends Args4jBase {
   var spark_add_stats_listener = false
 }
 
-trait SparkCommand extends AdamCommand {
+trait SparkCommand extends ADAMCommand {
 
   def createSparkContext(args: SparkArgs): SparkContext = {
-    AdamContext.createSparkContext(
+    ADAMContext.createSparkContext(
       companion.commandName,
       args.spark_master,
       args.spark_home,

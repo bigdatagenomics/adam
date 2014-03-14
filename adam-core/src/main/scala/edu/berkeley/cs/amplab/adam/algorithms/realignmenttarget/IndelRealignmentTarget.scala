@@ -16,12 +16,12 @@
 
 package edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget
 
+import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.{Kryo, Serializer}
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
-import scala.collection.immutable.{TreeSet, HashSet, NumericRange}
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.spark.Logging
+import scala.collection.immutable.{TreeSet, HashSet, NumericRange}
 import scala.util.Sorting.quickSort
 
 object ZippedTargetOrdering extends Ordering[(IndelRealignmentTarget, Int)] {

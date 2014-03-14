@@ -15,43 +15,42 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import edu.berkeley.cs.amplab.adam.util.ParquetLogger
-import org.kohsuke.args4j.{Option => Args4jOption, Argument}
-import org.apache.spark.SparkContext
-import org.apache.hadoop.mapreduce.Job
-import java.util.logging.Level
-
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.metrics.filters.{CombinedFilter, GeneratorFilter}
+import edu.berkeley.cs.amplab.adam.metrics.{DefaultComparisons, BucketComparisons}
+import edu.berkeley.cs.amplab.adam.models.ReadBucket
 import edu.berkeley.cs.amplab.adam.predicates._
-import scala.collection.Seq
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.util.ParquetLogger
+import java.io.OutputStreamWriter
+import java.util.logging.Level
 import java.util.regex.Pattern
 import org.apache.hadoop.fs.{Path, FileSystem}
-import java.io.OutputStreamWriter
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.models.ReadBucket
-import edu.berkeley.cs.amplab.adam.metrics.{DefaultComparisons, BucketComparisons}
-import edu.berkeley.cs.amplab.adam.metrics.filters.{CombinedFilter, GeneratorFilter}
+import org.kohsuke.args4j.{Option => Args4jOption, Argument}
+import scala.collection.Seq
 
 /**
- * FindReads is an auxiliary command to CompareAdam -- whereas CompareAdam takes two ADAM files (which
+ * FindReads is an auxiliary command to CompareADAM -- whereas CompareADAM takes two ADAM files (which
  * presumably contain the same reads, processed differently), joins them based on read-name, and computes
  * aggregates of one or more metrics (BucketComparisons) across those joined reads -- FindReads performs
  * the same join-and-metric-computation, but takes a second argument as well: a boolean condition on the
  * value(s) of the metric(s) computed.  FindReads then outputs just the names of the reads whose metric
  * values(s) meet the given condition.
  *
- * So, for example, CompareAdam might be used to find out that the same reads processed through two different
+ * So, for example, CompareADAM might be used to find out that the same reads processed through two different
  * pipelines are aligned to different locations 3% of the time.
  *
  * FindReads would then allow you to output the names of those 3% of the reads which are aligned differently,
  * using a filter expression like "positions!=0".
  */
-object FindReads extends AdamCommandCompanion {
+object FindReads extends ADAMCommandCompanion {
   val commandName: String = "findreads"
   val commandDescription: String = "Find reads that match particular individual or comparative criteria"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
+  def apply(cmdLine: Array[String]): ADAMCommand = {
     new FindReads(Args4j[FindReadsArgs](cmdLine))
   }
 
@@ -113,8 +112,8 @@ class FindReadsArgs extends Args4jBase with SparkArgs with ParquetArgs with Seri
   val file: String = null
 }
 
-class FindReads(protected val args: FindReadsArgs) extends AdamSparkCommand[FindReadsArgs] with Serializable {
-  val companion: AdamCommandCompanion = FindReads
+class FindReads(protected val args: FindReadsArgs) extends ADAMSparkCommand[FindReadsArgs] with Serializable {
+  val companion: ADAMCommandCompanion = FindReads
 
   def run(sc: SparkContext, job: Job): Unit = {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
@@ -122,9 +121,9 @@ class FindReads(protected val args: FindReadsArgs) extends AdamSparkCommand[Find
     val filter = FindReads.parseFilters(args.filter)
     val generator = filter.comparison
 
-    val engine = CompareAdam.setupTraversalEngine(sc, args.input1Path, args.recurse1, args.input2Path, args.recurse2, generator)
+    val engine = CompareADAM.setupTraversalEngine(sc, args.input1Path, args.recurse1, args.input2Path, args.recurse2, generator)
 
-    val generated : CompareAdam.GeneratedResults[Any] = engine.generate(generator)
+    val generated : CompareADAM.GeneratedResults[Any] = engine.generate(generator)
 
     val filtered : RDD[(CharSequence,Seq[Any])] = generated.filter {
       case (name : CharSequence, values : Seq[Any]) =>

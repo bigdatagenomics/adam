@@ -16,10 +16,9 @@
 
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-
-import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Output, Input}
+import com.esotericsoftware.kryo.{Kryo, Serializer}
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.serialization.AvroSerializer
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD

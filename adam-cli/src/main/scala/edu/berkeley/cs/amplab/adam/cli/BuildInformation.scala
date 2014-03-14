@@ -15,21 +15,20 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import scala.collection.JavaConversions._
 import scala.Some
+import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
-
-object BuildInformation extends AdamCommandCompanion {
+object BuildInformation extends ADAMCommandCompanion {
   val commandName: String = "buildinfo"
   val commandDescription: String = "Display build information (use this for bug reports)"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
+  def apply(cmdLine: Array[String]): ADAMCommand = {
     new BuildInformation()
   }
 }
 
-class BuildInformation() extends AdamCommand {
+class BuildInformation() extends ADAMCommand {
   val companion = BuildInformation
 
   def run() = {

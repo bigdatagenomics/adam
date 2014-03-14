@@ -17,10 +17,10 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.models.{SequenceDictionary, ReferenceMapping, ReferenceRegion}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
-import scala.Predef._
 import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
+import scala.Predef._
 
 /**
  * Contains multiple implementations of a 'region join', an operation that joins two sets of

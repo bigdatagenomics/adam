@@ -15,22 +15,13 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, 
-                                         ADAMRecord, 
-                                         ADAMNucleotideContigFragment,
-                                         Base}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord, ADAMNucleotideContigFragment, Base}
 import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
-import edu.berkeley.cs.amplab.adam.models.{SequenceRecord,
-                                           SequenceDictionary,
-                                           SingleReadBucket, 
-                                           SnpTable, 
-                                           ReferencePosition, 
-                                           ReferenceRegion,
-                                           ADAMRod}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.models.{SequenceRecord, SequenceDictionary, SingleReadBucket, SnpTable, ReferencePosition, ReferenceRegion, ADAMRod}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.recalibration.BaseQualityRecalibration
-import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util.{MapTools, ParquetLogger}
 import java.io.File
 import java.util.logging.Level
@@ -45,7 +36,7 @@ import parquet.hadoop.metadata.CompressionCodecName
 import parquet.hadoop.util.ContextUtil
 import scala.math.{min, max}
 
-class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
+class ADAMRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
 
   def adamSave(filePath: String, blockSize: Int = 128 * 1024 * 1024,
                pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
@@ -70,7 +61,7 @@ class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Seri
 
 }
 
-class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Logging {
+class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Logging {
   def adamSortReadsByReferencePosition(): RDD[ADAMRecord] = {
     log.info("Sorting reads by reference position")
 
@@ -243,14 +234,14 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends Serializable with Log
   }
 }
 
-class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Logging {
+class ADAMPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Logging {
   /**
    * Aggregates pileup bases together.
    *
    * @param coverage Coverage value is used to increase number of reducer operators.
    * @return RDD with aggregated bases.
    *
-   * @see AdamRodRDDFunctions#adamAggregateRods
+   * @see ADAMRodRDDFunctions#adamAggregateRods
    */
   def adamAggregatePileups(coverage: Int = 30): RDD[ADAMPileup] = {
     val helper = new PileupAggregator
@@ -271,7 +262,7 @@ class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Log
 
 }
 
-class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
+class ADAMRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
   /**
    * Given an RDD of rods, splits the rods up by the specific sample they correspond to.
    * Returns a flat RDD.
@@ -297,7 +288,7 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
    *
    * @return RDD with aggregated rods.
    *
-   * @see AdamPileupRDDFunctions#adamAggregatePileups
+   * @see ADAMPileupRDDFunctions#adamAggregatePileups
    */
   def adamAggregateRods(): RDD[ADAMRod] = {
     val helper = new PileupAggregator
@@ -324,7 +315,7 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
   }
 }
 
-class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFragment]) extends Serializable with Logging {
+class ADAMNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFragment]) extends Serializable with Logging {
   
   /**
    * Rewrites the contig IDs of a FASTA reference set to match the contig IDs present in a
@@ -368,7 +359,7 @@ class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
   /**
    * From this set of contigs, returns a sequence dictionary.
    *
-   * @see AdamRecordRDDFunctions#sequenceDictionary
+   * @see ADAMRecordRDDFunctions#sequenceDictionary
    * 
    * @return Sequence dictionary representing this reference.
    */

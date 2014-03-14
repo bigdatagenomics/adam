@@ -1,17 +1,17 @@
 
 package edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget
 
-import edu.berkeley.cs.amplab.adam.util.{MdTag, SparkFunSuite}
 import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
-import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import org.apache.spark.SparkContext._
-import parquet.filter.UnboundRecordFilter
-import scala.collection.immutable.{NumericRange, TreeSet}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.RealignIndels
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
+import edu.berkeley.cs.amplab.adam.util.{MdTag, SparkFunSuite}
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{TaskContext, Partition}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import parquet.filter.UnboundRecordFilter
+import scala.collection.immutable.{NumericRange, TreeSet}
 
 class IndelRealignmentTargetSuite extends SparkFunSuite {
 

@@ -17,8 +17,8 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.models.{SingleReadBucket, ReferencePositionPair, ReferencePositionWithOrientation}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
 
 private[rdd] object MarkDuplicates extends Serializable {

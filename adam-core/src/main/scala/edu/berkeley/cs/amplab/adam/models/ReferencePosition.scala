@@ -16,11 +16,11 @@
 
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMGenotype, ADAMVariant, ADAMPileup}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Input, Output}
 import Ordering.Option
+import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.{Kryo, Serializer}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMGenotype, ADAMVariant, ADAMPileup}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 
 object ReferencePositionWithOrientation {
 

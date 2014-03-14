@@ -16,9 +16,9 @@
 
 package edu.berkeley.cs.amplab.adam.models
 
-import scala.collection.immutable.NumericRange
-import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
 import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
+import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
+import scala.collection.immutable.NumericRange
 
 object Consensus {
 

@@ -16,12 +16,12 @@
 
 package edu.berkeley.cs.amplab.adam.predicates
 
-import parquet.filter.{RecordFilter, UnboundRecordFilter}
 import java.lang.Iterable
 import parquet.column.ColumnReader
+import parquet.filter.ColumnPredicates.equalTo
 import parquet.filter.ColumnRecordFilter.column
 import parquet.filter.OrRecordFilter.or
-import parquet.filter.ColumnPredicates.equalTo
+import parquet.filter.{RecordFilter, UnboundRecordFilter}
 
 class GenotypeVarFilterPASSPredicate extends UnboundRecordFilter {
   def bind(readers: Iterable[ColumnReader]): RecordFilter = {

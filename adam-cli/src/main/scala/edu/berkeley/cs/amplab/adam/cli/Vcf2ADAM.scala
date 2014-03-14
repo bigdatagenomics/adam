@@ -17,23 +17,23 @@
 package edu.berkeley.cs.amplab.adam.cli
 
 import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.kohsuke.args4j.Argument
 
-object Vcf2Adam extends AdamCommandCompanion {
+object Vcf2ADAM extends ADAMCommandCompanion {
   val commandName = "vcf2adam"
   val commandDescription = "Convert a VCF file to the corresponding ADAM format"
 
   def apply(cmdLine: Array[String]) = {
-    new Vcf2Adam(Args4j[Vcf2AdamArgs](cmdLine))
+    new Vcf2ADAM(Args4j[Vcf2ADAMArgs](cmdLine))
   }
 }
 
-class Vcf2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class Vcf2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @Argument(required = true, metaVar = "VCF", 
     usage = "The VCF file to convert", index = 0)
   var vcfFile: String = _
@@ -42,8 +42,8 @@ class Vcf2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var outputPath: String = null
 }
 
-class Vcf2Adam(val args: Vcf2AdamArgs) extends AdamSparkCommand[Vcf2AdamArgs] {
-  val companion = Vcf2Adam
+class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] {
+  val companion = Vcf2ADAM
 
   def run(sc: SparkContext, job: Job) {
     var adamVariants : RDD[ADAMVariantContext] = sc.adamVCFLoad(args.vcfFile)

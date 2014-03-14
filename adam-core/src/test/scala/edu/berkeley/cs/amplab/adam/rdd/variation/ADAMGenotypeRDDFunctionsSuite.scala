@@ -16,14 +16,13 @@
 
 package edu.berkeley.cs.amplab.adam.rdd.variation
 
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro._
 import edu.berkeley.cs.amplab.adam.models.ConcordanceTable
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
-import scala.collection.JavaConversions._
-import org.apache.spark.SparkContext._
 import edu.berkeley.cs.amplab.adam.rich.GenotypeType
-
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
+import org.apache.spark.SparkContext._
+import scala.collection.JavaConversions._
 
 class ADAMGenotypeRDDFunctionsSuite extends SparkFunSuite {
   def v0 = ADAMVariant.newBuilder

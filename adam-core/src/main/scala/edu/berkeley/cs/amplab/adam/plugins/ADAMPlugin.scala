@@ -16,15 +16,15 @@
 package edu.berkeley.cs.amplab.adam.plugins
 
 import org.apache.avro.Schema
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 /**
- * Defines the interface for a Plugin for the AdamSystem.
+ * Defines the interface for a Plugin for the ADAMSystem.
  *
  * A simple interface is available in [[edu.berkeley.cs.amplab.adam.plugins.Take10Plugin]]
  */
-trait AdamPlugin[Input, Output] {
+trait ADAMPlugin[Input, Output] {
   /**
    * The projection to push down into Parquet
    * @return If all fields are required or the specific projection is not known, None

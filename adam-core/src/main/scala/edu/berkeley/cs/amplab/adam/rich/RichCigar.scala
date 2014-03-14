@@ -16,8 +16,8 @@
 
 package edu.berkeley.cs.amplab.adam.rich
 
-import net.sf.samtools.{Cigar, CigarOperator, TextCigarCodec, CigarElement}
 import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
+import net.sf.samtools.{Cigar, CigarOperator, TextCigarCodec, CigarElement}
 import scala.annotation.tailrec
 
 object RichCigar {

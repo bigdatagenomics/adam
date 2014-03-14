@@ -53,7 +53,7 @@ request builds on request #92. Please review #92 first."
 optionally, any details that you want to share about the commit.
 * Include unit tests with your pull request. We love tests and [use Jenkins](https://amplab.cs.berkeley.edu/jenkins/)
 to check every pull request and commit. Just look for files in the ADAM repo that end in "*Suite.scala", 
-e.g. AdamContextSuite.scala, to see examples of how to write tests. You might also want to glance at the 
+e.g. ADAMContextSuite.scala, to see examples of how to write tests. You might also want to glance at the 
 `./scripts/jenkins-test` script for more end-to-end tests.
 * Please try to follow the existing coding style
 * Make sure to add a copyright header to all new files (see below).

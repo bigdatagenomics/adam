@@ -15,15 +15,15 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import org.apache.hadoop.mapreduce.Job
-import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
-import org.kohsuke.args4j.{Option => option, Argument}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.kohsuke.args4j.{Option => option, Argument}
 
-object Reads2Ref extends AdamCommandCompanion {
+object Reads2Ref extends ADAMCommandCompanion {
   val commandName: String = "reads2ref"
   val commandDescription: String = "Convert an ADAM read-oriented file to an ADAM reference-oriented file"
 
@@ -53,7 +53,7 @@ class Reads2RefArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var nonPrimary: Boolean = true
 }
 
-class Reads2Ref(protected val args: Reads2RefArgs) extends AdamSparkCommand[Reads2RefArgs] {
+class Reads2Ref(protected val args: Reads2RefArgs) extends ADAMSparkCommand[Reads2RefArgs] {
   val companion = Reads2Ref
 
   def run(sc: SparkContext, job: Job) {

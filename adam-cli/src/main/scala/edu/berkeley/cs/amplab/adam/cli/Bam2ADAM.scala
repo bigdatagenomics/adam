@@ -15,30 +15,30 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import edu.berkeley.cs.amplab.adam.util.ParquetLogger
-import org.kohsuke.args4j.{Option => Args4jOption, Argument}
-import net.sf.samtools._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import scala.collection.JavaConversions._
-import java.io.File
-import parquet.avro.AvroParquetWriter
-import org.apache.hadoop.fs.Path
-import java.util.concurrent._
-import scala.Some
-import java.util.logging.Level
-import edu.berkeley.cs.amplab.adam.models.{RecordGroupDictionary, SequenceDictionary}
 import edu.berkeley.cs.amplab.adam.converters.SAMRecordConverter
+import edu.berkeley.cs.amplab.adam.models.{RecordGroupDictionary, SequenceDictionary}
+import edu.berkeley.cs.amplab.adam.util.ParquetLogger
+import java.io.File
+import java.util.concurrent._
+import java.util.logging.Level
+import net.sf.samtools._
+import org.apache.hadoop.fs.Path
+import org.kohsuke.args4j.{Option => Args4jOption, Argument}
+import parquet.avro.AvroParquetWriter
+import scala.Some
+import scala.collection.JavaConversions._
 
-object Bam2Adam extends AdamCommandCompanion {
+object Bam2ADAM extends ADAMCommandCompanion {
   val commandName: String = "bam2adam"
   val commandDescription: String = "Single-node BAM to ADAM converter (Note: the 'transform' command can take SAM or BAM as input)"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
-    new Bam2Adam(Args4j[Bam2AdamArgs](cmdLine))
+  def apply(cmdLine: Array[String]): ADAMCommand = {
+    new Bam2ADAM(Args4j[Bam2ADAMArgs](cmdLine))
   }
 }
 
-class Bam2AdamArgs extends Args4jBase with ParquetArgs {
+class Bam2ADAMArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "BAM", usage = "The SAM or BAM file to convert", index = 0)
   var bamFile: String = null
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM data", index = 1)
@@ -51,8 +51,8 @@ class Bam2AdamArgs extends Args4jBase with ParquetArgs {
   var qSize = 10000
 }
 
-class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
-  val companion = Bam2Adam
+class Bam2ADAM(args: Bam2ADAMArgs) extends ADAMCommand {
+  val companion = Bam2ADAM
   val blockingQueue = new LinkedBlockingQueue[Option[(SAMRecord, SequenceDictionary, RecordGroupDictionary)]](args.qSize)
 
   val writerThreads = (0 until args.numThreads).foldLeft(List[Thread]()) {
@@ -91,7 +91,7 @@ class Bam2Adam(args: Bam2AdamArgs) extends AdamCommand {
           }
         }
       })
-      writerThread.setName("AdamWriter%d".format(threadNum))
+      writerThread.setName("ADAMWriter%d".format(threadNum))
       writerThread
     } :: list
   }

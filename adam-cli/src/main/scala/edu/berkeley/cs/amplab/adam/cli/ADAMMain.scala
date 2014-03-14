@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.cli
 import org.apache.spark.Logging
 import scala.Some
 
-object AdamMain extends Logging {
+object ADAMMain extends Logging {
 
   private val commands = List(Transform,
     PrintTags,
@@ -26,18 +26,18 @@ object AdamMain extends Logging {
     FlagStat,
     Reads2Ref,
     MpileupCommand,
-    PrintAdam,
+    PrintADAM,
     PileupAggregator,
     ListDict,
-    CompareAdam,
+    CompareADAM,
     /* TODO (nealsid): Reimplement in terms of new schema
     ComputeVariants, 
      */
-    Bam2Adam,
-    Adam2Vcf,
-    Vcf2Adam,
+    Bam2ADAM,
+    ADAM2Vcf,
+    Vcf2ADAM,
     FindReads,
-    Fasta2Adam,
+    Fasta2ADAM,
     PluginExecutor,
     BuildInformation)
 

@@ -15,18 +15,18 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import org.apache.hadoop.mapreduce.Job
-import edu.berkeley.cs.amplab.adam.util.ParquetLogger
-import org.kohsuke.args4j.{Argument, Option => Args4jOption}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.models.SnpTable
-import org.apache.spark.{SparkContext, Logging}
-import org.apache.spark.rdd.RDD
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.util.ParquetLogger
 import java.io.File
 import java.util.logging.Level
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{SparkContext, Logging}
+import org.kohsuke.args4j.{Argument, Option => Args4jOption}
 
-object Transform extends AdamCommandCompanion {
+object Transform extends ADAMCommandCompanion {
   val commandName = "transform"
   val commandDescription = "Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations"
 
@@ -54,7 +54,7 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var locallyRealign: Boolean = false
 }
 
-class Transform(protected val args: TransformArgs) extends AdamSparkCommand[TransformArgs] with Logging {
+class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[TransformArgs] with Logging {
   val companion = Transform
 
   def run(sc: SparkContext, job: Job) {
