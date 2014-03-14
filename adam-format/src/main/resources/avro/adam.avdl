@@ -176,6 +176,13 @@ enum ADAMGenotypeAllele {
 	 // enough information or had low quality)
 }
 
+enum ADAMGenotypeType {
+  HOM_REF,
+  HET,
+  HOM_ALT,
+  NO_CALL
+}
+
 // This record represents all stats that, inside a VCF, are stored outside of the
 // sample but are computed based on the samples.  For instance,  MAPQ0 is an aggregate
 // stat computed from all samples and stored inside the INFO line.

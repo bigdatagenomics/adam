@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.rich
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeAllele, ADAMGenotype}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeType, ADAMGenotypeAllele, ADAMGenotype}
 import scala.collection.JavaConversions._
 
 object RichADAMGenotype {
@@ -25,13 +25,16 @@ object RichADAMGenotype {
 }
 
 class RichADAMGenotype(val genotype: ADAMGenotype) {
-  def getType: GenotypeType = {
+  def ploidy: Int = genotype.getAlleles.size
+
+  def getType: ADAMGenotypeType = {
+    assert(ploidy <= 2, "getType only meaningful for genotypes with ploidy <= 2")
     genotype.getAlleles.toList.distinct match {
-      case List(ADAMGenotypeAllele.Ref) => GenotypeType.HOM_REF
-      case List(ADAMGenotypeAllele.Alt) => GenotypeType.HOM_ALT
+      case List(ADAMGenotypeAllele.Ref) => ADAMGenotypeType.HOM_REF
+      case List(ADAMGenotypeAllele.Alt) => ADAMGenotypeType.HOM_ALT
       case List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Alt) |
-           List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Ref) => GenotypeType.HET
-      case _ => GenotypeType.NO_CALL
+           List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Ref) => ADAMGenotypeType.HET
+      case _ => ADAMGenotypeType.NO_CALL
     }
   }
 }

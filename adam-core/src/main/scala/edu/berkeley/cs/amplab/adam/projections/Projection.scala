@@ -22,9 +22,16 @@ object Projection {
     filterPred.andThen(includeOrExlcude)
   }
 
+  // TODO: Unify these various methods
   def apply(includedFields: FieldValue*): Schema = {
     assert(!includedFields.isEmpty, "Can't project down to zero fields!")
     Projection(false, includedFields:_*)
+  }
+
+  def apply(includedFields: Traversable[FieldValue]) : Schema = {
+    assert(includedFields.size > 0, "Can't project down to zero fields!")
+    val baseSchema = includedFields.head.schema
+    createProjection(baseSchema, includedFields.map(_.toString).toSet, false)
   }
 
   def apply(exclude:Boolean, includedFields: FieldValue*): Schema = {
