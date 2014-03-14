@@ -4,7 +4,7 @@
     <parent>
         <groupId>edu.berkeley.cs.amplab.adam</groupId>
         <artifactId>adam-parent</artifactId>
-        <version>0.7.4-SNAPSHOT</version>
+        <version>0.7.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>adam-core</artifactId>
