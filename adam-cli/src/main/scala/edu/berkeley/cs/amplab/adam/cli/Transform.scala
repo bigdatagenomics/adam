@@ -52,6 +52,8 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var coalesce: Int = -1
   @Args4jOption(required = false, name = "-realignIndels", usage = "Locally realign indels present in reads.")
   var locallyRealign: Boolean = false
+  @Args4jOption(required = false, name = "-timingFilename", usage = "Output various timing measurements in CSV form to this file")
+  var timingFilename: String = null
 }
 
 class Transform(protected val args: TransformArgs) extends AdamSparkCommand[TransformArgs] with Logging {
@@ -61,6 +63,14 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
 
     // Quiet Parquet...
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
+    var measureTiming : Option[Boolean] = 
+      if (args.timingFilename != null) {
+        Some[Boolean](true)
+      } else {
+        None
+      }
+
+    measureTiming.foreach(p => TimingAggregator.Start("all"))
 
     var adamRecords: RDD[ADAMRecord] = sc.adamLoad(args.inputPath)
     if (args.coalesce != -1) {
@@ -69,14 +79,20 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
     }
 
     if (args.markDuplicates) {
+      measureTiming.foreach(p => TimingAggregator.Start("markduplicates"))
       log.info("Marking duplicates")
       adamRecords = adamRecords.adamMarkDuplicates()
+      measureTiming.foreach(p => TimingAggregator.Stop("markduplicates"))
     }
 
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
+      measureTiming.foreach(p => TimingAggregator.Start("bqsr"))
+      measureTiming.foreach(p => TimingAggregator.Start("bqsr-loadtable"))
       val knownSnps = loadSnpTable(sc)
+      measureTiming.foreach(p => TimingAggregator.Stop("bqsr-loadtable"))
       adamRecords = adamRecords.adamBQSR(knownSnps)
+      measureTiming.foreach(p => TimingAggregator.Stop("bqsr"))
     }
 
     if (args.locallyRealign) {
@@ -92,6 +108,10 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
 
     adamRecords.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
       compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
+    measureTiming.foreach(p => {
+      TimingAggregator.Stop("all")
+      TimingAggregator.Flush(args.timingFilename)
+    })
   }
 
   // FIXME: why doesn't this complain if the file doesn't exist?
