@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
@@ -9,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>edu.berkeley.cs.amplab.adam</groupId>
     <artifactId>adam-parent</artifactId>
-    <version>0.7.4-SNAPSHOT</version>
+    <version>0.7.3-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>ADAM</name>
     <description>A fast, scalable genome analysis system</description>
@@ -72,7 +73,7 @@
 	            <configuration>
 	                <mavenExecutorId>forked-path</mavenExecutorId>
 	                <useReleaseProfile>false</useReleaseProfile>
-	        <!--        <arguments>${arguments} -Psonatype-oss-release</arguments> -->
+	                <arguments>${arguments} -Psonatype-oss-release</arguments>
 	            </configuration>
 	        </plugin>
                 <plugin>
