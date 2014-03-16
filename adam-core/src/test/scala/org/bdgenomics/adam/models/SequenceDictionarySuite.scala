@@ -16,7 +16,7 @@
 package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.rdd.ADAMContext._
-import net.sf.samtools.{ SAMFileReader, SAMSequenceRecord }
+import net.sf.samtools.{ SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary }
 import org.scalatest.FunSuite
 import java.io.File
 
@@ -168,5 +168,34 @@ class SequenceDictionarySuite extends FunSuite {
 
   def record(name: String, length: Long = 1000, url: Option[String] = None, md5: Option[String] = None): SequenceRecord =
     new SequenceRecord(name, length, url = url, md5 = md5)
+
+  test("convert from sam sequence record and back") {
+    val sr = new SAMSequenceRecord("chr0", 1000)
+    sr.setAttribute(SAMSequenceRecord.URI_TAG, "http://bigdatagenomics.github.io/chr0")
+
+    val conv = SequenceRecord.fromSAMSequenceRecord(sr)
+
+    assert(conv.name === "chr0")
+    assert(conv.length === 1000L)
+    assert(conv.url.get === "http://bigdatagenomics.github.io/chr0")
+
+    val convSr = conv.toSAMSequenceRecord
+
+    assert(convSr.isSameSequence(sr))
+  }
+
+  test("convert from sam sequence dictionary and back") {
+    val sr0 = new SAMSequenceRecord("chr0", 1000)
+    println(sr0.getSequenceIndex)
+    val srs = List(sr0)
+
+    val ssd = new SAMSequenceDictionary(srs)
+
+    val asd = SequenceDictionary.fromSAMSequenceDictionary(ssd)
+
+    val toSSD = asd.toSAMSequenceDictionary
+
+    toSSD.assertSameDictionary(ssd)
+  }
 
 }

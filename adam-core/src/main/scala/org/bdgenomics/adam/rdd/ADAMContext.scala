@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,20 @@
  */
 package org.bdgenomics.adam.rdd
 
+import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat }
+import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
+import java.util.regex.Pattern
+import net.sf.samtools.{ SAMFileHeader, SAMReadGroupRecord, SAMRecord }
+import org.apache.avro.Schema
+import org.apache.avro.specific.SpecificRecord
+import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.{ Text, LongWritable }
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
+import org.apache.spark.{ SparkConf, Logging, SparkContext }
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
+import org.apache.spark.scheduler.StatsReportListener
 import org.bdgenomics.adam.avro.{
   ADAMPileup,
   ADAMRecord,
@@ -22,25 +36,14 @@ import org.bdgenomics.adam.avro.{
 }
 import org.bdgenomics.adam.converters.{ FastaConverter, SAMRecordConverter }
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.models.ADAMRod
+import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{
   ADAMRecordField,
   Projection,
   ADAMNucleotideContigFragmentField
 }
 import org.bdgenomics.adam.rich.RichADAMRecord
-import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat }
-import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
-import java.util.regex.Pattern
-import net.sf.samtools.SAMFileHeader
-import org.apache.hadoop.fs.FileSystem
-import org.apache.avro.Schema
-import org.apache.avro.specific.SpecificRecord
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.{ Text, LongWritable }
-import org.apache.spark.{ SparkConf, Logging, SparkContext }
-import org.apache.spark.rdd.RDD
-import org.apache.spark.scheduler.StatsReportListener
+import org.bdgenomics.adam.util.{ ADAMSAMOutputFormat, ADAMBAMOutputFormat, HadoopUtil }
 import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -48,9 +51,6 @@ import parquet.hadoop.util.ContextUtil
 import scala.Some
 import scala.collection.JavaConversions._
 import scala.collection.Map
-import org.bdgenomics.adam.util.HadoopUtil
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-import org.bdgenomics.adam.predicates.ADAMPredicate
 
 object ADAMContext {
   // Add ADAM Spark context methods
@@ -354,4 +354,5 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
     // dictionaries anymore.
     sc.union(paths.map(loadADAMs).map(v => v._2))
   }
+
 }

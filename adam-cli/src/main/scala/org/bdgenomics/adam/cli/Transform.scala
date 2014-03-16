@@ -126,8 +126,17 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
       adamRecords = adamRecords.adamSortReadsByReferencePosition()
     }
 
-    adamRecords.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
-      compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
+    if (args.outputPath.endsWith(".sam")) {
+      log.info("Saving data in SAM format")
+      adamRecords.adamSAMSave(args.outputPath)
+    } else if (args.outputPath.endsWith(".bam")) {
+      log.info("Saving data in BAM format")
+      adamRecords.adamSAMSave(args.outputPath, false)
+    } else {
+      log.info("Saving data in ADAM format")
+      adamRecords.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
+        compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
+    }
   }
 
 }
