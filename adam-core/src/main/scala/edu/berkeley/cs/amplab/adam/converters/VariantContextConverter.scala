@@ -138,6 +138,13 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */)
       .setReferenceAllele(vc.getReference.getBaseString)
       .setVariantAllele(vc.getAlternateAllele(0).getBaseString)
+      .setVariantType(
+        vc.getType match {
+            // TODO: handle indels, symbolic, etc.
+          case VariantContext.Type.SNP => VariantType.SNP
+          case VariantContext.Type.MNP => VariantType.MNP
+          case _ => null
+        })
       .build
     variant
   }
