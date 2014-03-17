@@ -1,10 +1,9 @@
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMVariant, ADAMRecord}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.rich.DecadentRead
+import edu.berkeley.cs.amplab.adam.rich.{RichADAMVariant, DecadentRead, ReferenceLocation}
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
-import edu.berkeley.cs.amplab.adam.rich.ReferenceLocation
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
@@ -71,6 +70,13 @@ object SnpTable {
     val table = new mutable.HashMap[String, mutable.HashSet[Long]]
     tuples.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
     // construct SnpTable from immutable copy of `table`
+    new SnpTable(table.mapValues(_.toSet).toMap)
+  }
+
+  def apply(variants : RDD[RichADAMVariant]) : SnpTable = {
+    val positions = variants.map(variant => (variant.getContig.getContigName.toString, variant.getPosition)).collect()
+    val table = new mutable.HashMap[String, mutable.HashSet[Long]]
+    positions.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
     new SnpTable(table.mapValues(_.toSet).toMap)
   }
 }

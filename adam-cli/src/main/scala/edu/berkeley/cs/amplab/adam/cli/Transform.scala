@@ -20,11 +20,13 @@ import edu.berkeley.cs.amplab.adam.util.ParquetLogger
 import org.kohsuke.args4j.{Argument, Option => Args4jOption}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import edu.berkeley.cs.amplab.adam.models.SnpTable
 import org.apache.spark.{SparkContext, Logging}
 import org.apache.spark.rdd.RDD
 import java.io.File
 import java.util.logging.Level
+import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant
 
 object Transform extends AdamCommandCompanion {
   val commandName = "transform"
@@ -75,7 +77,8 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
 
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
-      val knownSnps = loadSnpTable(sc)
+      val variants : RDD[RichADAMVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
+      val knownSnps = SnpTable(variants)
       adamRecords = adamRecords.adamBQSR(knownSnps)
     }
 
@@ -92,16 +95,6 @@ class Transform(protected val args: TransformArgs) extends AdamSparkCommand[Tran
 
     adamRecords.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
       compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
-  }
-
-  // FIXME: why doesn't this complain if the file doesn't exist?
-  def loadSnpTable(sc: SparkContext): SnpTable = {
-    if(args.knownSnpsFile != null) {
-      log.info("Loading SNP table")
-      SnpTable(new File(args.knownSnpsFile))
-    } else {
-      SnpTable()
-    }
   }
 
 }
