@@ -8,6 +8,9 @@ Trunk (not yet released)
 
   IMPROVEMENTS
 
+  * Upgraded Hadoop-BAM to 0.6.2-SNAPSHOT release. This pulls in Picard/Samtools 1.107. This feature was introduced
+    in PR#177, and is a non-breaking change.
+
   BUG FIXES
 
 
