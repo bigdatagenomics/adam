@@ -16,14 +16,29 @@
 
 package edu.berkeley.cs.amplab.adam.projections
 
-import edu.berkeley.cs.amplab.adam.avro.ADAMVariant
+import edu.berkeley.cs.amplab.adam.avro.VariantCallingAnnotations
 
-class ADAMVariantField extends FieldEnumeration(ADAMVariant.SCHEMA$)
-{
-  val contig,
-  position,
-  referenceAllele,
-  variantAllele
+class VariantCallingAnnotationsField  extends FieldEnumeration(VariantCallingAnnotations.SCHEMA$) {
 
-    = SchemaValue
+  val  readDepth,
+  downsampled,
+  baseQRankSum,
+  clippingRankSum,
+  haplotypeScore,
+  inbreedingCoefficient,
+  alleleCountMLE,
+  alleleFrequencyMLE,
+  rmsMapQ,
+  mapq0Reads,
+  mqRankSum,
+  usedForNegativeTrainingSet,
+  usedForPositiveTrainingSet,
+  variantQualityByDepth,
+  readPositionRankSum,
+  vqslod,
+  culprit,
+  variantCallErrorProbability,
+  variantIsPassing,
+  variantFilters
+  = SchemaValue
 }
