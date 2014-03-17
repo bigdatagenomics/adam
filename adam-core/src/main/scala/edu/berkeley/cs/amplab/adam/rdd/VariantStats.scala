@@ -23,33 +23,63 @@ import edu.berkeley.cs.amplab.adam.avro.VariantType
 
 case class SNV(reference: String, alternate: String)
 
-case class PerSampleVariantStatistics(
-  var snv_count: Long,
-  snv_counts: mutable.Map[SNV, Long]
-)
+class PerSampleVariantStatistics {
+  val snv_counts = mutable.Map[SNV, Long]().withDefaultValue(0)
 
-case class XZ()
+  def snv_count: Long = snv_counts.values.sum
+  def transitions: Long = ComputeVariantStatistics.TransitionSNVs.map(snv_counts).sum
+  def transversions: Long = ComputeVariantStatistics.TransversionsSNVs.map(snv_counts).sum
 
-case class VariantStatistics(
-  sample_statistics: mutable.Map[String, PerSampleVariantStatistics],
-  aggregate_statistics: PerSampleVariantStatistics
-) {
-  /*
-  def toString() = {
-    "A string"
+  def format_human(result : mutable.StringBuilder = new mutable.StringBuilder()): mutable.StringBuilder = {
+    var from, to = 0
+    result ++= "\tSNV Summary (%d total)\n".format(snv_count)
+    result ++= "\t\tTransitions / transversions = %4d / %4d = %1.3f\n".format(
+      transitions,
+      transversions,
+      transitions.toDouble / transversions.toDouble)
+    for (from <- ComputeVariantStatistics.SimpleNucleotides; to <- ComputeVariantStatistics.SimpleNucleotides; if (from != to)) {
+      result ++= "\t\t%s -> %s: %9d\n".format(from, to, snv_counts((SNV(from, to))))
+    }
+    result
   }
-  */
+}
+
+class VariantStatistics {
+  val sample_statistics = mutable.Map[String, PerSampleVariantStatistics]()
+  val aggregate_statistics = new PerSampleVariantStatistics()
+
+  def format_human(result : mutable.StringBuilder = new mutable.StringBuilder()): mutable.StringBuilder = {
+    result ++= toString
+    for ((sample, data) <- sample_statistics) {
+      result ++= "\nSample: %s\n".format(sample)
+      data.format_human(result)
+    }
+    result ++= "\nAggregated over samples\n"
+    aggregate_statistics.format_human(result)
+    result
+  }
 }
 
 object ComputeVariantStatistics {
+  val SimpleNucleotides = List("A", "C", "T", "G")
+  val TransitionSNVs = List(
+    SNV("A", "G"),
+    SNV("G", "A"),
+    SNV("C", "T"),
+    SNV("T", "C"))
+
+  val TransversionsSNVs = List(
+    SNV("A", "C"),
+    SNV("C", "A"),
+    SNV("A", "T"),
+    SNV("T", "A"),
+    SNV("G", "C"),
+    SNV("C", "G"),
+    SNV("G", "T"),
+    SNV("T", "G"))
+
   def apply(rdd: RDD[ADAMGenotype]) : VariantStatistics = {
-    println(rdd.count())
-    val c = rdd.map(_.getVariant.getVariantType).collect()
-    println(c)
-
     val snps = rdd.filter(_.getVariant.getVariantType == VariantType.SNP)
-
-    println(snps.count())
 
     val counts = snps.map(genotype => {
       val variant = genotype.getVariant
@@ -58,24 +88,14 @@ object ComputeVariantStatistics {
       (sample, snv)
     }).countByValue()
 
-    val stats = VariantStatistics(
-      new HashMap[String, PerSampleVariantStatistics].withDefault(
-        sample => PerSampleVariantStatistics(0, new HashMap[SNV, Long].withDefaultValue(0))),
-      PerSampleVariantStatistics(0, new HashMap[SNV, Long].withDefaultValue(0)))
-
-    println(counts.toString)
-
-    counts.foreach(item => {
-      val sample: String = item._1._1.toString
-      val snv: SNV = item._1._2
-      val count: Long = item._2
-      val sample_stats = stats.sample_statistics(sample)
-      sample_stats.snv_count += count
-      sample_stats.snv_counts(snv) += count
-      stats.aggregate_statistics.snv_count += count
+    val stats = new VariantStatistics
+    for (((sample: String, snv: SNV), count: Long) <- counts) {
+      if (!stats.sample_statistics.contains(sample)) {
+        stats.sample_statistics(sample) = new PerSampleVariantStatistics
+      }
+      stats.sample_statistics(sample).snv_counts(snv) += count
       stats.aggregate_statistics.snv_counts(snv) += count
-    })
-
-    return stats
+    }
+    stats
   }
 }

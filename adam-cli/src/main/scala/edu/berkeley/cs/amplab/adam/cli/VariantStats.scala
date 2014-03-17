@@ -20,7 +20,7 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext. _
 import edu.berkeley.cs.amplab.adam.rdd.{ComputeVariantStatistics, VariantStatistics}
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
-import org.kohsuke.args4j.Argument
+import org.kohsuke.args4j
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
 import org.apache.hadoop.mapreduce.Job
@@ -36,8 +36,11 @@ object VariantStats extends AdamCommandCompanion {
 }
 
 class VariantStatsArgs extends Args4jBase with ParquetArgs with SparkArgs {
-  @Argument(required = true, metaVar = "ADAM", usage = "The ADAM variant files to print stats for", index = 0)
+  @args4j.Argument(required = true, metaVar = "ADAM", usage = "The ADAM variant files to print stats for", index = 0)
   var adamFile: String = _
+  //@args4j.Option(required = false, name = "-format", usage = "Format: one of human, csv. Default: human.")
+  //var format: String = "human"
+
 }
 
 class VariantStats(val args: VariantStatsArgs) extends AdamSparkCommand[VariantStatsArgs] with Logging {
@@ -45,13 +48,7 @@ class VariantStats(val args: VariantStatsArgs) extends AdamSparkCommand[VariantS
 
   def run(sc: SparkContext, job: Job) {
     val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
-    //val stats: VariantStats = sc.adamVariantStats()
     val stats: VariantStatistics = ComputeVariantStatistics(adamGTs)
-    println(stats.toString())
-    /*
-    println(
-      "%d total variants".format(stats.numGenotypes)
-    )
-    */
+    println(stats.format_human())
   }
 }
