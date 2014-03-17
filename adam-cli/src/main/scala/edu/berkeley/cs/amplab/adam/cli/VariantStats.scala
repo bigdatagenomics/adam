@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.cli
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext. _
-import edu.berkeley.cs.amplab.adam.rdd.{ComputeVariantStatistics, VariantStatistics}
+import edu.berkeley.cs.amplab.adam.rdd.{VariantsSummary, VariantSummaryOutput}
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.kohsuke.args4j
 import org.apache.spark.rdd.RDD
@@ -38,8 +38,9 @@ object VariantStats extends AdamCommandCompanion {
 class VariantStatsArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @args4j.Argument(required = true, metaVar = "ADAM", usage = "The ADAM variant files to print stats for", index = 0)
   var adamFile: String = _
-  //@args4j.Option(required = false, name = "-format", usage = "Format: one of human, csv. Default: human.")
-  //var format: String = "human"
+
+  @args4j.Option(required = false, name = "-format", usage = "Format: one of human, csv. Default: human.")
+  var format: String = "human"
 
 }
 
@@ -48,7 +49,17 @@ class VariantStats(val args: VariantStatsArgs) extends AdamSparkCommand[VariantS
 
   def run(sc: SparkContext, job: Job) {
     val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
-    val stats: VariantStatistics = ComputeVariantStatistics(adamGTs)
-    println(stats.format_human())
+    val stats = VariantsSummary(adamGTs)
+    args.format match {
+      case "human" => {
+        println(VariantSummaryOutput.format_human_readable(stats))
+      }
+      case "csv" => {
+        println(VariantSummaryOutput.format_csv(stats))
+      }
+      case _ => {
+        log.error("Invalid -format: %s".format(args.format))
+      }
+    }
   }
 }
