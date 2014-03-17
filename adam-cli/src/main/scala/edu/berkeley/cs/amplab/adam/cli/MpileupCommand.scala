@@ -19,6 +19,12 @@ package edu.berkeley.cs.amplab.adam.cli
 import edu.berkeley.cs.amplab.adam.util._
 import org.kohsuke.args4j.Argument
 import scala.Some
+import org.apache.spark.{SparkContext, Logging}
+import org.apache.hadoop.mapreduce.Job
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import org.apache.spark.rdd.RDD
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
 
 object MpileupCommand extends AdamCommandCompanion {
   val commandName: String = "mpileup"
@@ -30,21 +36,20 @@ object MpileupCommand extends AdamCommandCompanion {
 }
 
 class MpileupArgs extends Args4jBase with SparkArgs {
-  @Argument(required = true, metaVar = "ADAMFILE", usage = "ADAM file", index = 0)
-  var file: String = _
+  @Argument(metaVar = "ADAMREADS", required = true, usage = "ADAM read-oriented data", index = 0)
+  var readInput: String = _
+
+  spark_master = "local"
 }
 
-class MpileupCommand(protected val args: MpileupArgs) extends AdamCommand with SparkCommand {
+class MpileupCommand(protected val args: MpileupArgs)  extends AdamSparkCommand[MpileupArgs] with Logging {
   val companion = MpileupCommand
 
-  def run() {
-    // If run locally, only use a single thread.
-    if (args.spark_master.startsWith("local")) {
-      args.spark_master = "local"
-    }
-    val sc = createSparkContext(args)
+  def run(sc: SparkContext, job: Job) {
 
-    val pileups = new PileupTraversable(sc, args.file)
+    val reads: RDD[ADAMRecord] = sc.adamLoad(args.readInput, Some(classOf[LocusPredicate]))
+
+    val pileups = new PileupTraversable(reads)
     for (pileup <- pileups) {
       // Reference name and position
       print("%s %s ".format(pileup.referenceName, pileup.referencePosition))

@@ -75,21 +75,12 @@ class Pileup(val referenceId: Int,
 object PileupTraversable {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
 
-  def apply(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) {
-    new PileupTraversable(sc, reads)
+  def apply(reads: RDD[ADAMRecord]) {
+    new PileupTraversable(reads)
   }
 }
 
-class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extends Traversable[Pileup] with Serializable {
-
-  def this(sc: SparkContext, file: String) = this(sc, {
-    val job = new Job()
-    ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[ADAMRecord]])
-    ParquetInputFormat.setUnboundRecordFilter(job, classOf[LocusPredicate])
-    sc.newAPIHadoopFile(file,
-      classOf[ParquetInputFormat[ADAMRecord]], classOf[Void], classOf[ADAMRecord],
-      ContextUtil.getConfiguration(job))
-  })
+class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with Serializable {
 
   def stringToQualitySanger(score: String): Int = {
     try {
@@ -114,7 +105,7 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
     }
 
     var referencePos = record.getStart
-    var isReverseStrand = record.getReadNegativeStrand
+    val isReverseStrand = record.getReadNegativeStrand
     var readPos = 0
 
     val cigar = PileupTraversable.CIGAR_CODEC.decode(record.getCigar.toString)
@@ -240,9 +231,7 @@ class PileupTraversable(sc: SparkContext, reads: RDD[(Void, ADAMRecord)]) extend
       pileups --= locationsToFlush
     }
 
-    val nonNullReads = reads.filter(_ != null)
-
-    for ((_, read: ADAMRecord) <- nonNullReads) {
+    for (read: ADAMRecord <- reads) {
 
       def updateCurrentInfo(read: ADAMRecord) = {
         currentReference = Some(read.getReferenceId)

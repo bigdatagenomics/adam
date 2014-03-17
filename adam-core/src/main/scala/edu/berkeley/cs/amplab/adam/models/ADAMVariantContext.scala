@@ -31,9 +31,9 @@ object ADAMVariantContext {
    *           optional domain annotation at site))
    * @return ADAMVariantContext corresponding to the data above.
    */
-  def apply(kv: (ReferencePosition, ADAMVariant, Seq[ADAMGenotype]))
+  def apply(kv: (ReferencePosition, ADAMVariant, Seq[ADAMGenotype], Option[ADAMDatabaseVariantAnnotation]))
       : ADAMVariantContext = {
-    new ADAMVariantContext(kv._1, kv._2, kv._3)
+    new ADAMVariantContext(kv._1, kv._2, kv._3, kv._4)
   }
 
   /**
@@ -43,19 +43,21 @@ object ADAMVariantContext {
    * @return ADAMVariantContext corresponding to the ADAMVariant
    */
   def apply(v : ADAMVariant) : ADAMVariantContext = {
-    apply((ReferencePosition(v), v, Seq()))
+    apply((ReferencePosition(v), v, Seq(), None))
   }
 
   /**
    * Constructs an ADAMVariantContext from an ADAMVariant and Seq[ADAMGenotype]
+   *  and ADAMDatabaseVariantAnnotation
    *
    * @param v ADAMVariant which is used to construct the ReferencePosition
-   * @param genotypes Seq[ADAMGenotype]  
+   * @param genotypes Seq[ADAMGenotype]
+   * @param annotation Option[ADAMDatabaseVariantAnnotation]
    * @return ADAMVariantContext corresponding to the ADAMVariant
    */
-  def apply(v : ADAMVariant, genotypes : Seq[ADAMGenotype]) 
+  def apply(v : ADAMVariant, genotypes : Seq[ADAMGenotype], annotation : Option[ADAMDatabaseVariantAnnotation] = None)
       : ADAMVariantContext = {
-    apply((ReferencePosition(v), v, genotypes))
+    apply((ReferencePosition(v), v, genotypes, annotation))
   }
 
   /**
