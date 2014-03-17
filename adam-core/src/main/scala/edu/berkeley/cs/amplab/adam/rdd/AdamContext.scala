@@ -39,13 +39,14 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Logging, SparkContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.scheduler.StatsReportListener
+import org.apache.spark.scheduler.{SparkListenerStageSubmitted, SparkListenerStageCompleted, StatsReportListener}
 import parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
 import parquet.hadoop.util.ContextUtil
 import scala.Some
 import scala.collection.JavaConversions._
+import scala.collection.mutable.HashMap
 import scala.collection.Map
 
 
@@ -135,9 +136,21 @@ object AdamContext {
     val sc = new SparkContext(master, appName, sparkHome, jars, environment)
 
     if (sparkAddStatsListener) {
-      sc.addSparkListener(new StatsReportListener)
-    }
+      sc.addSparkListener(new StatsReportListener {
+        val stageIdToDescription = new HashMap[Int, String]()
 
+        override def onStageSubmitted(stageSubmitted: SparkListenerStageSubmitted) = synchronized {
+          val description = Option(stageSubmitted.properties).flatMap {
+            p => Option(p.getProperty("spark.job.description"))
+          }
+          description.map(d => stageIdToDescription(stageSubmitted.stage.stageId) = d)
+        }
+        override def onStageCompleted(stageCompleted: SparkListenerStageCompleted) {
+          this.logInfo("Finished stage: " + stageIdToDescription(stageCompleted.stage.stageId))
+          super.onStageCompleted(stageCompleted)
+        }
+      })
+    }
     sc
   }
 }
