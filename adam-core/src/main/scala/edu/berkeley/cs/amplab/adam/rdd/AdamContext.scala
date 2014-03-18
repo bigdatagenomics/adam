@@ -39,7 +39,7 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Logging, SparkContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.scheduler.{SparkListenerStageSubmitted, SparkListenerStageCompleted, StatsReportListener}
+import org.apache.spark.scheduler.{SparkListener, SparkListenerStageSubmitted, SparkListenerStageCompleted, StatsReportListener}
 import parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -50,7 +50,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.Map
 
 
-object AdamContext {
+object AdamContext extends Logging {
   // Add ADAM Spark context methods
   implicit def sparkContextToAdamContext(sc: SparkContext): AdamContext = new AdamContext(sc)
 
@@ -136,23 +136,31 @@ object AdamContext {
     val sc = new SparkContext(master, appName, sparkHome, jars, environment)
 
     if (sparkAddStatsListener) {
-      sc.addSparkListener(new StatsReportListener {
-        val stageIdToDescription = new HashMap[Int, String]()
-
-        override def onStageSubmitted(stageSubmitted: SparkListenerStageSubmitted) = synchronized {
-          val description = Option(stageSubmitted.properties).flatMap {
-            p => Option(p.getProperty("spark.job.description"))
-          }
-          description.map(d => stageIdToDescription(stageSubmitted.stage.stageId) = d)
-        }
-        override def onStageCompleted(stageCompleted: SparkListenerStageCompleted) {
-          this.logInfo("Finished stage: " + stageIdToDescription(stageCompleted.stage.stageId))
-          super.onStageCompleted(stageCompleted)
-        }
-      })
+      sc.addSparkListener(new AdamStatsReportListener)
     }
     sc
   }
+}
+
+class AdamStatsReportListener extends SparkListener with Logging {
+  val stageIdToDescription = new HashMap[Int, String]()
+
+  override def onStageSubmitted(stageSubmitted: SparkListenerStageSubmitted) {
+    val description = Option(stageSubmitted.properties).flatMap {
+      p => Option(p.getProperty("spark.job.description"))
+    }
+    description.map(d => stageIdToDescription(stageSubmitted.stage.stageId) = d)
+  }
+  
+  override def onStageCompleted(stageCompleted: SparkListenerStageCompleted) {
+    if (stageIdToDescription contains stageCompleted.stage.stageId) {
+      log.info("Finished stage: " + stageIdToDescription(stageCompleted.stage.stageId))
+    } else {
+      log.info("Finished stage: " + stageCompleted.stage.stageId)
+    }
+    super.onStageCompleted(stageCompleted)
+  }
+
 }
 
 class AdamContext(sc: SparkContext) extends Serializable with Logging {
