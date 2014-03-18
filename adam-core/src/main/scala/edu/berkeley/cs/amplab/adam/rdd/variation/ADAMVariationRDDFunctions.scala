@@ -47,7 +47,7 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends AdamS
     rdd.keyBy(_.variant)
       .leftOuterJoin(ann.keyBy(_.getVariant))
       .values
-      .map { case (v:ADAMVariantContext, a) => new ADAMVariantContext(v.variant, v.genotypes, a) }
+      .map { case (v:ADAMVariantContext, a) => ADAMVariantContext(v.variant, v.genotypes, a) }
 
   }
 

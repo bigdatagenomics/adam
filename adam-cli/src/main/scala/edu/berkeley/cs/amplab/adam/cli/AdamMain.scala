@@ -17,6 +17,7 @@ package edu.berkeley.cs.amplab.adam.cli
 
 import org.apache.spark.Logging
 import scala.Some
+import edu.berkeley.cs.amplab.adam.cli.VcfAnnotation2Adam
 
 object AdamMain extends Logging {
 
@@ -39,7 +40,9 @@ object AdamMain extends Logging {
     FindReads,
     Fasta2Adam,
     PluginExecutor,
-    BuildInformation)
+    BuildInformation,
+    VcfAnnotation2Adam
+  )
 
   private def printCommands() {
     println("\n")

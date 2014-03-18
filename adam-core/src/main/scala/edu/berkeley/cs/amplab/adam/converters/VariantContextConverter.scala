@@ -75,7 +75,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
    * @param vc GATK Variant context to convert.
    * @return ADAM variant contexts
    */
-  def convert(vc:VariantContext): Seq[ADAMVariantContext] = {
+  def convert(vc:VariantContext, extractExternalAnnotations : Boolean = false): Seq[ADAMVariantContext] = {
 
     // TODO: Handle multi-allelic sites
     // We need to split the alleles (easy) and split and subset the PLs (harder)/update the genotype
@@ -94,7 +94,21 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     val sharedGenotype = sharedGenotypeBuilder.build
     val genotypes: Seq[ADAMGenotype] = extractGenotypes(vc, sharedGenotype)
 
-    Seq(ADAMVariantContext(variant, genotypes))
+
+    val annotation : Option[ADAMDatabaseVariantAnnotation] =
+      if (extractExternalAnnotations)
+        Some(extractVariantDatabaseAnnotation(variant, vc))
+      else
+        None
+
+    Seq(ADAMVariantContext(variant, genotypes, annotation))
+  }
+
+  def convertToAnnotation(vc:VariantContext): ADAMDatabaseVariantAnnotation = {
+
+    val variant = createAdamVariant(vc)
+    extractVariantDatabaseAnnotation(variant, vc)
+
   }
 
   private def createAdamVariant(vc: VariantContext): ADAMVariant = {
@@ -126,6 +140,15 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       .setVariantAllele(vc.getAlternateAllele(0).getBaseString)
       .build
     variant
+  }
+
+  private def extractVariantDatabaseAnnotation(variant : ADAMVariant, vc : VariantContext) : ADAMDatabaseVariantAnnotation = {
+    val annotation = ADAMDatabaseVariantAnnotation.newBuilder()
+      .setVariant(variant)
+      .build
+
+    VariantAnnotationConverter.convert(vc, annotation)
+
   }
 
   private def extractGenotypes(vc: VariantContext, sharedGenotype: ADAMGenotype): Seq[ADAMGenotype] = {
@@ -194,7 +217,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       .stop(variant.getPosition + 1 + variant.getReferenceAllele.length - 1)
       .alleles(VariantContextConverter.convertAlleles(variant))
 
-    vc.databases.flatMap(d => Option(d.getDbsnpId)).foreach(d => vcb.id("rs" + d))
+    vc.databases.flatMap(d => Option(d.getDbSnpId)).foreach(d => vcb.id("rs" + d))
 
     // TODO: Extract provenance INFO fields
     vcb.genotypes(vc.genotypes.map(g => {

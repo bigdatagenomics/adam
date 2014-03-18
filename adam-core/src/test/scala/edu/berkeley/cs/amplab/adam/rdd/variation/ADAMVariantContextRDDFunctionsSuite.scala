@@ -38,7 +38,7 @@ class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
 
     val a0 = ADAMDatabaseVariantAnnotation.newBuilder
       .setVariant(v0)
-      .setDbsnpId(5219)
+      .setDbSnpId(5219)
       .build
 
     val vda: RDD[ADAMDatabaseVariantAnnotation] = sc.parallelize(List(
