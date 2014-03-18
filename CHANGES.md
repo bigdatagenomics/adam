@@ -1,11 +1,41 @@
 # ADAM #
-* ISSUE [161](https://github.com/bigdatagenomics/adam/pull/161): Added switches to spark context creation code
+
+### Version parent ###
+* ISSUE [178](https://github.com/bigdatagenomics/adam/pull/178): Upgrade to Hadoop-BAM 0.6.2/Picard 1.107
+* ISSUE [166](https://github.com/bigdatagenomics/adam/pull/166): Pair-wise genotype concordance of genotype RDDs, with CLI tool
+* ISSUE [171](https://github.com/bigdatagenomics/adam/pull/171): Add back in allele dosage for genotypes.
+
+### Version 0.7.0 ###
+* ISSUE [167](https://github.com/bigdatagenomics/adam/pull/167): Fix for Hadoop 1.0.x support
+* ISSUE [165](https://github.com/bigdatagenomics/adam/pull/165): call PluginExecutor in apply method, fixes issue 164
 * ISSUE [160](https://github.com/bigdatagenomics/adam/pull/160): Refactoring FASTA work to break contig sizes.
-* ISSUE [148](https://github.com/bigdatagenomics/adam/issues/148): Moving createSparkContext into core
-* ISSUE [83](https://github.com/bigdatagenomics/adam/issues/83): Add ability to perform a "region join" to RDDs of ADAMRecords
-* ISSUE [101](https://github.com/bigdatagenomics/adam/issues/101): Add ability to call 'plugins' from the command-line
+* ISSUE [78](https://github.com/bigdatagenomics/adam/pull/78): Upgrade to Spark 0.9 and Scala 2.10
+* ISSUE [138](https://github.com/bigdatagenomics/adam/pull/138): Display Git commit info on command line
+* ISSUE [161](https://github.com/bigdatagenomics/adam/pull/161): Added switches to spark context creation code
+* ISSUE [117](https://github.com/bigdatagenomics/adam/pull/117): Add a "range join" method.
+* ISSUE [151](https://github.com/bigdatagenomics/adam/pull/151): Vcf work concordance and genotype
+* ISSUE [150](https://github.com/bigdatagenomics/adam/pull/150): Remaining variant changes for adam2vcf, unit tests, and CLI modifications
+* ISSUE [147](https://github.com/bigdatagenomics/adam/pull/147): Resurrect VCF conversion code
+* ISSUE [148](https://github.com/bigdatagenomics/adam/pull/148): Moving createSparkContext into core
+* ISSUE [142](https://github.com/bigdatagenomics/adam/pull/142): Enforce Maven and Java versions
+* ISSUE [144](https://github.com/bigdatagenomics/adam/pull/144): Merge of last few days of work on master into this branch
+* ISSUE [124](https://github.com/bigdatagenomics/adam/pull/124): Vcf work rdd master merge
+* ISSUE [143](https://github.com/bigdatagenomics/adam/pull/143): Changing package declaration to match test file location and removing un...
+* ISSUE [140](https://github.com/bigdatagenomics/adam/pull/140): Update README.md
+* ISSUE [139](https://github.com/bigdatagenomics/adam/pull/139): Update README.md
+* ISSUE [129](https://github.com/bigdatagenomics/adam/pull/129): Modified pileup transforms to improve performance + to add options
+* ISSUE [116](https://github.com/bigdatagenomics/adam/pull/116): add fastq interleaver script
+* ISSUE [125](https://github.com/bigdatagenomics/adam/pull/125): Add design doc to CONTRIBUTING document
+* ISSUE [114](https://github.com/bigdatagenomics/adam/pull/114): Changes to RDD utility files for new variant schema
+* ISSUE [122](https://github.com/bigdatagenomics/adam/pull/122): Add IRC Channel to readme
+* ISSUE [100](https://github.com/bigdatagenomics/adam/pull/100): CLI component changes for new variant schema
+* ISSUE [108](https://github.com/bigdatagenomics/adam/pull/108): Adding new PluginExecutor command
+* ISSUE [98](https://github.com/bigdatagenomics/adam/pull/98): Vcf work remove old variant
+* ISSUE [104](https://github.com/bigdatagenomics/adam/pull/104): Added the port erasure to SparkFunSuite's cleanup.
+* ISSUE [107](https://github.com/bigdatagenomics/adam/pull/107): Cleaning up change documentation.
 * ISSUE [99](https://github.com/bigdatagenomics/adam/pull/99): Encoding tag types in the ADAMRecord attributes, adding the 'tags' command
 * ISSUE [105](https://github.com/bigdatagenomics/adam/pull/105): Add initial documentation on contributing
+* ISSUE [97](https://github.com/bigdatagenomics/adam/pull/97): New schema, variant context converter changes, and removal of old genoty...
 * ISSUE [79](https://github.com/bigdatagenomics/adam/pull/79): Adding ability to convert reference FASTA files for nucleotide sequences
 * ISSUE [91](https://github.com/bigdatagenomics/adam/pull/91): Minor change, increase adam-cli usage width to 150 characters
 * ISSUE [86](https://github.com/bigdatagenomics/adam/pull/86): Fixes to pileup code
@@ -26,7 +56,7 @@
 * ISSUE [36](https://github.com/bigdatagenomics/adam/pull/36): Adding reads to rods transformation.
 * ISSUE [56](https://github.com/bigdatagenomics/adam/pull/56): Adding Yy as base in MdTag
 
-### Version parent ###
+### Version 0.6.0 ###
 * ISSUE [53](https://github.com/bigdatagenomics/adam/pull/53): Fix Hadoop 2.2.0 support, upgrade to Spark 0.8.1
 * ISSUE [52](https://github.com/bigdatagenomics/adam/pull/52): Attributes: Use 't' instead of ',', as , is a valid character
 * ISSUE [47](https://github.com/bigdatagenomics/adam/pull/47): Adding containsRefName to SequenceDictionary

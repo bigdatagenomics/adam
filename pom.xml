@@ -300,17 +300,17 @@
             <dependency>
                 <groupId>fi.tkk.ics.hadoop.bam</groupId>
                 <artifactId>hadoop-bam</artifactId>
-                <version>6.1-SNAPSHOT</version>
+                <version>6.1</version>
             </dependency>
             <dependency>
                 <groupId>variant</groupId>
                 <artifactId>variant</artifactId>
-                <version>1.93</version>
+                <version>1.107</version>
             </dependency>
             <dependency>
                 <groupId>tribble</groupId>
                 <artifactId>tribble</artifactId>
-                <version>1.93</version>
+                <version>1.107</version>
             </dependency>
             <dependency>
                 <groupId>cofoja</groupId>
@@ -320,12 +320,12 @@
             <dependency>
                 <groupId>picard</groupId>
                 <artifactId>picard</artifactId>
-                <version>1.93</version>
+                <version>1.107</version>
             </dependency>
             <dependency>
                 <groupId>samtools</groupId>
                 <artifactId>samtools</artifactId>
-                <version>1.93</version>
+                <version>1.107</version>
             </dependency>
             <dependency>
                 <groupId>args4j</groupId>
