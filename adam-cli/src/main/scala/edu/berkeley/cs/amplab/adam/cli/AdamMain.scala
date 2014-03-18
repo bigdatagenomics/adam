@@ -41,7 +41,7 @@ object AdamMain extends Logging {
     Fasta2Adam,
     PluginExecutor,
     BuildInformation,
-    VcfAnnotation2Adam
+    VcfAnnotation2Adam,
     VariantStats,
     BuildInformation)
 

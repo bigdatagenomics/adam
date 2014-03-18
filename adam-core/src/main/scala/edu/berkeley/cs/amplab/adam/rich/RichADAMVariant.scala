@@ -45,4 +45,17 @@ class RichADAMVariant(val variant: ADAMVariant) {
     }
     case _ => false
   }
+
+  def isSingleNucleotideVariant() = {
+    variant.getReferenceAllele.length == 1 && variant.getVariantAllele.length == 1
+  }
+  
+  def isMultipleNucleotideVariant() = {
+    !isSingleNucleotideVariant && variant.getReferenceAllele.length == variant.getVariantAllele.length
+  }
+
+  def isInsertion() = variant.getReferenceAllele.length < variant.getVariantAllele.length
+
+  def isDeletion() = variant.getReferenceAllele.length > variant.getVariantAllele.length
+
 }

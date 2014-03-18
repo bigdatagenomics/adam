@@ -15,10 +15,11 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeAllele, ADAMGenotype, VariantType}
+import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeAllele, ADAMGenotype}
 import org.apache.spark.rdd.RDD
 import collection.mutable.HashMap
 import collection.mutable
+import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant._
 
 class VariantsSummaryStatistics {
   val snv_counts = mutable.Map[VariantsSummary.SNV, Long]().withDefaultValue(0)
@@ -54,11 +55,13 @@ object VariantsSummary {
     SNV("T", "G"))
 
   def apply(rdd: RDD[ADAMGenotype]) : VariantsSummary = {
-    val snvs = rdd.filter(genotype => genotype.getVariant.getVariantType == VariantType.SNP
+    val snvs = rdd.filter(genotype => genotype.getVariant.isSingleNucleotideVariant
                                       && genotype.getAlleles.contains(ADAMGenotypeAllele.Alt))
 
     val sample_snvs = snvs.map(genotype => {
       val variant = genotype.getVariant
+      assert(SimpleNucleotides.contains(variant.getReferenceAllele))
+      assert(SimpleNucleotides.contains(variant.getVariantAllele))
       val snv = SNV(variant.getReferenceAllele.toString, variant.getVariantAllele.toString)
       val sample = genotype.getSampleId
       (sample, snv)
