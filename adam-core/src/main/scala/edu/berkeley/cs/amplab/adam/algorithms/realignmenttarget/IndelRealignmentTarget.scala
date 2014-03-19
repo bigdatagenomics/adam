@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,15 +92,10 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @return True if two targets overlap.
    */
   def overlap (a: IndelRealignmentTarget, b: IndelRealignmentTarget) : Boolean = {
-    // Note: the last two conditions were added for completeness; they should generally not
-    // be necessary although maybe in weird cases (indel on both reads in a mate pair that
-    // span a structural variant) and then one probably would not want to re-align these
-    // together.
-    // TODO: introduce an upper bound on re-align distance as GATK does??
-    ((a.getReadRange.start >= b.getReadRange.start && a.getReadRange.start <= b.getReadRange.end) ||
-      (a.getReadRange.end >= b.getReadRange.start && a.getReadRange.end <= b.getReadRange.start) ||
-      (a.getReadRange.start >= b.getReadRange.start && a.getReadRange.end <= b.getReadRange.end) ||
-      (b.getReadRange.start >= a.getReadRange.start && b.getReadRange.end <= a.getReadRange.end))
+    ((a.getReadRange.start <= b.getReadRange.start && a.getReadRange.end >= b.getReadRange.start) ||
+     (a.getReadRange.start <= b.getReadRange.end && a.getReadRange.end >= b.getReadRange.end) ||
+     (b.getReadRange.start <= a.getReadRange.start && b.getReadRange.end >= a.getReadRange.start) ||
+     (b.getReadRange.start <= a.getReadRange.end && b.getReadRange.end >= a.getReadRange.end))
   }
 }
 
@@ -136,8 +131,11 @@ case class IndelRange (indelRange: NumericRange[Long], override val readRange: N
    * @return Merged range.
    */
   override def merge (ir: GenericRange) : IndelRange = {
-    if(this == IndelRange.emptyRange)
+    if(this == IndelRange.emptyRange) {
       ir
+    } else if (ir == IndelRange.emptyRange) {
+      this
+    }
 
     assert(indelRange == ir.asInstanceOf[IndelRange].getIndelRange)
     // do not need to check read range - read range must contain indel range, so if
@@ -254,9 +252,6 @@ class SNPRangeSerializer extends Serializer[SNPRange] {
 
 object IndelRealignmentTarget {
 
-  // threshold for determining whether a pileup contains sufficient mismatch evidence
-  val mismatchThreshold = 0.15
-
   /**
    * Generates 0+ indel realignment targets from a single read.
    *
@@ -269,7 +264,7 @@ object IndelRealignmentTarget {
 
     var pos = List[NumericRange.Inclusive[Long]]()
     var referencePos = read.record.getStart
-    val readRange = new NumericRange.Inclusive[Long](referencePos, read.end.get, 1)
+    val readRange = new NumericRange.Inclusive[Long](referencePos, read.end.get - 1, 1)
     var readPos = 0
     var cigar = read.samtoolsCigar
     var mdTag = read.mdTag.get
@@ -286,7 +281,7 @@ object IndelRealignmentTarget {
         // DELETE
         case CigarOperator.D => {
           if (cigarElement.getLength <= maxIndelSize) {
-            pos ::= new NumericRange.Inclusive[Long](referencePos, referencePos + cigarElement.getLength, 1)
+            pos ::= new NumericRange.Inclusive[Long](referencePos, referencePos + cigarElement.getLength - 1, 1)
           }
           referencePos += cigarElement.getLength
         }
@@ -303,110 +298,9 @@ object IndelRealignmentTarget {
     )
 
     pos.map(r => IndelRange(r, readRange))
-      .map(ir => new IndelRealignmentTarget(Set(ir), Set(SNPRange.emptyRange)))
+      .map(ir => new IndelRealignmentTarget(Set(ir), Set[SNPRange]()))
       .toSeq
   }
-
-  /**
-   * Generates an indel realignment target from a rod.
-   *
-   * @param rod Base pileup.
-   * @return Generated realignment target.
-   */
-  def apply(rod: ADAMRod): IndelRealignmentTarget = {
-    apply(rod.pileups)
-  }
-
-  /**
-   * Generates an indel realignment target from a pileup.
-   *
-   * @param rod Base pileup.
-   * @return Generated realignment target.
-   */
-  def apply(rod: Seq[ADAMPileup]): IndelRealignmentTarget = {
-
-    /**
-     * If we have a indel in a pileup position, generates an indel range.
-     *
-     * @param pileup Single pileup position.
-     * @return Indel range.
-     */
-    def mapEvent(pileup: ADAMPileup): IndelRange = {
-      Option(pileup.getReadBase) match {
-        case None => {
-          // deletion
-          new IndelRange(
-            new NumericRange.Inclusive[Long](
-              pileup.getPosition.toLong - pileup.getRangeOffset.toLong,
-              pileup.getPosition.toLong + pileup.getRangeLength.toLong - pileup.getRangeOffset.toLong - 1,
-              1),
-            new NumericRange.Inclusive[Long](pileup.getReadStart.toLong, pileup.getReadEnd.toLong - 1, 1)
-          )
-        }
-        case Some(o) => {
-          // insert
-          new IndelRange(
-            new NumericRange.Inclusive[Long](pileup.getPosition.toLong, pileup.getPosition.toLong, 1),
-            new NumericRange.Inclusive[Long](pileup.getReadStart.toLong, pileup.getReadEnd.toLong - 1, 1)
-          )
-        }
-      }
-    }
-
-    /**
-     * If we have a point event, generates a SNPRange.
-     *
-     * @param pileup Pileup position with mismatch evidence.
-     * @return SNP range.
-     */
-    def mapPoint(pileup: ADAMPileup): SNPRange = {
-      val range : NumericRange.Inclusive[Long] =
-        new NumericRange.Inclusive[Long](pileup.getReadStart.toLong, pileup.getReadEnd.toLong - 1, 1)
-      new SNPRange(pileup.getPosition, range)
-    }
-
-    // segregate into indels, matches, and mismatches
-    val indels = extractIndels(rod)
-    val matches = extractMatches(rod)
-    val mismatches = extractMismatches(rod)
-
-    // TODO: this assumes Sanger encoding; how about older data? Should there be a property somewhere?
-    // calculate the quality of the matches and the mismatches
-    val matchQuality : Int =
-      if (matches.size > 0)
-        matches.map(_.getSangerQuality).reduce(_ + _)
-      else
-        0
-    val mismatchQuality : Int =
-      if (mismatches.size > 0)
-        mismatches.map(_.getSangerQuality).reduce(_ + _)
-      else
-        0
-
-    // check our mismatch ratio - if we have a sufficiently high ratio of mismatch quality, generate a snp event, else just generate indel events
-    if (matchQuality == 0 || mismatchQuality.toDouble / matchQuality.toDouble >= mismatchThreshold) {
-      new IndelRealignmentTarget(
-        new HashSet[IndelRange]().union(indels.map(mapEvent).toSet),
-        new HashSet[SNPRange]().union(mismatches.map(mapPoint).toSet)
-      )
-    } else {
-      new IndelRealignmentTarget(
-        new HashSet[IndelRange]().union(indels.map(mapEvent).toSet), HashSet[SNPRange]()
-      )
-    }
-  }
-
-  def extractMismatches(rod: Seq[ADAMPileup]) : Seq[ADAMPileup] = {
-    rod.filter(r => r.getRangeOffset == null && r.getNumSoftClipped == 0)
-      .filter(r => r.getReadBase != r.getReferenceBase)
-  }
-
-  def extractMatches(rod: Seq[ADAMPileup]) : Seq[ADAMPileup] =
-    rod.filter(r => r.getRangeOffset == null && r.getNumSoftClipped == 0)
-    .filter(r => r.getReadBase == r.getReferenceBase)
-
-  def extractIndels(rod: Seq[ADAMPileup]) : Seq[ADAMPileup] =
-    rod.filter(_.getRangeOffset != null)
 
   /**
    * @return An empty target that has no indel nor SNP evidence.

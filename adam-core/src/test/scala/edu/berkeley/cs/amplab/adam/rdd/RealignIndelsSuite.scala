@@ -51,17 +51,16 @@ class RealignIndelsSuite extends SparkFunSuite {
   }
 
   sparkTest("checking mapping to targets for artificial reads") {
-    assert(false) // to be fixed before merging in to master
-    /*val targets = RealignmentTargetFinder(artificial_reads)
-    assert(targets.size == 1)
+    val targets = RealignmentTargetFinder(artificial_reads.map(RichADAMRecord(_)))
+    assert(targets.size === 1)
     val rr = artificial_reads.map(RichADAMRecord(_))
-    val readsMappedToTarget = RealignIndels().mapTargets(rr, targets).map(kv => {
+    val readsMappedToTarget = RealignIndels.mapTargets(rr, targets).map(kv => {
         val (t, r) = kv
 
         (t, r.map(r => r.record))
       }).collect()
       
-    assert(readsMappedToTarget.size == 2)
+    assert(readsMappedToTarget.size === 2)
 
     readsMappedToTarget.forall {
       case (target : IndelRealignmentTarget, reads : Seq[ADAMRecord]) => reads.forall {
@@ -75,7 +74,7 @@ class RealignIndelsSuite extends SparkFunSuite {
           }
       }
       }
-    }*/
+    }
   }
 
   sparkTest("checking alternative consensus for artificial reads") {
@@ -104,8 +103,7 @@ class RealignIndelsSuite extends SparkFunSuite {
   }
 
   sparkTest("checking extraction of reference from reads") {
-    assert(false) // to be fixed before merging into trunk
-    /*def checkReference(readReference : Tuple3[String, Long, Long]) {
+    def checkReference(readReference : Tuple3[String, Long, Long]) {
       // the first three lines of artificial.fasta
       val refStr = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
       val startIndex = Math.min(readReference._2.toInt, 120)
@@ -113,9 +111,9 @@ class RealignIndelsSuite extends SparkFunSuite {
       assert(readReference._1 === refStr.substring(startIndex, stopIndex))
     }
     
-    val targets = RealignmentTargetFinder(artificial_reads)
+    val targets = RealignmentTargetFinder(artificial_reads.map(RichADAMRecord(_)))
     val rr = artificial_reads.map(RichADAMRecord(_))
-    val readsMappedToTarget : Array[Tuple2[IndelRealignmentTarget, Seq[ADAMRecord]]] = RealignIndels().mapTargets(rr, targets).map(kv => {
+    val readsMappedToTarget : Array[Tuple2[IndelRealignmentTarget, Seq[ADAMRecord]]] = RealignIndels.mapTargets(rr, targets).map(kv => {
         val (t, r) = kv
 
         (t, r.map(r => r.record))
@@ -124,14 +122,14 @@ class RealignIndelsSuite extends SparkFunSuite {
     val readReference = readsMappedToTarget.map {
       case (target, reads) => {
         if (!target.isEmpty) {
-          val referenceFromReads : (String, Long, Long) = RealignIndels().getReferenceFromReads(reads.map(r => new RichADAMRecord(r)))
+          val referenceFromReads : (String, Long, Long) = RealignIndels.getReferenceFromReads(reads.map(r => new RichADAMRecord(r)))
           assert(referenceFromReads._2 == -1 || referenceFromReads._1.length > 0)
           checkReference(referenceFromReads)
         }
       }
       case _ => assert(false)
     }
-    assert(readReference != null)*/
+    assert(readReference != null)
   }
 
   sparkTest("checking search for consensus list for artitifical reads") {

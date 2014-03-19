@@ -30,10 +30,6 @@ import scala.collection.immutable.TreeSet
 
 object RealignmentTargetFinder {
 
-  def apply(rdd: RDD[ADAMRecord]): TreeSet[IndelRealignmentTarget] = {
-    new RealignmentTargetFinder().findTargets(rdd.map(r => RichADAMRecord(r))).set
-  }
-
   /**
    * Generates realignment targets from a set of reads.
    *
@@ -112,9 +108,10 @@ class RealignmentTargetFinder extends Serializable with Logging {
      * are targets which do not show snp/indel evidence. we order these targets by reference position, and
      * merge targets who have overlapping positions
      */
-    val targetSet: TargetSet = TargetSet(reads.flatMap(IndelRealignmentTarget(_, maxIndelSize))
+    val targets = reads.flatMap(IndelRealignmentTarget(_, maxIndelSize))
       .filter(t => !t.isEmpty)
-      .mapPartitions(iter => iter.toArray.sorted(TargetOrdering).toIterator)
+
+    val targetSet: TargetSet = TargetSet(targets.mapPartitions(iter => iter.toArray.sorted(TargetOrdering).toIterator)
       .map(createTargetSet)
       .fold(TargetSet())((t1: TargetSet, t2: TargetSet) => joinTargets(t1, t2))
       .set.filter(_.readRange.length <= maxTargetSize))
