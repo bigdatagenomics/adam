@@ -31,6 +31,10 @@ import org.bdgenomics.formats.avro.{
   ADAMRecord,
   ADAMNucleotideContigFragment
 }
+import org.bdgenomics.adam.algorithms.consensus.{
+  ConsensusGenerator,
+  ConsensusGeneratorFromReads
+}
 import org.bdgenomics.adam.converters.ADAMRecordConverter
 import org.bdgenomics.adam.models.{
   ADAMRod,
@@ -55,7 +59,7 @@ import org.bdgenomics.adam.util.{
   ADAMBAMOutputFormat,
   ADAMSAMOutputFormat
 }
-import parquet.avro.{ AvroParquetOutputFormat, AvroWriteSupport }
+import parquet.avro.AvroParquetOutputFormat
 import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
 import parquet.hadoop.util.ContextUtil
@@ -167,8 +171,8 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
 
     // attach header to output format
     asSam match {
-      case true  => ADAMSAMOutputFormat.addHeader(convertRecords.first.get.getHeader())
-      case false => ADAMBAMOutputFormat.addHeader(convertRecords.first.get.getHeader())
+      case true  => ADAMSAMOutputFormat.addHeader(header)
+      case false => ADAMBAMOutputFormat.addHeader(header)
     }
 
     // write file to disk
@@ -306,8 +310,28 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
     BaseQualityRecalibration(rdd, knownSnps)
   }
 
-  def adamRealignIndels(): RDD[ADAMRecord] = {
-    RealignIndels(rdd)
+  /**
+   * Realigns indels using a concensus-based heuristic.
+   *
+   * @see RealignIndels
+   *
+   * @param isSorted If the input data is sorted, setting this parameter to true avoids a second sort.
+   * @param maxIndelSize The size of the largest indel to use for realignment.
+   * @param maxConsensusNumber The maximum number of consensus sequences to realign against per
+   * target region.
+   * @param lodThreshold Log-odds threhold to use when realigning; realignments are only finalized
+   * if the log-odds threshold is exceeded.
+   * @param maxTargetSize The maximum width of a single target region for realignment.
+   *
+   * @return Returns an RDD of mapped reads which have been realigned.
+   */
+  def adamRealignIndels(consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
+                        isSorted: Boolean = false,
+                        maxIndelSize: Int = 500,
+                        maxConsensusNumber: Int = 30,
+                        lodThreshold: Double = 5.0,
+                        maxTargetSize: Int = 3000): RDD[ADAMRecord] = {
+    RealignIndels(rdd, consensusModel, isSorted, maxIndelSize, maxConsensusNumber, lodThreshold)
   }
 
   // Returns a tuple of (failedQualityMetrics, passedQualityMetrics)
@@ -378,7 +402,7 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
      * @return A sequence containing the rods in this bucket.
      */
     def bucketedReadsToRods(bucket: (ReferencePosition, Iterable[ADAMRecord])): Iterable[ADAMRod] = {
-      val (bucketStart, bucketReads) = bucket
+      val (_, bucketReads) = bucket
 
       bucketReads.flatMap(pp.readToPileups)
         .groupBy(ReferencePosition(_))
@@ -490,7 +514,7 @@ class ADAMRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
    * @return Rods split up by samples and _not_ grouped together.
    */
   def adamSplitRodsBySamples(): RDD[ADAMRod] = {
-    rdd.flatMap(_.splitBySamples)
+    rdd.flatMap(_.splitBySamples())
   }
 
   /**
@@ -500,7 +524,7 @@ class ADAMRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
    * @return Rods split up by samples and grouped together by position.
    */
   def adamDivideRodsBySamples(): RDD[(ReferencePosition, List[ADAMRod])] = {
-    rdd.keyBy(_.position).map(r => (r._1, r._2.splitBySamples))
+    rdd.keyBy(_.position).map(r => (r._1, r._2.splitBySamples()))
   }
 
   /**
@@ -531,7 +555,7 @@ class ADAMRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
     val totalBases: Long = rdd.map(_.pileups.length.toLong).reduce(_ + _)
 
     // coverage is the total count of bases, over the total number of loci
-    totalBases.toDouble / rdd.count.toDouble
+    totalBases.toDouble / rdd.count().toDouble
   }
 }
 

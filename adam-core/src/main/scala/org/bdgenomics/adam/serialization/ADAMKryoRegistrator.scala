@@ -25,9 +25,8 @@ import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models._
 import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputStream }
 import org.apache.spark.serializer.KryoRegistrator
-import org.bdgenomics.adam.algorithms.realignmenttarget._
-import scala.collection.immutable.TreeSet
 import scala.reflect.ClassTag
+import org.bdgenomics.adam.algorithms.realignmenttarget._
 
 case class InputStreamWithDecoder(size: Int) {
   val buffer = new Array[Byte](size)
@@ -79,9 +78,8 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)
     kryo.register(classOf[SingleReadBucket], new SingleReadBucketSerializer)
-    kryo.register(classOf[IndelRange], new IndelRangeSerializer())
-    kryo.register(classOf[SNPRange], new SNPRangeSerializer)
     kryo.register(classOf[IndelRealignmentTarget])
-    kryo.register(classOf[TreeSet[IndelRealignmentTarget]], new TreeSetSerializer)
+    kryo.register(classOf[TargetSet], new TargetSetSerializer)
+    kryo.register(classOf[ZippedTargetSet], new ZippedTargetSetSerializer)
   }
 }

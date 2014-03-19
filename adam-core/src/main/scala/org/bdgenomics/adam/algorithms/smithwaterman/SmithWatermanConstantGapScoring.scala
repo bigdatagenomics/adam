@@ -20,11 +20,11 @@ package org.bdgenomics.adam.algorithms.smithwaterman
 object SmithWatermanConstantGapScoring {
 
   protected def constantGapFn(wMatch: Double, wDelete: Double, wInsert: Double, wMismatch: Double)(x: Int, y: Int, i: Char, j: Char): Double = {
-    if (x == y) {
+    if (i == j) {
       wMatch
-    } else if (x == '_') {
+    } else if (i == '_') {
       wDelete
-    } else if (y == '_') {
+    } else if (j == '_') {
       wInsert
     } else {
       wMismatch
@@ -33,11 +33,11 @@ object SmithWatermanConstantGapScoring {
 
 }
 
-abstract class SmithWatermanConstantGapScoring(xSequence: String,
-                                               ySequence: String,
-                                               wMatch: Double,
-                                               wMismatch: Double,
-                                               wInsert: Double,
-                                               wDelete: Double)
-    extends SmithWatermanGapScoringFromFn(xSequence, ySequence, SmithWatermanConstantGapScoring.constantGapFn(wMatch, wMismatch, wInsert, wDelete)) {
+class SmithWatermanConstantGapScoring(xSequence: String,
+                                      ySequence: String,
+                                      wMatch: Double,
+                                      wMismatch: Double,
+                                      wInsert: Double,
+                                      wDelete: Double)
+    extends SmithWatermanGapScoringFromFn(xSequence, ySequence, SmithWatermanConstantGapScoring.constantGapFn(wMatch, wInsert, wDelete, wMismatch)) {
 }
