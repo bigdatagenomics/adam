@@ -17,13 +17,11 @@
  */
 package org.bdgenomics.adam.algorithms.realignmenttarget
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMPileup }
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rich.RichADAMRecord
 import scala.annotation.tailrec
 import scala.collection.immutable.TreeSet
-import org.bdgenomics.adam.rdd.ADAMContext._
 
 object RealignmentTargetFinder {
 
@@ -33,8 +31,10 @@ object RealignmentTargetFinder {
    * @param rdd RDD of reads to use in generating realignment targets.
    * @return Sorted set of realignment targets.
    */
-  def apply(rdd: RDD[ADAMRecord]): TreeSet[IndelRealignmentTarget] = {
-    new RealignmentTargetFinder().findTargets(rdd)
+  def apply(rdd: RDD[RichADAMRecord],
+            maxIndelSize: Int = 500,
+            maxTargetSize: Int = 3000): TreeSet[IndelRealignmentTarget] = {
+    new RealignmentTargetFinder().findTargets(rdd, maxIndelSize, maxTargetSize).set
   }
 }
 
@@ -43,23 +43,27 @@ class RealignmentTargetFinder extends Serializable with Logging {
   /**
    * Joins two sorted sets of targets together. Is tail call recursive.
    *
-   * @param first A sorted set of realignment targets. This set must be ordered ahead of the second set.
+   * @note This function should not be called in a context where target set serialization is needed.
+   * Instead, call joinTargets(TargetSet, TargetSet), which wraps this function.
+   *
+   * @param first A sorted set of realignment targets. This set must be ordered ahead of the
+   * second set.
    * @param second A sorted set of realignment targets.
    * @return A merged set of targets.
    */
-  // TODO: it seems that the old way of merging allows for duplicate targets (say two copies of the same indel
-  // that have been generated from two different reads that therefore have different read ranges)
-  // That should be fixed now, see the change in merging.
   @tailrec protected final def joinTargets(
     first: TreeSet[IndelRealignmentTarget],
     second: TreeSet[IndelRealignmentTarget]): TreeSet[IndelRealignmentTarget] = {
 
-    if (!first.isEmpty && second.isEmpty)
+    if (first.isEmpty && second.isEmpty) {
+      TreeSet[IndelRealignmentTarget]()(TargetOrdering)
+    } else if (second.isEmpty) {
       first
-    else if (first.isEmpty && !second.isEmpty)
+    } else if (first.isEmpty) {
       second
-    else {
-      // if the two sets overlap, we must merge their head and tail elements, else we can just blindly append
+    } else {
+      // if the two sets overlap, we must merge their head and tail elements,
+      // else we can just blindly append
       if (!TargetOrdering.overlap(first.last, second.head)) {
         first.union(second)
       } else {
@@ -70,32 +74,46 @@ class RealignmentTargetFinder extends Serializable with Logging {
   }
 
   /**
+   * Wrapper for joinTargets(TreeSet[IndelRealignmentTarget], TreeSet[IndelRealignmentTarget])
+   * for contexts where serialization is needed.
+   *
+   * @param first A sorted set of realignment targets. This set must be ordered ahead of the
+   * second set.
+   * @param second A sorted set of realignment targets.
+   * @return A merged set of targets.
+   */
+  def joinTargets(first: TargetSet,
+                  second: TargetSet): TargetSet = {
+    new TargetSet(joinTargets(first.set, second.set))
+  }
+
+  /**
    * Finds indel targets over a set of reads.
    *
    * @param reads An RDD containing reads to generate indel realignment targets from.
    * @return An ordered set of indel realignment targets.
    */
-  def findTargets(reads: RDD[ADAMRecord]): TreeSet[IndelRealignmentTarget] = {
+  def findTargets(reads: RDD[RichADAMRecord],
+                  maxIndelSize: Int = 500,
+                  maxTargetSize: Int = 3000): TargetSet = {
 
-    // generate pileups from reads
-    val rods: RDD[Iterable[ADAMPileup]] = reads.adamRecords2Pileup(true)
-      .groupBy(_.getPosition).map(_._2)
-
-    def createTreeSet(target: IndelRealignmentTarget): TreeSet[IndelRealignmentTarget] = {
+    def createTargetSet(target: IndelRealignmentTarget): TargetSet = {
       val tmp = new TreeSet()(TargetOrdering)
-      tmp + target
+      new TargetSet(tmp + target)
     }
 
     /* for each rod, generate an indel realignment target. we then filter out all "empty" targets: these
      * are targets which do not show snp/indel evidence. we order these targets by reference position, and
      * merge targets who have overlapping positions
      */
-    val targetSet = rods.map(IndelRealignmentTarget(_))
-      .filter(!_.isEmpty)
-      .keyBy(_.getSortKey())
-      .sortByKey()
-      .map(x => createTreeSet(x._2)).collect()
-      .fold(new TreeSet()(TargetOrdering))(joinTargets)
+    val targets = reads.flatMap(IndelRealignmentTarget(_, maxIndelSize))
+      .filter(t => !t.isEmpty)
+
+    val targetSet: TargetSet = TargetSet(targets.mapPartitions(iter => iter.toArray.sorted(TargetOrdering).toIterator)
+      .map(createTargetSet)
+      .fold(TargetSet())((t1: TargetSet, t2: TargetSet) => joinTargets(t1, t2))
+      .set.filter(_.readRange.length <= maxTargetSize))
+
     targetSet
   }
 

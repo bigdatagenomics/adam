@@ -17,16 +17,14 @@
  */
 package org.bdgenomics.adam.util
 
+import org.bdgenomics.adam.models.ReferencePosition
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rich.RichADAMRecord._
+import org.bdgenomics.adam.rich.RichADAMRecord
+import net.sf.samtools.{ Cigar, CigarOperator }
 import scala.collection.immutable
 import scala.collection.immutable.NumericRange
 import scala.util.matching.Regex
-import net.sf.samtools.{ Cigar, CigarOperator }
-import org.bdgenomics.adam.models.ReferencePosition
-
-//import org.bdgenomics.adam.util.ImplicitJavaConversions._
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.rich.RichADAMRecord._
 
 object MdTagEvent extends Enumeration {
   val Match, Mismatch, Delete = Value
@@ -234,6 +232,57 @@ object MdTag {
   def moveAlignment(read: RichADAMRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
     moveAlignment(newReference, read.record.getSequence, newCigar, newAlignmentStart)
   }
+
+  def apply(read: String, reference: String, cigar: Cigar, start: Long): MdTag = {
+    var matchCount = 0
+    var delCount = 0
+    var string = ""
+    var readPos = 0
+    var refPos = 0
+
+    // loop over all cigar elements
+    cigar.getCigarElements.foreach(cigarElement => {
+      cigarElement.getOperator match {
+        case CigarOperator.M => {
+          for (i <- 0 until cigarElement.getLength) {
+            if (read(readPos) == reference(refPos)) {
+              matchCount += 1
+            } else {
+              string += matchCount.toString + reference(refPos)
+              matchCount = 0
+            }
+            readPos += 1
+            refPos += 1
+            delCount = 0
+          }
+        }
+        case CigarOperator.D => {
+          for (i <- 0 until cigarElement.getLength) {
+            if (delCount == 0) {
+              string += matchCount.toString + "^"
+            }
+            string += reference(refPos)
+
+            matchCount = 0
+            delCount += 1
+            refPos += 1
+          }
+        }
+        case _ => {
+          if (cigarElement.getOperator.consumesReadBases) {
+            readPos += cigarElement.getLength
+          }
+          if (cigarElement.getOperator.consumesReferenceBases) {
+            throw new IllegalArgumentException("Cannot handle operator: " + cigarElement.getOperator)
+          }
+        }
+      }
+    })
+
+    string += matchCount.toString
+
+    apply(string, start)
+  }
 }
 
 class MdTag(
@@ -280,7 +329,7 @@ class MdTag(
    *
    * @return True if this read has mismatches. We do not return true if the read has no mismatches but has deletions.
    */
-  def hasMismatches(): Boolean = {
+  def hasMismatches: Boolean = {
     !mismatches.isEmpty
   }
 
@@ -333,7 +382,7 @@ class MdTag(
       cigarElement.getOperator match {
         case CigarOperator.M => {
           // if we are a match, loop over bases in element
-          for (i <- (0 until cigarElement.getLength)) {
+          for (i <- 0 until cigarElement.getLength) {
             // if a mismatch, get from the mismatch set, else pull from read
             if (mismatches.contains(referencePos)) {
               reference += {
@@ -352,7 +401,7 @@ class MdTag(
         }
         case CigarOperator.D => {
           // if a delete, get from the delete pool
-          for (i <- (0 until cigarElement.getLength)) {
+          for (i <- 0 until cigarElement.getLength) {
             reference += {
               deletes.get(referencePos) match {
                 case Some(base) => base
@@ -381,7 +430,7 @@ class MdTag(
   /**
    * Converts an MdTag object to a properly formatted MD string.
    *
-   * @return MD string corresponding to [0-9]+(([A-Z]|\^[A-Z]+)[0-9]+)
+   * @return MD string corresponding to [0-9]+(([A-Z]|\&#94;[A-Z]+)[0-9]+)
    * @see http://zenfractal.com/2013/06/19/playing-with-matches/
    */
   override def toString(): String = {
@@ -454,5 +503,5 @@ class MdTag(
     case _           => false
   }
   def canEqual(other: Any): Boolean = other.isInstanceOf[MdTag]
-  override def hashCode: Int = toString.hashCode
+  override def hashCode: Int = toString().hashCode
 }
