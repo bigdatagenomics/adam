@@ -16,29 +16,31 @@
 
 package edu.berkeley.cs.amplab.adam.rdd
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
-import org.apache.spark.Logging
-import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget.{RealignmentTargetFinder,
                                                                  IndelRealignmentTarget,
                                                                  TargetOrdering,
-                                                                 ZippedTargetOrdering}
-import org.apache.spark.broadcast.Broadcast
-import scala.collection.immutable.TreeSet
-import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions
-import scala.annotation.tailrec
-import scala.collection.mutable.Map
-import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
-import scala.collection.immutable.NumericRange
-import edu.berkeley.cs.amplab.adam.models.Consensus
-import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
+                                                                 ZippedTargetOrdering,
+                                                                 TargetSet,
+                                                                 ZippedTargetSet}
+import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
+import edu.berkeley.cs.amplab.adam.models.{Consensus, ReferencePosition}
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.rich.RichCigar
 import edu.berkeley.cs.amplab.adam.rich.RichCigar._
 import edu.berkeley.cs.amplab.adam.util.MdTag
+import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions
+import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
 import edu.berkeley.cs.amplab.adam.util.NormalizationUtils._
+import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
+import org.apache.spark.{Logging, Partitioner}
+import org.apache.spark.SparkContext._
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
+import scala.annotation.tailrec
+import scala.collection.mutable.Map
+import scala.collection.immutable.{NumericRange, TreeSet}
+import scala.util.Random
 
 private[rdd] object RealignIndels {
 
@@ -48,8 +50,17 @@ private[rdd] object RealignIndels {
    * @param rdd RDD of reads to realign.
    * @return RDD of realigned reads.
    */
-  def apply(rdd: RDD[ADAMRecord]): RDD[ADAMRecord] = {
-    new RealignIndels().realignIndels(rdd)
+  def apply(rdd: RDD[ADAMRecord],
+            dataIsSorted: Boolean = false,
+            maxIndelSize: Int = 500,
+            maxConsensusNumber: Int = 30,
+            lodThreshold: Double = 5.0,
+            maxTargetSize: Int = 3000): RDD[ADAMRecord] = {
+    new RealignIndels(dataIsSorted, 
+                      maxIndelSize, 
+                      maxConsensusNumber, 
+                      lodThreshold,
+                      maxTargetSize).realignIndels(rdd)
   }
 
   /**
@@ -57,6 +68,8 @@ private[rdd] object RealignIndels {
    * target and should be realigned, else returns the "empty" target (denoted by a negative index).
    * 
    * @note Generally, this function shouldn't be called directly---for most cases, prefer mapTargets.
+   * @note This function should not be called in a context where target set serialization is needed.
+   * Instead, call mapToTarget(RichADAMRecord, ZippedTargetSet), which wraps this function.
    * 
    * @param read Read to check.
    * @param targets Sorted set of realignment targets.
@@ -65,7 +78,7 @@ private[rdd] object RealignIndels {
    * @see mapTargets
    */
   @tailrec final def mapToTarget (read: RichADAMRecord,
-                                  targets: TreeSet[(IndelRealignmentTarget, Int)]): Int = {
+                                  targets: TreeSet[Tuple2[IndelRealignmentTarget, Int]]): Int = {
     // Perform tail call recursive binary search
     if (targets.size == 1) {
       if (TargetOrdering.contains (targets.head._1, read)) {
@@ -89,9 +102,26 @@ private[rdd] object RealignIndels {
   }
 
   /**
+   * This method wraps mapToTarget(RichADAMRecord, TreeSet[Tuple2[IndelRealignmentTarget, Int]]) for
+   * serialization purposes.
+   *
+   * @param read Read to check.
+   * @param targets Wrapped zipped indel realignment target.
+   * @return Target if an overlapping target is found, else the empty target.
+   *
+   * @see mapTargets
+   */
+  def mapToTarget (read: RichADAMRecord,
+                   targets: ZippedTargetSet): Int = {
+    mapToTarget(read, targets.set)
+  }
+
+  /**
    * Method to map a target index to an indel realignment target.
    *
    * @note Generally, this function shouldn't be called directly---for most cases, prefer mapTargets.
+   * @note This function should not be called in a context where target set serialization is needed.
+   * Instead, call mapToTarget(Int, ZippedTargetSet), which wraps this function.
    *
    * @param int Index of target.
    * @param targets Set of realignment targets.
@@ -99,12 +129,27 @@ private[rdd] object RealignIndels {
    * 
    * @see mapTargets
    */
-  def mapToTarget (targetIndex: Int, targets: TreeSet[(IndelRealignmentTarget, Int)]): IndelRealignmentTarget = {
+  def mapToTarget (targetIndex: Int, 
+                   targets: TreeSet[Tuple2[IndelRealignmentTarget, Int]]): IndelRealignmentTarget = {
     if (targetIndex < 0) {
       IndelRealignmentTarget.emptyTarget()
     } else {
       targets.filter(p => p._2 == targetIndex).head._1
     }
+  }
+
+  /**
+   * Wrapper for mapToTarget(Int, TreeSet[Tuple2[IndelRealignmentTarget, Int]]) for contexts where
+   * serialization is needed.
+   *
+   * @param int Index of target.
+   * @param targets Set of realignment targets.
+   * @return Indel realignment target.
+   * 
+   * @see mapTargets
+   */
+  def mapToTarget (targetIndex: Int, targets: ZippedTargetSet): IndelRealignmentTarget = {
+    mapToTarget(targetIndex, targets.set)
   }
 
   /**
@@ -123,9 +168,9 @@ private[rdd] object RealignIndels {
    */
   def mapTargets (rich_rdd: RDD[RichADAMRecord], targets: TreeSet[IndelRealignmentTarget]): RDD[(IndelRealignmentTarget, Seq[RichADAMRecord])] = {
     val tmpZippedTargets = targets.zip(0 until targets.count(t => true))
-    var tmpZippedTargets2 = new TreeSet[(IndelRealignmentTarget, Int)]()(ZippedTargetOrdering)
+    var tmpZippedTargets2 = new TreeSet[Tuple2[IndelRealignmentTarget, Int]]()(ZippedTargetOrdering)
     tmpZippedTargets.foreach(t => tmpZippedTargets2 = tmpZippedTargets2 + t)
-    val zippedTargets = tmpZippedTargets2
+    val zippedTargets = new ZippedTargetSet(tmpZippedTargets2)
     
     // group reads by target
     val broadcastTargets = rich_rdd.context.broadcast(zippedTargets)
@@ -169,16 +214,11 @@ private[rdd] object RealignIndels {
 
 import RealignIndels._
 
-private[rdd] class RealignIndels extends Serializable with Logging {
-
-  // parameter for longest indel to realign
-  val maxIndelSize = 3000
-
-  // max number of consensuses to evaluate - TODO: not currently used
-  val maxConsensusNumber = 30
-
-  // log-odds threshold for entropy improvement for accepting a realignment
-  val lodThreshold = 5.0
+private[rdd] class RealignIndels (val dataIsSorted: Boolean = false,
+                                  val maxIndelSize: Int = 500,
+                                  val maxConsensusNumber: Int = 30,
+                                  val lodThreshold: Double = 5.0,
+                                  val maxTargetSize: Int = 3000) extends Serializable with Logging {
 
   def findConsensus(reads : Seq[RichADAMRecord]) : Tuple3[List[RichADAMRecord], List[RichADAMRecord], List[Consensus]] = {
     var realignedReads = List[RichADAMRecord]()
@@ -193,8 +233,14 @@ private[rdd] class RealignIndels extends Serializable with Logging {
       // if there are two alignment blocks (sequence matches) then there is a single indel in the read
       if (r.samtoolsCigar.numAlignmentBlocks == 2) {
         // left align this indel and update the mdtag
-        cigar = leftAlignIndel(r)
-        mdTag = MdTag.moveAlignment(r, cigar)
+        try {
+          cigar = leftAlignIndel(r)
+          mdTag = MdTag.moveAlignment(r, cigar)
+        } catch {
+          case _ : Throwable => {
+            println("Left normalization failed for :" + r)
+          }
+        }
       }
 
       mdTag = if (mdTag == null) r.mdTag.get else mdTag
@@ -222,6 +268,12 @@ private[rdd] class RealignIndels extends Serializable with Logging {
 
     // TODO: check whether this improves or harms performance
     consensus = consensus.distinct
+
+    // reduce count of consensus sequences
+    if (consensus.length > maxConsensusNumber) {
+      val r = new Random()
+      consensus = r.shuffle(consensus).take(maxConsensusNumber)
+    }
 
     new Tuple3(realignedReads, readsToClean, consensus)
   }
@@ -393,9 +445,9 @@ private[rdd] class RealignIndels extends Serializable with Logging {
   }
 
   /**
-   * Sums the mismatch quality of a read against a reference. Mismatch quality is defined as the sum of the base
-   * quality for all bases in the read that do not match the reference. This method ignores the cigar string, which
-   * treats indels as causing mismatches.
+   * Sums the mismatch quality of a read against a reference. Mismatch quality is defined as the sum
+   * of the base quality for all bases in the read that do not match the reference. This method
+   * ignores the cigar string, which treats indels as causing mismatches.
    *
    * @param read Read to evaluate.
    * @param reference Reference sequence to look for mismatches against.
@@ -416,7 +468,8 @@ private[rdd] class RealignIndels extends Serializable with Logging {
   }
 
   /**
-   * Given a read, sums the mismatch quality against it's current alignment position. Does NOT ignore cigar.
+   * Given a read, sums the mismatch quality against it's current alignment position.
+   * Does NOT ignore cigar.
    *
    * @param read Read over which to sum mismatch quality.
    * @return Mismatch quality of read for current alignment.
@@ -428,18 +481,31 @@ private[rdd] class RealignIndels extends Serializable with Logging {
   }
 
   /**
-   * Performs realignment for an RDD of reads. This includes target generation, read/target classification,
-   * and read realignment.
+   * Performs realignment for an RDD of reads. This includes target generation, read/target
+   * classification, and read realignment.
    *
    * @param rdd Reads to realign.
    * @return Realigned read.
    */
   def realignIndels (rdd: RDD[ADAMRecord]): RDD[ADAMRecord] = {
+    val sortedRdd = if (dataIsSorted) {
+      rdd.filter(r => r.getReadMapped)
+    } else {
+      val sr = rdd.filter(r => r.getReadMapped)
+        .keyBy(r => ReferencePosition(r).get)
+        .sortByKey()
+
+      sr.map(kv => kv._2)
+    }
+
     // we only want to convert once so let's get it over with
-    val rich_rdd = rdd.map(new RichADAMRecord(_))
+    val rich_rdd = sortedRdd.map(new RichADAMRecord(_))
+
     // find realignment targets
     log.info("Generating realignment targets...")
-    val targets: TreeSet[IndelRealignmentTarget] = RealignmentTargetFinder(rdd)
+    val targets: TreeSet[IndelRealignmentTarget] = RealignmentTargetFinder(rich_rdd,
+                                                                           maxIndelSize,
+                                                                           maxTargetSize)
 
     // map reads to targets
     log.info("Grouping reads by target...")

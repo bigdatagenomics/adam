@@ -17,11 +17,15 @@
 package edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.models.ADAMRod
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
+import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import scala.collection.immutable.{TreeSet, HashSet, NumericRange}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.spark.Logging
+import net.sf.samtools.CigarOperator
 import scala.util.Sorting.quickSort
 
 object ZippedTargetOrdering extends Ordering[(IndelRealignmentTarget, Int)] {
@@ -66,7 +70,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @return True if read alignment span is identical to the target span. 
    */
   def equals (target: IndelRealignmentTarget, read: ADAMRecord) : Boolean = {
-    (target.getReadRange.start == read.getStart) && (target.getReadRange.end == read.end.get)
+    (target.getReadRange.start == read.getStart) && (target.getReadRange.end == RichADAMRecord(read).end.get)
   }
 
   /**
@@ -77,7 +81,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @return True if read alignment is contained in target span.
    */
   def contains (target: IndelRealignmentTarget, read: ADAMRecord) : Boolean = {
-    (target.getReadRange.start <= read.getStart) && (target.getReadRange.end >= read.end.get - 1) // -1 since read end is non-inclusive
+    (target.getReadRange.start <= read.getStart) && (target.getReadRange.end >= RichADAMRecord(read).end.get - 1) // -1 since read end is non-inclusive
   }
 
   /**
@@ -252,6 +256,66 @@ object IndelRealignmentTarget {
 
   // threshold for determining whether a pileup contains sufficient mismatch evidence
   val mismatchThreshold = 0.15
+
+  /**
+   * Generates 0+ indel realignment targets from a single read.
+   *
+   * @param read Read to use for generation.
+   * @param maxIndelSize Maximum allowable size of an indel.
+   * @return Set of generated realignment targets.
+   */
+  def apply(read: RichADAMRecord,
+            maxIndelSize: Int): Seq[IndelRealignmentTarget] = {
+
+    var pos = List[NumericRange.Inclusive[Long]]()
+    var referencePos = read.record.getStart
+    val readRange = new NumericRange.Inclusive[Long](referencePos, read.end.get, 1)
+    var readPos = 0
+    var cigar = read.samtoolsCigar
+    var mdTag = read.mdTag.get
+
+    cigar.getCigarElements.foreach(cigarElement =>
+      cigarElement.getOperator match {
+        // INSERT
+        case CigarOperator.I => {
+          if (cigarElement.getLength <= maxIndelSize) {
+            pos ::= new NumericRange.Inclusive[Long](referencePos, referencePos, 1)
+          }
+          readPos += cigarElement.getLength
+        }
+        // DELETE
+        case CigarOperator.D => {
+          if (cigarElement.getLength <= maxIndelSize) {
+            pos ::= new NumericRange.Inclusive[Long](referencePos, referencePos + cigarElement.getLength, 1)
+          }
+          referencePos += cigarElement.getLength
+        }
+        // All other cases (TODO: add X and EQ?)
+        case _ => {
+          if (cigarElement.getOperator.consumesReadBases()) {
+            readPos += cigarElement.getLength
+          }
+          if (cigarElement.getOperator.consumesReferenceBases()) {
+            referencePos += cigarElement.getLength
+          }
+        }
+      }
+    )
+
+    pos.map(r => IndelRange(r, readRange))
+      .map(ir => new IndelRealignmentTarget(Set(ir), Set(SNPRange.emptyRange)))
+      .toSeq
+  }
+
+  /**
+   * Generates an indel realignment target from a rod.
+   *
+   * @param rod Base pileup.
+   * @return Generated realignment target.
+   */
+  def apply(rod: ADAMRod): IndelRealignmentTarget = {
+    apply(rod.pileups)
+  }
 
   /**
    * Generates an indel realignment target from a pileup.
@@ -434,13 +498,39 @@ class IndelRealignmentTarget(val indelSet: Set[IndelRange], val snpSet: Set[SNPR
 
 }
 
-class TreeSetSerializer extends Serializer[TreeSet[IndelRealignmentTarget]] {
+class TargetSetSerializer extends Serializer[TargetSet] {
 
-  def write (kryo: Kryo, output: Output, obj: TreeSet[IndelRealignmentTarget]) = {
-    kryo.writeClassAndObject(output, obj.toList)
+  def write (kryo: Kryo, output: Output, obj: TargetSet) = {
+    kryo.writeClassAndObject(output, obj.set.toList)
   }
 
-  def read (kryo: Kryo, input: Input, klazz: Class[TreeSet[IndelRealignmentTarget]]) : TreeSet[IndelRealignmentTarget] = {
-    new TreeSet()(TargetOrdering).union(kryo.readClassAndObject(input).asInstanceOf[List[IndelRealignmentTarget]].toSet)
+  def read (kryo: Kryo, input: Input, klazz: Class[TargetSet]) : TargetSet = {
+    new TargetSet(new TreeSet()(TargetOrdering)
+      .union(kryo.readClassAndObject(input).asInstanceOf[List[IndelRealignmentTarget]].toSet))
   }
+}
+
+class ZippedTargetSetSerializer extends Serializer[ZippedTargetSet] {
+
+  def write (kryo: Kryo, output: Output, obj: ZippedTargetSet) = {
+    kryo.writeClassAndObject(output, obj.set.toList)
+  }
+
+  def read (kryo: Kryo, input: Input, klazz: Class[ZippedTargetSet]) : ZippedTargetSet = {
+    new ZippedTargetSet(new TreeSet()(ZippedTargetOrdering)
+      .union(kryo.readClassAndObject(input).asInstanceOf[List[(IndelRealignmentTarget, Int)]].toSet))
+  }
+}
+
+object TargetSet {
+  def apply(): TargetSet = {
+    new TargetSet(TreeSet[IndelRealignmentTarget]()(TargetOrdering))
+  }
+}
+
+// These two case classes are needed to get around some serialization issues
+case class TargetSet (set: TreeSet[IndelRealignmentTarget]) extends Serializable {
+}
+
+case class ZippedTargetSet (set: TreeSet[(IndelRealignmentTarget, Int)]) extends Serializable {
 }

@@ -181,8 +181,27 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends AdamSequenceDictionar
     BaseQualityRecalibration(rdd, knownSnps)
   }
 
-  def adamRealignIndels(): RDD[ADAMRecord] = {
-    RealignIndels(rdd)
+  /**
+   * Realigns indels using a concensus-based heuristic.
+   *
+   * @see RealignIndels
+   *
+   * @param isSorted If the input data is sorted, setting this parameter to true avoids a second sort.
+   * @param maxIndelSize The size of the largest indel to use for realignment.
+   * @param maxConsensusNumber The maximum number of consensus sequences to realign against per
+   * target region.
+   * @param lodThreshold Log-odds threhold to use when realigning; realignments are only finalized
+   * if the log-odds threshold is exceeded.
+   * @param maxTargetSize The maximum width of a single target region for realignment.
+   *
+   * @return Returns an RDD of mapped reads which have been realigned.
+   */
+  def adamRealignIndels(isSorted: Boolean = false,
+                        maxIndelSize: Int = 500,
+                        maxConsensusNumber: Int = 30,
+                        lodThreshold: Double = 5.0,
+                        maxTargetSize: Int = 3000): RDD[ADAMRecord] = {
+    RealignIndels(rdd, isSorted, maxIndelSize, maxConsensusNumber, lodThreshold)
   }
 
   // Returns a tuple of (failedQualityMetrics, passedQualityMetrics)
