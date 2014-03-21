@@ -42,7 +42,7 @@ object AdamMain extends Logging {
     PluginExecutor,
     BuildInformation,
     VcfAnnotation2Adam,
-    VariantStats,
+    SummarizeGenotypes,
     BuildInformation)
 
   private def printCommands() {

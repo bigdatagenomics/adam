@@ -18,24 +18,24 @@ package edu.berkeley.cs.amplab.adam.cli
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext. _
-import edu.berkeley.cs.amplab.adam.rdd.{GenotypesSummary, VariantSummaryOutput}
+import edu.berkeley.cs.amplab.adam.rdd.{GenotypesSummary, GenotypesSummaryFormatting}
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.kohsuke.args4j
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
 import org.apache.hadoop.mapreduce.Job
 
-object VariantStats extends AdamCommandCompanion {
+object SummarizeGenotypes extends AdamCommandCompanion {
 
-  val commandName = "variant_stats"
-  val commandDescription = "Print statistics on variants in an ADAM file (similar to vcf-stats from VCFTools) "
+  val commandName = "summarize_genotypes"
+  val commandDescription = "Print statistics of genotypes and variants in an ADAM file"
 
   def apply(cmdLine: Array[String]) = {
-    new VariantStats(Args4j[VariantStatsArgs](cmdLine))
+    new SummarizeGenotypes(Args4j[SummarizeGenotypesArgs](cmdLine))
   }
 }
 
-class VariantStatsArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class SummarizeGenotypesArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @args4j.Argument(required = true, metaVar = "ADAM", usage = "The ADAM variant files to print stats for", index = 0)
   var adamFile: String = _
 
@@ -44,18 +44,18 @@ class VariantStatsArgs extends Args4jBase with ParquetArgs with SparkArgs {
 
 }
 
-class VariantStats(val args: VariantStatsArgs) extends AdamSparkCommand[VariantStatsArgs] with Logging {
-  val companion = VariantStats
+class SummarizeGenotypes(val args: SummarizeGenotypesArgs) extends AdamSparkCommand[SummarizeGenotypesArgs] with Logging {
+  val companion = SummarizeGenotypes
 
   def run(sc: SparkContext, job: Job) {
     val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
     val stats = GenotypesSummary(adamGTs)
     args.format match {
       case "human" => {
-        println(VariantSummaryOutput.format_human_readable(stats))
+        println(GenotypesSummaryFormatting.format_human_readable(stats))
       }
       case "csv" => {
-        println(VariantSummaryOutput.format_csv(stats))
+        println(GenotypesSummaryFormatting.format_csv(stats))
       }
       case _ => {
         log.error("Invalid -format: %s".format(args.format))

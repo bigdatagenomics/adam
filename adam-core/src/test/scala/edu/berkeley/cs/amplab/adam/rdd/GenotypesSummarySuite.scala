@@ -19,9 +19,9 @@ import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro._
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import org.scalatest._
-import edu.berkeley.cs.amplab.adam.rdd.GenotypesStatistics.ReferenceAndAlternate
+import edu.berkeley.cs.amplab.adam.rdd.GenotypesSummaryCounts.ReferenceAndAlternate
 
-class VariantsSummarySuite extends SparkFunSuite {
+class GenotypesSummarySuite extends SparkFunSuite {
   private val contig = ADAMContig.newBuilder()
     .setContigId(1)
     .setContigName("abc")
@@ -34,19 +34,20 @@ class VariantsSummarySuite extends SparkFunSuite {
   private def noCall = List(ADAMGenotypeAllele.NoCall, ADAMGenotypeAllele.NoCall)
 
   private def genotypes = List(
-    genotype("alice", variant("G", "A", 4), het),
-    genotype("alice", variant("G", "C", 1), homRef),
-    genotype("alice", variant("G", "T", 0), homAlt),
-    genotype("alice", variant("GGG", "T", 7), het),
-    genotype("alice", variant("T", "AA", 9), het),
-    genotype("alice", variant("TT", "AA", 12), het),
-    genotype("bob", variant("A", "TT", 2), het),
-    genotype("bob", variant("A", "T", 3), het),
-    genotype("bob", variant("A", "T", 9), het),
-    genotype("bob", variant("T", "C", 4), het),
-    genotype("bob", variant("T", "A", 7), homRef),
-    genotype("bob", variant("T", "G", 8), homAlt),
-    genotype("bob", variant("T", "G", 12), noCall)
+    genotype("alice", variant("A", "TT", 2), het).build,
+    genotype("alice", variant("G", "A", 4), het).build,
+    genotype("alice", variant("G", "C", 1), homRef).build,
+    genotype("alice", variant("G", "T", 0), homAlt).build,
+    genotype("alice", variant("GGG", "T", 7), het).build,
+    genotype("alice", variant("T", "AA", 9), het).build,
+    genotype("alice", variant("TT", "AA", 12), het).build,
+    genotype("bob", variant("A", "TT", 2), het).build,
+    genotype("bob", variant("A", "T", 3), het).build,
+    genotype("bob", variant("A", "T", 9), het).build,
+    genotype("bob", variant("T", "C", 4), het).setIsPhased(true).build,
+    genotype("bob", variant("T", "A", 7), homRef).build,
+    genotype("bob", variant("T", "G", 8), homAlt).build,
+    genotype("bob", variant("T", "G", 12), noCall).build
   )
 
   private def variant(reference: String, alternate: String, position: Int): ADAMVariant = {
@@ -63,7 +64,6 @@ class VariantsSummarySuite extends SparkFunSuite {
       .setSampleId(sample)
       .setVariant(variant)
       .setAlleles(alleles)
-      .build
   }
 
   private def summarize(genotypes: Seq[ADAMGenotype]): GenotypesSummary = {
@@ -79,8 +79,9 @@ class VariantsSummarySuite extends SparkFunSuite {
     assert(stats.perSampleStatistics("alice").singleNucleotideVariantCounts(ReferenceAndAlternate("G", "T")) == 1)
     assert(stats.perSampleStatistics("alice").singleNucleotideVariantCounts(ReferenceAndAlternate("A", "T")) == 0)
     assert(stats.perSampleStatistics("alice").deletionCount == 1)
-    assert(stats.perSampleStatistics("alice").insertionCount == 1)
+    assert(stats.perSampleStatistics("alice").insertionCount == 2)
     assert(stats.perSampleStatistics("alice").multipleNucleotideVariantCount == 1)
+    assert(stats.perSampleStatistics("alice").phasedCount == 0)
     assert(stats.perSampleStatistics("bob").singleNucleotideVariantCount == 4)
     assert(stats.perSampleStatistics("bob").singleNucleotideVariantCounts(ReferenceAndAlternate("A", "T")) == 2)
     assert(stats.perSampleStatistics("bob").singleNucleotideVariantCounts(ReferenceAndAlternate("T", "C")) == 1)
@@ -89,6 +90,7 @@ class VariantsSummarySuite extends SparkFunSuite {
     assert(stats.perSampleStatistics("bob").singleNucleotideVariantCounts(ReferenceAndAlternate("C", "T")) == 0)
     assert(stats.perSampleStatistics("bob").insertionCount == 1)
     assert(stats.perSampleStatistics("bob").noCallCount == 1)
+    assert(stats.perSampleStatistics("bob").phasedCount == 1)
 
     assert(stats.aggregateStatistics.singleNucleotideVariantCount == 6)
     assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("G", "A")) == 1)
@@ -97,10 +99,12 @@ class VariantsSummarySuite extends SparkFunSuite {
     assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("A", "T")) == 2)
     assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("T", "C")) == 1)
     assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("T", "G")) == 1)
-    assert(stats.aggregateStatistics.insertionCount == 2)
+    assert(stats.aggregateStatistics.insertionCount == 3)
     assert(stats.aggregateStatistics.deletionCount == 1)
     assert(stats.aggregateStatistics.multipleNucleotideVariantCount == 1)
 
-  }
+    assert(stats.singletonCount == 9)
+    assert(stats.distinctVariantCount == 10)
 
+  }
 }
