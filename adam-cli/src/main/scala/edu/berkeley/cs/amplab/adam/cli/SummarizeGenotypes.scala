@@ -17,9 +17,8 @@
 package edu.berkeley.cs.amplab.adam.cli
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext. _
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rdd.{GenotypesSummary, GenotypesSummaryFormatting}
-import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.kohsuke.args4j
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
@@ -42,6 +41,8 @@ class SummarizeGenotypesArgs extends Args4jBase with ParquetArgs with SparkArgs 
   @args4j.Option(required = false, name = "-format", usage = "Format: one of human, csv. Default: human.")
   var format: String = "human"
 
+  @args4j.Option(required = false, name = "-out", usage = "Write output to the given file.")
+  var out: String = ""
 }
 
 class SummarizeGenotypes(val args: SummarizeGenotypesArgs) extends AdamSparkCommand[SummarizeGenotypesArgs] with Logging {

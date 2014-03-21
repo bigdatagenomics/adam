@@ -15,11 +15,10 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro._
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import org.scalatest._
 import edu.berkeley.cs.amplab.adam.rdd.GenotypesSummaryCounts.ReferenceAndAlternate
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 
 class GenotypesSummarySuite extends SparkFunSuite {
   private val contig = ADAMContig.newBuilder()
@@ -105,6 +104,5 @@ class GenotypesSummarySuite extends SparkFunSuite {
 
     assert(stats.singletonCount == 9)
     assert(stats.distinctVariantCount == 10)
-
   }
 }

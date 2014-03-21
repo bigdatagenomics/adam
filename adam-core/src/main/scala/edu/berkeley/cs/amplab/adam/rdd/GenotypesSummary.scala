@@ -16,12 +16,12 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeAllele, ADAMGenotype}
-import org.apache.spark.rdd.RDD
-import scala.collection.mutable
-import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant._
-import scala.collection.JavaConverters._
 import edu.berkeley.cs.amplab.adam.rdd.GenotypesSummary.StatisticsMap
+import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant._
+import org.apache.spark.rdd.RDD
+import scala.collection.JavaConverters._
 import scala.collection.immutable.Map
+import scala.collection.mutable
 
 /**
  * Simple counts of various properties across a set of genotypes.
@@ -30,21 +30,35 @@ import scala.collection.immutable.Map
  * count as 1 (i.e. homozygous alternate is NOT counted as 2).
  * This seems to be the most common convention.
  *
+ * @param genotypesCounts Counts of genotypes: map from list of ADAMGenotypeAllele (of size ploidy) -> count
+ * @param singleNucleotideVariantCounts Map from ReferenceAndAlternate -> count
+ *                                      where ReferenceAndAlternate is a single base variant.
+ * @param multipleNucleotideVariantCount Count of multiple nucleotide variants (e.g.: AA -> TG)
+ * @param insertionCount Count of insertions
+ * @param deletionCount Count of deletions
+ * @param readCount Sum of read depths for all genotypes with a called variant
+ * @param phasedCount Number of genotypes with phasing information
+ *
  */
-final case class GenotypesSummaryCounts(
+case class GenotypesSummaryCounts(
   genotypesCounts: GenotypesSummaryCounts.GenotypeAlleleCounts,
   singleNucleotideVariantCounts: GenotypesSummaryCounts.VariantCounts,
   multipleNucleotideVariantCount: Long,
   insertionCount: Long,
   deletionCount: Long,
-  readCount: Long,  // sum of read depths for all genotypes with a called variant
-  phasedCount: Long)
-{
+  readCount: Option[Long],
+  phasedCount: Long) {
+
   lazy val genotypesCount: Long = genotypesCounts.values.sum
+  lazy val variantGenotypesCount: Long =
+    genotypesCounts.keys.filter(_.contains(ADAMGenotypeAllele.Alt)).map(genotypesCounts(_)).sum
   lazy val singleNucleotideVariantCount: Long = singleNucleotideVariantCounts.values.sum
-  lazy val transitionCount: Long = GenotypesSummaryCounts.Transitions.map(singleNucleotideVariantCounts).sum
-  lazy val transversionCount: Long = GenotypesSummaryCounts.Transversions.map(singleNucleotideVariantCounts).sum
+  lazy val transitionCount: Long = GenotypesSummaryCounts.transitions.map(singleNucleotideVariantCounts).sum
+  lazy val transversionCount: Long = GenotypesSummaryCounts.transversions.map(singleNucleotideVariantCounts).sum
   lazy val noCallCount: Long = genotypesCounts.count(_._1.contains(ADAMGenotypeAllele.NoCall))
+  lazy val averageReadDepthAtVariants =
+    if (variantGenotypesCount == 0) None
+    else for (readCount1 <- readCount) yield readCount1.toDouble / variantGenotypesCount.toDouble
 
   def combine(that: GenotypesSummaryCounts): GenotypesSummaryCounts = {
     def combine_counts[A](map1: Map[A, Long], map2: Map[A, Long]): Map[A, Long] = {
@@ -58,7 +72,7 @@ final case class GenotypesSummaryCounts(
       multipleNucleotideVariantCount + that.multipleNucleotideVariantCount,
       insertionCount + that.insertionCount,
       deletionCount + that.deletionCount,
-      readCount + that.readCount,
+      for (readCount1 <- readCount; readcount2 <- that.readCount) yield readCount1 + readcount2,
       phasedCount + that.phasedCount
     )
   }
@@ -75,15 +89,15 @@ object GenotypesSummaryCounts {
     def apply(): VariantCounts = Map[ReferenceAndAlternate, Long]().withDefaultValue(0)
   }
 
-  val SimpleNucleotides = List("A", "C", "T", "G")
+  val simpleNucleotides = List("A", "C", "T", "G")
 
-  val Transitions = List(
+  val transitions = List(
     ReferenceAndAlternate("A", "G"),
     ReferenceAndAlternate("G", "A"),
     ReferenceAndAlternate("C", "T"),
     ReferenceAndAlternate("T", "C"))
 
-  val Transversions = List(
+  val transversions = List(
     ReferenceAndAlternate("A", "C"),
     ReferenceAndAlternate("C", "A"),
     ReferenceAndAlternate("A", "T"),
@@ -97,7 +111,7 @@ object GenotypesSummaryCounts {
    * Factory for an empty GenotypesSummaryCounts.
    */
   def apply(): GenotypesSummaryCounts =
-    GenotypesSummaryCounts(Map[List[ADAMGenotypeAllele], Long](),Map[ReferenceAndAlternate, Long]() , 0, 0, 0, 0, 0)
+    GenotypesSummaryCounts(Map[List[ADAMGenotypeAllele], Long](),Map[ReferenceAndAlternate, Long]() , 0, 0, 0, Some(0), 0)
 
   /**
    * Factory for a GenotypesSummaryCounts that counts a single ADAMGenotype.
@@ -105,17 +119,26 @@ object GenotypesSummaryCounts {
   def apply(genotype: ADAMGenotype): GenotypesSummaryCounts = {
     val variant = genotype.getVariant
     val ref_and_alt = ReferenceAndAlternate(variant.getReferenceAllele.toString, variant.getVariantAllele.toString)
+
+    // We always count our genotype. The other counts are set to 1 only if we have a variant genotype.
     val isVariant = genotype.getAlleles.contains(ADAMGenotypeAllele.Alt)
+    val genotypeAlleleCounts = Map(genotype.getAlleles.asScala.toList -> 1.toLong).withDefaultValue(0.toLong)
+    val variantCounts: VariantCounts = (
+      if (isVariant && variant.isSingleNucleotideVariant) Map(ref_and_alt -> 1.toLong)
+      else VariantCounts()).withDefaultValue(0)
+
+    val readDepth = (
+      if (genotype.getReadDepth == null) None
+      else if (isVariant) Some(genotype.getReadDepth.toLong)
+      else Some(0.toLong))
+
     GenotypesSummaryCounts(
-      (GenotypeAlleleCounts() + (genotype.getAlleles.asScala.toList -> 1.toLong)).withDefaultValue(0),
-      if (isVariant && variant.isSingleNucleotideVariant)
-        (VariantCounts() + (ref_and_alt -> 1.toLong)).withDefaultValue(0.toLong)
-      else
-        VariantCounts(),
+      genotypeAlleleCounts,
+      variantCounts,
       if (isVariant && variant.isMultipleNucleotideVariant) 1 else 0,
       if (isVariant && variant.isInsertion) 1 else 0,
       if (isVariant && variant.isDeletion) 1 else 0,
-      if (isVariant && genotype.getReadDepth != null) genotype.getReadDepth.toLong else 0,
+      readDepth,
       if (isVariant && genotype.getIsPhased != null && genotype.getIsPhased) 1 else 0)
   }
 }
@@ -127,11 +150,10 @@ object GenotypesSummaryCounts {
  * @param distinctVariantCount Number of distinct variants that are called at least once.
  *
  */
-final case class GenotypesSummary(
+case class GenotypesSummary(
   perSampleStatistics: StatisticsMap,
   singletonCount: Long,
-  distinctVariantCount: Long)
-{
+  distinctVariantCount: Long) {
   lazy val aggregateStatistics = perSampleStatistics.values.foldLeft(GenotypesSummaryCounts())(_.combine(_))
 }
 object GenotypesSummary {
@@ -178,15 +200,15 @@ object GenotypesSummaryFormatting {
       row += stats.transitionCount.toString
       row += stats.transversionCount.toString
       row += (stats.transitionCount.toDouble / stats.transversionCount.toDouble).toString
-      for (from <- GenotypesSummaryCounts.SimpleNucleotides; to <- GenotypesSummaryCounts.SimpleNucleotides; if (from != to)) {
+      for (from <- GenotypesSummaryCounts.simpleNucleotides; to <- GenotypesSummaryCounts.simpleNucleotides; if (from != to)) {
         row += stats.singleNucleotideVariantCounts((GenotypesSummaryCounts.ReferenceAndAlternate(from, to))).toString
       }
       row
     }
 
     val header = List("# Sample", "Num SNV", "Transitions", "Transversions", "Ti / Tv") ++
-      (for (from <- GenotypesSummaryCounts.SimpleNucleotides;
-           to <- GenotypesSummaryCounts.SimpleNucleotides
+      (for (from <- GenotypesSummaryCounts.simpleNucleotides;
+           to <- GenotypesSummaryCounts.simpleNucleotides
            if (from != to)) yield "%s>%s".format(from, to))
 
     val result = new mutable.StringBuilder
@@ -205,10 +227,13 @@ object GenotypesSummaryFormatting {
   def format_human_readable(summary: GenotypesSummary): String = {
     def format_statistics(stats: GenotypesSummaryCounts, result: mutable.StringBuilder) = {
       result ++= "\tGenotypes: %d\n".format(stats.genotypesCount)
+      result ++= "\tVariant Genotypes: %d = %1.3f%%\n".format(
+        stats.variantGenotypesCount,
+        stats.variantGenotypesCount.toDouble * 100.0 / stats.genotypesCount)
       def alleleSorter(allele: ADAMGenotypeAllele): Int = allele match {
         case ADAMGenotypeAllele.Ref => 0
         case ADAMGenotypeAllele.Alt => 1
-        case ADAMGenotypeAllele.NoCall => 10
+        case ADAMGenotypeAllele.NoCall => 10  // arbitrary large number so any genotype with a NoCall sorts last.
       }
       for ((genotype, count) <- stats.genotypesCounts.toList.sortBy(_._1.map(alleleSorter(_)).sum)) {
         result ++= "\t%20s: %9d = %1.3f%%\n".format(
@@ -226,13 +251,16 @@ object GenotypesSummaryFormatting {
         stats.transversionCount,
         stats.transitionCount.toDouble / stats.transversionCount.toDouble)
       var from, to = 0
-      for (from <- GenotypesSummaryCounts.SimpleNucleotides; to <- GenotypesSummaryCounts.SimpleNucleotides; if (from != to)) {
+      for (from <- GenotypesSummaryCounts.simpleNucleotides; to <- GenotypesSummaryCounts.simpleNucleotides; if (from != to)) {
         result ++= "\t\t%s>%s %9d\n".format(
           from,
           to,
           stats.singleNucleotideVariantCounts((GenotypesSummaryCounts.ReferenceAndAlternate(from, to))))
       }
-      result ++= "\tAverage read depth at called variants: %1.1f\n".format(stats.readCount.toDouble / stats.genotypesCount)
+      result ++= "\tAverage read depth at called variants: %s\n".format(stats.averageReadDepthAtVariants match {
+        case Some(depth) => "%1.1f".format(depth)
+        case None => "[no variant calls, or read depth missing for one or more variant calls]"
+      })
       result ++= "\tPhased genotypes: %d / %d = %1.3f%%\n".format(
         stats.phasedCount,
         stats.genotypesCount,
