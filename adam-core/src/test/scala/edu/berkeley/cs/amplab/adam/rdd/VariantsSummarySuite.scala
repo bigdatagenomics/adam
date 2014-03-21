@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2013. Regents of the University of California
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package edu.berkeley.cs.amplab.adam.rdd
+
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
+import edu.berkeley.cs.amplab.adam.avro._
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import org.scalatest._
+import edu.berkeley.cs.amplab.adam.rdd.GenotypesStatistics.ReferenceAndAlternate
+
+class VariantsSummarySuite extends SparkFunSuite {
+  private val contig = ADAMContig.newBuilder()
+    .setContigId(1)
+    .setContigName("abc")
+    .setContigLength(100)
+    .build
+
+  private def homRef = List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Ref)
+  private def het = List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Ref)
+  private def homAlt = List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Alt)
+  private def noCall = List(ADAMGenotypeAllele.NoCall, ADAMGenotypeAllele.NoCall)
+
+  private def genotypes = List(
+    genotype("alice", variant("G", "A", 4), het),
+    genotype("alice", variant("G", "C", 1), homRef),
+    genotype("alice", variant("G", "T", 0), homAlt),
+    genotype("alice", variant("GGG", "T", 7), het),
+    genotype("alice", variant("T", "AA", 9), het),
+    genotype("alice", variant("TT", "AA", 12), het),
+    genotype("bob", variant("A", "TT", 2), het),
+    genotype("bob", variant("A", "T", 3), het),
+    genotype("bob", variant("A", "T", 9), het),
+    genotype("bob", variant("T", "C", 4), het),
+    genotype("bob", variant("T", "A", 7), homRef),
+    genotype("bob", variant("T", "G", 8), homAlt),
+    genotype("bob", variant("T", "G", 12), noCall)
+  )
+
+  private def variant(reference: String, alternate: String, position: Int): ADAMVariant = {
+    ADAMVariant.newBuilder()
+      .setContig(contig)
+      .setPosition(position)
+      .setReferenceAllele(reference)
+      .setVariantAllele(alternate)
+      .build
+  }
+
+  private def genotype(sample: String, variant: ADAMVariant, alleles: List[ADAMGenotypeAllele]) = {
+    ADAMGenotype.newBuilder()
+      .setSampleId(sample)
+      .setVariant(variant)
+      .setAlleles(alleles)
+      .build
+  }
+
+  private def summarize(genotypes: Seq[ADAMGenotype]): GenotypesSummary = {
+    GenotypesSummary(sc.parallelize(genotypes))
+  }
+
+  sparkTest("genotypes summary") {
+    val stats = summarize(genotypes)
+    assert(stats.perSampleStatistics.size == 2)
+    assert(stats.perSampleStatistics("alice").singleNucleotideVariantCount == 2)
+    assert(stats.perSampleStatistics("alice").singleNucleotideVariantCounts(ReferenceAndAlternate("G", "A")) == 1)
+    assert(stats.perSampleStatistics("alice").singleNucleotideVariantCounts(ReferenceAndAlternate("G", "C")) == 0)
+    assert(stats.perSampleStatistics("alice").singleNucleotideVariantCounts(ReferenceAndAlternate("G", "T")) == 1)
+    assert(stats.perSampleStatistics("alice").singleNucleotideVariantCounts(ReferenceAndAlternate("A", "T")) == 0)
+    assert(stats.perSampleStatistics("alice").deletionCount == 1)
+    assert(stats.perSampleStatistics("alice").insertionCount == 1)
+    assert(stats.perSampleStatistics("alice").multipleNucleotideVariantCount == 1)
+    assert(stats.perSampleStatistics("bob").singleNucleotideVariantCount == 4)
+    assert(stats.perSampleStatistics("bob").singleNucleotideVariantCounts(ReferenceAndAlternate("A", "T")) == 2)
+    assert(stats.perSampleStatistics("bob").singleNucleotideVariantCounts(ReferenceAndAlternate("T", "C")) == 1)
+    assert(stats.perSampleStatistics("bob").singleNucleotideVariantCounts(ReferenceAndAlternate("T", "C")) == 1)
+    assert(stats.perSampleStatistics("bob").singleNucleotideVariantCounts(ReferenceAndAlternate("T", "G")) == 1)
+    assert(stats.perSampleStatistics("bob").singleNucleotideVariantCounts(ReferenceAndAlternate("C", "T")) == 0)
+    assert(stats.perSampleStatistics("bob").insertionCount == 1)
+    assert(stats.perSampleStatistics("bob").noCallCount == 1)
+
+    assert(stats.aggregateStatistics.singleNucleotideVariantCount == 6)
+    assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("G", "A")) == 1)
+    assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("G", "C")) == 0)
+    assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("G", "T")) == 1)
+    assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("A", "T")) == 2)
+    assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("T", "C")) == 1)
+    assert(stats.aggregateStatistics.singleNucleotideVariantCounts(ReferenceAndAlternate("T", "G")) == 1)
+    assert(stats.aggregateStatistics.insertionCount == 2)
+    assert(stats.aggregateStatistics.deletionCount == 1)
+    assert(stats.aggregateStatistics.multipleNucleotideVariantCount == 1)
+
+  }
+
+}

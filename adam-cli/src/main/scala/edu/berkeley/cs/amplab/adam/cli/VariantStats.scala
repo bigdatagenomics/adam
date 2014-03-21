@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.cli
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext. _
-import edu.berkeley.cs.amplab.adam.rdd.{VariantsSummary, VariantSummaryOutput}
+import edu.berkeley.cs.amplab.adam.rdd.{GenotypesSummary, VariantSummaryOutput}
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.kohsuke.args4j
 import org.apache.spark.rdd.RDD
@@ -49,7 +49,7 @@ class VariantStats(val args: VariantStatsArgs) extends AdamSparkCommand[VariantS
 
   def run(sc: SparkContext, job: Job) {
     val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
-    val stats = VariantsSummary(adamGTs)
+    val stats = GenotypesSummary(adamGTs)
     args.format match {
       case "human" => {
         println(VariantSummaryOutput.format_human_readable(stats))
