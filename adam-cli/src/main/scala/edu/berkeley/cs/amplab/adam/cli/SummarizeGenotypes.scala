@@ -23,6 +23,9 @@ import org.kohsuke.args4j
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkContext}
 import org.apache.hadoop.mapreduce.Job
+import org.apache.hadoop.fs.{Path, FileSystem}
+import org.apache.hadoop.conf.Configuration
+import java.io.{OutputStreamWriter, BufferedWriter}
 
 object SummarizeGenotypes extends AdamCommandCompanion {
 
@@ -35,7 +38,7 @@ object SummarizeGenotypes extends AdamCommandCompanion {
 }
 
 class SummarizeGenotypesArgs extends Args4jBase with ParquetArgs with SparkArgs {
-  @args4j.Argument(required = true, metaVar = "ADAM", usage = "The ADAM variant files to print stats for", index = 0)
+  @args4j.Argument(required = true, metaVar = "ADAM", usage = "The ADAM genotypes file to print stats for", index = 0)
   var adamFile: String = _
 
   @args4j.Option(required = false, name = "-format", usage = "Format: one of human, csv. Default: human.")
@@ -51,16 +54,20 @@ class SummarizeGenotypes(val args: SummarizeGenotypesArgs) extends AdamSparkComm
   def run(sc: SparkContext, job: Job) {
     val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
     val stats = GenotypesSummary(adamGTs)
-    args.format match {
-      case "human" => {
-        println(GenotypesSummaryFormatting.format_human_readable(stats))
-      }
-      case "csv" => {
-        println(GenotypesSummaryFormatting.format_csv(stats))
-      }
-      case _ => {
-        log.error("Invalid -format: %s".format(args.format))
-      }
+    val result = args.format match {
+      case "human" => GenotypesSummaryFormatting.format_human_readable(stats)
+      case "csv" => GenotypesSummaryFormatting.format_csv(stats)
+      case _ => throw new IllegalArgumentException("Invalid -format: %s".format(args.format))
+    }
+    if (args.out.isEmpty) {
+      println(result)
+    } else {
+      val filesystem = FileSystem.get(new Configuration())
+      val path = new Path(args.out)
+      val writer = new BufferedWriter(new OutputStreamWriter(filesystem.create(path, true)))
+      writer.write(result)
+      writer.close()
+      println("Wrote: %s".format(args.out))
     }
   }
 }

@@ -22,6 +22,7 @@ import org.apache.spark.rdd.RDD
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Map
 import scala.collection.mutable
+import edu.berkeley.cs.amplab.adam.rdd.GenotypesSummaryCounts.ReferenceAndAlternate
 
 /**
  * Simple counts of various properties across a set of genotypes.
@@ -194,25 +195,31 @@ object GenotypesSummary {
  */
 object GenotypesSummaryFormatting {
   def format_csv(summary: GenotypesSummary): String = {
+
+    val genotypeAlleles = sortedGenotypeAlleles(summary.aggregateStatistics)
+
     def format_statistics(stats: GenotypesSummaryCounts): Seq[String] = {
       val row = mutable.MutableList[String]()
+      row += stats.genotypesCount.toString
+      row += stats.variantGenotypesCount.toString
+      row += stats.insertionCount.toString
+      row += stats.deletionCount.toString
       row += stats.singleNucleotideVariantCount.toString
       row += stats.transitionCount.toString
       row += stats.transversionCount.toString
       row += (stats.transitionCount.toDouble / stats.transversionCount.toDouble).toString
-      for (from <- GenotypesSummaryCounts.simpleNucleotides; to <- GenotypesSummaryCounts.simpleNucleotides; if (from != to)) {
-        row += stats.singleNucleotideVariantCounts((GenotypesSummaryCounts.ReferenceAndAlternate(from, to))).toString
-      }
+      row ++= genotypeAlleles.map(stats.genotypesCounts(_).toString) // Genotype counts
+      row ++= allSNVs.map(stats.singleNucleotideVariantCounts(_).toString) // SNV counts
       row
     }
 
-    val header = List("# Sample", "Num SNV", "Transitions", "Transversions", "Ti / Tv") ++
-      (for (from <- GenotypesSummaryCounts.simpleNucleotides;
-           to <- GenotypesSummaryCounts.simpleNucleotides
-           if (from != to)) yield "%s>%s".format(from, to))
+    val basicHeader = List(
+      "Sample", "Genotypes", "Variant Genotypes", "Insertions", "Deletions", "SNVs", "Transitions", "Transversions", "Ti / Tv")
+    val genotypesHeader = genotypeAlleles.map(genotypeAllelesToString(_))
+    val snvsHeader = allSNVs.map(snv => "%s>%s".format(snv.reference, snv.alternate))
 
     val result = new mutable.StringBuilder
-    result ++= header.mkString(", ") + "\n"
+    result ++= "# " + (basicHeader ++ genotypesHeader ++ snvsHeader).mkString(", ") + "\n"
 
     for ((sample, stats) <- summary.perSampleStatistics) {
       val row = mutable.MutableList(sample)
@@ -226,21 +233,17 @@ object GenotypesSummaryFormatting {
 
   def format_human_readable(summary: GenotypesSummary): String = {
     def format_statistics(stats: GenotypesSummaryCounts, result: mutable.StringBuilder) = {
-      result ++= "\tGenotypes: %d\n".format(stats.genotypesCount)
-      result ++= "\tVariant Genotypes: %d = %1.3f%%\n".format(
+      result ++= "\tVariant Genotypes: %d / %d = %1.3f%%\n".format(
         stats.variantGenotypesCount,
+        stats.genotypesCount,
         stats.variantGenotypesCount.toDouble * 100.0 / stats.genotypesCount)
-      def alleleSorter(allele: ADAMGenotypeAllele): Int = allele match {
-        case ADAMGenotypeAllele.Ref => 0
-        case ADAMGenotypeAllele.Alt => 1
-        case ADAMGenotypeAllele.NoCall => 10  // arbitrary large number so any genotype with a NoCall sorts last.
-      }
-      for ((genotype, count) <- stats.genotypesCounts.toList.sortBy(_._1.map(alleleSorter(_)).sum)) {
+
+      for (genotype <- sortedGenotypeAlleles(summary.aggregateStatistics)) {
+        val count = stats.genotypesCounts(genotype)
         result ++= "\t%20s: %9d = %1.3f%%\n".format(
-          genotype.map(_.toString).mkString("-"),
+          genotypeAllelesToString(genotype),
           count,
-          count.toDouble * 100.0 / stats.genotypesCount.toDouble
-        )
+          count.toDouble * 100.0 / stats.genotypesCount.toDouble)
       }
       result ++= "\tInsertions: %d\n".format(stats.insertionCount)
       result ++= "\tDeletions: %d\n".format(stats.deletionCount)
@@ -251,11 +254,8 @@ object GenotypesSummaryFormatting {
         stats.transversionCount,
         stats.transitionCount.toDouble / stats.transversionCount.toDouble)
       var from, to = 0
-      for (from <- GenotypesSummaryCounts.simpleNucleotides; to <- GenotypesSummaryCounts.simpleNucleotides; if (from != to)) {
-        result ++= "\t\t%s>%s %9d\n".format(
-          from,
-          to,
-          stats.singleNucleotideVariantCounts((GenotypesSummaryCounts.ReferenceAndAlternate(from, to))))
+      for (snv <- allSNVs) {
+        result ++= "\t\t%s>%s %9d\n".format(snv.reference, snv.alternate, stats.singleNucleotideVariantCounts(snv))
       }
       result ++= "\tAverage read depth at called variants: %s\n".format(stats.averageReadDepthAtVariants match {
         case Some(depth) => "%1.1f".format(depth)
@@ -270,8 +270,9 @@ object GenotypesSummaryFormatting {
 
     val result = new mutable.StringBuilder
     for (sample <- summary.perSampleStatistics.keySet.toList.sorted) {
-      result ++= "\nSample: %s\n".format(sample)
+      result ++= "Sample: %s\n".format(sample)
       format_statistics(summary.perSampleStatistics(sample), result)
+      result ++= "\n"
     }
     result ++= "\nSummary\n"
     result ++= "\tSamples: %d\n".format(summary.perSampleStatistics.size)
@@ -282,4 +283,22 @@ object GenotypesSummaryFormatting {
     format_statistics(summary.aggregateStatistics, result)
     result.toString
   }
+
+  private def sortedGenotypeAlleles(stats: GenotypesSummaryCounts): Seq[List[ADAMGenotypeAllele]] = {
+    def genotypeSortOrder(genotype: List[ADAMGenotypeAllele]): Int = genotype.map({
+      case ADAMGenotypeAllele.Ref => 0
+      case ADAMGenotypeAllele.Alt => 1
+      case ADAMGenotypeAllele.NoCall => 10  // arbitrary large number so any genotype with a NoCall sorts last.
+    }).sum
+    stats.genotypesCounts.keySet.toList.sortBy(genotypeSortOrder(_))
+  }
+
+  private def genotypeAllelesToString(alleles: List[ADAMGenotypeAllele]): String =
+    alleles.map(_.toString).mkString("-")
+
+  lazy val allSNVs: Seq[ReferenceAndAlternate] =
+    for (from <- GenotypesSummaryCounts.simpleNucleotides;
+         to <- GenotypesSummaryCounts.simpleNucleotides;
+         if (from != to)) yield GenotypesSummaryCounts.ReferenceAndAlternate(from, to)
+
 }
