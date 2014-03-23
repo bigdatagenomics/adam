@@ -151,22 +151,11 @@ record ADAMContig {
   union { null, string } referenceURL = null;
 }
 
-enum VariantType {
-    SNP,
-    MNP,
-    Insertion,
-    Deletion,
-    Complex,
-    SV
-}
-
 record ADAMVariant {
   union { null, ADAMContig } contig = null;
   union { null, long }       position = null;
   string                     referenceAllele;
   string                     variantAllele;
-  // enum to describe type of variant called
-  union { null, VariantType } variantType = null;
 }
 
 enum ADAMGenotypeAllele {
