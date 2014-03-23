@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Mount Sinai School of Medicine
+ * Copyright (c) 2014. Mount Sinai School of Medicine
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use file except in compliance with the License.
@@ -60,12 +60,20 @@ case class GenotypesSummaryCounts(
   lazy val averageReadDepthAtVariants =
     if (variantGenotypesCount == 0) None
     else for (readCount1 <- readCount) yield readCount1.toDouble / variantGenotypesCount.toDouble
+  lazy val withDefaultZeroCounts = GenotypesSummaryCounts(
+      genotypesCounts.withDefaultValue(0.toLong),
+      singleNucleotideVariantCounts.withDefaultValue(0.toLong),
+      multipleNucleotideVariantCount,
+      insertionCount,
+      deletionCount,
+      readCount,
+      phasedCount)
 
   def combine(that: GenotypesSummaryCounts): GenotypesSummaryCounts = {
     def combine_counts[A](map1: Map[A, Long], map2: Map[A, Long]): Map[A, Long] = {
       val keys: Set[A] = map1.keySet.union(map2.keySet)
       val pairs = keys.map(k => (k -> (map1.getOrElse(k, 0.toLong) + map2.getOrElse(k, 0.toLong))))
-      pairs.toMap.withDefaultValue(0)
+      pairs.toMap
     }
     GenotypesSummaryCounts(
       combine_counts(genotypesCounts, that.genotypesCounts),
@@ -82,13 +90,7 @@ object GenotypesSummaryCounts {
   case class ReferenceAndAlternate(reference: String, alternate: String)
 
   type GenotypeAlleleCounts =  Map[List[ADAMGenotypeAllele], Long]
-  object GenotypeAlleleCounts {
-    def apply(): GenotypeAlleleCounts = Map[List[ADAMGenotypeAllele], Long]().withDefaultValue(0)
-  }
   type VariantCounts = Map[ReferenceAndAlternate, Long]
-  object VariantCounts {
-    def apply(): VariantCounts = Map[ReferenceAndAlternate, Long]().withDefaultValue(0)
-  }
 
   val simpleNucleotides = List("A", "C", "T", "G")
 
@@ -112,7 +114,18 @@ object GenotypesSummaryCounts {
    * Factory for an empty GenotypesSummaryCounts.
    */
   def apply(): GenotypesSummaryCounts =
-    GenotypesSummaryCounts(Map[List[ADAMGenotypeAllele], Long](),Map[ReferenceAndAlternate, Long]() , 0, 0, 0, Some(0), 0)
+    GenotypesSummaryCounts(
+      Map(),
+      Map(),
+      0,  // Multiple nucleotide variants
+      0,  // Insertion count
+      0,  // Deletion count
+      Some(0),  // Read count
+      0)  // Phased count
+
+  def apply(counts: GenotypesSummaryCounts) {
+    assert(false)
+  }
 
   /**
    * Factory for a GenotypesSummaryCounts that counts a single ADAMGenotype.
@@ -123,10 +136,10 @@ object GenotypesSummaryCounts {
 
     // We always count our genotype. The other counts are set to 1 only if we have a variant genotype.
     val isVariant = genotype.getAlleles.contains(ADAMGenotypeAllele.Alt)
-    val genotypeAlleleCounts = Map(genotype.getAlleles.asScala.toList -> 1.toLong).withDefaultValue(0.toLong)
-    val variantCounts: VariantCounts = (
+    val genotypeAlleleCounts = Map(genotype.getAlleles.asScala.toList -> 1.toLong)
+    val variantCounts = (
       if (isVariant && variant.isSingleNucleotideVariant) Map(ref_and_alt -> 1.toLong)
-      else VariantCounts()).withDefaultValue(0)
+      else Map(): VariantCounts)
 
     val readDepth = (
       if (genotype.getReadDepth == null) None
@@ -155,13 +168,11 @@ case class GenotypesSummary(
   perSampleStatistics: StatisticsMap,
   singletonCount: Long,
   distinctVariantCount: Long) {
-  lazy val aggregateStatistics = perSampleStatistics.values.foldLeft(GenotypesSummaryCounts())(_.combine(_))
+  lazy val aggregateStatistics =
+    perSampleStatistics.values.foldLeft(GenotypesSummaryCounts())(_.combine(_)).withDefaultZeroCounts
 }
 object GenotypesSummary {
   type StatisticsMap = Map[String, GenotypesSummaryCounts]
-  object StatisticsMap {
-    def apply(): StatisticsMap = Map[String, GenotypesSummaryCounts]()
-  }
 
   /**
    * Factory for a GenotypesSummary given an RDD of ADAMGenotype.
@@ -170,16 +181,17 @@ object GenotypesSummary {
     def combineStatisticsMap(stats1: StatisticsMap, stats2: StatisticsMap): StatisticsMap = {
       stats1.keySet.union(stats2.keySet).map(sample => {
         (stats1.get(sample), stats2.get(sample)) match {
-          case (Some(stats1), Some(stats2)) => (sample, stats1.combine(stats2))
-          case (Some(stats1), None) => (sample, stats1)
-          case (None, Some(stats2)) => (sample, stats2)
+          case (Some(statsA), Some(statsB)) => sample -> statsA.combine(statsB)
+          case (Some(stats), None) => sample -> stats
+          case (None, Some(stats)) => sample -> stats
           case (None, None) => throw new AssertionError("Unreachable")
         }
       }).toMap
     }
     val perSampleStatistics: StatisticsMap = rdd
-      .map(genotype => StatisticsMap() + (genotype.getSampleId.toString -> GenotypesSummaryCounts(genotype)))
-      .fold(StatisticsMap())(combineStatisticsMap(_, _))
+      .map(genotype => Map(genotype.getSampleId.toString -> GenotypesSummaryCounts(genotype)))
+      .fold(Map(): StatisticsMap)(combineStatisticsMap(_, _))
+      .map({case (sample: String, stats: GenotypesSummaryCounts) => sample -> stats.withDefaultZeroCounts}).toMap
     val variantCounts =
       rdd.filter(_.getAlleles.contains(ADAMGenotypeAllele.Alt)).map(genotype => {
         val variant = genotype.getVariant
