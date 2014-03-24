@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,12 +63,11 @@ class RealignIndelsSuite extends SparkFunSuite {
     assert(readsMappedToTarget.size === 2)
 
     readsMappedToTarget.forall {
-      case (target : IndelRealignmentTarget, reads : Seq[ADAMRecord]) => reads.forall {
+      case (target : Option[IndelRealignmentTarget], reads : Seq[ADAMRecord]) => reads.forall {
         read => {
           if(read.getStart <= 25) {
-            var result : Boolean = (2 == target.indelSet.size.toInt)
-            result = result && (target.getReadRange().start.toLong <= read.start.toLong)
-            result && (target.getReadRange().end >= read.end.get - 1L)
+            var result : Boolean = (target.get.readRange.start.toLong <= read.getStart.toLong)
+            result && (target.get.readRange.end >= read.end.get)
           } else {
             target.isEmpty
           }
@@ -113,10 +112,12 @@ class RealignIndelsSuite extends SparkFunSuite {
     
     val targets = RealignmentTargetFinder(artificial_reads.map(RichADAMRecord(_)))
     val rr = artificial_reads.map(RichADAMRecord(_))
-    val readsMappedToTarget : Array[Tuple2[IndelRealignmentTarget, Seq[ADAMRecord]]] = RealignIndels.mapTargets(rr, targets).map(kv => {
+    val readsMappedToTarget : Array[Tuple2[IndelRealignmentTarget, Seq[ADAMRecord]]] = RealignIndels.mapTargets(rr, targets)
+      .filter(_._1.isDefined)
+      .map(kv => {
         val (t, r) = kv
 
-        (t, r.map(r => r.record))
+        (t.get, r.map(r => r.record))
       }).collect()
 
     val readReference = readsMappedToTarget.map {

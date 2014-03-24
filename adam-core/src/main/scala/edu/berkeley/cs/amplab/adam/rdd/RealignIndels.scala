@@ -129,12 +129,12 @@ private[rdd] object RealignIndels {
    * 
    * @see mapTargets
    */
-  def mapToTarget (targetIndex: Int, 
-                   targets: TreeSet[Tuple2[IndelRealignmentTarget, Int]]): IndelRealignmentTarget = {
+  def mapToTargetUnpacked (targetIndex: Int, 
+                           targets: TreeSet[Tuple2[IndelRealignmentTarget, Int]]): Option[IndelRealignmentTarget] = {
     if (targetIndex < 0) {
-      IndelRealignmentTarget.emptyTarget()
+      None
     } else {
-      targets.filter(p => p._2 == targetIndex).head._1
+      Some(targets.filter(p => p._2 == targetIndex).head._1)
     }
   }
 
@@ -148,8 +148,8 @@ private[rdd] object RealignIndels {
    * 
    * @see mapTargets
    */
-  def mapToTarget (targetIndex: Int, targets: ZippedTargetSet): IndelRealignmentTarget = {
-    mapToTarget(targetIndex, targets.set)
+  def mapToTarget (targetIndex: Int, targets: ZippedTargetSet): Option[IndelRealignmentTarget] = {
+    mapToTargetUnpacked(targetIndex, targets.set)
   }
 
   /**
@@ -166,7 +166,7 @@ private[rdd] object RealignIndels {
    * 
    * @see mapToTarget
    */
-  def mapTargets (rich_rdd: RDD[RichADAMRecord], targets: TreeSet[IndelRealignmentTarget]): RDD[(IndelRealignmentTarget, Seq[RichADAMRecord])] = {
+  def mapTargets (rich_rdd: RDD[RichADAMRecord], targets: TreeSet[IndelRealignmentTarget]): RDD[(Option[IndelRealignmentTarget], Seq[RichADAMRecord])] = {
     val tmpZippedTargets = targets.zip(0 until targets.count(t => true))
     var tmpZippedTargets2 = new TreeSet[Tuple2[IndelRealignmentTarget, Int]]()(ZippedTargetOrdering)
     tmpZippedTargets.foreach(t => tmpZippedTargets2 = tmpZippedTargets2 + t)
@@ -286,7 +286,7 @@ private[rdd] class RealignIndels (val dataIsSorted: Boolean = false,
    * @return A sequence of reads which have either been realigned if there is a sufficiently good alternative
    * consensus, or not realigned if there is not a sufficiently good consensus.
    */
-  def realignTargetGroup (targetGroup: (IndelRealignmentTarget, Seq[RichADAMRecord])): Seq[RichADAMRecord] = {
+  def realignTargetGroup (targetGroup: (Option[IndelRealignmentTarget], Seq[RichADAMRecord])): Seq[RichADAMRecord] = {
     val (target, reads) = targetGroup
     var (realignedReads, readsToClean, consensus) = findConsensus(reads)
 

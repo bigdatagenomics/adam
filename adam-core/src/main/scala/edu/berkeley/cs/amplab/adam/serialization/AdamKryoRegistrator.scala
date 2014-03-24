@@ -78,8 +78,6 @@ class AdamKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)
     kryo.register(classOf[SingleReadBucket], new SingleReadBucketSerializer)
-    kryo.register(classOf[IndelRange], new IndelRangeSerializer())
-    kryo.register(classOf[SNPRange], new SNPRangeSerializer)
     kryo.register(classOf[IndelRealignmentTarget])
     kryo.register(classOf[TargetSet], new TargetSetSerializer)
     kryo.register(classOf[ZippedTargetSet], new ZippedTargetSetSerializer)

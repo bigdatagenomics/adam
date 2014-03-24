@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 package edu.berkeley.cs.amplab.adam.rich
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
+import edu.berkeley.cs.amplab.adam.models.{Attribute, ReferenceRegion}
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.util._
+import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
 import scala.Some
-import scala.concurrent.JavaConversions._
 import scala.collection.immutable.NumericRange
-import edu.berkeley.cs.amplab.adam.models.Attribute
+import scala.concurrent.JavaConversions._
 
 object RichADAMRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
@@ -64,6 +64,14 @@ class RichADAMRecord(val record: ADAMRecord) {
   lazy val mdTag: Option[MdTag] = {
     if (record.getReadMapped) {
       Some(MdTag(record.getMismatchingPositions, record.getStart))
+    } else {
+      None
+    }
+  }
+
+  lazy val region: Option[ReferenceRegion] = {
+    if (record.getReadMapped) {
+      Some(ReferenceRegion(record.getReferenceId, record.getStart, end.get))
     } else {
       None
     }

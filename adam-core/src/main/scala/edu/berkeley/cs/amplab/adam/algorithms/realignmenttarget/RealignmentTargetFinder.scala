@@ -60,17 +60,20 @@ class RealignmentTargetFinder extends Serializable with Logging {
     first: TreeSet[IndelRealignmentTarget],
     second: TreeSet[IndelRealignmentTarget]): TreeSet[IndelRealignmentTarget] = {
 
-    if (second.isEmpty) {
+    if (first.isEmpty && second.isEmpty) {
+      TreeSet[IndelRealignmentTarget]()(TargetOrdering)
+    } else if (second.isEmpty) {
       first
     } else if (first.isEmpty) {
       second
     } else {
-      // if the two sets overlap, we must merge their head and tail elements, else we can just blindly append
+      // if the two sets overlap, we must merge their head and tail elements,
+      // else we can just blindly append
       if (!TargetOrdering.overlap(first.last, second.head)) {
         first.union(second)
       } else {
         // merge the tail of the first set and the head of the second set and retry the merge
-        joinTargets (first - first.last + first.last.merge(second.head), second - second.head)
+        joinTargets(first - first.last + first.last.merge(second.head), second - second.head)
       }
     }
   }

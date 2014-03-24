@@ -185,6 +185,10 @@ case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[R
       start.compareTo(that.start)
     else
       end.compareTo(that.end)
+
+  def length(): Long = {
+    end - start
+  }
 }
 
 class ReferenceRegionSerializer extends Serializer[ReferenceRegion] {
