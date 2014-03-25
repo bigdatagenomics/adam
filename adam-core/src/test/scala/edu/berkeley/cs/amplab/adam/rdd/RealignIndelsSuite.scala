@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import parquet.filter.UnboundRecordFilter
-import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget.RealignmentTargetFinder
-import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget.IndelRealignmentTarget
-import edu.berkeley.cs.amplab.adam.models.Consensus
+import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget.{RealignmentTargetFinder, 
+                                                                 IndelRealignmentTarget}
+import edu.berkeley.cs.amplab.adam.models.{Consensus, ReferencePosition}
+import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
-import org.scalatest.exceptions.TestFailedException
+import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
+import org.apache.spark.rdd.RDD
+import parquet.filter.UnboundRecordFilter
 
 class RealignIndelsSuite extends SparkFunSuite {
 
@@ -82,7 +80,7 @@ class RealignIndelsSuite extends SparkFunSuite {
     // similar to realignTargetGroup() in RealignIndels
     artificial_reads.collect().toList.foreach(r => {
       if (r.mdTag.get.hasMismatches) {
-        consensus = Consensus.generateAlternateConsensus(r.getSequence, r.getStart, r.samtoolsCigar) match {
+        consensus = Consensus.generateAlternateConsensus(r.getSequence, ReferencePosition(0, r.getStart), r.samtoolsCigar) match {
           case Some(o) => o :: consensus
           case None => consensus
         }
@@ -93,10 +91,10 @@ class RealignIndelsSuite extends SparkFunSuite {
     assert(consensus.length > 0)
     // Note: it seems that consensus ranges are non-inclusive
     assert(consensus.get(0).index.start === 34)
-    assert(consensus.get(0).index.end === 44)
+    assert(consensus.get(0).index.end === 45)
     assert(consensus.get(0).consensus === "")
     assert(consensus.get(1).index.start === 54)
-    assert(consensus.get(1).index.end === 64)
+    assert(consensus.get(1).index.end === 65)
     assert(consensus.get(1).consensus === "")
     // TODO: add check with insertions, how about SNPs
   }
@@ -131,14 +129,6 @@ class RealignIndelsSuite extends SparkFunSuite {
       case _ => assert(false)
     }
     assert(readReference != null)
-  }
-
-  sparkTest("checking search for consensus list for artitifical reads") {
-    val (realignedReads, readsToClean, consensus) = (new RealignIndels()).findConsensus(artificial_reads.map(new RichADAMRecord(_))
-                                                                                                        .collect()
-                                                                                                        .toSeq)
-
-    assert(consensus.length === 2)
   }
 
   sparkTest("checking realigned reads for artificial input") {

@@ -15,6 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
+import edu.berkeley.cs.amplab.adam.algorithms.consensus.{ConsensusGenerator, ConsensusGeneratorFromReads}
 import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, 
                                          ADAMRecord, 
                                          ADAMNucleotideContigFragment,
@@ -196,12 +197,13 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends AdamSequenceDictionar
    *
    * @return Returns an RDD of mapped reads which have been realigned.
    */
-  def adamRealignIndels(isSorted: Boolean = false,
+  def adamRealignIndels(consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
+                        isSorted: Boolean = false,
                         maxIndelSize: Int = 500,
                         maxConsensusNumber: Int = 30,
                         lodThreshold: Double = 5.0,
                         maxTargetSize: Int = 3000): RDD[ADAMRecord] = {
-    RealignIndels(rdd, isSorted, maxIndelSize, maxConsensusNumber, lodThreshold)
+    RealignIndels(rdd, consensusModel, isSorted, maxIndelSize, maxConsensusNumber, lodThreshold)
   }
 
   // Returns a tuple of (failedQualityMetrics, passedQualityMetrics)

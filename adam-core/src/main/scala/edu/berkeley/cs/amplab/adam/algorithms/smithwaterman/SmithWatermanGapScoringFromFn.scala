@@ -21,44 +21,51 @@ abstract class SmithWatermanGapScoringFromFn (xSequence: String,
 				     scoreFn: (Int, Int, Char, Char) => Double)
     extends SmithWaterman (xSequence, ySequence) {
   
-  def buildScoringMatrix (): Array[Array[Double]] = {
+  def buildScoringMatrix (): (Array[Array[Double]], Array[Array[Char]]) = {
 
-    val y = ySequence.length + 1
-    val x = xSequence.length + 1 
+    val y = ySequence.length
+    val x = xSequence.length
 
-    var matrix = new Array[Array[Double]](x)
-    for (i <- 0 until x) {
-      matrix (i) = new Array[Double](y)
+    var scoreMatrix = new Array[Array[Double]](x + 1)
+    var moveMatrix = new Array[Array[Char]](x + 1)
+    for (i <- 0 to x) {
+      scoreMatrix (i) = new Array[Double](y + 1)
+      moveMatrix (i) = new Array[Char](y + 1)
     }
 
     // set row/col 0 to 0
-    for (i <- 0 until x) {
-      matrix (i)(0) = 0.0
+    for (i <- 0 to x) {
+      scoreMatrix (i)(0) = 0.0
+      moveMatrix (i)(0) = 'T'
     }
-    for (j <- 0 until y) {
-      matrix (0)(j) = 0.0
+    for (j <- 0 to y) {
+      scoreMatrix (0)(j) = 0.0
+      moveMatrix (0)(j) = 'T'
     }
 
     // score matrix
-    for (i <- 1 until x) {
-      for (j <- i until y) {
-	val m = matrix(i - 1)(j - 1) + scoreFn(i, j, xSequence(i), ySequence(j))
-	val d = matrix(i - 1)(j) + scoreFn(i, j, xSequence(i), '_')
-	val in = matrix(i)(j - 1) + scoreFn(i, j, '_', ySequence(j))	
-	val update = (d max in) max (m max 0)  
+    for (i <- 1 to x) {
+      for (j <- 1 to y) {
+	val m = scoreMatrix(i - 1)(j - 1) + scoreFn(i, j, xSequence(i - 1), ySequence(j - 1))
+	val d = scoreMatrix(i - 1)(j) + scoreFn(i, j, xSequence(i - 1), '_')
+	val in = scoreMatrix(i)(j - 1) + scoreFn(i, j, '_', ySequence(j - 1))	
 
-	matrix(i)(j) = update
+	val (scoreUpdate, moveUpdate) = if (m >= d && m >= in && m > 0.0) {
+          (m, 'B')
+        } else if (d >= in && d > 0.0) {
+          (d, 'J')
+        } else if (in > 0.0) {
+          (in, 'I')
+        } else {
+          (0.0, 'T')
+        }
 
-	// check if new max and update
-	if (update > max) {
-	  maxX = i
-	  maxY = j
-	  max = update
-	}
+	scoreMatrix(i)(j) = scoreUpdate
+        moveMatrix(i)(j) = moveUpdate
       }
     }
 
-    matrix
+    (scoreMatrix, moveMatrix)
   }
 
 }

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package edu.berkeley.cs.amplab.adam.rdd
 
+import edu.berkeley.cs.amplab.adam.algorithms.consensus.{ConsensusGenerator, ConsensusGeneratorFromReads}
 import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget.{RealignmentTargetFinder,
                                                                  IndelRealignmentTarget,
                                                                  TargetOrdering,
@@ -23,7 +23,7 @@ import edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget.{RealignmentTarg
                                                                  TargetSet,
                                                                  ZippedTargetSet}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.models.{Consensus, ReferencePosition}
+import edu.berkeley.cs.amplab.adam.models.{Consensus, ReferencePosition, ReferenceRegion}
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.rich.RichCigar
@@ -51,12 +51,14 @@ private[rdd] object RealignIndels {
    * @return RDD of realigned reads.
    */
   def apply(rdd: RDD[ADAMRecord],
+            consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
             dataIsSorted: Boolean = false,
             maxIndelSize: Int = 500,
             maxConsensusNumber: Int = 30,
             lodThreshold: Double = 5.0,
             maxTargetSize: Int = 3000): RDD[ADAMRecord] = {
-    new RealignIndels(dataIsSorted, 
+    new RealignIndels(consensusModel,
+                      dataIsSorted, 
                       maxIndelSize, 
                       maxConsensusNumber, 
                       lodThreshold,
@@ -214,70 +216,12 @@ private[rdd] object RealignIndels {
 
 import RealignIndels._
 
-private[rdd] class RealignIndels (val dataIsSorted: Boolean = false,
+private[rdd] class RealignIndels (val consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
+                                  val dataIsSorted: Boolean = false,
                                   val maxIndelSize: Int = 500,
                                   val maxConsensusNumber: Int = 30,
                                   val lodThreshold: Double = 5.0,
                                   val maxTargetSize: Int = 3000) extends Serializable with Logging {
-
-  def findConsensus(reads : Seq[RichADAMRecord]) : Tuple3[List[RichADAMRecord], List[RichADAMRecord], List[Consensus]] = {
-    var realignedReads = List[RichADAMRecord]()
-    var readsToClean = List[RichADAMRecord]()
-    var consensus = List[Consensus]()
-
-    // loop across reads and triage/generate consensus sequences
-    reads.foreach(r => {
-      var cigar : Cigar = null
-      var mdTag : MdTag = null
-
-      // if there are two alignment blocks (sequence matches) then there is a single indel in the read
-      if (r.samtoolsCigar.numAlignmentBlocks == 2) {
-        // left align this indel and update the mdtag
-        try {
-          cigar = leftAlignIndel(r)
-          mdTag = MdTag.moveAlignment(r, cigar)
-        } catch {
-          case _ : Throwable => {
-            println("Left normalization failed for :" + r)
-          }
-        }
-      }
-
-      mdTag = if (mdTag == null) r.mdTag.get else mdTag
-
-      if (mdTag.hasMismatches) {
-        val newRead : RichADAMRecord =
-          if (cigar != null) {
-            ADAMRecord.newBuilder(r).setCigar(cigar.toString).setMismatchingPositions(mdTag.toString).build()
-          } else {
-            ADAMRecord.newBuilder(r).build()
-          }
-        // we clean all reads that have mismatches
-        readsToClean = newRead :: readsToClean
-
-        // try to generate a consensus alignment - if a consensus exists, add it to our list of consensuses to test
-        consensus = Consensus.generateAlternateConsensus(newRead.getSequence, newRead.getStart, newRead.samtoolsCigar) match {
-          case Some(o) => o :: consensus
-          case None => consensus
-        }
-      } else {
-        // if the read does not have mismatches, then we needn't process it further
-        realignedReads = new RichADAMRecord(r) :: realignedReads
-      }
-    })
-
-    // TODO: check whether this improves or harms performance
-    consensus = consensus.distinct
-
-    // reduce count of consensus sequences
-    if (consensus.length > maxConsensusNumber) {
-      val r = new Random()
-      consensus = r.shuffle(consensus).take(maxConsensusNumber)
-    }
-
-    new Tuple3(realignedReads, readsToClean, consensus)
-  }
-
   /**
    * Given a target group with an indel realignment target and a group of reads to realign, this method
    * generates read consensuses and realigns reads if a consensus leads to a sufficient improvement.
@@ -288,7 +232,23 @@ private[rdd] class RealignIndels (val dataIsSorted: Boolean = false,
    */
   def realignTargetGroup (targetGroup: (Option[IndelRealignmentTarget], Seq[RichADAMRecord])): Seq[RichADAMRecord] = {
     val (target, reads) = targetGroup
-    var (realignedReads, readsToClean, consensus) = findConsensus(reads)
+    var realignedReads = reads.filter(r => r.mdTag.isDefined && !r.mdTag.get.hasMismatches)
+
+    // get reference from reads
+    val (reference, refStart, refEnd) = getReferenceFromReads(reads.map(r => new RichADAMRecord(r)))
+    val refRegion = ReferenceRegion(reads.head.record.getReferenceId, refStart, refEnd)
+
+    // preprocess reads and get consensus
+    val readsToClean = consensusModel.preprocessReadsForRealignment(reads.filter(r => !r.mdTag.isDefined || r.mdTag.get.hasMismatches),
+                                                                    reference,
+                                                                    refRegion)
+    var consensus = consensusModel.findConsensus(readsToClean)
+
+    // reduce count of consensus sequences
+    if (consensus.length > maxConsensusNumber) {
+      val r = new Random()
+      consensus = r.shuffle(consensus).take(maxConsensusNumber)
+    }
 
     if (target.isEmpty) {
       // if the indel realignment target is empty, do not realign
@@ -298,9 +258,6 @@ private[rdd] class RealignIndels (val dataIsSorted: Boolean = false,
       var mismatchSum = 0L
 
       if(readsToClean.length > 0 && consensus.length > 0) {
-
-        // get reference from reads
-        val (reference, refStart, refEnd) = getReferenceFromReads(reads.map(r => new RichADAMRecord(r)))
 
         // do not check realigned reads - they must match
         val totalMismatchSumPreCleaning = readsToClean.map(sumMismatchQuality(_)).reduce(_ + _)
@@ -359,7 +316,7 @@ private[rdd] class RealignIndels (val dataIsSorted: Boolean = false,
         if ((totalMismatchSumPreCleaning - bestConsensusMismatchSum).toDouble / 10.0 > lodThreshold) {
 
           // if we see a sufficient improvement, realign the reads
-          val cleanedReads : List[RichADAMRecord] = readsToClean.map(r => {
+          val cleanedReads : Seq[RichADAMRecord] = readsToClean.map(r => {
 
             val builder : ADAMRecord.Builder = ADAMRecord.newBuilder(r)
             val remapping = bestMappings(r)
@@ -373,17 +330,17 @@ private[rdd] class RealignIndels (val dataIsSorted: Boolean = false,
               builder.setStart(refStart + remapping)
 
               // recompute cigar
-              val newCigar: Cigar = if (refStart + remapping >= bestConsensus.index.head && refStart + remapping <= bestConsensus.index.end) {
+              val newCigar: Cigar = if (refStart + remapping >= bestConsensus.index.start && refStart + remapping <= bestConsensus.index.end - 1) {
                 // if element overlaps with consensus indel, modify cigar with indel
-                val (idElement, endLength) = if(bestConsensus.index.head == bestConsensus.index.end) {
+                val (idElement, endLength) = if(bestConsensus.index.start == bestConsensus.index.end - 1) {
                   (new CigarElement(bestConsensus.consensus.length, CigarOperator.I),
-                    r.getSequence.length - bestConsensus.consensus.length - (bestConsensus.index.head - (refStart + remapping)))
+                    r.getSequence.length - bestConsensus.consensus.length - (bestConsensus.index.start - (refStart + remapping)))
                 } else {
-                  (new CigarElement((bestConsensus.index.end - bestConsensus.index.head).toInt, CigarOperator.D),
-                    r.getSequence.length - (bestConsensus.index.head - (refStart + remapping)))
+                  (new CigarElement((bestConsensus.index.end - 1 - bestConsensus.index.start).toInt, CigarOperator.D),
+                    r.getSequence.length - (bestConsensus.index.start - (refStart + remapping)))
                 }
 
-                val cigarElements = List[CigarElement](new CigarElement((refStart + remapping - bestConsensus.index.head).toInt, CigarOperator.M),
+                val cigarElements = List[CigarElement](new CigarElement((refStart + remapping - bestConsensus.index.start).toInt, CigarOperator.M),
                   idElement,
                   new CigarElement(endLength.toInt, CigarOperator.M))
 
@@ -402,14 +359,13 @@ private[rdd] class RealignIndels (val dataIsSorted: Boolean = false,
               new RichADAMRecord(builder.build())
           })
 
-          realignedReads = cleanedReads ::: realignedReads
+          realignedReads = cleanedReads ++ realignedReads
         } else {
-          realignedReads = readsToClean ::: realignedReads
+          realignedReads = readsToClean ++ realignedReads
         }
       }
 
       // return all reads that we cleaned and all reads that were initially realigned
-      //readsToClean //::: realignedReads
       realignedReads
     }
   }

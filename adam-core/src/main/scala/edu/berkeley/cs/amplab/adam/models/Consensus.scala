@@ -22,16 +22,16 @@ import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
 
 object Consensus {
 
-  def generateAlternateConsensus (sequence: String, start: Long, cigar: Cigar): Option[Consensus] = {
+  def generateAlternateConsensus (sequence: String, start: ReferencePosition, cigar: Cigar): Option[Consensus] = {
     
     var readPos = 0
-    var referencePos = start
+    var referencePos = start.pos
 
     if (cigar.getCigarElements.filter(elem => elem.getOperator == CigarOperator.I || elem.getOperator == CigarOperator.D).length == 1) {
       cigar.getCigarElements.foreach(cigarElement => {
         cigarElement.getOperator match {
-          case CigarOperator.I => return Some(new Consensus(sequence.substring(readPos, readPos + cigarElement.getLength), referencePos to referencePos))
-          case CigarOperator.D => return Some(new Consensus("", referencePos until (referencePos + cigarElement.getLength)))
+          case CigarOperator.I => return Some(new Consensus(sequence.substring(readPos, readPos + cigarElement.getLength), ReferenceRegion(start.refId, referencePos, referencePos + 1)))
+          case CigarOperator.D => return Some(new Consensus("", ReferenceRegion(start.refId, referencePos, referencePos + cigarElement.getLength + 1)))
           case _ => {
             if (cigarElement.getOperator.consumesReadBases && cigarElement.getOperator.consumesReferenceBases) {
               readPos += cigarElement.getLength
@@ -50,13 +50,21 @@ object Consensus {
 
 }
 
-case class Consensus (consensus: String, index: NumericRange[Long]) {
+case class Consensus (consensus: String, index: ReferenceRegion) {
 
   def insertIntoReference (reference: String, refStart: Long, refEnd: Long): String = {
-    if (index.head < refStart || index.head > refEnd || index.end < refStart || index.end > refEnd) {
+    if (index.start < refStart || index.start > refEnd || index.end - 1 < refStart || index.end - 1 > refEnd) {
       throw new IllegalArgumentException("Consensus and reference do not overlap: " + index + " vs. " + refStart + " to " + refEnd)
     } else {
-      reference.substring(0, (index.head - refStart).toInt) + consensus + reference.substring((index.end - refStart).toInt)
+      reference.substring(0, (index.start - refStart).toInt) + consensus + reference.substring((index.end - 1 - refStart).toInt)
+    }
+  }
+
+  override def toString(): String = {
+    if (index.start + 1 != index.end) {
+      "Deletion over " + index.toString
+    } else {
+      "Inserted " + consensus + " at " + index.toString
     }
   }
 

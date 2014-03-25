@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package edu.berkeley.cs.amplab.adam.algorithms.smithwaterman
 object SmithWatermanConstantGapScoring {
 
   protected def constantGapFn (wMatch: Double, wDelete: Double, wInsert: Double, wMismatch: Double)(x: Int, y: Int, i: Char, j: Char): Double = {
-    if (x == y) {
+    if (i == j) {
       wMatch
-    } else if (x == '_') {
+    } else if (i == '_') {
       wDelete
-    } else if (y == '_') {
+    } else if (j == '_') {
       wInsert
     } else {
       wMismatch
@@ -32,11 +32,11 @@ object SmithWatermanConstantGapScoring {
   
 }
 
-abstract class SmithWatermanConstantGapScoring (xSequence: String,
+class SmithWatermanConstantGapScoring (xSequence: String,
 				       ySequence: String,
 				       wMatch: Double,
 				       wMismatch: Double,
 				       wInsert: Double,
 				       wDelete: Double)
-    extends SmithWatermanGapScoringFromFn (xSequence, ySequence, SmithWatermanConstantGapScoring.constantGapFn(wMatch,wMismatch,wInsert,wDelete)) {
+    extends SmithWatermanGapScoringFromFn (xSequence, ySequence, SmithWatermanConstantGapScoring.constantGapFn(wMatch,wInsert,wDelete,wMismatch)) {
 }

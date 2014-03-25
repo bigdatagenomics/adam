@@ -20,7 +20,6 @@ import scala.collection.immutable.NumericRange
 import scala.util.matching.Regex
 import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-//import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
 import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
@@ -230,6 +229,57 @@ object MdTag {
    */
   def moveAlignment (read: RichADAMRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
     moveAlignment(newReference, read.record.getSequence, newCigar, newAlignmentStart)
+  }
+
+  def apply (read: String, reference: String, cigar: Cigar, start: Long): MdTag = {
+    var matchCount = 0
+    var delCount = 0
+    var string = ""
+    var readPos = 0
+    var refPos = 0
+
+    // loop over all cigar elements
+    cigar.getCigarElements.foreach(cigarElement => {
+      cigarElement.getOperator match {
+        case CigarOperator.M => {
+          for (i <- 0 until cigarElement.getLength) {
+            if (read(readPos) == reference(refPos)) {
+              matchCount += 1
+            } else {
+              string += matchCount.toString + reference(refPos)
+              matchCount = 0
+            }
+            readPos += 1
+            refPos += 1
+            delCount = 0
+          }
+        }
+        case CigarOperator.D => {
+          for (i <- 0 until cigarElement.getLength) {
+            if (delCount == 0) {
+              string += matchCount.toString + "^"
+            }
+            string += reference(refPos)
+            
+            matchCount = 0
+            delCount += 1
+            refPos += 1
+          }
+        }
+        case _ => {
+          if (cigarElement.getOperator.consumesReadBases) {
+            readPos += cigarElement.getLength
+          }
+          if (cigarElement.getOperator.consumesReferenceBases) {
+            throw new IllegalArgumentException ("Cannot handle operator: " + cigarElement.getOperator)
+          }
+        }
+      }
+    })
+
+    string += matchCount.toString
+    
+    apply(string, start)
   }
 }
 
