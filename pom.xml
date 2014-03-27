@@ -43,7 +43,7 @@
         <connection>scm:git:git@github.com:bigdatagenomics/adam.git</connection>
         <developerConnection>scm:git:git@github.com:bigdatagenomics/adam.git</developerConnection>
         <url>scm:git:git@github.com:bigdatagenomics/adam.git</url>
-        <tag>HEAD</tag>
+        <tag>master</tag>
     </scm>
     <developers>
         <developer>
