@@ -58,6 +58,10 @@ e.g. AdamContextSuite.scala, to see examples of how to write tests. You might al
 * Please try to follow the existing coding style
 * Make sure to add a copyright header to all new files (see below).
 
+### Update CHANGES.md file
+
+* The CHANGES.md file is updated to indicate changes that are resolved for the next release.  Please update the file with your commit.
+
 ## Copyright header and Licensing
 
 ADAM is released under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
