@@ -4,6 +4,7 @@
 * ISSUE [178](https://github.com/bigdatagenomics/adam/pull/178): Upgrade to Hadoop-BAM 0.6.2/Picard 1.107
 * ISSUE [166](https://github.com/bigdatagenomics/adam/pull/166): Pair-wise genotype concordance of genotype RDDs, with CLI tool
 * ISSUE [171](https://github.com/bigdatagenomics/adam/pull/171): Add back in allele dosage for genotypes.
+* ISSUE [131](https://github.com/bigdatagenomics/adam/issues/137): Clarify/unify role of CHANGES file
 
 ### Version 0.7.0 ###
 * ISSUE [167](https://github.com/bigdatagenomics/adam/pull/167): Fix for Hadoop 1.0.x support
