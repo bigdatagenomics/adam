@@ -36,6 +36,10 @@ trait SparkArgs extends Args4jBase {
   var spark_kryo_buffer_size = 4
   @Args4jOption(required = false, name = "-spark_add_stats_listener", usage = "Register job stat reporter, which is useful for debug/profiling.")
   var spark_add_stats_listener = false
+  @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
+  var coalesce: Int = -1
+  @Args4jOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
+  var repartition: Int = -1
 }
 
 trait SparkCommand extends AdamCommand {
