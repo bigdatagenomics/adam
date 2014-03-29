@@ -37,6 +37,7 @@ object AdamMain extends Logging {
     Bam2Adam,
     Adam2Vcf,
     Vcf2Adam,
+    Annot2Adam,
     FindReads,
     Fasta2Adam,
     PluginExecutor,
