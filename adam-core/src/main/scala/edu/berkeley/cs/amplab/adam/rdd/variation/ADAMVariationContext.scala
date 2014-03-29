@@ -85,7 +85,7 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
 
   def adamVCFAnnotationLoad(filePath: String): RDD[ADAMDatabaseVariantAnnotation] = {
     log.info("Reading VCF file from %s".format(filePath))
-    val job = Job.getInstance(sc.hadoopConfiguration)
+    val job = new Job(sc.hadoopConfiguration)
     val vcc = new VariantContextConverter
     val records = sc.newAPIHadoopFile(
       filePath,
