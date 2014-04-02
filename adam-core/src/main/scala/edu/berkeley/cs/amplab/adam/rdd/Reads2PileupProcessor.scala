@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013. Regents of the University of California
+ * Copyright (c) 2013-2014. Regents of the University of California
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,10 @@ private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = f
   def readToPileups(record: ADAMRecord): List[ADAMPileup] = {
     if (record == null || 
         record.getCigar == null || 
-        record.getMismatchingPositions == null ||
         record.getReadMapped == null ||
         !record.getReadMapped ||
         record.getPrimaryAlignment == null) {
-      // TODO: log this later... We can't create a pileup without the CIGAR and MD tag
-      // in the future, we can also get reference information from a reference file
+      // TODO: log this later... We can't create a pileup without the CIGAR
       return List.empty
     }
 
@@ -114,7 +112,11 @@ private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = f
     var readPos = 0
 
     val cigar = Reads2PileupProcessor.CIGAR_CODEC.decode(record.getCigar.toString)
-    val mdTag = MdTag(record.getMismatchingPositions.toString, referencePos)
+    val mdTag: Option[MdTag] = if(record.getMismatchingPositions == null) {
+      None
+    } else {
+      Some(MdTag(record.getMismatchingPositions.toString, referencePos))
+    }
 
     var pileupList = List[ADAMPileup]()
 
@@ -144,21 +146,26 @@ private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = f
 
           for (i <- 0 until cigarElement.getLength) {
 
-            val referenceBase = if (mdTag.isMatch(referencePos)) {
-              baseFromSequence(readPos)
+            val referenceBase: Option[Base] = if (mdTag.isDefined && mdTag.get.isMatch(referencePos)) {
+              Some(baseFromSequence(readPos))
             } else {
-              mdTag.mismatchedBase(referencePos) match {
-                case None => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace()
-                case Some(read) => Base.valueOf(read.toString)
-              }
+	      if (mdTag.isDefined) {
+		mdTag.get.mismatchedBase(referencePos) match {
+                  case None => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace()
+                  case Some(read) => Some(Base.valueOf(read.toString))
+		}
+	      } else {
+		None
+	      }
             }
 
             // sequence match
             val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
               .setReadBase(baseFromSequence(readPos))
-              .setReferenceBase(referenceBase)
-              .build()
-            pileupList ::= pileup
+
+	    referenceBase.foreach(b => pileup.setReferenceBase(b))
+              
+            pileupList ::= pileup.build()
 
             readPos += 1
             referencePos += 1
@@ -167,17 +174,25 @@ private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = f
         // DELETE
         case CigarOperator.D =>
           for (i <- 0 until cigarElement.getLength) {
-            val deletedBase = mdTag.deletedBase(referencePos)
-            if (deletedBase.isEmpty) {
-              throw new IllegalArgumentException("CIGAR delete but the MD tag is not a delete")
-            }
+            val deletedBase: Option[Char] = if (mdTag.isDefined) {
+	      val db = mdTag.get.deletedBase(referencePos)
+
+              if (db.isEmpty) {
+		throw new IllegalArgumentException("CIGAR delete but the MD tag is not a delete")
+              }
+
+	      db
+	    } else {
+	      None
+	    }
+
             val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
-              .setReferenceBase(Base.valueOf(deletedBase.get.toString))
               .setRangeOffset(i)
               .setRangeLength(cigarElement.getLength)
-              .build()
+            
+	    deletedBase.foreach(b => pileup.setReferenceBase(Base.valueOf(b.toString)))
 
-            pileupList ::= pileup
+            pileupList ::= pileup.build()
             // Consume reference bases but not read bases
             referencePos += 1
           }
@@ -204,7 +219,49 @@ private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = f
             clipPos += 1
           }
 
-        // All other cases (TODO: add X and EQ?)
+	case CigarOperator.EQ => 
+
+          for (i <- 0 until cigarElement.getLength) {
+
+            val referenceBase = baseFromSequence(readPos)
+
+            // sequence match
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
+              .setReadBase(baseFromSequence(readPos))
+              .setReferenceBase(referenceBase)
+              .build()
+            pileupList ::= pileup
+
+            readPos += 1
+            referencePos += 1
+          }
+
+	case CigarOperator.X => 
+
+          for (i <- 0 until cigarElement.getLength) {
+
+            val referenceBase: Option[Base] = if (mdTag.isDefined) {
+	      mdTag.get.mismatchedBase(referencePos) match {
+                case None => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace()
+                case Some(read) => Some(Base.valueOf(read.toString))
+	      }
+	    } else {
+	      None
+	    }
+
+            // sequence match
+            val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
+              .setReadBase(baseFromSequence(readPos))
+
+	    referenceBase.foreach(b => pileup.setReferenceBase(b))
+
+            pileupList ::= pileup.build()
+
+            readPos += 1
+            referencePos += 1
+          }
+
+        // All other cases)
         case _ =>
           if (cigarElement.getOperator.consumesReadBases()) {
             readPos += cigarElement.getLength
