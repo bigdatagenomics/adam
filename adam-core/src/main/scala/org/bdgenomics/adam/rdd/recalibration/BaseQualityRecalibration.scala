@@ -40,7 +40,7 @@ import org.apache.spark.rdd.RDD
  *     assign adjusted quality scores.
  */
 class BaseQualityRecalibration(
-  val reads: RDD[DecadentRead],
+  val input: RDD[DecadentRead],
   val knownSnps: Broadcast[SnpTable])
     extends Serializable with Logging {
 
@@ -53,42 +53,38 @@ class BaseQualityRecalibration(
   // TODO: parameterize
   val minAcceptableQuality = QualityScore(5)
 
-  val observed: ObservationTable = {
+  val dataset: RDD[(CovariateKey, Residue)] = {
     def shouldIncludeRead(read: DecadentRead) =
       read.isCanonicalRecord &&
         read.alignmentQuality.exists(_ > QualityScore.zero) &&
         read.passedQualityChecks
 
-    reads.
-      filter(shouldIncludeRead).flatMap(observe).
-      aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
-  }
-
-  val result: RDD[ADAMRecord] = {
-    val recalibrator = Recalibrator(observed, minAcceptableQuality)
-    reads.map(recalibrator)
-  }
-
-  // Compute observation table for a single read
-  private def observe(read: DecadentRead): Seq[(CovariateKey, Observation)] = {
     def shouldIncludeResidue(residue: Residue) =
       residue.quality > QualityScore.zero &&
         residue.isRegularBase &&
         !residue.isInsertion &&
         !knownSnps.value.isMasked(residue)
 
-    // Compute keys and filter out skipped residues
-    val keys: Seq[(CovariateKey, Residue)] =
-      covariates(read).zip(read.sequence).filter(x => shouldIncludeResidue(x._2))
+    def observe(read: DecadentRead): Seq[(CovariateKey, Residue)] =
+      covariates(read).zip(read.sequence).
+        filter { case (key, residue) => shouldIncludeResidue(residue) }
 
-    // Construct result
-    keys.map { case (key, residue) => (key, Observation(residue.isSNP)) }
+    input.filter(shouldIncludeRead).flatMap(observe)
+  }
+
+  val observed: ObservationTable = {
+    dataset.
+      map { case (key, residue) => (key, Observation(residue.isSNP)) }.
+      aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
+  }
+
+  val result: RDD[ADAMRecord] = {
+    val recalibrator = Recalibrator(observed, minAcceptableQuality)
+    input.map(recalibrator)
   }
 }
 
 object BaseQualityRecalibration {
-  def apply(rdd: RDD[ADAMRecord], knownSnps: SnpTable): RDD[ADAMRecord] = {
-    val sc = rdd.context
-    new BaseQualityRecalibration(cloy(rdd), sc.broadcast(knownSnps)).result
-  }
+  def apply(rdd: RDD[ADAMRecord], knownSnps: Broadcast[SnpTable]): RDD[ADAMRecord] =
+    new BaseQualityRecalibration(cloy(rdd), knownSnps).result
 }

@@ -117,7 +117,7 @@ object Aggregate {
   val empty: Aggregate = new Aggregate(0, 0, 0)
 
   def apply(key: CovariateKey, value: Observation) =
-    new Aggregate(value.total, value.mismatches, key.quality.errorProbability * value.mismatches)
+    new Aggregate(value.total, value.mismatches, key.quality.errorProbability * value.total)
 }
 
 /**
