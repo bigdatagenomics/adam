@@ -15,11 +15,11 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMVariant}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMContig, ADAMVariant }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import net.sf.samtools.{ SAMFileHeader, SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary }
 import org.apache.avro.specific.SpecificRecord
-import org.broadinstitute.variant.vcf.{VCFHeader, VCFContigHeaderLine}
+import org.broadinstitute.variant.vcf.{ VCFHeader, VCFContigHeaderLine }
 import org.scalatest.FunSuite
 
 class SequenceDictionarySuite extends FunSuite {
@@ -184,9 +184,9 @@ class SequenceDictionarySuite extends FunSuite {
 
   test("containsRefName works correctly") {
     val dict = SequenceDictionary(record(0, "chr0"),
-                                  record(1, "chr1"),
-                                  record(2, "chr2"),
-                                  record(3, "chr3"))
+      record(1, "chr1"),
+      record(2, "chr2"),
+      record(3, "chr3"))
     val str0: String = "chr0"
     val str1: java.lang.String = "chr1"
     val str2: CharSequence = "chr2"
@@ -200,9 +200,9 @@ class SequenceDictionarySuite extends FunSuite {
 
   test("apply on name works correctly") {
     val dict = SequenceDictionary(record(0, "chr0"),
-                                  record(1, "chr1"),
-                                  record(2, "chr2"),
-                                  record(3, "chr3"))
+      record(1, "chr1"),
+      record(2, "chr2"),
+      record(3, "chr3"))
     val str0: String = "chr0"
     val str1: java.lang.String = "chr1"
     val str2: CharSequence = "chr2"
@@ -213,7 +213,7 @@ class SequenceDictionarySuite extends FunSuite {
     assert(dict(str2).id === 2)
     assert(dict(str3).id === 3)
   }
-    
+
   // TODO (nealsid): Update this test case once we move ADAMRecord
   // over to using ADAMContig for it's location and fromSpecificRecord
   // is also updated.
@@ -251,13 +251,13 @@ class SequenceDictionarySuite extends FunSuite {
     assert(conv.id === -1)
 
     val convSr = conv.toSAMSequenceRecord
-    
+
     assert(convSr.isSameSequence(sr))
   }
 
   test("convert from sam sequence dictionary") {
     val sr0 = new SAMSequenceRecord("chr0", 1000)
-    println (sr0.getSequenceIndex)
+    println(sr0.getSequenceIndex)
     val srs = List(sr0)
 
     val ssd = new SAMSequenceDictionary(srs)

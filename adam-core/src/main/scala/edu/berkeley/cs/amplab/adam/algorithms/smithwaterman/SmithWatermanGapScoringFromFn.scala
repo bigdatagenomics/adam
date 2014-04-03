@@ -16,45 +16,45 @@
 
 package edu.berkeley.cs.amplab.adam.algorithms.smithwaterman
 
-abstract class SmithWatermanGapScoringFromFn (xSequence: String,
-				     ySequence: String,
-				     scoreFn: (Int, Int, Char, Char) => Double)
-    extends SmithWaterman (xSequence, ySequence) {
-  
-  def buildScoringMatrix (): Array[Array[Double]] = {
+abstract class SmithWatermanGapScoringFromFn(xSequence: String,
+  ySequence: String,
+  scoreFn: (Int, Int, Char, Char) => Double)
+  extends SmithWaterman(xSequence, ySequence) {
+
+  def buildScoringMatrix(): Array[Array[Double]] = {
 
     val y = ySequence.length + 1
-    val x = xSequence.length + 1 
+    val x = xSequence.length + 1
 
     var matrix = new Array[Array[Double]](x)
     for (i <- 0 until x) {
-      matrix (i) = new Array[Double](y)
+      matrix(i) = new Array[Double](y)
     }
 
     // set row/col 0 to 0
     for (i <- 0 until x) {
-      matrix (i)(0) = 0.0
+      matrix(i)(0) = 0.0
     }
     for (j <- 0 until y) {
-      matrix (0)(j) = 0.0
+      matrix(0)(j) = 0.0
     }
 
     // score matrix
     for (i <- 1 until x) {
       for (j <- i until y) {
-	val m = matrix(i - 1)(j - 1) + scoreFn(i, j, xSequence(i), ySequence(j))
-	val d = matrix(i - 1)(j) + scoreFn(i, j, xSequence(i), '_')
-	val in = matrix(i)(j - 1) + scoreFn(i, j, '_', ySequence(j))	
-	val update = (d max in) max (m max 0)  
+        val m = matrix(i - 1)(j - 1) + scoreFn(i, j, xSequence(i), ySequence(j))
+        val d = matrix(i - 1)(j) + scoreFn(i, j, xSequence(i), '_')
+        val in = matrix(i)(j - 1) + scoreFn(i, j, '_', ySequence(j))
+        val update = (d max in) max (m max 0)
 
-	matrix(i)(j) = update
+        matrix(i)(j) = update
 
-	// check if new max and update
-	if (update > max) {
-	  maxX = i
-	  maxY = j
-	  max = update
-	}
+        // check if new max and update
+        if (update > max) {
+          maxX = i
+          maxY = j
+          max = update
+        }
       }
     }
 
@@ -62,5 +62,4 @@ abstract class SmithWatermanGapScoringFromFn (xSequence: String,
   }
 
 }
-    
 

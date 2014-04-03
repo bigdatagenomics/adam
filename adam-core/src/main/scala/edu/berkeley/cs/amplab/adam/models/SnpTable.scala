@@ -1,8 +1,8 @@
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMVariant, ADAMRecord}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.rich.{RichADAMVariant, DecadentRead, ReferenceLocation}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMContig, ADAMVariant, ADAMRecord }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.rich.{ RichADAMVariant, DecadentRead, ReferenceLocation }
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
@@ -25,7 +25,7 @@ class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable w
    */
   def contains(location: ReferenceLocation): Boolean = {
     val bucket = table.get(location.contig)
-    if(bucket.isEmpty) unknownContigWarning(location.contig)
+    if (bucket.isEmpty) unknownContigWarning(location.contig)
     bucket.map(_.contains(location.offset)).getOrElse(false)
   }
 
@@ -36,7 +36,7 @@ class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable w
     // race to update `unknownContigs`, e.g. when running with a Spark
     // master of `local[N]`.
     synchronized {
-      if(!unknownContigs.contains(contig)) {
+      if (!unknownContigs.contains(contig)) {
         unknownContigs += contig
         log.warn("Contig has no entries in known SNPs table: %s".format(contig))
       }
@@ -60,9 +60,10 @@ object SnpTable {
       val ref = split(3)
       assert(pos >= 0)
       assert(!ref.isEmpty)
-      ref.zipWithIndex.map { case (base, idx) =>
-        assert(Seq('A', 'C', 'T', 'G', 'N').contains(base))
-        (contig, pos + idx)
+      ref.zipWithIndex.map {
+        case (base, idx) =>
+          assert(Seq('A', 'C', 'T', 'G', 'N').contains(base))
+          (contig, pos + idx)
       }
     })
     // construct map from contig to set of positions
@@ -73,7 +74,7 @@ object SnpTable {
     new SnpTable(table.mapValues(_.toSet).toMap)
   }
 
-  def apply(variants : RDD[RichADAMVariant]) : SnpTable = {
+  def apply(variants: RDD[RichADAMVariant]): SnpTable = {
     val positions = variants.map(variant => (variant.getContig.getContigName.toString, variant.getPosition)).collect()
     val table = new mutable.HashMap[String, mutable.HashSet[Long]]
     positions.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)

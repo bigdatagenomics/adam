@@ -15,7 +15,6 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-
 object VcfStringUtils {
 
   def clean(s: String): String = {

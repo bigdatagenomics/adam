@@ -15,11 +15,11 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import org.kohsuke.args4j.{Argument,Option=>Args4jOption}
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
-import edu.berkeley.cs.amplab.adam.plugins.{AccessControl, AdamPlugin}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.plugins.{ AccessControl, ADAMPlugin }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import org.apache.avro.Schema
 import org.apache.spark.rdd.RDD
 import parquet.filter.UnboundRecordFilter
@@ -33,19 +33,19 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
  *   adam plugin edu.berkeley.cs.amplab.adam.plugins.Take10Plugin reads12.sam
  *
  * <code>edu.berkeley.cs.amplab.adam.plugins.Take10Plugin</code> is a simple example plugin. The
- * [[edu.berkeley.cs.amplab.adam.plugins.AdamPlugin]] interface defines the class that will run using this command.
+ * [[edu.berkeley.cs.amplab.adam.plugins.ADAMPlugin]] interface defines the class that will run using this command.
  */
-object PluginExecutor extends AdamCommandCompanion {
+object PluginExecutor extends ADAMCommandCompanion {
   val commandName: String = "plugin"
-  val commandDescription: String = "Executes an AdamPlugin"
+  val commandDescription: String = "Executes an ADAMPlugin"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
+  def apply(cmdLine: Array[String]): ADAMCommand = {
     new PluginExecutor(Args4j[PluginExecutorArgs](cmdLine))
   }
 }
 
 class PluginExecutorArgs extends Args4jBase with SparkArgs with ParquetArgs {
-  @Argument(required = true, metaVar = "PLUGIN", usage = "The AdamPlugin to run", index = 0)
+  @Argument(required = true, metaVar = "PLUGIN", usage = "The ADAMPlugin to run", index = 0)
   var plugin: String = null
 
   // Currently, this *must* be an ADAMRecord file, and it is only one.
@@ -56,18 +56,18 @@ class PluginExecutorArgs extends Args4jBase with SparkArgs with ParquetArgs {
   var accessControl: String = "edu.berkeley.cs.amplab.adam.plugins.EmptyAccessControl"
 }
 
-class PluginExecutor(protected val args: PluginExecutorArgs) extends AdamSparkCommand[PluginExecutorArgs] {
-  val companion: AdamCommandCompanion = PluginExecutor
+class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCommand[PluginExecutorArgs] {
+  val companion: ADAMCommandCompanion = PluginExecutor
 
-  def loadPlugin[Input <% SpecificRecord : Manifest, Output](pluginName: String): AdamPlugin[Input, Output] = {
+  def loadPlugin[Input <% SpecificRecord: Manifest, Output](pluginName: String): ADAMPlugin[Input, Output] = {
     Thread.currentThread()
       .getContextClassLoader
       .loadClass(pluginName)
       .newInstance()
-      .asInstanceOf[AdamPlugin[Input, Output]]
+      .asInstanceOf[ADAMPlugin[Input, Output]]
   }
 
-  def loadAccessControl[Input <% SpecificRecord : Manifest](accessControl: String): AccessControl[Input] = {
+  def loadAccessControl[Input <% SpecificRecord: Manifest](accessControl: String): AccessControl[Input] = {
     Thread.currentThread()
       .getContextClassLoader
       .loadClass(accessControl)
@@ -75,7 +75,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends AdamSparkCo
       .asInstanceOf[AccessControl[Input]]
   }
 
-  def load[Input <% SpecificRecord : Manifest](sc: SparkContext, locations: String, projection: Option[Schema]): RDD[Input] = {
+  def load[Input <% SpecificRecord: Manifest](sc: SparkContext, locations: String, projection: Option[Schema]): RDD[Input] = {
     sc.adamLoad[Input, UnboundRecordFilter](locations, projection = projection)
   }
 
@@ -84,7 +84,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends AdamSparkCo
   }
 
   def run(sc: SparkContext, job: Job): Unit = {
-    val plugin = loadPlugin[ADAMRecord,Any](args.plugin)
+    val plugin = loadPlugin[ADAMRecord, Any](args.plugin)
     val accessControl = loadAccessControl[ADAMRecord](args.accessControl)
 
     // Create an optional combined filter so that pass-through is not penalized
@@ -104,7 +104,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends AdamSparkCo
       }
     }
 
-    val firstRdd : RDD[ADAMRecord] = load[ADAMRecord](sc, args.input, plugin.projection)
+    val firstRdd: RDD[ADAMRecord] = load[ADAMRecord](sc, args.input, plugin.projection)
 
     val input = filter match {
       case None => firstRdd

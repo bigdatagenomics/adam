@@ -30,7 +30,7 @@ trait BucketComparisons[+T] {
   /**
    * Description of the comparison, to be used by the "list comparisons" CLI option.
    */
-  def description : String
+  def description: String
 
   /**
    * All of the schemas which this comparison uses.
@@ -50,7 +50,7 @@ trait BucketComparisons[+T] {
    * @return A ComparisonsFilter value that performs the indicated comparison on the
    *         output of 'this' (i.e. T values)
    */
-  def createFilter(filterDef : String) : ComparisonsFilter[Any]
+  def createFilter(filterDef: String): ComparisonsFilter[Any]
 
 }
 
@@ -58,10 +58,10 @@ object BucketComparisons {
 
   val pointRegex = Pattern.compile("\\(\\s*(-?\\d+)\\s*,\\s*(-?\\d+)\\s*\\)")
 
-  def parsePoint(pointString : String) : (Int,Int) = {
+  def parsePoint(pointString: String): (Int, Int) = {
 
     val pointMatcher = pointRegex.matcher(pointString)
-    if(!pointMatcher.matches()) {
+    if (!pointMatcher.matches()) {
       throw new IllegalArgumentException("\"%s\" doesn't match point regex".format(pointString))
     }
 
@@ -71,15 +71,15 @@ object BucketComparisons {
     (p1, p2)
   }
 
-  case class ParsedFilter(filter : String, value : String) {
-    def valueAsInt : Int = value.toInt
-    def valueAsDouble : Double = value.toDouble
-    def valueAsPoint : (Int,Int) = parsePoint(value)
-    def valueAsBoolean : Boolean = value.toBoolean
-    def valueAsLong : Long = value.toLong
+  case class ParsedFilter(filter: String, value: String) {
+    def valueAsInt: Int = value.toInt
+    def valueAsDouble: Double = value.toDouble
+    def valueAsPoint: (Int, Int) = parsePoint(value)
+    def valueAsBoolean: Boolean = value.toBoolean
+    def valueAsLong: Long = value.toLong
 
-    def assertFilterValues(filterName : String, legalValues : String*) {
-      if(!legalValues.contains(filter)) {
+    def assertFilterValues(filterName: String, legalValues: String*) {
+      if (!legalValues.contains(filter)) {
         throw new IllegalArgumentException("\"%s\" isn't a legal filter value for %s".format(value, filterName))
       }
     }
@@ -87,36 +87,36 @@ object BucketComparisons {
 
   val filterStringRegex = Pattern.compile("(!=|=|<|>)(.*)")
 
-  def parseFilterString(filterString : String) : ParsedFilter = {
+  def parseFilterString(filterString: String): ParsedFilter = {
     val matcher = filterStringRegex.matcher(filterString)
-    if(!matcher.matches()) {
+    if (!matcher.matches()) {
       throw new IllegalArgumentException("\"%s\" doesn't match filter string pattern".format(filterString))
     }
 
     ParsedFilter(matcher.group(1), matcher.group(2))
   }
 
-  class EqualityFilter[T](generator : BucketComparisons[T], target : T) extends ComparisonsFilter[T](generator) {
+  class EqualityFilter[T](generator: BucketComparisons[T], target: T) extends ComparisonsFilter[T](generator) {
     def passesFilter(value: Any): Boolean = value == target
   }
 
-  class InequalityFilter[T](generator : BucketComparisons[T], target : T) extends ComparisonsFilter[T](generator) {
+  class InequalityFilter[T](generator: BucketComparisons[T], target: T) extends ComparisonsFilter[T](generator) {
     def passesFilter(value: Any): Boolean = value != target
   }
 
-  class WrapperFilter[T](generator : BucketComparisons[T], f : (Any) => Boolean ) extends ComparisonsFilter[T](generator) {
-    def passesFilter(value : Any) : Boolean = f(value)
+  class WrapperFilter[T](generator: BucketComparisons[T], f: (Any) => Boolean) extends ComparisonsFilter[T](generator) {
+    def passesFilter(value: Any): Boolean = f(value)
   }
 }
 
-class Collection[T](val values : Seq[T]) extends Serializable {
+class Collection[T](val values: Seq[T]) extends Serializable {
 }
 
 object Collection {
-  def apply[T](values : Traversable[T]) : Collection[T] = new Collection[T](values.toSeq)
+  def apply[T](values: Traversable[T]): Collection[T] = new Collection[T](values.toSeq)
 }
 
-class CombinedComparisons[T](inner : Seq[BucketComparisons[T]]) extends BucketComparisons[Collection[Seq[T]]] with Serializable {
+class CombinedComparisons[T](inner: Seq[BucketComparisons[T]]) extends BucketComparisons[Collection[Seq[T]]] with Serializable {
   /**
    * Name of the comparison. Should be identifiable, and able to be written on the command line.
    */
@@ -136,7 +136,7 @@ class CombinedComparisons[T](inner : Seq[BucketComparisons[T]]) extends BucketCo
    * The records have been matched by their names, but the rest may be mismatched.
    */
   def matchedByName(bucket1: ReadBucket, bucket2: ReadBucket): Seq[Collection[Seq[T]]] =
-    Seq(Collection(inner.map( bc => bc.matchedByName(bucket1, bucket2 ))))
+    Seq(Collection(inner.map(bc => bc.matchedByName(bucket1, bucket2))))
 
   /**
    * parses and creates a filter for this BucketComparisons value, conforming to the definition in
@@ -188,8 +188,8 @@ abstract class LongComparisons extends BucketComparisons[Long] {
 
     parsedFilter.filter match {
       case "=" => new EqualityFilter(this, parsedFilter.valueAsLong)
-      case ">" => new WrapperFilter(this, (value : Any) => value.asInstanceOf[Long] > parsedFilter.valueAsLong)
-      case "<" => new WrapperFilter(this, (value : Any) => value.asInstanceOf[Long] < parsedFilter.valueAsLong)
+      case ">" => new WrapperFilter(this, (value: Any) => value.asInstanceOf[Long] > parsedFilter.valueAsLong)
+      case "<" => new WrapperFilter(this, (value: Any) => value.asInstanceOf[Long] < parsedFilter.valueAsLong)
 
       case _ => throw new IllegalArgumentException(
         "Unknown filter-type \"%s\" in filterDef \"%s\"".format(parsedFilter.filter, filterDef))
@@ -197,7 +197,7 @@ abstract class LongComparisons extends BucketComparisons[Long] {
   }
 }
 
-abstract class PointComparisons extends BucketComparisons[(Int,Int)] {
+abstract class PointComparisons extends BucketComparisons[(Int, Int)] {
 
   /**
    * parses and creates a filter for this BucketComparisons value, conforming to the definition in
@@ -207,7 +207,7 @@ abstract class PointComparisons extends BucketComparisons[(Int,Int)] {
    * @return A ComparisonsFilter value that performs the indicated comparison on the
    *         output of 'this' (i.e. T values)
    */
-  def createFilter(filterDef: String): ComparisonsFilter[(Int,Int)] = {
+  def createFilter(filterDef: String): ComparisonsFilter[(Int, Int)] = {
     import BucketComparisons._
 
     val parsedFilter = parseFilterString(filterDef)
@@ -216,5 +216,4 @@ abstract class PointComparisons extends BucketComparisons[(Int,Int)] {
     else new InequalityFilter(this, parsedFilter.valueAsPoint)
   }
 }
-
 

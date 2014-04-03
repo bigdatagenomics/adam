@@ -19,7 +19,7 @@ import java.io.File
 import scala.io._
 import scala.collection._
 import java.util.regex._
-import edu.berkeley.cs.amplab.adam.models.{SequenceDictionary, SequenceRecord, ReferenceRegion}
+import edu.berkeley.cs.amplab.adam.models.{ SequenceDictionary, SequenceRecord, ReferenceRegion }
 
 /**
  * Reads GATK-style interval list files

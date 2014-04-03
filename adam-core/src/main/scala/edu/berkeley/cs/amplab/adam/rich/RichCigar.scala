@@ -16,32 +16,32 @@
 
 package edu.berkeley.cs.amplab.adam.rich
 
-import net.sf.samtools.{Cigar, CigarOperator, TextCigarCodec, CigarElement}
+import net.sf.samtools.{ Cigar, CigarOperator, TextCigarCodec, CigarElement }
 import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
 import scala.annotation.tailrec
 
 object RichCigar {
 
-  def apply (cigar: Cigar) = {
+  def apply(cigar: Cigar) = {
     new RichCigar(cigar)
   }
 
-  implicit def cigarToRichCigar (cigar: Cigar): RichCigar = new RichCigar(cigar)
+  implicit def cigarToRichCigar(cigar: Cigar): RichCigar = new RichCigar(cigar)
 
 }
 
-class RichCigar (cigar: Cigar) {
+class RichCigar(cigar: Cigar) {
 
   lazy val numElements: Int = cigar.numCigarElements
 
   // number of alignment blocks is defined as the number of segments in the sequence that are a cigar match
   lazy val numAlignmentBlocks: Int = {
-    cigar.getCigarElements.map (element => {
+    cigar.getCigarElements.map(element => {
       element.getOperator match {
         case CigarOperator.M => 1
         case _ => 0
       }
-    }).reduce (_ + _)
+    }).reduce(_ + _)
   }
 
   /**
@@ -50,7 +50,7 @@ class RichCigar (cigar: Cigar) {
    * @param index Index of the element to move.
    * @return New cigar with this element moved left.
    */
-  def moveLeft (index: Int): Cigar = {
+  def moveLeft(index: Int): Cigar = {
     // var elements = List[CigarElement]()
     // deepclone instead of empty list initialization
     var elements = cigar.getCigarElements.map(e => new CigarElement(e.getLength, e.getOperator))
@@ -62,9 +62,9 @@ class RichCigar (cigar: Cigar) {
      * @param cigarElements List of cigar elements to move.
      * @return List of cigar elements with single element moved.
      */
-    @tailrec def moveCigarLeft (head: List[CigarElement], 
-                                index: Int, 
-                                cigarElements: List[CigarElement]): List[CigarElement] = {
+    @tailrec def moveCigarLeft(head: List[CigarElement],
+      index: Int,
+      cigarElements: List[CigarElement]): List[CigarElement] = {
       if (index == 1) {
         val elementToTrim = cigarElements.head
         val elementToMove: Option[CigarElement] = Some(cigarElements(1))
@@ -85,11 +85,11 @@ class RichCigar (cigar: Cigar) {
         } else {
           None
         }
-        
+
         // if there are no elements afterwards to pad, add a match operator with length 1 to the end
         // if there are elements afterwards, pad the first one
         val elementPadded = elementToPad match {
-          case Some(o:CigarElement) => Some(new CigarElement(o.getLength + 1, o.getOperator))
+          case Some(o: CigarElement) => Some(new CigarElement(o.getLength + 1, o.getOperator))
           case _ => Some(new CigarElement(1, CigarOperator.M))
         }
 
@@ -101,15 +101,15 @@ class RichCigar (cigar: Cigar) {
       } else if (index == 0 || cigarElements.length < 2) {
         head ::: cigarElements
       } else {
-        moveCigarLeft (head ::: List(cigarElements.head), index - 1, cigarElements.tail)
+        moveCigarLeft(head ::: List(cigarElements.head), index - 1, cigarElements.tail)
       }
     }
 
     // create cigar from new list
-    new Cigar(moveCigarLeft (List[CigarElement](), index, elements))
+    new Cigar(moveCigarLeft(List[CigarElement](), index, elements))
   }
 
-  def getLength (): Int = {
+  def getLength(): Int = {
     cigar.getCigarElements.map(_.getLength).reduce(_ + _)
   }
 
@@ -119,7 +119,7 @@ class RichCigar (cigar: Cigar) {
    *
    * @param readLength Length of the read sequence.
    */
-  def isWellFormed (readLength: Int): Boolean = {
+  def isWellFormed(readLength: Int): Boolean = {
     readLength == getLength
   }
 

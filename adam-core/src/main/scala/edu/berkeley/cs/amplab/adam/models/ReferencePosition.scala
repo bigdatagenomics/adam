@@ -16,10 +16,10 @@
 
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMGenotype, ADAMVariant, ADAMPileup}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Input, Output}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMRecord, ADAMGenotype, ADAMVariant, ADAMPileup }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import com.esotericsoftware.kryo.{ Kryo, Serializer }
+import com.esotericsoftware.kryo.io.{ Input, Output }
 import Ordering.Option
 
 object ReferencePositionWithOrientation {
@@ -48,8 +48,7 @@ case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition], n
     val posCompare = refPos.compare(that.refPos)
     if (posCompare != 0) {
       posCompare
-    }
-    else {
+    } else {
       negativeStrand.compare(that.negativeStrand)
     }
   }
@@ -104,7 +103,7 @@ object ReferencePosition {
    * reference position.
    * @return The reference position of this variant.
    */
-  def apply (variant: ADAMVariant): ReferencePosition = {
+  def apply(variant: ADAMVariant): ReferencePosition = {
     new ReferencePosition(variant.getContig.getContigId, variant.getPosition)
   }
 
@@ -117,7 +116,7 @@ object ReferencePosition {
    * @param genotype Genotype from which to generate a reference position.
    * @return The reference position of this genotype.
    */
-  def apply (genotype: ADAMGenotype): ReferencePosition = {
+  def apply(genotype: ADAMGenotype): ReferencePosition = {
     val variant = genotype.getVariant()
     new ReferencePosition(variant.getContig.getContigId, variant.getPosition)
   }
@@ -148,7 +147,7 @@ object ReferencePosition {
    * @param pileup A single pileup base.
    * @return The reference position of this pileup.
    */
-  def apply (pileup: ADAMPileup): ReferencePosition = {
+  def apply(pileup: ADAMPileup): ReferencePosition = {
     new ReferencePosition(pileup.getReferenceId, pileup.getPosition)
   }
 }

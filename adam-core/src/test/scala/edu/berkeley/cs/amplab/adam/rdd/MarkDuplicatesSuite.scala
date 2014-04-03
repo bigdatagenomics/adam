@@ -17,7 +17,7 @@ package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import java.util.UUID
 
 class MarkDuplicatesSuite extends SparkFunSuite {
@@ -27,9 +27,9 @@ class MarkDuplicatesSuite extends SparkFunSuite {
   }
 
   def createMappedRead(referenceId: Int, position: Long,
-                       readName: String = UUID.randomUUID().toString, avgPhredScore: Int = 20,
-                       numClippedBases: Int = 0, isPrimaryAlignment: Boolean = true,
-                       isNegativeStrand: Boolean = false) = {
+    readName: String = UUID.randomUUID().toString, avgPhredScore: Int = 20,
+    numClippedBases: Int = 0, isPrimaryAlignment: Boolean = true,
+    isNegativeStrand: Boolean = false) = {
     assert(avgPhredScore >= 10 && avgPhredScore <= 50)
     val qual = (for (i <- 0 until 100) yield (avgPhredScore + 33).toChar).toString()
     val cigar = if (numClippedBases > 0) "%dS%dM".format(numClippedBases, 100 - numClippedBases) else "100M"
@@ -51,9 +51,9 @@ class MarkDuplicatesSuite extends SparkFunSuite {
   }
 
   def createPair(firstReferenceId: Int, firstPosition: Long,
-                 secondReferenceId: Int, secondPosition: Long,
-                 readName: String = UUID.randomUUID().toString,
-                 avgPhredScore: Int = 20): Seq[ADAMRecord] = {
+    secondReferenceId: Int, secondPosition: Long,
+    readName: String = UUID.randomUUID().toString,
+    avgPhredScore: Int = 20): Seq[ADAMRecord] = {
     val firstOfPair = createMappedRead(firstReferenceId, firstPosition,
       readName = readName, avgPhredScore = avgPhredScore)
     firstOfPair.setFirstOfPair(true)
@@ -135,8 +135,10 @@ class MarkDuplicatesSuite extends SparkFunSuite {
   }
 
   sparkTest("read pairs") {
-    val poorPairs = for (i <- 0 until 10;
-                         read <- createPair(0, 10, 0, 210, avgPhredScore = 20, readName = "poor%d".format(i))) yield read
+    val poorPairs = for (
+      i <- 0 until 10;
+      read <- createPair(0, 10, 0, 210, avgPhredScore = 20, readName = "poor%d".format(i))
+    ) yield read
     val bestPair = createPair(0, 10, 0, 210, avgPhredScore = 30, readName = "best")
     val marked = markDuplicates(bestPair ++ poorPairs: _*)
     val (dups, nonDups) = marked.partition(_.getDuplicateRead)

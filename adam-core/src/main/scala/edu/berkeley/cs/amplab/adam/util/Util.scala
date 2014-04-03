@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.util
 
 object Util {
   def hashCombine(parts: Int*): Int =
-    if(parts.tail == Nil)
+    if (parts.tail == Nil)
       parts.head
     else
       hashCombine2(parts.head, hashCombine(parts.tail: _*))

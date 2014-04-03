@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeAllele, ADAMGenotype}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMGenotypeAllele, ADAMGenotype }
 import edu.berkeley.cs.amplab.adam.rdd.GenotypesSummary.StatisticsMap
 import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant._
 import org.apache.spark.rdd.RDD
@@ -61,13 +61,13 @@ case class GenotypesSummaryCounts(
     if (variantGenotypesCount == 0) None
     else for (readCount1 <- readCount) yield readCount1.toDouble / variantGenotypesCount.toDouble
   lazy val withDefaultZeroCounts = GenotypesSummaryCounts(
-      genotypesCounts.withDefaultValue(0.toLong),
-      singleNucleotideVariantCounts.withDefaultValue(0.toLong),
-      multipleNucleotideVariantCount,
-      insertionCount,
-      deletionCount,
-      readCount,
-      phasedCount)
+    genotypesCounts.withDefaultValue(0.toLong),
+    singleNucleotideVariantCounts.withDefaultValue(0.toLong),
+    multipleNucleotideVariantCount,
+    insertionCount,
+    deletionCount,
+    readCount,
+    phasedCount)
 
   def combine(that: GenotypesSummaryCounts): GenotypesSummaryCounts = {
     def combine_counts[A](map1: Map[A, Long], map2: Map[A, Long]): Map[A, Long] = {
@@ -82,14 +82,13 @@ case class GenotypesSummaryCounts(
       insertionCount + that.insertionCount,
       deletionCount + that.deletionCount,
       for (readCount1 <- readCount; readcount2 <- that.readCount) yield readCount1 + readcount2,
-      phasedCount + that.phasedCount
-    )
+      phasedCount + that.phasedCount)
   }
 }
 object GenotypesSummaryCounts {
   case class ReferenceAndAlternate(reference: String, alternate: String)
 
-  type GenotypeAlleleCounts =  Map[List[ADAMGenotypeAllele], Long]
+  type GenotypeAlleleCounts = Map[List[ADAMGenotypeAllele], Long]
   type VariantCounts = Map[ReferenceAndAlternate, Long]
 
   val simpleNucleotides = List("A", "C", "T", "G")
@@ -117,11 +116,11 @@ object GenotypesSummaryCounts {
     GenotypesSummaryCounts(
       Map(),
       Map(),
-      0,  // Multiple nucleotide variants
-      0,  // Insertion count
-      0,  // Deletion count
-      Some(0),  // Read count
-      0)  // Phased count
+      0, // Multiple nucleotide variants
+      0, // Insertion count
+      0, // Deletion count
+      Some(0), // Read count
+      0) // Phased count
 
   def apply(counts: GenotypesSummaryCounts) {
     assert(false)
@@ -177,7 +176,7 @@ object GenotypesSummary {
   /**
    * Factory for a GenotypesSummary given an RDD of ADAMGenotype.
    */
-  def apply(rdd: RDD[ADAMGenotype]) : GenotypesSummary = {
+  def apply(rdd: RDD[ADAMGenotype]): GenotypesSummary = {
     def combineStatisticsMap(stats1: StatisticsMap, stats2: StatisticsMap): StatisticsMap = {
       stats1.keySet.union(stats2.keySet).map(sample => {
         (stats1.get(sample), stats2.get(sample)) match {
@@ -191,7 +190,7 @@ object GenotypesSummary {
     val perSampleStatistics: StatisticsMap = rdd
       .map(genotype => Map(genotype.getSampleId.toString -> GenotypesSummaryCounts(genotype)))
       .fold(Map(): StatisticsMap)(combineStatisticsMap(_, _))
-      .map({case (sample: String, stats: GenotypesSummaryCounts) => sample -> stats.withDefaultZeroCounts}).toMap
+      .map({ case (sample: String, stats: GenotypesSummaryCounts) => sample -> stats.withDefaultZeroCounts }).toMap
     val variantCounts =
       rdd.filter(_.getAlleles.contains(ADAMGenotypeAllele.Alt)).map(genotype => {
         val variant = genotype.getVariant
@@ -276,8 +275,7 @@ object GenotypesSummaryFormatting {
       result ++= "\tPhased genotypes: %d / %d = %1.3f%%\n".format(
         stats.phasedCount,
         stats.genotypesCount,
-        stats.phasedCount.toDouble * 100 / stats.genotypesCount
-      )
+        stats.phasedCount.toDouble * 100 / stats.genotypesCount)
     }
 
     val result = new mutable.StringBuilder
@@ -300,7 +298,7 @@ object GenotypesSummaryFormatting {
     def genotypeSortOrder(genotype: List[ADAMGenotypeAllele]): Int = genotype.map({
       case ADAMGenotypeAllele.Ref => 0
       case ADAMGenotypeAllele.Alt => 1
-      case ADAMGenotypeAllele.NoCall => 10  // arbitrary large number so any genotype with a NoCall sorts last.
+      case ADAMGenotypeAllele.NoCall => 10 // arbitrary large number so any genotype with a NoCall sorts last.
     }).sum
     stats.genotypesCounts.keySet.toList.sortBy(genotypeSortOrder(_))
   }
@@ -309,8 +307,10 @@ object GenotypesSummaryFormatting {
     alleles.map(_.toString).mkString("-")
 
   lazy val allSNVs: Seq[ReferenceAndAlternate] =
-    for (from <- GenotypesSummaryCounts.simpleNucleotides;
-         to <- GenotypesSummaryCounts.simpleNucleotides;
-         if (from != to)) yield GenotypesSummaryCounts.ReferenceAndAlternate(from, to)
+    for (
+      from <- GenotypesSummaryCounts.simpleNucleotides;
+      to <- GenotypesSummaryCounts.simpleNucleotides;
+      if (from != to)
+    ) yield GenotypesSummaryCounts.ReferenceAndAlternate(from, to)
 
 }

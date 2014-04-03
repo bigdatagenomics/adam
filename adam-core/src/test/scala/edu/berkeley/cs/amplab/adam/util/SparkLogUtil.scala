@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.util
 
-import org.apache.log4j.{Level, Logger}
+import org.apache.log4j.{ Level, Logger }
 
 object SparkLogUtil {
 

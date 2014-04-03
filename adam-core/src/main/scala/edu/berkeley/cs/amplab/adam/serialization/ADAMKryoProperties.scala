@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.serialization
 
-object AdamKryoProperties {
+object ADAMKryoProperties {
 
   /**
    * Sets up serialization properties for ADAM.
@@ -25,7 +25,7 @@ object AdamKryoProperties {
    */
   def setupContextProperties(kryoBufferSize: Int = 4) = {
     System.setProperty("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-    System.setProperty("spark.kryo.registrator", "edu.berkeley.cs.amplab.adam.serialization.AdamKryoRegistrator")
+    System.setProperty("spark.kryo.registrator", "edu.berkeley.cs.amplab.adam.serialization.ADAMKryoRegistrator")
     System.setProperty("spark.kryoserializer.buffer.mb", kryoBufferSize.toString)
     System.setProperty("spark.kryo.referenceTracking", "false")
   }

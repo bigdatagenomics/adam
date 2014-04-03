@@ -27,11 +27,11 @@ class RichRDDReferenceRecordsSuite extends SparkFunSuite {
     val r1 = adamRecord(0, "foo", "read1", 1000L, true)
     val r2 = adamRecord(1, "bar", "read2", 2000L, true)
 
-    val map = Map(r1.getReadName->r1, r2.getReadName->r2)
+    val map = Map(r1.getReadName -> r1, r2.getReadName -> r2)
 
     val rdd = sc.parallelize(Seq(r1, r2))
 
-    val remap = Map(0->10, 1->11)
+    val remap = Map(0 -> 10, 1 -> 11)
     val remapped = rdd.remapReferenceId(remap)(sc)
 
     val seq = remapped.collect().sortBy(_.getReadName.toString)

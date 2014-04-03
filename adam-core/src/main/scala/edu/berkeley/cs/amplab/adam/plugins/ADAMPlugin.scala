@@ -20,24 +20,24 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 
 /**
- * Defines the interface for a Plugin for the AdamSystem.
+ * Defines the interface for a Plugin for the ADAMSystem.
  *
  * A simple interface is available in [[edu.berkeley.cs.amplab.adam.plugins.Take10Plugin]]
  */
-trait AdamPlugin[Input, Output] {
+trait ADAMPlugin[Input, Output] {
   /**
    * The projection to push down into Parquet
    * @return If all fields are required or the specific projection is not known, None
    *         If a subset of fields on Input are required, an Avro schema with those fields
    */
-  def projection : Option[Schema]
+  def projection: Option[Schema]
 
   /**
    * The records that are applicable to this Plugin
    * @return If there is no filter for this plugin, None
    *         If a filter is applicable, a true response means record is included; a false means record is excluded
    */
-  def predicate : Option[Input => Boolean]
+  def predicate: Option[Input => Boolean]
 
   /**
    * Method to create the transformations on the RDD.

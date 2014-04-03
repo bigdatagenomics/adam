@@ -44,7 +44,7 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
    * Empirically estimated probability of a mismatch.
    */
   def empiricalErrorProbability: Double =
-    if(!emulateGATK) bayesianErrorProbability else gatkErrorProbability
+    if (!emulateGATK) bayesianErrorProbability else gatkErrorProbability
 
   /**
    * Empirically estimated probability of a mismatch, as a QualityScore.
@@ -77,7 +77,7 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
   def toCSV: Seq[String] = Seq(total.toString, mismatches.toString, empiricalQualityForCSV.phred.toString)
 
   def empiricalQualityForCSV: QualityScore =
-    if(!emulateGATK) empiricalQuality else QualityScore.fromErrorProbability(gatkErrorProbability(0))
+    if (!emulateGATK) empiricalQuality else QualityScore.fromErrorProbability(gatkErrorProbability(0))
 
   override def toString: String =
     "%s / %s (%s)".format(mismatches, total, empiricalQuality)
@@ -93,13 +93,13 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
 object Observation {
   val empty = new Observation(0, 0)
 
-  def apply(isMismatch: Boolean) = new Observation(1, if(isMismatch) 1 else 0)
+  def apply(isMismatch: Boolean) = new Observation(1, if (isMismatch) 1 else 0)
 }
 
-class Aggregate private(
-    total: Long,        // number of total observations
-    mismatches: Long,   // number of mismatches observed
-    val expectedMismatches: Double  // expected number of mismatches based on reported quality scores
+class Aggregate private (
+  total: Long, // number of total observations
+  mismatches: Long, // number of mismatches observed
+  val expectedMismatches: Double // expected number of mismatches based on reported quality scores
   ) extends Observation(total, mismatches) {
 
   require(expectedMismatches <= total)
@@ -124,9 +124,8 @@ object Aggregate {
  * Table containing the empirical frequency of mismatches for each set of covariate values.
  */
 class ObservationTable(
-    val space: CovariateSpace,
-    val entries: Map[CovariateKey, Observation]
-  ) extends Serializable {
+  val space: CovariateSpace,
+  val entries: Map[CovariateKey, Observation]) extends Serializable {
 
   // `func' computes the aggregation key
   def aggregate[K](func: (CovariateKey, Observation) => K): Map[K, Aggregate] = {
@@ -140,8 +139,9 @@ class ObservationTable(
 
   // Format as CSV compatible with GATK's output
   def toCSV: String = {
-    val rows = entries.map { case (key, obs) =>
-      space.toCSV(key) ++ obs.toCSV ++ (if(key.containsNone) Seq("**") else Seq())
+    val rows = entries.map {
+      case (key, obs) =>
+        space.toCSV(key) ++ obs.toCSV ++ (if (key.containsNone) Seq("**") else Seq())
     }
     (Seq(csvHeader) ++ rows).map(_.mkString(",")).mkString("\n")
   }
@@ -152,13 +152,13 @@ class ObservationTable(
 class ObservationAccumulator(val space: CovariateSpace) extends Serializable {
   private val entries = mutable.HashMap[CovariateKey, Observation]()
 
-  def += (that: (CovariateKey, Observation)): ObservationAccumulator =
+  def +=(that: (CovariateKey, Observation)): ObservationAccumulator =
     accum(that._1, that._2)
 
-  def ++= (that: ObservationAccumulator): ObservationAccumulator = {
-    if(this.space != that.space)
+  def ++=(that: ObservationAccumulator): ObservationAccumulator = {
+    if (this.space != that.space)
       throw new IllegalArgumentException("Can only combine observations with matching CovariateSpaces")
-    that.entries.foreach { case (k, v) =>  accum(k, v) }
+    that.entries.foreach { case (k, v) => accum(k, v) }
     this
   }
 

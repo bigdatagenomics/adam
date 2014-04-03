@@ -16,7 +16,7 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro._
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.GenotypesSummaryCounts.ReferenceAndAlternate
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 
@@ -69,8 +69,7 @@ class GenotypesSummarySuite extends SparkFunSuite {
       genotype("bob", variant("T", "A", 7), homRef).build,
       genotype("bob", variant("T", "G", 8), homAlt).build,
       genotype("bob", variant("T", "G", 12), noCall).build,
-      genotype("empty", variant("T", "G", 12), noCall).build
-    )
+      genotype("empty", variant("T", "G", 12), noCall).build)
 
     val stats = summarize(genotypes)
     assert(stats.perSampleStatistics.size == 3)
@@ -126,8 +125,7 @@ class GenotypesSummarySuite extends SparkFunSuite {
 
   sparkTest("empty genotypes summary") {
     val genotypes = List(
-      genotype("empty", variant("T", "G", 12), noCall).build
-    )
+      genotype("empty", variant("T", "G", 12), noCall).build)
 
     val stats = summarize(genotypes)
 

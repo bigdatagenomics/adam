@@ -17,9 +17,9 @@ package edu.berkeley.cs.amplab.adam.cli
 
 import org.apache.spark.Logging
 import scala.Some
-import edu.berkeley.cs.amplab.adam.cli.VcfAnnotation2Adam
+import edu.berkeley.cs.amplab.adam.cli.VcfAnnotation2ADAM
 
-object AdamMain extends Logging {
+object ADAMMain extends Logging {
 
   private val commands = List(Transform,
     PrintTags,
@@ -27,27 +27,27 @@ object AdamMain extends Logging {
     FlagStat,
     Reads2Ref,
     MpileupCommand,
-    PrintAdam,
+    PrintADAM,
     PileupAggregator,
     ListDict,
-    CompareAdam,
+    CompareADAM,
     /* TODO (nealsid): Reimplement in terms of new schema
     ComputeVariants, 
      */
-    Bam2Adam,
-    Adam2Vcf,
-    Vcf2Adam,
+    Bam2ADAM,
+    ADAM2Vcf,
+    Vcf2ADAM,
     FindReads,
-    Fasta2Adam,
+    Fasta2ADAM,
     PluginExecutor,
     BuildInformation,
-    VcfAnnotation2Adam,
+    VcfAnnotation2ADAM,
     SummarizeGenotypes,
     BuildInformation)
 
   private def printCommands() {
     println("\n")
-    println( """     e            888~-_              e                 e    e
+    println("""     e            888~-_              e                 e    e
                |    d8b           888   \            d8b               d8b  d8b
                |   /Y88b          888    |          /Y88b             d888bdY88b
                |  /  Y88b         888    |         /  Y88b           / Y88Y Y888b
@@ -55,8 +55,7 @@ object AdamMain extends Logging {
                |/      Y88b       888_-~         /      Y88b       /          Y888b""".stripMargin('|'))
     println("\nChoose one of the following commands:\n")
     commands.foreach(cmd =>
-      println("%20s : %s".format(cmd.commandName, cmd.commandDescription))
-    )
+      println("%20s : %s".format(cmd.commandName, cmd.commandDescription)))
     println("\n")
   }
 

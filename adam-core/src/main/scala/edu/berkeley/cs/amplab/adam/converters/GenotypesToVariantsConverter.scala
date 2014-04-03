@@ -16,10 +16,10 @@
 package edu.berkeley.cs.amplab.adam.converters
 
 import edu.berkeley.cs.amplab.adam.util._
-import scala.math.{pow, sqrt}
+import scala.math.{ pow, sqrt }
 
 private[adam] class GenotypesToVariantsConverter(validateSamples: Boolean = false,
-                                                 failOnValidationError: Boolean = false) extends Serializable {
+  failOnValidationError: Boolean = false) extends Serializable {
 
   /**
    * Computes root mean squared (RMS) values for a series of doubles.

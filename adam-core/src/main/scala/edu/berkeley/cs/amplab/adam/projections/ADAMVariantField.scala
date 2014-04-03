@@ -18,12 +18,6 @@ package edu.berkeley.cs.amplab.adam.projections
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMVariant
 
-class ADAMVariantField extends FieldEnumeration(ADAMVariant.SCHEMA$)
-{
-  val contig,
-  position,
-  referenceAllele,
-  variantAllele
-
-    = SchemaValue
+class ADAMVariantField extends FieldEnumeration(ADAMVariant.SCHEMA$) {
+  val contig, position, referenceAllele, variantAllele = SchemaValue
 }

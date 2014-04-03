@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.models.SnpTable
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.recalibration._
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
@@ -40,15 +40,14 @@ import org.apache.spark.rdd.RDD
  *     assign adjusted quality scores.
  */
 class BaseQualityRecalibration(
-    val reads: RDD[DecadentRead],
-    val knownSnps: Broadcast[SnpTable])
-extends Serializable with Logging {
+  val reads: RDD[DecadentRead],
+  val knownSnps: Broadcast[SnpTable])
+  extends Serializable with Logging {
 
   // Additional covariates to use when computing the correction
   // TODO: parameterize
   val covariates = CovariateSpace(
-    new DinucCovariate
-  )
+    new DinucCovariate)
 
   // Bases with quality less than this will be skipped and left alone
   // TODO: parameterize

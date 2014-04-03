@@ -16,9 +16,9 @@
 
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup}
+import edu.berkeley.cs.amplab.adam.avro.{ Base, ADAMPileup }
 import edu.berkeley.cs.amplab.adam.models.ReferencePosition
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 
@@ -155,7 +155,7 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
         c.setMapQuality(a.getMapQuality * a.getCountAtPosition +
           b.getMapQuality * b.getCountAtPosition)
           .setSangerQuality(a.getSangerQuality * a.getCountAtPosition +
-          b.getSangerQuality * b.getCountAtPosition)
+            b.getSangerQuality * b.getCountAtPosition)
           .setCountAtPosition(a.getCountAtPosition + b.getCountAtPosition)
           .setNumSoftClipped(a.getNumSoftClipped + b.getNumSoftClipped)
           .setNumReverseStrand(a.getNumReverseStrand + b.getNumReverseStrand)
@@ -206,7 +206,7 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
      * as a first order approximation, we use coverage as a proxy for setting the number of reducers needed.
      */
     val grouping = pileups.groupBy((p: ADAMPileup) => ReferencePosition(p),
-                                   pileups.partitions.length * coverage / 2)
+      pileups.partitions.length * coverage / 2)
 
     log.info("Pileups grouped into " + grouping.count + " positions.")
 

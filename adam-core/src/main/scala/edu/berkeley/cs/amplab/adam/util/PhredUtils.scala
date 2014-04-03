@@ -15,16 +15,16 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-import scala.math.{pow, log10}
+import scala.math.{ pow, log10 }
 
 object PhredUtils {
 
   lazy val phredToErrorProbabilityCache: Array[Double] = {
-    (0 until 256).map{p => pow(10.0, -p / 10.0)}.toArray
+    (0 until 256).map { p => pow(10.0, -p / 10.0) }.toArray
   }
 
   lazy val phredToSuccessProbabilityCache: Array[Double] = {
-    phredToErrorProbabilityCache.map{p => 1.0 - p}
+    phredToErrorProbabilityCache.map { p => 1.0 - p }
   }
 
   def phredToSuccessProbability(phred: Int): Double = phredToSuccessProbabilityCache(phred)

@@ -20,20 +20,5 @@ import edu.berkeley.cs.amplab.adam.projections.FieldEnumeration
 import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
 
 object ADAMGenotypeField extends FieldEnumeration(ADAMGenotype.SCHEMA$) {
-  val variant,
-  variantCallingAnnotations ,
-  sampleId ,
-  sampleDescription ,
-  processingDescription ,
-  alleles ,
-  referenceReadDepth ,
-  alternateReadDepth ,
-  readDepth ,
-  genotypeQuality ,
-  genotypeLikelihoods ,
-  splitFromMultiAllelic,
-  isPhased ,
-  phaseSetId ,
-  phaseQuality
-  = SchemaValue
+  val variant, variantCallingAnnotations, sampleId, sampleDescription, processingDescription, alleles, referenceReadDepth, alternateReadDepth, readDepth, genotypeQuality, genotypeLikelihoods, splitFromMultiAllelic, isPhased, phaseSetId, phaseQuality = SchemaValue
 }

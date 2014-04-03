@@ -17,9 +17,9 @@
 package edu.berkeley.cs.amplab.adam.util
 
 import scala.annotation.tailrec
-import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
+import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.rich.RichCigar
@@ -33,7 +33,7 @@ object NormalizationUtils {
    * @param cigar Cigar to left align.
    * @return Cigar fully moved left.
    */
-  def leftAlignIndel (read: ADAMRecord): Cigar = {
+  def leftAlignIndel(read: ADAMRecord): Cigar = {
     var indelPos = -1
     var pos = 0
     var indelLength = 0
@@ -53,7 +53,7 @@ object NormalizationUtils {
     cigar.getCigarElements.map(elem => {
       elem.getOperator match {
         case (CigarOperator.I) => {
-          if(indelPos == -1) {
+          if (indelPos == -1) {
             indelPos = pos
             indelLength = elem.getLength
           } else {
@@ -64,7 +64,7 @@ object NormalizationUtils {
           isInsert = true
         }
         case (CigarOperator.D) => {
-          if(indelPos == -1) {
+          if (indelPos == -1) {
             indelPos = pos
             indelLength = elem.getLength
           } else {
@@ -89,7 +89,7 @@ object NormalizationUtils {
 
     // if there is an indel, shift it, else return
     if (indelPos != -1) {
-      
+
       val readSeq: String = read.getSequence()
 
       // if an insert, get variant and preceeding bases from read
@@ -108,11 +108,11 @@ object NormalizationUtils {
       // identify the number of bases to shift by
       val shiftLength = numberOfPositionsToShiftIndel(variant, preceeding)
 
-      shiftIndel (cigar, indelPos, shiftLength)
+      shiftIndel(cigar, indelPos, shiftLength)
     } else {
       cigar
     }
-  }    
+  }
 
   /**
    * Returns the maximum number of bases that an indel can be shifted left during left normalization.
@@ -122,10 +122,10 @@ object NormalizationUtils {
    * @param preceeding Bases of sequence to left of variant.
    * @return The number of bases to shift an indel for it to be left normalized.
    */
-  def numberOfPositionsToShiftIndel (variant: String, preceeding: String): Int = {
-    
+  def numberOfPositionsToShiftIndel(variant: String, preceeding: String): Int = {
+
     // tail recursive function to determine shift
-    @tailrec def numberOfPositionsToShiftIndelAccumulate (variant: String, preceeding: String, accumulator: Int): Int = {
+    @tailrec def numberOfPositionsToShiftIndelAccumulate(variant: String, preceeding: String, accumulator: Int): Int = {
       if (preceeding.length == 0 || preceeding.last != variant.last) {
         // the indel cannot be moved further left if we do not have bases in front of our indel, or if we cannot barrel rotate the indel
         accumulator
@@ -139,8 +139,8 @@ object NormalizationUtils {
     }
 
     numberOfPositionsToShiftIndelAccumulate(variant, preceeding, 0)
-  }                                  
-  
+  }
+
   /**
    * Shifts an indel left by n. Is tail call recursive.
    *
@@ -149,15 +149,15 @@ object NormalizationUtils {
    * @param shifts Number of bases to shift element.
    * @return Cigar that has been shifted as far left as possible.
    */
-  @tailrec def shiftIndel (cigar: Cigar, position: Int, shifts: Int): Cigar = {
+  @tailrec def shiftIndel(cigar: Cigar, position: Int, shifts: Int): Cigar = {
     // generate new cigar with indel shifted by one
     val newCigar = new Cigar(cigar.getCigarElements).moveLeft(position)
-    
+
     // if there are no more shifts to do, or if shifting breaks the cigar, return old cigar
     if (shifts == 0 || !newCigar.isWellFormed(cigar.getLength)) {
       cigar
     } else {
-      shiftIndel (newCigar, position, shifts - 1)
+      shiftIndel(newCigar, position, shifts - 1)
     }
   }
 }

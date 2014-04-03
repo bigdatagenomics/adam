@@ -16,7 +16,7 @@
 package edu.berkeley.cs.amplab.adam.converters
 
 import edu.berkeley.cs.amplab.adam.avro._
-import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary, ReferencePosition}
+import edu.berkeley.cs.amplab.adam.models.{ ADAMVariantContext, SequenceDictionary, ReferencePosition }
 import edu.berkeley.cs.amplab.adam.util.VcfStringUtils._
 import org.broadinstitute.variant.vcf._
 import org.broadinstitute.variant.variantcontext._
@@ -64,8 +64,7 @@ object VariantContextConverter {
  */
 class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable {
 
-  implicit def gatkAllelesToADAMAlleles(gatkAlleles : java.util.List[Allele]) 
-      : java.util.List[ADAMGenotypeAllele] = {
+  implicit def gatkAllelesToADAMAlleles(gatkAlleles: java.util.List[Allele]): java.util.List[ADAMGenotypeAllele] = {
     gatkAlleles.map(VariantContextConverter.convertAllele(_))
   }
 
@@ -75,7 +74,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
    * @param vc GATK Variant context to convert.
    * @return ADAM variant contexts
    */
-  def convert(vc:VariantContext, extractExternalAnnotations : Boolean = false): Seq[ADAMVariantContext] = {
+  def convert(vc: VariantContext, extractExternalAnnotations: Boolean = false): Seq[ADAMVariantContext] = {
 
     // TODO: Handle multi-allelic sites
     // We need to split the alleles (easy) and split and subset the PLs (harder)/update the genotype
@@ -83,7 +82,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       return Seq()
     }
 
-    val variant: ADAMVariant = createAdamVariant(vc)
+    val variant: ADAMVariant = createADAMVariant(vc)
 
     val sharedGenotypeBuilder: ADAMGenotype.Builder = ADAMGenotype.newBuilder
       .setVariant(variant)
@@ -94,8 +93,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     val sharedGenotype = sharedGenotypeBuilder.build
     val genotypes: Seq[ADAMGenotype] = extractGenotypes(vc, sharedGenotype)
 
-
-    val annotation : Option[ADAMDatabaseVariantAnnotation] =
+    val annotation: Option[ADAMDatabaseVariantAnnotation] =
       if (extractExternalAnnotations)
         Some(extractVariantDatabaseAnnotation(variant, vc))
       else
@@ -104,14 +102,14 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     Seq(ADAMVariantContext(variant, genotypes, annotation))
   }
 
-  def convertToAnnotation(vc:VariantContext): ADAMDatabaseVariantAnnotation = {
+  def convertToAnnotation(vc: VariantContext): ADAMDatabaseVariantAnnotation = {
 
-    val variant = createAdamVariant(vc)
+    val variant = createADAMVariant(vc)
     extractVariantDatabaseAnnotation(variant, vc)
 
   }
 
-  private def createAdamVariant(vc: VariantContext): ADAMVariant = {
+  private def createADAMVariant(vc: VariantContext): ADAMVariant = {
     var contigId = 0;
     // This is really ugly - only temporary until we remove numeric
     // IDs from our representation of contigs.
@@ -135,13 +133,13 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     // VCF CHROM, POS, REF and ALT
     ADAMVariant.newBuilder
       .setContig(contig.build)
-      .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */)
+      .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */ )
       .setReferenceAllele(vc.getReference.getBaseString)
       .setVariantAllele(vc.getAlternateAllele(0).getBaseString)
       .build
   }
 
-  private def extractVariantDatabaseAnnotation(variant : ADAMVariant, vc : VariantContext) : ADAMDatabaseVariantAnnotation = {
+  private def extractVariantDatabaseAnnotation(variant: ADAMVariant, vc: VariantContext): ADAMDatabaseVariantAnnotation = {
     val annotation = ADAMDatabaseVariantAnnotation.newBuilder()
       .setVariant(variant)
       .build
@@ -166,7 +164,6 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       }
       if (g.hasPL) genotype.setGenotypeLikelihoods(g.getPL.toList.map(p => p: java.lang.Integer))
 
-
       val builtGenotype = genotype.build
       for ((v, a) <- VariantAnnotationConverter.VCF2GTAnnotations) {
         // Add extended attributes if present
@@ -180,7 +177,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     genotypes
   }
 
-  private def extractVariantCallingAnnotations(vc: VariantContext) : VariantCallingAnnotations = {
+  private def extractVariantCallingAnnotations(vc: VariantContext): VariantCallingAnnotations = {
 
     val call: VariantCallingAnnotations.Builder =
       VariantCallingAnnotations.newBuilder
@@ -208,11 +205,11 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
    * @param vc
    * @return GATK VariantContext
    */
-  def convert(vc:ADAMVariantContext):VariantContext = {
-    val variant : ADAMVariant = vc.variant
+  def convert(vc: ADAMVariantContext): VariantContext = {
+    val variant: ADAMVariant = vc.variant
     val vcb = new VariantContextBuilder()
       .chr(variant.getContig.getContigName.toString)
-      .start(variant.getPosition + 1 /* Recall ADAM is 0-indexed */)
+      .start(variant.getPosition + 1 /* Recall ADAM is 0-indexed */ )
       .stop(variant.getPosition + 1 + variant.getReferenceAllele.length - 1)
       .alleles(VariantContextConverter.convertAlleles(variant))
 
@@ -234,7 +231,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       }
 
       if (g.getGenotypeLikelihoods.nonEmpty)
-        gb.PL(g.getGenotypeLikelihoods.map(p => p:Int).toArray)
+        gb.PL(g.getGenotypeLikelihoods.map(p => p: Int).toArray)
 
       gb.make
     }))

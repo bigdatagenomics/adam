@@ -15,16 +15,16 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Input, Output}
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMNucleotideContigFragment, Base}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import com.esotericsoftware.kryo.{ Kryo, Serializer }
+import com.esotericsoftware.kryo.io.{ Input, Output }
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMRecord, ADAMNucleotideContigFragment, Base }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
-import scala.math.{min, max}
+import scala.math.{ min, max }
 
 object ReferenceRegion {
-  
+
   /**
    * Generates a reference region from read data. Returns None if the read is not mapped;
    * else, returns the inclusive region from the start to the end of the read alignment.
@@ -32,7 +32,7 @@ object ReferenceRegion {
    * @param record Read to create region from.
    * @return Region corresponding to inclusive region of read alignment, if read is mapped.
    */
-  def apply (record: ADAMRecord): Option[ReferenceRegion] = {
+  def apply(record: ADAMRecord): Option[ReferenceRegion] = {
     if (record.getReadMapped) {
       Some(ReferenceRegion(record.getReferenceId, record.getStart, RichADAMRecord(record).end.get + 1))
     } else {
@@ -45,8 +45,8 @@ object ReferenceRegion {
    * @param pos The position to convert
    * @return A 1-wide region at the same location as pos
    */
-  def apply(pos : ReferencePosition) : ReferenceRegion =
-    ReferenceRegion(pos.refId, pos.pos, pos.pos+1)
+  def apply(pos: ReferencePosition): ReferenceRegion =
+    ReferenceRegion(pos.refId, pos.pos, pos.pos + 1)
 
   /**
    * Generates a reference region from assembly data. Returns None if the assembly does not
@@ -55,16 +55,16 @@ object ReferenceRegion {
    * @param fragment Assembly fragment from which to generate data.
    * @return Region corresponding to inclusive region of contig fragment.
    */
-  def apply (fragment: ADAMNucleotideContigFragment): Option[ReferenceRegion] = {
+  def apply(fragment: ADAMNucleotideContigFragment): Option[ReferenceRegion] = {
     if (fragment.getContigId != null && fragment.getFragmentStartPosition != null) {
       val fragmentSequence = fragment.getFragmentSequence
-      Some(ReferenceRegion(fragment.getContigId, 
-                           fragment.getFragmentStartPosition,
-                           fragment.getFragmentStartPosition + fragmentSequence.length))
+      Some(ReferenceRegion(fragment.getContigId,
+        fragment.getFragmentStartPosition,
+        fragment.getFragmentStartPosition + fragmentSequence.length))
     } else {
       None
     }
-  }  
+  }
 }
 
 /**
@@ -103,7 +103,7 @@ case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[R
    * overlap of two regions. However, regions must be in the same reference space.
    *
    * @throws AssertionError Thrown if regions are in different reference spaces.
-   * 
+   *
    * @param region Other region to compute hull of with this region.
    * @return The convex hull of both unions.
    *

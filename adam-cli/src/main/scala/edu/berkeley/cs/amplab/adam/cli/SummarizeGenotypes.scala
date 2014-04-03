@@ -17,17 +17,17 @@
 package edu.berkeley.cs.amplab.adam.cli
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.rdd.{GenotypesSummary, GenotypesSummaryFormatting}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.rdd.{ GenotypesSummary, GenotypesSummaryFormatting }
 import org.kohsuke.args4j
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Logging, SparkContext}
+import org.apache.spark.{ Logging, SparkContext }
 import org.apache.hadoop.mapreduce.Job
-import org.apache.hadoop.fs.{Path, FileSystem}
+import org.apache.hadoop.fs.{ Path, FileSystem }
 import org.apache.hadoop.conf.Configuration
-import java.io.{OutputStreamWriter, BufferedWriter}
+import java.io.{ OutputStreamWriter, BufferedWriter }
 
-object SummarizeGenotypes extends AdamCommandCompanion {
+object SummarizeGenotypes extends ADAMCommandCompanion {
 
   val commandName = "summarize_genotypes"
   val commandDescription = "Print statistics of genotypes and variants in an ADAM file"
@@ -48,7 +48,7 @@ class SummarizeGenotypesArgs extends Args4jBase with ParquetArgs with SparkArgs 
   var out: String = ""
 }
 
-class SummarizeGenotypes(val args: SummarizeGenotypesArgs) extends AdamSparkCommand[SummarizeGenotypesArgs] with Logging {
+class SummarizeGenotypes(val args: SummarizeGenotypesArgs) extends ADAMSparkCommand[SummarizeGenotypesArgs] with Logging {
   val companion = SummarizeGenotypes
 
   def run(sc: SparkContext, job: Job) {

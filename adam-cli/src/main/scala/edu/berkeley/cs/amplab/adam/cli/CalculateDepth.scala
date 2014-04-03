@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.cli
 import java.util.logging.Level
 import scala.io._
 
-import org.kohsuke.args4j.{Argument,Option=>Args4jOption}
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.kohsuke.args4j.spi.BooleanOptionHandler
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
@@ -26,10 +26,10 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.models.{SequenceDictionary, ReferenceRegion}
+import edu.berkeley.cs.amplab.adam.models.{ SequenceDictionary, ReferenceRegion }
 import edu.berkeley.cs.amplab.adam.projections.Projection
 import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField._
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.RegionJoin
 import edu.berkeley.cs.amplab.adam.rich.ReferenceMappingContext._
 import edu.berkeley.cs.amplab.adam.util.ParquetLogger
@@ -41,12 +41,12 @@ import edu.berkeley.cs.amplab.adam.util.ParquetLogger
  * It then reports, on standard out, the location and name of each variant along with the
  * calculated depth.
  */
-object CalculateDepth extends AdamCommandCompanion {
+object CalculateDepth extends ADAMCommandCompanion {
   val commandName: String = "depth"
   val commandDescription: String = "Calculate the depth from a given ADAM file, " +
     "at each variant in a VCF"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
+  def apply(cmdLine: Array[String]): ADAMCommand = {
     new CalculateDepth(Args4j[CalculateDepthArgs](cmdLine))
   }
 }
@@ -62,8 +62,8 @@ class CalculateDepthArgs extends Args4jBase with SparkArgs with ParquetArgs {
   val cartesian: Boolean = false
 }
 
-class CalculateDepth(protected val args: CalculateDepthArgs) extends AdamSparkCommand[CalculateDepthArgs] {
-  val companion: AdamCommandCompanion = CalculateDepth
+class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCommand[CalculateDepthArgs] {
+  val companion: ADAMCommandCompanion = CalculateDepth
 
   def run(sc: SparkContext, job: Job): Unit = {
     // Quiet parquet logging...
@@ -71,7 +71,7 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends AdamSparkCo
 
     val proj = Projection(referenceId, referenceName, referenceLength, referenceUrl, start, cigar, readMapped)
 
-    val adamRDD : RDD[ADAMRecord] = sc.adamLoad(args.adamInputPath, projection=Some(proj))
+    val adamRDD: RDD[ADAMRecord] = sc.adamLoad(args.adamInputPath, projection = Some(proj))
     val mappedRDD = adamRDD.filter(_.getReadMapped)
 
     val seqDict = sc.adamDictionaryLoad[ADAMRecord](args.adamInputPath)
@@ -91,16 +91,16 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends AdamSparkCo
       .map(ctx => (ReferenceRegion(ctx.position), ctx.variants.map(_.getId).mkString(",")))
       .collect().toMap
     */
-    val vcf : RDD[(ReferenceRegion,String)] = loadPositions(sc, seqDict, args.vcfInputPath)
+    val vcf: RDD[(ReferenceRegion, String)] = loadPositions(sc, seqDict, args.vcfInputPath)
     val variantPositions = vcf.map(_._1)
     val variantNames = vcf.collect().toMap
 
-    val joinedRDD : RDD[(ReferenceRegion, ADAMRecord)] =
+    val joinedRDD: RDD[(ReferenceRegion, ADAMRecord)] =
       if (args.cartesian) RegionJoin.cartesianFilter(variantPositions, mappedRDD)
       else RegionJoin.partitionAndJoin(sc, seqDict, variantPositions, mappedRDD)
 
-    val depths : RDD[(ReferenceRegion,Int)] =
-      joinedRDD.map{ case (region, record) => (region, 1) }.reduceByKey(_ + _).sortByKey()
+    val depths: RDD[(ReferenceRegion, Int)] =
+      joinedRDD.map { case (region, record) => (region, 1) }.reduceByKey(_ + _).sortByKey()
 
     /*
      * tab-delimited output, containing the following columns:
@@ -134,24 +134,23 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends AdamSparkCo
    * @throws IllegalArgumentException if the file contains a chromosome name that is not in the
    *                                  SequenceDictionary
    */
-  private def loadPositions(sc : SparkContext, seqDict : SequenceDictionary, path : String) : RDD[(ReferenceRegion, String)] = {
+  private def loadPositions(sc: SparkContext, seqDict: SequenceDictionary, path: String): RDD[(ReferenceRegion, String)] = {
     sc.parallelize(Source.fromFile(path).getLines().filter(!_.startsWith("#")).map {
-      line => {
-        val array = line.split("\t")
-        val chrom = array(0)
-        if(!seqDict.containsRefName(chrom)) {
-          throw new IllegalArgumentException("chromosome name \"%s\" wasn't in the sequence dictionary (%s)".format(
-            chrom, seqDict.records.map(_.name).mkString(",")
-          ))
+      line =>
+        {
+          val array = line.split("\t")
+          val chrom = array(0)
+          if (!seqDict.containsRefName(chrom)) {
+            throw new IllegalArgumentException("chromosome name \"%s\" wasn't in the sequence dictionary (%s)".format(
+              chrom, seqDict.records.map(_.name).mkString(",")))
+          }
+          val refId = seqDict(chrom).id
+          val start = array(1).toLong
+          val name = array(2)
+          val end = start + array(3).length
+          (ReferenceRegion(refId, start, end), name)
         }
-        val refId = seqDict(chrom).id
-        val start = array(1).toLong
-        val name = array(2)
-        val end = start + array(3).length
-        (ReferenceRegion(refId, start, end), name)
-      }
     }.toSeq)
   }
 }
-
 

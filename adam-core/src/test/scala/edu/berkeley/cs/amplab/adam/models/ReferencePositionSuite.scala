@@ -16,7 +16,7 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import org.scalatest.FunSuite
-import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMGenotype, ADAMPileup, ADAMRecord, ADAMVariant}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMContig, ADAMGenotype, ADAMPileup, ADAMRecord, ADAMVariant }
 
 class ReferencePositionSuite extends FunSuite {
 
@@ -28,9 +28,9 @@ class ReferencePositionSuite extends FunSuite {
       .build()
 
     val refPosOpt = ReferencePosition(read)
-    
+
     assert(refPosOpt.isDefined)
-    
+
     val refPos = refPosOpt.get
 
     assert(refPos.refId === 1)
@@ -43,7 +43,7 @@ class ReferencePositionSuite extends FunSuite {
       .build()
 
     val refPosOpt = ReferencePosition(read)
-   
+
     assert(refPosOpt.isEmpty)
   }
 
@@ -54,7 +54,7 @@ class ReferencePositionSuite extends FunSuite {
       .build()
 
     val refPos = ReferencePosition(pileup)
-    
+
     assert(refPos.refId === 2)
     assert(refPos.pos === 2L)
   }
@@ -72,7 +72,7 @@ class ReferencePositionSuite extends FunSuite {
       .build()
 
     val refPos = ReferencePosition(variant)
-    
+
     assert(refPos.refId === 10)
     assert(refPos.pos === 10L)
   }
@@ -93,7 +93,7 @@ class ReferencePositionSuite extends FunSuite {
       .build()
 
     val refPos = ReferencePosition(genotype)
-    
+
     assert(refPos.refId === 10)
     assert(refPos.pos === 100L)
   }

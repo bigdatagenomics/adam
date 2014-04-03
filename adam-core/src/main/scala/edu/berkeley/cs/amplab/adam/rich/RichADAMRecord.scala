@@ -16,8 +16,8 @@
 package edu.berkeley.cs.amplab.adam.rich
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import net.sf.samtools.{CigarElement, CigarOperator, Cigar, TextCigarCodec}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import net.sf.samtools.{ CigarElement, CigarOperator, Cigar, TextCigarCodec }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.util._
 import scala.Some
 import scala.concurrent.JavaConversions._
@@ -81,7 +81,7 @@ class RichADAMRecord(val record: ADAMRecord) {
         .filter(p => p.getOperator.consumesReferenceBases())
         .foldLeft(record.getStart) {
           (pos, cigarEl) => pos + cigarEl.getLength
-      })
+        })
     } else {
       None
     }
@@ -164,11 +164,11 @@ class RichADAMRecord(val record: ADAMRecord) {
         val currentRefPos = runningPos._1
         val resultAccum = runningPos._2
         val advanceReference = op.consumesReferenceBases || op == CigarOperator.S
-        val newRefPos = currentRefPos + (if(advanceReference) elem.getLength else 0)
+        val newRefPos = currentRefPos + (if (advanceReference) elem.getLength else 0)
         val resultParts: Seq[Option[Long]] =
-          if(op.consumesReadBases) {
+          if (op.consumesReadBases) {
             val range = NumericRange(currentRefPos, currentRefPos + elem.getLength, 1L)
-            range.map(pos => if(advanceReference) Some(pos) else None)
+            range.map(pos => if (advanceReference) Some(pos) else None)
           } else {
             Seq.empty
           }

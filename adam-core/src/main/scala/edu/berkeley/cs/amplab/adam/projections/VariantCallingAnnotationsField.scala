@@ -18,27 +18,7 @@ package edu.berkeley.cs.amplab.adam.projections
 
 import edu.berkeley.cs.amplab.adam.avro.VariantCallingAnnotations
 
-class VariantCallingAnnotationsField  extends FieldEnumeration(VariantCallingAnnotations.SCHEMA$) {
+class VariantCallingAnnotationsField extends FieldEnumeration(VariantCallingAnnotations.SCHEMA$) {
 
-  val  readDepth,
-  downsampled,
-  baseQRankSum,
-  clippingRankSum,
-  haplotypeScore,
-  inbreedingCoefficient,
-  alleleCountMLE,
-  alleleFrequencyMLE,
-  rmsMapQ,
-  mapq0Reads,
-  mqRankSum,
-  usedForNegativeTrainingSet,
-  usedForPositiveTrainingSet,
-  variantQualityByDepth,
-  readPositionRankSum,
-  vqslod,
-  culprit,
-  variantCallErrorProbability,
-  variantIsPassing,
-  variantFilters
-  = SchemaValue
+  val readDepth, downsampled, baseQRankSum, clippingRankSum, haplotypeScore, inbreedingCoefficient, alleleCountMLE, alleleFrequencyMLE, rmsMapQ, mapq0Reads, mqRankSum, usedForNegativeTrainingSet, usedForPositiveTrainingSet, variantQualityByDepth, readPositionRankSum, vqslod, culprit, variantCallErrorProbability, variantIsPassing, variantFilters = SchemaValue
 }

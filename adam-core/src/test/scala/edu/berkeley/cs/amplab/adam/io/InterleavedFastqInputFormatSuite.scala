@@ -22,7 +22,6 @@ import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
 import org.apache.spark.rdd.RDD
 import org.apache.hadoop.io.Text
 
-
 class InterleavedFastqInputFormatSuite extends SparkFunSuite {
   (1 to 4) foreach { testNumber =>
     val inputName = "interleaved_fastq_sample%d.fq".format(testNumber)

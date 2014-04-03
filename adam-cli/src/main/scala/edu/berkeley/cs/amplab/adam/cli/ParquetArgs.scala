@@ -30,4 +30,3 @@ trait ParquetArgs extends Args4jBase {
   var disableDictionary = false
 }
 
-

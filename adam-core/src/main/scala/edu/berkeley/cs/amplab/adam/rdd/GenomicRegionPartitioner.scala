@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.models.{ReferencePosition, SequenceDictionary}
+import edu.berkeley.cs.amplab.adam.models.{ ReferencePosition, SequenceDictionary }
 import org.apache.spark.Partitioner
 import scala.math._
 
@@ -47,8 +47,7 @@ class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[Int, Long]
 
   // referenceId -> cumulative length before this sequence (using seqDict.records as the implicit ordering)
   val cumulativeLengths: Map[Int, Long] = Map(
-    ids.zip(cumuls)
-      : _*)
+    ids.zip(cumuls): _*)
 
   /**
    * 'parts' is the total number of partitions for non-UNMAPPED ReferencePositions --
@@ -102,5 +101,4 @@ object GenomicRegionPartitioner {
   def extractLengthMap(seqDict: SequenceDictionary): Map[Int, Long] =
     Map(seqDict.records.toSeq.map(rec => (rec.id, rec.length)): _*)
 }
-
 

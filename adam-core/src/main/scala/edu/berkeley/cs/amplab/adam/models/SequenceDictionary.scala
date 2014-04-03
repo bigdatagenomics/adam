@@ -15,11 +15,11 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord, ADAMNucleotideContigFragment, ADAMContig}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import net.sf.samtools.{SAMFileHeader, SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMRecord, ADAMNucleotideContigFragment, ADAMContig }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import net.sf.samtools.{ SAMFileHeader, SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary }
 import org.apache.avro.specific.SpecificRecord
-import org.broadinstitute.variant.vcf.{VCFHeader, VCFContigHeaderLine}
+import org.broadinstitute.variant.vcf.{ VCFHeader, VCFContigHeaderLine }
 import scala.collection._
 import scala.math.Ordering.Implicits._
 
@@ -73,25 +73,25 @@ class SequenceDictionary(val recordsIn: Array[SequenceRecord]) extends Serializa
    *
    * @throws AssertionError Throws assertion error if sequence corresponding to contig name
    * is not found.
-   * 
+   *
    * @param name Name to search for.
    * @return SequenceRecord associated with this record.
    */
   def apply(name: CharSequence): SequenceRecord = {
     // must explicitly call toString - see note at recordNames creation RE: Avro & Utf8
     val rec = recordsIn.find(kv => kv.name.toString == name.toString)
-    
+
     assert(rec.isDefined, "Could not find key " + name + " in dictionary.")
     rec.get
   }
 
   /**
-    * Returns true if this sequence dictionary contains a reference with a specific name.
-    *
-    * @param name Reference name to look for.
-    * @return True if reference is in this dictionary.
-    */
-  def containsRefName(name : CharSequence) : Boolean = {
+   * Returns true if this sequence dictionary contains a reference with a specific name.
+   *
+   * @param name Reference name to look for.
+   * @return True if reference is in this dictionary.
+   */
+  def containsRefName(name: CharSequence): Boolean = {
     // must explicitly call toString - see note at recordNames creation RE: Avro & Utf8
     !recordsIn.forall(kv => kv.name.toString != name.toString)
   }
@@ -101,7 +101,7 @@ class SequenceDictionary(val recordsIn: Array[SequenceRecord]) extends Serializa
    * @param id refId to look for
    * @return True if the refId is in this dictionary
    */
-  def containsRefId(id : Int) : Boolean = {
+  def containsRefId(id: Int): Boolean = {
     recordIndices.contains(id)
   }
 
@@ -195,7 +195,7 @@ class SequenceDictionary(val recordsIn: Array[SequenceRecord]) extends Serializa
    *                    mapTo.
    * @return A new SequenceDictionary with just the referenceIds mapped through the given Map argument.
    */
- def remap(idTransform: Map[Int, Int]): SequenceDictionary = {
+  def remap(idTransform: Map[Int, Int]): SequenceDictionary = {
     def remapIndex(i: Int): Int =
       if (idTransform.contains(i)) idTransform(i) else i
 
@@ -208,9 +208,9 @@ class SequenceDictionary(val recordsIn: Array[SequenceRecord]) extends Serializa
   def records: Set[SequenceRecord] = recordIndices.values.toSet
 
   private[models] def cleanAndMerge(a1: Array[SequenceRecord],
-                                    a2: Array[SequenceRecord]): Array[SequenceRecord] = {
+    a2: Array[SequenceRecord]): Array[SequenceRecord] = {
     val a2filt = a2.filter(k => !a1.contains(k))
-    
+
     a1 ++ a2filt
   }
 
@@ -272,7 +272,7 @@ class SequenceDictionary(val recordsIn: Array[SequenceRecord]) extends Serializa
    *
    * @return Returns the reference names in this dictionary.
    */
-  def getReferenceNames (): Iterable[String] = {
+  def getReferenceNames(): Iterable[String] = {
     recordsIn.map(_.name.toString)
   }
 }
@@ -327,7 +327,7 @@ object SequenceDictionary {
    *
    * @see fromSAMHeader
    * @see fromVCFHeader
-   * 
+   *
    * @param samDict SAM style sequence dictionary.
    * @return Returns an ADAM style sequence dictionary.
    */
@@ -335,8 +335,8 @@ object SequenceDictionary {
     val samDictRecords: List[SAMSequenceRecord] = samDict.getSequences
     val seqDict: SequenceDictionary =
       SequenceDictionary(samDictRecords.map {
-          seqRecord: SAMSequenceRecord => SequenceRecord.fromSamSequenceRecord(seqRecord)
-        }: _*)
+        seqRecord: SAMSequenceRecord => SequenceRecord.fromSamSequenceRecord(seqRecord)
+      }: _*)
 
     seqDict
   }
@@ -388,7 +388,7 @@ class SequenceRecord(val id: Int, val name: CharSequence, val length: Long, val 
    *
    * @return A SAM formatted sequence record.
    */
-  def toSAMSequenceRecord (): SAMSequenceRecord = {
+  def toSAMSequenceRecord(): SAMSequenceRecord = {
     val rec = new SAMSequenceRecord(name.toString, length.toInt)
 
     // NOTE: we should set the sam sequence record's id here, but, that is private inside of samtools - FAN, 2/5/2014
@@ -407,14 +407,13 @@ object SequenceRecord {
   def apply(id: Int, name: CharSequence, length: Long, url: CharSequence = null, md5: CharSequence = null): SequenceRecord =
     new SequenceRecord(id, name, length, url, md5)
 
-
   /**
    * Converts an ADAM contig into a sequence record.
    *
    * @param ctg Contig to convert.
    * @return Contig expressed as a sequence record.
    */
-  def fromADAMContigFragment (ctg: ADAMNucleotideContigFragment): SequenceRecord = {
+  def fromADAMContigFragment(ctg: ADAMNucleotideContigFragment): SequenceRecord = {
     apply(ctg.getContigId, ctg.getContigName, ctg.getContigLength, ctg.getUrl)
   }
 

@@ -15,26 +15,26 @@
  */
 package edu.berkeley.cs.amplab.adam.cli
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMNucleotideContigFragment, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMNucleotideContigFragment, ADAMRecord }
 import edu.berkeley.cs.amplab.adam.converters.FastaConverter
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import org.apache.hadoop.io.{LongWritable, Text}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-import org.apache.spark.{SparkContext, Logging}
+import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
-import org.kohsuke.args4j.{Option => Args4jOption, Argument}
+import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 
-object Fasta2Adam extends AdamCommandCompanion {
+object Fasta2ADAM extends ADAMCommandCompanion {
   val commandName: String = "fasta2adam"
   val commandDescription: String = "Converts a text FASTA sequence file into an ADAMNucleotideContig Parquet file which represents assembled sequences."
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
-    new Fasta2Adam(Args4j[Fasta2AdamArgs](cmdLine))
+  def apply(cmdLine: Array[String]): ADAMCommand = {
+    new Fasta2ADAM(Args4j[Fasta2ADAMArgs](cmdLine))
   }
 }
 
-class Fasta2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class Fasta2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @Argument(required = true, metaVar = "FASTA", usage = "The FASTA file to convert", index = 0)
   var fastaFile: String = null
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM data", index = 1)
@@ -47,15 +47,15 @@ class Fasta2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var fragmentLength: Long = 10000L
 }
 
-class Fasta2Adam(protected val args: Fasta2AdamArgs) extends AdamSparkCommand[Fasta2AdamArgs] with Logging {
-  val companion = Fasta2Adam
+class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fasta2ADAMArgs] with Logging {
+  val companion = Fasta2ADAM
 
   def run(sc: SparkContext, job: Job) {
     log.info("Loading FASTA data from disk.")
     val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(args.fastaFile,
-                                                                   classOf[TextInputFormat],
-                                                                   classOf[LongWritable],
-                                                                   classOf[Text])
+      classOf[TextInputFormat],
+      classOf[LongWritable],
+      classOf[Text])
 
     val remapData = fastaData.map(kv => (kv._1.get.toInt, kv._2.toString.toString))
 
@@ -89,7 +89,7 @@ class Fasta2Adam(protected val args: Fasta2AdamArgs) extends AdamSparkCommand[Fa
 
     log.info("Writing records to disk.")
     remapped.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
-                      compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
+      compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
   }
 }
 

@@ -66,10 +66,9 @@ abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
  * covariate valuess are in `extras`.
  */
 class CovariateKey(
-    val readGroup: String,
-    val quality: QualityScore,
-    val extras: Seq[Option[Covariate#Value]]
-) extends Serializable {
+  val readGroup: String,
+  val quality: QualityScore,
+  val extras: Seq[Option[Covariate#Value]]) extends Serializable {
 
   def parts: Seq[Any] = Seq(readGroup, quality) ++ extras
 
@@ -102,9 +101,10 @@ class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
     })
 
     // Construct the CovariateKeys
-    read.sequence.zipWithIndex.map { case (residue, residueIdx) =>
-      val residueExtras = extraVals.map(_(residueIdx))
-      new CovariateKey(read.readGroup, residue.quality, residueExtras)
+    read.sequence.zipWithIndex.map {
+      case (residue, residueIdx) =>
+        val residueExtras = extraVals.map(_(residueIdx))
+        new CovariateKey(read.readGroup, residue.quality, residueExtras)
     }
   }
 

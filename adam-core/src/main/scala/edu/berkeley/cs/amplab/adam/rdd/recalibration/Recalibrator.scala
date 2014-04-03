@@ -17,13 +17,13 @@
 package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util.QualityScore
-import math.{exp, log}
+import math.{ exp, log }
 
 class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)
   extends (DecadentRead => ADAMRecord) with Serializable {
@@ -39,9 +39,10 @@ class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: Qual
   def computeQual(read: DecadentRead): Seq[QualityScore] = {
     val origQuals = read.sequence.map(_.quality)
     val newQuals = table(read)
-    origQuals.zip(newQuals).map { case (origQ, newQ) =>
-      // Keep original quality score if below recalibration threshold
-      if(origQ >= minAcceptableQuality) newQ else origQ
+    origQuals.zip(newQuals).map {
+      case (origQ, newQ) =>
+        // Keep original quality score if below recalibration threshold
+        if (origQ >= minAcceptableQuality) newQ else origQ
     }
   }
 }
@@ -53,14 +54,14 @@ object Recalibrator {
 }
 
 class RecalibrationTable(
-    // covariates for this recalibration
-    val covariates: CovariateSpace,
-    // marginal by read group
-    val globalTable: Map[String, Aggregate],
-    // marginal by read group and quality
-    val qualityTable: Map[(String, QualityScore), Aggregate],
-    // marginals for each optional covariate by read group and quality
-    val extraTables: IndexedSeq[Map[(String, QualityScore, Option[Covariate#Value]), Aggregate]])
+  // covariates for this recalibration
+  val covariates: CovariateSpace,
+  // marginal by read group
+  val globalTable: Map[String, Aggregate],
+  // marginal by read group and quality
+  val qualityTable: Map[(String, QualityScore), Aggregate],
+  // marginals for each optional covariate by read group and quality
+  val extraTables: IndexedSeq[Map[(String, QualityScore, Option[Covariate#Value]), Aggregate]])
   extends (DecadentRead => Seq[QualityScore]) with Serializable {
 
   def apply(read: DecadentRead): Seq[QualityScore] =
