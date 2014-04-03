@@ -17,7 +17,7 @@ package edu.berkeley.cs.amplab.adam.rdd.comparisons
 
 import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.util.{Histogram, SparkFunSuite}
+import edu.berkeley.cs.amplab.adam.util.{ Histogram, SparkFunSuite }
 import edu.berkeley.cs.amplab.adam.projections.ADAMRecordField
 import edu.berkeley.cs.amplab.adam.metrics.aggregators.HistogramAggregator
 import edu.berkeley.cs.amplab.adam.metrics.MappedPosition
@@ -55,9 +55,9 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
 
     val generator = MappedPosition
 
-    val generated : RDD[(CharSequence, Seq[Long])] = engine.generate(generator)
+    val generated: RDD[(CharSequence, Seq[Long])] = engine.generate(generator)
 
-    val genMap = Map(generated.collect().map{ case (key, value) => (key.toString, value) } : _*)
+    val genMap = Map(generated.collect().map { case (key, value) => (key.toString, value) }: _*)
 
     assert(genMap.size === 2)
     assert(genMap.contains("read0"))
@@ -100,7 +100,7 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
     val generator = MappedPosition
     val aggregator = new HistogramAggregator[Long]()
 
-    val aggregated : Histogram[Long] =
+    val aggregated: Histogram[Long] =
       ComparisonTraversalEngine.combine(engine.generate(generator), aggregator)
 
     assert(aggregated.count() === 3)

@@ -23,7 +23,6 @@ import scala.collection.JavaConversions._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
-
 class ADAMGenotypeRDDFunctionsSuite extends SparkFunSuite {
   def v0 = ADAMVariant.newBuilder
     .setContig(ADAMContig.newBuilder.setContigName("11").build)
@@ -56,7 +55,7 @@ class ADAMGenotypeRDDFunctionsSuite extends SparkFunSuite {
   sparkTest("concordance of identical VCFs should be 1.0") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.vcf").getFile
 
-    val gts : RDD[ADAMGenotype] = sc.adamVCFLoad(path).flatMap(_.genotypes)
+    val gts: RDD[ADAMGenotype] = sc.adamVCFLoad(path).flatMap(_.genotypes)
     assert(gts.filter(_.getSampleId == "NA12878").count === 5)
 
     val tables = gts.concordanceWith(gts).collectAsMap

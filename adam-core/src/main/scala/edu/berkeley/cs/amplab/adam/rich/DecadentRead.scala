@@ -17,7 +17,7 @@
 package edu.berkeley.cs.amplab.adam.rich
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util.MdTag
 import edu.berkeley.cs.amplab.adam.util.QualityScore
@@ -74,7 +74,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   /**
    * A "residue" is an individual monomer of a polymeric chain, such as DNA.
    */
-  class Residue private[DecadentRead](val position: Int) {
+  class Residue private[DecadentRead] (val position: Int) {
     def read = DecadentRead.this
 
     /**
@@ -106,7 +106,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
     def referenceLocationOption: Option[ReferenceLocation] =
       assumingAligned(
         record.readOffsetToReferencePosition(position).
-        map(refOffset => new ReferenceLocation(record.getReferenceName.toString, refOffset)))
+          map(refOffset => new ReferenceLocation(record.getReferenceName.toString, refOffset)))
 
     def referenceLocation: ReferenceLocation =
       referenceLocationOption.getOrElse(
@@ -122,7 +122,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   def isAligned: Boolean = record.getReadMapped
 
   def alignmentQuality: Option[QualityScore] = assumingAligned {
-    if(record.getMapq == null || record.getMapq == 255) {
+    if (record.getMapq == null || record.getMapq == 255) {
       None
     } else {
       Some(QualityScore(record.getMapq))

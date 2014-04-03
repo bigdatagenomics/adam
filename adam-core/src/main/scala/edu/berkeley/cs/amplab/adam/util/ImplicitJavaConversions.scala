@@ -20,18 +20,18 @@ import scala.collection.JavaConversions._
 
 object ImplicitJavaConversions {
 
-  implicit def listToJavaList [A] (list: List[A]): java.util.List[A] = seqAsJavaList (list)
+  implicit def listToJavaList[A](list: List[A]): java.util.List[A] = seqAsJavaList(list)
 
-  implicit def javaListToList [A] (list: java.util.List[A]): List[A] = {
+  implicit def javaListToList[A](list: java.util.List[A]): List[A] = {
     asScalaBuffer(list).toList
   }
 
-  implicit def intListToJavaIntegerList (list: List[Int]): java.util.List[java.lang.Integer] = {
-    seqAsJavaList(list.map(i => i : java.lang.Integer))
+  implicit def intListToJavaIntegerList(list: List[Int]): java.util.List[java.lang.Integer] = {
+    seqAsJavaList(list.map(i => i: java.lang.Integer))
   }
-  
-  implicit def charSequenceToString (cs: CharSequence): String = cs.toString
 
-  implicit def charSequenceToList (cs: CharSequence): List[Char] = cs.toList
+  implicit def charSequenceToString(cs: CharSequence): String = cs.toString
+
+  implicit def charSequenceToList(cs: CharSequence): List[Char] = cs.toList
 
 }

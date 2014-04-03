@@ -17,10 +17,10 @@
 package edu.berkeley.cs.amplab.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{Logging, SparkContext}
-import org.kohsuke.args4j.{Argument, Option => Args4jOption}
+import org.apache.spark.{ Logging, SparkContext }
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.avro._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
@@ -28,42 +28,41 @@ import edu.berkeley.cs.amplab.adam.models.ADAMVariantContext
 import edu.berkeley.cs.amplab.adam.converters.VariantAnnotationConverter
 import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant
 
-object VcfAnnotation2Adam extends AdamCommandCompanion {
+object VcfAnnotation2ADAM extends ADAMCommandCompanion {
 
   val commandName = "anno2adam"
   val commandDescription = "Convert a annotation file (in VCF format) to the corresponding ADAM format"
 
   def apply(cmdLine: Array[String]) = {
-    new VcfAnnotation2Adam(Args4j[VcfAnnotation2AdamArgs](cmdLine))
+    new VcfAnnotation2ADAM(Args4j[VcfAnnotation2ADAMArgs](cmdLine))
   }
 }
 
-class VcfAnnotation2AdamArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class VcfAnnotation2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @Argument(required = true, metaVar = "VCF", usage = "The VCF file with annotations to convert", index = 0)
   var vcfFile: String = _
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM Variant annotations data", index = 1)
   var outputPath: String = null
-  @Args4jOption(required=false, name = "-current-db", usage = "Location of existing ADAM Variant annotations data")
+  @Args4jOption(required = false, name = "-current-db", usage = "Location of existing ADAM Variant annotations data")
   var currentAnnotations: String = null
 }
 
-class VcfAnnotation2Adam(val args: VcfAnnotation2AdamArgs) extends AdamSparkCommand[VcfAnnotation2AdamArgs] with Logging {
-  val companion = VcfAnnotation2Adam
+class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkCommand[VcfAnnotation2ADAMArgs] with Logging {
+  val companion = VcfAnnotation2ADAM
 
   def run(sc: SparkContext, job: Job) {
     log.info("Reading VCF file from %s".format(args.vcfFile))
-    val annotations : RDD[ADAMDatabaseVariantAnnotation] = sc.adamVCFAnnotationLoad(args.vcfFile)
+    val annotations: RDD[ADAMDatabaseVariantAnnotation] = sc.adamVCFAnnotationLoad(args.vcfFile)
     log.info("Converted %d records".format(annotations.count))
 
     if (args.currentAnnotations != null) {
-      val existingAnnotations : RDD[ADAMDatabaseVariantAnnotation] = sc.adamLoad(args.currentAnnotations)
+      val existingAnnotations: RDD[ADAMDatabaseVariantAnnotation] = sc.adamLoad(args.currentAnnotations)
       val keyedAnnotations = existingAnnotations.keyBy(anno => new RichADAMVariant(anno.getVariant))
-      val joinedAnnotations = keyedAnnotations.join( annotations.keyBy(anno => new RichADAMVariant(anno.getVariant)))
-      val mergedAnnotations = joinedAnnotations.map( kv => VariantAnnotationConverter.mergeAnnotations( kv._2._1, kv._2._2 ))
+      val joinedAnnotations = keyedAnnotations.join(annotations.keyBy(anno => new RichADAMVariant(anno.getVariant)))
+      val mergedAnnotations = joinedAnnotations.map(kv => VariantAnnotationConverter.mergeAnnotations(kv._2._1, kv._2._2))
       mergedAnnotations.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
         compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
-    }
-    else {
+    } else {
       annotations.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
         compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
     }

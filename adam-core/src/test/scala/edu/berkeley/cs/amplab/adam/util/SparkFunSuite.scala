@@ -15,11 +15,11 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.{ BeforeAndAfter, FunSuite }
 import org.apache.spark.SparkContext
 import java.net.ServerSocket
 import org.apache.log4j.Level
-import edu.berkeley.cs.amplab.adam.serialization.AdamKryoProperties
+import edu.berkeley.cs.amplab.adam.serialization.ADAMKryoProperties
 
 object SparkTest extends org.scalatest.Tag("edu.berkeley.cs.amplab.util.SparkFunSuite")
 
@@ -32,7 +32,7 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
 
   def createSpark(sparkName: String, silenceSpark: Boolean = true): SparkContext = {
     // Use the same context properties as ADAM commands
-    AdamKryoProperties.setupContextProperties()
+    ADAMKryoProperties.setupContextProperties()
     // Silence the Spark logs if requested
     maybeLevels = if (silenceSpark) Some(SparkLogUtil.silenceSpark()) else None
     synchronized {
@@ -74,8 +74,7 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
       try {
         // Run the before block
         body
-      }
-      finally {
+      } finally {
         destroySpark()
       }
     }
@@ -87,8 +86,7 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
       try {
         // Run the after block
         body
-      }
-      finally {
+      } finally {
         destroySpark()
       }
     }
@@ -100,8 +98,7 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
       try {
         // Run the test
         body
-      }
-      finally {
+      } finally {
         destroySpark()
       }
     }

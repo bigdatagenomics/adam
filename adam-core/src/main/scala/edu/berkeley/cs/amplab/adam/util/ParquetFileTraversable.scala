@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.{ FileSystem, Path }
 import parquet.avro.AvroParquetReader
 import org.apache.avro.generic.IndexedRecord
 import org.apache.spark.SparkContext
@@ -39,8 +39,7 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
             paths ::= file.getPath
           }
       }
-    }
-    else if (fs.isFile(file)) {
+    } else if (fs.isFile(file)) {
       paths ::= file
     } else {
       throw new IllegalArgumentException("The path '%s' is neither file nor directory".format(file))
@@ -63,6 +62,4 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
   }
 
 }
-
-
 

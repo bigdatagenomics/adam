@@ -19,13 +19,13 @@ import parquet.filter.UnboundRecordFilter
 import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.util.PhredUtils._
 import java.io.File
 import org.apache.hadoop.fs.Path
 import java.util.UUID
 
-class AdamContextSuite extends SparkFunSuite {
+class ADAMContextSuite extends SparkFunSuite {
 
   sparkTest("sc.adamLoad should not fail on unmapped reads") {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("unmapped.sam").getFile
@@ -52,7 +52,7 @@ class AdamContextSuite extends SparkFunSuite {
     assert(phredToSuccessProbability(50) > 0.99998 && phredToSuccessProbability(50) < 0.999999)
   }
 
-  sparkTest("loadAdamFromPaths can load simple RDDs that have just been saved") {
+  sparkTest("loadADAMFromPaths can load simple RDDs that have just been saved") {
     val a0 = ADAMRecord.newBuilder()
       .setRecordGroupName("group0")
       .setReadName("read0")
@@ -76,10 +76,9 @@ class AdamContextSuite extends SparkFunSuite {
 
     saved.adamSave(loc)
     try {
-      val loaded = sc.loadAdamFromPaths(Seq(path))
+      val loaded = sc.loadADAMFromPaths(Seq(path))
 
-
-    assert(loaded.count() === saved.count())
+      assert(loaded.count() === saved.count())
     } catch {
       case (e: Exception) => {
         println(e)
@@ -105,24 +104,24 @@ class AdamContextSuite extends SparkFunSuite {
      *     └── nomatch6/
      */
 
-    val tempDir = File.createTempFile("AdamContextSuite", "").getParentFile
+    val tempDir = File.createTempFile("ADAMContextSuite", "").getParentFile
 
-    def createDir(dir : File, name : String) : File = {
+    def createDir(dir: File, name: String): File = {
       val dirFile = new File(dir, name)
       dirFile.mkdir()
       dirFile
     }
 
-    val parentName : String = "parent-" + UUID.randomUUID().toString
-    val parentDir : File = createDir(tempDir, parentName)
-    val subDir1 : File = createDir(parentDir, "subDir1")
-    val subDir2 : File = createDir(parentDir, "subDir2")
-    val match1 : File = createDir(subDir1, "match1")
-    val match2 : File = createDir(subDir1, "match2")
-    val match3 : File = createDir(subDir2, "match3")
-    val nomatch4 : File = createDir(subDir2, "nomatch4")
-    val match5 : File = createDir(parentDir, "match5")
-    val nomatch6 : File = createDir(parentDir, "nomatch6")
+    val parentName: String = "parent-" + UUID.randomUUID().toString
+    val parentDir: File = createDir(tempDir, parentName)
+    val subDir1: File = createDir(parentDir, "subDir1")
+    val subDir2: File = createDir(parentDir, "subDir2")
+    val match1: File = createDir(subDir1, "match1")
+    val match2: File = createDir(subDir1, "match2")
+    val match3: File = createDir(subDir2, "match3")
+    val nomatch4: File = createDir(subDir2, "nomatch4")
+    val match5: File = createDir(parentDir, "match5")
+    val nomatch6: File = createDir(parentDir, "nomatch6")
 
     /**
      * Now, run findFiles() on the parentDir, and make sure we find match{1, 2, 3, 5} and _do not_
@@ -146,8 +145,8 @@ class AdamContextSuite extends SparkFunSuite {
   same location as createTempFile() uses, so therefore the returned path from this method
   should be suitable for adamSave().
    */
-  def tempLocation(suffix : String = "adam") : String = {
-    val tempFile = File.createTempFile("AdamContextSuite", "")
+  def tempLocation(suffix: String = "adam"): String = {
+    val tempFile = File.createTempFile("ADAMContextSuite", "")
     val tempDir = tempFile.getParentFile
     new File(tempDir, tempFile.getName + suffix).getAbsolutePath
   }

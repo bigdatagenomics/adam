@@ -16,34 +16,32 @@
 
 package edu.berkeley.cs.amplab.adam.rdd.variation
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMDatabaseVariantAnnotation, ADAMGenotype}
-import edu.berkeley.cs.amplab.adam.converters.{VariantAnnotationConverter, VariantContextConverter}
-import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMDatabaseVariantAnnotation, ADAMGenotype }
+import edu.berkeley.cs.amplab.adam.converters.{ VariantAnnotationConverter, VariantContextConverter }
+import edu.berkeley.cs.amplab.adam.models.{ ADAMVariantContext, SequenceDictionary }
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import fi.tkk.ics.hadoop.bam._
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{SparkContext, Logging}
+import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.broadinstitute.variant.vcf.{VCFHeaderLine, VCFHeader}
+import org.broadinstitute.variant.vcf.{ VCFHeaderLine, VCFHeader }
 import parquet.hadoop.util.ContextUtil
 import scala.collection.JavaConversions._
 
-
 private object ADAMVCFOutputFormat {
-  private var header : Option[VCFHeader] = None
+  private var header: Option[VCFHeader] = None
 
-  def getHeader : VCFHeader = header match {
+  def getHeader: VCFHeader = header match {
     case Some(h) => h
     case None => setHeader(Seq())
   }
 
-  def setHeader(samples: Seq[String]) : VCFHeader = {
+  def setHeader(samples: Seq[String]): VCFHeader = {
     header = Some(new VCFHeader(
-      (VariantAnnotationConverter.infoHeaderLines ++ VariantAnnotationConverter.formatHeaderLines).toSet : Set[VCFHeaderLine],
-      samples
-    ))
+      (VariantAnnotationConverter.infoHeaderLines ++ VariantAnnotationConverter.formatHeaderLines).toSet: Set[VCFHeaderLine],
+      samples))
     header.get
   }
 }
@@ -66,19 +64,18 @@ object ADAMVariationContext {
 
 class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
   /**
-  * This method will create a new RDD of VariantContext objects
-  * @param filePath: input VCF file to read
-  * @return RDD of variants
-  */
-  def adamVCFLoad(filePath: String, extractExternalAnnotations : Boolean = false): RDD[ADAMVariantContext] = {
+   * This method will create a new RDD of VariantContext objects
+   * @param filePath: input VCF file to read
+   * @return RDD of variants
+   */
+  def adamVCFLoad(filePath: String, extractExternalAnnotations: Boolean = false): RDD[ADAMVariantContext] = {
     log.info("Reading VCF file from %s".format(filePath))
     val job = new Job(sc.hadoopConfiguration)
     val vcc = new VariantContextConverter
     val records = sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
-      ContextUtil.getConfiguration(job)
-    )
+      ContextUtil.getConfiguration(job))
     log.info("Converted %d records".format(records.count()))
     records.flatMap(p => vcc.convert(p._2.get, extractExternalAnnotations))
   }
@@ -90,8 +87,7 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
     val records = sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
-      ContextUtil.getConfiguration(job)
-    )
+      ContextUtil.getConfiguration(job))
     log.info("Converted %d records".format(records.count()))
     records.map(p => vcc.convertToAnnotation(p._2.get))
   }
@@ -118,11 +114,9 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
     conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
     withKey.saveAsNewAPIHadoopFile(filePath,
       classOf[LongWritable], classOf[VariantContextWritable], classOf[ADAMVCFOutputFormat[LongWritable]],
-      conf
-    )
+      conf)
 
     log.info("Write %d records".format(gatkVCs.count))
   }
 }
-
 

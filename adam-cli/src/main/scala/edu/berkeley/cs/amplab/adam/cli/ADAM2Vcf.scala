@@ -17,32 +17,32 @@
 package edu.berkeley.cs.amplab.adam.cli
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.kohsuke.args4j.Argument
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Logging, SparkContext}
+import org.apache.spark.{ Logging, SparkContext }
 import org.apache.hadoop.mapreduce.Job
 
-object Adam2Vcf extends AdamCommandCompanion {
+object ADAM2Vcf extends ADAMCommandCompanion {
 
   val commandName = "adam2vcf"
   val commandDescription = "Convert an ADAM variant to the VCF ADAM format"
 
   def apply(cmdLine: Array[String]) = {
-    new Adam2Vcf(Args4j[Adam2VcfArgs](cmdLine))
+    new ADAM2Vcf(Args4j[ADAM2VcfArgs](cmdLine))
   }
 }
 
-class Adam2VcfArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class ADAM2VcfArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @Argument(required = true, metaVar = "ADAM", usage = "The ADAM variant files to convert", index = 0)
   var adamFile: String = _
   @Argument(required = true, metaVar = "VCF", usage = "Location to write VCF data", index = 1)
   var outputPath: String = null
 }
 
-class Adam2Vcf(val args: Adam2VcfArgs) extends AdamSparkCommand[Adam2VcfArgs] with Logging {
-  val companion = Adam2Vcf
+class ADAM2Vcf(val args: ADAM2VcfArgs) extends ADAMSparkCommand[ADAM2VcfArgs] with Logging {
+  val companion = ADAM2Vcf
 
   def run(sc: SparkContext, job: Job) {
     val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)

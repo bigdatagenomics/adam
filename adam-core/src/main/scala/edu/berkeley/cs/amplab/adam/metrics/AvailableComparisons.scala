@@ -24,7 +24,7 @@ import edu.berkeley.cs.amplab.adam.models.ReadBucket
 
 object DefaultComparisons {
 
-  val comparisons : Seq[BucketComparisons[Any]] = Seq[BucketComparisons[Any]](
+  val comparisons: Seq[BucketComparisons[Any]] = Seq[BucketComparisons[Any]](
     OverMatched,
     DupeMismatch,
     MappedPosition,
@@ -34,9 +34,9 @@ object DefaultComparisons {
   private val map =
     comparisons.foldLeft(
       Map[String, BucketComparisons[Any]]())(
-      (a: Map[String, BucketComparisons[Any]], b: BucketComparisons[Any]) => a + ((b.name, b)))
+        (a: Map[String, BucketComparisons[Any]], b: BucketComparisons[Any]) => a + ((b.name, b)))
 
-  def findComparison(k : String) : BucketComparisons[Any] =
+  def findComparison(k: String): BucketComparisons[Any] =
     map.getOrElse(k, throw new ArrayIndexOutOfBoundsException(
       String.format("Could not find comparison %s", k)))
 }
@@ -72,7 +72,7 @@ object DupeMismatch extends PointComparisons with Serializable {
     } else None
   }
 
-  def matchedByName(bucket1: ReadBucket, bucket2: ReadBucket): Seq[(Int,Int)] =
+  def matchedByName(bucket1: ReadBucket, bucket2: ReadBucket): Seq[(Int, Int)] =
     Seq(
       points(bucket1.unpairedPrimaryMappedReads, bucket2.unpairedPrimaryMappedReads),
       points(bucket1.pairedFirstPrimaryMappedReads, bucket2.pairedFirstPrimaryMappedReads),
@@ -114,7 +114,6 @@ object MappedPosition extends LongComparisons with Serializable {
       distance(bucket1.pairedFirstSecondaryMappedReads, bucket2.pairedFirstSecondaryMappedReads) +
       distance(bucket1.pairedSecondSecondaryMappedReads, bucket2.pairedSecondSecondaryMappedReads))
 
-
   def schemas: Seq[FieldValue] = Seq(
     referenceId,
     start,
@@ -135,7 +134,7 @@ object MapQualityScores extends PointComparisons with Serializable {
     } else None
   }
 
-  def matchedByName(bucket1: ReadBucket, bucket2: ReadBucket): Seq[(Int,Int)] =
+  def matchedByName(bucket1: ReadBucket, bucket2: ReadBucket): Seq[(Int, Int)] =
     Seq(
       points(bucket1.unpairedPrimaryMappedReads, bucket2.unpairedPrimaryMappedReads),
       points(bucket1.pairedFirstPrimaryMappedReads, bucket2.pairedFirstPrimaryMappedReads),
@@ -150,7 +149,7 @@ object BaseQualityScores extends PointComparisons with Serializable {
   val name = "baseqs"
   val description = "Creates scatter plots of base quality scores across identical positions in the same reads"
 
-  def points(records1: Seq[ADAMRecord], records2: Seq[ADAMRecord]): Seq[(Int,Int)] = {
+  def points(records1: Seq[ADAMRecord], records2: Seq[ADAMRecord]): Seq[(Int, Int)] = {
     if (records1.size == records2.size) {
       records1.size match {
         case 0 => Seq()
@@ -166,7 +165,7 @@ object BaseQualityScores extends PointComparisons with Serializable {
     } else Seq()
   }
 
-  def matchedByName(bucket1: ReadBucket, bucket2: ReadBucket): Seq[(Int,Int)] =
+  def matchedByName(bucket1: ReadBucket, bucket2: ReadBucket): Seq[(Int, Int)] =
     points(bucket1.unpairedPrimaryMappedReads, bucket2.unpairedPrimaryMappedReads) ++
       points(bucket1.pairedFirstPrimaryMappedReads, bucket2.pairedFirstPrimaryMappedReads) ++
       points(bucket1.pairedSecondPrimaryMappedReads, bucket2.pairedSecondPrimaryMappedReads) ++

@@ -17,8 +17,8 @@ package edu.berkeley.cs.amplab.adam.models
 
 trait ReferenceMapping[T] {
 
-  def getReferenceId( value : T ) : Int
-  def remapReferenceId( value : T, newId : Int) : T
+  def getReferenceId(value: T): Int
+  def remapReferenceId(value: T, newId: Int): T
 
-  def getReferenceRegion( value : T ) : ReferenceRegion
+  def getReferenceRegion(value: T): ReferenceRegion
 }

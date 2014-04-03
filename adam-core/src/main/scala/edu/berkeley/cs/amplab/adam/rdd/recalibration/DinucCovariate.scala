@@ -23,7 +23,7 @@ import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 class DinucCovariate extends AbstractCovariate[(Char, Char)] {
   def compute(read: DecadentRead): Seq[Option[(Char, Char)]] = {
     val sequence = read.sequence.map(_.base)
-    if(read.isNegativeRead) {
+    if (read.isNegativeRead) {
       /* Use the reverse-complement of the sequence to get back the original
        * sequence as it was read by the sequencing machine. The sequencer
        * always reads from the 5' to the 3' end of each strand, but the output
@@ -38,14 +38,15 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
   }
 
   private def dinucs(sequence: Seq[Char]): Seq[Option[(Char, Char)]] = {
-    sequence.zipWithIndex.map { case (current, index) =>
-      assert(Seq('A', 'C', 'T', 'G', 'N').contains(current))
-      def previous = sequence(index - 1)
-      if(index > 0 && previous != 'N' && current != 'N') {
-        Some((previous, current))
-      } else {
-        None
-      }
+    sequence.zipWithIndex.map {
+      case (current, index) =>
+        assert(Seq('A', 'C', 'T', 'G', 'N').contains(current))
+        def previous = sequence(index - 1)
+        if (index > 0 && previous != 'N' && current != 'N') {
+          Some((previous, current))
+        } else {
+          None
+        }
     }
   }
 

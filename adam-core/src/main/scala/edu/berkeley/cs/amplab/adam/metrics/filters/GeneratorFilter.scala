@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.metrics.filters
 
-import edu.berkeley.cs.amplab.adam.metrics.{CombinedComparisons, BucketComparisons}
+import edu.berkeley.cs.amplab.adam.metrics.{ CombinedComparisons, BucketComparisons }
 import edu.berkeley.cs.amplab.adam.metrics
 
 /**
@@ -30,8 +30,8 @@ import edu.berkeley.cs.amplab.adam.metrics
  * @tparam T
  */
 trait GeneratorFilter[+T] extends Serializable {
-  def passesFilter(value : Any) : Boolean
-  def comparison : BucketComparisons[T]
+  def passesFilter(value: Any): Boolean
+  def comparison: BucketComparisons[T]
 }
 
 /**
@@ -40,7 +40,7 @@ trait GeneratorFilter[+T] extends Serializable {
  * @param comparison The BucketComparisons value to wrap.
  * @tparam T The type of value produced by the 'generator' argument, and filtered by this class.
  */
-abstract class ComparisonsFilter[+T](val comparison : BucketComparisons[T]) extends GeneratorFilter[T] {}
+abstract class ComparisonsFilter[+T](val comparison: BucketComparisons[T]) extends GeneratorFilter[T] {}
 
 /**
  * CombinedFilter lifts a Sequence of GeneratorFilter[T] filters into a single GeneratorFilter (which filters
@@ -48,13 +48,13 @@ abstract class ComparisonsFilter[+T](val comparison : BucketComparisons[T]) exte
  * @param filters
  * @tparam T
  */
-class CombinedFilter[T](val filters : Seq[GeneratorFilter[T]]) extends GeneratorFilter[metrics.Collection[Seq[T]]] {
+class CombinedFilter[T](val filters: Seq[GeneratorFilter[T]]) extends GeneratorFilter[metrics.Collection[Seq[T]]] {
 
   def passesFilter(value: Any): Boolean = {
     value match {
-      case valueCollection : metrics.Collection[Seq[T]] =>
+      case valueCollection: metrics.Collection[Seq[T]] =>
         filters.zip(valueCollection.values).forall {
-          case (f : GeneratorFilter[T], values : Seq[T]) =>
+          case (f: GeneratorFilter[T], values: Seq[T]) =>
             values.exists(f.passesFilter(_))
         }
     }

@@ -119,6 +119,6 @@ class ComparisonsSuite extends SparkFunSuite {
   }
 
   sparkTest("Test base quality scores") {
-    assert(BaseQualityScores.matchedByName(bucket, bucket).forall( a => a._1 == a._2 ))
+    assert(BaseQualityScores.matchedByName(bucket, bucket).forall(a => a._1 == a._2))
   }
 }

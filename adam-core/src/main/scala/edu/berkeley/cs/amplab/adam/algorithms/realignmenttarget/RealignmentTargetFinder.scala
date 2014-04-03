@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package edu.berkeley.cs.amplab.adam.algorithms.realignmenttarget
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
-import edu.berkeley.cs.amplab.adam.avro.{ADAMRecord,ADAMPileup}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMRecord, ADAMPileup }
 import scala.annotation.tailrec
 import scala.collection.immutable.TreeSet
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 
 object RealignmentTargetFinder {
 
@@ -33,7 +33,7 @@ object RealignmentTargetFinder {
    * @return Sorted set of realignment targets.
    */
   def apply(rdd: RDD[ADAMRecord]): TreeSet[IndelRealignmentTarget] = {
-    new RealignmentTargetFinder().findTargets (rdd)
+    new RealignmentTargetFinder().findTargets(rdd)
   }
 }
 
@@ -49,13 +49,13 @@ class RealignmentTargetFinder extends Serializable with Logging {
   // TODO: it seems that the old way of merging allows for duplicate targets (say two copies of the same indel
   // that have been generated from two different reads that therefore have different read ranges)
   // That should be fixed now, see the change in merging.
-  @tailrec protected final def joinTargets (
+  @tailrec protected final def joinTargets(
     first: TreeSet[IndelRealignmentTarget],
     second: TreeSet[IndelRealignmentTarget]): TreeSet[IndelRealignmentTarget] = {
 
-    if(!first.isEmpty && second.isEmpty)
+    if (!first.isEmpty && second.isEmpty)
       first
-    else if(first.isEmpty && !second.isEmpty)
+    else if (first.isEmpty && !second.isEmpty)
       second
     else {
       // if the two sets overlap, we must merge their head and tail elements, else we can just blindly append
@@ -63,7 +63,7 @@ class RealignmentTargetFinder extends Serializable with Logging {
         first.union(second)
       } else {
         // merge the tail of the first set and the head of the second set and retry the merge
-        joinTargets (first - first.last + first.last.merge(second.head), second - second.head)
+        joinTargets(first - first.last + first.last.merge(second.head), second - second.head)
       }
     }
   }
@@ -74,13 +74,13 @@ class RealignmentTargetFinder extends Serializable with Logging {
    * @param reads An RDD containing reads to generate indel realignment targets from.
    * @return An ordered set of indel realignment targets.
    */
-  def findTargets (reads: RDD[ADAMRecord]) : TreeSet[IndelRealignmentTarget] = {
+  def findTargets(reads: RDD[ADAMRecord]): TreeSet[IndelRealignmentTarget] = {
 
     // generate pileups from reads
     val rods: RDD[Seq[ADAMPileup]] = reads.adamRecords2Pileup(true)
       .groupBy(_.getPosition).map(_._2)
 
-    def createTreeSet(target : IndelRealignmentTarget) : TreeSet[IndelRealignmentTarget] = {
+    def createTreeSet(target: IndelRealignmentTarget): TreeSet[IndelRealignmentTarget] = {
       val tmp = new TreeSet()(TargetOrdering)
       tmp + target
     }

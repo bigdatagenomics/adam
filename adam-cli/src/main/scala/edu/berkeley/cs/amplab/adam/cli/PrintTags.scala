@@ -16,27 +16,26 @@
 package edu.berkeley.cs.amplab.adam.cli
 
 import edu.berkeley.cs.amplab.adam.util.ParquetLogger
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import org.kohsuke.args4j.{Option, Argument}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import org.kohsuke.args4j.{ Option, Argument }
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
 import java.util.logging.Level
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.projections.{Projection, ADAMRecordField}
+import edu.berkeley.cs.amplab.adam.projections.{ Projection, ADAMRecordField }
 import org.apache.spark.rdd.RDD
 import ADAMRecordField._
-
 
 /**
  * Reads in the tagStrings field of every record, and prints out the set of unique
  * tags found in those fields along with the number of records that have each particular
  * tag.
  */
-object PrintTags extends AdamCommandCompanion {
+object PrintTags extends ADAMCommandCompanion {
   val commandName: String = "print_tags"
   val commandDescription: String = "Prints the values and counts of all tags in a set of records"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
+  def apply(cmdLine: Array[String]): ADAMCommand = {
     new PrintTags(Args4j[PrintTagsArgs](cmdLine))
   }
 }
@@ -47,39 +46,39 @@ class PrintTagsArgs extends Args4jBase with SparkArgs with ParquetArgs {
 
   @Option(required = false, name = "-list",
     usage = "When value is set to <N>, also lists the first N attribute fields for ADAMRecords in the input")
-  var list :String = null
+  var list: String = null
 
   @Option(required = false, name = "-count",
     usage = "comma-separated list of tag names; for each tag listed, we print the distinct values and their counts")
-  var count :String = null
+  var count: String = null
 
 }
 
-class PrintTags(protected val args: PrintTagsArgs) extends AdamSparkCommand[PrintTagsArgs] {
-  val companion: AdamCommandCompanion = PrintTags
+class PrintTags(protected val args: PrintTagsArgs) extends ADAMSparkCommand[PrintTagsArgs] {
+  val companion: ADAMCommandCompanion = PrintTags
 
   def run(sc: SparkContext, job: Job): Unit = {
 
     // Quiet parquet logging...
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
-    val toCount = if(args.count != null) args.count.split(",").toSet else Set()
+    val toCount = if (args.count != null) args.count.split(",").toSet else Set()
 
     val proj = Projection(attributes, primaryAlignment, readMapped, readPaired, failedVendorQualityChecks)
-    val rdd : RDD[ADAMRecord] = sc.adamLoad(args.inputPath, projection=Some(proj))
+    val rdd: RDD[ADAMRecord] = sc.adamLoad(args.inputPath, projection = Some(proj))
     val filtered = rdd.filter(rec => !rec.getFailedVendorQualityChecks)
 
-    if(args.list != null) {
+    if (args.list != null) {
       val count = args.list.toInt
       filtered.take(count).map(_.getAttributes).foreach(println)
     }
 
     val tagCounts = filtered.adamCharacterizeTags().collect()
-    for( (tag, count) <- tagCounts ) {
+    for ((tag, count) <- tagCounts) {
       println("%3s\t%d".format(tag, count))
-      if(toCount.contains(tag)) {
+      if (toCount.contains(tag)) {
         val countMap = filtered.adamCharacterizeTagValues(tag)
-        for( (value, valueCount) <- countMap ) {
+        for ((value, valueCount) <- countMap) {
           println("\t%10d\t%s".format(valueCount, value.toString))
         }
       }

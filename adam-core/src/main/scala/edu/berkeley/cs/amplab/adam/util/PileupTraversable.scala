@@ -21,7 +21,7 @@ import parquet.avro.AvroReadSupport
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
 import org.apache.hadoop.mapreduce.Job
 import scala.collection.JavaConversions._
-import net.sf.samtools.{TextCigarCodec, CigarOperator}
+import net.sf.samtools.{ TextCigarCodec, CigarOperator }
 import scala.collection.mutable.ListBuffer
 import parquet.hadoop.util.ContextUtil
 import scala.collection.SortedMap
@@ -36,39 +36,39 @@ object Base extends Enumeration with Serializable {
 abstract class PileupEvent(readName: String) extends Serializable
 
 case class MatchEvent(readName: String,
-                      isReverseStrand: Boolean,
-                      eventOffset: Int,
-                      eventLength: Int,
-                      mapQ: Int,
-                      qual: Int) extends PileupEvent(readName)
+  isReverseStrand: Boolean,
+  eventOffset: Int,
+  eventLength: Int,
+  mapQ: Int,
+  qual: Int) extends PileupEvent(readName)
 
 case class MismatchEvent(readName: String,
-                         mismatchedBase: Base.Value,
-                         isReverseStrand: Boolean,
-                         eventOffset: Int,
-                         eventLength: Int,
-                         mapQ: Int,
-                         qual: Int) extends PileupEvent(readName)
+  mismatchedBase: Base.Value,
+  isReverseStrand: Boolean,
+  eventOffset: Int,
+  eventLength: Int,
+  mapQ: Int,
+  qual: Int) extends PileupEvent(readName)
 
 case class InsertionEvent(readName: String,
-                          insertedSequence: String,
-                          mapQ: Int,
-                          qual: Int) extends PileupEvent(readName)
+  insertedSequence: String,
+  mapQ: Int,
+  qual: Int) extends PileupEvent(readName)
 
 case class DeletionEvent(readName: String,
-                         eventOffset: Int,
-                         eventLength: Int,
-                         mapQ: Int,
-                         qual: Int) extends PileupEvent(readName)
+  eventOffset: Int,
+  eventLength: Int,
+  mapQ: Int,
+  qual: Int) extends PileupEvent(readName)
 
 class Pileup(val referenceId: Int,
-             val referencePosition: Long,
-             val referenceName: String,
-             val referenceBase: Option[Base.Value],
-             val matches: List[MatchEvent] = List.empty,
-             val mismatches: List[MismatchEvent] = List.empty,
-             val insertions: List[InsertionEvent] = List.empty,
-             val deletes: List[DeletionEvent] = List.empty) extends Serializable {
+  val referencePosition: Long,
+  val referenceName: String,
+  val referenceBase: Option[Base.Value],
+  val matches: List[MatchEvent] = List.empty,
+  val mismatches: List[MismatchEvent] = List.empty,
+  val insertions: List[InsertionEvent] = List.empty,
+  val deletes: List[DeletionEvent] = List.empty) extends Serializable {
   val numReads = matches.length + mismatches.length + insertions.length + deletes.length
 }
 
@@ -176,8 +176,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
           if (cigarElement.getOperator.consumesReferenceBases()) {
             referencePos += cigarElement.getLength
           }
-      }
-    )
+      })
 
     pileupList
   }

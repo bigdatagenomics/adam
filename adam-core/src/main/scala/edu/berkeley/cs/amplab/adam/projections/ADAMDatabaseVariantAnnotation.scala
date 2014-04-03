@@ -14,53 +14,17 @@
  * limitations under the License.
  */
 
-
 package edu.berkeley.cs.amplab.adam.projections
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMDatabaseVariantAnnotation
 
-
 object ADAMDatabaseVariantAnnotationField extends FieldEnumeration(ADAMDatabaseVariantAnnotation.SCHEMA$) {
 
-  val  variant,
-
-  dbsnpId,
-
-  //domain information
-  hgvs,
-  geneSymbol,
-  ensemblGeneId,
-  ensemblTranscriptIds,
-
-  //clinical fields
-  omimId,
-  cosmicId,
-  clinvarId,
-  clinicalSignificance,
-
-  //conservation
-  gerpNr,
-  gerpRs,
-  phylop,
-  ancestralAllele,
-
-
-  //population statistics
-  thousandGenomesAlleleCount,
-  thousandGenomesAlleleFrequency,
-
-  //effect
-  referenceAminoAcid,
-  alternateAminoAcid,
-
-  //predicted effects
-  siftScore,
-  siftScoreConverted,
-  siftPred,
-
-  mutationTasterScore,
-  mutationTasterScoreConverted,
-  mutationTasterPred
-
-  = SchemaValue
+  val variant, dbsnpId, //domain information
+  hgvs, geneSymbol, ensemblGeneId, ensemblTranscriptIds, //clinical fields
+  omimId, cosmicId, clinvarId, clinicalSignificance, //conservation
+  gerpNr, gerpRs, phylop, ancestralAllele, //population statistics
+  thousandGenomesAlleleCount, thousandGenomesAlleleFrequency, //effect
+  referenceAminoAcid, alternateAminoAcid, //predicted effects
+  siftScore, siftScoreConverted, siftPred, mutationTasterScore, mutationTasterScoreConverted, mutationTasterPred = SchemaValue
 }

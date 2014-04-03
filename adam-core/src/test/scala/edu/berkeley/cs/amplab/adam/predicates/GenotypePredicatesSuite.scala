@@ -16,22 +16,23 @@
 
 package edu.berkeley.cs.amplab.adam.predicates
 
-import edu.berkeley.cs.amplab.adam.util.{ParquetLogger, SparkFunSuite}
+import edu.berkeley.cs.amplab.adam.util.{ ParquetLogger, SparkFunSuite }
 import org.scalatest.BeforeAndAfter
 import java.util.logging.Level
 import java.io.File
-import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, 
-                                         ADAMVariant,
-                                         ADAMGenotype,
-                                         VariantCallingAnnotations}
+import edu.berkeley.cs.amplab.adam.avro.{
+  ADAMContig,
+  ADAMVariant,
+  ADAMGenotype,
+  VariantCallingAnnotations
+}
 import org.apache.spark.rdd.RDD
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import com.google.common.io.Files
 import org.apache.commons.io.FileUtils
 
-
 class GenotypePredicatesSuite extends SparkFunSuite with BeforeAndAfter {
-  var genotypesParquetFile: File   = null
+  var genotypesParquetFile: File = null
 
   sparkBefore("genotypepredicatessuite_before") {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
@@ -43,7 +44,7 @@ class GenotypePredicatesSuite extends SparkFunSuite with BeforeAndAfter {
       .setVariantAllele("C")
       .build
 
-    val passFilterAnnotation = 
+    val passFilterAnnotation =
       VariantCallingAnnotations.newBuilder().setVariantIsPassing(true).build()
     val failFilterAnnotation =
       VariantCallingAnnotations.newBuilder().setVariantIsPassing(false).build()
@@ -53,8 +54,7 @@ class GenotypePredicatesSuite extends SparkFunSuite with BeforeAndAfter {
         .setVariantCallingAnnotations(passFilterAnnotation).build(),
       ADAMGenotype.newBuilder()
         .setVariant(v0)
-        .setVariantCallingAnnotations(failFilterAnnotation).build()
-    ))
+        .setVariantCallingAnnotations(failFilterAnnotation).build()))
 
     genotypesParquetFile = new File(Files.createTempDir(), "genotypes")
     if (genotypesParquetFile.exists())
@@ -70,8 +70,7 @@ class GenotypePredicatesSuite extends SparkFunSuite with BeforeAndAfter {
   sparkTest("Return only PASSing records") {
     val gts1: RDD[ADAMGenotype] = sc.adamLoad(
       genotypesParquetFile.getAbsolutePath,
-      predicate = Some(classOf[GenotypeVarFilterPASSPredicate])
-    )
+      predicate = Some(classOf[GenotypeVarFilterPASSPredicate]))
     assert(gts1.count === 1)
   }
 }

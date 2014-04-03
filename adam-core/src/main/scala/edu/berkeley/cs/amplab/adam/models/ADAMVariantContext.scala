@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.models
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant }
 import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
 import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant
 import edu.berkeley.cs.amplab.adam.rich.RichADAMVariant._
@@ -31,8 +31,7 @@ object ADAMVariantContext {
    *           optional domain annotation at site))
    * @return ADAMVariantContext corresponding to the data above.
    */
-  def apply(kv: (ReferencePosition, ADAMVariant, Seq[ADAMGenotype], Option[ADAMDatabaseVariantAnnotation]))
-      : ADAMVariantContext = {
+  def apply(kv: (ReferencePosition, ADAMVariant, Seq[ADAMGenotype], Option[ADAMDatabaseVariantAnnotation])): ADAMVariantContext = {
     new ADAMVariantContext(kv._1, kv._2, kv._3, kv._4)
   }
 
@@ -42,7 +41,7 @@ object ADAMVariantContext {
    * @param v ADAMVariant which is used to construct the ReferencePosition
    * @return ADAMVariantContext corresponding to the ADAMVariant
    */
-  def apply(v : ADAMVariant) : ADAMVariantContext = {
+  def apply(v: ADAMVariant): ADAMVariantContext = {
     apply((ReferencePosition(v), v, Seq(), None))
   }
 
@@ -55,8 +54,7 @@ object ADAMVariantContext {
    * @param annotation Option[ADAMDatabaseVariantAnnotation]
    * @return ADAMVariantContext corresponding to the ADAMVariant
    */
-  def apply(v : ADAMVariant, genotypes : Seq[ADAMGenotype], annotation : Option[ADAMDatabaseVariantAnnotation] = None)
-      : ADAMVariantContext = {
+  def apply(v: ADAMVariant, genotypes: Seq[ADAMGenotype], annotation: Option[ADAMDatabaseVariantAnnotation] = None): ADAMVariantContext = {
     apply((ReferencePosition(v), v, genotypes, annotation))
   }
 
@@ -70,7 +68,7 @@ object ADAMVariantContext {
    */
   def buildFromGenotypes(genotypes: Seq[ADAMGenotype]): ADAMVariantContext = {
     val position = ReferencePosition(genotypes.head)
-    assert(genotypes.map(ReferencePosition(_)).forall(_ == position), 
+    assert(genotypes.map(ReferencePosition(_)).forall(_ == position),
       "Genotypes do not all have the same position.")
 
     val variant = genotypes.head.variant
@@ -84,7 +82,7 @@ class ADAMVariantContext(
   val variant: RichADAMVariant,
   val genotypes: Seq[ADAMGenotype],
   val databases: Option[ADAMDatabaseVariantAnnotation] = None) {
-  def this(variant : RichADAMVariant, genotypes : Seq[ADAMGenotype], database : Option[ADAMDatabaseVariantAnnotation] = None) = {
+  def this(variant: RichADAMVariant, genotypes: Seq[ADAMGenotype], database: Option[ADAMDatabaseVariantAnnotation] = None) = {
     this(ReferencePosition(variant), variant, genotypes, database)
   }
 }

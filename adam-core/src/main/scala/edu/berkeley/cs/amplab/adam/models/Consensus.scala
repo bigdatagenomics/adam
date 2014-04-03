@@ -17,13 +17,13 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import scala.collection.immutable.NumericRange
-import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
+import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
 import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
 
 object Consensus {
 
-  def generateAlternateConsensus (sequence: String, start: Long, cigar: Cigar): Option[Consensus] = {
-    
+  def generateAlternateConsensus(sequence: String, start: Long, cigar: Cigar): Option[Consensus] = {
+
     var readPos = 0
     var referencePos = start
 
@@ -37,7 +37,7 @@ object Consensus {
               readPos += cigarElement.getLength
               referencePos += cigarElement.getLength
             } else {
-              return None 
+              return None
             }
           }
         }
@@ -50,9 +50,9 @@ object Consensus {
 
 }
 
-case class Consensus (consensus: String, index: NumericRange[Long]) {
+case class Consensus(consensus: String, index: NumericRange[Long]) {
 
-  def insertIntoReference (reference: String, refStart: Long, refEnd: Long): String = {
+  def insertIntoReference(reference: String, refStart: Long, refEnd: Long): String = {
     if (index.head < refStart || index.head > refEnd || index.end < refStart || index.end > refEnd) {
       throw new IllegalArgumentException("Consensus and reference do not overlap: " + index + " vs. " + refStart + " to " + refEnd)
     } else {

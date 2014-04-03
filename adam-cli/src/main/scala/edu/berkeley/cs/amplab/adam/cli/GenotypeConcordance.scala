@@ -16,19 +16,19 @@
 
 package edu.berkeley.cs.amplab.adam.cli
 
-import org.apache.spark.{SparkContext, Logging}
-import org.kohsuke.args4j.{Argument, Option => Args4jOption}
+import org.apache.spark.{ SparkContext, Logging }
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.avro.ADAMGenotype
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.apache.spark.SparkContext._
 import edu.berkeley.cs.amplab.adam.predicates.GenotypeVarFilterPASSPredicate
 import edu.berkeley.cs.amplab.adam.projections.variation.ADAMGenotypeField
 import edu.berkeley.cs.amplab.adam.rdd.variation.ConcordanceTable
 
-object GenotypeConcordance extends AdamCommandCompanion {
+object GenotypeConcordance extends ADAMCommandCompanion {
   val commandName = "genotype_concordance"
   val commandDescription = "Pairwise comparison of sets of ADAM genotypes"
 
@@ -46,14 +46,13 @@ class GenotypeConcordanceArgs extends Args4jBase with ParquetArgs with SparkArgs
   var includeNonPass: Boolean = false
 }
 
-class GenotypeConcordance(protected val args: GenotypeConcordanceArgs) extends AdamSparkCommand[GenotypeConcordanceArgs] with Logging {
-  val companion: AdamCommandCompanion = GenotypeConcordance
+class GenotypeConcordance(protected val args: GenotypeConcordanceArgs) extends ADAMSparkCommand[GenotypeConcordanceArgs] with Logging {
+  val companion: ADAMCommandCompanion = GenotypeConcordance
 
   def run(sc: SparkContext, job: Job): Unit = {
     // TODO: Figure out projections of nested fields
     var project = List(
-      ADAMGenotypeField.variant, ADAMGenotypeField.sampleId, ADAMGenotypeField.alleles
-    )
+      ADAMGenotypeField.variant, ADAMGenotypeField.sampleId, ADAMGenotypeField.alleles)
 
     val predicate = if (!args.includeNonPass) {
       // We also need to project the filter field to use this predicate
@@ -63,8 +62,8 @@ class GenotypeConcordance(protected val args: GenotypeConcordanceArgs) extends A
       None
     val projection = None //Some(Projection(project))
 
-    val testGTs  : RDD[ADAMGenotype] = sc.adamLoad(args.testGenotypesFile, predicate, projection)
-    val truthGTs : RDD[ADAMGenotype] = sc.adamLoad(args.truthGenotypesFile, predicate, projection)
+    val testGTs: RDD[ADAMGenotype] = sc.adamLoad(args.testGenotypesFile, predicate, projection)
+    val truthGTs: RDD[ADAMGenotype] = sc.adamLoad(args.truthGenotypesFile, predicate, projection)
 
     val tables = testGTs.concordanceWith(truthGTs)
 

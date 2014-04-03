@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.rich
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMContig, ADAMVariant}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMContig, ADAMVariant }
 import java.util.Arrays
 
 object RichADAMVariant {
@@ -25,23 +25,22 @@ object RichADAMVariant {
 }
 
 class RichADAMVariant(val variant: ADAMVariant) {
- // Only include the contigName in the hash
-  val hashObjects = Array[Object](variant.getContig.getContigName, 
+  // Only include the contigName in the hash
+  val hashObjects = Array[Object](variant.getContig.getContigName,
     variant.getPosition, variant.getReferenceAllele, variant.getVariantAllele)
   override def hashCode = Arrays.hashCode(hashObjects)
 
   private def isSameContig(left: ADAMContig, right: ADAMContig): Boolean = {
     left.getContigName == right.getContigName && (
-      left.getContigMD5 == null || right.contigMD5 == null || left.getContigMD5 == right.getContigMD5
-    )
+      left.getContigMD5 == null || right.contigMD5 == null || left.getContigMD5 == right.getContigMD5)
   }
 
   override def equals(o: Any) = o match {
     case that: RichADAMVariant => {
-      variant.getPosition        == that.variant.getPosition  &&
-      isSameContig(variant.getContig, that.variant.getContig) &&
-      variant.getReferenceAllele == that.variant.getReferenceAllele &&
-      variant.getVariantAllele   == that.variant.getVariantAllele
+      variant.getPosition == that.variant.getPosition &&
+        isSameContig(variant.getContig, that.variant.getContig) &&
+        variant.getReferenceAllele == that.variant.getReferenceAllele &&
+        variant.getVariantAllele == that.variant.getVariantAllele
     }
     case _ => false
   }
@@ -49,7 +48,7 @@ class RichADAMVariant(val variant: ADAMVariant) {
   def isSingleNucleotideVariant() = {
     variant.getReferenceAllele.length == 1 && variant.getVariantAllele.length == 1
   }
-  
+
   def isMultipleNucleotideVariant() = {
     !isSingleNucleotideVariant && variant.getReferenceAllele.length == variant.getVariantAllele.length
   }

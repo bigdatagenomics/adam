@@ -17,37 +17,37 @@
 package edu.berkeley.cs.amplab.adam.models
 
 import org.scalatest.FunSuite
-import net.sf.samtools.{Cigar, TextCigarCodec}
+import net.sf.samtools.{ Cigar, TextCigarCodec }
 
 class ConsensusSuite extends FunSuite {
 
-  test ("test the insertion of a consensus insertion into a reference") {   
+  test("test the insertion of a consensus insertion into a reference") {
     val c = Consensus("TCGA", 10L to 10L)
-    
+
     val ref = "AAAAAAAAAA"
-    
+
     val cs = c.insertIntoReference(ref, 5L, 15L)
-    
+
     assert(cs === "AAAAATCGAAAAAA")
   }
 
-  test ("test the insertion of a consensus deletion into a reference") {   
+  test("test the insertion of a consensus deletion into a reference") {
     val c = Consensus("", 10L to 15L)
-    
+
     val ref = "AAAAATTTTT"
-    
+
     val cs = c.insertIntoReference(ref, 5L, 15L)
-    
+
     assert(cs === "AAAAA")
   }
 
-  test ("inserting empty consensus returns the reference") {
+  test("inserting empty consensus returns the reference") {
     val ref = "AAAAAAAAAAAAA"
-    val c = new Consensus ("", 0L to 0L)
+    val c = new Consensus("", 0L to 0L)
 
     val co = c.insertIntoReference(ref, 0, ref.length)
 
-    assert (ref === co)
+    assert(ref === co)
   }
-  
+
 }

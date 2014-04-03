@@ -15,20 +15,22 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceDictionary}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.rdd.AdamRDDFunctions
+import edu.berkeley.cs.amplab.adam.models.{ ADAMVariantContext, SequenceDictionary }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMRDDFunctions
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariantContextRDDFunctions
 import org.apache.spark.rdd.RDD
-import org.broadinstitute.variant.vcf.{VCFHeader, 
-                                       VCFHeaderLine, 
-                                       VCFInfoHeaderLine,
-                                       VCFContigHeaderLine, 
-                                       VCFConstants,
-                                       VCFStandardHeaderLines,
-                                       VCFHeaderLineCount,
-                                       VCFHeaderLineType}
+import org.broadinstitute.variant.vcf.{
+  VCFHeader,
+  VCFHeaderLine,
+  VCFInfoHeaderLine,
+  VCFContigHeaderLine,
+  VCFConstants,
+  VCFStandardHeaderLines,
+  VCFHeaderLineCount,
+  VCFHeaderLineType
+}
 
 /**
  * Convenience object for building a VCF header from sequence data.
@@ -65,28 +67,27 @@ object VcfHeaderUtils {
 
 }
 
-private[util] class VcfHeaderBuilder (samples: List[String]) {
+private[util] class VcfHeaderBuilder(samples: List[String]) {
 
   var contigLines = List[VCFContigHeaderLine]()
 
   val formatLines: java.util.Set[VCFHeaderLine] = new java.util.HashSet[VCFHeaderLine]()
   val infoLines: java.util.Set[VCFHeaderLine] = new java.util.HashSet[VCFHeaderLine]()
-  val otherLines: Set[VCFHeaderLine] = Set(new VCFInfoHeaderLine(VCFConstants.RMS_BASE_QUALITY_KEY, 
-                                                                 1, 
-                                                                 VCFHeaderLineType.Float, 
-                                                                 "RMS Base Quality"),
-                                           new VCFInfoHeaderLine(VCFConstants.SAMPLE_NUMBER_KEY, 
-                                                                 VCFHeaderLineCount.INTEGER, 
-                                                                 VCFHeaderLineType.Integer, 
-                                                                 "RMS Mapping Quality")
-                                         )
+  val otherLines: Set[VCFHeaderLine] = Set(new VCFInfoHeaderLine(VCFConstants.RMS_BASE_QUALITY_KEY,
+    1,
+    VCFHeaderLineType.Float,
+    "RMS Base Quality"),
+    new VCFInfoHeaderLine(VCFConstants.SAMPLE_NUMBER_KEY,
+      VCFHeaderLineCount.INTEGER,
+      VCFHeaderLineType.Integer,
+      "RMS Mapping Quality"))
 
   /**
    * Creates VCF contig lines from a sequence dictionary.
    *
    * @param seqDict Sequence dictionary containing contig info.
    */
-  def addContigLines (seqDict: SequenceDictionary) {
+  def addContigLines(seqDict: SequenceDictionary) {
     val contigNames = seqDict.getReferenceNames
 
     contigNames.foreach(ctg => {
@@ -101,15 +102,15 @@ private[util] class VcfHeaderBuilder (samples: List[String]) {
    */
   private def addStandardLines() {
     val formatKeys = List(VCFConstants.GENOTYPE_KEY,
-                          VCFConstants.GENOTYPE_QUALITY_KEY,
-                          VCFConstants.GENOTYPE_PL_KEY)
+      VCFConstants.GENOTYPE_QUALITY_KEY,
+      VCFConstants.GENOTYPE_PL_KEY)
     val infoKeys = List(VCFConstants.ALLELE_FREQUENCY_KEY,
-                        VCFConstants.ALLELE_COUNT_KEY,
-                        VCFConstants.ALLELE_NUMBER_KEY,
-                        VCFConstants.STRAND_BIAS_KEY,   
-                        VCFConstants.RMS_MAPPING_QUALITY_KEY,
-                        VCFConstants.MAPPING_QUALITY_ZERO_KEY,
-                        VCFConstants.DEPTH_KEY)
+      VCFConstants.ALLELE_COUNT_KEY,
+      VCFConstants.ALLELE_NUMBER_KEY,
+      VCFConstants.STRAND_BIAS_KEY,
+      VCFConstants.RMS_MAPPING_QUALITY_KEY,
+      VCFConstants.MAPPING_QUALITY_ZERO_KEY,
+      VCFConstants.DEPTH_KEY)
 
     VCFStandardHeaderLines.addStandardFormatLines(formatLines, false, formatKeys)
     VCFStandardHeaderLines.addStandardInfoLines(infoLines, false, infoKeys)
@@ -126,7 +127,7 @@ private[util] class VcfHeaderBuilder (samples: List[String]) {
     val stdFmtLines: Set[VCFHeaderLine] = formatLines
     val stdInfLines: Set[VCFHeaderLine] = infoLines
     val lines: Set[VCFHeaderLine] = contigLines.toSet ++ stdFmtLines ++ stdInfLines ++ otherLines
-    
+
     new VCFHeader(lines, samples)
   }
 

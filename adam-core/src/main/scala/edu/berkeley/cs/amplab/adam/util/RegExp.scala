@@ -18,7 +18,7 @@ package edu.berkeley.cs.amplab.adam.util
 import java.util.regex._
 
 object RegExp {
-  def apply(pattern : String) : RegExp = new RegExp(pattern)
+  def apply(pattern: String): RegExp = new RegExp(pattern)
 }
 
 /**
@@ -28,21 +28,21 @@ object RegExp {
  *
  * @param patternString The Pattern-compatiable regular expression to be compiled and used for matching.
  */
-class RegExp(val patternString : String) {
+class RegExp(val patternString: String) {
   val pattern = Pattern.compile(patternString)
 
-  def matches(tgt : String) : Option[Matcher] = {
+  def matches(tgt: String): Option[Matcher] = {
     val m = pattern.matcher(tgt)
-    if(m.matches()) {
+    if (m.matches()) {
       Some(m)
     } else {
       None
     }
   }
 
-  def find(tgt : String, idx : Int = 0) : Option[Matcher] = {
+  def find(tgt: String, idx: Int = 0): Option[Matcher] = {
     val m = pattern.matcher(tgt)
-    if(m.find(idx)) {
+    if (m.find(idx)) {
       Some(m)
     } else {
       None

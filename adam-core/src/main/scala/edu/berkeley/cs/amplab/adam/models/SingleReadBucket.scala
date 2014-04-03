@@ -18,8 +18,8 @@ package edu.berkeley.cs.amplab.adam.models
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Output, Input}
+import com.esotericsoftware.kryo.{ Kryo, Serializer }
+import com.esotericsoftware.kryo.io.{ Output, Input }
 import edu.berkeley.cs.amplab.adam.serialization.AvroSerializer
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
@@ -36,8 +36,8 @@ object SingleReadBucket extends Logging {
 }
 
 case class SingleReadBucket(primaryMapped: Seq[ADAMRecord] = Seq.empty,
-                            secondaryMapped: Seq[ADAMRecord] = Seq.empty,
-                            unmapped: Seq[ADAMRecord] = Seq.empty) {
+  secondaryMapped: Seq[ADAMRecord] = Seq.empty,
+  unmapped: Seq[ADAMRecord] = Seq.empty) {
   // Note: not a val in order to save serialization/memory cost
   def allReads = {
     primaryMapped ++ secondaryMapped ++ unmapped

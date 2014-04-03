@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.predicates
 
-import parquet.filter.{RecordFilter, UnboundRecordFilter}
+import parquet.filter.{ RecordFilter, UnboundRecordFilter }
 
 import java.lang.Iterable
 import parquet.column.ColumnReader

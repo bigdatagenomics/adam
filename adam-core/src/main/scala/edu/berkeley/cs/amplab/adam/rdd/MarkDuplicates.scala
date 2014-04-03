@@ -17,8 +17,8 @@
 package edu.berkeley.cs.amplab.adam.rdd
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
-import edu.berkeley.cs.amplab.adam.models.{SingleReadBucket, ReferencePositionPair, ReferencePositionWithOrientation}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
+import edu.berkeley.cs.amplab.adam.models.{ SingleReadBucket, ReferencePositionPair, ReferencePositionWithOrientation }
 import org.apache.spark.rdd.RDD
 
 private[rdd] object MarkDuplicates extends Serializable {
@@ -67,45 +67,49 @@ private[rdd] object MarkDuplicates extends Serializable {
       p._1.read2refPos
     }
 
-    for (((leftPos, library), readsByLeftPos) <- rdd.adamSingleReadBuckets().keyBy(ReferencePositionPair(_)).groupBy(leftPositionAndLibrary);
-         buckets <- {
+    for (
+      ((leftPos, library), readsByLeftPos) <- rdd.adamSingleReadBuckets().keyBy(ReferencePositionPair(_)).groupBy(leftPositionAndLibrary);
+      buckets <- {
 
-           leftPos match {
-             // These are all unmapped reads. There is no way to determine if they are duplicates
-             case None =>
-               markReads(readsByLeftPos.unzip._2, areDups = false)
+        leftPos match {
+          // These are all unmapped reads. There is no way to determine if they are duplicates
+          case None =>
+            markReads(readsByLeftPos.unzip._2, areDups = false)
 
-             // These reads have their left position mapped
-             case Some(leftPosWithOrientation) =>
-               // Group the reads by their right position
-               val readsByRightPos = readsByLeftPos.groupBy(rightPosition)
-               // Find any reads with no right position
-               val fragments = readsByRightPos.get(None)
-               // Check if we have any pairs (reads with a right position)
-               val hasPairs = readsByRightPos.keys.exists(_.isDefined)
+          // These reads have their left position mapped
+          case Some(leftPosWithOrientation) =>
+            // Group the reads by their right position
+            val readsByRightPos = readsByLeftPos.groupBy(rightPosition)
+            // Find any reads with no right position
+            val fragments = readsByRightPos.get(None)
+            // Check if we have any pairs (reads with a right position)
+            val hasPairs = readsByRightPos.keys.exists(_.isDefined)
 
-               if (hasPairs) {
-                 // Since we have pairs, mark all fragments as duplicates
-                 val processedFrags = if (fragments.isDefined) {
-                   markReads(fragments.get.unzip._2, areDups = true)
-                 } else {
-                   Seq.empty
-                 }
+            if (hasPairs) {
+              // Since we have pairs, mark all fragments as duplicates
+              val processedFrags = if (fragments.isDefined) {
+                markReads(fragments.get.unzip._2, areDups = true)
+              } else {
+                Seq.empty
+              }
 
-                 val processedPairs = for (buckets <- (readsByRightPos - None).values;
-                                           processedPair <- scoreAndMarkReads(buckets.unzip._2)) yield processedPair
+              val processedPairs = for (
+                buckets <- (readsByRightPos - None).values;
+                processedPair <- scoreAndMarkReads(buckets.unzip._2)
+              ) yield processedPair
 
-                 processedPairs ++ processedFrags
+              processedPairs ++ processedFrags
 
-               } else if (fragments.isDefined) {
-                 // No pairs. Score the fragments.
-                 scoreAndMarkReads(fragments.get.unzip._2)
-               } else {
-                 Seq.empty
-               }
-           }
-         };
-         read <- buckets.allReads) yield read
+            } else if (fragments.isDefined) {
+              // No pairs. Score the fragments.
+              scoreAndMarkReads(fragments.get.unzip._2)
+            } else {
+              Seq.empty
+            }
+        }
+      };
+      read <- buckets.allReads
+    ) yield read
   }
 }
 

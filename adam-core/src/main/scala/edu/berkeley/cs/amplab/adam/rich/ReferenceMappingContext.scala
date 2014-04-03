@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.rich
 
-import edu.berkeley.cs.amplab.adam.models.{ReferenceRegion, ReferenceMapping}
+import edu.berkeley.cs.amplab.adam.models.{ ReferenceRegion, ReferenceMapping }
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 
 /**
@@ -42,9 +42,9 @@ object ReferenceMappingContext {
     def getReferenceRegion(value: ReferenceRegion): ReferenceRegion = value
   }
 
-  implicit def adamRecordToReferenceMapped(rec : ADAMRecord) : ReferenceMapping[ADAMRecord] =
+  implicit def adamRecordToReferenceMapped(rec: ADAMRecord): ReferenceMapping[ADAMRecord] =
     ADAMRecordReferenceMapping
 
-  implicit def referenceRegionToReferenceMapped(reg : ReferenceRegion) : ReferenceMapping[ReferenceRegion] =
+  implicit def referenceRegionToReferenceMapped(reg: ReferenceRegion): ReferenceMapping[ReferenceRegion] =
     ReferenceRegionReferenceMapping
 }

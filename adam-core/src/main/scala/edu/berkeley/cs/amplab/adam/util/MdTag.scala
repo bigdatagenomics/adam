@@ -18,10 +18,10 @@ package edu.berkeley.cs.amplab.adam.util
 import scala.collection.immutable
 import scala.collection.immutable.NumericRange
 import scala.util.matching.Regex
-import net.sf.samtools.{Cigar, CigarOperator, CigarElement}
+import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 //import edu.berkeley.cs.amplab.adam.util.ImplicitJavaConversions._
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 
@@ -112,7 +112,7 @@ object MdTag {
 
   /**
    * From an updated read alignment, writes a new MD tag.
-   * 
+   *
    * @param read Read to write a new alignment for.
    * @param newReference Reference sequence to write alignment against.
    * @param newCigar The Cigar for the new read alignment.
@@ -134,7 +134,7 @@ object MdTag {
    * @param readStart Start position of the new read alignment.
    * @return MdTag corresponding to the new alignment.
    */
-  private def moveAlignment (reference: String, sequence: String, newCigar: Cigar, readStart: Long): MdTag = {
+  private def moveAlignment(reference: String, sequence: String, newCigar: Cigar, readStart: Long): MdTag = {
     var referencePos = 0
     var readPos = 0
 
@@ -169,7 +169,7 @@ object MdTag {
             readPos += 1
             referencePos += 1
           }
-          
+
           // we are currently in a match, so use to
           if (inMatch) {
             matches = ((rangeStart + readStart) until (referencePos.toLong + readStart)) :: matches
@@ -187,7 +187,7 @@ object MdTag {
             readPos += cigarElement.getLength
           }
           if (cigarElement.getOperator.consumesReferenceBases) {
-            throw new IllegalArgumentException ("Cannot handle operator: " + cigarElement.getOperator)
+            throw new IllegalArgumentException("Cannot handle operator: " + cigarElement.getOperator)
           }
         }
       }
@@ -208,7 +208,7 @@ object MdTag {
    *
    * @see apply
    */
-  def moveAlignment (read: RichADAMRecord, newCigar: Cigar): MdTag = {
+  def moveAlignment(read: RichADAMRecord, newCigar: Cigar): MdTag = {
     val reference = read.mdTag.get.getReference(read.record)
 
     moveAlignment(reference, read.record.getSequence, newCigar, read.record.getStart)
@@ -228,15 +228,15 @@ object MdTag {
    *
    * @see apply
    */
-  def moveAlignment (read: RichADAMRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
+  def moveAlignment(read: RichADAMRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
     moveAlignment(newReference, read.record.getSequence, newCigar, newAlignmentStart)
   }
 }
 
 class MdTag(
-    private val matches: immutable.List[NumericRange[Long]],
-    private val mismatches: immutable.Map[Long, Char],
-    private val deletes: immutable.Map[Long, Char]) {
+  private val matches: immutable.List[NumericRange[Long]],
+  private val mismatches: immutable.Map[Long, Char],
+  private val deletes: immutable.Map[Long, Char]) {
 
   /**
    * Returns whether a base is a match against the reference.
@@ -303,8 +303,8 @@ class MdTag(
    * @param read A read for which one desires the reference sequence.
    * @return A string corresponding to the reference overlapping this read.
    */
-  def getReference (read: RichADAMRecord): String = {
-    getReference (read.getSequence, read.samtoolsCigar, read.getStart)
+  def getReference(read: RichADAMRecord): String = {
+    getReference(read.getSequence, read.samtoolsCigar, read.getStart)
   }
 
   /**
@@ -315,7 +315,7 @@ class MdTag(
    * @param referenceFrom The starting point of this read alignment vs. the reference.
    * @return A string corresponding to the reference overlapping this read.
    */
-  def getReference (readSequence: String, cigar: Cigar, referenceFrom: Long): String = {
+  def getReference(readSequence: String, cigar: Cigar, referenceFrom: Long): String = {
 
     var referencePos = start()
     var readPos = 0
@@ -332,7 +332,7 @@ class MdTag(
               reference += {
                 mismatches.get(referencePos) match {
                   case Some(base) => base
-                  case _ => throw new IllegalStateException("Could not find mismatching base at cigar offset"+i)
+                  case _ => throw new IllegalStateException("Could not find mismatching base at cigar offset" + i)
                 }
               }
             } else {
@@ -349,7 +349,7 @@ class MdTag(
             reference += {
               deletes.get(referencePos) match {
                 case Some(base) => base
-                case _ => throw new IllegalStateException("Could not find deleted base at cigar offset "+i)
+                case _ => throw new IllegalStateException("Could not find deleted base at cigar offset " + i)
               }
             }
 
@@ -362,7 +362,7 @@ class MdTag(
             readPos += cigarElement.getLength
           }
           if (cigarElement.getOperator.consumesReferenceBases) {
-            throw new IllegalArgumentException ("Cannot handle operator: " + cigarElement.getOperator)
+            throw new IllegalArgumentException("Cannot handle operator: " + cigarElement.getOperator)
           }
         }
       }
@@ -377,15 +377,15 @@ class MdTag(
    * @return MD string corresponding to [0-9]+(([A-Z]|\^[A-Z]+)[0-9]+)
    * @see http://zenfractal.com/2013/06/19/playing-with-matches/
    */
-  override def toString (): String = {
+  override def toString(): String = {
     var mdString = ""
     var lastWasMatch = false
     var lastWasDeletion = false
     var matchRun = 0
-                    
+
     // loop over positions in tag - FSM for building string
     for (i <- start() to end()) {
-      if(isMatch(i)) {
+      if (isMatch(i)) {
         if (lastWasMatch) {
           // if in run of matches, increment count
           matchRun += 1
@@ -415,7 +415,7 @@ class MdTag(
 
         // add deleted base
         mdString += deletes(i)
-      } else {        
+      } else {
         // write match count before mismatch
         if (lastWasMatch) {
           mdString += matchRun.toString
@@ -440,5 +440,5 @@ class MdTag(
 
     mdString
   }
-  
+
 }

@@ -15,23 +15,27 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMPileup, 
-                                         ADAMRecord, 
-                                         ADAMNucleotideContigFragment,
-                                         Base}
+import edu.berkeley.cs.amplab.adam.avro.{
+  ADAMPileup,
+  ADAMRecord,
+  ADAMNucleotideContigFragment,
+  Base
+}
 import edu.berkeley.cs.amplab.adam.converters.GenotypesToVariantsConverter
-import edu.berkeley.cs.amplab.adam.models.{SequenceRecord,
-                                           SequenceDictionary,
-                                           SingleReadBucket, 
-                                           SnpTable, 
-                                           ReferencePosition, 
-                                           ReferenceRegion,
-                                           ADAMRod}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.models.{
+  SequenceRecord,
+  SequenceDictionary,
+  SingleReadBucket,
+  SnpTable,
+  ReferencePosition,
+  ReferenceRegion,
+  ADAMRod
+}
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.recalibration.BaseQualityRecalibration
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
-import edu.berkeley.cs.amplab.adam.util.{MapTools, ParquetLogger}
+import edu.berkeley.cs.amplab.adam.util.{ MapTools, ParquetLogger }
 import java.io.File
 import java.util.logging.Level
 import org.apache.avro.specific.SpecificRecord
@@ -39,17 +43,17 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import parquet.avro.{AvroParquetOutputFormat, AvroWriteSupport}
+import parquet.avro.{ AvroParquetOutputFormat, AvroWriteSupport }
 import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
 import parquet.hadoop.util.ContextUtil
-import scala.math.{min, max}
+import scala.math.{ min, max }
 
-class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Serializable {
+class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Serializable {
 
   def adamSave(filePath: String, blockSize: Int = 128 * 1024 * 1024,
-               pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
-               disableDictionaryEncoding: Boolean = false): RDD[T] = {
+    pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+    disableDictionaryEncoding: Boolean = false): RDD[T] = {
     val job = new Job(rdd.context.hadoopConfiguration)
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
     ParquetOutputFormat.setWriteSupportClass(job, classOf[AvroWriteSupport])
@@ -76,14 +80,14 @@ class AdamRDDFunctions[T <% SpecificRecord : Manifest](rdd: RDD[T]) extends Seri
  * @tparam T Type contained in this RDD.
  * @param rdd RDD over which aggregation is supported.
  */
-abstract class AdamSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Serializable with Logging {
+abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Serializable with Logging {
   /**
    * For a single RDD element, returns 0+ sequence record elements.
    *
    * @param elem Element from which to extract sequence records.
    * @return A seq of sequence records.
    */
-  def getSequenceRecordsFromElement (elem: T): scala.collection.Set[SequenceRecord]
+  def getSequenceRecordsFromElement(elem: T): scala.collection.Set[SequenceRecord]
 
   /**
    * Aggregates together a sequence dictionary from the different individual reference sequences
@@ -91,10 +95,10 @@ abstract class AdamSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
    *
    * @return A sequence dictionary describing the reference contigs in this dataset.
    */
-  def adamGetSequenceDictionary (): SequenceDictionary = {
+  def adamGetSequenceDictionary(): SequenceDictionary = {
     def mergeRecords(l: List[SequenceRecord], rec: T): List[SequenceRecord] = {
       val recs = getSequenceRecordsFromElement(rec)
-      
+
       recs.foldLeft(l)((li: List[SequenceRecord], r: SequenceRecord) => {
         if (!li.contains(r)) {
           r :: li
@@ -108,7 +112,7 @@ abstract class AdamSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
       val recs = iter.foldLeft(List[SequenceRecord]())(mergeRecords)
       new SequenceDictionary(recs.toArray)
     }
-    
+
     rdd.mapPartitions(iter => Iterator(foldIterator(iter)), true)
       .reduce(_ ++ _)
   }
@@ -126,17 +130,17 @@ abstract class AdamSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
  * @tparam T A type defined in Avro that contains the reference identification fields.
  * @param rdd RDD over which aggregation is supported.
  */
-class AdamSpecificRecordSequenceDictionaryRDDAggregator[T <% SpecificRecord : Manifest](rdd: RDD[T])
-  extends AdamSequenceDictionaryRDDAggregator[T](rdd) {
+class ADAMSpecificRecordSequenceDictionaryRDDAggregator[T <% SpecificRecord: Manifest](rdd: RDD[T])
+  extends ADAMSequenceDictionaryRDDAggregator[T](rdd) {
 
-  def getSequenceRecordsFromElement (elem: T): Set[SequenceRecord] = {
+  def getSequenceRecordsFromElement(elem: T): Set[SequenceRecord] = {
     Set(SequenceRecord.fromSpecificRecord(elem))
   }
 }
 
-class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends AdamSequenceDictionaryRDDAggregator[ADAMRecord](rdd) {
+class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionaryRDDAggregator[ADAMRecord](rdd) {
 
-  def getSequenceRecordsFromElement (elem: ADAMRecord): scala.collection.Set[SequenceRecord] = {
+  def getSequenceRecordsFromElement(elem: ADAMRecord): scala.collection.Set[SequenceRecord] = {
     SequenceRecord.fromADAMRecord(elem)
   }
 
@@ -218,9 +222,9 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends AdamSequenceDictionar
    * @param secondaryAlignments Creates rods for non-primary aligned reads. Default is false.
    * @return RDD of ADAMRods.
    */
-  def adamRecords2Rods (bucketSize: Int = 1000,
-                        secondaryAlignments: Boolean = false): RDD[ADAMRod] = {
-    
+  def adamRecords2Rods(bucketSize: Int = 1000,
+    secondaryAlignments: Boolean = false): RDD[ADAMRod] = {
+
     /**
      * Maps a read to one or two buckets. A read maps to a single bucket if both
      * it's start and end are in a single bucket.
@@ -228,7 +232,7 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends AdamSequenceDictionar
      * @param r Read to map.
      * @return List containing one or two mapping key/value pairs.
      */
-    def mapToBucket (r: ADAMRecord): List[(ReferencePosition, ADAMRecord)] = {
+    def mapToBucket(r: ADAMRecord): List[(ReferencePosition, ADAMRecord)] = {
       val s = r.getStart / bucketSize
       val e = RichADAMRecord(r).end.get / bucketSize
       val id = r.getReferenceId
@@ -246,17 +250,17 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends AdamSequenceDictionar
       .flatMap(mapToBucket)
       .groupByKey()
 
-    println ("Have reads in buckets.")
+    println("Have reads in buckets.")
 
     val pp = new Reads2PileupProcessor(secondaryAlignments)
-    
+
     /**
      * Converts all reads in a bucket into rods.
      *
      * @param bucket Tuple of (bucket number, reads in bucket).
      * @return A sequence containing the rods in this bucket.
      */
-    def bucketedReadsToRods (bucket: (ReferencePosition, Seq[ADAMRecord])): Seq[ADAMRod] = {
+    def bucketedReadsToRods(bucket: (ReferencePosition, Seq[ADAMRecord])): Seq[ADAMRod] = {
       val (bucketStart, bucketReads) = bucket
 
       bucketReads.flatMap(pp.readToPileups)
@@ -275,24 +279,23 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends AdamSequenceDictionar
    *
    * @return An RDD of attribute name / count pairs.
    */
-  def adamCharacterizeTags() : RDD[(String,Long)] = {
-    rdd.flatMap(RichADAMRecord(_).tags.map( attr => (attr.tag, 1L) )).reduceByKey( _ + _ )
+  def adamCharacterizeTags(): RDD[(String, Long)] = {
+    rdd.flatMap(RichADAMRecord(_).tags.map(attr => (attr.tag, 1L))).reduceByKey(_ + _)
   }
 
   /**
-   * Calculates the set of unique attribute <i>values</i> that occur for the given 
-   * tag, and the number of time each value occurs.  
-   * 
+   * Calculates the set of unique attribute <i>values</i> that occur for the given
+   * tag, and the number of time each value occurs.
+   *
    * @param tag The name of the optional field whose values are to be counted.
    * @return A Map whose keys are the values of the tag, and whose values are the number of time each tag-value occurs.
    */
-  def adamCharacterizeTagValues(tag : String) : Map[Any,Long] = {
+  def adamCharacterizeTagValues(tag: String): Map[Any, Long] = {
     adamFilterRecordsWithTag(tag).flatMap(RichADAMRecord(_).tags.find(_.tag == tag)).map(
-      attr => Map(attr.value -> 1L)
-    ).reduce {
-      (map1 : Map[Any,Long], map2 : Map[Any,Long]) =>
-        MapTools.add(map1, map2)
-    }
+      attr => Map(attr.value -> 1L)).reduce {
+        (map1: Map[Any, Long], map2: Map[Any, Long]) =>
+          MapTools.add(map1, map2)
+      }
   }
 
   /**
@@ -300,21 +303,21 @@ class AdamRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends AdamSequenceDictionar
    * @param tagName The name of the attribute to filter on (should be length 2)
    * @return An RDD[ADAMRecord] containing the subset of records with a tag that matches the given name.
    */
-  def adamFilterRecordsWithTag(tagName : String) : RDD[ADAMRecord] = {
-    assert( tagName.length == 2,
+  def adamFilterRecordsWithTag(tagName: String): RDD[ADAMRecord] = {
+    assert(tagName.length == 2,
       "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName))
     rdd.filter(RichADAMRecord(_).tags.exists(_.tag == tagName))
   }
 }
 
-class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Logging {
+class ADAMPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Logging {
   /**
    * Aggregates pileup bases together.
    *
    * @param coverage Coverage value is used to increase number of reducer operators.
    * @return RDD with aggregated bases.
    *
-   * @see AdamRodRDDFunctions#adamAggregateRods
+   * @see ADAMRodRDDFunctions#adamAggregateRods
    */
   def adamAggregatePileups(coverage: Int = 30): RDD[ADAMPileup] = {
     val helper = new PileupAggregator
@@ -335,7 +338,7 @@ class AdamPileupRDDFunctions(rdd: RDD[ADAMPileup]) extends Serializable with Log
 
 }
 
-class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
+class ADAMRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
   /**
    * Given an RDD of rods, splits the rods up by the specific sample they correspond to.
    * Returns a flat RDD.
@@ -361,7 +364,7 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
    *
    * @return RDD with aggregated rods.
    *
-   * @see AdamPileupRDDFunctions#adamAggregatePileups
+   * @see ADAMPileupRDDFunctions#adamAggregatePileups
    */
   def adamAggregateRods(): RDD[ADAMRod] = {
     val helper = new PileupAggregator
@@ -388,8 +391,8 @@ class AdamRodRDDFunctions(rdd: RDD[ADAMRod]) extends Serializable with Logging {
   }
 }
 
-class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFragment]) extends AdamSequenceDictionaryRDDAggregator[ADAMNucleotideContigFragment](rdd) {
-  
+class ADAMNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[ADAMNucleotideContigFragment](rdd) {
+
   /**
    * Rewrites the contig IDs of a FASTA reference set to match the contig IDs present in a
    * different sequence dictionary. Sequences are matched by name.
@@ -399,7 +402,7 @@ class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
    * @param sequenceDict A sequence dictionary containing the preferred IDs for the contigs.
    * @return New set of contigs with IDs rewritten.
    */
-  def adamRewriteContigIds (sequenceDict: SequenceDictionary): RDD[ADAMNucleotideContigFragment] = {
+  def adamRewriteContigIds(sequenceDict: SequenceDictionary): RDD[ADAMNucleotideContigFragment] = {
     // broadcast sequence dictionary
     val bcastDict = rdd.context.broadcast(sequenceDict)
 
@@ -410,15 +413,15 @@ class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
      * @param dictionary A sequence dictionary containing the IDs to use for remapping.
      * @return An option containing the remapped contig if it's sequence name was found in the dictionary.
      */
-    def remapContig (contig: ADAMNucleotideContigFragment, dictionary: SequenceDictionary): Option[ADAMNucleotideContigFragment] = {
+    def remapContig(contig: ADAMNucleotideContigFragment, dictionary: SequenceDictionary): Option[ADAMNucleotideContigFragment] = {
       val name: CharSequence = contig.getContigName
-      
+
       if (dictionary.containsRefName(name)) {
         val newId = dictionary(contig.getContigName).id
         val newContig = ADAMNucleotideContigFragment.newBuilder(contig)
           .setContigId(newId)
           .build()
-        
+
         Some(newContig)
       } else {
         None
@@ -433,11 +436,11 @@ class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
    * From a set of contigs, returns the base sequence that corresponds to a region of the reference.
    *
    * @throws UnsupportedOperationException Throws exception if query region is not found.
-   * 
+   *
    * @param region Reference region over which to get sequence.
    * @return String of bases corresponding to reference sequence.
    */
-  def adamGetReferenceString (region: ReferenceRegion): String = {
+  def adamGetReferenceString(region: ReferenceRegion): String = {
     def getString(fragment: (ReferenceRegion, ADAMNucleotideContigFragment)): (ReferenceRegion, String) = {
       val trimStart = max(0, region.start - fragment._1.start).toInt
       val trimEnd = max(0, fragment._1.end - region.end).toInt
@@ -446,21 +449,20 @@ class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
 
       val str = fragmentSequence.drop(trimStart)
         .dropRight(trimEnd)
-      
+
       val reg = new ReferenceRegion(fragment._1.refId,
-                                    fragment._1.start + trimStart,
-                                    fragment._1.end - trimEnd)
+        fragment._1.start + trimStart,
+        fragment._1.end - trimEnd)
 
       (reg, str)
     }
 
-    def reducePairs(kv1: (ReferenceRegion, String), 
-                    kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
-      assert(kv1._1.isAdjacent(kv2._1), "Regions being joined must be adjacent. For: " + 
-             kv1 + ", " + kv2)
+    def reducePairs(kv1: (ReferenceRegion, String),
+      kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
+      assert(kv1._1.isAdjacent(kv2._1), "Regions being joined must be adjacent. For: " +
+        kv1 + ", " + kv2)
 
-      
-      (kv1._1.merge(kv2._1), if(kv1._1.compare(kv2._1) <= 0) {
+      (kv1._1.merge(kv2._1), if (kv1._1.compare(kv2._1) <= 0) {
         kv1._2 + kv2._2
       } else {
         kv2._2 + kv1._2
@@ -477,7 +479,7 @@ class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
         .reduce(reducePairs)
 
       assert(pair._1.compare(region) == 0,
-             "Merging fragments returned a different region than requested.")
+        "Merging fragments returned a different region than requested.")
 
       pair._2
     } catch {
@@ -487,7 +489,7 @@ class AdamNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
     }
   }
 
-  def getSequenceRecordsFromElement (elem: ADAMNucleotideContigFragment): Set[SequenceRecord] = {
+  def getSequenceRecordsFromElement(elem: ADAMNucleotideContigFragment): Set[SequenceRecord] = {
     // variant context contains a single locus
     Set(SequenceRecord.fromADAMContigFragment(elem))
   }

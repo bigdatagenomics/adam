@@ -16,7 +16,7 @@
 package edu.berkeley.cs.amplab.adam.cli
 
 import edu.berkeley.cs.amplab.adam.util.ParquetLogger
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.Argument
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
@@ -24,11 +24,11 @@ import java.util.logging.Level
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.models.SequenceRecord
 
-object ListDict extends AdamCommandCompanion {
+object ListDict extends ADAMCommandCompanion {
   val commandName: String = "listdict"
   val commandDescription: String = "Print the contents of an ADAM sequence dictionary"
 
-  def apply(cmdLine: Array[String]): AdamCommand = {
+  def apply(cmdLine: Array[String]): ADAMCommand = {
     new ListDict(Args4j[ListDictArgs](cmdLine))
   }
 }
@@ -38,8 +38,8 @@ class ListDictArgs extends Args4jBase with SparkArgs with ParquetArgs {
   val inputPath: String = null
 }
 
-class ListDict(protected val args: ListDictArgs) extends AdamSparkCommand[ListDictArgs] {
-  val companion: AdamCommandCompanion = ListDict
+class ListDict(protected val args: ListDictArgs) extends ADAMSparkCommand[ListDictArgs] {
+  val companion: ADAMCommandCompanion = ListDict
 
   def run(sc: SparkContext, job: Job): Unit = {
     // Quiet parquet logging...

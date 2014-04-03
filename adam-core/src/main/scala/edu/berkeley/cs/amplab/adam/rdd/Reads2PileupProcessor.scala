@@ -16,12 +16,12 @@
 
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{Base, ADAMPileup, ADAMRecord}
+import edu.berkeley.cs.amplab.adam.avro.{ Base, ADAMPileup, ADAMRecord }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.util._
-import net.sf.samtools.{CigarOperator, TextCigarCodec}
+import net.sf.samtools.{ CigarOperator, TextCigarCodec }
 import scala.collection.JavaConverters._
 import scala.collection.immutable.StringOps
 
@@ -35,8 +35,8 @@ private[rdd] object Reads2PileupProcessor {
  * @param createSecondaryAlignments If true, we process reads that are not at their primary alignment.
  * If false, we only process reads that are at their primary alignment. Default is false.
  */
-private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = false) 
-             extends Serializable with Logging {
+private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = false)
+  extends Serializable with Logging {
 
   /**
    * Converts a single read into a list of pileups.
@@ -45,12 +45,12 @@ private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = f
    * @return A list of pileups.
    */
   def readToPileups(record: ADAMRecord): List[ADAMPileup] = {
-    if (record == null || 
-        record.getCigar == null || 
-        record.getMismatchingPositions == null ||
-        record.getReadMapped == null ||
-        !record.getReadMapped ||
-        record.getPrimaryAlignment == null) {
+    if (record == null ||
+      record.getCigar == null ||
+      record.getMismatchingPositions == null ||
+      record.getReadMapped == null ||
+      !record.getReadMapped ||
+      record.getPrimaryAlignment == null) {
       // TODO: log this later... We can't create a pileup without the CIGAR and MD tag
       // in the future, we can also get reference information from a reference file
       return List.empty
@@ -148,7 +148,7 @@ private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = f
               baseFromSequence(readPos)
             } else {
               mdTag.mismatchedBase(referencePos) match {
-                case None => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace()
+                case None => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace ()
                 case Some(read) => Base.valueOf(read.toString)
               }
             }
@@ -212,8 +212,7 @@ private[rdd] class Reads2PileupProcessor (createSecondaryAlignments: Boolean = f
           if (cigarElement.getOperator.consumesReferenceBases()) {
             referencePos += cigarElement.getLength
           }
-      }
-    )
+      })
 
     pileupList
   }

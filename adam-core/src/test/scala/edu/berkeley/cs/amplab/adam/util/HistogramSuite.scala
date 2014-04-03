@@ -18,6 +18,6 @@ package edu.berkeley.cs.amplab.adam.util
 
 class HistogramSuite extends SparkFunSuite {
   sparkTest("Histogram addition works") {
-    assert((Histogram[Long](1)++Histogram[Long](1)).valueToCount(1) === 2)
+    assert((Histogram[Long](1) ++ Histogram[Long](1)).valueToCount(1) === 2)
   }
 }

@@ -18,17 +18,17 @@ package edu.berkeley.cs.amplab.adam.algorithms.smithwaterman
 
 import net.sf.samtools.Cigar
 
-abstract class SmithWaterman (xSequence: String, ySequence: String) {
-  
+abstract class SmithWaterman(xSequence: String, ySequence: String) {
+
   var max = 0.0
   var maxX = 0
   var maxY = 0
 
   lazy val scoringMatrix = buildScoringMatrix
-  lazy val (cigarX, cigarY, alignmentX, alignmentY) = trackback 
+  lazy val (cigarX, cigarY, alignmentX, alignmentY) = trackback
 
-  def buildScoringMatrix (): Array[Array[Double]]
+  def buildScoringMatrix(): Array[Array[Double]]
 
-  protected def trackback (): (Cigar, Cigar, String, String)
+  protected def trackback(): (Cigar, Cigar, String, String)
 
 }

@@ -15,8 +15,8 @@
  */
 package edu.berkeley.cs.amplab.adam.projections
 
-import edu.berkeley.cs.amplab.adam.util.{ParquetLogger, SparkFunSuite}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.util.{ ParquetLogger, SparkFunSuite }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import org.apache.spark.rdd.RDD
 import java.io.File
@@ -56,8 +56,7 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
   def cleanParquet(dir: File) {
     if (dir.isDirectory) {
       dir.listFiles().foreach(file =>
-        file.delete()
-      )
+        file.delete())
       dir.delete()
     } else {
       dir.delete()

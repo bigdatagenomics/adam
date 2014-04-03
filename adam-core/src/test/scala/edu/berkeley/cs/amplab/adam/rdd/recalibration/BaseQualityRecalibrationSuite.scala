@@ -17,8 +17,8 @@
 package edu.berkeley.cs.amplab.adam.rdd.recalibration
 
 import edu.berkeley.cs.amplab.adam.models.SnpTable
-import edu.berkeley.cs.amplab.adam.avro.{ADAMVariant, ADAMRecord}
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMVariant, ADAMRecord }
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import edu.berkeley.cs.amplab.adam.rich.DecadentRead._
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
@@ -54,7 +54,7 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     val obsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1-ref.observed").getFile
 
     val reads: RDD[ADAMRecord] = sc.adamLoad(readsFilepath)
-    val variants : RDD[RichADAMVariant] = sc.adamVCFLoad(snpsFilepath).map(_.variant)
+    val variants: RDD[RichADAMVariant] = sc.adamVCFLoad(snpsFilepath).map(_.variant)
     val snps = sc.broadcast(SnpTable(variants))
 
     val bqsr = new BaseQualityRecalibration(cloy(reads), snps)

@@ -15,7 +15,7 @@
  */
 package edu.berkeley.cs.amplab.adam.util
 
-import java.util.logging.{Level, Logger}
+import java.util.logging.{ Level, Logger }
 
 object ParquetLogger {
 

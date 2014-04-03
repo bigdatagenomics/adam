@@ -33,8 +33,7 @@ class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
       .build
 
     val vc: RDD[ADAMVariantContext] = sc.parallelize(List(
-      ADAMVariantContext(v0)
-    ))
+      ADAMVariantContext(v0)))
 
     val a0 = ADAMDatabaseVariantAnnotation.newBuilder
       .setVariant(v0)
@@ -42,12 +41,11 @@ class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
       .build
 
     val vda: RDD[ADAMDatabaseVariantAnnotation] = sc.parallelize(List(
-      a0
-    ))
+      a0))
 
     // TODO: implicit conversion to ADAMVariantContextRDD
     val annotated = vc.joinDatabaseVariantAnnotation(vda)
-    assert( annotated.map(_.databases.isDefined).reduce { (a,b) => a && b } )
+    assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
   }
 
 }

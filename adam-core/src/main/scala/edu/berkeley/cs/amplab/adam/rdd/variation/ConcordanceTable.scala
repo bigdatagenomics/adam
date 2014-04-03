@@ -22,14 +22,14 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMGenotypeType
 
 object ConcordanceTable {
   def apply() = new ConcordanceTable()
-  def apply(p : (ADAMGenotypeType, ADAMGenotypeType)) = (new ConcordanceTable()).add(p)
+  def apply(p: (ADAMGenotypeType, ADAMGenotypeType)) = (new ConcordanceTable()).add(p)
 
   // Relevant sub-groups of concordance table entries
-  val CALLED  = EnumSet.of(ADAMGenotypeType.HOM_REF, ADAMGenotypeType.HET, ADAMGenotypeType.HOM_ALT)
+  val CALLED = EnumSet.of(ADAMGenotypeType.HOM_REF, ADAMGenotypeType.HET, ADAMGenotypeType.HOM_ALT)
   val VARIANT = EnumSet.of(ADAMGenotypeType.HET, ADAMGenotypeType.HOM_ALT)
-  val ALL     = EnumSet.allOf(classOf[ADAMGenotypeType])
+  val ALL = EnumSet.allOf(classOf[ADAMGenotypeType])
 
-  implicit def typesToIdxs(types: EnumSet[ADAMGenotypeType]) : Set[Int] = {
+  implicit def typesToIdxs(types: EnumSet[ADAMGenotypeType]): Set[Int] = {
     types.asScala.map(_.ordinal).toSet
   }
 }
@@ -51,7 +51,7 @@ class ConcordanceTable {
    * @param p Tuple of (test, truth) GenotypeType
    * @return this
    */
-  def add(p : (ADAMGenotypeType, ADAMGenotypeType)) : ConcordanceTable = {
+  def add(p: (ADAMGenotypeType, ADAMGenotypeType)): ConcordanceTable = {
     table_(p._1.ordinal)(p._2.ordinal) += 1L
     this
   }
@@ -61,7 +61,7 @@ class ConcordanceTable {
    * @param that ConcordanceTable
    * @return this
    */
-  def add(that : ConcordanceTable) : ConcordanceTable = {
+  def add(that: ConcordanceTable): ConcordanceTable = {
     for (r <- ALL; c <- ALL)
       table_(r)(c) += that.table_(r)(c)
     this
@@ -70,10 +70,10 @@ class ConcordanceTable {
   /**
    * Get single table entry at (test, truth)
    */
-  def get(test: ADAMGenotypeType, truth: ADAMGenotypeType) : Long = table_(test.ordinal)(truth.ordinal)
+  def get(test: ADAMGenotypeType, truth: ADAMGenotypeType): Long = table_(test.ordinal)(truth.ordinal)
 
-  def total() : Long = total(ALL, ALL)
-  def total(diagonal : EnumSet[ADAMGenotypeType]) : Long = {
+  def total(): Long = total(ALL, ALL)
+  def total(diagonal: EnumSet[ADAMGenotypeType]): Long = {
     var t = 0L
     for (i <- diagonal)
       t += table_(i)(i)
@@ -83,14 +83,14 @@ class ConcordanceTable {
   /**
    * Total of all entries indexed by the cartesian product of test and truth
    */
-  def total(test : EnumSet[ADAMGenotypeType], truth : EnumSet[ADAMGenotypeType]) : Long = {
+  def total(test: EnumSet[ADAMGenotypeType], truth: EnumSet[ADAMGenotypeType]): Long = {
     var t = 0L
     for (r <- test; c <- truth)
       t += table_(r)(c)
     t
   }
 
-  private def ratio(num : Long, dnm : Long) = if (dnm == 0) 0.0 else num.toDouble / dnm.toDouble
+  private def ratio(num: Long, dnm: Long) = if (dnm == 0) 0.0 else num.toDouble / dnm.toDouble
 
   /**
    * Overally genotype concordance, or the percentage of identical genotypes (including homozygous reference calls)

@@ -56,10 +56,10 @@ case class DuplicateMetrics(total: Long, bothMapped: Long, onlyReadMapped: Long,
 }
 
 case class FlagStatMetrics(total: Long, duplicatesPrimary: DuplicateMetrics, duplicatesSecondary: DuplicateMetrics,
-                           mapped: Long, pairedInSequencing: Long,
-                           read1: Long, read2: Long, properlyPaired: Long, withSelfAndMateMapped: Long,
-                           singleton: Long, withMateMappedToDiffChromosome: Long,
-                           withMateMappedToDiffChromosomeMapQ5: Long, failedQuality: Boolean) {
+  mapped: Long, pairedInSequencing: Long,
+  read1: Long, read2: Long, properlyPaired: Long, withSelfAndMateMapped: Long,
+  singleton: Long, withMateMappedToDiffChromosome: Long,
+  withMateMappedToDiffChromosomeMapQ5: Long, failedQuality: Boolean) {
   def +(that: FlagStatMetrics): FlagStatMetrics = {
     assert(failedQuality == that.failedQuality, "Can't reduce passedVendorQuality with different failedQuality values")
     new FlagStatMetrics(total + that.total,
@@ -100,17 +100,17 @@ object FlagStat {
           b2i(mateMappedToDiffChromosome && p.getMapq >= 5),
           p.getFailedVendorQualityChecks)
     }.aggregate((FlagStatMetrics.emptyFailedQuality, FlagStatMetrics.emptyPassedQuality))(
-        seqOp = {
-          (a, b) =>
-            if (b.failedQuality) {
-              (a._1 + b, a._2)
-            } else {
-              (a._1, a._2 + b)
-            }
-        },
-        combOp = {
-          (a, b) =>
-            (a._1 + b._1, a._2 + b._2)
-        })
+      seqOp = {
+        (a, b) =>
+          if (b.failedQuality) {
+            (a._1 + b, a._2)
+          } else {
+            (a._1, a._2 + b)
+          }
+      },
+      combOp = {
+        (a, b) =>
+          (a._1 + b._1, a._2 + b._2)
+      })
   }
 }

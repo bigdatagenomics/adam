@@ -19,14 +19,14 @@ package edu.berkeley.cs.amplab.adam.cli
 import edu.berkeley.cs.amplab.adam.util._
 import org.kohsuke.args4j.Argument
 import scala.Some
-import org.apache.spark.{SparkContext, Logging}
+import org.apache.spark.{ SparkContext, Logging }
 import org.apache.hadoop.mapreduce.Job
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.predicates.LocusPredicate
 
-object MpileupCommand extends AdamCommandCompanion {
+object MpileupCommand extends ADAMCommandCompanion {
   val commandName: String = "mpileup"
   val commandDescription: String = "Output the samtool mpileup text from ADAM reference-oriented data"
 
@@ -42,7 +42,7 @@ class MpileupArgs extends Args4jBase with SparkArgs {
   spark_master = "local"
 }
 
-class MpileupCommand(protected val args: MpileupArgs)  extends AdamSparkCommand[MpileupArgs] with Logging {
+class MpileupCommand(protected val args: MpileupArgs) extends ADAMSparkCommand[MpileupArgs] with Logging {
   val companion = MpileupCommand
 
   def run(sc: SparkContext, job: Job) {

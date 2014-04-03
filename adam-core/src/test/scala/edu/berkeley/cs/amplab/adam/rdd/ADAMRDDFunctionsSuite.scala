@@ -15,25 +15,29 @@
  */
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMContig,
-                                         ADAMGenotype,
-                                         ADAMNucleotideContigFragment,
-                                         ADAMPileup, 
-                                         ADAMVariant,
-                                         ADAMRecord,
-                                         Base}
-import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext,
-                                           ReferenceRegion,
-                                           SequenceDictionary, 
-                                           SequenceRecord}
+import edu.berkeley.cs.amplab.adam.avro.{
+  ADAMContig,
+  ADAMGenotype,
+  ADAMNucleotideContigFragment,
+  ADAMPileup,
+  ADAMVariant,
+  ADAMRecord,
+  Base
+}
+import edu.berkeley.cs.amplab.adam.models.{
+  ADAMVariantContext,
+  ReferenceRegion,
+  SequenceDictionary,
+  SequenceRecord
+}
 import edu.berkeley.cs.amplab.adam.util.SparkFunSuite
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariantContextRDDFunctions
 import edu.berkeley.cs.amplab.adam.rdd.variation.ADAMVariationContext._
 import org.apache.spark.rdd.RDD
 import scala.util.Random
 
-class AdamRDDFunctionsSuite extends SparkFunSuite {
+class ADAMRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("can convert pileups to rods, bases at different pos, same reference") {
     val p0 = ADAMPileup.newBuilder()
@@ -167,7 +171,6 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(split.filter(_.isSingleSample).count === 1)
   }
 
-
   sparkTest("check coverage, bases at different pos") {
     val p0 = ADAMPileup.newBuilder()
       .setPosition(0L)
@@ -269,11 +272,11 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .setPrimaryAlignment(true)
       .setQual("%")
       .build()
-    
+
     val reads = sc.parallelize(List(r0, r1, r2))
 
     val rods = reads.adamRecords2Rods()
-    
+
     assert(rods.count === 3)
     assert(rods.collect.forall(_.position.refId == 0))
     assert(rods.filter(_.position.pos == 1L).count === 1)
@@ -324,11 +327,11 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
       .setPrimaryAlignment(true)
       .setQual("%")
       .build()
-    
+
     val reads = sc.parallelize(List(r0, r1, r2))
 
     val rods = reads.adamRecords2Rods()
-    
+
     assert(rods.count === 3)
     assert(rods.filter(_.position.refId == 0).count === 2)
     assert(rods.filter(_.position.refId == 1).count === 1)
@@ -343,9 +346,9 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.forall(_.getReadBase == Base.G))
   }
 
-  sparkTest ("can remap contig ids") {
+  sparkTest("can remap contig ids") {
     val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
-                                  SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
+      SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
     val ctg0 = ADAMNucleotideContigFragment.newBuilder()
       .setContigName("chr0")
       .setContigId(1)
@@ -360,15 +363,15 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val rdd = sc.parallelize(List(ctg0, ctg1))
 
     val remapped = rdd.adamRewriteContigIds(dict)
-    
+
     assert(remapped.count === 2)
     assert(remapped.filter(_.getContigName.toString == "chr0").first.getContigId === 0)
     assert(remapped.filter(_.getContigName.toString == "chr1").first.getContigId === 1)
   }
 
-  sparkTest ("can remap contig ids while filtering out contigs that aren't in dict") {
+  sparkTest("can remap contig ids while filtering out contigs that aren't in dict") {
     val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
-                                  SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
+      SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
     val ctg0 = ADAMNucleotideContigFragment.newBuilder()
       .setContigName("chr0")
       .setContigId(1)
@@ -389,7 +392,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(remapped.filter(_.getContigName.toString == "chr2").count === 0)
   }
 
-  sparkTest ("generate sequence dict from fasta") {
+  sparkTest("generate sequence dict from fasta") {
     val ctg0 = ADAMNucleotideContigFragment.newBuilder()
       .setContigName("chr0")
       .setContigId(1)
@@ -448,7 +451,6 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     assert(samples.filter(_ == "me").length === 1)
   }
 
-
   sparkTest("get sequence dictionary from variant context") {
     val contig0 = ADAMContig.newBuilder()
       .setContigName("chr0")
@@ -485,13 +487,13 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("characterizeTags counts integer tag values correctly") {
-    val tagCounts : Map[String,Long] = Map("XT" -> 10L, "XU" -> 9L, "XV" -> 8L)
-    val readItr : Iterable[ADAMRecord] =
-      for( (tagName, tagCount) <- tagCounts ; i <- 0 until tagCount.toInt  )
-      yield ADAMRecord.newBuilder().setAttributes("%s:i:%d".format(tagName, i)).build()
+    val tagCounts: Map[String, Long] = Map("XT" -> 10L, "XU" -> 9L, "XV" -> 8L)
+    val readItr: Iterable[ADAMRecord] =
+      for ((tagName, tagCount) <- tagCounts; i <- 0 until tagCount.toInt)
+        yield ADAMRecord.newBuilder().setAttributes("%s:i:%d".format(tagName, i)).build()
 
     val reads = sc.parallelize(readItr.toSeq)
-    val mapCounts : Map[String,Long] = Map(reads.adamCharacterizeTags().collect() : _*)
+    val mapCounts: Map[String, Long] = Map(reads.adamCharacterizeTags().collect(): _*)
 
     assert(mapCounts === tagCounts)
   }
@@ -540,9 +542,9 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("characterizeTags counts tags in a SAM file correctly") {
     val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
-    val sam : RDD[ADAMRecord] = sc.adamLoad(filePath)
+    val sam: RDD[ADAMRecord] = sc.adamLoad(filePath)
 
-    val mapCounts : Map[String,Long] = Map(sam.adamCharacterizeTags().collect() : _*)
+    val mapCounts: Map[String, Long] = Map(sam.adamCharacterizeTags().collect(): _*)
     assert(mapCounts("NM") === 200)
     assert(mapCounts("AS") === 200)
     assert(mapCounts("XS") === 200)
@@ -562,7 +564,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val region = ReferenceRegion(fragment).get
 
     val rdd = sc.parallelize(List(fragment))
-    
+
     assert(rdd.adamGetReferenceString(region) === "ACTGTAC")
   }
 
@@ -580,7 +582,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val region = new ReferenceRegion(1, 1L, 6L)
 
     val rdd = sc.parallelize(List(fragment))
-    
+
     assert(rdd.adamGetReferenceString(region) === "CTGTA")
   }
 
@@ -620,7 +622,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val region1 = ReferenceRegion(fragment1).get.merge(ReferenceRegion(fragment2).get)
 
     val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
-    
+
     assert(rdd.adamGetReferenceString(region0) === "ACTGTAC")
     assert(rdd.adamGetReferenceString(region1) === "GTACTCTCATG")
   }
@@ -661,7 +663,7 @@ class AdamRDDFunctionsSuite extends SparkFunSuite {
     val region1 = new ReferenceRegion(2, 3L, 9L)
 
     val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
-    
+
     assert(rdd.adamGetReferenceString(region0) === "CTGTA")
     assert(rdd.adamGetReferenceString(region1) === "CTCTCA")
   }

@@ -26,16 +26,16 @@ package edu.berkeley.cs.amplab.adam.models
  * @param tagType An enumerated value representing the type of the 'value' parameter.
  * @param value The 'value' half of the pair.
  */
-case class Attribute(tag: String, tagType : TagType.Value, value : Any) {
-  override def toString : String = "%s:%s:%s".format(tag, tagType, value.toString)
+case class Attribute(tag: String, tagType: TagType.Value, value: Any) {
+  override def toString: String = "%s:%s:%s".format(tag, tagType, value.toString)
 }
 
 object TagType extends Enumeration {
 
-  class TypeVal(val abbreviation : String) extends Val(nextId, abbreviation) {
-    override def toString() : String = abbreviation
+  class TypeVal(val abbreviation: String) extends Val(nextId, abbreviation) {
+    override def toString(): String = abbreviation
   }
-  def TypeValue(abbreviation : String) : Val = new TypeVal(abbreviation)
+  def TypeValue(abbreviation: String): Val = new TypeVal(abbreviation)
 
   // These String values come from the SAM file format spec: http://samtools.sourceforge.net/SAMv1.pdf
   val Character = TypeValue("A")

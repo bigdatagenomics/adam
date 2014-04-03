@@ -27,13 +27,5 @@ import edu.berkeley.cs.amplab.adam.avro.ADAMNucleotideContigFragment
  */
 object ADAMNucleotideContigFragmentField extends FieldEnumeration(ADAMNucleotideContigFragment.SCHEMA$) {
 
-  val contigName,
-  contigId,
-  description,
-  fragmentSequence,
-  contigLength,
-  fragmentNumber,
-  fragmentStartPosition,
-  numberOfFragmentsInContig,
-  url = SchemaValue
+  val contigName, contigId, description, fragmentSequence, contigLength, fragmentNumber, fragmentStartPosition, numberOfFragmentsInContig, url = SchemaValue
 }

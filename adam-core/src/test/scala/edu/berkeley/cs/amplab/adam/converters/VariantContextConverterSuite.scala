@@ -17,9 +17,9 @@ package edu.berkeley.cs.amplab.adam.converters
 
 import scala.collection.JavaConversions._
 import org.scalatest.FunSuite
-import org.broadinstitute.variant.variantcontext.{GenotypeType, Allele, VariantContextBuilder, GenotypeBuilder}
+import org.broadinstitute.variant.variantcontext.{ GenotypeType, Allele, VariantContextBuilder, GenotypeBuilder }
 import java.lang.Integer
-import edu.berkeley.cs.amplab.adam.models.{ADAMVariantContext, SequenceRecord, SequenceDictionary}
+import edu.berkeley.cs.amplab.adam.models.{ ADAMVariantContext, SequenceRecord, SequenceDictionary }
 import edu.berkeley.cs.amplab.adam.avro._
 import scala.Some
 
@@ -27,7 +27,7 @@ class VariantContextConverterSuite extends FunSuite {
   val dictionary = SequenceDictionary(SequenceRecord(1, "chr1", 249250621, "file://ucsc.hg19.fasta", "1b22b98cdeb4a9304cb5d48026a85128"))
 
   def gatkSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
-    .alleles(List(Allele.create("A",true), Allele.create("T")))
+    .alleles(List(Allele.create("A", true), Allele.create("T")))
     .start(1L)
     .stop(1L)
     .chr("chr1")
@@ -105,7 +105,7 @@ class VariantContextConverterSuite extends FunSuite {
     assert(annotations.getVariantIsPassing === false)
     assert(annotations.getVariantFilters.sameElements(List("LowMQ")))
   }
-  
+
   test("Convert ADAM site-only SNV to GATK") {
     val vc = ADAMVariantContext(adamSNVBuilder.build)
 

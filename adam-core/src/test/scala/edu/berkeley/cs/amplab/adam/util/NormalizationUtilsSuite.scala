@@ -17,9 +17,9 @@
 package edu.berkeley.cs.amplab.adam.util
 
 import org.scalatest.FunSuite
-import net.sf.samtools.{Cigar, CigarOperator, CigarElement, TextCigarCodec}
+import net.sf.samtools.{ Cigar, CigarOperator, CigarElement, TextCigarCodec }
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
-import edu.berkeley.cs.amplab.adam.rdd.AdamContext._
+import edu.berkeley.cs.amplab.adam.rdd.ADAMContext._
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord
 import edu.berkeley.cs.amplab.adam.rich.RichADAMRecord._
 import edu.berkeley.cs.amplab.adam.rich.RichCigar
@@ -95,7 +95,7 @@ class NormalizationUtilsSuite extends FunSuite {
       .build()
 
     val cigar = NormalizationUtils.leftAlignIndel(read)
-    
+
     assert(cigar.toString === "29M10D31M")
   }
 }

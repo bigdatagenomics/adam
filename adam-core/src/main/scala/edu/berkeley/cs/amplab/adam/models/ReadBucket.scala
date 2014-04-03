@@ -17,8 +17,8 @@ package edu.berkeley.cs.amplab.adam.models
 
 import edu.berkeley.cs.amplab.adam.avro.ADAMRecord
 import edu.berkeley.cs.amplab.adam.serialization.AvroSerializer
-import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.{ Kryo, Serializer }
+import com.esotericsoftware.kryo.io.{ Input, Output }
 
 /**
  * This class is similar to SingleReadBucket, except it breaks the reads down further.
@@ -29,12 +29,12 @@ import com.esotericsoftware.kryo.io.{Input, Output}
  * This is useful as this will usually map a single read in any of the sequences.
  */
 case class ReadBucket(unpairedPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      pairedFirstPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      pairedSecondPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      unpairedSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      pairedFirstSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      pairedSecondSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      unmappedReads: Seq[ADAMRecord] = Seq.empty) {
+  pairedFirstPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+  pairedSecondPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+  unpairedSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+  pairedFirstSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+  pairedSecondSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+  unmappedReads: Seq[ADAMRecord] = Seq.empty) {
   def allReads(): Seq[ADAMRecord] =
     unpairedPrimaryMappedReads ++
       pairedFirstPrimaryMappedReads ++
@@ -44,7 +44,6 @@ case class ReadBucket(unpairedPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
       pairedSecondSecondaryMappedReads ++
       unmappedReads
 }
-
 
 class ReadBucketSerializer extends Serializer[ReadBucket] {
   val recordSerializer = new AvroSerializer[ADAMRecord]()
@@ -91,7 +90,6 @@ class ReadBucketSerializer extends Serializer[ReadBucket] {
       unmappedReads)
   }
 }
-
 
 object ReadBucket {
   implicit def singleReadBucketToReadBucket(bucket: SingleReadBucket): ReadBucket = {

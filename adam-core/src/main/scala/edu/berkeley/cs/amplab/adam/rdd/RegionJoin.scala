@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.rdd
 
-import edu.berkeley.cs.amplab.adam.models.{SequenceDictionary, ReferenceMapping, ReferenceRegion}
+import edu.berkeley.cs.amplab.adam.models.{ SequenceDictionary, ReferenceMapping, ReferenceRegion }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import scala.Predef._
@@ -67,14 +67,12 @@ object RegionJoin {
    *         corresponding to x overlaps the region corresponding to y.
    */
   def partitionAndJoin[T, U](sc: SparkContext,
-                             seqDict : SequenceDictionary,
-                             baseRDD: RDD[T],
-                             joinedRDD: RDD[U])
-                            (implicit tMapping: ReferenceMapping[T],
-                             uMapping: ReferenceMapping[U],
-                             tManifest: ClassManifest[T],
-                             uManifest: ClassManifest[U])
-  : RDD[(T, U)] = {
+    seqDict: SequenceDictionary,
+    baseRDD: RDD[T],
+    joinedRDD: RDD[U])(implicit tMapping: ReferenceMapping[T],
+      uMapping: ReferenceMapping[U],
+      tManifest: ClassManifest[T],
+      uManifest: ClassManifest[U]): RDD[(T, U)] = {
 
     /**
      * Original Join Design:
@@ -97,17 +95,17 @@ object RegionJoin {
      * Ways in which we've generalized this plan:
      * - removed the aggregation step altogether
      * - carry a sequence dictionary through the computation.
-     **/
+     */
 
     // First, we group the regions in the left side of the join by their refId,
     // and collect them.
-    val collectedLeft : Seq[(Int,Seq[ReferenceRegion])] =
+    val collectedLeft: Seq[(Int, Seq[ReferenceRegion])] =
       baseRDD
-        .map(t => (tMapping.getReferenceId(t), tMapping.getReferenceRegion(t)))  // RDD[(Int,ReferenceRegion)]
-        .groupBy(_._1)                            // RDD[(Int,Seq[(Int,ReferenceRegion)])]
-        .map(t => (t._1, t._2.map(_._2)))         // RDD[(Int,Seq[ReferenceRegion])]
-        .collect()                                // Iterable[(Int,Seq[ReferenceRegion])]
-        .toSeq                                    // Seq[(Int,Seq[ReferenceRegion])]
+        .map(t => (tMapping.getReferenceId(t), tMapping.getReferenceRegion(t))) // RDD[(Int,ReferenceRegion)]
+        .groupBy(_._1) // RDD[(Int,Seq[(Int,ReferenceRegion)])]
+        .map(t => (t._1, t._2.map(_._2))) // RDD[(Int,Seq[ReferenceRegion])]
+        .collect() // Iterable[(Int,Seq[ReferenceRegion])]
+        .toSeq // Seq[(Int,Seq[ReferenceRegion])]
 
     // Next, we turn that into a data structure that reduces those regions to their non-overlapping
     // pieces, which we will use as a partition.
@@ -115,24 +113,24 @@ object RegionJoin {
 
     // Then, we broadcast those partitions -- this will be the function that allows us to
     // partition all the regions on the right side of the join.
-    val regions = sc.broadcast( multiNonOverlapping )
+    val regions = sc.broadcast(multiNonOverlapping)
 
     // each element of the left-side RDD should have exactly one partition.
-    val smallerKeyed : RDD[(ReferenceRegion, T)] =
+    val smallerKeyed: RDD[(ReferenceRegion, T)] =
       baseRDD.keyBy(t => regions.value.regionsFor(t).head)
 
     // each element of the right-side RDD may have 0, 1, or more than 1 corresponding partition.
-    val largerKeyed : RDD[(ReferenceRegion, U)] =
+    val largerKeyed: RDD[(ReferenceRegion, U)] =
       joinedRDD.filter(regions.value.filter(_))
-        .flatMap(t => regions.value.regionsFor(t).map((r : ReferenceRegion) => (r, t)))
+        .flatMap(t => regions.value.regionsFor(t).map((r: ReferenceRegion) => (r, t)))
 
     // this is (essentially) performing a cartesian product within each partition...
-    val joined: RDD[(ReferenceRegion, (T,U))] =
+    val joined: RDD[(ReferenceRegion, (T, U))] =
       smallerKeyed.join(largerKeyed)
 
     // ... so we need to filter the final pairs to make sure they're overlapping.
     val filtered: RDD[(ReferenceRegion, (T, U))] = joined.filter({
-      case (rr: ReferenceRegion, (t : T, u : U)) =>
+      case (rr: ReferenceRegion, (t: T, u: U)) =>
         tMapping.getReferenceRegion(t).overlaps(uMapping.getReferenceRegion(u))
     })
 
@@ -150,14 +148,12 @@ object RegionJoin {
    *
    */
   def cartesianFilter[T, U](baseRDD: RDD[T],
-                            joinedRDD: RDD[U])
-                           (implicit tMapping: ReferenceMapping[T],
-                            uMapping: ReferenceMapping[U],
-                            tManifest: ClassManifest[T],
-                            uManifest: ClassManifest[U])
-  : RDD[(T, U)] = {
+    joinedRDD: RDD[U])(implicit tMapping: ReferenceMapping[T],
+      uMapping: ReferenceMapping[U],
+      tManifest: ClassManifest[T],
+      uManifest: ClassManifest[U]): RDD[(T, U)] = {
     baseRDD.cartesian(joinedRDD).filter({
-      case (t : T, u : U) =>
+      case (t: T, u: U) =>
         tMapping.getReferenceRegion(t).overlaps(uMapping.getReferenceRegion(u))
     })
   }
@@ -180,7 +176,7 @@ object RegionJoin {
  *                with an entry in this dictionary
  * @param regions The input-set of regions.
  */
-class NonoverlappingRegions(seqDict : SequenceDictionary, regions: Seq[ReferenceRegion]) extends Serializable {
+class NonoverlappingRegions(seqDict: SequenceDictionary, regions: Seq[ReferenceRegion]) extends Serializable {
 
   assert(regions != null, "regions parameter cannot be null")
 
@@ -188,24 +184,24 @@ class NonoverlappingRegions(seqDict : SequenceDictionary, regions: Seq[Reference
   // checks to all the methods below to make sure that 'endpoints' isn't empty.  Also, it shouldn't
   // make any sense to have a set of non-overlapping regions for ... no regions.
   // Also, without this check, we can't tell which chromosome this NonoverlappingRegions object is for.
-  assert( regions.size > 0, "regions list must be non-empty" )
+  assert(regions.size > 0, "regions list must be non-empty")
   assert(regions.head != null, "regions must have at least one non-null entry")
 
   assert(seqDict != null, "Sequence Dictionary cannot be null")
 
-  val referenceId : Int = regions.head.refId
-  val referenceLength : Long = seqDict(referenceId).length
+  val referenceId: Int = regions.head.refId
+  val referenceLength: Long = seqDict(referenceId).length
 
   // invariant: all the values in the 'regions' list have the same referenceId
-  assert( regions.forall(_.refId == referenceId) )
+  assert(regions.forall(_.refId == referenceId))
 
   // We represent the distinct unions, the 'nonoverlapping-set' of regions, as a set of endpoints,
   // so that we can do reasonably-fast binary searching on them to determine the slice of nonoverlapping-set
   // regions that are overlapped by a new, query region (see findOverlappingRegions, below).
-  val endpoints : Array[Long] =
+  val endpoints: Array[Long] =
     mergeRegions(regions.sortBy(r => r.start)).flatMap(r => Seq(r.start, r.end)).distinct.sorted.toArray
 
-  private def updateListWithRegion(list : List[ReferenceRegion], newRegion : ReferenceRegion) : List[ReferenceRegion] = {
+  private def updateListWithRegion(list: List[ReferenceRegion], newRegion: ReferenceRegion): List[ReferenceRegion] = {
     list match {
       case head :: tail =>
 
@@ -213,7 +209,7 @@ class NonoverlappingRegions(seqDict : SequenceDictionary, regions: Seq[Reference
         // we can use the "alternating" optimization, described below, which reduces
         // the number of regions returned as keys (by a factor of 2) and therefore
         // the number of partitions that need to be examined during a regionJoin.
-        if(head.overlaps(newRegion) || head.isAdjacent(newRegion)) {
+        if (head.overlaps(newRegion) || head.isAdjacent(newRegion)) {
           head.hull(newRegion) :: tail
         } else {
           newRegion :: list
@@ -222,38 +218,38 @@ class NonoverlappingRegions(seqDict : SequenceDictionary, regions: Seq[Reference
     }
   }
 
-  def mergeRegions(regs : Seq[(ReferenceRegion)]) : List[ReferenceRegion] =
+  def mergeRegions(regs: Seq[(ReferenceRegion)]): List[ReferenceRegion] =
     regs.aggregate(List[ReferenceRegion]())(
       (lst: List[ReferenceRegion], p: (ReferenceRegion)) => updateListWithRegion(lst, p),
-      (a, b) => a++b)
+      (a, b) => a ++ b)
 
-  def binaryPointSearch(pos : Long, lessThan : Boolean) : Int = {
+  def binaryPointSearch(pos: Long, lessThan: Boolean): Int = {
     var i = 0
-    var j = endpoints.size-1
+    var j = endpoints.size - 1
 
-    while(j-i > 1) {
-      val ij2 = (i + j)/2
+    while (j - i > 1) {
+      val ij2 = (i + j) / 2
       val mid = endpoints(ij2)
-      if(mid < pos) {
+      if (mid < pos) {
         i = ij2
       } else {
         j = ij2
       }
     }
 
-    if(lessThan) i else j
+    if (lessThan) i else j
   }
 
-  def findOverlappingRegions(query : ReferenceRegion) : Seq[ReferenceRegion] = {
+  def findOverlappingRegions(query: ReferenceRegion): Seq[ReferenceRegion] = {
 
     assert(query != null, "query region was null")
     assert(endpoints != null, "endpoints field was null")
 
-    if(query.end <= endpoints.head || query.start >= endpoints.last) {
+    if (query.end <= endpoints.head || query.start >= endpoints.last) {
       Seq()
     } else {
-      val firsti = binaryPointSearch(query.start, lessThan=true)
-      val lasti = binaryPointSearch(query.end, lessThan=false)
+      val firsti = binaryPointSearch(query.start, lessThan = true)
+      val lasti = binaryPointSearch(query.end, lessThan = false)
 
       // Slice is an inclusive start, exclusive end operation
       val firstRegionIsHit = firsti % 2 == 0
@@ -276,7 +272,7 @@ class NonoverlappingRegions(seqDict : SequenceDictionary, regions: Seq[Reference
        * that these don't correspond to any region the input-set, and therefore
        * will never result in any pairs in the ultimate join result.
        */
-      NonoverlappingRegions.alternating(startSlice.zip(endSlice).map{
+      NonoverlappingRegions.alternating(startSlice.zip(endSlice).map {
         case (start, end) =>
           ReferenceRegion(referenceId, start, end)
       }.toSeq, firstRegionIsHit)
@@ -295,7 +291,7 @@ class NonoverlappingRegions(seqDict : SequenceDictionary, regions: Seq[Reference
    * @return An Iterable[ReferenceRegion], where each element of the Iterable is a nonoverlapping-region
    *         defined by 1 or more input-set regions.
    */
-  def regionsFor[U](regionable: U)(implicit mapping : ReferenceMapping[U]): Iterable[ReferenceRegion] =
+  def regionsFor[U](regionable: U)(implicit mapping: ReferenceMapping[U]): Iterable[ReferenceRegion] =
     findOverlappingRegions(mapping.getReferenceRegion(regionable))
 
   /**
@@ -320,11 +316,11 @@ class NonoverlappingRegions(seqDict : SequenceDictionary, regions: Seq[Reference
 
 object NonoverlappingRegions {
 
-  def apply[T](seqDict : SequenceDictionary, values : Seq[T])(implicit refMapping : ReferenceMapping[T]) =
+  def apply[T](seqDict: SequenceDictionary, values: Seq[T])(implicit refMapping: ReferenceMapping[T]) =
     new NonoverlappingRegions(seqDict, values.map(value => refMapping.getReferenceRegion(value)))
 
-  def alternating[T](seq : Seq[T], includeFirst : Boolean) : Seq[T] = {
-    val inds = if(includeFirst) { 0 until seq.size } else { 1 until seq.size+1 }
+  def alternating[T](seq: Seq[T], includeFirst: Boolean): Seq[T] = {
+    val inds = if (includeFirst) { 0 until seq.size } else { 1 until seq.size + 1 }
     seq.zip(inds).filter(p => p._2 % 2 == 0).map(_._1)
   }
 
@@ -348,7 +344,7 @@ class MultiContigNonoverlappingRegions(seqDict: SequenceDictionary, regions: Seq
   assert(!regions.map(_._1).exists(!seqDict.containsRefId(_)),
     "SeqDict doesn't contain a refId from the regions sequence")
 
-  val regionMap : Map[Int,NonoverlappingRegions] =
+  val regionMap: Map[Int, NonoverlappingRegions] =
     Map(regions.map(r => (r._1, new NonoverlappingRegions(seqDict, r._2))): _*)
 
   def regionsFor[U](regionable: U)(implicit mapping: ReferenceMapping[U]): Iterable[ReferenceRegion] =
@@ -365,14 +361,12 @@ class MultiContigNonoverlappingRegions(seqDict: SequenceDictionary, regions: Seq
 }
 
 object MultiContigNonoverlappingRegions {
-  def apply[T](seqDict : SequenceDictionary, values : Seq[T])(implicit mapping: ReferenceMapping[T]):
-  MultiContigNonoverlappingRegions = {
+  def apply[T](seqDict: SequenceDictionary, values: Seq[T])(implicit mapping: ReferenceMapping[T]): MultiContigNonoverlappingRegions = {
     new MultiContigNonoverlappingRegions(seqDict,
-      values.map(v => (mapping.getReferenceId(v),mapping.getReferenceRegion(v)))
+      values.map(v => (mapping.getReferenceId(v), mapping.getReferenceRegion(v)))
         .groupBy(t => t._1)
         .map(t => (t._1, t._2.map(k => k._2)))
         .toSeq)
   }
 }
-
 

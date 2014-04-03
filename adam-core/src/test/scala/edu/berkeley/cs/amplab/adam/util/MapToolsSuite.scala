@@ -46,7 +46,7 @@ class MapToolsSuite extends FunSuite {
 
   test("adding an empty map is the identity") {
     val m1 = Map(55 -> 2, 23 -> 1)
-    val m2 = Map[Int,Int]()
+    val m2 = Map[Int, Int]()
 
     val sum = MapTools.add(m1, m2)
 

@@ -32,7 +32,7 @@ trait Aggregator[SingleType, AggType <: Aggregated[SingleType]] extends Serializ
    * @param value The Seq[SingleType] produced by a Comparisons invocation on a ReadBucket
    * @return The aggregation of that sequence.
    */
-  def lift(value : Seq[SingleType]) : AggType
+  def lift(value: Seq[SingleType]): AggType
 
   /**
    * Aggregation function to combine the result of a computation with prior results.
@@ -45,41 +45,40 @@ trait Aggregator[SingleType, AggType <: Aggregated[SingleType]] extends Serializ
 
 }
 
-
 trait Writable {
-  def write(stream : Writer)
+  def write(stream: Writer)
 }
 
 trait Aggregated[+T] extends Writable with Serializable {
-  def count() : Long
-  def countIdentical() : Long
+  def count(): Long
+  def countIdentical(): Long
 }
 
-class AggregatedCollection[T,U <: Aggregated[T]](val values : Seq[U])
+class AggregatedCollection[T, U <: Aggregated[T]](val values: Seq[U])
   extends Aggregated[metrics.Collection[Seq[T]]]
   with Serializable {
 
-  def count(): Long = values.map( _.count() ).reduce( _ + _ )
+  def count(): Long = values.map(_.count()).reduce(_ + _)
   def countIdentical(): Long =
-    values.map( _.countIdentical() ).reduce( _ + _ )
+    values.map(_.countIdentical()).reduce(_ + _)
 
   def write(stream: Writer) {
-    values.foreach( value => value.write(stream) )
+    values.foreach(value => value.write(stream))
   }
 }
 
 object AggregatedCollection {
-  def apply[T, U <: Aggregated[T]](values : Seq[U]) = new AggregatedCollection[T,U](values)
+  def apply[T, U <: Aggregated[T]](values: Seq[U]) = new AggregatedCollection[T, U](values)
 }
 
-class CombinedAggregator[Single, Agg <: Aggregated[Single]](aggs : Seq[Aggregator[Single,Agg]])
-  extends Aggregator[metrics.Collection[Seq[Single]], AggregatedCollection[Single,Agg]] {
+class CombinedAggregator[Single, Agg <: Aggregated[Single]](aggs: Seq[Aggregator[Single, Agg]])
+  extends Aggregator[metrics.Collection[Seq[Single]], AggregatedCollection[Single, Agg]] {
 
   def initialValue: AggregatedCollection[Single, Agg] = AggregatedCollection(aggs.map(_.initialValue))
 
-  def liftCollection(c : metrics.Collection[Seq[Single]]) : AggregatedCollection[Single,Agg] =
+  def liftCollection(c: metrics.Collection[Seq[Single]]): AggregatedCollection[Single, Agg] =
     AggregatedCollection(aggs.zip(c.values).map {
-      case (agg : Aggregator[Single,Agg], values : Seq[Single]) =>
+      case (agg: Aggregator[Single, Agg], values: Seq[Single]) =>
         agg.lift(values)
     })
 
@@ -91,18 +90,18 @@ class CombinedAggregator[Single, Agg <: Aggregated[Single]](aggs : Seq[Aggregato
    */
   def combine(first: AggregatedCollection[Single, Agg], second: AggregatedCollection[Single, Agg]): AggregatedCollection[Single, Agg] =
     AggregatedCollection(aggs.zip(first.values.zip(second.values)).map {
-      case (agg : Aggregator[Single,Agg], p : (Agg, Agg)) =>
+      case (agg: Aggregator[Single, Agg], p: (Agg, Agg)) =>
         agg.combine(p._1, p._2)
     })
 }
 
-class UniqueAggregator[T] extends Aggregator[T,UniqueWritable[T]] {
+class UniqueAggregator[T] extends Aggregator[T, UniqueWritable[T]] {
   /**
    * An initial value for the aggregation
    */
   def initialValue: UniqueWritable[T] = new UniqueWritable[T]()
 
-  def lift(value: Seq[T]): UniqueWritable[T] = new UniqueWritable[T](value : _*)
+  def lift(value: Seq[T]): UniqueWritable[T] = new UniqueWritable[T](value: _*)
 
   /**
    * Aggregation function to combine the result of a computation with prior results.
@@ -110,7 +109,7 @@ class UniqueAggregator[T] extends Aggregator[T,UniqueWritable[T]] {
   def combine(first: UniqueWritable[T], second: UniqueWritable[T]): UniqueWritable[T] = first.union(second)
 }
 
-class HistogramAggregator[T] extends Aggregator[T,Histogram[T]] {
+class HistogramAggregator[T] extends Aggregator[T, Histogram[T]] {
   /**
    * An initial value for the aggregation
    */
@@ -125,20 +124,19 @@ class HistogramAggregator[T] extends Aggregator[T,Histogram[T]] {
 
 }
 
-
-class UniqueWritable[T]( vals : T* ) extends Aggregated[T] with Serializable {
+class UniqueWritable[T](vals: T*) extends Aggregated[T] with Serializable {
 
   val count = vals.size.toLong
   val countIdentical = 0L
 
   val values = vals.toSet
 
-  def union(other : UniqueWritable[T]) : UniqueWritable[T] =
-    new UniqueWritable[T](values.union(other.values).toSeq : _*)
+  def union(other: UniqueWritable[T]): UniqueWritable[T] =
+    new UniqueWritable[T](values.union(other.values).toSeq: _*)
 
-  def write(stream : Writer) {
+  def write(stream: Writer) {
     stream.append("values\n")
-    for(value <- values) {
+    for (value <- values) {
       stream.append("%s\n".format(value.toString))
     }
   }

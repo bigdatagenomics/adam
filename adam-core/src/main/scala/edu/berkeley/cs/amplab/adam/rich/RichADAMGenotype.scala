@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.rich
 
-import edu.berkeley.cs.amplab.adam.avro.{ADAMGenotypeType, ADAMGenotypeAllele, ADAMGenotype}
+import edu.berkeley.cs.amplab.adam.avro.{ ADAMGenotypeType, ADAMGenotypeAllele, ADAMGenotype }
 import scala.collection.JavaConversions._
 
 object RichADAMGenotype {
@@ -33,7 +33,7 @@ class RichADAMGenotype(val genotype: ADAMGenotype) {
       case List(ADAMGenotypeAllele.Ref) => ADAMGenotypeType.HOM_REF
       case List(ADAMGenotypeAllele.Alt) => ADAMGenotypeType.HOM_ALT
       case List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Alt) |
-           List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Ref) => ADAMGenotypeType.HET
+        List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Ref) => ADAMGenotypeType.HET
       case _ => ADAMGenotypeType.NO_CALL
     }
   }

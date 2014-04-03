@@ -23,13 +23,13 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 import org.apache.avro.specific.SpecificRecord
 
-class RichRDDReferenceRecords[T <: SpecificRecord : ClassManifest](rdd: RDD[T],
-                                                                   mapping : ReferenceMapping[T])
+class RichRDDReferenceRecords[T <: SpecificRecord: ClassManifest](rdd: RDD[T],
+  mapping: ReferenceMapping[T])
   extends Serializable {
 
-  def remapReferenceId(map: Map[Int, Int])(implicit sc : SparkContext): RDD[T] = {
+  def remapReferenceId(map: Map[Int, Int])(implicit sc: SparkContext): RDD[T] = {
     // If the reference IDs match, we don't need to do any remapping, just return the previous RDD
-    if (map.forall({case (a, b)=> a == b})) rdd
+    if (map.forall({ case (a, b) => a == b })) rdd
     else {
       // Broadcast the map variable
       val bc = sc.broadcast(map)
@@ -44,6 +44,6 @@ class RichRDDReferenceRecords[T <: SpecificRecord : ClassManifest](rdd: RDD[T],
 }
 
 object RichRDDReferenceRecords extends Serializable {
-  implicit def adamRDDToRichADAMRDD(rdd: RDD[ADAMRecord]) : RichRDDReferenceRecords[ADAMRecord] =
+  implicit def adamRDDToRichADAMRDD(rdd: RDD[ADAMRecord]): RichRDDReferenceRecords[ADAMRecord] =
     new RichRDDReferenceRecords(rdd, ADAMRecordReferenceMapping)
 }

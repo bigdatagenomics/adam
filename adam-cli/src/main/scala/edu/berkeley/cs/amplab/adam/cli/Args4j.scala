@@ -16,7 +16,7 @@
 
 package edu.berkeley.cs.amplab.adam.cli
 
-import org.kohsuke.args4j.{CmdLineException, CmdLineParser, Option}
+import org.kohsuke.args4j.{ CmdLineException, CmdLineParser, Option }
 import scala.collection.JavaConversions._
 import scala.util.control.Exception._
 import scala.Left
@@ -30,7 +30,7 @@ class Args4jBase {
 object Args4j {
   val helpOptions = Array("-h", "-help", "--help", "-?")
 
-  def apply[T <% Args4jBase : Manifest](args: Array[String]): T = {
+  def apply[T <% Args4jBase: Manifest](args: Array[String]): T = {
     val args4j: T = manifest[T].erasure.asInstanceOf[Class[T]].newInstance()
     val parser = new CmdLineParser(args4j)
     parser.setUsageWidth(150);
@@ -61,5 +61,4 @@ object Args4j {
   }
 
 }
-
 

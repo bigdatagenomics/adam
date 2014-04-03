@@ -16,9 +16,8 @@
 
 package edu.berkeley.cs.amplab.adam.models
 
-import net.sf.samtools.{SAMFileReader, SAMFileHeader}
+import net.sf.samtools.{ SAMFileReader, SAMFileHeader }
 import scala.collection.JavaConversions._
-
 
 object RecordGroupDictionary {
 
@@ -33,12 +32,11 @@ object RecordGroupDictionary {
 
 }
 
-class RecordGroupDictionary(readGroupNames: Seq[String]) extends Serializable
-{
+class RecordGroupDictionary(readGroupNames: Seq[String]) extends Serializable {
   val readGroups = readGroupNames.sorted.zipWithIndex.toMap
 
-  def apply(readGroupName: String) : Int =
-  {
-    readGroups(readGroupName)
-  }
+  def apply(readGroupName: String): Int =
+    {
+      readGroups(readGroupName)
+    }
 }
