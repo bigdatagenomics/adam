@@ -1,4 +1,4 @@
-@namespace("edu.berkeley.cs.amplab.adam.avro")
+@namespace("org.bdgenomics.adam.avro")
 protocol ADAM {
 
 record ADAMRecord {
