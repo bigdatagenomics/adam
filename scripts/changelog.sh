@@ -17,9 +17,9 @@ fi
 
 echo "# ADAM #"
 
-git log | grep -E "Merge pull request|prepare release" | while read l
+git log | grep -E "Merge pull request|prepare release" | grep -vi "Revert" | uniq | while read l
 do 
-  release=`echo $l | grep "\[maven-release-plugin\] prepare release" | cut -d "-" -f 4`
+  release=`echo $l | grep "\[maven-release-plugin\] prepare release" | cut -d "-" -f 5`
   PR=`echo $l| grep -E -o "Merge pull request #[^ ]*" | cut -d "#" -f 2`
 #  echo $l
   if [ -n "$release" ] 

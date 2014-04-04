@@ -1,10 +1,33 @@
 # ADAM #
 
-### Version parent ###
-* ISSUE [178](https://github.com/bigdatagenomics/adam/pull/178): Upgrade to Hadoop-BAM 0.6.2/Picard 1.107
+### Version 0.8.0 ###
+* ISSUE [203](https://github.com/bigdatagenomics/adam/pull/203): Move package from edu.berkeley.cs.amplab to org.bdgenomics
+* ISSUE [199](https://github.com/bigdatagenomics/adam/pull/199): Updating pileup conversion code to convert sequences that use the X and = (EQ) CIGAR operators
+* ISSUE [191](https://github.com/bigdatagenomics/adam/pull/191): Add repartition parameter
+* ISSUE [183](https://github.com/bigdatagenomics/adam/pull/183): Fixing Job.getInstance call that breaks hadoop 1 compatibility.
+* ISSUE [192](https://github.com/bigdatagenomics/adam/pull/192): Add docs and scripts for creating a release
+* ISSUE [193](https://github.com/bigdatagenomics/adam/pull/193): Issue #137, clarify role of CHANGES.{md,txt}
+
+### Version 0.7.2 ###
+* ISSUE [187](https://github.com/bigdatagenomics/adam/pull/187): Add summarize_genotypes command
+* ISSUE [178](https://github.com/bigdatagenomics/adam/pull/178): Upgraded to Hadoop-BAM 0.6.2/Picard 1.107.
+* ISSUE [173](https://github.com/bigdatagenomics/adam/pull/173): Parse annotations out of vcf files
+* ISSUE [162](https://github.com/bigdatagenomics/adam/pull/162): Refactored SequenceDictionary
+* ISSUE [180](https://github.com/bigdatagenomics/adam/pull/180): BQSR using vcf loader
+* ISSUE [179](https://github.com/bigdatagenomics/adam/pull/179): Update maven-surefire-plugin dependency version to 2.17, also create an ...
+* ISSUE [175](https://github.com/bigdatagenomics/adam/pull/175): VariantContext converter refactor
+* ISSUE [169](https://github.com/bigdatagenomics/adam/pull/169): Cleaning up mpileup command
+* ISSUE [170](https://github.com/bigdatagenomics/adam/pull/170): Adding variant field enumerations
+
+### Version 0.7.1 ###
+
+### Version 0.7.3 ###
+
+### Version 0.7.2 ###
 * ISSUE [166](https://github.com/bigdatagenomics/adam/pull/166): Pair-wise genotype concordance of genotype RDDs, with CLI tool
+
+### Version 0.7.0 ###
 * ISSUE [171](https://github.com/bigdatagenomics/adam/pull/171): Add back in allele dosage for genotypes.
-* ISSUE [131](https://github.com/bigdatagenomics/adam/issues/137): Clarify/unify role of CHANGES file
 
 ### Version 0.7.0 ###
 * ISSUE [167](https://github.com/bigdatagenomics/adam/pull/167): Fix for Hadoop 1.0.x support
@@ -80,7 +103,7 @@
 * ISSUE [17](https://github.com/bigdatagenomics/adam/pull/17): Fix transform -sort_reads partitioning. Add -coalesce option to transform.
 * ISSUE [16](https://github.com/bigdatagenomics/adam/pull/16): Fixing an issue in pileup generation and in the MdTag util.
 * ISSUE [15](https://github.com/bigdatagenomics/adam/pull/15): Tweaks 1
-* ISSUE [12](https://github.com/bigdatagenomics/adam/pull/12): Subclass testing bug in ADAMContext.adamLoad
+* ISSUE [12](https://github.com/bigdatagenomics/adam/pull/12): Subclass testing bug in AdamContext.adamLoad
 * ISSUE [11](https://github.com/bigdatagenomics/adam/pull/11): Missing brackets in VcfConverter.getType
 * ISSUE [10](https://github.com/bigdatagenomics/adam/pull/10): Moved record field name enum over to the projections package.
 * ISSUE [8](https://github.com/bigdatagenomics/adam/pull/8): Fixes to sorting in ReferencePosition
