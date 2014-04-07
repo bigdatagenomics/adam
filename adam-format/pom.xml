@@ -28,6 +28,7 @@
                         </goals>
                         <configuration>
                             <sourceDirectory>${project.basedir}/src/main/resources/avro</sourceDirectory>
+			    <fieldVisibility>PUBLIC</fieldVisibility>
                         </configuration>
                     </execution>
                 </executions>
