@@ -39,7 +39,7 @@ object MapTools {
    * @return
    */
   def add[KeyType, NumberType](map1: Map[KeyType, NumberType],
-    map2: Map[KeyType, NumberType])(implicit ops: Numeric[NumberType]): Map[KeyType, NumberType] = {
+                               map2: Map[KeyType, NumberType])(implicit ops: Numeric[NumberType]): Map[KeyType, NumberType] = {
 
     (map1.keys ++ map2.keys.filter(!map1.contains(_))).map {
       (key: KeyType) =>

@@ -208,7 +208,7 @@ class SequenceDictionary(val recordsIn: Array[SequenceRecord]) extends Serializa
   def records: Set[SequenceRecord] = recordIndices.values.toSet
 
   private[models] def cleanAndMerge(a1: Array[SequenceRecord],
-    a2: Array[SequenceRecord]): Array[SequenceRecord] = {
+                                    a2: Array[SequenceRecord]): Array[SequenceRecord] = {
     val a2filt = a2.filter(k => !a1.contains(k))
 
     a1 ++ a2filt

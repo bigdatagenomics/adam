@@ -27,9 +27,9 @@ class MarkDuplicatesSuite extends SparkFunSuite {
   }
 
   def createMappedRead(referenceId: Int, position: Long,
-    readName: String = UUID.randomUUID().toString, avgPhredScore: Int = 20,
-    numClippedBases: Int = 0, isPrimaryAlignment: Boolean = true,
-    isNegativeStrand: Boolean = false) = {
+                       readName: String = UUID.randomUUID().toString, avgPhredScore: Int = 20,
+                       numClippedBases: Int = 0, isPrimaryAlignment: Boolean = true,
+                       isNegativeStrand: Boolean = false) = {
     assert(avgPhredScore >= 10 && avgPhredScore <= 50)
     val qual = (for (i <- 0 until 100) yield (avgPhredScore + 33).toChar).toString()
     val cigar = if (numClippedBases > 0) "%dS%dM".format(numClippedBases, 100 - numClippedBases) else "100M"
@@ -51,9 +51,9 @@ class MarkDuplicatesSuite extends SparkFunSuite {
   }
 
   def createPair(firstReferenceId: Int, firstPosition: Long,
-    secondReferenceId: Int, secondPosition: Long,
-    readName: String = UUID.randomUUID().toString,
-    avgPhredScore: Int = 20): Seq[ADAMRecord] = {
+                 secondReferenceId: Int, secondPosition: Long,
+                 readName: String = UUID.randomUUID().toString,
+                 avgPhredScore: Int = 20): Seq[ADAMRecord] = {
     val firstOfPair = createMappedRead(firstReferenceId, firstPosition,
       readName = readName, avgPhredScore = avgPhredScore)
     firstOfPair.setFirstOfPair(true)

@@ -29,11 +29,11 @@ object AttributeUtils {
 
   def convertSAMTagAndValue(attr: SAMTagAndValue): Attribute = {
     attr.value match {
-      case x: java.lang.Integer => Attribute(attr.tag, TagType.Integer, attr.value.asInstanceOf[Int])
+      case x: java.lang.Integer   => Attribute(attr.tag, TagType.Integer, attr.value.asInstanceOf[Int])
       case x: java.lang.Character => Attribute(attr.tag, TagType.Character, attr.value.asInstanceOf[Char])
-      case x: java.lang.Float => Attribute(attr.tag, TagType.Float, attr.value.asInstanceOf[Float])
-      case x: java.lang.String => Attribute(attr.tag, TagType.String, attr.value.asInstanceOf[String])
-      case Array(_*) => Attribute(attr.tag, TagType.ByteSequence, attr.value.asInstanceOf[Array[java.lang.Byte]])
+      case x: java.lang.Float     => Attribute(attr.tag, TagType.Float, attr.value.asInstanceOf[Float])
+      case x: java.lang.String    => Attribute(attr.tag, TagType.String, attr.value.asInstanceOf[String])
+      case Array(_*)              => Attribute(attr.tag, TagType.ByteSequence, attr.value.asInstanceOf[Array[java.lang.Byte]])
       // It appears from the code, that 'H' is encoded as a String as well? I'm not sure
       // how to pull that out here.
     }
@@ -86,10 +86,10 @@ object AttributeUtils {
 
   private def typedStringToValue(tagType: TagType.Value, valueStr: String): Any = {
     tagType match {
-      case TagType.Character => valueStr(0)
-      case TagType.Integer => Integer.valueOf(valueStr)
-      case TagType.Float => java.lang.Float.valueOf(valueStr)
-      case TagType.String => valueStr
+      case TagType.Character    => valueStr(0)
+      case TagType.Integer      => Integer.valueOf(valueStr)
+      case TagType.Float        => java.lang.Float.valueOf(valueStr)
+      case TagType.String       => valueStr
       case TagType.ByteSequence => valueStr.map(c => java.lang.Byte.valueOf("" + c))
       case TagType.NumericSequence => valueStr.split(",").map(c => {
         if (c.contains(".")) java.lang.Float.valueOf(c)

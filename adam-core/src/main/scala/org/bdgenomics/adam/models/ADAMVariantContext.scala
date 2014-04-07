@@ -78,10 +78,10 @@ object ADAMVariantContext {
 }
 
 class ADAMVariantContext(
-  val position: ReferencePosition,
-  val variant: RichADAMVariant,
-  val genotypes: Seq[ADAMGenotype],
-  val databases: Option[ADAMDatabaseVariantAnnotation] = None) {
+    val position: ReferencePosition,
+    val variant: RichADAMVariant,
+    val genotypes: Seq[ADAMGenotype],
+    val databases: Option[ADAMDatabaseVariantAnnotation] = None) {
   def this(variant: RichADAMVariant, genotypes: Seq[ADAMGenotype], database: Option[ADAMDatabaseVariantAnnotation] = None) = {
     this(ReferencePosition(variant), variant, genotypes, database)
   }

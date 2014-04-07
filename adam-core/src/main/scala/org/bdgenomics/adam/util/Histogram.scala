@@ -41,10 +41,10 @@ class Histogram[T](val valueToCount: Map[T, Int]) extends Aggregated[T] with Ser
   private def defaultFilter(x: Any): Boolean = {
     x match {
       case (x1: Any, x2: Any) => x1 == x2
-      case i: Int => i == 0
-      case l: Long => l == 0L
-      case b: Boolean => b
-      case _ => false
+      case i: Int             => i == 0
+      case l: Long            => l == 0L
+      case b: Boolean         => b
+      case _                  => false
     }
   }
 

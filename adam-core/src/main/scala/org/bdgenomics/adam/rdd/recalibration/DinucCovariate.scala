@@ -61,7 +61,7 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
   }
 
   override def toCSV(option: Option[Value]): String = option match {
-    case None => "NN"
+    case None        => "NN"
     case Some(value) => "%s%s".format(value._1, value._2)
   }
 
@@ -69,7 +69,7 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
 
   override def equals(other: Any) = other match {
     case that: DinucCovariate => true
-    case _ => false
+    case _                    => false
   }
 
   override def hashCode = 0x9EAC50CB

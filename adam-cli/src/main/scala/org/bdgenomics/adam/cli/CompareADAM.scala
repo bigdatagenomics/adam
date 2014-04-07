@@ -68,11 +68,11 @@ object CompareADAM extends ADAMCommandCompanion with Serializable {
    * @see CompareADAMArgs.recurse1, CompareADAMArgs.recurse2
    */
   def setupTraversalEngine(sc: SparkContext,
-    input1Path: String,
-    recurse1: String,
-    input2Path: String,
-    recurse2: String,
-    generator: BucketComparisons[Any]): ComparisonTraversalEngine = {
+                           input1Path: String,
+                           recurse1: String,
+                           input2Path: String,
+                           recurse2: String,
+                           generator: BucketComparisons[Any]): ComparisonTraversalEngine = {
 
     val schemas = Seq[FieldValue](
       recordGroupId,
@@ -88,7 +88,7 @@ object CompareADAM extends ADAMCommandCompanion with Serializable {
   def parseGenerators(nameList: String): Seq[BucketComparisons[Any]] = {
     nameList match {
       case null => DefaultComparisons.comparisons
-      case s => parseGenerators(s.split(","))
+      case s    => parseGenerators(s.split(","))
     }
   }
 
@@ -146,9 +146,9 @@ class CompareADAM(protected val args: CompareADAMArgs) extends ADAMSparkCommand[
    * @param writer The PrintWriter to print the summary with.
    */
   def printSummary(engine: ComparisonTraversalEngine,
-    generators: Seq[BucketComparisons[Any]],
-    aggregateds: Seq[Histogram[Any]],
-    writer: PrintWriter) {
+                   generators: Seq[BucketComparisons[Any]],
+                   aggregateds: Seq[Histogram[Any]],
+                   writer: PrintWriter) {
 
     writer.println("%15s: %s".format("INPUT1", args.input1Path))
     writer.println("\t%15s: %d".format("total-reads", engine.named1.count()))

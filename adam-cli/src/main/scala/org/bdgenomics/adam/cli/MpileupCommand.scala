@@ -57,7 +57,7 @@ class MpileupCommand(protected val args: MpileupArgs) extends ADAMSparkCommand[M
       // The reference base
       pileup.referenceBase match {
         case Some(base) => print(base)
-        case None => print("?")
+        case None       => print("?")
       }
 
       // The number of reads

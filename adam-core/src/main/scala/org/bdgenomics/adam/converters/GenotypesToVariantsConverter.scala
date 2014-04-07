@@ -19,7 +19,7 @@ import org.bdgenomics.adam.util._
 import scala.math.{ pow, sqrt }
 
 private[adam] class GenotypesToVariantsConverter(validateSamples: Boolean = false,
-  failOnValidationError: Boolean = false) extends Serializable {
+                                                 failOnValidationError: Boolean = false) extends Serializable {
 
   /**
    * Computes root mean squared (RMS) values for a series of doubles.

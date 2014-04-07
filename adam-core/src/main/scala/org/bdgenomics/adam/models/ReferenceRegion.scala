@@ -122,7 +122,7 @@ case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[R
    */
   def isAdjacent(region: ReferenceRegion): Boolean = distance(region) match {
     case Some(d) => d == 1
-    case None => false
+    case None    => false
   }
 
   /**

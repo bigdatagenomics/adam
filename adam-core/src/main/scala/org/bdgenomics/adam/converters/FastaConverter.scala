@@ -43,7 +43,7 @@ private[adam] object FastaConverter {
    * @return An RDD of ADAM FASTA data.
    */
   def apply(rdd: RDD[(Int, String)],
-    maxFragmentLength: Long = 10000L): RDD[ADAMNucleotideContigFragment] = {
+            maxFragmentLength: Long = 10000L): RDD[ADAMNucleotideContigFragment] = {
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
       .filter((kv: (Int, String)) => !kv._2.startsWith(";"))
 
@@ -164,9 +164,9 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
    * @return The converted ADAM FASTA contig.
    */
   def convert(name: Option[String],
-    id: Int,
-    sequence: Seq[String],
-    description: Option[String]): Seq[ADAMNucleotideContigFragment] = {
+              id: Int,
+              sequence: Seq[String],
+              description: Option[String]): Seq[ADAMNucleotideContigFragment] = {
 
     // get sequence length
     val sequenceLength = sequence.map(_.length).reduce(_ + _)

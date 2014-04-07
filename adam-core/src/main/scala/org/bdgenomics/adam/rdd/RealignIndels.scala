@@ -67,7 +67,7 @@ private[rdd] object RealignIndels {
    * @see mapTargets
    */
   @tailrec final def mapToTarget(read: RichADAMRecord,
-    targets: TreeSet[(IndelRealignmentTarget, Int)]): Int = {
+                                 targets: TreeSet[(IndelRealignmentTarget, Int)]): Int = {
     // Perform tail call recursive binary search
     if (targets.size == 1) {
       if (TargetOrdering.contains(targets.head._1, read)) {
@@ -214,7 +214,7 @@ private[rdd] class RealignIndels extends Serializable with Logging {
         // try to generate a consensus alignment - if a consensus exists, add it to our list of consensuses to test
         consensus = Consensus.generateAlternateConsensus(newRead.getSequence, newRead.getStart, newRead.samtoolsCigar) match {
           case Some(o) => o :: consensus
-          case None => consensus
+          case None    => consensus
         }
       } else {
         // if the read does not have mismatches, then we needn't process it further

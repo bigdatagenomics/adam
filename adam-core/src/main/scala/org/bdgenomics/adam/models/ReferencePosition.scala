@@ -43,7 +43,7 @@ object ReferencePositionWithOrientation {
 }
 
 case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition], negativeStrand: Boolean)
-  extends Ordered[ReferencePositionWithOrientation] {
+    extends Ordered[ReferencePositionWithOrientation] {
   override def compare(that: ReferencePositionWithOrientation): Int = {
     val posCompare = refPos.compare(that.refPos)
     if (posCompare != 0) {

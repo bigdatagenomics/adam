@@ -32,7 +32,7 @@ class QualityScore(val phred: Int) extends Ordered[QualityScore] with Serializab
 
   override def equals(other: Any): Boolean = other match {
     case that: QualityScore => this.phred == that.phred
-    case _ => false
+    case _                  => false
   }
 
   override def hashCode: Int = Util.hashCombine(0x26C2E0BA, phred.hashCode)

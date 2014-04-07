@@ -36,8 +36,8 @@ object SingleReadBucket extends Logging {
 }
 
 case class SingleReadBucket(primaryMapped: Seq[ADAMRecord] = Seq.empty,
-  secondaryMapped: Seq[ADAMRecord] = Seq.empty,
-  unmapped: Seq[ADAMRecord] = Seq.empty) {
+                            secondaryMapped: Seq[ADAMRecord] = Seq.empty,
+                            unmapped: Seq[ADAMRecord] = Seq.empty) {
   // Note: not a val in order to save serialization/memory cost
   def allReads = {
     primaryMapped ++ secondaryMapped ++ unmapped

@@ -65,7 +65,7 @@ object ADAMMain extends Logging {
       printCommands()
     } else {
       commands.find(_.commandName == args(0)) match {
-        case None => printCommands()
+        case None      => printCommands()
         case Some(cmd) => cmd.apply(args drop 1).run()
       }
     }

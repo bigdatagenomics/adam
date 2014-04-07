@@ -29,12 +29,12 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
  * This is useful as this will usually map a single read in any of the sequences.
  */
 case class ReadBucket(unpairedPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-  pairedFirstPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-  pairedSecondPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-  unpairedSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-  pairedFirstSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-  pairedSecondSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-  unmappedReads: Seq[ADAMRecord] = Seq.empty) {
+                      pairedFirstPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+                      pairedSecondPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+                      unpairedSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+                      pairedFirstSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+                      pairedSecondSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
+                      unmappedReads: Seq[ADAMRecord] = Seq.empty) {
   def allReads(): Seq[ADAMRecord] =
     unpairedPrimaryMappedReads ++
       pairedFirstPrimaryMappedReads ++

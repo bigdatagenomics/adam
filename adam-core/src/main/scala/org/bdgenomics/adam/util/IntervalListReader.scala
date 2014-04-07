@@ -93,7 +93,7 @@ class IntervalListReader(file: File) extends Traversable[(ReferenceRegion, Strin
                 case "SN" => name = arg
                 case "UR" => url = arg
                 case "LN" => length = arg.toLong
-                case _ => None
+                case _    => None
               }
             }
         }

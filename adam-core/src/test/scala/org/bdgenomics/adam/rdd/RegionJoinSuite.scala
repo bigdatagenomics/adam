@@ -269,7 +269,7 @@ class RegionJoinSuite extends SparkFunSuite {
       .filter({
         case ((_: ADAMRecord, (cartesian: ADAMRecord, region: Option[ADAMRecord]))) =>
           region match {
-            case None => false
+            case None         => false
             case Some(record) => cartesian == record
           }
       })

@@ -45,14 +45,14 @@ class ComparisonTraversalEngine(schema: Seq[FieldValue], input1: RDD[ADAMRecord]
   def uniqueToNamed1(): Long = {
     named1.leftOuterJoin(named2).filter {
       case (name, (bucket1, Some(bucket2))) => false
-      case (name, (bucket1, None)) => true
+      case (name, (bucket1, None))          => true
     }.count()
   }
 
   def uniqueToNamed2(): Long = {
     named2.leftOuterJoin(named1).filter {
       case (name, (bucket1, Some(bucket2))) => false
-      case (name, (bucket1, None)) => true
+      case (name, (bucket1, None))          => true
     }.count()
   }
 

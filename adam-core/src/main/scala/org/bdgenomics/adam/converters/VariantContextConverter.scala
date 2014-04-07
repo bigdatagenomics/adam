@@ -48,8 +48,8 @@ object VariantContextConverter {
   private def convertAlleles(g: ADAMGenotype): java.util.List[Allele] = {
     g.getAlleles.map(a => a match {
       case ADAMGenotypeAllele.NoCall => Allele.NO_CALL
-      case ADAMGenotypeAllele.Ref => Allele.create(g.getVariant.getReferenceAllele.toString, true)
-      case ADAMGenotypeAllele.Alt => Allele.create(g.getVariant.getVariantAllele.toString)
+      case ADAMGenotypeAllele.Ref    => Allele.create(g.getVariant.getReferenceAllele.toString, true)
+      case ADAMGenotypeAllele.Alt    => Allele.create(g.getVariant.getVariantAllele.toString)
     })
   }
 }

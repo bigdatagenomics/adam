@@ -43,7 +43,7 @@ class PileupAggregatorArgs extends Args4jBase with SparkArgs with ParquetArgs {
 }
 
 class PileupAggregator(protected val args: PileupAggregatorArgs)
-  extends ADAMSparkCommand[PileupAggregatorArgs] {
+    extends ADAMSparkCommand[PileupAggregatorArgs] {
 
   val companion = PileupAggregator
 

@@ -52,8 +52,8 @@ import scala.math.{ min, max }
 class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Serializable {
 
   def adamSave(filePath: String, blockSize: Int = 128 * 1024 * 1024,
-    pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
-    disableDictionaryEncoding: Boolean = false): RDD[T] = {
+               pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+               disableDictionaryEncoding: Boolean = false): RDD[T] = {
     val job = new Job(rdd.context.hadoopConfiguration)
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
     ParquetOutputFormat.setWriteSupportClass(job, classOf[AvroWriteSupport])
@@ -131,7 +131,7 @@ abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
  * @param rdd RDD over which aggregation is supported.
  */
 class ADAMSpecificRecordSequenceDictionaryRDDAggregator[T <% SpecificRecord: Manifest](rdd: RDD[T])
-  extends ADAMSequenceDictionaryRDDAggregator[T](rdd) {
+    extends ADAMSequenceDictionaryRDDAggregator[T](rdd) {
 
   def getSequenceRecordsFromElement(elem: T): Set[SequenceRecord] = {
     Set(SequenceRecord.fromSpecificRecord(elem))
@@ -223,7 +223,7 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
    * @return RDD of ADAMRods.
    */
   def adamRecords2Rods(bucketSize: Int = 1000,
-    secondaryAlignments: Boolean = false): RDD[ADAMRod] = {
+                       secondaryAlignments: Boolean = false): RDD[ADAMRod] = {
 
     /**
      * Maps a read to one or two buckets. A read maps to a single bucket if both
@@ -458,7 +458,7 @@ class ADAMNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
     }
 
     def reducePairs(kv1: (ReferenceRegion, String),
-      kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
+                    kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
       assert(kv1._1.isAdjacent(kv2._1), "Regions being joined must be adjacent. For: " +
         kv1 + ", " + kv2)
 

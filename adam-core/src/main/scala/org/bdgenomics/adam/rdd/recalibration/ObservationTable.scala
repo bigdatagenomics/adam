@@ -84,7 +84,7 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
 
   override def equals(other: Any): Boolean = other match {
     case that: Observation => this.total == that.total && this.mismatches == that.mismatches
-    case _ => false
+    case _                 => false
   }
 
   override def hashCode = Util.hashCombine(0x634DAED9, total.hashCode, mismatches.hashCode)
@@ -97,10 +97,10 @@ object Observation {
 }
 
 class Aggregate private (
-  total: Long, // number of total observations
-  mismatches: Long, // number of mismatches observed
-  val expectedMismatches: Double // expected number of mismatches based on reported quality scores
-  ) extends Observation(total, mismatches) {
+    total: Long, // number of total observations
+    mismatches: Long, // number of mismatches observed
+    val expectedMismatches: Double // expected number of mismatches based on reported quality scores
+    ) extends Observation(total, mismatches) {
 
   require(expectedMismatches <= total)
 
@@ -124,8 +124,8 @@ object Aggregate {
  * Table containing the empirical frequency of mismatches for each set of covariate values.
  */
 class ObservationTable(
-  val space: CovariateSpace,
-  val entries: Map[CovariateKey, Observation]) extends Serializable {
+    val space: CovariateSpace,
+    val entries: Map[CovariateKey, Observation]) extends Serializable {
 
   // `func' computes the aggregation key
   def aggregate[K](func: (CovariateKey, Observation) => K): Map[K, Aggregate] = {

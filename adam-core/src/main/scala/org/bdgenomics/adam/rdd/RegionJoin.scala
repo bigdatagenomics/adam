@@ -67,12 +67,12 @@ object RegionJoin {
    *         corresponding to x overlaps the region corresponding to y.
    */
   def partitionAndJoin[T, U](sc: SparkContext,
-    seqDict: SequenceDictionary,
-    baseRDD: RDD[T],
-    joinedRDD: RDD[U])(implicit tMapping: ReferenceMapping[T],
-      uMapping: ReferenceMapping[U],
-      tManifest: ClassManifest[T],
-      uManifest: ClassManifest[U]): RDD[(T, U)] = {
+                             seqDict: SequenceDictionary,
+                             baseRDD: RDD[T],
+                             joinedRDD: RDD[U])(implicit tMapping: ReferenceMapping[T],
+                                                uMapping: ReferenceMapping[U],
+                                                tManifest: ClassManifest[T],
+                                                uManifest: ClassManifest[U]): RDD[(T, U)] = {
 
     /**
      * Original Join Design:
@@ -148,10 +148,10 @@ object RegionJoin {
    *
    */
   def cartesianFilter[T, U](baseRDD: RDD[T],
-    joinedRDD: RDD[U])(implicit tMapping: ReferenceMapping[T],
-      uMapping: ReferenceMapping[U],
-      tManifest: ClassManifest[T],
-      uManifest: ClassManifest[U]): RDD[(T, U)] = {
+                            joinedRDD: RDD[U])(implicit tMapping: ReferenceMapping[T],
+                                               uMapping: ReferenceMapping[U],
+                                               tManifest: ClassManifest[T],
+                                               uManifest: ClassManifest[U]): RDD[(T, U)] = {
     baseRDD.cartesian(joinedRDD).filter({
       case (t: T, u: U) =>
         tMapping.getReferenceRegion(t).overlaps(uMapping.getReferenceRegion(u))
@@ -336,7 +336,7 @@ object NonoverlappingRegions {
  *                all the x's must be valid refIds with respect to the sequence dictionary.
  */
 class MultiContigNonoverlappingRegions(seqDict: SequenceDictionary, regions: Seq[(Int, Seq[ReferenceRegion])])
-  extends Serializable {
+    extends Serializable {
 
   assert(regions != null,
     "Regions was set to null")
@@ -349,13 +349,13 @@ class MultiContigNonoverlappingRegions(seqDict: SequenceDictionary, regions: Seq
 
   def regionsFor[U](regionable: U)(implicit mapping: ReferenceMapping[U]): Iterable[ReferenceRegion] =
     regionMap.get(mapping.getReferenceId(regionable)) match {
-      case None => Seq()
+      case None     => Seq()
       case Some(nr) => nr.regionsFor(regionable)
     }
 
   def filter[U](value: U)(implicit mapping: ReferenceMapping[U]): Boolean =
     regionMap.get(mapping.getReferenceId(value)) match {
-      case None => false
+      case None     => false
       case Some(nr) => nr.hasRegionsFor(value)
     }
 }

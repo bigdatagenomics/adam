@@ -33,10 +33,10 @@ object SmithWatermanConstantGapScoring {
 }
 
 abstract class SmithWatermanConstantGapScoring(xSequence: String,
-  ySequence: String,
-  wMatch: Double,
-  wMismatch: Double,
-  wInsert: Double,
-  wDelete: Double)
-  extends SmithWatermanGapScoringFromFn(xSequence, ySequence, SmithWatermanConstantGapScoring.constantGapFn(wMatch, wMismatch, wInsert, wDelete)) {
+                                               ySequence: String,
+                                               wMatch: Double,
+                                               wMismatch: Double,
+                                               wInsert: Double,
+                                               wDelete: Double)
+    extends SmithWatermanGapScoringFromFn(xSequence, ySequence, SmithWatermanConstantGapScoring.constantGapFn(wMatch, wMismatch, wInsert, wDelete)) {
 }

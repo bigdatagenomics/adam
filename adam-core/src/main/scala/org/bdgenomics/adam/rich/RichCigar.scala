@@ -39,7 +39,7 @@ class RichCigar(cigar: Cigar) {
     cigar.getCigarElements.map(element => {
       element.getOperator match {
         case CigarOperator.M => 1
-        case _ => 0
+        case _               => 0
       }
     }).reduce(_ + _)
   }
@@ -63,8 +63,8 @@ class RichCigar(cigar: Cigar) {
      * @return List of cigar elements with single element moved.
      */
     @tailrec def moveCigarLeft(head: List[CigarElement],
-      index: Int,
-      cigarElements: List[CigarElement]): List[CigarElement] = {
+                               index: Int,
+                               cigarElements: List[CigarElement]): List[CigarElement] = {
       if (index == 1) {
         val elementToTrim = cigarElements.head
         val elementToMove: Option[CigarElement] = Some(cigarElements(1))
@@ -90,7 +90,7 @@ class RichCigar(cigar: Cigar) {
         // if there are elements afterwards, pad the first one
         val elementPadded = elementToPad match {
           case Some(o: CigarElement) => Some(new CigarElement(o.getLength + 1, o.getOperator))
-          case _ => Some(new CigarElement(1, CigarOperator.M))
+          case _                     => Some(new CigarElement(1, CigarOperator.M))
         }
 
         // flatmap to remove empty options

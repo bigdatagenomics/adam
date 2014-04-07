@@ -36,7 +36,7 @@ private[rdd] object Reads2PileupProcessor {
  * If false, we only process reads that are at their primary alignment. Default is false.
  */
 private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = false)
-  extends Serializable with Logging {
+    extends Serializable with Logging {
 
   /**
    * Converts a single read into a list of pileups.
@@ -77,7 +77,7 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
 
       val end: Long = record.end match {
         case Some(o) => o.asInstanceOf[Long]
-        case None => -1L
+        case None    => -1L
       }
 
       assert(end != -1L, "Read is mapped but has a null end position. Read:\n" + record)
@@ -151,7 +151,7 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
             } else {
               if (mdTag.isDefined) {
                 mdTag.get.mismatchedBase(referencePos) match {
-                  case None => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace ()
+                  case None       => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace ()
                   case Some(read) => Some(Base.valueOf(read.toString))
                 }
               } else {
@@ -242,7 +242,7 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
 
             val referenceBase: Option[Base] = if (mdTag.isDefined) {
               mdTag.get.mismatchedBase(referencePos) match {
-                case None => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace ()
+                case None       => throw new IllegalArgumentException("Cigar match has no MD (mis)match @" + referencePos + " " + record.getCigar + " " + record.getMismatchingPositions) fillInStackTrace ()
                 case Some(read) => Some(Base.valueOf(read.toString))
               }
             } else {

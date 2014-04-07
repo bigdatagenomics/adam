@@ -56,8 +56,8 @@ class SummarizeGenotypes(val args: SummarizeGenotypesArgs) extends ADAMSparkComm
     val stats = GenotypesSummary(adamGTs)
     val result = args.format match {
       case "human" => GenotypesSummaryFormatting.format_human_readable(stats)
-      case "csv" => GenotypesSummaryFormatting.format_csv(stats)
-      case _ => throw new IllegalArgumentException("Invalid -format: %s".format(args.format))
+      case "csv"   => GenotypesSummaryFormatting.format_csv(stats)
+      case _       => throw new IllegalArgumentException("Invalid -format: %s".format(args.format))
     }
     if (args.out.isEmpty) {
       println(result)

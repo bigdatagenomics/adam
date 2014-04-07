@@ -56,10 +56,10 @@ case class DuplicateMetrics(total: Long, bothMapped: Long, onlyReadMapped: Long,
 }
 
 case class FlagStatMetrics(total: Long, duplicatesPrimary: DuplicateMetrics, duplicatesSecondary: DuplicateMetrics,
-  mapped: Long, pairedInSequencing: Long,
-  read1: Long, read2: Long, properlyPaired: Long, withSelfAndMateMapped: Long,
-  singleton: Long, withMateMappedToDiffChromosome: Long,
-  withMateMappedToDiffChromosomeMapQ5: Long, failedQuality: Boolean) {
+                           mapped: Long, pairedInSequencing: Long,
+                           read1: Long, read2: Long, properlyPaired: Long, withSelfAndMateMapped: Long,
+                           singleton: Long, withMateMappedToDiffChromosome: Long,
+                           withMateMappedToDiffChromosomeMapQ5: Long, failedQuality: Boolean) {
   def +(that: FlagStatMetrics): FlagStatMetrics = {
     assert(failedQuality == that.failedQuality, "Can't reduce passedVendorQuality with different failedQuality values")
     new FlagStatMetrics(total + that.total,

@@ -42,7 +42,7 @@ import org.apache.spark.rdd.RDD
 class BaseQualityRecalibration(
   val reads: RDD[DecadentRead],
   val knownSnps: Broadcast[SnpTable])
-  extends Serializable with Logging {
+    extends Serializable with Logging {
 
   // Additional covariates to use when computing the correction
   // TODO: parameterize

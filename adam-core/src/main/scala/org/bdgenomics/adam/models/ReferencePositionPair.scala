@@ -48,7 +48,7 @@ object ReferencePositionPair extends Logging {
 }
 
 case class ReferencePositionPair(read1refPos: Option[ReferencePositionWithOrientation],
-  read2refPos: Option[ReferencePositionWithOrientation])
+                                 read2refPos: Option[ReferencePositionWithOrientation])
 
 class ReferencePositionPairSerializer extends Serializer[ReferencePositionPair] {
   val rps = new ReferencePositionWithOrientationSerializer()

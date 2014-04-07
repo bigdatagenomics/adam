@@ -26,7 +26,7 @@ import org.bdgenomics.adam.util.QualityScore
 import math.{ exp, log }
 
 class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)
-  extends (DecadentRead => ADAMRecord) with Serializable {
+    extends (DecadentRead => ADAMRecord) with Serializable {
 
   def apply(read: DecadentRead): ADAMRecord = {
     val record: ADAMRecord = read.record
@@ -62,7 +62,7 @@ class RecalibrationTable(
   val qualityTable: Map[(String, QualityScore), Aggregate],
   // marginals for each optional covariate by read group and quality
   val extraTables: IndexedSeq[Map[(String, QualityScore, Option[Covariate#Value]), Aggregate]])
-  extends (DecadentRead => Seq[QualityScore]) with Serializable {
+    extends (DecadentRead => Seq[QualityScore]) with Serializable {
 
   def apply(read: DecadentRead): Seq[QualityScore] =
     covariates(read).map(lookup)

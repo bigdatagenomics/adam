@@ -42,13 +42,13 @@ import org.bdgenomics.adam.rdd.GenotypesSummaryCounts.ReferenceAndAlternate
  *
  */
 case class GenotypesSummaryCounts(
-  genotypesCounts: GenotypesSummaryCounts.GenotypeAlleleCounts,
-  singleNucleotideVariantCounts: GenotypesSummaryCounts.VariantCounts,
-  multipleNucleotideVariantCount: Long,
-  insertionCount: Long,
-  deletionCount: Long,
-  readCount: Option[Long],
-  phasedCount: Long) {
+    genotypesCounts: GenotypesSummaryCounts.GenotypeAlleleCounts,
+    singleNucleotideVariantCounts: GenotypesSummaryCounts.VariantCounts,
+    multipleNucleotideVariantCount: Long,
+    insertionCount: Long,
+    deletionCount: Long,
+    readCount: Option[Long],
+    phasedCount: Long) {
 
   lazy val genotypesCount: Long = genotypesCounts.values.sum
   lazy val variantGenotypesCount: Long =
@@ -164,9 +164,9 @@ object GenotypesSummaryCounts {
  *
  */
 case class GenotypesSummary(
-  perSampleStatistics: StatisticsMap,
-  singletonCount: Long,
-  distinctVariantCount: Long) {
+    perSampleStatistics: StatisticsMap,
+    singletonCount: Long,
+    distinctVariantCount: Long) {
   lazy val aggregateStatistics =
     perSampleStatistics.values.foldLeft(GenotypesSummaryCounts())(_.combine(_)).withDefaultZeroCounts
 }
@@ -181,9 +181,9 @@ object GenotypesSummary {
       stats1.keySet.union(stats2.keySet).map(sample => {
         (stats1.get(sample), stats2.get(sample)) match {
           case (Some(statsA), Some(statsB)) => sample -> statsA.combine(statsB)
-          case (Some(stats), None) => sample -> stats
-          case (None, Some(stats)) => sample -> stats
-          case (None, None) => throw new AssertionError("Unreachable")
+          case (Some(stats), None)          => sample -> stats
+          case (None, Some(stats))          => sample -> stats
+          case (None, None)                 => throw new AssertionError("Unreachable")
         }
       }).toMap
     }
@@ -270,7 +270,7 @@ object GenotypesSummaryFormatting {
       }
       result ++= "\tAverage read depth at called variants: %s\n".format(stats.averageReadDepthAtVariants match {
         case Some(depth) => "%1.1f".format(depth)
-        case None => "[no variant calls, or read depth missing for one or more variant calls]"
+        case None        => "[no variant calls, or read depth missing for one or more variant calls]"
       })
       result ++= "\tPhased genotypes: %d / %d = %1.3f%%\n".format(
         stats.phasedCount,
@@ -296,8 +296,8 @@ object GenotypesSummaryFormatting {
 
   private def sortedGenotypeAlleles(stats: GenotypesSummaryCounts): Seq[List[ADAMGenotypeAllele]] = {
     def genotypeSortOrder(genotype: List[ADAMGenotypeAllele]): Int = genotype.map({
-      case ADAMGenotypeAllele.Ref => 0
-      case ADAMGenotypeAllele.Alt => 1
+      case ADAMGenotypeAllele.Ref    => 0
+      case ADAMGenotypeAllele.Alt    => 1
       case ADAMGenotypeAllele.NoCall => 10 // arbitrary large number so any genotype with a NoCall sorts last.
     }).sum
     stats.genotypesCounts.keySet.toList.sortBy(genotypeSortOrder(_))

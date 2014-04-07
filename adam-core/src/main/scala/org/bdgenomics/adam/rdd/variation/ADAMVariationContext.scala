@@ -35,7 +35,7 @@ private object ADAMVCFOutputFormat {
 
   def getHeader: VCFHeader = header match {
     case Some(h) => h
-    case None => setHeader(Seq())
+    case None    => setHeader(Seq())
   }
 
   def setHeader(samples: Seq[String]): VCFHeader = {

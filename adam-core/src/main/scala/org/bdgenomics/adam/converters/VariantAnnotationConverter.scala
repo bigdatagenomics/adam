@@ -26,18 +26,18 @@ import org.bdgenomics.adam.util.ImplicitJavaConversions._
 object VariantAnnotationConverter extends Serializable {
 
   private def attrAsInt(attr: Object): Object = attr match {
-    case a: String => java.lang.Integer.valueOf(a)
+    case a: String            => java.lang.Integer.valueOf(a)
     case a: java.lang.Integer => a
-    case a: java.lang.Number => java.lang.Integer.valueOf(a.intValue)
+    case a: java.lang.Number  => java.lang.Integer.valueOf(a.intValue)
   }
   private def attrAsLong(attr: Object): Object = attr match {
-    case a: String => java.lang.Long.valueOf(a)
-    case a: java.lang.Long => a
+    case a: String           => java.lang.Long.valueOf(a)
+    case a: java.lang.Long   => a
     case a: java.lang.Number => java.lang.Long.valueOf(a.longValue)
   }
   private def attrAsFloat(attr: Object): Object = attr match {
-    case a: String => java.lang.Float.valueOf(a)
-    case a: java.lang.Float => a
+    case a: String           => java.lang.Float.valueOf(a)
+    case a: java.lang.Float  => a
     case a: java.lang.Number => java.lang.Float.valueOf(a.floatValue)
   }
   private def attrAsString(attr: Object): Object = attr match {
@@ -46,7 +46,7 @@ object VariantAnnotationConverter extends Serializable {
 
   private def attrAsBoolean(attr: Object): Object = attr match {
     case a: java.lang.Boolean => a
-    case a: String => java.lang.Boolean.valueOf(a)
+    case a: String            => java.lang.Boolean.valueOf(a)
   }
 
   private case class AttrKey(adamKey: String, attrConverter: (Object => Object), hdrLine: VCFCompoundHeaderLine) {

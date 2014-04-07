@@ -76,10 +76,10 @@ class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[Int, Long]
       case ReferencePosition.UNMAPPED => parts
 
       // everything else gets assigned normally.
-      case refpos: ReferencePosition => getPart(refpos.refId, refpos.pos)
+      case refpos: ReferencePosition  => getPart(refpos.refId, refpos.pos)
 
       // only ReferencePosition values are partitioned using this partitioner
-      case _ => throw new IllegalArgumentException("Only ReferencePosition values can be partitioned by GenomicRegionPartitioner")
+      case _                          => throw new IllegalArgumentException("Only ReferencePosition values can be partitioned by GenomicRegionPartitioner")
     }
   }
 

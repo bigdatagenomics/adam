@@ -24,8 +24,8 @@ import org.apache.spark.SparkContext
 import org.apache.avro.specific.SpecificRecord
 
 class RichRDDReferenceRecords[T <: SpecificRecord: ClassManifest](rdd: RDD[T],
-  mapping: ReferenceMapping[T])
-  extends Serializable {
+                                                                  mapping: ReferenceMapping[T])
+    extends Serializable {
 
   def remapReferenceId(map: Map[Int, Int])(implicit sc: SparkContext): RDD[T] = {
     // If the reference IDs match, we don't need to do any remapping, just return the previous RDD

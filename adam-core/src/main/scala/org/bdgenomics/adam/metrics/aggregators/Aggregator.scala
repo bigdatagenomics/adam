@@ -55,8 +55,8 @@ trait Aggregated[+T] extends Writable with Serializable {
 }
 
 class AggregatedCollection[T, U <: Aggregated[T]](val values: Seq[U])
-  extends Aggregated[metrics.Collection[Seq[T]]]
-  with Serializable {
+    extends Aggregated[metrics.Collection[Seq[T]]]
+    with Serializable {
 
   def count(): Long = values.map(_.count()).reduce(_ + _)
   def countIdentical(): Long =
@@ -72,7 +72,7 @@ object AggregatedCollection {
 }
 
 class CombinedAggregator[Single, Agg <: Aggregated[Single]](aggs: Seq[Aggregator[Single, Agg]])
-  extends Aggregator[metrics.Collection[Seq[Single]], AggregatedCollection[Single, Agg]] {
+    extends Aggregator[metrics.Collection[Seq[Single]], AggregatedCollection[Single, Agg]] {
 
   def initialValue: AggregatedCollection[Single, Agg] = AggregatedCollection(aggs.map(_.initialValue))
 

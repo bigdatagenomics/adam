@@ -47,7 +47,7 @@ trait Covariate {
 
   // Format the provided Value to be compatible with GATK's CSV output
   def toCSV(option: Option[Value]): String = option match {
-    case None => "(none)"
+    case None        => "(none)"
     case Some(value) => value.toString
   }
 
@@ -66,9 +66,9 @@ abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
  * covariate valuess are in `extras`.
  */
 class CovariateKey(
-  val readGroup: String,
-  val quality: QualityScore,
-  val extras: Seq[Option[Covariate#Value]]) extends Serializable {
+    val readGroup: String,
+    val quality: QualityScore,
+    val extras: Seq[Option[Covariate#Value]]) extends Serializable {
 
   def parts: Seq[Any] = Seq(readGroup, quality) ++ extras
 
@@ -120,7 +120,7 @@ class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
 
   override def equals(other: Any): Boolean = other match {
     case that: CovariateSpace => this.extras == that.extras
-    case _ => false
+    case _                    => false
   }
 
   override def hashCode = Util.hashCombine(0x48C35799, extras.hashCode)

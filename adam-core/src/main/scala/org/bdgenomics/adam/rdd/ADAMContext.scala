@@ -113,12 +113,12 @@ object ADAMContext {
    * @return Returns a properly configured Spark Context.
    */
   def createSparkContext(name: String,
-    master: String,
-    sparkHome: String,
-    sparkJars: Seq[String],
-    sparkEnvVars: Seq[String],
-    sparkAddStatsListener: Boolean = false,
-    sparkKryoBufferSize: Int = 4): SparkContext = {
+                         master: String,
+                         sparkHome: String,
+                         sparkJars: Seq[String],
+                         sparkEnvVars: Seq[String],
+                         sparkAddStatsListener: Boolean = false,
+                         sparkKryoBufferSize: Int = 4): SparkContext = {
     ADAMKryoProperties.setupContextProperties(sparkKryoBufferSize)
     val appName = "adam: " + name
     val environment: Map[String, String] = if (sparkEnvVars.isEmpty) {

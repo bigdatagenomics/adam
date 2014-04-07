@@ -95,11 +95,11 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
     // see. This is related to Issue #62: Predicate to filter conversion.
     val filter = accessControl.predicate match {
       case None => plugin.predicate match {
-        case None => None
+        case None                  => None
         case Some(predicateFilter) => Some(predicateFilter)
       }
       case Some(accessControlPredicate) => plugin.predicate match {
-        case None => Some(accessControlPredicate)
+        case None                  => Some(accessControlPredicate)
         case Some(predicateFilter) => Some((value: ADAMRecord) => accessControlPredicate(value) && predicateFilter(value))
       }
     }
@@ -107,7 +107,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
     val firstRdd: RDD[ADAMRecord] = load[ADAMRecord](sc, args.input, plugin.projection)
 
     val input = filter match {
-      case None => firstRdd
+      case None             => firstRdd
       case Some(filterFunc) => firstRdd.filter(filterFunc)
     }
 

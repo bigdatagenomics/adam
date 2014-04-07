@@ -65,7 +65,7 @@ object ADAMVCFOutputFormat {
 }
 
 class ADAMVCFOutputFormat[K]
-  extends KeyIgnoringVCFOutputFormat[K](VCFFormat.valueOf("VCF")) {
+    extends KeyIgnoringVCFOutputFormat[K](VCFFormat.valueOf("VCF")) {
 
   setHeader(ADAMVCFOutputFormat.getHeader)
 }

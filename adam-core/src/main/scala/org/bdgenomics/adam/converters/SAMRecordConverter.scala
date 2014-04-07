@@ -124,7 +124,7 @@ class SAMRecordConverter extends Serializable {
     if (recordGroup != null) {
       Option(recordGroup.getRunDate) match {
         case Some(date) => builder.setRecordGroupRunDateEpoch(date.getTime)
-        case None =>
+        case None       =>
       }
       recordGroup.getId
       builder.setRecordGroupId(readGroups(recordGroup.getReadGroupId))

@@ -88,7 +88,7 @@ class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with
     // Compute RDD[sample -> ConcordanceTable] across variants/samples
     val inTestPairs = inTest.map({
       case ((_, sample), (l, Some(r))) => sample -> (l.getType, r.getType)
-      case ((_, sample), (l, None)) => sample -> (l.getType, ADAMGenotypeType.NO_CALL)
+      case ((_, sample), (l, None))    => sample -> (l.getType, ADAMGenotypeType.NO_CALL)
     })
     val justInTruthPairs = justInTruth.map({ // "truth-only" entries
       case ((_, sample), r) => sample -> (ADAMGenotypeType.NO_CALL, r.getType)

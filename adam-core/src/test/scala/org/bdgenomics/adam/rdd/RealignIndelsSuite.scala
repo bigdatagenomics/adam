@@ -86,7 +86,7 @@ class RealignIndelsSuite extends SparkFunSuite {
       if (r.mdTag.get.hasMismatches) {
         consensus = Consensus.generateAlternateConsensus(r.getSequence, r.getStart, r.samtoolsCigar) match {
           case Some(o) => o :: consensus
-          case None => consensus
+          case None    => consensus
         }
       }
     })

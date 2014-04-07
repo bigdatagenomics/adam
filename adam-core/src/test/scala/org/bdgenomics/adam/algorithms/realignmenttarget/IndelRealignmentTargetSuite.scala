@@ -236,12 +236,12 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
     def check_indel(target: IndelRealignmentTarget, read: ADAMRecord): Boolean = {
       val indelRange: NumericRange[Long] = target.indelSet.head.getIndelRange()
       read.start.toLong match {
-        case 5L => ((indelRange.start == 34) && (indelRange.end == 43))
+        case 5L  => ((indelRange.start == 34) && (indelRange.end == 43))
         case 10L => ((indelRange.start == 54) && (indelRange.end == 63))
         case 15L => ((indelRange.start == 34) && (indelRange.end == 43))
         case 20L => ((indelRange.start == 54) && (indelRange.end == 63))
         case 25L => ((indelRange.start == 34) && (indelRange.end == 43))
-        case _ => false
+        case _   => false
       }
     }
 
