@@ -191,7 +191,7 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
       AvroParquetInputFormat.setRequestedProjection(job, projection.get)
     }
     val records = sc.newAPIHadoopFile(filePath,
-      classOf[ParquetInputFormat[T]], classOf[Void], manifest[T].erasure.asInstanceOf[Class[T]],
+      classOf[ParquetInputFormat[T]], classOf[Void], manifest[T].runtimeClass.asInstanceOf[Class[T]],
       ContextUtil.getConfiguration(job)).map(p => p._2)
     if (predicate.isDefined) {
       // Strip the nulls that the predicate returns
@@ -218,8 +218,8 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
     // This funkiness is required because (a) ADAMRecords require a different projection from any
     // other flattened schema, and (b) because the SequenceRecord.fromADAMRecord, below, is going
     // to be called through a flatMap rather than through a map tranformation on the underlying record RDD.
-    val isADAMRecord = classOf[ADAMRecord].isAssignableFrom(manifest[T].erasure)
-    val isADAMContig = classOf[ADAMNucleotideContigFragment].isAssignableFrom(manifest[T].erasure)
+    val isADAMRecord = classOf[ADAMRecord].isAssignableFrom(manifest[T].runtimeClass)
+    val isADAMContig = classOf[ADAMNucleotideContigFragment].isAssignableFrom(manifest[T].runtimeClass)
 
     val projection =
       if (isADAMRecord) {
@@ -285,7 +285,7 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
    */
   def adamLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
 
-    if (filePath.endsWith(".bam") || filePath.endsWith(".sam") && classOf[ADAMRecord].isAssignableFrom(manifest[T].erasure)) {
+    if (filePath.endsWith(".bam") || filePath.endsWith(".sam") && classOf[ADAMRecord].isAssignableFrom(manifest[T].runtimeClass)) {
       if (predicate.isDefined) {
         log.warn("Predicate is ignored when loading a BAM file")
       }

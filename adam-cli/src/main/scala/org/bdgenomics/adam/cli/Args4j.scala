@@ -31,7 +31,7 @@ object Args4j {
   val helpOptions = Array("-h", "-help", "--help", "-?")
 
   def apply[T <% Args4jBase: Manifest](args: Array[String]): T = {
-    val args4j: T = manifest[T].erasure.asInstanceOf[Class[T]].newInstance()
+    val args4j: T = manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance()
     val parser = new CmdLineParser(args4j)
     parser.setUsageWidth(150);
 
