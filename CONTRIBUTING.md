@@ -55,7 +55,8 @@ optionally, any details that you want to share about the commit.
 to check every pull request and commit. Just look for files in the ADAM repo that end in "*Suite.scala", 
 e.g. ADAMContextSuite.scala, to see examples of how to write tests. You might also want to glance at the 
 `./scripts/jenkins-test` script for more end-to-end tests.
-* Please try to follow the existing coding style
+* Please try to follow the existing coding style. To ensure that your code is formatted according to the conventions we use, you should run scalariform on your code before submitting
+a pull request. This can be done by running "mvn process-sources".
 * Make sure to add a copyright header to all new files (see below).
 
 ### Update CHANGES.md file
