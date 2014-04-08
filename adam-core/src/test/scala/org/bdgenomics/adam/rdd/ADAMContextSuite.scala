@@ -93,15 +93,15 @@ class ADAMContextSuite extends SparkFunSuite {
      * Create the following directory structure, in the temp file location:
      *
      * .
-     * ├── parent-dir/
-     *     ├── subDir1/
-     *     |   ├── match1/
-     *     |   └── match2/
-     *     └── subDir2/
-     *     |   ├── match3/
-     *     |   └── nomatch4/
-     *     ├── match5/
-     *     └── nomatch6/
+     * |__ parent-dir/
+     *     |__ subDir1/
+     *     |   |__ match1/
+     *     |   |__ match2/
+     *     |__ subDir2/
+     *     |   |__ match3/
+     *     |   |__ nomatch4/
+     *     |__ match5/
+     *     |__ nomatch6/
      */
 
     val tempDir = File.createTempFile("ADAMContextSuite", "").getParentFile
