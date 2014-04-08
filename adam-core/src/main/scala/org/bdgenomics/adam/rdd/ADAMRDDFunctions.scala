@@ -61,12 +61,12 @@ class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Seria
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
     ParquetOutputFormat.setBlockSize(job, blockSize)
     ParquetOutputFormat.setPageSize(job, pageSize)
-    AvroParquetOutputFormat.setSchema(job, manifest[T].erasure.asInstanceOf[Class[T]].newInstance().getSchema)
+    AvroParquetOutputFormat.setSchema(job, manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema)
     // Add the Void Key
     val recordToSave = rdd.map(p => (null, p))
     // Save the values to the ADAM/Parquet file
     recordToSave.saveAsNewAPIHadoopFile(filePath,
-      classOf[java.lang.Void], manifest[T].erasure.asInstanceOf[Class[T]], classOf[ParquetOutputFormat[T]],
+      classOf[java.lang.Void], manifest[T].runtimeClass.asInstanceOf[Class[T]], classOf[ParquetOutputFormat[T]],
       ContextUtil.getConfiguration(job))
     // Return the origin rdd
     rdd
