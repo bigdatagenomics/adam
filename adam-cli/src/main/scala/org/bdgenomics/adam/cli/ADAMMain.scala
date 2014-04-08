@@ -17,7 +17,6 @@ package org.bdgenomics.adam.cli
 
 import org.apache.spark.Logging
 import scala.Some
-import org.bdgenomics.adam.cli.VcfAnnotation2ADAM
 
 object ADAMMain extends Logging {
 
