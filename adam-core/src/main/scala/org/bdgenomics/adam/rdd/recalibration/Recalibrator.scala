@@ -37,7 +37,7 @@ class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: Qual
   }
 
   def computeQual(read: DecadentRead): Seq[QualityScore] = {
-    val origQuals = read.sequence.map(_.quality)
+    val origQuals = read.residues.map(_.quality)
     val newQuals = table(read)
     origQuals.zip(newQuals).map {
       case (origQ, newQ) =>

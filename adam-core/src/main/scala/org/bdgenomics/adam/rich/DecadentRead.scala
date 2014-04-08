@@ -72,19 +72,20 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
   require(record.referencePositions.length == record.getSequence.length)
 
   /**
-   * A "residue" is an individual monomer of a polymeric chain, such as DNA.
+   * In biochemistry and molecular biology, a "residue" refers to a specific
+   * monomer within a polymeric chain, such as DNA.
    */
-  class Residue private[DecadentRead] (val position: Int) {
+  class Residue private[DecadentRead] (val offset: Int) {
     def read = DecadentRead.this
 
     /**
-     * Nucleotide at this position.
+     * Nucleotide at this offset.
      *
-     * TODO: Return values of meaningful type, e.g. `DNABase' or `Deoxyribonucleotide'.
+     * TODO: Return values of meaningful type, e.g. `DNABase'.
      */
-    def base: Char = read.baseSequence(position)
+    def base: Char = read.baseSequence(offset)
 
-    def quality = QualityScore(record.qualityScores(position))
+    def quality = QualityScore(record.qualityScores(offset))
 
     def isRegularBase: Boolean = base match {
       case 'A' => true
@@ -96,17 +97,17 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
     }
 
     def isMismatch(includeInsertions: Boolean = true): Boolean =
-      assumingAligned(record.isMismatchAtReadOffset(position).getOrElse(includeInsertions))
+      assumingAligned(record.isMismatchAtReadOffset(offset).getOrElse(includeInsertions))
 
     def isSNP: Boolean = isMismatch(false)
 
     def isInsertion: Boolean =
-      assumingAligned(record.isMismatchAtReadOffset(position).isEmpty)
+      assumingAligned(record.isMismatchAtReadOffset(offset).isEmpty)
 
-    def referenceLocationOption: Option[ReferenceLocation] =
-      assumingAligned(
-        record.readOffsetToReferencePosition(position).
-          map(refOffset => new ReferenceLocation(record.getReferenceName.toString, refOffset)))
+    def referenceLocationOption: Option[ReferenceLocation] = assumingAligned {
+      record.readOffsetToReferencePosition(offset).
+        map(refOffset => new ReferenceLocation(record.getReferenceName.toString, refOffset))
+    }
 
     def referenceLocation: ReferenceLocation =
       referenceLocationOption.getOrElse(
@@ -117,7 +118,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
 
   private lazy val baseSequence: String = record.getSequence.toString
 
-  lazy val sequence: IndexedSeq[Residue] = Range(0, baseSequence.length).map(new Residue(_))
+  lazy val residues: IndexedSeq[Residue] = Range(0, baseSequence.length).map(new Residue(_))
 
   def name: String = record.getReadName
 

@@ -71,7 +71,7 @@ class BaseQualityRecalibration(
         !knownSnps.value.isMasked(residue)
 
     def observe(read: DecadentRead): Seq[(CovariateKey, Residue)] =
-      covariates(read).zip(read.sequence).
+      covariates(read).zip(read.residues).
         filter { case (key, residue) => shouldIncludeResidue(residue) }
 
     input.filter(shouldIncludeRead).flatMap(observe)
@@ -106,10 +106,10 @@ class BaseQualityRecalibration(
         (if (read.record.getSecondOfPair) "2" else "")
 
     val readLengths =
-      input.map(read => (readId(read), read.sequence.length)).collectAsMap
+      input.map(read => (readId(read), read.residues.length)).collectAsMap
 
     val visited = dataset.
-      map { case (key, residue) => (readId(residue.read), Seq(residue.position)) }.
+      map { case (key, residue) => (readId(residue.read), Seq(residue.offset)) }.
       reduceByKeyLocally((left, right) => left ++ right)
 
     val outf = new java.io.File(filename)

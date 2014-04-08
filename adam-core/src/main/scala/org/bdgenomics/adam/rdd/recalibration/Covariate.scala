@@ -96,12 +96,12 @@ class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
     val extraVals = extras.map(cov => {
       val result = cov(read)
       // Each covariate must return a value per Residue
-      assert(result.size == read.sequence.size)
+      assert(result.size == read.residues.size)
       result
     })
 
     // Construct the CovariateKeys
-    read.sequence.zipWithIndex.map {
+    read.residues.zipWithIndex.map {
       case (residue, residueIdx) =>
         val residueExtras = extraVals.map(_(residueIdx))
         new CovariateKey(read.readGroup, residue.quality, residueExtras)
