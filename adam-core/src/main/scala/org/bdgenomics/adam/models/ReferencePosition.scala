@@ -20,7 +20,6 @@ import org.bdgenomics.adam.avro.{ ADAMRecord, ADAMGenotype, ADAMVariant, ADAMPil
 import org.bdgenomics.adam.rdd.ADAMContext._
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
-import Ordering.Option
 
 object ReferencePositionWithOrientation {
 
@@ -80,9 +79,9 @@ object ReferencePosition {
    * @return True if read is mapped and has a valid position, else false.
    */
   def mappedPositionCheck(record: ADAMRecord): Boolean = {
-    val contig = Some(record.getContig)
-    val start = Some(record.getStart)
-    record.getReadMapped && (contig.isDefined && Some(contig.get.getContigName).isDefined) && start.isDefined
+    val contig = Option(record.getContig)
+    val start = Option(record.getStart)
+    record.getReadMapped && (contig.isDefined && Option(contig.get.getContigName).isDefined) && start.isDefined
   }
 
   /**
