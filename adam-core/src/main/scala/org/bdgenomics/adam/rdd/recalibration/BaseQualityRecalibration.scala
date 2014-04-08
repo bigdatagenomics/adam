@@ -26,6 +26,7 @@ import org.bdgenomics.adam.util.QualityScore
 import org.apache.spark.Logging
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
+import org.apache.spark.SparkContext._
 
 /**
  * Base Quality Score Recalibration
@@ -53,6 +54,10 @@ class BaseQualityRecalibration(
   // TODO: parameterize
   val minAcceptableQuality = QualityScore(5)
 
+  // debug flags
+  val dumpObservationTable = false
+  val enableVisitLogging = false
+
   val dataset: RDD[(CovariateKey, Residue)] = {
     def shouldIncludeRead(read: DecadentRead) =
       read.isCanonicalRecord &&
@@ -72,15 +77,51 @@ class BaseQualityRecalibration(
     input.filter(shouldIncludeRead).flatMap(observe)
   }
 
+  if (enableVisitLogging) {
+    input.cache
+    dataset.cache
+    dumpVisits("bqsr-visits.dump")
+  }
+
   val observed: ObservationTable = {
     dataset.
       map { case (key, residue) => (key, Observation(residue.isSNP)) }.
       aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
   }
 
+  if (dumpObservationTable) {
+    println(observed.toCSV)
+  }
+
   val result: RDD[ADAMRecord] = {
     val recalibrator = Recalibrator(observed, minAcceptableQuality)
     input.map(recalibrator)
+  }
+
+  private def dumpVisits(filename: String) = {
+    def readId(read: DecadentRead): String =
+      read.name +
+        (if (read.isNegativeRead) "-" else "+") +
+        (if (read.record.getFirstOfPair) "1" else "") +
+        (if (read.record.getSecondOfPair) "2" else "")
+
+    val readLengths =
+      input.map(read => (readId(read), read.sequence.length)).collectAsMap
+
+    val visited = dataset.
+      map { case (key, residue) => (readId(residue.read), Seq(residue.position)) }.
+      reduceByKeyLocally((left, right) => left ++ right)
+
+    val outf = new java.io.File(filename)
+    val writer = new java.io.PrintWriter(outf)
+    visited.foreach {
+      case (readName, visited) =>
+        val length = readLengths(readName)
+        val buf = Array.fill[Char](length)('O')
+        visited.foreach { idx => buf(idx) = 'X' }
+        writer.println(readName + "\t" + String.valueOf(buf))
+    }
+    writer.close
   }
 }
 

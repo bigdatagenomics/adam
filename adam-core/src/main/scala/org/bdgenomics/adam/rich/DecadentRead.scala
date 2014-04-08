@@ -119,6 +119,8 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
 
   lazy val sequence: IndexedSeq[Residue] = Range(0, baseSequence.length).map(new Residue(_))
 
+  def name: String = record.getReadName
+
   def isAligned: Boolean = record.getReadMapped
 
   def alignmentQuality: Option[QualityScore] = assumingAligned {
