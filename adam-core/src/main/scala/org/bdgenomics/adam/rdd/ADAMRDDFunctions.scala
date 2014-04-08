@@ -35,7 +35,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.util.{ MapTools, ParquetLogger }
+import org.bdgenomics.adam.util.{ HadoopUtil, MapTools, ParquetLogger }
 import java.io.File
 import java.util.logging.Level
 import org.apache.avro.specific.SpecificRecord
@@ -54,7 +54,7 @@ class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Seria
   def adamSave(filePath: String, blockSize: Int = 128 * 1024 * 1024,
                pageSize: Int = 1 * 1024 * 1024, compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                disableDictionaryEncoding: Boolean = false): RDD[T] = {
-    val job = new Job(rdd.context.hadoopConfiguration)
+    val job = HadoopUtil.newJob(rdd.context)
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
     ParquetOutputFormat.setWriteSupportClass(job, classOf[AvroWriteSupport])
     ParquetOutputFormat.setCompression(job, compressCodec)

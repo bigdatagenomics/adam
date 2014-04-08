@@ -31,7 +31,7 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
     }
     val status = fs.getFileStatus(file)
     var paths = List[Path]()
-    if (status.isDir) {
+    if (HadoopUtil.isDirectory(status)) {
       val files = fs.listStatus(file)
       files.foreach {
         file =>

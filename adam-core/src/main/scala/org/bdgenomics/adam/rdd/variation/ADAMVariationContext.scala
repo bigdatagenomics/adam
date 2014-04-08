@@ -29,6 +29,7 @@ import org.apache.spark.rdd.RDD
 import org.broadinstitute.variant.vcf.{ VCFHeaderLine, VCFHeader }
 import parquet.hadoop.util.ContextUtil
 import scala.collection.JavaConversions._
+import org.bdgenomics.adam.util.HadoopUtil
 
 private object ADAMVCFOutputFormat {
   private var header: Option[VCFHeader] = None
@@ -70,7 +71,7 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
    */
   def adamVCFLoad(filePath: String, extractExternalAnnotations: Boolean = false): RDD[ADAMVariantContext] = {
     log.info("Reading VCF file from %s".format(filePath))
-    val job = new Job(sc.hadoopConfiguration)
+    val job = HadoopUtil.newJob(sc)
     val vcc = new VariantContextConverter
     val records = sc.newAPIHadoopFile(
       filePath,
@@ -82,7 +83,7 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
 
   def adamVCFAnnotationLoad(filePath: String): RDD[ADAMDatabaseVariantAnnotation] = {
     log.info("Reading VCF file from %s".format(filePath))
-    val job = new Job(sc.hadoopConfiguration)
+    val job = HadoopUtil.newJob(sc)
     val vcc = new VariantContextConverter
     val records = sc.newAPIHadoopFile(
       filePath,
