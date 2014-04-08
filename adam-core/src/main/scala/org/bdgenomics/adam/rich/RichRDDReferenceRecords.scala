@@ -22,9 +22,10 @@ import ReferenceMappingContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 import org.apache.avro.specific.SpecificRecord
+import scala.reflect.ClassTag
 
-class RichRDDReferenceRecords[T <: SpecificRecord: ClassManifest](rdd: RDD[T],
-                                                                  mapping: ReferenceMapping[T])
+class RichRDDReferenceRecords[T <: SpecificRecord: ClassTag](rdd: RDD[T],
+                                                             mapping: ReferenceMapping[T])
     extends Serializable {
 
   def remapReferenceId(map: Map[Int, Int])(implicit sc: SparkContext): RDD[T] = {

@@ -28,6 +28,7 @@ import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.metrics.BucketComparisons
 import org.bdgenomics.adam.metrics.aggregators.{ Aggregated, Aggregator }
 import org.bdgenomics.adam.metrics.filters.GeneratorFilter
+import scala.reflect.ClassTag
 
 class ComparisonTraversalEngine(schema: Seq[FieldValue], input1: RDD[ADAMRecord], input2: RDD[ADAMRecord])(implicit sc: SparkContext) {
   def this(schema: Seq[FieldValue], input1Paths: Seq[Path], input2Paths: Seq[Path])(implicit sc: SparkContext) =
@@ -80,7 +81,7 @@ object ComparisonTraversalEngine {
         filter.comparison.matchedByName(bucket1, bucket2).exists(filter.passesFilter)
     }.map(_._1)
 
-  def combine[T, A <: Aggregated[T]: ClassManifest](generated: GeneratedType[T], aggregator: Aggregator[T, A]): A =
+  def combine[T, A <: Aggregated[T]: ClassTag](generated: GeneratedType[T], aggregator: Aggregator[T, A]): A =
     generated.aggregate[A](aggregator.initialValue)(
       (aggregated, namedValue) => aggregator.combine(aggregated, aggregator.lift(namedValue._2)),
       aggregator.combine)
