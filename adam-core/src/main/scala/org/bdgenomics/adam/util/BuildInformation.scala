@@ -22,7 +22,7 @@ import java.util.Properties
 
 /**
  * A static object that gets the resource "git.properties" and renders the
- * build-information in different formats. The parsing is “lazy”, it parses
+ * build-information in different formats. The parsing is "lazy", it parses
  * the properties only the first time a function is called.
  */
 object BuildInformation {
