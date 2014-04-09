@@ -21,6 +21,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import scala.Predef._
 import org.apache.spark.SparkContext
+import scala.reflect.ClassTag
 
 /**
  * Contains multiple implementations of a 'region join', an operation that joins two sets of
@@ -71,8 +72,8 @@ object RegionJoin {
                              baseRDD: RDD[T],
                              joinedRDD: RDD[U])(implicit tMapping: ReferenceMapping[T],
                                                 uMapping: ReferenceMapping[U],
-                                                tManifest: ClassManifest[T],
-                                                uManifest: ClassManifest[U]): RDD[(T, U)] = {
+                                                tManifest: ClassTag[T],
+                                                uManifest: ClassTag[U]): RDD[(T, U)] = {
 
     /**
      * Original Join Design:
@@ -150,8 +151,8 @@ object RegionJoin {
   def cartesianFilter[T, U](baseRDD: RDD[T],
                             joinedRDD: RDD[U])(implicit tMapping: ReferenceMapping[T],
                                                uMapping: ReferenceMapping[U],
-                                               tManifest: ClassManifest[T],
-                                               uManifest: ClassManifest[U]): RDD[(T, U)] = {
+                                               tManifest: ClassTag[T],
+                                               uManifest: ClassTag[U]): RDD[(T, U)] = {
     baseRDD.cartesian(joinedRDD).filter({
       case (t: T, u: U) =>
         tMapping.getReferenceRegion(t).overlaps(uMapping.getReferenceRegion(u))

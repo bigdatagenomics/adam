@@ -18,6 +18,7 @@ package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.util.HadoopUtil
 
 trait ADAMCommandCompanion {
   val commandName: String
@@ -43,7 +44,7 @@ trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with 
 
   def run() {
     val sc: SparkContext = createSparkContext(args)
-    val job = new Job()
+    val job = HadoopUtil.newJob()
 
     run(sc, job)
   }

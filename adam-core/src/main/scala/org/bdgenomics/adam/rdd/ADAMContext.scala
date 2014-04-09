@@ -51,6 +51,7 @@ import parquet.hadoop.util.ContextUtil
 import scala.Some
 import scala.collection.JavaConversions._
 import scala.collection.Map
+import org.bdgenomics.adam.util.HadoopUtil
 
 object ADAMContext {
   // Add ADAM Spark context methods
@@ -171,7 +172,7 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
     val seqDict = adamBamDictionaryLoad(samHeader)
     val readGroups = adamBamLoadReadGroups(samHeader)
 
-    val job = new Job(sc.hadoopConfiguration)
+    val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],
       classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
     val samRecordConverter = new SAMRecordConverter
@@ -180,7 +181,7 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
 
   private def adamParquetLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
     log.info("Reading the ADAM file at %s to create RDD".format(filePath))
-    val job = new Job(sc.hadoopConfiguration)
+    val job = HadoopUtil.newJob(sc)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])
     if (predicate.isDefined) {
       log.info("Using the specified push-down predicate")
@@ -312,7 +313,7 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
     } else {
       val statuses = FileSystem.get(sc.hadoopConfiguration).listStatus(path)
       val r = Pattern.compile(regex)
-      val (matches, recurse) = statuses.filter(s => s.isDir).map(s => s.getPath).partition(p => r.matcher(p.getName).matches())
+      val (matches, recurse) = statuses.filter(HadoopUtil.isDirectory).map(s => s.getPath).partition(p => r.matcher(p.getName).matches())
       matches.toSeq ++ recurse.flatMap(p => findFiles(p, regex))
     }
   }
