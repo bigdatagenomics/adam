@@ -18,7 +18,7 @@ package org.bdgenomics.adam.util
 
 class QualityScore(val phred: Int) extends Ordered[QualityScore] with Serializable {
   // Valid range of phred + 33 is described by the regex "[!-~]".
-  require(phred + 33 >= '!'.toInt && phred + 33 <= '~'.toInt)
+  require(phred + 33 >= '!'.toInt && phred + 33 <= '~'.toInt, "Phred %s out of range".format(phred))
 
   def successProbability = PhredUtils.phredToSuccessProbability(phred)
 

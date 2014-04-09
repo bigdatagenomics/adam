@@ -64,6 +64,11 @@ class RecalibrationTable(
   val extraTables: IndexedSeq[Map[(String, QualityScore, Option[Covariate#Value]), Aggregate]])
     extends (DecadentRead => Seq[QualityScore]) with Serializable {
 
+  // TODO: parameterize?
+  val maxQualScore = QualityScore(50)
+
+  val maxLogP = log(maxQualScore.errorProbability)
+
   def apply(read: DecadentRead): Seq[QualityScore] =
     covariates(read).map(lookup)
 
@@ -73,7 +78,12 @@ class RecalibrationTable(
     val qualityDelta = computeQualityDelta(key, residueLogP + globalDelta)
     val extrasDelta = computeExtrasDelta(key, residueLogP + globalDelta + qualityDelta)
     val correctedLogP = residueLogP + globalDelta + qualityDelta + extrasDelta
-    QualityScore.fromErrorProbability(exp(correctedLogP))
+    qualityFromLogP(correctedLogP)
+  }
+
+  def qualityFromLogP(logP: Double): QualityScore = {
+    val boundedLogP = math.min(0.0, math.max(maxLogP, logP))
+    QualityScore.fromErrorProbability(exp(boundedLogP))
   }
 
   def computeGlobalDelta(key: CovariateKey): Double = {

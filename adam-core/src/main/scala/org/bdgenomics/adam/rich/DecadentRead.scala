@@ -139,6 +139,12 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
 
   def isDuplicate: Boolean = record.getDuplicateRead
 
+  def isPaired: Boolean = record.getReadPaired
+
+  def isFirstOfPair: Boolean = isPaired && !record.getSecondOfPair
+
+  def isSecondOfPair: Boolean = isPaired && record.getSecondOfPair
+
   def isNegativeRead: Boolean = record.getReadNegativeStrand
 
   // Is this the most representative record for this read?

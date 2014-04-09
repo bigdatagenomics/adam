@@ -47,8 +47,7 @@ class BaseQualityRecalibration(
 
   // Additional covariates to use when computing the correction
   // TODO: parameterize
-  val covariates = CovariateSpace(
-    new DinucCovariate)
+  val covariates = CovariateSpace(new CycleCovariate, new DinucCovariate)
 
   // Bases with quality less than this will be skipped and left alone
   // TODO: parameterize
