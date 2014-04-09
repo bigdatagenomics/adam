@@ -52,16 +52,7 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fa
 
   def run(sc: SparkContext, job: Job) {
     log.info("Loading FASTA data from disk.")
-    val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(args.fastaFile,
-      classOf[TextInputFormat],
-      classOf[LongWritable],
-      classOf[Text])
-
-    val remapData = fastaData.map(kv => (kv._1.get.toInt, kv._2.toString.toString))
-
-    log.info("Converting FASTA to ADAM.")
-    val adamFasta = FastaConverter(remapData, args.fragmentLength)
-
+    val adamFasta = sc.adamSequenceLoad(args.fastaFile, args.fragmentLength)
     if (args.verbose) {
       println("FASTA contains:")
       println(adamFasta.adamGetSequenceDictionary())

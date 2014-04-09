@@ -16,15 +16,41 @@
 package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.avro.ADAMNucleotideContigFragment
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
-import scala.math.Ordering._
+import scala.Int
+import scala.math.Ordering.Int
+import scala.Predef._
+import scala.Some
 
 /**
  * Object for converting an RDD containing FASTA sequence data into ADAM FASTA data.
  */
 private[adam] object FastaConverter {
+
+  case class FastaDescriptionLine(val fileIndex: Int = -1, val seqId: Int = 0, val descriptionLine: Option[String] = None) {
+    val (contigName, contigDescription) = parseDescriptionLine(descriptionLine, fileIndex)
+
+    private def parseDescriptionLine(descriptionLine: Option[String], id: Int): (Option[String], Option[String]) = {
+      if (descriptionLine.isEmpty) {
+        assert(id == -1, "Cannot have a headerless line in a file with more than one fragment.")
+        (None, None)
+      } else {
+        val splitIndex = descriptionLine.get.indexOf(' ')
+        if (splitIndex >= 0) {
+          val split = descriptionLine.get.splitAt(splitIndex)
+
+          val contigName: String = split._1.stripPrefix(">").trim
+          val contigDescription: String = split._2.trim
+
+          (Some(contigName), Some(contigDescription))
+
+        } else {
+          (Some(descriptionLine.get.stripPrefix(">").trim), None)
+        }
+      }
+    }
+  }
 
   /**
    * Converts an RDD containing ints and strings into an RDD containing ADAM nucleotide
@@ -47,64 +73,51 @@ private[adam] object FastaConverter {
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
       .filter((kv: (Int, String)) => !kv._2.startsWith(";"))
 
-    val indices: Map[Int, Int] = rdd.filter((kv: (Int, String)) => kv._2.startsWith(">"))
-      .map((kv: (Int, String)) => kv._1)
-      .collect
-      .toList
-      .sortWith(_ < _)
-      .zipWithIndex
-      .reverse
-      .toMap
+    val descriptionLines: Map[Int, FastaDescriptionLine] = getDescriptionLines(filtered)
+    val indexToContigDescription = rdd.context.broadcast(descriptionLines)
 
-    val groupedContigs: RDD[(Int, Seq[(Int, String)])] = if (indices.size == 0) {
-      filtered.keyBy(kv => -1)
-        .groupByKey()
+    val sequenceLines = filtered.filter(kv => !isDescriptionLine(kv._2))
+
+    val keyedSequences = if (indexToContigDescription.value.size == 0) {
+      sequenceLines.keyBy(kv => -1)
     } else {
-      filtered.keyBy((kv: (Int, String)) => indices.find(p => p._1 <= kv._1))
-        .filter((kv: (Option[(Int, Int)], (Int, String))) => kv._1.isDefined)
-        .map(kv => (kv._1.get._2, kv._2))
-        .groupByKey()
+      sequenceLines.keyBy(row => findContigIndex(row._1, indexToContigDescription.value.keys.toList))
     }
+    val groupedContigs = keyedSequences.groupByKey()
 
     val converter = new FastaConverter(maxFragmentLength)
 
     val convertedData = groupedContigs.flatMap(kv => {
       val (id, lines) = kv
+      val descriptionLine = indexToContigDescription.value.getOrElse(id, FastaDescriptionLine())
 
-      val descriptionLine = lines.filter(kv => kv._2.startsWith(">"))
-
-      val (name, comment): (Option[String], Option[String]) = if (descriptionLine.size == 0) {
-        assert(id == -1, "Cannot have a headerless line in a file with more than one fragment.")
-        (None, None)
-      } else if (descriptionLine.forall(kv => kv._2.contains(' '))) {
-        val description: String = descriptionLine.head._2
-        val splitIndex = description.indexOf(' ')
-        val split = description.splitAt(splitIndex)
-
-        val contigName: String = split._1.stripPrefix(">").trim
-        val contigDescription: String = split._2.trim
-
-        (Some(contigName), Some(contigDescription))
-      } else {
-        (Some(descriptionLine.head._2.stripPrefix(">").trim), None)
-      }
-
-      val seqId = if (id == -1) {
-        0
-      } else {
-        id
-      }
-
-      val sequenceLines: Seq[(Int, String)] = lines.filter(kv => !kv._2.startsWith(">"))
-      assert(sequenceLines.length != 0, "Sequence " + seqId + " has no sequence data.")
-
-      val sequence: Seq[String] = sequenceLines.sortBy(kv => kv._1)
-        .map(kv => kv._2.stripSuffix("*"))
-
-      converter.convert(name, seqId, sequence, comment)
+      assert(lines.length != 0, "Sequence " + descriptionLine.seqId + " has no sequence data.")
+      val sequence: Seq[String] = lines.sortBy(kv => kv._1).map(kv => cleanSequence(kv._2))
+      converter.convert(descriptionLine.contigName, descriptionLine.seqId, sequence, descriptionLine.contigDescription)
     })
 
     convertedData
+  }
+
+  private def cleanSequence(sequence: String): String = {
+    sequence.stripSuffix("*")
+  }
+
+  private def isDescriptionLine(line: String): Boolean = {
+    line.startsWith(">")
+  }
+
+  def getDescriptionLines(rdd: RDD[(Int, String)]): Map[Int, FastaDescriptionLine] = {
+
+    rdd.filter(kv => isDescriptionLine(kv._2))
+      .collect
+      .zipWithIndex
+      .map(kv => (kv._1._1, FastaDescriptionLine(kv._1._1, kv._2, Some(kv._1._2))))
+      .toMap
+  }
+
+  def findContigIndex(rowIdx: Int, indices: List[Int]): Int = {
+    indices.filter(_ <= rowIdx).max
   }
 }
 
@@ -121,7 +134,7 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
    */
   def mapFragments(sequences: Seq[String]): Seq[String] = {
     // internal "fsm" variables
-    var sequence: String = ""
+    var sequence: StringBuilder = new StringBuilder
     var sequenceSeq: List[String] = List()
 
     /**
@@ -132,10 +145,10 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
      * @param seq Fragment string to add.
      */
     def addFragment(seq: String) {
-      sequence += seq
+      sequence.append(seq)
 
       if (sequence.length > fragmentLength) {
-        sequenceSeq ::= sequence.take(fragmentLength.toInt)
+        sequenceSeq ::= sequence.take(fragmentLength.toInt).toString()
         sequence = sequence.drop(fragmentLength.toInt)
       }
     }
@@ -145,7 +158,7 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
 
     // if we still have a remaining sequence that is not part of a fragment, add it
     if (sequence.length != 0) {
-      sequenceSeq ::= sequence
+      sequenceSeq ::= sequence.toString()
     }
 
     // return our fragments

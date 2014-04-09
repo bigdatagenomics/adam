@@ -15,15 +15,28 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.adam.avro.{ ADAMNucleotideContigFragment, Base }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.apache.spark.rdd.RDD
-import org.scalatest.FunSuite
 
 class FastaConverterSuite extends SparkFunSuite {
 
   val converter = new FastaConverter(1000)
+
+  sparkTest("find contig index") {
+    val headerLines = sc.parallelize(Seq(
+      (0, ">1 dna:chromosome chromosome:GRCh37:1:1:249250621:1"),
+      (252366306, ">2 dna:chromosome chromosome:GRCh37:2:1:243199373:1"),
+      (699103487, ">4 dna:chromosome chromosome:GRCh37:4:1:191154276:1"),
+      (892647244, ">5 dna:chromosome chromosome:GRCh37:5:1:180915260:1"),
+      (498605724, ">3 dna:chromosome chromosome:GRCh37:3:1:198022430:1")))
+    val descLines = FastaConverter.getDescriptionLines(headerLines)
+    val headerIndices: List[Int] = descLines.keys.toList
+
+    assert(0 === FastaConverter.findContigIndex(252366300, headerIndices))
+    assert(892647244 === FastaConverter.findContigIndex(892647249, headerIndices))
+    assert(252366306 === FastaConverter.findContigIndex(498605720, headerIndices))
+
+  }
 
   test("convert a single record without naming information") {
     val contig = converter.convert(None, 0, Seq("AAATTTGCGC"), None)

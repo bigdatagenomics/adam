@@ -20,7 +20,7 @@ import org.bdgenomics.adam.avro.{
   ADAMRecord,
   ADAMNucleotideContigFragment
 }
-import org.bdgenomics.adam.converters.SAMRecordConverter
+import org.bdgenomics.adam.converters.{ FastaConverter, SAMRecordConverter }
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.models.ADAMRod
 import org.bdgenomics.adam.projections.{
@@ -39,7 +39,7 @@ import org.apache.hadoop.fs.FileSystem
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.LongWritable
+import org.apache.hadoop.io.{ Text, LongWritable }
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
@@ -52,6 +52,7 @@ import scala.Some
 import scala.collection.JavaConversions._
 import scala.collection.Map
 import org.bdgenomics.adam.util.HadoopUtil
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 
 object ADAMContext {
   // Add ADAM Spark context methods
@@ -296,6 +297,22 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
       adamBamLoad(filePath).asInstanceOf[RDD[T]]
     } else {
       adamParquetLoad(filePath, predicate, projection)
+    }
+  }
+
+  def adamSequenceLoad(filePath: String, fragmentLength: Long): RDD[ADAMNucleotideContigFragment] = {
+    if (filePath.endsWith(".fasta")) {
+      val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(filePath,
+        classOf[TextInputFormat],
+        classOf[LongWritable],
+        classOf[Text])
+
+      val remapData = fastaData.map(kv => (kv._1.get.toInt, kv._2.toString))
+
+      log.info("Converting FASTA to ADAM.")
+      FastaConverter(remapData, fragmentLength)
+    } else {
+      adamParquetLoad(filePath)
     }
   }
 
