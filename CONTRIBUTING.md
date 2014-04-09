@@ -46,6 +46,10 @@ or "topic" branches.
 * Use your feature branch in the pull request. Any changes that you push to your feature branch will automatically
 be shown in the pull request.
 * If your pull request fixes an issue, reference the issue so that it will [be closed when your pull request is merged](https://github.com/blog/1506-closing-issues-via-pull-requests)
+* Run Scalariform on the code by doing the following:
+  ```
+  $ mvn org.scalariform:scalariform-maven-plugin:format
+  ```
 * Keep your pull requests as small as possible. Large pull requests are hard to review. Try to break up your changes
 into self-contained and incremental pull requests, if need be, and reference dependent pull requests, e.g. "This pull
 request builds on request #92. Please review #92 first."
@@ -55,7 +59,6 @@ optionally, any details that you want to share about the commit.
 to check every pull request and commit. Just look for files in the ADAM repo that end in "*Suite.scala", 
 e.g. ADAMContextSuite.scala, to see examples of how to write tests. You might also want to glance at the 
 `./scripts/jenkins-test` script for more end-to-end tests.
-* Please try to follow the existing coding style
 * Make sure to add a copyright header to all new files (see below).
 
 ### Update CHANGES.md file

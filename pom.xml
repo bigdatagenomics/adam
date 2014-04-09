@@ -232,7 +232,7 @@
               <version>0.1.4</version>
               <executions>
 		<execution>
-		  <phase>process-sources</phase>
+		  <id>default-cli</id>
 		  <goals>
 		    <goal>format</goal>
 		  </goals>
