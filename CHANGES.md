@@ -1,4 +1,12 @@
 # ADAM #
+* ISSUE [214](https://github.com/bigdatagenomics/adam/pull/214): Upgrade to Spark 0.9.1
+* ISSUE [211](https://github.com/bigdatagenomics/adam/pull/211): FastaConverter Refactor
+* ISSUE [212](https://github.com/bigdatagenomics/adam/pull/212): Cleanup build warnings
+* ISSUE [210](https://github.com/bigdatagenomics/adam/pull/210): Remove Scalariform from process-sources phase
+* ISSUE [209](https://github.com/bigdatagenomics/adam/pull/209): Fix Scalariform issues and Maven warnings
+* ISSUE [207](https://github.com/bigdatagenomics/adam/pull/207): Change from deprecated manifest erasure to runtimeClass
+* ISSUE [206](https://github.com/bigdatagenomics/adam/pull/206): Add Scalariform settings to pom
+* ISSUE [204](https://github.com/bigdatagenomics/adam/pull/204): Update Avro code gen to not mark fields as deprecated.
 
 ### Version 0.8.0 ###
 * ISSUE [203](https://github.com/bigdatagenomics/adam/pull/203): Move package from edu.berkeley.cs.amplab to org.bdgenomics
