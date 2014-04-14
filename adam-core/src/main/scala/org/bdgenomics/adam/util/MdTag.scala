@@ -20,6 +20,8 @@ import scala.collection.immutable.NumericRange
 import scala.util.matching.Regex
 import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
 import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.models.ReferencePosition
+
 //import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
@@ -246,6 +248,10 @@ class MdTag(
    */
   def isMatch(pos: Long): Boolean = {
     matches.exists(_.contains(pos))
+  }
+
+  def isMatch(pos: ReferencePosition): Boolean = {
+    matches.exists(_.contains(pos.pos))
   }
 
   /**

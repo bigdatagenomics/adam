@@ -21,9 +21,10 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.adam.util.QualityScore
-import org.bdgenomics.adam.util.Util
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
+import scala.Some
+import org.bdgenomics.adam.models.ReferencePosition
 
 object DecadentRead {
   type Residue = DecadentRead#Residue
@@ -104,13 +105,15 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
     def isInsertion: Boolean =
       assumingAligned(record.isMismatchAtReadOffset(offset).isEmpty)
 
-    def referenceLocationOption: Option[ReferenceLocation] = assumingAligned {
-      record.readOffsetToReferencePosition(offset).
-        map(refOffset => new ReferenceLocation(record.getContig.getContigName.toString, refOffset))
-    }
+    def referencePositionOption: Option[ReferencePosition] =
+      assumingAligned(
+        record.readOffsetToReferencePosition(offset))
 
-    def referenceLocation: ReferenceLocation =
-      referenceLocationOption.getOrElse(
+    def referenceSequenceContext: Option[ReferenceSequenceContext] =
+      assumingAligned(record.readOffsetToReferenceSequenceContext(offset))
+
+    def referencePosition: ReferencePosition =
+      referencePositionOption.getOrElse(
         throw new IllegalArgumentException("Residue has no reference location (may be an insertion)"))
   }
 
@@ -161,18 +164,4 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
     ensureAligned
     func
   }
-}
-
-// TODO: merge with models.ReferencePosition
-class ReferenceLocation(val contig: String, val offset: Long) {
-  override def toString = "%s@%s".format(contig, offset)
-
-  override def equals(other: Any): Boolean = other match {
-    case that: ReferenceLocation =>
-      this.contig == that.contig && this.offset == that.offset
-
-    case _ => false
-  }
-
-  override def hashCode = Util.hashCombine(0x922927F8, contig.hashCode, offset.hashCode)
 }
