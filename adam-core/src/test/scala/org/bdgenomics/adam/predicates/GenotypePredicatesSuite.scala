@@ -32,7 +32,7 @@ import org.apache.commons.io.FileUtils
 
 class GenotypePredicatesSuite extends SparkFunSuite {
 
-  sparkTest("Return only PASSing records") {
+  sparkTest("Load only only PASSing records") {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val v0 = ADAMVariant.newBuilder
@@ -59,8 +59,43 @@ class GenotypePredicatesSuite extends SparkFunSuite {
 
     val gts1: RDD[ADAMGenotype] = sc.adamLoad(
       genotypesParquetFile.getAbsolutePath,
-      predicate = Some(classOf[GenotypeVarFilterPASSPredicate]))
+      predicate = Some(classOf[GenotypeRecordPASSPredicate]))
     assert(gts1.count === 1)
+
+    FileUtils.deleteDirectory(genotypesParquetFile.getParentFile)
+  }
+
+  sparkTest("Load all records and filter to only PASSing records") {
+    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
+
+    val v0 = ADAMVariant.newBuilder
+      .setContig(ADAMContig.newBuilder.setContigName("11").build)
+      .setPosition(17409571)
+      .setReferenceAllele("T")
+      .setVariantAllele("C")
+      .build
+
+    val passFilterAnnotation =
+      VariantCallingAnnotations.newBuilder().setVariantIsPassing(true).build()
+    val failFilterAnnotation =
+      VariantCallingAnnotations.newBuilder().setVariantIsPassing(false).build()
+
+    val genotypes = sc.parallelize(List(
+      ADAMGenotype.newBuilder().setVariant(v0)
+        .setVariantCallingAnnotations(passFilterAnnotation).build(),
+      ADAMGenotype.newBuilder()
+        .setVariant(v0)
+        .setVariantCallingAnnotations(failFilterAnnotation).build()))
+
+    val genotypesParquetFile = new File(Files.createTempDir(), "genotypes")
+    genotypes.adamSave(genotypesParquetFile.getAbsolutePath)
+
+    val gts: RDD[ADAMGenotype] = sc.adamLoad(genotypesParquetFile.getAbsolutePath)
+    assert(gts.count === 2)
+
+    val predicate = new GenotypeRecordPASSPredicate
+    val filtered = predicate(gts)
+    assert(filtered.count === 1)
 
     FileUtils.deleteDirectory(genotypesParquetFile.getParentFile)
   }

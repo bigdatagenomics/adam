@@ -16,7 +16,7 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.adam.predicates.LocusPredicate
+import org.bdgenomics.adam.predicates.{ UniqueMappedReadPredicate, LocusPredicate }
 import org.kohsuke.args4j.{ Option => option, Argument }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.avro.{ ADAMPileup, ADAMRecord }
@@ -57,7 +57,7 @@ class Reads2Ref(protected val args: Reads2RefArgs) extends ADAMSparkCommand[Read
   val companion = Reads2Ref
 
   def run(sc: SparkContext, job: Job) {
-    val reads: RDD[ADAMRecord] = sc.adamLoad(args.readInput, Some(classOf[LocusPredicate]))
+    val reads: RDD[ADAMRecord] = sc.adamLoad(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
 
     val readCount = reads.count()
 

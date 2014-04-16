@@ -24,7 +24,7 @@ import org.bdgenomics.adam.avro.ADAMGenotype
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.apache.spark.SparkContext._
-import org.bdgenomics.adam.predicates.GenotypeVarFilterPASSPredicate
+import org.bdgenomics.adam.predicates.GenotypeRecordPASSPredicate
 import org.bdgenomics.adam.projections.variation.ADAMGenotypeField
 import org.bdgenomics.adam.rdd.variation.ConcordanceTable
 
@@ -57,7 +57,7 @@ class GenotypeConcordance(protected val args: GenotypeConcordanceArgs) extends A
     val predicate = if (!args.includeNonPass) {
       // We also need to project the filter field to use this predicate
       // project :+= varIsFiltered
-      Some(classOf[GenotypeVarFilterPASSPredicate])
+      Some(classOf[GenotypeRecordPASSPredicate])
     } else
       None
     val projection = None //Some(Projection(project))

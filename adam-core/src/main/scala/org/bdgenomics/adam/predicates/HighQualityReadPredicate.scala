@@ -16,11 +16,10 @@
 
 package org.bdgenomics.adam.predicates
 
-import org.bdgenomics.adam.avro.ADAMGenotype
+import org.bdgenomics.adam.avro.ADAMRecord
 
-class GenotypeRecordPASSPredicate extends ADAMPredicate[ADAMGenotype] {
+class HighQualityReadPredicate extends ADAMPredicate[ADAMRecord] {
 
-  override val recordCondition = RecordCondition[ADAMGenotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
+  override val recordCondition = ADAMRecordConditions.isMapped && ADAMRecordConditions.isHighQuality(30)
 
 }
-

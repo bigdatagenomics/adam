@@ -41,6 +41,7 @@ import org.bdgenomics.adam.rdd.GenotypesSummaryCounts.ReferenceAndAlternate
  * @param phasedCount Number of genotypes with phasing information
  *
  */
+
 case class GenotypesSummaryCounts(
     genotypesCounts: GenotypesSummaryCounts.GenotypeAlleleCounts,
     singleNucleotideVariantCounts: GenotypesSummaryCounts.VariantCounts,

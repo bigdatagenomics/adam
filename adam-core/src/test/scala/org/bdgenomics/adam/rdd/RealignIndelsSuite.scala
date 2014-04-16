@@ -31,12 +31,14 @@ class RealignIndelsSuite extends SparkFunSuite {
 
   def mason_reads: RDD[ADAMRecord] = {
     val path = ClassLoader.getSystemClassLoader.getResource("small_realignment_targets.sam").getFile
-    sc.adamLoad[ADAMRecord, UnboundRecordFilter](path)
+    val reads: RDD[ADAMRecord] = sc.adamLoad(path)
+    reads
   }
 
   def artificial_reads: RDD[ADAMRecord] = {
     val path = ClassLoader.getSystemClassLoader.getResource("artificial.sam").getFile
-    sc.adamLoad[ADAMRecord, UnboundRecordFilter](path)
+    val reads: RDD[ADAMRecord] = sc.adamLoad(path)
+    reads
   }
 
   def artificial_realigned_reads: RDD[ADAMRecord] = {
@@ -47,7 +49,8 @@ class RealignIndelsSuite extends SparkFunSuite {
 
   def gatk_artificial_realigned_reads: RDD[ADAMRecord] = {
     val path = ClassLoader.getSystemClassLoader.getResource("artificial.realigned.sam").getFile
-    sc.adamLoad[ADAMRecord, UnboundRecordFilter](path)
+    val reads: RDD[ADAMRecord] = sc.adamLoad(path)
+    reads
   }
 
   sparkTest("checking mapping to targets for artificial reads") {
