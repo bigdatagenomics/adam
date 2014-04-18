@@ -113,6 +113,8 @@ class SAMRecordConverter extends Serializable {
         attr =>
           if (attr.tag == "MD") {
             builder.setMismatchingPositions(attr.value.toString)
+          } else if (attr.tag == "OQ") {
+            builder.setOrigQual(attr.value.toString)
           } else {
             tags ::= AttributeUtils.convertSAMTagAndValue(attr)
           }
