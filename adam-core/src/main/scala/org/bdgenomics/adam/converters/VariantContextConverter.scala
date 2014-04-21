@@ -41,9 +41,9 @@ object VariantContextConverter {
 
   private def convertAlleles(g: ADAMGenotype): java.util.List[Allele] = {
     g.getAlleles.map(a => a match {
-      case ADAMGenotypeAllele.NoCall => Allele.NO_CALL
+      case ADAMGenotypeAllele.NoCall                            => Allele.NO_CALL
       case ADAMGenotypeAllele.Ref | ADAMGenotypeAllele.OtherAlt => Allele.create(g.getVariant.getReferenceAllele.toString, true)
-      case ADAMGenotypeAllele.Alt => Allele.create(g.getVariant.getVariantAllele.toString)
+      case ADAMGenotypeAllele.Alt                               => Allele.create(g.getVariant.getVariantAllele.toString)
     })
   }
 }
@@ -83,7 +83,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
           val gb = new GenotypeBuilder(g)
           gb.phased(true) // Multi-allelic genotypes are locally phased, TODO add phase set
           if (g.hasAD) gb.AD(Array(g.getAD()(0), g.getAD()(idx))) // "Punch out" other alleles in AD
-          if (g.hasLikelihoods) {  // Recompute PLs as needed to reflect stripped alleles
+          if (g.hasLikelihoods) { // Recompute PLs as needed to reflect stripped alleles
             val oldLikelihoods = g.getLikelihoods.getAsVector
             val newLikelihoods = GenotypeLikelihoods.getPLIndecesOfAlleles(0, idx).map(oldLikelihoods(_))
             // Normalize new likelihoods in log-space
