@@ -175,37 +175,33 @@ enum ADAMGenotypeType {
 // sample but are computed based on the samples.  For instance,  MAPQ0 is an aggregate
 // stat computed from all samples and stored inside the INFO line.
 record VariantCallingAnnotations {
-  union { null, int }     readDepth = null;
-  // Was this downsampled?
-  union { null, boolean } downsampled = null;
+  // QUAL: Phred-scaled probability of error for this variant call.
+  union { null, float }   variantCallErrorProbability = null;
 
-  // Base quality rank sum.
+  // FILTER: True or false implies that filters were applied and this variant PASSed or not.
+  // While 'null' implies not filters were applied.
+  union { null, boolean } variantIsPassing = null;
+  array <string>          variantFilters = null;
+
+  union { null, int }     readDepth = null;
+  union { null, boolean } downsampled = null;
   union { null, float }   baseQRankSum = null;
   union { null, float }   clippingRankSum = null;
   union { null, float }   fisherStrandBiasPValue = null; // Phred-scaled.
   union { null, float }   haplotypeScore = null;
   union { null, float }   inbreedingCoefficient = null;
-  array<int>              alleleCountMLE = null;
-  array<int>              alleleFrequencyMLE = null;
   union { null, float }   rmsMapQ = null;
   union { null, int }     mapq0Reads = null;
   union { null, float }   mqRankSum = null;
-  union { null, boolean } usedForNegativeTrainingSet = null;
-  union { null, boolean } usedForPositiveTrainingSet = null;
   union { null, float }   variantQualityByDepth = null;
   union { null, float }   readPositionRankSum = null;
-  // Log-odds ratio of being a true vs false variant under trained
+
+  // VQSR: Log-odds ratio of being a true vs false variant under trained
   // Gaussian mixture model.
   union { null, float }   vqslod = null;
   union { null, string }  culprit = null;
-  // Phred-scaled probability of error for this variant call.
-  union { null, float }   variantCallErrorProbability = null;
-  // True implies either filters were applied and the variant passed
-  // those filters, or no filters were applied.  False implies filters
-  // were applied the variant did not pass.
-  boolean                 variantIsPassing = true;
-  // A list of filters applied.
-  array <string>          variantFilters = null;
+  union { null, boolean } usedForNegativeTrainingSet = null;
+  union { null, boolean } usedForPositiveTrainingSet = null;
 }
 
 record ADAMGenotype {
@@ -220,35 +216,31 @@ record ADAMGenotype {
   // Length is equal to the ploidy
   array <ADAMGenotypeAllele> alleles = null;
 
-  // How many reads consider this allele to be the reference
+  // How many reference and alternate reads (AD)
   union { null, int }     referenceReadDepth = null;
-  // How many reads consider this allele to be the alternate
   union { null, int }     alternateReadDepth = null;
-  // How many total reads at this position
+  // How many total reads at this position (DP)
   union { null, int }     readDepth = null;
-  // The phred-scaled probability that we're correct for this genotype
-  // call.
+  // The phred-scaled probability that we're correct for this genotype call (GQ)
   union { null, int }     genotypeQuality = null;
 
   // Phred-scaled. Always length 3 since we are not multiallelic.
   array<int>              genotypeLikelihoods = null;
 
-  // Allele dosage
+  // Allele dosage (EC)
   union { null, float }    expectedAlleleDosage = null;
 
   // number of reads mapped at site on forward strand
   union { null, int } readsMappedForwardStrand = null;
 
-  // In the ADAM world we split multiallelic VCF lines into multiple
+  // In the ADAM world we split multi-allelic VCF lines into multiple
   // single-alternate records.  This bit is set if that happened for this
   // record.
-  boolean                 splitFromMultiAllelic = false;
-  // Whether this is a phased genotype
+  boolean splitFromMultiAllelic = false;
+
+  // Whether this is a phased genotype, and if so the phase set and quality
   union { null, boolean } isPhased = null;
-  // And if so, what is the phase id
   union { null, int }     phaseSetId = null;
-  // The quality of the phasing.  This isn't precisely defined in v4.2
-  // of the spec.
   union { null, int }     phaseQuality = null;
 }
 

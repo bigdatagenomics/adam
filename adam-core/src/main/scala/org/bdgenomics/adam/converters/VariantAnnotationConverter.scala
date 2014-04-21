@@ -21,7 +21,16 @@ import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.broadinstitute.variant.vcf._
 import org.bdgenomics.adam.avro.{ ADAMDatabaseVariantAnnotation, ADAMGenotype, VariantCallingAnnotations }
-import org.bdgenomics.adam.util.ImplicitJavaConversions._
+
+object AttrKey {
+  def apply(adamKey: String, hdrLine: VCFCompoundHeaderLine): AttrKey = {
+    new AttrKey(adamKey, null, hdrLine)
+  }
+}
+
+case class AttrKey(adamKey: String, attrConverter: (Object => Object), hdrLine: VCFCompoundHeaderLine) {
+  val vcfKey: String = hdrLine.getID
+}
 
 object VariantAnnotationConverter extends Serializable {
 
@@ -43,36 +52,31 @@ object VariantAnnotationConverter extends Serializable {
   private def attrAsString(attr: Object): Object = attr match {
     case a: String => a
   }
-
   private def attrAsBoolean(attr: Object): Object = attr match {
     case a: java.lang.Boolean => a
     case a: String            => java.lang.Boolean.valueOf(a)
   }
 
-  private case class AttrKey(adamKey: String, attrConverter: (Object => Object), hdrLine: VCFCompoundHeaderLine) {
-    val vcfKey: String = hdrLine.getID
-  }
-
-  private val COSMIC_KEYS: List[AttrKey] = List(
+  val COSMIC_KEYS: List[AttrKey] = List(
     AttrKey("geneSymbol", attrAsString _, new VCFInfoHeaderLine("GENE,", 1, VCFHeaderLineType.String, "Gene name")),
     AttrKey("strand", attrAsString _, new VCFInfoHeaderLine("STRAND,", 1, VCFHeaderLineType.String, "Gene strand")),
     AttrKey("cds", attrAsString _, new VCFInfoHeaderLine("CDS,", 1, VCFHeaderLineType.String, "CDS annotation")),
     AttrKey("cnt", attrAsString _, new VCFInfoHeaderLine("CNT,", 1, VCFHeaderLineType.Integer, "How many samples have this mutation")))
 
-  private val DBNSFP_KEYS: List[AttrKey] = List(
+  val DBNSFP_KEYS: List[AttrKey] = List(
     AttrKey("phylop", attrAsFloat _, new VCFInfoHeaderLine("PHYLOP", 1, VCFHeaderLineType.Float, "PhyloP score. The larger the score, the more conserved the site.")),
     AttrKey("siftPred", attrAsString _, new VCFInfoHeaderLine("SIFT_PRED", 1, VCFHeaderLineType.Character, "SIFT Prediction: D (damaging), T (tolerated)")),
     AttrKey("siftScore", attrAsFloat _, new VCFInfoHeaderLine("SIFT_SCORE", 1, VCFHeaderLineType.Float, "SIFT Score")),
     AttrKey("ancestralAllele", attrAsString _, new VCFInfoHeaderLine("AA", 1, VCFHeaderLineType.String, "Ancestral allele")))
 
-  private val CLINVAR_KEYS: List[AttrKey] = List(
+  val CLINVAR_KEYS: List[AttrKey] = List(
     AttrKey("dbSnpId", attrAsInt _, new VCFInfoHeaderLine("dbSNP ID", 1, VCFHeaderLineType.Integer, "dbSNP ID")),
     AttrKey("geneSymbol", attrAsString _, new VCFInfoHeaderLine("GENEINFO", 1, VCFHeaderLineType.String, "Pairs each of gene symbol:gene id.  The gene symbol and id are delimited by a colon (:) and each pair is delimited by a vertical bar")))
 
-  private val OMIM_KEYS: List[AttrKey] = List(
+  val OMIM_KEYS: List[AttrKey] = List(
     AttrKey("omimId", attrAsString _, new VCFInfoHeaderLine("VAR", 1, VCFHeaderLineType.String, "MIM entry with variant mapped to rsID")))
 
-  private val INFO_KEYS: Seq[AttrKey] = Seq(
+  val INFO_KEYS: Seq[AttrKey] = Seq(
     AttrKey("clippingRankSum", attrAsFloat _, new VCFInfoHeaderLine("ClippingRankSum", 1, VCFHeaderLineType.Float, "Z-score From Wilcoxon rank sum test of Alt vs. Ref number of hard clipped bases")),
     AttrKey("readDepth", attrAsInt _, VCFStandardHeaderLines.getInfoLine(VCFConstants.DEPTH_KEY)),
     AttrKey("downsampled", attrAsBoolean _, VCFStandardHeaderLines.getInfoLine(VCFConstants.DOWNSAMPLED_KEY)),
@@ -89,32 +93,32 @@ object VariantAnnotationConverter extends Serializable {
     AttrKey("vqslod", attrAsFloat _, new VCFInfoHeaderLine("VQSLOD", 1, VCFHeaderLineType.Float, "Log odds ratio of being a true variant versus being false under the trained gaussian mixture model")),
     AttrKey("culprit", attrAsString _, new VCFInfoHeaderLine("culprit", 1, VCFHeaderLineType.String, "The annotation which was the worst performing in the Gaussian mixture model, likely the reason why the variant was filtered out")))
 
-  private val FORMAT_KEYS: Seq[AttrKey] = Seq(
-    AttrKey("alleles", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_KEY)),
-    AttrKey("gtQuality", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_QUALITY_KEY)),
-    AttrKey("readDepth", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.DEPTH_KEY)),
-    AttrKey("alleleDepths", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_ALLELE_DEPTHS)),
-    AttrKey("gtFilters", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_FILTER_KEY)),
-    AttrKey("genotypeLikelihoods", null, VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_PL_KEY)),
+  val FORMAT_KEYS: Seq[AttrKey] = Seq(
+    AttrKey("alleles", VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_KEY)),
+    AttrKey("gtQuality", VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_QUALITY_KEY)),
+    AttrKey("readDepth", VCFStandardHeaderLines.getFormatLine(VCFConstants.DEPTH_KEY)),
+    AttrKey("alleleDepths", VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_ALLELE_DEPTHS)),
+    AttrKey("gtFilters", VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_FILTER_KEY)),
+    AttrKey("genotypeLikelihoods", VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_PL_KEY)),
     AttrKey("phaseQuality", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_QUALITY_KEY, 1, VCFHeaderLineType.Float, "Read-backed phasing quality")),
     AttrKey("phaseSetId", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY, 1, VCFHeaderLineType.Integer, "Phase set")))
 
   lazy val infoHeaderLines: Seq[VCFCompoundHeaderLine] = INFO_KEYS.map(_.hdrLine)
   lazy val formatHeaderLines: Seq[VCFCompoundHeaderLine] = FORMAT_KEYS.map(_.hdrLine)
 
-  lazy val VCF2VarCallAnnotations: Map[String, (Int, Object => Object)] = createFieldMap(INFO_KEYS, VariantCallingAnnotations.getClassSchema)
-  lazy val VCF2GTAnnotations: Map[String, (Int, Object => Object)] = createFieldMap(FORMAT_KEYS, ADAMGenotype.getClassSchema)
+  lazy val VCF2VariantCallingAnnotations: Map[String, (Int, Object => Object)] =
+    createFieldMap(INFO_KEYS, VariantCallingAnnotations.getClassSchema)
+  lazy val VCF2GenotypeAnnotations: Map[String, (Int, Object => Object)] =
+    createFieldMap(FORMAT_KEYS, ADAMGenotype.getClassSchema)
 
   private lazy val EXTERNAL_DATABASE_KEYS: Seq[AttrKey] = OMIM_KEYS ::: CLINVAR_KEYS ::: DBNSFP_KEYS // ::: COSMIC_KEYS
   lazy val VCF2DatabaseAnnotations: Map[String, (Int, Object => Object)] = createFieldMap(EXTERNAL_DATABASE_KEYS, ADAMDatabaseVariantAnnotation.getClassSchema)
 
   private def createFieldMap(keys: Seq[AttrKey], schema: Schema): Map[String, (Int, Object => Object)] = {
-    keys.filter(_.attrConverter != null).map(
-      field => {
-        val avroField = schema.getField(field.adamKey)
-        field.vcfKey -> (avroField.pos, field.attrConverter)
-      })(collection.breakOut)
-
+    keys.filter(_.attrConverter != null).map(field => {
+      val avroField = schema.getField(field.adamKey)
+      field.vcfKey -> (avroField.pos, field.attrConverter)
+    })(collection.breakOut)
   }
 
   private def fillRecord[T <% SpecificRecord](fieldMap: Map[String, (Int, Object => Object)], vc: VariantContext, record: T): T = {
@@ -136,7 +140,7 @@ object VariantAnnotationConverter extends Serializable {
   }
 
   def convert(vc: VariantContext, call: VariantCallingAnnotations): VariantCallingAnnotations = {
-    fillRecord(VCF2VarCallAnnotations, vc, call)
+    fillRecord(VCF2VariantCallingAnnotations, vc, call)
   }
 
   def mergeAnnotations(leftRecord: ADAMDatabaseVariantAnnotation, rightRecord: ADAMDatabaseVariantAnnotation): ADAMDatabaseVariantAnnotation = {
