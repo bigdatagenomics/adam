@@ -23,12 +23,11 @@ import scala.collection.JavaConversions._
 
 object VariantContextConverter {
 
-  // One conversion method for each way of representing an Allele that
-  // GATK has, plus to convert based on actual alleles vs. the calls
-  // (ref/alt/nocall) in the genotypes.
-  private def convertAllele(allele: Allele): ADAMGenotypeAllele = {
+  // One conversion method for each way of representing an Allele
+  private def convertAllele(vc: VariantContext, allele: Allele): ADAMGenotypeAllele = {
     if (allele.isNoCall) ADAMGenotypeAllele.NoCall
     else if (allele.isReference) ADAMGenotypeAllele.Ref
+    else if (!vc.hasAlternateAllele(allele)) ADAMGenotypeAllele.OtherAlt
     else ADAMGenotypeAllele.Alt
   }
 
@@ -43,8 +42,8 @@ object VariantContextConverter {
   private def convertAlleles(g: ADAMGenotype): java.util.List[Allele] = {
     g.getAlleles.map(a => a match {
       case ADAMGenotypeAllele.NoCall => Allele.NO_CALL
-      case ADAMGenotypeAllele.Ref    => Allele.create(g.getVariant.getReferenceAllele.toString, true)
-      case ADAMGenotypeAllele.Alt    => Allele.create(g.getVariant.getVariantAllele.toString)
+      case ADAMGenotypeAllele.Ref | ADAMGenotypeAllele.OtherAlt => Allele.create(g.getVariant.getReferenceAllele.toString, true)
+      case ADAMGenotypeAllele.Alt => Allele.create(g.getVariant.getVariantAllele.toString)
     })
   }
 }
@@ -59,9 +58,7 @@ object VariantContextConverter {
  */
 class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable {
 
-  implicit def gatkAllelesToADAMAlleles(gatkAlleles: java.util.List[Allele]): java.util.List[ADAMGenotypeAllele] = {
-    gatkAlleles.map(VariantContextConverter.convertAllele(_))
-  }
+  private lazy val splitFromMultiAllelicField = ADAMGenotype.SCHEMA$.getField("splitFromMultiAllelic")
 
   /**
    * Converts a single GATK variant into ADAMVariantContext(s).
@@ -70,19 +67,43 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
    * @return ADAM variant contexts
    */
   def convert(vc: VariantContext, extractExternalAnnotations: Boolean = false): Seq[ADAMVariantContext] = {
-
-    // TODO: Handle multi-allelic sites
-    // We need to split the alleles (easy) and split and subset the PLs (harder)/update the genotype
+    // Uncommon case: Multi-allelic sites
     if (!vc.isBiallelic) {
       return vc.getAlternateAlleles.flatMap(allele => {
+        val idx = vc.getAlleleIndex(allele)
+        assert(idx >= 1, "Unexpected index for alternate allele")
+
         val vcb = new VariantContextBuilder(vc)
-        // Strip out other alternate alleles
+
+        // Retain alternate allele of interest
         vcb.alleles(List(vc.getReference, allele))
 
-        convert(vcb.make, extractExternalAnnotations)
+        val gc = GenotypesContext.create // Fixup genotypes
+        gc.addAll(vc.getGenotypes.map((g: Genotype) => {
+          val gb = new GenotypeBuilder(g)
+          gb.phased(true) // Multi-allelic genotypes are locally phased, TODO add phase set
+          if (g.hasAD) gb.AD(Array(g.getAD()(0), g.getAD()(idx))) // "Punch out" other alleles in AD
+          if (g.hasLikelihoods) {  // Recompute PLs as needed to reflect stripped alleles
+            val oldLikelihoods = g.getLikelihoods.getAsVector
+            val newLikelihoods = GenotypeLikelihoods.getPLIndecesOfAlleles(0, idx).map(oldLikelihoods(_))
+            // Normalize new likelihoods in log-space
+            gb.PL(newLikelihoods.map(_ - newLikelihoods.max))
+          }
+          gb.make()
+        }))
+        // We purposely retain "invalid" genotype alleles, that will eventually become
+        // "OtherAlt" entries, but won't validate against the reduced VariantContext
+        vcb.genotypesNoValidation(gc)
+
+        // Recursively convert now bi-allelic VariantContexts, setting any multi-allelic
+        // specific fields afterwards
+        val adamVCs = convert(vcb.make, extractExternalAnnotations)
+        adamVCs.flatMap(_.genotypes).foreach(g => g.put(splitFromMultiAllelicField.pos, true))
+        adamVCs
       })
     }
 
+    // Common case: Biallelic site
     val variant: ADAMVariant = createADAMVariant(vc)
 
     // VCF Genotypes
@@ -150,7 +171,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
         .setVariant(variant)
         .setVariantCallingAnnotations(annotations)
         .setSampleId(g.getSampleName)
-        .setAlleles(g.getAlleles.map(VariantContextConverter.convertAllele(_)))
+        .setAlleles(g.getAlleles.map(VariantContextConverter.convertAllele(vc, _)))
         .setIsPhased(g.isPhased)
 
       if (g.hasGQ) genotype.setGenotypeQuality(g.getGQ)

@@ -156,4 +156,35 @@ class VariantContextConverterSuite extends FunSuite {
       assert(adamVC.variant.getVariantAllele === allele.getBaseString)
     }
   }
+
+  test("Convert GATK multi-allelic SNVs to ADAM") {
+    val gb = new GenotypeBuilder("NA12878", List(Allele.create("T"), Allele.create("G")))
+    gb.AD(Array(4, 2, 3)).PL(Array(59, 0, 181, 1, 66, 102))
+
+    val vcb = gatkMultiAllelicSNVBuilder
+    vcb.genotypes(gb.make())
+
+    val converter = new VariantContextConverter(Some(dictionary))
+
+    val adamVCs = converter.convert(vcb.make)
+    assert(adamVCs.length === 2)
+
+    for (adamVC <- adamVCs) {
+      assert(adamVC.genotypes.length === 1)
+      val adamGT = adamVC.genotypes.head
+      assert(adamGT.getSplitFromMultiAllelic)
+      assert(adamGT.getReferenceReadDepth === 4)
+      assert(adamGT.getIsPhased)
+    }
+
+    val adamGT1 = adamVCs(0).genotypes.head
+    val adamGT2 = adamVCs(1).genotypes.head
+    assert(adamGT1.getAlleles.sameElements(List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.OtherAlt)))
+    assert(adamGT1.getAlternateReadDepth === 2)
+    assert(adamGT1.getGenotypeLikelihoods.sameElements(List(59, 0, 181)))
+
+    assert(adamGT2.getAlleles.sameElements(List(ADAMGenotypeAllele.OtherAlt, ADAMGenotypeAllele.Alt)))
+    assert(adamGT2.getAlternateReadDepth === 3)
+    assert(adamGT2.getGenotypeLikelihoods.sameElements(List(58, 0, 101)))
+  }
 }
