@@ -74,7 +74,13 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     // TODO: Handle multi-allelic sites
     // We need to split the alleles (easy) and split and subset the PLs (harder)/update the genotype
     if (!vc.isBiallelic) {
-      return Seq()
+      return vc.getAlternateAlleles.flatMap(allele => {
+        val vcb = new VariantContextBuilder(vc)
+        // Strip out other alternate alleles
+        vcb.alleles(List(vc.getReference, allele))
+
+        convert(vcb.make, extractExternalAnnotations)
+      })
     }
 
     val variant: ADAMVariant = createADAMVariant(vc)
@@ -89,7 +95,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       else
         None
 
-    Seq(ADAMVariantContext(variant, genotypes, annotation))
+    return Seq(ADAMVariantContext(variant, genotypes, annotation))
   }
 
   def convertToAnnotation(vc: VariantContext): ADAMDatabaseVariantAnnotation = {
