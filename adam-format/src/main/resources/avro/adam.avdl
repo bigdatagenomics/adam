@@ -160,8 +160,8 @@ record ADAMVariant {
 enum ADAMGenotypeAllele {
   Ref,   // Genotype is the reference allele
   Alt,   // Genotype is the alternate allele
-  NoCall // Genotype could not be called (e.g., reads did not provide
-	 // enough information or had low quality)
+  OtherAlt, // Genotype is unspecified other alternate allele (e.g. split from multi-allelic)
+  NoCall // Genotype could not be called
 }
 
 enum ADAMGenotypeType {
