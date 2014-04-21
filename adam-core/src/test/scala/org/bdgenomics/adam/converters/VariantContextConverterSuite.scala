@@ -32,6 +32,12 @@ class VariantContextConverterSuite extends FunSuite {
     .stop(1L)
     .chr("chr1")
 
+  def gatkMultiAllelicSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
+    .alleles(List(Allele.create("A", true), Allele.create("T"), Allele.create("G")))
+    .start(1L)
+    .stop(1L)
+    .chr("chr1")
+
   def adamSNVBuilder: ADAMVariant.Builder = ADAMVariant.newBuilder()
     .setContig(ADAMContig.newBuilder().setContigId(1).setContigName("chr1").build)
     .setPosition(0L)
@@ -135,5 +141,19 @@ class VariantContextConverterSuite extends FunSuite {
     assert(gatkVC.hasGenotype("NA12878"))
     val gatkGT = gatkVC.getGenotype("NA12878")
     assert(gatkGT.getType === GenotypeType.HET)
+  }
+
+  test("Convert GATK multi-allelic sites-only SNVs to ADAM") {
+    val vc = gatkMultiAllelicSNVBuilder.make
+    val converter = new VariantContextConverter(Some(dictionary))
+
+    val adamVCs = converter.convert(vc)
+    assert(adamVCs.length === 2)
+
+    for ((allele, idx) <- vc.getAlternateAlleles.zipWithIndex) {
+      val adamVC = adamVCs(idx);
+      assert(adamVC.variant.getReferenceAllele === vc.getReference.getBaseString)
+      assert(adamVC.variant.getVariantAllele === allele.getBaseString)
+    }
   }
 }
