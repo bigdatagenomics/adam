@@ -78,32 +78,30 @@ class VariantContextConverterSuite extends FunSuite {
     assert(adamGT.getPhaseQuality === 50)
   }
 
-  test("Convert GATK PASSing SNV to ADAM") {
+  test("Convert GATK SNV with different filters to ADAM") {
     val vcb = gatkSNVBuilder
     vcb.genotypes(GenotypeBuilder.create("NA12878", vcb.getAlleles))
-    vcb.passFilters()
 
     val converter = new VariantContextConverter(Some(dictionary))
 
-    val adamVCs = converter.convert(vcb.make)
-    val adamGT = adamVCs.flatMap(_.genotypes).head
-
-    assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing === true)
-  }
-
-  test("Convert GATK non-PASSing SNV to ADAM") {
-    val vcb = gatkSNVBuilder
-    vcb.genotypes(GenotypeBuilder.create("NA12878", vcb.getAlleles))
-    vcb.filter("LowMQ")
-
-    val converter = new VariantContextConverter(Some(dictionary))
-
-    val adamVCs = converter.convert(vcb.make)
-    val adamGT = adamVCs.flatMap(_.genotypes).head
-
-    val annotations = adamGT.getVariantCallingAnnotations
-    assert(annotations.getVariantIsPassing === false)
-    assert(annotations.getVariantFilters.sameElements(List("LowMQ")))
+    { // No filters
+      val adamVCs = converter.convert(vcb.make)
+      val adamGT = adamVCs.flatMap(_.genotypes).head
+      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing === null)
+    }
+    { // PASSing
+      vcb.unfiltered.passFilters
+      val adamVCs = converter.convert(vcb.make)
+      val adamGT = adamVCs.flatMap(_.genotypes).head
+      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing)
+    }
+    { // not PASSing
+      vcb.unfiltered.filter("LowMQ")
+      val adamVCs = converter.convert(vcb.make)
+      val adamGT = adamVCs.flatMap(_.genotypes).head
+      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing === false)
+      assert(adamGT.getVariantCallingAnnotations.getVariantFilters.sameElements(List("LowMQ")))
+    }
   }
 
   test("Convert ADAM site-only SNV to GATK") {

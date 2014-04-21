@@ -16,15 +16,10 @@
 package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.avro._
-import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary, ReferencePosition }
-import org.bdgenomics.adam.util.VcfStringUtils._
-import org.broadinstitute.variant.vcf._
+import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
 import org.broadinstitute.variant.variantcontext._
 import org.broadinstitute.variant.vcf.VCFConstants
 import scala.collection.JavaConversions._
-import org.apache.avro.Schema
-import org.apache.avro.generic.GenericRecord
-import org.apache.avro.specific.SpecificRecord
 
 object VariantContextConverter {
 
@@ -84,14 +79,9 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
 
     val variant: ADAMVariant = createADAMVariant(vc)
 
-    val sharedGenotypeBuilder: ADAMGenotype.Builder = ADAMGenotype.newBuilder
-      .setVariant(variant)
-
-    sharedGenotypeBuilder.setVariantCallingAnnotations(extractVariantCallingAnnotations(vc))
-
     // VCF Genotypes
-    val sharedGenotype = sharedGenotypeBuilder.build
-    val genotypes: Seq[ADAMGenotype] = extractGenotypes(vc, sharedGenotype)
+    val calling_annotations: VariantCallingAnnotations = extractVariantCallingAnnotations(vc)
+    val genotypes: Seq[ADAMGenotype] = extractGenotypes(vc, variant, calling_annotations)
 
     val annotation: Option[ADAMDatabaseVariantAnnotation] =
       if (extractExternalAnnotations)
@@ -148,9 +138,11 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
 
   }
 
-  private def extractGenotypes(vc: VariantContext, sharedGenotype: ADAMGenotype): Seq[ADAMGenotype] = {
+  private def extractGenotypes(vc: VariantContext, variant: ADAMVariant, annotations: VariantCallingAnnotations): Seq[ADAMGenotype] = {
     val genotypes: Seq[ADAMGenotype] = vc.getGenotypes.map((g: Genotype) => {
-      val genotype: ADAMGenotype.Builder = ADAMGenotype.newBuilder(sharedGenotype)
+      val genotype: ADAMGenotype.Builder = ADAMGenotype.newBuilder
+        .setVariant(variant)
+        .setVariantCallingAnnotations(annotations)
         .setSampleId(g.getSampleName)
         .setAlleles(g.getAlleles.map(VariantContextConverter.convertAllele(_)))
         .setIsPhased(g.isPhased)
@@ -165,7 +157,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       if (g.hasPL) genotype.setGenotypeLikelihoods(g.getPL.toList.map(p => p: java.lang.Integer))
 
       val builtGenotype = genotype.build
-      for ((v, a) <- VariantAnnotationConverter.VCF2GTAnnotations) {
+      for ((v, a) <- VariantAnnotationConverter.VCF2GenotypeAnnotations) {
         // Add extended attributes if present
         val attr = g.getExtendedAttribute(v)
         if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {
@@ -178,22 +170,16 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
   }
 
   private def extractVariantCallingAnnotations(vc: VariantContext): VariantCallingAnnotations = {
-
-    val call: VariantCallingAnnotations.Builder =
-      VariantCallingAnnotations.newBuilder
+    val call: VariantCallingAnnotations.Builder = VariantCallingAnnotations.newBuilder
 
     // VCF QUAL, FILTER and INFO fields
     if (vc.hasLog10PError) {
       call.setVariantCallErrorProbability(vc.getPhredScaledQual.asInstanceOf[Float])
     }
 
-    if (vc.isFiltered) {
-      // not PASSing
-      call.setVariantIsPassing(!vc.isFiltered.booleanValue)
-        .setVariantFilters(new java.util.ArrayList(vc.getFilters))
-    } else {
-      /* otherwise, filters were applied and the variant passed, or no
-       * filters were applied */
+    if (vc.filtersWereApplied && vc.isFiltered) {
+      call.setVariantIsPassing(false).setVariantFilters(new java.util.ArrayList(vc.getFilters))
+    } else if (vc.filtersWereApplied) {
       call.setVariantIsPassing(true)
     }
 
@@ -210,7 +196,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     val vcb = new VariantContextBuilder()
       .chr(variant.getContig.getContigName.toString)
       .start(variant.getPosition + 1 /* Recall ADAM is 0-indexed */ )
-      .stop(variant.getPosition + 1 + variant.getReferenceAllele.length - 1)
+      .stop(variant.getPosition + variant.getReferenceAllele.length)
       .alleles(VariantContextConverter.convertAlleles(variant))
 
     vc.databases.flatMap(d => Option(d.getDbSnpId)).foreach(d => vcb.id("rs" + d))

@@ -319,7 +319,7 @@
             <dependency>
                 <groupId>fi.tkk.ics.hadoop.bam</groupId>
                 <artifactId>hadoop-bam</artifactId>
-                <version>6.1</version>
+                <version>6.2</version>
             </dependency>
             <dependency>
                 <groupId>variant</groupId>
