@@ -106,7 +106,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
 
     def referenceLocationOption: Option[ReferenceLocation] = assumingAligned {
       record.readOffsetToReferencePosition(offset).
-        map(refOffset => new ReferenceLocation(record.getReferenceName.toString, refOffset))
+        map(refOffset => new ReferenceLocation(record.getContig.getContigName.toString, refOffset))
     }
 
     def referenceLocation: ReferenceLocation =

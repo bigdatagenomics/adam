@@ -69,7 +69,7 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
     // Quiet parquet logging...
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
-    val proj = Projection(referenceId, referenceName, referenceLength, referenceUrl, start, cigar, readMapped)
+    val proj = Projection(contig, start, cigar, readMapped)
 
     val adamRDD: RDD[ADAMRecord] = sc.adamLoad(args.adamInputPath, projection = Some(proj))
     val mappedRDD = adamRDD.filter(_.getReadMapped)
@@ -112,7 +112,7 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
     depths.collect().foreach {
       case (region, count) =>
         println("%20s\t%15s\t% 5d".format(
-          "%s:%d".format(seqDict(region.refId).name, region.start),
+          "%s:%d".format(region.referenceName, region.start),
           variantNames(region),
           count))
     }
@@ -144,13 +144,11 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
             throw new IllegalArgumentException("chromosome name \"%s\" wasn't in the sequence dictionary (%s)".format(
               chrom, seqDict.records.map(_.name).mkString(",")))
           }
-          val refId = seqDict(chrom).id
           val start = array(1).toLong
           val name = array(2)
           val end = start + array(3).length
-          (ReferenceRegion(refId, start, end), name)
+          (ReferenceRegion(chrom, start, end), name)
         }
     }.toSeq)
   }
 }
-

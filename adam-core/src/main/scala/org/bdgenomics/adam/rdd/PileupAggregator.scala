@@ -16,7 +16,7 @@
 
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.avro.{ Base, ADAMPileup }
+import org.bdgenomics.adam.avro.{ Base, ADAMContig, ADAMPileup }
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
@@ -68,10 +68,13 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
             "Cannot aggregate pileup with required fields null: " + b)
         }
 
+        // We have to duplicate the existing contig so it doesn't get
+        // inadvertently modified later on.
+        val contig = ADAMContig.newBuilder(a.getContig).build
+
         // set copied fields
         val c = ADAMPileup.newBuilder()
-          .setReferenceName(a.getReferenceName)
-          .setReferenceId(a.getReferenceId)
+          .setContig(contig)
           .setPosition(a.getPosition)
           .setRangeOffset(a.getRangeOffset)
           .setRangeLength(a.getRangeLength)

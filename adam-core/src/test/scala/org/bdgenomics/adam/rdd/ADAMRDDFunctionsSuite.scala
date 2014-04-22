@@ -40,14 +40,18 @@ import scala.util.Random
 class ADAMRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("can convert pileups to rods, bases at different pos, same reference") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
     val p0 = ADAMPileup.newBuilder()
       .setPosition(0L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.A)
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.C)
       .build()
 
@@ -63,14 +67,22 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("can convert pileups to rods, bases at same pos, different reference") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
+    val contig1 = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .build
+
     val p0 = ADAMPileup.newBuilder()
       .setPosition(0L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.A)
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(0L)
-      .setReferenceId(1)
+      .setContig(contig1)
       .setReadBase(Base.C)
       .build()
 
@@ -79,21 +91,26 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     val rods = pileups.adamPileupsToRods(1)
 
     assert(rods.count === 2)
-    assert(rods.filter(_.position.refId == 0).count === 1)
-    assert(rods.filter(_.position.refId == 0).flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
-    assert(rods.filter(_.position.refId == 1).count === 1)
-    assert(rods.filter(_.position.refId == 1).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
+    assert(rods.filter(_.position.referenceName == "chr0").count === 1)
+    assert(rods.filter(_.position.referenceName == "chr0").flatMap(_.pileups).filter(_.getReadBase == Base.A).count === 1)
+    assert(rods.filter(_.position.referenceName == "chr1").count === 1)
+    assert(rods.filter(_.position.referenceName == "chr1").flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
   }
 
   sparkTest("can convert pileups to rods, bases at same pos") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
     val p0 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.A)
       .build()
+
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.C)
       .build()
 
@@ -109,15 +126,19 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("can convert pileups to rods, bases at same pos, split by different sample") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
     val p0 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.A)
       .setRecordGroupSample("0")
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.C)
       .setRecordGroupSample("1")
       .build()
@@ -141,15 +162,19 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("can convert pileups to rods, bases at same pos, split by same sample") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
     val p0 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.A)
       .setRecordGroupSample("1")
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.C)
       .setRecordGroupSample("1")
       .build()
@@ -172,14 +197,18 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("check coverage, bases at different pos") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
     val p0 = ADAMPileup.newBuilder()
       .setPosition(0L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.A)
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.C)
       .build()
 
@@ -193,14 +222,18 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("check coverage, bases at same pos") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
     val p0 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.A)
       .build()
     val p1 = ADAMPileup.newBuilder()
       .setPosition(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setReadBase(Base.C)
       .build()
 
@@ -220,7 +253,10 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
       val mapped = random.nextBoolean()
       val builder = ADAMRecord.newBuilder().setReadMapped(mapped)
       if (mapped) {
-        builder.setReferenceId(random.nextInt(numReadsToCreate / 10)).setStart(random.nextInt(1000000))
+        val contig = ADAMContig.newBuilder
+          .setContigName(random.nextInt(numReadsToCreate / 10).toString)
+          .build
+        builder.setContig(contig).setStart(random.nextInt(1000000))
       }
       builder.build()
     }
@@ -231,14 +267,18 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     assert(unmapped.forall(p => p._2 > mapped.takeRight(1)(0)._2))
     // Make sure that we appropriately sorted the reads
     val expectedSortedReads = mapped.sortWith(
-      (a, b) => a._1.getReferenceId < b._1.getReferenceId && a._1.getStart < b._1.getStart)
+      (a, b) => a._1.getContig.getContigName.toString < b._1.getContig.getContigName.toString && a._1.getStart < b._1.getStart)
     assert(expectedSortedReads === mapped)
   }
 
   sparkTest("convert an RDD of reads into rods") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
     val r0 = ADAMRecord.newBuilder
       .setStart(1L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setSequence("ACG")
       .setMapq(30)
       .setCigar("3M")
@@ -250,7 +290,7 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
       .build()
     val r1 = ADAMRecord.newBuilder
       .setStart(2L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setSequence("CG")
       .setMapq(40)
       .setCigar("2M")
@@ -262,7 +302,7 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
       .build()
     val r2 = ADAMRecord.newBuilder
       .setStart(3L)
-      .setReferenceId(0)
+      .setContig(contig)
       .setSequence("G")
       .setMapq(50)
       .setCigar("1M")
@@ -278,7 +318,7 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     val rods = reads.adamRecords2Rods()
 
     assert(rods.count === 3)
-    assert(rods.collect.forall(_.position.refId == 0))
+    assert(rods.collect.forall(_.position.referenceName == "chr0"))
     assert(rods.filter(_.position.pos == 1L).count === 1)
     assert(rods.filter(_.position.pos == 1L).first.pileups.length === 1)
     assert(rods.filter(_.position.pos == 1L).first.pileups.forall(_.getReadBase == Base.A))
@@ -291,9 +331,17 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("convert an RDD of reads into rods, different references") {
+    val contig0 = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
+    val contig1 = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .build
+
     val r0 = ADAMRecord.newBuilder
       .setStart(1L)
-      .setReferenceId(0)
+      .setContig(contig0)
       .setSequence("AC")
       .setMapq(30)
       .setCigar("2M")
@@ -305,7 +353,7 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
       .build()
     val r1 = ADAMRecord.newBuilder
       .setStart(2L)
-      .setReferenceId(0)
+      .setContig(contig0)
       .setSequence("C")
       .setMapq(40)
       .setCigar("1M")
@@ -317,7 +365,7 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
       .build()
     val r2 = ADAMRecord.newBuilder
       .setStart(2L)
-      .setReferenceId(1)
+      .setContig(contig1)
       .setSequence("G")
       .setMapq(50)
       .setCigar("1M")
@@ -333,76 +381,36 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     val rods = reads.adamRecords2Rods()
 
     assert(rods.count === 3)
-    assert(rods.filter(_.position.refId == 0).count === 2)
-    assert(rods.filter(_.position.refId == 1).count === 1)
-    assert(rods.filter(_.position.pos == 1L).filter(_.position.refId == 0).count === 1)
-    assert(rods.filter(_.position.pos == 1L).filter(_.position.refId == 0).first.pileups.length === 1)
-    assert(rods.filter(_.position.pos == 1L).filter(_.position.refId == 0).first.pileups.forall(_.getReadBase == Base.A))
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 0).count === 1)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 0).first.pileups.length === 2)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 0).first.pileups.forall(_.getReadBase == Base.C))
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).count === 1)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.length === 1)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.refId == 1).first.pileups.forall(_.getReadBase == Base.G))
-  }
-
-  sparkTest("can remap contig ids") {
-    val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
-      SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
-    val ctg0 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigName("chr0")
-      .setContigId(1)
-      .setContigLength(1000L)
-      .build()
-    val ctg1 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigName("chr1")
-      .setContigId(2)
-      .setContigLength(1000L)
-      .build()
-
-    val rdd = sc.parallelize(List(ctg0, ctg1))
-
-    val remapped = rdd.adamRewriteContigIds(dict)
-
-    assert(remapped.count === 2)
-    assert(remapped.filter(_.getContigName.toString == "chr0").first.getContigId === 0)
-    assert(remapped.filter(_.getContigName.toString == "chr1").first.getContigId === 1)
-  }
-
-  sparkTest("can remap contig ids while filtering out contigs that aren't in dict") {
-    val dict = SequenceDictionary(SequenceRecord(0, "chr0", 1000L, "http://bigdatagenomics.github.io/chr0.fa"),
-      SequenceRecord(1, "chr1", 1000L, "http://bigdatagenomics.github.io/chr0.fa"))
-    val ctg0 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigName("chr0")
-      .setContigId(1)
-      .setContigLength(1000L)
-      .build()
-    val ctg1 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigName("chr2")
-      .setContigId(2)
-      .setContigLength(1000L)
-      .build()
-
-    val rdd = sc.parallelize(List(ctg0, ctg1))
-
-    val remapped = rdd.adamRewriteContigIds(dict)
-
-    assert(remapped.count === 1)
-    assert(remapped.filter(_.getContigName.toString == "chr0").first.getContigId === 0)
-    assert(remapped.filter(_.getContigName.toString == "chr2").count === 0)
+    assert(rods.filter(_.position.referenceName == "chr0").count === 2)
+    assert(rods.filter(_.position.referenceName == "chr1").count === 1)
+    assert(rods.filter(_.position.pos == 1L).filter(_.position.referenceName == "chr0").count === 1)
+    assert(rods.filter(_.position.pos == 1L).filter(_.position.referenceName == "chr0").first.pileups.length === 1)
+    assert(rods.filter(_.position.pos == 1L).filter(_.position.referenceName == "chr0").first.pileups.forall(_.getReadBase == Base.A))
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr0").count === 1)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr0").first.pileups.length === 2)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr0").first.pileups.forall(_.getReadBase == Base.C))
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr1").count === 1)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr1").first.pileups.length === 1)
+    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr1").first.pileups.forall(_.getReadBase == Base.G))
   }
 
   sparkTest("generate sequence dict from fasta") {
-    val ctg0 = ADAMNucleotideContigFragment.newBuilder()
+    val contig0 = ADAMContig.newBuilder
       .setContigName("chr0")
-      .setContigId(1)
       .setContigLength(1000L)
-      .setUrl("http://bigdatagenomics.github.io/chr0.fa")
+      .setReferenceURL("http://bigdatagenomics.github.io/chr0.fa")
+      .build
+
+    val contig1 = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(900L)
+      .build
+
+    val ctg0 = ADAMNucleotideContigFragment.newBuilder()
+      .setContig(contig0)
       .build()
     val ctg1 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigName("chr1")
-      .setContigId(2)
-      .setContigLength(900L)
+      .setContig(contig1)
       .build()
 
     val rdd = sc.parallelize(List(ctg0, ctg1))
@@ -410,17 +418,14 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     val dict = rdd.adamGetSequenceDictionary()
 
     assert(dict.containsRefName("chr0"))
-    assert(dict("chr0").id === 1)
     assert(dict("chr0").length === 1000L)
     assert(dict("chr0").url.toString == "http://bigdatagenomics.github.io/chr0.fa")
     assert(dict.containsRefName("chr1"))
-    assert(dict("chr1").id === 2)
     assert(dict("chr1").length === 900L)
   }
 
   sparkTest("recover samples from variant context") {
     val contig0 = ADAMContig.newBuilder()
-      .setContigId(1)
       .setContigName("chr0")
       .build
     val variant0 = ADAMVariant.newBuilder()
@@ -454,7 +459,6 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   sparkTest("get sequence dictionary from variant context") {
     val contig0 = ADAMContig.newBuilder()
       .setContigName("chr0")
-      .setContigId(0)
       .setContigLength(1000)
       .build
     val variant0 = ADAMVariant.newBuilder()
@@ -481,9 +485,8 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     val vc = ADAMVariantContext.buildFromGenotypes(genotypeSeq)
     val sequenceDict = sc.parallelize(List(vc)).adamGetSequenceDictionary()
 
-    assert(sequenceDict("chr0").id === 0)
-    println(sequenceDict(0).name.getClass)
-    assert(sequenceDict(0).name.toString === "chr0")
+    assert(sequenceDict("chr0") != None)
+    assert(sequenceDict("chr0").length === 1000)
   }
 
   sparkTest("characterizeTags counts integer tag values correctly") {
@@ -551,12 +554,15 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("recover reference string from a single contig fragment") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .build
+
     val sequence = "ACTGTAC"
     val fragment = ADAMNucleotideContigFragment.newBuilder()
-      .setContigId(1)
-      .setContigName("chr1")
+      .setContig(contig)
       .setFragmentSequence(sequence)
-      .setContigLength(7L)
       .setFragmentNumber(0)
       .setFragmentStartPosition(0L)
       .setNumberOfFragmentsInContig(1)
@@ -569,17 +575,20 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("recover trimmed reference string from a single contig fragment") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .build
+
     val sequence = "ACTGTAC"
     val fragment = ADAMNucleotideContigFragment.newBuilder()
-      .setContigId(1)
-      .setContigName("chr1")
+      .setContig(contig)
       .setFragmentSequence(sequence)
-      .setContigLength(7L)
       .setFragmentNumber(0)
       .setFragmentStartPosition(0L)
       .setNumberOfFragmentsInContig(1)
       .build()
-    val region = new ReferenceRegion(1, 1L, 6L)
+    val region = new ReferenceRegion("chr1", 1L, 6L)
 
     val rdd = sc.parallelize(List(fragment))
 
@@ -587,33 +596,37 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("recover reference string from multiple contig fragments") {
+    val contig1 = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .build
+
+    val contig2 = ADAMContig.newBuilder
+      .setContigName("chr2")
+      .setContigLength(11L)
+      .build
+
     val sequence = "ACTGTACTC"
     val sequence0 = sequence.take(7) // ACTGTAC
-    val sequence1 = sequence.drop(3).take(5) // GTACT 
+    val sequence1 = sequence.drop(3).take(5) // GTACT
     val sequence2 = sequence.takeRight(6).reverse // CTCATG
     val fragment0 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigId(1)
-      .setContigName("chr1")
+      .setContig(contig1)
       .setFragmentSequence(sequence0)
-      .setContigLength(7L)
       .setFragmentNumber(0)
       .setFragmentStartPosition(0L)
       .setNumberOfFragmentsInContig(1)
       .build()
     val fragment1 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigId(2)
-      .setContigName("chr2")
+      .setContig(contig2)
       .setFragmentSequence(sequence1)
-      .setContigLength(11L)
       .setFragmentNumber(0)
       .setFragmentStartPosition(0L)
       .setNumberOfFragmentsInContig(2)
       .build()
     val fragment2 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigId(2)
-      .setContigName("chr2")
+      .setContig(contig2)
       .setFragmentSequence(sequence2)
-      .setContigLength(11L)
       .setFragmentNumber(1)
       .setFragmentStartPosition(5L)
       .setNumberOfFragmentsInContig(2)
@@ -628,39 +641,43 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
   }
 
   sparkTest("recover trimmed reference string from multiple contig fragments") {
+    val contig1 = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .build
+
+    val contig2 = ADAMContig.newBuilder
+      .setContigName("chr2")
+      .setContigLength(11L)
+      .build
+
     val sequence = "ACTGTACTC"
     val sequence0 = sequence.take(7) // ACTGTAC
-    val sequence1 = sequence.drop(3).take(5) // GTACT 
+    val sequence1 = sequence.drop(3).take(5) // GTACT
     val sequence2 = sequence.takeRight(6).reverse // CTCATG
     val fragment0 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigId(1)
-      .setContigName("chr1")
+      .setContig(contig1)
       .setFragmentSequence(sequence0)
-      .setContigLength(7L)
       .setFragmentNumber(0)
       .setFragmentStartPosition(0L)
       .setNumberOfFragmentsInContig(1)
       .build()
     val fragment1 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigId(2)
-      .setContigName("chr2")
+      .setContig(contig2)
       .setFragmentSequence(sequence1)
-      .setContigLength(11L)
       .setFragmentNumber(0)
       .setFragmentStartPosition(0L)
       .setNumberOfFragmentsInContig(2)
       .build()
     val fragment2 = ADAMNucleotideContigFragment.newBuilder()
-      .setContigId(2)
-      .setContigName("chr2")
+      .setContig(contig2)
       .setFragmentSequence(sequence2)
-      .setContigLength(11L)
       .setFragmentNumber(1)
       .setFragmentStartPosition(5L)
       .setNumberOfFragmentsInContig(2)
       .build()
-    val region0 = new ReferenceRegion(1, 1L, 6L)
-    val region1 = new ReferenceRegion(2, 3L, 9L)
+    val region0 = new ReferenceRegion("chr1", 1L, 6L)
+    val region1 = new ReferenceRegion("chr2", 3L, 9L)
 
     val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
 

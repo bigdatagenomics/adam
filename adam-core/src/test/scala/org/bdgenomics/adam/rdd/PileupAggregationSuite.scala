@@ -17,7 +17,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.scalatest.FunSuite
-import org.bdgenomics.adam.avro.{ ADAMPileup, Base }
+import org.bdgenomics.adam.avro.{ ADAMContig, ADAMPileup, Base }
 
 class PileupAggregationSuite extends FunSuite {
 
@@ -53,7 +53,13 @@ class PileupAggregationSuite extends FunSuite {
   }
 
   test("aggregating a pileup with a single base type") {
+    val c0 = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(1000)
+      .build
+
     val p0 = ADAMPileup.newBuilder()
+      .setContig(c0)
       .setPosition(1L)
       .setReadBase(Base.A)
       .setMapQuality(9)
@@ -66,6 +72,7 @@ class PileupAggregationSuite extends FunSuite {
       .setReadEnd(1L)
       .build()
     val p1 = ADAMPileup.newBuilder()
+      .setContig(c0)
       .setPosition(1L)
       .setReadBase(Base.A)
       .setMapQuality(11)
@@ -98,7 +105,11 @@ class PileupAggregationSuite extends FunSuite {
   }
 
   test("aggregating a pileup with a single base type, multiple bases at a position") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
     val p0 = ADAMPileup.newBuilder()
+      .setContig(contig)
       .setPosition(1L)
       .setReadBase(Base.A)
       .setMapQuality(8)
@@ -111,6 +122,7 @@ class PileupAggregationSuite extends FunSuite {
       .setReadEnd(1L)
       .build()
     val p1 = ADAMPileup.newBuilder()
+      .setContig(contig)
       .setPosition(1L)
       .setReadBase(Base.A)
       .setMapQuality(11)

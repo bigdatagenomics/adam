@@ -22,7 +22,6 @@ import org.bdgenomics.adam.util.SparkFunSuite
 
 class GenotypesSummarySuite extends SparkFunSuite {
   private val contig = ADAMContig.newBuilder()
-    .setContigId(1)
     .setContigName("abc")
     .setContigLength(100)
     .build

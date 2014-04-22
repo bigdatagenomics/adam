@@ -34,7 +34,7 @@ object ReferenceRegion {
    */
   def apply(record: ADAMRecord): Option[ReferenceRegion] = {
     if (record.getReadMapped) {
-      Some(ReferenceRegion(record.getReferenceId, record.getStart, RichADAMRecord(record).end.get + 1))
+      Some(ReferenceRegion(record.getContig.getContigName, record.getStart, RichADAMRecord(record).end.get + 1))
     } else {
       None
     }
@@ -46,7 +46,7 @@ object ReferenceRegion {
    * @return A 1-wide region at the same location as pos
    */
   def apply(pos: ReferencePosition): ReferenceRegion =
-    ReferenceRegion(pos.refId, pos.pos, pos.pos + 1)
+    ReferenceRegion(pos.referenceName, pos.pos, pos.pos + 1)
 
   /**
    * Generates a reference region from assembly data. Returns None if the assembly does not
@@ -56,9 +56,11 @@ object ReferenceRegion {
    * @return Region corresponding to inclusive region of contig fragment.
    */
   def apply(fragment: ADAMNucleotideContigFragment): Option[ReferenceRegion] = {
-    if (fragment.getContigId != null && fragment.getFragmentStartPosition != null) {
+    val contig = fragment.getContig
+    if (contig != null && contig.getContigName != null &&
+      fragment.getFragmentStartPosition != null) {
       val fragmentSequence = fragment.getFragmentSequence
-      Some(ReferenceRegion(fragment.getContigId,
+      Some(ReferenceRegion(contig.getContigName,
         fragment.getFragmentStartPosition,
         fragment.getFragmentStartPosition + fragmentSequence.length))
     } else {
@@ -76,7 +78,7 @@ object ReferenceRegion {
  *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
  *            half-open interval.
  */
-case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[ReferenceRegion] {
+case class ReferenceRegion(referenceName: String, start: Long, end: Long) extends Ordered[ReferenceRegion] {
 
   assert(start >= 0)
   assert(end >= start)
@@ -110,8 +112,8 @@ case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[R
    * @see merge
    */
   def hull(region: ReferenceRegion): ReferenceRegion = {
-    assert(refId == region.refId, "Cannot compute convex hull of regions on different references.")
-    ReferenceRegion(refId, min(start, region.start), max(end, region.end))
+    assert(referenceName == region.referenceName, "Cannot compute convex hull of regions on different references.")
+    ReferenceRegion(referenceName, min(start, region.start), max(end, region.end))
   }
 
   /**
@@ -137,7 +139,7 @@ case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[R
    * our reference space, we return an empty option (None).
    */
   def distance(other: ReferencePosition): Option[Long] =
-    if (refId == other.refId)
+    if (referenceName == other.referenceName)
       if (other.pos < start)
         Some(start - other.pos)
       else if (other.pos >= end)
@@ -159,7 +161,7 @@ case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[R
    * our reference space, we return an empty option (None).
    */
   def distance(other: ReferenceRegion): Option[Long] =
-    if (refId == other.refId)
+    if (referenceName == other.referenceName)
       if (overlaps(other))
         Some(0)
       else if (other.start >= end)
@@ -170,17 +172,17 @@ case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[R
       None
 
   def contains(other: ReferencePosition): Boolean =
-    refId == other.refId && start <= other.pos && end > other.pos
+    referenceName == other.referenceName && start <= other.pos && end > other.pos
 
   def contains(other: ReferenceRegion): Boolean =
-    refId == other.refId && start <= other.start && end >= other.end
+    referenceName == other.referenceName && start <= other.start && end >= other.end
 
   def overlaps(other: ReferenceRegion): Boolean =
-    refId == other.refId && end > other.start && start < other.end
+    referenceName == other.referenceName && end > other.start && start < other.end
 
   def compare(that: ReferenceRegion): Int =
-    if (refId != that.refId)
-      refId.compareTo(that.refId)
+    if (referenceName != that.referenceName)
+      referenceName.compareTo(that.referenceName)
     else if (start != that.start)
       start.compareTo(that.start)
     else
@@ -189,15 +191,15 @@ case class ReferenceRegion(refId: Int, start: Long, end: Long) extends Ordered[R
 
 class ReferenceRegionSerializer extends Serializer[ReferenceRegion] {
   def write(kryo: Kryo, output: Output, obj: ReferenceRegion) = {
-    output.writeInt(obj.refId)
+    output.writeString(obj.referenceName)
     output.writeLong(obj.start)
     output.writeLong(obj.end)
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[ReferenceRegion]): ReferenceRegion = {
-    val refId = input.readInt()
+    val referenceName = input.readString()
     val start = input.readLong()
     val end = input.readLong()
-    new ReferenceRegion(refId, start, end)
+    new ReferenceRegion(referenceName, start, end)
   }
 }

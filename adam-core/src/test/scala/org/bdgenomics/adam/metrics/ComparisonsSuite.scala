@@ -16,7 +16,7 @@
 package org.bdgenomics.adam.metrics
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
 import org.bdgenomics.adam.models.SingleReadBucket
 
 class ComparisonsSuite extends SparkFunSuite {
@@ -37,12 +37,18 @@ class ComparisonsSuite extends SparkFunSuite {
       srbRDD.first()
     }
 
+    val contig: ADAMContig = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .build
+    val contig2: ADAMContig = ADAMContig.newBuilder
+      .setContigName("chr2")
+      .build
     val record: ADAMRecord = ADAMRecord.newBuilder()
+      .setContig(contig)
       .setReadName("test")
       .setDuplicateRead(false)
       .setMapq(10)
       .setQual("abcdef")
-      .setReferenceId(1)
       .setStart(100)
       .setPrimaryAlignment(true)
       .setRecordGroupName("groupid")
@@ -56,10 +62,10 @@ class ComparisonsSuite extends SparkFunSuite {
       .build())
 
     bucketMapqUnset = srb(ADAMRecord.newBuilder()
+      .setContig(contig)
       .setReadName("test")
       .setDuplicateRead(false)
       .setQual("abcdef")
-      .setReferenceId(1)
       .setStart(100)
       .setPrimaryAlignment(true)
       .setRecordGroupName("groupid")
@@ -75,10 +81,10 @@ class ComparisonsSuite extends SparkFunSuite {
       .build())
 
     bucketQualUnset = srb(ADAMRecord.newBuilder()
+      .setContig(contig)
       .setReadName("test")
       .setDuplicateRead(false)
       .setMapq(10)
-      .setReferenceId(1)
       .setStart(100)
       .setPrimaryAlignment(true)
       .setRecordGroupName("groupid")
@@ -86,7 +92,7 @@ class ComparisonsSuite extends SparkFunSuite {
       .build())
 
     bucketMovedChromosome = srb(ADAMRecord.newBuilder(record)
-      .setReferenceId(2)
+      .setContig(contig2)
       .setStart(200)
       .build())
 

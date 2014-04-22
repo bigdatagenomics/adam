@@ -135,7 +135,7 @@ class FindReads(protected val args: FindReadsArgs) extends ADAMSparkCommand[Find
       case (name: CharSequence, ((bucket1: ReadBucket, bucket2: ReadBucket), generated: Seq[Any])) => {
         val rec1 = bucket1.allReads().head
         val rec2 = bucket2.allReads().head
-        (name, "%s:%d".format(rec1.getReferenceName, rec1.getStart), "%s:%d".format(rec2.getReferenceName, rec2.getStart))
+        (name, "%s:%d".format(rec1.getContig.getContigName, rec1.getStart), "%s:%d".format(rec2.getContig.getContigName, rec2.getStart))
       }
     }
 

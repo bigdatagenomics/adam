@@ -16,9 +16,6 @@
 package org.bdgenomics.adam.models
 
 trait ReferenceMapping[T] {
-
-  def getReferenceId(value: T): Int
-  def remapReferenceId(value: T, newId: Int): T
-
+  def getReferenceName(value: T): String
   def getReferenceRegion(value: T): ReferenceRegion
 }

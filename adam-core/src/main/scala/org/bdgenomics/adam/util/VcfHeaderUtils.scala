@@ -90,8 +90,8 @@ private[util] class VcfHeaderBuilder(samples: List[String]) {
   def addContigLines(seqDict: SequenceDictionary) {
     val contigNames = seqDict.getReferenceNames
 
-    contigNames.foreach(ctg => {
-      val contig = new VCFContigHeaderLine(Map("ID" -> ctg), seqDict(ctg).id)
+    contigNames.zip(1 to contigNames.size).foreach(ctg => {
+      val contig = new VCFContigHeaderLine(Map("ID" -> ctg._1), ctg._2)
 
       contigLines = contig :: contigLines
     })

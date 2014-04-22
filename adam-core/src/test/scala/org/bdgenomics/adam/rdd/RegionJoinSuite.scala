@@ -17,7 +17,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
 import org.bdgenomics.adam.models.{ SequenceRecord, SequenceDictionary, ReferenceRegion, ReferenceMapping }
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
 import org.apache.spark.SparkContext._
@@ -27,8 +27,8 @@ class RegionJoinSuite extends SparkFunSuite {
 
   before {
     seqDict = SequenceDictionary(
-      SequenceRecord(1, "1", 5, "test://chrom1"),
-      SequenceRecord(2, "2", 5, "test://chrom2"))
+      SequenceRecord("chr1", 5, "test://chrom1"),
+      SequenceRecord("chr2", 5, "test://chrom2"))
   }
 
   test("alternating returns an alternating seq of items") {
@@ -51,7 +51,7 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   test("Single region returns itself") {
-    val region = new ReferenceRegion(1, 1, 2)
+    val region = new ReferenceRegion("chr1", 1, 2)
     val regions = new NonoverlappingRegions(seqDict, Seq(region))
     val result = regions.findOverlappingRegions(region)
     assert(result.size === 1)
@@ -60,17 +60,17 @@ class RegionJoinSuite extends SparkFunSuite {
 
   test("Two adjacent regions will be merged") {
     val regions = new NonoverlappingRegions(seqDict, Seq(
-      ReferenceRegion(1, 10, 20),
-      ReferenceRegion(1, 20, 30)))
+      ReferenceRegion("chr1", 10, 20),
+      ReferenceRegion("chr1", 20, 30)))
 
     assert(regions.endpoints === Array(10L, 30L))
   }
 
   test("Nonoverlapping regions will all be returned") {
-    val region1 = new ReferenceRegion(1, 1, 2)
-    val region2 = new ReferenceRegion(1, 3, 5)
-    val testRegion3 = new ReferenceRegion(1, 1, 4)
-    val testRegion1 = new ReferenceRegion(1, 4, 5)
+    val region1 = new ReferenceRegion("chr1", 1, 2)
+    val region2 = new ReferenceRegion("chr1", 3, 5)
+    val testRegion3 = new ReferenceRegion("chr1", 1, 4)
+    val testRegion1 = new ReferenceRegion("chr1", 4, 5)
     val regions = new NonoverlappingRegions(seqDict, Seq(region1, region2))
 
     // this should be 2, not 3, because binaryRegionSearch is (now) no longer returning
@@ -81,20 +81,23 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   test("Many overlapping regions will all be merged") {
-    val region1 = new ReferenceRegion(1, 1, 3)
-    val region2 = new ReferenceRegion(1, 2, 4)
-    val region3 = new ReferenceRegion(1, 3, 5)
-    val testRegion = new ReferenceRegion(1, 1, 4)
+    val region1 = new ReferenceRegion("chr1", 1, 3)
+    val region2 = new ReferenceRegion("chr1", 2, 4)
+    val region3 = new ReferenceRegion("chr1", 3, 5)
+    val testRegion = new ReferenceRegion("chr1", 1, 4)
     val regions = new NonoverlappingRegions(seqDict, Seq(region1, region2, region3))
     assert(regions.findOverlappingRegions(testRegion).size === 1)
   }
 
   test("ADAMRecords return proper references") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(5L)
+      .setReferenceURL("test://chrom1")
+      .build
+
     val built = ADAMRecord.newBuilder()
-      .setReferenceId(1)
-      .setReferenceName("1")
-      .setReferenceLength(5)
-      .setReferenceUrl("test://chrom1")
+      .setContig(contig)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")
@@ -113,11 +116,14 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   sparkTest("Ensure same reference regions get passed together") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(5L)
+      .setReferenceURL("test://chrom1")
+      .build
+
     val builder = ADAMRecord.newBuilder()
-      .setReferenceId(1)
-      .setReferenceName("1")
-      .setReferenceLength(5)
-      .setReferenceUrl("test://chrom1")
+      .setContig(contig)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")
@@ -150,11 +156,14 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   sparkTest("Overlapping reference regions") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(5L)
+      .setReferenceURL("test://chrom1")
+      .build
+
     val built = ADAMRecord.newBuilder()
-      .setReferenceId(1)
-      .setReferenceName("1")
-      .setReferenceLength(5)
-      .setReferenceUrl("test://chrom1")
+      .setContig(contig)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")
@@ -184,20 +193,26 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   sparkTest("Multiple reference regions do not throw exception") {
+    val contig1 = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(5L)
+      .setReferenceURL("test://chrom1")
+      .build
+
+    val contig2 = ADAMContig.newBuilder
+      .setContigName("chr2")
+      .setContigLength(5L)
+      .setReferenceURL("test://chrom2")
+      .build
+
     val builtRef1 = ADAMRecord.newBuilder()
-      .setReferenceId(1)
-      .setReferenceName("1")
-      .setReferenceLength(5)
-      .setReferenceUrl("test://chrom1")
+      .setContig(contig1)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")
       .build()
     val builtRef2 = ADAMRecord.newBuilder()
-      .setReferenceId(2)
-      .setReferenceName("2")
-      .setReferenceLength(5)
-      .setReferenceUrl("test://chrom2")
+      .setContig(contig2)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")
@@ -229,20 +244,26 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   sparkTest("regionJoin contains the same results as cartesianRegionJoin") {
+    val contig1 = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(5L)
+      .setReferenceURL("test://chrom1")
+      .build
+
+    val contig2 = ADAMContig.newBuilder
+      .setContigName("chr2")
+      .setContigLength(5L)
+      .setReferenceURL("test://chrom2")
+      .build
+
     val builtRef1 = ADAMRecord.newBuilder()
-      .setReferenceId(1)
-      .setReferenceName("1")
-      .setReferenceLength(5)
-      .setReferenceUrl("test://chrom1")
+      .setContig(contig1)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")
       .build()
     val builtRef2 = ADAMRecord.newBuilder()
-      .setReferenceId(2)
-      .setReferenceName("2")
-      .setReferenceLength(5)
-      .setReferenceUrl("test://chrom2")
+      .setContig(contig2)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")

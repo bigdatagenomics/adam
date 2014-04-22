@@ -15,6 +15,19 @@
  */
 package org.bdgenomics.adam.rdd
 
+import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat, VariantContextWritable, VCFInputFormat }
+import fi.tkk.ics.hadoop.bam.util.{ SAMHeaderReader, VCFHeaderReader, WrapSeekable }
+import java.util.regex.Pattern
+import net.sf.samtools.SAMFileHeader
+import org.apache.hadoop.fs.FileSystem
+import org.apache.avro.Schema
+import org.apache.avro.specific.SpecificRecord
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.{ LongWritable, Text }
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.rdd.RDD
+import org.apache.spark.scheduler.StatsReportListener
 import org.bdgenomics.adam.avro.{
   ADAMPileup,
   ADAMRecord,
@@ -29,21 +42,7 @@ import org.bdgenomics.adam.projections.{
   ADAMNucleotideContigFragmentField
 }
 import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.rich.RichRDDReferenceRecords._
 import org.bdgenomics.adam.serialization.ADAMKryoProperties
-import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat, VariantContextWritable, VCFInputFormat }
-import fi.tkk.ics.hadoop.bam.util.{ SAMHeaderReader, VCFHeaderReader, WrapSeekable }
-import java.util.regex.Pattern
-import net.sf.samtools.SAMFileHeader
-import org.apache.hadoop.fs.FileSystem
-import org.apache.avro.Schema
-import org.apache.avro.specific.SpecificRecord
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.{ Text, LongWritable }
-import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{ Logging, SparkContext }
-import org.apache.spark.rdd.RDD
-import org.apache.spark.scheduler.StatsReportListener
 import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -226,29 +225,16 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
     val projection =
       if (isADAMRecord) {
         Projection(
-          ADAMRecordField.referenceId,
-          ADAMRecordField.referenceName,
-          ADAMRecordField.referenceLength,
-          ADAMRecordField.referenceUrl,
-          ADAMRecordField.mateReferenceId,
-          ADAMRecordField.mateReference,
-          ADAMRecordField.mateReferenceLength,
-          ADAMRecordField.mateReferenceUrl,
+          ADAMRecordField.contig,
+          ADAMRecordField.mateContig,
           ADAMRecordField.readPaired,
           ADAMRecordField.firstOfPair,
           ADAMRecordField.readMapped,
           ADAMRecordField.mateMapped)
       } else if (isADAMContig) {
-        Projection(ADAMNucleotideContigFragmentField.contigName,
-          ADAMNucleotideContigFragmentField.contigId,
-          ADAMNucleotideContigFragmentField.contigLength,
-          ADAMNucleotideContigFragmentField.url)
+        Projection(ADAMNucleotideContigFragmentField.contig)
       } else {
-        Projection(
-          ADAMRecordField.referenceId,
-          ADAMRecordField.referenceName,
-          ADAMRecordField.referenceLength,
-          ADAMRecordField.referenceUrl)
+        Projection(ADAMRecordField.contig)
       }
 
     if (filePath.endsWith(".bam") || filePath.endsWith(".sam")) {
@@ -353,18 +339,8 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
       (dict, rdd)
     }
 
-    def remap(adams: Seq[(SequenceDictionary, RDD[ADAMRecord])]): Seq[RDD[ADAMRecord]] = {
-      adams.headOption match {
-        case None => Seq()
-        case Some(head) =>
-          head._2 +: adams.tail.map(v => {
-            if (v._1.equals(head._1)) v._2
-            else v._2.remapReferenceId(v._1.mapTo(head._1).toMap)(sc)
-          })
-      }
-    }
-
-    sc.union(remap(paths.map(loadADAMs)))
+    // Remapreferenceid code deleted since we don't remap sequence
+    // dictionaries anymore.
+    sc.union(paths.map(loadADAMs).map(v => v._2))
   }
 }
-

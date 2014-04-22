@@ -16,7 +16,7 @@
 package org.bdgenomics.adam.rdd.comparisons
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
 import org.bdgenomics.adam.util.{ Histogram, SparkFunSuite }
 import org.bdgenomics.adam.projections.ADAMRecordField
 import org.bdgenomics.adam.metrics.aggregators.HistogramAggregator
@@ -25,11 +25,14 @@ import org.bdgenomics.adam.metrics.MappedPosition
 class ComparisonTraversalEngineSuite extends SparkFunSuite {
 
   sparkTest("generate works on a simple RDD") {
+    val c0 = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
 
     val a0 = ADAMRecord.newBuilder()
+      .setContig(c0)
       .setRecordGroupName("group0")
       .setReadName("read0")
-      .setReferenceId(0)
       .setStart(100)
       .setPrimaryAlignment(true)
       .setReadPaired(false)
@@ -49,7 +52,7 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
     val b = sc.parallelize(Seq(b0, b1))
 
     import ADAMRecordField._
-    val fields = Seq(recordGroupId, readName, referenceId, start, primaryAlignment, readPaired, readMapped)
+    val fields = Seq(recordGroupId, readName, contig, start, primaryAlignment, readPaired, readMapped)
 
     val engine = new ComparisonTraversalEngine(fields, a, b)(sc)
 
@@ -67,10 +70,14 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
   }
 
   sparkTest("combine works on a simple RDD") {
+    val c0 = ADAMContig.newBuilder
+      .setContigName("chr0")
+      .build
+
     val a0 = ADAMRecord.newBuilder()
       .setRecordGroupName("group0")
       .setReadName("read0")
-      .setReferenceId(0)
+      .setContig(c0)
       .setStart(100)
       .setPrimaryAlignment(true)
       .setReadPaired(false)
@@ -93,7 +100,7 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
     val b = sc.parallelize(Seq(b0, b1, b2))
 
     import ADAMRecordField._
-    val fields = Seq(recordGroupId, readName, referenceId, start, primaryAlignment, readPaired, readMapped)
+    val fields = Seq(recordGroupId, readName, contig, start, primaryAlignment, readPaired, readMapped)
 
     val engine = new ComparisonTraversalEngine(fields, a, b)(sc)
 

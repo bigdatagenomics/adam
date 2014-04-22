@@ -15,8 +15,9 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.avro.ADAMRecord
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.util.Util._
 
 object FlagStatMetrics {
   val emptyFailedQuality = new FlagStatMetrics(0, DuplicateMetrics.empty, DuplicateMetrics.empty, 0, 0, 0, 0, 0, 0, 0, 0, 0, true)
@@ -40,7 +41,7 @@ object DuplicateMetrics {
       new DuplicateMetrics(b2i(f(record)),
         b2i(f(record) && record.getReadMapped && record.getMateMapped),
         b2i(f(record) && record.getReadMapped && !record.getMateMapped),
-        b2i(f(record) && (record.getReferenceId != record.getMateReferenceId)))
+        b2i(f(record) && (!isSameContig(record.getContig, record.getMateContig))))
     }
     (duplicateMetrics(isPrimary), duplicateMetrics(isSecondary))
   }
@@ -85,7 +86,7 @@ object FlagStat {
   def apply(rdd: RDD[ADAMRecord]) = {
     rdd.map {
       p =>
-        val mateMappedToDiffChromosome = p.getReadPaired && p.getReadMapped && p.getMateMapped && (p.getReferenceId != p.getMateReferenceId)
+        val mateMappedToDiffChromosome = p.getReadPaired && p.getReadMapped && p.getMateMapped && !isSameContig(p.getContig, p.getMateContig)
         val (primaryDuplicates, secondaryDuplicates) = DuplicateMetrics(p)
         new FlagStatMetrics(1,
           primaryDuplicates, secondaryDuplicates,

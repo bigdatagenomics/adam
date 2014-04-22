@@ -24,7 +24,8 @@ import org.bdgenomics.adam.avro._
 import scala.Some
 
 class VariantContextConverterSuite extends FunSuite {
-  val dictionary = SequenceDictionary(SequenceRecord(1, "chr1", 249250621, "file://ucsc.hg19.fasta", "1b22b98cdeb4a9304cb5d48026a85128"))
+  val dictionary = SequenceDictionary(SequenceRecord("chr1", 249250621,
+    "file://ucsc.hg19.fasta", "1b22b98cdeb4a9304cb5d48026a85128"))
 
   def gatkSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(Allele.create("A", true), Allele.create("T")))
@@ -39,7 +40,7 @@ class VariantContextConverterSuite extends FunSuite {
     .chr("chr1")
 
   def adamSNVBuilder: ADAMVariant.Builder = ADAMVariant.newBuilder()
-    .setContig(ADAMContig.newBuilder().setContigId(1).setContigName("chr1").build)
+    .setContig(ADAMContig.newBuilder().setContigName("chr1").build)
     .setPosition(0L)
     .setReferenceAllele("A")
     .setVariantAllele("T")

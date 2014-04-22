@@ -30,7 +30,7 @@ class ADAMVariationContextSuite extends SparkFunSuite {
 
   def variants: RDD[ADAMVariantContext] = {
     val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigId(1).setContigName("chr11").build)
+      .setContig(ADAMContig.newBuilder.setContigName("chr11").build)
       .setPosition(17409572)
       .setReferenceAllele("T")
       .setVariantAllele("C")

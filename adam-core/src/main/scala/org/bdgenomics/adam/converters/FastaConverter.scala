@@ -15,9 +15,10 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.adam.avro.ADAMNucleotideContigFragment
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
+import org.bdgenomics.adam.avro.{ ADAMContig, ADAMNucleotideContigFragment }
+import org.bdgenomics.adam.rdd.ADAMContext._
 import scala.Int
 import scala.math.Ordering.Int
 import scala.Predef._
@@ -195,18 +196,19 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
       .map(si => {
         val (bases, index) = si
 
-        val builder = ADAMNucleotideContigFragment.newBuilder()
-          .setContigId(id)
-          .setFragmentSequence(bases)
+        val contig = ADAMContig.newBuilder
           .setContigLength(sequenceLength)
+
+        val builder = ADAMNucleotideContigFragment.newBuilder()
+          .setFragmentSequence(bases)
           .setFragmentNumber(index)
           .setFragmentStartPosition(index * fragmentLength)
           .setNumberOfFragmentsInContig(fragmentCount)
 
         // map over optional fields
-        name.foreach(builder.setContigName(_))
+        name.foreach(contig.setContigName(_))
         description.foreach(builder.setDescription(_))
-
+        builder.setContig(contig.build)
         // build and return
         builder.build()
       })

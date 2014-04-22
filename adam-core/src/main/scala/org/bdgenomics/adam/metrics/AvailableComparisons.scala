@@ -15,10 +15,12 @@
  */
 package org.bdgenomics.adam.metrics
 
-import org.bdgenomics.adam.rich.RichADAMRecord._
+import org.bdgenomics.adam.avro.{ ADAMRecord, ADAMContig }
+import org.bdgenomics.adam.models.ReadBucket
 import org.bdgenomics.adam.projections.FieldValue
 import org.bdgenomics.adam.projections.ADAMRecordField._
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.rich.RichADAMRecord._
+import org.bdgenomics.adam.util.Util._;
 import scala.collection.Map
 import org.bdgenomics.adam.models.ReadBucket
 
@@ -93,7 +95,7 @@ object MappedPosition extends LongComparisons with Serializable {
       case 1 => {
         val r1 = records1.head
         val r2 = records2.head
-        if (r1.getReferenceId == r2.getReferenceId) {
+        if (isSameContig(r1.getContig, r2.getContig)) {
           val start1 = r1.getStart
           val start2 = r2.getStart
           if (start1 > start2) start1 - start2 else start2 - start1
@@ -115,7 +117,6 @@ object MappedPosition extends LongComparisons with Serializable {
       distance(bucket1.pairedSecondSecondaryMappedReads, bucket2.pairedSecondSecondaryMappedReads))
 
   def schemas: Seq[FieldValue] = Seq(
-    referenceId,
     start,
     firstOfPair)
 }

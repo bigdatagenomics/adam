@@ -27,5 +27,5 @@ import org.bdgenomics.adam.avro.ADAMNucleotideContigFragment
  */
 object ADAMNucleotideContigFragmentField extends FieldEnumeration(ADAMNucleotideContigFragment.SCHEMA$) {
 
-  val contigName, contigId, description, fragmentSequence, contigLength, fragmentNumber, fragmentStartPosition, numberOfFragmentsInContig, url = SchemaValue
+  val contig, description, fragmentSequence, fragmentNumber, fragmentStartPosition, numberOfFragmentsInContig, url = SchemaValue
 }

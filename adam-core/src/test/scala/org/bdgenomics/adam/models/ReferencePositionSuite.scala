@@ -21,9 +21,13 @@ import org.bdgenomics.adam.avro.{ ADAMContig, ADAMGenotype, ADAMPileup, ADAMReco
 class ReferencePositionSuite extends FunSuite {
 
   test("create reference position from mapped read") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .build
+
     val read = ADAMRecord.newBuilder()
+      .setContig(contig)
       .setStart(1L)
-      .setReferenceId(1)
       .setReadMapped(true)
       .build()
 
@@ -33,7 +37,7 @@ class ReferencePositionSuite extends FunSuite {
 
     val refPos = refPosOpt.get
 
-    assert(refPos.refId === 1)
+    assert(refPos.referenceName === "chr1")
     assert(refPos.pos === 1L)
   }
 
@@ -48,20 +52,23 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from pileup") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr2")
+      .build
+
     val pileup = ADAMPileup.newBuilder()
       .setPosition(2L)
-      .setReferenceId(2)
+      .setContig(contig)
       .build()
 
     val refPos = ReferencePosition(pileup)
 
-    assert(refPos.refId === 2)
+    assert(refPos.referenceName === "chr2")
     assert(refPos.pos === 2L)
   }
 
   test("create reference position from variant") {
     val contig = ADAMContig.newBuilder()
-      .setContigId(10)
       .setContigName("chr10")
       .build()
     val variant = ADAMVariant.newBuilder()
@@ -73,13 +80,12 @@ class ReferencePositionSuite extends FunSuite {
 
     val refPos = ReferencePosition(variant)
 
-    assert(refPos.refId === 10)
+    assert(refPos.referenceName === "chr10")
     assert(refPos.pos === 10L)
   }
 
   test("create reference position from genotype") {
     val contig = ADAMContig.newBuilder()
-      .setContigId(10)
       .setContigName("chr10")
       .build()
     val variant = ADAMVariant.newBuilder()
@@ -94,7 +100,7 @@ class ReferencePositionSuite extends FunSuite {
 
     val refPos = ReferencePosition(genotype)
 
-    assert(refPos.refId === 10)
+    assert(refPos.referenceName === "chr10")
     assert(refPos.pos === 100L)
   }
 }
