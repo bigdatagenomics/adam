@@ -19,45 +19,35 @@ import org.scalatest.{ BeforeAndAfter, FunSuite }
 import org.apache.spark.SparkContext
 import java.net.ServerSocket
 import org.apache.log4j.Level
-import org.bdgenomics.adam.serialization.ADAMKryoProperties
+import org.bdgenomics.adam.rdd.ADAMContext
 
 object SparkTest extends org.scalatest.Tag("org.bdgenomics.adam.util.SparkFunSuite")
 
 trait SparkFunSuite extends FunSuite with BeforeAndAfter {
 
-  val sparkPortProperty = "spark.driver.port"
-
   var sc: SparkContext = _
   var maybeLevels: Option[Map[String, Level]] = None
 
-  def createSpark(sparkName: String, silenceSpark: Boolean = true): SparkContext = {
-    // Use the same context properties as ADAM commands
-    ADAMKryoProperties.setupContextProperties()
+  def setupSparkContext(sparkName: String, silenceSpark: Boolean = true) {
     // Silence the Spark logs if requested
     maybeLevels = if (silenceSpark) Some(SparkLogUtil.silenceSpark()) else None
     synchronized {
       // Find an unused port
       val s = new ServerSocket(0)
-      System.setProperty(sparkPortProperty, s.getLocalPort.toString)
-      // Allow Spark to take the port we just discovered
+      val driverPort = Some(s.getLocalPort)
       s.close()
-
-      // Create a spark context
-      new SparkContext("local[4]", sparkName)
+      sc = ADAMContext.createSparkContext(
+        name = "adam: " + sparkName,
+        master = "local[4]",
+        loadSystemValues = false,
+        sparkDriverPort = driverPort)
     }
   }
 
-  def destroySpark() {
+  def teardownSparkContext() {
     // Stop the context
     sc.stop()
     sc = null
-
-    // See notes at:
-    // http://blog.quantifind.com/posts/spark-unit-test/
-    // That post calls for clearing 'spark.master.port', but this thread
-    // https://groups.google.com/forum/#!topic/spark-users/MeVzgoJXm8I
-    // suggests that the property was renamed 'spark.driver.port'
-    System.clearProperty(sparkPortProperty)
 
     maybeLevels match {
       case None =>
@@ -70,36 +60,36 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
 
   def sparkBefore(beforeName: String, silenceSpark: Boolean = true)(body: => Unit) {
     before {
-      sc = createSpark(beforeName, silenceSpark)
+      setupSparkContext(beforeName, silenceSpark)
       try {
         // Run the before block
         body
       } finally {
-        destroySpark()
+        teardownSparkContext()
       }
     }
   }
 
   def sparkAfter(beforeName: String, silenceSpark: Boolean = true)(body: => Unit) {
     after {
-      sc = createSpark(beforeName, silenceSpark)
+      setupSparkContext(beforeName, silenceSpark)
       try {
         // Run the after block
         body
       } finally {
-        destroySpark()
+        teardownSparkContext()
       }
     }
   }
 
   def sparkTest(name: String, silenceSpark: Boolean = true)(body: => Unit) {
     test(name, SparkTest) {
-      sc = createSpark(name, silenceSpark)
+      setupSparkContext(name, silenceSpark)
       try {
         // Run the test
         body
       } finally {
-        destroySpark()
+        teardownSparkContext()
       }
     }
   }

@@ -15,19 +15,6 @@
  */
 package org.bdgenomics.adam.rdd
 
-import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat, VariantContextWritable, VCFInputFormat }
-import fi.tkk.ics.hadoop.bam.util.{ SAMHeaderReader, VCFHeaderReader, WrapSeekable }
-import java.util.regex.Pattern
-import net.sf.samtools.SAMFileHeader
-import org.apache.hadoop.fs.FileSystem
-import org.apache.avro.Schema
-import org.apache.avro.specific.SpecificRecord
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.{ LongWritable, Text }
-import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{ Logging, SparkContext }
-import org.apache.spark.rdd.RDD
-import org.apache.spark.scheduler.StatsReportListener
 import org.bdgenomics.adam.avro.{
   ADAMPileup,
   ADAMRecord,
@@ -42,7 +29,18 @@ import org.bdgenomics.adam.projections.{
   ADAMNucleotideContigFragmentField
 }
 import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.serialization.ADAMKryoProperties
+import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat }
+import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
+import java.util.regex.Pattern
+import net.sf.samtools.SAMFileHeader
+import org.apache.hadoop.fs.FileSystem
+import org.apache.avro.Schema
+import org.apache.avro.specific.SpecificRecord
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.{ Text, LongWritable }
+import org.apache.spark.{ SparkConf, Logging, SparkContext }
+import org.apache.spark.rdd.RDD
+import org.apache.spark.scheduler.StatsReportListener
 import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -115,28 +113,35 @@ object ADAMContext {
    */
   def createSparkContext(name: String,
                          master: String,
-                         sparkHome: String,
-                         sparkJars: Seq[String],
-                         sparkEnvVars: Seq[String],
+                         sparkHome: String = null,
+                         sparkJars: Seq[String] = Nil,
+                         sparkEnvVars: Seq[(String, String)] = Nil,
                          sparkAddStatsListener: Boolean = false,
-                         sparkKryoBufferSize: Int = 4): SparkContext = {
-    ADAMKryoProperties.setupContextProperties(sparkKryoBufferSize)
-    val appName = "adam: " + name
-    val environment: Map[String, String] = if (sparkEnvVars.isEmpty) {
-      Map()
-    } else {
-      sparkEnvVars.map {
-        kv =>
-          val kvSplit = kv.split("=")
-          if (kvSplit.size != 2) {
-            throw new IllegalArgumentException("Env variables should be key=value syntax, e.g. -spark_env foo=bar")
-          }
-          (kvSplit(0), kvSplit(1))
-      }.toMap
+                         sparkKryoBufferSize: Int = 4,
+                         loadSystemValues: Boolean = true,
+                         sparkDriverPort: Option[Int] = None): SparkContext = {
+    // TODO: Add enough spark arguments so that we don't need to load the system values (e.g. SPARK_MEM)
+    val config: SparkConf = new SparkConf(loadSystemValues).setAppName("adam: " + name).setMaster(master)
+    if (sparkHome != null)
+      config.setSparkHome(sparkHome)
+    if (sparkJars != Nil)
+      config.setJars(sparkJars)
+    if (sparkEnvVars != Nil)
+      config.setExecutorEnv(sparkEnvVars)
+
+    // Optionally set the spark driver port
+    sparkDriverPort match {
+      case Some(port) => config.set("spark.driver.port", port.toString)
+      case None       =>
     }
 
-    val jars: Seq[String] = if (sparkJars.isEmpty) Nil else sparkJars
-    val sc = new SparkContext(master, appName, sparkHome, jars, environment)
+    // Setup the Kryo settings
+    config.setAll(Array(("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
+      ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
+      ("spark.kryoserializer.buffer.mb", sparkKryoBufferSize.toString),
+      ("spark.kryo.referenceTracking", "false")))
+
+    val sc = new SparkContext(config)
 
     if (sparkAddStatsListener) {
       sc.addSparkListener(new StatsReportListener)

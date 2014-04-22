@@ -20,7 +20,6 @@ import org.kohsuke.args4j.{ Option => Args4jOption }
 import java.util
 import scala.collection.JavaConversions._
 import org.apache.spark.SparkContext
-import org.bdgenomics.adam.serialization.ADAMKryoProperties
 import org.bdgenomics.adam.rdd.ADAMContext
 
 trait SparkArgs extends Args4jBase {
@@ -44,15 +43,31 @@ trait SparkArgs extends Args4jBase {
 
 trait SparkCommand extends ADAMCommand {
 
+  /**
+   * Commandline format is -spark_env foo=1 -spark_env bar=2
+   * @param envVariables The variables found on the commandline
+   * @return
+   */
+  def parseEnvVariables(envVariables: util.ArrayList[String]): Array[(String, String)] = {
+    envVariables.foldLeft(Array[(String, String)]()) {
+      (a, kv) =>
+        val kvSplit = kv.split("=")
+        if (kvSplit.size != 2) {
+          throw new IllegalArgumentException("Env variables should be key=value syntax, e.g. -spark_env foo=bar")
+        }
+        a :+ (kvSplit(0), kvSplit(1))
+    }
+  }
+
   def createSparkContext(args: SparkArgs): SparkContext = {
     ADAMContext.createSparkContext(
-      companion.commandName,
-      args.spark_master,
-      args.spark_home,
-      args.spark_jars,
-      args.spark_env_vars,
-      args.spark_add_stats_listener,
-      args.spark_kryo_buffer_size)
+      name = companion.commandName,
+      master = args.spark_master,
+      sparkHome = args.spark_home,
+      sparkJars = args.spark_jars,
+      sparkEnvVars = parseEnvVariables(args.spark_env_vars),
+      sparkAddStatsListener = args.spark_add_stats_listener,
+      sparkKryoBufferSize = args.spark_kryo_buffer_size)
   }
 
 }
