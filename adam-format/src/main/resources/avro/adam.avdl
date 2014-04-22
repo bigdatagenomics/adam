@@ -42,6 +42,7 @@ record ADAMRecord {
 
     // Commonly used optional attributes
     union { null, string } mismatchingPositions = null;
+    union { null, string } origQual = null;
 
     // Remaining optional attributes flattened into a string
     union { null, string } attributes = null;
@@ -66,8 +67,6 @@ record ADAMRecord {
 
     union { null, long } mateReferenceLength = null;
     union { null, string } mateReferenceUrl = null;
-
-    union { null, string } origQual = null;
 }
 
 enum Base {
@@ -97,7 +96,7 @@ record ADAMNucleotideContigFragment {
     union { null, string } contigName = null;
     union { null, int } contigId = null;
     union { null, string } description = null;
-    union { null, string } url = null; 
+    union { null, string } url = null;
     union { null, string } fragmentSequence = null; // sequence of bases in this fragment
     union { null, long } contigLength = null; // length of the total contig (all fragments)
     union { null, int } fragmentNumber = null; // ordered number for this fragment
@@ -180,7 +179,7 @@ record VariantCallingAnnotations {
   // Was this downsampled?
   union { null, boolean } downsampled = null;
 
-  // Base quality rank sum. 
+  // Base quality rank sum.
   union { null, float }   baseQRankSum = null;
   union { null, float }   clippingRankSum = null;
   union { null, float }   fisherStrandBiasPValue = null; // Phred-scaled.
@@ -232,7 +231,7 @@ record ADAMGenotype {
   union { null, int }     genotypeQuality = null;
 
   // Phred-scaled. Always length 3 since we are not multiallelic.
-  array<int>              genotypeLikelihoods = null; 
+  array<int>              genotypeLikelihoods = null;
 
   // Allele dosage
   union { null, float }    expectedAlleleDosage = null;
