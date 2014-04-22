@@ -53,8 +53,10 @@ class BaseQualityRecalibration(
   // TODO: parameterize
   val minAcceptableQuality = QualityScore(5)
 
-  // debug flags
+  // Debug: Print the ObservationTable to stdout
   val dumpObservationTable = false
+
+  // Debug: Log the visited/skipped residues to bqsr-visits.dump
   val enableVisitLogging = false
 
   val dataset: RDD[(CovariateKey, Residue)] = {
