@@ -22,7 +22,7 @@ import org.bdgenomics.adam.rich.DecadentRead._
 // TODO: should inherit from something like AbstractCovariate[(DNABase, DNABase)]
 class DinucCovariate extends AbstractCovariate[(Char, Char)] {
   def compute(read: DecadentRead): Seq[Option[(Char, Char)]] = {
-    val sequence = read.sequence.map(_.base)
+    val sequence = read.residues.map(_.base)
     if (read.isNegativeRead) {
       /* Use the reverse-complement of the sequence to get back the original
        * sequence as it was read by the sequencing machine. The sequencer

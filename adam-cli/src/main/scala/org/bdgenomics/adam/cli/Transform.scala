@@ -78,7 +78,7 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
       log.info("Recalibrating base qualities")
       val variants: RDD[RichADAMVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
       val knownSnps = SnpTable(variants)
-      adamRecords = adamRecords.adamBQSR(knownSnps)
+      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps))
     }
 
     if (args.locallyRealign) {

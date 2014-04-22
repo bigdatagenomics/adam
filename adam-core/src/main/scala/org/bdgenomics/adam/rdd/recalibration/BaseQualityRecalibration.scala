@@ -26,6 +26,7 @@ import org.bdgenomics.adam.util.QualityScore
 import org.apache.spark.Logging
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
+import org.apache.spark.SparkContext._
 
 /**
  * Base Quality Score Recalibration
@@ -40,55 +41,92 @@ import org.apache.spark.rdd.RDD
  *     assign adjusted quality scores.
  */
 class BaseQualityRecalibration(
-  val reads: RDD[DecadentRead],
+  val input: RDD[DecadentRead],
   val knownSnps: Broadcast[SnpTable])
     extends Serializable with Logging {
 
   // Additional covariates to use when computing the correction
   // TODO: parameterize
-  val covariates = CovariateSpace(
-    new DinucCovariate)
+  val covariates = CovariateSpace(new CycleCovariate, new DinucCovariate)
 
   // Bases with quality less than this will be skipped and left alone
   // TODO: parameterize
   val minAcceptableQuality = QualityScore(5)
 
-  val observed: ObservationTable = {
+  // Debug: Print the ObservationTable to stdout
+  val dumpObservationTable = false
+
+  // Debug: Log the visited/skipped residues to bqsr-visits.dump
+  val enableVisitLogging = false
+
+  val dataset: RDD[(CovariateKey, Residue)] = {
     def shouldIncludeRead(read: DecadentRead) =
       read.isCanonicalRecord &&
         read.alignmentQuality.exists(_ > QualityScore.zero) &&
         read.passedQualityChecks
 
-    reads.
-      filter(shouldIncludeRead).flatMap(observe).
-      aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
-  }
-
-  val result: RDD[ADAMRecord] = {
-    val recalibrator = Recalibrator(observed, minAcceptableQuality)
-    reads.map(recalibrator)
-  }
-
-  // Compute observation table for a single read
-  private def observe(read: DecadentRead): Seq[(CovariateKey, Observation)] = {
     def shouldIncludeResidue(residue: Residue) =
       residue.quality > QualityScore.zero &&
         residue.isRegularBase &&
         !residue.isInsertion &&
         !knownSnps.value.isMasked(residue)
 
-    // Compute keys and filter out skipped residues
-    val keys: Seq[(CovariateKey, Residue)] =
-      covariates(read).zip(read.sequence).filter(x => shouldIncludeResidue(x._2))
+    def observe(read: DecadentRead): Seq[(CovariateKey, Residue)] =
+      covariates(read).zip(read.residues).
+        filter { case (key, residue) => shouldIncludeResidue(residue) }
 
-    // Construct result
-    keys.map { case (key, residue) => (key, Observation(residue.isSNP)) }
+    input.filter(shouldIncludeRead).flatMap(observe)
+  }
+
+  if (enableVisitLogging) {
+    input.cache
+    dataset.cache
+    dumpVisits("bqsr-visits.dump")
+  }
+
+  val observed: ObservationTable = {
+    dataset.
+      map { case (key, residue) => (key, Observation(residue.isSNP)) }.
+      aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
+  }
+
+  if (dumpObservationTable) {
+    println(observed.toCSV)
+  }
+
+  val result: RDD[ADAMRecord] = {
+    val recalibrator = Recalibrator(observed, minAcceptableQuality)
+    input.map(recalibrator)
+  }
+
+  private def dumpVisits(filename: String) = {
+    def readId(read: DecadentRead): String =
+      read.name +
+        (if (read.isNegativeRead) "-" else "+") +
+        (if (read.record.getFirstOfPair) "1" else "") +
+        (if (read.record.getSecondOfPair) "2" else "")
+
+    val readLengths =
+      input.map(read => (readId(read), read.residues.length)).collectAsMap
+
+    val visited = dataset.
+      map { case (key, residue) => (readId(residue.read), Seq(residue.offset)) }.
+      reduceByKeyLocally((left, right) => left ++ right)
+
+    val outf = new java.io.File(filename)
+    val writer = new java.io.PrintWriter(outf)
+    visited.foreach {
+      case (readName, visited) =>
+        val length = readLengths(readName)
+        val buf = Array.fill[Char](length)('O')
+        visited.foreach { idx => buf(idx) = 'X' }
+        writer.println(readName + "\t" + String.valueOf(buf))
+    }
+    writer.close
   }
 }
 
 object BaseQualityRecalibration {
-  def apply(rdd: RDD[ADAMRecord], knownSnps: SnpTable): RDD[ADAMRecord] = {
-    val sc = rdd.context
-    new BaseQualityRecalibration(cloy(rdd), sc.broadcast(knownSnps)).result
-  }
+  def apply(rdd: RDD[ADAMRecord], knownSnps: Broadcast[SnpTable]): RDD[ADAMRecord] =
+    new BaseQualityRecalibration(cloy(rdd), knownSnps).result
 }

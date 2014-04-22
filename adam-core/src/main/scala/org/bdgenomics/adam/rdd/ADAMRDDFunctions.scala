@@ -40,6 +40,7 @@ import java.io.File
 import java.util.logging.Level
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
@@ -181,7 +182,7 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
     MarkDuplicates(rdd)
   }
 
-  def adamBQSR(knownSnps: SnpTable): RDD[ADAMRecord] = {
+  def adamBQSR(knownSnps: Broadcast[SnpTable]): RDD[ADAMRecord] = {
     BaseQualityRecalibration(rdd, knownSnps)
   }
 
