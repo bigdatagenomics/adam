@@ -74,7 +74,7 @@ class RichADAMRecord(val record: ADAMRecord) {
       el.getOperator == CigarOperator.HARD_CLIP
   }
 
-  // Returns the end position if the read is mapped, None otherwise
+  // Returns the exclusive end position if the read is mapped, None otherwise
   lazy val end: Option[Long] = {
     if (record.getReadMapped) {
       Some(samtoolsCigar.getCigarElements
