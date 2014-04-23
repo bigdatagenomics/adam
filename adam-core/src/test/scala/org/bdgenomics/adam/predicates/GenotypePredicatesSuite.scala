@@ -17,7 +17,6 @@
 package org.bdgenomics.adam.predicates
 
 import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }
-import org.scalatest.BeforeAndAfter
 import java.util.logging.Level
 import java.io.File
 import org.bdgenomics.adam.avro.{
@@ -31,10 +30,9 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import com.google.common.io.Files
 import org.apache.commons.io.FileUtils
 
-class GenotypePredicatesSuite extends SparkFunSuite with BeforeAndAfter {
-  var genotypesParquetFile: File = null
+class GenotypePredicatesSuite extends SparkFunSuite {
 
-  sparkBefore("genotypepredicatessuite_before") {
+  sparkTest("Return only PASSing records") {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val v0 = ADAMVariant.newBuilder
@@ -56,21 +54,14 @@ class GenotypePredicatesSuite extends SparkFunSuite with BeforeAndAfter {
         .setVariant(v0)
         .setVariantCallingAnnotations(failFilterAnnotation).build()))
 
-    genotypesParquetFile = new File(Files.createTempDir(), "genotypes")
-    if (genotypesParquetFile.exists())
-      FileUtils.deleteDirectory(genotypesParquetFile.getParentFile)
-
+    val genotypesParquetFile = new File(Files.createTempDir(), "genotypes")
     genotypes.adamSave(genotypesParquetFile.getAbsolutePath)
-  }
 
-  after {
-    FileUtils.deleteDirectory(genotypesParquetFile.getParentFile)
-  }
-
-  sparkTest("Return only PASSing records") {
     val gts1: RDD[ADAMGenotype] = sc.adamLoad(
       genotypesParquetFile.getAbsolutePath,
       predicate = Some(classOf[GenotypeVarFilterPASSPredicate]))
     assert(gts1.count === 1)
+
+    FileUtils.deleteDirectory(genotypesParquetFile.getParentFile)
   }
 }
