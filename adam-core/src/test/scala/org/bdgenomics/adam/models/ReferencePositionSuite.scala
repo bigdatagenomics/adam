@@ -51,6 +51,49 @@ class ReferencePositionSuite extends FunSuite {
     assert(refPosOpt.isEmpty)
   }
 
+  test("create reference position from mapped read but contig not specified") {
+    val read = ADAMRecord.newBuilder()
+      .setReadMapped(true)
+      .setStart(1L)
+      .build()
+
+    val refPosOpt = ReferencePosition(read)
+
+    assert(refPosOpt.isEmpty)
+  }
+
+  test("create reference position from mapped read but contig is underspecified") {
+    val contig = ADAMContig.newBuilder
+      // contigName is NOT set
+      //.setContigName("chr1")
+      .build
+
+    val read = ADAMRecord.newBuilder()
+      .setReadMapped(true)
+      .setStart(1L)
+      .setContig(contig)
+      .build()
+
+    val refPosOpt = ReferencePosition(read)
+
+    assert(refPosOpt.isEmpty)
+  }
+
+  test("create reference position from mapped read but start not specified") {
+    val contig = ADAMContig.newBuilder
+      .setContigName("chr1")
+      .build
+
+    val read = ADAMRecord.newBuilder()
+      .setReadMapped(true)
+      .setContig(contig)
+      .build()
+
+    val refPosOpt = ReferencePosition(read)
+
+    assert(refPosOpt.isEmpty)
+  }
+
   test("create reference position from pileup") {
     val contig = ADAMContig.newBuilder
       .setContigName("chr2")
