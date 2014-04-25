@@ -62,7 +62,7 @@ class RichADAMRecord(val record: ADAMRecord) {
 
   // Returns the MdTag if the read is mapped, None otherwise
   lazy val mdTag: Option[MdTag] = {
-    if (record.getReadMapped) {
+    if (record.getReadMapped && record.getMismatchingPositions != null) {
       Some(MdTag(record.getMismatchingPositions, record.getStart))
     } else {
       None
@@ -118,14 +118,6 @@ class RichADAMRecord(val record: ADAMRecord) {
     }
   }
 
-  lazy val mdEvent: Option[MdTag] = {
-    if (record.getMismatchingPositions != null) {
-      Some(MdTag(record.getMismatchingPositions.toString, record.getStart))
-    } else {
-      None
-    }
-  }
-
   // Does this read overlap with the given reference position?
   // FIXME: doesn't check contig! should use ReferenceLocation, not Long
   def overlapsReferencePosition(pos: Long): Option[Boolean] = {
@@ -138,10 +130,10 @@ class RichADAMRecord(val record: ADAMRecord) {
 
   // Does this read mismatch the reference at the given reference position?
   def isMismatchAtReferencePosition(pos: Long): Option[Boolean] = {
-    if (mdEvent.isEmpty || !overlapsReferencePosition(pos).get) {
+    if (!overlapsReferencePosition(pos).get) {
       None
     } else {
-      Some(!mdEvent.get.isMatch(pos))
+      mdTag.map(!_.isMatch(pos))
     }
   }
 
