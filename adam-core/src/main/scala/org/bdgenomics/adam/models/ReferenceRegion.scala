@@ -34,7 +34,7 @@ object ReferenceRegion {
    */
   def apply(record: ADAMRecord): Option[ReferenceRegion] = {
     if (record.getReadMapped) {
-      Some(ReferenceRegion(record.getContig.getContigName, record.getStart, RichADAMRecord(record).end.get + 1))
+      Some(ReferenceRegion(record.getContig.getContigName, record.getStart, RichADAMRecord(record).end.get))
     } else {
       None
     }

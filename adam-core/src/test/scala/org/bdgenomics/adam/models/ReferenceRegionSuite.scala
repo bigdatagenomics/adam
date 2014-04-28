@@ -142,6 +142,8 @@ class ReferenceRegionSuite extends FunSuite {
     assert(ReferenceRegion(read).isDefined)
     assert(ReferenceRegion(read).get.contains(point("chr1", 1L)))
     assert(ReferenceRegion(read).get.contains(point("chr1", 5L)))
+
+    assert(ReferenceRegion(read).get.contains(point("chr1", 6L)) == false)
   }
 
   test("validate that adjacent regions can be merged") {
