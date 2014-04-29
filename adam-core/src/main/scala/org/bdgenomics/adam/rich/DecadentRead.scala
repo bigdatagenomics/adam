@@ -152,7 +152,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
 
   def passedQualityChecks: Boolean = !record.getFailedVendorQualityChecks
 
-  def mismatchesOption: Option[MdTag] = record.mdEvent
+  def mismatchesOption: Option[MdTag] = record.mdTag
 
   def mismatches: MdTag =
     mismatchesOption.getOrElse(throw new IllegalArgumentException("Read has no MD tag"))
