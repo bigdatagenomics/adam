@@ -94,7 +94,6 @@ record ADAMNucleotideContigFragment {
     union { null, ADAMContig } contig = null;
     union { null, string } description = null;
     union { null, string } fragmentSequence = null; // sequence of bases in this fragment
-    union { null, long } contigLength = null; // length of the total contig (all fragments)
     union { null, int } fragmentNumber = null; // ordered number for this fragment
     union { null, long } fragmentStartPosition = null; // position of first base of fragment in contig
     union { null, int } numberOfFragmentsInContig = null; // total number of fragments in contig
