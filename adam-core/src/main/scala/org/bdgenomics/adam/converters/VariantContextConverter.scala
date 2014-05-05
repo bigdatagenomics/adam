@@ -20,6 +20,7 @@ import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
 import org.broadinstitute.variant.variantcontext._
 import org.broadinstitute.variant.vcf.VCFConstants
 import scala.collection.JavaConversions._
+import java.util.Collections
 
 object VariantContextConverter {
 
@@ -32,7 +33,10 @@ object VariantContextConverter {
   }
 
   private def convertAllele(allele: CharSequence, isRef: Boolean = false): Seq[Allele] = {
-    if (allele == null) Seq() else Seq(Allele.create(allele.toString, isRef))
+    if (allele == null)
+      Seq()
+    else
+      Seq(Allele.create(allele.toString, isRef))
   }
 
   private def convertAlleles(v: ADAMVariant): java.util.Collection[Allele] = {
@@ -40,11 +44,13 @@ object VariantContextConverter {
   }
 
   private def convertAlleles(g: ADAMGenotype): java.util.List[Allele] = {
-    g.getAlleles.map(a => a match {
+    var alleles = g.getAlleles
+    if (alleles == null) return Collections.emptyList[Allele]
+    else g.getAlleles.map {
       case ADAMGenotypeAllele.NoCall                            => Allele.NO_CALL
       case ADAMGenotypeAllele.Ref | ADAMGenotypeAllele.OtherAlt => Allele.create(g.getVariant.getReferenceAllele.toString, true)
       case ADAMGenotypeAllele.Alt                               => Allele.create(g.getVariant.getVariantAllele.toString)
-    })
+    }
   }
 }
 
@@ -60,6 +66,15 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
 
   private lazy val splitFromMultiAllelicField = ADAMGenotype.SCHEMA$.getField("splitFromMultiAllelic")
 
+  private lazy val contigToRefSeq: Map[String, String] = dict match {
+    case Some(d) => d.records.filter(_.refseq.isDefined).map(r => r.name -> r.refseq.get).toMap
+    case _       => Map.empty
+  }
+
+  private lazy val refSeqToContig: Map[String, String] = dict match {
+    case Some(d) => d.records.filter(_.refseq.isDefined).map(r => r.refseq.get -> r.name).toMap
+    case _       => Map.empty
+  }
   /**
    * Converts a single GATK variant into ADAMVariantContext(s).
    *
@@ -127,28 +142,11 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
   }
 
   private def createADAMVariant(vc: VariantContext): ADAMVariant = {
-    var contigId = 0;
-    // This is really ugly - only temporary until we remove numeric
-    // IDs from our representation of contigs.
-    try {
-      contigId = vc.getID.toInt
-    } catch {
-      case ex: NumberFormatException => {
-
-      }
-    }
-
-    val contig: ADAMContig.Builder = ADAMContig.newBuilder()
-      .setContigName(vc.getChr)
-
-    if (dict.isDefined) {
-      val sr = (dict.get)(vc.getChr)
-      contig.setContigLength(sr.length).setReferenceURL(sr.url).setContigMD5(sr.md5)
-    }
+    assert(vc.isBiallelic, "ADAMVariant is exclusively bi-allelic")
 
     // VCF CHROM, POS, REF and ALT
     ADAMVariant.newBuilder
-      .setContig(contig.build)
+      .setContig(contigToRefSeq.getOrElse(vc.getChr, vc.getChr))
       .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */ )
       .setReferenceAllele(vc.getReference.getBaseString)
       .setVariantAllele(vc.getAlternateAllele(0).getBaseString)
@@ -220,7 +218,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
   def convert(vc: ADAMVariantContext): VariantContext = {
     val variant: ADAMVariant = vc.variant
     val vcb = new VariantContextBuilder()
-      .chr(variant.getContig.getContigName.toString)
+      .chr(refSeqToContig.getOrElse(variant.getContig.toString, variant.getContig.toString))
       .start(variant.getPosition + 1 /* Recall ADAM is 0-indexed */ )
       .stop(variant.getPosition + variant.getReferenceAllele.length)
       .alleles(VariantContextConverter.convertAlleles(variant))
@@ -234,15 +232,17 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       Option(g.getIsPhased).foreach(gb.phased(_))
       Option(g.getGenotypeQuality).foreach(gb.GQ(_))
       Option(g.getReadDepth).foreach(gb.DP(_))
+
       if (g.getReferenceReadDepth != null && g.getAlternateReadDepth != null)
         gb.AD(Array(g.getReferenceReadDepth, g.getAlternateReadDepth))
+
       if (g.getVariantCallingAnnotations != null) {
         val callAnnotations = g.getVariantCallingAnnotations()
         if (callAnnotations.getVariantFilters != null)
           gb.filters(callAnnotations.getVariantFilters.map(_.toString))
       }
 
-      if (g.getGenotypeLikelihoods.nonEmpty)
+      if (g.getGenotypeLikelihoods != null && !g.getGenotypeLikelihoods.isEmpty)
         gb.PL(g.getGenotypeLikelihoods.map(p => p: Int).toArray)
 
       gb.make

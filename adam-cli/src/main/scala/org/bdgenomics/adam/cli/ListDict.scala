@@ -47,7 +47,7 @@ class ListDict(protected val args: ListDictArgs) extends ADAMSparkCommand[ListDi
 
     val dict = sc.adamDictionaryLoad[ADAMRecord](args.inputPath)
 
-    dict.recordsIn.sortBy(_.name.toString).foreach {
+    dict.records.foreach {
       rec: SequenceRecord =>
         println("%s\t%d".format(rec.name, rec.length))
     }

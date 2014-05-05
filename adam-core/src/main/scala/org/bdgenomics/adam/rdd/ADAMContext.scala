@@ -160,7 +160,7 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
   }
 
   private def adamBamDictionaryLoad(samHeader: SAMFileHeader): SequenceDictionary = {
-    SequenceDictionary.fromSAMHeader(samHeader)
+    SequenceDictionary(samHeader)
 
   }
 

@@ -19,10 +19,15 @@ package org.bdgenomics.adam.cli
 import org.bdgenomics.adam.avro.ADAMGenotype
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
-import org.kohsuke.args4j.Argument
+import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.hadoop.mapreduce.Job
+import java.io.{ FileOutputStream, File }
+import org.apache.commons.io.IOUtils
+import org.bdgenomics.adam.models.SequenceDictionary
+import net.sf.samtools.SAMFileReader
+import scala.Option
 
 object ADAM2Vcf extends ADAMCommandCompanion {
 
@@ -35,8 +40,12 @@ object ADAM2Vcf extends ADAMCommandCompanion {
 }
 
 class ADAM2VcfArgs extends Args4jBase with ParquetArgs with SparkArgs {
+  @Args4jOption(required = false, name = "-dict", usage = "Reference dictionary")
+  var dictionaryFile: File = _
+
   @Argument(required = true, metaVar = "ADAM", usage = "The ADAM variant files to convert", index = 0)
   var adamFile: String = _
+
   @Argument(required = true, metaVar = "VCF", usage = "Location to write VCF data", index = 1)
   var outputPath: String = null
 }
@@ -45,7 +54,31 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends ADAMSparkCommand[ADAM2VcfArgs] wi
   val companion = ADAM2Vcf
 
   def run(sc: SparkContext, job: Job) {
+    def getDictionaryFile(name: String): Option[File] = {
+      val stream = ClassLoader.getSystemClassLoader.getResourceAsStream("dictionaries/" + name)
+      if (stream == null)
+        return None
+      val file = File.createTempFile(name, ".dict")
+      file.deleteOnExit()
+      IOUtils.copy(stream, new FileOutputStream(file))
+      Some(file)
+    }
+
+    def getDictionary(file: File) = Some(SequenceDictionary(SAMFileReader.getSequenceDictionary(file)))
+
+    var dictionary: Option[SequenceDictionary] = None
+    if (args.dictionaryFile != null) {
+      if (args.dictionaryFile.exists) {
+        dictionary = getDictionary(args.dictionaryFile)
+      } else getDictionaryFile(args.dictionaryFile.getName) match {
+        case Some(file) => dictionary = getDictionary(file)
+        case _          => assert(false, "Supplied dictionary path is invalid")
+      }
+    }
+    if (dictionary.isDefined)
+      log.info("Using contig translation")
+
     val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
-    sc.adamVCFSave(args.outputPath, adamGTs.toADAMVariantContext)
+    sc.adamVCFSave(args.outputPath, adamGTs.toADAMVariantContext, dict = dictionary)
   }
 }

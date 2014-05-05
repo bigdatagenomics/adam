@@ -16,13 +16,16 @@
 
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.models.ADAMVariantContext
+import org.bdgenomics.adam.models.{ SequenceDictionary, ADAMVariantContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.SparkContext
+import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
-import org.kohsuke.args4j.Argument
+import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
+import java.io.{ FileOutputStream, File }
+import net.sf.samtools.SAMFileReader
+import org.apache.commons.io.IOUtils
 
 object Vcf2ADAM extends ADAMCommandCompanion {
   val commandName = "vcf2adam"
@@ -34,21 +37,51 @@ object Vcf2ADAM extends ADAMCommandCompanion {
 }
 
 class Vcf2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
-  @Argument(required = true, metaVar = "VCF",
-    usage = "The VCF file to convert", index = 0)
-  var vcfFile: String = _
-  @Argument(required = true, metaVar = "ADAM",
-    usage = "Location to write ADAM Variant data", index = 1)
+  @Args4jOption(required = false, name = "-dict", usage = "Reference dictionary")
+  var dictionaryFile: File = _
+
+  @Argument(required = true, metaVar = "VCF", usage = "The VCF file to convert", index = 0)
+  var vcfPath: String = _
+
+  @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM Variant data", index = 1)
   var outputPath: String = null
 }
 
-class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] {
+class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] with Logging {
   val companion = Vcf2ADAM
 
   def run(sc: SparkContext, job: Job) {
-    var adamVariants: RDD[ADAMVariantContext] = sc.adamVCFLoad(args.vcfFile)
-    adamVariants.flatMap(p => p.genotypes).adamSave(args.outputPath,
-      blockSize = args.blockSize, pageSize = args.pageSize,
+
+    def getDictionaryFile(name: String): Option[File] = {
+      val stream = ClassLoader.getSystemClassLoader.getResourceAsStream("dictionaries/" + name)
+      if (stream == null)
+        return None
+      val file = File.createTempFile(name, ".dict")
+      file.deleteOnExit()
+      IOUtils.copy(stream, new FileOutputStream(file))
+      Some(file)
+    }
+
+    def getDictionary(file: File) = Some(SequenceDictionary(SAMFileReader.getSequenceDictionary(file)))
+
+    var dictionary: Option[SequenceDictionary] = None
+    if (args.dictionaryFile != null) {
+      if (args.dictionaryFile.exists) {
+        dictionary = getDictionary(args.dictionaryFile)
+      } else getDictionaryFile(args.dictionaryFile.getName) match {
+        case Some(file) => dictionary = getDictionary(file)
+        case _          => assert(false, "Supplied dictionary path is invalid")
+      }
+    }
+    if (dictionary.isDefined)
+      log.info("Using contig translation")
+
+    var adamVariants: RDD[ADAMVariantContext] = sc.adamVCFLoad(args.vcfPath, dict = dictionary)
+
+    adamVariants.flatMap(p => p.genotypes).adamSave(
+      args.outputPath,
+      blockSize = args.blockSize,
+      pageSize = args.pageSize,
       compressCodec = args.compressionCodec,
       disableDictionaryEncoding = args.disableDictionary)
   }
