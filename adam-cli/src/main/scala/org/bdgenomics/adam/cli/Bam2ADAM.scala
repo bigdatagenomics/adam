@@ -102,7 +102,7 @@ class Bam2ADAM(args: Bam2ADAMArgs) extends ADAMCommand {
     val samReader = new SAMFileReader(new File(args.bamFile), null, true)
     samReader.setValidationStringency(args.validationStringency)
 
-    val seqDict = SequenceDictionary.fromSAMReader(samReader)
+    val seqDict = SequenceDictionary(samReader)
     val rgDict = RecordGroupDictionary.fromSAMReader(samReader)
 
     println(seqDict)

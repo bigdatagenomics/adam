@@ -15,11 +15,13 @@
  */
 package org.bdgenomics.adam.util
 
-import java.io.File
-import scala.io._
+import java.io.{ FileInputStream, File }
 import scala.collection._
-import java.util.regex._
-import org.bdgenomics.adam.models.{ SequenceDictionary, SequenceRecord, ReferenceRegion }
+import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
+import net.sf.picard.util.IntervalList
+import scala.collection.JavaConverters._
+import net.sf.samtools.SAMTextHeaderCodec
+import net.sf.samtools.util.BufferedLineReader
 
 /**
  * Reads GATK-style interval list files
@@ -29,77 +31,21 @@ import org.bdgenomics.adam.models.{ SequenceDictionary, SequenceRecord, Referenc
  * @param file a File whose contents are a (line-based tab-separated) interval file in UTF-8 encoding
  */
 class IntervalListReader(file: File) extends Traversable[(ReferenceRegion, String)] {
-
   val encoding = "UTF-8"
-  private var seqDict: SequenceDictionary = null
 
   /**
    * The interval list file contains a SAM-style sequence dictionary as a header --
    * this value holds that dictionary, reading it if necessary (if the file hasn't been
    * opened before).
    */
-  lazy val sequenceDictionary = loadSequenceDictionary()
-
-  private def loadSequenceDictionary(): SequenceDictionary = {
-    val headerLines = Source.fromFile(file, encoding).getLines().filter(_.startsWith("@SQ"))
-    val headerReader = new HeaderReader()
-    headerLines.foreach(headerReader.takeLine)
-
-    headerReader.sequenceDictionary
+  lazy val sequenceDictionary: SequenceDictionary = {
+    // Do we need to manually close the file stream?
+    val codec = new SAMTextHeaderCodec()
+    SequenceDictionary(codec.decode(new BufferedLineReader(new FileInputStream(file)), file.toString))
   }
 
   def foreach[U](f: ((ReferenceRegion, String)) => U) {
-    val lines: Iterator[String] = Source.fromFile(file, encoding).getLines()
-
-    lines.filter(!_.startsWith("@")).foreach {
-      line =>
-        val array = line.split("\t")
-        val refname = array(0).toString
-        val start = array(1).toLong
-        val end = array(2).toLong
-        val strand = array(3)
-        val name = array(4)
-        assert(strand == "+")
-
-        f((ReferenceRegion(refname, start, end), name))
-    }
+    IntervalList.fromFile(file).asScala.foreach(
+      i => f((ReferenceRegion(i.getSequence, i.getStart, i.getEnd), i.getName)))
   }
-
-  class HeaderReader {
-
-    val sequenceRecords = mutable.ListBuffer[SequenceRecord]()
-    val regex = Pattern.compile("(\\w{2}):(.*)")
-
-    def sequenceDictionary: SequenceDictionary = SequenceDictionary(sequenceRecords: _*)
-
-    def takeLine(line: String) {
-      if (line.startsWith("@SQ")) {
-        val array: Array[String] = line.split("\t")
-
-        var name: String = null
-        var length: Long = null.asInstanceOf[Long]
-        var url: String = null
-
-        (1 until array.length).foreach {
-          idx =>
-            val matcher = regex.matcher(array(idx))
-            if (matcher.matches()) {
-              val tag = matcher.group(1)
-              val arg = matcher.group(2)
-
-              tag match {
-                case "SN" => name = arg
-                case "UR" => url = arg
-                case "LN" => length = arg.toLong
-                case _    => None
-              }
-            }
-        }
-
-        sequenceRecords ++= List(SequenceRecord(name, length, url))
-      }
-
-    }
-  }
-
 }

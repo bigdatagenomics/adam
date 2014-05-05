@@ -17,9 +17,7 @@ package org.bdgenomics.adam.util
 
 import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.ADAMRDDFunctions
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
-import org.bdgenomics.adam.rdd.variation.ADAMVariantContextRDDFunctions
 import org.apache.spark.rdd.RDD
 import org.broadinstitute.variant.vcf.{
   VCFHeader,
@@ -88,6 +86,7 @@ private[util] class VcfHeaderBuilder(samples: List[String]) {
    * @param seqDict Sequence dictionary containing contig info.
    */
   def addContigLines(seqDict: SequenceDictionary) {
+    /*
     val contigNames = seqDict.getReferenceNames
 
     contigNames.zip(1 to contigNames.size).foreach(ctg => {
@@ -95,6 +94,7 @@ private[util] class VcfHeaderBuilder(samples: List[String]) {
 
       contigLines = contig :: contigLines
     })
+    */
   }
 
   /**

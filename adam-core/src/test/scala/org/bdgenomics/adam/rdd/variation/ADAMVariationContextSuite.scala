@@ -22,7 +22,7 @@ import org.bdgenomics.adam.models.ADAMVariantContext
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import com.google.common.io.Files
 import java.io.File
-import org.bdgenomics.adam.avro.{ ADAMGenotypeAllele, ADAMGenotype, ADAMContig, ADAMVariant }
+import org.bdgenomics.adam.avro.{ ADAMGenotypeAllele, ADAMGenotype, ADAMVariant }
 import scala.collection.JavaConversions._
 
 class ADAMVariationContextSuite extends SparkFunSuite {
@@ -30,7 +30,7 @@ class ADAMVariationContextSuite extends SparkFunSuite {
 
   def variants: RDD[ADAMVariantContext] = {
     val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("chr11").build)
+      .setContig("chr11")
       .setPosition(17409572)
       .setReferenceAllele("T")
       .setVariantAllele("C")
