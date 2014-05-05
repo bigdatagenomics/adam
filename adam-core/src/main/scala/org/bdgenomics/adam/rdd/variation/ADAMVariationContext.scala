@@ -22,7 +22,6 @@ import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import fi.tkk.ics.hadoop.bam._
 import org.apache.hadoop.io.LongWritable
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
@@ -69,10 +68,10 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
    * @param filePath: input VCF file to read
    * @return RDD of variants
    */
-  def adamVCFLoad(filePath: String, extractExternalAnnotations: Boolean = false): RDD[ADAMVariantContext] = {
+  def adamVCFLoad(filePath: String, extractExternalAnnotations: Boolean = false, dict: Option[SequenceDictionary] = None): RDD[ADAMVariantContext] = {
     log.info("Reading VCF file from %s".format(filePath))
     val job = HadoopUtil.newJob(sc)
-    val vcc = new VariantContextConverter
+    val vcc = new VariantContextConverter(dict)
     val records = sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],

@@ -139,10 +139,11 @@ record ADAMNestedPileup {
 
 
 record ADAMVariant {
-  union { null, ADAMContig } contig = null;
-  union { null, long }       position = null;
-  string                     referenceAllele;
-  string                     variantAllele;
+  string                 contig;
+  long                   position;
+  union { null, long }   exclusiveEnd = null;
+  string                 referenceAllele;
+  union { null, string } variantAllele = null;
 }
 
 enum ADAMGenotypeAllele {
@@ -169,7 +170,7 @@ record VariantCallingAnnotations {
   // FILTER: True or false implies that filters were applied and this variant PASSed or not.
   // While 'null' implies not filters were applied.
   union { null, boolean } variantIsPassing = null;
-  array <string>          variantFilters = null;
+  union { null, array <string> } variantFilters = null;
 
   union { null, int }     readDepth = null;
   union { null, boolean } downsampled = null;
@@ -193,16 +194,19 @@ record VariantCallingAnnotations {
 }
 
 record ADAMGenotype {
-  union { null, ADAMVariant }               variant;
+  ADAMVariant variant;
   union { null, VariantCallingAnnotations } variantCallingAnnotations = null;
 
   // Sample-level data, i.e. data specific to this particular sample
-  union { null, string }  sampleId = null;
+  string sampleId;
   union { null, string }  sampleDescription = null;
   union { null, string }  processingDescription = null;
 
   // Length is equal to the ploidy
-  array <ADAMGenotypeAllele> alleles = null;
+  union { null, array <ADAMGenotypeAllele> } alleles = null;
+
+  // Allele dosage (EC)
+  union { null, float } expectedAlleleDosage = null;
 
   // How many reference and alternate reads (AD)
   union { null, int }     referenceReadDepth = null;
@@ -212,11 +216,9 @@ record ADAMGenotype {
   // The phred-scaled probability that we're correct for this genotype call (GQ)
   union { null, int }     genotypeQuality = null;
 
-  // Phred-scaled. Always length 3 since we are not multiallelic.
-  array<int>              genotypeLikelihoods = null;
-
-  // Allele dosage (EC)
-  union { null, float }    expectedAlleleDosage = null;
+  // Phred-scaled. Always length 3 since all variants are bi-allelic
+  union { null, array<int> } genotypeLikelihoods = null;
+  union { null, array<int> } nonReferenceLikelihoods = null;
 
   // number of reads mapped at site on forward strand
   union { null, int } readsMappedForwardStrand = null;

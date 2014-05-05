@@ -111,11 +111,8 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from variant") {
-    val contig = ADAMContig.newBuilder()
-      .setContigName("chr10")
-      .build()
     val variant = ADAMVariant.newBuilder()
-      .setContig(contig)
+      .setContig("chr10")
       .setReferenceAllele("A")
       .setVariantAllele("T")
       .setPosition(10L)
@@ -128,17 +125,15 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from genotype") {
-    val contig = ADAMContig.newBuilder()
-      .setContigName("chr10")
-      .build()
     val variant = ADAMVariant.newBuilder()
       .setPosition(100L)
-      .setContig(contig)
+      .setContig("chr10")
       .setReferenceAllele("A")
       .setVariantAllele("T")
       .build()
     val genotype = ADAMGenotype.newBuilder()
       .setVariant(variant)
+      .setSampleId("NA12878")
       .build()
 
     val refPos = ReferencePosition(genotype)

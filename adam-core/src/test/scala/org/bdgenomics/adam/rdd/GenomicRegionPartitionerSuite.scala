@@ -131,8 +131,7 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
       .build()
   }
 
-  def record(name: CharSequence, length: Long) =
-    SequenceRecord(name, length, "")
+  def record(name: CharSequence, length: Long) = SequenceRecord(name.toString, length.toInt)
 }
 
 class PositionKeyed[U <: Serializable] extends Serializable {

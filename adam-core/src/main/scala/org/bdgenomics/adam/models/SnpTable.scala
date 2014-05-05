@@ -1,12 +1,9 @@
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.avro.{ ADAMContig, ADAMVariant, ADAMRecord }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.{ RichADAMVariant, DecadentRead, ReferenceLocation }
+import org.bdgenomics.adam.rich.{ RichADAMVariant, ReferenceLocation }
 import org.bdgenomics.adam.rich.DecadentRead._
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
 import scala.collection.immutable._
 import scala.collection.mutable
 import java.io.File
@@ -75,7 +72,7 @@ object SnpTable {
   }
 
   def apply(variants: RDD[RichADAMVariant]): SnpTable = {
-    val positions = variants.map(variant => (variant.getContig.getContigName.toString, variant.getPosition)).collect()
+    val positions = variants.map(variant => (variant.getContig.toString, variant.getPosition)).collect()
     val table = new mutable.HashMap[String, mutable.HashSet[Long]]
     positions.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
     new SnpTable(table.mapValues(_.toSet).toMap)

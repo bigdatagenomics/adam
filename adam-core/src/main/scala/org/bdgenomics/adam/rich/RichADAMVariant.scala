@@ -16,9 +16,7 @@
 
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.adam.avro.{ ADAMContig, ADAMVariant }
-import org.bdgenomics.adam.util.Util._
-import java.util.Arrays
+import org.bdgenomics.adam.avro.ADAMVariant
 
 object RichADAMVariant {
   implicit def variantToRichVariant(variant: ADAMVariant): RichADAMVariant = new RichADAMVariant(variant)
@@ -26,21 +24,6 @@ object RichADAMVariant {
 }
 
 class RichADAMVariant(val variant: ADAMVariant) {
-  // Only include the contigName in the hash
-  val hashObjects = Array[Object](variant.getContig.getContigName,
-    variant.getPosition, variant.getReferenceAllele, variant.getVariantAllele)
-  override def hashCode = Arrays.hashCode(hashObjects)
-
-  override def equals(o: Any) = o match {
-    case that: RichADAMVariant => {
-      variant.getPosition == that.variant.getPosition &&
-        isSameContig(variant.getContig, that.variant.getContig) &&
-        variant.getReferenceAllele == that.variant.getReferenceAllele &&
-        variant.getVariantAllele == that.variant.getVariantAllele
-    }
-    case _ => false
-  }
-
   def isSingleNucleotideVariant() = {
     variant.getReferenceAllele.length == 1 && variant.getVariantAllele.length == 1
   }
@@ -52,5 +35,12 @@ class RichADAMVariant(val variant: ADAMVariant) {
   def isInsertion() = variant.getReferenceAllele.length < variant.getVariantAllele.length
 
   def isDeletion() = variant.getReferenceAllele.length > variant.getVariantAllele.length
+
+  override def hashCode = variant.hashCode
+
+  override def equals(o: Any) = o match {
+    case that: RichADAMVariant => variant.equals(that.variant)
+    case _                     => false
+  }
 
 }

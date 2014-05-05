@@ -27,8 +27,8 @@ class RegionJoinSuite extends SparkFunSuite {
 
   before {
     seqDict = SequenceDictionary(
-      SequenceRecord("chr1", 5, "test://chrom1"),
-      SequenceRecord("chr2", 5, "test://chrom2"))
+      SequenceRecord("chr1", 5, url = "test://chrom1"),
+      SequenceRecord("chr2", 5, url = "tes=t://chrom2"))
   }
 
   test("alternating returns an alternating seq of items") {

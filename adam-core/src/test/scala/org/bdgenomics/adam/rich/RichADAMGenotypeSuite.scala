@@ -24,12 +24,12 @@ import scala.collection.JavaConversions._
 class RichADAMGenotypeSuite extends FunSuite {
 
   def v0 = ADAMVariant.newBuilder
-    .setContig(ADAMContig.newBuilder.setContigName("chr1").build)
+    .setContig("chr1")
     .setPosition(0).setReferenceAllele("A").setVariantAllele("T")
     .build
 
   test("different ploidy") {
-    val gb = ADAMGenotype.newBuilder.setVariant(v0)
+    val gb = ADAMGenotype.newBuilder.setVariant(v0).setSampleId("NA12878")
     for (ploidy <- 0 until 3) {
       val g = gb.setAlleles(List.fill(ploidy)(ADAMGenotypeAllele.Ref)).build
       assert(g.ploidy === ploidy)
@@ -37,7 +37,7 @@ class RichADAMGenotypeSuite extends FunSuite {
   }
 
   test("all types for diploid genotype") {
-    val gb = ADAMGenotype.newBuilder.setVariant(v0)
+    val gb = ADAMGenotype.newBuilder.setVariant(v0).setSampleId("NA12878")
 
     val hom_ref = gb.setAlleles(List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Ref)).build
     assert(hom_ref.getType === ADAMGenotypeType.HOM_REF)
