@@ -48,7 +48,7 @@ class PileupAggregator(protected val args: PileupAggregatorArgs)
   val companion = PileupAggregator
 
   def run(sc: SparkContext, job: Job) {
-    val pileups: RDD[ADAMPileup] = sc.adamLoad(args.readInput, predicate = Some(classOf[LocusPredicate]))
+    val pileups: RDD[ADAMPileup] = sc.adamLoad(args.readInput)
     pileups.adamAggregatePileups().adamSave(args.pileupOutput,
       blockSize = args.blockSize, pageSize = args.pageSize,
       compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)

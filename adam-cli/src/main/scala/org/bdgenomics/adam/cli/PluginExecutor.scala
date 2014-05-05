@@ -25,6 +25,7 @@ import org.apache.spark.rdd.RDD
 import parquet.filter.UnboundRecordFilter
 import org.apache.avro.specific.SpecificRecord
 import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.predicates.ADAMPredicate
 
 /**
  * This set of classes executes a plugin along with the associated input location.
@@ -76,7 +77,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
   }
 
   def load[Input <% SpecificRecord: Manifest](sc: SparkContext, locations: String, projection: Option[Schema]): RDD[Input] = {
-    sc.adamLoad[Input, UnboundRecordFilter](locations, projection = projection)
+    sc.adamLoad[Input, ADAMPredicate[Input]](locations, projection = projection)
   }
 
   def output[Output](sc: SparkContext, output: RDD[Output]) {

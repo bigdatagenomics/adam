@@ -24,6 +24,7 @@ import org.bdgenomics.adam.util.PhredUtils._
 import java.io.File
 import org.apache.hadoop.fs.Path
 import java.util.UUID
+import org.bdgenomics.adam.predicates.{ ADAMPredicate, ADAMRecordConditions, HighQualityReadPredicate }
 
 class ADAMContextSuite extends SparkFunSuite {
 
@@ -37,8 +38,14 @@ class ADAMContextSuite extends SparkFunSuite {
 
   sparkTest("can read a small .SAM file") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
-    val reads: RDD[ADAMRecord] = sc.adamLoad[ADAMRecord, UnboundRecordFilter](path)
+    val reads: RDD[ADAMRecord] = sc.adamLoad(path)
     assert(reads.count() === 20)
+  }
+
+  sparkTest("can filter a .SAM file based on quality") {
+    val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
+    val reads: RDD[ADAMRecord] = sc.adamLoad(path, predicate = Some(classOf[HighQualityReadPredicate]))
+    assert(reads.count() === 10)
   }
 
   test("Can convert to phred") {

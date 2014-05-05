@@ -50,6 +50,7 @@ import scala.collection.JavaConversions._
 import scala.collection.Map
 import org.bdgenomics.adam.util.HadoopUtil
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
+import org.bdgenomics.adam.predicates.ADAMPredicate
 
 object ADAMContext {
   // Add ADAM Spark context methods
@@ -276,16 +277,21 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
    * @tparam T The type of records to return
    * @return An RDD with records of the specified type
    */
-  def adamLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
+  def adamLoad[T <% SpecificRecord: Manifest, U <: ADAMPredicate[T]](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
 
     if (filePath.endsWith(".bam") || filePath.endsWith(".sam") && classOf[ADAMRecord].isAssignableFrom(manifest[T].runtimeClass)) {
-      if (predicate.isDefined) {
-        log.warn("Predicate is ignored when loading a BAM file")
-      }
+
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a BAM file")
       }
-      adamBamLoad(filePath).asInstanceOf[RDD[T]]
+      val reads = adamBamLoad(filePath).asInstanceOf[RDD[T]]
+      if (predicate.isDefined) {
+        val predicateClass = predicate.get
+        val filter = predicateClass.newInstance()
+        filter(reads)
+      } else {
+        reads
+      }
     } else {
       adamParquetLoad(filePath, predicate, projection)
     }
@@ -340,7 +346,7 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
   def loadADAMFromPaths(paths: Seq[Path]): RDD[ADAMRecord] = {
     def loadADAMs(path: Path): (SequenceDictionary, RDD[ADAMRecord]) = {
       val dict = adamDictionaryLoad[ADAMRecord](path.toString)
-      val rdd = adamLoad[ADAMRecord, UnboundRecordFilter](path.toString)
+      val rdd: RDD[ADAMRecord] = adamLoad(path.toString)
       (dict, rdd)
     }
 
