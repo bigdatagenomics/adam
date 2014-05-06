@@ -1,12 +1,9 @@
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.avro.{ ADAMContig, ADAMVariant, ADAMRecord }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.{ RichADAMVariant, DecadentRead, ReferenceLocation }
+import org.bdgenomics.adam.rich.RichADAMVariant
 import org.bdgenomics.adam.rich.DecadentRead._
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
 import scala.collection.immutable._
 import scala.collection.mutable
 import java.io.File
@@ -18,15 +15,15 @@ class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable w
    * Is there a known SNP at the reference location of this Residue?
    */
   def isMasked(residue: Residue): Boolean =
-    contains(residue.referenceLocation)
+    contains(residue.referencePosition)
 
   /**
    * Is there a known SNP at the given reference location?
    */
-  def contains(location: ReferenceLocation): Boolean = {
-    val bucket = table.get(location.contig)
-    if (bucket.isEmpty) unknownContigWarning(location.contig)
-    bucket.map(_.contains(location.offset)).getOrElse(false)
+  def contains(location: ReferencePosition): Boolean = {
+    val bucket = table.get(location.referenceName)
+    if (bucket.isEmpty) unknownContigWarning(location.referenceName)
+    bucket.map(_.contains(location.pos)).getOrElse(false)
   }
 
   private val unknownContigs = new mutable.HashSet[String]

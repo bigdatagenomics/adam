@@ -22,7 +22,7 @@ import org.bdgenomics.adam.util._
 import scala.Some
 import scala.concurrent.JavaConversions._
 import scala.collection.immutable.NumericRange
-import org.bdgenomics.adam.models.Attribute
+import org.bdgenomics.adam.models.{ ReferenceRegion, ReferencePosition, Attribute }
 
 object RichADAMRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
@@ -39,6 +39,8 @@ object RichADAMRecord {
 class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 
 class RichADAMRecord(val record: ADAMRecord) {
+
+  lazy val readRegion = ReferenceRegion(this)
 
   // Returns the quality scores as a list of bytes
   lazy val qualityScores: Array[Int] = record.getQual.toString.toCharArray.map(q => (q - 33))
@@ -119,18 +121,13 @@ class RichADAMRecord(val record: ADAMRecord) {
   }
 
   // Does this read overlap with the given reference position?
-  // FIXME: doesn't check contig! should use ReferenceLocation, not Long
-  def overlapsReferencePosition(pos: Long): Option[Boolean] = {
-    if (record.getReadMapped) {
-      Some(record.getStart <= pos && pos < end.get)
-    } else {
-      None
-    }
+  def overlapsReferencePosition(pos: ReferencePosition): Option[Boolean] = {
+    readRegion.map(_.contains(pos))
   }
 
   // Does this read mismatch the reference at the given reference position?
-  def isMismatchAtReferencePosition(pos: Long): Option[Boolean] = {
-    if (!overlapsReferencePosition(pos).get) {
+  def isMismatchAtReferencePosition(pos: ReferencePosition): Option[Boolean] = {
+    if (mdTag.isEmpty || !overlapsReferencePosition(pos).get) {
       None
     } else {
       mdTag.map(!_.isMatch(pos))
@@ -143,13 +140,45 @@ class RichADAMRecord(val record: ADAMRecord) {
     if (referencePositions.isEmpty) {
       None
     } else {
-      readOffsetToReferencePosition(offset).flatMap(isMismatchAtReferencePosition)
+      readOffsetToReferencePosition(offset).flatMap(pos => isMismatchAtReferencePosition(pos))
     }
   }
 
-  lazy val referencePositions: Seq[Option[Long]] = {
+  def getReferenceContext(readOffset: Int, referencePosition: Long, cigarElem: CigarElement, elemOffset: Int): ReferenceSequenceContext = {
+    val position = if (ReferencePosition.mappedPositionCheck(record)) {
+      Some(new ReferencePosition(record.getContig.getContigName.toString, referencePosition))
+    } else {
+      None
+    }
+
+    def getReferenceBase(cigarElement: CigarElement, refPos: Long, readPos: Int): Option[Char] = {
+      mdTag.flatMap(tag => {
+        cigarElement.getOperator match {
+          case CigarOperator.M => {
+            if (!tag.isMatch(refPos)) {
+              tag.mismatchedBase(refPos)
+            } else {
+              Some(record.getSequence()(readPos))
+            }
+          }
+          case CigarOperator.D => {
+            // if a delete, get from the delete pool
+            tag.deletedBase(refPos)
+          }
+          case _ => None
+        }
+      })
+    }
+
+    val referenceBase = getReferenceBase(cigarElem, referencePosition, readOffset)
+    ReferenceSequenceContext(position, referenceBase, cigarElem, elemOffset)
+  }
+
+  lazy val referencePositions: Seq[Option[ReferencePosition]] = referenceContexts.map(ref => ref.flatMap(_.pos))
+
+  lazy val referenceContexts: Seq[Option[ReferenceSequenceContext]] = {
     if (record.getReadMapped) {
-      val resultTuple = samtoolsCigar.getCigarElements.foldLeft((unclippedStart.get, List[Option[Long]]()))((runningPos, elem) => {
+      val resultTuple = samtoolsCigar.getCigarElements.foldLeft((unclippedStart.get, List[Option[ReferenceSequenceContext]]()))((runningPos, elem) => {
         // runningPos is a tuple, the first element holds the starting position of the next CigarOperator
         // and the second element is the list of positions up to this point
         val op = elem.getOperator
@@ -157,17 +186,18 @@ class RichADAMRecord(val record: ADAMRecord) {
         val resultAccum = runningPos._2
         val advanceReference = op.consumesReferenceBases || op == CigarOperator.S
         val newRefPos = currentRefPos + (if (advanceReference) elem.getLength else 0)
-        val resultParts: Seq[Option[Long]] =
+        val resultParts: Seq[Option[ReferenceSequenceContext]] =
           if (op.consumesReadBases) {
             val range = NumericRange(currentRefPos, currentRefPos + elem.getLength, 1L)
-            range.map(pos => if (advanceReference) Some(pos) else None)
+            range.zipWithIndex.map(kv =>
+              if (advanceReference)
+                Some(getReferenceContext(resultAccum.size + kv._2, kv._1, elem, kv._2))
+              else None)
           } else {
             Seq.empty
           }
         (newRefPos, resultAccum ++ resultParts)
       })
-
-      val endRefPos = resultTuple._1
       val results = resultTuple._2
       results.toIndexedSeq
     } else {
@@ -175,11 +205,20 @@ class RichADAMRecord(val record: ADAMRecord) {
     }
   }
 
-  def readOffsetToReferencePosition(offset: Int): Option[Long] = {
+  def readOffsetToReferencePosition(offset: Int): Option[ReferencePosition] = {
     if (record.getReadMapped) {
       referencePositions(offset)
     } else {
       None
     }
   }
+
+  def readOffsetToReferenceSequenceContext(offset: Int): Option[ReferenceSequenceContext] = {
+    if (record.getReadMapped) {
+      referenceContexts(offset)
+    } else {
+      None
+    }
+  }
+
 }

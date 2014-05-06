@@ -16,9 +16,9 @@
 package org.bdgenomics.adam.rich
 
 import org.scalatest.FunSuite
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
 import RichADAMRecord._
-import org.bdgenomics.adam.models.{ TagType, Attribute }
+import org.bdgenomics.adam.models.{ ReferencePosition, TagType, Attribute }
 
 class RichADAMRecordSuite extends FunSuite {
 
@@ -68,13 +68,15 @@ class RichADAMRecordSuite extends FunSuite {
   }
 
   test("Cigar Clipping Sequence") {
-    val softClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(100).setCigar("10S90M").build()
-    assert(softClippedRead.referencePositions(0) == Some(90L))
+    val contig = ADAMContig.newBuilder.setContigName("chr1").build
+    val softClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(100).setCigar("10S90M").setContig(contig).build()
+    assert(softClippedRead.referencePositions(0).map(_.pos) == Some(90L))
 
   }
 
   test("tags contains optional fields") {
-    val rec = ADAMRecord.newBuilder().setAttributes("XX:i:3\tYY:Z:foo").build()
+    val contig = ADAMContig.newBuilder.setContigName("chr1").build
+    val rec = ADAMRecord.newBuilder().setAttributes("XX:i:3\tYY:Z:foo").setContig(contig).build()
     assert(rec.tags.size === 2)
     assert(rec.tags(0) === Attribute("XX", TagType.Integer, 3))
     assert(rec.tags(1) === Attribute("YY", TagType.String, "foo"))
@@ -82,45 +84,74 @@ class RichADAMRecordSuite extends FunSuite {
 
   test("Reference Positions") {
 
-    val hardClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("90M10H").build()
+    val contig = ADAMContig.newBuilder.setContigName("chr1").build
+
+    val hardClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("90M10H").setContig(contig).build()
     assert(hardClippedRead.referencePositions.length == 90)
-    assert(hardClippedRead.referencePositions(0) == Some(1000L))
+    assert(hardClippedRead.referencePositions(0).map(_.pos) == Some(1000L))
 
-    val softClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10S90M").build()
+    val softClippedRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10S90M").setContig(contig).build()
     assert(softClippedRead.referencePositions.length == 100)
-    assert(softClippedRead.referencePositions(0) == Some(990L))
-    assert(softClippedRead.referencePositions(10) == Some(1000L))
+    assert(softClippedRead.referencePositions(0).map(_.pos) == Some(990L))
+    assert(softClippedRead.referencePositions(10).map(_.pos) == Some(1000L))
 
-    val doubleMatchNonsenseRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M10M").build()
-    Range(0, 20).foreach(i => assert(doubleMatchNonsenseRead.referencePositions(i) == Some(1000 + i)))
+    val doubleMatchNonsenseRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M10M").setContig(contig).build()
+    Range(0, 20).foreach(i => assert(doubleMatchNonsenseRead.referencePositions(i).map(_.pos) == Some(1000 + i)))
 
-    val deletionRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("5M5D10M").build()
+    val deletionRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("5M5D10M").setContig(contig).build()
     assert(deletionRead.referencePositions.length == 15)
-    assert(deletionRead.referencePositions(0) == Some(1000L))
-    assert(deletionRead.referencePositions(5) == Some(1010L))
+    assert(deletionRead.referencePositions(0).map(_.pos) == Some(1000L))
+    assert(deletionRead.referencePositions(5).map(_.pos) == Some(1010L))
 
-    val insertionRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M2I10M").build()
+    val insertionRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M2I10M").setContig(contig).build()
     assert(insertionRead.referencePositions.length == 22)
-    assert(insertionRead.referencePositions(0) == Some(1000L))
-    assert(insertionRead.referencePositions(10) == None)
-    assert(insertionRead.referencePositions(12) == Some(1010L))
+    assert(insertionRead.referencePositions(0).map(_.pos) == Some(1000L))
+    assert(insertionRead.referencePositions(10).map(_.pos) == None)
+    assert(insertionRead.referencePositions(12).map(_.pos) == Some(1010L))
 
-    val indelRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M3D10M2I").build()
+    val indelRead = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M3D10M2I").setContig(contig).build()
     assert(indelRead.referencePositions.length == 22)
-    assert(indelRead.referencePositions(0) == Some(1000L))
-    assert(indelRead.referencePositions(10) == Some(1013L))
-    assert(indelRead.referencePositions(20) == None)
+    assert(indelRead.referencePositions(0).map(_.pos) == Some(1000L))
+    assert(indelRead.referencePositions(10).map(_.pos) == Some(1013L))
+    assert(indelRead.referencePositions(20).map(_.pos) == None)
 
-    val hg00096read = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("1S28M1D32M1I15M1D23M").build()
+    val hg00096read = ADAMRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("1S28M1D32M1I15M1D23M").setContig(contig).build()
     assert(hg00096read.referencePositions.length == 100)
-    assert(hg00096read.referencePositions(0) == Some(999L))
-    assert(hg00096read.referencePositions(1) == Some(1000L))
-    assert(hg00096read.referencePositions(29) == Some(1029L))
-    assert(hg00096read.referencePositions(61) == None)
-    assert(hg00096read.referencePositions(62) == Some(1061L))
-    assert(hg00096read.referencePositions(78) == Some(1078L))
-    assert(hg00096read.referencePositions(99) == Some(1099L))
+    assert(hg00096read.referencePositions(0).map(_.pos) == Some(999L))
+    assert(hg00096read.referencePositions(1).map(_.pos) == Some(1000L))
+    assert(hg00096read.referencePositions(29).map(_.pos) == Some(1029L))
+    assert(hg00096read.referencePositions(61).map(_.pos) == None)
+    assert(hg00096read.referencePositions(62).map(_.pos) == Some(1061L))
+    assert(hg00096read.referencePositions(78).map(_.pos) == Some(1078L))
+    assert(hg00096read.referencePositions(99).map(_.pos) == Some(1099L))
 
+  }
+
+  test("read overlap unmapped read") {
+    val unmappedRead = ADAMRecord.newBuilder().setReadMapped(false).setStart(0).setCigar("10M").build()
+
+    val overlaps = unmappedRead.overlapsReferencePosition(ReferencePosition("chr1", 10))
+    assert(overlaps == None)
+  }
+
+  test("read overlap reference position") {
+
+    val contig = ADAMContig.newBuilder.setContigName("chr1").build
+    val record = RichADAMRecord(ADAMRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10).setContig(contig).build())
+
+    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 10)) == Some(true))
+
+    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 14)) == Some(true))
+    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 19)) == Some(true))
+    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 20)) == Some(false))
+  }
+
+  test("read overlap same position different contig") {
+
+    val contig = ADAMContig.newBuilder.setContigName("chr1").build
+    val record = RichADAMRecord(ADAMRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10).setContig(contig).build())
+
+    assert(record.overlapsReferencePosition(ReferencePosition("chr2", 10)) == Some(false))
   }
 
 }
