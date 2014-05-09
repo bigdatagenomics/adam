@@ -17,45 +17,16 @@
 package org.bdgenomics.adam.rdd.variation
 
 import org.bdgenomics.adam.avro.{ ADAMDatabaseVariantAnnotation, ADAMGenotype }
-import org.bdgenomics.adam.converters.{ VariantAnnotationConverter, VariantContextConverter }
+import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import fi.tkk.ics.hadoop.bam._
 import org.apache.hadoop.io.LongWritable
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.broadinstitute.variant.vcf.{ VCFHeaderLine, VCFHeader }
 import parquet.hadoop.util.ContextUtil
-import scala.collection.JavaConversions._
 import org.bdgenomics.adam.util.HadoopUtil
-
-private object ADAMVCFOutputFormat {
-  private var header: Option[VCFHeader] = None
-
-  def getHeader: VCFHeader = header match {
-    case Some(h) => h
-    case None    => setHeader(Seq())
-  }
-
-  def setHeader(samples: Seq[String]): VCFHeader = {
-    header = Some(new VCFHeader(
-      (VariantAnnotationConverter.infoHeaderLines ++ VariantAnnotationConverter.formatHeaderLines).toSet: Set[VCFHeaderLine],
-      samples))
-    header.get
-  }
-}
-
-/**
- * Wrapper for Hadoop-BAM to work around requirement for no-args constructor. Depends on
- * ADAMVCFOutputFormat object to maintain global state (such as samples)
- *
- * @tparam K
- */
-private class ADAMVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF) {
-  setHeader(ADAMVCFOutputFormat.getHeader)
-}
 
 object ADAMVariationContext {
   implicit def sparkContextToADAMVariationContext(sc: SparkContext): ADAMVariationContext = new ADAMVariationContext(sc)
@@ -100,7 +71,7 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
     log.info("Writing %s file to %s".format(vcfFormat, filePath))
 
     // Initialize global header object required by Hadoop VCF Writer
-    ADAMVCFOutputFormat.setHeader(variants.adamGetCallsetSamples)
+    ADAMVCFOutputFormat.setHeader(variants.adamGetCallsetSamples())
 
     // TODO: Sort variants according to sequence dictionary (if supplied)
     val converter = new VariantContextConverter(dict)
@@ -117,7 +88,7 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
       classOf[LongWritable], classOf[VariantContextWritable], classOf[ADAMVCFOutputFormat[LongWritable]],
       conf)
 
-    log.info("Write %d records".format(gatkVCs.count))
+    log.info("Write %d records".format(gatkVCs.count()))
   }
 }
 
