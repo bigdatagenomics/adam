@@ -31,13 +31,12 @@ class IntervalListReaderSuite extends FunSuite {
     assert(intervals.size === 6)
 
     (1 until 6).foreach {
-      idx =>
-        assert(intervals(idx - 1)._2 === "target_%d".format(idx))
+      idx => assert(intervals(idx - 1)._2 === "target_%d".format(idx))
     }
 
     assert(reader.sequenceDictionary != null, "sequence dictionary was null")
     assert(reader.sequenceDictionary.records.size === 2)
-    assert(reader.sequenceDictionary("1").length === 249250621)
-    assert(reader.sequenceDictionary("2").length === 243199373)
+    assert(reader.sequenceDictionary("1").get.length === 249250621)
+    assert(reader.sequenceDictionary("2").get.length === 243199373)
   }
 }

@@ -56,8 +56,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
     true
   }
 
-  // This getOrElse smells...
-  def apply(name: String): SequenceRecord = byName.getOrElse(name, null)
+  def apply(name: String): Option[SequenceRecord] = byName.get(name)
   def containsRefName(name: String): Boolean = byName.containsKey(name)
 
   def +(record: SequenceRecord): SequenceDictionary = this ++ SequenceDictionary(record)
@@ -97,6 +96,7 @@ class SequenceRecord(
     case _ => false
   }
 
+  // No md5/url is "equal" to any md5/url in this setting
   private def optionEq(o1: Option[CharSequence], o2: Option[CharSequence]) = (o1, o2) match {
     case (Some(c1), Some(c2)) => c1 == c2
     case _                    => true
@@ -146,8 +146,8 @@ object SequenceRecord {
     val builder = ADAMContig.newBuilder()
       .setContigName(record.name)
       .setContigLength(record.length)
-    record.md5.foreach(builder.setContigMD5(_))
-    record.url.foreach(builder.setReferenceURL(_))
+    record.md5.foreach(builder.setContigMD5)
+    record.url.foreach(builder.setReferenceURL)
     builder.build
   }
 
@@ -170,7 +170,7 @@ object SequenceRecord {
       // The contig should be null for unmapped read
       List(Option(rec.getContig), Option(rec.getMateContig))
         .flatten
-        .map(fromADAMContig(_))
+        .map(fromADAMContig)
         .toSet
     } else
       Set()

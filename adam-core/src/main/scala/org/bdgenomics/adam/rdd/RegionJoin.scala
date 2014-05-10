@@ -191,7 +191,7 @@ class NonoverlappingRegions(seqDict: SequenceDictionary, regions: Seq[ReferenceR
   assert(seqDict != null, "Sequence Dictionary cannot be null")
 
   val referenceName: String = regions.head.referenceName
-  val referenceLength: Long = seqDict(referenceName).length
+  //val referenceLength: Long = seqDict(referenceName).length
 
   // invariant: all the values in the 'regions' list have the same referenceId
   assert(regions.forall(_.referenceName == referenceName))

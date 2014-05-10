@@ -35,7 +35,7 @@ class SAMRecordConverter extends Serializable {
     // This prevents looking up a -1 in the sequence dictionary
     val readReference: Int = samRecord.getReferenceIndex
     if (readReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
-      builder.setContig(SequenceRecord.toADAMContig(dict(samRecord.getReferenceName)))
+      builder.setContig(SequenceRecord.toADAMContig(dict(samRecord.getReferenceName).get))
 
       val start: Int = samRecord.getAlignmentStart
       if (start != 0) {
@@ -53,7 +53,7 @@ class SAMRecordConverter extends Serializable {
     val mateReference: Int = samRecord.getMateReferenceIndex
 
     if (mateReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
-      builder.setMateContig(SequenceRecord.toADAMContig(dict(samRecord.getMateReferenceName)))
+      builder.setMateContig(SequenceRecord.toADAMContig(dict(samRecord.getMateReferenceName).get))
 
       val mateStart = samRecord.getMateAlignmentStart
       if (mateStart > 0) {
