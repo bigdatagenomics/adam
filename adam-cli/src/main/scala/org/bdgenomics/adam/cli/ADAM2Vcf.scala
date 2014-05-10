@@ -23,10 +23,8 @@ import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.hadoop.mapreduce.Job
-import java.io.{ FileOutputStream, File }
-import org.apache.commons.io.IOUtils
+import java.io.File
 import org.bdgenomics.adam.models.SequenceDictionary
-import net.sf.samtools.SAMFileReader
 import scala.Option
 
 object ADAM2Vcf extends ADAMCommandCompanion {
@@ -50,31 +48,11 @@ class ADAM2VcfArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var outputPath: String = null
 }
 
-class ADAM2Vcf(val args: ADAM2VcfArgs) extends ADAMSparkCommand[ADAM2VcfArgs] with Logging {
+class ADAM2Vcf(val args: ADAM2VcfArgs) extends ADAMSparkCommand[ADAM2VcfArgs] with DictionaryCommand with Logging {
   val companion = ADAM2Vcf
 
   def run(sc: SparkContext, job: Job) {
-    def getDictionaryFile(name: String): Option[File] = {
-      val stream = ClassLoader.getSystemClassLoader.getResourceAsStream("dictionaries/" + name)
-      if (stream == null)
-        return None
-      val file = File.createTempFile(name, ".dict")
-      file.deleteOnExit()
-      IOUtils.copy(stream, new FileOutputStream(file))
-      Some(file)
-    }
-
-    def getDictionary(file: File) = Some(SequenceDictionary(SAMFileReader.getSequenceDictionary(file)))
-
-    var dictionary: Option[SequenceDictionary] = None
-    if (args.dictionaryFile != null) {
-      if (args.dictionaryFile.exists) {
-        dictionary = getDictionary(args.dictionaryFile)
-      } else getDictionaryFile(args.dictionaryFile.getName) match {
-        case Some(file) => dictionary = getDictionary(file)
-        case _          => assert(false, "Supplied dictionary path is invalid")
-      }
-    }
+    var dictionary: Option[SequenceDictionary] = loadSequenceDictionary(args.dictionaryFile)
     if (dictionary.isDefined)
       log.info("Using contig translation")
 
