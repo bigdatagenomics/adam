@@ -40,7 +40,7 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
    * @param filePath: input VCF file to read
    * @return RDD of variants
    */
-  def adamVCFLoad(filePath: String, extractExternalAnnotations: Boolean = false, dict: Option[SequenceDictionary] = None): RDD[ADAMVariantContext] = {
+  def adamVCFLoad(filePath: String, dict: Option[SequenceDictionary] = None): RDD[ADAMVariantContext] = {
     log.info("Reading VCF file from %s".format(filePath))
     val job = HadoopUtil.newJob(sc)
     val vcc = new VariantContextConverter(dict)
@@ -49,13 +49,13 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
       ContextUtil.getConfiguration(job))
     log.info("Converted %d records".format(records.count()))
-    records.flatMap(p => vcc.convert(p._2.get, extractExternalAnnotations))
+    records.flatMap(p => vcc.convert(p._2.get))
   }
 
-  def adamVCFAnnotationLoad(filePath: String): RDD[ADAMDatabaseVariantAnnotation] = {
+  def adamVCFAnnotationLoad(filePath: String, dict: Option[SequenceDictionary] = None): RDD[ADAMDatabaseVariantAnnotation] = {
     log.info("Reading VCF file from %s".format(filePath))
     val job = HadoopUtil.newJob(sc)
-    val vcc = new VariantContextConverter
+    val vcc = new VariantContextConverter(dict)
     val records = sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],

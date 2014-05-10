@@ -415,11 +415,11 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     val dict = rdd.adamGetSequenceDictionary()
 
     assert(dict.containsRefName("chr0"))
-    val chr0 = dict("chr0")
+    val chr0 = dict("chr0").get
     assert(chr0.length === 1000L)
     assert(chr0.url == Some("http://bigdatagenomics.github.io/chr0.fa"))
     assert(dict.containsRefName("chr1"))
-    val chr1 = dict("chr1")
+    val chr1 = dict("chr1").get
     assert(chr1.length === 900L)
   }
 

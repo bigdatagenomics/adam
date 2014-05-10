@@ -67,7 +67,7 @@ object VcfHeaderUtils {
 
 private[util] class VcfHeaderBuilder(samples: List[String]) {
 
-  var contigLines = List[VCFContigHeaderLine]()
+  var contigLines = List.empty[VCFContigHeaderLine]
 
   val formatLines: java.util.Set[VCFHeaderLine] = new java.util.HashSet[VCFHeaderLine]()
   val infoLines: java.util.Set[VCFHeaderLine] = new java.util.HashSet[VCFHeaderLine]()
@@ -83,18 +83,13 @@ private[util] class VcfHeaderBuilder(samples: List[String]) {
   /**
    * Creates VCF contig lines from a sequence dictionary.
    *
-   * @param seqDict Sequence dictionary containing contig info.
+   * @param dict Sequence dictionary containing contig info.
    */
-  def addContigLines(seqDict: SequenceDictionary) {
-    /*
-    val contigNames = seqDict.getReferenceNames
-
-    contigNames.zip(1 to contigNames.size).foreach(ctg => {
-      val contig = new VCFContigHeaderLine(Map("ID" -> ctg._1), ctg._2)
-
-      contigLines = contig :: contigLines
-    })
-    */
+  def addContigLines(dict: SequenceDictionary) {
+    val contigs: List[VCFContigHeaderLine] = dict.records.zipWithIndex.map {
+      case (record, index) => new VCFContigHeaderLine(Map("ID" -> record.name), index + 1)
+    }.toList
+    contigLines = contigs ::: contigLines
   }
 
   /**

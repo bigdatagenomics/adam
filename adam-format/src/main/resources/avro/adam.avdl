@@ -210,8 +210,9 @@ record ADAMGenotype {
   // How many reference and alternate reads (AD)
   union { null, int }     referenceReadDepth = null;
   union { null, int }     alternateReadDepth = null;
-  // How many total reads at this position (DP)
+  // How many reads and minimum reads at this position in this sample (DP, MIN_DP)
   union { null, int }     readDepth = null;
+  union { null, int }     minReadDepth = null;
   // The phred-scaled probability that we're correct for this genotype call (GQ)
   union { null, int }     genotypeQuality = null;
 
@@ -219,10 +220,10 @@ record ADAMGenotype {
   union { null, array<int> } genotypeLikelihoods = null;
   union { null, array<int> } nonReferenceLikelihoods = null;
 
-  // number of reads mapped at site on forward strand
-  union { null, int } readsMappedForwardStrand = null;
+  // Component statistics which comprise the Fisher's Exact Test to detect strand bias
+  union { null, array<int> } strandBiasComponents = null;
 
-  // In the ADAM world we split multi-allelic VCF lines into multiple
+  // In ADAM we split multi-allelic VCF lines into multiple
   // single-alternate records.  This bit is set if that happened for this
   // record.
   boolean splitFromMultiAllelic = false;

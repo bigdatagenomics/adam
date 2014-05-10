@@ -56,7 +56,7 @@ class SequenceDictionarySuite extends FunSuite {
 
     val asd = SequenceDictionary(ssd)
     assert(asd.containsRefName("1"))
-    val chr1 = asd("1")
+    val chr1 = asd("1").get
 
     val myDict = SequenceDictionary(record(chr1.name, chr1.length, md5 = chr1.md5))
     assert(asd.isCompatibleWith(myDict))
@@ -74,7 +74,7 @@ class SequenceDictionarySuite extends FunSuite {
     val rec = record("chr1")
     val asd = SequenceDictionary(rec)
     val recFromName = asd(rec.name)
-    assert(rec === recFromName)
+    assert(recFromName === Some(rec))
   }
 
   test("SequenceDictionary's with same single element are equal") {
@@ -160,10 +160,10 @@ class SequenceDictionarySuite extends FunSuite {
     val str2: CharSequence = "chr2"
     val str3: java.lang.CharSequence = "chr3"
 
-    assert(dict(str0).name === "chr0")
-    assert(dict(str1).name === "chr1")
-    assert(dict(str2).name === "chr2")
-    assert(dict(str3).name === "chr3")
+    assert(dict(str0).get.name === "chr0")
+    assert(dict(str1).get.name === "chr1")
+    assert(dict(str2).get.name === "chr2")
+    assert(dict(str3).get.name === "chr3")
   }
 
   def record(name: String, length: Long = 1000, url: Option[String] = None, md5: Option[String] = None): SequenceRecord =
