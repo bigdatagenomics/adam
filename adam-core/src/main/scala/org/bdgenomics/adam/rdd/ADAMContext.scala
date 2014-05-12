@@ -298,13 +298,13 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
   }
 
   def adamSequenceLoad(filePath: String, fragmentLength: Long): RDD[ADAMNucleotideContigFragment] = {
-    if (filePath.endsWith(".fasta")) {
+    if (filePath.endsWith(".fasta") || filePath.endsWith(".fa")) {
       val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(filePath,
         classOf[TextInputFormat],
         classOf[LongWritable],
         classOf[Text])
 
-      val remapData = fastaData.map(kv => (kv._1.get.toInt, kv._2.toString))
+      val remapData = fastaData.map(kv => (kv._1.get.toLong, kv._2.toString))
 
       log.info("Converting FASTA to ADAM.")
       FastaConverter(remapData, fragmentLength)
