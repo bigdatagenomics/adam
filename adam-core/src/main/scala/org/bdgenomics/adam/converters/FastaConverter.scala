@@ -29,12 +29,12 @@ import scala.Some
  */
 private[adam] object FastaConverter {
 
-  case class FastaDescriptionLine(val fileIndex: Int = -1, val seqId: Int = 0, val descriptionLine: Option[String] = None) {
+  case class FastaDescriptionLine(val fileIndex: Long = -1L, val seqId: Int = 0, val descriptionLine: Option[String] = None) {
     val (contigName, contigDescription) = parseDescriptionLine(descriptionLine, fileIndex)
 
-    private def parseDescriptionLine(descriptionLine: Option[String], id: Int): (Option[String], Option[String]) = {
+    private def parseDescriptionLine(descriptionLine: Option[String], id: Long): (Option[String], Option[String]) = {
       if (descriptionLine.isEmpty) {
-        assert(id == -1, "Cannot have a headerless line in a file with more than one fragment.")
+        assert(id == -1L, "Cannot have a headerless line in a file with more than one fragment.")
         (None, None)
       } else {
         val splitIndex = descriptionLine.get.indexOf(' ')
@@ -64,23 +64,23 @@ private[adam] object FastaConverter {
    * that do not have descriptions.
    * @throws IllegalArgumentError Thrown if a sequence does not have sequence data.
    *
-   * @param rdd RDD containing Int,String tuples, where the Int corresponds to the number
+   * @param rdd RDD containing Long,String tuples, where the Long corresponds to the number
    * of the file line, and the String is the line of the file.
    * @param maxFragmentLength The maximum length of fragments in the contig.
    * @return An RDD of ADAM FASTA data.
    */
-  def apply(rdd: RDD[(Int, String)],
+  def apply(rdd: RDD[(Long, String)],
             maxFragmentLength: Long = 10000L): RDD[ADAMNucleotideContigFragment] = {
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
-      .filter((kv: (Int, String)) => !kv._2.startsWith(";"))
+      .filter((kv: (Long, String)) => !kv._2.startsWith(";"))
 
-    val descriptionLines: Map[Int, FastaDescriptionLine] = getDescriptionLines(filtered)
+    val descriptionLines: Map[Long, FastaDescriptionLine] = getDescriptionLines(filtered)
     val indexToContigDescription = rdd.context.broadcast(descriptionLines)
 
     val sequenceLines = filtered.filter(kv => !isDescriptionLine(kv._2))
 
     val keyedSequences = if (indexToContigDescription.value.size == 0) {
-      sequenceLines.keyBy(kv => -1)
+      sequenceLines.keyBy(kv => -1L)
     } else {
       sequenceLines.keyBy(row => findContigIndex(row._1, indexToContigDescription.value.keys.toList))
     }
@@ -94,7 +94,10 @@ private[adam] object FastaConverter {
 
       assert(lines.length != 0, "Sequence " + descriptionLine.seqId + " has no sequence data.")
       val sequence: Seq[String] = lines.sortBy(kv => kv._1).map(kv => cleanSequence(kv._2))
-      converter.convert(descriptionLine.contigName, descriptionLine.seqId, sequence, descriptionLine.contigDescription)
+      converter.convert(descriptionLine.contigName,
+        descriptionLine.seqId,
+        sequence,
+        descriptionLine.contigDescription)
     })
 
     convertedData
@@ -108,7 +111,7 @@ private[adam] object FastaConverter {
     line.startsWith(">")
   }
 
-  def getDescriptionLines(rdd: RDD[(Int, String)]): Map[Int, FastaDescriptionLine] = {
+  def getDescriptionLines(rdd: RDD[(Long, String)]): Map[Long, FastaDescriptionLine] = {
 
     rdd.filter(kv => isDescriptionLine(kv._2))
       .collect
@@ -117,8 +120,9 @@ private[adam] object FastaConverter {
       .toMap
   }
 
-  def findContigIndex(rowIdx: Int, indices: List[Int]): Int = {
-    indices.filter(_ <= rowIdx).max
+  def findContigIndex(rowIdx: Long, indices: List[Long]): Long = {
+    val idx = indices.filter(_ <= rowIdx)
+    idx.max
   }
 }
 
