@@ -73,7 +73,7 @@ class GenotypePredicatesSuite extends SparkFunSuite {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("11").build)
+      .setContig("11")
       .setPosition(17409571)
       .setReferenceAllele("T")
       .setVariantAllele("C")
@@ -86,8 +86,10 @@ class GenotypePredicatesSuite extends SparkFunSuite {
 
     val genotypes = sc.parallelize(List(
       ADAMGenotype.newBuilder().setVariant(v0)
+        .setSampleId("ignored")
         .setVariantCallingAnnotations(passFilterAnnotation).build(),
       ADAMGenotype.newBuilder()
+        .setSampleId("ignored")
         .setVariant(v0)
         .setVariantCallingAnnotations(failFilterAnnotation).build()))
 
