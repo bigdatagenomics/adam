@@ -15,23 +15,17 @@
  */
 package org.bdgenomics.adam.rdd
 
-import java.io.File
 import java.util.logging.Level
-import java.util.UUID
 import org.apache.avro.specific.SpecificRecord
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.avro.{
-  ADAMContig,
   ADAMPileup,
   ADAMRecord,
-  ADAMNucleotideContigFragment,
-  Base
+  ADAMNucleotideContigFragment
 }
-import org.bdgenomics.adam.converters.GenotypesToVariantsConverter
 import org.bdgenomics.adam.models.{
   SequenceRecord,
   SequenceDictionary,
@@ -43,14 +37,13 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
-import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.util.{ HadoopUtil, MapTools, ParquetLogger }
 import parquet.avro.{ AvroParquetOutputFormat, AvroWriteSupport }
 import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
 import parquet.hadoop.util.ContextUtil
-import scala.math.{ min, max }
+import scala.math.max
 
 class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -113,7 +106,7 @@ abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
 
     def foldIterator(iter: Iterator[T]): SequenceDictionary = {
       val recs = iter.foldLeft(List[SequenceRecord]())(mergeRecords)
-      new SequenceDictionary(recs.toArray)
+      SequenceDictionary(recs: _*)
     }
 
     rdd.mapPartitions(iter => Iterator(foldIterator(iter)), true)

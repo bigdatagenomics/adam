@@ -19,34 +19,44 @@ import scala.collection.JavaConversions._
 import org.scalatest.FunSuite
 import org.broadinstitute.variant.variantcontext.{ GenotypeType, Allele, VariantContextBuilder, GenotypeBuilder }
 import java.lang.Integer
-import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceRecord, SequenceDictionary }
+import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
 import org.bdgenomics.adam.avro._
 import scala.Some
+import net.sf.samtools.SAMFileReader
+import java.io.File
 
 class VariantContextConverterSuite extends FunSuite {
-  val dictionary = SequenceDictionary(SequenceRecord("chr1", 249250621,
-    "file://ucsc.hg19.fasta", "1b22b98cdeb4a9304cb5d48026a85128"))
+  val dictionary = {
+    val path = ClassLoader.getSystemClassLoader.getResource("dict_with_accession.dict").getFile
+    SequenceDictionary(SAMFileReader.getSequenceDictionary(new File(path)))
+  }
 
   def gatkSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(Allele.create("A", true), Allele.create("T")))
     .start(1L)
     .stop(1L)
-    .chr("chr1")
+    .chr("1")
 
   def gatkMultiAllelicSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(Allele.create("A", true), Allele.create("T"), Allele.create("G")))
     .start(1L)
     .stop(1L)
-    .chr("chr1")
+    .chr("1")
 
-  def adamSNVBuilder: ADAMVariant.Builder = ADAMVariant.newBuilder()
-    .setContig(ADAMContig.newBuilder().setContigName("chr1").build)
+  def gatkRefSNV: VariantContextBuilder = new VariantContextBuilder()
+    .alleles(List(Allele.create("A", true), Allele.create("<NON_REF>", false)))
+    .start(1L)
+    .stop(1L)
+    .chr("1")
+
+  def adamSNVBuilder(contig: String = "1"): ADAMVariant.Builder = ADAMVariant.newBuilder()
+    .setContig(contig)
     .setPosition(0L)
     .setReferenceAllele("A")
     .setVariantAllele("T")
 
   test("Convert GATK site-only SNV to ADAM") {
-    val converter = new VariantContextConverter(Some(dictionary))
+    val converter = new VariantContextConverter
 
     val adamVCs = converter.convert(gatkSNVBuilder.make)
     assert(adamVCs.length === 1)
@@ -55,15 +65,21 @@ class VariantContextConverterSuite extends FunSuite {
     assert(adamVC.genotypes.length === 0)
 
     val variant = adamVC.variant
-
-    val contig = variant.getContig
-    assert(contig.getContigName === "chr1")
-    assert(contig.getContigLength === 249250621)
-    assert(contig.getReferenceURL === "file://ucsc.hg19.fasta")
-    assert(contig.getContigMD5 === "1b22b98cdeb4a9304cb5d48026a85128")
+    assert(variant.getContig === "1")
 
     assert(variant.getReferenceAllele === "A")
     assert(variant.getPosition === 0L)
+  }
+
+  test("Convert GATK site-only SNV to ADAM with contig conversion") {
+    val converter = new VariantContextConverter(Some(dictionary))
+
+    val adamVCs = converter.convert(gatkSNVBuilder.make)
+    assert(adamVCs.length === 1)
+
+    val adamVC = adamVCs.head
+    val variant = adamVC.variant
+    assert(variant.getContig === "NC_000001.10")
   }
 
   test("Convert GATK SNV w/ genotypes w/ phase information to ADAM") {
@@ -72,7 +88,7 @@ class VariantContextConverterSuite extends FunSuite {
     val genotypeAttributes = Map[String, Object]("PQ" -> new Integer(50), "PS" -> new Integer(1))
     val vc = vcb.genotypes(GenotypeBuilder.create("NA12878", vcb.getAlleles(), genotypeAttributes)).make()
 
-    val converter = new VariantContextConverter(Some(dictionary))
+    val converter = new VariantContextConverter
 
     val adamVCs = converter.convert(vc)
     assert(adamVCs.length === 1)
@@ -89,7 +105,7 @@ class VariantContextConverterSuite extends FunSuite {
     val vcb = gatkSNVBuilder
     vcb.genotypes(GenotypeBuilder.create("NA12878", vcb.getAlleles))
 
-    val converter = new VariantContextConverter(Some(dictionary))
+    val converter = new VariantContextConverter
 
     { // No filters
       val adamVCs = converter.convert(vcb.make)
@@ -112,12 +128,12 @@ class VariantContextConverterSuite extends FunSuite {
   }
 
   test("Convert ADAM site-only SNV to GATK") {
-    val vc = ADAMVariantContext(adamSNVBuilder.build)
+    val vc = ADAMVariantContext(adamSNVBuilder().build)
 
-    val converter = new VariantContextConverter(Some(dictionary))
+    val converter = new VariantContextConverter
 
     val gatkVC = converter.convert(vc)
-    assert(gatkVC.getChr === "chr1")
+    assert(gatkVC.getChr === "1")
     assert(gatkVC.getStart === 1)
     assert(gatkVC.getEnd === 1)
     assert(gatkVC.getReference === Allele.create("A", true))
@@ -127,15 +143,24 @@ class VariantContextConverterSuite extends FunSuite {
     assert(!gatkVC.filtersWereApplied)
   }
 
+  test("Convert ADAM site-only SNV to GATK with contig conversion") {
+    val vc = ADAMVariantContext(adamSNVBuilder("NC_000001.10").build)
+
+    val converter = new VariantContextConverter(dict = Some(dictionary))
+
+    val gatkVC = converter.convert(vc)
+    assert(gatkVC.getChr === "1")
+  }
+
   test("Convert ADAM SNV w/ genotypes to GATK") {
-    val variant = adamSNVBuilder.build
+    val variant = adamSNVBuilder().build
     val genotype = ADAMGenotype.newBuilder
       .setVariant(variant)
       .setSampleId("NA12878")
       .setAlleles(List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Alt))
       .build
 
-    val converter = new VariantContextConverter(Some(dictionary))
+    val converter = new VariantContextConverter
 
     val gatkVC = converter.convert(ADAMVariantContext(variant, Seq(genotype)))
     assert(gatkVC.getNSamples === 1)
@@ -146,7 +171,7 @@ class VariantContextConverterSuite extends FunSuite {
 
   test("Convert GATK multi-allelic sites-only SNVs to ADAM") {
     val vc = gatkMultiAllelicSNVBuilder.make
-    val converter = new VariantContextConverter(Some(dictionary))
+    val converter = new VariantContextConverter
 
     val adamVCs = converter.convert(vc)
     assert(adamVCs.length === 2)
@@ -163,9 +188,9 @@ class VariantContextConverterSuite extends FunSuite {
     gb.AD(Array(4, 2, 3)).PL(Array(59, 0, 181, 1, 66, 102))
 
     val vcb = gatkMultiAllelicSNVBuilder
-    vcb.genotypes(gb.make())
+    vcb.genotypes(gb.make)
 
-    val converter = new VariantContextConverter(Some(dictionary))
+    val converter = new VariantContextConverter
 
     val adamVCs = converter.convert(vcb.make)
     assert(adamVCs.length === 2)
@@ -187,5 +212,27 @@ class VariantContextConverterSuite extends FunSuite {
     assert(adamGT2.getAlleles.sameElements(List(ADAMGenotypeAllele.OtherAlt, ADAMGenotypeAllele.Alt)))
     assert(adamGT2.getAlternateReadDepth === 3)
     assert(adamGT2.getGenotypeLikelihoods.sameElements(List(58, 0, 101)))
+  }
+
+  test("Convert gVCF reference records to ADAM") {
+    val gb = new GenotypeBuilder("NA12878", List(Allele.create("A", true), Allele.create("A", true)))
+    gb.PL(Array(0, 1, 2)).DP(44).attribute("MIN_DP", 38)
+
+    val vcb = gatkRefSNV
+    vcb.genotypes(gb.make)
+
+    val converter = new VariantContextConverter
+
+    val adamVCs = converter.convert(vcb.make)
+    assert(adamVCs.length == 1)
+
+    val adamGTs = adamVCs.flatMap(_.genotypes)
+    assert(adamGTs.length === 1)
+    val adamGT = adamGTs.head
+    assert(adamGT.getVariant.getVariantAllele === null)
+    assert(adamGT.getAlleles.sameElements(List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Ref)))
+    assert(adamGT.getMinReadDepth === 38)
+    assert(adamGT.getGenotypeLikelihoods === null)
+    assert(adamGT.getNonReferenceLikelihoods.sameElements(List(0, 1, 2)))
   }
 }

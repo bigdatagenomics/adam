@@ -20,7 +20,6 @@ import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }
 import java.util.logging.Level
 import java.io.File
 import org.bdgenomics.adam.avro.{
-  ADAMContig,
   ADAMVariant,
   ADAMGenotype,
   VariantCallingAnnotations
@@ -36,7 +35,7 @@ class GenotypePredicatesSuite extends SparkFunSuite {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("11").build)
+      .setContig("chr11")
       .setPosition(17409571)
       .setReferenceAllele("T")
       .setVariantAllele("C")
@@ -48,11 +47,16 @@ class GenotypePredicatesSuite extends SparkFunSuite {
       VariantCallingAnnotations.newBuilder().setVariantIsPassing(false).build()
 
     val genotypes = sc.parallelize(List(
-      ADAMGenotype.newBuilder().setVariant(v0)
-        .setVariantCallingAnnotations(passFilterAnnotation).build(),
       ADAMGenotype.newBuilder()
         .setVariant(v0)
-        .setVariantCallingAnnotations(failFilterAnnotation).build()))
+        .setVariantCallingAnnotations(passFilterAnnotation)
+        .setSampleId("NA12878")
+        .build(),
+      ADAMGenotype.newBuilder()
+        .setVariant(v0)
+        .setVariantCallingAnnotations(failFilterAnnotation)
+        .setSampleId("NA12878")
+        .build()))
 
     val genotypesParquetFile = new File(Files.createTempDir(), "genotypes")
     genotypes.adamSave(genotypesParquetFile.getAbsolutePath)
@@ -69,7 +73,7 @@ class GenotypePredicatesSuite extends SparkFunSuite {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("11").build)
+      .setContig("11")
       .setPosition(17409571)
       .setReferenceAllele("T")
       .setVariantAllele("C")
@@ -82,8 +86,10 @@ class GenotypePredicatesSuite extends SparkFunSuite {
 
     val genotypes = sc.parallelize(List(
       ADAMGenotype.newBuilder().setVariant(v0)
+        .setSampleId("ignored")
         .setVariantCallingAnnotations(passFilterAnnotation).build(),
       ADAMGenotype.newBuilder()
+        .setSampleId("ignored")
         .setVariant(v0)
         .setVariantCallingAnnotations(failFilterAnnotation).build()))
 

@@ -16,7 +16,7 @@
 
 package org.bdgenomics.adam.converters
 
-import org.broadinstitute.variant.variantcontext.VariantContext
+import org.broadinstitute.variant.variantcontext.{ Genotype, VariantContext }
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.broadinstitute.variant.vcf._
@@ -101,7 +101,9 @@ object VariantAnnotationConverter extends Serializable {
     AttrKey("gtFilters", VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_FILTER_KEY)),
     AttrKey("genotypeLikelihoods", VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_PL_KEY)),
     AttrKey("phaseQuality", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_QUALITY_KEY, 1, VCFHeaderLineType.Float, "Read-backed phasing quality")),
-    AttrKey("phaseSetId", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY, 1, VCFHeaderLineType.Integer, "Phase set")))
+    AttrKey("phaseSetId", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY, 1, VCFHeaderLineType.Integer, "Phase set")),
+    AttrKey("minReadDepth", attrAsInt _, new VCFFormatHeaderLine("MIN_DP", 1, VCFHeaderLineType.Integer, "Minimum DP observed within the GVCF block")),
+    AttrKey("strandBiasComponents", attrAsInt _, new VCFFormatHeaderLine("SB", 4, VCFHeaderLineType.Integer, "Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.")))
 
   lazy val infoHeaderLines: Seq[VCFCompoundHeaderLine] = INFO_KEYS.map(_.hdrLine)
   lazy val formatHeaderLines: Seq[VCFCompoundHeaderLine] = FORMAT_KEYS.map(_.hdrLine)
@@ -141,6 +143,17 @@ object VariantAnnotationConverter extends Serializable {
 
   def convert(vc: VariantContext, call: VariantCallingAnnotations): VariantCallingAnnotations = {
     fillRecord(VCF2VariantCallingAnnotations, vc, call)
+  }
+
+  def convert(g: Genotype, genotype: ADAMGenotype): ADAMGenotype = {
+    for ((v, a) <- VariantAnnotationConverter.VCF2GenotypeAnnotations) {
+      // Add extended attributes if present
+      val attr = g.getExtendedAttribute(v)
+      if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {
+        genotype.put(a._1, a._2(attr))
+      }
+    }
+    genotype
   }
 
   def mergeAnnotations(leftRecord: ADAMDatabaseVariantAnnotation, rightRecord: ADAMDatabaseVariantAnnotation): ADAMDatabaseVariantAnnotation = {

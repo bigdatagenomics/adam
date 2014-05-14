@@ -21,10 +21,6 @@ import org.bdgenomics.adam.rdd.GenotypesSummaryCounts.ReferenceAndAlternate
 import org.bdgenomics.adam.util.SparkFunSuite
 
 class GenotypesSummarySuite extends SparkFunSuite {
-  private val contig = ADAMContig.newBuilder()
-    .setContigName("abc")
-    .setContigLength(100)
-    .build
 
   private def homRef = List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Ref)
   private def het = List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Ref)
@@ -33,7 +29,7 @@ class GenotypesSummarySuite extends SparkFunSuite {
 
   private def variant(reference: String, alternate: String, position: Int): ADAMVariant = {
     ADAMVariant.newBuilder()
-      .setContig(contig)
+      .setContig("chr1")
       .setPosition(position)
       .setReferenceAllele(reference)
       .setVariantAllele(alternate)

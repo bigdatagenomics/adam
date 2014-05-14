@@ -26,13 +26,10 @@ import org.bdgenomics.adam.avro.{
 }
 import org.bdgenomics.adam.models.{
   ADAMVariantContext,
-  ReferenceRegion,
-  SequenceDictionary,
-  SequenceRecord
+  ReferenceRegion
 }
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.ADAMVariantContextRDDFunctions
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.apache.spark.rdd.RDD
 import scala.util.Random
@@ -418,27 +415,26 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     val dict = rdd.adamGetSequenceDictionary()
 
     assert(dict.containsRefName("chr0"))
-    assert(dict("chr0").length === 1000L)
-    assert(dict("chr0").url.toString == "http://bigdatagenomics.github.io/chr0.fa")
+    val chr0 = dict("chr0").get
+    assert(chr0.length === 1000L)
+    assert(chr0.url == Some("http://bigdatagenomics.github.io/chr0.fa"))
     assert(dict.containsRefName("chr1"))
-    assert(dict("chr1").length === 900L)
+    val chr1 = dict("chr1").get
+    assert(chr1.length === 900L)
   }
 
   sparkTest("recover samples from variant context") {
-    val contig0 = ADAMContig.newBuilder()
-      .setContigName("chr0")
-      .build
     val variant0 = ADAMVariant.newBuilder()
       .setPosition(0L)
       .setVariantAllele("A")
       .setReferenceAllele("T")
-      .setContig(contig0)
+      .setContig("chr0")
       .build()
     val variant1 = ADAMVariant.newBuilder()
       .setPosition(0L)
       .setVariantAllele("C")
       .setReferenceAllele("T")
-      .setContig(contig0)
+      .setContig("chr0")
       .build()
     val genotype0 = ADAMGenotype.newBuilder()
       .setVariant(variant0)
@@ -454,39 +450,6 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
 
     assert(samples.filter(_ == "you").length === 1)
     assert(samples.filter(_ == "me").length === 1)
-  }
-
-  sparkTest("get sequence dictionary from variant context") {
-    val contig0 = ADAMContig.newBuilder()
-      .setContigName("chr0")
-      .setContigLength(1000)
-      .build
-    val variant0 = ADAMVariant.newBuilder()
-      .setPosition(0L)
-      .setVariantAllele("A")
-      .setReferenceAllele("T")
-      .setContig(contig0)
-      .build()
-    val variant1 = ADAMVariant.newBuilder()
-      .setPosition(0L)
-      .setVariantAllele("C")
-      .setReferenceAllele("T")
-      .setContig(contig0)
-      .build()
-    val genotype0 = ADAMGenotype.newBuilder()
-      .setVariant(variant0)
-      .build()
-    val genotype1 = ADAMGenotype.newBuilder()
-      .setVariant(variant1)
-      .build()
-
-    val genotypeSeq = List(genotype0, genotype1)
-
-    val vc = ADAMVariantContext.buildFromGenotypes(genotypeSeq)
-    val sequenceDict = sc.parallelize(List(vc)).adamGetSequenceDictionary()
-
-    assert(sequenceDict("chr0") != None)
-    assert(sequenceDict("chr0").length === 1000)
   }
 
   sparkTest("characterizeTags counts integer tag values correctly") {

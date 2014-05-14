@@ -17,63 +17,7 @@
 package org.bdgenomics.adam.rich
 
 import org.scalatest.FunSuite
-import org.bdgenomics.adam.avro.{ ADAMVariant, ADAMContig }
 
 class RichADAMVariantSuite extends FunSuite {
-  test("Equality without reference MD5") {
-    val c1 = ADAMContig.newBuilder()
-      .setContigName("chr1")
-      .setContigMD5("1b22b98cdeb4a9304cb5d48026a85128")
-      .build
-    val c2 = ADAMContig.newBuilder()
-      .setContigName("chr1")
-      .build()
 
-    val v1 = ADAMVariant.newBuilder()
-      .setContig(c1)
-      .setPosition(1)
-      .setReferenceAllele("A")
-      .setVariantAllele("T")
-      .build
-    val v2 = ADAMVariant.newBuilder(v1)
-      .setContig(c2)
-      .build
-
-    assert(v1 != v2)
-
-    val rv1: RichADAMVariant = v1
-    val rv2: RichADAMVariant = v2
-
-    assert(rv1 == rv2)
-    assert(rv1.hashCode == rv2.hashCode)
-  }
-
-  test("Equality with reference MD5") {
-    val c1 = ADAMContig.newBuilder()
-      .setContigName("chr1")
-      .setContigMD5("1b22b98cdeb4a9304cb5d48026a85128")
-      .build
-    val c2 = ADAMContig.newBuilder()
-      .setContigName("chr1")
-      .setContigMD5("1b22b98cdeb4a9304cb5d48026a85127")
-      .build
-
-    val v1 = ADAMVariant.newBuilder()
-      .setContig(c1)
-      .setPosition(1)
-      .setReferenceAllele("A")
-      .setVariantAllele("T")
-      .build
-    val v2 = ADAMVariant.newBuilder(v1)
-      .setContig(c2)
-      .build
-
-    assert(v1 != v2)
-
-    val rv1: RichADAMVariant = v1
-    val rv2: RichADAMVariant = v2
-
-    assert(rv1 != rv2)
-    assert(rv1.hashCode == rv2.hashCode)
-  }
 }
