@@ -22,6 +22,7 @@ import java.io.File
 import org.bdgenomics.adam.avro.{
   ADAMVariant,
   ADAMGenotype,
+  ADAMContig,
   VariantCallingAnnotations
 }
 import org.apache.spark.rdd.RDD
@@ -35,7 +36,7 @@ class GenotypePredicatesSuite extends SparkFunSuite {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val v0 = ADAMVariant.newBuilder
-      .setContig("chr11")
+      .setContig(ADAMContig.newBuilder.setContigName("chr11").build)
       .setPosition(17409571)
       .setReferenceAllele("T")
       .setVariantAllele("C")
@@ -73,7 +74,7 @@ class GenotypePredicatesSuite extends SparkFunSuite {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val v0 = ADAMVariant.newBuilder
-      .setContig("11")
+      .setContig(ADAMContig.newBuilder.setContigName("11").build)
       .setPosition(17409571)
       .setReferenceAllele("T")
       .setVariantAllele("C")
