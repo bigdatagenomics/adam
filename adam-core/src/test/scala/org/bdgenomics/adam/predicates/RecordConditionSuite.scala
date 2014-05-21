@@ -31,7 +31,7 @@ class RecordConditionSuite extends FunSuite {
 
   test("create record condition from nested field condition") {
     val v0 = ADAMVariant.newBuilder
-      .setContig("11")
+      .setContig(ADAMContig.newBuilder.setContigName("11").build)
       .setPosition(17409571)
       .setReferenceAllele("T")
       .setVariantAllele("C")
@@ -168,7 +168,7 @@ class RecordConditionSuite extends FunSuite {
 
   test("passing genotype record condition") {
     val v0 = ADAMVariant.newBuilder
-      .setContig("11")
+      .setContig(ADAMContig.newBuilder.setContigName("11").build)
       .setPosition(17409571)
       .setReferenceAllele("T")
       .setVariantAllele("C")

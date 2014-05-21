@@ -173,10 +173,18 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     new ADAMDatabaseVariantAnnotation()
   }
 
+  private def createContig(vc: VariantContext): ADAMContig = {
+    val contigName = contigToRefSeq.getOrElse(vc.getChr, vc.getChr)
+
+    ADAMContig.newBuilder()
+      .setContigName(contigName)
+      .build()
+  }
+
   private def createADAMVariant(vc: VariantContext, alt: Option[String]): ADAMVariant = {
     // VCF CHROM, POS, REF and ALT
     val builder = ADAMVariant.newBuilder
-      .setContig(contigToRefSeq.getOrElse(vc.getChr, vc.getChr))
+      .setContig(createContig(vc))
       .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */ )
       .setExclusiveEnd(vc.getEnd /* ADAM is 0-indexed, so the 1-indexed inclusive end becomes exclusive */ )
       .setReferenceAllele(vc.getReference.getBaseString)
@@ -275,7 +283,8 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
   def convert(vc: ADAMVariantContext): VariantContext = {
     val variant: ADAMVariant = vc.variant
     val vcb = new VariantContextBuilder()
-      .chr(refSeqToContig.getOrElse(variant.getContig.toString, variant.getContig.toString))
+      .chr(refSeqToContig.getOrElse(variant.getContig.getContigName.toString,
+        variant.getContig.getContigName.toString))
       .start(variant.getPosition + 1 /* Recall ADAM is 0-indexed */ )
       .stop(variant.getPosition + variant.getReferenceAllele.length)
       .alleles(VariantContextConverter.convertAlleles(variant))

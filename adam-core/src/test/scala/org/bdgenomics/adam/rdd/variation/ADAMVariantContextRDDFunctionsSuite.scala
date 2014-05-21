@@ -26,7 +26,7 @@ class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("joins SNV database annotation") {
     val v0 = ADAMVariant.newBuilder
-      .setContig("11")
+      .setContig(ADAMContig.newBuilder.setContigName("11").build)
       .setPosition(17409572)
       .setReferenceAllele("T")
       .setVariantAllele("C")

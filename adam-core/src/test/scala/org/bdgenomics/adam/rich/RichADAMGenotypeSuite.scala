@@ -24,7 +24,7 @@ import scala.collection.JavaConversions._
 class RichADAMGenotypeSuite extends FunSuite {
 
   def v0 = ADAMVariant.newBuilder
-    .setContig("chr1")
+    .setContig(ADAMContig.newBuilder.setContigName("chr1").build)
     .setPosition(0).setReferenceAllele("A").setVariantAllele("T")
     .build
 

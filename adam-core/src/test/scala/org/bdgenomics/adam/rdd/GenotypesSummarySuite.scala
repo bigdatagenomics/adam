@@ -29,7 +29,7 @@ class GenotypesSummarySuite extends SparkFunSuite {
 
   private def variant(reference: String, alternate: String, position: Int): ADAMVariant = {
     ADAMVariant.newBuilder()
-      .setContig("chr1")
+      .setContig(ADAMContig.newBuilder.setContigName("chr1").build)
       .setPosition(position)
       .setReferenceAllele(reference)
       .setVariantAllele(alternate)

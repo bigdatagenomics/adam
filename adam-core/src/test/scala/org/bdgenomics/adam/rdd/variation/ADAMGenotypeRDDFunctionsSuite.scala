@@ -25,7 +25,7 @@ import org.apache.spark.rdd.RDD
 
 class ADAMGenotypeRDDFunctionsSuite extends SparkFunSuite {
   def v0 = ADAMVariant.newBuilder
-    .setContig("11")
+    .setContig(ADAMContig.newBuilder.setContigName("11").build)
     .setPosition(17409572)
     .setReferenceAllele("T")
     .setVariantAllele("C")

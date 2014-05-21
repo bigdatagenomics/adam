@@ -50,7 +50,7 @@ class VariantContextConverterSuite extends FunSuite {
     .chr("1")
 
   def adamSNVBuilder(contig: String = "1"): ADAMVariant.Builder = ADAMVariant.newBuilder()
-    .setContig(contig)
+    .setContig(ADAMContig.newBuilder().setContigName(contig).build())
     .setPosition(0L)
     .setReferenceAllele("A")
     .setVariantAllele("T")
@@ -65,7 +65,7 @@ class VariantContextConverterSuite extends FunSuite {
     assert(adamVC.genotypes.length === 0)
 
     val variant = adamVC.variant
-    assert(variant.getContig === "1")
+    assert(variant.getContig.getContigName === "1")
 
     assert(variant.getReferenceAllele === "A")
     assert(variant.getPosition === 0L)
@@ -79,7 +79,7 @@ class VariantContextConverterSuite extends FunSuite {
 
     val adamVC = adamVCs.head
     val variant = adamVC.variant
-    assert(variant.getContig === "NC_000001.10")
+    assert(variant.getContig.getContigName === "NC_000001.10")
   }
 
   test("Convert GATK SNV w/ genotypes w/ phase information to ADAM") {

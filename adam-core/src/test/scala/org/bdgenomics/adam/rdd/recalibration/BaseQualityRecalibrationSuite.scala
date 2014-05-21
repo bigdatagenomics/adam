@@ -63,8 +63,8 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     assert(bqsr.result.count == reads.count)
 
     // Compare the ObservatonTables
-    val referenceObs: Set[String] = scala.io.Source.fromFile(new File(obsFilepath)).getLines.filter(_.length > 0).toSet
-    val testObs: Set[String] = bqsr.observed.toCSV.split('\n').filter(_.length > 0).toSet
-    assert(testObs == referenceObs)
+    val referenceObs: Seq[String] = scala.io.Source.fromFile(new File(obsFilepath)).getLines.filter(_.length > 0).toSeq.sortWith((kv1, kv2) => kv1.compare(kv2) < 0)
+    val testObs: Seq[String] = bqsr.observed.toCSV.split('\n').filter(_.length > 0).toSeq.sortWith((kv1, kv2) => kv1.compare(kv2) < 0)
+    referenceObs.zip(testObs).foreach(p => assert(p._1 === p._2))
   }
 }

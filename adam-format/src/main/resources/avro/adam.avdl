@@ -138,10 +138,10 @@ record ADAMNestedPileup {
 
 
 record ADAMVariant {
-  string                 contig;
-  long                   position;
-  union { null, long }   exclusiveEnd = null;
-  string                 referenceAllele;
+  union { null, ADAMContig } contig = null;
+  union { null, long } position = null;
+  union { null, long } exclusiveEnd = null;
+  union { null, string } referenceAllele = null;
   union { null, string } variantAllele = null;
 }
 
@@ -169,7 +169,7 @@ record VariantCallingAnnotations {
   // FILTER: True or false implies that filters were applied and this variant PASSed or not.
   // While 'null' implies not filters were applied.
   union { null, boolean } variantIsPassing = null;
-  union { null, array <string> } variantFilters = null;
+  array <string> variantFilters = [];
 
   union { null, int }     readDepth = null;
   union { null, boolean } downsampled = null;
@@ -226,7 +226,7 @@ record ADAMGenotype {
   // In ADAM we split multi-allelic VCF lines into multiple
   // single-alternate records.  This bit is set if that happened for this
   // record.
-  boolean splitFromMultiAllelic = false;
+  union { boolean, null } splitFromMultiAllelic = false;
 
   // Whether this is a phased genotype, and if so the phase set and quality
   union { null, boolean } isPhased = null;
