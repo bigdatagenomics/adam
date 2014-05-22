@@ -197,7 +197,7 @@ record ADAMGenotype {
   union { null, VariantCallingAnnotations } variantCallingAnnotations = null;
 
   // Sample-level data, i.e. data specific to this particular sample
-  string sampleId;
+  union { null, string }  sampleId = null;
   union { null, string }  sampleDescription = null;
   union { null, string }  processingDescription = null;
 
