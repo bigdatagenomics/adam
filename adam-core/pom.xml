@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>edu.berkeley.cs.amplab.adam</groupId>
+        <groupId>org.bdgenomics.adam</groupId>
         <artifactId>adam-parent</artifactId>
-        <version>0.6.1-SNAPSHOT</version>
+        <version>0.10.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>adam-core</artifactId>
@@ -43,43 +43,64 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <verbose>true</verbose>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <!-- <generateGitPropertiesFilename>adam-cli/src/main/resources/git.properties</generateGitPropertiesFilename> -->
+                    <generateGitPropertiesFilename>src/main/resources/git.properties</generateGitPropertiesFilename>
+                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
+                    <excludeProperties>
+                        <!-- Avoid email addresses and names: -->
+                        <excludeProperty>git.commit.user.*</excludeProperty>
+                        <excludeProperty>git.build.user.*</excludeProperty>
+                    </excludeProperties>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
     <dependencies>
         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${akka.group}</groupId>
-            <artifactId>akka-actor</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${akka.group}</groupId>
-            <artifactId>akka-remote</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${akka.group}</groupId>
-            <artifactId>akka-slf4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${akka.group}</groupId>
-            <artifactId>akka-zeromq</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>edu.berkeley.cs.amplab.adam</groupId>
+            <groupId>org.bdgenomics.adam</groupId>
             <artifactId>adam-format</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_${scala.version}</artifactId>
+            <artifactId>spark-core_${scala.artifact.suffix}</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
@@ -119,7 +140,7 @@
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.version}</artifactId>
+            <artifactId>scalatest_${scala.artifact.suffix}</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

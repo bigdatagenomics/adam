@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>edu.berkeley.cs.amplab.adam</groupId>
+        <groupId>org.bdgenomics.adam</groupId>
         <artifactId>adam-parent</artifactId>
-        <version>0.6.1-SNAPSHOT</version>
+        <version>0.10.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -19,7 +19,7 @@
                 <configuration>
                     <transformers>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                            <mainClass>edu.berkeley.cs.amplab.adam.cli.AdamMain</mainClass>
+                            <mainClass>org.bdgenomics.adam.cli.ADAMMain</mainClass>
                         </transformer>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                             <resource>reference.conf</resource>
@@ -87,34 +87,23 @@
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
 
     <dependencies>
         <dependency>
-            <groupId>edu.berkeley.cs.amplab.adam</groupId>
+            <groupId>org.bdgenomics.adam</groupId>
             <artifactId>adam-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bdgenomics.adam</groupId>
+            <artifactId>adam-core</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${akka.group}</groupId>
-            <artifactId>akka-actor</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${akka.group}</groupId>
-            <artifactId>akka-remote</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${akka.group}</groupId>
-            <artifactId>akka-slf4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${akka.group}</groupId>
-            <artifactId>akka-zeromq</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -126,7 +115,7 @@
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.version}</artifactId>
+            <artifactId>scalatest_${scala.artifact.suffix}</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

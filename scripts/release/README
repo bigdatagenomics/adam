@@ -1,0 +1,20 @@
+This document describes how to make an ADAM release.
+
+Setup your environment
+1. Copy (or incorporate) the settings.xml file to ~/.m2/settings.xml
+2. Request the ADAM packager private GPG key
+3. Edit the username, password, etc in ~/.m2/settings.xml
+
+Once your environment is setup, you'll be able to do a release.
+
+Make sure that the CHANGES.md is up to date first by running,
+`./scripts/changelog.sh | tee CHANGES.md` in the root of the ADAM project.
+
+From the project root directory, run `./scripts/release/release.sh`.
+If you have any problems, run `./scripts/release/rollback.sh`.
+
+Once you've successfully published the release, you will need to
+"close" and "release" it following the instructions at
+https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide#SonatypeOSSMavenRepositoryUsageGuide-8.a.1.ClosingaStagingRepository
+
+Be sure to announce the release on the ADAM mailing list and Twitter (@bigdatagenomics).

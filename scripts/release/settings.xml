@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd" xmlns="http://maven.apache.org/SETTINGS/1.1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <servers>
+    <server>
+      <id>sonatype-nexus-snapshots</id>
+      <username>@SONATYPE_USERNAME@</username>
+      <password>@SONATYPE_PASSWORD@</password>
+    </server>
+    <server>
+      <id>sonatype-nexus-staging</id>
+      <username>@SONATYPE_USERNAME@</username>
+      <password>@SONATYPE_PASSWORD@</password>
+    </server>
+  </servers>
+  <profiles>
+    <profile>
+      <id>gpg</id>
+      <properties>
+        <gpg.executable>@GPG_EXECUTABLE_PATH@</gpg.executable>
+        <gpg.passphrase>@PGP_KEY_PASSPHRASE@</gpg.passphrase>
+        <gpg.keyname>@GPG_KEY_NAME</gpg.keyname>
+      </properties>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>gpg</activeProfile>
+  </activeProfiles>
+</settings>

@@ -1,5 +1,12 @@
-@namespace("edu.berkeley.cs.amplab.adam.avro")
+@namespace("org.bdgenomics.adam.avro")
 protocol ADAM {
+
+record ADAMContig {
+  union { null, string } contigName = null;
+  union { null, long }   contigLength = null;
+  union { null, string } contigMD5 = null;
+  union { null, string } referenceURL = null;
+}
 
 record ADAMRecord {
 
@@ -10,8 +17,7 @@ record ADAMRecord {
      * of the Sequence Dictionary embedded in the these
      * records from the BAM / SAM itself.
      */
-    union { null, string } referenceName = null;
-    union { null, int } referenceId = null;
+    union { null, ADAMContig } contig = null;
 
     // 0-based reference position start
     union { null, long } start = null;
@@ -41,6 +47,7 @@ record ADAMRecord {
 
     // Commonly used optional attributes
     union { null, string } mismatchingPositions = null;
+    union { null, string } origQual = null;
 
     // Remaining optional attributes flattened into a string
     union { null, string } attributes = null;
@@ -57,14 +64,7 @@ record ADAMRecord {
     union { null, string } recordGroupPlatformUnit = null;
     union { null, string } recordGroupSample = null;
 
-    union { null, int } mateReferenceId = null;
-
-    // See note, above.
-    union { null, long }   referenceLength = null;
-    union { null, string } referenceUrl = null;
-
-    union { null, long } mateReferenceLength = null;
-    union { null, string } mateReferenceUrl = null;
+    union { null, ADAMContig} mateContig = null;
 }
 
 enum Base {
@@ -87,18 +87,20 @@ enum Base {
     D  // not C
 }
 
-record ADAMNucleotideContig {
-    union { null, string } contigName = null;
-    union { null, int } contigId = null;
+record ADAMNucleotideContigFragment {
+    // stores a contig of nucleotides; this may be a reference chromosome, may be an
+    // assembly, may be a BAC. very long contigs (>1Mbp) need to be split into fragments.
+    // it seems that they are too long to load in a single go.
+    union { null, ADAMContig } contig = null;
     union { null, string } description = null;
-    array<Base> sequence = [];
-    union { null, long } sequenceLength = null;
-    union { null, string } url = null;
+    union { null, string } fragmentSequence = null; // sequence of bases in this fragment
+    union { null, int } fragmentNumber = null; // ordered number for this fragment
+    union { null, long } fragmentStartPosition = null; // position of first base of fragment in contig
+    union { null, int } numberOfFragmentsInContig = null; // total number of fragments in contig
 }
 
 record ADAMPileup {
-    union { null, string } referenceName = null;
-    union { null, int } referenceId = null;
+    union { null, ADAMContig } contig = null;
     union { null, long } position = null;
     union { null, int } rangeOffset = null;
     union { null, int } rangeLength = null;
@@ -134,207 +136,149 @@ record ADAMNestedPileup {
      array<ADAMRecord> readEvidence;
 }
 
-enum StructuralVariantType {
-    Deletion,
-    Insertion,
-    Duplication,
-    Inversion,
-    CopyNumberVariation,
-    TandemDuplication,
-    MobileElementDeletion,
-    MobileElementInsertion
-}
-
-enum VariantType {
-    SNP,
-    MNP,
-    Insertion,
-    Deletion,
-    Complex,
-    SV
-}
 
 record ADAMVariant {
-  // reference identifiers
-  union { null, int } referenceId = null;
-  union { null, string } referenceName = null;
-  union { null, long } referenceLength = null;
-  union { null, string } referenceUrl = null;
-
-  // start position of variant against reference
+  union { null, ADAMContig } contig = null;
   union { null, long } position = null;
-  // base pair string describing reference allele at locus
+  union { null, long } exclusiveEnd = null;
   union { null, string } referenceAllele = null;
-  // true if this variant is the reference allele
-  union { boolean, null } isReference = false;
-  // base pair string describing this allele
-  union { null, string } variant = null;
-  // enum to describe type of variant called
-  union { null, VariantType } variantType = null;
-  // variant identifier
-  union { null, string } id = null;
-  // phred scaled quality of variant call
-  union { null, int } quality = null;
-  // comma delimited string describing filters run on variant that have failed, null if filters were run and passed
-  union { null, string } filters = null;
-  // indicates whether filters have been run or not
-  union { boolean, null } filtersRun = false;
+  union { null, string } variantAllele = null;
+}
 
-  // frequency with which this allele occurs/occurred
-  union { null, double } alleleFrequency = null;
-  // RMS base quality at variant site
-  union { null, int } rmsBaseQuality = null;
-  // RMS mapping quality for reads aligned to variant site
-  union { null, int } siteRmsMappingQuality = null;
-  // count of reads with map quality == 0 aligned to variant site
-  union { null, int } siteMapQZeroCounts = null;
-  // total number of reads mapped to variant site
-  union { null, int } totalSiteMapCounts = null;
-  // total number of samples which had at least 1 read aligned at variant site
-  union { null, int } numberOfSamplesWithData = null;
-  // total number of samples in variant calling run
-  union { null, int } totalNumberOfSamplesCount = null;
-  // ratio representing # forward strand reads / # reverse strand reads aligned at variant site
-  union { null, double } strandBias = null;
+enum ADAMGenotypeAllele {
+  Ref,   // Genotype is the reference allele
+  Alt,   // Genotype is the alternate allele
+  OtherAlt, // Genotype is unspecified other alternate allele (e.g. split from multi-allelic)
+  NoCall // Genotype could not be called
+}
 
-  // further descriptor for structural variants
-  // type of structural variant called
-  union { null, StructuralVariantType } svType = null;
+enum ADAMGenotypeType {
+  HOM_REF,
+  HET,
+  HOM_ALT,
+  NO_CALL
+}
 
-  // length of variant relative to reference allele - deletions have negative values, inserts have positive values
-  union { null, long } svLength = null;
-  // indicates whether start/end of SV is known precisely
-  union { null, boolean } svIsPrecise = null;
-  // end position of SV - for imprecise variants, best guess for end
-  union { null, long } svEnd = null;
-  
-  // for imprecise variants, these fields represent the svConfidence interval upper/lower bounds for the SV start/end
-  union { null, long } svConfidenceIntervalStartLow = null;
-  union { null, long } svConfidenceIntervalStartHigh = null;
-  union { null, long } svConfidenceIntervalEndLow = null;
-  union { null, long } svConfidenceIntervalEndHigh = null;
+// This record represents all stats that, inside a VCF, are stored outside of the
+// sample but are computed based on the samples.  For instance,  MAPQ0 is an aggregate
+// stat computed from all samples and stored inside the INFO line.
+record VariantCallingAnnotations {
+  // QUAL: Phred-scaled probability of error for this variant call.
+  union { null, float }   variantCallErrorProbability = null;
 
+  // FILTER: True or false implies that filters were applied and this variant PASSed or not.
+  // While 'null' implies not filters were applied.
+  union { null, boolean } variantIsPassing = null;
+  array <string> variantFilters = [];
+
+  union { null, int }     readDepth = null;
+  union { null, boolean } downsampled = null;
+  union { null, float }   baseQRankSum = null;
+  union { null, float }   clippingRankSum = null;
+  union { null, float }   fisherStrandBiasPValue = null; // Phred-scaled.
+  union { null, float }   haplotypeScore = null;
+  union { null, float }   inbreedingCoefficient = null;
+  union { null, float }   rmsMapQ = null;
+  union { null, int }     mapq0Reads = null;
+  union { null, float }   mqRankSum = null;
+  union { null, float }   variantQualityByDepth = null;
+  union { null, float }   readPositionRankSum = null;
+
+  // VQSR: Log-odds ratio of being a true vs false variant under trained
+  // Gaussian mixture model.
+  union { null, float }   vqslod = null;
+  union { null, string }  culprit = null;
+  union { null, boolean } usedForNegativeTrainingSet = null;
+  union { null, boolean } usedForPositiveTrainingSet = null;
 }
 
 record ADAMGenotype {
-  // reference identifiers
-  union { null, int } referenceId = null;
-  union { null, string } referenceName = null;
-  union { null, long } referenceLength = null;
-  union { null, string } referenceUrl = null;
+  ADAMVariant variant;
+  union { null, VariantCallingAnnotations } variantCallingAnnotations = null;
 
-  // start position of genotype call against reference
-  union { null, long } position = null;
-  // identifier for sample in call set
-  union { null, string } sampleId = null;
+  // Sample-level data, i.e. data specific to this particular sample
+  string sampleId;
+  union { null, string }  sampleDescription = null;
+  union { null, string }  processingDescription = null;
 
-  // ploidy at call site - this is the number of chromosomes we have seen/called at this site in this specific sample
-  // this is not the number of chromosomes expected by the reference genome at this site, e.g. if we genotype
-  // an individual with trisomy 21, we expect the ploidy of all calls on chr 21 of this sample to be 3
-  union { null, int } ploidy = null;
-  // number of haplotype at a specific call site - this is important for variant callers that perform assembly or
-  // other methods leading to phased calls. specifically, these methods function by assembling candidate haplotypes,
-  // which represent the expected base sequence of an individual chromosome across multiple sites
-  // this number need not be provided for unphased calls, but if it is provided it is expected that all genotypes
-  // of a specific sample at a specific site 
-  union { null, int } haplotypeNumber = null;
-  // allele variant type
-  union { null, VariantType } alleleVariantType = null;
-  // base pair string describing allele
-  union { null, string } allele = null;
-  // true if is reference
-  union { null, boolean } isReference = null;
-  // base pair string describing reference allele
-  union { null, string } referenceAllele = null;
-  // expected value of number of chromosomes with this allele at this site. this is a function of the genotype
-  // state likelihoods.
-  union { null, double } expectedAlleleDosage = null;
-  // phred scaled quality score describing likelihood genotype is correct
-  union { null, int } genotypeQuality = null;
-  // coverage at genotype site
-  union { null, int } depth = null;
-  // comma delimited list of phred scaled genotype likelihoods
-  union { null, string } phredLikelihoods = null;
-  // comma delimited list of phred scaled posteriors used when calculating genotype likelihoods
-  union { null, string } phredPosteriorLikelihoods = null;
-  // comma delimited list describing phred scaled likelihoods of different ploidy when unclear for site
-  union { null, string } ploidyStateGenotypeLikelihoods = null;
-  // phred scaled quality score for assembled haplotype
-  union { null, int } haplotypeQuality = null;
-  // RMS base quality score for reads aligned to genotyped site
-  union { null, int } rmsBaseQuality = null;
-  // RMS mapping quality for reads aligned to genotyped site
-  union { null, int } rmsMappingQuality = null;
-  // number of reads mapped at site on forward strand
-  union { null, int } readsMappedForwardStrand = null;
-  // number of reads mapped with mapq = 0
-  union { null, int } readsMappedMapQ0 = null;
+  // Length is equal to the ploidy
+  union { null, array <ADAMGenotypeAllele> } alleles = null;
 
-  // further descriptor for structural variants
-  // type of structural variant called
-  union { null, StructuralVariantType } svType = null;
+  // Allele dosage (EC)
+  union { null, float } expectedAlleleDosage = null;
 
-  // length of variant relative to reference allele - deletions have negative values, inserts have positive values
-  union { null, long } svLength = null;
-  // indicates whether start/end of SV is known precisely
-  union { null, boolean } svIsPrecise = null;
-  // end position of SV - for imprecise variants, best guess for end
-  union { null, long } svEnd = null;
-  
-  // for imprecise variants, these fields represent the svConfidence interval upper/lower bounds for the SV start/end
-  union { null, long } svConfidenceIntervalStartLow = null;
-  union { null, long } svConfidenceIntervalStartHigh = null;
-  union { null, long } svConfidenceIntervalEndLow = null;
-  union { null, long } svConfidenceIntervalEndHigh = null;
+  // How many reference and alternate reads (AD)
+  union { null, int }     referenceReadDepth = null;
+  union { null, int }     alternateReadDepth = null;
+  // How many reads and minimum reads at this position in this sample (DP, MIN_DP)
+  union { null, int }     readDepth = null;
+  union { null, int }     minReadDepth = null;
+  // The phred-scaled probability that we're correct for this genotype call (GQ)
+  union { null, int }     genotypeQuality = null;
 
-  // true if call is phased
-  union { boolean, null } isPhased = false;
-  // true if call is phased and phase has switched at site, null if not phased
-  union { boolean, null } isPhaseSwitch = false;
-  // if phased, identifier for phasing set
-  union { null, string } phaseSetId = null;
-  // phred scaled quality for phasing
-  union { null, int } phaseQuality = null;
+  // Phred-scaled. Always length 3 since all variants are bi-allelic
+  union { null, array<int> } genotypeLikelihoods = null;
+  union { null, array<int> } nonReferenceLikelihoods = null;
+
+  // Component statistics which comprise the Fisher's Exact Test to detect strand bias
+  union { null, array<int> } strandBiasComponents = null;
+
+  // In ADAM we split multi-allelic VCF lines into multiple
+  // single-alternate records.  This bit is set if that happened for this
+  // record.
+  union { boolean, null } splitFromMultiAllelic = false;
+
+  // Whether this is a phased genotype, and if so the phase set and quality
+  union { null, boolean } isPhased = null;
+  union { null, int }     phaseSetId = null;
+  union { null, int }     phaseQuality = null;
 }
 
-/**
- * Begin Variant/genotype annotation records.
- *
- * Any updates that add annotations should impact three or four files:
- * - adam-format/.../adam.avdl
- * - this file
- * - rdd/AdamContext.scala --> adamVariantLoad function
- * - If there is a corresponding conversion of that data between VCF and ADAM, commands/VariantContextConverter.scala
- */
-
-record ADAMVariantDomain {
-  // position of variant site
-  union { null, long } position = null;
-
-  // fields denote whether variant has been seen in dbSNP, Hapmap2/3, or 1000 genomes
-  union { boolean, null } inDbSNP = false;
-  union { boolean, null } inHM2 = false;
-  union { boolean, null } inHM3 = false;
-  union { boolean, null } in1000G = false;
+record VariantEffect
+{
+  union { null, string} hgvs = null;
+  union { null, string } referenceAminoAcid = null;
+  union { null, string } alternateAminoAcid = null;
+  union {null, string} geneId = null;
+  union {null, string} transcriptId = null;
 }
 
-record ADAMGenotypeIdentification {
+record ADAMDatabaseVariantAnnotation {
+  union { null, ADAMVariant } variant;
 
-  // identifiers for sample cohort and sample ethnicity
-  union { null, string } sampleEthnicity = null;
-  union { null, string } sampleCohort = null;
+  union { null, int } dbSnpId = null;
 
-  // record group identifer from sequencing run
-  union { null, string } recordGroupSequencingCenter = null;
-  union { null, string } recordGroupDescription = null;
-  union { null, long } recordGroupRunDateEpoch = null;
-  union { null, string } recordGroupFlowOrder = null;
-  union { null, string } recordGroupKeySequence = null;
-  union { null, string } recordGroupLibrary = null;
-  union { null, int } recordGroupPredictedMedianInsertSize = null;
-  union { null, string } recordGroupPlatform = null;
-  union { null, string } recordGroupPlatformUnit = null;
-  union { null, string } recordGroupSample = null;
+  //domain information
+  union {null, string} geneSymbol = null;
+
+  //clinical fields
+  union {null, string} omimId  = null;
+  union {null, string} cosmicId = null;
+  union {null, string} clinvarId  = null;
+  union {null, string} clinicalSignificance  = null;
+
+  //conservation
+  union { null, string } gerpNr  = null;
+  union { null, string } gerpRs  = null;
+  union { null, float } phylop  = null;
+  union { null, string } ancestralAllele  = null;
+
+  //population statistics
+  union {null, int} thousandGenomesAlleleCount = null;
+  union {null, float} thousandGenomesAlleleFrequency = null;
+
+  //effect
+  //TODO(arahuja): Parse into array
+  //array<VariantEffect> effects = null;
+
+  //predicted effects
+  union { null, float } siftScore = null;
+  union { null, float } siftScoreConverted = null;
+  union { null, string } siftPred = null;
+
+  union { null, float } mutationTasterScore = null;
+  union { null, float } mutationTasterScoreConverted = null;
+  union { null, string } mutationTasterPred = null;
 
 }
 
