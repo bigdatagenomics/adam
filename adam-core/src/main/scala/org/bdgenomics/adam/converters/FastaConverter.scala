@@ -23,6 +23,7 @@ import scala.Int
 import scala.math.Ordering.Int
 import scala.Predef._
 import scala.Some
+import scala.collection.mutable
 
 /**
  * Object for converting an RDD containing FASTA sequence data into ADAM FASTA data.
@@ -140,7 +141,7 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
   def mapFragments(sequences: Seq[String]): Seq[String] = {
     // internal "fsm" variables
     var sequence: StringBuilder = new StringBuilder
-    var sequenceSeq: List[String] = List()
+    var sequenceSeq: mutable.MutableList[String] = mutable.MutableList()
 
     /**
      * Adds a string fragment to our accumulator. If this string fragment causes the accumulator
@@ -152,8 +153,8 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
     def addFragment(seq: String) {
       sequence.append(seq)
 
-      if (sequence.length > fragmentLength) {
-        sequenceSeq ::= sequence.take(fragmentLength.toInt).toString()
+      while (sequence.length > fragmentLength) {
+        sequenceSeq += sequence.take(fragmentLength.toInt).toString()
         sequence = sequence.drop(fragmentLength.toInt)
       }
     }
@@ -163,7 +164,7 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
 
     // if we still have a remaining sequence that is not part of a fragment, add it
     if (sequence.length != 0) {
-      sequenceSeq ::= sequence.toString()
+      sequenceSeq += sequence.toString()
     }
 
     // return our fragments
