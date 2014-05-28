@@ -25,10 +25,32 @@ import org.bdgenomics.adam.util.AttributeUtils
 class SAMRecordConverter extends Serializable {
   def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): ADAMRecord = {
 
+    val cigar: String = samRecord.getCigarString
+    val startTrim = if (cigar == "*") {
+      0
+    } else {
+      val count = cigar.takeWhile(_.isDigit).toInt
+      val operator = cigar.dropWhile(_.isDigit).head
+
+      if (operator == 'H') {
+        count
+      } else {
+        0
+      }
+    }
+    val endTrim = if (cigar.endsWith("H")) {
+      // must reverse string as takeWhile is not implemented in reverse direction
+      cigar.dropRight(1).reverse.takeWhile(_.isDigit).reverse.toInt
+    } else {
+      0
+    }
+
     val builder: ADAMRecord.Builder = ADAMRecord.newBuilder
       .setReadName(samRecord.getReadName)
       .setSequence(samRecord.getReadString)
-      .setCigar(samRecord.getCigarString)
+      .setCigar(cigar)
+      .setBasesTrimmedFromStart(startTrim)
+      .setBasesTrimmedFromEnd(endTrim)
       .setQual(samRecord.getBaseQualityString)
 
     // Only set the reference information if the read is aligned, matching the mate reference
