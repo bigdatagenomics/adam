@@ -89,19 +89,19 @@ private[adam] object FastaConverter {
 
     val converter = new FastaConverter(maxFragmentLength)
 
-    val convertedData = groupedContigs.flatMap(kv => {
-      val (id, lines) = kv
-      val descriptionLine = indexToContigDescription.value.getOrElse(id, FastaDescriptionLine())
+    groupedContigs.flatMap {
+      case (id, lines) =>
 
-      assert(lines.length != 0, "Sequence " + descriptionLine.seqId + " has no sequence data.")
-      val sequence: Seq[String] = lines.sortBy(kv => kv._1).map(kv => cleanSequence(kv._2))
-      converter.convert(descriptionLine.contigName,
-        descriptionLine.seqId,
-        sequence,
-        descriptionLine.contigDescription)
-    })
+        val descriptionLine = indexToContigDescription.value.getOrElse(id, FastaDescriptionLine())
+        assert(lines.length != 0, "Sequence " + descriptionLine.seqId + " has no sequence data.")
 
-    convertedData
+        val sequence: Seq[String] = lines.sortBy(_._1).map(kv => cleanSequence(kv._2))
+        converter.convert(descriptionLine.contigName,
+          descriptionLine.seqId,
+          sequence,
+          descriptionLine.contigDescription)
+    }
+
   }
 
   private def cleanSequence(sequence: String): String = {
@@ -115,7 +115,7 @@ private[adam] object FastaConverter {
   def getDescriptionLines(rdd: RDD[(Long, String)]): Map[Long, FastaDescriptionLine] = {
 
     rdd.filter(kv => isDescriptionLine(kv._2))
-      .collect
+      .collect()
       .zipWithIndex
       .map(kv => (kv._1._1, FastaDescriptionLine(kv._1._1, kv._2, Some(kv._1._2))))
       .toMap
@@ -160,7 +160,7 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
     }
 
     // run addFragment on all fragments
-    sequences.foreach(addFragment(_))
+    sequences.foreach(addFragment)
 
     // if we still have a remaining sequence that is not part of a fragment, add it
     if (sequence.length != 0) {
