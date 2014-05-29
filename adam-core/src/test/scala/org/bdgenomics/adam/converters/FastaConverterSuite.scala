@@ -17,6 +17,7 @@ package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.SparkFunSuite
+import java.io.File
 
 class FastaConverterSuite extends SparkFunSuite {
 
@@ -212,6 +213,8 @@ class FastaConverterSuite extends SparkFunSuite {
     assert(referenceSequences.slice(0, referenceSequences.length - 2).forall(_.getFragmentSequence.length == 10))
 
     val reassembledSequence = referenceSequences.sortBy(_.getFragmentNumber).map(_.getFragmentSequence).mkString
-  }
+    val originalSequence = scala.io.Source.fromFile(new File(chr1File)).getLines().filter(!_.startsWith(">")).mkString
 
+    assert(reassembledSequence === originalSequence)
+  }
 }
