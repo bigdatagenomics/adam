@@ -154,4 +154,47 @@ class TrimReadsSuite extends SparkFunSuite {
     })
   }
 
+  test("trim N's from reads") {
+    val tr = new TrimReads
+
+    val r1 = AlignmentRecord.newBuilder()
+      .setSequence("NNNACAC")
+      .setQual("...,,,,")
+      .build()
+
+    val t1 = ec.trimNs(r1)
+
+    assert(t1.getSequence === "ACAC")
+    assert(t1.getQual === ",,,,")
+    assert(t1.getBasesTrimmedFromStart === 3)
+    assert(t1.getBasesTrimmedFromEnd === 0)
+
+    val r2 = AlignmentRecord.newBuilder()
+      .setSequence("NACACN")
+      .setQual(".,,,,.")
+      .setBasesTrimmedFromStart(0)
+      .setBasesTrimmedFromEnd(0)
+      .build()
+
+    val t2 = ec.trimNs(r2)
+
+    assert(t2.getSequence === "ACAC")
+    assert(t2.getQual === ",,,,")
+    assert(t2.getBasesTrimmedFromStart === 1)
+    assert(t2.getBasesTrimmedFromEnd === 1)
+
+    val r3 = AlignmentRecord.newBuilder()
+      .setSequence("ACACGGGACTTAACnnnn")
+      .setQual(",,,,,,,,,,,,,,....")
+      .setBasesTrimmedFromStart(6)
+      .setBasesTrimmedFromEnd(0)
+      .build()
+
+    val t3 = ec.trimNs(r3)
+
+    assert(t3.getSequence === "ACACGGGACTTAAC")
+    assert(t3.getQual === ",,,,,,,,,,,,,,")
+    assert(t3.getBasesTrimmedFromStart === 6)
+    assert(t3.getBasesTrimmedFromEnd === 4)
+  }
 }

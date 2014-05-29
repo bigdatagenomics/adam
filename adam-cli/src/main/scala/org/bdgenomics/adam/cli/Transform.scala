@@ -27,6 +27,7 @@ import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
+import scala.math.{ log => mathLog }
 
 object Transform extends ADAMCommandCompanion {
   val commandName = "transform"
@@ -52,20 +53,34 @@ class TransformArgs extends Args4jBase with ParquetArgs {
   var knownSnpsFile: String = null
   @Args4jOption(required = false, name = "-realignIndels", usage = "Locally realign indels present in reads.")
   var locallyRealign: Boolean = false
-  @Args4jOption(required = false, name = "-trimReads", usage = "Apply a fixed trim to the prefix and suffix of all reads/reads in a specific read group.")
+  @Args4jOption(required = false, name = "-trim_reads", usage = "Apply a fixed trim to the prefix and suffix of all reads/reads in a specific read group.")
   var trimReads: Boolean = false
-  @Args4jOption(required = false, name = "-trimFromStart", usage = "Trim to be applied to start of read.")
+  @Args4jOption(required = false, name = "-trim_from_start", usage = "Trim to be applied to start of read.")
   var trimStart: Int = 0
-  @Args4jOption(required = false, name = "-trimFromEnd", usage = "Trim to be applied to end of read.")
+  @Args4jOption(required = false, name = "-trim_from_end", usage = "Trim to be applied to end of read.")
   var trimEnd: Int = 0
-  @Args4jOption(required = false, name = "-trimReadGroup", usage = "Read group to be trimmed. If omitted, all reads are trimmed.")
+  @Args4jOption(required = false, name = "-trim_read_group", usage = "Read group to be trimmed. If omitted, all reads are trimmed.")
   var trimReadGroup: String = null
-  @Args4jOption(required = false, name = "-qualityBasedTrim", usage = "Trims reads based on quality scores of prefix/suffixes across read group.")
+  @Args4jOption(required = false, name = "-quality_based_trim", usage = "Trims reads based on quality scores of prefix/suffixes across read group.")
   var qualityBasedTrim: Boolean = false
-  @Args4jOption(required = false, name = "-qualityThreshold", usage = "Phred scaled quality threshold used for trimming. If omitted, Phred 20 is used.")
+  @Args4jOption(required = false, name = "-quality_threshold", usage = "Phred scaled quality threshold used for trimming. If omitted, Phred 20 is used.")
   var qualityThreshold: Int = 20
-  @Args4jOption(required = false, name = "-trimBeforeBQSR", usage = "Performs quality based trim before running BQSR. Default is to run quality based trim after BQSR.")
+  @Args4jOption(required = false, name = "-trim_before_BQSR", usage = "Performs quality based trim before running BQSR. Default is to run quality based trim after BQSR.")
   var trimBeforeBQSR: Boolean = false
+  @Args4jOption(required = false, name = "-correct_errors", usage = "Performs read error correction.")
+  var correctReads: Boolean = false
+  @Args4jOption(required = false, name = "-kmer_length", usage = "K-mer length to use for error correction. Defaults to 20.")
+  var kmerLength: Int = 20
+  @Args4jOption(required = false, name = "-fixing_threshold", usage = "The minimum phred-scaled probability to allow when correcting a read. Default is 10 (P >= 0.9)")
+  var fixingThreshold: Int = 10
+  @Args4jOption(required = false, name = "-ploidy", usage = "The median ploidy of the sample being corrected. Defaults to 2.")
+  var ploidy: Int = 2
+  @Args4jOption(required = false, name = "-max_iterations", usage = "The iteration limit to apply to model fits in error correction. Default is 10.")
+  var maxIterations: Int = 10
+  @Args4jOption(required = false, name = "-em_threshold", usage = "Minimum improvement threshold for the Gamma mixture model EM process. Default is log(0.5).")
+  var emThreshold: Double = mathLog(2)
+  @Args4jOption(required = false, name = "-missing_kmer_probability", usage = "The probability assigned to a kmer which is filtered out for being an errant kmer. Default is 0.05.")
+  var missingKmerProbability: Double = 0.05
   @Args4jOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
   var repartition: Int = -1
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
@@ -94,6 +109,18 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
     if (args.qualityBasedTrim && args.trimBeforeBQSR) {
       log.info("Applying quality based trim.")
       adamRecords = adamRecords.adamTrimLowQualityReadGroups(args.qualityThreshold)
+    }
+
+    if (args.correctReads) {
+      log.info("Correcting errors")
+      val oldAdamRecords = adamRecords.cache()
+      adamRecords = oldAdamRecords.adamCorrectErrors(args.kmerLength,
+        args.fixingThreshold,
+        args.ploidy,
+        args.maxIterations,
+        args.emThreshold,
+        args.missingKmerProbability)
+      oldAdamRecords.unpersist()
     }
 
     if (args.markDuplicates) {

@@ -24,7 +24,7 @@
     <spark.version>1.1.0</spark.version>
     <parquet.version>1.4.3</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
-    <hadoop.version>2.2.0</hadoop.version>
+    <hadoop.version>1.0.4</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
     <chill.version>0.5.0</chill.version>
   </properties>
@@ -347,6 +347,11 @@
         <version>1.3.2</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-math3</artifactId>
+        <version>3.3</version>
+      </dependency>
+      <dependency>
         <groupId>it.unimi.dsi</groupId>
         <artifactId>fastutil</artifactId>
         <version>6.4.4</version>
@@ -425,6 +430,11 @@
             <artifactId>hadoop-mapreduce</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-mllib_${scala.artifact.suffix}</artifactId>
+        <version>${spark.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.avro</groupId>
