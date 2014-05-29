@@ -33,6 +33,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.apache.spark.rdd.RDD
 import scala.util.Random
+import java.io.File
 
 class ADAMRDDFunctionsSuite extends SparkFunSuite {
 
@@ -646,6 +647,29 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
 
     assert(rdd.adamGetReferenceString(region0) === "CTGTA")
     assert(rdd.adamGetReferenceString(region1) === "CTCTCA")
+  }
+
+  sparkTest("round trip from ADAM to SAM and back to ADAM produces equivalent ADAMRecord values") {
+    val reads12Path = Thread.currentThread().getContextClassLoader.getResource("reads12.sam").getFile
+    val rdd12A: RDD[ADAMRecord] = sc.adamLoad(reads12Path)
+
+    val tempFile = File.createTempFile("reads12", "adam")
+    rdd12A.adamSAMSave(tempFile.getAbsolutePath, asSam = true)
+
+    val rdd12B: RDD[ADAMRecord] = sc.adamLoad(tempFile.getAbsolutePath)
+
+    assert(rdd12B.count() === rdd12A.count())
+
+    val reads12A = rdd12A.collect()
+    val reads12B = rdd12B.collect()
+
+    (0 until reads12A.length) foreach {
+      case i: Int =>
+        val (readA, readB) = (reads12A(i), reads12B(i))
+        assert(readA.getSequence === readB.getSequence)
+        assert(readA.getQual === readB.getQual)
+        assert(readA.getCigar === readB.getCigar)
+    }
   }
 
 }
