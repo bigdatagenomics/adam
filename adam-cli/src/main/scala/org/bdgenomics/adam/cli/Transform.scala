@@ -52,6 +52,20 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var knownSnpsFile: String = null
   @Args4jOption(required = false, name = "-realignIndels", usage = "Locally realign indels present in reads.")
   var locallyRealign: Boolean = false
+  @Args4jOption(required = false, name = "-trimReads", usage = "Apply a fixed trim to the prefix and suffix of all reads/reads in a specific read group.")
+  var trimReads: Boolean = false
+  @Args4jOption(required = false, name = "-trimFromStart", usage = "Trim to be applied to start of read.")
+  var trimStart: Int = 0
+  @Args4jOption(required = false, name = "-trimFromEnd", usage = "Trim to be applied to end of read.")
+  var trimEnd: Int = 0
+  @Args4jOption(required = false, name = "-trimReadGroup", usage = "Read group to be trimmed. If omitted, all reads are trimmed.")
+  var trimReadGroup: Int = -1
+  @Args4jOption(required = false, name = "-qualityBasedTrim", usage = "Trims reads based on quality scores of prefix/suffixes across read group.")
+  var qualityBasedTrim: Boolean = false
+  @Args4jOption(required = false, name = "-qualityThreshold", usage = "Phred scaled quality threshold used for trimming. If omitted, Phred 20 is used.")
+  var qualityThreshold: Int = 20
+  @Args4jOption(required = false, name = "-trimBeforeBQSR", usage = "Performs quality based trim before running BQSR. Default is to run quality based trim after BQSR.")
+  var trimBeforeBQSR: Boolean = false
 }
 
 class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[TransformArgs] with Logging {
@@ -69,6 +83,16 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
       adamRecords = adamRecords.repartition(args.repartition)
     }
 
+    if (args.trimReads) {
+      log.info("Trimming reads.")
+      adamRecords = adamRecords.adamTrimReads(args.trimStart, args.trimEnd, args.trimReadGroup)
+    }
+
+    if (args.qualityBasedTrim && args.trimBeforeBQSR) {
+      log.info("Applying quality based trim.")
+      adamRecords = adamRecords.adamTrimLowQualityReadGroups(args.qualityThreshold)
+    }
+
     if (args.markDuplicates) {
       log.info("Marking duplicates")
       adamRecords = adamRecords.adamMarkDuplicates()
@@ -79,6 +103,11 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
       val variants: RDD[RichADAMVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
       val knownSnps = SnpTable(variants)
       adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps))
+    }
+
+    if (args.qualityBasedTrim && !args.trimBeforeBQSR) {
+      log.info("Applying quality based trim.")
+      adamRecords = adamRecords.adamTrimLowQualityReadGroups(args.qualityThreshold)
     }
 
     if (args.locallyRealign) {

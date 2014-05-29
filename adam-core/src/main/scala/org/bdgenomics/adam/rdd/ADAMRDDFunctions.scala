@@ -37,6 +37,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
+import org.bdgenomics.adam.rdd.correction.TrimReads
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.util.{ HadoopUtil, MapTools, ParquetLogger }
 import parquet.avro.{ AvroParquetOutputFormat, AvroWriteSupport }
@@ -306,6 +307,33 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
     assert(tagName.length == 2,
       "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName))
     rdd.filter(RichADAMRecord(_).tags.exists(_.tag == tagName))
+  }
+
+  /**
+   * Trims bases from the start and end of all reads in an RDD.
+   *
+   * @param trimStart Number of bases to trim from the start of the read.
+   * @param trimEnd Number of bases to trim from the end of the read.
+   * @param readGroup Optional parameter specifying which read group to trim. If omitted,
+   * all reads are trimmed.
+   * @return Returns an RDD of trimmed reads.
+   *
+   * @note Trimming parameters must be >= 0.
+   */
+  def adamTrimReads(trimStart: Int, trimEnd: Int, readGroup: Int = -1): RDD[ADAMRecord] = {
+    TrimReads(rdd, trimStart, trimEnd, readGroup)
+  }
+
+  /**
+   * Trims low quality read prefix/suffixes. The average read prefix/suffix quality is
+   * calculated from the Phred scaled qualities for read bases. We trim suffixes/prefixes
+   * that are below a user provided threshold.
+   *
+   * @param phredThreshold Phred score for trimming. Defaut value is 20.
+   * @return Returns an RDD of trimmed reads.
+   */
+  def adamTrimLowQualityReadGroups(phredThreshold: Int = 20): RDD[ADAMRecord] = {
+    TrimReads(rdd, phredThreshold)
   }
 }
 
