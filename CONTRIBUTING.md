@@ -44,7 +44,8 @@ Some general rules to follow:
 * Create a branch for each feature/bug in ADAM that you're working on. These branches are often called "feature"
 or "topic" branches.
 * Use your feature branch in the pull request. Any changes that you push to your feature branch will automatically
-be shown in the pull request.
+be shown in the pull request.  If your feature branch is not based off the latest master, you will be asked to rebase
+it before it is merged.
 * If your pull request fixes an issue, reference the issue so that it will [be closed when your pull request is merged](https://github.com/blog/1506-closing-issues-via-pull-requests)
 * Run Scalariform on the code by doing the following:
   ```
