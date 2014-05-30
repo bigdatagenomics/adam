@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.parquet_reimpl.index
 
-import org.scalatest.Tag
+/**
+ * Any index-file implementation should extend this trait.
+ *
+ * @tparam Entry The type of the entries in the index file.
+ */
+trait RowGroupIndex[Entry <: RowGroupIndexEntry] {
 
-object SparkTest extends Tag("org.bdgenomics.adam.util.SparkFunSuite")
-
-object NetworkConnected extends Tag("org.bdgenomics.adam.util.NetworkConnected")
-
-object S3Test extends Tag("org.bdgenomics.adam.util.S3Test")
+  def findIndexEntries(predicate: IndexEntryPredicate[Entry]): Iterable[Entry]
+}

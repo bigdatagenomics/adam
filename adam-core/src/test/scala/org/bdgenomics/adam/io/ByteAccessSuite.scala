@@ -20,10 +20,18 @@ package org.bdgenomics.adam.io
 import java.io.{ File, PrintWriter }
 import java.net.URI
 
-import org.bdgenomics.adam.util.NetworkConnected
+import com.amazonaws.services.s3.AmazonS3Client
+import org.bdgenomics.adam.util.{ CredentialsProperties, S3Test, NetworkConnected }
 import org.scalatest.FunSuite
 
 class ByteAccessSuite extends FunSuite {
+
+  lazy val credentials = new CredentialsProperties(new File(System.getProperty("user.home") + "/spark.conf"))
+    .awsCredentials(Some("s3"))
+
+  lazy val bucketName = System.getenv("BUCKET_NAME")
+  lazy val parquetLocation = System.getenv("PARQUET_LOCATION")
+
   test("ByteArrayByteAccess returns arbitrary subsets of bytes correctly") {
     val bytes = Array[Byte](0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
     val access = new ByteArrayByteAccess(bytes)
@@ -74,5 +82,12 @@ class ByteAccessSuite extends FunSuite {
     val http = new HTTPRangedByteAccess(uri)
     val bytes = http.readFully(0, http.length().toInt)
     assert(bytes.length === http.length())
+  }
+
+  test("Testing S3 byte access", NetworkConnected, S3Test) {
+    val byteAccess = new S3ByteAccess(new AmazonS3Client(credentials),
+      bucketName,
+      parquetLocation)
+    assert(byteAccess.readFully(0, 1)(0) === 80)
   }
 }

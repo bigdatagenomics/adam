@@ -15,12 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.parquet_reimpl
 
-import org.scalatest.Tag
+import org.scalatest.FunSuite
 
-object SparkTest extends Tag("org.bdgenomics.adam.util.SparkFunSuite")
+class TypePathSuite extends FunSuite {
+  test("Two tail-less type pathes equal") {
+    assert(new TypePath("head") === new TypePath("head"))
+  }
 
-object NetworkConnected extends Tag("org.bdgenomics.adam.util.NetworkConnected")
+  test("Two identically tailed type pathes equal") {
+    val tail = new TypePath("tail")
+    assert(new TypePath("head", tail) === new TypePath("head", tail))
+  }
 
-object S3Test extends Tag("org.bdgenomics.adam.util.S3Test")
+  test("Two type pathes equal with separately constructed tails") {
+    assert(new TypePath("head", new TypePath("tail")) === new TypePath("head", new TypePath("tail")))
+  }
+}
