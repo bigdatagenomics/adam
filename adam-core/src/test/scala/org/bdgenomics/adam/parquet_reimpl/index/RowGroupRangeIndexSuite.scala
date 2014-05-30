@@ -15,12 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.parquet_reimpl.index
 
-import org.scalatest.Tag
+import java.io.File
+import org.scalatest.FunSuite
 
-object SparkTest extends Tag("org.bdgenomics.adam.util.SparkFunSuite")
+class RowGroupRangeIndexSuite extends FunSuite {
 
-object NetworkConnected extends Tag("org.bdgenomics.adam.util.NetworkConnected")
+  test("Can read simple test range index") {
+    val filename = getClass.getClassLoader.getResource("test_rowgroup_rangeindex.1.txt").getFile
+    val file = new File(filename)
 
-object S3Test extends Tag("org.bdgenomics.adam.util.S3Test")
+    val rangeIndex = new RangeIndex(file)
+
+    assert(rangeIndex.entries.size === 1)
+    assert(rangeIndex.entries.head.ranges.size === 2)
+  }
+}

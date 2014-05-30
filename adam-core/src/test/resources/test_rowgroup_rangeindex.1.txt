@@ -1,0 +1,1 @@
+s3://TEST/test-parquet	0	chr22:1000-2000,chr21:10000-20000

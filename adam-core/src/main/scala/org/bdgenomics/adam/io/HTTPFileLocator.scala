@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.io
 
-import org.scalatest.Tag
+import java.net.URI
 
-object SparkTest extends Tag("org.bdgenomics.adam.util.SparkFunSuite")
+class HTTPFileLocator(uri: URI) extends FileLocator {
+  override def parentLocator(): Option[FileLocator] = ???
 
-object NetworkConnected extends Tag("org.bdgenomics.adam.util.NetworkConnected")
+  override def relativeLocator(relativePath: String): FileLocator = ???
 
-object S3Test extends Tag("org.bdgenomics.adam.util.S3Test")
+  override def bytes: ByteAccess = new HTTPRangedByteAccess(uri)
+}
