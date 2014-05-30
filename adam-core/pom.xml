@@ -147,5 +147,9 @@
             <artifactId>scalatest_${scala.artifact.suffix}</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk</artifactId>
+        </dependency>
     </dependencies>
 </project>
