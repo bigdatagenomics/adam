@@ -15,6 +15,7 @@
  */
 package org.bdgenomics.adam.rdd
 
+import java.nio.file.Files
 import org.bdgenomics.adam.avro.{
   ADAMContig,
   ADAMGenotype,
@@ -33,7 +34,6 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.apache.spark.rdd.RDD
 import scala.util.Random
-import java.io.File
 
 class ADAMRDDFunctionsSuite extends SparkFunSuite {
 
@@ -653,10 +653,10 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     val reads12Path = Thread.currentThread().getContextClassLoader.getResource("reads12.sam").getFile
     val rdd12A: RDD[ADAMRecord] = sc.adamLoad(reads12Path)
 
-    val tempFile = File.createTempFile("reads12", "adam")
-    rdd12A.adamSAMSave(tempFile.getAbsolutePath, asSam = true)
+    val tempFile = Files.createTempDirectory("reads12")
+    rdd12A.adamSAMSave(tempFile.toAbsolutePath.toString + "/reads12.sam", asSam = true)
 
-    val rdd12B: RDD[ADAMRecord] = sc.adamLoad(tempFile.getAbsolutePath)
+    val rdd12B: RDD[ADAMRecord] = sc.adamBamLoad(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
 
     assert(rdd12B.count() === rdd12A.count())
 
@@ -672,4 +672,10 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     }
   }
 
+  sparkTest("SAM conversion sets read mapped flag properly") {
+    val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
+    val sam: RDD[ADAMRecord] = sc.adamLoad(filePath)
+
+    sam.collect.foreach(r => assert(r.getReadMapped))
+  }
 }

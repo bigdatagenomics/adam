@@ -59,7 +59,6 @@ import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
 import parquet.hadoop.util.ContextUtil
 import scala.math.{ min, max }
-import org.bdgenomics.adam.converters.ADAMRecordConverter
 
 class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -190,7 +189,8 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
    * @return A dictionary describing the read groups in this RDD.
    */
   def adamGetReadGroupDictionary(): RecordGroupDictionary = {
-    val rgNames = rdd.map(r => r.getRecordGroupName.toString)
+    val rgNames = rdd.flatMap(r => Option(r.getRecordGroupName))
+      .map(_.toString)
       .distinct()
       .collect()
       .toSeq

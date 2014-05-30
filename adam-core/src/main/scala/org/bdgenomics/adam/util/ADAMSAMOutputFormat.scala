@@ -15,7 +15,7 @@
  */
 package org.bdgenomics.adam.util
 
-import fi.tkk.ics.hadoop.bam.{ KeyIgnoringBAMOutputFormat, KeyIgnoringAnySAMOutputFormat, SAMFormat }
+import fi.tkk.ics.hadoop.bam.{ KeyIgnoringAnySAMOutputFormat, SAMFormat }
 import net.sf.samtools.SAMFileHeader
 
 object ADAMSAMOutputFormat {
@@ -51,7 +51,7 @@ object ADAMSAMOutputFormat {
    *
    * @return Current SAM header.
    */
-  private[util] def getHeader(): SAMFileHeader = {
+  private[util] def getHeader: SAMFileHeader = {
     assert(header.isDefined, "Cannot return header if not attached.")
     header.get
   }

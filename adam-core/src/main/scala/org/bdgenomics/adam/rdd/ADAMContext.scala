@@ -18,7 +18,7 @@ package org.bdgenomics.adam.rdd
 import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat }
 import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
 import java.util.regex.Pattern
-import net.sf.samtools.{ SAMFileHeader, SAMReadGroupRecord, SAMRecord }
+import net.sf.samtools.{ SAMFileHeader }
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.FileSystem
@@ -26,7 +26,6 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{ Text, LongWritable }
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 import org.apache.spark.{ SparkConf, Logging, SparkContext }
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.StatsReportListener
 import org.bdgenomics.adam.avro.{
@@ -168,7 +167,7 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
     RecordGroupDictionary.fromSAMHeader(samHeader)
   }
 
-  private def adamBamLoad(filePath: String): RDD[ADAMRecord] = {
+  protected[rdd] def adamBamLoad(filePath: String): RDD[ADAMRecord] = {
     log.info("Reading legacy BAM file format %s to create RDD".format(filePath))
 
     // We need to separately read the header, so that we can inject the sequence dictionary

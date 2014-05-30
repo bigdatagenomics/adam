@@ -17,17 +17,13 @@ package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.models.{
-  Attribute,
   SAMFileHeaderWritable,
   SequenceDictionary,
-  SequenceRecord,
   RecordGroupDictionary
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import net.sf.samtools.{ SAMReadGroupRecord, SAMRecord, SAMFileHeader }
-import java.util.Date
-import scala.collection.JavaConverters._
 
 class ADAMRecordConverter extends Serializable {
 
@@ -35,27 +31,13 @@ class ADAMRecordConverter extends Serializable {
    * Converts a single ADAM record into a SAM record.
    *
    * @param adamRecord ADAM formatted alignment record to convert.
-   * @param dict Reference sequence dictionary to use for conversion.
-   * @param readGroups Dictionary containing record groups.
+   * @param header SAM file header to use.
    * @return Returns the record converted to SAMtools format. Can be used for output to SAM/BAM.
    */
   def convert(adamRecord: ADAMRecord, header: SAMFileHeaderWritable): SAMRecord = {
 
-    assert(adamRecord.getRecordGroupName != null, "can't get record group name if not set")
-
-    // start building read group data for header
-    val readGroupFromADAM: SAMReadGroupRecord = new SAMReadGroupRecord(adamRecord.getRecordGroupName)
-
-    Option(adamRecord.getRecordGroupSequencingCenter).foreach(v => readGroupFromADAM.setSequencingCenter(v.toString))
-    Option(adamRecord.getRecordGroupRunDateEpoch).foreach(v => readGroupFromADAM.setRunDate(new Date(v)))
-    Option(adamRecord.getRecordGroupDescription).foreach(v => readGroupFromADAM.setDescription(v))
-    Option(adamRecord.getRecordGroupFlowOrder).foreach(v => readGroupFromADAM.setFlowOrder(v))
-    Option(adamRecord.getRecordGroupKeySequence).foreach(v => readGroupFromADAM.setKeySequence(v))
-    Option(adamRecord.getRecordGroupLibrary).foreach(v => readGroupFromADAM.setLibrary(v))
-    Option(adamRecord.getRecordGroupPredictedMedianInsertSize).foreach(v => readGroupFromADAM.setPredictedMedianInsertSize(v))
-    Option(adamRecord.getRecordGroupPlatform).foreach(v => readGroupFromADAM.setPlatform(v))
-    Option(adamRecord.getRecordGroupPlatformUnit).foreach(v => readGroupFromADAM.setPlatformUnit(v))
-    Option(adamRecord.getRecordGroupSample).foreach(v => readGroupFromADAM.setSample(v))
+    // get read group dictionary from header
+    val rgDict = header.header.getSequenceDictionary
 
     // attach header
     val builder: SAMRecord = new SAMRecord(header.header)
@@ -65,61 +47,75 @@ class ADAMRecordConverter extends Serializable {
     builder.setReadString(adamRecord.getSequence)
     builder.setBaseQualityString(adamRecord.getQual)
 
-    // set the cigar, if provided
-    Option(adamRecord.getCigar).map(_.toString).foreach(builder.setCigarString)
+    // set read group flags
+    Option(adamRecord.getRecordGroupName)
+      .map(_.toString)
+      .map(rgDict.getSequenceIndex)
+      .foreach(v => builder.setAttribute("RG", v.toString))
+    Option(adamRecord.getRecordGroupLibrary)
+      .foreach(v => builder.setAttribute("LB", v.toString))
+    Option(adamRecord.getRecordGroupPlatformUnit)
+      .foreach(v => builder.setAttribute("PU", v.toString))
 
-    // set the reference name, alignment position, and mapping quality, for this read and mate
-    Option(adamRecord.getContig)
-      .map(_.getContigName)
-      .foreach(v => builder.setReferenceName(v))
-    Option(adamRecord.getStart)
-      .filter(_ > 0)
-      .foreach(s => builder.setAlignmentStart(s.toInt + 1))
-    Option(adamRecord.getMapq).foreach(v => builder.setMappingQuality(v))
+    // set the reference name, and alignment position, for mate
     Option(adamRecord.getMateReference)
       .map(_.toString)
       .foreach(builder.setMateReferenceName)
     Option(adamRecord.getMateAlignmentStart)
-      .filter(_ > 0)
       .foreach(s => builder.setMateAlignmentStart(s.toInt + 1))
 
     // set flags
-    if (adamRecord.getReadPaired) {
-      builder.setReadPairedFlag(true)
-      if (adamRecord.getMateNegativeStrand) {
-        builder.setMateNegativeStrandFlag(true)
+    Option(adamRecord.getReadPaired).foreach(p => {
+      builder.setReadPairedFlag(p.booleanValue)
+
+      // only set flags if read is paired
+      if (p) {
+        Option(adamRecord.getMateNegativeStrand)
+          .foreach(v => builder.setMateNegativeStrandFlag(v.booleanValue))
+        Option(adamRecord.getMateMapped)
+          .foreach(v => builder.setMateUnmappedFlag(!v.booleanValue))
+        Option(adamRecord.getProperPair)
+          .foreach(v => builder.setProperPairFlag(v.booleanValue))
+        Option(adamRecord.getFirstOfPair)
+          .foreach(v => builder.setFirstOfPairFlag(v.booleanValue))
+        Option(adamRecord.getSecondOfPair)
+          .foreach(v => builder.setSecondOfPairFlag(v.booleanValue))
       }
-      if (!adamRecord.getMateMapped) {
-        builder.setMateUnmappedFlag(true)
-      }
-      if (adamRecord.getProperPair) {
-        builder.setProperPairFlag(true)
-      }
-      if (adamRecord.getFirstOfPair) {
-        builder.setFirstOfPairFlag(true)
-      }
-      if (adamRecord.getSecondOfPair) {
-        builder.setSecondOfPairFlag(true)
-      }
-    }
-    if (adamRecord.getDuplicateRead) {
-      builder.setDuplicateReadFlag(true)
-    }
-    if (adamRecord.getReadNegativeStrand) {
-      builder.setReadNegativeStrandFlag(true)
-    }
-    if (!adamRecord.getPrimaryAlignment) {
-      builder.setNotPrimaryAlignmentFlag(true)
-    }
-    if (adamRecord.getFailedVendorQualityChecks) {
-      builder.setReadFailsVendorQualityCheckFlag(true)
-    }
-    if (!adamRecord.getReadMapped) {
-      builder.setReadUnmappedFlag(true)
-    }
-    if (adamRecord.getMismatchingPositions != null) {
-      builder.setAttribute("MD", adamRecord.getMismatchingPositions)
-    }
+    })
+    Option(adamRecord.getDuplicateRead)
+      .foreach(v => builder.setDuplicateReadFlag(v.booleanValue))
+    Option(adamRecord.getReadMapped)
+      .foreach(m => {
+        builder.setReadUnmappedFlag(!m.booleanValue)
+
+        // only set alignment flags if read is aligned
+        if (m) {
+          // if we are aligned, we must have a reference
+          assert(adamRecord.getContig != null, "Cannot have null contig if aligned.")
+          builder.setReferenceName(adamRecord.getContig.getContigName)
+
+          // set the cigar, if provided
+          Option(adamRecord.getCigar).map(_.toString).foreach(builder.setCigarString)
+
+          // set mapping flags
+          Option(adamRecord.getReadNegativeStrand)
+            .foreach(v => builder.setReadNegativeStrandFlag(v.booleanValue))
+          Option(adamRecord.getPrimaryAlignment)
+            .foreach(v => builder.setNotPrimaryAlignmentFlag(!v.booleanValue))
+          Option(adamRecord.getStart)
+            .foreach(s => builder.setAlignmentStart(s.toInt + 1))
+          Option(adamRecord.getMapq).foreach(v => builder.setMappingQuality(v))
+        } else {
+          // mapping quality must be 0 if read is unmapped
+          builder.setMappingQuality(0)
+        }
+      })
+    Option(adamRecord.getFailedVendorQualityChecks)
+      .foreach(v => builder.setReadFailsVendorQualityCheckFlag(v.booleanValue))
+    Option(adamRecord.getMismatchingPositions)
+      .foreach(builder.setAttribute("MD", _))
+
+    // add all other tags
     if (adamRecord.getAttributes != null) {
       val mp = RichADAMRecord(adamRecord).tags
       mp.foreach(a => {
@@ -136,11 +132,10 @@ class ADAMRecordConverter extends Serializable {
    *
    * @param sd Reference sequence dictionary to use for conversion.
    * @param rgd Dictionary containing record groups.
-   * @param rgfa SAM formatted read group record.
    * @return Converted SAM formatted record.
    */
   def createSAMHeader(sd: SequenceDictionary, rgd: RecordGroupDictionary): SAMFileHeader = {
-    val samSequenceDictionary = sd.toSAMSequenceDictionary
+    val samSequenceDictionary = sd.toSAMSequenceDictionary()
     val samHeader = new SAMFileHeader
     samHeader.setSequenceDictionary(samSequenceDictionary)
     rgd.readGroups.foreach(kv => {

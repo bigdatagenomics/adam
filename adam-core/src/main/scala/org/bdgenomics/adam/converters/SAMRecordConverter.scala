@@ -59,10 +59,13 @@ class SAMRecordConverter extends Serializable {
     if (readReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
       builder.setContig(SequenceRecord.toADAMContig(dict(samRecord.getReferenceName).get))
 
+      // set read alignment flag
       val start: Int = samRecord.getAlignmentStart
-      if (start != 0) {
-        builder.setStart((start - 1).asInstanceOf[Long])
-      }
+      assert(start != 0, "Start cannot equal 0 if contig is set.")
+      builder.setStart((start - 1).asInstanceOf[Long])
+
+      // set read mapped flag
+      builder.setReadMapped(true)
 
       val mapq: Int = samRecord.getMappingQuality
 
@@ -116,8 +119,8 @@ class SAMRecordConverter extends Serializable {
       if (samRecord.getReadFailsVendorQualityCheckFlag) {
         builder.setFailedVendorQualityChecks(true)
       }
-      if (!samRecord.getReadUnmappedFlag) {
-        builder.setReadMapped(true)
+      if (samRecord.getReadUnmappedFlag) {
+        builder.setReadMapped(false)
       }
     }
 

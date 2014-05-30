@@ -22,18 +22,16 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   SequenceRecord
 }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.scalatest.FunSuite
-import scala.collection.JavaConverters._
 
-class ADAMtoSAMConverterSuite extends FunSuite {
+class ADAMRecordConverterSuite extends FunSuite {
 
   def make_read(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0): ADAMRecord = {
     val sequence: String = "A" * length
     ADAMRecord.newBuilder()
       .setReadName("read" + id.toString)
       .setStart(start)
-      .setReadMapped(false)
+      .setReadMapped(true)
       .setCigar(cigar)
       .setSequence(sequence)
       .setReadNegativeStrand(false)
@@ -76,7 +74,7 @@ class ADAMtoSAMConverterSuite extends FunSuite {
     val sequence = "A" * 4
     assert(toSAM.getReadName === ("read" + 0.toString))
     assert(toSAM.getAlignmentStart === 4)
-    assert(toSAM.getReadUnmappedFlag === true)
+    assert(toSAM.getReadUnmappedFlag === false)
     assert(toSAM.getCigarString === "2M3D2M")
     assert(toSAM.getReadString === sequence)
     assert(toSAM.getReadNegativeStrandFlag === false)
