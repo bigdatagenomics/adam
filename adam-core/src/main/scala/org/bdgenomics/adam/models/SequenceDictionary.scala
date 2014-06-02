@@ -39,6 +39,37 @@ object SequenceDictionary {
     new SAMSequenceDictionary(dictionary.records.map(SequenceRecord.toSAMSequenceRecord(_)).toList)
   }
 
+  /**
+   * Extracts a SAM sequence dictionary from a SAM file header and returns an
+   * ADAM sequence dictionary.
+   *
+   * @see fromSAMSequenceDictionary
+   *
+   * @param header SAM file header.
+   * @return Returns an ADAM style sequence dictionary.
+   */
+  def fromSAMHeader(header: SAMFileHeader): SequenceDictionary = {
+    val samDict = header.getSequenceDictionary
+
+    fromSAMSequenceDictionary(samDict)
+  }
+
+  /**
+   * Converts a picard/samtools SAMSequenceDictionary into an ADAM sequence dictionary.
+   *
+   * @see fromSAMHeader
+   * @see fromVCFHeader
+   *
+   * @param samDict SAM style sequence dictionary.
+   * @return Returns an ADAM style sequence dictionary.
+   */
+  def fromSAMSequenceDictionary(samDict: SAMSequenceDictionary): SequenceDictionary = {
+    val samDictRecords: List[SAMSequenceRecord] = samDict.getSequences
+    new SequenceDictionary(samDictRecords.map(SequenceRecord.fromSAMSequenceRecord).toVector)
+  }
+
+  def fromSAMReader(samReader: SAMFileReader): SequenceDictionary =
+    fromSAMHeader(samReader.getFileHeader)
 }
 
 class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializable {
@@ -70,6 +101,15 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
     case that: SequenceDictionary => records.equals(that.records)
     case _                        => false
   }
+
+  /**
+   * Converts this ADAM style sequence dictionary into a SAM style sequence dictionary.
+   *
+   * @return Returns a SAM formatted sequence dictionary.
+   */
+  def toSAMSequenceDictionary(): SAMSequenceDictionary = {
+    new SAMSequenceDictionary(records.map(_.toSAMSequenceRecord).toList)
+  }
 }
 
 /**
@@ -88,6 +128,20 @@ class SequenceRecord(
   assert(length > 0, "SequenceRecord.length <= 0")
 
   override def toString: String = "%s->%s".format(name, length)
+
+  /**
+   * Converts this sequence record into a SAM sequence record.
+   *
+   * @return A SAM formatted sequence record.
+   */
+  def toSAMSequenceRecord(): SAMSequenceRecord = {
+    val rec = new SAMSequenceRecord(name.toString, length.toInt)
+
+    // set URL if available
+    url.foreach(rec.setAssembly)
+
+    rec
+  }
 
   override def equals(o: Any): Boolean = o match {
     case that: SequenceRecord => {
@@ -117,6 +171,12 @@ object SequenceRecord {
       Option(genbank).map(_.toString))
   }
 
+  /*
+   * Generates a sequence record from a SAMSequence record.
+   *
+   * @param seqRecord SAM Sequence record input.
+   * @return A new ADAM sequence record.
+   */
   def fromSAMSequenceRecord(record: SAMSequenceRecord): SequenceRecord = {
     SequenceRecord(
       record.getSequenceName,

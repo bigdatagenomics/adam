@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.bdgenomics.adam.rdd
 
+import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat }
+import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
 import java.util.logging.Level
+import net.sf.samtools.{ SAMRecord, SAMFileHeader }
 import org.apache.avro.specific.SpecificRecord
+import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
@@ -26,25 +31,34 @@ import org.bdgenomics.adam.avro.{
   ADAMRecord,
   ADAMNucleotideContigFragment
 }
+import org.bdgenomics.adam.converters.ADAMRecordConverter
 import org.bdgenomics.adam.models.{
+  ADAMRod,
+  RecordGroupDictionary,
+  ReferencePosition,
+  ReferenceRegion,
+  SAMFileHeaderWritable,
   SequenceRecord,
   SequenceDictionary,
   SingleReadBucket,
-  SnpTable,
-  ReferencePosition,
-  ReferenceRegion,
-  ADAMRod
+  SnpTable
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rdd.correction.TrimReads
 import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.util.{ HadoopUtil, MapTools, ParquetLogger }
+import org.bdgenomics.adam.util.{
+  HadoopUtil,
+  MapTools,
+  ParquetLogger,
+  ADAMBAMOutputFormat,
+  ADAMSAMOutputFormat
+}
 import parquet.avro.{ AvroParquetOutputFormat, AvroWriteSupport }
 import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
 import parquet.hadoop.util.ContextUtil
-import scala.math.max
+import scala.math.{ min, max }
 
 class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -137,8 +151,81 @@ class ADAMSpecificRecordSequenceDictionaryRDDAggregator[T <% SpecificRecord: Man
 
 class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionaryRDDAggregator[ADAMRecord](rdd) {
 
+  /**
+   * Saves an RDD of ADAM read data into the SAM/BAM format.
+   *
+   * @param filePath Path to save files to.
+   * @param asSam Selects whether to save as SAM or BAM. The default value is true (save in SAM format).
+   */
+  def adamSAMSave(filePath: String, asSam: Boolean = true) {
+
+    // convert the records
+    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM()
+
+    // add keys to our records
+    val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
+
+    // attach header to output format
+    asSam match {
+      case true  => ADAMSAMOutputFormat.addHeader(convertRecords.first.get.getHeader())
+      case false => ADAMBAMOutputFormat.addHeader(convertRecords.first.get.getHeader())
+    }
+
+    // write file to disk
+    val conf = rdd.context.hadoopConfiguration
+    asSam match {
+      case true  => withKey.saveAsNewAPIHadoopFile(filePath, classOf[LongWritable], classOf[SAMRecordWritable], classOf[ADAMSAMOutputFormat[LongWritable]], conf)
+      case false => withKey.saveAsNewAPIHadoopFile(filePath, classOf[LongWritable], classOf[SAMRecordWritable], classOf[ADAMBAMOutputFormat[LongWritable]], conf)
+    }
+  }
+
   def getSequenceRecordsFromElement(elem: ADAMRecord): scala.collection.Set[SequenceRecord] = {
     SequenceRecord.fromADAMRecord(elem)
+  }
+
+  /**
+   * Collects a dictionary summarizing the read groups in an RDD of ADAMRecords.
+   *
+   * @return A dictionary describing the read groups in this RDD.
+   */
+  def adamGetReadGroupDictionary(): RecordGroupDictionary = {
+    val rgNames = rdd.flatMap(r => Option(r.getRecordGroupName))
+      .map(_.toString)
+      .distinct()
+      .collect()
+      .toSeq
+
+    new RecordGroupDictionary(rgNames)
+  }
+
+  /**
+   * Converts an RDD of ADAM read records into SAM records.
+   *
+   * @return Returns a SAM/BAM formatted RDD of reads, as well as the file header.
+   */
+  def adamConvertToSAM(): (RDD[SAMRecordWritable], SAMFileHeader) = {
+    // collect global summary data
+    val sd = rdd.adamGetSequenceDictionary()
+    val rgd = rdd.adamGetReadGroupDictionary()
+
+    // create conversion object
+    val adamRecordConverter = new ADAMRecordConverter
+
+    // create header
+    val header = adamRecordConverter.createSAMHeader(sd, rgd)
+
+    // broadcast for efficiency
+    val hdrBcast = rdd.context.broadcast(SAMFileHeaderWritable(header))
+
+    // map across RDD to perform conversion
+    val convertedRDD: RDD[SAMRecordWritable] = rdd.map(r => {
+      // must wrap record for serializability
+      val srw = new SAMRecordWritable()
+      srw.set(adamRecordConverter.convert(r, hdrBcast.value))
+      srw
+    })
+
+    (convertedRDD, header)
   }
 
   def adamSortReadsByReferencePosition(): RDD[ADAMRecord] = {

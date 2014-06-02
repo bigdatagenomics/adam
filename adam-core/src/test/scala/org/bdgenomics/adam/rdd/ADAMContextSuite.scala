@@ -45,7 +45,7 @@ class ADAMContextSuite extends SparkFunSuite {
   sparkTest("can filter a .SAM file based on quality") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
     val reads: RDD[ADAMRecord] = sc.adamLoad(path, predicate = Some(classOf[HighQualityReadPredicate]))
-    assert(reads.count() === 10)
+    assert(reads.count() === 18)
   }
 
   test("Can convert to phred") {
