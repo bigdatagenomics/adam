@@ -16,10 +16,9 @@
 
 package org.bdgenomics.adam.rdd
 
-import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat }
-import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
+import fi.tkk.ics.hadoop.bam.SAMRecordWritable
 import java.util.logging.Level
-import net.sf.samtools.{ SAMRecord, SAMFileHeader }
+import net.sf.samtools.SAMFileHeader
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
@@ -58,7 +57,7 @@ import parquet.avro.{ AvroParquetOutputFormat, AvroWriteSupport }
 import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
 import parquet.hadoop.util.ContextUtil
-import scala.math.{ min, max }
+import scala.math.max
 
 class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Serializable {
 

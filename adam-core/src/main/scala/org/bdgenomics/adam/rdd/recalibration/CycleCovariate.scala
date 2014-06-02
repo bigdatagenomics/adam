@@ -17,7 +17,6 @@
 package org.bdgenomics.adam.rdd.recalibration
 
 import org.bdgenomics.adam.rich.DecadentRead
-import org.bdgenomics.adam.rich.DecadentRead._
 
 // This is based on the CycleCovariate in GATK 1.6.
 class CycleCovariate extends AbstractCovariate[Int] {

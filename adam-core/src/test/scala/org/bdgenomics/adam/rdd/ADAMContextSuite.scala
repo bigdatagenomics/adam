@@ -15,7 +15,6 @@
  */
 package org.bdgenomics.adam.rdd
 
-import parquet.filter.UnboundRecordFilter
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
 import org.bdgenomics.adam.util.SparkFunSuite
@@ -24,7 +23,7 @@ import org.bdgenomics.adam.util.PhredUtils._
 import java.io.File
 import org.apache.hadoop.fs.Path
 import java.util.UUID
-import org.bdgenomics.adam.predicates.{ ADAMPredicate, ADAMRecordConditions, HighQualityReadPredicate }
+import org.bdgenomics.adam.predicates.HighQualityReadPredicate
 
 class ADAMContextSuite extends SparkFunSuite {
 

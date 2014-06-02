@@ -17,7 +17,7 @@
 package org.bdgenomics.adam.models
 
 import scala.collection.immutable.NumericRange
-import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
+import net.sf.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 
 object Consensus {

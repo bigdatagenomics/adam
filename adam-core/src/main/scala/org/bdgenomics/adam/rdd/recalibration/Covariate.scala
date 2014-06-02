@@ -17,7 +17,6 @@
 package org.bdgenomics.adam.rdd.recalibration
 
 import org.bdgenomics.adam.rich.DecadentRead
-import org.bdgenomics.adam.rich.DecadentRead._
 import org.bdgenomics.adam.util.QualityScore
 import org.bdgenomics.adam.util.Util
 

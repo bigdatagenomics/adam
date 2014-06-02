@@ -15,7 +15,6 @@
  */
 package org.bdgenomics.adam.core.util
 
-import scala.collection.JavaConversions._
 import scala.Some
 import scala.collection.JavaConverters._
 import java.util.Properties

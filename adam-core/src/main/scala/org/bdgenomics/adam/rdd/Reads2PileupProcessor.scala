@@ -16,7 +16,7 @@
 
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.avro.{ Base, ADAMContig, ADAMPileup, ADAMRecord }
+import org.bdgenomics.adam.avro.{ Base, ADAMPileup, ADAMRecord }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 import org.bdgenomics.adam.rich.RichADAMRecord._

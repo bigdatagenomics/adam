@@ -22,7 +22,6 @@ import org.bdgenomics.adam.plugins.{ AccessControl, ADAMPlugin }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.avro.Schema
 import org.apache.spark.rdd.RDD
-import parquet.filter.UnboundRecordFilter
 import org.apache.avro.specific.SpecificRecord
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.predicates.ADAMPredicate

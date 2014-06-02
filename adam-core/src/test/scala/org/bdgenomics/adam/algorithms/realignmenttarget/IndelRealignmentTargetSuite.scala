@@ -1,16 +1,13 @@
 
 package org.bdgenomics.adam.algorithms.realignmenttarget
 
-import org.bdgenomics.adam.util.{ MdTag, SparkFunSuite }
-import org.bdgenomics.adam.avro.{ Base, ADAMPileup, ADAMRecord }
+import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.avro.{ ADAMPileup, ADAMRecord }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.SparkContext._
-import parquet.filter.UnboundRecordFilter
 import scala.collection.immutable.{ NumericRange, TreeSet }
-import org.bdgenomics.adam.rdd.RealignIndels
-import org.bdgenomics.adam.rich.RichADAMRecord
-import org.apache.spark.{ TaskContext, Partition }
+import org.apache.spark.TaskContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 
 class IndelRealignmentTargetSuite extends SparkFunSuite {

@@ -20,9 +20,6 @@ import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
 import java.util.logging.Level
-
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.predicates._
 import scala.collection.Seq
 import java.util.regex.Pattern
 import org.apache.hadoop.fs.{ Path, FileSystem }

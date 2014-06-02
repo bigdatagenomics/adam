@@ -17,12 +17,10 @@
 package org.bdgenomics.adam.util
 
 import scala.annotation.tailrec
-import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
+import net.sf.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.rich.RichADAMRecord._
-import org.bdgenomics.adam.rich.RichCigar
 import org.bdgenomics.adam.rich.RichCigar._
 
 object NormalizationUtils {

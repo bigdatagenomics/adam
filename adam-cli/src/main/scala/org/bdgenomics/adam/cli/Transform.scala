@@ -24,7 +24,6 @@ import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.models.SnpTable
 import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
-import java.io.File
 import java.util.logging.Level
 import org.bdgenomics.adam.rich.RichADAMVariant
 

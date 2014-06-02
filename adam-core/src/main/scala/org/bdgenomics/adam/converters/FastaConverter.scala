@@ -18,9 +18,7 @@ package org.bdgenomics.adam.converters
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.avro.{ ADAMContig, ADAMNucleotideContigFragment }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import scala.Int
-import scala.math.Ordering.Int
 import scala.Predef._
 import scala.Some
 import scala.collection.mutable
