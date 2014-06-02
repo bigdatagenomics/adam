@@ -18,7 +18,7 @@ package org.bdgenomics.adam.rdd
 import fi.tkk.ics.hadoop.bam.{ SAMRecordWritable, AnySAMInputFormat }
 import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
 import java.util.regex.Pattern
-import net.sf.samtools.{ SAMFileHeader }
+import net.sf.samtools.SAMFileHeader
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.FileSystem
@@ -42,7 +42,7 @@ import org.bdgenomics.adam.projections.{
   ADAMNucleotideContigFragmentField
 }
 import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.util.{ ADAMSAMOutputFormat, ADAMBAMOutputFormat, HadoopUtil }
+import org.bdgenomics.adam.util.HadoopUtil
 import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat

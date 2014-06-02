@@ -16,12 +16,10 @@
 
 package org.bdgenomics.adam.rdd.correction
 
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.SparkFunSuite
-import scala.math.abs
 
 class TrimReadsSuite extends SparkFunSuite {
 

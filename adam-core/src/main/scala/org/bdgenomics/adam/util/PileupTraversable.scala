@@ -16,17 +16,11 @@
 
 package org.bdgenomics.adam.util
 
-import parquet.hadoop.ParquetInputFormat
-import parquet.avro.AvroReadSupport
-import org.bdgenomics.adam.predicates.LocusPredicate
-import org.apache.hadoop.mapreduce.Job
 import scala.collection.JavaConversions._
 import net.sf.samtools.{ TextCigarCodec, CigarOperator }
 import scala.collection.mutable.ListBuffer
-import parquet.hadoop.util.ContextUtil
 import scala.collection.SortedMap
 import org.bdgenomics.adam.avro.ADAMRecord
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 object Base extends Enumeration with Serializable {

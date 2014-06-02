@@ -16,11 +16,8 @@
 package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.avro.{ ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant }
-import org.bdgenomics.adam.converters.GenotypesToVariantsConverter
 import org.bdgenomics.adam.rich.RichADAMVariant
 import org.bdgenomics.adam.rich.RichADAMVariant._
-import org.apache.spark.SparkContext._
-import org.apache.spark.rdd.RDD
 
 object ADAMVariantContext {
 

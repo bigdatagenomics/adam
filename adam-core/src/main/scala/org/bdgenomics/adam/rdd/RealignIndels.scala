@@ -17,7 +17,6 @@
 package org.bdgenomics.adam.rdd
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.algorithms.realignmenttarget.{
@@ -26,9 +25,7 @@ import org.bdgenomics.adam.algorithms.realignmenttarget.{
   TargetOrdering,
   ZippedTargetOrdering
 }
-import org.apache.spark.broadcast.Broadcast
 import scala.collection.immutable.TreeSet
-import org.bdgenomics.adam.util.ImplicitJavaConversions
 import scala.annotation.tailrec
 import scala.collection.mutable.Map
 import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
@@ -37,7 +34,6 @@ import org.bdgenomics.adam.models.Consensus
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.rich.RichADAMRecord._
-import org.bdgenomics.adam.rich.RichCigar
 import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.adam.util.NormalizationUtils._

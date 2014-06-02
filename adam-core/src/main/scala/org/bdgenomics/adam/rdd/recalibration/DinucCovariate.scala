@@ -17,7 +17,6 @@
 package org.bdgenomics.adam.rdd.recalibration
 
 import org.bdgenomics.adam.rich.DecadentRead
-import org.bdgenomics.adam.rich.DecadentRead._
 
 // TODO: should inherit from something like AbstractCovariate[(DNABase, DNABase)]
 class DinucCovariate extends AbstractCovariate[(Char, Char)] {

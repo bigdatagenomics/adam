@@ -15,7 +15,7 @@
  */
 package org.bdgenomics.adam.util
 
-import fi.tkk.ics.hadoop.bam.{ KeyIgnoringBAMOutputFormat, SAMFormat }
+import fi.tkk.ics.hadoop.bam.KeyIgnoringBAMOutputFormat
 import net.sf.samtools.SAMFileHeader
 
 object ADAMBAMOutputFormat {

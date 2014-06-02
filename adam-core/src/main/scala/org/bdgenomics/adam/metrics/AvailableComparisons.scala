@@ -15,8 +15,7 @@
  */
 package org.bdgenomics.adam.metrics
 
-import org.bdgenomics.adam.avro.{ ADAMRecord, ADAMContig }
-import org.bdgenomics.adam.models.ReadBucket
+import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.projections.FieldValue
 import org.bdgenomics.adam.projections.ADAMRecordField._
 import org.bdgenomics.adam.rich.RichADAMRecord._

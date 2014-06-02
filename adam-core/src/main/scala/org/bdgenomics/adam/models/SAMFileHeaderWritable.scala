@@ -15,7 +15,7 @@
  */
 package org.bdgenomics.adam.models
 
-import net.sf.samtools.{ SAMReadGroupRecord, SAMRecord, SAMFileHeader }
+import net.sf.samtools.SAMFileHeader
 
 case class SAMFileHeaderWritable(header: SAMFileHeader) extends Serializable {
 }

@@ -20,7 +20,6 @@ import net.sf.samtools.{ CigarElement, CigarOperator, Cigar, TextCigarCodec }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._
 import scala.Some
-import scala.concurrent.JavaConversions._
 import scala.collection.immutable.NumericRange
 import org.bdgenomics.adam.models.{ ReferenceRegion, ReferencePosition, Attribute }
 

@@ -18,8 +18,7 @@ package org.bdgenomics.adam.util
 import scala.collection.immutable
 import scala.collection.immutable.NumericRange
 import scala.util.matching.Regex
-import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
-import org.bdgenomics.adam.avro.ADAMRecord
+import net.sf.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.models.ReferencePosition
 
 //import org.bdgenomics.adam.util.ImplicitJavaConversions._

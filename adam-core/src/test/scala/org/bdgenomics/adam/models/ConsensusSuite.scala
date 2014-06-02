@@ -17,7 +17,7 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest.FunSuite
-import net.sf.samtools.{ Cigar, TextCigarCodec }
+import net.sf.samtools.Cigar
 
 class ConsensusSuite extends FunSuite {
 
