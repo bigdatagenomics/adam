@@ -103,6 +103,10 @@
             <artifactId>spark-core_${scala.artifact.suffix}</artifactId>
         </dependency>
         <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
         </dependency>
