@@ -252,7 +252,7 @@ object IndelRealignmentTarget {
    * @param rod Base pileup.
    * @return Generated realignment target.
    */
-  def apply(rod: Seq[ADAMPileup]): IndelRealignmentTarget = {
+  def apply(rod: Iterable[ADAMPileup]): IndelRealignmentTarget = {
 
     /**
      * If we have a indel in a pileup position, generates an indel range.
@@ -321,16 +321,16 @@ object IndelRealignmentTarget {
     }
   }
 
-  def extractMismatches(rod: Seq[ADAMPileup]): Seq[ADAMPileup] = {
+  def extractMismatches(rod: Iterable[ADAMPileup]): Iterable[ADAMPileup] = {
     rod.filter(r => r.getRangeOffset == null && r.getNumSoftClipped == 0)
       .filter(r => r.getReadBase != r.getReferenceBase)
   }
 
-  def extractMatches(rod: Seq[ADAMPileup]): Seq[ADAMPileup] =
+  def extractMatches(rod: Iterable[ADAMPileup]): Iterable[ADAMPileup] =
     rod.filter(r => r.getRangeOffset == null && r.getNumSoftClipped == 0)
       .filter(r => r.getReadBase == r.getReferenceBase)
 
-  def extractIndels(rod: Seq[ADAMPileup]): Seq[ADAMPileup] =
+  def extractIndels(rod: Iterable[ADAMPileup]): Iterable[ADAMPileup] =
     rod.filter(_.getRangeOffset != null)
 
   /**

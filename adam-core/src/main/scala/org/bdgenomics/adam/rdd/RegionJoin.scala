@@ -100,7 +100,7 @@ object RegionJoin {
 
     // First, we group the regions in the left side of the join by their referenceName,
     // and collect them.
-    val collectedLeft: Seq[(String, Seq[ReferenceRegion])] =
+    val collectedLeft: Seq[(String, Iterable[ReferenceRegion])] =
       baseRDD
         .map(t => (tMapping.getReferenceName(t), tMapping.getReferenceRegion(t))) // RDD[(String,ReferenceRegion)]
         .groupBy(_._1) // RDD[(String,Seq[(String,ReferenceRegion)])]
@@ -177,7 +177,7 @@ object RegionJoin {
  *                with an entry in this dictionary
  * @param regions The input-set of regions.
  */
-class NonoverlappingRegions(seqDict: SequenceDictionary, regions: Seq[ReferenceRegion]) extends Serializable {
+class NonoverlappingRegions(seqDict: SequenceDictionary, regions: Iterable[ReferenceRegion]) extends Serializable {
 
   assert(regions != null, "regions parameter cannot be null")
 
@@ -200,7 +200,7 @@ class NonoverlappingRegions(seqDict: SequenceDictionary, regions: Seq[ReferenceR
   // so that we can do reasonably-fast binary searching on them to determine the slice of nonoverlapping-set
   // regions that are overlapped by a new, query region (see findOverlappingRegions, below).
   val endpoints: Array[Long] =
-    mergeRegions(regions.sortBy(r => r.start)).flatMap(r => Seq(r.start, r.end)).distinct.sorted.toArray
+    mergeRegions(regions.toSeq.sortBy(r => r.start)).flatMap(r => Seq(r.start, r.end)).distinct.sorted.toArray
 
   private def updateListWithRegion(list: List[ReferenceRegion], newRegion: ReferenceRegion): List[ReferenceRegion] = {
     list match {
@@ -342,7 +342,7 @@ object NonoverlappingRegions {
  */
 class MultiContigNonoverlappingRegions(
     seqDict: SequenceDictionary,
-    regions: Seq[(String, Seq[ReferenceRegion])]) extends Serializable {
+    regions: Seq[(String, Iterable[ReferenceRegion])]) extends Serializable {
 
   assert(regions != null,
     "Regions was set to null")

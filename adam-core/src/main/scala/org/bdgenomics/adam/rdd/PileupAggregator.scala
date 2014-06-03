@@ -187,7 +187,7 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
    * @param kv Group of pileups to aggregate.
    * @return Aggregated pileups.
    */
-  def flatten(kv: Seq[ADAMPileup]): List[ADAMPileup] = {
+  def flatten(kv: Iterable[ADAMPileup]): List[ADAMPileup] = {
     val splitUp = kv.toList.groupBy(mapPileup)
 
     splitUp.map(kv => aggregatePileup(kv._2)).toList

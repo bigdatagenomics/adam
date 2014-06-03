@@ -28,7 +28,7 @@ object ADAMVariantContext {
    *           optional domain annotation at site))
    * @return ADAMVariantContext corresponding to the data above.
    */
-  def apply(kv: (ReferencePosition, ADAMVariant, Seq[ADAMGenotype], Option[ADAMDatabaseVariantAnnotation])): ADAMVariantContext = {
+  def apply(kv: (ReferencePosition, ADAMVariant, Iterable[ADAMGenotype], Option[ADAMDatabaseVariantAnnotation])): ADAMVariantContext = {
     new ADAMVariantContext(kv._1, kv._2, kv._3, kv._4)
   }
 
@@ -51,7 +51,7 @@ object ADAMVariantContext {
    * @param annotation Option[ADAMDatabaseVariantAnnotation]
    * @return ADAMVariantContext corresponding to the ADAMVariant
    */
-  def apply(v: ADAMVariant, genotypes: Seq[ADAMGenotype], annotation: Option[ADAMDatabaseVariantAnnotation] = None): ADAMVariantContext = {
+  def apply(v: ADAMVariant, genotypes: Iterable[ADAMGenotype], annotation: Option[ADAMDatabaseVariantAnnotation] = None): ADAMVariantContext = {
     apply((ReferencePosition(v), v, genotypes, annotation))
   }
 
@@ -77,9 +77,9 @@ object ADAMVariantContext {
 class ADAMVariantContext(
     val position: ReferencePosition,
     val variant: RichADAMVariant,
-    val genotypes: Seq[ADAMGenotype],
+    val genotypes: Iterable[ADAMGenotype],
     val databases: Option[ADAMDatabaseVariantAnnotation] = None) {
-  def this(variant: RichADAMVariant, genotypes: Seq[ADAMGenotype], database: Option[ADAMDatabaseVariantAnnotation] = None) = {
+  def this(variant: RichADAMVariant, genotypes: Iterable[ADAMGenotype], database: Option[ADAMDatabaseVariantAnnotation] = None) = {
     this(ReferencePosition(variant), variant, genotypes, database)
   }
 }

@@ -35,9 +35,9 @@ object SingleReadBucket extends Logging {
   }
 }
 
-case class SingleReadBucket(primaryMapped: Seq[ADAMRecord] = Seq.empty,
-                            secondaryMapped: Seq[ADAMRecord] = Seq.empty,
-                            unmapped: Seq[ADAMRecord] = Seq.empty) {
+case class SingleReadBucket(primaryMapped: Iterable[ADAMRecord] = Seq.empty,
+                            secondaryMapped: Iterable[ADAMRecord] = Seq.empty,
+                            unmapped: Iterable[ADAMRecord] = Seq.empty) {
   // Note: not a val in order to save serialization/memory cost
   def allReads = {
     primaryMapped ++ secondaryMapped ++ unmapped
@@ -62,9 +62,9 @@ class SingleReadBucketSerializer extends Serializer[SingleReadBucket] {
   }
 
   def write(kryo: Kryo, output: Output, groupedReads: SingleReadBucket) = {
-    writeArray(kryo, output, groupedReads.primaryMapped)
-    writeArray(kryo, output, groupedReads.secondaryMapped)
-    writeArray(kryo, output, groupedReads.unmapped)
+    writeArray(kryo, output, groupedReads.primaryMapped.toSeq)
+    writeArray(kryo, output, groupedReads.secondaryMapped.toSeq)
+    writeArray(kryo, output, groupedReads.unmapped.toSeq)
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[SingleReadBucket]): SingleReadBucket = {

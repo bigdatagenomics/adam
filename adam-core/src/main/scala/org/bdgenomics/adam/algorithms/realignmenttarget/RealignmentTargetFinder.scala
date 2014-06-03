@@ -77,7 +77,7 @@ class RealignmentTargetFinder extends Serializable with Logging {
   def findTargets(reads: RDD[ADAMRecord]): TreeSet[IndelRealignmentTarget] = {
 
     // generate pileups from reads
-    val rods: RDD[Seq[ADAMPileup]] = reads.adamRecords2Pileup(true)
+    val rods: RDD[Iterable[ADAMPileup]] = reads.adamRecords2Pileup(true)
       .groupBy(_.getPosition).map(_._2)
 
     def createTreeSet(target: IndelRealignmentTarget): TreeSet[IndelRealignmentTarget] = {

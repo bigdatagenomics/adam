@@ -91,7 +91,7 @@ private[rdd] object RealignIndels {
    *
    * @note Generally, this function shouldn't be called directly---for most cases, prefer mapTargets.
    *
-   * @param int Index of target.
+   * @param targetIndex Index of target.
    * @param targets Set of realignment targets.
    * @return Indel realignment target.
    *
@@ -119,7 +119,7 @@ private[rdd] object RealignIndels {
    *
    * @see mapToTarget
    */
-  def mapTargets(rich_rdd: RDD[RichADAMRecord], targets: TreeSet[IndelRealignmentTarget]): RDD[(IndelRealignmentTarget, Seq[RichADAMRecord])] = {
+  def mapTargets(rich_rdd: RDD[RichADAMRecord], targets: TreeSet[IndelRealignmentTarget]): RDD[(IndelRealignmentTarget, Iterable[RichADAMRecord])] = {
     val tmpZippedTargets = targets.zip(0 until targets.count(t => true))
     var tmpZippedTargets2 = new TreeSet[(IndelRealignmentTarget, Int)]()(ZippedTargetOrdering)
     tmpZippedTargets.foreach(t => tmpZippedTargets2 = tmpZippedTargets2 + t)
@@ -178,7 +178,7 @@ private[rdd] class RealignIndels extends Serializable with Logging {
   // log-odds threshold for entropy improvement for accepting a realignment
   val lodThreshold = 5.0
 
-  def findConsensus(reads: Seq[RichADAMRecord]): Tuple3[List[RichADAMRecord], List[RichADAMRecord], List[Consensus]] = {
+  def findConsensus(reads: Iterable[RichADAMRecord]): Tuple3[List[RichADAMRecord], List[RichADAMRecord], List[Consensus]] = {
     var realignedReads = List[RichADAMRecord]()
     var readsToClean = List[RichADAMRecord]()
     var consensus = List[Consensus]()
@@ -232,7 +232,7 @@ private[rdd] class RealignIndels extends Serializable with Logging {
    * @return A sequence of reads which have either been realigned if there is a sufficiently good alternative
    * consensus, or not realigned if there is not a sufficiently good consensus.
    */
-  def realignTargetGroup(targetGroup: (IndelRealignmentTarget, Seq[RichADAMRecord])): Seq[RichADAMRecord] = {
+  def realignTargetGroup(targetGroup: (IndelRealignmentTarget, Iterable[RichADAMRecord])): Iterable[RichADAMRecord] = {
     val (target, reads) = targetGroup
     var (realignedReads, readsToClean, consensus) = findConsensus(reads)
 
@@ -246,7 +246,7 @@ private[rdd] class RealignIndels extends Serializable with Logging {
       if (readsToClean.length > 0 && consensus.length > 0) {
 
         // get reference from reads
-        val (reference, refStart, refEnd) = getReferenceFromReads(reads.map(r => new RichADAMRecord(r)))
+        val (reference, refStart, refEnd) = getReferenceFromReads(reads.map(r => new RichADAMRecord(r)).toSeq)
 
         // do not check realigned reads - they must match
         val totalMismatchSumPreCleaning = readsToClean.map(sumMismatchQuality(_)).reduce(_ + _)

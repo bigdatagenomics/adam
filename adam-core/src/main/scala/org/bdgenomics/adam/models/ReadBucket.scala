@@ -28,14 +28,14 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
  *
  * This is useful as this will usually map a single read in any of the sequences.
  */
-case class ReadBucket(unpairedPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      pairedFirstPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      pairedSecondPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      unpairedSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      pairedFirstSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      pairedSecondSecondaryMappedReads: Seq[ADAMRecord] = Seq.empty,
-                      unmappedReads: Seq[ADAMRecord] = Seq.empty) {
-  def allReads(): Seq[ADAMRecord] =
+case class ReadBucket(unpairedPrimaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
+                      pairedFirstPrimaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
+                      pairedSecondPrimaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
+                      unpairedSecondaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
+                      pairedFirstSecondaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
+                      pairedSecondSecondaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
+                      unmappedReads: Iterable[ADAMRecord] = Seq.empty) {
+  def allReads(): Iterable[ADAMRecord] =
     unpairedPrimaryMappedReads ++
       pairedFirstPrimaryMappedReads ++
       pairedSecondPrimaryMappedReads ++
@@ -48,7 +48,7 @@ case class ReadBucket(unpairedPrimaryMappedReads: Seq[ADAMRecord] = Seq.empty,
 class ReadBucketSerializer extends Serializer[ReadBucket] {
   val recordSerializer = new AvroSerializer[ADAMRecord]()
 
-  def writeArray(kryo: Kryo, output: Output, reads: Seq[ADAMRecord]): Unit = {
+  def writeArray(kryo: Kryo, output: Output, reads: Iterable[ADAMRecord]): Unit = {
     output.writeInt(reads.size, true)
     for (read <- reads) {
       recordSerializer.write(kryo, output, read)

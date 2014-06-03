@@ -91,9 +91,9 @@ private[adam] object FastaConverter {
       case (id, lines) =>
 
         val descriptionLine = indexToContigDescription.value.getOrElse(id, FastaDescriptionLine())
-        assert(lines.length != 0, "Sequence " + descriptionLine.seqId + " has no sequence data.")
+        assert(lines.size != 0, "Sequence " + descriptionLine.seqId + " has no sequence data.")
 
-        val sequence: Seq[String] = lines.sortBy(_._1).map(kv => cleanSequence(kv._2))
+        val sequence: Seq[String] = lines.toSeq.sortBy(_._1).map(kv => cleanSequence(kv._2))
         converter.convert(descriptionLine.contigName,
           descriptionLine.seqId,
           sequence,

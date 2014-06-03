@@ -342,7 +342,7 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
      * @param bucket Tuple of (bucket number, reads in bucket).
      * @return A sequence containing the rods in this bucket.
      */
-    def bucketedReadsToRods(bucket: (ReferencePosition, Seq[ADAMRecord])): Seq[ADAMRod] = {
+    def bucketedReadsToRods(bucket: (ReferencePosition, Iterable[ADAMRecord])): Iterable[ADAMRod] = {
       val (bucketStart, bucketReads) = bucket
 
       bucketReads.flatMap(pp.readToPileups)
@@ -518,7 +518,7 @@ class ADAMNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
     /**
      * Remaps a single contig.
      *
-     * @param contig Contig to remap.
+     * @param fragment Contig to remap.
      * @param dictionary A sequence dictionary containing the IDs to use for remapping.
      * @return An option containing the remapped contig if it's sequence name was found in the dictionary.
      */

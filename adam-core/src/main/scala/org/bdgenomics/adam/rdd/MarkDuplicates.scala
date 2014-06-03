@@ -59,7 +59,7 @@ private[rdd] object MarkDuplicates extends Serializable {
   def apply(rdd: RDD[ADAMRecord]): RDD[ADAMRecord] = {
     // Group by library and left position
     def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket)): (Option[ReferencePositionWithOrientation], CharSequence) = {
-      (p._1.read1refPos, p._2.allReads(0).getRecordGroupLibrary)
+      (p._1.read1refPos, p._2.allReads.head.getRecordGroupLibrary)
     }
 
     // Group by right position
@@ -74,7 +74,7 @@ private[rdd] object MarkDuplicates extends Serializable {
         leftPos match {
           // These are all unmapped reads. There is no way to determine if they are duplicates
           case None =>
-            markReads(readsByLeftPos.unzip._2, areDups = false)
+            markReads(readsByLeftPos.toSeq.unzip._2, areDups = false)
 
           // These reads have their left position mapped
           case Some(leftPosWithOrientation) =>
@@ -88,21 +88,21 @@ private[rdd] object MarkDuplicates extends Serializable {
             if (hasPairs) {
               // Since we have pairs, mark all fragments as duplicates
               val processedFrags = if (fragments.isDefined) {
-                markReads(fragments.get.unzip._2, areDups = true)
+                markReads(fragments.get.toSeq.unzip._2, areDups = true)
               } else {
                 Seq.empty
               }
 
               val processedPairs = for (
                 buckets <- (readsByRightPos - None).values;
-                processedPair <- scoreAndMarkReads(buckets.unzip._2)
+                processedPair <- scoreAndMarkReads(buckets.toSeq.unzip._2)
               ) yield processedPair
 
               processedPairs ++ processedFrags
 
             } else if (fragments.isDefined) {
               // No pairs. Score the fragments.
-              scoreAndMarkReads(fragments.get.unzip._2)
+              scoreAndMarkReads(fragments.get.toSeq.unzip._2)
             } else {
               Seq.empty
             }
