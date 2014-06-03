@@ -446,4 +446,11 @@ class MdTag(
     mdString
   }
 
+  // We implement equality and hashing using the string representation of the MD tag.
+  override def equals(other: Any): Boolean = other match {
+    case that: MdTag => toString == that.toString
+    case _           => false
+  }
+  def canEqual(other: Any): Boolean = other.isInstanceOf[MdTag]
+  override def hashCode: Int = toString.hashCode
 }
