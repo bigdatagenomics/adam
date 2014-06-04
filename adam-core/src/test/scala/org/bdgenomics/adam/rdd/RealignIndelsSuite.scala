@@ -147,7 +147,6 @@ class RealignIndelsSuite extends SparkFunSuite {
 
     assert(artificial_realigned_reads_collected.size === gatk_artificial_realigned_reads_collected.size)
 
-    Console.println("checking relative ordering of realigned reads")
     val artificial_read4 = artificial_realigned_reads_collected.filter(_.getReadName == "read4")
     val gatk_read4 = gatk_artificial_realigned_reads_collected.filter(_.getReadName == "read4")
     val result = artificial_read4.zip(gatk_read4)

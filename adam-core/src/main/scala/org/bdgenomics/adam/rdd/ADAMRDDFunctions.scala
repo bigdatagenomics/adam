@@ -330,13 +330,9 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
       }
     }
 
-    println("Putting reads in buckets.")
-
     val bucketedReads = rdd.filter(_.getStart != null)
       .flatMap(mapToBucket)
       .groupByKey()
-
-    println("Have reads in buckets.")
 
     val pp = new Reads2PileupProcessor(secondaryAlignments)
 

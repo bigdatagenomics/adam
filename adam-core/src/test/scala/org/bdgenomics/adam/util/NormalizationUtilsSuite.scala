@@ -61,7 +61,6 @@ class NormalizationUtilsSuite extends FunSuite {
 
     val new_cigar = NormalizationUtils.leftAlignIndel(read)
 
-    println(new_cigar)
     assert(new_cigar.toString == "10M10D10M")
     // TODO: the implicit for ADAMRecord->RichADAMRecord doesn't get
     // called here for some reason.

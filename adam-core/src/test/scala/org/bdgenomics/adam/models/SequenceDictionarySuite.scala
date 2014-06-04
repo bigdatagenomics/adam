@@ -186,7 +186,7 @@ class SequenceDictionarySuite extends FunSuite {
 
   test("convert from sam sequence dictionary and back") {
     val sr0 = new SAMSequenceRecord("chr0", 1000)
-    println(sr0.getSequenceIndex)
+
     val srs = List(sr0)
 
     val ssd = new SAMSequenceDictionary(srs)

@@ -110,6 +110,10 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   def toSAMSequenceDictionary(): SAMSequenceDictionary = {
     new SAMSequenceDictionary(records.map(_.toSAMSequenceRecord).toList)
   }
+
+  override def toString: String = {
+    records.map(_.toString).fold("SequenceDictionary{")(_ + "\n" + _) + "}"
+  }
 }
 
 /**
