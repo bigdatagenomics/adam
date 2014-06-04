@@ -20,11 +20,12 @@ import org.apache.avro.Schema
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 
-class Take10Plugin extends ADAMPlugin[ADAMRecord, ADAMRecord] with Serializable {
+class TakeNPlugin extends ADAMPlugin[ADAMRecord, ADAMRecord] with Serializable {
   override def projection: Option[Schema] = None
   override def predicate: Option[(ADAMRecord) => Boolean] = None
 
   override def run(sc: SparkContext, recs: RDD[ADAMRecord], args: String): RDD[ADAMRecord] = {
-    sc.parallelize(recs.take(10))
+    val n = args.toInt
+    sc.parallelize(recs.take(n))
   }
 }
