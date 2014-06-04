@@ -300,8 +300,8 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
     assert(only_SNPs(2).getSNPSet().head.getSNPSite() === 807733)
     // the last read has two SNPs
     assert(only_SNPs(4).getSNPSet().size === 2)
-    assert(only_SNPs(4).getSNPSet().head.getSNPSite() === 869572)
-    assert(only_SNPs(4).getSNPSet().toIndexedSeq(1).getSNPSite() === 869673)
+    assert(only_SNPs(4).getSNPSet().head.getSNPSite() === 869673)
+    assert(only_SNPs(4).getSNPSet().toIndexedSeq(1).getSNPSite() === 869572)
   }
 
   sparkTest("creating indel targets for mason reads") {
