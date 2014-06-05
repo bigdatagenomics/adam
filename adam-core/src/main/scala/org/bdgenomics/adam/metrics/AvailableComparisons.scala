@@ -20,7 +20,7 @@ import org.bdgenomics.adam.projections.FieldValue
 import org.bdgenomics.adam.projections.ADAMRecordField._
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.util.Util._;
-import scala.collection.{ JavaConversions, Map }
+import scala.collection.Map
 import org.bdgenomics.adam.models.ReadBucket
 
 object DefaultComparisons {
