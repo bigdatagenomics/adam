@@ -19,7 +19,7 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
     reads
   }
 
-  def mason_rods: RDD[Seq[ADAMPileup]] = {
+  def mason_rods: RDD[Iterable[ADAMPileup]] = {
     mason_reads.adamRecords2Pileup()
       .groupBy(_.getPosition) // this we just do to match behaviour in IndelRealignerTargetFinder
       .sortByKey(ascending = true, numPartitions = 1)
@@ -32,7 +32,7 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
     reads
   }
 
-  def artificial_rods: RDD[Seq[ADAMPileup]] = {
+  def artificial_rods: RDD[Iterable[ADAMPileup]] = {
     artificial_reads.adamRecords2Pileup()
       .groupBy(_.getPosition) // this we just do to match behaviour in IndelRealignerTargetFinder
       .sortByKey(ascending = true, numPartitions = 1)
@@ -54,7 +54,7 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
       .build()
   }
 
-  def make_pileup(reads: RDD[ADAMRecord]): Array[Seq[ADAMPileup]] = {
+  def make_pileup(reads: RDD[ADAMRecord]): Array[Iterable[ADAMPileup]] = {
     reads.adamRecords2Pileup().groupBy(_.getPosition).sortByKey().map(_._2).collect()
   }
 
@@ -190,44 +190,44 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
 
   sparkTest("extracting matches, mismatches and indels from mason reads") {
 
-    val extracted_rods: RDD[Tuple3[Seq[ADAMPileup], Seq[ADAMPileup], Seq[ADAMPileup]]] =
+    val extracted_rods: RDD[Tuple3[Iterable[ADAMPileup], Iterable[ADAMPileup], Iterable[ADAMPileup]]] =
       mason_rods.map(x => Tuple3(IndelRealignmentTarget.extractIndels(x), IndelRealignmentTarget.extractMatches(x), IndelRealignmentTarget.extractMismatches(x)))
-    val extracted_rods_collected: Array[Tuple3[Seq[ADAMPileup], Seq[ADAMPileup], Seq[ADAMPileup]]] = extracted_rods.collect()
+    val extracted_rods_collected: Array[Tuple3[Iterable[ADAMPileup], Iterable[ADAMPileup], Iterable[ADAMPileup]]] = extracted_rods.collect()
 
     // the first read has CIGAR 100M and MD 92T7
-    assert(extracted_rods_collected.slice(0, 100).forall(x => x._1.length == 0))
-    assert(extracted_rods_collected.slice(0, 92).forall(x => x._2.length == 1))
-    assert(extracted_rods_collected.slice(0, 92).forall(x => x._3.length == 0))
-    assert(extracted_rods_collected(92)._2.length === 0)
-    assert(extracted_rods_collected(92)._3.length === 1)
-    assert(extracted_rods_collected.slice(93, 100).forall(x => x._2.length == 1))
-    assert(extracted_rods_collected.slice(93, 100).forall(x => x._3.length == 0))
+    assert(extracted_rods_collected.slice(0, 100).forall(x => x._1.size == 0))
+    assert(extracted_rods_collected.slice(0, 92).forall(x => x._2.size == 1))
+    assert(extracted_rods_collected.slice(0, 92).forall(x => x._3.size == 0))
+    assert(extracted_rods_collected(92)._2.size === 0)
+    assert(extracted_rods_collected(92)._3.size === 1)
+    assert(extracted_rods_collected.slice(93, 100).forall(x => x._2.size == 1))
+    assert(extracted_rods_collected.slice(93, 100).forall(x => x._3.size == 0))
     // the second read has CIGAR 32M1D33M1I34M and MD 0G24A6^T67
-    assert(extracted_rods_collected.slice(100, 132).forall(x => x._1.length == 0))
+    assert(extracted_rods_collected.slice(100, 132).forall(x => x._1.size == 0))
     // first the SNP at the beginning
-    assert(extracted_rods_collected(100)._2.length === 0)
-    assert(extracted_rods_collected(100)._3.length === 1)
+    assert(extracted_rods_collected(100)._2.size === 0)
+    assert(extracted_rods_collected(100)._3.size === 1)
     // now a few matches
-    assert(extracted_rods_collected.slice(101, 125).forall(x => x._2.length == 1))
-    assert(extracted_rods_collected.slice(101, 125).forall(x => x._3.length == 0))
+    assert(extracted_rods_collected.slice(101, 125).forall(x => x._2.size == 1))
+    assert(extracted_rods_collected.slice(101, 125).forall(x => x._3.size == 0))
     // another SNP
-    assert(extracted_rods_collected(125)._2.length === 0)
-    assert(extracted_rods_collected(125)._3.length === 1)
+    assert(extracted_rods_collected(125)._2.size === 0)
+    assert(extracted_rods_collected(125)._3.size === 1)
     // a few more matches
-    assert(extracted_rods_collected.slice(126, 132).forall(x => x._2.length == 1))
-    assert(extracted_rods_collected.slice(126, 132).forall(x => x._3.length == 0))
+    assert(extracted_rods_collected.slice(126, 132).forall(x => x._2.size == 1))
+    assert(extracted_rods_collected.slice(126, 132).forall(x => x._3.size == 0))
     // now comes the deletion of T
-    assert(extracted_rods_collected(132)._1.length === 1)
-    assert(extracted_rods_collected(132)._2.length === 0)
-    assert(extracted_rods_collected(132)._3.length === 0)
+    assert(extracted_rods_collected(132)._1.size === 1)
+    assert(extracted_rods_collected(132)._2.size === 0)
+    assert(extracted_rods_collected(132)._3.size === 0)
     // now 33 more matches
-    assert(extracted_rods_collected.slice(133, 166).forall(x => x._1.length == 0))
-    assert(extracted_rods_collected.slice(133, 166).forall(x => x._2.length == 1))
-    assert(extracted_rods_collected.slice(133, 166).forall(x => x._3.length == 0))
+    assert(extracted_rods_collected.slice(133, 166).forall(x => x._1.size == 0))
+    assert(extracted_rods_collected.slice(133, 166).forall(x => x._2.size == 1))
+    assert(extracted_rods_collected.slice(133, 166).forall(x => x._3.size == 0))
     // now one insertion
-    assert(extracted_rods_collected(166)._1.length === 1)
-    assert(extracted_rods_collected(166)._2.length === 1)
-    assert(extracted_rods_collected(166)._3.length === 0)
+    assert(extracted_rods_collected(166)._1.size === 1)
+    assert(extracted_rods_collected(166)._2.size === 1)
+    assert(extracted_rods_collected(166)._3.size === 0)
     // TODO: add read with more insertions, overlapping reads
   }
 
@@ -300,8 +300,8 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
     assert(only_SNPs(2).getSNPSet().head.getSNPSite() === 807733)
     // the last read has two SNPs
     assert(only_SNPs(4).getSNPSet().size === 2)
-    assert(only_SNPs(4).getSNPSet().head.getSNPSite() === 869572)
-    assert(only_SNPs(4).getSNPSet().toIndexedSeq(1).getSNPSite() === 869673)
+    assert(only_SNPs(4).getSNPSet().head.getSNPSite() === 869673)
+    assert(only_SNPs(4).getSNPSet().toIndexedSeq(1).getSNPSite() === 869572)
   }
 
   sparkTest("creating indel targets for mason reads") {

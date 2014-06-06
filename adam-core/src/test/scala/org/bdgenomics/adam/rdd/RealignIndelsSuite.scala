@@ -114,7 +114,7 @@ class RealignIndelsSuite extends SparkFunSuite {
 
     val targets = RealignmentTargetFinder(artificial_reads)
     val rr = artificial_reads.map(RichADAMRecord(_))
-    val readsMappedToTarget: Array[Tuple2[IndelRealignmentTarget, Seq[ADAMRecord]]] = RealignIndels.mapTargets(rr, targets).map(kv => {
+    val readsMappedToTarget: Array[Tuple2[IndelRealignmentTarget, Iterable[ADAMRecord]]] = RealignIndels.mapTargets(rr, targets).map(kv => {
       val (t, r) = kv
 
       (t, r.map(r => r.record))
@@ -123,7 +123,7 @@ class RealignIndelsSuite extends SparkFunSuite {
     val readReference = readsMappedToTarget.map {
       case (target, reads) => {
         if (!target.isEmpty) {
-          val referenceFromReads: (String, Long, Long) = RealignIndels.getReferenceFromReads(reads.map(r => new RichADAMRecord(r)))
+          val referenceFromReads: (String, Long, Long) = RealignIndels.getReferenceFromReads(reads.map(r => new RichADAMRecord(r)).toSeq)
           assert(referenceFromReads._2 == -1 || referenceFromReads._1.length > 0)
           checkReference(referenceFromReads)
         }

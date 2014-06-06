@@ -139,7 +139,7 @@ object ADAMContext {
     config.setAll(Array(("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
       ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
       ("spark.kryoserializer.buffer.mb", sparkKryoBufferSize.toString),
-      ("spark.kryo.referenceTracking", "false")))
+      ("spark.kryo.referenceTracking", "true")))
 
     val sc = new SparkContext(config)
 
