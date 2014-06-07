@@ -41,13 +41,24 @@ record ADAMRecord {
     union { boolean, null } properPair = false;
     union { boolean, null } readMapped = false;
     union { boolean, null } mateMapped = false;
-    union { boolean, null } readNegativeStrand = false;
-    union { boolean, null } mateNegativeStrand = false;
     union { boolean, null } firstOfPair = false;
     union { boolean, null } secondOfPair = false;
-    union { boolean, null } primaryAlignment = false;
     union { boolean, null } failedVendorQualityChecks = false;
     union { boolean, null } duplicateRead = false;
+
+    // alignment flags (all default to null, as readMapped defaults to false)
+    union { boolean, null } readNegativeStrand = false; // aligned to reverse compliment
+    union { boolean, null } mateNegativeStrand = false; // mate aligned to reverse compliment
+    // primary vs. secondary vs. supplementary:
+    // - primary is either the best linear alignment or the "first" linear alignment 
+    //   in a chimeric alignment
+    // - supplementary is a non-primary linear alignment in a chimeric alignment
+    // - secondary is an alignment that is not the best alignment (an alignment that is
+    //   worse than the primary alignment) and that is not a supplimental linear alignment in a 
+    //   chimeric alignment (thus not supplimentary)
+    union { boolean, null } primaryAlignment = false;
+    union { boolean, null } secondaryAlignment = false;
+    union { boolean, null } supplementaryAlignment = false;
 
     // Commonly used optional attributes
     union { null, string } mismatchingPositions = null;
