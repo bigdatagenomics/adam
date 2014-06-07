@@ -40,6 +40,7 @@ object ADAMMain extends Logging {
     Fasta2ADAM,
     PluginExecutor,
     VcfAnnotation2ADAM,
+    Vcf2FlatGenotype,
     SummarizeGenotypes,
     BuildInformation)
 

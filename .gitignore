@@ -7,6 +7,5 @@ build
 #*
 *.bam*
 *.adam*
-*.vcf*
 *.log
 .*.swp
