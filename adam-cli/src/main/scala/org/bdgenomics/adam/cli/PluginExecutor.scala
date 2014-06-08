@@ -54,6 +54,9 @@ class PluginExecutorArgs extends Args4jBase with SparkArgs with ParquetArgs {
 
   @Args4jOption(name = "-access_control", usage = "Class for access control")
   var accessControl: String = "org.bdgenomics.adam.plugins.EmptyAccessControl"
+
+  @Args4jOption(name = "-plugin_args", usage = "Arguments for the plugin")
+  var pluginArgs: String = ""
 }
 
 class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCommand[PluginExecutorArgs] {
@@ -111,7 +114,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
       case Some(filterFunc) => firstRdd.filter(filterFunc)
     }
 
-    val results = plugin.run(sc, input)
+    val results = plugin.run(sc, input, args.pluginArgs)
 
     output(sc, results)
   }
