@@ -126,7 +126,9 @@ class SequenceRecord(
     val url: Option[String] = None,
     val md5: Option[String] = None,
     val refseq: Option[String] = None,
-    val genbank: Option[String] = None) extends Serializable {
+    val genbank: Option[String] = None,
+    val assembly: Option[String] = None,
+    val species: Option[String] = None) extends Serializable {
 
   assert(name != null && !name.isEmpty, "SequenceRecord.name is null or empty")
   assert(length > 0, "SequenceRecord.length <= 0")
@@ -141,9 +143,25 @@ class SequenceRecord(
   def toSAMSequenceRecord(): SAMSequenceRecord = {
     val rec = new SAMSequenceRecord(name.toString, length.toInt)
 
-    // set URL if available
-    url.foreach(rec.setAssembly)
+    // set md5 if available
+    md5.foreach(s => rec.setAttribute(SAMSequenceRecord.MD5_TAG, s.toUpperCase()))
 
+    // set URL if available
+    url.foreach(rec.setAttribute(SAMSequenceRecord.URI_TAG, _))
+
+    // set species if available
+    species.foreach(rec.setAttribute(SAMSequenceRecord.SPECIES_TAG, _))
+
+    // set assembly if available
+    assembly.foreach(rec.setAssembly)
+
+    // set refseq accession number if available
+    refseq.foreach(rec.setAttribute("REFSEQ", _))
+
+    // set genbank accession number if available
+    genbank.foreach(rec.setAttribute("GENBANK", _))
+
+    // return record
     rec
   }
 
@@ -165,14 +183,23 @@ object SequenceRecord {
   val REFSEQ_TAG = "REFSEQ"
   val GENBANK_TAG = "GENBANK"
 
-  def apply(name: String, length: Long, md5: CharSequence = null, url: CharSequence = null, refseq: CharSequence = null, genbank: CharSequence = null): SequenceRecord = {
+  def apply(name: String,
+            length: Long,
+            md5: CharSequence = null,
+            url: CharSequence = null,
+            refseq: CharSequence = null,
+            genbank: CharSequence = null,
+            assembly: CharSequence = null,
+            species: CharSequence = null): SequenceRecord = {
     new SequenceRecord(
       name,
       length,
       Option(url).map(_.toString),
       Option(md5).map(_.toString),
       Option(refseq).map(_.toString),
-      Option(genbank).map(_.toString))
+      Option(genbank).map(_.toString),
+      Option(assembly).map(_.toString),
+      Option(species).map(_.toString))
   }
 
   /*
@@ -188,7 +215,9 @@ object SequenceRecord {
       md5 = record.getAttribute(SAMSequenceRecord.MD5_TAG),
       url = record.getAttribute(SAMSequenceRecord.URI_TAG),
       refseq = record.getAttribute(REFSEQ_TAG),
-      genbank = record.getAttribute(GENBANK_TAG))
+      genbank = record.getAttribute(GENBANK_TAG),
+      assembly = record.getAssembly,
+      species = record.getAttribute(SAMSequenceRecord.SPECIES_TAG))
 
   }
   def toSAMSequenceRecord(record: SequenceRecord): SAMSequenceRecord = {
@@ -203,7 +232,9 @@ object SequenceRecord {
       contig.getContigName.toString,
       contig.getContigLength,
       md5 = contig.getContigName,
-      url = contig.getReferenceURL)
+      url = contig.getReferenceURL,
+      assembly = contig.getAssembly,
+      species = contig.getSpecies)
   }
 
   def toADAMContig(record: SequenceRecord): ADAMContig = {
@@ -212,6 +243,8 @@ object SequenceRecord {
       .setContigLength(record.length)
     record.md5.foreach(builder.setContigMD5)
     record.url.foreach(builder.setReferenceURL)
+    record.assembly.foreach(builder.setAssembly)
+    record.species.foreach(builder.setSpecies)
     builder.build
   }
 
