@@ -6,6 +6,8 @@ record ADAMContig {
   union { null, long }   contigLength = null;
   union { null, string } contigMD5 = null;
   union { null, string } referenceURL = null;
+  union { null, string } assembly = null;
+  union { null, string } species = null;
 }
 
 record ADAMRecord {
