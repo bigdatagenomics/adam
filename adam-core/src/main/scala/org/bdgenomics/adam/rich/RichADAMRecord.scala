@@ -22,10 +22,38 @@ import org.bdgenomics.adam.util._
 import scala.Some
 import scala.collection.immutable.NumericRange
 import org.bdgenomics.adam.models.{ ReferenceRegion, ReferencePosition, Attribute }
+import java.util.regex.Pattern
 
 object RichADAMRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
   val ILLUMINA_READNAME_REGEX = "[a-zA-Z0-9]+:[0-9]:([0-9]+):([0-9]+):([0-9]+).*".r
+
+  val cigarPattern = Pattern.compile("([0-9]+)([MIDNSHPX=])")
+
+  /**
+   * Parses a CIGAR string, and returns the aligned length with respect to the
+   * reference genome (i.e. skipping clipping, padding, and insertion operators)
+   *
+   * @param cigar The CIGAR string whose reference length is to be measured
+   * @return A non-negative integer, the sum of the MDNX= operators in the CIGAR string.
+   */
+  def referenceLengthFromCigar(cigar: String): Int = {
+    val m = cigarPattern.matcher(cigar)
+    var i = 0
+    var len: Int = 0
+    while (i < cigar.length) {
+      if (m.find(i)) {
+        val op = m.group(2)
+        if ("MDNX=".indexOf(op) != -1) {
+          len += m.group(1).toInt
+        }
+      } else {
+        return len
+      }
+      i = m.end()
+    }
+    len
+  }
 
   def apply(record: ADAMRecord) = {
     new RichADAMRecord(record)
@@ -38,6 +66,8 @@ object RichADAMRecord {
 class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 
 class RichADAMRecord(val record: ADAMRecord) {
+
+  lazy val referenceLength: Int = RichADAMRecord.referenceLengthFromCigar(record.cigar)
 
   lazy val readRegion = ReferenceRegion(this)
 
