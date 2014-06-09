@@ -56,15 +56,13 @@ object DecadentRead {
 
 class DecadentRead(val record: RichADAMRecord) extends Logging {
   // Can't be a primary alignment unless it has been aligned
-  //
-  // FIXME(#112): This is currently unenforceable; SAMRecordConverter sets PrimaryAlignment on unmapped reads
-  //require(!record.getPrimaryAlignment || record.getReadMapped, "Unaligned read can't be a primary alignment")
+  require(!record.getPrimaryAlignment || record.getReadMapped, "Unaligned read can't be a primary alignment")
 
   // Should have quality scores for all residues
   require(record.getSequence.length == record.qualityScores.length, "sequence and qualityScores must be same length")
 
   // MapQ should be valid
-  require(record.getMapq == null || (record.getMapq >= 0 && record.getMapq <= 255), "MapQ must be in [0, 255]")
+  require(record.getMapq == null || (record.getMapq >= 0 && record.getMapq <= 93), "MapQ must be in [0, 255]")
 
   // Alignment must be valid
   require(!record.getReadMapped || record.getStart >= 0, "Invalid alignment start index")

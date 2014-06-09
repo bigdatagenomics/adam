@@ -102,6 +102,8 @@ class ADAMRecordConverter extends Serializable {
             .foreach(v => builder.setReadNegativeStrandFlag(v.booleanValue))
           Option(adamRecord.getPrimaryAlignment)
             .foreach(v => builder.setNotPrimaryAlignmentFlag(!v.booleanValue))
+          Option(adamRecord.getSupplementaryAlignment)
+            .foreach(v => builder.setSupplementaryAlignmentFlag(v.booleanValue))
           Option(adamRecord.getStart)
             .foreach(s => builder.setAlignmentStart(s.toInt + 1))
           Option(adamRecord.getMapq).foreach(v => builder.setMappingQuality(v))

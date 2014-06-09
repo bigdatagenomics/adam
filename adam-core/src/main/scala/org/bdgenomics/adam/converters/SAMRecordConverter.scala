@@ -64,13 +64,32 @@ class SAMRecordConverter extends Serializable {
       assert(start != 0, "Start cannot equal 0 if contig is set.")
       builder.setStart((start - 1).asInstanceOf[Long])
 
-      // set read mapped flag
-      builder.setReadMapped(true)
-
+      // set mapping quality
       val mapq: Int = samRecord.getMappingQuality
 
       if (mapq != SAMRecord.UNKNOWN_MAPPING_QUALITY) {
         builder.setMapq(mapq)
+      }
+
+      // set mapping flags
+      // oddly enough, it appears that reads can show up with mapping info (mapq, cigar, position)
+      // even if the read unmapped flag is set...
+      if (samRecord.getReadUnmappedFlag) {
+        builder.setReadMapped(false)
+      } else {
+        builder.setReadMapped(true)
+        if (samRecord.getReadNegativeStrandFlag) {
+          builder.setReadNegativeStrand(true)
+        }
+        if (!samRecord.getNotPrimaryAlignmentFlag) {
+          builder.setPrimaryAlignment(true)
+        } else {
+          // if the read is not a primary alignment, it can be either secondary or supplementary
+          // - secondary: not the best linear alignment
+          // - supplementary: part of a chimeric alignment
+          builder.setSupplementaryAlignment(samRecord.getSupplementaryAlignmentFlag)
+          builder.setSecondaryAlignment(!samRecord.getSupplementaryAlignmentFlag)
+        }
       }
     }
 
@@ -110,17 +129,8 @@ class SAMRecordConverter extends Serializable {
       if (samRecord.getDuplicateReadFlag) {
         builder.setDuplicateRead(true)
       }
-      if (samRecord.getReadNegativeStrandFlag) {
-        builder.setReadNegativeStrand(true)
-      }
-      if (!samRecord.getNotPrimaryAlignmentFlag) {
-        builder.setPrimaryAlignment(true)
-      }
       if (samRecord.getReadFailsVendorQualityCheckFlag) {
         builder.setFailedVendorQualityChecks(true)
-      }
-      if (samRecord.getReadUnmappedFlag) {
-        builder.setReadMapped(false)
       }
     }
 
