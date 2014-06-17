@@ -207,6 +207,20 @@ record VariantCallingAnnotations {
   union { null, boolean } usedForPositiveTrainingSet = null;
 }
 
+record ADAMFlatGenotype {
+    union { null, string } referenceName = null;
+    union { null, long }   position = null;
+    union { null, string } referenceAllele = null;
+    union { null, array<string> } alleles = null;
+
+    union { null, array<int> } genotypeLikelihoods = null;
+    union { null, array<int> } alleleDepths = null;
+    union { null, int } readDepth = null;
+    union { null, int } genotypeQuality = null;
+
+    union { null, string } sampleId = null;
+}
+
 record ADAMGenotype {
   ADAMVariant variant;
   union { null, VariantCallingAnnotations } variantCallingAnnotations = null;
