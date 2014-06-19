@@ -16,13 +16,11 @@
 
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.Argument
 import org.apache.hadoop.mapreduce.Job
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.projections.{ Projection, ADAMRecordField }
-import java.util.logging.Level
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
@@ -44,8 +42,6 @@ class FlagStat(protected val args: FlagStatArgs) extends ADAMSparkCommand[FlagSt
   val companion: ADAMCommandCompanion = FlagStat
 
   def run(sc: SparkContext, job: Job): Unit = {
-    // Quiet parquet logging...
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val projection = Projection(
       ADAMRecordField.readMapped, ADAMRecordField.mateMapped, ADAMRecordField.readPaired,

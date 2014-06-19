@@ -15,12 +15,10 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.Argument
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
-import java.util.logging.Level
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.models.SequenceRecord
 
@@ -42,9 +40,6 @@ class ListDict(protected val args: ListDictArgs) extends ADAMSparkCommand[ListDi
   val companion: ADAMCommandCompanion = ListDict
 
   def run(sc: SparkContext, job: Job): Unit = {
-    // Quiet parquet logging...
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
-
     val dict = sc.adamDictionaryLoad[ADAMRecord](args.inputPath)
 
     dict.records.foreach {

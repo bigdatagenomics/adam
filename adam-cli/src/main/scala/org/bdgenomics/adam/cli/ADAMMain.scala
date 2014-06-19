@@ -17,6 +17,8 @@ package org.bdgenomics.adam.cli
 
 import org.apache.spark.Logging
 import scala.Some
+import org.bdgenomics.adam.util.ParquetLogger
+import java.util.logging.Level._
 
 object ADAMMain extends Logging {
 
@@ -64,8 +66,10 @@ object ADAMMain extends Logging {
       printCommands()
     } else {
       commands.find(_.commandName == args(0)) match {
-        case None      => printCommands()
-        case Some(cmd) => cmd.apply(args drop 1).run()
+        case None => printCommands()
+        case Some(cmd) =>
+          init(Args4j[InitArgs](args drop 1))
+          cmd.apply(args drop 1).run()
       }
     }
   }
@@ -75,5 +79,12 @@ object ADAMMain extends Logging {
   private def argsToString(args: Array[String]): String = {
     def escapeArg(s: String) = "\"" + s.replaceAll("\\\"", "\\\\\"") + "\""
     args.map(escapeArg).mkString(" ")
+  }
+
+  class InitArgs extends Args4jBase with ParquetArgs {}
+
+  private def init(args: InitArgs) {
+    // Set parquet logging (default: severe)
+    ParquetLogger.hadoopLoggerLevel(parse(args.logLevel))
   }
 }

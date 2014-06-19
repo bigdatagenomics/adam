@@ -15,7 +15,6 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.util.ParquetLogger
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import net.sf.samtools._
 import org.bdgenomics.adam.avro.ADAMRecord
@@ -25,7 +24,6 @@ import parquet.avro.AvroParquetWriter
 import org.apache.hadoop.fs.Path
 import java.util.concurrent._
 import scala.Some
-import java.util.logging.Level
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.converters.SAMRecordConverter
 
@@ -59,9 +57,6 @@ class Bam2ADAM(args: Bam2ADAMArgs) extends ADAMCommand {
     (list, threadNum) =>
       {
         val writerThread = new Thread(new Runnable {
-
-          // Quiet parquet...
-          ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
           val parquetWriter = new AvroParquetWriter[ADAMRecord](
             new Path(args.outputPath + "/part%d".format(threadNum)),
