@@ -27,7 +27,6 @@ import org.apache.spark.rdd.RDD
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 
 import scala.collection.Seq
-import java.util.logging.Level
 import java.io.{ PrintWriter, OutputStreamWriter }
 import org.bdgenomics.adam.rdd.comparisons.ComparisonTraversalEngine
 import org.bdgenomics.adam.metrics.{ DefaultComparisons, CombinedComparisons, Collection, BucketComparisons }
@@ -173,8 +172,6 @@ class CompareADAM(protected val args: CompareADAMArgs) extends ADAMSparkCommand[
   }
 
   def run(sc: SparkContext, job: Job): Unit = {
-
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     if (args.listComparisons) {
       println("\nAvailable comparisons:")
