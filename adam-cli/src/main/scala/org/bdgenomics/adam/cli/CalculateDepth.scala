@@ -15,7 +15,6 @@
  */
 package org.bdgenomics.adam.cli
 
-import java.util.logging.Level
 import scala.io._
 
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -32,7 +31,6 @@ import org.bdgenomics.adam.projections.ADAMRecordField._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.RegionJoin
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
-import org.bdgenomics.adam.util.ParquetLogger
 
 /**
  * CalculateDepth (accessible as the command 'depth' through the CLI) takes two arguments,
@@ -66,8 +64,6 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
   val companion: ADAMCommandCompanion = CalculateDepth
 
   def run(sc: SparkContext, job: Job): Unit = {
-    // Quiet parquet logging...
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val proj = Projection(contig, start, cigar, readMapped)
 

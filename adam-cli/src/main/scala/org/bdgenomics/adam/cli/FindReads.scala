@@ -15,11 +15,9 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.util.ParquetLogger
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
-import java.util.logging.Level
 import scala.collection.Seq
 import java.util.regex.Pattern
 import org.apache.hadoop.fs.{ Path, FileSystem }
@@ -114,7 +112,6 @@ class FindReads(protected val args: FindReadsArgs) extends ADAMSparkCommand[Find
   val companion: ADAMCommandCompanion = FindReads
 
   def run(sc: SparkContext, job: Job): Unit = {
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     val filter = FindReads.parseFilters(args.filter)
     val generator = filter.comparison
