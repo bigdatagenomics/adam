@@ -28,5 +28,7 @@ trait ParquetArgs extends Args4jBase {
   var compressionCodec = CompressionCodecName.GZIP
   @Option(name = "-parquet_disable_dictionary", usage = "Disable dictionary encoding")
   var disableDictionary = false
+  @Option(required = false, name = "-parquet_logging_level", usage = "Parquet logging level (default = severe)")
+  var logLevel = "SEVERE"
 }
 

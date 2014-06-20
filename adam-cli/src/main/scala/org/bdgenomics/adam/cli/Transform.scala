@@ -16,7 +16,6 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.adam.util.ParquetLogger
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -24,7 +23,6 @@ import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.models.SnpTable
 import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
-import java.util.logging.Level
 import org.bdgenomics.adam.rich.RichADAMVariant
 
 object Transform extends ADAMCommandCompanion {
@@ -71,9 +69,6 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
   val companion = Transform
 
   def run(sc: SparkContext, job: Job) {
-
-    // Quiet Parquet...
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     var adamRecords: RDD[ADAMRecord] = sc.adamLoad(args.inputPath)
 

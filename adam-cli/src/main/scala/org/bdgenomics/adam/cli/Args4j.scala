@@ -18,9 +18,6 @@ package org.bdgenomics.adam.cli
 
 import org.kohsuke.args4j.{ CmdLineException, CmdLineParser, Option }
 import scala.collection.JavaConversions._
-import scala.util.control.Exception._
-import scala.Left
-import scala.Right
 
 class Args4jBase {
   @Option(name = "-h", aliases = Array("-help", "--help", "-?"), usage = "Print help")
@@ -30,7 +27,7 @@ class Args4jBase {
 object Args4j {
   val helpOptions = Array("-h", "-help", "--help", "-?")
 
-  def apply[T <% Args4jBase: Manifest](args: Array[String]): T = {
+  def apply[T <% Args4jBase: Manifest](args: Array[String], ignoreCmdLineExceptions: Boolean = false): T = {
     val args4j: T = manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance()
     val parser = new CmdLineParser(args4j)
     parser.setUsageWidth(150);
@@ -45,16 +42,16 @@ object Args4j {
       displayHelp()
     }
 
-    allCatch either parser.parseArgument(args.toList) match {
-      case Right(x) => {
-        if (args4j.doPrintUsage) {
-          displayHelp()
+    try {
+      parser.parseArgument(args.toList)
+      if (args4j.doPrintUsage)
+        displayHelp()
+    } catch {
+      case e: CmdLineException =>
+        if (!ignoreCmdLineExceptions) {
+          println(e.getMessage)
+          displayHelp(1)
         }
-      }
-      case Left(e: CmdLineException) => {
-        println(e.getMessage)
-        displayHelp(1)
-      }
     }
 
     args4j
