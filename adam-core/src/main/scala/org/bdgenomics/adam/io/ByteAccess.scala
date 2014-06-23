@@ -15,12 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.io
 
 import java.io._
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.GetObjectRequest
-import scala.Serializable
 
 /**
  * ByteAccess is a wrapper trait around sources of bytes which are accessible at arbitrary offsets.
@@ -50,53 +47,4 @@ trait ByteAccess {
     }
     buffer
   }
-}
-
-class ByteArrayByteAccess(val bytes: Array[Byte]) extends ByteAccess with Serializable {
-
-  private val inputStream = new ByteArrayInputStream(bytes)
-  assert(inputStream.markSupported(), "ByteArrayInputStream doesn't support marks")
-
-  inputStream.mark(bytes.length)
-
-  override def length(): Long = bytes.length
-  override def readByteStream(offset: Long, length: Int): InputStream = {
-    inputStream.reset()
-    inputStream.skip(offset)
-    inputStream
-  }
-}
-
-/**
- * This is somewhat poorly named, it probably should be LocalFileByteAccess
- *
- * @param f the file to read bytes from
- */
-class LocalFileByteAccess(f: File) extends ByteAccess {
-
-  assert(f.isFile, "\"%s\" isn't a file".format(f.getAbsolutePath))
-  assert(f.exists(), "File \"%s\" doesn't exist".format(f.getAbsolutePath))
-  assert(f.canRead, "File \"%s\" can't be read".format(f.getAbsolutePath))
-
-  override def length(): Long = f.length()
-
-  override def readByteStream(offset: Long, length: Int): InputStream = {
-    val fileIo = new FileInputStream(f)
-    fileIo.skip(offset)
-    fileIo
-  }
-
-}
-
-class S3ByteAccess(client: AmazonS3, bucket: String, keyName: String) extends ByteAccess {
-  assert(bucket != null)
-  assert(keyName != null)
-
-  lazy val objectMetadata = client.getObjectMetadata(bucket, keyName)
-  override def length(): Long = objectMetadata.getContentLength
-  override def readByteStream(offset: Long, length: Int): InputStream = {
-    val getObjectRequest = new GetObjectRequest(bucket, keyName).withRange(offset, offset + length)
-    client.getObject(getObjectRequest).getObjectContent
-  }
-
 }

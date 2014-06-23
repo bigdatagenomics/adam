@@ -15,11 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
-
-import com.amazonaws.auth.AWSCredentials
-import com.amazonaws.services.s3.AmazonS3Client
-import java.io.File
+package org.bdgenomics.adam.io
 
 /**
  * FileLocator is a trait which is meant to combine aspects of
@@ -53,41 +49,4 @@ object FileLocator {
       case None    => None
       case Some(m) => Some(m.group(1), m.group(2))
     }
-}
-
-class S3FileLocator(val credentials: AWSCredentials, val bucket: String, val key: String) extends FileLocator {
-
-  override def parentLocator(): Option[FileLocator] = FileLocator.parseSlash(key) match {
-    case Some((parent, child)) => Some(new S3FileLocator(credentials, bucket, parent))
-    case None                  => None
-  }
-
-  override def relativeLocator(relativePath: String): FileLocator =
-    new S3FileLocator(credentials, bucket, "%s/%s".format(key.stripSuffix("/"), relativePath))
-
-  override def bytes: ByteAccess = new S3ByteAccess(new AmazonS3Client(credentials), bucket, key)
-}
-
-class LocalFileLocator(val file: File) extends FileLocator {
-  override def relativeLocator(relativePath: String): FileLocator = new LocalFileLocator(new File(file, relativePath))
-  override def bytes: ByteAccess = new LocalFileByteAccess(file)
-
-  override def parentLocator(): Option[FileLocator] = file.getParentFile match {
-    case null             => None
-    case parentFile: File => Some(new LocalFileLocator(parentFile))
-  }
-
-  override def hashCode(): Int = file.hashCode()
-  override def equals(x: Any): Boolean = {
-    x match {
-      case loc: LocalFileLocator => file.equals(loc.file)
-      case _                     => false
-    }
-  }
-}
-
-class ByteArrayLocator(val byteData: Array[Byte]) extends FileLocator {
-  override def relativeLocator(relativePath: String): FileLocator = this
-  override def parentLocator(): Option[FileLocator] = None
-  override def bytes: ByteAccess = new ByteArrayByteAccess(byteData)
 }
