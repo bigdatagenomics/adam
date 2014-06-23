@@ -8,6 +8,8 @@ PROJECT_ROOT="$DIR/.."
 VERSION=$(grep "<version>" "$PROJECT_ROOT/pom.xml"  | head -2 | tail -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')
 echo "Testing ADAM version $VERSION"
 
+MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=1g" mvn test -Dnetworkconnected
+
 ADAM_TMP_DIR=$(mktemp -d -t "adamTestXXXXXXX")
 # Just to be paranoid.. use a directory internal to the ADAM_TMP_DIR
 ADAM_TMP_DIR="$ADAM_TMP_DIR/deleteMePleaseThisIsNoLongerNeeded"
