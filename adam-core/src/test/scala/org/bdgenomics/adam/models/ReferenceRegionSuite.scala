@@ -182,6 +182,31 @@ class ReferenceRegionSuite extends FunSuite {
     assert(hull1.end == 10L)
   }
 
+  test("region name is sanitized when creating region from read") {
+    val contig = ADAMContig.newBuilder()
+      .setContigName("chrM")
+      .build()
+
+    val read = ADAMRecord.newBuilder()
+      .setStart(5L)
+      .setSequence("ACGT")
+      .setContig(contig)
+      .setReadMapped(true)
+      .setCigar("5M")
+      .setMismatchingPositions("5")
+      .build()
+
+    val region = ReferenceRegion(read)
+
+    assert(region.isDefined)
+
+    val r = region.get
+
+    assert(r.referenceName === "chrM")
+    assert(r.start === 5L)
+    assert(r.end === 10L)
+  }
+
   def region(refName: String, start: Long, end: Long): ReferenceRegion =
     ReferenceRegion(refName, start, end)
 
