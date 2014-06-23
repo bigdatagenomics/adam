@@ -17,35 +17,39 @@ package org.bdgenomics.adam.cli
 
 import org.apache.spark.Logging
 import scala.Some
+import scala.collection.mutable.ListBuffer
 import org.bdgenomics.adam.util.ParquetLogger
 import java.util.logging.Level._
 
 object ADAMMain extends Logging {
 
-  private val commands = List(Transform,
-    PrintTags,
-    CalculateDepth,
-    FlagStat,
-    Reads2Ref,
-    MpileupCommand,
-    PrintADAM,
-    PileupAggregator,
-    ListDict,
-    CompareADAM,
-    /* TODO (nealsid): Reimplement in terms of new schema
-    ComputeVariants, 
-     */
-    Bam2ADAM,
-    ADAM2Vcf,
-    Vcf2ADAM,
-    FindReads,
-    Fasta2ADAM,
-    PluginExecutor,
-    VcfAnnotation2ADAM,
-    Vcf2FlatGenotype,
-    SummarizeGenotypes,
-    CountKmers,
-    BuildInformation)
+  case class CommandGroup(name: String, commands: List[ADAMCommandCompanion])
+
+  private val commandGroups =
+    List(CommandGroup("ADAM ACTIONS", List(CompareADAM,
+      FindReads,
+      CalculateDepth,
+      CountKmers,
+      PileupAggregator,
+      Transform,
+      /* TODO (nealsid): Reimplement in terms of new schema
+         ComputeVariants
+       */
+      PluginExecutor)),
+      CommandGroup("CONVERSION OPERATIONS", List(Bam2ADAM,
+        Vcf2FlatGenotype,
+        Vcf2ADAM,
+        VcfAnnotation2ADAM,
+        ADAM2Vcf,
+        Fasta2ADAM,
+        Reads2Ref,
+        MpileupCommand)),
+      CommandGroup("PRINT", List(PrintADAM,
+        FlagStat,
+        PrintTags,
+        ListDict,
+        SummarizeGenotypes,
+        BuildInformation)))
 
   private def printCommands() {
     println("\n")
@@ -55,9 +59,12 @@ object ADAMMain extends Logging {
                |  /  Y88b         888    |         /  Y88b           / Y88Y Y888b
                | /____Y88b        888   /         /____Y88b         /   YY   Y888b
                |/      Y88b       888_-~         /      Y88b       /          Y888b""".stripMargin('|'))
-    println("\nChoose one of the following commands:\n")
-    commands.foreach(cmd =>
-      println("%20s : %s".format(cmd.commandName, cmd.commandDescription)))
+    println("\nChoose one of the following commands:")
+    commandGroups.foreach { grp =>
+      println("\n%s".format(grp.name))
+      grp.commands.foreach(cmd =>
+        println("%20s : %s".format(cmd.commandName, cmd.commandDescription)))
+    }
     println("\n")
   }
 
@@ -66,6 +73,10 @@ object ADAMMain extends Logging {
     if (args.size < 1) {
       printCommands()
     } else {
+      var commands = new ListBuffer[ADAMCommandCompanion]
+      commandGroups.foreach(grp =>
+        grp.commands.foreach(cmd =>
+          commands += cmd))
       commands.find(_.commandName == args(0)) match {
         case None => printCommands()
         case Some(cmd) =>
