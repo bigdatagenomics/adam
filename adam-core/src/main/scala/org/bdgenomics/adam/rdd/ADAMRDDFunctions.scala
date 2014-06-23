@@ -44,7 +44,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
-import org.bdgenomics.adam.rdd.correction.TrimReads
+import org.bdgenomics.adam.rdd.correction.{ ErrorCorrection, TrimReads }
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.util.{
   HadoopUtil,
@@ -225,6 +225,41 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
     })
 
     (convertedRDD, header)
+  }
+
+  /**
+   * Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
+   *
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
+   * @return Returns an RDD containing k-mer/count pairs.
+   *
+   * @see adamCountQmers
+   */
+  def adamCountKmers(kmerLength: Int): RDD[(String, Long)] = {
+    rdd.flatMap(r => {
+      // cut each read into k-mers, and attach a count of 1L
+      r.getSequence
+        .toString
+        .sliding(kmerLength)
+        .map(k => (k, 1L))
+    }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
+  }
+
+  /**
+   * Cuts reads into _q_-mers, and then finds the _q_-mer weight. Q-mers are described in:
+   *
+   * Kelley, David R., Michael C. Schatz, and Steven L. Salzberg. "Quake: quality-aware detection
+   * and correction of sequencing errors." Genome Biol 11.11 (2010): R116.
+   *
+   * _Q_-mers are _k_-mers weighted by the quality score of the bases in the _k_-mer.
+   *
+   * @param qmerLength The value of _q_ to use for cutting _q_-mers.
+   * @return Returns an RDD containing q-mer/weight pairs.
+   *
+   * @see adamCountKmers
+   */
+  def adamCountQmers(qmerLength: Int): RDD[(String, Double)] = {
+    ErrorCorrection.countQmers(rdd, qmerLength)
   }
 
   def adamSortReadsByReferencePosition(): RDD[ADAMRecord] = {
