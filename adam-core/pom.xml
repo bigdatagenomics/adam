@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.bdgenomics.adam</groupId>
         <artifactId>adam-parent</artifactId>
-        <version>0.10.1-SNAPSHOT</version>
+        <version>0.12.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>adam-core</artifactId>
@@ -103,6 +103,10 @@
             <artifactId>spark-core_${scala.artifact.suffix}</artifactId>
         </dependency>
         <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
         </dependency>
@@ -142,6 +146,10 @@
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.artifact.suffix}</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk</artifactId>
         </dependency>
     </dependencies>
 </project>

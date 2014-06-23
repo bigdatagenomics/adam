@@ -17,10 +17,7 @@
 package org.bdgenomics.adam.rdd.recalibration
 
 import org.bdgenomics.adam.avro.ADAMRecord
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.DecadentRead
-import org.bdgenomics.adam.rich.DecadentRead._
-import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.util.QualityScore
 import math.{ exp, log }

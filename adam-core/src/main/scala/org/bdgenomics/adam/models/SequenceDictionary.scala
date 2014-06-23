@@ -39,6 +39,37 @@ object SequenceDictionary {
     new SAMSequenceDictionary(dictionary.records.map(SequenceRecord.toSAMSequenceRecord(_)).toList)
   }
 
+  /**
+   * Extracts a SAM sequence dictionary from a SAM file header and returns an
+   * ADAM sequence dictionary.
+   *
+   * @see fromSAMSequenceDictionary
+   *
+   * @param header SAM file header.
+   * @return Returns an ADAM style sequence dictionary.
+   */
+  def fromSAMHeader(header: SAMFileHeader): SequenceDictionary = {
+    val samDict = header.getSequenceDictionary
+
+    fromSAMSequenceDictionary(samDict)
+  }
+
+  /**
+   * Converts a picard/samtools SAMSequenceDictionary into an ADAM sequence dictionary.
+   *
+   * @see fromSAMHeader
+   * @see fromVCFHeader
+   *
+   * @param samDict SAM style sequence dictionary.
+   * @return Returns an ADAM style sequence dictionary.
+   */
+  def fromSAMSequenceDictionary(samDict: SAMSequenceDictionary): SequenceDictionary = {
+    val samDictRecords: List[SAMSequenceRecord] = samDict.getSequences
+    new SequenceDictionary(samDictRecords.map(SequenceRecord.fromSAMSequenceRecord).toVector)
+  }
+
+  def fromSAMReader(samReader: SAMFileReader): SequenceDictionary =
+    fromSAMHeader(samReader.getFileHeader)
 }
 
 class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializable {
@@ -70,6 +101,19 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
     case that: SequenceDictionary => records.equals(that.records)
     case _                        => false
   }
+
+  /**
+   * Converts this ADAM style sequence dictionary into a SAM style sequence dictionary.
+   *
+   * @return Returns a SAM formatted sequence dictionary.
+   */
+  def toSAMSequenceDictionary(): SAMSequenceDictionary = {
+    new SAMSequenceDictionary(records.map(_.toSAMSequenceRecord).toList)
+  }
+
+  override def toString: String = {
+    records.map(_.toString).fold("SequenceDictionary{")(_ + "\n" + _) + "}"
+  }
 }
 
 /**
@@ -82,12 +126,44 @@ class SequenceRecord(
     val url: Option[String] = None,
     val md5: Option[String] = None,
     val refseq: Option[String] = None,
-    val genbank: Option[String] = None) extends Serializable {
+    val genbank: Option[String] = None,
+    val assembly: Option[String] = None,
+    val species: Option[String] = None) extends Serializable {
 
   assert(name != null && !name.isEmpty, "SequenceRecord.name is null or empty")
   assert(length > 0, "SequenceRecord.length <= 0")
 
   override def toString: String = "%s->%s".format(name, length)
+
+  /**
+   * Converts this sequence record into a SAM sequence record.
+   *
+   * @return A SAM formatted sequence record.
+   */
+  def toSAMSequenceRecord(): SAMSequenceRecord = {
+    val rec = new SAMSequenceRecord(name.toString, length.toInt)
+
+    // set md5 if available
+    md5.foreach(s => rec.setAttribute(SAMSequenceRecord.MD5_TAG, s.toUpperCase()))
+
+    // set URL if available
+    url.foreach(rec.setAttribute(SAMSequenceRecord.URI_TAG, _))
+
+    // set species if available
+    species.foreach(rec.setAttribute(SAMSequenceRecord.SPECIES_TAG, _))
+
+    // set assembly if available
+    assembly.foreach(rec.setAssembly)
+
+    // set refseq accession number if available
+    refseq.foreach(rec.setAttribute("REFSEQ", _))
+
+    // set genbank accession number if available
+    genbank.foreach(rec.setAttribute("GENBANK", _))
+
+    // return record
+    rec
+  }
 
   override def equals(o: Any): Boolean = o match {
     case that: SequenceRecord => {
@@ -107,16 +183,31 @@ object SequenceRecord {
   val REFSEQ_TAG = "REFSEQ"
   val GENBANK_TAG = "GENBANK"
 
-  def apply(name: String, length: Long, md5: CharSequence = null, url: CharSequence = null, refseq: CharSequence = null, genbank: CharSequence = null): SequenceRecord = {
+  def apply(name: String,
+            length: Long,
+            md5: CharSequence = null,
+            url: CharSequence = null,
+            refseq: CharSequence = null,
+            genbank: CharSequence = null,
+            assembly: CharSequence = null,
+            species: CharSequence = null): SequenceRecord = {
     new SequenceRecord(
       name,
       length,
       Option(url).map(_.toString),
       Option(md5).map(_.toString),
       Option(refseq).map(_.toString),
-      Option(genbank).map(_.toString))
+      Option(genbank).map(_.toString),
+      Option(assembly).map(_.toString),
+      Option(species).map(_.toString))
   }
 
+  /*
+   * Generates a sequence record from a SAMSequence record.
+   *
+   * @param seqRecord SAM Sequence record input.
+   * @return A new ADAM sequence record.
+   */
   def fromSAMSequenceRecord(record: SAMSequenceRecord): SequenceRecord = {
     SequenceRecord(
       record.getSequenceName,
@@ -124,7 +215,9 @@ object SequenceRecord {
       md5 = record.getAttribute(SAMSequenceRecord.MD5_TAG),
       url = record.getAttribute(SAMSequenceRecord.URI_TAG),
       refseq = record.getAttribute(REFSEQ_TAG),
-      genbank = record.getAttribute(GENBANK_TAG))
+      genbank = record.getAttribute(GENBANK_TAG),
+      assembly = record.getAssembly,
+      species = record.getAttribute(SAMSequenceRecord.SPECIES_TAG))
 
   }
   def toSAMSequenceRecord(record: SequenceRecord): SAMSequenceRecord = {
@@ -139,7 +232,9 @@ object SequenceRecord {
       contig.getContigName.toString,
       contig.getContigLength,
       md5 = contig.getContigName,
-      url = contig.getReferenceURL)
+      url = contig.getReferenceURL,
+      assembly = contig.getAssembly,
+      species = contig.getSpecies)
   }
 
   def toADAMContig(record: SequenceRecord): ADAMContig = {
@@ -148,6 +243,8 @@ object SequenceRecord {
       .setContigLength(record.length)
     record.md5.foreach(builder.setContigMD5)
     record.url.foreach(builder.setReferenceURL)
+    record.assembly.foreach(builder.setAssembly)
+    record.species.foreach(builder.setSpecies)
     builder.build
   }
 

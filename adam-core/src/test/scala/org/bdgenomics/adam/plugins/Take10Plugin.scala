@@ -24,7 +24,7 @@ class Take10Plugin extends ADAMPlugin[ADAMRecord, ADAMRecord] with Serializable 
   override def projection: Option[Schema] = None
   override def predicate: Option[(ADAMRecord) => Boolean] = None
 
-  override def run(sc: SparkContext, recs: RDD[ADAMRecord]): RDD[ADAMRecord] = {
+  override def run(sc: SparkContext, recs: RDD[ADAMRecord], args: String): RDD[ADAMRecord] = {
     sc.parallelize(recs.take(10))
   }
 }

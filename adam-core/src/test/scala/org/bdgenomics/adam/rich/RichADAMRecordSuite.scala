@@ -22,6 +22,16 @@ import org.bdgenomics.adam.models.{ ReferencePosition, TagType, Attribute }
 
 class RichADAMRecordSuite extends FunSuite {
 
+  test("referenceLengthFromCigar") {
+    assert(referenceLengthFromCigar("3M") === 3)
+    assert(referenceLengthFromCigar("30M") === 30)
+    assert(referenceLengthFromCigar("10Y") === 0) // should abort when it hits an illegal operator
+    assert(referenceLengthFromCigar("10M1Y") === 10) // same
+    assert(referenceLengthFromCigar("10M1I10M") === 20)
+    assert(referenceLengthFromCigar("10M1D10M") === 21)
+    assert(referenceLengthFromCigar("1S10M1S") === 10)
+  }
+
   test("Unclipped Start") {
     val recordWithoutClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(42).build()
     val recordWithClipping = ADAMRecord.newBuilder().setReadMapped(true).setCigar("2S8M").setStart(42).build()

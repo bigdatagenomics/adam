@@ -42,5 +42,5 @@ trait ADAMPlugin[Input, Output] {
   /**
    * Method to create the transformations on the RDD.
    */
-  def run(sc: SparkContext, recs: RDD[Input]): RDD[Output]
+  def run(sc: SparkContext, recs: RDD[Input], args: String): RDD[Output]
 }

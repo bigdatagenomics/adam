@@ -16,12 +16,18 @@
 package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.models.{ ReferenceRegion, ReferenceMapping }
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.adam.avro.{ ADAMFlatGenotype, ADAMRecord }
 
 /**
  * A common location in which to drop some ReferenceMapping implementations.
  */
 object ReferenceMappingContext {
+
+  implicit object ADAMFlatGenotypeReferenceMapping extends ReferenceMapping[ADAMFlatGenotype] with Serializable {
+    override def getReferenceName(value: ADAMFlatGenotype): String = value.getReferenceName.toString
+    override def getReferenceRegion(value: ADAMFlatGenotype): ReferenceRegion =
+      ReferenceRegion(value.getReferenceName.toString, value.getPosition, value.getPosition)
+  }
 
   implicit object ADAMRecordReferenceMapping extends ReferenceMapping[ADAMRecord] with Serializable {
     def getReferenceName(value: ADAMRecord): String =

@@ -17,13 +17,10 @@
 package org.bdgenomics.adam.util
 
 import org.scalatest.FunSuite
-import net.sf.samtools.{ Cigar, CigarOperator, CigarElement, TextCigarCodec }
+import net.sf.samtools.TextCigarCodec
 import org.bdgenomics.adam.avro.ADAMRecord
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.rich.RichADAMRecord._
-import org.bdgenomics.adam.rich.RichCigar
-import org.bdgenomics.adam.rich.RichCigar._
 
 class NormalizationUtilsSuite extends FunSuite {
 
@@ -64,7 +61,6 @@ class NormalizationUtilsSuite extends FunSuite {
 
     val new_cigar = NormalizationUtils.leftAlignIndel(read)
 
-    println(new_cigar)
     assert(new_cigar.toString == "10M10D10M")
     // TODO: the implicit for ADAMRecord->RichADAMRecord doesn't get
     // called here for some reason.

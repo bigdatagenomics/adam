@@ -6,6 +6,8 @@ record ADAMContig {
   union { null, long }   contigLength = null;
   union { null, string } contigMD5 = null;
   union { null, string } referenceURL = null;
+  union { null, string } assembly = null;
+  union { null, string } species = null;
 }
 
 record ADAMRecord {
@@ -31,19 +33,32 @@ record ADAMRecord {
     union { null, string } qual = null;
     union { null, string } recordGroupName = null;
     union { null, int } recordGroupId = null;
+    union { int, null } basesTrimmedFromStart = 0;
+    union { int, null } basesTrimmedFromEnd = 0;
 
     // Read flags (all default to false)
     union { boolean, null } readPaired = false;
     union { boolean, null } properPair = false;
     union { boolean, null } readMapped = false;
     union { boolean, null } mateMapped = false;
-    union { boolean, null } readNegativeStrand = false;
-    union { boolean, null } mateNegativeStrand = false;
     union { boolean, null } firstOfPair = false;
     union { boolean, null } secondOfPair = false;
-    union { boolean, null } primaryAlignment = false;
     union { boolean, null } failedVendorQualityChecks = false;
     union { boolean, null } duplicateRead = false;
+
+    // alignment flags (all default to null, as readMapped defaults to false)
+    union { boolean, null } readNegativeStrand = false; // aligned to reverse compliment
+    union { boolean, null } mateNegativeStrand = false; // mate aligned to reverse compliment
+    // primary vs. secondary vs. supplementary:
+    // - primary is either the best linear alignment or the "first" linear alignment 
+    //   in a chimeric alignment
+    // - supplementary is a non-primary linear alignment in a chimeric alignment
+    // - secondary is an alignment that is not the best alignment (an alignment that is
+    //   worse than the primary alignment) and that is not a supplimental linear alignment in a 
+    //   chimeric alignment (thus not supplimentary)
+    union { boolean, null } primaryAlignment = false;
+    union { boolean, null } secondaryAlignment = false;
+    union { boolean, null } supplementaryAlignment = false;
 
     // Commonly used optional attributes
     union { null, string } mismatchingPositions = null;
@@ -192,12 +207,26 @@ record VariantCallingAnnotations {
   union { null, boolean } usedForPositiveTrainingSet = null;
 }
 
+record ADAMFlatGenotype {
+    union { null, string } referenceName = null;
+    union { null, long }   position = null;
+    union { null, string } referenceAllele = null;
+    union { null, array<string> } alleles = null;
+
+    union { null, array<int> } genotypeLikelihoods = null;
+    union { null, array<int> } alleleDepths = null;
+    union { null, int } readDepth = null;
+    union { null, int } genotypeQuality = null;
+
+    union { null, string } sampleId = null;
+}
+
 record ADAMGenotype {
   ADAMVariant variant;
   union { null, VariantCallingAnnotations } variantCallingAnnotations = null;
 
   // Sample-level data, i.e. data specific to this particular sample
-  string sampleId;
+  union { null, string }  sampleId = null;
   union { null, string }  sampleDescription = null;
   union { null, string }  processingDescription = null;
 

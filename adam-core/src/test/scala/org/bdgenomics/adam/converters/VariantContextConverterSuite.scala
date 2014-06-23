@@ -62,7 +62,7 @@ class VariantContextConverterSuite extends FunSuite {
     assert(adamVCs.length === 1)
     val adamVC = adamVCs.head
 
-    assert(adamVC.genotypes.length === 0)
+    assert(adamVC.genotypes.size === 0)
 
     val variant = adamVC.variant
     assert(variant.getContig.getContigName === "1")
@@ -196,7 +196,7 @@ class VariantContextConverterSuite extends FunSuite {
     assert(adamVCs.length === 2)
 
     for (adamVC <- adamVCs) {
-      assert(adamVC.genotypes.length === 1)
+      assert(adamVC.genotypes.size === 1)
       val adamGT = adamVC.genotypes.head
       assert(adamGT.getSplitFromMultiAllelic)
       assert(adamGT.getReferenceReadDepth === 4)

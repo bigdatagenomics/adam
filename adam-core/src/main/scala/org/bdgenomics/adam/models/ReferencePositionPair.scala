@@ -7,14 +7,14 @@ import Ordering.Option
 
 object ReferencePositionPair extends Logging {
   def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = {
-    singleReadBucket.primaryMapped.lift(0) match {
+    singleReadBucket.primaryMapped.toSeq.lift(0) match {
       case None =>
         // No mapped reads
         new ReferencePositionPair(None, None)
       case Some(read1) =>
         val read1pos = ReferencePositionWithOrientation.fivePrime(read1)
         if (read1.getReadPaired && read1.getMateMapped) {
-          singleReadBucket.primaryMapped.lift(1) match {
+          singleReadBucket.primaryMapped.toSeq.lift(1) match {
             case None =>
               // Orphaned read. Missing its mate.
               log.warn("%s denoted mate as mapped but mate does not exist".format(read1.getReadName))
@@ -29,7 +29,7 @@ object ReferencePositionPair extends Logging {
               }
           }
         } else {
-          singleReadBucket.primaryMapped.lift(1) match {
+          singleReadBucket.primaryMapped.toSeq.lift(1) match {
             case None =>
               // Mate is not mapped...
               new ReferencePositionPair(read1pos, None)

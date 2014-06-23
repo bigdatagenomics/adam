@@ -20,12 +20,10 @@ import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.avro.ADAMRecord
-import parquet.filter.UnboundRecordFilter
 import org.bdgenomics.adam.algorithms.realignmenttarget.RealignmentTargetFinder
 import org.bdgenomics.adam.algorithms.realignmenttarget.IndelRealignmentTarget
 import org.bdgenomics.adam.models.Consensus
 import org.bdgenomics.adam.rich.RichADAMRecord
-import org.scalatest.exceptions.TestFailedException
 
 class RealignIndelsSuite extends SparkFunSuite {
 
@@ -116,7 +114,7 @@ class RealignIndelsSuite extends SparkFunSuite {
 
     val targets = RealignmentTargetFinder(artificial_reads)
     val rr = artificial_reads.map(RichADAMRecord(_))
-    val readsMappedToTarget: Array[Tuple2[IndelRealignmentTarget, Seq[ADAMRecord]]] = RealignIndels.mapTargets(rr, targets).map(kv => {
+    val readsMappedToTarget: Array[Tuple2[IndelRealignmentTarget, Iterable[ADAMRecord]]] = RealignIndels.mapTargets(rr, targets).map(kv => {
       val (t, r) = kv
 
       (t, r.map(r => r.record))
@@ -125,7 +123,7 @@ class RealignIndelsSuite extends SparkFunSuite {
     val readReference = readsMappedToTarget.map {
       case (target, reads) => {
         if (!target.isEmpty) {
-          val referenceFromReads: (String, Long, Long) = RealignIndels.getReferenceFromReads(reads.map(r => new RichADAMRecord(r)))
+          val referenceFromReads: (String, Long, Long) = RealignIndels.getReferenceFromReads(reads.map(r => new RichADAMRecord(r)).toSeq)
           assert(referenceFromReads._2 == -1 || referenceFromReads._1.length > 0)
           checkReference(referenceFromReads)
         }
@@ -149,7 +147,6 @@ class RealignIndelsSuite extends SparkFunSuite {
 
     assert(artificial_realigned_reads_collected.size === gatk_artificial_realigned_reads_collected.size)
 
-    Console.println("checking relative ordering of realigned reads")
     val artificial_read4 = artificial_realigned_reads_collected.filter(_.getReadName == "read4")
     val gatk_read4 = gatk_artificial_realigned_reads_collected.filter(_.getReadName == "read4")
     val result = artificial_read4.zip(gatk_read4)

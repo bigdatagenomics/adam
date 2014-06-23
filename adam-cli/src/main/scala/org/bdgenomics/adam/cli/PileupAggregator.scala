@@ -20,7 +20,6 @@ import org.bdgenomics.adam.avro.ADAMPileup
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.Argument
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.adam.predicates.LocusPredicate
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 

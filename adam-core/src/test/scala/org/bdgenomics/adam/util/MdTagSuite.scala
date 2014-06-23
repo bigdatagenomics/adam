@@ -17,9 +17,8 @@
 package org.bdgenomics.adam.util
 
 import org.scalatest.FunSuite
-import net.sf.samtools.{ Cigar, TextCigarCodec }
+import net.sf.samtools.TextCigarCodec
 import org.bdgenomics.adam.avro.ADAMRecord
-import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.rich.RichADAMRecord._
 
 class MdTagSuite extends FunSuite {
@@ -48,6 +47,23 @@ class MdTagSuite extends FunSuite {
     intercept[IllegalArgumentException] {
       MdTag("0ACTG", 0L)
     }
+  }
+
+  test("md tag equality and hashcode") {
+    val md1 = MdTag("0A0", 0L)
+    val md1Dup = MdTag("0A0", 0L)
+    assert(md1 == md1Dup)
+    assert(md1.hashCode == md1Dup.hashCode)
+
+    val md2 = MdTag("100C0^C20", 0L)
+    val md2Dup = MdTag("100C0^C20", 0L)
+    assert(md2 == md2Dup)
+    assert(md2.hashCode == md2Dup.hashCode)
+
+    val md3 = MdTag("22^A79", 0L)
+    val md3Dup = MdTag("22^A79", 0L)
+    assert(md3 == md3Dup)
+    assert(md3.hashCode == md3Dup.hashCode)
   }
 
   test("valid md tags") {

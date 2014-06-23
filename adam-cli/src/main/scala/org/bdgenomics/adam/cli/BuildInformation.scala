@@ -15,10 +15,6 @@
  */
 package org.bdgenomics.adam.cli
 
-import scala.collection.JavaConversions._
-import scala.Some
-import scala.collection.JavaConverters._
-
 object BuildInformation extends ADAMCommandCompanion {
   val commandName: String = "buildinfo"
   val commandDescription: String = "Display build information (use this for bug reports)"

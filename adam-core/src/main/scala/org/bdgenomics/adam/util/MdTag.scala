@@ -18,8 +18,7 @@ package org.bdgenomics.adam.util
 import scala.collection.immutable
 import scala.collection.immutable.NumericRange
 import scala.util.matching.Regex
-import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
-import org.bdgenomics.adam.avro.ADAMRecord
+import net.sf.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.models.ReferencePosition
 
 //import org.bdgenomics.adam.util.ImplicitJavaConversions._
@@ -447,4 +446,11 @@ class MdTag(
     mdString
   }
 
+  // We implement equality and hashing using the string representation of the MD tag.
+  override def equals(other: Any): Boolean = other match {
+    case that: MdTag => toString == that.toString
+    case _           => false
+  }
+  def canEqual(other: Any): Boolean = other.isInstanceOf[MdTag]
+  override def hashCode: Int = toString.hashCode
 }

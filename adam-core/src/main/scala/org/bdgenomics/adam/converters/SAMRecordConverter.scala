@@ -25,10 +25,32 @@ import org.bdgenomics.adam.util.AttributeUtils
 class SAMRecordConverter extends Serializable {
   def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): ADAMRecord = {
 
+    val cigar: String = samRecord.getCigarString
+    val startTrim = if (cigar == "*") {
+      0
+    } else {
+      val count = cigar.takeWhile(_.isDigit).toInt
+      val operator = cigar.dropWhile(_.isDigit).head
+
+      if (operator == 'H') {
+        count
+      } else {
+        0
+      }
+    }
+    val endTrim = if (cigar.endsWith("H")) {
+      // must reverse string as takeWhile is not implemented in reverse direction
+      cigar.dropRight(1).reverse.takeWhile(_.isDigit).reverse.toInt
+    } else {
+      0
+    }
+
     val builder: ADAMRecord.Builder = ADAMRecord.newBuilder
       .setReadName(samRecord.getReadName)
       .setSequence(samRecord.getReadString)
-      .setCigar(samRecord.getCigarString)
+      .setCigar(cigar)
+      .setBasesTrimmedFromStart(startTrim)
+      .setBasesTrimmedFromEnd(endTrim)
       .setQual(samRecord.getBaseQualityString)
 
     // Only set the reference information if the read is aligned, matching the mate reference
@@ -37,15 +59,37 @@ class SAMRecordConverter extends Serializable {
     if (readReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
       builder.setContig(SequenceRecord.toADAMContig(dict(samRecord.getReferenceName).get))
 
+      // set read alignment flag
       val start: Int = samRecord.getAlignmentStart
-      if (start != 0) {
-        builder.setStart((start - 1).asInstanceOf[Long])
-      }
+      assert(start != 0, "Start cannot equal 0 if contig is set.")
+      builder.setStart((start - 1).asInstanceOf[Long])
 
+      // set mapping quality
       val mapq: Int = samRecord.getMappingQuality
 
       if (mapq != SAMRecord.UNKNOWN_MAPPING_QUALITY) {
         builder.setMapq(mapq)
+      }
+
+      // set mapping flags
+      // oddly enough, it appears that reads can show up with mapping info (mapq, cigar, position)
+      // even if the read unmapped flag is set...
+      if (samRecord.getReadUnmappedFlag) {
+        builder.setReadMapped(false)
+      } else {
+        builder.setReadMapped(true)
+        if (samRecord.getReadNegativeStrandFlag) {
+          builder.setReadNegativeStrand(true)
+        }
+        if (!samRecord.getNotPrimaryAlignmentFlag) {
+          builder.setPrimaryAlignment(true)
+        } else {
+          // if the read is not a primary alignment, it can be either secondary or supplementary
+          // - secondary: not the best linear alignment
+          // - supplementary: part of a chimeric alignment
+          builder.setSupplementaryAlignment(samRecord.getSupplementaryAlignmentFlag)
+          builder.setSecondaryAlignment(!samRecord.getSupplementaryAlignmentFlag)
+        }
       }
     }
 
@@ -85,17 +129,8 @@ class SAMRecordConverter extends Serializable {
       if (samRecord.getDuplicateReadFlag) {
         builder.setDuplicateRead(true)
       }
-      if (samRecord.getReadNegativeStrandFlag) {
-        builder.setReadNegativeStrand(true)
-      }
-      if (!samRecord.getNotPrimaryAlignmentFlag) {
-        builder.setPrimaryAlignment(true)
-      }
       if (samRecord.getReadFailsVendorQualityCheckFlag) {
         builder.setFailedVendorQualityChecks(true)
-      }
-      if (!samRecord.getReadUnmappedFlag) {
-        builder.setReadMapped(true)
       }
     }
 

@@ -15,6 +15,7 @@
  */
 package org.bdgenomics.adam.rdd
 
+import java.nio.file.Files
 import org.bdgenomics.adam.avro.{
   ADAMContig,
   ADAMGenotype,
@@ -648,4 +649,33 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     assert(rdd.adamGetReferenceString(region1) === "CTCTCA")
   }
 
+  sparkTest("round trip from ADAM to SAM and back to ADAM produces equivalent ADAMRecord values") {
+    val reads12Path = Thread.currentThread().getContextClassLoader.getResource("reads12.sam").getFile
+    val rdd12A: RDD[ADAMRecord] = sc.adamLoad(reads12Path)
+
+    val tempFile = Files.createTempDirectory("reads12")
+    rdd12A.adamSAMSave(tempFile.toAbsolutePath.toString + "/reads12.sam", asSam = true)
+
+    val rdd12B: RDD[ADAMRecord] = sc.adamBamLoad(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
+
+    assert(rdd12B.count() === rdd12A.count())
+
+    val reads12A = rdd12A.collect()
+    val reads12B = rdd12B.collect()
+
+    (0 until reads12A.length) foreach {
+      case i: Int =>
+        val (readA, readB) = (reads12A(i), reads12B(i))
+        assert(readA.getSequence === readB.getSequence)
+        assert(readA.getQual === readB.getQual)
+        assert(readA.getCigar === readB.getCigar)
+    }
+  }
+
+  sparkTest("SAM conversion sets read mapped flag properly") {
+    val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
+    val sam: RDD[ADAMRecord] = sc.adamLoad(filePath)
+
+    sam.collect.foreach(r => assert(r.getReadMapped))
+  }
 }

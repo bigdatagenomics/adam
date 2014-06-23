@@ -18,7 +18,6 @@ package org.bdgenomics.adam.metrics
 import org.bdgenomics.adam.models.ReadBucket
 import org.bdgenomics.adam.projections.FieldValue
 import java.util.regex.Pattern
-import java.io.Writer
 import org.bdgenomics.adam.metrics.filters.ComparisonsFilter
 
 trait BucketComparisons[+T] {

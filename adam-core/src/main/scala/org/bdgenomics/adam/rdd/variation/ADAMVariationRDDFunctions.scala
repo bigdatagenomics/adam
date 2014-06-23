@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rdd.variation
 import org.bdgenomics.adam.avro.{ ADAMGenotypeType, ADAMGenotype, ADAMDatabaseVariantAnnotation }
 import org.bdgenomics.adam.models.{
   ADAMVariantContext,
-  SequenceDictionary,
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
@@ -54,7 +53,7 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends ADAMS
   }
 
   def adamGetCallsetSamples(): List[String] = {
-    rdd.flatMap(c => c.genotypes.map(_.getSampleId).distinct)
+    rdd.flatMap(c => c.genotypes.map(_.getSampleId).toSeq.distinct)
       .distinct
       .map(_.toString)
       .collect()

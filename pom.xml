@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.bdgenomics.adam</groupId>
     <artifactId>adam-parent</artifactId>
-    <version>0.10.1-SNAPSHOT</version>
+    <version>0.12.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>ADAM</name>
     <description>A fast, scalable genome analysis system</description>
@@ -20,8 +20,8 @@
         <java.version>1.7</java.version>
         <scala.version>2.10.3</scala.version>
         <scala.artifact.suffix>2.10</scala.artifact.suffix>
-        <avro.version>1.7.4</avro.version>
-        <spark.version>0.9.1</spark.version>
+        <avro.version>1.7.6</avro.version>
+        <spark.version>1.0.0</spark.version>
         <parquet.version>1.4.3</parquet.version>
         <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
         <hadoop.version>2.2.0</hadoop.version>
@@ -262,6 +262,11 @@
                 <version>1.3.2</version>
             </dependency>
             <dependency>
+                <groupId>it.unimi.dsi</groupId>
+                <artifactId>fastutil</artifactId>
+                <version>6.4.4</version>
+            </dependency>
+            <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
                 <version>${scala.version}</version>
@@ -361,6 +366,12 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
                 <version>1.7.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk</artifactId>
+                <version>1.7.5</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

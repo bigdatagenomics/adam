@@ -24,13 +24,10 @@ import com.twitter.chill.Base64.OutputStream
 // import org.apache.spark.api.java.*
 
 import java.util
-import java.io.PrintWriter
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
-import org.apache.avro.data.Json
 import org.apache.avro.io.{ EncoderFactory, DecoderFactory }
-import org.bdgenomics.adam.avro.{ ADAMGenotype, ADAMVariant, ADAMRecord }
-import org.apache.avro.specific.SpecificRecord
+import org.bdgenomics.adam.avro.ADAMRecord
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object PrintADAM extends ADAMCommandCompanion {

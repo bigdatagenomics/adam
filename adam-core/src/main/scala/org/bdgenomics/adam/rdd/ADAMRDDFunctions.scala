@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.bdgenomics.adam.rdd
 
+import fi.tkk.ics.hadoop.bam.SAMRecordWritable
 import java.util.logging.Level
+import net.sf.samtools.SAMFileHeader
 import org.apache.avro.specific.SpecificRecord
+import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
@@ -26,19 +30,29 @@ import org.bdgenomics.adam.avro.{
   ADAMRecord,
   ADAMNucleotideContigFragment
 }
+import org.bdgenomics.adam.converters.ADAMRecordConverter
 import org.bdgenomics.adam.models.{
+  ADAMRod,
+  RecordGroupDictionary,
+  ReferencePosition,
+  ReferenceRegion,
+  SAMFileHeaderWritable,
   SequenceRecord,
   SequenceDictionary,
   SingleReadBucket,
-  SnpTable,
-  ReferencePosition,
-  ReferenceRegion,
-  ADAMRod
+  SnpTable
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
+import org.bdgenomics.adam.rdd.correction.{ ErrorCorrection, TrimReads }
 import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.util.{ HadoopUtil, MapTools, ParquetLogger }
+import org.bdgenomics.adam.util.{
+  HadoopUtil,
+  MapTools,
+  ParquetLogger,
+  ADAMBAMOutputFormat,
+  ADAMSAMOutputFormat
+}
 import parquet.avro.{ AvroParquetOutputFormat, AvroWriteSupport }
 import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
@@ -136,8 +150,116 @@ class ADAMSpecificRecordSequenceDictionaryRDDAggregator[T <% SpecificRecord: Man
 
 class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionaryRDDAggregator[ADAMRecord](rdd) {
 
+  /**
+   * Saves an RDD of ADAM read data into the SAM/BAM format.
+   *
+   * @param filePath Path to save files to.
+   * @param asSam Selects whether to save as SAM or BAM. The default value is true (save in SAM format).
+   */
+  def adamSAMSave(filePath: String, asSam: Boolean = true) {
+
+    // convert the records
+    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM()
+
+    // add keys to our records
+    val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
+
+    // attach header to output format
+    asSam match {
+      case true  => ADAMSAMOutputFormat.addHeader(convertRecords.first.get.getHeader())
+      case false => ADAMBAMOutputFormat.addHeader(convertRecords.first.get.getHeader())
+    }
+
+    // write file to disk
+    val conf = rdd.context.hadoopConfiguration
+    asSam match {
+      case true  => withKey.saveAsNewAPIHadoopFile(filePath, classOf[LongWritable], classOf[SAMRecordWritable], classOf[ADAMSAMOutputFormat[LongWritable]], conf)
+      case false => withKey.saveAsNewAPIHadoopFile(filePath, classOf[LongWritable], classOf[SAMRecordWritable], classOf[ADAMBAMOutputFormat[LongWritable]], conf)
+    }
+  }
+
   def getSequenceRecordsFromElement(elem: ADAMRecord): scala.collection.Set[SequenceRecord] = {
     SequenceRecord.fromADAMRecord(elem)
+  }
+
+  /**
+   * Collects a dictionary summarizing the read groups in an RDD of ADAMRecords.
+   *
+   * @return A dictionary describing the read groups in this RDD.
+   */
+  def adamGetReadGroupDictionary(): RecordGroupDictionary = {
+    val rgNames = rdd.flatMap(r => Option(r.getRecordGroupName))
+      .map(_.toString)
+      .distinct()
+      .collect()
+      .toSeq
+
+    new RecordGroupDictionary(rgNames)
+  }
+
+  /**
+   * Converts an RDD of ADAM read records into SAM records.
+   *
+   * @return Returns a SAM/BAM formatted RDD of reads, as well as the file header.
+   */
+  def adamConvertToSAM(): (RDD[SAMRecordWritable], SAMFileHeader) = {
+    // collect global summary data
+    val sd = rdd.adamGetSequenceDictionary()
+    val rgd = rdd.adamGetReadGroupDictionary()
+
+    // create conversion object
+    val adamRecordConverter = new ADAMRecordConverter
+
+    // create header
+    val header = adamRecordConverter.createSAMHeader(sd, rgd)
+
+    // broadcast for efficiency
+    val hdrBcast = rdd.context.broadcast(SAMFileHeaderWritable(header))
+
+    // map across RDD to perform conversion
+    val convertedRDD: RDD[SAMRecordWritable] = rdd.map(r => {
+      // must wrap record for serializability
+      val srw = new SAMRecordWritable()
+      srw.set(adamRecordConverter.convert(r, hdrBcast.value))
+      srw
+    })
+
+    (convertedRDD, header)
+  }
+
+  /**
+   * Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
+   *
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
+   * @return Returns an RDD containing k-mer/count pairs.
+   *
+   * @see adamCountQmers
+   */
+  def adamCountKmers(kmerLength: Int): RDD[(String, Long)] = {
+    rdd.flatMap(r => {
+      // cut each read into k-mers, and attach a count of 1L
+      r.getSequence
+        .toString
+        .sliding(kmerLength)
+        .map(k => (k, 1L))
+    }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
+  }
+
+  /**
+   * Cuts reads into _q_-mers, and then finds the _q_-mer weight. Q-mers are described in:
+   *
+   * Kelley, David R., Michael C. Schatz, and Steven L. Salzberg. "Quake: quality-aware detection
+   * and correction of sequencing errors." Genome Biol 11.11 (2010): R116.
+   *
+   * _Q_-mers are _k_-mers weighted by the quality score of the bases in the _k_-mer.
+   *
+   * @param qmerLength The value of _q_ to use for cutting _q_-mers.
+   * @return Returns an RDD containing q-mer/weight pairs.
+   *
+   * @see adamCountKmers
+   */
+  def adamCountQmers(qmerLength: Int): RDD[(String, Double)] = {
+    ErrorCorrection.countQmers(rdd, qmerLength)
   }
 
   def adamSortReadsByReferencePosition(): RDD[ADAMRecord] = {
@@ -243,13 +365,9 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
       }
     }
 
-    println("Putting reads in buckets.")
-
     val bucketedReads = rdd.filter(_.getStart != null)
       .flatMap(mapToBucket)
       .groupByKey()
-
-    println("Have reads in buckets.")
 
     val pp = new Reads2PileupProcessor(secondaryAlignments)
 
@@ -259,7 +377,7 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
      * @param bucket Tuple of (bucket number, reads in bucket).
      * @return A sequence containing the rods in this bucket.
      */
-    def bucketedReadsToRods(bucket: (ReferencePosition, Seq[ADAMRecord])): Seq[ADAMRod] = {
+    def bucketedReadsToRods(bucket: (ReferencePosition, Iterable[ADAMRecord])): Iterable[ADAMRod] = {
       val (bucketStart, bucketReads) = bucket
 
       bucketReads.flatMap(pp.readToPileups)
@@ -306,6 +424,33 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
     assert(tagName.length == 2,
       "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName))
     rdd.filter(RichADAMRecord(_).tags.exists(_.tag == tagName))
+  }
+
+  /**
+   * Trims bases from the start and end of all reads in an RDD.
+   *
+   * @param trimStart Number of bases to trim from the start of the read.
+   * @param trimEnd Number of bases to trim from the end of the read.
+   * @param readGroup Optional parameter specifying which read group to trim. If omitted,
+   * all reads are trimmed.
+   * @return Returns an RDD of trimmed reads.
+   *
+   * @note Trimming parameters must be >= 0.
+   */
+  def adamTrimReads(trimStart: Int, trimEnd: Int, readGroup: Int = -1): RDD[ADAMRecord] = {
+    TrimReads(rdd, trimStart, trimEnd, readGroup)
+  }
+
+  /**
+   * Trims low quality read prefix/suffixes. The average read prefix/suffix quality is
+   * calculated from the Phred scaled qualities for read bases. We trim suffixes/prefixes
+   * that are below a user provided threshold.
+   *
+   * @param phredThreshold Phred score for trimming. Defaut value is 20.
+   * @return Returns an RDD of trimmed reads.
+   */
+  def adamTrimLowQualityReadGroups(phredThreshold: Int = 20): RDD[ADAMRecord] = {
+    TrimReads(rdd, phredThreshold)
   }
 }
 
@@ -408,7 +553,7 @@ class ADAMNucleotideContigFragmentRDDFunctions(rdd: RDD[ADAMNucleotideContigFrag
     /**
      * Remaps a single contig.
      *
-     * @param contig Contig to remap.
+     * @param fragment Contig to remap.
      * @param dictionary A sequence dictionary containing the IDs to use for remapping.
      * @return An option containing the remapped contig if it's sequence name was found in the dictionary.
      */

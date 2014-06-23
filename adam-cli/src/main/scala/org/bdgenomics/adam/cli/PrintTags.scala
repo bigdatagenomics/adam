@@ -15,12 +15,10 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.{ Option, Argument }
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
-import java.util.logging.Level
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.projections.{ Projection, ADAMRecordField }
 import org.apache.spark.rdd.RDD
@@ -58,10 +56,6 @@ class PrintTags(protected val args: PrintTagsArgs) extends ADAMSparkCommand[Prin
   val companion: ADAMCommandCompanion = PrintTags
 
   def run(sc: SparkContext, job: Job): Unit = {
-
-    // Quiet parquet logging...
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
-
     val toCount = if (args.count != null) args.count.split(",").toSet else Set()
 
     val proj = Projection(attributes, primaryAlignment, readMapped, readPaired, failedVendorQualityChecks)

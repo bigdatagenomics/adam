@@ -22,7 +22,6 @@ import org.bdgenomics.adam.plugins.{ AccessControl, ADAMPlugin }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.avro.Schema
 import org.apache.spark.rdd.RDD
-import parquet.filter.UnboundRecordFilter
 import org.apache.avro.specific.SpecificRecord
 import org.bdgenomics.adam.avro.ADAMRecord
 import org.bdgenomics.adam.predicates.ADAMPredicate
@@ -55,6 +54,9 @@ class PluginExecutorArgs extends Args4jBase with SparkArgs with ParquetArgs {
 
   @Args4jOption(name = "-access_control", usage = "Class for access control")
   var accessControl: String = "org.bdgenomics.adam.plugins.EmptyAccessControl"
+
+  @Args4jOption(name = "-plugin_args", usage = "Arguments for the plugin")
+  var pluginArgs: String = ""
 }
 
 class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCommand[PluginExecutorArgs] {
@@ -112,7 +114,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
       case Some(filterFunc) => firstRdd.filter(filterFunc)
     }
 
-    val results = plugin.run(sc, input)
+    val results = plugin.run(sc, input, args.pluginArgs)
 
     output(sc, results)
   }

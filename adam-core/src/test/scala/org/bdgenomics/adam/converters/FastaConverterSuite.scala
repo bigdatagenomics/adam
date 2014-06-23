@@ -17,6 +17,7 @@ package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.SparkFunSuite
+import java.io.File
 
 class FastaConverterSuite extends SparkFunSuite {
 
@@ -148,4 +149,72 @@ class FastaConverterSuite extends SparkFunSuite {
     assert(fastaElement2.getDescription === null)
   }
 
+  sparkTest("convert fasta with multiple sequences; short fragment") {
+    val fasta1 = List((0L, ">chr1"),
+      (1L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAGGGGGGGGGGAAAAAA"),
+      (2L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (3L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (4L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (5L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (6L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (7L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (8L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (9L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (10L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (11L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (12L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (13L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (14L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (15L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+      (16L, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+    val fasta2 = List((17L, ">chr2"),
+      (18L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCTTTTTTTTTTCCCCCCCCCCTTTTTTTTTTCCCCCC"),
+      (19L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (20L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (21L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (22L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (23L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (24L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (25L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (26L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (27L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (28L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (29L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (30L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (31L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (32L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"),
+      (33L, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"))
+    val fasta = fasta1 ::: fasta2
+    val rdd = sc.parallelize(fasta.toSeq)
+
+    val adamFasta = FastaConverter(rdd, maxFragmentLength = 35)
+    assert(adamFasta.count === 64)
+
+    val fastaElement1 = adamFasta.filter(_.getContig.getContigName == "chr1").collect()
+    val fastaFragmentSequence1 = fasta1.drop(1).map(_._2).mkString
+    val seqs = fastaElement1.sortBy(_.getFragmentNumber)
+    val convertedFragmentSequence1 = fastaElement1.sortBy(_.getFragmentNumber).map(_.getFragmentSequence.toString).mkString
+    assert(seqs != null)
+    assert(convertedFragmentSequence1 === fastaFragmentSequence1)
+
+    val fastaElement2 = adamFasta.filter(_.getContig.getContigName == "chr2").collect()
+    val fastaFragmentSequence2 = fasta2.drop(1).map(_._2).mkString
+    val convertedFragmentSequence2 = fastaElement2.sortBy(_.getFragmentNumber).map(_.getFragmentSequence.toString).mkString
+
+    assert(convertedFragmentSequence2 === fastaFragmentSequence2)
+  }
+
+  val chr1File = ClassLoader.getSystemClassLoader.getResource("human_g1k_v37_chr1_59kb.fasta").getFile
+
+  sparkTest("convert reference fasta file") {
+    //Loading "human_g1k_v37_chr1_59kb.fasta"
+    val referenceSequences = sc.adamSequenceLoad(chr1File, 10).collect()
+    assert(referenceSequences.forall(_.getContig.getContigName.toString == "1"))
+    assert(referenceSequences.slice(0, referenceSequences.length - 2).forall(_.getFragmentSequence.length == 10))
+
+    val reassembledSequence = referenceSequences.sortBy(_.getFragmentNumber).map(_.getFragmentSequence).mkString
+    val originalSequence = scala.io.Source.fromFile(new File(chr1File)).getLines().filter(!_.startsWith(">")).mkString
+
+    assert(reassembledSequence === originalSequence)
+  }
 }
