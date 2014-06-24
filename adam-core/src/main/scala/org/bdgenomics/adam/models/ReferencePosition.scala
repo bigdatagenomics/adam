@@ -96,7 +96,7 @@ object ReferencePosition {
    */
   def apply(record: ADAMRecord): Option[ReferencePosition] = {
     if (mappedPositionCheck(record)) {
-      Some(new ReferencePosition(record.getContig.getContigName, record.getStart))
+      Some(new ReferencePosition(record.getContig.getContigName.toString, record.getStart))
     } else {
       None
     }
