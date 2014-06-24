@@ -39,10 +39,10 @@ rm -rf $ADAM_TMP_DIR
 popd
 
 pushd "$PROJECT_ROOT"
-mvn org.scalariform:scalariform-maven-plugin:format
+./scripts/format-source
 if grep --quiet "dirty" <(git describe --dirty --tags)
 then
-        echo "Please run scalariform using 'mvn org.scalariform:scalariform-maven-plugin:format'"
+        echo "Please run './scripts/format-source'"
         exit 1
 fi
 popd
