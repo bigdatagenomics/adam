@@ -311,4 +311,70 @@ record ADAMDatabaseVariantAnnotation {
 
 }
 
+enum Strand {
+  Forward,
+  Reverse,
+  Independent
+}
+
+record ADAMFeature {
+  // identifier for the particular feature object
+  // if provided, then preferably unique within a given trackName
+  union { null, string } featureId = null;
+
+  // the name of this feature-type/track (e.g., centipede, conservation, etc.)
+  union { null, string } trackName = null;
+
+  // list of keys into outside databases
+  array<string> dbxrefs = null;
+
+  // pointers to parent features, a la Chado feature database schema
+  // parentIds and parentdbxrefs should correspond to each other
+  // only inconsistency is Chado would treat ADAMContig as a Feature;
+  array<string> parentIds = null;
+  array<string> parentdbxrefs = null;
+
+  // coordinate system to locate against
+  union { null, ADAMContig } contig = null;
+
+  // position
+  union { null, long } start = null;
+  union { null, long } end = null;
+  union { null, Strand } strand = null;
+
+  // base observation field
+  union { null, long, double, string } value = null;
+
+  // BED format - http://genome.ucsc.edu/FAQ/FAQformat.html
+  // chrom -- parsed into contig
+  // chromStart -- parsed into start
+  // chromEnd -- parsed into end
+  // name -- parsed into trackName
+  // score -- parsed into value
+  // strand -- parsed into strand
+  union { null, long } thickStart = null;
+  union { null, long } thickEnd = null;
+  union { null, string } itemRgb = null;
+  // should these be parsed into new ADAMFeatures while setting their parentIds?
+  union { null, long } blockCount = null;
+  array<long> blockSizes = null;
+  array<long> blockStarts = null;
+
+  // GFF2 format - http://www.sanger.ac.uk/resources/software/gff/spec.html
+  // seqname -- parsed into contig
+  // source -- parsed into trackName
+  // feature --  parsed into trackName
+  // start -- parsed into start
+  // end -- parsed into end
+  // score -- parsed into value
+  // strand -- parsed into strand
+  union { null, long } frame = null;
+
+  // narrowPeak format - (BED6+4)
+  union { null, double } signalValue = null;
+  union { null, double } pValue = null;
+  union { null, double } qValue = null;
+  union { null, long } peak = null;
+}
+
 }
