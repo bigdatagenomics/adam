@@ -48,7 +48,14 @@ class Features2ADAM(val args: Features2ADAMArgs)
   val companion = Features2ADAM
 
   def run(sc: SparkContext, job: Job) {
-    val features: RDD[_ <: BaseFeature] = sc.adamFeatureLoad(args.featuresFile)
+    // get file extension
+    // regex: anything . (extension) EOL
+    val extensionPattern = """.*[.]([^.]*)$""".r
+    val extensionPattern(extension) = args.featuresFile
+    val features: RDD[_ <: BaseFeature] = extension.toLowerCase match {
+      case "bed"        => sc.adamBEDFeatureLoad(args.featuresFile)
+      case "narrowPeak" => sc.adamNarrowPeakFeatureLoad(args.featuresFile)
+    }
     features.map(f => f.feature).adamSave(args.outputPath, blockSize = args.blockSize,
       pageSize = args.pageSize, compressCodec = args.compressionCodec,
       disableDictionaryEncoding = args.disableDictionary)

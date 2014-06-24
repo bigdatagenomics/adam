@@ -371,7 +371,7 @@ record ADAMFeature {
   union { null, long } frame = null;
 
   // narrowPeak format - (BED6+4)
-  union { null, long } signalValue = null;
+  union { null, double } signalValue = null;
   union { null, double } pValue = null;
   union { null, double } qValue = null;
   union { null, long } peak = null;

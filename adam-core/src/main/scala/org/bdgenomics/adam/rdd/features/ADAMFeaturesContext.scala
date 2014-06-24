@@ -17,24 +17,19 @@
 package org.bdgenomics.adam.rdd.features
 
 import org.apache.spark.{ SparkContext, Logging }
-import org.bdgenomics.adam.util.HadoopUtil
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.BaseFeature
+import org.bdgenomics.adam.models.{ NarrowPeakFeature, BEDFeature }
 
 object ADAMFeaturesContext {
   implicit def sparkContextToADAMFeaturesContext(sc: SparkContext): ADAMFeaturesContext = new ADAMFeaturesContext(sc)
 }
 
 class ADAMFeaturesContext(sc: SparkContext) extends Serializable with Logging {
+  def adamBEDFeatureLoad(filePath: String): RDD[BEDFeature] = {
+    sc.textFile(filePath).map(new BEDParser().parse _)
+  }
 
-  def adamFeatureLoad(filePath: String): RDD[_ <: BaseFeature] = {
-    val job = HadoopUtil.newJob(sc)
-    // regex: anything . (extenstion) EOL
-    val extensionPattern = """.*[.]([^.]*)$""".r
-    val extensionPattern(extension) = filePath
-    extension.toLowerCase match {
-      case "bed"        => sc.textFile(filePath).map(new BEDParser().parse _)
-      case "narrowPeak" => sc.textFile(filePath).map(new NarrowPeakParser().parse _)
-    }
+  def adamNarrowPeakFeatureLoad(filePath: String): RDD[NarrowPeakFeature] = {
+    sc.textFile(filePath).map(new NarrowPeakParser().parse _)
   }
 }

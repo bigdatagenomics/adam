@@ -24,14 +24,15 @@ import org.bdgenomics.adam.rdd.features.ADAMFeaturesContext._
 class FeatureParsingSuite extends SparkFunSuite {
 
   sparkTest("Can read a .bed file") {
-    val path = ClassLoader.getSystemClassLoader.getResource("annotation/gencode.v7.annotation.trunc10.bed").getFile
-    val features: RDD[BEDFeature] = sc.adamFeatureLoad(path)
+    // note: this .bed doesn't actually conform to the UCSC BED spec...sigh...
+    val path = ClassLoader.getSystemClassLoader.getResource("features/gencode.v7.annotation.trunc10.bed").getFile
+    val features: RDD[BEDFeature] = sc.adamBEDFeatureLoad(path)
     assert(features.count === 10)
   }
 
   sparkTest("Can read a .narrowPeak file") {
-    val path = ClassLoader.getSystemClassLoader.getResource("annotation/wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak").getFile
-    val annot: RDD[NarrowPeakFeature] = sc.adamFeatureLoad(path)
+    val path = ClassLoader.getSystemClassLoader.getResource("features/wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak").getFile
+    val annot: RDD[NarrowPeakFeature] = sc.adamNarrowPeakFeatureLoad(path)
     assert(annot.count === 10)
   }
 }

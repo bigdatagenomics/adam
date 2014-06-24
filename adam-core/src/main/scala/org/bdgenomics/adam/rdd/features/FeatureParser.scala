@@ -16,51 +16,68 @@
 
 package org.bdgenomics.adam.rdd.features
 
-import org.bdgenomics.adam.avro.{ ADAMContig, ADAMFeature }
-import org.broad.tribble.bed.BEDCodec
-import org.broad.tribble.bed.BEDCodec.StartOffset
+import org.bdgenomics.adam.avro.{ ADAMContig, ADAMFeature, Strand }
 import org.bdgenomics.adam.models.{ BaseFeature, NarrowPeakFeature, BEDFeature }
 
 trait FeatureParser[FT <: BaseFeature] extends Serializable {
   def parse(line: String): FT
 }
 
-object BEDParser {
-  val tribbleCodec = new BEDCodec(StartOffset.ZERO) // TODO(laserson): serializable?
-}
-
 class BEDParser extends FeatureParser[BEDFeature] {
   def parse(line: String): BEDFeature = {
-    val tribbleFeature = BEDParser.tribbleCodec.decode(line)
+    val fields = line.split("\t")
+    assert(fields.length >= 3, "BED line had less than 3 fields")
     val fb = ADAMFeature.newBuilder()
     val cb = ADAMContig.newBuilder()
-    cb.setContigName(tribbleFeature.getChr())
+    cb.setContigName(fields(0))
     fb.setContig(cb.build())
-    fb.setStart(tribbleFeature.getStart())
-    fb.setEnd(tribbleFeature.getEnd())
-    fb.setTrackName(tribbleFeature.getName())
-    fb.setValue(tribbleFeature.getScore())
-    fb.setStrand(tribbleFeature.getStrand() match {
-      case org.broad.tribble.annotation.Strand.NEGATIVE => org.bdgenomics.adam.avro.Strand.Reverse
-      case org.broad.tribble.annotation.Strand.POSITIVE => org.bdgenomics.adam.avro.Strand.Forward
-      case org.broad.tribble.annotation.Strand.NONE     => org.bdgenomics.adam.avro.Strand.Independent
+    fb.setStart(fields(1).toLong)
+    fb.setEnd(fields(2).toLong)
+    if (fields.length > 3) fb.setTrackName(fields(3))
+    if (fields.length > 4) fb.setValue(fields(4) match {
+      case "." => null
+      case _   => fields(4).toDouble
     })
-    // fb.setThickStart(...) -- Tribble BEDCodec doesn't parse thickStart
-    // fb.setThickEnd(...) -- Tribble BEDCodec doesn't parse thickEnd
-    fb.setItemRgb(tribbleFeature.getColor().toString())
-    // TODO(laserson): decide how to parse these
-    // fb.setBlockCount()
-    // fb.setBlockSizes()
-    // fb.setBlockStarts()
+    if (fields.length > 5) fb.setStrand(fields(5) match {
+      case "+" => Strand.Forward
+      case "-" => Strand.Reverse
+      case _   => Strand.Independent
+    })
+    //    if (fields.length > 6) fb.setThickStart(fields(6).toLong)
+    //    if (fields.length > 7) fb.setThickEnd(fields(7).toLong)
+    //    if (fields.length > 8) fb.setItemRgb(fields(8))
+    //    if (fields.length > 9) fb.setBlockCount(fields(9).toLong)
+    //    if (fields.length > 10) fb.setBlockSizes(fields(10).split(",").map(new java.lang.Long(_)).toList)
+    //    if (fields.length > 11) fb.setBlockStarts(fields(11).split(",").map(new java.lang.Long(_)).toList)
     new BEDFeature(fb.build())
   }
 }
 
 // TODO(laserson): finish narrowPeak parser
 class NarrowPeakParser extends FeatureParser[NarrowPeakFeature] {
-
   def parse(line: String): NarrowPeakFeature = {
+    val fields = line.split("\t")
+    assert(fields.length >= 3, "narrowPeak line had less than 3 fields")
     val fb = ADAMFeature.newBuilder()
+    val cb = ADAMContig.newBuilder()
+    cb.setContigName(fields(0))
+    fb.setContig(cb.build())
+    fb.setStart(fields(1).toLong)
+    fb.setEnd(fields(2).toLong)
+    if (fields.length > 3) fb.setTrackName(fields(3))
+    if (fields.length > 4) fb.setValue(fields(4) match {
+      case "." => null
+      case _   => fields(4).toDouble
+    })
+    if (fields.length > 5) fb.setStrand(fields(5) match {
+      case "+" => Strand.Forward
+      case "-" => Strand.Reverse
+      case _   => Strand.Independent
+    })
+    if (fields.length > 6) fb.setSignalValue(fields(6).toDouble)
+    if (fields.length > 7) fb.setPValue(fields(7).toDouble)
+    if (fields.length > 8) fb.setQValue(fields(8).toDouble)
+    if (fields.length > 9) fb.setPeak(fields(9).toLong)
     new NarrowPeakFeature(fb.build())
   }
 }
