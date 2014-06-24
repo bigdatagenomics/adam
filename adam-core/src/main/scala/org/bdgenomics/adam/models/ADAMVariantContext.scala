@@ -21,6 +21,11 @@ import org.bdgenomics.adam.avro.{ ADAMGenotype, ADAMDatabaseVariantAnnotation, A
 import org.bdgenomics.adam.rich.RichADAMVariant
 import org.bdgenomics.adam.rich.RichADAMVariant._
 
+/**
+ * Note: ADAMVariantContext inherits its name from the Picard VariantContext, and is not related to the SparkContext object.
+ * If you're looking for the latter, see [[org.bdgenomics.adam.rdd.variation.ADAMVariationContext]]
+ */
+
 object ADAMVariantContext {
 
   /**
