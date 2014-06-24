@@ -45,7 +45,8 @@ object ADAMMain extends Logging {
     Vcf2FlatGenotype,
     SummarizeGenotypes,
     CountKmers,
-    BuildInformation)
+    BuildInformation,
+    AlleleCount)
 
   private def printCommands() {
     println("\n")
