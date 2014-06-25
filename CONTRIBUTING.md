@@ -47,9 +47,9 @@ or "topic" branches.
 be shown in the pull request.  If your feature branch is not based off the latest master, you will be asked to rebase
 it before it is merged.
 * If your pull request fixes an issue, reference the issue so that it will [be closed when your pull request is merged](https://github.com/blog/1506-closing-issues-via-pull-requests)
-* Run Scalariform on the code by doing the following:
+* Run the ./scripts/format-source script in order to format the code and ensure correct license headers
   ```
-  $ mvn org.scalariform:scalariform-maven-plugin:format
+  $ ./scripts/format-source
   ```
 * Keep your pull requests as small as possible. Large pull requests are hard to review. Try to break up your changes
 into self-contained and incremental pull requests, if need be, and reference dependent pull requests, e.g. "This pull
@@ -60,27 +60,3 @@ optionally, any details that you want to share about the commit.
 to check every pull request and commit. Just look for files in the ADAM repo that end in "*Suite.scala", 
 e.g. ADAMContextSuite.scala, to see examples of how to write tests. You might also want to glance at the 
 `./scripts/jenkins-test` script for more end-to-end tests.
-* Make sure to add a copyright header to all new files (see below).
-
-## Copyright header and Licensing
-
-ADAM is released under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
-Any new files added need to have a header with a license like the following, e.g.
-
-    /**
-     * Copyright (c) 2014. [insert your company or name here]
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-
-
