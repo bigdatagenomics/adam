@@ -69,7 +69,7 @@ class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 
 class RichADAMRecord(val record: ADAMRecord) {
 
-  lazy val referenceLength: Int = RichADAMRecord.referenceLengthFromCigar(record.cigar.toString)
+  lazy val referenceLength: Int = RichADAMRecord.referenceLengthFromCigar(record.getCigar.toString)
 
   lazy val readRegion = ReferenceRegion(this)
 

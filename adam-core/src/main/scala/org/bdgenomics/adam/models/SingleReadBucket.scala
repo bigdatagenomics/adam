@@ -27,12 +27,17 @@ import org.apache.spark.rdd.RDD
 
 object SingleReadBucket extends Logging {
   def apply(rdd: RDD[ADAMRecord]): RDD[SingleReadBucket] = {
-    for (((recordGroup, readName), reads) <- rdd.groupBy(p => (p.getRecordGroupId, p.getReadName))) yield {
-      val (mapped, unmapped) = reads.partition(_.getReadMapped)
-      val (primaryMapped, secondaryMapped) = mapped.partition(_.getPrimaryAlignment)
-      // TODO: consider doing validation here (e.g. read says mate mapped but it doesn't exist)
-      new SingleReadBucket(primaryMapped, secondaryMapped, unmapped)
-    }
+    rdd.groupBy(p => (p.getRecordGroupId, p.getReadName))
+      .map(kv => {
+        val ((recordGroup, readName), reads) = kv
+
+        // split by mapping
+        val (mapped, unmapped) = reads.partition(_.getReadMapped)
+        val (primaryMapped, secondaryMapped) = mapped.partition(_.getPrimaryAlignment)
+
+        // TODO: consider doing validation here (e.g. read says mate mapped but it doesn't exist)
+        new SingleReadBucket(primaryMapped, secondaryMapped, unmapped)
+      })
   }
 }
 
