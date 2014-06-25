@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import java.nio.file.Files
-import org.bdgenomics.adam.avro.{
+import org.bdgenomics.formats.avro.{
   ADAMContig,
   ADAMGenotype,
   ADAMNucleotideContigFragment,

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.avro.{ ADAMRecord, ADAMNucleotideContigFragment, ADAMContig }
+import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMNucleotideContigFragment, ADAMContig }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import net.sf.samtools.{ SAMFileReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
 import org.apache.avro.specific.SpecificRecord

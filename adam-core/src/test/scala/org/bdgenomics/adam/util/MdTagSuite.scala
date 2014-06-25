@@ -19,7 +19,7 @@ package org.bdgenomics.adam.util
 
 import org.scalatest.FunSuite
 import net.sf.samtools.TextCigarCodec
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.rich.RichADAMRecord._
 
 class MdTagSuite extends FunSuite {

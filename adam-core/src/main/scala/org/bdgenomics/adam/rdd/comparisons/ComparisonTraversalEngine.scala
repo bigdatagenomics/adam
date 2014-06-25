@@ -26,7 +26,7 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import scala.Some
 import org.apache.hadoop.fs.Path
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.metrics.BucketComparisons
 import org.bdgenomics.adam.metrics.aggregators.{ Aggregated, Aggregator }
 import org.bdgenomics.adam.metrics.filters.GeneratorFilter

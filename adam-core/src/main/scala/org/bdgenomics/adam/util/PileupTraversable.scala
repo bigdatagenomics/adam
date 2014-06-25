@@ -21,7 +21,7 @@ import scala.collection.JavaConversions._
 import net.sf.samtools.{ TextCigarCodec, CigarOperator }
 import scala.collection.mutable.ListBuffer
 import scala.collection.SortedMap
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.apache.spark.rdd.RDD
 
 object Base extends Enumeration with Serializable {

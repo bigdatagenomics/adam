@@ -21,7 +21,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.{ Option, Argument }
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.projections.{ Projection, ADAMRecordField }
 import org.apache.spark.rdd.RDD
 import ADAMRecordField._

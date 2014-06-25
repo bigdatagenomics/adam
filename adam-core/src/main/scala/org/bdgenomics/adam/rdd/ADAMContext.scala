@@ -30,7 +30,7 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 import org.apache.spark.{ SparkConf, Logging, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.StatsReportListener
-import org.bdgenomics.adam.avro.{
+import org.bdgenomics.formats.avro.{
   ADAMPileup,
   ADAMRecord,
   ADAMNucleotideContigFragment

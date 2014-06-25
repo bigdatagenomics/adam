@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-import org.bdgenomics.adam.avro.ADAMContig
+import org.bdgenomics.formats.avro.ADAMContig
 
 object Util {
   def isSameContig(left: ADAMContig, right: ADAMContig): Boolean = {

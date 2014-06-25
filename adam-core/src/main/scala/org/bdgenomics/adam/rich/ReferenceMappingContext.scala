@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.models.{ ReferenceRegion, ReferenceMapping }
-import org.bdgenomics.adam.avro.{ ADAMFlatGenotype, ADAMRecord }
+import org.bdgenomics.formats.avro.{ ADAMFlatGenotype, ADAMRecord }
 
 /**
  * A common location in which to drop some ReferenceMapping implementations.

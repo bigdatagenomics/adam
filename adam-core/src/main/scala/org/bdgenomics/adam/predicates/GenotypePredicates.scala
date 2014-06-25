@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.predicates
 
-import org.bdgenomics.adam.avro.ADAMGenotype
+import org.bdgenomics.formats.avro.ADAMGenotype
 
 class GenotypeRecordPASSPredicate extends ADAMPredicate[ADAMGenotype] {
 

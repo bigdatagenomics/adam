@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.avro.ADAMGenotype
+import org.bdgenomics.formats.avro.ADAMGenotype
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ GenotypesSummary, GenotypesSummaryFormatting }
 import org.kohsuke.args4j

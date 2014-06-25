@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd
 
 import org.bdgenomics.adam.models.{ ReferencePosition, SequenceRecord, SequenceDictionary }
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.projections.Projection
 

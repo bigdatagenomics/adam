@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.recalibration
 
 import org.bdgenomics.adam.models.SnpTable
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.rich.DecadentRead._

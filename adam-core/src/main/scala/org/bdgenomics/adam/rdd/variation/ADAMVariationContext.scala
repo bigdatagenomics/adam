@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.bdgenomics.adam.avro.{ ADAMDatabaseVariantAnnotation, ADAMGenotype }
+import org.bdgenomics.formats.avro.{ ADAMDatabaseVariantAnnotation, ADAMGenotype }
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._

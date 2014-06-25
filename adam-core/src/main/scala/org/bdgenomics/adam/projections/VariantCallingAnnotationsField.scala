@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.adam.avro.VariantCallingAnnotations
+import org.bdgenomics.formats.avro.VariantCallingAnnotations
 
 class VariantCallingAnnotationsField extends FieldEnumeration(VariantCallingAnnotations.SCHEMA$) {
 

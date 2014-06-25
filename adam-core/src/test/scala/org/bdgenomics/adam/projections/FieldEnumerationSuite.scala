@@ -19,7 +19,7 @@ package org.bdgenomics.adam.projections
 
 import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.apache.spark.rdd.RDD
 import java.io.File
 import org.scalatest.BeforeAndAfter

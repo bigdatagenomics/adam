@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import net.sf.samtools._
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import scala.collection.JavaConversions._
 import java.io.File
 import parquet.avro.AvroParquetWriter
