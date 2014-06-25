@@ -22,7 +22,7 @@ import org.bdgenomics.formats.avro.ADAMContig
 object Util {
   def isSameContig(left: ADAMContig, right: ADAMContig): Boolean = {
     left.getContigName == right.getContigName && (
-      left.getContigMD5 == null || right.contigMD5 == null || left.getContigMD5 == right.getContigMD5)
+      left.getContigMD5 == null || right.getContigMD5 == null || left.getContigMD5 == right.getContigMD5)
   }
 
   def hashCombine(parts: Int*): Int =

@@ -223,7 +223,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
       pileups --= locationsToFlush
     }
 
-    for (read: ADAMRecord <- reads) {
+    reads.foreach((read: ADAMRecord) => {
 
       def updateCurrentInfo(read: ADAMRecord) = {
         currentReference = Some(read.getContig.getContigName.toString)
@@ -254,7 +254,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
 
       // Flush all pileups before the start of this read since they are completed
       flushPileups(Some(read.getStart))
-    }
+    })
 
     // Flush any remaining pileups
     flushPileups()

@@ -70,7 +70,7 @@ class RealignIndelsSuite extends SparkFunSuite {
           {
             if (read.getStart <= 25) {
               var result: Boolean = (2 == target.indelSet.size.toInt)
-              result = result && (target.getReadRange().start.toLong <= read.start.toLong)
+              result = result && (target.getReadRange().start.toLong <= read.getStart.toLong)
               result && (target.getReadRange().end >= read.end.get - 1L)
             } else {
               target.isEmpty
