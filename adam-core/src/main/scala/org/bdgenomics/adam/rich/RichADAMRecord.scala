@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import net.sf.samtools.{ CigarElement, CigarOperator, Cigar, TextCigarCodec }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._
@@ -69,7 +69,7 @@ class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 
 class RichADAMRecord(val record: ADAMRecord) {
 
-  lazy val referenceLength: Int = RichADAMRecord.referenceLengthFromCigar(record.cigar)
+  lazy val referenceLength: Int = RichADAMRecord.referenceLengthFromCigar(record.cigar.toString)
 
   lazy val readRegion = ReferenceRegion(this)
 

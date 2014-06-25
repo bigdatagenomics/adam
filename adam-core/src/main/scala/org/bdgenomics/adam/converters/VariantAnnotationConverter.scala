@@ -37,7 +37,7 @@ import org.broadinstitute.variant.variantcontext.{ Genotype, VariantContext }
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.broadinstitute.variant.vcf._
-import org.bdgenomics.adam.avro.{ ADAMDatabaseVariantAnnotation, ADAMGenotype, VariantCallingAnnotations }
+import org.bdgenomics.formats.avro.{ ADAMDatabaseVariantAnnotation, ADAMGenotype, VariantCallingAnnotations }
 
 object AttrKey {
   def apply(adamKey: String, hdrLine: VCFCompoundHeaderLine): AttrKey = {

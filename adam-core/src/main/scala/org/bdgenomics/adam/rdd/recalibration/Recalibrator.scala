@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.recalibration
 
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.rich.DecadentRead
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.util.QualityScore

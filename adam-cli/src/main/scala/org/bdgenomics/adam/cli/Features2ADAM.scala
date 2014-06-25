@@ -17,14 +17,13 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.BaseFeature
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.features.ADAMFeaturesContext._
-import org.apache.spark.rdd.RDD
 import org.kohsuke.args4j.Argument
-import org.bdgenomics.adam.cli.ADAMSparkCommand
-import org.bdgenomics.adam.models.BaseFeature
 
 object Features2ADAM extends ADAMCommandCompanion {
   val commandName = "features2adam"

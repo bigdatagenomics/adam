@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 
 /**
  * This enumeration exist in order to reduce typo errors in the code. It needs to be kept

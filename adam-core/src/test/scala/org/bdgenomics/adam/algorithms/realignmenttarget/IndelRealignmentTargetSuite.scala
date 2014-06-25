@@ -19,7 +19,7 @@
 package org.bdgenomics.adam.algorithms.realignmenttarget
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.adam.avro.{ ADAMPileup, ADAMRecord }
+import org.bdgenomics.formats.avro.{ ADAMPileup, ADAMRecord }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.SparkContext._

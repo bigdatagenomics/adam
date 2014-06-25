@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.avro.{ Base, ADAMContig, ADAMPileup }
+import org.bdgenomics.formats.avro.{ Base, ADAMContig, ADAMPileup }
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD

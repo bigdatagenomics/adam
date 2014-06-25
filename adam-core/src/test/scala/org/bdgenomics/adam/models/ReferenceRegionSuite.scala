@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest._
-import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
 
 class ReferenceRegionSuite extends FunSuite {
 

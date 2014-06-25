@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rich
 
 import org.scalatest.FunSuite
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import RichADAMRecord._
 import net.sf.samtools.Cigar
 import RichCigar._

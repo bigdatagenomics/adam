@@ -19,7 +19,7 @@ package org.bdgenomics.adam.util
 
 import scala.annotation.tailrec
 import net.sf.samtools.{ Cigar, CigarOperator }
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.rich.RichCigar._

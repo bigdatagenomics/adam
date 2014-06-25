@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.models.SnpTable

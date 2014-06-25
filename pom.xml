@@ -29,7 +29,6 @@
     </properties>
 
     <modules>
-        <module>adam-format</module>
         <module>adam-core</module>
         <module>adam-cli</module>
     </modules>
@@ -283,6 +282,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.bdgenomics.bdg-formats</groupId>
+                <artifactId>bdg-formats</artifactId>
+                <version>0.1.1-SNAPSHOT</version>
+            </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>

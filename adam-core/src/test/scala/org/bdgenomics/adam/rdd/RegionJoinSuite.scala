@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
 import org.bdgenomics.adam.models.{ SequenceRecord, SequenceDictionary, ReferenceRegion, ReferenceMapping }
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
 import org.apache.spark.SparkContext._

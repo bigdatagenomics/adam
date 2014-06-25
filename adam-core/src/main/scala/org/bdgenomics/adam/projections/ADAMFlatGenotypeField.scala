@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.adam.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.ADAMFlatGenotype
 
 object ADAMFlatGenotypeField extends FieldEnumeration(ADAMFlatGenotype.SCHEMA$) {
 

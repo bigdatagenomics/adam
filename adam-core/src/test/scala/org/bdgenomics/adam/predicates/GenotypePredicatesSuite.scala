@@ -20,7 +20,7 @@ package org.bdgenomics.adam.predicates
 import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }
 import java.util.logging.Level
 import java.io.File
-import org.bdgenomics.adam.avro.{
+import org.bdgenomics.formats.avro.{
   ADAMVariant,
   ADAMGenotype,
   ADAMContig,

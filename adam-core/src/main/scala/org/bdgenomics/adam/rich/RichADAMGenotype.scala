@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.adam.avro.{ ADAMGenotypeType, ADAMGenotypeAllele, ADAMGenotype }
+import org.bdgenomics.formats.avro.{ ADAMGenotypeType, ADAMGenotypeAllele, ADAMGenotype }
 import scala.collection.JavaConversions._
 
 object RichADAMGenotype {

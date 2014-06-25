@@ -25,7 +25,7 @@ import org.apache.hadoop.fs.Path
 import scala.Some
 import java.util.logging.Level
 import org.bdgenomics.adam.util.ParquetLogger
-import org.bdgenomics.adam.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.ADAMFlatGenotype
 import org.bdgenomics.adam.converters.{ VCFLine, VCFLineConverter, VCFLineParser }
 
 /**

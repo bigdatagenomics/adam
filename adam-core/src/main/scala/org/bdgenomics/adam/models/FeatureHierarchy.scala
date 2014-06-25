@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.avro.ADAMFeature
+import org.bdgenomics.formats.avro.ADAMFeature
 
 class BaseFeature(val feature: ADAMFeature) {
   def featureId = feature.getFeatureId

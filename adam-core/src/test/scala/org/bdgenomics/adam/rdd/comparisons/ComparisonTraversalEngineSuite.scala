@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.comparisons
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
 import org.bdgenomics.adam.util.{ Histogram, SparkFunSuite }
 import org.bdgenomics.adam.projections.ADAMRecordField
 import org.bdgenomics.adam.metrics.aggregators.HistogramAggregator

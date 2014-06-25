@@ -20,7 +20,7 @@ package org.bdgenomics.adam.algorithms.realignmenttarget
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
-import org.bdgenomics.adam.avro.{ ADAMRecord, ADAMPileup }
+import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMPileup }
 import scala.annotation.tailrec
 import scala.collection.immutable.TreeSet
 import org.bdgenomics.adam.rdd.ADAMContext._

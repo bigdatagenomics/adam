@@ -82,6 +82,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.bdgenomics.bdg-formats</groupId>
+            <artifactId>bdg-formats</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
