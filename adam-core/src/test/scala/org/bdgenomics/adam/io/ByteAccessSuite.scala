@@ -15,14 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.io
 
+import java.io.{ File, PrintWriter }
+import java.net.URI
+
+import org.bdgenomics.adam.util.NetworkConnected
 import org.scalatest.FunSuite
-import java.io.{ PrintWriter, File, ByteArrayInputStream }
-import java.nio.charset.Charset
 
 class ByteAccessSuite extends FunSuite {
-
   test("ByteArrayByteAccess returns arbitrary subsets of bytes correctly") {
     val bytes = Array[Byte](0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
     val access = new ByteArrayByteAccess(bytes)
@@ -51,5 +52,27 @@ class ByteAccessSuite extends FunSuite {
     val access = new LocalFileByteAccess(temp)
     assert(access.length() === content.length())
     assert(access.readFully(3, 5) === content.substring(3, 8).getBytes("ASCII"))
+  }
+
+  test("HTTPRangedByteAccess supports range queries", NetworkConnected) {
+    val uri = URI.create("http://www.cs.berkeley.edu/~massie/bams/mouse_chrM.bam")
+    val http = new HTTPRangedByteAccess(uri)
+    val bytes1 = http.readFully(100, 10)
+    val bytes2 = http.readFully(100, 100)
+
+    assert(bytes1.length === 10)
+    assert(bytes2.length === 100)
+    assert(bytes1 === bytes2.slice(0, 10))
+
+    // figured this out by executing:
+    // curl --range 100-109 http://www.cs.berkeley.edu/~massie/bams/mouse_chrM.bam | od -t u1
+    assert(bytes1 === Array(188, 185, 119, 110, 102, 222, 76, 23, 189, 139).map(_.toByte))
+  }
+
+  test("HTTPRangedByteAccess can retrieve a full range", NetworkConnected) {
+    val uri = URI.create("http://www.eecs.berkeley.edu/Includes/EECS-images/eecslogo.gif")
+    val http = new HTTPRangedByteAccess(uri)
+    val bytes = http.readFully(0, http.length().toInt)
+    assert(bytes.length === http.length())
   }
 }

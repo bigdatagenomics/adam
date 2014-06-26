@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.io
+
+import java.io.{ File, FileWriter, PrintWriter }
 
 import org.scalatest.FunSuite
-import java.io.{ PrintWriter, FileWriter, File }
 
 class FileLocatorSuite extends FunSuite {
 

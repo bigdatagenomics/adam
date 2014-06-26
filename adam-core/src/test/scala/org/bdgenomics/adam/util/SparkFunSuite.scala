@@ -23,8 +23,6 @@ import java.net.ServerSocket
 import org.apache.log4j.Level
 import org.bdgenomics.adam.rdd.ADAMContext
 
-object SparkTest extends org.scalatest.Tag("org.bdgenomics.adam.util.SparkFunSuite")
-
 trait SparkFunSuite extends FunSuite with BeforeAndAfter {
 
   var sc: SparkContext = _
