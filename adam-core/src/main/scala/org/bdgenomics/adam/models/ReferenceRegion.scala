@@ -73,7 +73,7 @@ object ReferenceRegion {
 /**
  * Represents a contiguous region of the reference genome.
  *
- * @param refId The index of the sequence (chromosome) in the reference genome
+ * @param referenceName The name of the sequence (chromosome) in the reference genome
  * @param start The 0-based residue-coordinate for the start of the region
  * @param end The 0-based residue-coordinate for the first residue <i>after</i> the start
  *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
