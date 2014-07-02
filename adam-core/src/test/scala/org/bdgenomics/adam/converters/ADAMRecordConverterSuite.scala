@@ -62,7 +62,7 @@ class ADAMRecordConverterSuite extends FunSuite {
     // make sequence dictionary
     val seqRecForDict = SequenceRecord("referencetest", 5, "test://chrom1")
     val dict = SequenceDictionary(seqRecForDict)
-    val readGroups = new RecordGroupDictionary(Seq("testing"))
+    val readGroups = new RecordGroupDictionary(Seq())
 
     // allocate converters
     val adamRecordConverter = new ADAMRecordConverter
