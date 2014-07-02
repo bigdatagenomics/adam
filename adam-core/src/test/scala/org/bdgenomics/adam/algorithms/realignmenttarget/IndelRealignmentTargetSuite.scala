@@ -251,7 +251,7 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
   sparkTest("creating targets for artificial reads: one-by-one") {
     def check_indel(target: IndelRealignmentTarget, read: ADAMRecord): Boolean = {
       val indelRange: NumericRange[Long] = target.indelSet.head.getIndelRange()
-      read.start.toLong match {
+      read.getStart.toLong match {
         case 5L  => ((indelRange.start == 34) && (indelRange.end == 43))
         case 10L => ((indelRange.start == 54) && (indelRange.end == 63))
         case 15L => ((indelRange.start == 34) && (indelRange.end == 43))
@@ -266,10 +266,10 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
       read => {
         val read_rdd: RDD[ADAMRecord] = sc.makeRDD(Seq(read), 1)
         val targets = RealignmentTargetFinder(read_rdd)
-        if (read.start < 105) {
+        if (read.getStart < 105) {
           assert(targets != null)
           assert(targets.size === 1) // the later read mates do not have indels
-          assert(targets.head.getIndelSet().head.readRange.start === read.start)
+          assert(targets.head.getIndelSet().head.readRange.start === read.getStart)
           assert(targets.head.getIndelSet().head.readRange.end === read.end.get - 1)
           assert(check_indel(targets.head, read))
         }

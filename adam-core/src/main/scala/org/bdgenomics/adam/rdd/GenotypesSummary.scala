@@ -299,9 +299,9 @@ object GenotypesSummaryFormatting {
 
   private def sortedGenotypeAlleles(stats: GenotypesSummaryCounts): Seq[List[ADAMGenotypeAllele]] = {
     def genotypeSortOrder(genotype: List[ADAMGenotypeAllele]): Int = genotype.map({
-      case ADAMGenotypeAllele.Ref    => 0
-      case ADAMGenotypeAllele.Alt    => 1
-      case ADAMGenotypeAllele.NoCall => 10 // arbitrary large number so any genotype with a NoCall sorts last.
+      case ADAMGenotypeAllele.Ref                               => 0
+      case ADAMGenotypeAllele.Alt | ADAMGenotypeAllele.OtherAlt => 1 // alt/otheralt sort to same point
+      case ADAMGenotypeAllele.NoCall                            => 10 // arbitrary large number so any genotype with a NoCall sorts last.
     }).sum
     stats.genotypesCounts.keySet.toList.sortBy(genotypeSortOrder(_))
   }

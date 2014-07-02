@@ -75,7 +75,7 @@ object ADAMVariantContext {
     assert(genotypes.map(ReferencePosition(_)).forall(_ == position),
       "Genotypes do not all have the same position.")
 
-    val variant = genotypes.head.variant
+    val variant = genotypes.head.getVariant
 
     new ADAMVariantContext(position, variant, genotypes, None)
   }

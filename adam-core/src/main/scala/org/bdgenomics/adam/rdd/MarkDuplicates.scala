@@ -68,11 +68,11 @@ private[rdd] object MarkDuplicates extends Serializable {
       p._1.read2refPos
     }
 
-    for (
-      ((leftPos, library), readsByLeftPos) <- rdd.adamSingleReadBuckets().keyBy(ReferencePositionPair(_)).groupBy(leftPositionAndLibrary);
-      buckets <- {
+    rdd.adamSingleReadBuckets().keyBy(ReferencePositionPair(_)).groupBy(leftPositionAndLibrary)
+      .flatMap(kv => {
+        val ((leftPos, library), readsByLeftPos) = kv
 
-        leftPos match {
+        val buckets = leftPos match {
           // These are all unmapped reads. There is no way to determine if they are duplicates
           case None =>
             markReads(readsByLeftPos.toSeq.unzip._2, areDups = false)
@@ -108,9 +108,9 @@ private[rdd] object MarkDuplicates extends Serializable {
               Seq.empty
             }
         }
-      };
-      read <- buckets.allReads
-    ) yield read
+
+        buckets.flatMap(_.allReads)
+      })
   }
 }
 
