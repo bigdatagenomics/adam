@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rich
 
 import org.scalatest.FunSuite
-import org.bdgenomics.adam.avro._
+import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.rich.RichADAMGenotype._
 import scala.collection.JavaConversions._
 

@@ -33,7 +33,7 @@ package org.bdgenomics.adam.cli
  * limitations under the License.
  */
 
-import org.bdgenomics.adam.avro.ADAMPileup
+import org.bdgenomics.formats.avro.ADAMPileup
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.Argument
 import org.apache.hadoop.mapreduce.Job

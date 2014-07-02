@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.models.{
   SAMFileHeaderWritable,
   SequenceDictionary,

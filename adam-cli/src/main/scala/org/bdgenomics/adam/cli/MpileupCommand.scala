@@ -24,7 +24,7 @@ import org.apache.spark.{ SparkContext, Logging }
 import org.apache.hadoop.mapreduce.Job
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
 
 object MpileupCommand extends ADAMCommandCompanion {

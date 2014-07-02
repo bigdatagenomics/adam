@@ -21,7 +21,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
 import org.kohsuke.args4j.{ Option => option, Argument }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.avro.{ ADAMPileup, ADAMRecord }
+import org.bdgenomics.formats.avro.{ ADAMPileup, ADAMRecord }
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 

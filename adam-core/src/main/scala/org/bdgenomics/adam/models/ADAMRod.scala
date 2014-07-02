@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.avro.ADAMPileup
+import org.bdgenomics.formats.avro.ADAMPileup
 
 /**
  * Class representing a set of pileup bases at a specific locus.

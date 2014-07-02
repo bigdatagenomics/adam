@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.adam.avro.ADAMNucleotideContigFragment
+import org.bdgenomics.formats.avro.ADAMNucleotideContigFragment
 
 /**
  * This enumeration exist in order to reduce typo errors in the code. It needs to be kept

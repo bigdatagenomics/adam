@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.avro.{ ADAMRecord, ADAMGenotype, ADAMVariant, ADAMPileup }
+import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMGenotype, ADAMVariant, ADAMPileup }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.adam.avro._
+import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
 import org.broadinstitute.variant.variantcontext._
 import scala.collection.JavaConversions._

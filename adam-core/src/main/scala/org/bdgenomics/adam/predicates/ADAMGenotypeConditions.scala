@@ -33,7 +33,7 @@
 
 package org.bdgenomics.adam.predicates
 
-import org.bdgenomics.adam.avro.{ ADAMRecord, ADAMGenotype }
+import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMGenotype }
 
 object ADAMGenotypeConditions {
 

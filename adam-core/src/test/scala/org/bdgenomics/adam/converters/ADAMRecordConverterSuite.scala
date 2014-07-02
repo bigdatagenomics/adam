@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.adam.avro.{ ADAMRecord, ADAMContig }
+import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMContig }
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
   SAMFileHeaderWritable,

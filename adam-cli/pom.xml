@@ -92,6 +92,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.bdgenomics.bdg-formats</groupId>
+            <artifactId>bdg-formats</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.bdgenomics.adam</groupId>
             <artifactId>adam-core</artifactId>
         </dependency>

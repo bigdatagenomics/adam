@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.algorithms.realignmenttarget
 
-import org.bdgenomics.adam.avro.{ ADAMPileup, ADAMRecord }
+import org.bdgenomics.formats.avro.{ ADAMPileup, ADAMRecord }
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import scala.collection.immutable.{ TreeSet, HashSet, NumericRange }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.adam.avro.ADAMVariant
+import org.bdgenomics.formats.avro.ADAMVariant
 
 object RichADAMVariant {
   implicit def variantToRichVariant(variant: ADAMVariant): RichADAMVariant = new RichADAMVariant(variant)

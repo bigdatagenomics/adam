@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.predicates
 
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 
 class UniqueMappedReadPredicate extends ADAMPredicate[ADAMRecord] {
 

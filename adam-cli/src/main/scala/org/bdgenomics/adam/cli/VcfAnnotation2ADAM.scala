@@ -38,7 +38,7 @@ import org.apache.spark.{ Logging, SparkContext }
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.avro._
+import org.bdgenomics.formats.avro._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.converters.VariantAnnotationConverter

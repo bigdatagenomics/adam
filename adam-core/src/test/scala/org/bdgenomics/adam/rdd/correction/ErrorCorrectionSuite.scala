@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.correction
 
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import org.scalatest.FunSuite
 import scala.math.abs
 

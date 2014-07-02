@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.variation
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.adam.avro._
+import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import scala.collection.JavaConversions._
 import org.apache.spark.SparkContext._

@@ -22,7 +22,7 @@ import org.scalatest.FunSuite
 import org.broadinstitute.variant.variantcontext.{ GenotypeType, Allele, VariantContextBuilder, GenotypeBuilder }
 import java.lang.Integer
 import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
-import org.bdgenomics.adam.avro._
+import org.bdgenomics.formats.avro._
 import scala.Some
 import net.sf.samtools.SAMFileReader
 import java.io.File

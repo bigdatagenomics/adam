@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.variation
 
 import java.util.EnumSet
 import scala.collection.JavaConverters._
-import org.bdgenomics.adam.avro.ADAMGenotypeType
+import org.bdgenomics.formats.avro.ADAMGenotypeType
 
 object ConcordanceTable {
   def apply() = new ConcordanceTable()

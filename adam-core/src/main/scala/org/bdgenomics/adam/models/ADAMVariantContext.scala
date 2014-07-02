@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.avro.{ ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant }
+import org.bdgenomics.formats.avro.{ ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant }
 import org.bdgenomics.adam.rich.RichADAMVariant
 import org.bdgenomics.adam.rich.RichADAMVariant._
 

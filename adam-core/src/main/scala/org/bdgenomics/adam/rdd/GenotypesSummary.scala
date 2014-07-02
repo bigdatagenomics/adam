@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.avro.{ ADAMGenotypeAllele, ADAMGenotype }
+import org.bdgenomics.formats.avro.{ ADAMGenotypeAllele, ADAMGenotype }
 import org.bdgenomics.adam.rdd.GenotypesSummary.StatisticsMap
 import org.bdgenomics.adam.rich.RichADAMVariant._
 import org.apache.spark.rdd.RDD

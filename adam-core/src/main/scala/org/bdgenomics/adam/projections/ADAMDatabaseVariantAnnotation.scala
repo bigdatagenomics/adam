@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.adam.avro.ADAMDatabaseVariantAnnotation
+import org.bdgenomics.formats.avro.ADAMDatabaseVariantAnnotation
 
 object ADAMDatabaseVariantAnnotationField extends FieldEnumeration(ADAMDatabaseVariantAnnotation.SCHEMA$) {
 

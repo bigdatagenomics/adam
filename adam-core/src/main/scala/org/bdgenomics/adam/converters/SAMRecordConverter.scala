@@ -19,7 +19,7 @@ package org.bdgenomics.adam.converters
 
 import net.sf.samtools.{ SAMReadGroupRecord, SAMRecord }
 
-import org.bdgenomics.adam.avro.ADAMRecord
+import org.bdgenomics.formats.avro.ADAMRecord
 import scala.collection.JavaConverters._
 import org.bdgenomics.adam.models.{ SequenceRecord, Attribute, RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.util.AttributeUtils

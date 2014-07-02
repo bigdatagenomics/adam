@@ -23,7 +23,7 @@ import org.bdgenomics.adam.models.ADAMVariantContext
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import com.google.common.io.Files
 import java.io.File
-import org.bdgenomics.adam.avro.{ ADAMGenotypeAllele, ADAMGenotype, ADAMVariant, ADAMContig }
+import org.bdgenomics.formats.avro.{ ADAMGenotypeAllele, ADAMGenotype, ADAMVariant, ADAMContig }
 import scala.collection.JavaConversions._
 
 class ADAMVariationContextSuite extends SparkFunSuite {

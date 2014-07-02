@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.metrics
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.adam.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
 import org.bdgenomics.adam.models.SingleReadBucket
 
 class ComparisonsSuite extends SparkFunSuite {
