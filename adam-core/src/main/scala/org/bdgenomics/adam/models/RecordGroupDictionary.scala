@@ -170,15 +170,8 @@ class RecordGroup(val sample: String,
    * equal. Else, returns false.
    */
   override def equals(o: Any): Boolean = o match {
-    case rg: RecordGroup => {
-      println("comparing: " + rg.sample + "/" + rg.recordGroupName)
-      println("against  : " + sample + "/" + rg.recordGroupName)
-      rg.sample == sample && rg.recordGroupName == recordGroupName
-    }
-    case _ => {
-      println("not comparing")
-      false
-    }
+    case rg: RecordGroup => rg.sample == sample && rg.recordGroupName == recordGroupName
+    case _               => false
   }
 
   /**
