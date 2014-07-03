@@ -153,13 +153,9 @@ class SAMRecordConverter extends Serializable {
 
     val recordGroup: SAMReadGroupRecord = samRecord.getReadGroup
     if (recordGroup != null) {
-      Option(recordGroup.getRunDate) match {
-        case Some(date) => builder.setRecordGroupRunDateEpoch(date.getTime)
-        case None       =>
-      }
-      recordGroup.getId
-      builder.setRecordGroupId(readGroups(recordGroup.getReadGroupId))
-        .setRecordGroupName(recordGroup.getReadGroupId)
+      Option(recordGroup.getRunDate).foreach(date => builder.setRecordGroupRunDateEpoch(date.getTime))
+
+      builder.setRecordGroupName(recordGroup.getReadGroupId)
         .setRecordGroupSequencingCenter(recordGroup.getSequencingCenter)
         .setRecordGroupDescription(recordGroup.getDescription)
         .setRecordGroupFlowOrder(recordGroup.getFlowOrder)

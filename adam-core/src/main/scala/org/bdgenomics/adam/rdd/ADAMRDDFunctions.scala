@@ -34,6 +34,7 @@ import org.bdgenomics.formats.avro.{
 import org.bdgenomics.adam.converters.ADAMRecordConverter
 import org.bdgenomics.adam.models.{
   ADAMRod,
+  RecordGroup,
   RecordGroupDictionary,
   ReferencePosition,
   ReferenceRegion,
@@ -189,8 +190,7 @@ class ADAMRecordRDDFunctions(rdd: RDD[ADAMRecord]) extends ADAMSequenceDictionar
    * @return A dictionary describing the read groups in this RDD.
    */
   def adamGetReadGroupDictionary(): RecordGroupDictionary = {
-    val rgNames = rdd.flatMap(r => Option(r.getRecordGroupName))
-      .map(_.toString)
+    val rgNames = rdd.flatMap(RecordGroup(_))
       .distinct()
       .collect()
       .toSeq
