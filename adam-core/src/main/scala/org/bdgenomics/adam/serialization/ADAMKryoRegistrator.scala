@@ -74,6 +74,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[ADAMFlatGenotype], new AvroSerializer[ADAMFlatGenotype]())
     kryo.register(classOf[ADAMDatabaseVariantAnnotation], new AvroSerializer[ADAMDatabaseVariantAnnotation]())
     kryo.register(classOf[ADAMNucleotideContigFragment], new AvroSerializer[ADAMNucleotideContigFragment]())
+    kryo.register(classOf[ADAMFeature], new AvroSerializer[ADAMFeature]())
     kryo.register(classOf[ReferencePositionWithOrientation], new ReferencePositionWithOrientationSerializer)
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)
