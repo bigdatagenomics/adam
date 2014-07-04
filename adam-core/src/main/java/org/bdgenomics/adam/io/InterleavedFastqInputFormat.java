@@ -43,7 +43,10 @@ import java.io.InputStream;
  * in two separate files. This makes it much easier to Hadoopily slice
  * up a single file and feed the slices into an aligner.
  * The format is the same as fastq, but records are expected to alternate
- * between /1 and /2.
+ * between /1 and /2. As a precondition, we assume that the interleaved
+ * FASTQ files are always uncompressed; if the files are compressed, they
+ * cannot be split, and thus there is no reason to use the interleaved
+ * format.
  *
  * This reader is based on the FastqInputFormat that's part of Hadoop-BAM,
  * found at http://sourceforge.net/p/hadoop-bam/code/ci/master/tree/src/fi/tkk/ics/hadoop/bam/FastqInputFormat.java
@@ -303,12 +306,6 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
 
             return bytesRead;
         }
-    }
-
-    @Override
-    public boolean isSplitable(JobContext context, Path path) {
-        CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(path);
-        return codec == null;
     }
 
     public RecordReader<Void, Text> createRecordReader(
