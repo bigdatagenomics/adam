@@ -28,16 +28,10 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 
 /**
- * Base Quality Score Recalibration
- * ================================
- *
- * The algorithm proceeds in two phases:
- *
- *  1. Make a pass over the reads to collect statistics and build the
- *     recalibration tables.
- *
- *  2. Perform a second pass over the reads to apply the recalibration and
- *     assign adjusted quality scores.
+ * The algorithm proceeds in two phases. First, we make a pass over the reads
+ * to collect statistics and build the recalibration tables. Then, we perform
+ * a second pass over the reads to apply the recalibration and assign adjusted
+ * quality scores.
  */
 class BaseQualityRecalibration(
   val input: RDD[DecadentRead],
