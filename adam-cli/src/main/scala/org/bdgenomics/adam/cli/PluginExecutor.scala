@@ -29,13 +29,15 @@ import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.predicates.ADAMPredicate
 
 /**
- * This set of classes executes a plugin along with the associated input location.
+ * This set of classes executes a plugin along with the associated input
+ * location.
  *
  * Example usage:
  *   adam plugin org.bdgenomics.adam.plugins.Take10Plugin reads12.sam
  *
- * <code>org.bdgenomics.adam.plugins.Take10Plugin</code> is a simple example plugin. The
- * [[org.bdgenomics.adam.plugins.ADAMPlugin]] interface defines the class that will run using this command.
+ * <code>org.bdgenomics.adam.plugins.Take10Plugin</code> is a simple example
+ * plugin. The org.bdgenomics.adam.plugins.ADAMPlugin interface defines the
+ * class that will run using this command.
  */
 object PluginExecutor extends ADAMCommandCompanion {
   val commandName: String = "plugin"

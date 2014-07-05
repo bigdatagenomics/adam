@@ -22,15 +22,17 @@ import scala.collection.TraversableOnce
 object DNAPrefixTrie {
 
   /**
-   * Creates a fixed depth prefix trie, and populates it with a set of key->value mappings.
-   * Keys containing ambiguous bases are not added to the collection.
+   * Creates a fixed depth prefix trie, and populates it with a set of
+   * key->value mappings. Keys containing ambiguous bases are not added to the
+   * collection.
    *
-   * @param init A map specifying key->value mappings. Used for populating the initial trie.
+   * @param init A map specifying key->value mappings. Used for populating the
+   * initial trie.
    * @tparam V The type of the values stored in the trie.
    * @return Returns a populated trie.
    *
-   * @throws AssertionError An assertion error is thrown if the length of the keys provided varies.
-   * @throws AssertionError An assertion error is thrown if the input is an empty map.
+   * @throws AssertionError An assertion error is thrown if the length of the
+   * keys provided varies or if the input is an empty map.
    */
   def apply[V](init: Map[String, V]): DNAPrefixTrie[V] = {
     assert(init.size > 0, "Cannot build empty prefix trie.")
@@ -77,9 +79,9 @@ trait DNAPrefixTrie[V] extends Serializable {
    *
    * @throws IllegalArgumentException Throws an exception if the key is not in the collection.
    *
-   * @sa getOrElse
-   * @sa getIfExists
-   * @sa search
+   * @see getOrElse
+   * @see getIfExists
+   * @see search
    */
   def get(key: String): V
 
@@ -92,9 +94,9 @@ trait DNAPrefixTrie[V] extends Serializable {
    * @tparam V Type of the values in this collection.
    * @return Returns the value corresponding to this key, or a default value if the key is not found.
    *
-   * @sa get
-   * @sa getIfExists
-   * @sa search
+   * @see get
+   * @see getIfExists
+   * @see search
    */
   def getOrElse(key: String, default: V): V
 
@@ -106,9 +108,9 @@ trait DNAPrefixTrie[V] extends Serializable {
    * @tparam V Type of the values in this collection.
    * @return Returns the value wrapped in an option. None is returned if the key is not found.
    *
-   * @sa get
-   * @sa getOrElse
-   * @sa search
+   * @see get
+   * @see getOrElse
+   * @see search
    */
   def getIfExists(key: String): Option[V]
 
@@ -120,8 +122,8 @@ trait DNAPrefixTrie[V] extends Serializable {
    * @tparam V Type of the values in this collection.
    * @return Returns a map containing all keys that match this search key, and their values.
    *
-   * @sa prefixSearch
-   * @sa suffixSearch
+   * @see prefixSearch
+   * @see suffixSearch
    */
   def search(key: String): Map[String, V]
 
@@ -133,8 +135,8 @@ trait DNAPrefixTrie[V] extends Serializable {
    * @tparam V Type of the values in this collection.
    * @return Returns a map containing all keys that match this search key, and their values.
    *
-   * @sa search
-   * @sa suffixSearch
+   * @see search
+   * @see suffixSearch
    */
   def prefixSearch(key: String): Map[String, V]
 
@@ -146,8 +148,8 @@ trait DNAPrefixTrie[V] extends Serializable {
    * @tparam V Type of the values in this collection.
    * @return Returns a map containing all keys that match this search key, and their values.
    *
-   * @sa search
-   * @sa prefixSearch
+   * @see search
+   * @see prefixSearch
    */
   def suffixSearch(key: String): Map[String, V]
 
@@ -182,7 +184,7 @@ trait DNAPrefixTrie[V] extends Serializable {
  *
  * @tparam V Type of the values stored by this class.
  *
- * @sa DNAPrefixTrie
+ * @see DNAPrefixTrie
  */
 private[prefixtrie] class NestedFixedDepthDNAPrefixTrie[V](init: Map[String, V]) extends DNAPrefixTrie[V] {
 
@@ -344,7 +346,7 @@ private[prefixtrie] class NestedFixedDepthDNAPrefixTrie[V](init: Map[String, V])
  *
  * @tparam V Type of the values stored by this class.
  *
- * @sa DNAPrefixTrie
+ * @see DNAPrefixTrie
  */
 private[prefixtrie] class FixedDepthDNAPrefixTrieValues[V](init: Map[String, V]) extends DNAPrefixTrie[V] {
 
