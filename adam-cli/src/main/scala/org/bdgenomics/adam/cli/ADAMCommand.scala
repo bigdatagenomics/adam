@@ -20,6 +20,7 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.util.HadoopUtil
+import org.bdgenomics.adam.instrumentation.{ DurationFormatting, ADAMMetricsListener, ADAMMetrics }
 
 trait ADAMCommandCompanion {
   val commandName: String
@@ -44,9 +45,28 @@ trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with 
   def run(sc: SparkContext, job: Job)
 
   def run() {
-    val sc: SparkContext = createSparkContext(args)
+
+    val start = System.nanoTime()
+
+    val metricsListener = if (args.printMetrics) Some(new ADAMMetricsListener(new ADAMMetrics())) else None
+
+    val sc: SparkContext = createSparkContext(args, metricsListener)
     val job = HadoopUtil.newJob()
 
     run(sc, job)
+
+    val totalTime = System.nanoTime() - start
+    printMetrics(totalTime, metricsListener)
+
   }
+
+  def printMetrics(totalTime: Long, metricsListener: Option[ADAMMetricsListener]) {
+    metricsListener.foreach(listener => {
+      println()
+      println("Overall Duration: " + DurationFormatting.formatNanosecondDuration(totalTime))
+      println()
+      listener.adamMetrics.sparkTaskMetrics.print(Console.out)
+    })
+  }
+
 }
