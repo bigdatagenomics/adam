@@ -52,6 +52,7 @@ import parquet.hadoop.util.ContextUtil
 import scala.Some
 import scala.collection.JavaConversions._
 import scala.collection.Map
+import org.bdgenomics.adam.instrumentation.ADAMMetricsListener
 
 object ADAMContext {
   // Add ADAM Spark context methods
@@ -111,6 +112,7 @@ object ADAMContext {
    * @param sparkAddStatsListener Disabled by default; true enables. If enabled, a job status
    *                              listener is registered. This can be useful for performance debug.
    * @param sparkKryoBufferSize Size of the object serialization buffer. Default setting is 4MB.
+   * @param sparkMetricsListener A listener for recording metrics from Spark. Defaults to [[None]]
    * @return Returns a properly configured Spark Context.
    */
   def createSparkContext(name: String,
@@ -120,6 +122,7 @@ object ADAMContext {
                          sparkEnvVars: Seq[(String, String)] = Nil,
                          sparkAddStatsListener: Boolean = false,
                          sparkKryoBufferSize: Int = 4,
+                         sparkMetricsListener: Option[ADAMMetricsListener] = None,
                          loadSystemValues: Boolean = true,
                          sparkDriverPort: Option[Int] = None): SparkContext = {
     // TODO: Add enough spark arguments so that we don't need to load the system values (e.g. SPARK_MEM)
@@ -148,6 +151,8 @@ object ADAMContext {
     if (sparkAddStatsListener) {
       sc.addSparkListener(new StatsReportListener)
     }
+
+    sparkMetricsListener.foreach(sc.addSparkListener(_))
 
     sc
   }
