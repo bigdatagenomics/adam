@@ -58,10 +58,12 @@ class PrintADAM(protected val args: PrintADAMArgs) extends ADAMSparkCommand[Prin
   /**
    * Safe output-stream “resource” function
    *
-   * This function calls the function op on a [[java.io.PrintStream]], if [[filename]]
-   * is [[None]], it uses [[System.out]]. If the function ends with an exception, and
-   * filename is [[Some(_)]], the output stream will be closed.
+   * This function calls the function op on a java.io.PrintStream, if filename
+   * is None, it uses System.out. If the function ends with an exception,
+   * and filename is Some(_), the output stream will be closed.
    *
+   * @param filename If provided, this is the output to print to. Else, if None,
+   * we print to System.out.
    */
   def withPrintStream(filename: Option[String])(op: java.io.PrintStream => Unit) {
     val p = filename match {

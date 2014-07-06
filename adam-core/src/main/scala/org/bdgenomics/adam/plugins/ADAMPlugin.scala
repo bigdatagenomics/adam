@@ -24,7 +24,7 @@ import org.apache.spark.SparkContext
 /**
  * Defines the interface for a Plugin for the ADAMSystem.
  *
- * A simple interface is available in [[org.bdgenomics.adam.plugins.Take10Plugin]]
+ * A simple interface is available in org.bdgenomics.adam.plugins.Take10Plugin.
  */
 trait ADAMPlugin[Input, Output] {
   /**
