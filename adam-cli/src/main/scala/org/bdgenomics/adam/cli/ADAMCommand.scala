@@ -18,9 +18,10 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.SparkContext
+import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.adam.instrumentation.{ DurationFormatting, ADAMMetricsListener, ADAMMetrics }
+import java.io.{ ByteArrayOutputStream, PrintStream }
 
 trait ADAMCommandCompanion {
   val commandName: String
@@ -38,7 +39,7 @@ trait ADAMCommand extends Runnable {
   val companion: ADAMCommandCompanion
 }
 
-trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with SparkCommand {
+trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with SparkCommand with Logging {
 
   protected val args: A
 
@@ -62,10 +63,14 @@ trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with 
 
   def printMetrics(totalTime: Long, metricsListener: Option[ADAMMetricsListener]) {
     metricsListener.foreach(listener => {
-      println()
-      println("Overall Duration: " + DurationFormatting.formatNanosecondDuration(totalTime))
-      println()
-      listener.adamMetrics.sparkTaskMetrics.print(Console.out)
+      val bytes = new ByteArrayOutputStream()
+      val out = new PrintStream(bytes)
+      out.println()
+      out.println()
+      out.println("Overall Duration: " + DurationFormatting.formatNanosecondDuration(totalTime))
+      out.println()
+      listener.adamMetrics.sparkTaskMetrics.print(out)
+      logInfo("Metrics:" + bytes.toString("UTF-8"))
     })
   }
 
