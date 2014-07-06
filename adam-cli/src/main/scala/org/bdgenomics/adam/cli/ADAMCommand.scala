@@ -63,7 +63,8 @@ trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with 
 
   def printMetrics(totalTime: Long, metricsListener: Option[ADAMMetricsListener]) {
     metricsListener.foreach(listener => {
-      val bytes = new ByteArrayOutputStream()
+      // Set the output buffer size to 4KB by default
+      val bytes = new ByteArrayOutputStream(1024 * 4)
       val out = new PrintStream(bytes)
       out.println()
       out.println()
