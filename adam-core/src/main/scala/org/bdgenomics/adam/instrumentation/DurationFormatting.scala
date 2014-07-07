@@ -29,25 +29,22 @@ import java.util.concurrent.TimeUnit
  */
 object DurationFormatting {
 
-  val MillisecondTimeFormatter: (Any) => String = formatMillisecondDuration
-  val NanosecondTimeFormatter: (Any) => String = formatNanosecondDuration
-
   private val TwoDigitNumberFormatter = new DecimalFormat(".0#")
 
   /**
-   * Formats the passed-in value as a duration. The value must be a [[Number]],
-   * and is expected to be an integer (it will be rounded if it is not).
+   * Formats the passed-in value as a duration. Non-integer values will be rounded
+   * before they are formatted.
    */
-  def formatMillisecondDuration(number: Any): String = {
+  def formatMillisecondDuration(number: Number): String = {
     val conversion: (Long) => Long = TimeUnit.MILLISECONDS.toNanos
     formatNumber(number, conversion)
   }
 
   /**
-   * Formats the passed-in value as a duration. The value must be a [[Number]],
-   * and is expected to be an integer (it will be rounded if it is not).
+   * Formats the passed-in value as a duration. Non-integer values will be rounded
+   * before they are formatted.
    */
-  def formatNanosecondDuration(number: Any): String = {
+  def formatNanosecondDuration(number: Number): String = {
     val conversion: (Long) => Long = TimeUnit.NANOSECONDS.toNanos
     formatNumber(number, conversion)
   }
@@ -129,11 +126,8 @@ object DurationFormatting {
     }
   }
 
-  private def formatNumber(number: Any, conversionFunction: (Long) => Long): String = {
-    number match {
-      case number: Number => formatDuration(Duration.fromNanos(conversionFunction.apply(number.longValue())))
-      case _              => throw new IllegalArgumentException("Cannot format non-numeric value [" + number + "]")
-    }
+  private def formatNumber(number: Number, conversionFunction: (Long) => Long): String = {
+    formatDuration(Duration.fromNanos(conversionFunction.apply(number.longValue())))
   }
 
 }

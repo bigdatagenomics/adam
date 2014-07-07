@@ -22,7 +22,6 @@ import com.netflix.servo.monitor.MonitorConfig
 import java.io.PrintStream
 import scala.collection.mutable.ArrayBuffer
 import com.netflix.servo.tag.Tags.newTag
-import org.bdgenomics.adam.instrumentation.DurationFormatting.NanosecondTimeFormatter
 import org.bdgenomics.adam.instrumentation.ServoTimer._
 import org.bdgenomics.adam.instrumentation.ValueExtractor._
 import com.netflix.servo.tag.Tag
@@ -44,10 +43,10 @@ abstract class SparkMetrics {
     renderTable(out, "Task Timings", overallMonitors, createBaseHeader())
     out.println()
     renderTable(out, "Task Timings By Host", monitorsByHost,
-      createHeaderWith(Header(name = "Host", valueExtractor = forTagValueWithKey(HostTagKey), alignment = Alignment.Left), 1))
+      createHeaderWith(TableHeader(name = "Host", valueExtractor = forTagValueWithKey(HostTagKey), alignment = Alignment.Left), 1))
     out.println()
     renderTable(out, "Task Timings By Stage", monitorsByStageName,
-      createHeaderWith(Header(name = "Stage ID & Name", valueExtractor = forTagValueWithKey(StageNameTagKey), alignment = Alignment.Left), 1))
+      createHeaderWith(TableHeader(name = "Stage ID & Name", valueExtractor = forTagValueWithKey(StageNameTagKey), alignment = Alignment.Left), 1))
   }
 
   def mapStageIdToName(stageId: Int, stageName: String) {
@@ -99,26 +98,34 @@ abstract class SparkMetrics {
     stageIdAndTimer._2
   }
 
-  private def renderTable(out: PrintStream, name: String, timers: Seq[ServoTimer], header: ArrayBuffer[Header]) = {
+  private def renderTable(out: PrintStream, name: String, timers: Seq[ServoTimer], header: ArrayBuffer[TableHeader]) = {
     val monitorTable = new MonitorTable(header.toArray, timers.toArray)
     out.println(name)
     monitorTable.print(out)
   }
 
-  private def createHeaderWith(header: Header, position: Int): ArrayBuffer[Header] = {
+  private def createHeaderWith(header: TableHeader, position: Int): ArrayBuffer[TableHeader] = {
     val baseHeader = createBaseHeader()
     baseHeader.insert(position, header)
     baseHeader
   }
 
-  private def createBaseHeader(): ArrayBuffer[Header] = {
+  private def createBaseHeader(): ArrayBuffer[TableHeader] = {
     ArrayBuffer(
-      Header(name = "Metric", valueExtractor = forTagValueWithKey(NameTagKey), alignment = Alignment.Left),
-      Header(name = "Total Time", valueExtractor = forMonitorMatchingTag(TotalTimeTag), formatFunction = Some(NanosecondTimeFormatter)),
-      Header(name = "Count", valueExtractor = forMonitorMatchingTag(CountTag)),
-      Header(name = "Mean", valueExtractor = forMonitorMatchingTag(MeanTag), formatFunction = Some(NanosecondTimeFormatter)),
-      Header(name = "Min", valueExtractor = forMonitorMatchingTag(MinTag), formatFunction = Some(NanosecondTimeFormatter)),
-      Header(name = "Max", valueExtractor = forMonitorMatchingTag(MaxTag), formatFunction = Some(NanosecondTimeFormatter)))
+      TableHeader(name = "Metric", valueExtractor = forTagValueWithKey(NameTagKey), alignment = Alignment.Left),
+      TableHeader(name = "Total Time", valueExtractor = forMonitorMatchingTag(TotalTimeTag), formatFunction = Some(formatNanos)),
+      TableHeader(name = "Count", valueExtractor = forMonitorMatchingTag(CountTag)),
+      TableHeader(name = "Mean", valueExtractor = forMonitorMatchingTag(MeanTag), formatFunction = Some(formatNanos)),
+      TableHeader(name = "Min", valueExtractor = forMonitorMatchingTag(MinTag), formatFunction = Some(formatNanos)),
+      TableHeader(name = "Max", valueExtractor = forMonitorMatchingTag(MaxTag), formatFunction = Some(formatNanos)))
+  }
+
+  private def formatNanos(number: Any): String = {
+    // We need to do some dynamic type checking here, as monitors return an Object
+    number match {
+      case number: Number => DurationFormatting.formatNanosecondDuration(number)
+      case _              => throw new IllegalArgumentException("Cannot format non-numeric value [" + number + "]")
+    }
   }
 
 }
