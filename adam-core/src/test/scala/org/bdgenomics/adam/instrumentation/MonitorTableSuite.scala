@@ -27,8 +27,8 @@ class MonitorTableSuite extends FunSuite {
   test("Table is rendered correctly") {
 
     val headers = Array(
-      new Header(name = "Col1", valueExtractor = ValueExtractor.forTagValueWithKey("TagKey1"), None, alignment = Alignment.Left),
-      new Header(name = "Col2", valueExtractor = ValueExtractor.forMonitorMatchingTag(ServoTimer.TotalTimeTag), formatFunction = Some(formatFunction1)))
+      new TableHeader(name = "Col1", valueExtractor = ValueExtractor.forTagValueWithKey("TagKey1"), None, alignment = Alignment.Left),
+      new TableHeader(name = "Col2", valueExtractor = ValueExtractor.forMonitorMatchingTag(ServoTimer.TotalTimeTag), formatFunction = Some(formatFunction1)))
 
     val rows = Array[Monitor[_]](
       new ServoTimer(MonitorConfig.builder("timer1").build()),

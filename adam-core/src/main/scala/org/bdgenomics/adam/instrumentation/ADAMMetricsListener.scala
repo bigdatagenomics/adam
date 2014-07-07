@@ -22,7 +22,7 @@ import org.apache.spark.scheduler.{ SparkListenerStageCompleted, SparkListenerTa
 /**
  * Spark listener that accumulates metrics in the passed-in [[ADAMMetrics]] object
  * at stage completion time.
- * NOTE: This class relies on being run in the same process as the driver. However,
+ * @note This class relies on being run in the same process as the driver. However,
  * this is the way that Spark seems to work.
  */
 class ADAMMetricsListener(val adamMetrics: ADAMMetrics) extends SparkListener {

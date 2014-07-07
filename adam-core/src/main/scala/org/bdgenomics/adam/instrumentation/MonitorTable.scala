@@ -26,9 +26,9 @@ import scala.collection.mutable.ArrayBuffer
 import com.bethecoder.ascii_table.spec.IASCIITable
 
 /**
- * Tabular representation of a set of [[Monitor]]s. A [[MonitorTable]] consists of a list of [[Header]]s, which specify not only the titles of the
- * columns, but also how the data is extracted from the rows, as well as a list of rows which are [[Monitor]]s containing the data. Each header
- * can specify the following:
+ * Tabular representation of a set of [[Monitor]]s. A [[MonitorTable]] consists of a list of [[TableHeader]]s, which specify not only the
+ * titles of the columns, but also how the data is extracted from the rows, as well as a list of rows which are [[Monitor]]s containing the data.
+ * Each header can specify the following:
  *
  * - name: the name of the column; this will be the text that is used in the header row
  * - valueExtractor: specifies how data will be extracted from a monitor; the functions in the [[ValueExtractor]] object can be used to create
@@ -36,7 +36,7 @@ import com.bethecoder.ascii_table.spec.IASCIITable
  * - formatFunction (optional): a function which formats the value extracted from the monitor as a [[String]]
  * - alignment (optional): specifies how the data in a cell is aligned; defaults to right-alignment
  */
-class MonitorTable(headerRow: Array[Header], rows: Array[Monitor[_]]) {
+class MonitorTable(headerRow: Array[TableHeader], rows: Array[Monitor[_]]) {
 
   def print(out: PrintStream) = {
     val tableHeader = headerRow.map(e => { new ASCIITableHeader(e.name, getAlignment(e)) })
@@ -56,7 +56,7 @@ class MonitorTable(headerRow: Array[Header], rows: Array[Monitor[_]]) {
     })
   }
 
-  private def getAlignment(header: Header): Int = {
+  private def getAlignment(header: TableHeader): Int = {
     header.alignment match {
       case Alignment.Left   => IASCIITable.ALIGN_LEFT
       case Alignment.Center => IASCIITable.ALIGN_CENTER
@@ -64,7 +64,7 @@ class MonitorTable(headerRow: Array[Header], rows: Array[Monitor[_]]) {
     }
   }
 
-  private def stringValue(headerCol: Header, option: Option[Any]): String = {
+  private def stringValue(headerCol: TableHeader, option: Option[Any]): String = {
     option.foreach(value => {
       if (headerCol.formatFunction.isDefined)
         return headerCol.formatFunction.get.apply(value)
@@ -79,8 +79,8 @@ class MonitorTable(headerRow: Array[Header], rows: Array[Monitor[_]]) {
 /**
  * Specifies the title of a column, as well as how data is extracted to form the cells of this column
  */
-case class Header(name: String, valueExtractor: ValueExtractor, formatFunction: Option[(Any) => String] = None,
-                  alignment: Alignment.Alignment = Alignment.Right)
+case class TableHeader(name: String, valueExtractor: ValueExtractor, formatFunction: Option[(Any) => String] = None,
+                       alignment: Alignment.Alignment = Alignment.Right)
 
 object ValueExtractor {
   /**
