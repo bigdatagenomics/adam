@@ -22,6 +22,7 @@ import java.util
 import scala.collection.JavaConversions._
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext
+import org.bdgenomics.adam.instrumentation.ADAMMetricsListener
 
 trait SparkArgs extends Args4jBase {
   @Args4jOption(required = false, name = "-spark_master", usage = "Spark Master (default = \"local[#cores]\")")
@@ -60,7 +61,7 @@ trait SparkCommand extends ADAMCommand {
     }
   }
 
-  def createSparkContext(args: SparkArgs): SparkContext = {
+  def createSparkContext(args: SparkArgs, metricsListener: Option[ADAMMetricsListener]): SparkContext = {
     ADAMContext.createSparkContext(
       name = companion.commandName,
       master = args.spark_master,
@@ -68,7 +69,8 @@ trait SparkCommand extends ADAMCommand {
       sparkJars = args.spark_jars,
       sparkEnvVars = parseEnvVariables(args.spark_env_vars),
       sparkAddStatsListener = args.spark_add_stats_listener,
-      sparkKryoBufferSize = args.spark_kryo_buffer_size)
+      sparkKryoBufferSize = args.spark_kryo_buffer_size,
+      sparkMetricsListener = metricsListener)
   }
 
 }

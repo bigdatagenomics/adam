@@ -278,6 +278,11 @@
             <id>hadoop-bam</id>
             <url>http://hadoop-bam.sourceforge.net/maven/</url>
         </repository>
+        <repository>
+            <id>project.local</id>
+            <name>project</name>
+            <url>file:${basedir}/../repo</url>
+        </repository>
     </repositories>
 
     <dependencyManagement>
@@ -422,6 +427,11 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>4.2.6</version>
+            </dependency>
+            <dependency>
+                <groupId>com.netflix.servo</groupId>
+                <artifactId>servo-core</artifactId>
+                <version>0.5.5</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
