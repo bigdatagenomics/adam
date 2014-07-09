@@ -433,11 +433,6 @@
                 <artifactId>servo-core</artifactId>
                 <version>0.5.5</version>
             </dependency>
-            <dependency>
-                <groupId>com.bethecoder.ascii_table</groupId>
-                <artifactId>btc-ascii-table</artifactId>
-                <version>1.0</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 

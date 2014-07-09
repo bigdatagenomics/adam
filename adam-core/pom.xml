@@ -158,10 +158,6 @@
             <groupId>com.netflix.servo</groupId>
             <artifactId>servo-core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.bethecoder.ascii_table</groupId>
-            <artifactId>btc-ascii-table</artifactId>
-        </dependency>
     </dependencies>
     <profiles>
         <profile>
