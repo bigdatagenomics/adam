@@ -278,11 +278,6 @@
             <id>hadoop-bam</id>
             <url>http://hadoop-bam.sourceforge.net/maven/</url>
         </repository>
-        <repository>
-            <id>project.local</id>
-            <name>project</name>
-            <url>file:${basedir}/../repo</url>
-        </repository>
     </repositories>
 
     <dependencyManagement>
