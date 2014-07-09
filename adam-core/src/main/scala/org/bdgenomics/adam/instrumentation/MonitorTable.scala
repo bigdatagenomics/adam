@@ -20,10 +20,8 @@ package org.bdgenomics.adam.instrumentation
 import com.netflix.servo.monitor.{ CompositeMonitor, Monitor }
 import com.netflix.servo.tag.Tag
 import java.io.PrintStream
-import com.bethecoder.ascii_table.{ ASCIITableHeader, ASCIITable }
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-import com.bethecoder.ascii_table.spec.IASCIITable
 
 /**
  * Tabular representation of a set of [[Monitor]]s. A [[MonitorTable]] consists of a list of [[TableHeader]]s, which specify not only the
@@ -39,10 +37,10 @@ import com.bethecoder.ascii_table.spec.IASCIITable
 class MonitorTable(headerRow: Array[TableHeader], rows: Array[Monitor[_]]) {
 
   def print(out: PrintStream) = {
-    val tableHeader = headerRow.map(e => { new ASCIITableHeader(e.name, getAlignment(e)) })
+    val tableHeader = headerRow.map(e => { new ASCIITableHeader(e.name, e.alignment) })
     val tableRows = createRows()
-    val tableText = ASCIITable.getInstance().getTable(tableHeader, tableRows)
-    out.print(tableText)
+    val table = new ASCIITable(tableHeader, tableRows)
+    table.print(out)
   }
 
   private def createRows(): Array[Array[String]] = {
@@ -54,14 +52,6 @@ class MonitorTable(headerRow: Array[TableHeader], rows: Array[Monitor[_]]) {
       })
       columns.toArray
     })
-  }
-
-  private def getAlignment(header: TableHeader): Int = {
-    header.alignment match {
-      case Alignment.Left   => IASCIITable.ALIGN_LEFT
-      case Alignment.Center => IASCIITable.ALIGN_CENTER
-      case _                => IASCIITable.ALIGN_RIGHT
-    }
   }
 
   private def stringValue(headerCol: TableHeader, option: Option[Any]): String = {
@@ -98,11 +88,6 @@ object ValueExtractor {
   def forTagValueWithKey(key: String): ValueExtractor = {
     new MonitorTagValueExtractor(key)
   }
-}
-
-object Alignment extends Enumeration {
-  type Alignment = Value
-  val Left, Right, Center = Value
 }
 
 trait ValueExtractor {

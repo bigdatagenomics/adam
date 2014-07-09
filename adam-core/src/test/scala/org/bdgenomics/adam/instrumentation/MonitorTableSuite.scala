@@ -61,7 +61,7 @@ class MonitorTableSuite extends FunSuite {
 
   val expectedTable =
     """+-------------------------+--------------------+
-      #|           Col1          |        Col2        |
+      #|          Col1           |        Col2        |
       #+-------------------------+--------------------+
       #| Col1Value1              |    100 nanoseconds |
       #| Col1Value2 A Bit Longer | 200000 nanoseconds |
