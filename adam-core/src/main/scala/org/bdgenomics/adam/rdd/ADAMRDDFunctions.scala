@@ -68,7 +68,6 @@ class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Seria
                disableDictionaryEncoding: Boolean = false): RDD[T] = {
     val job = HadoopUtil.newJob(rdd.context)
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
-    ParquetOutputFormat.setWriteSupportClass(job, classOf[AvroWriteSupport])
     ParquetOutputFormat.setCompression(job, compressCodec)
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
     ParquetOutputFormat.setBlockSize(job, blockSize)
@@ -78,7 +77,7 @@ class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Seria
     val recordToSave = rdd.map(p => (null, p))
     // Save the values to the ADAM/Parquet file
     recordToSave.saveAsNewAPIHadoopFile(filePath,
-      classOf[java.lang.Void], manifest[T].runtimeClass.asInstanceOf[Class[T]], classOf[ParquetOutputFormat[T]],
+      classOf[java.lang.Void], manifest[T].runtimeClass.asInstanceOf[Class[T]], classOf[AvroParquetOutputFormat],
       ContextUtil.getConfiguration(job))
     // Return the origin rdd
     rdd
