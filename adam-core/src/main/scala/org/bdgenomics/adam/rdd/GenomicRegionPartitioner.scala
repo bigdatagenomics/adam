@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.bdgenomics.adam.models.{ ReferencePosition, SequenceDictionary }
-import org.apache.spark.Partitioner
+import org.apache.spark.{ Logging, Partitioner }
 import scala.math._
 
 /**
@@ -35,7 +35,10 @@ import scala.math._
  * @param seqLengths a map relating sequence name-to-length and indicating the set and length of all extant
  *                   sequences in the genome.
  */
-class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[String, Long]) extends Partitioner {
+class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[String, Long]) extends Partitioner with Logging {
+
+  log.info("Have genomic region partitioner with " + numParts + " partitions, and sequences:")
+  seqLengths.foreach(kv => log.info("Contig " + kv._1 + " with length " + kv._2))
 
   def this(numParts: Int, seqDict: SequenceDictionary) =
     this(numParts, GenomicRegionPartitioner.extractLengthMap(seqDict))
