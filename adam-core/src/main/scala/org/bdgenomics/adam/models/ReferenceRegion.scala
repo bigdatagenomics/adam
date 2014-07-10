@@ -102,6 +102,17 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
   }
 
   /**
+   * Calculates the intersection of two reference regions.
+   *
+   * @param region Region to intersect with.
+   * @return A smaller reference region.
+   */
+  def intersection(region: ReferenceRegion): ReferenceRegion = {
+    assert(overlaps(region), "Cannot calculate the intersection of non-overlapping regions.")
+    ReferenceRegion(referenceName, max(start, region.start), min(end, region.end))
+  }
+
+  /**
    * Creates a region corresponding to the convex hull of two regions. Has no preconditions about the adjacency or
    * overlap of two regions. However, regions must be in the same reference space.
    *
