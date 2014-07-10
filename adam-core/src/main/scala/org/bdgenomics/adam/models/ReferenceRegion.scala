@@ -24,6 +24,88 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import scala.math.{ min, max }
 
+object ReferenceRegionWithOrientation {
+
+  /**
+   * Builds an oriented reference region from a given reference region
+   * and an orientation parameter.
+   *
+   * @param region Unstranded reference region.
+   * @param negativeStrand True if this region should be placed on the negative
+   * strand, else it will be on the positive strand.
+   * @return Returns an oriented reference region.
+   */
+  def apply(region: ReferenceRegion,
+            negativeStrand: Boolean): ReferenceRegionWithOrientation = {
+    ReferenceRegionWithOrientation(region.referenceName,
+      region.start,
+      region.end,
+      negativeStrand)
+  }
+}
+
+/**
+ * Represents a contiguous region of the reference genome with strand information.
+ *
+ * @param referenceName The name of the sequence (chromosome) in the reference genome
+ * @param start The 0-based residue-coordinate for the start of the region
+ * @param end The 0-based residue-coordinate for the first residue <i>after</i> the start
+ *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
+ *            half-open interval.
+ * @param negativeStrand Boolean flag as to whether the region is on the forward or
+ *                       reverse strand of the reference region.
+ */
+case class ReferenceRegionWithOrientation(referenceName: String,
+                                          start: Long,
+                                          end: Long,
+                                          negativeStrand: Boolean) extends Ordered[ReferenceRegionWithOrientation] {
+
+  assert(end >= 0)
+  assert(start >= 0)
+
+  def width: Long = end - start - 1 // need minus 1 for open end
+
+  def contains(other: ReferencePositionWithOrientation): Boolean = {
+    other.refPos.fold(false)(rp => (referenceName == rp.referenceName &&
+      negativeStrand == other.negativeStrand &&
+      start <= rp.pos && end > rp.pos))
+  }
+
+  def contains(other: ReferenceRegionWithOrientation): Boolean = {
+    (referenceName == other.referenceName && negativeStrand == other.negativeStrand &&
+      start <= other.start && end >= other.end)
+  }
+
+  def overlaps(other: ReferenceRegionWithOrientation): Boolean = {
+    (referenceName == other.referenceName && negativeStrand == other.negativeStrand &&
+      ((start >= other.start && start <= other.end) || (end >= other.start && end <= other.end)))
+  }
+
+  def compare(that: ReferenceRegionWithOrientation): Int =
+    if (referenceName != that.referenceName) {
+      referenceName.compareTo(that.referenceName)
+    } else if (negativeStrand != that.negativeStrand) {
+      negativeStrand.compareTo(that.negativeStrand)
+    } else {
+      if (negativeStrand) {
+        // invert comparison if on negative strand
+        if (start != that.start)
+          -start.compareTo(that.start)
+        else
+          -end.compareTo(that.end)
+      } else {
+        if (start != that.start)
+          start.compareTo(that.start)
+        else
+          end.compareTo(that.end)
+      }
+    }
+
+  def toReferenceRegion: ReferenceRegion = {
+    ReferenceRegion(referenceName, start, end)
+  }
+}
+
 object ReferenceRegion {
 
   /**
@@ -84,7 +166,7 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
   assert(start >= 0)
   assert(end >= start)
 
-  def width: Long = end - start
+  def width: Long = end - start - 1
 
   /**
    * Merges two reference regions that are contiguous.

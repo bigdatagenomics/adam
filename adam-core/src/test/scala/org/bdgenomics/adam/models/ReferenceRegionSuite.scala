@@ -230,4 +230,78 @@ class ReferenceRegionSuite extends FunSuite {
 
   def point(refName: String, pos: Long): ReferencePosition =
     ReferencePosition(refName, pos)
+
+  test("build oriented reference region from non-oriented") {
+    val rrf = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), false)
+    assert(rrf.referenceName === "chr1")
+    assert(rrf.start === 10L)
+    assert(rrf.end === 20L)
+    assert(!rrf.negativeStrand)
+
+    val rrr = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), true)
+    assert(rrr.referenceName === "chr1")
+    assert(rrr.start === 10L)
+    assert(rrr.end === 20L)
+    assert(rrr.negativeStrand)
+  }
+
+  test("comparison tests for oriented reference region") {
+    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, false)
+      .contains(ReferenceRegionWithOrientation("chr1", 10L, 20L, false)))
+    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, true)
+      .contains(ReferenceRegionWithOrientation("chr1", 15L, 17L, true)))
+
+    val rrf = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), false)
+    val rrr = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), true)
+    assert(!rrf.contains(rrr))
+
+    assert(!ReferenceRegionWithOrientation("chr1", 10L, 20L, false)
+      .contains(ReferenceRegionWithOrientation("chr2", 10L, 20L, false)))
+    assert(!ReferenceRegionWithOrientation("chr1", 20L, 50L, true)
+      .contains(ReferenceRegionWithOrientation("chr1", 50L, 100L, true)))
+  }
+
+  test("comparison tests for oriented reference region vs position") {
+    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, false)
+      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 10L)), false)))
+    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, true)
+      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 17L)), true)))
+
+    assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), false)
+      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 17L)), true)))
+    assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), true)
+      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 10L)), false)))
+
+    assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), false)
+      .contains(ReferencePositionWithOrientation(None.asInstanceOf[Option[ReferencePosition]], true)))
+    assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), true)
+      .contains(ReferencePositionWithOrientation(None.asInstanceOf[Option[ReferencePosition]], false)))
+
+    assert(!ReferenceRegionWithOrientation("chr1", 10L, 20L, false)
+      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr2", 10L)), false)))
+    assert(!ReferenceRegionWithOrientation("chr1", 20L, 50L, true)
+      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 100L)), true)))
+  }
+
+  test("overlap tests for oriented reference region") {
+    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, false)
+      .overlaps(ReferenceRegionWithOrientation("chr1", 15L, 25L, false)))
+    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, true)
+      .overlaps(ReferenceRegionWithOrientation("chr1", 5L, 15L, true)))
+
+    val rrf = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 12L, 22L), false)
+    val rrr = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 8L, 8L), true)
+    assert(!rrf.overlaps(rrr))
+
+    assert(!ReferenceRegionWithOrientation("chr1", 10L, 20L, false)
+      .overlaps(ReferenceRegionWithOrientation("chr2", 10L, 20L, false)))
+    assert(!ReferenceRegionWithOrientation("chr1", 20L, 50L, true)
+      .overlaps(ReferenceRegionWithOrientation("chr1", 51L, 100L, true)))
+  }
+
+  test("check the width of a reference region") {
+    assert(ReferenceRegion("chr1", 100, 201).width === 100)
+    assert(ReferenceRegionWithOrientation("chr2", 200, 401, false).width === 200)
+    assert(ReferenceRegionWithOrientation("chr3", 399, 1000, true).width === 600)
+  }
 }

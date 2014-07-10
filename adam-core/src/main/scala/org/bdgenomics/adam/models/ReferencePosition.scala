@@ -21,6 +21,7 @@ import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMGenotype, ADAMVariant, ADAM
 import org.bdgenomics.adam.rdd.ADAMContext._
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
+import scala.annotation.tailrec
 
 object ReferencePositionWithOrientation {
 
@@ -39,11 +40,112 @@ object ReferencePositionWithOrientation {
       None
     }
   }
+  /**
+   * Given an index into a sequence (e.g., a transcript), and a sequence
+   * of regions that map this sequence to a reference genome, returns a
+   * reference position.
+   *
+   * @param idx Index into a sequence.
+   * @param mapping Sequence of reference regions that maps the sequence to a
+   * reference genome.
+   * @return Returns a lifted over reference position.
+   *
+   * @throws AssertionError Throws an assertion error if the strandedness does
+   * not match between the reference position and the mapping regions.
+   * @throws IllegalArgumentException Throws an exception if the index given
+   * is out of the range of the mappings given.
+   */
+  def liftOverToReference(idx: Long,
+                          mapping: Seq[ReferenceRegionWithOrientation]): ReferencePositionWithOrientation = {
+    val negativeStrand = mapping.headOption.fold(false)(_.negativeStrand)
 
+    @tailrec def liftOverHelper(regions: Iterator[ReferenceRegionWithOrientation],
+                                idx: Long): ReferencePositionWithOrientation = {
+      if (!regions.hasNext) {
+        throw new IllegalArgumentException("Liftover is out of range")
+      } else {
+        val reg = regions.next
+        assert(reg.negativeStrand == negativeStrand,
+          "Strand is inconsistent across set of regions.")
+
+        // is our position in this region?
+        if (reg.width > idx) {
+          // get contig
+          val chr = reg.referenceName
+
+          // get our pos
+          val pos = if (negativeStrand) {
+            reg.end - idx - 1 // need -1 because of open end coordinate
+          } else {
+            reg.start + idx
+          }
+
+          // return
+          ReferencePositionWithOrientation(Some(ReferencePosition(chr, pos)),
+            negativeStrand)
+        } else {
+          // recurse
+          liftOverHelper(regions, idx - reg.width)
+        }
+      }
+    }
+
+    // call out to helper
+    liftOverHelper(mapping.toIterator, idx)
+  }
 }
 
-case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition], negativeStrand: Boolean)
+case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition],
+                                            negativeStrand: Boolean)
     extends Ordered[ReferencePositionWithOrientation] {
+
+  /**
+   * Given a sequence of regions that map from a reference genome to a sequence,
+   * returns an index into a sequence.
+   *
+   * @param mapping Sequence of reference regions that maps the sequence to a
+   * reference genome.
+   * @return Returns an index into a sequence.
+   *
+   * @throws AssertionError Throws an assertion error if the strandedness does
+   * not match between the reference position and the mapping regions.
+   * @throws IllegalArgumentException Throws an exception if the index given
+   * is out of the range of the mappings given.
+   */
+  def liftOverFromReference(mapping: Seq[ReferenceRegionWithOrientation]): Long = {
+    assert(refPos.isDefined, "Cannot lift an undefined position.")
+    val pos = refPos.get.pos
+
+    @tailrec def liftOverHelper(regions: Iterator[ReferenceRegionWithOrientation],
+                                idx: Long = 0L): Long = {
+      if (!regions.hasNext) {
+        throw new IllegalArgumentException("Position was not contained in mapping.")
+      } else {
+        // get region
+        val reg = regions.next
+        assert(reg.negativeStrand == negativeStrand,
+          "Strand is inconsistent across set of regions.")
+
+        // are we in this region?
+        if (reg.contains(this)) {
+          // how far are we from the end of the region
+          val into = if (negativeStrand) {
+            reg.end - pos
+          } else {
+            pos - reg.start
+          }
+
+          // add to index
+          idx + into
+        } else {
+          liftOverHelper(regions, idx + reg.width)
+        }
+      }
+    }
+
+    // call out to helper
+    liftOverHelper(mapping.toIterator)
+  }
 
   override def compare(that: ReferencePositionWithOrientation): Int = {
     if (refPos.isEmpty && that.refPos.isEmpty) {
