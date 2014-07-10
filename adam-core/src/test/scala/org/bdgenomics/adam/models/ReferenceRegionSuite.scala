@@ -209,6 +209,22 @@ class ReferenceRegionSuite extends FunSuite {
     assert(r.end === 10L)
   }
 
+  test("intersection fails on non-overlapping regions") {
+    intercept[AssertionError] {
+      ReferenceRegion("chr1", 1L, 10L).intersection(ReferenceRegion("chr1", 11L, 20L))
+    }
+    intercept[AssertionError] {
+      ReferenceRegion("chr1", 1L, 10L).intersection(ReferenceRegion("chr2", 1L, 10L))
+    }
+  }
+
+  test("compute intersection") {
+    val overlapRegion = ReferenceRegion("chr1", 1L, 10L).intersection(ReferenceRegion("chr1", 5L, 15L))
+    assert(overlapRegion.referenceName === "chr1")
+    assert(overlapRegion.start === 5L)
+    assert(overlapRegion.end === 10L)
+  }
+
   def region(refName: String, start: Long, end: Long): ReferenceRegion =
     ReferenceRegion(refName, start, end)
 
