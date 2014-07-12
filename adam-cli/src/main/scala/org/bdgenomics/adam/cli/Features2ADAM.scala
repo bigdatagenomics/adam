@@ -39,7 +39,7 @@ class Features2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
     usage = "The features file to convert (e.g., .bed, .gff)", index = 0)
   var featuresFile: String = _
   @Argument(required = true, metaVar = "ADAM",
-    usage = "Location to write ADAM features data")
+    usage = "Location to write ADAM features data", index = 1)
   var outputPath: String = null
 }
 
