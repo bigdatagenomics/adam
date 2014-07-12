@@ -68,7 +68,7 @@ class PrintADAM(protected val args: PrintADAMArgs) extends ADAMSparkCommand[Prin
   def withPrintStream(filename: Option[String])(op: java.io.PrintStream => Unit) {
     val p = filename match {
       case Some(s) => new java.io.PrintStream(s)
-      case None    => System.out
+      case None    => scala.Console.out
     }
     try { op(p) } finally { if (filename != None) p.close() }
   }
