@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.models.{
   SAMFileHeaderWritable,
   SequenceDictionary,
@@ -36,7 +36,7 @@ class ADAMRecordConverter extends Serializable {
    * @param header SAM file header to use.
    * @return Returns the record converted to SAMtools format. Can be used for output to SAM/BAM.
    */
-  def convert(adamRecord: ADAMRecord, header: SAMFileHeaderWritable): SAMRecord = {
+  def convert(adamRecord: Read, header: SAMFileHeaderWritable): SAMRecord = {
 
     // get read group dictionary from header
     val rgDict = header.header.getSequenceDictionary
@@ -62,7 +62,7 @@ class ADAMRecordConverter extends Serializable {
       .foreach(v => builder.setAttribute("SM", v.toString))
 
     // set the reference name, and alignment position, for mate
-    Option(adamRecord.getMateReference)
+    Option(adamRecord.getMateContig.getContigName)
       .map(_.toString)
       .foreach(builder.setMateReferenceName)
     Option(adamRecord.getMateAlignmentStart)

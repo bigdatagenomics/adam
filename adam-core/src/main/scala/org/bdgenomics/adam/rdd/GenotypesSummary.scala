@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.formats.avro.{ ADAMGenotypeAllele, ADAMGenotype }
+import org.bdgenomics.formats.avro.{ GenotypeAllele, Genotype }
 import org.bdgenomics.adam.rdd.GenotypesSummary.StatisticsMap
 import org.bdgenomics.adam.rich.RichADAMVariant._
 import org.apache.spark.rdd.RDD
@@ -33,7 +33,7 @@ import org.bdgenomics.adam.rdd.GenotypesSummaryCounts.ReferenceAndAlternate
  * count as 1 (i.e. homozygous alternate is NOT counted as 2).
  * This seems to be the most common convention.
  *
- * @param genotypesCounts Counts of genotypes: map from list of ADAMGenotypeAllele (of size ploidy) -> count
+ * @param genotypesCounts Counts of genotypes: map from list of GenotypeAllele (of size ploidy) -> count
  * @param singleNucleotideVariantCounts Map from ReferenceAndAlternate -> count
  *                                      where ReferenceAndAlternate is a single base variant.
  * @param multipleNucleotideVariantCount Count of multiple nucleotide variants (e.g.: AA -> TG)
@@ -55,11 +55,11 @@ case class GenotypesSummaryCounts(
 
   lazy val genotypesCount: Long = genotypesCounts.values.sum
   lazy val variantGenotypesCount: Long =
-    genotypesCounts.keys.filter(_.contains(ADAMGenotypeAllele.Alt)).map(genotypesCounts(_)).sum
+    genotypesCounts.keys.filter(_.contains(GenotypeAllele.Alt)).map(genotypesCounts(_)).sum
   lazy val singleNucleotideVariantCount: Long = singleNucleotideVariantCounts.values.sum
   lazy val transitionCount: Long = GenotypesSummaryCounts.transitions.map(singleNucleotideVariantCounts).sum
   lazy val transversionCount: Long = GenotypesSummaryCounts.transversions.map(singleNucleotideVariantCounts).sum
-  lazy val noCallCount: Long = genotypesCounts.count(_._1.contains(ADAMGenotypeAllele.NoCall))
+  lazy val noCallCount: Long = genotypesCounts.count(_._1.contains(GenotypeAllele.NoCall))
   lazy val averageReadDepthAtVariants =
     if (variantGenotypesCount == 0) None
     else for (readCount1 <- readCount) yield readCount1.toDouble / variantGenotypesCount.toDouble
@@ -91,7 +91,7 @@ case class GenotypesSummaryCounts(
 object GenotypesSummaryCounts {
   case class ReferenceAndAlternate(reference: String, alternate: String)
 
-  type GenotypeAlleleCounts = Map[List[ADAMGenotypeAllele], Long]
+  type GenotypeAlleleCounts = Map[List[GenotypeAllele], Long]
   type VariantCounts = Map[ReferenceAndAlternate, Long]
 
   val simpleNucleotides = List("A", "C", "T", "G")
@@ -130,14 +130,15 @@ object GenotypesSummaryCounts {
   }
 
   /**
-   * Factory for a GenotypesSummaryCounts that counts a single ADAMGenotype.
+   * Factory for a GenotypesSummaryCounts that counts a single Genotype.
    */
-  def apply(genotype: ADAMGenotype): GenotypesSummaryCounts = {
+  def apply(genotype: Genotype): GenotypesSummaryCounts = {
     val variant = genotype.getVariant
-    val ref_and_alt = ReferenceAndAlternate(variant.getReferenceAllele.toString, variant.getVariantAllele.toString)
+    val ref_and_alt = ReferenceAndAlternate(variant.getReferenceAllele.toString,
+      variant.getAlternateAllele.toString)
 
     // We always count our genotype. The other counts are set to 1 only if we have a variant genotype.
-    val isVariant = genotype.getAlleles.contains(ADAMGenotypeAllele.Alt)
+    val isVariant = genotype.getAlleles.contains(GenotypeAllele.Alt)
     val genotypeAlleleCounts = Map(genotype.getAlleles.asScala.toList -> 1.toLong)
     val variantCounts = (
       if (isVariant && variant.isSingleNucleotideVariant) Map(ref_and_alt -> 1.toLong)
@@ -177,9 +178,9 @@ object GenotypesSummary {
   type StatisticsMap = Map[String, GenotypesSummaryCounts]
 
   /**
-   * Factory for a GenotypesSummary given an RDD of ADAMGenotype.
+   * Factory for a GenotypesSummary given an RDD of Genotype.
    */
-  def apply(rdd: RDD[ADAMGenotype]): GenotypesSummary = {
+  def apply(rdd: RDD[Genotype]): GenotypesSummary = {
     def combineStatisticsMap(stats1: StatisticsMap, stats2: StatisticsMap): StatisticsMap = {
       stats1.keySet.union(stats2.keySet).map(sample => {
         (stats1.get(sample), stats2.get(sample)) match {
@@ -195,9 +196,9 @@ object GenotypesSummary {
       .fold(Map(): StatisticsMap)(combineStatisticsMap(_, _))
       .map({ case (sample: String, stats: GenotypesSummaryCounts) => sample -> stats.withDefaultZeroCounts }).toMap
     val variantCounts =
-      rdd.filter(_.getAlleles.contains(ADAMGenotypeAllele.Alt)).map(genotype => {
+      rdd.filter(_.getAlleles.contains(GenotypeAllele.Alt)).map(genotype => {
         val variant = genotype.getVariant
-        (variant.getContig, variant.getPosition, variant.getReferenceAllele, variant.getVariantAllele)
+        (variant.getContig, variant.getStart, variant.getReferenceAllele, variant.getAlternateAllele)
       }).countByValue
     val singletonCount = variantCounts.count(_._2 == 1)
     val distinctVariantsCount = variantCounts.size
@@ -297,16 +298,16 @@ object GenotypesSummaryFormatting {
     result.toString
   }
 
-  private def sortedGenotypeAlleles(stats: GenotypesSummaryCounts): Seq[List[ADAMGenotypeAllele]] = {
-    def genotypeSortOrder(genotype: List[ADAMGenotypeAllele]): Int = genotype.map({
-      case ADAMGenotypeAllele.Ref                               => 0
-      case ADAMGenotypeAllele.Alt | ADAMGenotypeAllele.OtherAlt => 1 // alt/otheralt sort to same point
-      case ADAMGenotypeAllele.NoCall                            => 10 // arbitrary large number so any genotype with a NoCall sorts last.
+  private def sortedGenotypeAlleles(stats: GenotypesSummaryCounts): Seq[List[GenotypeAllele]] = {
+    def genotypeSortOrder(genotype: List[GenotypeAllele]): Int = genotype.map({
+      case GenotypeAllele.Ref                           => 0
+      case GenotypeAllele.Alt | GenotypeAllele.OtherAlt => 1 // alt/otheralt sort to same point
+      case GenotypeAllele.NoCall                        => 10 // arbitrary large number so any genotype with a NoCall sorts last.
     }).sum
     stats.genotypesCounts.keySet.toList.sortBy(genotypeSortOrder(_))
   }
 
-  private def genotypeAllelesToString(alleles: List[ADAMGenotypeAllele]): String =
+  private def genotypeAllelesToString(alleles: List[GenotypeAllele]): String =
     alleles.map(_.toString).mkString("-")
 
   lazy val allSNVs: Seq[ReferenceAndAlternate] =

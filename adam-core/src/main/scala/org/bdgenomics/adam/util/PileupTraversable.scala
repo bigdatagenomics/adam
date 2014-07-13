@@ -21,7 +21,7 @@ import scala.collection.JavaConversions._
 import net.sf.samtools.{ TextCigarCodec, CigarOperator }
 import scala.collection.mutable.ListBuffer
 import scala.collection.SortedMap
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.apache.spark.rdd.RDD
 
 object Base extends Enumeration with Serializable {
@@ -69,12 +69,12 @@ class Pileup(val referenceName: String,
 object PileupTraversable {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
 
-  def apply(reads: RDD[ADAMRecord]) {
+  def apply(reads: RDD[Read]) {
     new PileupTraversable(reads)
   }
 }
 
-class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with Serializable {
+class PileupTraversable(reads: RDD[Read]) extends Traversable[Pileup] with Serializable {
 
   def stringToQualitySanger(score: String): Int = {
     try {
@@ -86,7 +86,7 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
     }
   }
 
-  def readToPileups(record: ADAMRecord): List[Pileup] = {
+  def readToPileups(record: Read): List[Pileup] = {
     if (record == null || record.getCigar == null || record.getMismatchingPositions == null) {
       // TODO: log this later... We can't create a pileup without the CIGAR and MD tag
       // in the future, we can also get reference information from a reference file
@@ -223,9 +223,9 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
       pileups --= locationsToFlush
     }
 
-    reads.foreach((read: ADAMRecord) => {
+    reads.foreach((read: Read) => {
 
-      def updateCurrentInfo(read: ADAMRecord) = {
+      def updateCurrentInfo(read: Read) = {
         currentReference = Some(read.getContig.getContigName.toString)
         currentReferencePosition = Some(read.getStart)
       }

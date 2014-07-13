@@ -18,17 +18,17 @@
 package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ Contig, Read }
 import org.bdgenomics.adam.rich.ReferenceMappingContext.ADAMRecordReferenceMapping
 
 class ADAMRecordReferenceMappingSuite extends SparkFunSuite {
 
   sparkTest("test getReferenceId returns the right referenceId") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr12")
       .build
 
-    val rec = ADAMRecord.newBuilder().setContig(contig).build()
+    val rec = Read.newBuilder().setContig(contig).build()
     assert(ADAMRecordReferenceMapping.getReferenceName(rec) === "chr12")
   }
 }

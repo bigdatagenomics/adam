@@ -24,7 +24,7 @@ import org.apache.spark.Logging
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import scala.collection.immutable.TreeSet
 
 object ZippedTargetOrdering extends Ordering[(IndelRealignmentTarget, Int)] {
@@ -59,7 +59,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @param read Read to compare.
    * @return True if read alignment is contained in target span.
    */
-  def contains(target: IndelRealignmentTarget, read: ADAMRecord): Boolean = {
+  def contains(target: IndelRealignmentTarget, read: Read): Boolean = {
     val reg = RichADAMRecord(read).readRegion
 
     reg.forall(r => target.readRange.overlaps(r))

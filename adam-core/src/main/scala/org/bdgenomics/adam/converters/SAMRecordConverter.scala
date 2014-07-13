@@ -19,13 +19,13 @@ package org.bdgenomics.adam.converters
 
 import net.sf.samtools.{ SAMReadGroupRecord, SAMRecord }
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import scala.collection.JavaConverters._
 import org.bdgenomics.adam.models.{ SequenceRecord, Attribute, RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.util.AttributeUtils
 
 class SAMRecordConverter extends Serializable {
-  def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): ADAMRecord = {
+  def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): Read = {
 
     val cigar: String = samRecord.getCigarString
     val startTrim = if (cigar == "*") {
@@ -47,7 +47,7 @@ class SAMRecordConverter extends Serializable {
       0
     }
 
-    val builder: ADAMRecord.Builder = ADAMRecord.newBuilder
+    val builder: Read.Builder = Read.newBuilder
       .setReadName(samRecord.getReadName)
       .setSequence(samRecord.getReadString)
       .setCigar(cigar)

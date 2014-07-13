@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.algorithms.realignmenttarget.RealignmentTargetFinder
 import org.bdgenomics.adam.algorithms.realignmenttarget.IndelRealignmentTarget
 import org.bdgenomics.adam.models.{ Consensus, ReferencePosition }
@@ -28,27 +28,27 @@ import org.bdgenomics.adam.rich.RichADAMRecord
 
 class RealignIndelsSuite extends SparkFunSuite {
 
-  def mason_reads: RDD[ADAMRecord] = {
+  def mason_reads: RDD[Read] = {
     val path = ClassLoader.getSystemClassLoader.getResource("small_realignment_targets.sam").getFile
-    val reads: RDD[ADAMRecord] = sc.adamLoad(path)
+    val reads: RDD[Read] = sc.adamLoad(path)
     reads
   }
 
-  def artificial_reads: RDD[ADAMRecord] = {
+  def artificial_reads: RDD[Read] = {
     val path = ClassLoader.getSystemClassLoader.getResource("artificial.sam").getFile
-    val reads: RDD[ADAMRecord] = sc.adamLoad(path)
+    val reads: RDD[Read] = sc.adamLoad(path)
     reads
   }
 
-  def artificial_realigned_reads: RDD[ADAMRecord] = {
+  def artificial_realigned_reads: RDD[Read] = {
     artificial_reads
       .adamRealignIndels()
       .adamSortReadsByReferencePosition()
   }
 
-  def gatk_artificial_realigned_reads: RDD[ADAMRecord] = {
+  def gatk_artificial_realigned_reads: RDD[Read] = {
     val path = ClassLoader.getSystemClassLoader.getResource("artificial.realigned.sam").getFile
-    val reads: RDD[ADAMRecord] = sc.adamLoad(path)
+    val reads: RDD[Read] = sc.adamLoad(path)
     reads
   }
 
@@ -65,12 +65,12 @@ class RealignIndelsSuite extends SparkFunSuite {
     assert(readsMappedToTarget.size === 2)
 
     readsMappedToTarget.forall {
-      case (target: Option[IndelRealignmentTarget], reads: Seq[ADAMRecord]) => reads.forall {
+      case (target: Option[IndelRealignmentTarget], reads: Seq[Read]) => reads.forall {
         read =>
           {
             if (read.getStart <= 25) {
               val result = target.get.readRange.start <= read.getStart.toLong
-              result && (target.get.readRange.end >= read.end.get)
+              result && (target.get.readRange.end >= read.end)
             } else {
               target.isEmpty
             }
@@ -114,7 +114,7 @@ class RealignIndelsSuite extends SparkFunSuite {
 
     val targets = RealignmentTargetFinder(artificial_reads.map(RichADAMRecord(_)))
     val rr = artificial_reads.map(RichADAMRecord(_))
-    val readsMappedToTarget: Array[(IndelRealignmentTarget, Iterable[ADAMRecord])] = RealignIndels.mapTargets(rr, targets)
+    val readsMappedToTarget: Array[(IndelRealignmentTarget, Iterable[Read])] = RealignIndels.mapTargets(rr, targets)
       .filter(_._1.isDefined)
       .map(kv => {
         val (t, r) = kv

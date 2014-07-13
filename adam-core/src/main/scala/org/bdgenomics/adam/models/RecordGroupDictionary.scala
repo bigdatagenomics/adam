@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import java.util.Date
 import net.sf.samtools.{ SAMFileReader, SAMFileHeader, SAMReadGroupRecord }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import scala.collection.JavaConversions._
 
 object RecordGroupDictionary {
@@ -104,7 +104,7 @@ object RecordGroup {
    * @param read Read to populate data from.
    * @return Returns a filled Option if record group data is attached to the read, else returns None.
    */
-  def apply(read: ADAMRecord): Option[RecordGroup] = {
+  def apply(read: Read): Option[RecordGroup] = {
     Option(read.getRecordGroupSample).fold(None.asInstanceOf[Option[RecordGroup]])(rgs => {
       Option(read.getRecordGroupName).fold(None.asInstanceOf[Option[RecordGroup]])(rgn => {
         Some(new RecordGroup(rgs.toString,

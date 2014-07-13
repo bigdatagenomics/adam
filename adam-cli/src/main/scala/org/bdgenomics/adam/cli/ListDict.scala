@@ -21,7 +21,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.Argument
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.models.SequenceRecord
 
 object ListDict extends ADAMCommandCompanion {
@@ -42,7 +42,7 @@ class ListDict(protected val args: ListDictArgs) extends ADAMSparkCommand[ListDi
   val companion: ADAMCommandCompanion = ListDict
 
   def run(sc: SparkContext, job: Job): Unit = {
-    val dict = sc.adamDictionaryLoad[ADAMRecord](args.inputPath)
+    val dict = sc.adamDictionaryLoad[Read](args.inputPath)
 
     dict.records.foreach {
       rec: SequenceRecord =>

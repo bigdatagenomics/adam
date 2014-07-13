@@ -21,9 +21,9 @@ import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }
 import java.util.logging.Level
 import java.io.File
 import org.bdgenomics.formats.avro.{
-  ADAMVariant,
-  ADAMGenotype,
-  ADAMContig,
+  Variant,
+  Genotype,
+  Contig,
   VariantCallingAnnotations
 }
 import org.apache.spark.rdd.RDD
@@ -36,11 +36,11 @@ class GenotypePredicatesSuite extends SparkFunSuite {
   sparkTest("Load only only PASSing records") {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
-    val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("chr11").build)
-      .setPosition(17409571)
+    val v0 = Variant.newBuilder
+      .setContig(Contig.newBuilder.setContigName("chr11").build)
+      .setStart(17409571)
       .setReferenceAllele("T")
-      .setVariantAllele("C")
+      .setAlternateAllele("C")
       .build
 
     val passFilterAnnotation =
@@ -49,12 +49,12 @@ class GenotypePredicatesSuite extends SparkFunSuite {
       VariantCallingAnnotations.newBuilder().setVariantIsPassing(false).build()
 
     val genotypes = sc.parallelize(List(
-      ADAMGenotype.newBuilder()
+      Genotype.newBuilder()
         .setVariant(v0)
         .setVariantCallingAnnotations(passFilterAnnotation)
         .setSampleId("NA12878")
         .build(),
-      ADAMGenotype.newBuilder()
+      Genotype.newBuilder()
         .setVariant(v0)
         .setVariantCallingAnnotations(failFilterAnnotation)
         .setSampleId("NA12878")
@@ -63,7 +63,7 @@ class GenotypePredicatesSuite extends SparkFunSuite {
     val genotypesParquetFile = new File(Files.createTempDir(), "genotypes")
     genotypes.adamSave(genotypesParquetFile.getAbsolutePath)
 
-    val gts1: RDD[ADAMGenotype] = sc.adamLoad(
+    val gts1: RDD[Genotype] = sc.adamLoad(
       genotypesParquetFile.getAbsolutePath,
       predicate = Some(classOf[GenotypeRecordPASSPredicate]))
     assert(gts1.count === 1)
@@ -74,11 +74,11 @@ class GenotypePredicatesSuite extends SparkFunSuite {
   sparkTest("Load all records and filter to only PASSing records") {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
-    val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("11").build)
-      .setPosition(17409571)
+    val v0 = Variant.newBuilder
+      .setContig(Contig.newBuilder.setContigName("11").build)
+      .setStart(17409571)
       .setReferenceAllele("T")
-      .setVariantAllele("C")
+      .setAlternateAllele("C")
       .build
 
     val passFilterAnnotation =
@@ -87,10 +87,10 @@ class GenotypePredicatesSuite extends SparkFunSuite {
       VariantCallingAnnotations.newBuilder().setVariantIsPassing(false).build()
 
     val genotypes = sc.parallelize(List(
-      ADAMGenotype.newBuilder().setVariant(v0)
+      Genotype.newBuilder().setVariant(v0)
         .setSampleId("ignored")
         .setVariantCallingAnnotations(passFilterAnnotation).build(),
-      ADAMGenotype.newBuilder()
+      Genotype.newBuilder()
         .setSampleId("ignored")
         .setVariant(v0)
         .setVariantCallingAnnotations(failFilterAnnotation).build()))
@@ -98,7 +98,7 @@ class GenotypePredicatesSuite extends SparkFunSuite {
     val genotypesParquetFile = new File(Files.createTempDir(), "genotypes")
     genotypes.adamSave(genotypesParquetFile.getAbsolutePath)
 
-    val gts: RDD[ADAMGenotype] = sc.adamLoad(genotypesParquetFile.getAbsolutePath)
+    val gts: RDD[Genotype] = sc.adamLoad(genotypesParquetFile.getAbsolutePath)
     assert(gts.count === 2)
 
     val predicate = new GenotypeRecordPASSPredicate

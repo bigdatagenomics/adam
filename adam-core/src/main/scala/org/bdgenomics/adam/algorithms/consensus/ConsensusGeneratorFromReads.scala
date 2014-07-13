@@ -26,7 +26,7 @@ import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import org.bdgenomics.adam.util.NormalizationUtils._
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 
 class ConsensusGeneratorFromReads extends ConsensusGenerator {
 
@@ -54,7 +54,7 @@ class ConsensusGeneratorFromReads extends ConsensusGenerator {
         val cigar = leftAlignIndel(r)
         val mdTag = MdTag.moveAlignment(r, cigar)
 
-        val newRead: RichADAMRecord = ADAMRecord.newBuilder(r)
+        val newRead: RichADAMRecord = Read.newBuilder(r)
           .setCigar(cigar.toString)
           .setMismatchingPositions(mdTag.toString())
           .build()

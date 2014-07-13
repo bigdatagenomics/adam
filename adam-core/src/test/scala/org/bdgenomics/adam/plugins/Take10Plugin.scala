@@ -17,16 +17,16 @@
  */
 package org.bdgenomics.adam.plugins
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.apache.avro.Schema
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 
-class Take10Plugin extends ADAMPlugin[ADAMRecord, ADAMRecord] with Serializable {
+class Take10Plugin extends ADAMPlugin[Read, Read] with Serializable {
   override def projection: Option[Schema] = None
-  override def predicate: Option[(ADAMRecord) => Boolean] = None
+  override def predicate: Option[(Read) => Boolean] = None
 
-  override def run(sc: SparkContext, recs: RDD[ADAMRecord], args: String): RDD[ADAMRecord] = {
+  override def run(sc: SparkContext, recs: RDD[Read], args: String): RDD[Read] = {
     sc.parallelize(recs.take(10))
   }
 }

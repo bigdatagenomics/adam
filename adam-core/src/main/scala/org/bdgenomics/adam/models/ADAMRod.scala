@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.ADAMPileup
+import org.bdgenomics.formats.avro.Pileup
 
 /**
  * Class representing a set of pileup bases at a specific locus.
@@ -25,7 +25,7 @@ import org.bdgenomics.formats.avro.ADAMPileup
  * @param position Position on the reference genome.
  * @param pileups A list representing the bases at this locus.
  */
-case class ADAMRod(position: ReferencePosition, pileups: List[ADAMPileup]) {
+case class ADAMRod(position: ReferencePosition, pileups: List[Pileup]) {
   // all bases must be at the same position
   require(pileups.forall(ReferencePosition(_) == position))
 

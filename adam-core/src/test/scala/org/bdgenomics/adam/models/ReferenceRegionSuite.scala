@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest._
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ Contig, Read }
 
 class ReferenceRegionSuite extends FunSuite {
 
@@ -122,7 +122,7 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("create region from unmapped read fails") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setReadMapped(false)
       .build()
 
@@ -130,12 +130,12 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("create region from mapped read contains read start and end") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setReadMapped(true)
       .setSequence("AAAAA")
       .setStart(1L)
       .setCigar("5M")
-      .setContig(ADAMContig.newBuilder
+      .setContig(Contig.newBuilder
         .setContigName("chr1")
         .setContigLength(10)
         .build)
@@ -185,11 +185,11 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("region name is sanitized when creating region from read") {
-    val contig = ADAMContig.newBuilder()
+    val contig = Contig.newBuilder()
       .setContigName("chrM")
       .build()
 
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setStart(5L)
       .setSequence("ACGT")
       .setContig(contig)

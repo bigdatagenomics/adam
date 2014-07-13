@@ -34,17 +34,17 @@
 package org.bdgenomics.adam.predicates
 
 import org.bdgenomics.adam.projections.ADAMRecordField
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 
 object ADAMRecordConditions {
 
-  val isMapped = RecordCondition[ADAMRecord](FieldCondition(ADAMRecordField.readMapped.toString, PredicateUtils.isTrue))
-  val isUnique = RecordCondition[ADAMRecord](FieldCondition(ADAMRecordField.duplicateRead.toString, PredicateUtils.isFalse))
+  val isMapped = RecordCondition[Read](FieldCondition(ADAMRecordField.readMapped.toString, PredicateUtils.isTrue))
+  val isUnique = RecordCondition[Read](FieldCondition(ADAMRecordField.duplicateRead.toString, PredicateUtils.isFalse))
 
-  val isPrimaryAlignment = RecordCondition[ADAMRecord](FieldCondition(ADAMRecordField.primaryAlignment.toString, PredicateUtils.isTrue))
+  val isPrimaryAlignment = RecordCondition[Read](FieldCondition(ADAMRecordField.primaryAlignment.toString, PredicateUtils.isTrue))
 
-  val passedVendorQualityChecks = RecordCondition[ADAMRecord](FieldCondition(ADAMRecordField.failedVendorQualityChecks.toString, PredicateUtils.isFalse))
+  val passedVendorQualityChecks = RecordCondition[Read](FieldCondition(ADAMRecordField.failedVendorQualityChecks.toString, PredicateUtils.isFalse))
 
-  def isHighQuality(minQuality: Int) = RecordCondition[ADAMRecord](FieldCondition(ADAMRecordField.mapq.toString, (x: Int) => x > minQuality))
+  def isHighQuality(minQuality: Int) = RecordCondition[Read](FieldCondition(ADAMRecordField.mapq.toString, (x: Int) => x > minQuality))
 
 }

@@ -290,7 +290,7 @@
             <dependency>
                 <groupId>org.bdgenomics.bdg-formats</groupId>
                 <artifactId>bdg-formats</artifactId>
-                <version>0.1.1-SNAPSHOT</version>
+                <version>0.1.2-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>

@@ -29,7 +29,7 @@ import java.util
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.avro.io.{ EncoderFactory, DecoderFactory }
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object PrintADAM extends ADAMCommandCompanion {

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.recalibration
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.rich.DecadentRead
 import org.bdgenomics.adam.rich.DecadentRead._
@@ -87,7 +87,7 @@ class BaseQualityRecalibration(
     println(observed.toCSV)
   }
 
-  val result: RDD[ADAMRecord] = {
+  val result: RDD[Read] = {
     val recalibrator = Recalibrator(observed, minAcceptableQuality)
     input.map(recalibrator)
   }
@@ -120,6 +120,6 @@ class BaseQualityRecalibration(
 }
 
 object BaseQualityRecalibration {
-  def apply(rdd: RDD[ADAMRecord], knownSnps: Broadcast[SnpTable]): RDD[ADAMRecord] =
+  def apply(rdd: RDD[Read], knownSnps: Broadcast[SnpTable]): RDD[Read] =
     new BaseQualityRecalibration(cloy(rdd), knownSnps).result
 }

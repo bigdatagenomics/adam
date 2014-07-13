@@ -24,24 +24,24 @@ import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMContig }
+import org.bdgenomics.formats.avro.{ Read, Contig }
 
 class IndelRealignmentTargetSuite extends SparkFunSuite {
 
   // Note: this can't be lazy vals because Spark won't find the RDDs after the first test
   def mason_reads: RDD[RichADAMRecord] = {
     val path = ClassLoader.getSystemClassLoader.getResource("small_realignment_targets.sam").getFile
-    sc.adamLoad[ADAMRecord, UniqueMappedReadPredicate](path).map(RichADAMRecord(_))
+    sc.adamLoad[Read, UniqueMappedReadPredicate](path).map(RichADAMRecord(_))
   }
 
   def artificial_reads: RDD[RichADAMRecord] = {
     val path = ClassLoader.getSystemClassLoader.getResource("artificial.sam").getFile
-    sc.adamLoad[ADAMRecord, UniqueMappedReadPredicate](path).map(RichADAMRecord(_))
+    sc.adamLoad[Read, UniqueMappedReadPredicate](path).map(RichADAMRecord(_))
   }
 
   def make_read(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0): RichADAMRecord = {
     val sequence: String = "A" * length
-    RichADAMRecord(ADAMRecord.newBuilder()
+    RichADAMRecord(Read.newBuilder()
       .setReadName("read" + id.toString)
       .setStart(start)
       .setReadMapped(true)
@@ -50,7 +50,7 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
       .setReadNegativeStrand(false)
       .setMapq(60)
       .setQual(sequence) // no typo, we just don't care
-      .setContig(ADAMContig.newBuilder()
+      .setContig(Contig.newBuilder()
         .setContigName("1")
         .build())
       .setMismatchingPositions(mdtag)
@@ -167,7 +167,7 @@ class IndelRealignmentTargetSuite extends SparkFunSuite {
   }
 
   sparkTest("creating targets for artificial reads: one-by-one") {
-    def check_indel(target: IndelRealignmentTarget, read: ADAMRecord): Boolean = {
+    def check_indel(target: IndelRealignmentTarget, read: Read): Boolean = {
       val indelRange: ReferenceRegion = target.variation.get
       read.getStart.toLong match {
         case 5L  => (indelRange.start == 34) && (indelRange.end == 44)

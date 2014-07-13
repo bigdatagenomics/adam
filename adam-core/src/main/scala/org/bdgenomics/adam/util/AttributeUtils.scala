@@ -51,7 +51,7 @@ object AttributeUtils {
 
   /**
    * Extract the Attribute value from the corresponding String fragment stored in the
-   * ADAMRecord.attributes field.
+   * Read.attributes field.
    *
    * @param encoded A three-part ':'-separated string, containing [attrTuple]:[type]:[value]
    * @return An Attribute value which has the three, extracted and correctly-typed parts of the encoded argument.

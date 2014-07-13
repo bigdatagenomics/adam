@@ -19,7 +19,7 @@ package org.bdgenomics.adam.parquet_reimpl
 
 import org.bdgenomics.adam.projections.ADAMFlatGenotypeField._
 import org.bdgenomics.adam.projections.Projection
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.FlatGenotype
 import org.scalatest.FunSuite
 
 class ParquetListerSuite extends FunSuite {
@@ -27,7 +27,7 @@ class ParquetListerSuite extends FunSuite {
   test("can list a single small parquet file") {
     val filename = "small_adam.fgenotype"
     val path = Thread.currentThread().getContextClassLoader.getResource(filename).getPath
-    val lister = new ParquetLister[ADAMFlatGenotype]()
+    val lister = new ParquetLister[FlatGenotype]()
 
     val recs = lister.materialize(path).toSeq
     assert(recs.length === 15)
@@ -36,7 +36,7 @@ class ParquetListerSuite extends FunSuite {
   test("can list all the records in a directory") {
     val filename = "parquet_lister_dir"
     val path = Thread.currentThread().getContextClassLoader.getResource(filename).getPath
-    val lister = new ParquetLister[ADAMFlatGenotype]()
+    val lister = new ParquetLister[FlatGenotype]()
 
     val recs = lister.materialize(path).toSeq
     assert(recs.length === 30)
@@ -45,7 +45,7 @@ class ParquetListerSuite extends FunSuite {
   test("directories with no parquet files should have 0 records") {
     val filename = "parquet_lister_dir_empty"
     val path = Thread.currentThread().getContextClassLoader.getResource(filename).getPath
-    val lister = new ParquetLister[ADAMFlatGenotype]()
+    val lister = new ParquetLister[FlatGenotype]()
 
     val recs = lister.materialize(path).toSeq
     assert(recs.length === 0)
@@ -55,7 +55,7 @@ class ParquetListerSuite extends FunSuite {
     val proj = Projection(referenceAllele)
     val filename = "small_adam.fgenotype"
     val path = Thread.currentThread().getContextClassLoader.getResource(filename).getPath
-    val lister = new ParquetLister[ADAMFlatGenotype](Some(proj))
+    val lister = new ParquetLister[FlatGenotype](Some(proj))
 
     val recs = lister.materialize(path).toSeq
     assert(recs.length === 15)

@@ -23,7 +23,7 @@ import org.apache.spark.SparkContext
 import org.bdgenomics.adam.parquet_reimpl.index._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.ADAMFlatGenotypeField._
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.FlatGenotype
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object IndexFlatGenotype extends ADAMCommandCompanion {
@@ -56,16 +56,16 @@ class IndexFlatGenotype(@transient val args: IndexFlatGenotypeArgs) extends ADAM
     val writer: OutputStream = new FileOutputStream(args.indexFile)
     sc.parallelize(args.listOfParquetFiles.split(",")).map {
       case parquetFilePath: String =>
-        implicit val folder = new ADAMFlatGenotypeReferenceFolder(rangeSize)
+        implicit val folder = new FlatGenotypeReferenceFolder(rangeSize)
 
         val schema = Projection(referenceName, position, sampleId)
         val bytes = new ByteArrayOutputStream()
         val indexWriter: IDRangeIndexWriter = new IDRangeIndexWriter(bytes)
         folder.count = 0
 
-        val generator: IDRangeIndexGenerator[ADAMFlatGenotype] =
-          new IDRangeIndexGenerator[ADAMFlatGenotype](
-            (v: ADAMFlatGenotype) => v.getSampleId.toString,
+        val generator: IDRangeIndexGenerator[FlatGenotype] =
+          new IDRangeIndexGenerator[FlatGenotype](
+            (v: FlatGenotype) => v.getSampleId.toString,
             Some(schema))
         generator.addParquetFile(parquetFilePath).foreach(indexWriter.write)
         indexWriter.flush()

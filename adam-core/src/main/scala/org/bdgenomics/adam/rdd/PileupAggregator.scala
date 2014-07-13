@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.formats.avro.{ Base, ADAMContig, ADAMPileup }
+import org.bdgenomics.formats.avro.{ Base, Contig, Pileup }
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
@@ -31,7 +31,7 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
    * @param a Pileup to uniquify.
    * @return Key uniquified by base, indel position, and sample.
    */
-  def mapPileup(a: ADAMPileup): (Option[Base], Option[java.lang.Integer], Option[CharSequence]) = {
+  def mapPileup(a: Pileup): (Option[Base], Option[java.lang.Integer], Option[CharSequence]) = {
     (Option(a.getReadBase), Option(a.getRangeOffset), Option(a.getRecordGroupSample))
   }
 
@@ -43,10 +43,10 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
    *
    * @note All bases are expected to be from the same sample, and to have the same base and indel location.
    */
-  protected def aggregatePileup(pileupList: List[ADAMPileup]): ADAMPileup = {
+  protected def aggregatePileup(pileupList: List[Pileup]): Pileup = {
 
-    def combineEvidence(pileupGroup: List[ADAMPileup]): ADAMPileup = {
-      val pileup = pileupGroup.reduce((a: ADAMPileup, b: ADAMPileup) => {
+    def combineEvidence(pileupGroup: List[Pileup]): Pileup = {
+      val pileup = pileupGroup.reduce((a: Pileup, b: Pileup) => {
         if (validate) {
           require(Option(a.getMapQuality).isDefined &&
             Option(a.getSangerQuality).isDefined &&
@@ -71,10 +71,10 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
 
         // We have to duplicate the existing contig so it doesn't get
         // inadvertently modified later on.
-        val contig = ADAMContig.newBuilder(a.getContig).build
+        val contig = Contig.newBuilder(a.getContig).build
 
         // set copied fields
-        val c = ADAMPileup.newBuilder()
+        val c = Pileup.newBuilder()
           .setContig(contig)
           .setPosition(a.getPosition)
           .setRangeOffset(a.getRangeOffset)
@@ -188,7 +188,7 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
    * @param kv Group of pileups to aggregate.
    * @return Aggregated pileups.
    */
-  def flatten(kv: Iterable[ADAMPileup]): List[ADAMPileup] = {
+  def flatten(kv: Iterable[Pileup]): List[Pileup] = {
     val splitUp = kv.toList.groupBy(mapPileup)
 
     splitUp.map(kv => aggregatePileup(kv._2)).toList
@@ -201,7 +201,7 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
    * @param coverage Parameter showing average coverage. Default is 30. Used to increase number of reducers.
    * @return RDD of aggregated bases.
    */
-  def aggregate(pileups: RDD[ADAMPileup], coverage: Int = 30): RDD[ADAMPileup] = {
+  def aggregate(pileups: RDD[Pileup], coverage: Int = 30): RDD[Pileup] = {
 
     log.info("Aggregating " + pileups.count + " pileups.")
 
@@ -209,7 +209,7 @@ private[rdd] class PileupAggregator(validate: Boolean = false) extends Serializa
      * if this is not set, then you will encounter out-of-memory errors, as the working set for each reducer becomes very large.
      * as a first order approximation, we use coverage as a proxy for setting the number of reducers needed.
      */
-    val grouping = pileups.groupBy((p: ADAMPileup) => ReferencePosition(p),
+    val grouping = pileups.groupBy((p: Pileup) => ReferencePosition(p),
       pileups.partitions.length * coverage / 2)
 
     log.info("Pileups grouped into " + grouping.count + " positions.")

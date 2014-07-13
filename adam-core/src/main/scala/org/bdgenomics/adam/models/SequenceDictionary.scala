@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMNucleotideContigFragment, ADAMContig }
+import org.bdgenomics.formats.avro.{ Read, NucleotideContigFragment, Contig }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import net.sf.samtools.{ SAMFileReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
 import org.apache.avro.specific.SpecificRecord
@@ -229,7 +229,7 @@ object SequenceRecord {
     sam
   }
 
-  def fromADAMContig(contig: ADAMContig): SequenceRecord = {
+  def fromADAMContig(contig: Contig): SequenceRecord = {
     SequenceRecord(
       contig.getContigName.toString,
       contig.getContigLength,
@@ -239,8 +239,8 @@ object SequenceRecord {
       species = contig.getSpecies)
   }
 
-  def toADAMContig(record: SequenceRecord): ADAMContig = {
-    val builder = ADAMContig.newBuilder()
+  def toADAMContig(record: SequenceRecord): Contig = {
+    val builder = Contig.newBuilder()
       .setContigName(record.name)
       .setContigLength(record.length)
     record.md5.foreach(builder.setContigMD5)
@@ -250,21 +250,21 @@ object SequenceRecord {
     builder.build
   }
 
-  def fromADAMContigFragment(fragment: ADAMNucleotideContigFragment): SequenceRecord = {
+  def fromADAMContigFragment(fragment: NucleotideContigFragment): SequenceRecord = {
     fromADAMContig(fragment.getContig)
   }
 
   /**
-   * Convert an ADAMRecord into one or more SequenceRecords.
-   * The reason that we can't simply use the "fromSpecificRecord" method, below, is that each ADAMRecord
+   * Convert an Read into one or more SequenceRecords.
+   * The reason that we can't simply use the "fromSpecificRecord" method, below, is that each Read
    * can (through the fact that it could be a pair of reads) contain 1 or 2 possible SequenceRecord entries
    * for the SequenceDictionary itself.  Both have to be extracted, separately.
    *
-   * @param rec The ADAMRecord from which to extract the SequenceRecord entries
+   * @param rec The Read from which to extract the SequenceRecord entries
    * @return a list of all SequenceRecord entries derivable from this record.
    */
-  def fromADAMRecord(rec: ADAMRecord): Set[SequenceRecord] = {
-    assert(rec != null, "ADAMRecord was null")
+  def fromADAMRecord(rec: Read): Set[SequenceRecord] = {
+    assert(rec != null, "Read was null")
     if ((!rec.getReadPaired || rec.getFirstOfPair) && (rec.getContig != null || rec.getMateContig != null)) {
       // The contig should be null for unmapped read
       List(Option(rec.getContig), Option(rec.getMateContig))
@@ -284,7 +284,7 @@ object SequenceRecord {
         url = rec.get(schema.getField("referenceUrl").pos()).toString)
     } else if (schema.getField("contig") != null) {
       val pos = schema.getField("contig").pos()
-      fromADAMContig(rec.get(pos).asInstanceOf[ADAMContig])
+      fromADAMContig(rec.get(pos).asInstanceOf[Contig])
     } else {
       assert(false, "Missing information to generate SequenceRecord")
       null

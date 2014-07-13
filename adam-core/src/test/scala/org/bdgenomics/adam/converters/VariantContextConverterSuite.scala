@@ -51,11 +51,11 @@ class VariantContextConverterSuite extends FunSuite {
     .stop(1L)
     .chr("1")
 
-  def adamSNVBuilder(contig: String = "1"): ADAMVariant.Builder = ADAMVariant.newBuilder()
-    .setContig(ADAMContig.newBuilder().setContigName(contig).build())
-    .setPosition(0L)
+  def adamSNVBuilder(contig: String = "1"): Variant.Builder = Variant.newBuilder()
+    .setContig(Contig.newBuilder().setContigName(contig).build())
+    .setStart(0L)
     .setReferenceAllele("A")
-    .setVariantAllele("T")
+    .setAlternateAllele("T")
 
   test("Convert GATK site-only SNV to ADAM") {
     val converter = new VariantContextConverter
@@ -70,7 +70,7 @@ class VariantContextConverterSuite extends FunSuite {
     assert(variant.getContig.getContigName === "1")
 
     assert(variant.getReferenceAllele === "A")
-    assert(variant.getPosition === 0L)
+    assert(variant.getStart === 0L)
   }
 
   test("Convert GATK site-only SNV to ADAM with contig conversion") {
@@ -98,7 +98,7 @@ class VariantContextConverterSuite extends FunSuite {
     val adamGTs = adamVCs.flatMap(_.genotypes)
     assert(adamGTs.length === 1)
     val adamGT = adamGTs.head
-    assert(adamGT.getAlleles.sameElements(List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Alt)))
+    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.Ref, GenotypeAllele.Alt)))
     assert(adamGT.getPhaseSetId === 1)
     assert(adamGT.getPhaseQuality === 50)
   }
@@ -156,10 +156,10 @@ class VariantContextConverterSuite extends FunSuite {
 
   test("Convert ADAM SNV w/ genotypes to GATK") {
     val variant = adamSNVBuilder().build
-    val genotype = ADAMGenotype.newBuilder
+    val genotype = Genotype.newBuilder
       .setVariant(variant)
       .setSampleId("NA12878")
-      .setAlleles(List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Alt))
+      .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
       .build
 
     val converter = new VariantContextConverter
@@ -181,7 +181,7 @@ class VariantContextConverterSuite extends FunSuite {
     for ((allele, idx) <- vc.getAlternateAlleles.zipWithIndex) {
       val adamVC = adamVCs(idx);
       assert(adamVC.variant.getReferenceAllele === vc.getReference.getBaseString)
-      assert(adamVC.variant.getVariantAllele === allele.getBaseString)
+      assert(adamVC.variant.getAlternateAllele === allele.getBaseString)
     }
   }
 
@@ -207,11 +207,11 @@ class VariantContextConverterSuite extends FunSuite {
 
     val adamGT1 = adamVCs(0).genotypes.head
     val adamGT2 = adamVCs(1).genotypes.head
-    assert(adamGT1.getAlleles.sameElements(List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.OtherAlt)))
+    assert(adamGT1.getAlleles.sameElements(List(GenotypeAllele.Alt, GenotypeAllele.OtherAlt)))
     assert(adamGT1.getAlternateReadDepth === 2)
     assert(adamGT1.getGenotypeLikelihoods.sameElements(List(59, 0, 181)))
 
-    assert(adamGT2.getAlleles.sameElements(List(ADAMGenotypeAllele.OtherAlt, ADAMGenotypeAllele.Alt)))
+    assert(adamGT2.getAlleles.sameElements(List(GenotypeAllele.OtherAlt, GenotypeAllele.Alt)))
     assert(adamGT2.getAlternateReadDepth === 3)
     assert(adamGT2.getGenotypeLikelihoods.sameElements(List(58, 0, 101)))
   }
@@ -231,10 +231,10 @@ class VariantContextConverterSuite extends FunSuite {
     val adamGTs = adamVCs.flatMap(_.genotypes)
     assert(adamGTs.length === 1)
     val adamGT = adamGTs.head
-    assert(adamGT.getVariant.getVariantAllele === null)
-    assert(adamGT.getAlleles.sameElements(List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Ref)))
+    assert(adamGT.getVariant.getAlternateAllele === null)
+    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.Ref, GenotypeAllele.Ref)))
     assert(adamGT.getMinReadDepth === 38)
-    assert(adamGT.getGenotypeLikelihoods === null)
+    assert(adamGT.getGenotypeLikelihoods === Array())
     assert(adamGT.getNonReferenceLikelihoods.sameElements(List(0, 1, 2)))
   }
 }

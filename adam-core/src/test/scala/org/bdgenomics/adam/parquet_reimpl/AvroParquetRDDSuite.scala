@@ -28,7 +28,7 @@ import org.bdgenomics.adam.parquet_reimpl.index.ReferenceFoldingContext._
 import org.bdgenomics.adam.parquet_reimpl.index._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.util._
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMFlatGenotype }
+import org.bdgenomics.formats.avro.{ Read, FlatGenotype }
 import parquet.column.ColumnReader
 import parquet.filter.{ RecordFilter, UnboundRecordFilter }
 
@@ -49,8 +49,8 @@ class RDDFunSuite extends SparkFunSuite {
 class AvroIndexedParquetRDDSuite extends RDDFunSuite {
 
   def writeIndexAsBytes(rootLocator: FileLocator, parquets: String*): FileLocator = {
-    val rangeIndexGenerator = new IDRangeIndexGenerator[ADAMFlatGenotype](
-      (v: ADAMFlatGenotype) => v.getSampleId.toString)
+    val rangeIndexGenerator = new IDRangeIndexGenerator[FlatGenotype](
+      (v: FlatGenotype) => v.getSampleId.toString)
     val debugPrint = false
 
     val entries = parquets.flatMap {
@@ -88,9 +88,9 @@ class AvroIndexedParquetRDDSuite extends RDDFunSuite {
     val indexFileLocator = writeIndexAsBytes(inputDataRootLocator, "small_adam.fgenotype")
 
     val queryRange = ReferenceRegion("chr1", 5000, 15000)
-    val filter = new FilterTuple[ADAMFlatGenotype, IDRangeIndexEntry](null, null,
+    val filter = new FilterTuple[FlatGenotype, IDRangeIndexEntry](null, null,
       new IDRangeIndexPredicate(queryRange))
-    val indexedRDD = new AvroIndexedParquetRDD[ADAMFlatGenotype](sc, filter, indexFileLocator, inputDataRootLocator, None)
+    val indexedRDD = new AvroIndexedParquetRDD[FlatGenotype](sc, filter, indexFileLocator, inputDataRootLocator, None)
 
     val fileMetadata = AvroParquetFileMetadata(new LocalFileLocator(inputDataFile), None)
     val records = indexedRDD.compute(fileMetadata.partition(0), null).toSeq
@@ -107,9 +107,9 @@ class AvroIndexedParquetRDDSuite extends RDDFunSuite {
 
     // this query Range is on chr10, which should overlap no read groups at all
     val queryRange = ReferenceRegion("chr10", 5000, 15000)
-    val filter = new FilterTuple[ADAMFlatGenotype, IDRangeIndexEntry](null, null,
+    val filter = new FilterTuple[FlatGenotype, IDRangeIndexEntry](null, null,
       new IDRangeIndexPredicate(Some(queryRange)))
-    val indexedRDD = new AvroIndexedParquetRDD[ADAMFlatGenotype](sc, filter, indexFileLocator, inputDataRootLocator, None)
+    val indexedRDD = new AvroIndexedParquetRDD[FlatGenotype](sc, filter, indexFileLocator, inputDataRootLocator, None)
 
     assert(indexedRDD.partitions.length === 0)
   }
@@ -123,13 +123,13 @@ class AvroIndexedParquetRDDSuite extends RDDFunSuite {
 
     val queryRange = ReferenceRegion("1", 60000, 70000)
     val rangePredicate = new IDRangeIndexPredicate(Some(queryRange), Some(Set[String]("1e54a67a-e285-4764-954f-83f23c049701")))
-    val filter = new FilterTuple[ADAMFlatGenotype, IDRangeIndexEntry](
+    val filter = new FilterTuple[FlatGenotype, IDRangeIndexEntry](
       null, null, rangePredicate)
 
     val rangeIndex = new IDRangeIndex(indexFileLocator)
     assert(rangeIndex.findIndexEntries(rangePredicate).toSeq.length === 1)
 
-    val indexedRDD = new AvroIndexedParquetRDD[ADAMFlatGenotype](sc, filter, indexFileLocator, inputDataRootLocator, None)
+    val indexedRDD = new AvroIndexedParquetRDD[FlatGenotype](sc, filter, indexFileLocator, inputDataRootLocator, None)
     assert(indexedRDD.partitions.length === 1)
 
     val records = indexedRDD.collect()
@@ -149,16 +149,16 @@ class AvroIndexedParquetRDDSuite extends RDDFunSuite {
       Some(queryRange),
       Some(Set[String]("1e54a67a-e285-4764-954f-83f23c049701")))
 
-    val filter = new FilterTuple[ADAMFlatGenotype, IDRangeIndexEntry](
+    val filter = new FilterTuple[FlatGenotype, IDRangeIndexEntry](
       RDDFunSuite.createRangeFilter(queryRange), null, rangePredicate)
 
     val rangeIndex = new IDRangeIndex(indexFileLocator)
     assert(rangeIndex.findIndexEntries(rangePredicate).toSeq.length === 1)
 
-    val indexedRDD = new AvroIndexedParquetRDD[ADAMFlatGenotype](sc, filter, indexFileLocator, inputDataRootLocator, None)
+    val indexedRDD = new AvroIndexedParquetRDD[FlatGenotype](sc, filter, indexFileLocator, inputDataRootLocator, None)
     assert(indexedRDD.partitions.length === 1)
 
-    val nonIndexedRDD = new AvroParquetRDD[ADAMFlatGenotype](sc, filter.recordFilter, inputDataLocator, None)
+    val nonIndexedRDD = new AvroParquetRDD[FlatGenotype](sc, filter.recordFilter, inputDataLocator, None)
     assert(indexedRDD.count() === nonIndexedRDD.count())
 
   }
@@ -195,7 +195,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
   sparkTest("Retrieve records from a Parquet file through HTTP", silenceSpark = true, NetworkConnected) {
     val locator = new HTTPFileLocator(URI.create("http://www.cs.berkeley.edu/~massie/adams/part1"))
-    val rdd = new AvroParquetRDD[ADAMRecord](
+    val rdd = new AvroParquetRDD[Read](
       sc,
       null,
       locator,
@@ -212,7 +212,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
   sparkTest("Retrieve records from a Parquet file through S3", silenceSpark = true, NetworkConnected, S3Test) {
 
     val locator = new S3FileLocator(credentials, bucketName, parquetLocation)
-    val rdd = new AvroParquetRDD[ADAMRecord](
+    val rdd = new AvroParquetRDD[Read](
       sc,
       null,
       locator,
@@ -233,7 +233,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     val schema = Projection(readName, start, contig)
 
     val locator = new HTTPFileLocator(URI.create("http://www.cs.berkeley.edu/~massie/adams/part1"))
-    val rdd = new AvroParquetRDD[ADAMRecord](
+    val rdd = new AvroParquetRDD[Read](
       sc,
       null,
       locator,
@@ -254,7 +254,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     val schema = Projection(readName, start, contig)
 
     val locator = new S3FileLocator(credentials, bucketName, parquetLocation)
-    val rdd = new AvroParquetRDD[ADAMRecord](
+    val rdd = new AvroParquetRDD[Read](
       sc,
       null,
       locator,
@@ -276,7 +276,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     val filter = new ReadNameFilter("simread:1:189606653:true")
 
     val locator = new HTTPFileLocator(URI.create("http://www.cs.berkeley.edu/~massie/adams/part1"))
-    val rdd = new AvroParquetRDD[ADAMRecord](
+    val rdd = new AvroParquetRDD[Read](
       sc,
       filter,
       locator,
@@ -299,7 +299,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     val filter = new ReadNameFilter("simread:1:189606653:true")
 
     val locator = new S3FileLocator(credentials, bucketName, parquetLocation)
-    val rdd = new AvroParquetRDD[ADAMRecord](
+    val rdd = new AvroParquetRDD[Read](
       sc,
       filter,
       locator,

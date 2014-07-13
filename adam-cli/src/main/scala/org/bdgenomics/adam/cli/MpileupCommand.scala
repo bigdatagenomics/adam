@@ -24,7 +24,7 @@ import org.apache.spark.{ SparkContext, Logging }
 import org.apache.hadoop.mapreduce.Job
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
 
 object MpileupCommand extends ADAMCommandCompanion {
@@ -48,7 +48,7 @@ class MpileupCommand(protected val args: MpileupArgs) extends ADAMSparkCommand[M
 
   def run(sc: SparkContext, job: Job) {
 
-    val reads: RDD[ADAMRecord] = sc.adamLoad(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
+    val reads: RDD[Read] = sc.adamLoad(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
 
     val pileups = new PileupTraversable(reads)
     for (pileup <- pileups) {

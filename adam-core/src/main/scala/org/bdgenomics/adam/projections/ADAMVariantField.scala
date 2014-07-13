@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.ADAMVariant
+import org.bdgenomics.formats.avro.Variant
 
-class ADAMVariantField extends FieldEnumeration(ADAMVariant.SCHEMA$) {
+class ADAMVariantField extends FieldEnumeration(Variant.SCHEMA$) {
   val contig, position, referenceAllele, variantAllele = SchemaValue
 }

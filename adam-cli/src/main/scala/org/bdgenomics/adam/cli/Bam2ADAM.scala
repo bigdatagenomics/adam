@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import net.sf.samtools._
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import scala.collection.JavaConversions._
 import java.io.File
 import parquet.avro.AvroParquetWriter
@@ -60,9 +60,9 @@ class Bam2ADAM(args: Bam2ADAMArgs) extends ADAMCommand {
       {
         val writerThread = new Thread(new Runnable {
 
-          val parquetWriter = new AvroParquetWriter[ADAMRecord](
+          val parquetWriter = new AvroParquetWriter[Read](
             new Path(args.outputPath + "/part%d".format(threadNum)),
-            ADAMRecord.SCHEMA$, args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
+            Read.SCHEMA$, args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
 
           val samRecordConverter = new SAMRecordConverter
 

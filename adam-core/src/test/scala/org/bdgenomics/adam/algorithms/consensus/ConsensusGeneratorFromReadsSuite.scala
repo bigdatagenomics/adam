@@ -22,15 +22,15 @@ import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 
 class ConsensusGeneratorFromReadsSuite extends SparkFunSuite {
 
   val cg = new ConsensusGeneratorFromReads
 
-  def artificial_reads: RDD[ADAMRecord] = {
+  def artificial_reads: RDD[Read] = {
     val path = ClassLoader.getSystemClassLoader.getResource("artificial.sam").getFile
-    sc.adamLoad[ADAMRecord, UniqueMappedReadPredicate](path)
+    sc.adamLoad[Read, UniqueMappedReadPredicate](path)
   }
 
   sparkTest("checking search for consensus list for artificial reads") {

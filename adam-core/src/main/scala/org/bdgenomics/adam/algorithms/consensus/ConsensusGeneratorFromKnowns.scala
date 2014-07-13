@@ -39,8 +39,8 @@ class ConsensusGeneratorFromKnowns(file: String, sc: SparkContext) extends Conse
     val rdd: RDD[ADAMVariantContext] = sc.adamVCFLoad(file)
 
     Some(rdd.map(_.variant.variant)
-      .filter(v => v.getReferenceAllele.length != v.getVariantAllele.length)
-      .map(v => ReferenceRegion(v.getContig.getContigName, v.getPosition, v.getPosition + v.getReferenceAllele.length))
+      .filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
+      .map(v => ReferenceRegion(v.getContig.getContigName, v.getStart, v.getStart + v.getReferenceAllele.length))
       .map(r => new IndelRealignmentTarget(Some(r), r)))
   }
 
