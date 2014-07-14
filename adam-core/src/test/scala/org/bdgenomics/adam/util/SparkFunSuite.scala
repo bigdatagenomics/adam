@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-import org.scalatest.{ BeforeAndAfter, FunSuite }
+import org.scalatest.{ Tag, BeforeAndAfter, FunSuite }
 import org.apache.spark.SparkContext
 import java.net.ServerSocket
 import org.apache.log4j.Level
@@ -82,8 +82,8 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
     }
   }
 
-  def sparkTest(name: String, silenceSpark: Boolean = true)(body: => Unit) {
-    test(name, SparkTest) {
+  def sparkTest(name: String, silenceSpark: Boolean, tags: Tag*)(body: => Unit) {
+    test(name, SparkTest +: tags: _*) {
       setupSparkContext(name, silenceSpark)
       try {
         // Run the test
@@ -94,5 +94,8 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
     }
   }
 
+  def sparkTest(name: String)(body: => Unit) {
+    sparkTest(name, silenceSpark = true)(body)
+  }
 }
 

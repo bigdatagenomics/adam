@@ -123,4 +123,43 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.scalatest</groupId>
+                        <artifactId>scalatest-maven-plugin</artifactId>
+                        <configuration>
+                            <tagsToExclude>org.bdgenomics.adam.util.NetworkConnected,org.bdgenomics.adam.util.S3Test</tagsToExclude>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>network-connected</id>
+            <activation>
+                <property>
+                    <name>networkconnected</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.scalatest</groupId>
+                        <artifactId>scalatest-maven-plugin</artifactId>
+                        <configuration>
+                            <tagsToExclude>org.bdgenomics.adam.util.S3Test</tagsToExclude>
+                            <tagsToInclude>org.bdgenomics.adam.util.NetworkConnected</tagsToInclude>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

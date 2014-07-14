@@ -171,7 +171,7 @@
                         <groupId>org.scalatest</groupId>
                         <artifactId>scalatest-maven-plugin</artifactId>
                         <configuration>
-                            <tagsToExclude>org.bdgenomics.adam.util.NetworkConnected</tagsToExclude>
+                            <tagsToExclude>org.bdgenomics.adam.util.NetworkConnected,org.bdgenomics.adam.util.S3Test</tagsToExclude>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -190,6 +190,7 @@
                         <groupId>org.scalatest</groupId>
                         <artifactId>scalatest-maven-plugin</artifactId>
                         <configuration>
+                            <tagsToExclude>org.bdgenomics.adam.util.S3Test</tagsToExclude>
                             <tagsToInclude>org.bdgenomics.adam.util.NetworkConnected</tagsToInclude>
                         </configuration>
                     </plugin>
