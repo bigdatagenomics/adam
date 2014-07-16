@@ -36,12 +36,12 @@ import com.amazonaws.auth.AWSCredentials
  * @param location The location of the file which will be read _if it exists and is readable_,
  *                 otherwise the parameters will be read from the System environment.
  */
-class CredentialsProperties(location: File) extends Serializable with Logging {
+class CredentialsProperties(location: Option[File]) extends Serializable with Logging {
 
   val defaultAccessKey = System.getenv("AWS_ACCESS_KEY_ID")
   val defaultSecretKey = System.getenv("AWS_SECRET_KEY")
   private val defaultMap = Map("accessKey" -> defaultAccessKey, "secretKey" -> defaultSecretKey)
-  val configuration = new ConfigurationFile(location, Some(defaultMap))
+  val configuration = location.map(new ConfigurationFile(_, Some(defaultMap))).map(_.properties).getOrElse(defaultMap)
 
   /**
    * Retrieves the value associated with a given key from the configuration file.
@@ -62,15 +62,14 @@ class CredentialsProperties(location: File) extends Serializable with Logging {
    */
   def configuredValue(keyName: String, suffix: Option[String] = None): String = {
     suffix match {
-      case None => configuration.properties(keyName)
-      case Some(suffixString) => {
+      case None => configuration(keyName)
+      case Some(suffixString) =>
         val combinedKey = "%s_%s".format(keyName, suffixString)
-        if (configuration.properties.contains(combinedKey)) {
-          configuration.properties(combinedKey)
+        if (configuration.contains(combinedKey)) {
+          configuration(combinedKey)
         } else {
-          configuration.properties(keyName)
+          configuration(keyName)
         }
-      }
     }
   }
 
