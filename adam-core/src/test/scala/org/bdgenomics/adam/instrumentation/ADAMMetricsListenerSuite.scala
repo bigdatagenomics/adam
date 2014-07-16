@@ -41,11 +41,12 @@ class ADAMMetricsListenerSuite extends SparkFunSuite with Eventually with Integr
     }
 
     eventually {
-      // There's nothing sensible we can assert based on the timings, so just assert based on the timings
-      assert(metrics.sparkTaskMetrics.duration.getOverallTimings.getCount === 8)
-      assert(metrics.sparkTaskMetrics.executorRunTime.getOverallTimings.getCount === 8)
-      assert(metrics.sparkTaskMetrics.executorDeserializeTime.getOverallTimings.getCount === 8)
-      assert(metrics.sparkTaskMetrics.resultSerializationTime.getOverallTimings.getCount === 8)
+      // There's nothing sensible we can assert based on the timings, so just assert based on the counts
+      assert(metrics.adamSparkMetrics.duration.getOverallTimings.getCount === 8)
+      assert(metrics.adamSparkMetrics.executorRunTime.getOverallTimings.getCount === 8)
+      assert(metrics.adamSparkMetrics.executorDeserializeTime.getOverallTimings.getCount === 8)
+      assert(metrics.adamSparkMetrics.resultSerializationTime.getOverallTimings.getCount === 8)
+      assert(metrics.adamSparkMetrics.stageTimes.iterator.hasNext)
     }
 
   }

@@ -70,7 +70,7 @@ trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with 
       out.println()
       out.println("Overall Duration: " + DurationFormatting.formatNanosecondDuration(totalTime))
       out.println()
-      listener.adamMetrics.sparkTaskMetrics.print(out)
+      listener.adamMetrics.adamSparkMetrics.print(out)
       logInfo("Metrics:" + bytes.toString("UTF-8"))
     })
   }
