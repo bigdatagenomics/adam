@@ -28,7 +28,8 @@ class MonitorTableSuite extends FunSuite {
 
     val headers = Array(
       new TableHeader(name = "Col1", valueExtractor = ValueExtractor.forTagValueWithKey("TagKey1"), None, alignment = Alignment.Left),
-      new TableHeader(name = "Col2", valueExtractor = ValueExtractor.forMonitorMatchingTag(ServoTimer.TotalTimeTag), formatFunction = Some(formatFunction1)))
+      new TableHeader(name = "Col2", valueExtractor = ValueExtractor.forMonitorMatchingTag(ServoTimer.TotalTimeTag), formatFunction = Some(formatFunction1)),
+      new TableHeader(name = "Col3", valueExtractor = ValueExtractor.forMonitorValue()))
 
     val rows = Array[Monitor[_]](
       new ServoTimer(MonitorConfig.builder("timer1").build()),
@@ -43,6 +44,8 @@ class MonitorTableSuite extends FunSuite {
     val monitorTable = new MonitorTable(headers, rows)
 
     val renderedTable = getRenderedTable(monitorTable)
+
+    println(renderedTable)
 
     assert(renderedTable === expectedTable)
 
@@ -60,12 +63,12 @@ class MonitorTableSuite extends FunSuite {
   }
 
   val expectedTable =
-    """+-------------------------+--------------------+
-      #|          Col1           |        Col2        |
-      #+-------------------------+--------------------+
-      #| Col1Value1              |    100 nanoseconds |
-      #| Col1Value2 A Bit Longer | 200000 nanoseconds |
-      #+-------------------------+--------------------+
+    """+-------------------------+--------------------+--------+
+      #|          Col1           |        Col2        |  Col3  |
+      #+-------------------------+--------------------+--------+
+      #| Col1Value1              |    100 nanoseconds |    100 |
+      #| Col1Value2 A Bit Longer | 200000 nanoseconds | 200000 |
+      #+-------------------------+--------------------+--------+
       #""".stripMargin('#')
 
 }

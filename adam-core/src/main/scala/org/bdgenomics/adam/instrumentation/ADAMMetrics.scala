@@ -22,9 +22,9 @@ package org.bdgenomics.adam.instrumentation
  */
 class ADAMMetrics {
 
-  val sparkTaskMetrics = new TaskMetrics()
+  val adamSparkMetrics = new ADAMSparkMetrics()
 
-  class TaskMetrics extends SparkMetrics {
+  class ADAMSparkMetrics extends SparkMetrics {
     val executorRunTime = taskTimer("Executor Run Time")
     val executorDeserializeTime = taskTimer("Executor Deserialization Time")
     val resultSerializationTime = taskTimer("Result Serialization Time")
