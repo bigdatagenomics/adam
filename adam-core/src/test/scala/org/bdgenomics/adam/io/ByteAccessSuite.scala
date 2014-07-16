@@ -26,7 +26,7 @@ import org.scalatest.FunSuite
 
 class ByteAccessSuite extends FunSuite {
 
-  lazy val credentials = new CredentialsProperties(new File(System.getProperty("user.home") + "/spark.conf"))
+  lazy val credentials = new CredentialsProperties(Some(new File(System.getProperty("user.home") + "/spark.conf")))
     .awsCredentials(Some("s3"))
 
   lazy val bucketName = System.getenv("BUCKET_NAME")

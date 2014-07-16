@@ -25,7 +25,7 @@ class CredentialsPropertiesTestSuite extends FunSuite {
   test("Can parse a simple configuration file with CredentialsProperties") {
     val path = Thread.currentThread().getContextClassLoader.getResource("test.conf").getFile
     val file = new File(path)
-    val cp = new CredentialsProperties(file)
+    val cp = new CredentialsProperties(Some(file))
 
     val aws = cp.awsCredentials()
     assert(aws.getAWSAccessKeyId === "accessKey")
