@@ -23,7 +23,7 @@ import scala.collection.JavaConversions._
 class Args4jBase {
   @Option(name = "-h", aliases = Array("-help", "--help", "-?"), usage = "Print help")
   var doPrintUsage: Boolean = false
-  @Option(name = "-print_metrics", usage = "Print metrics on completion")
+  @Option(name = "-print_metrics", usage = "Print metrics to the log on completion")
   var printMetrics: Boolean = false
 }
 

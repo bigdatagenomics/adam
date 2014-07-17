@@ -88,10 +88,23 @@ object ValueExtractor {
   def forTagValueWithKey(key: String): ValueExtractor = {
     new MonitorTagValueExtractor(key)
   }
+
+  /**
+   * Creates a [[ValueExtractor]] which returns the value of the specified monitor
+   */
+  def forMonitorValue(): ValueExtractor = {
+    new SimpleMonitorValueExtractor()
+  }
 }
 
 trait ValueExtractor {
   def extractValue(monitor: Monitor[_]): Option[Any]
+}
+
+private class SimpleMonitorValueExtractor() extends ValueExtractor {
+  override def extractValue(monitor: Monitor[_]): Option[Any] = {
+    Option(monitor.getValue)
+  }
 }
 
 private class MonitorTagValueExtractor(key: String) extends ValueExtractor {

@@ -22,10 +22,11 @@ import java.io._
 import org.apache.spark.Logging
 import java.util.concurrent.TimeUnit
 import scala.util.control.Breaks._
+import scala.concurrent.duration._
 
 class SparkMetricsSuite extends FunSuite with Logging {
 
-  test("Metrics are captured correctly") {
+  test("Task metrics are captured correctly") {
 
     val myMetrics = new MyMetrics()
 
@@ -49,6 +50,18 @@ class SparkMetricsSuite extends FunSuite with Logging {
 
   }
 
+  test("Stage metrics are captured correctly") {
+
+    val myMetrics = new MyMetrics()
+
+    myMetrics.recordStageDuration(1, Some("stage1"), Duration(100, MILLISECONDS))
+    myMetrics.recordStageDuration(2, None, Duration(200, MILLISECONDS))
+
+    assert(fromNanos(myMetrics.stageTimes.get("1: stage1").get.getNumber.longValue()) === 100)
+    assert(fromNanos(myMetrics.stageTimes.get("2: unknown").get.getNumber.longValue()) === 200)
+
+  }
+
   test("Metrics are rendered correctly") {
 
     val myMetrics = new MyMetrics()
@@ -62,11 +75,17 @@ class SparkMetricsSuite extends FunSuite with Logging {
     addValue(myMetrics.metric2, 211, "host2", 2)
     addValue(myMetrics.metric2, 212, "host2", 1)
 
+    myMetrics.recordStageDuration(1, None, Duration(100, MILLISECONDS))
+    myMetrics.recordStageDuration(2, Some("stage2"), Duration(200, MILLISECONDS))
+
     // Don't map stage 1 so we test what happens in this case (we output "unknown")
     myMetrics.mapStageIdToName(2, "stage2")
 
     val renderedTable = getRenderedTable(myMetrics)
     val reader = new BufferedReader(new StringReader(renderedTable))
+
+    val expectedStageDurations = getExpectedStageDurations
+    checkTable("Stage Durations", expectedStageDurations, reader)
 
     val expectedOverallValues = getExpectedOverallValues
     checkTable("Task Timings", expectedOverallValues, reader)
@@ -77,6 +96,14 @@ class SparkMetricsSuite extends FunSuite with Logging {
     val expectedValuesByStage = getExpectedValuesByStage
     checkTable("Task Timings By Stage", expectedValuesByStage, reader)
 
+  }
+
+  private def getExpectedStageDurations: Array[Array[String]] = {
+    Array(
+      Array("Stage ID & Name", "Duration"),
+      Array("2: stage2", "200 ms"),
+      Array("1: unknown", "100 ms"),
+      Array("TOTAL", "300 ms"))
   }
 
   private def getExpectedOverallValues: Array[Array[String]] = {

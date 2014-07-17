@@ -17,7 +17,8 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import org.apache.spark.scheduler.{ SparkListenerStageCompleted, SparkListenerTaskEnd, SparkListener }
+import org.apache.spark.scheduler.{ StageInfo, SparkListenerStageCompleted, SparkListenerTaskEnd, SparkListener }
+import scala.concurrent.duration._
 
 /**
  * Spark listener that accumulates metrics in the passed-in [[ADAMMetrics]] object
@@ -27,11 +28,12 @@ import org.apache.spark.scheduler.{ SparkListenerStageCompleted, SparkListenerTa
  */
 class ADAMMetricsListener(val adamMetrics: ADAMMetrics) extends SparkListener {
 
-  private val adamTaskMetrics = adamMetrics.sparkTaskMetrics
+  private val adamSparkMetrics = adamMetrics.adamSparkMetrics
 
   override def onStageCompleted(stageCompleted: SparkListenerStageCompleted): Unit = {
     val stageInfo = stageCompleted.stageInfo
-    adamTaskMetrics.mapStageIdToName(stageInfo.stageId, stageInfo.name)
+    adamSparkMetrics.mapStageIdToName(stageInfo.stageId, stageInfo.name)
+    getStageDuration(stageInfo).foreach(adamSparkMetrics.recordStageDuration(stageInfo.stageId, Option(stageInfo.name), _))
   }
 
   override def onTaskEnd(taskEnd: SparkListenerTaskEnd): Unit = {
@@ -44,15 +46,25 @@ class ADAMMetricsListener(val adamMetrics: ADAMMetrics) extends SparkListener {
       taskEnd.stageId)
 
     taskMetrics.foreach(e => {
-      adamTaskMetrics.executorRunTime += e.executorRunTime
-      adamTaskMetrics.executorDeserializeTime += e.executorDeserializeTime
-      adamTaskMetrics.resultSerializationTime += e.resultSerializationTime
+      adamSparkMetrics.executorRunTime += e.executorRunTime
+      adamSparkMetrics.executorDeserializeTime += e.executorDeserializeTime
+      adamSparkMetrics.resultSerializationTime += e.resultSerializationTime
     })
 
     taskInfo.foreach(e => {
-      adamTaskMetrics.duration += e.duration
+      adamSparkMetrics.duration += e.duration
     })
 
+  }
+
+  private def getStageDuration(info: StageInfo): Option[Duration] = {
+    // We calculate this in the same way as the Spark code calculates the task duration when it
+    // logs it at completion time, so hopefully it is a good representation of the duration
+    if (info.submissionTime.isDefined && info.completionTime.isDefined) {
+      Some(Duration(info.completionTime.get - info.submissionTime.get, MILLISECONDS))
+    } else {
+      None
+    }
   }
 
 }
