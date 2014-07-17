@@ -45,10 +45,4 @@ object ReferenceMappingContext {
 
     def getReferenceRegion(value: ReferenceRegion): ReferenceRegion = value
   }
-
-  implicit def adamRecordToReferenceMapped(rec: ADAMRecord): ReferenceMapping[ADAMRecord] =
-    ADAMRecordReferenceMapping
-
-  implicit def referenceRegionToReferenceMapped(reg: ReferenceRegion): ReferenceMapping[ReferenceRegion] =
-    ReferenceRegionReferenceMapping
 }
