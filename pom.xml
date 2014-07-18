@@ -30,6 +30,7 @@
 
     <modules>
         <module>adam-core</module>
+        <module>adam-apis</module>
         <module>adam-cli</module>
     </modules>
 

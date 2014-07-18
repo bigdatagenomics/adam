@@ -96,6 +96,8 @@ object ADAMContext {
 
   implicit def mapToJavaMap[A, B](map: Map[A, B]): java.util.Map[A, B] = mapAsJavaMap(map)
 
+  implicit def javaMapToMap[A, B](map: java.util.Map[A, B]): Map[A, B] = mapAsScalaMap(map).toMap
+
   implicit def iterableToJavaCollection[A](i: Iterable[A]): java.util.Collection[A] = asJavaCollection(i)
 
   implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
@@ -158,7 +160,7 @@ object ADAMContext {
   }
 }
 
-class ADAMContext(sc: SparkContext) extends Serializable with Logging {
+class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
   private def adamBamDictionaryLoad(filePath: String): SequenceDictionary = {
     val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
@@ -167,7 +169,6 @@ class ADAMContext(sc: SparkContext) extends Serializable with Logging {
 
   private def adamBamDictionaryLoad(samHeader: SAMFileHeader): SequenceDictionary = {
     SequenceDictionary(samHeader)
-
   }
 
   private def adamBamLoadReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
