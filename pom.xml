@@ -25,6 +25,7 @@
     <parquet.version>1.4.3</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.2.0</hadoop.version>
+    <scoverage.version>0.99.2</scoverage.version>
   </properties>
   
   <modules>
@@ -217,8 +218,16 @@
             <id>scala-compile-first</id>
             <phase>process-resources</phase>
             <goals>
+              <goal>add-source</goal>
               <goal>compile</goal>
             </goals>
+            <configuration>
+              <args>
+                <arg>-g:vars</arg>
+                <arg>-Yrangepos</arg>
+                <arg>-P:scoverage:dataDir:${project.build.directory}</arg>
+              </args>
+            </configuration>
           </execution>
           <execution>
             <id>scala-test-compile-first</id>
@@ -255,6 +264,13 @@
             <javacArg>-target</javacArg>
             <javacArg>${java.version}</javacArg>
           </javacArgs>
+          <compilerPlugins>
+            <compilerPlugin>
+              <groupId>org.scoverage</groupId>
+              <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
+              <version>${scoverage.version}</version>
+            </compilerPlugin>
+          </compilerPlugins>
         </configuration>
       </plugin>
       <plugin>
@@ -287,6 +303,11 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.scoverage</groupId>
+        <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
+        <version>${scoverage.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.bdgenomics.bdg-formats</groupId>
         <artifactId>bdg-formats</artifactId>
