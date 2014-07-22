@@ -18,12 +18,11 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest.FunSuite
-import net.sf.samtools.Cigar
 
 class ConsensusSuite extends FunSuite {
 
   test("test the insertion of a consensus insertion into a reference") {
-    val c = Consensus("TCGA", 10L to 10L)
+    val c = Consensus("TCGA", ReferenceRegion("0", 10L, 11L))
 
     val ref = "AAAAAAAAAA"
 
@@ -33,7 +32,7 @@ class ConsensusSuite extends FunSuite {
   }
 
   test("test the insertion of a consensus deletion into a reference") {
-    val c = Consensus("", 10L to 15L)
+    val c = Consensus("", ReferenceRegion("0", 10L, 16L))
 
     val ref = "AAAAATTTTT"
 
@@ -44,7 +43,7 @@ class ConsensusSuite extends FunSuite {
 
   test("inserting empty consensus returns the reference") {
     val ref = "AAAAAAAAAAAAA"
-    val c = new Consensus("", 0L to 0L)
+    val c = new Consensus("", ReferenceRegion("0", 0L, 1L))
 
     val co = c.insertIntoReference(ref, 0, ref.length)
 

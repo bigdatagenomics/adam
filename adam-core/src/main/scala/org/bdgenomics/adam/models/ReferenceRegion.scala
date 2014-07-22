@@ -199,6 +199,10 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
       start.compareTo(that.start)
     else
       end.compareTo(that.end)
+
+  def length(): Long = {
+    end - start
+  }
 }
 
 class ReferenceRegionSerializer extends Serializer[ReferenceRegion] {
