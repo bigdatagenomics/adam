@@ -143,4 +143,90 @@ class ReferencePositionSuite extends FunSuite {
     assert(refPos.referenceName === "chr10")
     assert(refPos.pos === 100L)
   }
+
+  test("liftOverToReference works with a multi-block alignment on the forward strand") {
+    val exons = Seq(ReferenceRegionWithOrientation("1", 100, 201, false),
+      ReferenceRegionWithOrientation("1", 300, 401, false),
+      ReferenceRegionWithOrientation("1", 500, 601, false))
+
+    val p0 = ReferencePositionWithOrientation.liftOverToReference(0, exons)
+    assert(p0.refPos.isDefined)
+    assert(p0.refPos.get.referenceName === "1")
+    assert(p0.refPos.get.pos === 100)
+
+    val p1 = ReferencePositionWithOrientation.liftOverToReference(50, exons)
+    assert(p1.refPos.isDefined)
+    assert(p1.refPos.get.referenceName === "1")
+    assert(p1.refPos.get.pos === 150)
+
+    val p2 = ReferencePositionWithOrientation.liftOverToReference(150, exons)
+    assert(p2.refPos.isDefined)
+    assert(p2.refPos.get.referenceName === "1")
+    assert(p2.refPos.get.pos === 350)
+
+    val p3 = ReferencePositionWithOrientation.liftOverToReference(250, exons)
+    assert(p3.refPos.isDefined)
+    assert(p3.refPos.get.referenceName === "1")
+    assert(p3.refPos.get.pos === 550)
+  }
+
+  test("liftOverToReference works with a multi-block alignment on the reverse strand") {
+    val exons = Seq(ReferenceRegionWithOrientation("1", 500, 601, true),
+      ReferenceRegionWithOrientation("1", 300, 401, true),
+      ReferenceRegionWithOrientation("1", 100, 201, true))
+
+    val p1 = ReferencePositionWithOrientation.liftOverToReference(50, exons)
+    assert(p1.refPos.isDefined)
+    assert(p1.refPos.get.referenceName === "1")
+    assert(p1.refPos.get.pos === 550)
+
+    val p2 = ReferencePositionWithOrientation.liftOverToReference(150, exons)
+    assert(p2.refPos.isDefined)
+    assert(p2.refPos.get.referenceName === "1")
+    assert(p2.refPos.get.pos === 350)
+
+    val p3 = ReferencePositionWithOrientation.liftOverToReference(250, exons)
+    assert(p3.refPos.isDefined)
+    assert(p3.refPos.get.referenceName === "1")
+    assert(p3.refPos.get.pos === 150)
+  }
+
+  test("lift over between two transcripts on the forward strand") {
+    // create mappings for transcripts
+    val t1 = Seq(ReferenceRegionWithOrientation("chr0", 0L, 201L, false))
+    val t2 = Seq(ReferenceRegionWithOrientation("chr0", 50L, 101L, false),
+      ReferenceRegionWithOrientation("chr0", 175L, 201L, false))
+
+    // check forward strand
+    val pos = ReferencePositionWithOrientation.liftOverToReference(60, t1)
+
+    assert(pos.refPos.isDefined)
+    assert(pos.refPos.get.referenceName === "chr0")
+    assert(pos.refPos.get.pos === 60L)
+    assert(!pos.negativeStrand)
+
+    val idx = pos.liftOverFromReference(t2)
+
+    assert(idx === 10L)
+  }
+
+  test("lift over between two transcripts on the reverse strand") {
+    // create mappings for transcripts
+    val t1 = Seq(ReferenceRegionWithOrientation("chr0", 0L, 201L, true))
+    val t2 = Seq(ReferenceRegionWithOrientation("chr0", 175L, 201L, true),
+      ReferenceRegionWithOrientation("chr0", 50L, 101L, true))
+
+    // check reverse strand
+    val idx = ReferencePositionWithOrientation(Some(ReferencePosition("chr0", 190L)), true)
+      .liftOverFromReference(t2)
+
+    assert(idx === 11L)
+
+    val pos = ReferencePositionWithOrientation.liftOverToReference(idx, t1)
+
+    assert(pos.refPos.isDefined)
+    assert(pos.refPos.get.referenceName === "chr0")
+    assert(pos.refPos.get.pos === 189L)
+    assert(pos.negativeStrand)
+  }
 }
