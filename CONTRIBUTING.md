@@ -45,8 +45,11 @@ Some general rules to follow:
 or "topic" branches.
 * Use your feature branch in the pull request. Any changes that you push to your feature branch will automatically
 be shown in the pull request.  If your feature branch is not based off the latest master, you will be asked to rebase
-it before it is merged.
-* If your pull request fixes an issue, reference the issue so that it will [be closed when your pull request is merged](https://github.com/blog/1506-closing-issues-via-pull-requests)
+it before it is merged. This ensures that the commit history is linear, which makes the commit history easier to read.
+* Before contributing code to ADAM, check the [Github issue tracker](https://github.com/bigdatagenomics/adam/issues).
+If there is not an open ticket for what you would like to work on, please open it. When you submit your changes to ADAM,
+reference the issue from the pull request so that it will [be closed when your pull request is merged](https://github.com/blog/1506-closing-issues-via-pull-requests).
+Also, please reference the issue number in your commit.
 * Run the ./scripts/format-source script in order to format the code and ensure correct license headers
   ```
   $ ./scripts/format-source
@@ -54,7 +57,8 @@ it before it is merged.
 * Keep your pull requests as small as possible. Large pull requests are hard to review. Try to break up your changes
 into self-contained and incremental pull requests, if need be, and reference dependent pull requests, e.g. "This pull
 request builds on request #92. Please review #92 first."
-* The first line of commit messages should be a short (<80 character) summary, followed by an empty line and then,
+* The first line of commit messages should start by referencing the issue number they fix (i.e., "[ADAM-307]" indicates that
+this commit fixes ADAM issue #307), followed by a short (<80 character) summary, followed by an empty line and then,
 optionally, any details that you want to share about the commit.
 * Include unit tests with your pull request. We love tests and [use Jenkins](https://amplab.cs.berkeley.edu/jenkins/)
 to check every pull request and commit. Just look for files in the ADAM repo that end in "*Suite.scala", 
