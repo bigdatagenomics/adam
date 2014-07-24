@@ -25,7 +25,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.avro.Schema
 import org.apache.spark.rdd.RDD
 import org.apache.avro.specific.SpecificRecord
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.predicates.ADAMPredicate
 
 /**
@@ -52,7 +52,7 @@ class PluginExecutorArgs extends Args4jBase with SparkArgs with ParquetArgs {
   @Argument(required = true, metaVar = "PLUGIN", usage = "The ADAMPlugin to run", index = 0)
   var plugin: String = null
 
-  // Currently, this *must* be an ADAMRecord file, and it is only one.
+  // Currently, this *must* be an Read file, and it is only one.
   @Argument(required = true, metaVar = "INPUT", usage = "The input location", index = 1)
   var input: String = null
 
@@ -91,8 +91,8 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
   }
 
   def run(sc: SparkContext, job: Job): Unit = {
-    val plugin = loadPlugin[ADAMRecord, Any](args.plugin)
-    val accessControl = loadAccessControl[ADAMRecord](args.accessControl)
+    val plugin = loadPlugin[Read, Any](args.plugin)
+    val accessControl = loadAccessControl[Read](args.accessControl)
 
     // Create an optional combined filter so that pass-through is not penalized
     //
@@ -107,11 +107,11 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
       }
       case Some(accessControlPredicate) => plugin.predicate match {
         case None                  => Some(accessControlPredicate)
-        case Some(predicateFilter) => Some((value: ADAMRecord) => accessControlPredicate(value) && predicateFilter(value))
+        case Some(predicateFilter) => Some((value: Read) => accessControlPredicate(value) && predicateFilter(value))
       }
     }
 
-    val firstRdd: RDD[ADAMRecord] = load[ADAMRecord](sc, args.input, plugin.projection)
+    val firstRdd: RDD[Read] = load[Read](sc, args.input, plugin.projection)
 
     val input = filter match {
       case None             => firstRdd

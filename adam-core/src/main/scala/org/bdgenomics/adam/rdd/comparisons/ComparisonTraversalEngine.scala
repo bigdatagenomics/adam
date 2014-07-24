@@ -26,13 +26,13 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import scala.Some
 import org.apache.hadoop.fs.Path
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.metrics.BucketComparisons
 import org.bdgenomics.adam.metrics.aggregators.{ Aggregated, Aggregator }
 import org.bdgenomics.adam.metrics.filters.GeneratorFilter
 import scala.reflect.ClassTag
 
-class ComparisonTraversalEngine(schema: Seq[FieldValue], input1: RDD[ADAMRecord], input2: RDD[ADAMRecord])(implicit sc: SparkContext) {
+class ComparisonTraversalEngine(schema: Seq[FieldValue], input1: RDD[Read], input2: RDD[Read])(implicit sc: SparkContext) {
   def this(schema: Seq[FieldValue], input1Paths: Seq[Path], input2Paths: Seq[Path])(implicit sc: SparkContext) =
     this(schema, sc.loadADAMFromPaths(input1Paths), sc.loadADAMFromPaths(input2Paths))(sc)
 

@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.recalibration
 
 import org.bdgenomics.adam.models.SnpTable
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.rich.DecadentRead._
@@ -33,7 +33,7 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     val snpsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.snps").getFile
     val obsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1-ref.observed").getFile
 
-    val reads: RDD[ADAMRecord] = sc.adamLoad(readsFilepath)
+    val reads: RDD[Read] = sc.adamLoad(readsFilepath)
     val snps = sc.broadcast(SnpTable(new File(snpsFilepath)))
 
     val bqsr = new BaseQualityRecalibration(cloy(reads), snps)
@@ -54,7 +54,7 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     val snpsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.vcf").getFile
     val obsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1-ref.observed").getFile
 
-    val reads: RDD[ADAMRecord] = sc.adamLoad(readsFilepath)
+    val reads: RDD[Read] = sc.adamLoad(readsFilepath)
     val variants: RDD[RichADAMVariant] = sc.adamVCFLoad(snpsFilepath).map(_.variant)
     val snps = sc.broadcast(SnpTable(variants))
 

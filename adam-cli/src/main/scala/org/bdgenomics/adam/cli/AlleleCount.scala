@@ -22,7 +22,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.{ ADAMGenotype, ADAMGenotypeAllele }
+import org.bdgenomics.formats.avro.{ Genotype, GenotypeAllele }
 import org.kohsuke.args4j.Argument
 
 object AlleleCount extends ADAMCommandCompanion {
@@ -44,17 +44,18 @@ class AlleleCountArgs extends Args4jBase with ParquetArgs with SparkArgs {
 }
 
 object AlleleCountHelper extends Serializable {
-  def chooseAllele(x: (CharSequence, java.lang.Long, CharSequence, CharSequence, ADAMGenotypeAllele)) =
+  def chooseAllele(x: (CharSequence, java.lang.Long, CharSequence, CharSequence, GenotypeAllele)) =
     x match {
-      case (chr, position, refAllele, varAllele, ADAMGenotypeAllele.Ref) => Some(chr, position, refAllele)
-      case (chr, position, refAllele, varAllele, ADAMGenotypeAllele.Alt) => Some(chr, position, varAllele)
+      case (chr, position, refAllele, varAllele, GenotypeAllele.Ref) => Some(chr, position, refAllele)
+      case (chr, position, refAllele, varAllele, GenotypeAllele.Alt) => Some(chr, position, varAllele)
       case _ => None
     }
 
-  def countAlleles(adamVariants: RDD[ADAMGenotype], args: AlleleCountArgs) {
-    val usefulData = adamVariants.map(p => (p.getVariant.getContig.getContigName, p.getVariant.getPosition,
+  def countAlleles(adamVariants: RDD[Genotype], args: AlleleCountArgs) {
+    val usefulData = adamVariants.map(p => (p.getVariant.getContig.getContigName,
+      p.getVariant.getStart,
       p.getVariant.getReferenceAllele,
-      p.getVariant.getVariantAllele,
+      p.getVariant.getAlternateAllele,
       p.getAlleles.get(0),
       p.getAlleles.get(1)))
     val reduced_Variants = usefulData.flatMap(p => Seq((p._1, p._2, p._3, p._4, p._5), (p._1, p._2, p._3, p._4, p._6)))
@@ -69,7 +70,7 @@ class AlleleCount(val args: AlleleCountArgs) extends ADAMSparkCommand[AlleleCoun
 
   def run(sc: SparkContext, job: Job) {
 
-    val adamVariants: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
+    val adamVariants: RDD[Genotype] = sc.adamLoad(args.adamFile)
     AlleleCountHelper.countAlleles(adamVariants, args)
 
   }

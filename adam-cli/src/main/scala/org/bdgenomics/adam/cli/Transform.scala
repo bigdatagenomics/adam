@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.models.SnpTable
@@ -58,7 +58,7 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   @Args4jOption(required = false, name = "-trimFromEnd", usage = "Trim to be applied to end of read.")
   var trimEnd: Int = 0
   @Args4jOption(required = false, name = "-trimReadGroup", usage = "Read group to be trimmed. If omitted, all reads are trimmed.")
-  var trimReadGroup: Int = -1
+  var trimReadGroup: String = null
   @Args4jOption(required = false, name = "-qualityBasedTrim", usage = "Trims reads based on quality scores of prefix/suffixes across read group.")
   var qualityBasedTrim: Boolean = false
   @Args4jOption(required = false, name = "-qualityThreshold", usage = "Phred scaled quality threshold used for trimming. If omitted, Phred 20 is used.")
@@ -72,7 +72,7 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
 
   def run(sc: SparkContext, job: Job) {
 
-    var adamRecords: RDD[ADAMRecord] = sc.adamLoad(args.inputPath)
+    var adamRecords: RDD[Read] = sc.adamLoad(args.inputPath)
 
     if (args.repartition != -1) {
       log.info("Repartitioning reads to to '%d' partitions".format(args.repartition))

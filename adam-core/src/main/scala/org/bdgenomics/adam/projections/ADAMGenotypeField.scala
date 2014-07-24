@@ -18,8 +18,8 @@
 package org.bdgenomics.adam.projections.variation
 
 import org.bdgenomics.adam.projections.FieldEnumeration
-import org.bdgenomics.formats.avro.ADAMGenotype
+import org.bdgenomics.formats.avro.Genotype
 
-object ADAMGenotypeField extends FieldEnumeration(ADAMGenotype.SCHEMA$) {
+object ADAMGenotypeField extends FieldEnumeration(Genotype.SCHEMA$) {
   val variant, variantCallingAnnotations, sampleId, sampleDescription, processingDescription, alleles, referenceReadDepth, alternateReadDepth, readDepth, genotypeQuality, genotypeLikelihoods, splitFromMultiAllelic, isPhased, phaseSetId, phaseQuality = SchemaValue
 }

@@ -23,7 +23,7 @@ import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.adam.util.MdTag
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 
 class ConsensusGeneratorFromSmithWaterman(wMatch: Double,
                                           wMismatch: Double,
@@ -57,7 +57,7 @@ class ConsensusGeneratorFromSmithWaterman(wMatch: Double,
           sw.cigarX,
           region.start)
 
-        val newRead: RichADAMRecord = ADAMRecord.newBuilder(r)
+        val newRead: RichADAMRecord = Read.newBuilder(r)
           .setStart(sw.xStart + region.start)
           .setCigar(sw.cigarX.toString)
           .setMismatchingPositions(mdTag.toString())

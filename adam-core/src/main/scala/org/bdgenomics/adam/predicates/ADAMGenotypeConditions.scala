@@ -33,12 +33,12 @@
 
 package org.bdgenomics.adam.predicates
 
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMGenotype }
+import org.bdgenomics.formats.avro.{ Read, Genotype }
 
 object ADAMGenotypeConditions {
 
-  val isPassing = RecordCondition[ADAMGenotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
+  val isPassing = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
 
-  def hasMinReadDepth(minReadDepth: Int) = RecordCondition[ADAMRecord](FieldCondition("variantCallingAnnotations.readDepth", (x: Int) => x > minReadDepth))
+  def hasMinReadDepth(minReadDepth: Int) = RecordCondition[Read](FieldCondition("variantCallingAnnotations.readDepth", (x: Int) => x > minReadDepth))
 
 }

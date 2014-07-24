@@ -17,25 +17,25 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.formats.avro.{ ADAMGenotypeType, ADAMGenotypeAllele, ADAMGenotype }
+import org.bdgenomics.formats.avro.{ GenotypeType, GenotypeAllele, Genotype }
 import scala.collection.JavaConversions._
 
 object RichADAMGenotype {
-  implicit def genotypeToRichGenotype(g: ADAMGenotype) = new RichADAMGenotype(g)
+  implicit def genotypeToRichGenotype(g: Genotype) = new RichADAMGenotype(g)
   implicit def richGenotypeToGenotype(g: RichADAMGenotype) = g.genotype
 }
 
-class RichADAMGenotype(val genotype: ADAMGenotype) {
+class RichADAMGenotype(val genotype: Genotype) {
   def ploidy: Int = genotype.getAlleles.size
 
-  def getType: ADAMGenotypeType = {
+  def getType: GenotypeType = {
     assert(ploidy <= 2, "getType only meaningful for genotypes with ploidy <= 2")
     genotype.getAlleles.toList.distinct match {
-      case List(ADAMGenotypeAllele.Ref) => ADAMGenotypeType.HOM_REF
-      case List(ADAMGenotypeAllele.Alt) => ADAMGenotypeType.HOM_ALT
-      case List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Alt) |
-        List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Ref) => ADAMGenotypeType.HET
-      case _ => ADAMGenotypeType.NO_CALL
+      case List(GenotypeAllele.Ref) => GenotypeType.HOM_REF
+      case List(GenotypeAllele.Alt) => GenotypeType.HOM_ALT
+      case List(GenotypeAllele.Ref, GenotypeAllele.Alt) |
+        List(GenotypeAllele.Alt, GenotypeAllele.Ref) => GenotypeType.HET
+      case _ => GenotypeType.NO_CALL
     }
   }
 }

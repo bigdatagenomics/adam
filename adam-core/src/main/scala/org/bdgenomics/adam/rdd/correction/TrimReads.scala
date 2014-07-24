@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.correction
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils
 import scala.annotation.tailrec
@@ -35,21 +35,21 @@ private[rdd] object TrimReads extends Logging {
    * @param phredThreshold Phred score threshold for trimming read start/end.
    * @return Returns an RDD of trimmed reads.
    */
-  def apply(rdd: RDD[ADAMRecord], phredThreshold: Int): RDD[ADAMRecord] = {
+  def apply(rdd: RDD[Read], phredThreshold: Int): RDD[Read] = {
     val tr = new TrimReads
 
     // get read length
-    val readLength = rdd.first.getSequence.length
+    val readLength = rdd.first().getSequence.length
 
     // map read quality scores into doubles
     log.info("Collecting read quality scores.")
-    val doubleRdd: RDD[((Int, Int), Double)] = rdd.flatMap(tr.readToDoubles)
-      .cache
+    val doubleRdd: RDD[((String, Int), Double)] = rdd.flatMap(tr.readToDoubles)
+      .cache()
 
     // reduce this by key, and also get counts
     log.info("Summarizing quality scores.")
     val columnValues = doubleRdd.reduceByKeyLocally(_ + _)
-    val columnCounts = doubleRdd.countByKey
+    val columnCounts = doubleRdd.countByKey()
 
     // we are done with doubleRdd - so, unpersist to free memory
     doubleRdd.unpersist()
@@ -107,10 +107,10 @@ private[rdd] object TrimReads extends Logging {
    * Set to -1 if you would like to trim all reads.
    * @return Returns an RDD of trimmed reads.
    */
-  def apply(rdd: RDD[ADAMRecord],
+  def apply(rdd: RDD[Read],
             trimStart: Int,
             trimEnd: Int,
-            rg: Int = -1): RDD[ADAMRecord] = {
+            rg: String = null): RDD[Read] = {
     assert(trimStart >= 0 && trimEnd >= 0,
       "Trim parameters must be positive.")
     assert(rdd.first.getSequence.length > trimStart + trimEnd,
@@ -121,7 +121,7 @@ private[rdd] object TrimReads extends Logging {
     val tr = new TrimReads
     rdd.map(read => {
       // only trim reads that are in this read group
-      if (read.getRecordGroupId == rg || rg == -1) {
+      if (read.getRecordGroupName == rg || rg == null) {
         tr.trimRead(read, trimStart, trimEnd)
       } else {
         read
@@ -138,11 +138,11 @@ private[correction] class TrimReads extends Serializable {
    *
    * @param read Read to convert.
    * @return Returns an array of log scaled success probabilities for each base, zipped with
-   * the position of the double in the read, and the read group ID. -1 is returned if the
+   * the position of the double in the read, and the read group ID. 'null' is returned if the
    * read group is not set.
    */
-  def readToDoubles(read: ADAMRecord): Array[((Int, Int), Double)] = {
-    val rgIdx: Int = read.getRecordGroupId
+  def readToDoubles(read: Read): Array[((String, Int), Double)] = {
+    val rgIdx: String = read.getRecordGroupName
 
     read.getQual
       .toArray
@@ -343,13 +343,13 @@ private[correction] class TrimReads extends Serializable {
    * @param trimEnd Number of bases to trim from the end of the read.
    * @return Trimmed read.
    */
-  def trimRead(read: ADAMRecord, trimStart: Int, trimEnd: Int): ADAMRecord = {
+  def trimRead(read: Read, trimStart: Int, trimEnd: Int): Read = {
     // trim sequence and quality value
     val seq: String = read.getSequence.toString.drop(trimStart).dropRight(trimEnd)
     val qual: String = read.getQual.toString.drop(trimStart).dropRight(trimEnd)
 
     // make copy builder
-    val builder = ADAMRecord.newBuilder(read)
+    val builder = Read.newBuilder(read)
       .setSequence(seq)
       .setBasesTrimmedFromStart(Option(read.getBasesTrimmedFromStart).fold(0)(v => v) + trimStart)
       .setBasesTrimmedFromEnd(Option(read.getBasesTrimmedFromEnd).fold(0)(v => v) + trimEnd)

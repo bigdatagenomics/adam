@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.formats.avro.ADAMGenotype
+import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ GenotypesSummary, GenotypesSummaryFormatting }
 import org.kohsuke.args4j
@@ -53,7 +53,7 @@ class SummarizeGenotypes(val args: SummarizeGenotypesArgs) extends ADAMSparkComm
   val companion = SummarizeGenotypes
 
   def run(sc: SparkContext, job: Job) {
-    val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
+    val adamGTs: RDD[Genotype] = sc.adamLoad(args.adamFile)
     val stats = GenotypesSummary(adamGTs)
     val result = args.format match {
       case "human" => GenotypesSummaryFormatting.format_human_readable(stats)

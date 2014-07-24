@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.predicates
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 
-class HighQualityReadPredicate extends ADAMPredicate[ADAMRecord] {
+class HighQualityReadPredicate extends ADAMPredicate[Read] {
 
   override val recordCondition = ADAMRecordConditions.isMapped && ADAMRecordConditions.isHighQuality(30)
 

@@ -34,17 +34,17 @@
 package org.bdgenomics.adam.rich
 
 import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ Contig, Read }
 import org.bdgenomics.adam.models.ReferencePosition
 
 class DecadentReadSuite extends FunSuite {
 
   test("reference position of decadent read") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr1")
       .build
 
-    val hardClippedRead = RichADAMRecord(ADAMRecord
+    val hardClippedRead = RichADAMRecord(Read
       .newBuilder()
       .setReadMapped(true)
       .setStart(1000)
@@ -62,11 +62,11 @@ class DecadentReadSuite extends FunSuite {
   }
 
   test("reference position of decadent read with insertions") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr1")
       .build
 
-    val hardClippedRead = RichADAMRecord(ADAMRecord
+    val hardClippedRead = RichADAMRecord(Read
       .newBuilder()
       .setReadMapped(true)
       .setStart(1000)

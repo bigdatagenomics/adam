@@ -19,7 +19,7 @@ package org.bdgenomics.adam.models
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMNucleotideContigFragment }
+import org.bdgenomics.formats.avro.{ Read, NucleotideContigFragment }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import scala.math.{ min, max }
@@ -115,7 +115,7 @@ object ReferenceRegion {
    * @param record Read to create region from.
    * @return Region corresponding to inclusive region of read alignment, if read is mapped.
    */
-  def apply(record: ADAMRecord): Option[ReferenceRegion] = {
+  def apply(record: Read): Option[ReferenceRegion] = {
     if (record.getReadMapped) {
       Some(ReferenceRegion(record.getContig.getContigName.toString, record.getStart, RichADAMRecord(record).end.get))
     } else {
@@ -138,7 +138,7 @@ object ReferenceRegion {
    * @param fragment Assembly fragment from which to generate data.
    * @return Region corresponding to inclusive region of contig fragment.
    */
-  def apply(fragment: ADAMNucleotideContigFragment): Option[ReferenceRegion] = {
+  def apply(fragment: NucleotideContigFragment): Option[ReferenceRegion] = {
     val contig = fragment.getContig
     if (contig != null && contig.getContigName != null &&
       fragment.getFragmentStartPosition != null) {

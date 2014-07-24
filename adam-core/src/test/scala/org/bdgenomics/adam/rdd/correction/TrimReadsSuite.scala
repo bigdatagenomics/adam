@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.correction
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 
@@ -26,8 +26,8 @@ class TrimReadsSuite extends SparkFunSuite {
 
   val ec = new TrimReads
 
-  def makeRead(sequence: String, qual: String): ADAMRecord = {
-    ADAMRecord.newBuilder
+  def makeRead(sequence: String, qual: String): Read = {
+    Read.newBuilder
       .setSequence(sequence)
       .setQual(qual)
       .build
@@ -74,7 +74,7 @@ class TrimReadsSuite extends SparkFunSuite {
 
   test("trim a few reads") {
     // trim from the front only, read without cigar
-    val read1 = ADAMRecord.newBuilder
+    val read1 = Read.newBuilder
       .setSequence("ACTCGCCCACTCA")
       .setQual("##/9:::::::::")
       .build
@@ -84,7 +84,7 @@ class TrimReadsSuite extends SparkFunSuite {
     assert(trimmedRead1.getQual.toString === "/9:::::::::")
 
     // trim from both ends, read with cigar
-    val read2 = ADAMRecord.newBuilder
+    val read2 = Read.newBuilder
       .setSequence("ACTCGCCCACTCAAA")
       .setQual("##/9:::::::::##")
       .setCigar("2S11M2S")
@@ -135,12 +135,11 @@ class TrimReadsSuite extends SparkFunSuite {
 
   sparkTest("adaptively trim reads") {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.sam").getFile
-    val reads: RDD[ADAMRecord] = sc.adamLoad(readsFilepath)
+    val reads: RDD[Read] = sc.adamLoad(readsFilepath)
 
     // put all reads into a single read group
     val readsSingleRG = reads.map(read => {
-      ADAMRecord.newBuilder(read)
-        .setRecordGroupId(0)
+      Read.newBuilder(read)
         .setRecordGroupName("group0")
         .build()
     })

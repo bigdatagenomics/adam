@@ -21,7 +21,7 @@ import org.apache.spark.{ SparkContext, Logging }
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMGenotype
+import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.apache.spark.SparkContext._
@@ -63,8 +63,8 @@ class GenotypeConcordance(protected val args: GenotypeConcordanceArgs) extends A
       None
     val projection = None //Some(Projection(project))
 
-    val testGTs: RDD[ADAMGenotype] = sc.adamLoad(args.testGenotypesFile, predicate, projection)
-    val truthGTs: RDD[ADAMGenotype] = sc.adamLoad(args.truthGenotypesFile, predicate, projection)
+    val testGTs: RDD[Genotype] = sc.adamLoad(args.testGenotypesFile, predicate, projection)
+    val truthGTs: RDD[Genotype] = sc.adamLoad(args.truthGenotypesFile, predicate, projection)
 
     val tables = testGTs.concordanceWith(truthGTs)
 

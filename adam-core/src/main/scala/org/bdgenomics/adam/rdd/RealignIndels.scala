@@ -41,7 +41,7 @@ import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import scala.annotation.tailrec
 import scala.collection.immutable.{ NumericRange, TreeSet }
 import scala.collection.mutable.Map
@@ -55,13 +55,13 @@ private[rdd] object RealignIndels {
    * @param rdd RDD of reads to realign.
    * @return RDD of realigned reads.
    */
-  def apply(rdd: RDD[ADAMRecord],
+  def apply(rdd: RDD[Read],
             consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
             dataIsSorted: Boolean = false,
             maxIndelSize: Int = 500,
             maxConsensusNumber: Int = 30,
             lodThreshold: Double = 5.0,
-            maxTargetSize: Int = 3000): RDD[ADAMRecord] = {
+            maxTargetSize: Int = 3000): RDD[Read] = {
     new RealignIndels(consensusModel,
       dataIsSorted,
       maxIndelSize,
@@ -321,7 +321,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
           // if we see a sufficient improvement, realign the reads
           val cleanedReads: Iterable[RichADAMRecord] = readsToClean.map(r => {
 
-            val builder: ADAMRecord.Builder = ADAMRecord.newBuilder(r)
+            val builder: Read.Builder = Read.newBuilder(r)
             val remapping = bestMappings(r)
 
             // if read alignment is improved by aligning against new consensus, realign
@@ -432,7 +432,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
    * @param read Read over which to sum mismatch quality.
    * @return Mismatch quality of read for current alignment.
    */
-  def sumMismatchQuality(read: ADAMRecord): Int = {
+  def sumMismatchQuality(read: Read): Int = {
     sumMismatchQualityIgnoreCigar(read.getSequence,
       read.mdTag.get.getReference(read),
       read.qualityScores)
@@ -445,7 +445,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
    * @param rdd Reads to realign.
    * @return Realigned read.
    */
-  def realignIndels(rdd: RDD[ADAMRecord]): RDD[ADAMRecord] = {
+  def realignIndels(rdd: RDD[Read]): RDD[Read] = {
     val sortedRdd = if (dataIsSorted) {
       rdd.filter(r => r.getReadMapped)
     } else {

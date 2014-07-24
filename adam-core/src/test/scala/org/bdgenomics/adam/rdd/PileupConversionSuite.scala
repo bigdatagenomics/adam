@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.{ ADAMRecord, Base }
+import org.bdgenomics.formats.avro.{ Read, Base }
 
 class PileupConversionSuite extends FunSuite {
 
@@ -28,7 +28,7 @@ class PileupConversionSuite extends FunSuite {
     val sequence = "ACTAG"
 
     // build a read with 5 base pairs, all match
-    val record: ADAMRecord = ADAMRecord.newBuilder()
+    val record: Read = Read.newBuilder()
       .setStart(1L)
       .setMapq(30)
       .setSequence(sequence)
@@ -64,7 +64,7 @@ class PileupConversionSuite extends FunSuite {
     val sequence = "ACTAG"
 
     // build a read with 5 base pairs, all match
-    val record: ADAMRecord = ADAMRecord.newBuilder()
+    val record: Read = Read.newBuilder()
       .setStart(1L)
       .setMapq(30)
       .setSequence(sequence)

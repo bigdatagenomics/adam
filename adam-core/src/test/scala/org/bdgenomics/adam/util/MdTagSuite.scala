@@ -19,7 +19,7 @@ package org.bdgenomics.adam.util
 
 import org.scalatest.FunSuite
 import net.sf.samtools.TextCigarCodec
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.rich.RichADAMRecord._
 
 class MdTagSuite extends FunSuite {
@@ -157,16 +157,17 @@ class MdTagSuite extends FunSuite {
   }
 
   test("check that mdtag and rich record return same end") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setSequence("A" * 60)
       .setStart(1L)
+      .setEnd(60L)
       .setCigar("60M")
       .setMismatchingPositions("60")
       .setReadMapped(true)
       .build()
 
     // rich adam record returns exclusive end?
-    assert(read.mdTag.get.end() === (read.end.get - 1))
+    assert(read.mdTag.get.end() === (read.getEnd - 1))
   }
 
   test("get end of read with no mismatches, but a deletion at end") {
@@ -216,11 +217,12 @@ class MdTagSuite extends FunSuite {
   }
 
   test("check complex mdtag") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
       .setStart(5)
+      .setEnd(75)
       .setMismatchingPositions("29^GGGGGGGGGG10G0G0G0G0G0G0G0G0G0G11")
       .build()
 
@@ -230,12 +232,12 @@ class MdTagSuite extends FunSuite {
     assert((34 until 44).forall(i => tag.deletedBase(i).get == 'G'))
     assert((44 until 54).forall(i => tag.isMatch(i)))
     assert((54 until 64).forall(i => tag.mismatchedBase(i).get == 'G'))
-    assert((64 until read.end.get.toInt).forall(i => tag.isMatch(i)))
+    assert((64 until read.getEnd.toInt).forall(i => tag.isMatch(i)))
     assert(tag.getReference(read) === "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAA")
   }
 
   test("move a cigar alignment by two for a read") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -251,7 +253,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("rewrite alignment to all matches") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -269,7 +271,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("rewrite alignment to two mismatches followed by all matches") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -287,7 +289,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("rewrite alignment to include a deletion but otherwise all matches") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")
@@ -305,7 +307,7 @@ class MdTagSuite extends FunSuite {
   }
 
   test("rewrite alignment to include an insertion at the start of the read but otherwise all matches") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")

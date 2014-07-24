@@ -20,7 +20,7 @@ package org.bdgenomics.adam.cli
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.Argument
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.projections.{ Projection, ADAMRecordField }
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -53,7 +53,7 @@ class FlagStat(protected val args: FlagStatArgs) extends ADAMSparkCommand[FlagSt
       ADAMRecordField.properPair, ADAMRecordField.mapq,
       ADAMRecordField.failedVendorQualityChecks)
 
-    val adamFile: RDD[ADAMRecord] = sc.adamLoad(args.inputPath, projection = Some(projection))
+    val adamFile: RDD[Read] = sc.adamLoad(args.inputPath, projection = Some(projection))
 
     val (failedVendorQuality, passedVendorQuality) = adamFile.adamFlagStat()
 

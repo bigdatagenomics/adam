@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.correction
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.scalatest.FunSuite
 import scala.math.abs
 
@@ -28,7 +28,7 @@ class ErrorCorectionSuite extends FunSuite {
   def fpCompare(a: Double, b: Double, epsilon: Double = 1e-3): Boolean = abs(a - b) < epsilon
 
   test("cut a short read into qmers") {
-    val read = ADAMRecord.newBuilder
+    val read = Read.newBuilder
       .setSequence("ACTCATG")
       .setQual("??;957:")
       .build()

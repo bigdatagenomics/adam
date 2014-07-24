@@ -68,11 +68,11 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkComm
 
   def run(sc: SparkContext, job: Job) {
     log.info("Reading VCF file from %s".format(args.vcfFile))
-    val annotations: RDD[ADAMDatabaseVariantAnnotation] = sc.adamVCFAnnotationLoad(args.vcfFile)
+    val annotations: RDD[DatabaseVariantAnnotation] = sc.adamVCFAnnotationLoad(args.vcfFile)
     log.info("Converted %d records".format(annotations.count))
 
     if (args.currentAnnotations != null) {
-      val existingAnnotations: RDD[ADAMDatabaseVariantAnnotation] = sc.adamLoad(args.currentAnnotations)
+      val existingAnnotations: RDD[DatabaseVariantAnnotation] = sc.adamLoad(args.currentAnnotations)
       val keyedAnnotations = existingAnnotations.keyBy(anno => new RichADAMVariant(anno.getVariant))
       val joinedAnnotations = keyedAnnotations.join(annotations.keyBy(anno => new RichADAMVariant(anno.getVariant)))
       val mergedAnnotations = joinedAnnotations.map(kv => VariantAnnotationConverter.mergeAnnotations(kv._2._1, kv._2._2))

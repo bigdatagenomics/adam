@@ -21,7 +21,7 @@ import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
-import org.bdgenomics.formats.avro.ADAMVariant
+import org.bdgenomics.formats.avro.Variant
 
 class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Serializable with Logging {
   log.info("Indel table has %s contigs and %s entries".format(table.size,
@@ -64,20 +64,20 @@ object IndelTable {
    * @param variants RDD of variants.
    * @return Returns a table with known indels populated.
    */
-  def apply(variants: RDD[ADAMVariant]): IndelTable = {
-    val consensus: Map[String, Iterable[Consensus]] = variants.filter(v => v.getReferenceAllele.length != v.getVariantAllele.length)
+  def apply(variants: RDD[Variant]): IndelTable = {
+    val consensus: Map[String, Iterable[Consensus]] = variants.filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
       .map(v => {
         val referenceName = v.getContig.getContigName.toString
-        val consensus = if (v.getReferenceAllele.length > v.getVariantAllele.length) {
+        val consensus = if (v.getReferenceAllele.length > v.getAlternateAllele.length) {
           // deletion
-          val deletionLength = v.getReferenceAllele.length - v.getVariantAllele.length
-          val start = v.getPosition + v.getVariantAllele.length
+          val deletionLength = v.getReferenceAllele.length - v.getAlternateAllele.length
+          val start = v.getStart + v.getAlternateAllele.length
 
           Consensus("", ReferenceRegion(referenceName, start, start + deletionLength))
         } else {
-          val start = v.getPosition + v.getReferenceAllele.length
+          val start = v.getStart + v.getReferenceAllele.length
 
-          Consensus(v.getVariantAllele.toString.drop(v.getReferenceAllele.length), ReferenceRegion(referenceName, start, start + 1))
+          Consensus(v.getAlternateAllele.toString.drop(v.getReferenceAllele.length), ReferenceRegion(referenceName, start, start + 1))
         }
 
         (referenceName, consensus)

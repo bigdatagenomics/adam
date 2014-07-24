@@ -19,7 +19,7 @@ package org.bdgenomics.adam.util
 
 import scala.annotation.tailrec
 import net.sf.samtools.{ Cigar, CigarOperator }
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord
 import org.bdgenomics.adam.rich.RichCigar._
@@ -32,7 +32,7 @@ object NormalizationUtils {
    * @param cigar Cigar to left align.
    * @return Cigar fully moved left.
    */
-  def leftAlignIndel(read: ADAMRecord): Cigar = {
+  def leftAlignIndel(read: Read): Cigar = {
     var indelPos = -1
     var pos = 0
     var indelLength = 0

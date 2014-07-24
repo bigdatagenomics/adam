@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.ADAMDatabaseVariantAnnotation
+import org.bdgenomics.formats.avro.DatabaseVariantAnnotation
 
-object ADAMDatabaseVariantAnnotationField extends FieldEnumeration(ADAMDatabaseVariantAnnotation.SCHEMA$) {
+object ADAMDatabaseVariantAnnotationField extends FieldEnumeration(DatabaseVariantAnnotation.SCHEMA$) {
 
   val variant, dbsnpId, //domain information
   hgvs, geneSymbol, ensemblGeneId, ensemblTranscriptIds, //clinical fields

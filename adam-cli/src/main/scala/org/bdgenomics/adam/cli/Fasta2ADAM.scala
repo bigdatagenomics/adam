@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
@@ -58,7 +58,7 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fa
     }
 
     val remapped = if (args.reads != "") {
-      val readDict = sc.adamDictionaryLoad[ADAMRecord](args.reads)
+      val readDict = sc.adamDictionaryLoad[Read](args.reads)
 
       if (args.verbose) {
         println("Remapping with:")

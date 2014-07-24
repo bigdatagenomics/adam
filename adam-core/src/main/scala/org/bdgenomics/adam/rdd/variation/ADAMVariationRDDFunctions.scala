@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.bdgenomics.formats.avro.{ ADAMGenotypeType, ADAMGenotype, ADAMDatabaseVariantAnnotation }
+import org.bdgenomics.formats.avro.{ GenotypeType, Genotype, DatabaseVariantAnnotation }
 import org.bdgenomics.adam.models.{
   ADAMVariantContext,
   SequenceRecord
@@ -45,7 +45,7 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends ADAMS
    * Left outer join database variant annotations
    *
    */
-  def joinDatabaseVariantAnnotation(ann: RDD[ADAMDatabaseVariantAnnotation]): RDD[ADAMVariantContext] = {
+  def joinDatabaseVariantAnnotation(ann: RDD[DatabaseVariantAnnotation]): RDD[ADAMVariantContext] = {
     rdd.keyBy(_.variant)
       .leftOuterJoin(ann.keyBy(_.getVariant))
       .values
@@ -62,7 +62,7 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends ADAMS
   }
 }
 
-class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with Logging {
+class ADAMGenotypeRDDFunctions(rdd: RDD[Genotype]) extends Serializable with Logging {
   def toADAMVariantContext(): RDD[ADAMVariantContext] = {
     rdd.keyBy({ g => RichADAMVariant.variantToRichVariant(g.getVariant) })
       .groupByKey
@@ -75,7 +75,7 @@ class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with
    * @param truth Truth genotypes
    * @return PairedRDD of sample -> ConcordanceTable
    */
-  def concordanceWith(truth: RDD[ADAMGenotype]): RDD[(String, ConcordanceTable)] = {
+  def concordanceWith(truth: RDD[Genotype]): RDD[(String, ConcordanceTable)] = {
     // Concordance approach only works for ploidy <= 2, e.g. diploid/haploid
     val keyedTest = rdd.filter(_.ploidy <= 2)
       .keyBy(g => (g.getVariant, g.getSampleId.toString): (RichADAMVariant, String))
@@ -88,15 +88,15 @@ class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with
     // Compute RDD[sample -> ConcordanceTable] across variants/samples
     val inTestPairs = inTest.map({
       case ((_, sample), (l, Some(r))) => sample -> (l.getType, r.getType)
-      case ((_, sample), (l, None))    => sample -> (l.getType, ADAMGenotypeType.NO_CALL)
+      case ((_, sample), (l, None))    => sample -> (l.getType, GenotypeType.NO_CALL)
     })
     val justInTruthPairs = justInTruth.map({ // "truth-only" entries
-      case ((_, sample), r) => sample -> (ADAMGenotypeType.NO_CALL, r.getType)
+      case ((_, sample), r) => sample -> (GenotypeType.NO_CALL, r.getType)
     })
 
     val bySample = inTestPairs.union(justInTruthPairs).combineByKey(
-      (p: (ADAMGenotypeType, ADAMGenotypeType)) => ConcordanceTable(p),
-      (l: ConcordanceTable, r: (ADAMGenotypeType, ADAMGenotypeType)) => l.add(r),
+      (p: (GenotypeType, GenotypeType)) => ConcordanceTable(p),
+      (l: ConcordanceTable, r: (GenotypeType, GenotypeType)) => l.add(r),
       (l: ConcordanceTable, r: ConcordanceTable) => l.add(r))
 
     bySample

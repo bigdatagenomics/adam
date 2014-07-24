@@ -20,11 +20,11 @@ package org.bdgenomics.adam.converters
 import java.io._
 
 import scala.collection.JavaConversions._
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.FlatGenotype
 
 /**
  * VCFLineParser is a line-by-line (streaming) parser for VCF files, written specifically to support
- * light-weight creation of ADAMFlatGenotype records from large (multi-Gb, gzipped) VCF files.
+ * light-weight creation of FlatGenotype records from large (multi-Gb, gzipped) VCF files.
  * @param inputStream An input stream containing the VCF contents
  * @param sampleSubset An (optional) set of Strings, containing only those samples that should be parsed
  *                     from the file.  If this parameter is non-None, then only those samples (column
@@ -119,9 +119,9 @@ class VCFLine(vcfLine: String, val samples: Array[String], sampleIndices: Seq[In
 
 object VCFLineConverter {
 
-  def convert(line: VCFLine): Seq[ADAMFlatGenotype] = {
+  def convert(line: VCFLine): Seq[FlatGenotype] = {
 
-    def buildGenotype(i: Int): Option[ADAMFlatGenotype] = {
+    def buildGenotype(i: Int): Option[FlatGenotype] = {
       val sampleFieldMap = line.sampleFields(i)
       val gtField = sampleFieldMap("GT")
 
@@ -132,7 +132,7 @@ object VCFLineConverter {
         val genotypes: Seq[CharSequence] = gts.map(idx => line.alleleArray(idx))
         val sampleId = line.samples(i)
 
-        val flatGenotype = ADAMFlatGenotype.newBuilder()
+        val flatGenotype = FlatGenotype.newBuilder()
           .setReferenceName(line.referenceName)
           .setPosition(line.position)
           .setReferenceAllele(line.ref)

@@ -33,7 +33,7 @@ package org.bdgenomics.adam.cli
  * limitations under the License.
  */
 
-import org.bdgenomics.formats.avro.ADAMPileup
+import org.bdgenomics.formats.avro.Pileup
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.Argument
 import org.apache.hadoop.mapreduce.Job
@@ -64,7 +64,7 @@ class PileupAggregator(protected val args: PileupAggregatorArgs)
   val companion = PileupAggregator
 
   def run(sc: SparkContext, job: Job) {
-    val pileups: RDD[ADAMPileup] = sc.adamLoad(args.readInput)
+    val pileups: RDD[Pileup] = sc.adamLoad(args.readInput)
     pileups.adamAggregatePileups().adamSave(args.pileupOutput,
       blockSize = args.blockSize, pageSize = args.pageSize,
       compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)

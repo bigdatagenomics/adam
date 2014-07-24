@@ -18,16 +18,16 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMGenotype, ADAMPileup, ADAMRecord, ADAMVariant }
+import org.bdgenomics.formats.avro.{ Contig, Genotype, Pileup, Read, Variant }
 
 class ReferencePositionSuite extends FunSuite {
 
   test("create reference position from mapped read") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr1")
       .build
 
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setContig(contig)
       .setStart(1L)
       .setReadMapped(true)
@@ -44,7 +44,7 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from unmapped read") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setReadMapped(false)
       .build()
 
@@ -54,7 +54,7 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from mapped read but contig not specified") {
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setReadMapped(true)
       .setStart(1L)
       .build()
@@ -65,12 +65,12 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from mapped read but contig is underspecified") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       // contigName is NOT set
       //.setContigName("chr1")
       .build
 
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setReadMapped(true)
       .setStart(1L)
       .setContig(contig)
@@ -82,11 +82,11 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from mapped read but start not specified") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr1")
       .build
 
-    val read = ADAMRecord.newBuilder()
+    val read = Read.newBuilder()
       .setReadMapped(true)
       .setContig(contig)
       .build()
@@ -97,11 +97,11 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from pileup") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr2")
       .build
 
-    val pileup = ADAMPileup.newBuilder()
+    val pileup = Pileup.newBuilder()
       .setPosition(2L)
       .setContig(contig)
       .build()
@@ -113,11 +113,11 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from variant") {
-    val variant = ADAMVariant.newBuilder()
-      .setContig(ADAMContig.newBuilder.setContigName("chr10").build())
+    val variant = Variant.newBuilder()
+      .setContig(Contig.newBuilder.setContigName("chr10").build())
       .setReferenceAllele("A")
-      .setVariantAllele("T")
-      .setPosition(10L)
+      .setAlternateAllele("T")
+      .setStart(10L)
       .build()
 
     val refPos = ReferencePosition(variant)
@@ -127,13 +127,13 @@ class ReferencePositionSuite extends FunSuite {
   }
 
   test("create reference position from genotype") {
-    val variant = ADAMVariant.newBuilder()
-      .setPosition(100L)
-      .setContig(ADAMContig.newBuilder.setContigName("chr10").build())
+    val variant = Variant.newBuilder()
+      .setStart(100L)
+      .setContig(Contig.newBuilder.setContigName("chr10").build())
       .setReferenceAllele("A")
-      .setVariantAllele("T")
+      .setAlternateAllele("T")
       .build()
-    val genotype = ADAMGenotype.newBuilder()
+    val genotype = Genotype.newBuilder()
       .setVariant(variant)
       .setSampleId("NA12878")
       .build()

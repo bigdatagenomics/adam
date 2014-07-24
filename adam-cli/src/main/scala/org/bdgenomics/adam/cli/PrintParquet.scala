@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.bdgenomics.adam.parquet_reimpl.ParquetLister
 import org.bdgenomics.adam.projections.Projection
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.FlatGenotype
 import org.kohsuke.args4j.Argument
 
 import scala.collection.JavaConversions._
@@ -48,10 +48,10 @@ class PrintParquet(args: PrintParquetArgs) extends ADAMCommand {
   def run() = {
 
     val schema = Projection(referenceName, position, sampleId, referenceAllele, alleles)
-    val lister: ParquetLister[ADAMFlatGenotype] = new ParquetLister[ADAMFlatGenotype](Some(schema))
+    val lister: ParquetLister[FlatGenotype] = new ParquetLister[FlatGenotype](Some(schema))
 
     lister.materialize(args.parquetFile).take(args.count).foreach {
-      case rec: ADAMFlatGenotype =>
+      case rec: FlatGenotype =>
         println("%s\t%d\t%s\t%s\t%s".format(
           rec.getReferenceName, rec.getPosition.toInt,
           rec.getSampleId,

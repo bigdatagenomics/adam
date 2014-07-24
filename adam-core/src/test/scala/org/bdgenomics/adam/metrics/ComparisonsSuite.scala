@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.metrics
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ Contig, Read }
 import org.bdgenomics.adam.models.SingleReadBucket
 
 class ComparisonsSuite extends SparkFunSuite {
@@ -32,20 +32,20 @@ class ComparisonsSuite extends SparkFunSuite {
   var bucketMovedStart: SingleReadBucket = null
 
   sparkBefore("Generators setup") {
-    def srb(record: ADAMRecord): SingleReadBucket = {
+    def srb(record: Read): SingleReadBucket = {
       val seq = Seq(record)
       val rdd = sc.makeRDD(seq)
       val srbRDD = SingleReadBucket(rdd)
       srbRDD.first()
     }
 
-    val contig: ADAMContig = ADAMContig.newBuilder
+    val contig: Contig = Contig.newBuilder
       .setContigName("chr1")
       .build
-    val contig2: ADAMContig = ADAMContig.newBuilder
+    val contig2: Contig = Contig.newBuilder
       .setContigName("chr2")
       .build
-    val record: ADAMRecord = ADAMRecord.newBuilder()
+    val record: Read = Read.newBuilder()
       .setContig(contig)
       .setReadName("test")
       .setDuplicateRead(false)
@@ -59,11 +59,11 @@ class ComparisonsSuite extends SparkFunSuite {
 
     bucket = srb(record)
 
-    bucketMapq = srb(ADAMRecord.newBuilder(record)
+    bucketMapq = srb(Read.newBuilder(record)
       .setMapq(11)
       .build())
 
-    bucketMapqUnset = srb(ADAMRecord.newBuilder()
+    bucketMapqUnset = srb(Read.newBuilder()
       .setContig(contig)
       .setReadName("test")
       .setDuplicateRead(false)
@@ -74,15 +74,15 @@ class ComparisonsSuite extends SparkFunSuite {
       .setReadMapped(true)
       .build())
 
-    bucketDuplicate = srb(ADAMRecord.newBuilder(record)
+    bucketDuplicate = srb(Read.newBuilder(record)
       .setDuplicateRead(true)
       .build())
 
-    bucketQual = srb(ADAMRecord.newBuilder(record)
+    bucketQual = srb(Read.newBuilder(record)
       .setQual("fedcba")
       .build())
 
-    bucketQualUnset = srb(ADAMRecord.newBuilder()
+    bucketQualUnset = srb(Read.newBuilder()
       .setContig(contig)
       .setReadName("test")
       .setDuplicateRead(false)
@@ -93,12 +93,12 @@ class ComparisonsSuite extends SparkFunSuite {
       .setReadMapped(true)
       .build())
 
-    bucketMovedChromosome = srb(ADAMRecord.newBuilder(record)
+    bucketMovedChromosome = srb(Read.newBuilder(record)
       .setContig(contig2)
       .setStart(200)
       .build())
 
-    bucketMovedStart = srb(ADAMRecord.newBuilder(record)
+    bucketMovedStart = srb(Read.newBuilder(record)
       .setStart(200)
       .build())
   }

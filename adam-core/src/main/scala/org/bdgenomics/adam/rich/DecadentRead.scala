@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichADAMRecord._
 import org.bdgenomics.adam.util.MdTag
@@ -31,14 +31,14 @@ object DecadentRead {
   type Residue = DecadentRead#Residue
 
   // Constructors
-  def apply(record: ADAMRecord): DecadentRead = DecadentRead(RichADAMRecord(record))
+  def apply(record: Read): DecadentRead = DecadentRead(RichADAMRecord(record))
 
   def apply(rich: RichADAMRecord): DecadentRead = {
     try {
       new DecadentRead(rich)
     } catch {
       case exc: Exception =>
-        val msg = "Error \"%s\" while constructing DecadentRead from ADAMRecord(%s)".format(exc.getMessage, rich.record)
+        val msg = "Error \"%s\" while constructing DecadentRead from Read(%s)".format(exc.getMessage, rich.record)
         throw new IllegalArgumentException(msg, exc)
     }
   }
@@ -49,10 +49,10 @@ object DecadentRead {
    *   2. To clog, to glut, or satisfy, as the appetite; to satiate.
    *   3. To fill up or choke up; to stop up.
    */
-  def cloy(rdd: RDD[ADAMRecord]): RDD[DecadentRead] = rdd.map(DecadentRead.apply)
+  def cloy(rdd: RDD[Read]): RDD[DecadentRead] = rdd.map(DecadentRead.apply)
 
   // The inevitable counterpart of the above.
-  implicit def decay(rdd: RDD[DecadentRead]): RDD[ADAMRecord] = rdd.map(_.record)
+  implicit def decay(rdd: RDD[DecadentRead]): RDD[Read] = rdd.map(_.record)
 }
 
 class DecadentRead(val record: RichADAMRecord) extends Logging {

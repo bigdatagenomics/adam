@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.FlatGenotype
 
-object ADAMFlatGenotypeField extends FieldEnumeration(ADAMFlatGenotype.SCHEMA$) {
+object ADAMFlatGenotypeField extends FieldEnumeration(FlatGenotype.SCHEMA$) {
 
   val referenceName, referenceAllele, alleles, genotypeLikelihoods, alleleDepths, readDepth, genotypeQuality, sampleId, position = SchemaValue
 }

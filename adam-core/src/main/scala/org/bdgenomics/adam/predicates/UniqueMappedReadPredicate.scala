@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.predicates
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 
-class UniqueMappedReadPredicate extends ADAMPredicate[ADAMRecord] {
+class UniqueMappedReadPredicate extends ADAMPredicate[Read] {
 
   override val recordCondition = ADAMRecordConditions.isMapped && ADAMRecordConditions.isUnique &&
     ADAMRecordConditions.isPrimaryAlignment && ADAMRecordConditions.passedVendorQualityChecks

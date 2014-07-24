@@ -21,7 +21,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.kohsuke.args4j.{ Option, Argument }
 import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.projections.{ Projection, ADAMRecordField }
 import org.apache.spark.rdd.RDD
 import ADAMRecordField._
@@ -61,7 +61,7 @@ class PrintTags(protected val args: PrintTagsArgs) extends ADAMSparkCommand[Prin
     val toCount = if (args.count != null) args.count.split(",").toSet else Set()
 
     val proj = Projection(attributes, primaryAlignment, readMapped, readPaired, failedVendorQualityChecks)
-    val rdd: RDD[ADAMRecord] = sc.adamLoad(args.inputPath, projection = Some(proj))
+    val rdd: RDD[Read] = sc.adamLoad(args.inputPath, projection = Some(proj))
     val filtered = rdd.filter(rec => !rec.getFailedVendorQualityChecks)
 
     if (args.list != null) {

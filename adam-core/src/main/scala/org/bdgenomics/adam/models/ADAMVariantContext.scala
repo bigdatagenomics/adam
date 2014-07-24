@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ ADAMGenotype, ADAMDatabaseVariantAnnotation, ADAMVariant }
+import org.bdgenomics.formats.avro.{ Genotype, DatabaseVariantAnnotation, Variant }
 import org.bdgenomics.adam.rich.RichADAMVariant
 import org.bdgenomics.adam.rich.RichADAMVariant._
 
@@ -35,30 +35,30 @@ object ADAMVariantContext {
    *           optional domain annotation at site))
    * @return ADAMVariantContext corresponding to the data above.
    */
-  def apply(kv: (ReferencePosition, ADAMVariant, Iterable[ADAMGenotype], Option[ADAMDatabaseVariantAnnotation])): ADAMVariantContext = {
+  def apply(kv: (ReferencePosition, Variant, Iterable[Genotype], Option[DatabaseVariantAnnotation])): ADAMVariantContext = {
     new ADAMVariantContext(kv._1, kv._2, kv._3, kv._4)
   }
 
   /**
-   * Constructs an ADAMVariantContext from an ADAMVariant
+   * Constructs an ADAMVariantContext from an Variant
    *
-   * @param v ADAMVariant which is used to construct the ReferencePosition
-   * @return ADAMVariantContext corresponding to the ADAMVariant
+   * @param v Variant which is used to construct the ReferencePosition
+   * @return ADAMVariantContext corresponding to the Variant
    */
-  def apply(v: ADAMVariant): ADAMVariantContext = {
+  def apply(v: Variant): ADAMVariantContext = {
     apply((ReferencePosition(v), v, Seq(), None))
   }
 
   /**
-   * Constructs an ADAMVariantContext from an ADAMVariant and Seq[ADAMGenotype]
-   *  and ADAMDatabaseVariantAnnotation
+   * Constructs an ADAMVariantContext from an Variant and Seq[Genotype]
+   *  and DatabaseVariantAnnotation
    *
-   * @param v ADAMVariant which is used to construct the ReferencePosition
-   * @param genotypes Seq[ADAMGenotype]
-   * @param annotation Option[ADAMDatabaseVariantAnnotation]
-   * @return ADAMVariantContext corresponding to the ADAMVariant
+   * @param v Variant which is used to construct the ReferencePosition
+   * @param genotypes Seq[Genotype]
+   * @param annotation Option[DatabaseVariantAnnotation]
+   * @return ADAMVariantContext corresponding to the Variant
    */
-  def apply(v: ADAMVariant, genotypes: Iterable[ADAMGenotype], annotation: Option[ADAMDatabaseVariantAnnotation] = None): ADAMVariantContext = {
+  def apply(v: Variant, genotypes: Iterable[Genotype], annotation: Option[DatabaseVariantAnnotation] = None): ADAMVariantContext = {
     apply((ReferencePosition(v), v, genotypes, annotation))
   }
 
@@ -70,7 +70,7 @@ object ADAMVariantContext {
    * @param genotypes List of genotypes to build variant context from.
    * @return A variant context corresponding to the variants and genotypes at this site.
    */
-  def buildFromGenotypes(genotypes: Seq[ADAMGenotype]): ADAMVariantContext = {
+  def buildFromGenotypes(genotypes: Seq[Genotype]): ADAMVariantContext = {
     val position = ReferencePosition(genotypes.head)
     assert(genotypes.map(ReferencePosition(_)).forall(_ == position),
       "Genotypes do not all have the same position.")
@@ -84,9 +84,9 @@ object ADAMVariantContext {
 class ADAMVariantContext(
     val position: ReferencePosition,
     val variant: RichADAMVariant,
-    val genotypes: Iterable[ADAMGenotype],
-    val databases: Option[ADAMDatabaseVariantAnnotation] = None) {
-  def this(variant: RichADAMVariant, genotypes: Iterable[ADAMGenotype], database: Option[ADAMDatabaseVariantAnnotation] = None) = {
+    val genotypes: Iterable[Genotype],
+    val databases: Option[DatabaseVariantAnnotation] = None) {
+  def this(variant: RichADAMVariant, genotypes: Iterable[Genotype], database: Option[DatabaseVariantAnnotation] = None) = {
     this(ReferencePosition(variant), variant, genotypes, database)
   }
 }

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.serialization.AvroSerializer
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
@@ -30,14 +30,14 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
  *
  * This is useful as this will usually map a single read in any of the sequences.
  */
-case class ReadBucket(unpairedPrimaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      pairedFirstPrimaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      pairedSecondPrimaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      unpairedSecondaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      pairedFirstSecondaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      pairedSecondSecondaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      unmappedReads: Iterable[ADAMRecord] = Seq.empty) {
-  def allReads(): Iterable[ADAMRecord] =
+case class ReadBucket(unpairedPrimaryMappedReads: Iterable[Read] = Seq.empty,
+                      pairedFirstPrimaryMappedReads: Iterable[Read] = Seq.empty,
+                      pairedSecondPrimaryMappedReads: Iterable[Read] = Seq.empty,
+                      unpairedSecondaryMappedReads: Iterable[Read] = Seq.empty,
+                      pairedFirstSecondaryMappedReads: Iterable[Read] = Seq.empty,
+                      pairedSecondSecondaryMappedReads: Iterable[Read] = Seq.empty,
+                      unmappedReads: Iterable[Read] = Seq.empty) {
+  def allReads(): Iterable[Read] =
     unpairedPrimaryMappedReads ++
       pairedFirstPrimaryMappedReads ++
       pairedSecondPrimaryMappedReads ++
@@ -48,19 +48,19 @@ case class ReadBucket(unpairedPrimaryMappedReads: Iterable[ADAMRecord] = Seq.emp
 }
 
 class ReadBucketSerializer extends Serializer[ReadBucket] {
-  val recordSerializer = new AvroSerializer[ADAMRecord]()
+  val recordSerializer = new AvroSerializer[Read]()
 
-  def writeArray(kryo: Kryo, output: Output, reads: Iterable[ADAMRecord]): Unit = {
+  def writeArray(kryo: Kryo, output: Output, reads: Iterable[Read]): Unit = {
     output.writeInt(reads.size, true)
     for (read <- reads) {
       recordSerializer.write(kryo, output, read)
     }
   }
 
-  def readArray(kryo: Kryo, input: Input): Seq[ADAMRecord] = {
+  def readArray(kryo: Kryo, input: Input): Seq[Read] = {
     val numReads = input.readInt(true)
-    (0 until numReads).foldLeft(List[ADAMRecord]()) {
-      (a, b) => recordSerializer.read(kryo, input, classOf[ADAMRecord]) :: a
+    (0 until numReads).foldLeft(List[Read]()) {
+      (a, b) => recordSerializer.read(kryo, input, classOf[Read]) :: a
     }
   }
 

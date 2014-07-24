@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.comparisons
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ Contig, Read }
 import org.bdgenomics.adam.util.{ Histogram, SparkFunSuite }
 import org.bdgenomics.adam.projections.ADAMRecordField
 import org.bdgenomics.adam.metrics.aggregators.HistogramAggregator
@@ -27,11 +27,11 @@ import org.bdgenomics.adam.metrics.MappedPosition
 class ComparisonTraversalEngineSuite extends SparkFunSuite {
 
   sparkTest("generate works on a simple RDD") {
-    val c0 = ADAMContig.newBuilder
+    val c0 = Contig.newBuilder
       .setContigName("chr0")
       .build
 
-    val a0 = ADAMRecord.newBuilder()
+    val a0 = Read.newBuilder()
       .setContig(c0)
       .setRecordGroupName("group0")
       .setReadName("read0")
@@ -40,15 +40,15 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
       .setReadPaired(false)
       .setReadMapped(true)
       .build()
-    val a1 = ADAMRecord.newBuilder(a0)
+    val a1 = Read.newBuilder(a0)
       .setReadName("read1")
       .setStart(200)
       .build()
 
-    val b0 = ADAMRecord.newBuilder(a0)
+    val b0 = Read.newBuilder(a0)
       .setStart(105)
       .build()
-    val b1 = ADAMRecord.newBuilder(a1).build()
+    val b1 = Read.newBuilder(a1).build()
 
     val a = sc.parallelize(Seq(a0, a1))
     val b = sc.parallelize(Seq(b0, b1))
@@ -72,11 +72,11 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
   }
 
   sparkTest("combine works on a simple RDD") {
-    val c0 = ADAMContig.newBuilder
+    val c0 = Contig.newBuilder
       .setContigName("chr0")
       .build
 
-    val a0 = ADAMRecord.newBuilder()
+    val a0 = Read.newBuilder()
       .setRecordGroupName("group0")
       .setReadName("read0")
       .setContig(c0)
@@ -85,18 +85,18 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
       .setReadPaired(false)
       .setReadMapped(true)
       .build()
-    val a1 = ADAMRecord.newBuilder(a0)
+    val a1 = Read.newBuilder(a0)
       .setReadName("read1")
       .setStart(200)
       .build()
-    val a2 = ADAMRecord.newBuilder(a0)
+    val a2 = Read.newBuilder(a0)
       .setReadName("read2")
       .setStart(300)
       .build()
 
-    val b0 = ADAMRecord.newBuilder(a0).build()
-    val b1 = ADAMRecord.newBuilder(a1).build()
-    val b2 = ADAMRecord.newBuilder(a2).setStart(305).build()
+    val b0 = Read.newBuilder(a0).build()
+    val b1 = Read.newBuilder(a1).build()
+    val b2 = Read.newBuilder(a2).setStart(305).build()
 
     val a = sc.parallelize(Seq(a0, a1, a2))
     val b = sc.parallelize(Seq(b0, b1, b2))

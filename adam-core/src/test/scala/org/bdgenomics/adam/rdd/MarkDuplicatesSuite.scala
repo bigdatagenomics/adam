@@ -18,14 +18,14 @@
 package org.bdgenomics.adam.rdd
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ Contig, Read }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import java.util.UUID
 
 class MarkDuplicatesSuite extends SparkFunSuite {
 
   def createUnmappedRead() = {
-    ADAMRecord.newBuilder().setReadMapped(false).build()
+    Read.newBuilder().setReadMapped(false).build()
   }
 
   def createMappedRead(referenceName: String, position: Long,
@@ -36,11 +36,11 @@ class MarkDuplicatesSuite extends SparkFunSuite {
     val qual = (for (i <- 0 until 100) yield (avgPhredScore + 33).toChar).toString()
     val cigar = if (numClippedBases > 0) "%dS%dM".format(numClippedBases, 100 - numClippedBases) else "100M"
 
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("reference%s".format(referenceName))
       .build
 
-    ADAMRecord.newBuilder()
+    Read.newBuilder()
       .setContig(contig)
       .setStart(position)
       .setQual(qual)
@@ -49,7 +49,6 @@ class MarkDuplicatesSuite extends SparkFunSuite {
       .setPrimaryAlignment(isPrimaryAlignment)
       .setReadName(readName)
       .setRecordGroupName("machine foo")
-      .setRecordGroupId(0)
       .setRecordGroupLibrary("library bar")
       .setDuplicateRead(false)
       .setReadNegativeStrand(isNegativeStrand)
@@ -59,12 +58,12 @@ class MarkDuplicatesSuite extends SparkFunSuite {
   def createPair(firstReferenceName: String, firstPosition: Long,
                  secondReferenceName: String, secondPosition: Long,
                  readName: String = UUID.randomUUID().toString,
-                 avgPhredScore: Int = 20): Seq[ADAMRecord] = {
-    val firstContig = ADAMContig.newBuilder
+                 avgPhredScore: Int = 20): Seq[Read] = {
+    val firstContig = Contig.newBuilder
       .setContigName(firstReferenceName)
       .build
 
-    val secondContig = ADAMContig.newBuilder
+    val secondContig = Contig.newBuilder
       .setContigName(secondReferenceName)
       .build
 
@@ -85,7 +84,7 @@ class MarkDuplicatesSuite extends SparkFunSuite {
     Seq(firstOfPair, secondOfPair)
   }
 
-  private def markDuplicates(reads: ADAMRecord*) = {
+  private def markDuplicates(reads: Read*) = {
     sc.parallelize(reads).adamMarkDuplicates().collect()
   }
 
@@ -175,7 +174,7 @@ class MarkDuplicatesSuite extends SparkFunSuite {
   test("quality scores") {
     // The ascii value 53 is equal to a phred score of 20
     val qual = 53.toChar.toString * 100
-    val record = ADAMRecord.newBuilder().setQual(qual).build()
+    val record = Read.newBuilder().setQual(qual).build()
     assert(MarkDuplicates.score(record) == 2000)
   }
 

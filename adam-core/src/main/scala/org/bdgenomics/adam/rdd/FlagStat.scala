@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.util.Util._
 
 object FlagStatMetrics {
@@ -29,17 +29,17 @@ object FlagStatMetrics {
 object DuplicateMetrics {
   val empty = new DuplicateMetrics(0, 0, 0, 0)
 
-  def apply(record: ADAMRecord): (DuplicateMetrics, DuplicateMetrics) = {
+  def apply(record: Read): (DuplicateMetrics, DuplicateMetrics) = {
     import FlagStat.b2i
 
-    def isPrimary(record: ADAMRecord): Boolean = {
+    def isPrimary(record: Read): Boolean = {
       record.getDuplicateRead && record.getPrimaryAlignment
     }
-    def isSecondary(record: ADAMRecord): Boolean = {
+    def isSecondary(record: Read): Boolean = {
       record.getDuplicateRead && !record.getPrimaryAlignment
     }
 
-    def duplicateMetrics(f: (ADAMRecord) => Boolean) = {
+    def duplicateMetrics(f: (Read) => Boolean) = {
       new DuplicateMetrics(b2i(f(record)),
         b2i(f(record) && record.getReadMapped && record.getMateMapped),
         b2i(f(record) && record.getReadMapped && !record.getMateMapped),
@@ -85,7 +85,7 @@ object FlagStat {
 
   def b2i(boolean: Boolean) = if (boolean) 1 else 0
 
-  def apply(rdd: RDD[ADAMRecord]) = {
+  def apply(rdd: RDD[Read]) = {
     rdd.map {
       p =>
         val mateMappedToDiffChromosome = p.getReadPaired && p.getReadMapped && p.getMateMapped && !isSameContig(p.getContig, p.getMateContig)

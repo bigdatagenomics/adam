@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.correction
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.Read
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils
 
@@ -40,7 +40,7 @@ private[rdd] object ErrorCorrection extends Logging {
    * @param qmerLength The value of _q_ to use for cutting _q_-mers.
    * @return Returns an RDD containing q-mer/weight pairs.
    */
-  def countQmers(rdd: RDD[ADAMRecord],
+  def countQmers(rdd: RDD[Read],
                  qmerLength: Int): RDD[(String, Double)] = {
     // generate qmer counts
     rdd.flatMap(ec.readToQmers(_, qmerLength))
@@ -57,7 +57,7 @@ private[correction] class ErrorCorrection extends Serializable with Logging {
    * @param qmerLength The length of the qmer to cut.
    * @return Returns an iterator containing q-mer/weight mappings.
    */
-  def readToQmers(read: ADAMRecord,
+  def readToQmers(read: Read,
                   qmerLength: Int = 20): Iterator[(String, Double)] = {
     // get read bases and quality scores
     val bases = read.getSequence.toSeq

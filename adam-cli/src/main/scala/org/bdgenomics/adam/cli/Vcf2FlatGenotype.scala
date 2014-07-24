@@ -25,11 +25,11 @@ import org.apache.hadoop.fs.Path
 import scala.Some
 import java.util.logging.Level
 import org.bdgenomics.adam.util.ParquetLogger
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.FlatGenotype
 import org.bdgenomics.adam.converters.{ VCFLine, VCFLineConverter, VCFLineParser }
 
 /**
- * Vcf2FlatGenotype converts .vcf files into ADAMFlatGenotype-containing Parquet files.
+ * Vcf2FlatGenotype converts .vcf files into FlatGenotype-containing Parquet files.
  *
  * For large VCF files (e.g. the 1K genomes vcfs) the converter has the option (through the
  * -sample_block option) of breaking up the output into separate parquet files, each containing
@@ -82,17 +82,17 @@ class Vcf2FlatGenotype(args: Vcf2FlatGenotypeArgs) extends ADAMCommand {
       case (sample, i) => (i / args.sampleBlock, sample)
     }
 
-    def createWriter(index: Int): AvroParquetWriter[ADAMFlatGenotype] =
-      new AvroParquetWriter[ADAMFlatGenotype](
+    def createWriter(index: Int): AvroParquetWriter[FlatGenotype] =
+      new AvroParquetWriter[FlatGenotype](
         new Path(args.outputPath + "/part_%d".format(index)),
-        ADAMFlatGenotype.SCHEMA$,
+        FlatGenotype.SCHEMA$,
         args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
 
     // create a new writer for each file to be output
     val writers = indexedSamples.map(_._1).distinct.map(i => createWriter(i))
 
     // assign each sample to a writer
-    val sampleWriters: Map[String, AvroParquetWriter[ADAMFlatGenotype]] =
+    val sampleWriters: Map[String, AvroParquetWriter[FlatGenotype]] =
       indexedSamples.map {
         case (i, sample) => (sample, writers(i))
       }.toMap
@@ -107,8 +107,8 @@ class Vcf2FlatGenotype(args: Vcf2FlatGenotypeArgs) extends ADAMCommand {
           lineCount = 0
 
           VCFLineConverter.convert(vcfLine).foreach {
-            case genotype: ADAMFlatGenotype => {
-              // here is where we assign each ADAMFlatGenotype to an output file
+            case genotype: FlatGenotype => {
+              // here is where we assign each FlatGenotype to an output file
               sampleWriters(genotype.getSampleId.toString).write(genotype)
               lineCount += 1
             }

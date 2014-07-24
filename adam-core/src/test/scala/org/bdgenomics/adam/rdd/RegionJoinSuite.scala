@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ Contig, Read }
 import org.bdgenomics.adam.models.{ SequenceRecord, SequenceDictionary, ReferenceRegion, ReferenceMapping }
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
 import org.apache.spark.SparkContext._
@@ -91,13 +91,13 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   test("ADAMRecords return proper references") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr1")
       .setContigLength(5L)
       .setReferenceURL("test://chrom1")
       .build
 
-    val built = ADAMRecord.newBuilder()
+    val built = Read.newBuilder()
       .setContig(contig)
       .setStart(1)
       .setReadMapped(true)
@@ -105,8 +105,8 @@ class RegionJoinSuite extends SparkFunSuite {
       .build()
 
     val record1 = built
-    val record2 = ADAMRecord.newBuilder(built).setStart(3).build()
-    val baseRecord = ADAMRecord.newBuilder(built).setCigar("4M").build()
+    val record2 = Read.newBuilder(built).setStart(3).build()
+    val baseRecord = Read.newBuilder(built).setCigar("4M").build()
 
     val baseMapping = new NonoverlappingRegions(seqDict, Seq(ADAMRecordReferenceMapping.getReferenceRegion(baseRecord)))
     val regions1 = baseMapping.findOverlappingRegions(ADAMRecordReferenceMapping.getReferenceRegion(record1))
@@ -117,13 +117,13 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   sparkTest("Ensure same reference regions get passed together") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr1")
       .setContigLength(5L)
       .setReferenceURL("test://chrom1")
       .build
 
-    val builder = ADAMRecord.newBuilder()
+    val builder = Read.newBuilder()
       .setContig(contig)
       .setStart(1)
       .setReadMapped(true)
@@ -138,7 +138,7 @@ class RegionJoinSuite extends SparkFunSuite {
     assert(RegionJoinSuite.getReferenceRegion(record1) ===
       RegionJoinSuite.getReferenceRegion(record2))
 
-    assert(RegionJoin.partitionAndJoin[ADAMRecord, ADAMRecord](
+    assert(RegionJoin.partitionAndJoin[Read, Read](
       sc,
       seqDict,
       rdd1,
@@ -146,7 +146,7 @@ class RegionJoinSuite extends SparkFunSuite {
         RegionJoinSuite.merge,
         RegionJoinSuite.and))
 
-    assert(RegionJoin.partitionAndJoin[ADAMRecord, ADAMRecord](
+    assert(RegionJoin.partitionAndJoin[Read, Read](
       sc,
       seqDict,
       rdd1,
@@ -157,13 +157,13 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   sparkTest("Overlapping reference regions") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr1")
       .setContigLength(5L)
       .setReferenceURL("test://chrom1")
       .build
 
-    val built = ADAMRecord.newBuilder()
+    val built = Read.newBuilder()
       .setContig(contig)
       .setStart(1)
       .setReadMapped(true)
@@ -171,13 +171,13 @@ class RegionJoinSuite extends SparkFunSuite {
       .build()
 
     val record1 = built
-    val record2 = ADAMRecord.newBuilder(built).setStart(3).build()
-    val baseRecord = ADAMRecord.newBuilder(built).setCigar("4M").build()
+    val record2 = Read.newBuilder(built).setStart(3).build()
+    val baseRecord = Read.newBuilder(built).setCigar("4M").build()
 
     val baseRdd = sc.parallelize(Seq(baseRecord))
     val recordsRdd = sc.parallelize(Seq(record1, record2))
 
-    assert(RegionJoin.partitionAndJoin[ADAMRecord, ADAMRecord](
+    assert(RegionJoin.partitionAndJoin[Read, Read](
       sc,
       seqDict,
       baseRdd,
@@ -186,7 +186,7 @@ class RegionJoinSuite extends SparkFunSuite {
         RegionJoinSuite.merge,
         RegionJoinSuite.and))
 
-    assert(RegionJoin.partitionAndJoin[ADAMRecord, ADAMRecord](
+    assert(RegionJoin.partitionAndJoin[Read, Read](
       sc,
       seqDict,
       baseRdd,
@@ -194,25 +194,25 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   sparkTest("Multiple reference regions do not throw exception") {
-    val contig1 = ADAMContig.newBuilder
+    val contig1 = Contig.newBuilder
       .setContigName("chr1")
       .setContigLength(5L)
       .setReferenceURL("test://chrom1")
       .build
 
-    val contig2 = ADAMContig.newBuilder
+    val contig2 = Contig.newBuilder
       .setContigName("chr2")
       .setContigLength(5L)
       .setReferenceURL("test://chrom2")
       .build
 
-    val builtRef1 = ADAMRecord.newBuilder()
+    val builtRef1 = Read.newBuilder()
       .setContig(contig1)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")
       .build()
-    val builtRef2 = ADAMRecord.newBuilder()
+    val builtRef2 = Read.newBuilder()
       .setContig(contig2)
       .setStart(1)
       .setReadMapped(true)
@@ -220,15 +220,15 @@ class RegionJoinSuite extends SparkFunSuite {
       .build()
 
     val record1 = builtRef1
-    val record2 = ADAMRecord.newBuilder(builtRef1).setStart(3).build()
+    val record2 = Read.newBuilder(builtRef1).setStart(3).build()
     val record3 = builtRef2
-    val baseRecord1 = ADAMRecord.newBuilder(builtRef1).setCigar("4M").build()
-    val baseRecord2 = ADAMRecord.newBuilder(builtRef2).setCigar("4M").build()
+    val baseRecord1 = Read.newBuilder(builtRef1).setCigar("4M").build()
+    val baseRecord2 = Read.newBuilder(builtRef2).setCigar("4M").build()
 
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3))
 
-    assert(RegionJoin.partitionAndJoin[ADAMRecord, ADAMRecord](
+    assert(RegionJoin.partitionAndJoin[Read, Read](
       sc,
       seqDict,
       baseRdd,
@@ -237,7 +237,7 @@ class RegionJoinSuite extends SparkFunSuite {
         RegionJoinSuite.merge,
         RegionJoinSuite.and))
 
-    assert(RegionJoin.partitionAndJoin[ADAMRecord, ADAMRecord](
+    assert(RegionJoin.partitionAndJoin[Read, Read](
       sc,
       seqDict,
       baseRdd,
@@ -245,25 +245,25 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   sparkTest("regionJoin contains the same results as cartesianRegionJoin") {
-    val contig1 = ADAMContig.newBuilder
+    val contig1 = Contig.newBuilder
       .setContigName("chr1")
       .setContigLength(5L)
       .setReferenceURL("test://chrom1")
       .build
 
-    val contig2 = ADAMContig.newBuilder
+    val contig2 = Contig.newBuilder
       .setContigName("chr2")
       .setContigLength(5L)
       .setReferenceURL("test://chrom2")
       .build
 
-    val builtRef1 = ADAMRecord.newBuilder()
+    val builtRef1 = Read.newBuilder()
       .setContig(contig1)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")
       .build()
-    val builtRef2 = ADAMRecord.newBuilder()
+    val builtRef2 = Read.newBuilder()
       .setContig(contig2)
       .setStart(1)
       .setReadMapped(true)
@@ -271,10 +271,10 @@ class RegionJoinSuite extends SparkFunSuite {
       .build()
 
     val record1 = builtRef1
-    val record2 = ADAMRecord.newBuilder(builtRef1).setStart(3).build()
+    val record2 = Read.newBuilder(builtRef1).setStart(3).build()
     val record3 = builtRef2
-    val baseRecord1 = ADAMRecord.newBuilder(builtRef1).setCigar("4M").build()
-    val baseRecord2 = ADAMRecord.newBuilder(builtRef2).setCigar("4M").build()
+    val baseRecord1 = Read.newBuilder(builtRef1).setCigar("4M").build()
+    val baseRecord2 = Read.newBuilder(builtRef2).setCigar("4M").build()
 
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3))
@@ -289,7 +289,7 @@ class RegionJoinSuite extends SparkFunSuite {
           baseRdd,
           recordsRdd))
       .filter({
-        case ((_: ADAMRecord, (cartesian: ADAMRecord, region: Option[ADAMRecord]))) =>
+        case ((_: Read, (cartesian: Read, region: Option[Read]))) =>
           region match {
             case None         => false
             case Some(record) => cartesian == record
@@ -303,7 +303,7 @@ object RegionJoinSuite {
   def getReferenceRegion[T](record: T)(implicit mapping: ReferenceMapping[T]): ReferenceRegion =
     mapping.getReferenceRegion(record)
 
-  def merge(prev: Boolean, next: (ADAMRecord, ADAMRecord)): Boolean =
+  def merge(prev: Boolean, next: (Read, Read)): Boolean =
     prev && getReferenceRegion(next._1).overlaps(getReferenceRegion(next._2))
 
   def count[T](prev: Int, next: (T, T)): Int =

@@ -23,23 +23,23 @@ import org.bdgenomics.adam.models.ADAMVariantContext
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import com.google.common.io.Files
 import java.io.File
-import org.bdgenomics.formats.avro.{ ADAMGenotypeAllele, ADAMGenotype, ADAMVariant, ADAMContig }
+import org.bdgenomics.formats.avro.{ GenotypeAllele, Genotype, Variant, Contig }
 import scala.collection.JavaConversions._
 
 class ADAMVariationContextSuite extends SparkFunSuite {
   val tempDir = Files.createTempDir()
 
   def variants: RDD[ADAMVariantContext] = {
-    val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("chr11").build)
-      .setPosition(17409572)
+    val v0 = Variant.newBuilder
+      .setContig(Contig.newBuilder.setContigName("chr11").build)
+      .setStart(17409572)
       .setReferenceAllele("T")
-      .setVariantAllele("C")
+      .setAlternateAllele("C")
       .build
 
-    val g0 = ADAMGenotype.newBuilder().setVariant(v0)
+    val g0 = Genotype.newBuilder().setVariant(v0)
       .setSampleId("NA12878")
-      .setAlleles(List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Alt))
+      .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
       .build
 
     sc.parallelize(List(
