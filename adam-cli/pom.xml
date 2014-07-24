@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.bdgenomics.adam</groupId>
         <artifactId>adam-parent</artifactId>
-        <version>0.12.1-SNAPSHOT</version>
+        <version>0.12.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

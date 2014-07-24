@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
         <version>7</version>
-        <relativePath/>
+        <relativePath />
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.bdgenomics.adam</groupId>
     <artifactId>adam-parent</artifactId>
-    <version>0.12.1-SNAPSHOT</version>
+    <version>0.12.1</version>
     <packaging>pom</packaging>
     <name>ADAM</name>
     <description>A fast, scalable genome analysis system</description>
@@ -44,7 +43,7 @@
         <connection>scm:git:git@github.com:bigdatagenomics/adam.git</connection>
         <developerConnection>scm:git:git@github.com:bigdatagenomics/adam.git</developerConnection>
         <url>scm:git:git@github.com:bigdatagenomics/adam.git</url>
-        <tag>master</tag>
+        <tag>adam-parent-0.12.1</tag>
     </scm>
     <developers>
         <developer>
@@ -290,7 +289,7 @@
             <dependency>
                 <groupId>org.bdgenomics.bdg-formats</groupId>
                 <artifactId>bdg-formats</artifactId>
-                <version>0.1.1-SNAPSHOT</version>
+                <version>0.1.1</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
