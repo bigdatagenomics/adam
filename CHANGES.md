@@ -1,169 +1,204 @@
 # ADAM #
-* ISSUE [264](https://github.com/bigdatagenomics/adam/pull/264): Parquet-related Utility Classes
-* ISSUE [259](https://github.com/bigdatagenomics/adam/pull/259): ADAMFlatGenotype is a smaller, flat version of a genotype schema
-* ISSUE [266](https://github.com/bigdatagenomics/adam/pull/266): Removed extra command 'BuildInformation'
-* ISSUE [263](https://github.com/bigdatagenomics/adam/pull/263): Added AdamContext.referenceLengthFromCigar
-* ISSUE [260](https://github.com/bigdatagenomics/adam/pull/260): Modifying conversion code to resolve #112.
-* ISSUE [258](https://github.com/bigdatagenomics/adam/pull/258): Adding an 'args' parameter to the plugin framework.
-* ISSUE [262](https://github.com/bigdatagenomics/adam/pull/262): Adding reference assembly name to ADAMContig.
-* ISSUE [256](https://github.com/bigdatagenomics/adam/pull/256): Upgrading to Spark 1.0
-* ISSUE [257](https://github.com/bigdatagenomics/adam/pull/257): Adds toString method for sequence dictionary.
-* ISSUE [255](https://github.com/bigdatagenomics/adam/pull/255): Add equals, canEqual, and hashCode methods to MdTag class
+
+### Version 0.12.1 ###
+* ISSUE [308](https://github.com/bigdatagenomics/adam/pull/308): 
+* ISSUE [306](https://github.com/bigdatagenomics/adam/pull/306): 
+* ISSUE [320](https://github.com/bigdatagenomics/adam/pull/320): 
+* ISSUE [314](https://github.com/bigdatagenomics/adam/pull/314): 
+* ISSUE [319](https://github.com/bigdatagenomics/adam/pull/319): 
+* ISSUE [315](https://github.com/bigdatagenomics/adam/pull/315): 
+* ISSUE [312](https://github.com/bigdatagenomics/adam/pull/312): 
+* ISSUE [313](https://github.com/bigdatagenomics/adam/pull/313): 
+* ISSUE [267](https://github.com/bigdatagenomics/adam/pull/267): 
+* ISSUE [301](https://github.com/bigdatagenomics/adam/pull/301): 
+* ISSUE [293](https://github.com/bigdatagenomics/adam/pull/293): 
+* ISSUE [295](https://github.com/bigdatagenomics/adam/pull/295): 
+* ISSUE [292](https://github.com/bigdatagenomics/adam/pull/292): 
+* ISSUE [289](https://github.com/bigdatagenomics/adam/pull/289): 
+* ISSUE [288](https://github.com/bigdatagenomics/adam/pull/288): 
+* ISSUE [286](https://github.com/bigdatagenomics/adam/pull/286): 
+* ISSUE [287](https://github.com/bigdatagenomics/adam/pull/287): 
+* ISSUE [285](https://github.com/bigdatagenomics/adam/pull/285): 
+* ISSUE [284](https://github.com/bigdatagenomics/adam/pull/284): 
+* ISSUE [280](https://github.com/bigdatagenomics/adam/pull/280): 
+* ISSUE [283](https://github.com/bigdatagenomics/adam/pull/283): 
+* ISSUE [282](https://github.com/bigdatagenomics/adam/pull/282): 
+* ISSUE [277](https://github.com/bigdatagenomics/adam/pull/277): 
+* ISSUE [274](https://github.com/bigdatagenomics/adam/pull/274): 
+* ISSUE [279](https://github.com/bigdatagenomics/adam/pull/279): 
+* ISSUE [278](https://github.com/bigdatagenomics/adam/pull/278): 
+* ISSUE [268](https://github.com/bigdatagenomics/adam/pull/268): 
+* ISSUE [273](https://github.com/bigdatagenomics/adam/pull/273): 
+* ISSUE [272](https://github.com/bigdatagenomics/adam/pull/272): 
+* ISSUE [269](https://github.com/bigdatagenomics/adam/pull/269): 
+* ISSUE [271](https://github.com/bigdatagenomics/adam/pull/271): 
+
+### Version 0.12.0 ###
+* ISSUE [264](https://github.com/bigdatagenomics/adam/pull/264): 
+* ISSUE [259](https://github.com/bigdatagenomics/adam/pull/259): 
+* ISSUE [266](https://github.com/bigdatagenomics/adam/pull/266): 
+* ISSUE [263](https://github.com/bigdatagenomics/adam/pull/263): 
+* ISSUE [260](https://github.com/bigdatagenomics/adam/pull/260): 
+* ISSUE [258](https://github.com/bigdatagenomics/adam/pull/258): 
+* ISSUE [262](https://github.com/bigdatagenomics/adam/pull/262): 
+* ISSUE [256](https://github.com/bigdatagenomics/adam/pull/256): 
+* ISSUE [257](https://github.com/bigdatagenomics/adam/pull/257): 
+* ISSUE [255](https://github.com/bigdatagenomics/adam/pull/255): 
 
 ### Version 0.11.0 ###
-* ISSUE [254](https://github.com/bigdatagenomics/adam/pull/254): Cleanup import statements
-* ISSUE [250](https://github.com/bigdatagenomics/adam/pull/250): Adding ADAM to SAM conversion.
-* ISSUE [248](https://github.com/bigdatagenomics/adam/pull/248): Adding utilities for read trimming.
-* ISSUE [252](https://github.com/bigdatagenomics/adam/pull/252): Added a note about rebasing-off-master to CONTRIBUTING.md
-* ISSUE [249](https://github.com/bigdatagenomics/adam/pull/249): Cosmetic changes to FastaConverter and FastaConverterSuite.
-* ISSUE [251](https://github.com/bigdatagenomics/adam/pull/251): CHANGES.md is updated at release instead of per pull request
-* ISSUE [247](https://github.com/bigdatagenomics/adam/pull/247): For #244, Fragments were incorrect order and incomplete
-* ISSUE [246](https://github.com/bigdatagenomics/adam/pull/246): Making sample ID field in genotype nullable.
-* ISSUE [245](https://github.com/bigdatagenomics/adam/pull/245): Adding ADAMContig back to ADAMVariant.
-* ISSUE [243](https://github.com/bigdatagenomics/adam/pull/243): Rebase PR#238 onto master
+* ISSUE [254](https://github.com/bigdatagenomics/adam/pull/254): 
+* ISSUE [250](https://github.com/bigdatagenomics/adam/pull/250): 
+* ISSUE [248](https://github.com/bigdatagenomics/adam/pull/248): 
+* ISSUE [252](https://github.com/bigdatagenomics/adam/pull/252): 
+* ISSUE [249](https://github.com/bigdatagenomics/adam/pull/249): 
+* ISSUE [251](https://github.com/bigdatagenomics/adam/pull/251): 
+* ISSUE [247](https://github.com/bigdatagenomics/adam/pull/247): 
+* ISSUE [246](https://github.com/bigdatagenomics/adam/pull/246): 
+* ISSUE [245](https://github.com/bigdatagenomics/adam/pull/245): 
+* ISSUE [243](https://github.com/bigdatagenomics/adam/pull/243): 
 
 ### Version 0.10.0 ###
-* ISSUE [242](https://github.com/bigdatagenomics/adam/pull/242): Upgrade to Parquet 1.4.3
-* ISSUE [241](https://github.com/bigdatagenomics/adam/pull/241): Fixes to FASTA code to properly handle indices.
-* ISSUE [239](https://github.com/bigdatagenomics/adam/pull/239): Make ADAMVCFOutputFormat public
-* ISSUE [233](https://github.com/bigdatagenomics/adam/pull/233): Build up reference information during cigar processing
-* ISSUE [234](https://github.com/bigdatagenomics/adam/pull/234): Predicate to filter conversion
-* ISSUE [235](https://github.com/bigdatagenomics/adam/pull/235): Remove unused contiglength field
-* ISSUE [232](https://github.com/bigdatagenomics/adam/pull/232): Add `-pretty` and `-o` to the `print` command
-* ISSUE [230](https://github.com/bigdatagenomics/adam/pull/230): Remove duplicate mdtag field
-* ISSUE [231](https://github.com/bigdatagenomics/adam/pull/231): Helper scripts to run an ADAM Console.
-* ISSUE [226](https://github.com/bigdatagenomics/adam/pull/226): Fix ReferenceRegion from ADAMRecord
-* ISSUE [225](https://github.com/bigdatagenomics/adam/pull/225): Change Some to Option to check for unmapped reads
-* ISSUE [223](https://github.com/bigdatagenomics/adam/pull/223): Use SparkConf object to configure SparkContext
-* ISSUE [217](https://github.com/bigdatagenomics/adam/pull/217): Stop using reference IDs and use reference names instead
-* ISSUE [220](https://github.com/bigdatagenomics/adam/pull/220): Update SAM to ADAM conversion
-* ISSUE [213](https://github.com/bigdatagenomics/adam/pull/213): BQSR updates
+* ISSUE [242](https://github.com/bigdatagenomics/adam/pull/242): 
+* ISSUE [241](https://github.com/bigdatagenomics/adam/pull/241): 
+* ISSUE [239](https://github.com/bigdatagenomics/adam/pull/239): 
+* ISSUE [233](https://github.com/bigdatagenomics/adam/pull/233): 
+* ISSUE [234](https://github.com/bigdatagenomics/adam/pull/234): 
+* ISSUE [235](https://github.com/bigdatagenomics/adam/pull/235): 
+* ISSUE [232](https://github.com/bigdatagenomics/adam/pull/232): 
+* ISSUE [230](https://github.com/bigdatagenomics/adam/pull/230): 
+* ISSUE [231](https://github.com/bigdatagenomics/adam/pull/231): 
+* ISSUE [226](https://github.com/bigdatagenomics/adam/pull/226): 
+* ISSUE [225](https://github.com/bigdatagenomics/adam/pull/225): 
+* ISSUE [223](https://github.com/bigdatagenomics/adam/pull/223): 
+* ISSUE [217](https://github.com/bigdatagenomics/adam/pull/217): 
+* ISSUE [220](https://github.com/bigdatagenomics/adam/pull/220): 
+* ISSUE [213](https://github.com/bigdatagenomics/adam/pull/213): 
 
 ### Version 0.9.0 ###
-* ISSUE [214](https://github.com/bigdatagenomics/adam/pull/214): Upgrade to Spark 0.9.1
-* ISSUE [211](https://github.com/bigdatagenomics/adam/pull/211): FastaConverter Refactor
-* ISSUE [212](https://github.com/bigdatagenomics/adam/pull/212): Cleanup build warnings
-* ISSUE [210](https://github.com/bigdatagenomics/adam/pull/210): Remove Scalariform from process-sources phase
-* ISSUE [209](https://github.com/bigdatagenomics/adam/pull/209): Fix Scalariform issues and Maven warnings
-* ISSUE [207](https://github.com/bigdatagenomics/adam/pull/207): Change from deprecated manifest erasure to runtimeClass
-* ISSUE [206](https://github.com/bigdatagenomics/adam/pull/206): Add Scalariform settings to pom
-* ISSUE [204](https://github.com/bigdatagenomics/adam/pull/204): Update Avro code gen to not mark fields as deprecated.
+* ISSUE [214](https://github.com/bigdatagenomics/adam/pull/214): 
+* ISSUE [211](https://github.com/bigdatagenomics/adam/pull/211): 
+* ISSUE [212](https://github.com/bigdatagenomics/adam/pull/212): 
+* ISSUE [210](https://github.com/bigdatagenomics/adam/pull/210): 
+* ISSUE [209](https://github.com/bigdatagenomics/adam/pull/209): 
+* ISSUE [207](https://github.com/bigdatagenomics/adam/pull/207): 
+* ISSUE [206](https://github.com/bigdatagenomics/adam/pull/206): 
+* ISSUE [204](https://github.com/bigdatagenomics/adam/pull/204): 
 
 ### Version 0.8.0 ###
-* ISSUE [203](https://github.com/bigdatagenomics/adam/pull/203): Move package from edu.berkeley.cs.amplab to org.bdgenomics
-* ISSUE [199](https://github.com/bigdatagenomics/adam/pull/199): Updating pileup conversion code to convert sequences that use the X and = (EQ) CIGAR operators
-* ISSUE [191](https://github.com/bigdatagenomics/adam/pull/191): Add repartition parameter
-* ISSUE [183](https://github.com/bigdatagenomics/adam/pull/183): Fixing Job.getInstance call that breaks hadoop 1 compatibility.
-* ISSUE [192](https://github.com/bigdatagenomics/adam/pull/192): Add docs and scripts for creating a release
-* ISSUE [193](https://github.com/bigdatagenomics/adam/pull/193): Issue #137, clarify role of CHANGES.{md,txt}
+* ISSUE [203](https://github.com/bigdatagenomics/adam/pull/203): 
+* ISSUE [199](https://github.com/bigdatagenomics/adam/pull/199): 
+* ISSUE [191](https://github.com/bigdatagenomics/adam/pull/191): 
+* ISSUE [183](https://github.com/bigdatagenomics/adam/pull/183): 
+* ISSUE [192](https://github.com/bigdatagenomics/adam/pull/192): 
+* ISSUE [193](https://github.com/bigdatagenomics/adam/pull/193): 
 
 ### Version 0.7.2 ###
-* ISSUE [187](https://github.com/bigdatagenomics/adam/pull/187): Add summarize_genotypes command
-* ISSUE [178](https://github.com/bigdatagenomics/adam/pull/178): Upgraded to Hadoop-BAM 0.6.2/Picard 1.107.
-* ISSUE [173](https://github.com/bigdatagenomics/adam/pull/173): Parse annotations out of vcf files
-* ISSUE [162](https://github.com/bigdatagenomics/adam/pull/162): Refactored SequenceDictionary
-* ISSUE [180](https://github.com/bigdatagenomics/adam/pull/180): BQSR using vcf loader
-* ISSUE [179](https://github.com/bigdatagenomics/adam/pull/179): Update maven-surefire-plugin dependency version to 2.17, also create an ...
-* ISSUE [175](https://github.com/bigdatagenomics/adam/pull/175): VariantContext converter refactor
-* ISSUE [169](https://github.com/bigdatagenomics/adam/pull/169): Cleaning up mpileup command
-* ISSUE [170](https://github.com/bigdatagenomics/adam/pull/170): Adding variant field enumerations
+* ISSUE [187](https://github.com/bigdatagenomics/adam/pull/187): 
+* ISSUE [178](https://github.com/bigdatagenomics/adam/pull/178): 
+* ISSUE [173](https://github.com/bigdatagenomics/adam/pull/173): 
+* ISSUE [162](https://github.com/bigdatagenomics/adam/pull/162): 
+* ISSUE [180](https://github.com/bigdatagenomics/adam/pull/180): 
+* ISSUE [179](https://github.com/bigdatagenomics/adam/pull/179): 
+* ISSUE [175](https://github.com/bigdatagenomics/adam/pull/175): 
+* ISSUE [169](https://github.com/bigdatagenomics/adam/pull/169): 
+* ISSUE [170](https://github.com/bigdatagenomics/adam/pull/170): 
 
 ### Version 0.7.1 ###
 
 ### Version 0.7.3 ###
 
 ### Version 0.7.2 ###
-* ISSUE [166](https://github.com/bigdatagenomics/adam/pull/166): Pair-wise genotype concordance of genotype RDDs, with CLI tool
+* ISSUE [166](https://github.com/bigdatagenomics/adam/pull/166): 
 
 ### Version 0.7.0 ###
-* ISSUE [171](https://github.com/bigdatagenomics/adam/pull/171): Add back in allele dosage for genotypes.
+* ISSUE [171](https://github.com/bigdatagenomics/adam/pull/171): 
 
 ### Version 0.7.0 ###
-* ISSUE [167](https://github.com/bigdatagenomics/adam/pull/167): Fix for Hadoop 1.0.x support
-* ISSUE [165](https://github.com/bigdatagenomics/adam/pull/165): call PluginExecutor in apply method, fixes issue 164
-* ISSUE [160](https://github.com/bigdatagenomics/adam/pull/160): Refactoring FASTA work to break contig sizes.
-* ISSUE [78](https://github.com/bigdatagenomics/adam/pull/78): Upgrade to Spark 0.9 and Scala 2.10
-* ISSUE [138](https://github.com/bigdatagenomics/adam/pull/138): Display Git commit info on command line
-* ISSUE [161](https://github.com/bigdatagenomics/adam/pull/161): Added switches to spark context creation code
-* ISSUE [117](https://github.com/bigdatagenomics/adam/pull/117): Add a "range join" method.
-* ISSUE [151](https://github.com/bigdatagenomics/adam/pull/151): Vcf work concordance and genotype
-* ISSUE [150](https://github.com/bigdatagenomics/adam/pull/150): Remaining variant changes for adam2vcf, unit tests, and CLI modifications
-* ISSUE [147](https://github.com/bigdatagenomics/adam/pull/147): Resurrect VCF conversion code
-* ISSUE [148](https://github.com/bigdatagenomics/adam/pull/148): Moving createSparkContext into core
-* ISSUE [142](https://github.com/bigdatagenomics/adam/pull/142): Enforce Maven and Java versions
-* ISSUE [144](https://github.com/bigdatagenomics/adam/pull/144): Merge of last few days of work on master into this branch
-* ISSUE [124](https://github.com/bigdatagenomics/adam/pull/124): Vcf work rdd master merge
-* ISSUE [143](https://github.com/bigdatagenomics/adam/pull/143): Changing package declaration to match test file location and removing un...
-* ISSUE [140](https://github.com/bigdatagenomics/adam/pull/140): Update README.md
-* ISSUE [139](https://github.com/bigdatagenomics/adam/pull/139): Update README.md
-* ISSUE [129](https://github.com/bigdatagenomics/adam/pull/129): Modified pileup transforms to improve performance + to add options
-* ISSUE [116](https://github.com/bigdatagenomics/adam/pull/116): add fastq interleaver script
-* ISSUE [125](https://github.com/bigdatagenomics/adam/pull/125): Add design doc to CONTRIBUTING document
-* ISSUE [114](https://github.com/bigdatagenomics/adam/pull/114): Changes to RDD utility files for new variant schema
-* ISSUE [122](https://github.com/bigdatagenomics/adam/pull/122): Add IRC Channel to readme
-* ISSUE [100](https://github.com/bigdatagenomics/adam/pull/100): CLI component changes for new variant schema
-* ISSUE [108](https://github.com/bigdatagenomics/adam/pull/108): Adding new PluginExecutor command
-* ISSUE [98](https://github.com/bigdatagenomics/adam/pull/98): Vcf work remove old variant
-* ISSUE [104](https://github.com/bigdatagenomics/adam/pull/104): Added the port erasure to SparkFunSuite's cleanup.
-* ISSUE [107](https://github.com/bigdatagenomics/adam/pull/107): Cleaning up change documentation.
-* ISSUE [99](https://github.com/bigdatagenomics/adam/pull/99): Encoding tag types in the ADAMRecord attributes, adding the 'tags' command
-* ISSUE [105](https://github.com/bigdatagenomics/adam/pull/105): Add initial documentation on contributing
-* ISSUE [97](https://github.com/bigdatagenomics/adam/pull/97): New schema, variant context converter changes, and removal of old genoty...
-* ISSUE [79](https://github.com/bigdatagenomics/adam/pull/79): Adding ability to convert reference FASTA files for nucleotide sequences
-* ISSUE [91](https://github.com/bigdatagenomics/adam/pull/91): Minor change, increase adam-cli usage width to 150 characters
-* ISSUE [86](https://github.com/bigdatagenomics/adam/pull/86): Fixes to pileup code
-* ISSUE [88](https://github.com/bigdatagenomics/adam/pull/88): Added function for building variant context from genotypes.
-* ISSUE [81](https://github.com/bigdatagenomics/adam/pull/81): Update README and cleanup top-level cli help text
-* ISSUE [76](https://github.com/bigdatagenomics/adam/pull/76): Changing hadoop fs call to be compatible with Hadoop 1.
-* ISSUE [74](https://github.com/bigdatagenomics/adam/pull/74): Updated CHANGES.txt to include note about the recursive-load branch.
-* ISSUE [73](https://github.com/bigdatagenomics/adam/pull/73): Support for loading/combining multiple ADAM files into a single RDD.
-* ISSUE [72](https://github.com/bigdatagenomics/adam/pull/72): Added ability to create regions from reads, and to merge adjacent regions
-* ISSUE [71](https://github.com/bigdatagenomics/adam/pull/71): Change RecalTable to use optimized phred calculations
-* ISSUE [68](https://github.com/bigdatagenomics/adam/pull/68): sonatype-nexus-snapshots repository is already in parent oss-parent-7 pom
-* ISSUE [67](https://github.com/bigdatagenomics/adam/pull/67): fix for wildcard exclusion maven warnings
-* ISSUE [65](https://github.com/bigdatagenomics/adam/pull/65): Create a cache for phred -> double values instead of recalculating
-* ISSUE [60](https://github.com/bigdatagenomics/adam/pull/60): Bugfix for BQSR: Offset into qualityScore list was wrong
-* ISSUE [66](https://github.com/bigdatagenomics/adam/pull/66): add pluginDependency section and remove versions in plugin sections
-* ISSUE [61](https://github.com/bigdatagenomics/adam/pull/61): Filter utility for inverse of Projection
-* ISSUE [48](https://github.com/bigdatagenomics/adam/pull/48): Fix read groups mapping and add Y as base type
-* ISSUE [36](https://github.com/bigdatagenomics/adam/pull/36): Adding reads to rods transformation.
-* ISSUE [56](https://github.com/bigdatagenomics/adam/pull/56): Adding Yy as base in MdTag
+* ISSUE [167](https://github.com/bigdatagenomics/adam/pull/167): 
+* ISSUE [165](https://github.com/bigdatagenomics/adam/pull/165): 
+* ISSUE [160](https://github.com/bigdatagenomics/adam/pull/160): 
+* ISSUE [78](https://github.com/bigdatagenomics/adam/pull/78): 
+* ISSUE [138](https://github.com/bigdatagenomics/adam/pull/138): 
+* ISSUE [161](https://github.com/bigdatagenomics/adam/pull/161): 
+* ISSUE [117](https://github.com/bigdatagenomics/adam/pull/117): 
+* ISSUE [151](https://github.com/bigdatagenomics/adam/pull/151): 
+* ISSUE [150](https://github.com/bigdatagenomics/adam/pull/150): 
+* ISSUE [147](https://github.com/bigdatagenomics/adam/pull/147): 
+* ISSUE [148](https://github.com/bigdatagenomics/adam/pull/148): 
+* ISSUE [142](https://github.com/bigdatagenomics/adam/pull/142): 
+* ISSUE [144](https://github.com/bigdatagenomics/adam/pull/144): 
+* ISSUE [124](https://github.com/bigdatagenomics/adam/pull/124): 
+* ISSUE [143](https://github.com/bigdatagenomics/adam/pull/143): 
+* ISSUE [140](https://github.com/bigdatagenomics/adam/pull/140): 
+* ISSUE [139](https://github.com/bigdatagenomics/adam/pull/139): 
+* ISSUE [129](https://github.com/bigdatagenomics/adam/pull/129): 
+* ISSUE [116](https://github.com/bigdatagenomics/adam/pull/116): 
+* ISSUE [125](https://github.com/bigdatagenomics/adam/pull/125): 
+* ISSUE [114](https://github.com/bigdatagenomics/adam/pull/114): 
+* ISSUE [122](https://github.com/bigdatagenomics/adam/pull/122): 
+* ISSUE [100](https://github.com/bigdatagenomics/adam/pull/100): 
+* ISSUE [108](https://github.com/bigdatagenomics/adam/pull/108): 
+* ISSUE [98](https://github.com/bigdatagenomics/adam/pull/98): 
+* ISSUE [104](https://github.com/bigdatagenomics/adam/pull/104): 
+* ISSUE [107](https://github.com/bigdatagenomics/adam/pull/107): 
+* ISSUE [99](https://github.com/bigdatagenomics/adam/pull/99): 
+* ISSUE [105](https://github.com/bigdatagenomics/adam/pull/105): 
+* ISSUE [97](https://github.com/bigdatagenomics/adam/pull/97): 
+* ISSUE [79](https://github.com/bigdatagenomics/adam/pull/79): 
+* ISSUE [91](https://github.com/bigdatagenomics/adam/pull/91): 
+* ISSUE [86](https://github.com/bigdatagenomics/adam/pull/86): 
+* ISSUE [88](https://github.com/bigdatagenomics/adam/pull/88): 
+* ISSUE [81](https://github.com/bigdatagenomics/adam/pull/81): 
+* ISSUE [76](https://github.com/bigdatagenomics/adam/pull/76): 
+* ISSUE [74](https://github.com/bigdatagenomics/adam/pull/74): 
+* ISSUE [73](https://github.com/bigdatagenomics/adam/pull/73): 
+* ISSUE [72](https://github.com/bigdatagenomics/adam/pull/72): 
+* ISSUE [71](https://github.com/bigdatagenomics/adam/pull/71): 
+* ISSUE [68](https://github.com/bigdatagenomics/adam/pull/68): 
+* ISSUE [67](https://github.com/bigdatagenomics/adam/pull/67): 
+* ISSUE [65](https://github.com/bigdatagenomics/adam/pull/65): 
+* ISSUE [60](https://github.com/bigdatagenomics/adam/pull/60): 
+* ISSUE [66](https://github.com/bigdatagenomics/adam/pull/66): 
+* ISSUE [61](https://github.com/bigdatagenomics/adam/pull/61): 
+* ISSUE [48](https://github.com/bigdatagenomics/adam/pull/48): 
+* ISSUE [36](https://github.com/bigdatagenomics/adam/pull/36): 
+* ISSUE [56](https://github.com/bigdatagenomics/adam/pull/56): 
 
 ### Version 0.6.0 ###
-* ISSUE [53](https://github.com/bigdatagenomics/adam/pull/53): Fix Hadoop 2.2.0 support, upgrade to Spark 0.8.1
-* ISSUE [52](https://github.com/bigdatagenomics/adam/pull/52): Attributes: Use 't' instead of ',', as , is a valid character
-* ISSUE [47](https://github.com/bigdatagenomics/adam/pull/47): Adding containsRefName to SequenceDictionary
-* ISSUE [46](https://github.com/bigdatagenomics/adam/pull/46): Reduce logging for the actual adamSave job
-* ISSUE [45](https://github.com/bigdatagenomics/adam/pull/45): Make MdTag immutable
-* ISSUE [38](https://github.com/bigdatagenomics/adam/pull/38): Small bugfixes and cleanups to BQSR
-* ISSUE [40](https://github.com/bigdatagenomics/adam/pull/40): Fixing reference position from offset implementation
-* ISSUE [31](https://github.com/bigdatagenomics/adam/pull/31): Fixing a few issues in the ADAM2VCF2ADAM pipeline.
-* ISSUE [30](https://github.com/bigdatagenomics/adam/pull/30): Suppress parquet logging in FieldEnumerationSuite
-* ISSUE [28](https://github.com/bigdatagenomics/adam/pull/28): Fix build warnings
-* ISSUE [24](https://github.com/bigdatagenomics/adam/pull/24): Add unit tests for marking duplicates
-* ISSUE [26](https://github.com/bigdatagenomics/adam/pull/26): Fix unmapped reads in sequence dictionary
-* ISSUE [23](https://github.com/bigdatagenomics/adam/pull/23): Generalizing the Projection class
-* ISSUE [25](https://github.com/bigdatagenomics/adam/pull/25): Adding support for before, after clauses to SparkFunSuite.
-* ISSUE [22](https://github.com/bigdatagenomics/adam/pull/22): Add a unit test for sorting reads
-* ISSUE [21](https://github.com/bigdatagenomics/adam/pull/21): Adding rod functionality: a specialized grouping of pileup data.
-* ISSUE [13](https://github.com/bigdatagenomics/adam/pull/13): Cleaning up VCF<->ADAM pipeline
-* ISSUE [20](https://github.com/bigdatagenomics/adam/pull/20): Added Apache License 2.0 boilerplate to tops of all the GB-(c) files
-* ISSUE [19](https://github.com/bigdatagenomics/adam/pull/19): Allow the Hadoop version to be specified
-* ISSUE [17](https://github.com/bigdatagenomics/adam/pull/17): Fix transform -sort_reads partitioning. Add -coalesce option to transform.
-* ISSUE [16](https://github.com/bigdatagenomics/adam/pull/16): Fixing an issue in pileup generation and in the MdTag util.
-* ISSUE [15](https://github.com/bigdatagenomics/adam/pull/15): Tweaks 1
-* ISSUE [12](https://github.com/bigdatagenomics/adam/pull/12): Subclass testing bug in AdamContext.adamLoad
-* ISSUE [11](https://github.com/bigdatagenomics/adam/pull/11): Missing brackets in VcfConverter.getType
-* ISSUE [10](https://github.com/bigdatagenomics/adam/pull/10): Moved record field name enum over to the projections package.
-* ISSUE [8](https://github.com/bigdatagenomics/adam/pull/8): Fixes to sorting in ReferencePosition
-* ISSUE [4](https://github.com/bigdatagenomics/adam/pull/4): New SparkFunSuite test support class, logging util and new BQSR test.
-* ISSUE [1](https://github.com/bigdatagenomics/adam/pull/1): Fix scalatest configuration and fix unit tests
-* ISSUE [14](https://github.com/bigdatagenomics/adam/pull/14): Converting some of the Option() calls to Some()
-* ISSUE [13](https://github.com/bigdatagenomics/adam/pull/13): Cleaning up VCF<->ADAM pipeline
-* ISSUE [9](https://github.com/bigdatagenomics/adam/pull/9): Adding support for a Sequence Dictionary from BAM files
-* ISSUE [8](https://github.com/bigdatagenomics/adam/pull/8): Fixes to sorting in ReferencePosition
-* ISSUE [7](https://github.com/bigdatagenomics/adam/pull/7): ADAM variant and genotype formats; and a VCF->ADAM converter
-* ISSUE [4](https://github.com/bigdatagenomics/adam/pull/4): New SparkFunSuite test support class, logging util and new BQSR test.
-* ISSUE [3](https://github.com/bigdatagenomics/adam/pull/3): Adding in implicit conversion functions for going between Java and Scala...
-* ISSUE [2](https://github.com/bigdatagenomics/adam/pull/2): Update from Spark 0.7.3 to 0.8.0-incubating
-* ISSUE [1](https://github.com/bigdatagenomics/adam/pull/1): Fix scalatest configuration and fix unit tests
+* ISSUE [53](https://github.com/bigdatagenomics/adam/pull/53): 
+* ISSUE [52](https://github.com/bigdatagenomics/adam/pull/52): 
+* ISSUE [47](https://github.com/bigdatagenomics/adam/pull/47): 
+* ISSUE [46](https://github.com/bigdatagenomics/adam/pull/46): 
+* ISSUE [45](https://github.com/bigdatagenomics/adam/pull/45): 
+* ISSUE [38](https://github.com/bigdatagenomics/adam/pull/38): 
+* ISSUE [40](https://github.com/bigdatagenomics/adam/pull/40): 
+* ISSUE [31](https://github.com/bigdatagenomics/adam/pull/31): 
+* ISSUE [30](https://github.com/bigdatagenomics/adam/pull/30): 
+* ISSUE [28](https://github.com/bigdatagenomics/adam/pull/28): 
+* ISSUE [24](https://github.com/bigdatagenomics/adam/pull/24): 
+* ISSUE [26](https://github.com/bigdatagenomics/adam/pull/26): 
+* ISSUE [23](https://github.com/bigdatagenomics/adam/pull/23): 
+* ISSUE [25](https://github.com/bigdatagenomics/adam/pull/25): 
+* ISSUE [22](https://github.com/bigdatagenomics/adam/pull/22): 
+* ISSUE [21](https://github.com/bigdatagenomics/adam/pull/21): 
+* ISSUE [13](https://github.com/bigdatagenomics/adam/pull/13): 
+* ISSUE [20](https://github.com/bigdatagenomics/adam/pull/20): 
+* ISSUE [19](https://github.com/bigdatagenomics/adam/pull/19): 
+* ISSUE [17](https://github.com/bigdatagenomics/adam/pull/17): 
+* ISSUE [16](https://github.com/bigdatagenomics/adam/pull/16): 
+* ISSUE [15](https://github.com/bigdatagenomics/adam/pull/15): 
+* ISSUE [12](https://github.com/bigdatagenomics/adam/pull/12): 
+* ISSUE [11](https://github.com/bigdatagenomics/adam/pull/11): 
+* ISSUE [10](https://github.com/bigdatagenomics/adam/pull/10): 
+* ISSUE [8](https://github.com/bigdatagenomics/adam/pull/8): 
+* ISSUE [4](https://github.com/bigdatagenomics/adam/pull/4): 
+* ISSUE [1](https://github.com/bigdatagenomics/adam/pull/1): 
+* ISSUE [14](https://github.com/bigdatagenomics/adam/pull/14): 
+* ISSUE [13](https://github.com/bigdatagenomics/adam/pull/13): 
+* ISSUE [9](https://github.com/bigdatagenomics/adam/pull/9): 
+* ISSUE [8](https://github.com/bigdatagenomics/adam/pull/8): 
+* ISSUE [7](https://github.com/bigdatagenomics/adam/pull/7): 
+* ISSUE [4](https://github.com/bigdatagenomics/adam/pull/4): 
+* ISSUE [3](https://github.com/bigdatagenomics/adam/pull/3): 
+* ISSUE [2](https://github.com/bigdatagenomics/adam/pull/2): 
+* ISSUE [1](https://github.com/bigdatagenomics/adam/pull/1): 
