@@ -72,18 +72,22 @@ class MdTagSuite extends FunSuite {
   test("valid md tags") {
     val md1 = MdTag("0A0", 0L)
     assert(md1.mismatchedBase(0) == Some('A'))
+    assert(md1.countOfMismatches === 1)
 
     val md2 = MdTag("100", 0L)
     for (i <- 0 until 100) {
       assert(md2.isMatch(i))
     }
     assert(!md2.isMatch(-1))
+    assert(md2.countOfMismatches === 0)
 
     val md3 = MdTag("100C2", 0L)
     for (i <- 0 until 100) {
       assert(md3.isMatch(i))
     }
     assert(md3.mismatchedBase(100) == Some('C'))
+    assert(md3.countOfMismatches === 1)
+
     for (i <- 101 until 103) {
       assert(md3.isMatch(i))
     }
@@ -103,6 +107,8 @@ class MdTagSuite extends FunSuite {
     for (i <- 0 until deletedString.length) {
       assert(md5.deletedBase(i) == Some(deletedString charAt i))
     }
+
+    assert(md5.countOfMismatches === 0)
 
     val md6 = MdTag("22^A79", 0L)
     for (i <- 0 until 22) {
@@ -129,6 +135,7 @@ class MdTagSuite extends FunSuite {
 
     val mdy = MdTag("34Y18G46", 0L)
     assert(mdy.mismatchedBase(34) == Some('Y'))
+    assert(mdy.countOfMismatches === 2)
 
   }
 

@@ -334,6 +334,15 @@ class MdTag(
   }
 
   /**
+   * Returns the number of mismatches against the reference.
+   *
+   * @return Number of mismatches against the reference
+   */
+  def countOfMismatches: Int = {
+    mismatches.size
+  }
+
+  /**
    * Returns the start position of the record described by this MD tag.
    *
    * @return The reference based start position of this tag.
