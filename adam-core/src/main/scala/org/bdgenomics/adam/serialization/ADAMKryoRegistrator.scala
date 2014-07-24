@@ -66,14 +66,14 @@ class AvroSerializer[T <: SpecificRecord: ClassTag] extends Serializer[T] {
 
 class ADAMKryoRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo) {
-    kryo.register(classOf[ADAMRecord], new AvroSerializer[ADAMRecord]())
-    kryo.register(classOf[ADAMPileup], new AvroSerializer[ADAMPileup]())
-    kryo.register(classOf[ADAMGenotype], new AvroSerializer[ADAMGenotype]())
-    kryo.register(classOf[ADAMVariant], new AvroSerializer[ADAMVariant]())
-    kryo.register(classOf[ADAMFlatGenotype], new AvroSerializer[ADAMFlatGenotype]())
-    kryo.register(classOf[ADAMDatabaseVariantAnnotation], new AvroSerializer[ADAMDatabaseVariantAnnotation]())
-    kryo.register(classOf[ADAMNucleotideContigFragment], new AvroSerializer[ADAMNucleotideContigFragment]())
-    kryo.register(classOf[ADAMFeature], new AvroSerializer[ADAMFeature]())
+    kryo.register(classOf[AlignmentRecord], new AvroSerializer[AlignmentRecord]())
+    kryo.register(classOf[Pileup], new AvroSerializer[Pileup]())
+    kryo.register(classOf[Genotype], new AvroSerializer[Genotype]())
+    kryo.register(classOf[Variant], new AvroSerializer[Variant]())
+    kryo.register(classOf[FlatGenotype], new AvroSerializer[FlatGenotype]())
+    kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation]())
+    kryo.register(classOf[NucleotideContigFragment], new AvroSerializer[NucleotideContigFragment]())
+    kryo.register(classOf[Feature], new AvroSerializer[Feature]())
     kryo.register(classOf[ReferencePositionWithOrientation], new ReferencePositionWithOrientationSerializer)
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)

@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.predicates
 
-import org.bdgenomics.formats.avro.ADAMGenotype
+import org.bdgenomics.formats.avro.Genotype
 
-class GenotypeRecordPASSPredicate extends ADAMPredicate[ADAMGenotype] {
+class GenotypeRecordPASSPredicate extends ADAMPredicate[Genotype] {
 
-  override val recordCondition = RecordCondition[ADAMGenotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
+  override val recordCondition = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
 
 }
 

@@ -33,11 +33,11 @@
 
 package org.bdgenomics.adam.converters
 
-import org.broadinstitute.variant.variantcontext.{ Genotype, VariantContext }
+import org.broadinstitute.variant.variantcontext.VariantContext
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.broadinstitute.variant.vcf._
-import org.bdgenomics.formats.avro.{ ADAMDatabaseVariantAnnotation, ADAMGenotype, VariantCallingAnnotations }
+import org.bdgenomics.formats.avro.{ DatabaseVariantAnnotation, Genotype, VariantCallingAnnotations }
 
 object AttrKey {
   def apply(adamKey: String, hdrLine: VCFCompoundHeaderLine): AttrKey = {
@@ -128,10 +128,10 @@ object VariantAnnotationConverter extends Serializable {
   lazy val VCF2VariantCallingAnnotations: Map[String, (Int, Object => Object)] =
     createFieldMap(INFO_KEYS, VariantCallingAnnotations.getClassSchema)
   lazy val VCF2GenotypeAnnotations: Map[String, (Int, Object => Object)] =
-    createFieldMap(FORMAT_KEYS, ADAMGenotype.getClassSchema)
+    createFieldMap(FORMAT_KEYS, Genotype.getClassSchema)
 
   private lazy val EXTERNAL_DATABASE_KEYS: Seq[AttrKey] = OMIM_KEYS ::: CLINVAR_KEYS ::: DBNSFP_KEYS // ::: COSMIC_KEYS
-  lazy val VCF2DatabaseAnnotations: Map[String, (Int, Object => Object)] = createFieldMap(EXTERNAL_DATABASE_KEYS, ADAMDatabaseVariantAnnotation.getClassSchema)
+  lazy val VCF2DatabaseAnnotations: Map[String, (Int, Object => Object)] = createFieldMap(EXTERNAL_DATABASE_KEYS, DatabaseVariantAnnotation.getClassSchema)
 
   private def createFieldMap(keys: Seq[AttrKey], schema: Schema): Map[String, (Int, Object => Object)] = {
     keys.filter(_.attrConverter != null).map(field => {
@@ -154,7 +154,7 @@ object VariantAnnotationConverter extends Serializable {
     fillRecord(createFieldMap(keys, record.getSchema), vc, record)
   }
 
-  def convert(vc: VariantContext, annotation: ADAMDatabaseVariantAnnotation): ADAMDatabaseVariantAnnotation = {
+  def convert(vc: VariantContext, annotation: DatabaseVariantAnnotation): DatabaseVariantAnnotation = {
     fillRecord(VCF2DatabaseAnnotations, vc, annotation)
   }
 
@@ -162,7 +162,7 @@ object VariantAnnotationConverter extends Serializable {
     fillRecord(VCF2VariantCallingAnnotations, vc, call)
   }
 
-  def convert(g: Genotype, genotype: ADAMGenotype): ADAMGenotype = {
+  def convert(g: org.broadinstitute.variant.variantcontext.Genotype, genotype: Genotype): Genotype = {
     for ((v, a) <- VariantAnnotationConverter.VCF2GenotypeAnnotations) {
       // Add extended attributes if present
       val attr = g.getExtendedAttribute(v)
@@ -173,9 +173,9 @@ object VariantAnnotationConverter extends Serializable {
     genotype
   }
 
-  def mergeAnnotations(leftRecord: ADAMDatabaseVariantAnnotation, rightRecord: ADAMDatabaseVariantAnnotation): ADAMDatabaseVariantAnnotation = {
-    val mergedAnnotation = ADAMDatabaseVariantAnnotation.newBuilder(leftRecord).build()
-    val numFields = ADAMDatabaseVariantAnnotation.getClassSchema.getFields.size
+  def mergeAnnotations(leftRecord: DatabaseVariantAnnotation, rightRecord: DatabaseVariantAnnotation): DatabaseVariantAnnotation = {
+    val mergedAnnotation = DatabaseVariantAnnotation.newBuilder(leftRecord).build()
+    val numFields = DatabaseVariantAnnotation.getClassSchema.getFields.size
 
     def insertField(fieldIdx: Int) =
       {

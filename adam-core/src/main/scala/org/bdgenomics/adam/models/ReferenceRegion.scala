@@ -17,12 +17,11 @@
  */
 package org.bdgenomics.adam.models
 
-import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMNucleotideContigFragment }
+import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichADAMRecord
-import scala.math.{ min, max }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
+import scala.math.{ max, min }
 
 object ReferenceRegionWithOrientation {
 
@@ -66,19 +65,19 @@ case class ReferenceRegionWithOrientation(referenceName: String,
   def width: Long = end - start - 1 // need minus 1 for open end
 
   def contains(other: ReferencePositionWithOrientation): Boolean = {
-    other.refPos.fold(false)(rp => (referenceName == rp.referenceName &&
+    other.refPos.fold(false)(rp => referenceName == rp.referenceName &&
       negativeStrand == other.negativeStrand &&
-      start <= rp.pos && end > rp.pos))
+      start <= rp.pos && end > rp.pos)
   }
 
   def contains(other: ReferenceRegionWithOrientation): Boolean = {
-    (referenceName == other.referenceName && negativeStrand == other.negativeStrand &&
-      start <= other.start && end >= other.end)
+    referenceName == other.referenceName && negativeStrand == other.negativeStrand &&
+      start <= other.start && end >= other.end
   }
 
   def overlaps(other: ReferenceRegionWithOrientation): Boolean = {
-    (referenceName == other.referenceName && negativeStrand == other.negativeStrand &&
-      ((start >= other.start && start <= other.end) || (end >= other.start && end <= other.end)))
+    referenceName == other.referenceName && negativeStrand == other.negativeStrand &&
+      ((start >= other.start && start <= other.end) || (end >= other.start && end <= other.end))
   }
 
   def compare(that: ReferenceRegionWithOrientation): Int =
@@ -115,9 +114,9 @@ object ReferenceRegion {
    * @param record Read to create region from.
    * @return Region corresponding to inclusive region of read alignment, if read is mapped.
    */
-  def apply(record: ADAMRecord): Option[ReferenceRegion] = {
+  def apply(record: AlignmentRecord): Option[ReferenceRegion] = {
     if (record.getReadMapped) {
-      Some(ReferenceRegion(record.getContig.getContigName.toString, record.getStart, RichADAMRecord(record).end.get))
+      Some(ReferenceRegion(record.getContig.getContigName.toString, record.getStart, record.getEnd))
     } else {
       None
     }
@@ -138,7 +137,7 @@ object ReferenceRegion {
    * @param fragment Assembly fragment from which to generate data.
    * @return Region corresponding to inclusive region of contig fragment.
    */
-  def apply(fragment: ADAMNucleotideContigFragment): Option[ReferenceRegion] = {
+  def apply(fragment: NucleotideContigFragment): Option[ReferenceRegion] = {
     val contig = fragment.getContig
     if (contig != null && contig.getContigName != null &&
       fragment.getFragmentStartPosition != null) {

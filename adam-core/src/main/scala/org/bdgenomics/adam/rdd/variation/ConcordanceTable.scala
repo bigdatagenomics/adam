@@ -19,18 +19,18 @@ package org.bdgenomics.adam.rdd.variation
 
 import java.util.EnumSet
 import scala.collection.JavaConverters._
-import org.bdgenomics.formats.avro.ADAMGenotypeType
+import org.bdgenomics.formats.avro.GenotypeType
 
 object ConcordanceTable {
   def apply() = new ConcordanceTable()
-  def apply(p: (ADAMGenotypeType, ADAMGenotypeType)) = (new ConcordanceTable()).add(p)
+  def apply(p: (GenotypeType, GenotypeType)) = (new ConcordanceTable()).add(p)
 
   // Relevant sub-groups of concordance table entries
-  val CALLED = EnumSet.of(ADAMGenotypeType.HOM_REF, ADAMGenotypeType.HET, ADAMGenotypeType.HOM_ALT)
-  val VARIANT = EnumSet.of(ADAMGenotypeType.HET, ADAMGenotypeType.HOM_ALT)
-  val ALL = EnumSet.allOf(classOf[ADAMGenotypeType])
+  val CALLED = EnumSet.of(GenotypeType.HOM_REF, GenotypeType.HET, GenotypeType.HOM_ALT)
+  val VARIANT = EnumSet.of(GenotypeType.HET, GenotypeType.HOM_ALT)
+  val ALL = EnumSet.allOf(classOf[GenotypeType])
 
-  implicit def typesToIdxs(types: EnumSet[ADAMGenotypeType]): Set[Int] = {
+  implicit def typesToIdxs(types: EnumSet[GenotypeType]): Set[Int] = {
     types.asScala.map(_.ordinal).toSet
   }
 }
@@ -45,14 +45,14 @@ object ConcordanceTable {
 class ConcordanceTable {
   import ConcordanceTable._
 
-  private val table_ = Array.fill[Long](ADAMGenotypeType.values.length, ADAMGenotypeType.values.length)(0L)
+  private val table_ = Array.fill[Long](GenotypeType.values.length, GenotypeType.values.length)(0L)
 
   /**
    * Add single genotype-genotype comparison into this table.
    * @param p Tuple of (test, truth) GenotypeType
    * @return this
    */
-  def add(p: (ADAMGenotypeType, ADAMGenotypeType)): ConcordanceTable = {
+  def add(p: (GenotypeType, GenotypeType)): ConcordanceTable = {
     table_(p._1.ordinal)(p._2.ordinal) += 1L
     this
   }
@@ -71,10 +71,10 @@ class ConcordanceTable {
   /**
    * Get single table entry at (test, truth)
    */
-  def get(test: ADAMGenotypeType, truth: ADAMGenotypeType): Long = table_(test.ordinal)(truth.ordinal)
+  def get(test: GenotypeType, truth: GenotypeType): Long = table_(test.ordinal)(truth.ordinal)
 
   def total(): Long = total(ALL, ALL)
-  def total(diagonal: EnumSet[ADAMGenotypeType]): Long = {
+  def total(diagonal: EnumSet[GenotypeType]): Long = {
     var t = 0L
     for (i <- diagonal)
       t += table_(i)(i)
@@ -84,7 +84,7 @@ class ConcordanceTable {
   /**
    * Total of all entries indexed by the cartesian product of test and truth
    */
-  def total(test: EnumSet[ADAMGenotypeType], truth: EnumSet[ADAMGenotypeType]): Long = {
+  def total(test: EnumSet[GenotypeType], truth: EnumSet[GenotypeType]): Long = {
     var t = 0L
     for (r <- test; c <- truth)
       t += table_(r)(c)
@@ -120,7 +120,7 @@ class ConcordanceTable {
    */
   def nonReferenceDiscrepancy = {
     val all_called = total(ALL, ALL)
-    ratio(all_called - total(ALL), all_called - get(ADAMGenotypeType.HOM_REF, ADAMGenotypeType.HOM_REF))
+    ratio(all_called - total(ALL), all_called - get(GenotypeType.HOM_REF, GenotypeType.HOM_REF))
   }
 
   /**

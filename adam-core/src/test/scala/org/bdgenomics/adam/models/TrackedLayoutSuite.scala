@@ -18,40 +18,41 @@
 package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import org.scalatest.FunSuite
 
 class TrackedLayoutSuite extends FunSuite {
 
-  def rec(contig: String = null, start: Int = 0, cigar: String = null, readMapped: Boolean = true, firstOfPair: Boolean = true): ADAMRecord = {
-    val c = ADAMContig.newBuilder().setContigName(contig).build()
+  def rec(contig: String = null, start: Int = 0, cigar: String = null, end: Int = 0, readMapped: Boolean = true, firstOfPair: Boolean = true): AlignmentRecord = {
+    val c = Contig.newBuilder().setContigName(contig).build()
 
-    ADAMRecord.newBuilder()
+    AlignmentRecord.newBuilder()
       .setContig(c)
       .setReadMapped(readMapped)
       .setFirstOfPair(firstOfPair)
       .setStart(start)
       .setCigar(cigar)
+      .setEnd(end)
       .build()
   }
 
   test("OrderedTrackedLayout lays out no records into zero tracks") {
-    val layout = new OrderedTrackedLayout[ADAMRecord](Seq())
+    val layout = new OrderedTrackedLayout[AlignmentRecord](Seq())
     assert(layout.numTracks === 0)
   }
 
-  test("OrderedTrackedLayout lays out ADAMRecords left-to-right in the order they're passed") {
+  test("OrderedTrackedLayout lays out AlignmentRecords left-to-right in the order they're passed") {
     val (r1, r2, r3, r4) = (
-      rec("chr1", 100, "100M"),
-      rec("chr1", 150, "100M"),
-      rec("chr1", 200, "100M"),
-      rec("chr2", 200, "100M"))
+      rec("chr1", 100, "100M", 200),
+      rec("chr1", 150, "100M", 250),
+      rec("chr1", 200, "100M", 300),
+      rec("chr2", 200, "100M", 300))
 
     val recs = Seq(r1, r2, r3, r4)
-    val layout: OrderedTrackedLayout[ADAMRecord] = new OrderedTrackedLayout(recs)
+    val layout: OrderedTrackedLayout[AlignmentRecord] = new OrderedTrackedLayout(recs)
 
     // Just making sure... r4 shouldn't overlap r1-3
-    val rm: ReferenceMapping[ADAMRecord] = ADAMRecordReferenceMapping
+    val rm: ReferenceMapping[AlignmentRecord] = AlignmentRecordReferenceMapping
     val refs123 = Seq(r1, r2, r3).map(rm.getReferenceRegion)
     assert(!refs123.exists(rm.getReferenceRegion(r4).overlaps))
 
@@ -65,16 +66,16 @@ class TrackedLayoutSuite extends FunSuite {
 
   test("OrderedTrackedLayout can handle unaligned reads") {
     val (r1, r2, r3, r4) = (
-      rec("chr1", 100, "100M"),
-      rec("chr1", 150, "100M"),
-      rec("chr1", 200, "100M"),
+      rec("chr1", 100, "100M", 200),
+      rec("chr1", 150, "100M", 250),
+      rec("chr1", 200, "100M", 300),
       rec(readMapped = false))
 
     val recs = Seq(r1, r2, r3, r4)
-    val layout: OrderedTrackedLayout[ADAMRecord] = new OrderedTrackedLayout(recs)
+    val layout: OrderedTrackedLayout[AlignmentRecord] = new OrderedTrackedLayout(recs)
 
     // Just making sure... r4 shouldn't overlap r1-3
-    val rm: ReferenceMapping[ADAMRecord] = ADAMRecordReferenceMapping
+    val rm: ReferenceMapping[AlignmentRecord] = AlignmentRecordReferenceMapping
     val refs123 = Seq(r1, r2, r3).map(rm.getReferenceRegion)
 
     // Now, test the correct track assignments of each record

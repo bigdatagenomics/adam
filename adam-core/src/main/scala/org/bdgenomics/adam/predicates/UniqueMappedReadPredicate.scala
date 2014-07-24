@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.predicates
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 
-class UniqueMappedReadPredicate extends ADAMPredicate[ADAMRecord] {
+class UniqueMappedReadPredicate extends ADAMPredicate[AlignmentRecord] {
 
-  override val recordCondition = ADAMRecordConditions.isMapped && ADAMRecordConditions.isUnique &&
-    ADAMRecordConditions.isPrimaryAlignment && ADAMRecordConditions.passedVendorQualityChecks
+  override val recordCondition = AlignmentRecordConditions.isMapped && AlignmentRecordConditions.isUnique &&
+    AlignmentRecordConditions.isPrimaryAlignment && AlignmentRecordConditions.passedVendorQualityChecks
 
 }
 

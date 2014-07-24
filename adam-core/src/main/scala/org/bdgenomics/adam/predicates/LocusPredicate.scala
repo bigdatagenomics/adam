@@ -24,14 +24,14 @@ import parquet.column.ColumnReader
 import parquet.filter.AndRecordFilter.and
 import parquet.filter.ColumnPredicates.equalTo
 import parquet.filter.ColumnRecordFilter.column
-import org.bdgenomics.adam.projections.ADAMRecordField
+import org.bdgenomics.adam.projections.AlignmentRecordField
 
 class LocusPredicate extends UnboundRecordFilter {
 
   def bind(readers: Iterable[ColumnReader]): RecordFilter = {
-    and(column(ADAMRecordField.readMapped.toString(), equalTo(true)),
-      and(column(ADAMRecordField.primaryAlignment.toString(), equalTo(true)),
-        and(column(ADAMRecordField.failedVendorQualityChecks.toString(), equalTo(false)),
-          column(ADAMRecordField.duplicateRead.toString(), equalTo(false))))).bind(readers)
+    and(column(AlignmentRecordField.readMapped.toString(), equalTo(true)),
+      and(column(AlignmentRecordField.primaryAlignment.toString(), equalTo(true)),
+        and(column(AlignmentRecordField.failedVendorQualityChecks.toString(), equalTo(false)),
+          column(AlignmentRecordField.duplicateRead.toString(), equalTo(false))))).bind(readers)
   }
 }

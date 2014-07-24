@@ -17,15 +17,14 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.models.{ ReferencePosition, SequenceRecord, SequenceDictionary }
-import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.projections.Projection
-
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.RangePartitioner
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{ ReferencePosition, SequenceRecord, SequenceDictionary }
+import org.bdgenomics.adam.projections.Projection
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import scala.util.Random
 
 class GenomicRegionPartitionerSuite extends SparkFunSuite {
@@ -81,7 +80,7 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
     assert(partitioned.count() === count)
 
     val sizes: RDD[Int] = partitioned.mapPartitions {
-      itr: Iterator[(ReferencePosition, ADAMRecord)] =>
+      itr: Iterator[(ReferencePosition, AlignmentRecord)] =>
         List(itr.size).iterator
     }
 
@@ -92,14 +91,14 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
     val filename = ClassLoader.getSystemClassLoader.getResource("reads12.sam").getFile
     val parts = 1
 
-    val dict = sc.adamDictionaryLoad[ADAMRecord](filename)
+    val dict = sc.adamDictionaryLoad[AlignmentRecord](filename)
     val parter = new GenomicRegionPartitioner(parts, dict)
 
     val p = {
-      import org.bdgenomics.adam.projections.ADAMRecordField._
+      import org.bdgenomics.adam.projections.AlignmentRecordField._
       Projection(contig, start, readName, readMapped)
     }
-    val rdd: RDD[ADAMRecord] = sc.adamLoad(filename, projection = Some(p))
+    val rdd: RDD[AlignmentRecord] = sc.adamLoad(filename, projection = Some(p))
 
     assert(rdd.count() === 200)
 
@@ -121,11 +120,11 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
   }
 
   def adamRecord(referenceName: String, readName: String, start: Long, readMapped: Boolean) = {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName(referenceName)
       .build
 
-    ADAMRecord.newBuilder()
+    AlignmentRecord.newBuilder()
       .setContig(contig)
       .setReadName(readName)
       .setReadMapped(readMapped)

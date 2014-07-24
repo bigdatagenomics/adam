@@ -17,16 +17,16 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.ADAMFeature
+import org.bdgenomics.formats.avro.Feature
 
-class BaseFeature(val feature: ADAMFeature) {
+class BaseFeature(val feature: Feature) {
   def featureId = feature.getFeatureId
   def contig = feature.getContig
   def start = feature.getStart
   def end = feature.getEnd
 }
 
-class BEDFeature(feature: ADAMFeature) extends BaseFeature(feature) {
+class BEDFeature(feature: Feature) extends BaseFeature(feature) {
   def name = feature.getTrackName
   def score = feature.getValue
   def strand = feature.getStrand
@@ -38,7 +38,7 @@ class BEDFeature(feature: ADAMFeature) extends BaseFeature(feature) {
   def blockStarts = feature.getBlockStarts
 }
 
-class NarrowPeakFeature(feature: ADAMFeature) extends BaseFeature(feature) {
+class NarrowPeakFeature(feature: Feature) extends BaseFeature(feature) {
   def name = feature.getTrackName
   def score = feature.getValue
   def strand = feature.getStrand

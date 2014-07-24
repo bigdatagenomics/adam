@@ -17,34 +17,21 @@
  */
 package org.bdgenomics.adam.rdd
 
-import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
+import net.sf.samtools.{ Cigar, CigarElement, CigarOperator }
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.algorithms.consensus.{
-  ConsensusGenerator,
-  ConsensusGeneratorFromReads
-}
-import org.bdgenomics.adam.algorithms.realignmenttarget.{
-  RealignmentTargetFinder,
-  IndelRealignmentTarget,
-  TargetOrdering,
-  ZippedTargetOrdering,
-  ZippedTargetSet
-}
-import org.bdgenomics.adam.models.{
-  Consensus,
-  ReferencePosition,
-  ReferenceRegion
-}
-import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.rich.RichADAMRecord._
-import org.bdgenomics.adam.util.MdTag
+import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
+import org.bdgenomics.adam.algorithms.realignmenttarget.{ IndelRealignmentTarget, RealignmentTargetFinder, TargetOrdering, ZippedTargetOrdering, ZippedTargetSet }
+import org.bdgenomics.adam.models.{ Consensus, ReferencePosition, ReferenceRegion }
+import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.adam.util.MdTag
+import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.annotation.tailrec
 import scala.collection.immutable.{ NumericRange, TreeSet }
-import scala.collection.mutable.Map
+import scala.collection.mutable
 import scala.util.Random
 
 private[rdd] object RealignIndels {
@@ -55,13 +42,13 @@ private[rdd] object RealignIndels {
    * @param rdd RDD of reads to realign.
    * @return RDD of realigned reads.
    */
-  def apply(rdd: RDD[ADAMRecord],
+  def apply(rdd: RDD[AlignmentRecord],
             consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
             dataIsSorted: Boolean = false,
             maxIndelSize: Int = 500,
             maxConsensusNumber: Int = 30,
             lodThreshold: Double = 5.0,
-            maxTargetSize: Int = 3000): RDD[ADAMRecord] = {
+            maxTargetSize: Int = 3000): RDD[AlignmentRecord] = {
     new RealignIndels(consensusModel,
       dataIsSorted,
       maxIndelSize,
@@ -81,7 +68,7 @@ private[rdd] object RealignIndels {
    *
    * @see mapTargets
    */
-  @tailrec final def mapToTarget(read: RichADAMRecord,
+  @tailrec final def mapToTarget(read: RichAlignmentRecord,
                                  targets: TreeSet[(IndelRealignmentTarget, Int)]): Int = {
     // Perform tail call recursive binary search
     if (targets.size == 1) {
@@ -115,7 +102,7 @@ private[rdd] object RealignIndels {
    *
    * @see mapTargets
    */
-  def mapToTarget(read: RichADAMRecord,
+  def mapToTarget(read: RichAlignmentRecord,
                   targets: ZippedTargetSet): Int = {
     mapToTarget(read, targets.set)
   }
@@ -134,7 +121,7 @@ private[rdd] object RealignIndels {
    * @see mapTargets
    */
   def mapToTargetUnpacked(targetIndex: Int,
-                          targets: TreeSet[Tuple2[IndelRealignmentTarget, Int]]): Option[IndelRealignmentTarget] = {
+                          targets: TreeSet[(IndelRealignmentTarget, Int)]): Option[IndelRealignmentTarget] = {
     if (targetIndex < 0) {
       None
     } else {
@@ -170,9 +157,9 @@ private[rdd] object RealignIndels {
    *
    * @see mapToTarget
    */
-  def mapTargets(rich_rdd: RDD[RichADAMRecord], targets: TreeSet[IndelRealignmentTarget]): RDD[(Option[IndelRealignmentTarget], Iterable[RichADAMRecord])] = {
+  def mapTargets(rich_rdd: RDD[RichAlignmentRecord], targets: TreeSet[IndelRealignmentTarget]): RDD[(Option[IndelRealignmentTarget], Iterable[RichAlignmentRecord])] = {
     val tmpZippedTargets = targets.zip(0 until targets.count(t => true))
-    var tmpZippedTargets2 = new TreeSet[Tuple2[IndelRealignmentTarget, Int]]()(ZippedTargetOrdering)
+    var tmpZippedTargets2 = new TreeSet[(IndelRealignmentTarget, Int)]()(ZippedTargetOrdering)
     tmpZippedTargets.foreach(t => tmpZippedTargets2 = tmpZippedTargets2 + t)
 
     val zippedTargets = new ZippedTargetSet(tmpZippedTargets2)
@@ -194,10 +181,10 @@ private[rdd] object RealignIndels {
   /**
    * From a set of reads, returns the reference sequence that they overlap.
    */
-  def getReferenceFromReads(reads: Iterable[RichADAMRecord]): (String, Long, Long) = {
+  def getReferenceFromReads(reads: Iterable[RichAlignmentRecord]): (String, Long, Long) = {
     // get reference and range from a single read
-    val readRefs = reads.map((r: RichADAMRecord) => {
-      (r.mdTag.get.getReference(r), r.getStart.toLong to r.end.get)
+    val readRefs = reads.map((r: RichAlignmentRecord) => {
+      (r.mdTag.get.getReference(r), r.getStart.toLong to r.getEnd)
     })
       .toSeq
       .sortBy(_._2.head)
@@ -218,7 +205,7 @@ private[rdd] object RealignIndels {
   }
 }
 
-import RealignIndels._
+import org.bdgenomics.adam.rdd.RealignIndels._
 
 private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
                                  val dataIsSorted: Boolean = false,
@@ -235,12 +222,12 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
    * @return A sequence of reads which have either been realigned if there is a sufficiently good alternative
    * consensus, or not realigned if there is not a sufficiently good consensus.
    */
-  def realignTargetGroup(targetGroup: (Option[IndelRealignmentTarget], Iterable[RichADAMRecord])): Iterable[RichADAMRecord] = {
+  def realignTargetGroup(targetGroup: (Option[IndelRealignmentTarget], Iterable[RichAlignmentRecord])): Iterable[RichAlignmentRecord] = {
     val (target, reads) = targetGroup
     var realignedReads = reads.filter(r => r.mdTag.isDefined && !r.mdTag.get.hasMismatches)
 
     // get reference from reads
-    val (reference, refStart, refEnd) = getReferenceFromReads(reads.map(r => new RichADAMRecord(r)))
+    val (reference, refStart, refEnd) = getReferenceFromReads(reads.map(r => new RichAlignmentRecord(r)))
     val refRegion = ReferenceRegion(reads.head.record.getContig.getContigName, refStart, refEnd)
 
     // preprocess reads and get consensus
@@ -270,7 +257,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
          *  - the consensus sequence itself
          *  - a map containing each realigned read and it's offset into the new sequence
          */
-        var consensusOutcomes = List[(Int, Consensus, Map[RichADAMRecord, Int])]()
+        var consensusOutcomes = List[(Int, Consensus, mutable.Map[RichAlignmentRecord, Int])]()
 
         // loop over all consensuses and evaluate
         consensus.foreach(c => {
@@ -295,7 +282,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
           val totalQuality = sweptValues.map(_._2._1).reduce(_ + _)
 
           // package data
-          var readMappings = Map[RichADAMRecord, Int]()
+          var readMappings = mutable.Map[RichAlignmentRecord, Int]()
           sweptValues.map(kv => (kv._1, kv._2._2)).foreach(m => {
             readMappings += (m._1 -> m._2)
           })
@@ -305,7 +292,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
         })
 
         // perform reduction to pick the consensus with the lowest aggregated mismatch score
-        val bestConsensusTuple = consensusOutcomes.reduce((c1: (Int, Consensus, Map[RichADAMRecord, Int]), c2: (Int, Consensus, Map[RichADAMRecord, Int])) => {
+        val bestConsensusTuple = consensusOutcomes.reduce((c1: (Int, Consensus, mutable.Map[RichAlignmentRecord, Int]), c2: (Int, Consensus, mutable.Map[RichAlignmentRecord, Int])) => {
           if (c1._1 <= c2._1) {
             c1
           } else {
@@ -319,9 +306,9 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
         if ((totalMismatchSumPreCleaning - bestConsensusMismatchSum).toDouble / 10.0 > lodThreshold) {
 
           // if we see a sufficient improvement, realign the reads
-          val cleanedReads: Iterable[RichADAMRecord] = readsToClean.map(r => {
+          val cleanedReads: Iterable[RichAlignmentRecord] = readsToClean.map(r => {
 
-            val builder: ADAMRecord.Builder = ADAMRecord.newBuilder(r)
+            val builder: AlignmentRecord.Builder = AlignmentRecord.newBuilder(r)
             val remapping = bestMappings(r)
 
             // if read alignment is improved by aligning against new consensus, realign
@@ -356,9 +343,9 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
               // update mdtag and cigar
               builder.setMismatchingPositions(MdTag.moveAlignment(r, newCigar, reference.drop(remapping), refStart + remapping).toString())
               builder.setCigar(newCigar.toString)
-              new RichADAMRecord(builder.build())
+              new RichAlignmentRecord(builder.build())
             } else
-              new RichADAMRecord(builder.build())
+              new RichAlignmentRecord(builder.build())
           })
 
           realignedReads = cleanedReads ++ realignedReads
@@ -432,7 +419,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
    * @param read Read over which to sum mismatch quality.
    * @return Mismatch quality of read for current alignment.
    */
-  def sumMismatchQuality(read: ADAMRecord): Int = {
+  def sumMismatchQuality(read: AlignmentRecord): Int = {
     sumMismatchQualityIgnoreCigar(read.getSequence,
       read.mdTag.get.getReference(read),
       read.qualityScores)
@@ -445,7 +432,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
    * @param rdd Reads to realign.
    * @return Realigned read.
    */
-  def realignIndels(rdd: RDD[ADAMRecord]): RDD[ADAMRecord] = {
+  def realignIndels(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
     val sortedRdd = if (dataIsSorted) {
       rdd.filter(r => r.getReadMapped)
     } else {
@@ -457,7 +444,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
     }
 
     // we only want to convert once so let's get it over with
-    val rich_rdd = sortedRdd.map(new RichADAMRecord(_))
+    val rich_rdd = sortedRdd.map(new RichAlignmentRecord(_))
 
     // find realignment targets
     log.info("Generating realignment targets...")

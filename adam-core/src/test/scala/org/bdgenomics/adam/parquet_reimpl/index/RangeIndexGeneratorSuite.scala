@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.parquet_reimpl.index
 
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.FlatGenotype
 import org.scalatest.FunSuite
 import ReferenceFoldingContext._
 
@@ -26,7 +26,7 @@ class RangeIndexGeneratorSuite extends FunSuite {
 
   test("small_adam_A.fgenotype is indexed into one RangeIndexEntry") {
 
-    val generator = new RangeIndexGenerator[ADAMFlatGenotype]
+    val generator = new RangeIndexGenerator[FlatGenotype]
 
     val parquetPath = Thread.currentThread().getContextClassLoader.getResource("small_adam.fgenotype").getFile
     val entrySeq = generator.addParquetFile(parquetPath).toSeq
@@ -40,7 +40,7 @@ class RangeIndexGeneratorSuite extends FunSuite {
         assert(ranges.size === 3)
         ranges.head match {
           case ReferenceRegion(refName, start, end) =>
-            assert(refName === "chr1")
+            assert(refName === "1")
             assert(start === 14397)
             assert(end === 19191)
         }

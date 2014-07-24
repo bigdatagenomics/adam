@@ -17,12 +17,11 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.formats.avro.ADAMRecord
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{ SparkContext, Logging }
-import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
+import org.apache.spark.{ Logging, SparkContext }
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.AlignmentRecord
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object Fasta2ADAM extends ADAMCommandCompanion {
   val commandName: String = "fasta2adam"
@@ -58,7 +57,7 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fa
     }
 
     val remapped = if (args.reads != "") {
-      val readDict = sc.adamDictionaryLoad[ADAMRecord](args.reads)
+      val readDict = sc.adamDictionaryLoad[AlignmentRecord](args.reads)
 
       if (args.verbose) {
         println("Remapping with:")

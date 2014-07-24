@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.util
 
-import org.bdgenomics.formats.avro.ADAMContig
+import org.bdgenomics.formats.avro.Contig
 
 object Util {
-  def isSameContig(left: ADAMContig, right: ADAMContig): Boolean = {
+  def isSameContig(left: Contig, right: Contig): Boolean = {
     left.getContigName == right.getContigName && (
       left.getContigMD5 == null || right.getContigMD5 == null || left.getContigMD5 == right.getContigMD5)
   }

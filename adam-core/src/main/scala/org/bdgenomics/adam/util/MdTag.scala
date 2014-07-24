@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.util
 
+import net.sf.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichADAMRecord._
-import org.bdgenomics.adam.rich.RichADAMRecord
-import net.sf.samtools.{ Cigar, CigarOperator }
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
+import org.bdgenomics.adam.rich.RichAlignmentRecord
 import scala.collection.immutable
 import scala.collection.immutable.NumericRange
 import scala.util.matching.Regex
@@ -107,7 +107,7 @@ object MdTag {
    *
    * @see moveAlignment
    */
-  def apply(read: RichADAMRecord, newCigar: Cigar): MdTag = {
+  def apply(read: RichAlignmentRecord, newCigar: Cigar): MdTag = {
     moveAlignment(read, newCigar)
   }
 
@@ -122,7 +122,7 @@ object MdTag {
    *
    * @see moveAlignment
    */
-  def apply(read: RichADAMRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
+  def apply(read: RichAlignmentRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
     moveAlignment(read, newCigar, newReference, newAlignmentStart)
   }
 
@@ -209,7 +209,7 @@ object MdTag {
    *
    * @see apply
    */
-  def moveAlignment(read: RichADAMRecord, newCigar: Cigar): MdTag = {
+  def moveAlignment(read: RichAlignmentRecord, newCigar: Cigar): MdTag = {
     val reference = read.mdTag.get.getReference(read.record)
 
     moveAlignment(reference, read.record.getSequence, newCigar, read.record.getStart)
@@ -229,7 +229,7 @@ object MdTag {
    *
    * @see apply
    */
-  def moveAlignment(read: RichADAMRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
+  def moveAlignment(read: RichAlignmentRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
     moveAlignment(newReference, read.record.getSequence, newCigar, newAlignmentStart)
   }
 
@@ -368,7 +368,7 @@ class MdTag(
    * @param read A read for which one desires the reference sequence.
    * @return A string corresponding to the reference overlapping this read.
    */
-  def getReference(read: RichADAMRecord): String = {
+  def getReference(read: RichAlignmentRecord): String = {
     getReference(read.getSequence, read.samtoolsCigar, read.getStart)
   }
 

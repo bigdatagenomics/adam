@@ -17,15 +17,12 @@
  */
 package org.bdgenomics.adam.apis.java
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.api.java.JavaSparkContext._
-import org.apache.spark.api.java.{ JavaRDD, JavaSparkContext }
+import org.apache.spark.api.java.JavaRDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.formats.avro._
 import parquet.hadoop.metadata.CompressionCodecName
 
-class JavaADAMRecordRDD(val jrdd: JavaRDD[ADAMRecord]) extends Serializable {
+class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord]) extends Serializable {
 
   /**
    * Saves this RDD to disk as a Parquet file.

@@ -19,26 +19,26 @@ package org.bdgenomics.adam.predicates
 
 import org.scalatest.FunSuite
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.adam.projections.ADAMRecordField
+import org.bdgenomics.adam.projections.AlignmentRecordField
 
 class RecordConditionSuite extends FunSuite {
 
   test("create record condition from simple field condition") {
-    val mappedReadCondition = RecordCondition[ADAMRecord](
-      FieldCondition(ADAMRecordField.readMapped.toString(), (x: Boolean) => x))
+    val mappedReadCondition = RecordCondition[AlignmentRecord](
+      FieldCondition(AlignmentRecordField.readMapped.toString(), (x: Boolean) => x))
 
-    val mappedRead = ADAMRecord.newBuilder
+    val mappedRead = AlignmentRecord.newBuilder
       .setReadMapped(true)
       .build
     assert(mappedReadCondition(mappedRead))
 
-    val unmappedRead = ADAMRecord.newBuilder
+    val unmappedRead = AlignmentRecord.newBuilder
       .setReadMapped(false)
       .build
 
     assert(!mappedReadCondition(unmappedRead))
 
-    val underspecifiedRead = ADAMRecord.newBuilder
+    val underspecifiedRead = AlignmentRecord.newBuilder
       .setMapq(30)
       .build
 
@@ -47,11 +47,11 @@ class RecordConditionSuite extends FunSuite {
   }
 
   test("create record condition from nested field condition") {
-    val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("11").build)
-      .setPosition(17409571)
+    val v0 = Variant.newBuilder
+      .setContig(Contig.newBuilder.setContigName("11").build)
+      .setStart(17409571)
       .setReferenceAllele("T")
-      .setVariantAllele("C")
+      .setAlternateAllele("C")
       .build
 
     val passFilterAnnotation =
@@ -60,17 +60,17 @@ class RecordConditionSuite extends FunSuite {
       VariantCallingAnnotations.newBuilder().setVariantIsPassing(false).build()
 
     val passGenotype =
-      ADAMGenotype.newBuilder().setVariant(v0)
+      Genotype.newBuilder().setVariant(v0)
         .setSampleId("ignored")
         .setVariantCallingAnnotations(passFilterAnnotation)
         .build
-    val failGenotype = ADAMGenotype.newBuilder()
+    val failGenotype = Genotype.newBuilder()
       .setSampleId("ignored")
       .setVariant(v0)
       .setVariantCallingAnnotations(failFilterAnnotation)
       .build
 
-    val isPassing = RecordCondition[ADAMGenotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
+    val isPassing = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
 
     assert(isPassing(passGenotype))
     assert(!isPassing(failGenotype))
@@ -78,13 +78,13 @@ class RecordConditionSuite extends FunSuite {
   }
 
   test("create record condition from multiple field conditions") {
-    val mappedReadCondition = RecordCondition[ADAMRecord](
-      FieldCondition(ADAMRecordField.readMapped.toString(), (x: Boolean) => x),
-      FieldCondition(ADAMRecordField.primaryAlignment.toString(), (x: Boolean) => x),
-      FieldCondition(ADAMRecordField.failedVendorQualityChecks.toString(), (x: Boolean) => !x),
-      FieldCondition(ADAMRecordField.duplicateRead.toString(), (x: Boolean) => !x))
+    val mappedReadCondition = RecordCondition[AlignmentRecord](
+      FieldCondition(AlignmentRecordField.readMapped.toString(), (x: Boolean) => x),
+      FieldCondition(AlignmentRecordField.primaryAlignment.toString(), (x: Boolean) => x),
+      FieldCondition(AlignmentRecordField.failedVendorQualityChecks.toString(), (x: Boolean) => !x),
+      FieldCondition(AlignmentRecordField.duplicateRead.toString(), (x: Boolean) => !x))
 
-    val mappedRead = ADAMRecord.newBuilder
+    val mappedRead = AlignmentRecord.newBuilder
       .setReadMapped(true)
       .setPrimaryAlignment(true)
       .setFailedVendorQualityChecks(false)
@@ -93,7 +93,7 @@ class RecordConditionSuite extends FunSuite {
 
     assert(mappedReadCondition(mappedRead))
 
-    val mappedDuplicateRead = ADAMRecord.newBuilder
+    val mappedDuplicateRead = AlignmentRecord.newBuilder
       .setReadMapped(true)
       .setPrimaryAlignment(true)
       .setFailedVendorQualityChecks(false)
@@ -102,7 +102,7 @@ class RecordConditionSuite extends FunSuite {
 
     assert(!mappedReadCondition(mappedDuplicateRead))
 
-    val mappedSecondaryAlignmentRead = ADAMRecord.newBuilder
+    val mappedSecondaryAlignmentRead = AlignmentRecord.newBuilder
       .setReadMapped(true)
       .setPrimaryAlignment(false)
       .setFailedVendorQualityChecks(false)
@@ -111,7 +111,7 @@ class RecordConditionSuite extends FunSuite {
 
     assert(!mappedReadCondition(mappedSecondaryAlignmentRead))
 
-    val unmappedRead = ADAMRecord.newBuilder
+    val unmappedRead = AlignmentRecord.newBuilder
       .setReadMapped(false)
       .build
 
@@ -119,18 +119,18 @@ class RecordConditionSuite extends FunSuite {
   }
 
   test("create record condition from non-equality field conditions") {
-    val highQualityReadCondition = RecordCondition[ADAMRecord](
-      FieldCondition(ADAMRecordField.readMapped.toString(), PredicateUtils.isTrue),
-      FieldCondition(ADAMRecordField.mapq.toString(), (x: Int) => x > 10))
+    val highQualityReadCondition = RecordCondition[AlignmentRecord](
+      FieldCondition(AlignmentRecordField.readMapped.toString(), PredicateUtils.isTrue),
+      FieldCondition(AlignmentRecordField.mapq.toString(), (x: Int) => x > 10))
 
-    val highQualityRead = ADAMRecord.newBuilder
+    val highQualityRead = AlignmentRecord.newBuilder
       .setReadMapped(true)
       .setMapq(30)
       .build
 
     assert(highQualityReadCondition(highQualityRead))
 
-    val lowQualityRead = ADAMRecord.newBuilder
+    val lowQualityRead = AlignmentRecord.newBuilder
       .setReadMapped(true)
       .setMapq(5)
       .build
@@ -140,23 +140,23 @@ class RecordConditionSuite extends FunSuite {
 
   test("create record condition OR of record conditions") {
 
-    val sample1Conditon = RecordCondition[ADAMRecord](
-      FieldCondition(ADAMRecordField.recordGroupSample.toString(), (x: String) => x == "sample1"))
+    val sample1Conditon = RecordCondition[AlignmentRecord](
+      FieldCondition(AlignmentRecordField.recordGroupSample.toString(), (x: String) => x == "sample1"))
 
-    val sample2Conditon = RecordCondition[ADAMRecord](
-      FieldCondition(ADAMRecordField.recordGroupSample.toString(), (x: String) => x == "sample2"))
+    val sample2Conditon = RecordCondition[AlignmentRecord](
+      FieldCondition(AlignmentRecordField.recordGroupSample.toString(), (x: String) => x == "sample2"))
 
     val sample1ORsample2 = sample1Conditon || sample2Conditon
 
-    val sample1Read = ADAMRecord.newBuilder
+    val sample1Read = AlignmentRecord.newBuilder
       .setRecordGroupSample("sample1")
       .build
 
-    val sample2Read = ADAMRecord.newBuilder
+    val sample2Read = AlignmentRecord.newBuilder
       .setRecordGroupSample("sample2")
       .build
 
-    val sample3Read = ADAMRecord.newBuilder
+    val sample3Read = AlignmentRecord.newBuilder
       .setRecordGroupSample("sample3")
       .build
 
@@ -167,15 +167,15 @@ class RecordConditionSuite extends FunSuite {
 
   test("high quality adam read condition") {
 
-    val highQualityReadCondition = ADAMRecordConditions.isHighQuality(10)
-    val highQualityRead = ADAMRecord.newBuilder
+    val highQualityReadCondition = AlignmentRecordConditions.isHighQuality(10)
+    val highQualityRead = AlignmentRecord.newBuilder
       .setReadMapped(true)
       .setMapq(30)
       .build
 
     assert(highQualityReadCondition(highQualityRead))
 
-    val lowQualityRead = ADAMRecord.newBuilder
+    val lowQualityRead = AlignmentRecord.newBuilder
       .setReadMapped(true)
       .setMapq(5)
       .build
@@ -184,11 +184,11 @@ class RecordConditionSuite extends FunSuite {
   }
 
   test("passing genotype record condition") {
-    val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("11").build)
-      .setPosition(17409571)
+    val v0 = Variant.newBuilder
+      .setContig(Contig.newBuilder.setContigName("11").build)
+      .setStart(17409571)
       .setReferenceAllele("T")
-      .setVariantAllele("C")
+      .setAlternateAllele("C")
       .build
 
     val passFilterAnnotation =
@@ -196,16 +196,16 @@ class RecordConditionSuite extends FunSuite {
     val failFilterAnnotation =
       VariantCallingAnnotations.newBuilder().setVariantIsPassing(false).build()
 
-    val genotypes = Seq[ADAMGenotype](
-      ADAMGenotype.newBuilder().setVariant(v0)
+    val genotypes = Seq[Genotype](
+      Genotype.newBuilder().setVariant(v0)
         .setSampleId("ignored")
         .setVariantCallingAnnotations(passFilterAnnotation).build(),
-      ADAMGenotype.newBuilder()
+      Genotype.newBuilder()
         .setSampleId("ignored")
         .setVariant(v0)
         .setVariantCallingAnnotations(failFilterAnnotation).build())
 
-    val filtered = genotypes.filter(ADAMGenotypeConditions.isPassing.filter)
+    val filtered = genotypes.filter(GenotypeConditions.isPassing.filter)
 
     assert(filtered.size == 1)
   }

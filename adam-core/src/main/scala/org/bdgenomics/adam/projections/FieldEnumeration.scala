@@ -27,8 +27,8 @@ import org.apache.avro.Schema
  * Projection is a class for turning fields from an Enumeration into a projected Avro Schema object.
  *
  * In the old way of doing this, we used a "normal" Enumeration.  Projection would receive a
- * collection of ADAMRecord.Value objects, and use their names (plus the ADAMRecord.SCHEMA$
- * static field) to turn them into a Schema for ADAMRecords.  This worked fine for ADAMRecord,
+ * collection of Read.Value objects, and use their names (plus the Read.SCHEMA$
+ * static field) to turn them into a Schema for ADAMRecords.  This worked fine for Read,
  * and not at all for generalizing to other Schemas over other field enumerations.
  *
  * In the new system, we embed the Avro Schema object as an argument *in* each enumeration Value.

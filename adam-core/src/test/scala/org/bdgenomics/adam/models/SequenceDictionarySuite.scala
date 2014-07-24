@@ -181,7 +181,7 @@ class SequenceDictionarySuite extends FunSuite {
     assert(conv.length === 1000L)
     assert(conv.url.get === "http://bigdatagenomics.github.io/chr0")
 
-    val convSr = conv.toSAMSequenceRecord()
+    val convSr = conv.toSAMSequenceRecord
 
     assert(convSr.isSameSequence(sr))
   }
@@ -195,7 +195,7 @@ class SequenceDictionarySuite extends FunSuite {
 
     val asd = SequenceDictionary.fromSAMSequenceDictionary(ssd)
 
-    val toSSD = asd.toSAMSequenceDictionary()
+    val toSSD = asd.toSAMSequenceDictionary
 
     toSSD.assertSameDictionary(ssd)
   }

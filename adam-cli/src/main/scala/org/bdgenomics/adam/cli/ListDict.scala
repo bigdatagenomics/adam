@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.kohsuke.args4j.Argument
-import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.apache.spark.SparkContext
 import org.bdgenomics.adam.models.SequenceRecord
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.AlignmentRecord
+import org.kohsuke.args4j.Argument
 
 object ListDict extends ADAMCommandCompanion {
   val commandName: String = "listdict"
@@ -42,7 +42,7 @@ class ListDict(protected val args: ListDictArgs) extends ADAMSparkCommand[ListDi
   val companion: ADAMCommandCompanion = ListDict
 
   def run(sc: SparkContext, job: Job): Unit = {
-    val dict = sc.adamDictionaryLoad[ADAMRecord](args.inputPath)
+    val dict = sc.adamDictionaryLoad[AlignmentRecord](args.inputPath)
 
     dict.records.foreach {
       rec: SequenceRecord =>

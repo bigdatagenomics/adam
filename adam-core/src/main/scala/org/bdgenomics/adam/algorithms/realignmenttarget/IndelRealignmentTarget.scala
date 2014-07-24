@@ -17,14 +17,14 @@
  */
 package org.bdgenomics.adam.algorithms.realignmenttarget
 
-import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
+import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import net.sf.samtools.CigarOperator
 import org.apache.spark.Logging
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.immutable.TreeSet
 
 object ZippedTargetOrdering extends Ordering[(IndelRealignmentTarget, Int)] {
@@ -59,8 +59,8 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @param read Read to compare.
    * @return True if read alignment is contained in target span.
    */
-  def contains(target: IndelRealignmentTarget, read: ADAMRecord): Boolean = {
-    val reg = RichADAMRecord(read).readRegion
+  def contains(target: IndelRealignmentTarget, read: AlignmentRecord): Boolean = {
+    val reg = RichAlignmentRecord(read).readRegion
 
     reg.forall(r => target.readRange.overlaps(r))
   }
@@ -72,7 +72,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @param read Read to compare.
    * @return True if start of read is before the start of the indel alignment target.
    */
-  def lt(target: IndelRealignmentTarget, read: RichADAMRecord): Boolean = {
+  def lt(target: IndelRealignmentTarget, read: RichAlignmentRecord): Boolean = {
     val region = read.readRegion
 
     region.forall(r => target.readRange.compare(r) < 0)
@@ -100,7 +100,7 @@ object IndelRealignmentTarget {
    * @param maxIndelSize Maximum allowable size of an indel.
    * @return Set of generated realignment targets.
    */
-  def apply(read: RichADAMRecord,
+  def apply(read: RichAlignmentRecord,
             maxIndelSize: Int): Seq[IndelRealignmentTarget] = {
 
     val region = read.readRegion.get
@@ -112,23 +112,20 @@ object IndelRealignmentTarget {
     cigar.getCigarElements.foreach(cigarElement =>
       cigarElement.getOperator match {
         // INSERT
-        case CigarOperator.I => {
+        case CigarOperator.I =>
           if (cigarElement.getLength <= maxIndelSize) {
             pos ::= ReferenceRegion(refId, referencePos, referencePos + 1)
           }
-        }
         // DELETE
-        case CigarOperator.D => {
+        case CigarOperator.D =>
           if (cigarElement.getLength <= maxIndelSize) {
             pos ::= ReferenceRegion(refId, referencePos, referencePos + cigarElement.getLength)
           }
           referencePos += cigarElement.getLength
-        }
-        case _ => {
+        case _ =>
           if (cigarElement.getOperator.consumesReferenceBases()) {
             referencePos += cigarElement.getLength
           }
-        }
       })
 
     // if we have indels, emit those targets, else emit a target for this read

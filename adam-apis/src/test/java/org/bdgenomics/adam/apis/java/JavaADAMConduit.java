@@ -21,18 +21,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.bdgenomics.adam.apis.java.JavaADAMContext;
-import org.bdgenomics.adam.predicates.HighQualityReadPredicate;
-import org.bdgenomics.formats.avro.ADAMRecord;
+import org.bdgenomics.formats.avro.AlignmentRecord;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD to
  * disk and reads it back.
  */
 public class JavaADAMConduit {
-    public static JavaADAMRecordRDD conduit(JavaRDD<ADAMRecord> rdd) throws IOException {
-        JavaADAMRecordRDD recordRdd = new JavaADAMRecordRDD(rdd);
+    public static JavaAlignmentRecordRDD conduit(JavaRDD<AlignmentRecord> rdd) throws IOException {
+        JavaAlignmentRecordRDD recordRdd = new JavaAlignmentRecordRDD(rdd);
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");

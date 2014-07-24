@@ -17,15 +17,14 @@
  */
 package org.bdgenomics.adam.converters
 
-import net.sf.samtools.{ SAMReadGroupRecord, SAMRecord }
-
-import org.bdgenomics.formats.avro.ADAMRecord
-import scala.collection.JavaConverters._
+import net.sf.samtools.{ CigarElement, SAMReadGroupRecord, SAMRecord }
 import org.bdgenomics.adam.models.{ SequenceRecord, Attribute, RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.util.AttributeUtils
+import org.bdgenomics.formats.avro.AlignmentRecord
+import scala.collection.JavaConverters._
 
 class SAMRecordConverter extends Serializable {
-  def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): ADAMRecord = {
+  def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): AlignmentRecord = {
 
     val cigar: String = samRecord.getCigarString
     val startTrim = if (cigar == "*") {
@@ -47,7 +46,7 @@ class SAMRecordConverter extends Serializable {
       0
     }
 
-    val builder: ADAMRecord.Builder = ADAMRecord.newBuilder
+    val builder: AlignmentRecord.Builder = AlignmentRecord.newBuilder
       .setReadName(samRecord.getReadName)
       .setSequence(samRecord.getReadString)
       .setCigar(cigar)
@@ -66,6 +65,13 @@ class SAMRecordConverter extends Serializable {
       assert(start != 0, "Start cannot equal 0 if contig is set.")
       builder.setStart((start - 1).asInstanceOf[Long])
 
+      val end = samRecord.getCigar.getCigarElements
+        .asScala
+        .filter((p: CigarElement) => p.getOperator.consumesReferenceBases())
+        .foldLeft(start - 1) {
+          (pos, cigarEl) => pos + cigarEl.getLength
+        }
+      builder.setEnd(end)
       // set mapping quality
       val mapq: Int = samRecord.getMappingQuality
 

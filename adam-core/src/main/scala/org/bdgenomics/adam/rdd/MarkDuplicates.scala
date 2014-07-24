@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.formats.avro.ADAMRecord
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.models.{ SingleReadBucket, ReferencePositionPair, ReferencePositionWithOrientation }
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{ ReferencePositionPair, ReferencePositionWithOrientation, SingleReadBucket }
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 private[rdd] object MarkDuplicates extends Serializable {
 
@@ -35,7 +35,7 @@ private[rdd] object MarkDuplicates extends Serializable {
   }
 
   // Calculates the sum of the phred scores that are greater than or equal to 15
-  def score(record: ADAMRecord): Int = {
+  def score(record: AlignmentRecord): Int = {
     record.qualityScores.filter(15 <=).sum
   }
 
@@ -57,7 +57,7 @@ private[rdd] object MarkDuplicates extends Serializable {
     buckets
   }
 
-  def apply(rdd: RDD[ADAMRecord]): RDD[ADAMRecord] = {
+  def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
     // Group by library and left position
     def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket)): (Option[ReferencePositionWithOrientation], CharSequence) = {
       (p._1.read1refPos, p._2.allReads.head.getRecordGroupLibrary)

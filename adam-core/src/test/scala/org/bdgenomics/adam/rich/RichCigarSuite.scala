@@ -17,16 +17,16 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.ADAMRecord
-import RichADAMRecord._
 import net.sf.samtools.Cigar
-import RichCigar._
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
+import org.bdgenomics.adam.rich.RichCigar._
+import org.bdgenomics.formats.avro.AlignmentRecord
+import org.scalatest.FunSuite
 
 class RichCigarSuite extends FunSuite {
 
   test("moving 2 bp from a deletion to a match operator") {
-    val read = ADAMRecord.newBuilder()
+    val read = AlignmentRecord.newBuilder()
       .setReadMapped(true)
       .setStart(0)
       .setCigar("10M10D10M")
@@ -40,7 +40,7 @@ class RichCigarSuite extends FunSuite {
   }
 
   test("moving 2 bp from a insertion to a match operator") {
-    val read = ADAMRecord
+    val read = AlignmentRecord
       .newBuilder()
       .setReadMapped(true)
       .setStart(0)
@@ -55,7 +55,7 @@ class RichCigarSuite extends FunSuite {
   }
 
   test("moving 1 base in a two element cigar") {
-    val read = ADAMRecord
+    val read = AlignmentRecord
       .newBuilder()
       .setReadMapped(true)
       .setStart(0)
@@ -69,7 +69,7 @@ class RichCigarSuite extends FunSuite {
   }
 
   test("move to start of read") {
-    val read = ADAMRecord
+    val read = AlignmentRecord
       .newBuilder()
       .setReadMapped(true)
       .setStart(0)

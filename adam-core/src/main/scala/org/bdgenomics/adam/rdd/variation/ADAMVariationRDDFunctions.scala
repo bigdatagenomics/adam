@@ -17,19 +17,19 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.bdgenomics.formats.avro.{ ADAMGenotypeType, ADAMGenotype, ADAMDatabaseVariantAnnotation }
+import org.apache.spark.SparkContext._
+import org.apache.spark.Logging
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
-  ADAMVariantContext,
+  VariantContext,
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
-import org.bdgenomics.adam.rich.RichADAMVariant
-import org.bdgenomics.adam.rich.RichADAMGenotype._
-import org.apache.spark.Logging
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
+import org.bdgenomics.adam.rich.RichVariant
+import org.bdgenomics.adam.rich.RichGenotype._
+import org.bdgenomics.formats.avro.{ Genotype, GenotypeType, DatabaseVariantAnnotation }
 
-class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends ADAMSequenceDictionaryRDDAggregator[ADAMVariantContext](rdd) {
+class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceDictionaryRDDAggregator[VariantContext](rdd) {
 
   /**
    * For a single variant context, returns sequence record elements.
@@ -37,7 +37,7 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends ADAMS
    * @param elem Element from which to extract sequence records.
    * @return A seq of sequence records.
    */
-  def getSequenceRecordsFromElement(elem: ADAMVariantContext): scala.collection.Set[SequenceRecord] = {
+  def getSequenceRecordsFromElement(elem: VariantContext): scala.collection.Set[SequenceRecord] = {
     elem.genotypes.map(gt => SequenceRecord.fromSpecificRecord(gt.getVariant)).toSet
   }
 
@@ -45,11 +45,11 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends ADAMS
    * Left outer join database variant annotations
    *
    */
-  def joinDatabaseVariantAnnotation(ann: RDD[ADAMDatabaseVariantAnnotation]): RDD[ADAMVariantContext] = {
+  def joinDatabaseVariantAnnotation(ann: RDD[DatabaseVariantAnnotation]): RDD[VariantContext] = {
     rdd.keyBy(_.variant)
       .leftOuterJoin(ann.keyBy(_.getVariant))
       .values
-      .map { case (v: ADAMVariantContext, a) => ADAMVariantContext(v.variant, v.genotypes, a) }
+      .map { case (v: VariantContext, a) => VariantContext(v.variant, v.genotypes, a) }
 
   }
 
@@ -62,11 +62,11 @@ class ADAMVariantContextRDDFunctions(rdd: RDD[ADAMVariantContext]) extends ADAMS
   }
 }
 
-class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with Logging {
-  def toADAMVariantContext(): RDD[ADAMVariantContext] = {
-    rdd.keyBy({ g => RichADAMVariant.variantToRichVariant(g.getVariant) })
+class GenotypeRDDFunctions(rdd: RDD[Genotype]) extends Serializable with Logging {
+  def toVariantContext(): RDD[VariantContext] = {
+    rdd.keyBy({ g => RichVariant.variantToRichVariant(g.getVariant) })
       .groupByKey
-      .map { case (v: RichADAMVariant, g) => new ADAMVariantContext(v, g, None) }
+      .map { case (v: RichVariant, g) => new VariantContext(v, g, None) }
   }
 
   /**
@@ -75,12 +75,12 @@ class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with
    * @param truth Truth genotypes
    * @return PairedRDD of sample -> ConcordanceTable
    */
-  def concordanceWith(truth: RDD[ADAMGenotype]): RDD[(String, ConcordanceTable)] = {
+  def concordanceWith(truth: RDD[Genotype]): RDD[(String, ConcordanceTable)] = {
     // Concordance approach only works for ploidy <= 2, e.g. diploid/haploid
     val keyedTest = rdd.filter(_.ploidy <= 2)
-      .keyBy(g => (g.getVariant, g.getSampleId.toString): (RichADAMVariant, String))
+      .keyBy(g => (g.getVariant, g.getSampleId.toString): (RichVariant, String))
     val keyedTruth = truth.filter(_.ploidy <= 2)
-      .keyBy(g => (g.getVariant, g.getSampleId.toString): (RichADAMVariant, String))
+      .keyBy(g => (g.getVariant, g.getSampleId.toString): (RichVariant, String))
 
     val inTest = keyedTest.leftOuterJoin(keyedTruth)
     val justInTruth = keyedTruth.subtractByKey(inTest)
@@ -88,15 +88,15 @@ class ADAMGenotypeRDDFunctions(rdd: RDD[ADAMGenotype]) extends Serializable with
     // Compute RDD[sample -> ConcordanceTable] across variants/samples
     val inTestPairs = inTest.map({
       case ((_, sample), (l, Some(r))) => sample -> (l.getType, r.getType)
-      case ((_, sample), (l, None))    => sample -> (l.getType, ADAMGenotypeType.NO_CALL)
+      case ((_, sample), (l, None))    => sample -> (l.getType, GenotypeType.NO_CALL)
     })
     val justInTruthPairs = justInTruth.map({ // "truth-only" entries
-      case ((_, sample), r) => sample -> (ADAMGenotypeType.NO_CALL, r.getType)
+      case ((_, sample), r) => sample -> (GenotypeType.NO_CALL, r.getType)
     })
 
     val bySample = inTestPairs.union(justInTruthPairs).combineByKey(
-      (p: (ADAMGenotypeType, ADAMGenotypeType)) => ConcordanceTable(p),
-      (l: ConcordanceTable, r: (ADAMGenotypeType, ADAMGenotypeType)) => l.add(r),
+      (p: (GenotypeType, GenotypeType)) => ConcordanceTable(p),
+      (l: ConcordanceTable, r: (GenotypeType, GenotypeType)) => l.add(r),
       (l: ConcordanceTable, r: ConcordanceTable) => l.add(r))
 
     bySample

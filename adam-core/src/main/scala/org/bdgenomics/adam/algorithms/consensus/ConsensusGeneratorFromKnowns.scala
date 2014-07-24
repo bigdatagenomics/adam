@@ -19,11 +19,11 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.algorithms.realignmenttarget.IndelRealignmentTarget
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rich.RichADAMRecord
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
+import org.bdgenomics.adam.rich.RichAlignmentRecord
 
 class ConsensusGeneratorFromKnowns(file: String, sc: SparkContext) extends ConsensusGenerator {
 
@@ -36,11 +36,11 @@ class ConsensusGeneratorFromKnowns(file: String, sc: SparkContext) extends Conse
    * @return Returns an option which wraps an RDD of indel realignment targets.
    */
   def targetsToAdd(): Option[RDD[IndelRealignmentTarget]] = {
-    val rdd: RDD[ADAMVariantContext] = sc.adamVCFLoad(file)
+    val rdd: RDD[VariantContext] = sc.adamVCFLoad(file)
 
     Some(rdd.map(_.variant.variant)
-      .filter(v => v.getReferenceAllele.length != v.getVariantAllele.length)
-      .map(v => ReferenceRegion(v.getContig.getContigName, v.getPosition, v.getPosition + v.getReferenceAllele.length))
+      .filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
+      .map(v => ReferenceRegion(v.getContig.getContigName, v.getStart, v.getStart + v.getReferenceAllele.length))
       .map(r => new IndelRealignmentTarget(Some(r), r)))
   }
 
@@ -51,9 +51,9 @@ class ConsensusGeneratorFromKnowns(file: String, sc: SparkContext) extends Conse
    * @param reads Reads to preprocess.
    * @return Preprocessed reads.
    */
-  def preprocessReadsForRealignment(reads: Iterable[RichADAMRecord],
+  def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord],
                                     reference: String,
-                                    region: ReferenceRegion): Iterable[RichADAMRecord] = {
+                                    region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
     reads
   }
 
@@ -63,12 +63,12 @@ class ConsensusGeneratorFromKnowns(file: String, sc: SparkContext) extends Conse
    * @param reads Reads to generate consensus sequences from.
    * @return Consensus sequences to use for realignment.
    */
-  def findConsensus(reads: Iterable[RichADAMRecord]): Iterable[Consensus] = {
+  def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus] = {
     val table = indelTable.value
 
     // get region
     val start = reads.map(_.record.getStart.toLong).reduce(_ min _)
-    val end = reads.flatMap(_.end).reduce(_ max _)
+    val end = reads.map(_.getEnd.toLong).reduce(_ max _)
     val refId = reads.head.record.getContig.getContigName
 
     val region = ReferenceRegion(refId, start, end + 1)

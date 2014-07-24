@@ -17,13 +17,13 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.ADAMRecord
-import org.apache.spark.rdd.RDD
 import java.io.File
-import org.scalatest.BeforeAndAfter
 import java.util.logging.Level
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }
+import org.bdgenomics.formats.avro.AlignmentRecord
+import org.scalatest.BeforeAndAfter
 
 class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
 
@@ -43,7 +43,7 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
       cleanParquet(readsParquetFile)
 
     // Convert the reads12.sam file into a parquet file
-    val bamReads: RDD[ADAMRecord] = sc.adamLoad(readsFilepath)
+    val bamReads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
     bamReads.adamSave(readsParquetFile.getAbsolutePath)
   }
 
@@ -71,11 +71,11 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
     }
   }
 
-  sparkTest("Simple projection on ADAMRecord works") {
+  sparkTest("Simple projection on Read works") {
 
-    val p1 = Projection(ADAMRecordField.readName)
+    val p1 = Projection(AlignmentRecordField.readName)
 
-    val reads1: RDD[ADAMRecord] = sc.adamLoad(readsParquetFile.getAbsolutePath, projection = Some(p1))
+    val reads1: RDD[AlignmentRecord] = sc.adamLoad(readsParquetFile.getAbsolutePath, projection = Some(p1))
 
     assert(reads1.count() === 200)
 
@@ -83,9 +83,9 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
     assert(first1.getReadName === "simread:1:26472783:false")
     assert(first1.getReadMapped === false)
 
-    val p2 = Projection(ADAMRecordField.readName, ADAMRecordField.readMapped)
+    val p2 = Projection(AlignmentRecordField.readName, AlignmentRecordField.readMapped)
 
-    val reads2: RDD[ADAMRecord] = sc.adamLoad(readsParquetFile.getAbsolutePath, projection = Some(p2))
+    val reads2: RDD[AlignmentRecord] = sc.adamLoad(readsParquetFile.getAbsolutePath, projection = Some(p2))
 
     assert(reads2.count() === 200)
 

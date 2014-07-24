@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.parquet_reimpl.index
 
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.FlatGenotype
 import scala.math._
 
 /**
@@ -39,7 +39,7 @@ trait ReferenceFolder[T] extends Serializable {
   def fold(regions: Seq[ReferenceRegion], value: T): Seq[ReferenceRegion]
 }
 
-class ADAMFlatGenotypeReferenceFolder(val rangeGapSize: Long = 10000L) extends ReferenceFolder[ADAMFlatGenotype] {
+class FlatGenotypeReferenceFolder(val rangeGapSize: Long = 10000L) extends ReferenceFolder[FlatGenotype] {
 
   var count: Long = 0L
 
@@ -48,17 +48,17 @@ class ADAMFlatGenotypeReferenceFolder(val rangeGapSize: Long = 10000L) extends R
     else if (pos > r.end) pos - r.end + 1
     else 0
 
-  def canCombine(fg: ADAMFlatGenotype, r: ReferenceRegion): Boolean =
+  def canCombine(fg: FlatGenotype, r: ReferenceRegion): Boolean =
     r.referenceName == fg.getReferenceName && distance(r, fg.getPosition) <= rangeGapSize
 
-  def combine(fg: ADAMFlatGenotype, r: ReferenceRegion): ReferenceRegion =
+  def combine(fg: FlatGenotype, r: ReferenceRegion): ReferenceRegion =
     if (r.start <= fg.getPosition && r.end > fg.getPosition) r
     else ReferenceRegion(r.referenceName, min(r.start, fg.getPosition), max(r.end, fg.getPosition + 1))
 
-  def lift(fg: ADAMFlatGenotype): ReferenceRegion =
+  def lift(fg: FlatGenotype): ReferenceRegion =
     ReferenceRegion(fg.getReferenceName.toString, fg.getPosition, fg.getPosition + 1)
 
-  override def fold(regions: Seq[ReferenceRegion], value: ADAMFlatGenotype): Seq[ReferenceRegion] = {
+  override def fold(regions: Seq[ReferenceRegion], value: FlatGenotype): Seq[ReferenceRegion] = {
     count += 1
     if (count % 10000 == 0) println("Processed %dk records".format(count / 1000))
 
@@ -75,5 +75,5 @@ class ADAMFlatGenotypeReferenceFolder(val rangeGapSize: Long = 10000L) extends R
 }
 
 object ReferenceFoldingContext {
-  implicit val adamFlatGenotypeReferenceFolder = new ADAMFlatGenotypeReferenceFolder(10000L)
+  implicit val adamFlatGenotypeReferenceFolder = new FlatGenotypeReferenceFolder(10000L)
 }

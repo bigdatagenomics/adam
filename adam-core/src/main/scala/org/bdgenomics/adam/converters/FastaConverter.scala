@@ -19,7 +19,7 @@ package org.bdgenomics.adam.converters
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMNucleotideContigFragment }
+import org.bdgenomics.formats.avro.{ Contig, NucleotideContigFragment }
 import scala.Int
 import scala.Predef._
 import scala.Some
@@ -71,7 +71,7 @@ private[adam] object FastaConverter {
    * @return An RDD of ADAM FASTA data.
    */
   def apply(rdd: RDD[(Long, String)],
-            maxFragmentLength: Long = 10000L): RDD[ADAMNucleotideContigFragment] = {
+            maxFragmentLength: Long = 10000L): RDD[NucleotideContigFragment] = {
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
       .filter((kv: (Long, String)) => !kv._2.startsWith(";"))
 
@@ -185,7 +185,7 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
   def convert(name: Option[String],
               id: Int,
               sequence: Seq[String],
-              description: Option[String]): Seq[ADAMNucleotideContigFragment] = {
+              description: Option[String]): Seq[NucleotideContigFragment] = {
 
     // get sequence length
     val sequenceLength = sequence.map(_.length).reduce(_ + _)
@@ -201,10 +201,10 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
       .map(si => {
         val (bases, index) = si
 
-        val contig = ADAMContig.newBuilder
+        val contig = Contig.newBuilder
           .setContigLength(sequenceLength)
 
-        val builder = ADAMNucleotideContigFragment.newBuilder()
+        val builder = NucleotideContigFragment.newBuilder()
           .setFragmentSequence(bases)
           .setFragmentNumber(index)
           .setFragmentStartPosition(index * fragmentLength)

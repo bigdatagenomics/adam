@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
@@ -26,10 +26,10 @@ import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 
 object SingleReadBucket extends Logging {
-  def apply(rdd: RDD[ADAMRecord]): RDD[SingleReadBucket] = {
-    rdd.groupBy(p => (p.getRecordGroupId, p.getReadName))
+  def apply(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
+    rdd.groupBy(p => (p.getRecordGroupName, p.getReadName))
       .map(kv => {
-        val ((recordGroup, readName), reads) = kv
+        val (_, reads) = kv
 
         // split by mapping
         val (mapped, unmapped) = reads.partition(_.getReadMapped)
@@ -41,9 +41,9 @@ object SingleReadBucket extends Logging {
   }
 }
 
-case class SingleReadBucket(primaryMapped: Iterable[ADAMRecord] = Seq.empty,
-                            secondaryMapped: Iterable[ADAMRecord] = Seq.empty,
-                            unmapped: Iterable[ADAMRecord] = Seq.empty) {
+case class SingleReadBucket(primaryMapped: Iterable[AlignmentRecord] = Seq.empty,
+                            secondaryMapped: Iterable[AlignmentRecord] = Seq.empty,
+                            unmapped: Iterable[AlignmentRecord] = Seq.empty) {
   // Note: not a val in order to save serialization/memory cost
   def allReads = {
     primaryMapped ++ secondaryMapped ++ unmapped
@@ -51,19 +51,19 @@ case class SingleReadBucket(primaryMapped: Iterable[ADAMRecord] = Seq.empty,
 }
 
 class SingleReadBucketSerializer extends Serializer[SingleReadBucket] {
-  val recordSerializer = new AvroSerializer[ADAMRecord]()
+  val recordSerializer = new AvroSerializer[AlignmentRecord]()
 
-  def writeArray(kryo: Kryo, output: Output, reads: Seq[ADAMRecord]): Unit = {
+  def writeArray(kryo: Kryo, output: Output, reads: Seq[AlignmentRecord]): Unit = {
     output.writeInt(reads.size, true)
     for (read <- reads) {
       recordSerializer.write(kryo, output, read)
     }
   }
 
-  def readArray(kryo: Kryo, input: Input): Seq[ADAMRecord] = {
+  def readArray(kryo: Kryo, input: Input): Seq[AlignmentRecord] = {
     val numReads = input.readInt(true)
-    (0 until numReads).foldLeft(List[ADAMRecord]()) {
-      (a, b) => recordSerializer.read(kryo, input, classOf[ADAMRecord]) :: a
+    (0 until numReads).foldLeft(List[AlignmentRecord]()) {
+      (a, b) => recordSerializer.read(kryo, input, classOf[AlignmentRecord]) :: a
     }
   }
 

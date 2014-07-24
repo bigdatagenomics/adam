@@ -15,12 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.bdgenomics.adam.predicates
 
+import org.bdgenomics.adam.projections.AlignmentRecordField
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-class HighQualityReadPredicate extends ADAMPredicate[AlignmentRecord] {
+object AlignmentRecordConditions {
 
-  override val recordCondition = AlignmentRecordConditions.isMapped && AlignmentRecordConditions.isHighQuality(30)
+  val isMapped = RecordCondition[AlignmentRecord](FieldCondition(AlignmentRecordField.readMapped.toString(), PredicateUtils.isTrue))
+  val isUnique = RecordCondition[AlignmentRecord](FieldCondition(AlignmentRecordField.duplicateRead.toString(), PredicateUtils.isFalse))
+
+  val isPrimaryAlignment = RecordCondition[AlignmentRecord](FieldCondition(AlignmentRecordField.primaryAlignment.toString(), PredicateUtils.isTrue))
+
+  val passedVendorQualityChecks = RecordCondition[AlignmentRecord](FieldCondition(AlignmentRecordField.failedVendorQualityChecks.toString(), PredicateUtils.isFalse))
+
+  def isHighQuality(minQuality: Int) = RecordCondition[AlignmentRecord](FieldCondition(AlignmentRecordField.mapq.toString(), (x: Int) => x > minQuality))
 
 }
