@@ -21,6 +21,7 @@ import java.io.{ File, PrintWriter }
 import java.net.URI
 
 import com.amazonaws.services.s3.AmazonS3Client
+import org.apache.http.conn.HttpHostConnectException
 import org.bdgenomics.adam.util.{ CredentialsProperties, S3Test, NetworkConnected }
 import org.scalatest.FunSuite
 
@@ -77,10 +78,31 @@ class ByteAccessSuite extends FunSuite {
     assert(bytes1 === Array(188, 185, 119, 110, 102, 222, 76, 23, 189, 139).map(_.toByte))
   }
 
+  def lengthWithRetry(http: HTTPRangedByteAccess): Int = {
+    try {
+      http.length().toInt
+    } catch {
+      case e: HttpHostConnectException =>
+        Thread.sleep(5000)
+        http.length().toInt
+    }
+  }
+
+  def readWithRetry(http: HTTPRangedByteAccess, length: Option[Int] = None): Array[Byte] = {
+    val len = if (length.isDefined) length.get else lengthWithRetry(http)
+    try {
+      http.readFully(0, len)
+    } catch {
+      case cxnExcept: HttpHostConnectException =>
+        Thread.sleep(5000)
+        http.readFully(0, len)
+    }
+  }
+
   test("HTTPRangedByteAccess can retrieve a full range", NetworkConnected) {
     val uri = URI.create("http://www.eecs.berkeley.edu/Includes/EECS-images/eecslogo.gif")
     val http = new HTTPRangedByteAccess(uri)
-    val bytes = http.readFully(0, http.length().toInt)
+    val bytes = readWithRetry(http)
     assert(bytes.length === http.length())
   }
 
