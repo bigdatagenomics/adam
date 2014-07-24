@@ -20,13 +20,13 @@ package org.bdgenomics.adam.algorithms.consensus
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.realignmenttarget.IndelRealignmentTarget
 import org.bdgenomics.adam.models.{ Consensus, ReferenceRegion, ReferencePosition }
-import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.rich.RichADAMRecord._
+import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import org.bdgenomics.adam.util.NormalizationUtils._
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 class ConsensusGeneratorFromReads extends ConsensusGenerator {
 
@@ -44,9 +44,9 @@ class ConsensusGeneratorFromReads extends ConsensusGenerator {
    * @param reads Reads to process.
    * @return Reads with indels normalized if they contain a single indel.
    */
-  def preprocessReadsForRealignment(reads: Iterable[RichADAMRecord],
+  def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord],
                                     reference: String,
-                                    region: ReferenceRegion): Iterable[RichADAMRecord] = {
+                                    region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
     reads.map(r => {
       // if there are two alignment blocks (sequence matches) then there is a single indel in the read
       if (r.samtoolsCigar.numAlignmentBlocks == 2) {
@@ -54,7 +54,7 @@ class ConsensusGeneratorFromReads extends ConsensusGenerator {
         val cigar = leftAlignIndel(r)
         val mdTag = MdTag.moveAlignment(r, cigar)
 
-        val newRead: RichADAMRecord = ADAMRecord.newBuilder(r)
+        val newRead: RichAlignmentRecord = AlignmentRecord.newBuilder(r)
           .setCigar(cigar.toString)
           .setMismatchingPositions(mdTag.toString())
           .build()
@@ -69,7 +69,7 @@ class ConsensusGeneratorFromReads extends ConsensusGenerator {
   /**
    * Generates concensus sequences from reads with indels.
    */
-  def findConsensus(reads: Iterable[RichADAMRecord]): Iterable[Consensus] = {
+  def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus] = {
     reads.filter(r => r.mdTag.isDefined)
       .flatMap(r => {
         // try to generate a consensus alignment - if a consensus exists, add it to our

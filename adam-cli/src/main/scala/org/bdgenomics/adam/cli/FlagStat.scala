@@ -17,13 +17,13 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.kohsuke.args4j.Argument
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.formats.avro.ADAMRecord
-import org.bdgenomics.adam.projections.{ Projection, ADAMRecordField }
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.projections.{ Projection, AlignmentRecordField }
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.AlignmentRecord
+import org.kohsuke.args4j.Argument
 
 object FlagStat extends ADAMCommandCompanion {
   val commandName: String = "flagstat"
@@ -45,15 +45,22 @@ class FlagStat(protected val args: FlagStatArgs) extends ADAMSparkCommand[FlagSt
   def run(sc: SparkContext, job: Job): Unit = {
 
     val projection = Projection(
-      ADAMRecordField.readMapped, ADAMRecordField.mateMapped, ADAMRecordField.readPaired,
-      ADAMRecordField.contig, ADAMRecordField.mateContig,
-      ADAMRecordField.primaryAlignment,
-      ADAMRecordField.duplicateRead, ADAMRecordField.readMapped, ADAMRecordField.mateMapped,
-      ADAMRecordField.firstOfPair, ADAMRecordField.secondOfPair,
-      ADAMRecordField.properPair, ADAMRecordField.mapq,
-      ADAMRecordField.failedVendorQualityChecks)
+      AlignmentRecordField.readMapped,
+      AlignmentRecordField.mateMapped,
+      AlignmentRecordField.readPaired,
+      AlignmentRecordField.contig,
+      AlignmentRecordField.mateContig,
+      AlignmentRecordField.primaryAlignment,
+      AlignmentRecordField.duplicateRead,
+      AlignmentRecordField.readMapped,
+      AlignmentRecordField.mateMapped,
+      AlignmentRecordField.firstOfPair,
+      AlignmentRecordField.secondOfPair,
+      AlignmentRecordField.properPair,
+      AlignmentRecordField.mapq,
+      AlignmentRecordField.failedVendorQualityChecks)
 
-    val adamFile: RDD[ADAMRecord] = sc.adamLoad(args.inputPath, projection = Some(projection))
+    val adamFile: RDD[AlignmentRecord] = sc.adamLoad(args.inputPath, projection = Some(projection))
 
     val (failedVendorQuality, passedVendorQuality) = adamFile.adamFlagStat()
 

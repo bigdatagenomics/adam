@@ -17,15 +17,14 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.util._
-import org.kohsuke.args4j.Argument
-import scala.Some
-import org.apache.spark.{ SparkContext, Logging }
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util._
+import org.bdgenomics.formats.avro.AlignmentRecord
+import org.kohsuke.args4j.Argument
 
 object MpileupCommand extends ADAMCommandCompanion {
   val commandName: String = "mpileup"
@@ -48,7 +47,7 @@ class MpileupCommand(protected val args: MpileupArgs) extends ADAMSparkCommand[M
 
   def run(sc: SparkContext, job: Job) {
 
-    val reads: RDD[ADAMRecord] = sc.adamLoad(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
+    val reads: RDD[AlignmentRecord] = sc.adamLoad(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
 
     val pileups = new PileupTraversable(reads)
     for (pileup <- pileups) {

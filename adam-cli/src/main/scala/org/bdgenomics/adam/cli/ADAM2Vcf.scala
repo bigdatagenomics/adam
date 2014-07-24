@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.formats.avro.ADAMGenotype
+import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
@@ -57,7 +57,7 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends ADAMSparkCommand[ADAM2VcfArgs] wi
     if (dictionary.isDefined)
       log.info("Using contig translation")
 
-    val adamGTs: RDD[ADAMGenotype] = sc.adamLoad(args.adamFile)
-    sc.adamVCFSave(args.outputPath, adamGTs.toADAMVariantContext, dict = dictionary)
+    val adamGTs: RDD[Genotype] = sc.adamLoad(args.adamFile)
+    sc.adamVCFSave(args.outputPath, adamGTs.toVariantContext, dict = dictionary)
   }
 }

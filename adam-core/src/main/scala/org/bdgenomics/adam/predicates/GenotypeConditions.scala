@@ -15,20 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rich
 
-import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
-import org.bdgenomics.adam.rich.ReferenceMappingContext.ADAMRecordReferenceMapping
+package org.bdgenomics.adam.predicates
 
-class ADAMRecordReferenceMappingSuite extends SparkFunSuite {
+import org.bdgenomics.formats.avro.Genotype
 
-  sparkTest("test getReferenceId returns the right referenceId") {
-    val contig = ADAMContig.newBuilder
-      .setContigName("chr12")
-      .build
+object GenotypeConditions {
 
-    val rec = ADAMRecord.newBuilder().setContig(contig).build()
-    assert(ADAMRecordReferenceMapping.getReferenceName(rec) === "chr12")
-  }
+  val isPassing = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
+
+  def hasMinReadDepth(minReadDepth: Int) = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.readDepth", (x: Int) => x > minReadDepth))
+
 }

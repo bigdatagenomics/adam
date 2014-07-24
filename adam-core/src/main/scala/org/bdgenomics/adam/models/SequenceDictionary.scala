@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMNucleotideContigFragment, ADAMContig }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import net.sf.samtools.{ SAMFileReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
 import org.apache.avro.specific.SpecificRecord
@@ -32,13 +32,13 @@ object SequenceDictionary {
   def apply(): SequenceDictionary = new SequenceDictionary()
   def apply(records: SequenceRecord*): SequenceDictionary = new SequenceDictionary(records.toVector)
   def apply(dict: SAMSequenceDictionary): SequenceDictionary = {
-    new SequenceDictionary(dict.getSequences.map(SequenceRecord.fromSAMSequenceRecord(_)).toVector)
+    new SequenceDictionary(dict.getSequences.map(SequenceRecord.fromSAMSequenceRecord).toVector)
   }
   def apply(header: SAMFileHeader): SequenceDictionary = SequenceDictionary(header.getSequenceDictionary)
   def apply(reader: SAMFileReader): SequenceDictionary = SequenceDictionary(reader.getFileHeader)
 
   def toSAMSequenceDictionary(dictionary: SequenceDictionary): SAMSequenceDictionary = {
-    new SAMSequenceDictionary(dictionary.records.map(SequenceRecord.toSAMSequenceRecord(_)).toList)
+    new SAMSequenceDictionary(dictionary.records.map(SequenceRecord.toSAMSequenceRecord).toList)
   }
 
   /**
@@ -98,7 +98,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
     new SequenceDictionary(records ++ that.records.filter(r => !byName.contains(r.name)))
   }
 
-  override def hashCode = records.hashCode
+  override def hashCode = records.hashCode()
   override def equals(o: Any) = o match {
     case that: SequenceDictionary => records.equals(that.records)
     case _                        => false
@@ -109,8 +109,8 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    *
    * @return Returns a SAM formatted sequence dictionary.
    */
-  def toSAMSequenceDictionary(): SAMSequenceDictionary = {
-    new SAMSequenceDictionary(records.map(_.toSAMSequenceRecord).toList)
+  def toSAMSequenceDictionary: SAMSequenceDictionary = {
+    new SAMSequenceDictionary(records.map(_ toSAMSequenceRecord).toList)
   }
 
   override def toString: String = {
@@ -142,11 +142,11 @@ class SequenceRecord(
    *
    * @return A SAM formatted sequence record.
    */
-  def toSAMSequenceRecord(): SAMSequenceRecord = {
+  def toSAMSequenceRecord: SAMSequenceRecord = {
     val rec = new SAMSequenceRecord(name.toString, length.toInt)
 
     // set md5 if available
-    md5.foreach(s => rec.setAttribute(SAMSequenceRecord.MD5_TAG, s.toUpperCase()))
+    md5.foreach(s => rec.setAttribute(SAMSequenceRecord.MD5_TAG, s.toUpperCase))
 
     // set URL if available
     url.foreach(rec.setAttribute(SAMSequenceRecord.URI_TAG, _))
@@ -168,9 +168,8 @@ class SequenceRecord(
   }
 
   override def equals(o: Any): Boolean = o match {
-    case that: SequenceRecord => {
+    case that: SequenceRecord =>
       name == that.name && length == that.length && optionEq(md5, that.md5) && optionEq(url, that.url)
-    }
     case _ => false
   }
 
@@ -229,7 +228,7 @@ object SequenceRecord {
     sam
   }
 
-  def fromADAMContig(contig: ADAMContig): SequenceRecord = {
+  def fromADAMContig(contig: Contig): SequenceRecord = {
     SequenceRecord(
       contig.getContigName.toString,
       contig.getContigLength,
@@ -239,8 +238,8 @@ object SequenceRecord {
       species = contig.getSpecies)
   }
 
-  def toADAMContig(record: SequenceRecord): ADAMContig = {
-    val builder = ADAMContig.newBuilder()
+  def toADAMContig(record: SequenceRecord): Contig = {
+    val builder = Contig.newBuilder()
       .setContigName(record.name)
       .setContigLength(record.length)
     record.md5.foreach(builder.setContigMD5)
@@ -250,21 +249,21 @@ object SequenceRecord {
     builder.build
   }
 
-  def fromADAMContigFragment(fragment: ADAMNucleotideContigFragment): SequenceRecord = {
+  def fromADAMContigFragment(fragment: NucleotideContigFragment): SequenceRecord = {
     fromADAMContig(fragment.getContig)
   }
 
   /**
-   * Convert an ADAMRecord into one or more SequenceRecords.
-   * The reason that we can't simply use the "fromSpecificRecord" method, below, is that each ADAMRecord
+   * Convert an Read into one or more SequenceRecords.
+   * The reason that we can't simply use the "fromSpecificRecord" method, below, is that each Read
    * can (through the fact that it could be a pair of reads) contain 1 or 2 possible SequenceRecord entries
    * for the SequenceDictionary itself.  Both have to be extracted, separately.
    *
-   * @param rec The ADAMRecord from which to extract the SequenceRecord entries
+   * @param rec The Read from which to extract the SequenceRecord entries
    * @return a list of all SequenceRecord entries derivable from this record.
    */
-  def fromADAMRecord(rec: ADAMRecord): Set[SequenceRecord] = {
-    assert(rec != null, "ADAMRecord was null")
+  def fromADAMRecord(rec: AlignmentRecord): Set[SequenceRecord] = {
+    assert(rec != null, "Read was null")
     if ((!rec.getReadPaired || rec.getFirstOfPair) && (rec.getContig != null || rec.getMateContig != null)) {
       // The contig should be null for unmapped read
       List(Option(rec.getContig), Option(rec.getMateContig))
@@ -284,10 +283,9 @@ object SequenceRecord {
         url = rec.get(schema.getField("referenceUrl").pos()).toString)
     } else if (schema.getField("contig") != null) {
       val pos = schema.getField("contig").pos()
-      fromADAMContig(rec.get(pos).asInstanceOf[ADAMContig])
+      fromADAMContig(rec.get(pos).asInstanceOf[Contig])
     } else {
-      assert(false, "Missing information to generate SequenceRecord")
-      null
+      throw new AssertionError("Missing information to generate SequenceRecord")
     }
   }
 }

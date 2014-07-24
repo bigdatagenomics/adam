@@ -17,13 +17,13 @@
  */
 package org.bdgenomics.adam.rdd
 
+import org.bdgenomics.formats.avro.{ Base, Contig, Pileup }
 import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMPileup, Base }
 
 class PileupAggregationSuite extends FunSuite {
 
   test("aggregating a pileup with two different bases does not change values") {
-    val p0 = ADAMPileup.newBuilder()
+    val p0 = Pileup.newBuilder()
       .setPosition(1L)
       .setReadBase(Base.A)
       .setMapQuality(10)
@@ -32,7 +32,7 @@ class PileupAggregationSuite extends FunSuite {
       .setNumSoftClipped(0)
       .setNumReverseStrand(0)
       .build()
-    val p1 = ADAMPileup.newBuilder()
+    val p1 = Pileup.newBuilder()
       .setPosition(1L)
       .setReadBase(Base.C)
       .setMapQuality(20)
@@ -54,12 +54,12 @@ class PileupAggregationSuite extends FunSuite {
   }
 
   test("aggregating a pileup with a single base type") {
-    val c0 = ADAMContig.newBuilder
+    val c0 = Contig.newBuilder
       .setContigName("chr1")
       .setContigLength(1000)
       .build
 
-    val p0 = ADAMPileup.newBuilder()
+    val p0 = Pileup.newBuilder()
       .setContig(c0)
       .setPosition(1L)
       .setReadBase(Base.A)
@@ -72,7 +72,7 @@ class PileupAggregationSuite extends FunSuite {
       .setReadStart(0L)
       .setReadEnd(1L)
       .build()
-    val p1 = ADAMPileup.newBuilder()
+    val p1 = Pileup.newBuilder()
       .setContig(c0)
       .setPosition(1L)
       .setReadBase(Base.A)
@@ -106,10 +106,10 @@ class PileupAggregationSuite extends FunSuite {
   }
 
   test("aggregating a pileup with a single base type, multiple bases at a position") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("chr0")
       .build
-    val p0 = ADAMPileup.newBuilder()
+    val p0 = Pileup.newBuilder()
       .setContig(contig)
       .setPosition(1L)
       .setReadBase(Base.A)
@@ -122,7 +122,7 @@ class PileupAggregationSuite extends FunSuite {
       .setReadStart(0L)
       .setReadEnd(1L)
       .build()
-    val p1 = ADAMPileup.newBuilder()
+    val p1 = Pileup.newBuilder()
       .setContig(contig)
       .setPosition(1L)
       .setReadBase(Base.A)

@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.util
 
-import scala.collection.JavaConversions._
 import net.sf.samtools.{ TextCigarCodec, CigarOperator }
-import scala.collection.mutable.ListBuffer
-import scala.collection.SortedMap
-import org.bdgenomics.formats.avro.ADAMRecord
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.formats.avro.AlignmentRecord
+import scala.collection.JavaConversions._
+import scala.collection.SortedMap
+import scala.collection.mutable.ListBuffer
 
 object Base extends Enumeration with Serializable {
   val A, C, T, G, N = Value
@@ -69,12 +69,12 @@ class Pileup(val referenceName: String,
 object PileupTraversable {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
 
-  def apply(reads: RDD[ADAMRecord]) {
+  def apply(reads: RDD[AlignmentRecord]) {
     new PileupTraversable(reads)
   }
 }
 
-class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with Serializable {
+class PileupTraversable(reads: RDD[AlignmentRecord]) extends Traversable[Pileup] with Serializable {
 
   def stringToQualitySanger(score: String): Int = {
     try {
@@ -82,11 +82,11 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
       score.toInt - 33
     } catch {
       // thrown if phred score is omitted
-      case nfe: NumberFormatException => return 0
+      case nfe: NumberFormatException => 0
     }
   }
 
-  def readToPileups(record: ADAMRecord): List[Pileup] = {
+  def readToPileups(record: AlignmentRecord): List[Pileup] = {
     if (record == null || record.getCigar == null || record.getMismatchingPositions == null) {
       // TODO: log this later... We can't create a pileup without the CIGAR and MD tag
       // in the future, we can also get reference information from a reference file
@@ -223,9 +223,9 @@ class PileupTraversable(reads: RDD[ADAMRecord]) extends Traversable[Pileup] with
       pileups --= locationsToFlush
     }
 
-    reads.foreach((read: ADAMRecord) => {
+    reads.foreach((read: AlignmentRecord) => {
 
-      def updateCurrentInfo(read: ADAMRecord) = {
+      def updateCurrentInfo(read: AlignmentRecord) = {
         currentReference = Some(read.getContig.getContigName.toString)
         currentReferencePosition = Some(read.getStart)
       }

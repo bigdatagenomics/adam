@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.ADAMFeature
+import org.bdgenomics.formats.avro.Feature
 
 /**
  * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
@@ -26,7 +26,7 @@ import org.bdgenomics.formats.avro.ADAMFeature
  * This enumeration is necessary because Parquet needs the field string names
  * for predicates and projections.
  */
-object ADAMFeatureField extends FieldEnumeration(ADAMFeature.SCHEMA$) {
+object FeatureField extends FieldEnumeration(Feature.SCHEMA$) {
 
   val featureId, trackName, dbxrefs, parentIds, parentdbxrefs, contig, start, end, strand, value, thickStart, thickEnd, itemRgb, blockCount, blockSizes, blockStarts, frame, source, featureType, signalValue, pValue, qValue, peak = SchemaValue
 }

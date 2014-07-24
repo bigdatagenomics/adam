@@ -18,10 +18,9 @@
 package org.bdgenomics.adam.models
 
 import java.util.Date
-import net.sf.samtools.{ SAMFileReader, SAMFileHeader, SAMReadGroupRecord }
+import net.sf.samtools.{ SAMFileHeader, SAMFileReader, SAMReadGroupRecord }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.ADAMRecord
-import scala.collection.JavaConversions._
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 object RecordGroupDictionary {
 
@@ -41,7 +40,7 @@ object RecordGroupDictionary {
    * Builds a record group dictionary from a SAM file reader by collecting the header, and the
    * read groups attached to the header.
    *
-   * @param header SAM file header with attached read groups.
+   * @param samReader SAM file header with attached read groups.
    * @return Returns a new record group dictionary with the read groups attached to the file header.
    */
   def fromSAMReader(samReader: SAMFileReader): RecordGroupDictionary = {
@@ -104,7 +103,7 @@ object RecordGroup {
    * @param read Read to populate data from.
    * @return Returns a filled Option if record group data is attached to the read, else returns None.
    */
-  def apply(read: ADAMRecord): Option[RecordGroup] = {
+  def apply(read: AlignmentRecord): Option[RecordGroup] = {
     Option(read.getRecordGroupSample).fold(None.asInstanceOf[Option[RecordGroup]])(rgs => {
       Option(read.getRecordGroupName).fold(None.asInstanceOf[Option[RecordGroup]])(rgn => {
         Some(new RecordGroup(rgs.toString,

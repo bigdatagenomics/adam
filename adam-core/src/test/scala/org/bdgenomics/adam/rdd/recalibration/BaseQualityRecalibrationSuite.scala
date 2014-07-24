@@ -17,15 +17,15 @@
  */
 package org.bdgenomics.adam.rdd.recalibration
 
+import java.io.File
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.SnpTable
-import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.rich.DecadentRead._
+import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.apache.spark.rdd.RDD
-import java.io.File
-import org.bdgenomics.adam.rich.RichADAMVariant
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 class BaseQualityRecalibrationSuite extends SparkFunSuite {
   sparkTest("BQSR Test Input #1") {
@@ -33,7 +33,7 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     val snpsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.snps").getFile
     val obsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1-ref.observed").getFile
 
-    val reads: RDD[ADAMRecord] = sc.adamLoad(readsFilepath)
+    val reads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
     val snps = sc.broadcast(SnpTable(new File(snpsFilepath)))
 
     val bqsr = new BaseQualityRecalibration(cloy(reads), snps)
@@ -41,8 +41,8 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     // Sanity checks
     assert(bqsr.result.count == reads.count)
 
-    // Compare the ObservatonTables
-    val referenceObs: Set[String] = scala.io.Source.fromFile(new File(obsFilepath)).getLines.filter(_.length > 0).toSet
+    // Compare the ObservationTables
+    val referenceObs: Set[String] = scala.io.Source.fromFile(new File(obsFilepath)).getLines().filter(_.length > 0).toSet
     val testObs: Set[String] = bqsr.observed.toCSV.split('\n').filter(_.length > 0).toSet
     assert(testObs == referenceObs)
 
@@ -54,8 +54,8 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     val snpsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.vcf").getFile
     val obsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1-ref.observed").getFile
 
-    val reads: RDD[ADAMRecord] = sc.adamLoad(readsFilepath)
-    val variants: RDD[RichADAMVariant] = sc.adamVCFLoad(snpsFilepath).map(_.variant)
+    val reads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
+    val variants: RDD[RichVariant] = sc.adamVCFLoad(snpsFilepath).map(_.variant)
     val snps = sc.broadcast(SnpTable(variants))
 
     val bqsr = new BaseQualityRecalibration(cloy(reads), snps)
@@ -63,8 +63,8 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     // Sanity checks
     assert(bqsr.result.count == reads.count)
 
-    // Compare the ObservatonTables
-    val referenceObs: Seq[String] = scala.io.Source.fromFile(new File(obsFilepath)).getLines.filter(_.length > 0).toSeq.sortWith((kv1, kv2) => kv1.compare(kv2) < 0)
+    // Compare the ObservationTables
+    val referenceObs: Seq[String] = scala.io.Source.fromFile(new File(obsFilepath)).getLines().filter(_.length > 0).toSeq.sortWith((kv1, kv2) => kv1.compare(kv2) < 0)
     val testObs: Seq[String] = bqsr.observed.toCSV.split('\n').filter(_.length > 0).toSeq.sortWith((kv1, kv2) => kv1.compare(kv2) < 0)
     referenceObs.zip(testObs).foreach(p => assert(p._1 === p._2))
   }

@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd
 
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Base }
 import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.{ ADAMRecord, Base }
 
 class PileupConversionSuite extends FunSuite {
 
@@ -28,11 +28,12 @@ class PileupConversionSuite extends FunSuite {
     val sequence = "ACTAG"
 
     // build a read with 5 base pairs, all match
-    val record: ADAMRecord = ADAMRecord.newBuilder()
+    val record: AlignmentRecord = AlignmentRecord.newBuilder()
       .setStart(1L)
       .setMapq(30)
       .setSequence(sequence)
       .setCigar("5M")
+      .setEnd(6L)
       .setMismatchingPositions("5")
       .setQual(qualString)
       .setReadMapped(true)
@@ -64,11 +65,12 @@ class PileupConversionSuite extends FunSuite {
     val sequence = "ACTAG"
 
     // build a read with 5 base pairs, all match
-    val record: ADAMRecord = ADAMRecord.newBuilder()
+    val record: AlignmentRecord = AlignmentRecord.newBuilder()
       .setStart(1L)
       .setMapq(30)
       .setSequence(sequence)
       .setCigar("5M")
+      .setEnd(6L)
       .setMismatchingPositions("4A0")
       .setQual(qualString)
       .setReadMapped(true)

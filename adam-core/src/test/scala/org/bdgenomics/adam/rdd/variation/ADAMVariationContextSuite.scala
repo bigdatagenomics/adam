@@ -17,39 +17,39 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.adam.models.ADAMVariantContext
-import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import com.google.common.io.Files
 import java.io.File
-import org.bdgenomics.formats.avro.{ ADAMGenotypeAllele, ADAMGenotype, ADAMVariant, ADAMContig }
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.VariantContext
+import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
+import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.formats.avro.{ GenotypeAllele, Genotype, Variant, Contig }
 import scala.collection.JavaConversions._
 
 class ADAMVariationContextSuite extends SparkFunSuite {
   val tempDir = Files.createTempDir()
 
-  def variants: RDD[ADAMVariantContext] = {
-    val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("chr11").build)
-      .setPosition(17409572)
+  def variants: RDD[VariantContext] = {
+    val v0 = Variant.newBuilder
+      .setContig(Contig.newBuilder.setContigName("chr11").build)
+      .setStart(17409572)
       .setReferenceAllele("T")
-      .setVariantAllele("C")
+      .setAlternateAllele("C")
       .build
 
-    val g0 = ADAMGenotype.newBuilder().setVariant(v0)
+    val g0 = Genotype.newBuilder().setVariant(v0)
       .setSampleId("NA12878")
-      .setAlleles(List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Alt))
+      .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
       .build
 
     sc.parallelize(List(
-      ADAMVariantContext(v0, Seq(g0))))
+      VariantContext(v0, Seq(g0))))
   }
 
   sparkTest("can read a small .vcf file") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.vcf").getFile
 
-    val vcs: RDD[ADAMVariantContext] = sc.adamVCFLoad(path)
+    val vcs: RDD[VariantContext] = sc.adamVCFLoad(path)
     assert(vcs.count === 5)
 
     val vc = vcs.first

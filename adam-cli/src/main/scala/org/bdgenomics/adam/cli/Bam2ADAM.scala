@@ -17,17 +17,16 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
-import net.sf.samtools._
-import org.bdgenomics.formats.avro.ADAMRecord
-import scala.collection.JavaConversions._
 import java.io.File
-import parquet.avro.AvroParquetWriter
-import org.apache.hadoop.fs.Path
 import java.util.concurrent._
-import scala.Some
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
+import net.sf.samtools._
+import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.converters.SAMRecordConverter
+import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
+import org.bdgenomics.formats.avro.AlignmentRecord
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
+import parquet.avro.AvroParquetWriter
+import scala.collection.JavaConversions._
 
 object Bam2ADAM extends ADAMCommandCompanion {
   val commandName: String = "bam2adam"
@@ -60,9 +59,9 @@ class Bam2ADAM(args: Bam2ADAMArgs) extends ADAMCommand {
       {
         val writerThread = new Thread(new Runnable {
 
-          val parquetWriter = new AvroParquetWriter[ADAMRecord](
+          val parquetWriter = new AvroParquetWriter[AlignmentRecord](
             new Path(args.outputPath + "/part%d".format(threadNum)),
-            ADAMRecord.SCHEMA$, args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
+            AlignmentRecord.SCHEMA$, args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
 
           val samRecordConverter = new SAMRecordConverter
 

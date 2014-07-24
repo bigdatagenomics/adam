@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.rich.RichADAMVariant
+import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.rich.DecadentRead._
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
@@ -88,8 +88,8 @@ object SnpTable {
     new SnpTable(table.mapValues(_.toSet).toMap)
   }
 
-  def apply(variants: RDD[RichADAMVariant]): SnpTable = {
-    val positions = variants.map(variant => (variant.getContig.getContigName.toString, variant.getPosition)).collect()
+  def apply(variants: RDD[RichVariant]): SnpTable = {
+    val positions = variants.map(variant => (variant.getContig.getContigName.toString, variant.getStart)).collect()
     val table = new mutable.HashMap[String, mutable.HashSet[Long]]
     positions.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
     new SnpTable(table.mapValues(_.toSet).toMap)

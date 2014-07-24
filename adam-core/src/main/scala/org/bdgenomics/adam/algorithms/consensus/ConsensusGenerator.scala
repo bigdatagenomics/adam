@@ -19,7 +19,7 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import org.bdgenomics.adam.algorithms.realignmenttarget.IndelRealignmentTarget
 import org.bdgenomics.adam.models.{ Consensus, ReferenceRegion }
-import org.bdgenomics.adam.rich.RichADAMRecord
+import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.apache.spark.rdd.RDD
 
 abstract class ConsensusGenerator extends Serializable {
@@ -39,9 +39,9 @@ abstract class ConsensusGenerator extends Serializable {
    * @param reads Reads to preprocess.
    * @return Preprocessed reads.
    */
-  def preprocessReadsForRealignment(reads: Iterable[RichADAMRecord],
+  def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord],
                                     reference: String,
-                                    region: ReferenceRegion): Iterable[RichADAMRecord]
+                                    region: ReferenceRegion): Iterable[RichAlignmentRecord]
 
   /**
    * For all reads in this region, generates the list of consensus sequences for realignment.
@@ -49,5 +49,5 @@ abstract class ConsensusGenerator extends Serializable {
    * @param reads Reads to generate consensus sequences from.
    * @return Consensus sequences to use for realignment.
    */
-  def findConsensus(reads: Iterable[RichADAMRecord]): Iterable[Consensus]
+  def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus]
 }

@@ -29,7 +29,6 @@ import org.bdgenomics.adam.metrics
  * allows us to handle both read-level and base-level comparison metrics and filters, e.g. 'find all
  * matched ReadBuckets for which <i>some</i> base quality score doesn't match').
  *
- * @tparam T
  */
 trait GeneratorFilter[+T] extends Serializable {
   def passesFilter(value: Any): Boolean
@@ -47,8 +46,6 @@ abstract class ComparisonsFilter[+T](val comparison: BucketComparisons[T]) exten
 /**
  * CombinedFilter lifts a Sequence of GeneratorFilter[T] filters into a single GeneratorFilter (which filters
  * a vector, here reified as a metrics.Collection value, of Seq[T]).
- * @param filters
- * @tparam T
  */
 class CombinedFilter[T](val filters: Seq[GeneratorFilter[T]]) extends GeneratorFilter[metrics.Collection[Seq[T]]] {
 

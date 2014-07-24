@@ -19,11 +19,11 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import org.bdgenomics.adam.algorithms.smithwaterman.SmithWatermanConstantGapScoring
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.rich.RichADAMRecord._
+import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.adam.util.MdTag
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 class ConsensusGeneratorFromSmithWaterman(wMatch: Double,
                                           wMismatch: Double,
@@ -37,10 +37,10 @@ class ConsensusGeneratorFromSmithWaterman(wMatch: Double,
    * @param reads Reads to process.
    * @return Reads with indels normalized if they contain a single indel.
    */
-  override def preprocessReadsForRealignment(reads: Iterable[RichADAMRecord],
+  override def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord],
                                              reference: String,
-                                             region: ReferenceRegion): Iterable[RichADAMRecord] = {
-    val rds: Iterable[RichADAMRecord] = reads.map(r => {
+                                             region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
+    val rds: Iterable[RichAlignmentRecord] = reads.map(r => {
 
       val sw = new SmithWatermanConstantGapScoring(r.record.getSequence.toString,
         reference,
@@ -57,7 +57,7 @@ class ConsensusGeneratorFromSmithWaterman(wMatch: Double,
           sw.cigarX,
           region.start)
 
-        val newRead: RichADAMRecord = ADAMRecord.newBuilder(r)
+        val newRead: RichAlignmentRecord = AlignmentRecord.newBuilder(r)
           .setStart(sw.xStart + region.start)
           .setCigar(sw.cigarX.toString)
           .setMismatchingPositions(mdTag.toString())

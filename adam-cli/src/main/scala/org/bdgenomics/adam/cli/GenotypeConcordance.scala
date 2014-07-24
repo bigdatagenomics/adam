@@ -17,17 +17,17 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.spark.{ SparkContext, Logging }
-import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.{ SparkContext, Logging }
+import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMGenotype
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
+import org.bdgenomics.adam.predicates.GenotypeRecordPASSPredicate
+import org.bdgenomics.adam.projections.GenotypeField
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
-import org.apache.spark.SparkContext._
-import org.bdgenomics.adam.predicates.GenotypeRecordPASSPredicate
-import org.bdgenomics.adam.projections.variation.ADAMGenotypeField
 import org.bdgenomics.adam.rdd.variation.ConcordanceTable
+import org.bdgenomics.formats.avro.Genotype
 
 object GenotypeConcordance extends ADAMCommandCompanion {
   val commandName = "genotype_concordance"
@@ -53,7 +53,7 @@ class GenotypeConcordance(protected val args: GenotypeConcordanceArgs) extends A
   def run(sc: SparkContext, job: Job): Unit = {
     // TODO: Figure out projections of nested fields
     var project = List(
-      ADAMGenotypeField.variant, ADAMGenotypeField.sampleId, ADAMGenotypeField.alleles)
+      GenotypeField.variant, GenotypeField.sampleId, GenotypeField.alleles)
 
     val predicate = if (!args.includeNonPass) {
       // We also need to project the filter field to use this predicate
@@ -63,14 +63,14 @@ class GenotypeConcordance(protected val args: GenotypeConcordanceArgs) extends A
       None
     val projection = None //Some(Projection(project))
 
-    val testGTs: RDD[ADAMGenotype] = sc.adamLoad(args.testGenotypesFile, predicate, projection)
-    val truthGTs: RDD[ADAMGenotype] = sc.adamLoad(args.truthGenotypesFile, predicate, projection)
+    val testGTs: RDD[Genotype] = sc.adamLoad(args.testGenotypesFile, predicate, projection)
+    val truthGTs: RDD[Genotype] = sc.adamLoad(args.truthGenotypesFile, predicate, projection)
 
     val tables = testGTs.concordanceWith(truthGTs)
 
     // Write out results as a table
     System.out.println("Sample\tConcordance\tNonReferenceSensitivity")
-    for ((sample, table) <- tables.collectAsMap) {
+    for ((sample, table) <- tables.collectAsMap()) {
       System.out.println("%s\t%f\t%f".format(sample, table.concordance, table.nonReferenceSensitivity))
     }
     {

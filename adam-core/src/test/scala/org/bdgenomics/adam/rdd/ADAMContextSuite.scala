@@ -17,15 +17,15 @@
  */
 package org.bdgenomics.adam.rdd
 
+import java.io.File
+import java.util.UUID
+import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMRecord }
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.predicates.HighQualityReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
-import java.io.File
-import org.apache.hadoop.fs.Path
-import java.util.UUID
-import org.bdgenomics.adam.predicates.HighQualityReadPredicate
+import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 class ADAMContextSuite extends SparkFunSuite {
 
@@ -33,19 +33,19 @@ class ADAMContextSuite extends SparkFunSuite {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("unmapped.sam").getFile
 
     // Convert the reads12.sam file into a parquet file
-    val bamReads: RDD[ADAMRecord] = sc.adamLoad(readsFilepath)
+    val bamReads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
     assert(bamReads.count === 200)
   }
 
   sparkTest("can read a small .SAM file") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
-    val reads: RDD[ADAMRecord] = sc.adamLoad(path)
+    val reads: RDD[AlignmentRecord] = sc.adamLoad(path)
     assert(reads.count() === 20)
   }
 
   sparkTest("can filter a .SAM file based on quality") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
-    val reads: RDD[ADAMRecord] = sc.adamLoad(path, predicate = Some(classOf[HighQualityReadPredicate]))
+    val reads: RDD[AlignmentRecord] = sc.adamLoad(path, predicate = Some(classOf[HighQualityReadPredicate]))
     assert(reads.count() === 18)
   }
 
@@ -61,13 +61,13 @@ class ADAMContextSuite extends SparkFunSuite {
   }
 
   sparkTest("loadADAMFromPaths can load simple RDDs that have just been saved") {
-    val contig = ADAMContig.newBuilder
+    val contig = Contig.newBuilder
       .setContigName("abc")
       .setContigLength(1000000)
       .setReferenceURL("http://abc")
       .build
 
-    val a0 = ADAMRecord.newBuilder()
+    val a0 = AlignmentRecord.newBuilder()
       .setRecordGroupName("group0")
       .setReadName("read0")
       .setContig(contig)
@@ -76,7 +76,7 @@ class ADAMContextSuite extends SparkFunSuite {
       .setReadPaired(false)
       .setReadMapped(true)
       .build()
-    val a1 = ADAMRecord.newBuilder(a0)
+    val a1 = AlignmentRecord.newBuilder(a0)
       .setReadName("read1")
       .setStart(200)
       .build()
@@ -91,10 +91,9 @@ class ADAMContextSuite extends SparkFunSuite {
 
       assert(loaded.count() === saved.count())
     } catch {
-      case (e: Exception) => {
+      case (e: Exception) =>
         println(e)
         throw e
-      }
     }
   }
 

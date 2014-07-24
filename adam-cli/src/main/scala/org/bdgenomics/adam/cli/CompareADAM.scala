@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.projections.ADAMRecordField._
+import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.projections.FieldValue
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._

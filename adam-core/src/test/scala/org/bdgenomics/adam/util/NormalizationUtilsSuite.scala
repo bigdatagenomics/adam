@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.util
 
-import org.scalatest.FunSuite
 import net.sf.samtools.TextCigarCodec
-import org.bdgenomics.formats.avro.ADAMRecord
-import org.bdgenomics.adam.rich.RichADAMRecord
-import org.bdgenomics.adam.rich.RichADAMRecord._
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
+import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
+import org.scalatest.FunSuite
 
 class NormalizationUtilsSuite extends FunSuite {
 
@@ -52,7 +52,7 @@ class NormalizationUtilsSuite extends FunSuite {
   }
 
   test("moving a simple read with single deletion that cannot shift") {
-    val read: RichADAMRecord = ADAMRecord.newBuilder()
+    val read: RichAlignmentRecord = AlignmentRecord.newBuilder()
       .setReadMapped(true)
       .setSequence("AAAAACCCCCGGGGGTTTTT")
       .setStart(0)
@@ -63,9 +63,9 @@ class NormalizationUtilsSuite extends FunSuite {
     val new_cigar = NormalizationUtils.leftAlignIndel(read)
 
     assert(new_cigar.toString == "10M10D10M")
-    // TODO: the implicit for ADAMRecord->RichADAMRecord doesn't get
+    // TODO: the implicit for Read->RichADAMRecord doesn't get
     // called here for some reason.
-    assert(RichADAMRecord(read).samtoolsCigar.getReadLength === new_cigar.getReadLength)
+    assert(RichAlignmentRecord(read).samtoolsCigar.getReadLength === new_cigar.getReadLength)
   }
 
   test("shift an indel left by 0 in a cigar") {
@@ -83,7 +83,7 @@ class NormalizationUtilsSuite extends FunSuite {
   }
 
   test("do not left align a complex read which is already left aligned") {
-    val read = ADAMRecord.newBuilder()
+    val read = AlignmentRecord.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
       .setReadMapped(true)
       .setCigar("29M10D31M")

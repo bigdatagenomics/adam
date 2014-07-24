@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMVariant }
+import org.bdgenomics.formats.avro.{ Contig, Variant }
 
 class IndelTableSuite extends SparkFunSuite {
 
@@ -38,23 +38,23 @@ class IndelTableSuite extends SparkFunSuite {
   }
 
   sparkTest("build indel table from rdd of variants") {
-    val ctg1 = ADAMContig.newBuilder()
+    val ctg1 = Contig.newBuilder()
       .setContigName("1")
       .build()
-    val ctg2 = ADAMContig.newBuilder()
+    val ctg2 = Contig.newBuilder()
       .setContigName("2")
       .build()
-    val ins = ADAMVariant.newBuilder()
+    val ins = Variant.newBuilder()
       .setContig(ctg1)
-      .setPosition(1000L)
+      .setStart(1000L)
       .setReferenceAllele("A")
-      .setVariantAllele("ATT")
+      .setAlternateAllele("ATT")
       .build()
-    val del = ADAMVariant.newBuilder()
+    val del = Variant.newBuilder()
       .setContig(ctg2)
-      .setPosition(50L)
+      .setStart(50L)
       .setReferenceAllele("ACAT")
-      .setVariantAllele("A")
+      .setAlternateAllele("A")
       .build()
 
     val rdd = sc.parallelize(Seq(ins, del))

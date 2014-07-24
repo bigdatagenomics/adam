@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.formats.avro.{ Base, ADAMPileup, ADAMRecord }
-import org.apache.spark.rdd.RDD
-import org.apache.spark.Logging
-import org.bdgenomics.adam.rich.RichADAMRecord._
-import org.bdgenomics.adam.util._
 import net.sf.samtools.{ CigarOperator, TextCigarCodec }
+import org.apache.spark.Logging
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
+import org.bdgenomics.adam.util._
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Base, Pileup }
 import scala.collection.JavaConverters._
 import scala.collection.immutable.StringOps
 
@@ -45,7 +45,7 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
    * @param record Read to convert.
    * @return A list of pileups.
    */
-  def readToPileups(record: ADAMRecord): List[ADAMPileup] = {
+  def readToPileups(record: AlignmentRecord): List[Pileup] = {
     if (record == null ||
       record.getCigar == null ||
       record.getReadMapped == null ||
@@ -65,7 +65,7 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
 
     def sangerScoreToInt(score: String, position: Int): Int = score(position).toInt - 33
 
-    def populatePileupFromReference(record: ADAMRecord, referencePos: Long, isReverseStrand: Boolean, readPos: Int): ADAMPileup.Builder = {
+    def populatePileupFromReference(record: AlignmentRecord, referencePos: Long, isReverseStrand: Boolean, readPos: Int): Pileup.Builder = {
 
       var reverseStrandCount = 0
 
@@ -76,14 +76,10 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
       // check read mapping locations
       assert(record.getStart != null, "Read is mapped but has a null start position.")
 
-      val end: Long = record.end match {
-        case Some(o) => o.asInstanceOf[Long]
-        case None    => -1L
-      }
-
+      val end = record.getEnd
       assert(end != -1L, "Read is mapped but has a null end position. Read:\n" + record)
 
-      ADAMPileup.newBuilder()
+      Pileup.newBuilder()
         .setContig(record.getContig)
         .setMapQuality(record.getMapq)
         .setPosition(referencePos)
@@ -118,7 +114,7 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
       Some(MdTag(record.getMismatchingPositions.toString, referencePos))
     }
 
-    var pileupList = List[ADAMPileup]()
+    var pileupList = List[Pileup]()
 
     cigar.getCigarElements.asScala.foreach(cigarElement =>
       cigarElement.getOperator match {
@@ -280,7 +276,7 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
    * @param reads An RDD of reads to convert into pileups.
    * @return An RDD of pileups without known grouping.
    */
-  def process(reads: RDD[ADAMRecord]): RDD[ADAMPileup] = {
-    reads.flatMap(readToPileups(_))
+  def process(reads: RDD[AlignmentRecord]): RDD[Pileup] = {
+    reads.flatMap(readToPileups)
   }
 }

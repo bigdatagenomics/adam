@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.features
 
-import org.bdgenomics.formats.avro.{ ADAMContig, ADAMFeature, Strand }
+import org.bdgenomics.formats.avro.{ Contig, Feature, Strand }
 import org.bdgenomics.adam.models.{ BaseFeature, NarrowPeakFeature, BEDFeature }
 
 trait FeatureParser[FT <: BaseFeature] extends Serializable {
@@ -28,8 +28,8 @@ class BEDParser extends FeatureParser[BEDFeature] {
   def parse(line: String): BEDFeature = {
     val fields = line.split("\t")
     assert(fields.length >= 3, "BED line had less than 3 fields")
-    val fb = ADAMFeature.newBuilder()
-    val cb = ADAMContig.newBuilder()
+    val fb = Feature.newBuilder()
+    val cb = Contig.newBuilder()
     cb.setContigName(fields(0))
     fb.setContig(cb.build())
     fb.setStart(fields(1).toLong)
@@ -59,8 +59,8 @@ class NarrowPeakParser extends FeatureParser[NarrowPeakFeature] {
   def parse(line: String): NarrowPeakFeature = {
     val fields = line.split("\t")
     assert(fields.length >= 3, "narrowPeak line had less than 3 fields")
-    val fb = ADAMFeature.newBuilder()
-    val cb = ADAMContig.newBuilder()
+    val fb = Feature.newBuilder()
+    val cb = Contig.newBuilder()
     cb.setContigName(fields(0))
     fb.setContig(cb.build())
     fb.setStart(fields(1).toLong)

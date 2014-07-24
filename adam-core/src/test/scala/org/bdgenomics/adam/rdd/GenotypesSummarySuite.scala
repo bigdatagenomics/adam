@@ -24,28 +24,28 @@ import org.bdgenomics.adam.util.SparkFunSuite
 
 class GenotypesSummarySuite extends SparkFunSuite {
 
-  private def homRef = List(ADAMGenotypeAllele.Ref, ADAMGenotypeAllele.Ref)
-  private def het = List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Ref)
-  private def homAlt = List(ADAMGenotypeAllele.Alt, ADAMGenotypeAllele.Alt)
-  private def noCall = List(ADAMGenotypeAllele.NoCall, ADAMGenotypeAllele.NoCall)
+  private def homRef = List(GenotypeAllele.Ref, GenotypeAllele.Ref)
+  private def het = List(GenotypeAllele.Alt, GenotypeAllele.Ref)
+  private def homAlt = List(GenotypeAllele.Alt, GenotypeAllele.Alt)
+  private def noCall = List(GenotypeAllele.NoCall, GenotypeAllele.NoCall)
 
-  private def variant(reference: String, alternate: String, position: Int): ADAMVariant = {
-    ADAMVariant.newBuilder()
-      .setContig(ADAMContig.newBuilder.setContigName("chr1").build)
-      .setPosition(position)
+  private def variant(reference: String, alternate: String, position: Int): Variant = {
+    Variant.newBuilder()
+      .setContig(Contig.newBuilder.setContigName("chr1").build)
+      .setStart(position)
       .setReferenceAllele(reference)
-      .setVariantAllele(alternate)
+      .setAlternateAllele(alternate)
       .build
   }
 
-  private def genotype(sample: String, variant: ADAMVariant, alleles: List[ADAMGenotypeAllele]) = {
-    ADAMGenotype.newBuilder()
+  private def genotype(sample: String, variant: Variant, alleles: List[GenotypeAllele]) = {
+    Genotype.newBuilder()
       .setSampleId(sample)
       .setVariant(variant)
       .setAlleles(alleles)
   }
 
-  private def summarize(genotypes: Seq[ADAMGenotype]): GenotypesSummary = {
+  private def summarize(genotypes: Seq[Genotype]): GenotypesSummary = {
     val rdd = sc.parallelize(genotypes)
     GenotypesSummary(rdd)
   }

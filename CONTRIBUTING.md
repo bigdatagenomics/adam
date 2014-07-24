@@ -54,6 +54,11 @@ Also, please reference the issue number in your commit.
   ```
   $ ./scripts/format-source
   ```
+* Please alphabetize your imports. We follow the following approach: first, alphabetize by package name (e.g., `org.apache.spark`
+should be before `org.bigdatagenomics.adam`). Within a project, "lower level" packages should be sorted ahead (e.g.,
+`org.apache.spark.SparkContext` should be before `org.apache.spark.rdd.RDD`). Within a single package, sort alphabetically,
+but put object implicit imports first (e.g., put `org.apache.spark.SparkContext._` before `org.apache.spark.Logging`, and
+`org.apache.spark.Logging` before `org.apache.spark.SparkContext`).
 * Keep your pull requests as small as possible. Large pull requests are hard to review. Try to break up your changes
 into self-contained and incremental pull requests, if need be, and reference dependent pull requests, e.g. "This pull
 request builds on request #92. Please review #92 first."

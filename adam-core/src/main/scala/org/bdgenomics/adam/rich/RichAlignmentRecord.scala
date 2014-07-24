@@ -17,16 +17,15 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.formats.avro.ADAMRecord
-import net.sf.samtools.{ CigarElement, CigarOperator, Cigar, TextCigarCodec }
+import java.util.regex.Pattern
+import net.sf.samtools.{ Cigar, CigarElement, CigarOperator, TextCigarCodec }
+import org.bdgenomics.adam.models.{ Attribute, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._
-import scala.Some
+import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.immutable.NumericRange
-import org.bdgenomics.adam.models.{ ReferenceRegion, ReferencePosition, Attribute }
-import java.util.regex.Pattern
 
-object RichADAMRecord {
+object RichAlignmentRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
   val ILLUMINA_READNAME_REGEX = "[a-zA-Z0-9]+:[0-9]:([0-9]+):([0-9]+):([0-9]+).*".r
 
@@ -57,24 +56,26 @@ object RichADAMRecord {
     len
   }
 
-  def apply(record: ADAMRecord) = {
-    new RichADAMRecord(record)
+  def apply(record: AlignmentRecord) = {
+    new RichAlignmentRecord(record)
   }
 
-  implicit def recordToRichRecord(record: ADAMRecord): RichADAMRecord = new RichADAMRecord(record)
-  implicit def richRecordToRecord(record: RichADAMRecord): ADAMRecord = record.record
+  implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
+  implicit def richRecordToRecord(record: RichAlignmentRecord): AlignmentRecord = record.record
 }
 
 class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 
-class RichADAMRecord(val record: ADAMRecord) {
+class RichAlignmentRecord(val record: AlignmentRecord) {
 
-  lazy val referenceLength: Int = RichADAMRecord.referenceLengthFromCigar(record.getCigar.toString)
+  lazy val referenceLength: Int = RichAlignmentRecord.referenceLengthFromCigar(record.getCigar.toString)
 
   lazy val readRegion = ReferenceRegion(this)
 
   // Returns the quality scores as a list of bytes
-  lazy val qualityScores: Array[Int] = record.getQual.toString.toCharArray.map(q => (q - 33))
+  lazy val qualityScores: Array[Int] = {
+    record.getQual.toString.toCharArray.map(q => q - 33)
+  }
 
   // Parse the tags ("key:type:value" triples)
   lazy val tags: Seq[Attribute] = AttributeUtils.parseAttributes(record.getAttributes.toString)
@@ -82,7 +83,7 @@ class RichADAMRecord(val record: ADAMRecord) {
   // Parses the readname to Illumina optics information
   lazy val illuminaOptics: Option[IlluminaOptics] = {
     try {
-      val RichADAMRecord.ILLUMINA_READNAME_REGEX(tile, x, y) = record.getReadName
+      val RichAlignmentRecord.ILLUMINA_READNAME_REGEX(tile, x, y) = record.getReadName
       Some(new IlluminaOptics(tile.toInt, x.toInt, y.toInt))
     } catch {
       case e: MatchError => None
@@ -90,7 +91,7 @@ class RichADAMRecord(val record: ADAMRecord) {
   }
 
   lazy val samtoolsCigar: Cigar = {
-    RichADAMRecord.CIGAR_CODEC.decode(record.getCigar.toString)
+    RichAlignmentRecord.CIGAR_CODEC.decode(record.getCigar.toString)
   }
 
   // Returns the MdTag if the read is mapped, None otherwise
@@ -107,23 +108,10 @@ class RichADAMRecord(val record: ADAMRecord) {
       el.getOperator == CigarOperator.HARD_CLIP
   }
 
-  // Returns the exclusive end position if the read is mapped, None otherwise
-  lazy val end: Option[Long] = {
-    if (record.getReadMapped) {
-      Some(samtoolsCigar.getCigarElements
-        .filter(p => p.getOperator.consumesReferenceBases())
-        .foldLeft(record.getStart) {
-          (pos, cigarEl) => pos + cigarEl.getLength
-        })
-    } else {
-      None
-    }
-  }
-
   // Returns the position of the unclipped end if the read is mapped, None otherwise
   lazy val unclippedEnd: Option[Long] = {
     if (record.getReadMapped) {
-      Some(samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(end.get) {
+      Some(samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(record.getEnd) {
         (pos, cigarEl) => pos + cigarEl.getLength
       })
     } else {
@@ -185,17 +173,15 @@ class RichADAMRecord(val record: ADAMRecord) {
     def getReferenceBase(cigarElement: CigarElement, refPos: Long, readPos: Int): Option[Char] = {
       mdTag.flatMap(tag => {
         cigarElement.getOperator match {
-          case CigarOperator.M => {
+          case CigarOperator.M =>
             if (!tag.isMatch(refPos)) {
               tag.mismatchedBase(refPos)
             } else {
               Some(record.getSequence()(readPos))
             }
-          }
-          case CigarOperator.D => {
+          case CigarOperator.D =>
             // if a delete, get from the delete pool
             tag.deletedBase(refPos)
-          }
           case _ => None
         }
       })

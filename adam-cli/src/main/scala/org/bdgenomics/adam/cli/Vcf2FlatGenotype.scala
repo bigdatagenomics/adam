@@ -17,16 +17,13 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
+import java.io.{ File, FileInputStream }
 import net.sf.samtools._
-import java.io.{ FileInputStream, File }
-import parquet.avro.AvroParquetWriter
 import org.apache.hadoop.fs.Path
-import scala.Some
-import java.util.logging.Level
-import org.bdgenomics.adam.util.ParquetLogger
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
 import org.bdgenomics.adam.converters.{ VCFLine, VCFLineConverter, VCFLineParser }
+import org.bdgenomics.formats.avro.FlatGenotype
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
+import parquet.avro.AvroParquetWriter
 
 /**
  * Vcf2FlatGenotype converts .vcf files into ADAMFlatGenotype-containing Parquet files.
@@ -82,17 +79,17 @@ class Vcf2FlatGenotype(args: Vcf2FlatGenotypeArgs) extends ADAMCommand {
       case (sample, i) => (i / args.sampleBlock, sample)
     }
 
-    def createWriter(index: Int): AvroParquetWriter[ADAMFlatGenotype] =
-      new AvroParquetWriter[ADAMFlatGenotype](
+    def createWriter(index: Int): AvroParquetWriter[FlatGenotype] =
+      new AvroParquetWriter[FlatGenotype](
         new Path(args.outputPath + "/part_%d".format(index)),
-        ADAMFlatGenotype.SCHEMA$,
+        FlatGenotype.SCHEMA$,
         args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
 
     // create a new writer for each file to be output
     val writers = indexedSamples.map(_._1).distinct.map(i => createWriter(i))
 
     // assign each sample to a writer
-    val sampleWriters: Map[String, AvroParquetWriter[ADAMFlatGenotype]] =
+    val sampleWriters: Map[String, AvroParquetWriter[FlatGenotype]] =
       indexedSamples.map {
         case (i, sample) => (sample, writers(i))
       }.toMap
@@ -107,11 +104,10 @@ class Vcf2FlatGenotype(args: Vcf2FlatGenotypeArgs) extends ADAMCommand {
           lineCount = 0
 
           VCFLineConverter.convert(vcfLine).foreach {
-            case genotype: ADAMFlatGenotype => {
+            case genotype: FlatGenotype =>
               // here is where we assign each ADAMFlatGenotype to an output file
               sampleWriters(genotype.getSampleId.toString).write(genotype)
               lineCount += 1
-            }
           }
 
           if (i / million < (i + lineCount) / million) {

@@ -23,22 +23,22 @@ import org.apache.spark.api.java.JavaRDD
 import org.bdgenomics.adam.predicates.HighQualityReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 class JavaADAMContextSuite extends SparkFunSuite {
 
   sparkTest("can read a small .SAM file") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
     val ctx = new JavaADAMContext(sc)
-    val reads: JavaADAMRecordRDD = ctx.adamRecordLoad[HighQualityReadPredicate](path)
+    val reads: JavaAlignmentRecordRDD = ctx.adamRecordLoad[HighQualityReadPredicate](path)
     assert(reads.jrdd.count() === 20)
   }
 
   sparkTest("can read a small .SAM file inside of java") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
-    val reads: RDD[ADAMRecord] = sc.adamLoad(path)
+    val reads: RDD[AlignmentRecord] = sc.adamLoad(path)
 
-    val newReads: JavaADAMRecordRDD = JavaADAMConduit.conduit(reads)
+    val newReads: JavaAlignmentRecordRDD = JavaADAMConduit.conduit(reads)
 
     assert(newReads.jrdd.count() === 20)
   }

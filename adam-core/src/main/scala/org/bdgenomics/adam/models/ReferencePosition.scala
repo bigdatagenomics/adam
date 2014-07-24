@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMGenotype, ADAMVariant, ADAMPileup }
+import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
@@ -25,7 +25,7 @@ import scala.annotation.tailrec
 
 object ReferencePositionWithOrientation {
 
-  def apply(record: ADAMRecord): Option[ReferencePositionWithOrientation] = {
+  def apply(record: AlignmentRecord): Option[ReferencePositionWithOrientation] = {
     if (record.getReadMapped) {
       Some(new ReferencePositionWithOrientation(ReferencePosition(record), record.getReadNegativeStrand))
     } else {
@@ -33,7 +33,7 @@ object ReferencePositionWithOrientation {
     }
   }
 
-  def fivePrime(record: ADAMRecord): Option[ReferencePositionWithOrientation] = {
+  def fivePrime(record: AlignmentRecord): Option[ReferencePositionWithOrientation] = {
     if (record.getReadMapped) {
       Some(new ReferencePositionWithOrientation(ReferencePosition.fivePrime(record), record.getReadNegativeStrand))
     } else {
@@ -64,7 +64,7 @@ object ReferencePositionWithOrientation {
       if (!regions.hasNext) {
         throw new IllegalArgumentException("Liftover is out of range")
       } else {
-        val reg = regions.next
+        val reg = regions.next()
         assert(reg.negativeStrand == negativeStrand,
           "Strand is inconsistent across set of regions.")
 
@@ -122,7 +122,7 @@ case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition],
         throw new IllegalArgumentException("Position was not contained in mapping.")
       } else {
         // get region
-        val reg = regions.next
+        val reg = regions.next()
         assert(reg.negativeStrand == negativeStrand,
           "Strand is inconsistent across set of regions.")
 
@@ -181,7 +181,7 @@ object ReferencePosition {
    * @param record Read to check for mapping.
    * @return True if read is mapped and has a valid position, else false.
    */
-  def mappedPositionCheck(record: ADAMRecord): Boolean = {
+  def mappedPositionCheck(record: AlignmentRecord): Boolean = {
     val contig = Option(record.getContig)
     val start = Option(record.getStart)
     record.getReadMapped && (contig.isDefined && Option(contig.get.getContigName).isDefined) && start.isDefined
@@ -197,7 +197,7 @@ object ReferencePosition {
    *
    * @see fivePrime
    */
-  def apply(record: ADAMRecord): Option[ReferencePosition] = {
+  def apply(record: AlignmentRecord): Option[ReferencePosition] = {
     if (mappedPositionCheck(record)) {
       Some(new ReferencePosition(record.getContig.getContigName.toString, record.getStart))
     } else {
@@ -215,8 +215,8 @@ object ReferencePosition {
    * reference position.
    * @return The reference position of this variant.
    */
-  def apply(variant: ADAMVariant): ReferencePosition = {
-    new ReferencePosition(variant.getContig.getContigName, variant.getPosition)
+  def apply(variant: Variant): ReferencePosition = {
+    new ReferencePosition(variant.getContig.getContigName, variant.getStart)
   }
 
   /**
@@ -228,9 +228,9 @@ object ReferencePosition {
    * @param genotype Genotype from which to generate a reference position.
    * @return The reference position of this genotype.
    */
-  def apply(genotype: ADAMGenotype): ReferencePosition = {
-    val variant = genotype.getVariant()
-    new ReferencePosition(variant.getContig.getContigName, variant.getPosition)
+  def apply(genotype: Genotype): ReferencePosition = {
+    val variant = genotype.getVariant
+    new ReferencePosition(variant.getContig.getContigName, variant.getStart)
   }
 
   /**
@@ -242,9 +242,9 @@ object ReferencePosition {
    * @return Reference position wrapped inside of an option. If the read is
    * mapped, the option will be stuffed, else it will be empty (None).
    *
-   * @see apply(record: ADAMRecord)
+   * @see apply(record: Read)
    */
-  def fivePrime(record: ADAMRecord): Option[ReferencePosition] = {
+  def fivePrime(record: AlignmentRecord): Option[ReferencePosition] = {
     if (mappedPositionCheck(record)) {
       Some(new ReferencePosition(record.getContig.getContigName, record.fivePrimePosition.get))
     } else {
@@ -259,7 +259,7 @@ object ReferencePosition {
    * @param pileup A single pileup base.
    * @return The reference position of this pileup.
    */
-  def apply(pileup: ADAMPileup): ReferencePosition = {
+  def apply(pileup: Pileup): ReferencePosition = {
     new ReferencePosition(pileup.getContig.getContigName, pileup.getPosition)
   }
 }
