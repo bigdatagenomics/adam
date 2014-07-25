@@ -286,9 +286,9 @@ object MdTag {
 }
 
 class MdTag(
-    private val matches: immutable.List[NumericRange[Long]],
-    private val mismatches: immutable.Map[Long, Char],
-    private val deletes: immutable.Map[Long, Char]) {
+    val matches: immutable.List[NumericRange[Long]],
+    val mismatches: immutable.Map[Long, Char],
+    val deletes: immutable.Map[Long, Char]) {
 
   /**
    * Returns whether a base is a match against the reference.
