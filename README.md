@@ -76,18 +76,19 @@ reads and pileups, run flagstat, etc. We use this script to test that ADAM is wo
 
 ## Running ADAM
 
-The ADAM jar file is a self-executing jar file with all dependencies included.
+ADAM is packaged via [appassembler](http://mojo.codehaus.org/appassembler/appassembler-maven-plugin/) and includes all necessary
+dependencies
 
 You might want to add the following to your `.bashrc` to make running `adam` easier:
 
 ```
-adam_jar="/workspace/adam/adam-cli/target/adam-0.6.0-SNAPSHOT.jar"
-alias adam="java -Xmx4g -jar $adam_jar"
+alias adam=". $ADAM_HOME/adam-cli/target/appassembler/bin/adam"
 ```
 
-Of course, you will want to change the `adam_jar` variable to point to the directory
-you placed ADAM on your local filesystem. You can also modify `-Xmx4g` to either give
-ADAM more or less memory depending on your system.
+`$ADAM_HOME` should be the path to where you have checked ADAM out on your local filesystem.
+To change any Java options (e.g., the memory settings --> "-Xmx4g", or to pass Java properties)
+set the `$JAVA_OPTS` environment variable. Additional details about customizing the appassembler
+runtime can be found [here](http://mojo.codehaus.org/appassembler/appassembler-maven-plugin/usage-script.html).
 
 Once this alias is in place, you can run adam by simply typing `adam` at the commandline, e.g.
 
@@ -119,7 +120,7 @@ Choose one of the following commands:
 ```
 
 ADAM outputs all the commands that are available for you to run. To get
-help for a specific command, run `adam <command> -h`, e.g.
+help for a specific command, run `adam <command>` without any additional arguments.
 
 ````
 $ adam transform --help
@@ -171,11 +172,18 @@ $ adam flagstat NA12878_chr20.adam
 ````
 
 In practice, you'll find that the ADAM `flagstat` command takes orders of magnitude less
-time than samtools to compute these statistics. For example, on my MacBook Pro the command 
+time than samtools to compute these statistics. For example, on a MacBook Pro the command 
 above took 17 seconds to run while `samtools flagstat NA12878_chr20.bam` took 55 secs.
 On larger files, the difference in speed is even more dramatic. ADAM is faster because
 it's multi-threaded and distributed and uses a columnar storage format (with a projected
 schema that only materializes the read flags instead of the whole read). 
+
+## Running Plugins
+
+ADAM allows users to create plugins via the [ADAMPlugin](https://github.com/bigdatagenomics/adam/blob/master/adam-core/src/main/scala/org/bdgenomics/adam/plugins/ADAMPlugin.scala)
+trait. These plugins are then imported using the Java classpath at runtime. To add to the classpath when
+using appassembler, use the `$CLASSPATH_PREFIX` environment variable. For an example of how to use
+the plugin interface, please see the [adam-plugins repo](https://github.com/heuermh/adam-plugins).
 
 # Getting In Touch
 
