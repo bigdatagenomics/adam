@@ -17,12 +17,11 @@
  */
 package org.bdgenomics.adam.io
 
-import java.io.{ File, PrintWriter }
-import java.net.URI
-
 import com.amazonaws.services.s3.AmazonS3Client
-import org.apache.http.conn.HttpHostConnectException
-import org.bdgenomics.adam.util.{ CredentialsProperties, S3Test, NetworkConnected }
+import java.io.{ File, PrintWriter }
+import java.net.{ ServerSocket, URI }
+import java.util.concurrent.atomic.AtomicInteger
+import org.bdgenomics.adam.util.{ CredentialsProperties, NetworkConnected, S3Test }
 import org.scalatest.FunSuite
 
 class ByteAccessSuite extends FunSuite {
@@ -63,9 +62,39 @@ class ByteAccessSuite extends FunSuite {
     assert(access.readFully(3, 5) === content.substring(3, 8).getBytes("ASCII"))
   }
 
+  test("HTTPRangedByteAccess will retry multiple times", NetworkConnected) {
+    val socket = new ServerSocket(0)
+    if (!socket.isBound) throw new Exception("Could not bind ServerSocket")
+    val port = socket.getLocalPort
+    val count = new AtomicInteger(0)
+    val thread = new Thread(new Runnable {
+      def single() = {
+        val client = socket.accept()
+        count.getAndIncrement
+        client.close()
+      }
+
+      override def run(): Unit = {
+        single()
+        run()
+      }
+    })
+
+    thread.start()
+
+    val uri = URI.create("http://localhost:" + port + "/")
+    val http = new HTTPRangedByteAccess(uri, 9)
+    intercept[Exception] {
+      http.length()
+    }
+    assert(count.get() === 10, "Retrying 9 times should result in 10 connections")
+    socket.close()
+    thread.interrupt()
+  }
+
   test("HTTPRangedByteAccess supports range queries", NetworkConnected) {
-    val uri = URI.create("http://www.cs.berkeley.edu/~massie/bams/mouse_chrM.bam")
-    val http = new HTTPRangedByteAccess(uri)
+    val uri = URI.create("https://s3.amazonaws.com/bdgenomics-test/mouse_chrM.bam")
+    val http = new HTTPRangedByteAccess(uri, 1)
     val bytes1 = http.readFully(100, 10)
     val bytes2 = http.readFully(100, 100)
 
@@ -78,31 +107,10 @@ class ByteAccessSuite extends FunSuite {
     assert(bytes1 === Array(188, 185, 119, 110, 102, 222, 76, 23, 189, 139).map(_.toByte))
   }
 
-  def lengthWithRetry(http: HTTPRangedByteAccess): Int = {
-    try {
-      http.length().toInt
-    } catch {
-      case e: HttpHostConnectException =>
-        Thread.sleep(5000)
-        http.length().toInt
-    }
-  }
-
-  def readWithRetry(http: HTTPRangedByteAccess, length: Option[Int] = None): Array[Byte] = {
-    val len = if (length.isDefined) length.get else lengthWithRetry(http)
-    try {
-      http.readFully(0, len)
-    } catch {
-      case cxnExcept: HttpHostConnectException =>
-        Thread.sleep(5000)
-        http.readFully(0, len)
-    }
-  }
-
   test("HTTPRangedByteAccess can retrieve a full range", NetworkConnected) {
-    val uri = URI.create("http://www.eecs.berkeley.edu/Includes/EECS-images/eecslogo.gif")
-    val http = new HTTPRangedByteAccess(uri)
-    val bytes = readWithRetry(http)
+    val uri = URI.create("https://s3.amazonaws.com/bdgenomics-test/eecslogo.gif")
+    val http = new HTTPRangedByteAccess(uri, 1)
+    val bytes = http.readFully(0, http.length().toInt)
     assert(bytes.length === http.length())
   }
 

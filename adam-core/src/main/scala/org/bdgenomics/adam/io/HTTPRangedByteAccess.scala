@@ -19,22 +19,28 @@ package org.bdgenomics.adam.io
 
 import java.io.InputStream
 import java.net.URI
+
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.{ HttpGet, HttpHead }
-import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.impl.client.{ HttpClients, StandardHttpRequestRetryHandler }
 import org.apache.spark.Logging
 
 /**
  * HTTPRangedByteAccess supports Ranged GET queries against HTTP resources.
  *
  * @param uri The URL of the resource, which should support ranged queries
+ * @param retries Number of times to retry a failed connection before giving up
  */
-class HTTPRangedByteAccess(uri: URI) extends ByteAccess with Logging {
+class HTTPRangedByteAccess(uri: URI, retries: Int = 3) extends ByteAccess with Logging {
+  private def getClient: HttpClient = {
+    HttpClients.custom()
+      .setRetryHandler(new StandardHttpRequestRetryHandler(retries, true))
+      .build()
+  }
 
   private def readLength(): Long = {
-    val httpClient: HttpClient = new DefaultHttpClient()
     val head = new HttpHead(uri)
-    val response = httpClient.execute(head)
+    val response = getClient.execute(head)
     val headers = response.getAllHeaders
 
     // The spec (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.5) says that
@@ -82,18 +88,17 @@ class HTTPRangedByteAccess(uri: URI) extends ByteAccess with Logging {
    * In this initial implementation, we throw an error when we get a partial response from the
    * server whose content is less than the bytes we originally requested.
    *
-   * @param offset The offset into the resource at which we want to start reading bytesd
+   * @param offset The offset into the resource at which we want to start reading bytes
    * @param length The number of bytes to be read
    * @return An InputStream from a ranged HTTP GET, which should contain just the requested bytes
    */
   override def readByteStream(offset: Long, length: Int): InputStream = {
-    val httpClient: HttpClient = new DefaultHttpClient()
     val get = new HttpGet(uri)
 
     // I believe the 'end' coordinate on the range request is _inclusive_
     get.setHeader("Range", "bytes=%d-%d".format(offset, offset + length - 1))
 
-    val response = httpClient.execute(get)
+    val response = getClient.execute(get)
 
     // We want a 206 response to a ranged request, not your normal 200!
     require(response.getStatusLine.getStatusCode == 206,
