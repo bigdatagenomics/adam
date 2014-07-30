@@ -19,10 +19,10 @@ package org.bdgenomics.adam.io
 
 import java.net.URI
 
-class HTTPFileLocator(uri: URI) extends FileLocator {
+class HTTPFileLocator(uri: URI, retries: Int = 3) extends FileLocator {
   override def parentLocator(): Option[FileLocator] = ???
 
   override def relativeLocator(relativePath: String): FileLocator = ???
 
-  override def bytes: ByteAccess = new HTTPRangedByteAccess(uri)
+  override def bytes: ByteAccess = new HTTPRangedByteAccess(uri, retries)
 }
