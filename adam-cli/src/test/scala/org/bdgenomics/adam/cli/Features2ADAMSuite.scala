@@ -21,8 +21,8 @@ import java.io._
 
 import org.bdgenomics.adam.parquet_reimpl.ParquetLister
 import org.bdgenomics.adam.projections.Projection
-import org.bdgenomics.adam.projections.ADAMFeatureField._
-import org.bdgenomics.formats.avro.ADAMFeature
+import org.bdgenomics.adam.projections.FeatureField._
+import org.bdgenomics.formats.avro.Feature
 import org.scalatest.FunSuite
 
 class Features2ADAMSuite extends FunSuite {
@@ -46,7 +46,7 @@ class Features2ADAMSuite extends FunSuite {
     features2Adam.run()
 
     val schema = Projection(featureId, contig, start, strand)
-    val lister = new ParquetLister[ADAMFeature](Some(schema))
+    val lister = new ParquetLister[Feature](Some(schema))
 
     val converted = lister.materialize(outputPath).toSeq
 

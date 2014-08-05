@@ -17,18 +17,18 @@
  */
 package org.bdgenomics.adam.rdd.correction
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite
 import scala.math.abs
 
-class ErrorCorectionSuite extends FunSuite {
+class ErrorCorrectionSuite extends FunSuite {
 
   val ec = new ErrorCorrection
 
   def fpCompare(a: Double, b: Double, epsilon: Double = 1e-3): Boolean = abs(a - b) < epsilon
 
   test("cut a short read into qmers") {
-    val read = ADAMRecord.newBuilder
+    val read = AlignmentRecord.newBuilder
       .setSequence("ACTCATG")
       .setQual("??;957:")
       .build()

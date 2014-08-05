@@ -17,17 +17,13 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.formats.avro.ADAMRecord
-import org.bdgenomics.adam.models.{
-  SAMFileHeaderWritable,
-  SequenceDictionary,
-  RecordGroupDictionary
-}
+import net.sf.samtools.{ SAMFileHeader, SAMRecord }
+import org.bdgenomics.adam.models.{ RecordGroupDictionary, SAMFileHeaderWritable, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichADAMRecord
-import net.sf.samtools.{ SAMReadGroupRecord, SAMRecord, SAMFileHeader }
+import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 
-class ADAMRecordConverter extends Serializable {
+class AlignmentRecordConverter extends Serializable {
 
   /**
    * Converts a single ADAM record into a SAM record.
@@ -36,7 +32,7 @@ class ADAMRecordConverter extends Serializable {
    * @param header SAM file header to use.
    * @return Returns the record converted to SAMtools format. Can be used for output to SAM/BAM.
    */
-  def convert(adamRecord: ADAMRecord, header: SAMFileHeaderWritable): SAMRecord = {
+  def convert(adamRecord: AlignmentRecord, header: SAMFileHeaderWritable): SAMRecord = {
 
     // get read group dictionary from header
     val rgDict = header.header.getSequenceDictionary
@@ -62,7 +58,8 @@ class ADAMRecordConverter extends Serializable {
       .foreach(v => builder.setAttribute("SM", v.toString))
 
     // set the reference name, and alignment position, for mate
-    Option(adamRecord.getMateReference)
+    Option(adamRecord.getMateContig)
+      .map(_.getContigName)
       .map(_.toString)
       .foreach(builder.setMateReferenceName)
     Option(adamRecord.getMateAlignmentStart)
@@ -123,7 +120,7 @@ class ADAMRecordConverter extends Serializable {
 
     // add all other tags
     if (adamRecord.getAttributes != null) {
-      val mp = RichADAMRecord(adamRecord).tags
+      val mp = RichAlignmentRecord(adamRecord).tags
       mp.foreach(a => {
         builder.setAttribute(a.tag, a.value)
       })
@@ -141,10 +138,10 @@ class ADAMRecordConverter extends Serializable {
    * @return Converted SAM formatted record.
    */
   def createSAMHeader(sd: SequenceDictionary, rgd: RecordGroupDictionary): SAMFileHeader = {
-    val samSequenceDictionary = sd.toSAMSequenceDictionary()
+    val samSequenceDictionary = sd.toSAMSequenceDictionary
     val samHeader = new SAMFileHeader
     samHeader.setSequenceDictionary(samSequenceDictionary)
-    rgd.recordGroups.foreach(group => samHeader.addReadGroup(group.toSAMReadGroupRecord))
+    rgd.recordGroups.foreach(group => samHeader.addReadGroup(group.toSAMReadGroupRecord()))
 
     samHeader
   }

@@ -17,20 +17,16 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.avro.generic.{ GenericDatumWriter, IndexedRecord }
-import scala.collection.JavaConversions._
-import org.bdgenomics.adam.util.ParquetFileTraversable
-import org.eclipse.jetty.io.UncheckedPrintWriter
-import com.twitter.chill.Base64.OutputStream
-
-// import org.apache.spark.api.java.*
-
 import java.util
+
+import org.apache.avro.generic.{ GenericDatumWriter, IndexedRecord }
+import org.apache.avro.io.EncoderFactory
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
-import org.apache.avro.io.{ EncoderFactory, DecoderFactory }
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.adam.util.ParquetFileTraversable
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
+
+import scala.collection.JavaConversions._
 
 object PrintADAM extends ADAMCommandCompanion {
   val commandName: String = "print"
@@ -80,26 +76,24 @@ class PrintADAM(protected val args: PrintADAMArgs) extends ADAMSparkCommand[Prin
     withPrintStream(output)(out => {
       val it = new ParquetFileTraversable[IndexedRecord](sc, file)
       pretty match {
-        case true => {
+        case true =>
           it.headOption match {
             case None => out.print("")
             case Some(hd) =>
-              val schema = hd.getSchema()
+              val schema = hd.getSchema
               val writer = new GenericDatumWriter[Object](schema)
               val encoder = EncoderFactory.get().jsonEncoder(schema, out)
-              val jg = (new org.codehaus.jackson.JsonFactory()).createJsonGenerator(out)
+              val jg = new org.codehaus.jackson.JsonFactory().createJsonGenerator(out)
               jg.useDefaultPrettyPrinter()
               encoder.configure(jg)
               it.foreach(pileup => {
                 writer.write(pileup, encoder)
               })
           }
-        }
-        case false => {
+        case false =>
           it.foreach(pileup => {
-            out.println(pileup.toString())
+            out.println(pileup.toString)
           })
-        }
       }
     })
   }

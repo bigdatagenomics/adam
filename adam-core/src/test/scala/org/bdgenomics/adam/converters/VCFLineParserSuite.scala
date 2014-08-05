@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.converters
 
 import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.ADAMFlatGenotype
+import org.bdgenomics.formats.avro.FlatGenotype
 
 class VCFLineParserSuite extends FunSuite {
 
@@ -45,7 +45,7 @@ class VCFLineParserSuite extends FunSuite {
     assert(gts.size === 15)
   }
 
-  test("passing in a sample subsets results in fewer ADAMFlatGenotype records being produced") {
+  test("passing in a sample subsets results in fewer FlatGenotype records being produced") {
     //NA12878 is artificially missing a call, in "small_missing.vcf"
     val is = Thread.currentThread().getContextClassLoader.getResourceAsStream("small_missing.vcf")
     val parser = new VCFLineParser(is, Some(Set("NA12878")))
@@ -53,7 +53,7 @@ class VCFLineParserSuite extends FunSuite {
 
     assert(gts.length === 4)
     gts.foreach {
-      case gt: ADAMFlatGenotype => {
+      case gt: FlatGenotype => {
         assert(gt.getReferenceName === "1")
         assert(gt.getSampleId === "NA12878")
       }

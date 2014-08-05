@@ -18,21 +18,21 @@
 package org.bdgenomics.adam.converters
 
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
-import org.broadinstitute.variant.variantcontext._
+import org.bdgenomics.adam.models.{ VariantContext => ADAMVariantContext, SequenceDictionary }
+import org.broadinstitute.variant.variantcontext.{ VariantContext => BroadVariantContext, VariantContextBuilder, Allele, GenotypeLikelihoods, GenotypesContext }
 import scala.collection.JavaConversions._
 import java.util.Collections
 
 object VariantContextConverter {
   private val NON_REF_ALLELE = Allele.create("<NON_REF>", false /* !Reference */ )
-  private lazy val splitFromMultiAllelicField = ADAMGenotype.SCHEMA$.getField("splitFromMultiAllelic")
+  private lazy val splitFromMultiAllelicField = Genotype.SCHEMA$.getField("splitFromMultiAllelic")
 
   // One conversion method for each way of representing an Allele
-  private def convertAllele(vc: VariantContext, allele: Allele): ADAMGenotypeAllele = {
-    if (allele.isNoCall) ADAMGenotypeAllele.NoCall
-    else if (allele.isReference) ADAMGenotypeAllele.Ref
-    else if (allele == NON_REF_ALLELE || !vc.hasAlternateAllele(allele)) ADAMGenotypeAllele.OtherAlt
-    else ADAMGenotypeAllele.Alt
+  private def convertAllele(vc: BroadVariantContext, allele: Allele): GenotypeAllele = {
+    if (allele.isNoCall) GenotypeAllele.NoCall
+    else if (allele.isReference) GenotypeAllele.Ref
+    else if (allele == NON_REF_ALLELE || !vc.hasAlternateAllele(allele)) GenotypeAllele.OtherAlt
+    else GenotypeAllele.Alt
   }
 
   private def convertAllele(allele: CharSequence, isRef: Boolean = false): Seq[Allele] = {
@@ -42,17 +42,17 @@ object VariantContextConverter {
       Seq(Allele.create(allele.toString, isRef))
   }
 
-  private def convertAlleles(v: ADAMVariant): java.util.Collection[Allele] = {
-    convertAllele(v.getReferenceAllele, true) ++ convertAllele(v.getVariantAllele)
+  private def convertAlleles(v: Variant): java.util.Collection[Allele] = {
+    convertAllele(v.getReferenceAllele, true) ++ convertAllele(v.getAlternateAllele)
   }
 
-  private def convertAlleles(g: ADAMGenotype): java.util.List[Allele] = {
+  private def convertAlleles(g: Genotype): java.util.List[Allele] = {
     var alleles = g.getAlleles
     if (alleles == null) return Collections.emptyList[Allele]
     else g.getAlleles.map {
-      case ADAMGenotypeAllele.NoCall                            => Allele.NO_CALL
-      case ADAMGenotypeAllele.Ref | ADAMGenotypeAllele.OtherAlt => Allele.create(g.getVariant.getReferenceAllele.toString, true)
-      case ADAMGenotypeAllele.Alt                               => Allele.create(g.getVariant.getVariantAllele.toString)
+      case GenotypeAllele.NoCall                        => Allele.NO_CALL
+      case GenotypeAllele.Ref | GenotypeAllele.OtherAlt => Allele.create(g.getVariant.getReferenceAllele.toString, true)
+      case GenotypeAllele.Alt                           => Allele.create(g.getVariant.getAlternateAllele.toString)
     }
   }
 
@@ -85,7 +85,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
    * @param vc GATK Variant context to convert.
    * @return ADAM variant contexts
    */
-  def convert(vc: VariantContext): Seq[ADAMVariantContext] = {
+  def convert(vc: BroadVariantContext): Seq[ADAMVariantContext] = {
 
     // INFO field variant calling annotations, e.g. MQ
     lazy val calling_annotations: VariantCallingAnnotations = extractVariantCallingAnnotations(vc)
@@ -120,8 +120,9 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
           assert(idx >= 1, "Unexpected index for alternate allele")
           vcb.alleles(List(vc.getReference, allele, NON_REF_ALLELE))
 
-          def punchOutGenotype(g: Genotype, idx: Int): Genotype = {
-            val gb = new GenotypeBuilder(g)
+          def punchOutGenotype(g: org.broadinstitute.variant.variantcontext.Genotype, idx: Int): org.broadinstitute.variant.variantcontext.Genotype = {
+
+            val gb = new org.broadinstitute.variant.variantcontext.GenotypeBuilder(g)
             // TODO: Multi-allelic genotypes are locally phased, add phase set
             gb.phased(true)
 
@@ -158,7 +159,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     }
 
     /*
-    val annotation: Option[ADAMDatabaseVariantAnnotation] =
+    val annotation: Option[DatabaseVariantAnnotation] =
       if (extractExternalAnnotations)
         Some(extractVariantDatabaseAnnotation(variant, vc))
       else
@@ -166,36 +167,36 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
      */
   }
 
-  def convertToAnnotation(vc: VariantContext): ADAMDatabaseVariantAnnotation = {
+  def convertToAnnotation(vc: BroadVariantContext): DatabaseVariantAnnotation = {
     assert(false, "TODO")
     /*
     val variant = createADAMVariant(vc)
     extractVariantDatabaseAnnotation(variant, vc)
     */
-    new ADAMDatabaseVariantAnnotation()
+    new DatabaseVariantAnnotation()
   }
 
-  private def createContig(vc: VariantContext): ADAMContig = {
+  private def createContig(vc: BroadVariantContext): Contig = {
     val contigName = contigToRefSeq.getOrElse(vc.getChr, vc.getChr)
 
-    ADAMContig.newBuilder()
+    Contig.newBuilder()
       .setContigName(contigName)
       .build()
   }
 
-  private def createADAMVariant(vc: VariantContext, alt: Option[String]): ADAMVariant = {
+  private def createADAMVariant(vc: BroadVariantContext, alt: Option[String]): Variant = {
     // VCF CHROM, POS, REF and ALT
-    val builder = ADAMVariant.newBuilder
+    val builder = Variant.newBuilder
       .setContig(createContig(vc))
-      .setPosition(vc.getStart - 1 /* ADAM is 0-indexed */ )
-      .setExclusiveEnd(vc.getEnd /* ADAM is 0-indexed, so the 1-indexed inclusive end becomes exclusive */ )
+      .setStart(vc.getStart - 1 /* ADAM is 0-indexed */ )
+      .setEnd(vc.getEnd /* ADAM is 0-indexed, so the 1-indexed inclusive end becomes exclusive */ )
       .setReferenceAllele(vc.getReference.getBaseString)
-    alt.foreach(builder.setVariantAllele(_))
+    alt.foreach(builder.setAlternateAllele(_))
     builder.build
   }
 
-  private def extractVariantDatabaseAnnotation(variant: ADAMVariant, vc: VariantContext): ADAMDatabaseVariantAnnotation = {
-    val annotation = ADAMDatabaseVariantAnnotation.newBuilder()
+  private def extractVariantDatabaseAnnotation(variant: Variant, vc: BroadVariantContext): DatabaseVariantAnnotation = {
+    val annotation = DatabaseVariantAnnotation.newBuilder()
       .setVariant(variant)
       .build
 
@@ -204,48 +205,50 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
   }
 
   private def extractGenotypes(
-    vc: VariantContext,
-    variant: ADAMVariant,
+    vc: BroadVariantContext,
+    variant: Variant,
     annotations: VariantCallingAnnotations,
-    setPL: (Genotype, ADAMGenotype.Builder) => Unit): Seq[ADAMGenotype] = {
+    setPL: (org.broadinstitute.variant.variantcontext.Genotype, Genotype.Builder) => Unit): Seq[Genotype] = {
 
-    val genotypes: Seq[ADAMGenotype] = vc.getGenotypes.map((g: Genotype) => {
-      val genotype: ADAMGenotype.Builder = ADAMGenotype.newBuilder
-        .setVariant(variant)
-        .setVariantCallingAnnotations(annotations)
-        .setSampleId(g.getSampleName)
-        .setAlleles(g.getAlleles.map(VariantContextConverter.convertAllele(vc, _)))
-        .setIsPhased(g.isPhased)
+    val genotypes: Seq[Genotype] = vc.getGenotypes.map(
+      (g: org.broadinstitute.variant.variantcontext.Genotype) => {
+        val genotype: Genotype.Builder = Genotype.newBuilder
+          .setVariant(variant)
+          .setVariantCallingAnnotations(annotations)
+          .setSampleId(g.getSampleName)
+          .setAlleles(g.getAlleles.map(VariantContextConverter.convertAllele(vc, _)))
+          .setIsPhased(g.isPhased)
 
-      if (g.hasGQ) genotype.setGenotypeQuality(g.getGQ)
-      if (g.hasDP) genotype.setReadDepth(g.getDP)
-      if (g.hasAD) {
-        val ad = g.getAD
-        genotype.setReferenceReadDepth(ad(0)).setAlternateReadDepth(ad(1))
-      }
-      setPL(g, genotype)
+        if (g.hasGQ) genotype.setGenotypeQuality(g.getGQ)
+        if (g.hasDP) genotype.setReadDepth(g.getDP)
+        if (g.hasAD) {
+          val ad = g.getAD
+          genotype.setReferenceReadDepth(ad(0)).setAlternateReadDepth(ad(1))
+        }
+        setPL(g, genotype)
 
-      VariantAnnotationConverter.convert(g, genotype.build)
-    }).toSeq
+        VariantAnnotationConverter.convert(g, genotype.build)
+      }).toSeq
 
     genotypes
   }
 
-  private def extractNonReferenceGenotypes(vc: VariantContext, variant: ADAMVariant, annotations: VariantCallingAnnotations): Seq[ADAMGenotype] = {
+  private def extractNonReferenceGenotypes(vc: BroadVariantContext, variant: Variant, annotations: VariantCallingAnnotations): Seq[Genotype] = {
     assert(vc.isBiallelic)
-    extractGenotypes(vc, variant, annotations, (g, b) => {
-      if (g.hasPL) b.setGenotypeLikelihoods(g.getPL.toList.map(p => p: java.lang.Integer))
-    })
+    extractGenotypes(vc, variant, annotations,
+      (g: org.broadinstitute.variant.variantcontext.Genotype, b: Genotype.Builder) => {
+        if (g.hasPL) b.setGenotypeLikelihoods(g.getPL.toList.map(p => p: java.lang.Integer))
+      })
   }
 
-  private def extractReferenceGenotypes(vc: VariantContext, variant: ADAMVariant, annotations: VariantCallingAnnotations): Seq[ADAMGenotype] = {
+  private def extractReferenceGenotypes(vc: BroadVariantContext, variant: Variant, annotations: VariantCallingAnnotations): Seq[Genotype] = {
     assert(vc.isBiallelic)
     extractGenotypes(vc, variant, annotations, (g, b) => {
       if (g.hasPL) b.setNonReferenceLikelihoods(g.getPL.toList.map(p => p: java.lang.Integer))
     })
   }
 
-  private def extractReferenceModelGenotypes(vc: VariantContext, variant: ADAMVariant, annotations: VariantCallingAnnotations): Seq[ADAMGenotype] = {
+  private def extractReferenceModelGenotypes(vc: BroadVariantContext, variant: Variant, annotations: VariantCallingAnnotations): Seq[Genotype] = {
     extractGenotypes(vc, variant, annotations, (g, b) => {
       if (g.hasPL) {
         val pls = g.getPL.map(p => p: java.lang.Integer)
@@ -260,7 +263,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     })
   }
 
-  private def extractVariantCallingAnnotations(vc: VariantContext): VariantCallingAnnotations = {
+  private def extractVariantCallingAnnotations(vc: BroadVariantContext): VariantCallingAnnotations = {
     val call: VariantCallingAnnotations.Builder = VariantCallingAnnotations.newBuilder
 
     // VCF QUAL, FILTER and INFO fields
@@ -282,20 +285,21 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
    * @param vc
    * @return GATK VariantContext
    */
-  def convert(vc: ADAMVariantContext): VariantContext = {
-    val variant: ADAMVariant = vc.variant
+  def convert(vc: ADAMVariantContext): BroadVariantContext = {
+    val variant: Variant = vc.variant
     val vcb = new VariantContextBuilder()
       .chr(refSeqToContig.getOrElse(variant.getContig.getContigName.toString,
         variant.getContig.getContigName.toString))
-      .start(variant.getPosition + 1 /* Recall ADAM is 0-indexed */ )
-      .stop(variant.getPosition + variant.getReferenceAllele.length)
+      .start(variant.getStart + 1 /* Recall ADAM is 0-indexed */ )
+      .stop(variant.getStart + variant.getReferenceAllele.length)
       .alleles(VariantContextConverter.convertAlleles(variant))
 
     vc.databases.flatMap(d => Option(d.getDbSnpId)).foreach(d => vcb.id("rs" + d))
 
     // TODO: Extract provenance INFO fields
     vcb.genotypes(vc.genotypes.map(g => {
-      val gb = new GenotypeBuilder(g.getSampleId.toString, VariantContextConverter.convertAlleles(g))
+      val gb = new org.broadinstitute.variant.variantcontext.GenotypeBuilder(
+        g.getSampleId.toString, VariantContextConverter.convertAlleles(g))
 
       Option(g.getIsPhased).foreach(gb.phased(_))
       Option(g.getGenotypeQuality).foreach(gb.GQ(_))

@@ -17,31 +17,30 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.formats.avro.ADAMVariant
+import org.bdgenomics.formats.avro.Variant
 
-object RichADAMVariant {
-  implicit def variantToRichVariant(variant: ADAMVariant): RichADAMVariant = new RichADAMVariant(variant)
-  implicit def richVariantToVariant(variant: RichADAMVariant): ADAMVariant = variant.variant
+object RichVariant {
+  implicit def variantToRichVariant(variant: Variant): RichVariant = new RichVariant(variant)
+  implicit def richVariantToVariant(variant: RichVariant): Variant = variant.variant
 }
 
-class RichADAMVariant(val variant: ADAMVariant) {
+class RichVariant(val variant: Variant) {
   def isSingleNucleotideVariant() = {
-    variant.getReferenceAllele.length == 1 && variant.getVariantAllele.length == 1
+    variant.getReferenceAllele.length == 1 && variant.getAlternateAllele.length == 1
   }
 
   def isMultipleNucleotideVariant() = {
-    !isSingleNucleotideVariant && variant.getReferenceAllele.length == variant.getVariantAllele.length
+    !isSingleNucleotideVariant && variant.getReferenceAllele.length == variant.getAlternateAllele.length
   }
 
-  def isInsertion() = variant.getReferenceAllele.length < variant.getVariantAllele.length
+  def isInsertion() = variant.getReferenceAllele.length < variant.getAlternateAllele.length
 
-  def isDeletion() = variant.getReferenceAllele.length > variant.getVariantAllele.length
+  def isDeletion() = variant.getReferenceAllele.length > variant.getAlternateAllele.length
 
   override def hashCode = variant.hashCode
 
   override def equals(o: Any) = o match {
-    case that: RichADAMVariant => variant.equals(that.variant)
-    case _                     => false
+    case that: RichVariant => variant.equals(that.variant)
+    case _                 => false
   }
-
 }

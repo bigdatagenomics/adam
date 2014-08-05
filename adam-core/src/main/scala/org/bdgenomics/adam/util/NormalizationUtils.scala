@@ -19,9 +19,9 @@ package org.bdgenomics.adam.util
 
 import scala.annotation.tailrec
 import net.sf.samtools.{ Cigar, CigarOperator }
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichADAMRecord
+import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichCigar._
 
 object NormalizationUtils {
@@ -29,29 +29,23 @@ object NormalizationUtils {
   /**
    * Given a cigar, returns the cigar with the position of the cigar shifted left.
    *
-   * @param cigar Cigar to left align.
+   * @param read Read whose Cigar should be left align.
    * @return Cigar fully moved left.
    */
-  def leftAlignIndel(read: ADAMRecord): Cigar = {
+  def leftAlignIndel(read: AlignmentRecord): Cigar = {
     var indelPos = -1
     var pos = 0
     var indelLength = 0
     var readPos = 0
     var referencePos = 0
     var isInsert = false
-    val richRead = RichADAMRecord(read)
+    val richRead = RichAlignmentRecord(read)
     val cigar = richRead.samtoolsCigar
-
-    val clippedOffset = if (cigar.getCigarElements.head.getOperator == CigarOperator.SOFT_CLIP) {
-      cigar.getCigarElements.head.getLength
-    } else {
-      0
-    }
 
     // find indel in cigar
     cigar.getCigarElements.map(elem => {
       elem.getOperator match {
-        case (CigarOperator.I) => {
+        case (CigarOperator.I) =>
           if (indelPos == -1) {
             indelPos = pos
             indelLength = elem.getLength
@@ -61,8 +55,7 @@ object NormalizationUtils {
           }
           pos += 1
           isInsert = true
-        }
-        case (CigarOperator.D) => {
+        case (CigarOperator.D) =>
           if (indelPos == -1) {
             indelPos = pos
             indelLength = elem.getLength
@@ -71,8 +64,7 @@ object NormalizationUtils {
             return cigar
           }
           pos += 1
-        }
-        case _ => {
+        case _ =>
           pos += 1
           if (indelPos == -1) {
             if (elem.getOperator.consumesReadBases()) {
@@ -82,14 +74,13 @@ object NormalizationUtils {
               referencePos += elem.getLength
             }
           }
-        }
       }
     })
 
     // if there is an indel, shift it, else return
     if (indelPos != -1) {
 
-      val readSeq: String = read.getSequence()
+      val readSeq: String = read.getSequence
 
       // if an insert, get variant and preceeding bases from read
       // if delete, pick variant, from reference, preceeding bases from read
@@ -153,7 +144,7 @@ object NormalizationUtils {
     val newCigar = new Cigar(cigar.getCigarElements).moveLeft(position)
 
     // if there are no more shifts to do, or if shifting breaks the cigar, return old cigar
-    if (shifts == 0 || !newCigar.isWellFormed(cigar.getLength)) {
+    if (shifts == 0 || !newCigar.isWellFormed(cigar.getLength())) {
       cigar
     } else {
       shiftIndel(newCigar, position, shifts - 1)

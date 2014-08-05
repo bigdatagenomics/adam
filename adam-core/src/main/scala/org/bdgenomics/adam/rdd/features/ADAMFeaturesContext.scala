@@ -27,10 +27,10 @@ object ADAMFeaturesContext {
 
 class ADAMFeaturesContext(sc: SparkContext) extends Serializable with Logging {
   def adamBEDFeatureLoad(filePath: String): RDD[BEDFeature] = {
-    sc.textFile(filePath).map(new BEDParser().parse _)
+    sc.textFile(filePath).map(new BEDParser().parse)
   }
 
   def adamNarrowPeakFeatureLoad(filePath: String): RDD[NarrowPeakFeature] = {
-    sc.textFile(filePath).map(new NarrowPeakParser().parse _)
+    sc.textFile(filePath).map(new NarrowPeakParser().parse)
   }
 }

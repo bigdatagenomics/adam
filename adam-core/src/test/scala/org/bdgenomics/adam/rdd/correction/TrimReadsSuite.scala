@@ -18,16 +18,16 @@
 package org.bdgenomics.adam.rdd.correction
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 class TrimReadsSuite extends SparkFunSuite {
 
   val ec = new TrimReads
 
-  def makeRead(sequence: String, qual: String): ADAMRecord = {
-    ADAMRecord.newBuilder
+  def makeRead(sequence: String, qual: String): AlignmentRecord = {
+    AlignmentRecord.newBuilder
       .setSequence(sequence)
       .setQual(qual)
       .build
@@ -74,7 +74,7 @@ class TrimReadsSuite extends SparkFunSuite {
 
   test("trim a few reads") {
     // trim from the front only, read without cigar
-    val read1 = ADAMRecord.newBuilder
+    val read1 = AlignmentRecord.newBuilder
       .setSequence("ACTCGCCCACTCA")
       .setQual("##/9:::::::::")
       .build
@@ -84,7 +84,7 @@ class TrimReadsSuite extends SparkFunSuite {
     assert(trimmedRead1.getQual.toString === "/9:::::::::")
 
     // trim from both ends, read with cigar
-    val read2 = ADAMRecord.newBuilder
+    val read2 = AlignmentRecord.newBuilder
       .setSequence("ACTCGCCCACTCAAA")
       .setQual("##/9:::::::::##")
       .setCigar("2S11M2S")
@@ -109,7 +109,7 @@ class TrimReadsSuite extends SparkFunSuite {
 
     val trimFront = TrimReads(rdd, 2, 0)
 
-    trimFront.collect.foreach(r => {
+    trimFront.collect().foreach(r => {
       assert(r.getSequence.length === 11)
       assert(r.getQual.length === 11)
       assert(r.getSequence.toString.startsWith("CT"))
@@ -122,7 +122,7 @@ class TrimReadsSuite extends SparkFunSuite {
 
     val trimEnd = TrimReads(trimFront, 0, 3)
 
-    trimEnd.collect.foreach(r => {
+    trimEnd.collect().foreach(r => {
       assert(r.getSequence.length === 8, r.getSequence)
       assert(r.getQual.length === 8)
       assert(r.getSequence.toString.startsWith("CT"))
@@ -135,12 +135,11 @@ class TrimReadsSuite extends SparkFunSuite {
 
   sparkTest("adaptively trim reads") {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.sam").getFile
-    val reads: RDD[ADAMRecord] = sc.adamLoad(readsFilepath)
+    val reads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
 
     // put all reads into a single read group
     val readsSingleRG = reads.map(read => {
-      ADAMRecord.newBuilder(read)
-        .setRecordGroupId(0)
+      AlignmentRecord.newBuilder(read)
         .setRecordGroupName("group0")
         .build()
     })
@@ -149,7 +148,7 @@ class TrimReadsSuite extends SparkFunSuite {
     val trimmed = TrimReads(readsSingleRG, 10)
 
     // we should trim the first and last 5 bases off all reads
-    trimmed.collect.foreach(r => {
+    trimmed.collect().foreach(r => {
       assert(r.getBasesTrimmedFromStart === 5)
       assert(r.getBasesTrimmedFromEnd === 5)
     })

@@ -20,31 +20,31 @@ package org.bdgenomics.adam.rdd.variation
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.ADAMVariantContext
+import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 
-class ADAMVariantContextRDDFunctionsSuite extends SparkFunSuite {
+class VariantContextRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("joins SNV database annotation") {
-    val v0 = ADAMVariant.newBuilder
-      .setContig(ADAMContig.newBuilder.setContigName("11").build)
-      .setPosition(17409572)
+    val v0 = Variant.newBuilder
+      .setContig(Contig.newBuilder.setContigName("11").build)
+      .setStart(17409572)
       .setReferenceAllele("T")
-      .setVariantAllele("C")
+      .setAlternateAllele("C")
       .build
 
-    val vc: RDD[ADAMVariantContext] = sc.parallelize(List(
-      ADAMVariantContext(v0)))
+    val vc: RDD[VariantContext] = sc.parallelize(List(
+      VariantContext(v0)))
 
-    val a0 = ADAMDatabaseVariantAnnotation.newBuilder
+    val a0 = DatabaseVariantAnnotation.newBuilder
       .setVariant(v0)
       .setDbSnpId(5219)
       .build
 
-    val vda: RDD[ADAMDatabaseVariantAnnotation] = sc.parallelize(List(
+    val vda: RDD[DatabaseVariantAnnotation] = sc.parallelize(List(
       a0))
 
-    // TODO: implicit conversion to ADAMVariantContextRDD
+    // TODO: implicit conversion to VariantContextRDD
     val annotated = vc.joinDatabaseVariantAnnotation(vda)
     assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
   }

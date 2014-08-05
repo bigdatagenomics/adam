@@ -17,28 +17,26 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.formats.avro.ADAMRecord
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rich.RichADAMRecord._
-import org.bdgenomics.adam.util.MdTag
-import org.bdgenomics.adam.util.QualityScore
-import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
-import scala.Some
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferencePosition
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
+import org.bdgenomics.adam.util.{ MdTag, QualityScore }
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 object DecadentRead {
   type Residue = DecadentRead#Residue
 
   // Constructors
-  def apply(record: ADAMRecord): DecadentRead = DecadentRead(RichADAMRecord(record))
+  def apply(record: AlignmentRecord): DecadentRead = DecadentRead(RichAlignmentRecord(record))
 
-  def apply(rich: RichADAMRecord): DecadentRead = {
+  def apply(rich: RichAlignmentRecord): DecadentRead = {
     try {
       new DecadentRead(rich)
     } catch {
       case exc: Exception =>
-        val msg = "Error \"%s\" while constructing DecadentRead from ADAMRecord(%s)".format(exc.getMessage, rich.record)
+        val msg = "Error \"%s\" while constructing DecadentRead from Read(%s)".format(exc.getMessage, rich.record)
         throw new IllegalArgumentException(msg, exc)
     }
   }
@@ -49,13 +47,13 @@ object DecadentRead {
    *   2. To clog, to glut, or satisfy, as the appetite; to satiate.
    *   3. To fill up or choke up; to stop up.
    */
-  def cloy(rdd: RDD[ADAMRecord]): RDD[DecadentRead] = rdd.map(DecadentRead.apply)
+  def cloy(rdd: RDD[AlignmentRecord]): RDD[DecadentRead] = rdd.map(DecadentRead.apply)
 
   // The inevitable counterpart of the above.
-  implicit def decay(rdd: RDD[DecadentRead]): RDD[ADAMRecord] = rdd.map(_.record)
+  implicit def decay(rdd: RDD[DecadentRead]): RDD[AlignmentRecord] = rdd.map(_.record)
 }
 
-class DecadentRead(val record: RichADAMRecord) extends Logging {
+class DecadentRead(val record: RichAlignmentRecord) extends Logging {
   // Can't be a primary alignment unless it has been aligned
   require(!record.getPrimaryAlignment || record.getReadMapped, "Unaligned read can't be a primary alignment")
 
@@ -81,7 +79,7 @@ class DecadentRead(val record: RichADAMRecord) extends Logging {
     /**
      * Nucleotide at this offset.
      *
-     * TODO: Return values of meaningful type, e.g. `DNABase'.
+     * TODO: Return values of meaningful type, e.g. `DNABase`.
      */
     def base: Char = read.baseSequence(offset)
 

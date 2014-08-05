@@ -17,27 +17,25 @@
  */
 package org.bdgenomics.adam.cli
 
-import scala.io._
-
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.kohsuke.args4j.spi.BooleanOptionHandler
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-
-import org.bdgenomics.formats.avro.ADAMRecord
 import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
 import org.bdgenomics.adam.projections.Projection
-import org.bdgenomics.adam.projections.ADAMRecordField._
+import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.RegionJoin
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
+import org.bdgenomics.formats.avro.AlignmentRecord
+import scala.io._
 
 /**
  * CalculateDepth (accessible as the command 'depth' through the CLI) takes two arguments,
- * an ADAMRecord file and a VCF (or equivalent) file, and calculates the number of reads
- * (the 'depth') from the ADAMRecord file which overlap each of the variants given by the VCF.
+ * an Read file and a VCF (or equivalent) file, and calculates the number of reads
+ * (the 'depth') from the Read file which overlap each of the variants given by the VCF.
  * It then reports, on standard out, the location and name of each variant along with the
  * calculated depth.
  */
@@ -52,7 +50,7 @@ object CalculateDepth extends ADAMCommandCompanion {
 }
 
 class CalculateDepthArgs extends Args4jBase with SparkArgs with ParquetArgs {
-  @Argument(required = true, metaVar = "ADAM", usage = "The ADAMRecord file to use to calculate depths", index = 0)
+  @Argument(required = true, metaVar = "ADAM", usage = "The Read file to use to calculate depths", index = 0)
   val adamInputPath: String = null
 
   @Argument(required = true, metaVar = "VCF", usage = "The VCF containing the sites at which to calculate depths", index = 1)
@@ -69,10 +67,10 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
 
     val proj = Projection(contig, start, cigar, readMapped)
 
-    val adamRDD: RDD[ADAMRecord] = sc.adamLoad(args.adamInputPath, projection = Some(proj))
+    val adamRDD: RDD[AlignmentRecord] = sc.adamLoad(args.adamInputPath, projection = Some(proj))
     val mappedRDD = adamRDD.filter(_.getReadMapped)
 
-    val seqDict = sc.adamDictionaryLoad[ADAMRecord](args.adamInputPath)
+    val seqDict = sc.adamDictionaryLoad[AlignmentRecord](args.adamInputPath)
 
     /*
      * The following is the code I _want_ to be able to run.  However, in order to do this,
@@ -93,7 +91,7 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
     val variantPositions = vcf.map(_._1)
     val variantNames = vcf.collect().toMap
 
-    val joinedRDD: RDD[(ReferenceRegion, ADAMRecord)] =
+    val joinedRDD: RDD[(ReferenceRegion, AlignmentRecord)] =
       if (args.cartesian) RegionJoin.cartesianFilter(variantPositions, mappedRDD)
       else RegionJoin.partitionAndJoin(sc, seqDict, variantPositions, mappedRDD)
 

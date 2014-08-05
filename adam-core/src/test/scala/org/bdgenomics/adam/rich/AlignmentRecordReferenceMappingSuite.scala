@@ -15,10 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.projections
+package org.bdgenomics.adam.rich
 
-import org.bdgenomics.formats.avro.ADAMVariant
+import org.bdgenomics.adam.rich.ReferenceMappingContext.AlignmentRecordReferenceMapping
+import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
-class ADAMVariantField extends FieldEnumeration(ADAMVariant.SCHEMA$) {
-  val contig, position, referenceAllele, variantAllele = SchemaValue
+class AlignmentRecordReferenceMappingSuite extends SparkFunSuite {
+
+  sparkTest("test getReferenceId returns the right referenceId") {
+    val contig = Contig.newBuilder
+      .setContigName("chr12")
+      .build
+
+    val rec = AlignmentRecord.newBuilder().setContig(contig).build()
+    assert(AlignmentRecordReferenceMapping.getReferenceName(rec) === "chr12")
+  }
 }

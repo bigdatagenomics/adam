@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-import org.bdgenomics.adam.models.{ ADAMVariantContext, SequenceDictionary }
+import org.bdgenomics.adam.models.{ VariantContext, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.apache.spark.rdd.RDD
@@ -58,7 +58,7 @@ object VcfHeaderUtils {
    * @param rdd An RDD of ADAM variant contexts.
    * @return A complete VCF header.
    */
-  def makeHeader(rdd: RDD[ADAMVariantContext]): VCFHeader = {
+  def makeHeader(rdd: RDD[VariantContext]): VCFHeader = {
     val sequenceDict = rdd.adamGetSequenceDictionary()
     val samples = rdd.adamGetCallsetSamples()
 

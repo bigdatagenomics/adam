@@ -120,7 +120,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * @tparam U A predicate to apply on the load.
    */
-  def adamRecordLoad[U <: ADAMPredicate[ADAMRecord]](filePath: java.lang.String): JavaADAMRecordRDD = {
-    new JavaADAMRecordRDD(ac.adamLoad[ADAMRecord, U](filePath).toJavaRDD())
+  def adamRecordLoad[U <: ADAMPredicate[AlignmentRecord]](filePath: java.lang.String): JavaAlignmentRecordRDD = {
+    new JavaAlignmentRecordRDD(ac.adamLoad[AlignmentRecord, U](filePath).toJavaRDD())
   }
 }

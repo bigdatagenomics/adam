@@ -17,16 +17,16 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.NucleotideContigFragment
 
 /**
  * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
- * in sync with any changes to ADAMRecord.
+ * in sync with any changes to Read.
  *
  * This enumeration is necessary because Parquet needs the field string names
  * for predicates and projections.
  */
-object ADAMRecordField extends FieldEnumeration(ADAMRecord.SCHEMA$) {
+object NucleotideContigFragmentField extends FieldEnumeration(NucleotideContigFragment.SCHEMA$) {
 
-  val contig, start, mapq, readName, sequence, mateAlignmentStart, cigar, qual, recordGroupId, recordGroupName, readPaired, properPair, readMapped, mateMapped, readNegativeStrand, mateNegativeStrand, firstOfPair, secondOfPair, primaryAlignment, failedVendorQualityChecks, duplicateRead, mismatchingPositions, attributes, recordGroupSequencingCenter, recordGroupDescription, recordGroupRunDateEpoch, recordGroupFlowOrder, recordGroupKeySequence, recordGroupLibrary, recordGroupPredictedMedianInsertSize, recordGroupPlatform, recordGroupPlatformUnit, recordGroupSample, mateContig, origQual = SchemaValue
+  val contig, description, fragmentSequence, fragmentNumber, fragmentStartPosition, numberOfFragmentsInContig, url = SchemaValue
 }

@@ -17,16 +17,8 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.ADAMNucleotideContigFragment
+import org.bdgenomics.formats.avro.Variant
 
-/**
- * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
- * in sync with any changes to ADAMRecord.
- *
- * This enumeration is necessary because Parquet needs the field string names
- * for predicates and projections.
- */
-object ADAMNucleotideContigFragmentField extends FieldEnumeration(ADAMNucleotideContigFragment.SCHEMA$) {
-
-  val contig, description, fragmentSequence, fragmentNumber, fragmentStartPosition, numberOfFragmentsInContig, url = SchemaValue
+class VariantField extends FieldEnumeration(Variant.SCHEMA$) {
+  val contig, position, referenceAllele, variantAllele = SchemaValue
 }

@@ -17,9 +17,8 @@
  */
 package org.bdgenomics.adam.models
 
-import java.util.Date
 import net.sf.samtools.SAMReadGroupRecord
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite
 
 class RecordGroupDictionarySuite extends FunSuite {
@@ -47,7 +46,7 @@ class RecordGroupDictionarySuite extends FunSuite {
   }
 
   test("create a record group from a read") {
-    val ar = ADAMRecord.newBuilder()
+    val ar = AlignmentRecord.newBuilder()
       .setRecordGroupSample("mySample")
       .setRecordGroupName("myName")
       .build()
@@ -60,7 +59,7 @@ class RecordGroupDictionarySuite extends FunSuite {
   }
 
   test("don't create a record group from a read without record group info") {
-    val ar = ADAMRecord.newBuilder()
+    val ar = AlignmentRecord.newBuilder()
       .build()
 
     val rg = RecordGroup(ar)
@@ -70,7 +69,7 @@ class RecordGroupDictionarySuite extends FunSuite {
 
   test("simple equality checks") {
     val rg1a = new RecordGroup("me", "rg1")
-    val rg1b = RecordGroup(ADAMRecord.newBuilder()
+    val rg1b = RecordGroup(AlignmentRecord.newBuilder()
       .setRecordGroupSample("me")
       .setRecordGroupName("rg1")
       .build())

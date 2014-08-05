@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.ADAMRecord
-import org.bdgenomics.adam.serialization.AvroSerializer
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
+import org.bdgenomics.adam.serialization.AvroSerializer
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 /**
  * This class is similar to SingleReadBucket, except it breaks the reads down further.
@@ -30,14 +30,14 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
  *
  * This is useful as this will usually map a single read in any of the sequences.
  */
-case class ReadBucket(unpairedPrimaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      pairedFirstPrimaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      pairedSecondPrimaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      unpairedSecondaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      pairedFirstSecondaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      pairedSecondSecondaryMappedReads: Iterable[ADAMRecord] = Seq.empty,
-                      unmappedReads: Iterable[ADAMRecord] = Seq.empty) {
-  def allReads(): Iterable[ADAMRecord] =
+case class ReadBucket(unpairedPrimaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+                      pairedFirstPrimaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+                      pairedSecondPrimaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+                      unpairedSecondaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+                      pairedFirstSecondaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+                      pairedSecondSecondaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+                      unmappedReads: Iterable[AlignmentRecord] = Seq.empty) {
+  def allReads(): Iterable[AlignmentRecord] =
     unpairedPrimaryMappedReads ++
       pairedFirstPrimaryMappedReads ++
       pairedSecondPrimaryMappedReads ++
@@ -48,19 +48,19 @@ case class ReadBucket(unpairedPrimaryMappedReads: Iterable[ADAMRecord] = Seq.emp
 }
 
 class ReadBucketSerializer extends Serializer[ReadBucket] {
-  val recordSerializer = new AvroSerializer[ADAMRecord]()
+  val recordSerializer = new AvroSerializer[AlignmentRecord]()
 
-  def writeArray(kryo: Kryo, output: Output, reads: Iterable[ADAMRecord]): Unit = {
+  def writeArray(kryo: Kryo, output: Output, reads: Iterable[AlignmentRecord]): Unit = {
     output.writeInt(reads.size, true)
     for (read <- reads) {
       recordSerializer.write(kryo, output, read)
     }
   }
 
-  def readArray(kryo: Kryo, input: Input): Seq[ADAMRecord] = {
+  def readArray(kryo: Kryo, input: Input): Seq[AlignmentRecord] = {
     val numReads = input.readInt(true)
-    (0 until numReads).foldLeft(List[ADAMRecord]()) {
-      (a, b) => recordSerializer.read(kryo, input, classOf[ADAMRecord]) :: a
+    (0 until numReads).foldLeft(List[AlignmentRecord]()) {
+      (a, b) => recordSerializer.read(kryo, input, classOf[AlignmentRecord]) :: a
     }
   }
 

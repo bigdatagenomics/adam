@@ -19,7 +19,7 @@ package org.bdgenomics.adam.algorithms.realignmenttarget
 
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rich.RichADAMRecord
+import org.bdgenomics.adam.rich.RichAlignmentRecord
 import scala.annotation.tailrec
 import scala.collection.immutable.TreeSet
 
@@ -31,7 +31,7 @@ object RealignmentTargetFinder {
    * @param rdd RDD of reads to use in generating realignment targets.
    * @return Sorted set of realignment targets.
    */
-  def apply(rdd: RDD[RichADAMRecord],
+  def apply(rdd: RDD[RichAlignmentRecord],
             maxIndelSize: Int = 500,
             maxTargetSize: Int = 3000): TreeSet[IndelRealignmentTarget] = {
     new RealignmentTargetFinder().findTargets(rdd, maxIndelSize, maxTargetSize).set
@@ -93,7 +93,7 @@ class RealignmentTargetFinder extends Serializable with Logging {
    * @param reads An RDD containing reads to generate indel realignment targets from.
    * @return An ordered set of indel realignment targets.
    */
-  def findTargets(reads: RDD[RichADAMRecord],
+  def findTargets(reads: RDD[RichAlignmentRecord],
                   maxIndelSize: Int = 500,
                   maxTargetSize: Int = 3000): TargetSet = {
 

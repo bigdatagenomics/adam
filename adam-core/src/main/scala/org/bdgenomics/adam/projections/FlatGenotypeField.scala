@@ -17,15 +17,9 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.ADAMDatabaseVariantAnnotation
+import org.bdgenomics.formats.avro.FlatGenotype
 
-object ADAMDatabaseVariantAnnotationField extends FieldEnumeration(ADAMDatabaseVariantAnnotation.SCHEMA$) {
+object FlatGenotypeField extends FieldEnumeration(FlatGenotype.SCHEMA$) {
 
-  val variant, dbsnpId, //domain information
-  hgvs, geneSymbol, ensemblGeneId, ensemblTranscriptIds, //clinical fields
-  omimId, cosmicId, clinvarId, clinicalSignificance, //conservation
-  gerpNr, gerpRs, phylop, ancestralAllele, //population statistics
-  thousandGenomesAlleleCount, thousandGenomesAlleleFrequency, //effect
-  referenceAminoAcid, alternateAminoAcid, //predicted effects
-  siftScore, siftScoreConverted, siftPred, mutationTasterScore, mutationTasterScoreConverted, mutationTasterPred = SchemaValue
+  val referenceName, referenceAllele, alleles, genotypeLikelihoods, alleleDepths, readDepth, genotypeQuality, sampleId, position = SchemaValue
 }

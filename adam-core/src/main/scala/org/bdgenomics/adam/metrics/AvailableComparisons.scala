@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.metrics
 
-import org.bdgenomics.formats.avro.ADAMRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.adam.projections.FieldValue
-import org.bdgenomics.adam.projections.ADAMRecordField._
-import org.bdgenomics.adam.rich.RichADAMRecord._
-import org.bdgenomics.adam.util.Util._;
+import org.bdgenomics.adam.projections.AlignmentRecordField._
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
+import org.bdgenomics.adam.util.Util._
 import scala.collection.Map
 import org.bdgenomics.adam.models.ReadBucket
 
@@ -48,7 +48,7 @@ object OverMatched extends BooleanComparisons with Serializable {
   val name = "overmatched"
   val description = "Checks that all buckets have exactly 0 or 1 records"
 
-  def matches(records1: Iterable[ADAMRecord], records2: Iterable[ADAMRecord]): Boolean =
+  def matches(records1: Iterable[AlignmentRecord], records2: Iterable[AlignmentRecord]): Boolean =
     records1.size == records2.size && (records1.size == 0 || records1.size == 1)
 
   def matchedByName(bucket1: ReadBucket, bucket2: ReadBucket): Seq[Boolean] =
@@ -65,7 +65,7 @@ object DupeMismatch extends PointComparisons with Serializable {
   val name = "dupemismatch"
   val description = "Counts the number of common reads marked as duplicates"
 
-  def points(records1: Iterable[ADAMRecord], records2: Iterable[ADAMRecord]): Option[(Int, Int)] = {
+  def points(records1: Iterable[AlignmentRecord], records2: Iterable[AlignmentRecord]): Option[(Int, Int)] = {
     if (records1.size == records2.size) {
       records1.size match {
         case 0 => None
@@ -90,10 +90,10 @@ object MappedPosition extends LongComparisons with Serializable {
   val name = "positions"
   val description = "Counts how many reads align to the same genomic location"
 
-  def distance(records1: Iterable[ADAMRecord], records2: Iterable[ADAMRecord]): Long = {
+  def distance(records1: Iterable[AlignmentRecord], records2: Iterable[AlignmentRecord]): Long = {
     if (records1.size == records2.size) records1.size match {
       case 0 => 0
-      case 1 => {
+      case 1 =>
         val r1 = records1.head
         val r2 = records2.head
         if (isSameContig(r1.getContig, r2.getContig)) {
@@ -101,7 +101,6 @@ object MappedPosition extends LongComparisons with Serializable {
           val start2 = r2.getStart
           if (start1 > start2) start1 - start2 else start2 - start1
         } else -1
-      }
       case _ => -1
     }
     else -1
@@ -126,7 +125,7 @@ object MapQualityScores extends PointComparisons with Serializable {
   val name = "mapqs"
   val description = "Creates scatter plot of mapping quality scores across identical reads"
 
-  def points(records1: Iterable[ADAMRecord], records2: Iterable[ADAMRecord]): Option[(Int, Int)] = {
+  def points(records1: Iterable[AlignmentRecord], records2: Iterable[AlignmentRecord]): Option[(Int, Int)] = {
     if (records1.size == records2.size) {
       records1.size match {
         case 0 => None
@@ -151,17 +150,16 @@ object BaseQualityScores extends PointComparisons with Serializable {
   val name = "baseqs"
   val description = "Creates scatter plots of base quality scores across identical positions in the same reads"
 
-  def points(records1: Iterable[ADAMRecord], records2: Iterable[ADAMRecord]): Seq[(Int, Int)] = {
+  def points(records1: Iterable[AlignmentRecord], records2: Iterable[AlignmentRecord]): Seq[(Int, Int)] = {
     if (records1.size == records2.size) {
       records1.size match {
         case 0 => Seq()
-        case 1 => {
+        case 1 =>
           val record1 = records1.head
           val record2 = records2.head
           record1.qualityScores
             .zip(record2.qualityScores)
             .map(b => (b._1.toInt, b._2.toInt))
-        }
         case _ => Seq()
       }
     } else Seq()

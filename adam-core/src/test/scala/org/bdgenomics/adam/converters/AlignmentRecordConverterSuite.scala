@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMContig }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
   SAMFileHeaderWritable,
@@ -26,11 +26,11 @@ import org.bdgenomics.adam.models.{
 }
 import org.scalatest.FunSuite
 
-class ADAMRecordConverterSuite extends FunSuite {
+class AlignmentRecordConverterSuite extends FunSuite {
 
-  def make_read(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0): ADAMRecord = {
+  def make_read(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0): AlignmentRecord = {
     val sequence: String = "A" * length
-    ADAMRecord.newBuilder()
+    AlignmentRecord.newBuilder()
       .setReadName("read" + id.toString)
       .setStart(start)
       .setReadMapped(true)
@@ -48,11 +48,10 @@ class ADAMRecordConverterSuite extends FunSuite {
 
     // add reference details
     adamRead.setRecordGroupName("testname")
-    adamRead.setContig(ADAMContig.newBuilder()
+    adamRead.setContig(Contig.newBuilder()
       .setContigName("referencetest")
       .build())
-    adamRead.setMateReference("matereferencetest")
-    adamRead.setMateContig(ADAMContig.newBuilder()
+    adamRead.setMateContig(Contig.newBuilder()
       .setContigName("matereferencetest")
       .setContigLength(6L)
       .setReferenceURL("test://chrom1")
@@ -65,7 +64,7 @@ class ADAMRecordConverterSuite extends FunSuite {
     val readGroups = new RecordGroupDictionary(Seq())
 
     // allocate converters
-    val adamRecordConverter = new ADAMRecordConverter
+    val adamRecordConverter = new AlignmentRecordConverter
 
     // convert read
     val toSAM = adamRecordConverter.convert(adamRead,
