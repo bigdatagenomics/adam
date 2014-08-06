@@ -18,9 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable
-import java.util.logging.Level
 import net.sf.samtools.SAMFileHeader
-import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
@@ -60,6 +58,13 @@ import parquet.hadoop.ParquetOutputFormat
 import parquet.hadoop.metadata.CompressionCodecName
 import parquet.hadoop.util.ContextUtil
 import scala.math.max
+import org.apache.avro.specific.SpecificRecord
+import org.apache.spark.rdd.RDD
+import org.apache.spark.SparkContext._
+import org.apache.spark.Logging
+import java.io.File
+import java.util.logging.Level
+import scala.Some
 
 class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Serializable {
 
@@ -148,6 +153,28 @@ class ADAMSpecificRecordSequenceDictionaryRDDAggregator[T <% SpecificRecord: Man
 }
 
 class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {
+
+  /**
+   * Calculates the subset of the RDD whose AlignmentRecords overlap the corresponding
+   * query ReferenceRegion.  Equality of the reference sequence (to which these are aligned)
+   * is tested by string equality of the names.  AlignmentRecords whose 'getReadMapped' method
+   * return 'false' are ignored.
+   *
+   * The end of the record against the reference sequence is calculated from the cigar string
+   * using the ADAMContext.referenceLengthFromCigar method.
+   *
+   * @param query The query region, only records which overlap this region are returned.
+   * @return The subset of AlignmentRecords (corresponding to either primary or secondary alignments) that
+   *         overlap the query region.
+   */
+  def filterByOverlappingRegion(query: ReferenceRegion): RDD[AlignmentRecord] = {
+    def overlapsQuery(rec: AlignmentRecord): Boolean =
+      rec.getReadMapped &&
+        rec.getContig.getContigName.toString == query.referenceName &&
+        rec.getStart < query.end &&
+        rec.getEnd > query.start
+    rdd.filter(overlapsQuery)
+  }
 
   /**
    * Saves an RDD of ADAM read data into the SAM/BAM format.
