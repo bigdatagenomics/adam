@@ -49,6 +49,7 @@ object ADAMMain extends Logging {
         Features2ADAM)),
       CommandGroup("PRINT", List(PrintADAM,
         FlagStat,
+        VizReads,
         PrintTags,
         ListDict,
         SummarizeGenotypes,
