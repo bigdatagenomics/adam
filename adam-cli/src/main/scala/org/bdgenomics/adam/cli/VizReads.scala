@@ -42,25 +42,60 @@ object VizReads extends ADAMCommandCompanion {
 
   val trackHeight = 5
   val width = 1200
-  val base = 20
+  val height = 400
+  val base = 50
 
   def apply(cmdLine: Array[String]): ADAMCommand = {
     new VizReads(Args4j[VizReadsArgs](cmdLine))
   }
 
-  def printJson(layout: OrderedTrackedLayout[AlignmentRecord]): List[TrackJson] = {
+  def printTrackJson(layout: OrderedTrackedLayout[AlignmentRecord]): List[TrackJson] = {
     var tracks = new scala.collection.mutable.ListBuffer[TrackJson]
 
-    // draws a box for each read, in the appropriate track.
+    // draws a box for each read, in the appropriate track
     for ((rec, track) <- layout.trackAssignments) {
       val aRec = rec.asInstanceOf[AlignmentRecord]
       tracks += new TrackJson(aRec.getReadName, aRec.getStart, aRec.getEnd, track)
     }
     tracks.toList
   }
+
+  def printJsonFreq(array: Array[AlignmentRecord], region: ReferenceRegion): List[FreqJson] = {
+    val freqMap = new java.util.TreeMap[Long, Long]
+    var freqBuffer = new scala.collection.mutable.ListBuffer[FreqJson]
+
+    // initiates map with 0 values
+    var i0 = region.start
+    while (i0 <= region.end) {
+      freqMap.put(i0, 0)
+      i0 += 1
+    }
+
+    // creates a point for each base showing its frequency
+    for (rec <- array) {
+      val aRec = rec.asInstanceOf[AlignmentRecord]
+      var i = aRec.getStart
+      while (i <= aRec.getEnd) {
+        if (i >= region.start && i <= region.end)
+          freqMap.put(i, freqMap(i) + 1)
+        i += 1
+      }
+    }
+
+    // convert to list of FreqJsons
+    val iter = freqMap.keySet.iterator
+    var key = 0L
+    while (iter.hasNext) {
+      key = iter.next()
+      freqBuffer += FreqJson(key, freqMap(key))
+    }
+
+    freqBuffer.toList
+  }
 }
 
 case class TrackJson(readName: String, start: Long, end: Long, track: Long)
+case class FreqJson(base: Long, freq: Long)
 
 class VizReadsArgs extends Args4jBase with SparkArgs with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM Records file to view", index = 0)
@@ -74,6 +109,7 @@ class VizServlet extends ScalatraServlet with JacksonJsonSupport {
   protected implicit val jsonFormats: Formats = DefaultFormats
   var regInfo = ReferenceRegion(VizReads.refName, 0, 100)
   var filteredLayout: OrderedTrackedLayout[AlignmentRecord] = null
+  var filteredArray: Array[AlignmentRecord] = null
 
   get("/?") {
     redirect(url("reads"))
@@ -84,7 +120,7 @@ class VizServlet extends ScalatraServlet with JacksonJsonSupport {
 
     filteredLayout = new OrderedTrackedLayout(VizReads.reads.filterByOverlappingRegion(regInfo).collect())
     val templateEngine = new TemplateEngine
-    templateEngine.layout("adam-cli/src/main/webapp/WEB-INF/layouts/default.ssp",
+    templateEngine.layout("adam-cli/src/main/webapp/WEB-INF/layouts/reads.ssp",
       Map("regInfo" -> (regInfo.referenceName, regInfo.start.toString, regInfo.end.toString),
         "width" -> VizReads.width.toString,
         "base" -> VizReads.base.toString,
@@ -97,7 +133,27 @@ class VizServlet extends ScalatraServlet with JacksonJsonSupport {
 
     regInfo = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
     filteredLayout = new OrderedTrackedLayout(VizReads.reads.filterByOverlappingRegion(regInfo).collect())
-    VizReads.printJson(filteredLayout)
+    VizReads.printTrackJson(filteredLayout)
+  }
+
+  get("/freq") {
+    contentType = "text/html"
+
+    filteredArray = VizReads.reads.filterByOverlappingRegion(regInfo).collect()
+    val templateEngine = new TemplateEngine
+    templateEngine.layout("adam-cli/src/main/webapp/WEB-INF/layouts/freq.ssp",
+      Map("regInfo" -> (regInfo.referenceName, regInfo.start.toString, regInfo.end.toString),
+        "width" -> VizReads.width.toString,
+        "height" -> VizReads.height.toString,
+        "base" -> VizReads.base.toString))
+  }
+
+  get("/freq/:ref") {
+    contentType = formats("json")
+
+    regInfo = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
+    filteredArray = VizReads.reads.filterByOverlappingRegion(regInfo).collect()
+    VizReads.printJsonFreq(filteredArray, regInfo)
   }
 }
 
@@ -116,6 +172,8 @@ class VizReads(protected val args: VizReadsArgs) extends ADAMSparkCommand[VizRea
     handlers.addHandler(new org.eclipse.jetty.webapp.WebAppContext("adam-cli/src/main/webapp", "/"))
     server.start()
     println("View the visualization at: 8080")
+    println("Frequency visualization at: /freq")
+    println("Overlapping reads visualization at: /reads")
     server.join()
   }
 
