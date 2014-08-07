@@ -1,0 +1,360 @@
+<%@ val regInfo: (String, String, String) %>
+<%@ val width: String %>
+<%@ val base: String %>
+<%@ val trackHeight: String %>
+<%@ val numTracks: String %>
+
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700' rel='stylesheet' type='text/css'>
+    <style>
+        body {
+            background: whitesmoke;
+            font-family: 'Open Sans', sans-serif;
+            font-weight:300;
+        }
+        h1 {
+            text-align: center;
+            margin: 10px 0 0 0;
+            color: #333333;
+            font-weight:400;
+            text-transform: uppercase;
+        }
+        .highlight {
+            font-weight:700;
+        }
+	    h2 {
+	        text-align: center;
+	        margin: 0 0 10px 0;
+	        color: #999999;
+	        font-weight:300;
+	    }
+	    ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0 5px 0 5px;
+            float: left;
+        }
+        li {
+            display: inline;
+            float: left;
+            padding: 0 0 0 5px;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+        .axis text {
+            font-family: sans-serif;
+            font-size: 11px;
+        }
+        div.tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 2px;
+            background: lightsteelblue;
+            border: 0px;
+            pointer-events: none;
+        }
+        rect {
+            fill: slategray;
+        }
+        input[type="text"] {
+            height: 22px;
+        }
+    </style>
+    <title>Genome visualization for ADAM</title>
+</head>
+<body>
+    <h1>Genome visualization for <span class='highlight'>ADAM</span></h1>
+    <h2 align="center">current region: ${regInfo._1}:</h2>
+    <br>
+    <ul>
+        <li>move:</li>
+        <li>
+            <input name="Move very far left button"
+               type="button"
+               value="<<<"
+               onclick="moveVeryFarLeft()"
+               class="btn btn-primary btn-xs"/>
+        </li>
+        <li>
+            <input name="Move far left button"
+               type="button"
+               value="<<"
+               onclick="moveFarLeft()"
+               class="btn btn-primary btn-xs"/>
+        </li>
+        <li>
+            <input name="Move left button"
+               type="button"
+               value="<"
+               onclick="moveLeft()"
+               class="btn btn-primary btn-xs"/>
+        </li>
+        <li>
+            <input name="Move right button"
+               type="button"
+               value=">"
+               onclick="moveRight()"
+               class="btn btn-info btn-xs"/>
+        </li>
+        <li>
+            <input name="Move far right button"
+               type="button"
+               value=">>"
+               onclick="moveFarRight()"
+               class="btn btn-info btn-xs"/>
+        </li>
+        <li>
+            <input name="Move very far right button"
+               type="button"
+               value=">>>"
+               onclick="moveVeryFarRight()"
+               class="btn btn-info btn-xs"/>
+        </li>
+        <li>zoom:</li>
+        <li>
+            <input name="Zoom in button"
+               type="button"
+               value="++"
+               onclick="zoomIn()"
+               class="btn btn-warning btn-xs"/>
+        </li>
+        <li>
+            <input name="Zoom out button"
+               type="button"
+               value="--"
+               onclick="zoomOut()"
+               class="btn btn-warning btn-xs"/>
+        </li>
+        <li>
+            <form name="regForm" method="GET" class="form-inline">
+                region:
+                <input type="text" name="start" size="10" class="form-control" placeholder="start">
+                - <input type="text" name="end" size="10" class="form-control" placeholder="end">
+                <input name="Submit button"
+                       type="button"
+                       value="Submit"
+                       onclick="checkForm(this.form)"
+                       class="btn btn-danger btn-xs"/>
+            </form>
+        </li>
+    </ul>
+    <br>
+    <script>
+        var refName = "${regInfo._1}";
+        var start = parseInt(${regInfo._2}, 10);
+        var end = parseInt(${regInfo._3}, 10);
+        var width = parseInt(${width}, 10);
+        var base = parseInt(${base}, 10);
+        var trackHeight = parseInt(${trackHeight}, 10);
+        var numTracks = parseInt(${numTracks}, 10);
+        var height = (numTracks+1) * trackHeight;
+        var jsonLocation = "/reads/" + refName + "?start=" + start + "&end=" + end;
+
+        var svgContainer = d3.select("body")
+                             .append("svg")
+                             .attr("height", (height+base))
+                             .attr("width", width);
+
+        d3.select("h2")
+          .append("span")
+          .text(start + "-" + end);
+
+        d3.json(jsonLocation, function(error, data) {
+            data.forEach(function(d) {
+                d.readName = d.readName;
+                d.start = +d.start;
+                d.end = +d.end;
+                d.track = +d.track;
+            });
+
+            // Add the rectangles
+            svgContainer.append("g")
+                        .selectAll("rect")
+                        .data(data)
+                        .enter()
+                        .append("rect")
+                        .attr("x", (function(d) { return (d.start-start)/(end-start) * width; }))
+                        .attr("y", (function(d) { return height - trackHeight * (d.track+1); }))
+                        .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(end-start))); }))
+                        .attr("height", (trackHeight-2))
+                        .on("mouseover", function(d) {
+                                            div.transition()
+                                            .duration(200)
+                                            .style("opacity", .9);
+                                            div .html(d.readName)
+                                            .style("left", (d3.event.pageX) + "px")
+                                            .style("top", (d3.event.pageY - 28) + "px");
+                                        })
+                        .on("mouseout", function(d) {
+                                            div.transition()
+                                            .duration(500)
+                                            .style("opacity", 0);
+                                        });
+        });
+
+        // Create the scale for the axis
+        var axisScale = d3.scale.linear()
+                                .domain([start, end])
+                                .range([0, width]);
+
+        // Create the axis
+        var xAxis = d3.svg.axis()
+                       .scale(axisScale)
+                       .ticks(5);
+
+        // Add the axis to the container
+        svgContainer.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", "translate(0, " + height + ")")
+                    .call(xAxis);
+
+        // Try to move very far left
+        function moveVeryFarLeft() {
+            var newStart = Math.max(0, start - (end-start));
+            var newEnd = Math.max(newStart, end - (end-start));
+            update(newStart, newEnd);
+        }
+
+        // Try to move far left
+        function moveFarLeft() {
+            var newStart = Math.max(0, start - (end-start)/2);
+            var newEnd = Math.max(newStart, end - (end-start)/2);
+            update(newStart, newEnd);
+        }
+
+        // Try to move left
+        function moveLeft() {
+            var newStart = Math.max(0, start - (end-start)/4);
+            var newEnd = Math.max(newStart, end - (end-start)/4);
+            update(newStart, newEnd);
+        }
+
+         // Try to move right
+         function moveRight() {
+             var newStart = start + (end-start)/4;
+             var newEnd = end + (end-start)/4;
+             update(newStart, newEnd);
+         }
+
+        // Try to move far right
+        function moveFarRight() {
+            var newStart = start + (end-start)/2;
+            var newEnd = end + (end-start)/2;
+            update(newStart, newEnd);
+        }
+
+        // Try to move very far right
+        function moveVeryFarRight() {
+            var newStart = start + (end-start);
+            var newEnd = end + (end-start);
+            update(newStart, newEnd);
+        }
+
+        // Try to zoom in
+        function zoomIn() {
+            var newStart = start + (end-start)/4;
+            var newEnd = end - (end-start)/4;
+            update(newStart, newEnd);
+        }
+
+        // Try to zoom out
+        function zoomOut() {
+            var newStart = Math.max(0, start - (end-start)/2);
+            var newEnd = end - (end-start)/2;
+            update(newStart, newEnd);
+        }
+
+        // Redirect based on form input
+        function checkForm(form) {
+            var newStart = Math.max(0, form.start.value);
+            var newEnd = Math.max(newStart, form.end.value);
+            form.reset();
+            update(newStart, newEnd);
+        }
+
+        function update(newStart, newEnd) {
+            start = newStart;
+            end = newEnd;
+            jsonLocation = ("/reads/" + refName + "?start=" + start + "&end=" + end);
+            var numTracks = 0;
+
+            d3.json(jsonLocation, function(error, data) {
+                data.forEach(function(d) {
+                    d.readName = d.readName;
+                    d.start = +d.start;
+                    d.end = +d.end;
+                    if (d.track > numTracks) { numTracks = d.track; }
+                });
+
+                d3.select("h2")
+                  .select("span")
+                  .text(start + "-" + end);
+
+                height = (numTracks+1) * trackHeight;
+
+                // Change dimensions of the SVG container
+                var svgContainer = d3.select("svg")
+                                     .attr("height", (height+base));
+
+                // Remove old content
+                svgContainer.selectAll("g")
+                            .remove();
+
+                // Add the rectangles
+                svgContainer.append("g")
+                            .selectAll("rect")
+                            .data(data)
+                            .enter()
+                            .append("rect")
+                            .attr("x", (function(d) { return (d.start-start)/(end-start) * width; }))
+                            .attr("y", (function(d) { return height - trackHeight * (d.track+1); }))
+                            .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(end-start))); }))
+                            .attr("height", (trackHeight-2))
+                            .on("mouseover", function(d) {
+                                                div.transition()
+                                                .duration(200)
+                                                .style("opacity", .9);
+                                                div .html(d.readName)
+                                                .style("left", (d3.event.pageX) + "px")
+                                                .style("top", (d3.event.pageY - 28) + "px");
+                                            })
+                            .on("mouseout", function(d) {
+                                                div.transition()
+                                                .duration(500)
+                                                .style("opacity", 0);
+                                            });
+
+                // Recreate the scale for the axis
+                var axisScale = d3.scale.linear()
+                                        .domain([start, end])
+                                        .range([0, width]);
+
+                // Recreate the axis
+                var xAxis = d3.svg.axis()
+                               .scale(axisScale)
+                               .ticks(5);
+
+                // Add the axis to the container
+                svgContainer.append("g")
+                            .attr("class", "axis")
+                            .attr("transform", "translate(0, " + height + ")")
+                            .call(xAxis);
+            });
+        }
+
+        // Hover box for reads
+        var div = d3.select("body")
+                    .append("div")
+                    .attr("class", "tooltip")
+                    .style("opacity", 0);
+    </script>
+</body>
+</html>
