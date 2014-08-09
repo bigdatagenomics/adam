@@ -42,7 +42,7 @@ class ADAMMetricsListener(val adamMetrics: ADAMMetrics) extends SparkListener {
     val taskInfo = Option(taskEnd.taskInfo)
 
     implicit val taskContext = TaskContext(
-      if (taskMetrics.isDefined) taskMetrics.get.hostname else "unknown",
+      if (taskMetrics.isDefined && taskMetrics.get.hostname != null) taskMetrics.get.hostname else "unknown",
       taskEnd.stageId)
 
     taskMetrics.foreach(e => {
