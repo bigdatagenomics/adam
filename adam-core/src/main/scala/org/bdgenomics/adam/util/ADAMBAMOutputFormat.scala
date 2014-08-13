@@ -20,7 +20,7 @@ package org.bdgenomics.adam.util
 import fi.tkk.ics.hadoop.bam.KeyIgnoringBAMOutputFormat
 import net.sf.samtools.SAMFileHeader
 
-object ADAMBAMOutputFormat {
+object ADAMBAMOutputFormat extends Serializable {
 
   private[util] var header: Option[SAMFileHeader] = None
 
@@ -60,7 +60,7 @@ object ADAMBAMOutputFormat {
 }
 
 class ADAMBAMOutputFormat[K]
-    extends KeyIgnoringBAMOutputFormat[K] {
+    extends KeyIgnoringBAMOutputFormat[K] with Serializable {
 
   setSAMHeader(ADAMBAMOutputFormat.getHeader)
 }

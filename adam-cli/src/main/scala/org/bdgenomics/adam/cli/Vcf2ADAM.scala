@@ -57,7 +57,14 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] wi
 
     var adamVariants: RDD[VariantContext] = sc.adamVCFLoad(args.vcfPath, dict = dictionary)
 
-    adamVariants.flatMap(p => p.genotypes).adamSave(
+    val gts = if (args.coalesce > 1) {
+      adamVariants.coalesce(args.coalesce, true)
+        .flatMap(p => p.genotypes)
+    } else {
+      adamVariants.flatMap(p => p.genotypes)
+    }
+
+    gts.adamSave(
       args.outputPath,
       blockSize = args.blockSize,
       pageSize = args.pageSize,

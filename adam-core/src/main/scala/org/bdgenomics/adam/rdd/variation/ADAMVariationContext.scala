@@ -35,7 +35,7 @@ object ADAMVariationContext {
   implicit def rddToADAMGenotypeRDD(rdd: RDD[Genotype]) = new GenotypeRDDFunctions(rdd)
 }
 
-class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
+class ADAMVariationContext(@transient val sc: SparkContext) extends Serializable with Logging {
   /**
    * This method will create a new RDD of VariantContext objects
    * @param filePath: input VCF file to read
@@ -74,7 +74,24 @@ class ADAMVariationContext(sc: SparkContext) extends Serializable with Logging {
     log.info("Writing %s file to %s".format(vcfFormat, filePath))
 
     // Initialize global header object required by Hadoop VCF Writer
-    ADAMVCFOutputFormat.setHeader(variants.adamGetCallsetSamples())
+    val header = variants.adamGetCallsetSamples()
+    val bcastHeader = sc.broadcast(header)
+    val mp = variants.mapPartitionsWithIndex((idx, iter) => {
+      log.warn("Setting header for partition " + idx)
+      synchronized {
+        // perform map partition call to ensure that the VCF header is set on all
+        // nodes in the cluster; see:
+        // https://github.com/bigdatagenomics/adam/issues/353
+        ADAMVCFOutputFormat.setHeader(bcastHeader.value)
+        log.warn("Set VCF header for partition " + idx)
+      }
+      Iterator[Int]()
+    }).count()
+
+    // force value check, ensure that computation happens
+    if (mp != 0) {
+      log.warn("Had more than 0 elements after map partitions call to set VCF header across cluster.")
+    }
 
     // TODO: Sort variants according to sequence dictionary (if supplied)
     val converter = new VariantContextConverter(dict)

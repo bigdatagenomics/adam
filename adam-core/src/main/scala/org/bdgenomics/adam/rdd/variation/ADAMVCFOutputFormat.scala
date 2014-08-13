@@ -22,7 +22,7 @@ import org.bdgenomics.adam.converters.VariantAnnotationConverter
 import fi.tkk.ics.hadoop.bam.{ VCFFormat, KeyIgnoringVCFOutputFormat }
 import scala.collection.JavaConversions._
 
-object ADAMVCFOutputFormat {
+object ADAMVCFOutputFormat extends Serializable {
   private var header: Option[VCFHeader] = None
 
   def getHeader: VCFHeader = header match {
@@ -44,6 +44,6 @@ object ADAMVCFOutputFormat {
  *
  * @tparam K
  */
-class ADAMVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF) {
+class ADAMVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF) with Serializable {
   setHeader(ADAMVCFOutputFormat.getHeader)
 }
