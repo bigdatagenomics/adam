@@ -17,7 +17,43 @@
  */
 package org.bdgenomics.adam.models
 
-import net.sf.samtools.SAMFileHeader
+import net.sf.samtools.{ SAMFileHeader, SAMProgramRecord }
+import org.bdgenomics.adam.rdd.ADAMContext._
 
-case class SAMFileHeaderWritable(header: SAMFileHeader) extends Serializable {
+object SAMFileHeaderWritable {
+  def apply(header: SAMFileHeader): SAMFileHeaderWritable = {
+    new SAMFileHeaderWritable(header)
+  }
+}
+
+class SAMFileHeaderWritable(@transient hdr: SAMFileHeader) extends Serializable {
+  // extract fields that are needed in order to recreate the SAMFileHeader
+  protected val text = {
+    val txt: String = hdr.getTextHeader
+    Option(txt)
+  }
+  protected val sd = SequenceDictionary(hdr.getSequenceDictionary)
+  protected val pgl = {
+    val pgs: List[SAMProgramRecord] = hdr.getProgramRecords
+    pgs.map(ProgramRecord(_))
+  }
+  protected val comments = {
+    val cmts: List[java.lang.String] = hdr.getComments
+    cmts.flatMap(Option(_)).map(_.toString) // don't trust samtools to return non-nulls
+  }
+  protected val rgs = RecordGroupDictionary.fromSAMHeader(hdr)
+
+  // recreate header when requested to get around header not being serializable
+  @transient lazy val header = {
+    val h = new SAMFileHeader()
+
+    // add back optional fields
+    text.foreach(h.setTextHeader)
+    h.setSequenceDictionary(sd.toSAMSequenceDictionary)
+    pgl.foreach(p => h.addProgramRecord(p.toSAMProgramRecord))
+    comments.foreach(h.addComment)
+    rgs.recordGroups.foreach(rg => h.addReadGroup(rg.toSAMReadGroupRecord))
+
+    h
+  }
 }

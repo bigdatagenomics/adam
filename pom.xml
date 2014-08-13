@@ -24,7 +24,7 @@
     <spark.version>1.0.1</spark.version>
     <parquet.version>1.4.3</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
-    <hadoop.version>2.2.0</hadoop.version>
+    <hadoop.version>1.0.4</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
   </properties>
   

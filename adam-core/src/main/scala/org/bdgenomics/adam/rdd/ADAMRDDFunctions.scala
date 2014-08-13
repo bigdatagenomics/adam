@@ -190,10 +190,26 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends ADAMSequenc
     // add keys to our records
     val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
 
-    // attach header to output format
-    asSam match {
-      case true  => ADAMSAMOutputFormat.addHeader(header)
-      case false => ADAMBAMOutputFormat.addHeader(header)
+    // Initialize global header object required by Hadoop SAM/BAM Writer
+    val writableHeader = SAMFileHeaderWritable(header)
+    val mp = convertRecords.mapPartitions(iter => {
+      synchronized {
+        // perform map partition call to ensure that the SAM/BAM header is set on all
+        // nodes in the cluster; see:
+        // https://github.com/bigdatagenomics/adam/issues/353     
+
+        // attach header to output format
+        asSam match {
+          case true  => ADAMSAMOutputFormat.addHeader(writableHeader.header)
+          case false => ADAMBAMOutputFormat.addHeader(writableHeader.header)
+        }
+        Iterator[Int]()
+      }
+    }).count()
+
+    // force value check, ensure that computation happens
+    if (mp != 0) {
+      log.warn("Had more than 0 elements after map partitions call to set VCF header across cluster.")
     }
 
     // write file to disk
