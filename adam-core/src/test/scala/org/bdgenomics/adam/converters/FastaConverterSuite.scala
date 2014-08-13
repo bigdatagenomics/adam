@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.contig.ADAMNucleotideContigFragmentContext
 import org.bdgenomics.adam.util.SparkFunSuite
 import java.io.File
 
@@ -210,7 +211,7 @@ class FastaConverterSuite extends SparkFunSuite {
 
   sparkTest("convert reference fasta file") {
     //Loading "human_g1k_v37_chr1_59kb.fasta"
-    val referenceSequences = sc.adamSequenceLoad(chr1File, 10).collect()
+    val referenceSequences = new ADAMNucleotideContigFragmentContext(sc).adamSequenceLoad(chr1File, 10).collect()
     assert(referenceSequences.forall(_.getContig.getContigName.toString == "1"))
     assert(referenceSequences.slice(0, referenceSequences.length - 2).forall(_.getFragmentSequence.length == 10))
 
