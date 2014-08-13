@@ -17,16 +17,16 @@
  */
 package org.bdgenomics.adam.serialization
 
-import org.apache.avro.specific.{ SpecificDatumWriter, SpecificDatumReader, SpecificRecord }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
+import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputStream }
 import org.apache.avro.io.{ BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory }
+import org.apache.avro.specific.{ SpecificDatumWriter, SpecificDatumReader, SpecificRecord }
+import org.apache.spark.serializer.KryoRegistrator
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models._
-import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputStream }
-import org.apache.spark.serializer.KryoRegistrator
+import org.bdgenomics.adam.rdd.realignment._
 import scala.reflect.ClassTag
-import org.bdgenomics.adam.algorithms.realignmenttarget._
 
 case class InputStreamWithDecoder(size: Int) {
   val buffer = new Array[Byte](size)

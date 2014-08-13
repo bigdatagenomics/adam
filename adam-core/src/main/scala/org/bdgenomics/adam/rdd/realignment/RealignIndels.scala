@@ -15,14 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.rdd.realignment
 
 import net.sf.samtools.{ Cigar, CigarElement, CigarOperator }
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
-import org.bdgenomics.adam.algorithms.realignmenttarget.{ IndelRealignmentTarget, RealignmentTargetFinder, TargetOrdering, ZippedTargetOrdering, ZippedTargetSet }
 import org.bdgenomics.adam.models.{ Consensus, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
@@ -205,7 +204,7 @@ private[rdd] object RealignIndels {
   }
 }
 
-import org.bdgenomics.adam.rdd.RealignIndels._
+import org.bdgenomics.adam.rdd.realignment.RealignIndels._
 
 private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
                                  val dataIsSorted: Boolean = false,

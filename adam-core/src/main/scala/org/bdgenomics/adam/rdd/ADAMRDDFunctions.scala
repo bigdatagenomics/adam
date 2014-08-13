@@ -42,8 +42,9 @@ import org.bdgenomics.adam.models.{
   SnpTable
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rdd.correction.{ ErrorCorrection, TrimReads }
+import org.bdgenomics.adam.rdd.realignment.RealignIndels
+import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.{
   ADAMBAMOutputFormat,
