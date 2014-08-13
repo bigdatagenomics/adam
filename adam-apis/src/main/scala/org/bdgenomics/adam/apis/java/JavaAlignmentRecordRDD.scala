@@ -19,6 +19,7 @@ package org.bdgenomics.adam.apis.java
 
 import org.apache.spark.api.java.JavaRDD
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
 import org.bdgenomics.formats.avro._
 import parquet.hadoop.metadata.CompressionCodecName
 

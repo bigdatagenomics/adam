@@ -20,6 +20,9 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.ADAMContext
+import org.bdgenomics.adam.rdd.contig.ADAMNucleotideContigFragmentContext._
+import org.bdgenomics.adam.rdd.contig.ADAMNucleotideContigFragmentContext
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -50,14 +53,14 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fa
 
   def run(sc: SparkContext, job: Job) {
     log.info("Loading FASTA data from disk.")
-    val adamFasta = sc.adamSequenceLoad(args.fastaFile, args.fragmentLength)
+    val adamFasta = new ADAMNucleotideContigFragmentContext(sc).adamSequenceLoad(args.fastaFile, args.fragmentLength)
     if (args.verbose) {
       println("FASTA contains:")
       println(adamFasta.adamGetSequenceDictionary())
     }
 
     val remapped = if (args.reads != "") {
-      val readDict = sc.adamDictionaryLoad[AlignmentRecord](args.reads)
+      val readDict = new ADAMContext(sc).adamDictionaryLoad[AlignmentRecord](args.reads)
 
       if (args.verbose) {
         println("Remapping with:")
