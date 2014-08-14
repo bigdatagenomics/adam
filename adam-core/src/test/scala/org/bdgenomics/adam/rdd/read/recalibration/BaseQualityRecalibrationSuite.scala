@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.recalibration
+package org.bdgenomics.adam.rdd.read.recalibration
 
 import java.io.File
 import org.apache.spark.rdd.RDD

@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.rdd.read
 
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Base }
 import org.scalatest.FunSuite
 
-class PileupConversionSuite extends FunSuite {
+class Reads2PileupProcessorSuite extends FunSuite {
 
   test("can convert a single read with only matches") {
     val quals = List(30, 20, 40, 20, 10)

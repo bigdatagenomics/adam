@@ -19,7 +19,7 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ Consensus, ReferenceRegion }
-import org.bdgenomics.adam.rdd.realignment.IndelRealignmentTarget
+import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 
 abstract class ConsensusGenerator extends Serializable {

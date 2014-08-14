@@ -25,7 +25,7 @@ import org.apache.avro.specific.{ SpecificDatumWriter, SpecificDatumReader, Spec
 import org.apache.spark.serializer.KryoRegistrator
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.realignment._
+import org.bdgenomics.adam.rdd.read.realignment._
 import scala.reflect.ClassTag
 
 case class InputStreamWithDecoder(size: Int) {

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.realignment
+package org.bdgenomics.adam.rdd.read.realignment
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.realignmenttarget.{ IndelRealignmentTarget, RealignmentTargetFinder }

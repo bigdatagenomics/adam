@@ -42,13 +42,19 @@ import org.bdgenomics.adam.models.{
   SnpTable
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.correction.{ ErrorCorrection, TrimReads }
-import org.bdgenomics.adam.rdd.realignment.RealignIndels
-import org.bdgenomics.adam.rdd.recalibration.BaseQualityRecalibration
-import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.{
+import org.bdgenomics.adam.rdd.read.{
   ADAMBAMOutputFormat,
   ADAMSAMOutputFormat,
+  FlagStat,
+  FlagStatMetrics,
+  MarkDuplicates,
+  Reads2PileupProcessor
+}
+import org.bdgenomics.adam.rdd.read.correction.{ ErrorCorrection, TrimReads }
+import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
+import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
+import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.util.{
   HadoopUtil,
   MapTools,
   ParquetLogger

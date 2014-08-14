@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.correction
+package org.bdgenomics.adam.rdd.read.correction
 
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.recalibration
+package org.bdgenomics.adam.rdd.read.recalibration
 
 import org.bdgenomics.adam.util.QualityScore
 import org.bdgenomics.adam.util.Util

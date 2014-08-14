@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.realignment
+package org.bdgenomics.adam.rdd.read.realignment
 
 import net.sf.samtools.{ Cigar, CigarElement, CigarOperator }
 import org.apache.spark.Logging
@@ -204,7 +204,7 @@ private[rdd] object RealignIndels {
   }
 }
 
-import org.bdgenomics.adam.rdd.realignment.RealignIndels._
+import org.bdgenomics.adam.rdd.read.realignment.RealignIndels._
 
 private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
                                  val dataIsSorted: Boolean = false,

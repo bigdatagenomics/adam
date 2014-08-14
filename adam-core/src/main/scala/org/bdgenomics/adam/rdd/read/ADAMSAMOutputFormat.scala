@@ -15,14 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.rdd.read
 
 import fi.tkk.ics.hadoop.bam.{ KeyIgnoringAnySAMOutputFormat, SAMFormat }
 import net.sf.samtools.SAMFileHeader
 
 object ADAMSAMOutputFormat extends Serializable {
 
-  private[util] var header: Option[SAMFileHeader] = None
+  private[read] var header: Option[SAMFileHeader] = None
 
   /**
    * Attaches a header to the ADAMSAMOutputFormat Hadoop writer. If a header has previously
@@ -53,7 +53,7 @@ object ADAMSAMOutputFormat extends Serializable {
    *
    * @return Current SAM header.
    */
-  private[util] def getHeader: SAMFileHeader = {
+  private[read] def getHeader: SAMFileHeader = {
     assert(header.isDefined, "Cannot return header if not attached.")
     header.get
   }
