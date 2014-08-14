@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.rdd.pileup
 
 import org.bdgenomics.formats.avro.{ Base, Contig, Pileup }
 import org.scalatest.FunSuite
 
-class PileupAggregationSuite extends FunSuite {
+class PileupAggregatorSuite extends FunSuite {
 
   test("aggregating a pileup with two different bases does not change values") {
     val p0 = Pileup.newBuilder()

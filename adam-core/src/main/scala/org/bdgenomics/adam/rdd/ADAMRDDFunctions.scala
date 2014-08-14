@@ -42,6 +42,7 @@ import org.bdgenomics.adam.models.{
   SnpTable
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.pileup.PileupAggregator
 import org.bdgenomics.adam.rdd.read.{
   ADAMBAMOutputFormat,
   ADAMSAMOutputFormat,

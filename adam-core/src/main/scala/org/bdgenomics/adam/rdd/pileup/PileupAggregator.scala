@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.rdd.pileup
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
