@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.comparisons
+package org.bdgenomics.adam.rdd.read.comparisons
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.metrics.MappedPosition

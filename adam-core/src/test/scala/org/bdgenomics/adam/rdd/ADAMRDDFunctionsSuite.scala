@@ -17,14 +17,12 @@
  */
 package org.bdgenomics.adam.rdd
 
-import java.nio.file.Files
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ VariantContext, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro._
-import scala.util.Random
 
 class ADAMRDDFunctionsSuite extends SparkFunSuite {
 
@@ -235,161 +233,6 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     assert(coverage > 1.99 && coverage < 2.01)
   }
 
-  sparkTest("sorting reads") {
-    val random = new Random("sorting".hashCode)
-    val numReadsToCreate = 1000
-    val reads = for (i <- 0 until numReadsToCreate) yield {
-      val mapped = random.nextBoolean()
-      val builder = AlignmentRecord.newBuilder().setReadMapped(mapped)
-      if (mapped) {
-        val contig = Contig.newBuilder
-          .setContigName(random.nextInt(numReadsToCreate / 10).toString)
-          .build
-        val start = random.nextInt(1000000)
-        builder.setContig(contig).setStart(start).setEnd(start)
-      }
-      builder.build()
-    }
-    val rdd = sc.parallelize(reads)
-    val sortedReads = rdd.adamSortReadsByReferencePosition().collect().zipWithIndex
-    val (mapped, unmapped) = sortedReads.partition(_._1.getReadMapped)
-    // Make sure that all the unmapped reads are placed at the end
-    assert(unmapped.forall(p => p._2 > mapped.takeRight(1)(0)._2))
-    // Make sure that we appropriately sorted the reads
-    val expectedSortedReads = mapped.sortWith(
-      (a, b) => a._1.getContig.getContigName.toString < b._1.getContig.getContigName.toString && a._1.getStart < b._1.getStart)
-    assert(expectedSortedReads === mapped)
-  }
-
-  sparkTest("convert an RDD of reads into rods") {
-    val contig = Contig.newBuilder
-      .setContigName("chr0")
-      .build
-
-    val r0 = AlignmentRecord.newBuilder
-      .setStart(1L)
-      .setContig(contig)
-      .setSequence("ACG")
-      .setMapq(30)
-      .setCigar("3M")
-      .setEnd(4L)
-      .setMismatchingPositions("3")
-      .setReadNegativeStrand(false)
-      .setReadMapped(true)
-      .setPrimaryAlignment(true)
-      .setQual("!#$")
-      .build()
-    val r1 = AlignmentRecord.newBuilder
-      .setStart(2L)
-      .setContig(contig)
-      .setSequence("CG")
-      .setMapq(40)
-      .setCigar("2M")
-      .setEnd(4L)
-      .setMismatchingPositions("2")
-      .setReadNegativeStrand(false)
-      .setReadMapped(true)
-      .setPrimaryAlignment(true)
-      .setQual("%&")
-      .build()
-    val r2 = AlignmentRecord.newBuilder
-      .setStart(3L)
-      .setContig(contig)
-      .setSequence("G")
-      .setMapq(50)
-      .setCigar("1M")
-      .setEnd(4L)
-      .setMismatchingPositions("1")
-      .setReadNegativeStrand(false)
-      .setReadMapped(true)
-      .setPrimaryAlignment(true)
-      .setQual("%")
-      .build()
-
-    val reads = sc.parallelize(List(r0, r1, r2))
-
-    val rods = reads.adamRecords2Rods()
-
-    assert(rods.count === 3)
-    assert(rods.collect().forall(_.position.referenceName == "chr0"))
-    assert(rods.filter(_.position.pos == 1L).count === 1)
-    assert(rods.filter(_.position.pos == 1L).first().pileups.length === 1)
-    assert(rods.filter(_.position.pos == 1L).first().pileups.forall(_.getReadBase == Base.A))
-    assert(rods.filter(_.position.pos == 2L).count === 1)
-    assert(rods.filter(_.position.pos == 2L).first().pileups.length === 2)
-    assert(rods.filter(_.position.pos == 2L).first().pileups.forall(_.getReadBase == Base.C))
-    assert(rods.filter(_.position.pos == 3L).count === 1)
-    assert(rods.filter(_.position.pos == 3L).first().pileups.length === 3)
-    assert(rods.filter(_.position.pos == 3L).first().pileups.forall(_.getReadBase == Base.G))
-  }
-
-  sparkTest("convert an RDD of reads into rods, different references") {
-    val contig0 = Contig.newBuilder
-      .setContigName("chr0")
-      .build
-
-    val contig1 = Contig.newBuilder
-      .setContigName("chr1")
-      .build
-
-    val r0 = AlignmentRecord.newBuilder
-      .setStart(1L)
-      .setContig(contig0)
-      .setSequence("AC")
-      .setMapq(30)
-      .setCigar("2M")
-      .setEnd(3L)
-      .setMismatchingPositions("2")
-      .setReadNegativeStrand(false)
-      .setReadMapped(true)
-      .setPrimaryAlignment(true)
-      .setQual("!#$")
-      .build()
-    val r1 = AlignmentRecord.newBuilder
-      .setStart(2L)
-      .setContig(contig0)
-      .setSequence("C")
-      .setMapq(40)
-      .setCigar("1M")
-      .setEnd(3L)
-      .setMismatchingPositions("1")
-      .setReadNegativeStrand(false)
-      .setReadMapped(true)
-      .setPrimaryAlignment(true)
-      .setQual("%&")
-      .build()
-    val r2 = AlignmentRecord.newBuilder
-      .setStart(2L)
-      .setContig(contig1)
-      .setSequence("G")
-      .setMapq(50)
-      .setCigar("1M")
-      .setEnd(3L)
-      .setMismatchingPositions("1")
-      .setReadNegativeStrand(false)
-      .setReadMapped(true)
-      .setPrimaryAlignment(true)
-      .setQual("%")
-      .build()
-
-    val reads = sc.parallelize(List(r0, r1, r2))
-
-    val rods = reads.adamRecords2Rods()
-
-    assert(rods.count === 3)
-    assert(rods.filter(_.position.referenceName == "chr0").count === 2)
-    assert(rods.filter(_.position.referenceName == "chr1").count === 1)
-    assert(rods.filter(_.position.pos == 1L).filter(_.position.referenceName == "chr0").count === 1)
-    assert(rods.filter(_.position.pos == 1L).filter(_.position.referenceName == "chr0").first().pileups.length === 1)
-    assert(rods.filter(_.position.pos == 1L).filter(_.position.referenceName == "chr0").first().pileups.forall(_.getReadBase == Base.A))
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr0").count === 1)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr0").first().pileups.length === 2)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr0").first().pileups.forall(_.getReadBase == Base.C))
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr1").count === 1)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr1").first().pileups.length === 1)
-    assert(rods.filter(_.position.pos == 2L).filter(_.position.referenceName == "chr1").first().pileups.forall(_.getReadBase == Base.G))
-  }
-
   sparkTest("generate sequence dict from fasta") {
     val contig0 = Contig.newBuilder
       .setContigName("chr0")
@@ -449,70 +292,6 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
 
     assert(samples.count(_ == "you") === 1)
     assert(samples.count(_ == "me") === 1)
-  }
-
-  sparkTest("characterizeTags counts integer tag values correctly") {
-    val tagCounts: Map[String, Long] = Map("XT" -> 10L, "XU" -> 9L, "XV" -> 8L)
-    val readItr: Iterable[AlignmentRecord] =
-      for ((tagName, tagCount) <- tagCounts; i <- 0 until tagCount.toInt)
-        yield AlignmentRecord.newBuilder().setAttributes("%s:i:%d".format(tagName, i)).build()
-
-    val reads = sc.parallelize(readItr.toSeq)
-    val mapCounts: Map[String, Long] = Map(reads.adamCharacterizeTags().collect(): _*)
-
-    assert(mapCounts === tagCounts)
-  }
-
-  sparkTest("withTag returns only those records which have the appropriate tag") {
-    val r1 = AlignmentRecord.newBuilder().setAttributes("XX:i:3").build()
-    val r2 = AlignmentRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
-    val r3 = AlignmentRecord.newBuilder().setAttributes("YY:i:20").build()
-
-    val rdd = sc.parallelize(Seq(r1, r2, r3))
-    assert(rdd.count() === 3)
-
-    val rddXX = rdd.adamFilterRecordsWithTag("XX")
-    assert(rddXX.count() === 2)
-
-    val collected = rddXX.collect()
-    assert(collected.contains(r1))
-    assert(collected.contains(r2))
-  }
-
-  sparkTest("withTag, when given a tag name that doesn't exist in the input, returns an empty RDD") {
-    val r1 = AlignmentRecord.newBuilder().setAttributes("XX:i:3").build()
-    val r2 = AlignmentRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
-    val r3 = AlignmentRecord.newBuilder().setAttributes("YY:i:20").build()
-
-    val rdd = sc.parallelize(Seq(r1, r2, r3))
-    assert(rdd.count() === 3)
-
-    val rddXX = rdd.adamFilterRecordsWithTag("ZZ")
-    assert(rddXX.count() === 0)
-  }
-
-  sparkTest("characterizeTagValues counts distinct values of a tag") {
-    val r1 = AlignmentRecord.newBuilder().setAttributes("XX:i:3").build()
-    val r2 = AlignmentRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
-    val r3 = AlignmentRecord.newBuilder().setAttributes("YY:i:20").build()
-    val r4 = AlignmentRecord.newBuilder().setAttributes("XX:i:4").build()
-
-    val rdd = sc.parallelize(Seq(r1, r2, r3, r4))
-    val tagValues = rdd.adamCharacterizeTagValues("XX")
-
-    assert(tagValues.keys.size === 2)
-    assert(tagValues(4) === 2)
-    assert(tagValues(3) === 1)
-  }
-
-  sparkTest("characterizeTags counts tags in a SAM file correctly") {
-    val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
-    val sam: RDD[AlignmentRecord] = sc.adamLoad(filePath)
-
-    val mapCounts: Map[String, Long] = Map(sam.adamCharacterizeTags().collect(): _*)
-    assert(mapCounts("NM") === 200)
-    assert(mapCounts("AS") === 200)
-    assert(mapCounts("XS") === 200)
   }
 
   sparkTest("recover reference string from a single contig fragment") {
@@ -645,35 +424,5 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
 
     assert(rdd.adamGetReferenceString(region0) === "CTGTA")
     assert(rdd.adamGetReferenceString(region1) === "CTCTCA")
-  }
-
-  sparkTest("round trip from ADAM to SAM and back to ADAM produces equivalent Read values") {
-    val reads12Path = Thread.currentThread().getContextClassLoader.getResource("reads12.sam").getFile
-    val rdd12A: RDD[AlignmentRecord] = sc.adamLoad(reads12Path)
-
-    val tempFile = Files.createTempDirectory("reads12")
-    rdd12A.adamSAMSave(tempFile.toAbsolutePath.toString + "/reads12.sam", asSam = true)
-
-    val rdd12B: RDD[AlignmentRecord] = sc.adamBamLoad(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
-
-    assert(rdd12B.count() === rdd12A.count())
-
-    val reads12A = rdd12A.collect()
-    val reads12B = rdd12B.collect()
-
-    (0 until reads12A.length) foreach {
-      case i: Int =>
-        val (readA, readB) = (reads12A(i), reads12B(i))
-        assert(readA.getSequence === readB.getSequence)
-        assert(readA.getQual === readB.getQual)
-        assert(readA.getCigar === readB.getCigar)
-    }
-  }
-
-  sparkTest("SAM conversion sets read mapped flag properly") {
-    val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
-    val sam: RDD[AlignmentRecord] = sc.adamLoad(filePath)
-
-    sam.collect().foreach(r => assert(r.getReadMapped))
   }
 }

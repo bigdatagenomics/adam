@@ -17,22 +17,20 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.projections.AlignmentRecordField._
-import org.bdgenomics.adam.projections.FieldValue
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util._
+import java.io.{ PrintWriter, OutputStreamWriter }
 import org.apache.hadoop.fs.{ Path, FileSystem }
-
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
-
-import scala.collection.Seq
-import java.io.{ PrintWriter, OutputStreamWriter }
-import org.bdgenomics.adam.rdd.comparisons.ComparisonTraversalEngine
 import org.bdgenomics.adam.metrics.{ DefaultComparisons, CombinedComparisons, Collection, BucketComparisons }
 import org.bdgenomics.adam.metrics.aggregators.{ HistogramAggregator, CombinedAggregator, AggregatedCollection, Writable }
+import org.bdgenomics.adam.projections.AlignmentRecordField._
+import org.bdgenomics.adam.projections.FieldValue
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.comparisons.ComparisonTraversalEngine
+import org.bdgenomics.adam.util._
+import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
+import scala.collection.Seq
 
 /**
  * CompareADAM is a tool for pairwise comparison of ADAM files (or merged sets of ADAM files, see the

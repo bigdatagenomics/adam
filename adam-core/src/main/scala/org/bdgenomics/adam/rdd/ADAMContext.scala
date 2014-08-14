@@ -48,9 +48,6 @@ object ADAMContext {
   // Add ADAM Spark context methods
   implicit def sparkContextToADAMContext(sc: SparkContext): ADAMContext = new ADAMContext(sc)
 
-  // Add methods specific to Read RDDs
-  implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
-
   // Add methods specific to the Pileup RDDs
   implicit def rddToADAMPileupRDD(rdd: RDD[Pileup]) = new PileupRDDFunctions(rdd)
 
@@ -152,16 +149,16 @@ object ADAMContext {
 
 class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
-  private def adamBamDictionaryLoad(filePath: String): SequenceDictionary = {
+  private[rdd] def adamBamDictionaryLoad(filePath: String): SequenceDictionary = {
     val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
     adamBamDictionaryLoad(samHeader)
   }
 
-  private def adamBamDictionaryLoad(samHeader: SAMFileHeader): SequenceDictionary = {
+  private[rdd] def adamBamDictionaryLoad(samHeader: SAMFileHeader): SequenceDictionary = {
     SequenceDictionary(samHeader)
   }
 
-  private def adamBamLoadReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
+  private[rdd] def adamBamLoadReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
     RecordGroupDictionary.fromSAMHeader(samHeader)
   }
 
@@ -328,28 +325,4 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       matches.toSeq ++ recurse.flatMap(p => findFiles(p, regex))
     }
   }
-
-  /**
-   * Takes a sequence of Path objects (e.g. the return value of findFiles).  Treats each path as
-   * corresponding to a Read set -- loads each Read set, converts each set to use the
-   * same SequenceDictionary, and returns the union of the RDDs.
-   *
-   * (GenomeBridge is using this to load BAMs that have been split into multiple files per sample,
-   * for example, one-BAM-per-chromosome.)
-   *
-   * @param paths The locations of the parquet files to load
-   * @return a single RDD[Read] that contains the union of the ADAMRecords in the argument paths.
-   */
-  def loadADAMFromPaths(paths: Seq[Path]): RDD[AlignmentRecord] = {
-    def loadADAMs(path: Path): (SequenceDictionary, RDD[AlignmentRecord]) = {
-      val dict = adamDictionaryLoad[AlignmentRecord](path.toString)
-      val rdd: RDD[AlignmentRecord] = adamLoad(path.toString)
-      (dict, rdd)
-    }
-
-    // Remapreferenceid code deleted since we don't remap sequence
-    // dictionaries anymore.
-    sc.union(paths.map(loadADAMs).map(v => v._2))
-  }
-
 }

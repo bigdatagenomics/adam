@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.variation
 
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.GenotypesSummaryCounts.ReferenceAndAlternate
+import org.bdgenomics.adam.rdd.variation.GenotypesSummaryCounts.ReferenceAndAlternate
 import org.bdgenomics.adam.util.SparkFunSuite
 
 class GenotypesSummarySuite extends SparkFunSuite {

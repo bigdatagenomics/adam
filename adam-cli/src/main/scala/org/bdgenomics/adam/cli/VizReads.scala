@@ -24,6 +24,7 @@ import org.bdgenomics.adam.models.{ OrderedTrackedLayout, ReferenceRegion }
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
 import org.bdgenomics.adam.rich.ReferenceMappingContext.AlignmentRecordReferenceMapping
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.fusesource.scalate.TemplateEngine
