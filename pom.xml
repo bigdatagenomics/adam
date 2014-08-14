@@ -532,6 +532,7 @@
                 <arg>-unchecked</arg>
                 <arg>-optimise</arg>
                 <arg>-deprecation</arg>
+                <arg>-Xlog-implicits</arg>
               </args>
               <jvmArgs>
                 <jvmArg>-Xms64m</jvmArg>

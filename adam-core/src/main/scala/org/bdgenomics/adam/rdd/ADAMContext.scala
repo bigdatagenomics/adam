@@ -24,12 +24,11 @@ import net.sf.samtools.SAMFileHeader
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.{ FileSystem, Path }
-import org.apache.hadoop.io.{ LongWritable, Text }
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
+import org.apache.hadoop.io.LongWritable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.StatsReportListener
 import org.apache.spark.{ Logging, SparkConf, SparkContext }
-import org.bdgenomics.adam.converters.{ FastaConverter, SAMRecordConverter }
+import org.bdgenomics.adam.converters.SAMRecordConverter
 import org.bdgenomics.adam.instrumentation.ADAMMetricsListener
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
@@ -56,9 +55,6 @@ object ADAMContext {
 
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToADAMRDD[T <% SpecificRecord: Manifest](rdd: RDD[T]) = new ADAMRDDFunctions(rdd)
-
-  // Add methods specific to the ADAMNucleotideContig RDDs
-  implicit def rddToADAMRDD(rdd: RDD[NucleotideContigFragment]) = new NucleotideContigFragmentRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
@@ -179,7 +175,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
   }
 
-  private def adamParquetLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
+  private[rdd] def adamParquetLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
     log.info("Reading the ADAM file at %s to create RDD".format(filePath))
     val job = HadoopUtil.newJob(sc)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])
@@ -288,22 +284,6 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       }
     } else {
       adamParquetLoad(filePath, predicate, projection)
-    }
-  }
-
-  def adamSequenceLoad(filePath: String, fragmentLength: Long): RDD[NucleotideContigFragment] = {
-    if (filePath.endsWith(".fasta") || filePath.endsWith(".fa")) {
-      val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(filePath,
-        classOf[TextInputFormat],
-        classOf[LongWritable],
-        classOf[Text])
-
-      val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
-
-      log.info("Converting FASTA to ADAM.")
-      FastaConverter(remapData, fragmentLength)
-    } else {
-      adamParquetLoad(filePath)
     }
   }
 
