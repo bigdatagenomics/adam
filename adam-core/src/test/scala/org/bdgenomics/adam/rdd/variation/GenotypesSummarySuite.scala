@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.rdd.variation
 
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.rdd.ADAMContext._
