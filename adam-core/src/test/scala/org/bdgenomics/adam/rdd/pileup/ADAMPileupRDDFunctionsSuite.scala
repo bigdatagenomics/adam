@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.rdd.pileup
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.pileup.ADAMPileupContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro._

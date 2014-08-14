@@ -17,31 +17,9 @@
  */
 package org.bdgenomics.adam.rdd.pileup
 
-import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
-import fi.tkk.ics.hadoop.bam.{ AnySAMInputFormat, SAMRecordWritable }
-import java.util.regex.Pattern
-import net.sf.samtools.SAMFileHeader
-import org.apache.avro.Schema
-import org.apache.avro.specific.SpecificRecord
-import org.apache.hadoop.fs.{ FileSystem, Path }
-import org.apache.hadoop.io.LongWritable
 import org.apache.spark.rdd.RDD
-import org.apache.spark.scheduler.StatsReportListener
-import org.apache.spark.{ Logging, SparkConf, SparkContext }
-import org.bdgenomics.adam.converters.SAMRecordConverter
-import org.bdgenomics.adam.instrumentation.ADAMMetricsListener
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.predicates.ADAMPredicate
-import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
-import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.HadoopUtil
-import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Pileup }
-import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
-import parquet.filter.UnboundRecordFilter
-import parquet.hadoop.ParquetInputFormat
-import parquet.hadoop.util.ContextUtil
-import scala.collection.JavaConversions._
-import scala.collection.Map
+import org.bdgenomics.formats.avro.Pileup
 
 object ADAMPileupContext {
 

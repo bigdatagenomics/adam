@@ -15,15 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.rdd.variation
 
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ VariantContext, ReferenceRegion }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro._
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.VariantContext
+import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 
-class ADAMRDDFunctionsSuite extends SparkFunSuite {
+class ADAMVariationRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("recover samples from variant context") {
     val variant0 = Variant.newBuilder()
@@ -53,4 +53,29 @@ class ADAMRDDFunctionsSuite extends SparkFunSuite {
     assert(samples.count(_ == "you") === 1)
     assert(samples.count(_ == "me") === 1)
   }
+
+  sparkTest("joins SNV database annotation") {
+    val v0 = Variant.newBuilder
+      .setContig(Contig.newBuilder.setContigName("11").build)
+      .setStart(17409572)
+      .setReferenceAllele("T")
+      .setAlternateAllele("C")
+      .build
+
+    val vc: RDD[VariantContext] = sc.parallelize(List(
+      VariantContext(v0)))
+
+    val a0 = DatabaseVariantAnnotation.newBuilder
+      .setVariant(v0)
+      .setDbSnpId(5219)
+      .build
+
+    val vda: RDD[DatabaseVariantAnnotation] = sc.parallelize(List(
+      a0))
+
+    // TODO: implicit conversion to VariantContextRDD
+    val annotated = vc.joinDatabaseVariantAnnotation(vda)
+    assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
+  }
+
 }
