@@ -45,6 +45,29 @@ class PluginExecutorSuite extends FunSuite {
     assert(outputString.lines.size === 10)
   }
 
+  test("java take10 works correctly on example SAM") {
+
+    val args = new PluginExecutorArgs()
+    args.plugin = "org.bdgenomics.adam.apis.java.JavaTake10Plugin"
+    val stream = Thread.currentThread().getContextClassLoader.getResourceAsStream("reads12.sam")
+    val file = File.createTempFile("reads12", ".sam")
+    val os = new FileOutputStream(file)
+    val bytes = new Array[Byte](stream.available())
+    stream.read(bytes)
+    os.write(bytes)
+    args.input = file.getAbsolutePath
+
+    val pluginExecutor = new PluginExecutor(args)
+
+    val bytesWritten = new ByteArrayOutputStream()
+    scala.Console.withOut(bytesWritten)(pluginExecutor.run())
+
+    val outputString = bytesWritten.toString
+
+    // Make sure that 10 lines are output
+    assert(outputString.lines.size === 10)
+  }
+
   test("takeN works correctly on example SAM with arg of '3'") {
 
     val args = new PluginExecutorArgs()
