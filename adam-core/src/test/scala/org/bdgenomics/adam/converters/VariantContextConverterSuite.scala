@@ -49,6 +49,12 @@ class VariantContextConverterSuite extends FunSuite {
     .stop(1L)
     .chr("1")
 
+  def gatkCNVBuilder: VariantContextBuilder = new VariantContextBuilder()
+    .alleles(List(Allele.create("A", true), Allele.create("<CN0>", false)))
+    .start(10L)
+    .stop(20L)
+    .chr("1")
+
   def adamSNVBuilder(contig: String = "1"): Variant.Builder = Variant.newBuilder()
     .setContig(Contig.newBuilder().setContigName(contig).build())
     .setStart(0L)
@@ -80,6 +86,24 @@ class VariantContextConverterSuite extends FunSuite {
     val adamVC = adamVCs.head
     val variant = adamVC.variant
     assert(variant.getContig.getContigName === "NC_000001.10")
+  }
+
+  test("Convert GATK site-only CNV to ADAM") {
+    val converter = new VariantContextConverter
+
+    val adamVCs = converter.convert(gatkCNVBuilder.make)
+    assert(adamVCs.length === 1)
+    val adamVC = adamVCs.head
+
+    assert(adamVC.genotypes.size === 0)
+
+    val variant = adamVC.variant
+    assert(variant.getContig.getContigName === "1")
+
+    assert(variant.getReferenceAllele === "A")
+    assert(variant.getAlternateAllele === "<CN0>")
+    assert(variant.getStart === 9L)
+    assert(variant.getEnd === 20L)
   }
 
   test("Convert GATK SNV w/ genotypes w/ phase information to ADAM") {
