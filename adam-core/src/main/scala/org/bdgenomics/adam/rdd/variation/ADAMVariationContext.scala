@@ -71,6 +71,7 @@ class ADAMVariationContext(@transient val sc: SparkContext) extends Serializable
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
+    variants.cache()
     log.info("Writing %s file to %s".format(vcfFormat, filePath))
 
     // Initialize global header object required by Hadoop VCF Writer
@@ -109,6 +110,7 @@ class ADAMVariationContext(@transient val sc: SparkContext) extends Serializable
       conf)
 
     log.info("Write %d records".format(gatkVCs.count()))
+    variants.unpersist()
   }
 }
 
