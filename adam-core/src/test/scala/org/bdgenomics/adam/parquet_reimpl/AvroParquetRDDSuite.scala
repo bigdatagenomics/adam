@@ -211,7 +211,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
   }
 
   sparkTest("Retrieve records from a Parquet file through HTTP", silenceSpark = true, NetworkConnected) {
-    val locator = new HTTPFileLocator(URI.create("http://www.cs.berkeley.edu/~massie/adams/reads-0-2-0"))
+    val locator = new HTTPFileLocator(URI.create("https://s3.amazonaws.com/bdgenomics-test/reads-0-2-0"))
     val rdd = new AvroParquetRDD[AlignmentRecord](
       sc,
       null,
@@ -270,7 +270,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val schema = Projection(readName, start, contig)
 
-    val locator = new HTTPFileLocator(URI.create("http://www.cs.berkeley.edu/~massie/adams/reads-0-2-0"))
+    val locator = new HTTPFileLocator(URI.create("https://s3.amazonaws.com/bdgenomics-test/reads-0-2-0"))
     val rdd = new AvroParquetRDD[AlignmentRecord](
       sc,
       null,
@@ -336,7 +336,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     val schema = Projection(readName, start, sequence)
     val filter = new ReadNameFilter("simread:1:189606653:true")
 
-    val locator = new HTTPFileLocator(URI.create("http://www.cs.berkeley.edu/~massie/adams/reads-0-2-0"))
+    val locator = new HTTPFileLocator(URI.create("https://s3.amazonaws.com/bdgenomics-test/reads-0-2-0"))
     val rdd = new AvroParquetRDD[AlignmentRecord](
       sc,
       filter,

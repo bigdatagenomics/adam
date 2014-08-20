@@ -44,7 +44,7 @@ class ParquetCommonSuite extends FunSuite {
   }
 
   test("Reading a footer from HTTP", NetworkConnected) {
-    val byteAccess = new HTTPRangedByteAccess(URI.create("http://www.cs.berkeley.edu/~massie/adams/reads-0-2-0"))
+    val byteAccess = new HTTPRangedByteAccess(URI.create("https://s3.amazonaws.com/bdgenomics-test/reads-0-2-0"))
     val footer = ParquetCommon.readFooter(byteAccess)
     assert(footer.rowGroups.length === 1)
   }
