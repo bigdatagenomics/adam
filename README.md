@@ -68,8 +68,6 @@ $ mvn clean package -DskipTests
 [INFO] Final Memory: 19M/81M
 [INFO] ------------------------------------------------------------------------
 ```
-Once successfully built, you'll see a single jar file named `adam-X.Y-SNAPSHOT.jar` in the `adam-cli/target` directory. This single jar
-has all the dependencies you need in it. You can copy this single jar file to any machine you want to launch ADAM jobs from.
 
 You might want to take a peek at the `scripts/jenkins-test` script and give it a run. It will fetch a mouse chromosome, encode it to ADAM
 reads and pileups, run flagstat, etc. We use this script to test that ADAM is working correctly.
