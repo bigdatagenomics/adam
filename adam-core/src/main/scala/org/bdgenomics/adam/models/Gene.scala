@@ -131,27 +131,13 @@ trait Extractable {
   def extractSequence(referenceSequence: String): String
 }
 
-abstract class BlockExtractable(strand: Boolean, region: ReferenceRegion)
+abstract class BlockExtractable(strand: Boolean, region: ReferenceRegion, alphabet: Alphabet = DNAAlphabet)
     extends Extractable {
 
   def reverseComplement(dna: String): String = {
     val builder = new StringBuilder()
-    dna.foreach(c => builder.append(complement(c)))
+    dna.foreach(c => builder.append(alphabet.complement(c)))
     builder.reverse.toString()
-  }
-
-  def complement(c: Char): Char = {
-    c match {
-      case 'A' => 'T'
-      case 'a' => 't'
-      case 'G' => 'C'
-      case 'g' => 'c'
-      case 'C' => 'G'
-      case 'c' => 'g'
-      case 'T' => 'A'
-      case 't' => 'a'
-      case _   => c
-    }
   }
 
   def extractSequence(referenceSequence: String): String =
