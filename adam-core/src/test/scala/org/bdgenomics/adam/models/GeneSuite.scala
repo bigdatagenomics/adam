@@ -97,7 +97,7 @@ class GeneSuite extends SparkFunSuite {
     val transcripts: Seq[Transcript] = genes.flatMap(g => g.transcripts).take(100)
 
     transcripts.foreach { transcript =>
-      val mySequence = transcript.extractSequence(chr20sequence.get)
+      val mySequence = transcript.extractSplicedmRNASequence(chr20sequence.get)
       val gencodeSequence = gencodeTranscripts.get(transcript.id)
 
       if (gencodeSequence.isDefined) {

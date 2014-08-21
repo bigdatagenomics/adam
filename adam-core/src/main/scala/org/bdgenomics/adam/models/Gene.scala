@@ -82,19 +82,32 @@ case class Transcript(id: String,
                       strand: Boolean,
                       exons: Iterable[Exon],
                       cds: Iterable[CDS],
-                      utrs: Iterable[UTR]) extends Extractable {
+                      utrs: Iterable[UTR]) {
 
   lazy val region = exons.map(_.region).reduceLeft[ReferenceRegion]((acc, ex) => acc.hull(ex))
 
-  /**
-   * Extracts the _exonic_ sequence of the transcript.
-   *
-   * @param referenceSequence The reference sequence (e.g. chromosomal sequence) with
-   *                          respect to which the Extractable's coordinates or locators
-   *                          are given
-   * @return the String representation of this Extractable
-   */
-  def extractSequence(referenceSequence: String): String = {
+  def extractTranscribedRNASequence(refSequence: String)(implicit alphabet: Alphabet): String = {
+    val minStart = exons.map(_.region.start).toSeq.sorted.head.toInt
+    val maxEnd = -exons.map(-_.region.end).toSeq.sorted.head.toInt
+    if (strand)
+      refSequence.substring(minStart, maxEnd)
+    else
+      alphabet.reverseComplement(refSequence.substring(minStart, maxEnd))
+  }
+
+  def extractCodingSequence(refSequence: String): String = {
+    val builder = new StringBuilder()
+    val cdses =
+      if (strand)
+        cds.toSeq.sortBy(_.region.start)
+      else
+        cds.toSeq.sortBy(_.region.start).reverse
+
+    cdses.foreach(cds => builder.append(cds.extractSequence(refSequence)))
+    builder.toString()
+  }
+
+  def extractSplicedmRNASequence(referenceSequence: String): String = {
     val builder = new StringBuilder()
     val exs =
       if (strand)
@@ -134,17 +147,11 @@ trait Extractable {
 abstract class BlockExtractable(strand: Boolean, region: ReferenceRegion, alphabet: Alphabet = DNAAlphabet)
     extends Extractable {
 
-  def reverseComplement(dna: String): String = {
-    val builder = new StringBuilder()
-    dna.foreach(c => builder.append(alphabet.complement(c)))
-    builder.reverse.toString()
-  }
-
   def extractSequence(referenceSequence: String): String =
     if (strand)
       referenceSequence.substring(region.start.toInt, region.end.toInt)
     else
-      reverseComplement(referenceSequence.substring(region.start.toInt, region.end.toInt))
+      alphabet.reverseComplement(referenceSequence.substring(region.start.toInt, region.end.toInt))
 }
 
 /**
@@ -221,12 +228,12 @@ class GeneFeatureRDD[GTF <: GTFFeature](featureRDD: RDD[GTF]) extends Serializab
 
     2. Take all the values of type 'exon', and create Exon objects from them.
        Key this RDD by transcriptId of each exon, and group all exons of the same
-       transcript together.
+       transcript together. Also, do the same for the 'cds' features.
 
     3. Take all the values of type 'transcript', key them by their transcriptId,
-       and join them with the step #2.  This should give each us enough information
-       to create each Transcript, which we do, key each Transcript by its geneId, and
-       group the transcripts which share a common gene together.
+       and join them with the cds and exons from step #2.  This should give each us
+       enough information to create each Transcript, which we do, key each Transcript
+       by its geneId, and group the transcripts which share a common gene together.
 
     4. Finally, find each 'gene'-typed GTFFeature, key it by its geneId, and join with
        the transcripts in #3.  Use these joined values to create the final set of
@@ -251,19 +258,29 @@ class GeneFeatureRDD[GTF <: GTFFeature](featureRDD: RDD[GTF]) extends Serializab
             Exon(ftr.feature.getFeatureId.toString, transcriptId, strand(ftr.feature.getStrand), ftr)))
       }.groupByKey()
 
+    val cdsByTranscript: RDD[(String, Iterable[CDS])] =
+      typePartitioned.filter(_._1 == "CDS").flatMap {
+        case ("CDS", ftr: GTFFeature) =>
+          val ids: Seq[String] = ftr.feature.getParentIds.map(_.toString)
+          ids.map(transcriptId => (transcriptId,
+            CDS(transcriptId, strand(ftr.feature.getStrand), ftr)))
+      }.groupByKey()
+
     // Step #3
     val transcriptsByGene: RDD[(String, Iterable[Transcript])] =
       typePartitioned.filter(_._1 == "transcript").map {
         case ("transcript", ftr: GTFFeature) => (ftr.featureId.toString, ftr)
-      }.join(exonsByTranscript).flatMap {
-        // There really only should be _one_ parent listed in this flatMap, but since
-        // getParentIds is modeled as returning a List[], we'll write it this way.
-        case (transcriptId: String, (tgtf: GTF, exons: Iterable[Exon])) =>
-          val geneIds: Seq[String] = tgtf.feature.getParentIds.map(_.toString) // should be length 1
-          geneIds.map(geneId => (geneId,
-            Transcript(transcriptId, Seq(), geneId, strand(tgtf.feature.getStrand),
-              exons, Seq(), Seq())))
-      }.groupByKey()
+      }.join(exonsByTranscript)
+        .join(cdsByTranscript)
+        .flatMap {
+          // There really only should be _one_ parent listed in this flatMap, but since
+          // getParentIds is modeled as returning a List[], we'll write it this way.
+          case (transcriptId: String, ((tgtf: GTF, exons: Iterable[Exon]), cds: Iterable[CDS])) =>
+            val geneIds: Seq[String] = tgtf.feature.getParentIds.map(_.toString) // should be length 1
+            geneIds.map(geneId => (geneId,
+              Transcript(transcriptId, Seq(), geneId, strand(tgtf.feature.getStrand),
+                exons, cds, Seq())))
+        }.groupByKey()
 
     // Step #4
     val genes = typePartitioned.filter(_._1 == "gene").map {

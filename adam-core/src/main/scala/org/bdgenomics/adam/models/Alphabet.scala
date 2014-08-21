@@ -20,6 +20,12 @@ package org.bdgenomics.adam.models
 trait Alphabet {
   def letters: Set[Char]
   def complement(char: Char): Char
+
+  def reverseComplement(dna: String): String = {
+    val builder = new StringBuilder()
+    dna.foreach(c => builder.append(complement(c)))
+    builder.reverse.toString()
+  }
 }
 
 object DNAAlphabet extends Alphabet {
