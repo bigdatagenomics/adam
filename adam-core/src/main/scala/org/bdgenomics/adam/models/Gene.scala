@@ -277,11 +277,6 @@ class GeneFeatureRDD[GTF <: GTFFeature](featureRDD: RDD[GTF]) extends Serializab
   }
 }
 
-object Gene {
-
-  implicit def sparkToGeneContext(sc: SparkContext) = new GeneContext(sc)
-}
-
 object ReferenceUtils {
 
   def unionReferenceSet(refs: Iterable[ReferenceRegion]): Iterable[ReferenceRegion] = {
