@@ -36,12 +36,22 @@ object MdTag {
   // for description, see base enum in adam schema
   private val basesPattern = new Regex("[AaGgCcTtNnUuKkMmRrSsWwBbVvHhDdXxYy]+")
 
+  /**
+   * Builds an MD tag object from the string representation of an MD tag and the
+   * start position of the read.
+   *
+   * @param mdTagInput Textual MD tag/mismatchingPositions string.
+   * @param referenceStart The read start position.
+   * @return Returns a populated MD tag.
+   */
   def apply(mdTagInput: String, referenceStart: Long): MdTag = {
     var matches = List[NumericRange[Long]]()
     var mismatches = Map[Long, Char]()
-    var deletes = Map[Long, Char]()
+    var deletions = Map[Long, Char]()
 
-    if (mdTagInput != null && mdTagInput.length > 0) {
+    if (mdTagInput != null && mdTagInput == "0") {
+      new MdTag(referenceStart, List(), Map(), Map())
+    } else if (mdTagInput != null && mdTagInput.length > 0) {
       val mdTag = mdTagInput.toUpperCase
       val end = mdTag.length
 
@@ -79,7 +89,7 @@ object MdTag {
               case MdTagEvent.Delete =>
                 bases.foreach {
                   base =>
-                    deletes += (referencePos -> base)
+                    deletions += (referencePos -> base)
                     referencePos += 1
                 }
               case MdTagEvent.Mismatch =>
@@ -95,7 +105,7 @@ object MdTag {
       }
     }
 
-    new MdTag(matches, mismatches, deletes)
+    new MdTag(referenceStart, matches, mismatches, deletions)
   }
 
   /**
@@ -141,7 +151,7 @@ object MdTag {
 
     var matches: List[NumericRange[Long]] = List[NumericRange[Long]]()
     var mismatches: Map[Long, Char] = Map[Long, Char]()
-    var deletes: Map[Long, Char] = Map[Long, Char]()
+    var deletions: Map[Long, Char] = Map[Long, Char]()
 
     // loop over cigar elements and fill sets
     newCigar.getCigarElements.foreach(cigarElement => {
@@ -178,7 +188,7 @@ object MdTag {
         }
         case CigarOperator.D => {
           for (i <- 0 until cigarElement.getLength) {
-            deletes += ((referencePos + readStart) -> reference(referencePos))
+            deletions += ((referencePos + readStart) -> reference(referencePos))
 
             referencePos += 1
           }
@@ -194,7 +204,7 @@ object MdTag {
       }
     })
 
-    new MdTag(matches, mismatches, deletes)
+    new MdTag(readStart, matches, mismatches, deletions)
   }
 
   /**
@@ -233,6 +243,15 @@ object MdTag {
     moveAlignment(newReference, read.record.getSequence, newCigar, newAlignmentStart)
   }
 
+  /**
+   * Creates an MD tag object given a read, and the accompanying reference alignment.
+   *
+   * @param read Sequence of bases in the read.
+   * @param reference Reference sequence that the read is aligned to.
+   * @param cigar The CIGAR for the reference alignment.
+   * @param start The start position of the read alignment.
+   * @return Returns a populated MD tag.
+   */
   def apply(read: String, reference: String, cigar: Cigar, start: Long): MdTag = {
     var matchCount = 0
     var delCount = 0
@@ -285,10 +304,22 @@ object MdTag {
   }
 }
 
+/**
+ * Represents the mismatches and deletions present in a read that has been
+ * aligned to a reference genome. The MD tag can be used to reconstruct
+ * the reference that an aligned read overlaps.
+ *
+ * @param start Start position of the alignment.
+ * @param matches A list of the ranges over which the read has a perfect
+ *                sequence match.
+ * @param mismatches A map of all the locations where a base mismatched.
+ * @param deletions A map of all locations where a base was deleted.
+ */
 class MdTag(
+    val start: Long,
     val matches: immutable.List[NumericRange[Long]],
     val mismatches: immutable.Map[Long, Char],
-    val deletes: immutable.Map[Long, Char]) {
+    val deletions: immutable.Map[Long, Char]) {
 
   /**
    * Returns whether a base is a match against the reference.
@@ -300,6 +331,12 @@ class MdTag(
     matches.exists(_.contains(pos))
   }
 
+  /**
+   * Returns whether a base is a match against the reference.
+   *
+   * @param pos ReferencePosition object describing where to check.
+   * @return True if base matches reference. False means that the base may be either a mismatch or a deletion.
+   */
   def isMatch(pos: ReferencePosition): Boolean = {
     matches.exists(_.contains(pos.pos))
   }
@@ -321,7 +358,7 @@ class MdTag(
    * @return The base that was deleted at this position in the reference.
    */
   def deletedBase(pos: Long): Option[Char] = {
-    deletes.get(pos)
+    deletions.get(pos)
   }
 
   /**
@@ -343,22 +380,12 @@ class MdTag(
   }
 
   /**
-   * Returns the start position of the record described by this MD tag.
-   *
-   * @return The reference based start position of this tag.
-   */
-  def start(): Long = {
-    val starts = matches.map(_.start) ::: mismatches.keys.toList ::: deletes.keys.toList
-    starts.reduce(_ min _)
-  }
-
-  /**
    * Returns the end position of the record described by this MD tag.
    *
    * @return The reference based end position of this tag.
    */
   def end(): Long = {
-    val ends = matches.map(_.end - 1) ::: mismatches.keys.toList ::: deletes.keys.toList
+    val ends = matches.map(_.end - 1) ::: mismatches.keys.toList ::: deletions.keys.toList
     ends.reduce(_ max _)
   }
 
@@ -382,7 +409,7 @@ class MdTag(
    */
   def getReference(readSequence: String, cigar: Cigar, referenceFrom: Long): String = {
 
-    var referencePos = start()
+    var referencePos = start
     var readPos = 0
     var reference = ""
 
@@ -412,7 +439,7 @@ class MdTag(
           // if a delete, get from the delete pool
           for (i <- 0 until cigarElement.getLength) {
             reference += {
-              deletes.get(referencePos) match {
+              deletions.get(referencePos) match {
                 case Some(base) => base
                 case _          => throw new IllegalStateException("Could not find deleted base at cigar offset " + i)
               }
@@ -443,74 +470,97 @@ class MdTag(
    * @see http://zenfractal.com/2013/06/19/playing-with-matches/
    */
   override def toString(): String = {
-    var mdString = ""
-    var lastWasMatch = false
-    var lastWasDeletion = false
-    var matchRun = 0
+    if (matches.isEmpty && mismatches.isEmpty && deletions.isEmpty) {
+      "0"
+    } else {
+      var mdString = ""
+      var lastWasMatch = false
+      var lastWasDeletion = false
+      var matchRun = 0
 
-    // loop over positions in tag - FSM for building string
-    for (i <- start() to end()) {
-      if (isMatch(i)) {
-        if (lastWasMatch) {
-          // if in run of matches, increment count
-          matchRun += 1
+      // loop over positions in tag - FSM for building string
+      (start to end()).foreach(i => {
+        if (isMatch(i)) {
+          if (lastWasMatch) {
+            // if in run of matches, increment count
+            matchRun += 1
+          } else {
+            // if first match, reset match count and set flag
+            matchRun = 1
+            lastWasMatch = true
+          }
+
+          // clear state
+          lastWasDeletion = false
+        } else if (deletions.contains(i)) {
+          if (!lastWasDeletion) {
+            // write match count before deletion
+            if (lastWasMatch) {
+              mdString += matchRun.toString
+            } else {
+              mdString += "0"
+            }
+            // add deletion caret
+            mdString += "^"
+
+            // set state
+            lastWasMatch = false
+            lastWasDeletion = true
+          }
+
+          // add deleted base
+          mdString += deletions(i)
         } else {
-          // if first match, reset match count and set flag
-          matchRun = 1
-          lastWasMatch = true
-        }
-
-        // clear state
-        lastWasDeletion = false
-      } else if (deletes.contains(i)) {
-        if (!lastWasDeletion) {
-          // write match count before deletion
+          // write match count before mismatch
           if (lastWasMatch) {
             mdString += matchRun.toString
           } else {
             mdString += "0"
           }
-          // add deletion caret
-          mdString += "^"
 
-          // set state
+          mdString += mismatches(i)
+
+          // clear state
           lastWasMatch = false
-          lastWasDeletion = true
+          lastWasDeletion = false
         }
+      })
 
-        // add deleted base
-        mdString += deletes(i)
+      // if we have more matches, write count
+      if (lastWasMatch) {
+        mdString += matchRun.toString
       } else {
-        // write match count before mismatch
-        if (lastWasMatch) {
-          mdString += matchRun.toString
-        } else {
-          mdString += "0"
-        }
-
-        mdString += mismatches(i)
-
-        // clear state
-        lastWasMatch = false
-        lastWasDeletion = false
+        mdString += "0"
       }
-    }
 
-    // if we have more matches, write count
-    if (lastWasMatch) {
-      mdString += matchRun.toString
-    } else {
-      mdString += "0"
+      mdString
     }
-
-    mdString
   }
 
-  // We implement equality and hashing using the string representation of the MD tag.
+  /**
+   * We implement equality checking by seeing whether two MD tags are at the
+   * same position and have the same value.
+   *
+   * @param other An object to compare to.
+   * @return True if the object is an MD tag at the same position and with the
+   *         same string value. Else, false.
+   */
   override def equals(other: Any): Boolean = other match {
-    case that: MdTag => toString == that.toString
+    case that: MdTag => toString == that.toString && start == that.start
     case _           => false
   }
+
+  /**
+   * We can check equality against MdTags.
+   *
+   * @param other Object to see if we can compare against.
+   * @return Returns True if the object is an MdTag.
+   */
   def canEqual(other: Any): Boolean = other.isInstanceOf[MdTag]
+
+  /**
+   * @return We implement hashing by hashing the string representation of the
+   *         MD tag.
+   */
   override def hashCode: Int = toString().hashCode
 }

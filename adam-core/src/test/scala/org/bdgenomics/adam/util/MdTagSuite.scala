@@ -52,6 +52,32 @@ class MdTagSuite extends FunSuite {
     }
   }
 
+  test("md tag, pure insertion") {
+    // example
+    // Cigar = 101I
+    // MD:Z:0
+    val tag = MdTag("0", 1L)
+    assert(tag.start === 1L)
+    assert(tag.toString === "0")
+  }
+
+  test("md tag, pure insertion, test 2") {
+    // example
+    // Cigar = 101I
+    // MD:Z:0
+    val tag = MdTag("ACATAC", "", CIGAR_CODEC.decode("6I"), 1L)
+    assert(tag.start === 1L)
+    assert(tag.toString === "0")
+  }
+
+  test("md tag pure insertion equality") {
+    val tag0 = MdTag("0", 1L)
+    val tag1 = MdTag("0", 1L)
+    val tag2 = MdTag("0", 3L)
+    assert(tag0.equals(tag1))
+    assert(!tag0.equals(tag2))
+  }
+
   test("md tag equality and hashcode") {
     val md1 = MdTag("0A0", 0L)
     val md1Dup = MdTag("0A0", 0L)
@@ -142,19 +168,19 @@ class MdTagSuite extends FunSuite {
   test("get start of read with no mismatches or deletions") {
     val tag = MdTag("60", 1L)
 
-    assert(tag.start() === 1L)
+    assert(tag.start === 1L)
   }
 
   test("get start of read with no mismatches, but with a deletion at the start") {
     val tag = MdTag("0^AC60", 5L)
 
-    assert(tag.start() === 5L)
+    assert(tag.start === 5L)
   }
 
   test("get start of read with mismatches at the start") {
     val tag = MdTag("0AC60", 10L)
 
-    assert(tag.start() === 10L)
+    assert(tag.start === 10L)
   }
 
   test("get end of read with no mismatches or deletions") {
@@ -203,7 +229,7 @@ class MdTagSuite extends FunSuite {
   test("get correct string out of mdtag with deletion at end") {
     val tag = MdTag("10^GG0", 200L)
 
-    assert(tag.start() === 200L)
+    assert(tag.start === 200L)
     assert(tag.end() === 211L)
     assert(tag.toString === "10^GG0")
   }
@@ -211,7 +237,7 @@ class MdTagSuite extends FunSuite {
   test("get correct string out of mdtag with mismatches at end") {
     val tag = MdTag("10G0G0", 200L)
 
-    assert(tag.start() === 200L)
+    assert(tag.start === 200L)
     assert(tag.end() === 211L)
     assert(tag.toString === "10G0G0")
   }
@@ -272,7 +298,7 @@ class MdTagSuite extends FunSuite {
     val newTag = MdTag.moveAlignment(read, newCigar, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
 
     assert(newTag.toString === "60")
-    assert(newTag.start() === 100L)
+    assert(newTag.start === 100L)
     assert(newTag.end() === 159L)
   }
 
@@ -290,7 +316,7 @@ class MdTagSuite extends FunSuite {
     val newTag = MdTag.moveAlignment(read, newCigar, "GGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
 
     assert(newTag.toString === "0G0G58")
-    assert(newTag.start() === 100L)
+    assert(newTag.start === 100L)
     assert(newTag.end() === 159L)
   }
 
@@ -308,7 +334,7 @@ class MdTagSuite extends FunSuite {
     val newTag = MdTag.moveAlignment(read, newCigar, "AAAAAAAAAAGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
 
     assert(newTag.toString === "10^GGGGGGGGGG50")
-    assert(newTag.start() === 100L)
+    assert(newTag.start === 100L)
     assert(newTag.end() === 169L)
   }
 
@@ -326,7 +352,7 @@ class MdTagSuite extends FunSuite {
     val newTag = MdTag.moveAlignment(read, newCigar, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
 
     assert(newTag.toString === "50")
-    assert(newTag.start() === 100L)
+    assert(newTag.start === 100L)
     assert(newTag.end() === 149L)
   }
 
