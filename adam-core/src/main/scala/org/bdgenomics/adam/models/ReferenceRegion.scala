@@ -168,6 +168,15 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
   def width: Long = end - start - 1
 
   /**
+   * From one reference region, creates reference positions spanning the region.
+   *
+   * @return Returns a seq of positions covering the region.
+   */
+  def toPositions(): Seq[ReferencePosition] = {
+    (start until end).map(i => ReferencePosition(referenceName, i))
+  }
+
+  /**
    * Merges two reference regions that are contiguous.
    *
    * @throws AssertionError Thrown if regions are not overlapping or adjacent.
