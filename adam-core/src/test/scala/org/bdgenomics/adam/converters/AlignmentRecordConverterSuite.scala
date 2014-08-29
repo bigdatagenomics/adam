@@ -43,6 +43,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
       .setMapq(60)
       .setQual(sequence) // no typo, we just don't care
       .setMismatchingPositions(mdtag)
+      .setOldPosition(12)
+      .setOldCigar("2^AAA3")
       .build()
   }
 
@@ -82,6 +84,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(toSAM.getMappingQuality === 60)
     assert(toSAM.getBaseQualityString === sequence)
     assert(toSAM.getAttribute("MD") === "2^AAA2")
+    assert(toSAM.getIntegerAttribute("OP") === 13)
+    assert(toSAM.getStringAttribute("OC") === "2^AAA3")
   }
 
   test("convert a read to fastq") {

@@ -66,6 +66,12 @@ class SAMRecordConverter extends Serializable {
       assert(start != 0, "Start cannot equal 0 if contig is set.")
       builder.setStart((start - 1).asInstanceOf[Long])
 
+      // set OP and OC flags, if applicable
+      if (samRecord.getAttribute("OP") != null) {
+        builder.setOldPosition(samRecord.getIntegerAttribute("OP").toLong - 1)
+        builder.setOldCigar(samRecord.getStringAttribute("OC"))
+      }
+
       val end = samRecord.getCigar.getCigarElements
         .asScala
         .filter((p: CigarElement) => p.getOperator.consumesReferenceBases())
