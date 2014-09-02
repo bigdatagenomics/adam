@@ -97,27 +97,29 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case List(allele) => {
-        assert(allele.isNonReference && !allele.isSymbolic)
-        val variant = createADAMVariant(vc, Some(allele.getBaseString))
-        val genotypes = extractNonReferenceGenotypes(vc, variant, calling_annotations)
+        assert(allele.isNonReference,
+          "Assertion failed when converting: " + vc.toString)
+        val variant = createADAMVariant(vc, Some(allele.getDisplayString))
+        val genotypes = extractReferenceModelGenotypes(vc, variant, calling_annotations)
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case List(allele, NON_REF_ALLELE) => {
-        assert(allele.isNonReference && !allele.isSymbolic)
-        val variant = createADAMVariant(vc, Some(allele.getBaseString))
+        assert(allele.isNonReference,
+          "Assertion failed when converting: " + vc.toString)
+        val variant = createADAMVariant(vc, Some(allele.getDisplayString))
         val genotypes = extractReferenceModelGenotypes(vc, variant, calling_annotations)
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case alleles :+ NON_REF_ALLELE => {
-        assert(false, "Multi-allelic site with non-ref symbolic allele")
-        Seq()
+        throw new IllegalArgumentException("Multi-allelic site with non-ref symbolic allele" +
+          vc.toString)
       }
       case _ => {
         // Default case is multi-allelic without reference model
         val vcb = new VariantContextBuilder(vc)
         return vc.getAlternateAlleles.flatMap(allele => {
           val idx = vc.getAlleleIndex(allele)
-          assert(idx >= 1, "Unexpected index for alternate allele")
+          assert(idx >= 1, "Unexpected index for alternate allele: " + vc.toString)
           vcb.alleles(List(vc.getReference, allele, NON_REF_ALLELE))
 
           def punchOutGenotype(g: org.broadinstitute.variant.variantcontext.Genotype, idx: Int): org.broadinstitute.variant.variantcontext.Genotype = {
