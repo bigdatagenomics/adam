@@ -25,7 +25,7 @@ import org.bdgenomics.adam.predicates.HighQualityReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 class ADAMContextSuite extends SparkFunSuite {
 
@@ -58,43 +58,6 @@ class ADAMContextSuite extends SparkFunSuite {
     // result is floating point, so apply tolerance
     assert(phredToSuccessProbability(10) > 0.89 && phredToSuccessProbability(10) < 0.91)
     assert(phredToSuccessProbability(50) > 0.99998 && phredToSuccessProbability(50) < 0.999999)
-  }
-
-  sparkTest("loadADAMFromPaths can load simple RDDs that have just been saved") {
-    val contig = Contig.newBuilder
-      .setContigName("abc")
-      .setContigLength(1000000)
-      .setReferenceURL("http://abc")
-      .build
-
-    val a0 = AlignmentRecord.newBuilder()
-      .setRecordGroupName("group0")
-      .setReadName("read0")
-      .setContig(contig)
-      .setStart(100)
-      .setPrimaryAlignment(true)
-      .setReadPaired(false)
-      .setReadMapped(true)
-      .build()
-    val a1 = AlignmentRecord.newBuilder(a0)
-      .setReadName("read1")
-      .setStart(200)
-      .build()
-
-    val saved = sc.parallelize(Seq(a0, a1))
-    val loc = tempLocation()
-    val path = new Path(loc)
-
-    saved.adamSave(loc)
-    try {
-      val loaded = sc.loadADAMFromPaths(Seq(path))
-
-      assert(loaded.count() === saved.count())
-    } catch {
-      case (e: Exception) =>
-        println(e)
-        throw e
-    }
   }
 
   sparkTest("findFiles correctly finds a nested set of directories") {
@@ -148,18 +111,5 @@ class ADAMContextSuite extends SparkFunSuite {
     assert(pathNames.contains("match3"))
     assert(pathNames.contains("match5"))
   }
-
-  /*
-  Little helper function -- because apparently createTempFile creates an actual file, not
-  just a name?  Whereas, this returns the name of something that could be mkdir'ed, in the
-  same location as createTempFile() uses, so therefore the returned path from this method
-  should be suitable for adamSave().
-   */
-  def tempLocation(suffix: String = "adam"): String = {
-    val tempFile = File.createTempFile("ADAMContextSuite", "")
-    val tempDir = tempFile.getParentFile
-    new File(tempDir, tempFile.getName + suffix).getAbsolutePath
-  }
-
 }
 

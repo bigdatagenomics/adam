@@ -18,12 +18,14 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
-import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
-import org.kohsuke.args4j.{ Option => option, Argument }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Pileup }
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.pileup.ADAMPileupContext._
+import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Pileup }
+import org.kohsuke.args4j.{ Option => option, Argument }
 
 object Reads2Ref extends ADAMCommandCompanion {
   val commandName: String = "reads2ref"

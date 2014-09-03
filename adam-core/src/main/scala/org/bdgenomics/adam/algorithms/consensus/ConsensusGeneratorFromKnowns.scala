@@ -19,9 +19,9 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.algorithms.realignmenttarget.IndelRealignmentTarget
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 
