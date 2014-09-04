@@ -257,6 +257,7 @@ package org.bdgenomics.adam.rdd {
             val dp = readDataPage(bytesInput, header, parquetMetadataConverter)
             dataPages = dataPages :+ dp
             valuesRead += dp.getValueCount
+          case _ =>
         }
       }
 

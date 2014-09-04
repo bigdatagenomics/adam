@@ -59,8 +59,8 @@ class ParquetListerSuite extends FunSuite {
 
     val recs = lister.materialize(path).toSeq
     assert(recs.length === 15)
-    assert(recs.forall(_.referenceName == null))
-    assert(recs.forall(_.referenceAllele != null))
+    assert(recs.forall(_.getReferenceName == null))
+    assert(recs.forall(_.getReferenceAllele != null))
   }
 
 }
