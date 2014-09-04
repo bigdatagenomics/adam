@@ -35,8 +35,8 @@ class Histogram[T](val valueToCount: Map[T, Int]) extends Aggregated[T] with Ser
    * @param f Only those keys k for which f(k) == true will be counted.
    * @return The sum of the values passed by the predicate.
    */
-  def countSubset(f: (Any) => Boolean): Long = valueToCount.filter {
-    case (k: T, v: Int) => f(k)
+  def countSubset(f: Any => Boolean): Long = valueToCount.filter {
+    case (k, v: Int) => f(k)
   }.values.map(_.toLong).reduce(_ + _)
 
   private def defaultFilter(x: Any): Boolean = {

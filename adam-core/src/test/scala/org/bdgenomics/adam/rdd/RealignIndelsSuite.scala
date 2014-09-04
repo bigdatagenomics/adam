@@ -75,6 +75,7 @@ class RealignIndelsSuite extends SparkFunSuite {
             }
           }
       }
+      case _ => false
     }
   }
 
