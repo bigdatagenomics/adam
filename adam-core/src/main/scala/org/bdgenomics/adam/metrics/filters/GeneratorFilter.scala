@@ -51,7 +51,7 @@ class CombinedFilter[T](val filters: Seq[GeneratorFilter[T]]) extends GeneratorF
 
   def passesFilter(value: Any): Boolean = {
     value match {
-      case valueCollection: metrics.Collection[Seq[T]] =>
+      case valueCollection: metrics.Collection[_] =>
         filters.zip(valueCollection.values).forall {
           case (f: GeneratorFilter[T], values: Seq[T]) =>
             values.exists(f.passesFilter(_))
