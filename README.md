@@ -80,7 +80,7 @@ dependencies
 You might want to add the following to your `.bashrc` to make running `adam` easier:
 
 ```
-alias adam=". $ADAM_HOME/adam-cli/target/appassembler/bin/adam"
+alias adam="bash $ADAM_HOME/adam-cli/target/appassembler/bin/adam"
 ```
 
 `$ADAM_HOME` should be the path to where you have checked ADAM out on your local filesystem.
