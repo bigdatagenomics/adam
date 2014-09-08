@@ -33,7 +33,7 @@ import scala.collection.immutable.{ NumericRange, TreeSet }
 import scala.collection.mutable
 import scala.util.Random
 
-private[rdd] object RealignIndels {
+private[rdd] object RealignIndels extends Serializable with Logging {
 
   /**
    * Realigns an RDD of reads.
@@ -181,9 +181,17 @@ private[rdd] object RealignIndels {
    * From a set of reads, returns the reference sequence that they overlap.
    */
   def getReferenceFromReads(reads: Iterable[RichAlignmentRecord]): (String, Long, Long) = {
+    var tossedReads = 0
+
     // get reference and range from a single read
-    val readRefs = reads.map((r: RichAlignmentRecord) => {
-      (r.mdTag.get.getReference(r), r.getStart.toLong to r.getEnd)
+    val readRefs = reads.flatMap((r: RichAlignmentRecord) => {
+      if (r.mdTag.isDefined) {
+        Some((r.mdTag.get.getReference(r), r.getStart.toLong to r.getEnd))
+      } else {
+        log.warn("Discarding read " + r.record.getReadName + " during reference re-creation.")
+        tossedReads += 1
+        None
+      }
     })
       .toSeq
       .sortBy(_._2.head)
@@ -196,7 +204,8 @@ private[rdd] object RealignIndels {
         (reference._1 + refReads._1.substring((reference._2 - refReads._2.head).toInt), refReads._2.end)
       } else {
         // there is a gap in the sequence
-        throw new IllegalArgumentException("Current sequence has a gap at " + reference._2 + "with " + refReads._2.head + "," + refReads._2.end + ".")
+        throw new IllegalArgumentException("Current sequence has a gap at " + reference._2 + "with " + refReads._2.head + "," + refReads._2.end +
+          ". Discarded " + tossedReads + " in region when reconstructing region; reads may not have MD tag attached.")
       }
     })
 
