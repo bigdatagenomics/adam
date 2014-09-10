@@ -34,7 +34,7 @@ object Features2ADAM extends ADAMCommandCompanion {
   }
 }
 
-class Features2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class Features2ADAMArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "FEATURES",
     usage = "The features file to convert (e.g., .bed, .gff)", index = 0)
   var featuresFile: String = _

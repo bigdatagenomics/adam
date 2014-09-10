@@ -41,7 +41,7 @@ object PrintTags extends ADAMCommandCompanion {
   }
 }
 
-class PrintTagsArgs extends Args4jBase with SparkArgs with ParquetArgs {
+class PrintTagsArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM file to scan for tags", index = 0)
   val inputPath: String = null
 

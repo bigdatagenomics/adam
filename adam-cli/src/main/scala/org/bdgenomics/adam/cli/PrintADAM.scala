@@ -37,7 +37,7 @@ object PrintADAM extends ADAMCommandCompanion {
   }
 }
 
-class PrintADAMArgs extends Args4jBase with SparkArgs {
+class PrintADAMArgs extends Args4jBase {
   @Argument(required = true, metaVar = "FILE(S)", multiValued = true, usage = "One or more files to print")
   var filesToPrint = new util.ArrayList[String]()
 

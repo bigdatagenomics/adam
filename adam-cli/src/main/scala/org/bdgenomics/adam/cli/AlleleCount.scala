@@ -34,7 +34,7 @@ object AlleleCount extends ADAMCommandCompanion {
   }
 }
 
-class AlleleCountArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class AlleleCountArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "ADAM",
     usage = "The ADAM Variant file", index = 0)
   var adamFile: String = _

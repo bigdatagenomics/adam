@@ -35,7 +35,7 @@ object Vcf2ADAM extends ADAMCommandCompanion {
   }
 }
 
-class Vcf2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class Vcf2ADAMArgs extends Args4jBase with ParquetArgs {
   @Args4jOption(required = false, name = "-dict", usage = "Reference dictionary")
   var dictionaryFile: File = _
 
@@ -44,6 +44,9 @@ class Vcf2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
 
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM Variant data", index = 1)
   var outputPath: String = null
+
+  @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
+  var coalesce: Int = -1
 }
 
 class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] with DictionaryCommand with Logging {

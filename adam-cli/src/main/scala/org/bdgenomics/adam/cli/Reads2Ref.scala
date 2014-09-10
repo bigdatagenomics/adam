@@ -40,7 +40,7 @@ object Reads2RefArgs {
   val MIN_MAPQ_DEFAULT: Long = 30L
 }
 
-class Reads2RefArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class Reads2RefArgs extends Args4jBase with ParquetArgs {
   @Argument(metaVar = "ADAMREADS", required = true, usage = "ADAM read-oriented data", index = 0)
   var readInput: String = _
 

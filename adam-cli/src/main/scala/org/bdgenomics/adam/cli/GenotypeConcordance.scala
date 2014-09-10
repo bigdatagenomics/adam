@@ -38,7 +38,7 @@ object GenotypeConcordance extends ADAMCommandCompanion {
   }
 }
 
-class GenotypeConcordanceArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class GenotypeConcordanceArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "test", usage = "The test ADAM genotypes file", index = 0)
   var testGenotypesFile: String = _
   @Argument(required = true, metaVar = "truth", usage = "The truth ADAM genotypes file", index = 1)

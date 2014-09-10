@@ -95,7 +95,7 @@ object CompareADAM extends ADAMCommandCompanion with Serializable {
     names.map(DefaultComparisons.findComparison)
 }
 
-class CompareADAMArgs extends Args4jBase with SparkArgs with ParquetArgs with Serializable {
+class CompareADAMArgs extends Args4jBase with ParquetArgs with Serializable {
 
   @Argument(required = true, metaVar = "INPUT1", usage = "The first ADAM file to compare", index = 0)
   val input1Path: String = null

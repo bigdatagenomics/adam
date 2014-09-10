@@ -41,7 +41,7 @@ object SummarizeGenotypes extends ADAMCommandCompanion {
   }
 }
 
-class SummarizeGenotypesArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class SummarizeGenotypesArgs extends Args4jBase with ParquetArgs {
   @args4j.Argument(required = true, metaVar = "ADAM", usage = "The ADAM genotypes file to print stats for", index = 0)
   var adamFile: String = _
 

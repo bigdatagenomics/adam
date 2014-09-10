@@ -17,11 +17,12 @@
  */
 package org.bdgenomics.adam.cli
 
+import java.io.{ PrintStream, ByteArrayOutputStream }
+
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{ Logging, SparkContext }
-import org.bdgenomics.adam.util.HadoopUtil
+import org.apache.spark.{ SparkConf, Logging, SparkContext }
 import org.bdgenomics.adam.instrumentation.{ DurationFormatting, ADAMMetricsListener, ADAMMetrics }
-import java.io.{ ByteArrayOutputStream, PrintStream }
+import org.bdgenomics.adam.util.HadoopUtil
 
 trait ADAMCommandCompanion {
   val commandName: String
@@ -39,26 +40,24 @@ trait ADAMCommand extends Runnable {
   val companion: ADAMCommandCompanion
 }
 
-trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with SparkCommand with Logging {
-
+trait ADAMSparkCommand[A <: Args4jBase] extends ADAMCommand with Logging {
   protected val args: A
 
   def run(sc: SparkContext, job: Job)
 
   def run() {
-
     val start = System.nanoTime()
-
     val metricsListener = if (args.printMetrics) Some(new ADAMMetricsListener(new ADAMMetrics())) else None
-
-    val sc: SparkContext = createSparkContext(args, metricsListener)
+    val conf = new SparkConf().setAppName("adam: " + companion.commandName)
+    if (conf.getOption("spark.master").isEmpty) {
+      conf.setMaster("local[%d]".format(Runtime.getRuntime.availableProcessors()))
+    }
+    val sc = new SparkContext(conf)
     val job = HadoopUtil.newJob()
-
+    metricsListener.foreach(sc.addSparkListener(_))
     run(sc, job)
-
     val totalTime = System.nanoTime() - start
     printMetrics(totalTime, metricsListener)
-
   }
 
   def printMetrics(totalTime: Long, metricsListener: Option[ADAMMetricsListener]) {
@@ -74,5 +73,4 @@ trait ADAMSparkCommand[A <: Args4jBase with SparkArgs] extends ADAMCommand with 
       logInfo("Metrics:" + bytes.toString("UTF-8"))
     })
   }
-
 }

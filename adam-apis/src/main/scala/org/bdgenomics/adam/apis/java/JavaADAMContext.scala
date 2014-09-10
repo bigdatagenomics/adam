@@ -41,62 +41,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   def getSparkContext: JavaSparkContext = new JavaSparkContext(ac.sc)
 
   /**
-   * Builds this Java ADAM Context by creating a new Spark Context.
-   *
-   * @param name Name of the Spark Context to create.
-   * @param master The URI of the Spark master.
-   * @param sparkHome Path to the Spark home directory.
-   * @param sparkJars JAR files to include.
-   * @param sparkEnvVars A map containing envars and their settings.
-   * @param sparkAddStatsListener Whether or not to include a stats listener.
-   * @param sparkKryoBufferSize The size of the kryo serialization buffer in MB.
-   * @param sparkMetricsListener A metrics listener to attach. Can be null.
-   * @param loadSystemValues Whether to load system values or not.
-   * @param sparkDriverPort The port mapping for the Spark driver. Can be null.
-   * @return Returns a new Java ADAM Context, built on a new Spark Context.
-   */
-  def this(name: java.lang.String,
-           master: java.lang.String,
-           sparkHome: java.lang.String,
-           sparkJars: java.util.List[java.lang.String],
-           sparkEnvVars: java.util.Map[java.lang.String, java.lang.String],
-           sparkAddStatsListener: java.lang.Boolean,
-           sparkKryoBufferSize: java.lang.Integer,
-           sparkMetricsListener: ADAMMetricsListener,
-           loadSystemValues: java.lang.Boolean,
-           sparkDriverPort: java.lang.Integer) = {
-    this(new ADAMContext(ADAMContext.createSparkContext(name,
-      master,
-      sparkHome, {
-        // force implicit conversion
-        val sj: List[java.lang.String] = sparkJars
-
-        sj.map(_.toString)
-      }, {
-        // force implicit conversion
-        val sev: Map[java.lang.String, java.lang.String] = mapAsScalaMap(sparkEnvVars).toMap
-
-        sev.map(kv => (kv._1.toString,
-          kv._2.toString)).toSeq
-      }, sparkAddStatsListener,
-      sparkKryoBufferSize,
-      Option(sparkMetricsListener),
-      loadSystemValues,
-      Option(sparkDriverPort).map(_.toInt))))
-  }
-
-  /**
-   * Builds this Java ADAM Context by creating a new Spark Context.
-   *
-   * @param name Name of the Spark Context to create.
-   * @param master The URI of the Spark master.
-   * @return Returns a new Java ADAM Context, built on a new Spark Context.
-   */
-  def this(name: java.lang.String,
-           master: java.lang.String) = this(new ADAMContext(
-    ADAMContext.createSparkContext(name, master)))
-
-  /**
    * Builds this Java ADAM Context using an existing Java Spark Context.
    *
    * @param jsc Java Spark Context to use to build this ADAM Context.

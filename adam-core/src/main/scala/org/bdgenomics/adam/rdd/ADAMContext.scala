@@ -78,63 +78,6 @@ object ADAMContext {
   implicit def iterableToJavaCollection[A](i: Iterable[A]): java.util.Collection[A] = asJavaCollection(i)
 
   implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
-
-  /**
-   * Creates a SparkContext that is configured for use with ADAM. Applies default serialization
-   * settings.
-   *
-   * @param name Context name.
-   * @param master URL for master.
-   * @param sparkHome Path to Spark.
-   * @param sparkJars JAR files to import into context.
-   * @param sparkEnvVars Environment variables to set.
-   * @param sparkAddStatsListener Disabled by default; true enables. If enabled, a job status
-   *                              listener is registered. This can be useful for performance debug.
-   * @param sparkKryoBufferSize Size of the object serialization buffer. Default setting is 4MB.
-   * @param sparkMetricsListener A listener for recording metrics from Spark. Defaults to [[None]]
-   * @return Returns a properly configured Spark Context.
-   */
-  def createSparkContext(name: String,
-                         master: String,
-                         sparkHome: String = null,
-                         sparkJars: Seq[String] = Nil,
-                         sparkEnvVars: Seq[(String, String)] = Nil,
-                         sparkAddStatsListener: Boolean = false,
-                         sparkKryoBufferSize: Int = 4,
-                         sparkMetricsListener: Option[ADAMMetricsListener] = None,
-                         loadSystemValues: Boolean = true,
-                         sparkDriverPort: Option[Int] = None): SparkContext = {
-    // TODO: Add enough spark arguments so that we don't need to load the system values (e.g. SPARK_MEM)
-    val config: SparkConf = new SparkConf(loadSystemValues).setAppName("adam: " + name).setMaster(master)
-    if (sparkHome != null)
-      config.setSparkHome(sparkHome)
-    if (sparkJars != Nil)
-      config.setJars(sparkJars)
-    if (sparkEnvVars != Nil)
-      config.setExecutorEnv(sparkEnvVars)
-
-    // Optionally set the spark driver port
-    sparkDriverPort match {
-      case Some(port) => config.set("spark.driver.port", port.toString)
-      case None       =>
-    }
-
-    // Setup the Kryo settings
-    config.setAll(Array(("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
-      ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
-      ("spark.kryoserializer.buffer.mb", sparkKryoBufferSize.toString),
-      ("spark.kryo.referenceTracking", "true")))
-
-    val sc = new SparkContext(config)
-
-    if (sparkAddStatsListener) {
-      sc.addSparkListener(new StatsReportListener)
-    }
-
-    sparkMetricsListener.foreach(sc.addSparkListener(_))
-
-    sc
-  }
 }
 
 class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
