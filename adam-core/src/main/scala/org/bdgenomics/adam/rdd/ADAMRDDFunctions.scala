@@ -19,8 +19,8 @@ package org.bdgenomics.adam.rdd
 
 import java.util.logging.Level
 import org.apache.avro.specific.SpecificRecord
-import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
+import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.util.{

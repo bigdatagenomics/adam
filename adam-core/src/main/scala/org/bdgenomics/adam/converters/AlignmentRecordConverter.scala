@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
-import net.sf.samtools.{ SAMFileHeader, SAMRecord }
+import htsjdk.samtools.{ SAMFileHeader, SAMRecord }
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SAMFileHeaderWritable, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord

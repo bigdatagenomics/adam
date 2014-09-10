@@ -289,13 +289,6 @@
     </plugins>
   </build>
 
-  <repositories>
-    <repository>
-      <id>hadoop-bam</id>
-      <url>http://hadoop-bam.sourceforge.net/maven/</url>
-    </repository>
-  </repositories>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -405,34 +398,19 @@
         <version>${parquet.version}</version>
       </dependency>
       <dependency>
-        <groupId>fi.tkk.ics.hadoop.bam</groupId>
+        <groupId>org.seqdoop</groupId>
         <artifactId>hadoop-bam</artifactId>
-        <version>6.2</version>
+        <version>7.0.0</version>
       </dependency>
       <dependency>
-        <groupId>variant</groupId>
-        <artifactId>variant</artifactId>
-        <version>1.107</version>
-      </dependency>
-      <dependency>
-        <groupId>tribble</groupId>
-        <artifactId>tribble</artifactId>
-        <version>1.107</version>
-      </dependency>
-      <dependency>
-        <groupId>cofoja</groupId>
+        <groupId>org.seqdoop</groupId>
         <artifactId>cofoja</artifactId>
-        <version>1.0</version>
+        <version>1.1-r150</version>
       </dependency>
       <dependency>
-        <groupId>picard</groupId>
-        <artifactId>picard</artifactId>
-        <version>1.107</version>
-      </dependency>
-      <dependency>
-        <groupId>samtools</groupId>
-        <artifactId>samtools</artifactId>
-        <version>1.107</version>
+        <groupId>org.seqdoop</groupId>
+        <artifactId>htsjdk</artifactId>
+        <version>1.118</version>
       </dependency>
       <dependency>
         <groupId>args4j</groupId>

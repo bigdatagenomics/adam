@@ -49,7 +49,7 @@ import java.io.InputStream;
  * format.
  *
  * This reader is based on the FastqInputFormat that's part of Hadoop-BAM,
- * found at http://sourceforge.net/p/hadoop-bam/code/ci/master/tree/src/fi/tkk/ics/hadoop/bam/FastqInputFormat.java
+ * found at https://github.com/HadoopGenomics/Hadoop-BAM/blob/master/src/main/java/org/seqdoop/hadoop_bam/FastqInputFormat.java
  *
  * @author Jeremy Elson (jelson@microsoft.com)
  * @date Feb 2014

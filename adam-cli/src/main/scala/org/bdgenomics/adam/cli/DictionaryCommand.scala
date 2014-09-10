@@ -20,7 +20,7 @@ package org.bdgenomics.adam.cli
 import java.io.{ FileOutputStream, File }
 import org.apache.commons.io.IOUtils
 import org.bdgenomics.adam.models.SequenceDictionary
-import net.sf.samtools.SAMFileReader
+import htsjdk.samtools.SAMFileReader
 
 trait DictionaryCommand {
   private def getDictionaryFile(name: String): Option[File] = {

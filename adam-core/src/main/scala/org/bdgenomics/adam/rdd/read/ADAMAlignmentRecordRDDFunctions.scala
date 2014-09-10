@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import fi.tkk.ics.hadoop.bam.SAMRecordWritable
-import net.sf.samtools.SAMFileHeader
+import org.seqdoop.hadoop_bam.SAMRecordWritable
+import htsjdk.samtools.SAMFileHeader
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.SparkContext._

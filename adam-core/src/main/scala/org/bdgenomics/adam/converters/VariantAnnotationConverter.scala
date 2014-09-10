@@ -33,10 +33,10 @@
 
 package org.bdgenomics.adam.converters
 
-import org.broadinstitute.variant.variantcontext.VariantContext
+import htsjdk.variant.variantcontext.VariantContext
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
-import org.broadinstitute.variant.vcf._
+import htsjdk.variant.vcf._
 import org.bdgenomics.formats.avro.{ DatabaseVariantAnnotation, Genotype, VariantCallingAnnotations }
 
 object AttrKey {
@@ -162,7 +162,7 @@ object VariantAnnotationConverter extends Serializable {
     fillRecord(VCF2VariantCallingAnnotations, vc, call)
   }
 
-  def convert(g: org.broadinstitute.variant.variantcontext.Genotype, genotype: Genotype): Genotype = {
+  def convert(g: htsjdk.variant.variantcontext.Genotype, genotype: Genotype): Genotype = {
     for ((v, a) <- VariantAnnotationConverter.VCF2GenotypeAnnotations) {
       // Add extended attributes if present
       val attr = g.getExtendedAttribute(v)

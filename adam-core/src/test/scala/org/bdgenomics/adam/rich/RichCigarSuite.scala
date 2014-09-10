@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
-import net.sf.samtools.Cigar
+import htsjdk.samtools.Cigar
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.formats.avro.AlignmentRecord

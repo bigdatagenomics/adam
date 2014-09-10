@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import fi.tkk.ics.hadoop.bam.{ KeyIgnoringAnySAMOutputFormat, SAMFormat }
-import net.sf.samtools.SAMFileHeader
+import org.seqdoop.hadoop_bam.{ KeyIgnoringAnySAMOutputFormat, SAMFormat }
+import htsjdk.samtools.SAMFileHeader
 
 object ADAMSAMOutputFormat extends Serializable {
 

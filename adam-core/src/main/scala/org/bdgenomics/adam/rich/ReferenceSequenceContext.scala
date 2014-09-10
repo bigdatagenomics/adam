@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.models.ReferencePosition
-import net.sf.samtools.CigarElement
+import htsjdk.samtools.CigarElement
 
 /**
  * Represents information on the reference relative to a particular residue

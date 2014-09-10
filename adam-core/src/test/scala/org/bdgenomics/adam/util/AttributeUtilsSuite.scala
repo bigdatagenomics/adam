@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.util
 
 import org.scalatest._
-import net.sf.samtools.SAMRecord.SAMTagAndValue
+import htsjdk.samtools.SAMRecord.SAMTagAndValue
 import org.bdgenomics.adam.models.{ Attribute, TagType }
 
 class AttributeUtilsSuite extends FunSuite {

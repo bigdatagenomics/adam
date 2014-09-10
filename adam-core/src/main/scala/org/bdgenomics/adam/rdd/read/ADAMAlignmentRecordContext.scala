@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
-import fi.tkk.ics.hadoop.bam.{ AnySAMInputFormat, SAMRecordWritable }
+import org.seqdoop.hadoop_bam.util.SAMHeaderReader
+import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, SAMRecordWritable }
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.rdd.RDD

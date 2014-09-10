@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-import net.sf.samtools.TextCigarCodec
+import htsjdk.samtools.TextCigarCodec
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord

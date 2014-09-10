@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.broadinstitute.variant.vcf.VCFHeader
+import htsjdk.variant.vcf.VCFHeader
 
 case class VCFHeaderWritable(header: VCFHeader) {
 }

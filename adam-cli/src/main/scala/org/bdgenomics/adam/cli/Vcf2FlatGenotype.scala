@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import java.io.{ File, FileInputStream }
-import net.sf.samtools._
+import htsjdk.samtools._
 import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.converters.{ VCFLine, VCFLineConverter, VCFLineParser }
 import org.bdgenomics.formats.avro.FlatGenotype
@@ -47,7 +47,7 @@ class Vcf2FlatGenotypeArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM data", index = 1)
   var outputPath: String = null
   @Args4jOption(required = false, name = "-samtools_validation", usage = "SAM tools validation level")
-  var validationStringency = SAMFileReader.ValidationStringency.LENIENT
+  var validationStringency = ValidationStringency.LENIENT
   @Args4jOption(required = false, name = "-samples", usage = "Comma-separated set of samples to subset")
   var sampleSubset: String = null
   @Args4jOption(required = false, name = "-num_threads", usage = "Number of threads/partitions to use (default=4)")

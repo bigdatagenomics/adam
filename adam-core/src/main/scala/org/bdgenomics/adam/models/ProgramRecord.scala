@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import net.sf.samtools.SAMProgramRecord
+import htsjdk.samtools.SAMProgramRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 
 object ProgramRecord {

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import net.sf.samtools.{ SAMFileHeader, SAMProgramRecord }
+import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord }
 import org.bdgenomics.adam.rdd.ADAMContext._
 
 object SAMFileHeaderWritable {

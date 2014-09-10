@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import fi.tkk.ics.hadoop.bam._
+import org.seqdoop.hadoop_bam._
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.SparkContext._
