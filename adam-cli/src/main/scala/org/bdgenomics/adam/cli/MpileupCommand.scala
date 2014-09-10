@@ -35,11 +35,9 @@ object MpileupCommand extends ADAMCommandCompanion {
   }
 }
 
-class MpileupArgs extends Args4jBase with SparkArgs {
+class MpileupArgs extends Args4jBase {
   @Argument(metaVar = "ADAMREADS", required = true, usage = "ADAM read-oriented data", index = 0)
   var readInput: String = _
-
-  spark_master = "local"
 }
 
 class MpileupCommand(protected val args: MpileupArgs) extends ADAMSparkCommand[MpileupArgs] with Logging {

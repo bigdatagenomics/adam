@@ -36,7 +36,7 @@ object CountKmers extends ADAMCommandCompanion {
   }
 }
 
-class CountKmersArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class CountKmersArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to count kmers from", index = 0)
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location for storing k-mer counts", index = 1)
@@ -47,6 +47,8 @@ class CountKmersArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var countQmers: Boolean = false
   @Args4jOption(required = false, name = "-printHistogram", usage = "Prints a histogram of counts.")
   var printHistogram: Boolean = false
+  @Args4jOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
+  var repartition: Int = -1
 }
 
 class CountKmers(protected val args: CountKmersArgs) extends ADAMSparkCommand[CountKmersArgs] with Logging {

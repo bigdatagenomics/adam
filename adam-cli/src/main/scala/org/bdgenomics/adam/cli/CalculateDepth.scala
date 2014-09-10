@@ -49,7 +49,7 @@ object CalculateDepth extends ADAMCommandCompanion {
   }
 }
 
-class CalculateDepthArgs extends Args4jBase with SparkArgs with ParquetArgs {
+class CalculateDepthArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "ADAM", usage = "The Read file to use to calculate depths", index = 0)
   val adamInputPath: String = null
 

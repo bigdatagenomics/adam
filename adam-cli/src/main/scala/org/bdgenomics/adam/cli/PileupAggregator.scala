@@ -34,7 +34,7 @@ object PileupAggregator extends ADAMCommandCompanion {
   }
 }
 
-class PileupAggregatorArgs extends Args4jBase with SparkArgs with ParquetArgs {
+class PileupAggregatorArgs extends Args4jBase with ParquetArgs {
 
   @Argument(metaVar = "ADAMPILEUPS", required = true, usage = "ADAM reference-oriented data", index = 0)
   var readInput: String = _

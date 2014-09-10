@@ -98,7 +98,7 @@ object VizReads extends ADAMCommandCompanion {
 case class TrackJson(readName: String, start: Long, end: Long, track: Long)
 case class FreqJson(base: Long, freq: Long)
 
-class VizReadsArgs extends Args4jBase with SparkArgs with ParquetArgs {
+class VizReadsArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM Records file to view", index = 0)
   var inputPath: String = null
 

@@ -18,10 +18,9 @@
 package org.bdgenomics.adam.util
 
 import org.scalatest.{ Tag, BeforeAndAfter, FunSuite }
-import org.apache.spark.SparkContext
+import org.apache.spark.{ SparkConf, SparkContext }
 import java.net.ServerSocket
 import org.apache.log4j.Level
-import org.bdgenomics.adam.rdd.ADAMContext
 
 trait SparkFunSuite extends FunSuite with BeforeAndAfter {
 
@@ -34,13 +33,17 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
     synchronized {
       // Find an unused port
       val s = new ServerSocket(0)
-      val driverPort = Some(s.getLocalPort)
+      val driverPort = s.getLocalPort
       s.close()
-      sc = ADAMContext.createSparkContext(
-        name = "adam: " + sparkName,
-        master = "local[4]",
-        loadSystemValues = false,
-        sparkDriverPort = driverPort)
+      val conf = new SparkConf(false)
+	.setAppName("adam: " + sparkName)
+	.setMaster("local[4]")
+	.set("spark.driver.port", driverPort.toString)
+	.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+	.set("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator")
+	.set("spark.kryoserializer.buffer.mb", "4")
+	.set("spark.kryo.referenceTracking", "true")
+      sc = new SparkContext(conf)
     }
   }
 

@@ -54,7 +54,7 @@ object VcfAnnotation2ADAM extends ADAMCommandCompanion {
   }
 }
 
-class VcfAnnotation2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class VcfAnnotation2ADAMArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "VCF", usage = "The VCF file with annotations to convert", index = 0)
   var vcfFile: String = _
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM Variant annotations data", index = 1)

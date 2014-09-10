@@ -33,7 +33,7 @@ object ListDict extends ADAMCommandCompanion {
   }
 }
 
-class ListDictArgs extends Args4jBase with SparkArgs with ParquetArgs {
+class ListDictArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM sequence dictionary to print", index = 0)
   val inputPath: String = null
 }
