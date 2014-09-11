@@ -17,13 +17,24 @@
  */
 package org.bdgenomics.adam.models
 
+import org.bdgenomics.adam.rdd.features.GTFParser
 import org.bdgenomics.formats.avro.Feature
 
-class BaseFeature(val feature: Feature) {
+class BaseFeature(val feature: Feature)
+    extends ReferenceRegion(feature.getContig.getContigName.toString,
+      feature.getStart,
+      feature.getEnd) {
+
   def featureId = feature.getFeatureId
   def contig = feature.getContig
-  def start = feature.getStart
-  def end = feature.getEnd
+}
+
+class GTFFeature(feature: Feature) extends BaseFeature(feature) {
+
+  def featureType = feature.getFeatureType.toString
+  def source = feature.getSource.toString
+
+  lazy val attributes = GTFParser.parseAttrs(feature.getValue.toString)
 }
 
 class BEDFeature(feature: Feature) extends BaseFeature(feature) {
