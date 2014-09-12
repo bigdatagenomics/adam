@@ -80,13 +80,15 @@ dependencies
 You might want to add the following to your `.bashrc` to make running `adam` easier:
 
 ```
-alias adam="bash $ADAM_HOME/adam-cli/target/appassembler/bin/adam"
+alias adam="${ADAM_HOME}/bin/adam-submit"
+alias adam-shell="${ADAM_HOME}/bin/adam-shell"
 ```
 
 `$ADAM_HOME` should be the path to where you have checked ADAM out on your local filesystem.
-To change any Java options (e.g., the memory settings --> "-Xmx4g", or to pass Java properties)
-set the `$JAVA_OPTS` environment variable. Additional details about customizing the appassembler
-runtime can be found [here](http://mojo.codehaus.org/appassembler/appassembler-maven-plugin/usage-script.html).
+These scripts wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You'll need
+to have the Spark binaries on your system; prebuilt binaries can be downloaded from the
+[Spark website](http://spark.apache.org/downloads.html). Currently, we build for
+[Spark 1.0.1, and Hadoop 2.2.0 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.0.1-bin-hadoop2.tgz).
 
 Once this alias is in place, you can run adam by simply typing `adam` at the commandline, e.g.
 
@@ -175,6 +177,11 @@ above took 17 seconds to run while `samtools flagstat NA12878_chr20.bam` took 55
 On larger files, the difference in speed is even more dramatic. ADAM is faster because
 it's multi-threaded and distributed and uses a columnar storage format (with a projected
 schema that only materializes the read flags instead of the whole read). 
+
+# Running on a cluster
+
+We provide the `adam-submit` and `adam-shell` commands under the `bin` directory. These can
+be used to submit ADAM jobs to a spark cluster, or to run ADAM interactively.
 
 ## Running Plugins
 

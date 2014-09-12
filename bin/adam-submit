@@ -37,7 +37,7 @@ if [ "$num_versions" -gt "1" ]; then
   echo "Please remove all but one."
   exit 1
 fi
-ADAM_CLI_JAR="$ADAM_REPO"/adam-cli/target/appassembler/repo/org/bdgenomics/adam/adam-cli/*/adam-cli-*.jar
+ADAM_CLI_JAR=$(ls "$ADAM_REPO"/adam-cli/target/appassembler/repo/org/bdgenomics/adam/adam-cli/*/adam-cli-*.jar)
 
 if [ -z "$SPARK_HOME" ]; then
   echo "Attempting to use 'spark-submit' on default path; you might need to set SPARK_HOME"
@@ -50,6 +50,6 @@ fi
 "$SPARK_SUBMIT" \
   "$ADAM_CLI_JAR" \
   --class org.bdgenomics.adam.cli.ADAMMain \
-  --properties-file "$ADAM_REPO"/bin/adam-spark-defaults.conf
+  --properties-file "$ADAM_REPO"/bin/adam-spark-defaults.conf \
   --jars "$ADAM_JARS" \
   "$@"

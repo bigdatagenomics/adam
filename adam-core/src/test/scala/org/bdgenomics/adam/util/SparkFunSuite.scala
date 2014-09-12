@@ -36,13 +36,13 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
       val driverPort = s.getLocalPort
       s.close()
       val conf = new SparkConf(false)
-	.setAppName("adam: " + sparkName)
-	.setMaster("local[4]")
-	.set("spark.driver.port", driverPort.toString)
-	.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-	.set("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator")
-	.set("spark.kryoserializer.buffer.mb", "4")
-	.set("spark.kryo.referenceTracking", "true")
+        .setAppName("adam: " + sparkName)
+        .setMaster("local[4]")
+        .set("spark.driver.port", driverPort.toString)
+        .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+        .set("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator")
+        .set("spark.kryoserializer.buffer.mb", "4")
+        .set("spark.kryo.referenceTracking", "true")
       sc = new SparkContext(conf)
     }
   }
