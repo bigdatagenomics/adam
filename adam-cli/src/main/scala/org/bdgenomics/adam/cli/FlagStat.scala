@@ -35,7 +35,7 @@ object FlagStat extends ADAMCommandCompanion {
   }
 }
 
-class FlagStatArgs extends Args4jBase with SparkArgs with ParquetArgs {
+class FlagStatArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM data to return stats for", index = 0)
   val inputPath: String = null
 }

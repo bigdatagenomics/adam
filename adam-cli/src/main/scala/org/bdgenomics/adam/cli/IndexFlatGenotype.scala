@@ -35,7 +35,7 @@ object IndexFlatGenotype extends ADAMCommandCompanion {
   }
 }
 
-class IndexFlatGenotypeArgs extends Args4jBase with SparkArgs with ParquetArgs {
+class IndexFlatGenotypeArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INDEX", usage = "The index file to generate", index = 0)
   var indexFile: String = null
   @Argument(required = true, metaVar = "PARQUET_LIST", usage = "Comma-separated list of parquet file paths", index = 1)

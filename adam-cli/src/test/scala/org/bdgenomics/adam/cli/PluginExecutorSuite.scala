@@ -18,11 +18,11 @@
 package org.bdgenomics.adam.cli
 
 import java.io._
-import org.scalatest.FunSuite
+import org.bdgenomics.adam.util.{ HadoopUtil, SparkFunSuite }
 
-class PluginExecutorSuite extends FunSuite {
+class PluginExecutorSuite extends SparkFunSuite {
 
-  test("take10 works correctly on example SAM") {
+  sparkTest("take10 works correctly on example SAM") {
 
     val args = new PluginExecutorArgs()
     args.plugin = "org.bdgenomics.adam.plugins.Take10Plugin"
@@ -37,7 +37,7 @@ class PluginExecutorSuite extends FunSuite {
     val pluginExecutor = new PluginExecutor(args)
 
     val bytesWritten = new ByteArrayOutputStream()
-    scala.Console.withOut(bytesWritten)(pluginExecutor.run())
+    scala.Console.withOut(bytesWritten)(pluginExecutor.run(sc, HadoopUtil.newJob()))
 
     val outputString = bytesWritten.toString
 
@@ -45,7 +45,7 @@ class PluginExecutorSuite extends FunSuite {
     assert(outputString.lines.size === 10)
   }
 
-  test("java take10 works correctly on example SAM") {
+  sparkTest("java take10 works correctly on example SAM") {
 
     val args = new PluginExecutorArgs()
     args.plugin = "org.bdgenomics.adam.apis.java.JavaTake10Plugin"
@@ -60,7 +60,7 @@ class PluginExecutorSuite extends FunSuite {
     val pluginExecutor = new PluginExecutor(args)
 
     val bytesWritten = new ByteArrayOutputStream()
-    scala.Console.withOut(bytesWritten)(pluginExecutor.run())
+    scala.Console.withOut(bytesWritten)(pluginExecutor.run(sc, HadoopUtil.newJob()))
 
     val outputString = bytesWritten.toString
 
@@ -68,7 +68,7 @@ class PluginExecutorSuite extends FunSuite {
     assert(outputString.lines.size === 10)
   }
 
-  test("takeN works correctly on example SAM with arg of '3'") {
+  sparkTest("takeN works correctly on example SAM with arg of '3'") {
 
     val args = new PluginExecutorArgs()
     args.plugin = "org.bdgenomics.adam.plugins.TakeNPlugin"
@@ -85,7 +85,7 @@ class PluginExecutorSuite extends FunSuite {
     val pluginExecutor = new PluginExecutor(args)
 
     val bytesWritten = new ByteArrayOutputStream()
-    scala.Console.withOut(bytesWritten)(pluginExecutor.run())
+    scala.Console.withOut(bytesWritten)(pluginExecutor.run(sc, HadoopUtil.newJob()))
 
     val outputString = bytesWritten.toString
 

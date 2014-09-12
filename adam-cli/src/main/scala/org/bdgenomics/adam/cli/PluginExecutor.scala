@@ -48,7 +48,7 @@ object PluginExecutor extends ADAMCommandCompanion {
   }
 }
 
-class PluginExecutorArgs extends Args4jBase with SparkArgs with ParquetArgs {
+class PluginExecutorArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "PLUGIN", usage = "The ADAMPlugin to run", index = 0)
   var plugin: String = null
 

@@ -37,7 +37,7 @@ object Transform extends ADAMCommandCompanion {
   }
 }
 
-class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class TransformArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to apply the transforms to", index = 0)
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
@@ -66,6 +66,10 @@ class TransformArgs extends Args4jBase with ParquetArgs with SparkArgs {
   var qualityThreshold: Int = 20
   @Args4jOption(required = false, name = "-trimBeforeBQSR", usage = "Performs quality based trim before running BQSR. Default is to run quality based trim after BQSR.")
   var trimBeforeBQSR: Boolean = false
+  @Args4jOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
+  var repartition: Int = -1
+  @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
+  var coalesce: Int = -1
 }
 
 class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[TransformArgs] with Logging {

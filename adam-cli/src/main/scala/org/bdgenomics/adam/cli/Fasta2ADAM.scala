@@ -35,7 +35,7 @@ object Fasta2ADAM extends ADAMCommandCompanion {
   }
 }
 
-class Fasta2ADAMArgs extends Args4jBase with ParquetArgs with SparkArgs {
+class Fasta2ADAMArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "FASTA", usage = "The FASTA file to convert", index = 0)
   var fastaFile: String = null
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM data", index = 1)
