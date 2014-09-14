@@ -25,6 +25,40 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 
 private[rdd] object MarkDuplicates extends Serializable {
 
+  private def markReadsInBucket(bucket: SingleReadBucket, primaryAreDups: Boolean, secondaryAreDups: Boolean) {
+    for (read <- bucket.primaryMapped) {
+      read.setDuplicateRead(primaryAreDups)
+    }
+    for (read <- bucket.secondaryMapped) {
+      read.setDuplicateRead(secondaryAreDups)
+    }
+    for (read <- bucket.unmapped) {
+      read.setDuplicateRead(false)
+    }
+  }
+
+  // Calculates the sum of the phred scores that are greater than or equal to 15
+  def score(record: AlignmentRecord): Int = {
+    record.qualityScores.filter(15 <=).sum
+  }
+
+  private def scoreBucket(bucket: SingleReadBucket): Int = {
+    bucket.primaryMapped.map(score).sum
+  }
+
+  private def markReads(reads: Iterable[(ReferencePositionPair, SingleReadBucket)], areDups: Boolean) {
+    markReads(reads, primaryAreDups = areDups, secondaryAreDups = areDups, ignore = None)
+  }
+
+  private def markReads(reads: Iterable[(ReferencePositionPair, SingleReadBucket)], primaryAreDups: Boolean, secondaryAreDups: Boolean,
+                        ignore: Option[(ReferencePositionPair, SingleReadBucket)] = None) {
+    reads.foreach(read => {
+      if (ignore.isEmpty || read != ignore.get) {
+        markReadsInBucket(read._2, primaryAreDups, secondaryAreDups)
+      }
+    })
+  }
+
   def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
 
     // Group by library and left position
@@ -87,40 +121,6 @@ private[rdd] object MarkDuplicates extends Serializable {
 
       })
 
-  }
-
-  // Calculates the sum of the phred scores that are greater than or equal to 15
-  def score(record: AlignmentRecord): Int = {
-    record.qualityScores.filter(15 <=).sum
-  }
-
-  private def markReads(reads: Iterable[(ReferencePositionPair, SingleReadBucket)], areDups: Boolean) {
-    markReads(reads, primaryAreDups = areDups, secondaryAreDups = areDups, ignore = None)
-  }
-
-  private def markReads(reads: Iterable[(ReferencePositionPair, SingleReadBucket)], primaryAreDups: Boolean, secondaryAreDups: Boolean,
-                        ignore: Option[(ReferencePositionPair, SingleReadBucket)] = None) {
-    reads.foreach(read => {
-      if (ignore.isEmpty || read != ignore.get) {
-        markReadsInBucket(read._2, primaryAreDups, secondaryAreDups)
-      }
-    })
-  }
-
-  private def markReadsInBucket(bucket: SingleReadBucket, primaryAreDups: Boolean, secondaryAreDups: Boolean) {
-    for (read <- bucket.primaryMapped) {
-      read.setDuplicateRead(primaryAreDups)
-    }
-    for (read <- bucket.secondaryMapped) {
-      read.setDuplicateRead(secondaryAreDups)
-    }
-    for (read <- bucket.unmapped) {
-      read.setDuplicateRead(false)
-    }
-  }
-
-  private def scoreBucket(bucket: SingleReadBucket): Int = {
-    bucket.primaryMapped.map(score).sum
   }
 
   private object ScoreOrdering extends Ordering[(ReferencePositionPair, SingleReadBucket)] {
