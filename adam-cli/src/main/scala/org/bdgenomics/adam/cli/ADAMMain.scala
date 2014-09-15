@@ -30,18 +30,18 @@ object ADAMMain extends Logging {
   private val commandGroups =
     List(
       CommandGroup("ADAM ACTIONS", List(
-	CompareADAM,
-	FindReads,
-	CalculateDepth,
-	CountKmers,
-	PileupAggregator,
-	Transform,
-	/* TODO (nealsid): Reimplement in terms of new schema
+        CompareADAM,
+        FindReads,
+        CalculateDepth,
+        CountKmers,
+        PileupAggregator,
+        Transform,
+        /* TODO (nealsid): Reimplement in terms of new schema
 	  ComputeVariants
 	*/
-	PluginExecutor)),
+        PluginExecutor)),
       CommandGroup("CONVERSION OPERATIONS", List(
-	Bam2ADAM,
+        Bam2ADAM,
         Vcf2FlatGenotype,
         Vcf2ADAM,
         VcfAnnotation2ADAM,
@@ -51,7 +51,7 @@ object ADAMMain extends Logging {
         MpileupCommand,
         Features2ADAM)),
       CommandGroup("PRINT", List(
-	PrintADAM,
+        PrintADAM,
         FlagStat,
         VizReads,
         PrintTags,
