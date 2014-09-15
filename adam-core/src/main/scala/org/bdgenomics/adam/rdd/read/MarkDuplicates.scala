@@ -26,15 +26,15 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 private[rdd] object MarkDuplicates extends Serializable {
 
   private def markReadsInBucket(bucket: SingleReadBucket, primaryAreDups: Boolean, secondaryAreDups: Boolean) {
-    for (read <- bucket.primaryMapped) {
+    bucket.primaryMapped.foreach(read => {
       read.setDuplicateRead(primaryAreDups)
-    }
-    for (read <- bucket.secondaryMapped) {
+    })
+    bucket.secondaryMapped.foreach(read => {
       read.setDuplicateRead(secondaryAreDups)
-    }
-    for (read <- bucket.unmapped) {
+    })
+    bucket.unmapped.foreach(read => {
       read.setDuplicateRead(false)
-    }
+    })
   }
 
   // Calculates the sum of the phred scores that are greater than or equal to 15
