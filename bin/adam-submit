@@ -48,8 +48,8 @@ fi
 
 # submit the job to Spark
 "$SPARK_SUBMIT" \
-  "$ADAM_CLI_JAR" \
   --class org.bdgenomics.adam.cli.ADAMMain \
   --properties-file "$ADAM_REPO"/bin/adam-spark-defaults.conf \
   --jars "$ADAM_JARS" \
+  "$ADAM_CLI_JAR" \
   "$@"
