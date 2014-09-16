@@ -80,7 +80,7 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
     assert(reads1.count() === 200)
 
     val first1 = reads1.first()
-    assert(first1.getReadName === "simread:1:26472783:false")
+    assert(first1.getReadName.toString === "simread:1:26472783:false")
     assert(first1.getReadMapped === false)
 
     val p2 = Projection(AlignmentRecordField.readName, AlignmentRecordField.readMapped)
@@ -90,7 +90,7 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
     assert(reads2.count() === 200)
 
     val first2 = reads2.first()
-    assert(first2.getReadName === "simread:1:26472783:false")
+    assert(first2.getReadName.toString === "simread:1:26472783:false")
     assert(first2.getReadMapped === true)
   }
 }

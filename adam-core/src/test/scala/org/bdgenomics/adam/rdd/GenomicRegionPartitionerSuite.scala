@@ -71,20 +71,17 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
   sparkTest("test that we can range partition ADAMRecords") {
     val rand = new Random(1000L)
     val count = 1000
-    val pos = sc.parallelize((1 to count).map(i => adamRecord("chr1", "read_%d".format(i), rand.nextInt(100), readMapped = true)))
+    val pos = sc.parallelize((1 to count).map(i => adamRecord("chr1", "read_%d".format(i), rand.nextInt(100), readMapped = true)), 1)
     val parts = 200
     val pairs = pos.map(p => (ReferencePosition(p.getContig.getContigName, p.getStart), p))
     val parter = new RangePartitioner(parts, pairs)
     val partitioned = pairs.sortByKey().partitionBy(parter)
 
     assert(partitioned.count() === count)
-
-    val sizes: RDD[Int] = partitioned.mapPartitions {
-      itr: Iterator[(ReferencePosition, AlignmentRecord)] =>
-        List(itr.size).iterator
-    }
-
-    assert(sizes.collect().size === parts)
+    // check here to make sure that we have at least increased the number of partitions
+    // as of spark 1.1.0, range partitioner does not guarantee that you will receive a 
+    // number of partitions equal to the number requested
+    assert(partitioned.partitions.length > 1)
   }
 
   sparkTest("test that simple partitioning works okay on a reasonable set of ADAMRecords") {

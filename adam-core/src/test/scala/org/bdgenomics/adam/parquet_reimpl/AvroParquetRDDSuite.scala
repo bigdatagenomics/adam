@@ -204,7 +204,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val value = rdd.first()
     assert(value != null)
-    assert(value.getReadName === "simread:1:26472783:false")
+    assert(value.getReadName.toString === "simread:1:26472783:false")
     assert(value.getStart === 26472783L)
 
     assert(rdd.count() === 200)
@@ -220,7 +220,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val value = rdd.first()
     assert(value != null)
-    assert(value.getReadName === "simread:1:26472783:false")
+    assert(value.getReadName.toString === "simread:1:26472783:false")
     assert(value.getStart === 26472783L)
 
     assert(rdd.count() === 200)
@@ -237,7 +237,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val value = rdd.first()
     assert(value != null)
-    assert(value.getReadName === "simread:1:26472783:false")
+    assert(value.getReadName.toString === "simread:1:26472783:false")
     assert(value.getStart === 26472783L)
 
     assert(rdd.count() === 200)
@@ -258,7 +258,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val value = rdd.first()
     assert(value != null)
-    assert(value.getReadName === "simread:1:26472783:false")
+    assert(value.getReadName.toString === "simread:1:26472783:false")
     assert(value.getStart === 26472783L)
 
     assert(rdd.count() === 200)
@@ -279,7 +279,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val value = rdd.first()
     assert(value != null)
-    assert(value.getReadName === "simread:1:26472783:false")
+    assert(value.getReadName.toString === "simread:1:26472783:false")
     assert(value.getStart === 26472783L)
 
     assert(rdd.count() === 200)
@@ -300,7 +300,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val value = rdd.first()
     assert(value != null)
-    assert(value.getReadName === "simread:1:26472783:false")
+    assert(value.getReadName.toString === "simread:1:26472783:false")
     assert(value.getStart === 26472783L)
 
     assert(rdd.count() === 200)
@@ -322,7 +322,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val value = rdd.first()
     assert(value != null)
-    assert(value.getReadName === "simread:1:189606653:true")
+    assert(value.getReadName.toString === "simread:1:189606653:true")
     assert(value.getStart === 189606653L)
 
     assert(rdd.collect().length === 1)
@@ -345,7 +345,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val value = rdd.first()
     assert(value != null)
-    assert(value.getReadName === "simread:1:189606653:true")
+    assert(value.getReadName.toString === "simread:1:189606653:true")
     assert(value.getStart === 189606653L)
 
     assert(rdd.collect().length === 1)
@@ -368,7 +368,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val value = rdd.first()
     assert(value != null)
-    assert(value.getReadName === "simread:1:189606653:true")
+    assert(value.getReadName.toString === "simread:1:189606653:true")
     assert(value.getStart === 189606653L)
 
     assert(rdd.collect().length === 1)
