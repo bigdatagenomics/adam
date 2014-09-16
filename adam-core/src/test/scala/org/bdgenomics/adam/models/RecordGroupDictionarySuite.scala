@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import net.sf.samtools.SAMReadGroupRecord
+import htsjdk.samtools.SAMReadGroupRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite
 

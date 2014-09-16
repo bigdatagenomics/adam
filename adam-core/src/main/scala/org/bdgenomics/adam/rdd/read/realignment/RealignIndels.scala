@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.realignment
 
-import net.sf.samtools.{ Cigar, CigarElement, CigarOperator }
+import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator }
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD

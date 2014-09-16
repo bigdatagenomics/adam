@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.rdd
 
-import fi.tkk.ics.hadoop.bam.util.SAMHeaderReader
-import fi.tkk.ics.hadoop.bam.{ AnySAMInputFormat, SAMRecordWritable }
+import org.seqdoop.hadoop_bam.util.SAMHeaderReader
+import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, SAMRecordWritable }
 import java.util.regex.Pattern
-import net.sf.samtools.SAMFileHeader
+import htsjdk.samtools.SAMFileHeader
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.{ FileSystem, Path }

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.algorithms.smithwaterman
 
-import net.sf.samtools.{ Cigar, TextCigarCodec }
+import htsjdk.samtools.{ Cigar, TextCigarCodec }
 import scala.annotation.tailrec
 
 private[smithwaterman] object SmithWaterman {

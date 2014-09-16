@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
-import net.sf.samtools.{ Cigar, CigarOperator, CigarElement }
+import htsjdk.samtools.{ Cigar, CigarOperator, CigarElement }
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import scala.annotation.tailrec
 

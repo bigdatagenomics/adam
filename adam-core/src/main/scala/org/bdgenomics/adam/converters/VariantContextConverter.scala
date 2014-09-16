@@ -19,7 +19,7 @@ package org.bdgenomics.adam.converters
 
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models.{ VariantContext => ADAMVariantContext, SequenceDictionary }
-import org.broadinstitute.variant.variantcontext.{ VariantContext => BroadVariantContext, VariantContextBuilder, Allele, GenotypeLikelihoods, GenotypesContext }
+import htsjdk.variant.variantcontext.{ VariantContext => BroadVariantContext, VariantContextBuilder, Allele, GenotypeLikelihoods, GenotypesContext }
 import scala.collection.JavaConversions._
 import java.util.Collections
 
@@ -122,9 +122,9 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
           assert(idx >= 1, "Unexpected index for alternate allele: " + vc.toString)
           vcb.alleles(List(vc.getReference, allele, NON_REF_ALLELE))
 
-          def punchOutGenotype(g: org.broadinstitute.variant.variantcontext.Genotype, idx: Int): org.broadinstitute.variant.variantcontext.Genotype = {
+          def punchOutGenotype(g: htsjdk.variant.variantcontext.Genotype, idx: Int): htsjdk.variant.variantcontext.Genotype = {
 
-            val gb = new org.broadinstitute.variant.variantcontext.GenotypeBuilder(g)
+            val gb = new htsjdk.variant.variantcontext.GenotypeBuilder(g)
             // TODO: Multi-allelic genotypes are locally phased, add phase set
             gb.phased(true)
 
@@ -210,10 +210,10 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     vc: BroadVariantContext,
     variant: Variant,
     annotations: VariantCallingAnnotations,
-    setPL: (org.broadinstitute.variant.variantcontext.Genotype, Genotype.Builder) => Unit): Seq[Genotype] = {
+    setPL: (htsjdk.variant.variantcontext.Genotype, Genotype.Builder) => Unit): Seq[Genotype] = {
 
     val genotypes: Seq[Genotype] = vc.getGenotypes.map(
-      (g: org.broadinstitute.variant.variantcontext.Genotype) => {
+      (g: htsjdk.variant.variantcontext.Genotype) => {
         val genotype: Genotype.Builder = Genotype.newBuilder
           .setVariant(variant)
           .setVariantCallingAnnotations(annotations)
@@ -238,7 +238,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
   private def extractNonReferenceGenotypes(vc: BroadVariantContext, variant: Variant, annotations: VariantCallingAnnotations): Seq[Genotype] = {
     assert(vc.isBiallelic)
     extractGenotypes(vc, variant, annotations,
-      (g: org.broadinstitute.variant.variantcontext.Genotype, b: Genotype.Builder) => {
+      (g: htsjdk.variant.variantcontext.Genotype, b: Genotype.Builder) => {
         if (g.hasPL) b.setGenotypeLikelihoods(g.getPL.toList.map(p => p: java.lang.Integer))
       })
   }
@@ -300,7 +300,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
 
     // TODO: Extract provenance INFO fields
     vcb.genotypes(vc.genotypes.map(g => {
-      val gb = new org.broadinstitute.variant.variantcontext.GenotypeBuilder(
+      val gb = new htsjdk.variant.variantcontext.GenotypeBuilder(
         g.getSampleId.toString, VariantContextConverter.convertAlleles(g))
 
       Option(g.getIsPhased).foreach(gb.phased(_))

@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import java.io.File
 import java.util.concurrent._
-import net.sf.samtools._
+import htsjdk.samtools._
 import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.converters.SAMRecordConverter
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
@@ -43,7 +43,7 @@ class Bam2ADAMArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM data", index = 1)
   var outputPath: String = null
   @Args4jOption(required = false, name = "-samtools_validation", usage = "SAM tools validation level")
-  var validationStringency = SAMFileReader.ValidationStringency.LENIENT
+  var validationStringency = ValidationStringency.LENIENT
   @Args4jOption(required = false, name = "-num_threads", usage = "Number of threads/partitions to use (default=4)")
   var numThreads = 4
   @Args4jOption(required = false, name = "-queue_size", usage = "Queue size (default = 10,000)")

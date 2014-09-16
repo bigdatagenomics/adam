@@ -20,10 +20,10 @@ package org.bdgenomics.adam.util
 import java.io.{ FileInputStream, File }
 import scala.collection._
 import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
-import net.sf.picard.util.IntervalList
+import htsjdk.samtools.util.IntervalList
 import scala.collection.JavaConverters._
-import net.sf.samtools.SAMTextHeaderCodec
-import net.sf.samtools.util.BufferedLineReader
+import htsjdk.samtools.SAMTextHeaderCodec
+import htsjdk.samtools.util.BufferedLineReader
 
 /**
  * Reads GATK-style interval list files

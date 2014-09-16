@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import net.sf.samtools.{ CigarOperator, TextCigarCodec }
+import htsjdk.samtools.{ CigarOperator, TextCigarCodec }
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord._

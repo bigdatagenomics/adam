@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rich
 
 import java.util.regex.Pattern
-import net.sf.samtools.{ Cigar, CigarElement, CigarOperator, TextCigarCodec }
+import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator, TextCigarCodec }
 import org.bdgenomics.adam.models.{ Attribute, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._

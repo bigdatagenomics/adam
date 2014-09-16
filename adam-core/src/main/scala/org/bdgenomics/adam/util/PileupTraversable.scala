@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-import net.sf.samtools.{ TextCigarCodec, CigarOperator }
+import htsjdk.samtools.{ TextCigarCodec, CigarOperator }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConversions._

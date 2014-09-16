@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-import net.sf.samtools.{ Cigar, CigarOperator }
+import htsjdk.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord._

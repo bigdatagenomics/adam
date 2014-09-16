@@ -156,28 +156,16 @@
       <artifactId>parquet-avro</artifactId>
     </dependency>
     <dependency>
-      <groupId>fi.tkk.ics.hadoop.bam</groupId>
+      <groupId>org.seqdoop</groupId>
       <artifactId>hadoop-bam</artifactId>
     </dependency>
     <dependency>
-      <groupId>picard</groupId>
-      <artifactId>picard</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>cofoja</groupId>
+      <groupId>org.seqdoop</groupId>
       <artifactId>cofoja</artifactId>
     </dependency>
     <dependency>
-      <groupId>tribble</groupId>
-      <artifactId>tribble</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>variant</groupId>
-      <artifactId>variant</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>samtools</groupId>
-      <artifactId>samtools</artifactId>
+      <groupId>org.seqdoop</groupId>
+      <artifactId>htsjdk</artifactId>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>

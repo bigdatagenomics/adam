@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import net.sf.samtools.{ Cigar, CigarOperator }
+import htsjdk.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 
 object Consensus {

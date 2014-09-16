@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
-import net.sf.samtools.{ CigarElement, SAMReadGroupRecord, SAMRecord }
+import htsjdk.samtools.{ CigarElement, SAMReadGroupRecord, SAMRecord }
 import org.bdgenomics.adam.models.{ SequenceRecord, Attribute, RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.util.AttributeUtils
 import org.bdgenomics.formats.avro.AlignmentRecord

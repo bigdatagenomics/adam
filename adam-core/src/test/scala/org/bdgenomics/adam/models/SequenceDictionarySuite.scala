@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.rdd.ADAMContext._
-import net.sf.samtools.{ SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary }
+import htsjdk.samtools.{ SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary }
 import org.scalatest.FunSuite
 import java.io.File
 

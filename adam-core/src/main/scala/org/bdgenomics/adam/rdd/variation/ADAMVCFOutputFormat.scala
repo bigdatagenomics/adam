@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.broadinstitute.variant.vcf.{ VCFHeaderLine, VCFHeader }
+import htsjdk.variant.vcf.{ VCFHeaderLine, VCFHeader }
 import org.bdgenomics.adam.converters.VariantAnnotationConverter
-import fi.tkk.ics.hadoop.bam.{ VCFFormat, KeyIgnoringVCFOutputFormat }
+import org.seqdoop.hadoop_bam.{ VCFFormat, KeyIgnoringVCFOutputFormat }
 import scala.collection.JavaConversions._
 
 object ADAMVCFOutputFormat extends Serializable {
