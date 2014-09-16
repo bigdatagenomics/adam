@@ -1,4 +1,19 @@
 # ADAM #
+* ISSUE [376](https://github.com/bigdatagenomics/adam/pull/376): [ADAM-375] Upgrade to Hadoop-BAM 7.0.0.
+* ISSUE [378](https://github.com/bigdatagenomics/adam/pull/378): [ADAM-360] Upgrade to Spark 1.1.0.
+* ISSUE [379](https://github.com/bigdatagenomics/adam/pull/379): Fix the position of the jar path in the submit.
+* ISSUE [383](https://github.com/bigdatagenomics/adam/pull/383): Make Mdtags handle '=' and 'X' cigar operators
+* ISSUE [369](https://github.com/bigdatagenomics/adam/pull/369): [ADAM-369] Improve debug output for indel realigner
+* ISSUE [377](https://github.com/bigdatagenomics/adam/pull/377): [ADAM-377] Update to Jenkins scripts and README.
+* ISSUE [374](https://github.com/bigdatagenomics/adam/pull/374): [ADAM-372][ADAM-371][ADAM-365] Refactoring CLI to simplify and integrate with Spark model better
+* ISSUE [370](https://github.com/bigdatagenomics/adam/pull/370): [ADAM-367] Updated alias in README.md
+* ISSUE [368](https://github.com/bigdatagenomics/adam/pull/368): erasure, nonexhaustive-match, deprecation warnings
+* ISSUE [354](https://github.com/bigdatagenomics/adam/pull/354): [ADAM-353] Fixing issue with SAM/BAM/VCF header attachment when running distributed
+* ISSUE [357](https://github.com/bigdatagenomics/adam/pull/357): [ADAM-357] Added Java Plugin hook for ADAM.
+* ISSUE [352](https://github.com/bigdatagenomics/adam/pull/352): Fix failing MD tag
+* ISSUE [363](https://github.com/bigdatagenomics/adam/pull/363): Adding maven assembly plugin configuration to create tarballs
+* ISSUE [364](https://github.com/bigdatagenomics/adam/pull/364): [ADAM-364] Fixing remaining cs.berkeley.edu URLs.
+* ISSUE [362](https://github.com/bigdatagenomics/adam/pull/362): Remove mention of uberjar from README
 
 ### Version 0.13.0 ###
 * ISSUE [343](https://github.com/bigdatagenomics/adam/pull/343): Allow retrying on failure for HTTPRangedByteAccess
