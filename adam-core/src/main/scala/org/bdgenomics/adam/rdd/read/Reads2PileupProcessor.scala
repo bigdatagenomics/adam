@@ -83,23 +83,8 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
         .setContig(record.getContig)
         .setMapQuality(record.getMapq)
         .setPosition(referencePos)
-        .setRecordGroupSequencingCenter(record.getRecordGroupSequencingCenter)
-        .setRecordGroupDescription(record.getRecordGroupDescription)
-        .setRecordGroupRunDateEpoch(record.getRecordGroupRunDateEpoch)
-        .setRecordGroupFlowOrder(record.getRecordGroupFlowOrder)
-        .setRecordGroupKeySequence(record.getRecordGroupKeySequence)
-        .setRecordGroupLibrary(record.getRecordGroupLibrary)
-        .setRecordGroupPredictedMedianInsertSize(record.getRecordGroupPredictedMedianInsertSize)
-        .setRecordGroupPlatform(record.getRecordGroupPlatform)
-        .setRecordGroupPlatformUnit(record.getRecordGroupPlatformUnit)
-        .setRecordGroupSample(record.getRecordGroupSample)
+        .setSampleId(record.getRecordGroupSample)
         .setSangerQuality(record.qualityScores(readPos))
-        .setNumReverseStrand(reverseStrandCount)
-        .setNumSoftClipped(0)
-        .setReadName(record.getReadName)
-        .setReadStart(record.getStart)
-        .setReadEnd(end)
-        .setCountAtPosition(1)
 
     }
 
@@ -204,7 +189,6 @@ private[rdd] class Reads2PileupProcessor(createSecondaryAlignments: Boolean = fa
             // sequence match
             val pileup = populatePileupFromReference(record, referencePos, isReverseStrand, readPos)
               .setReadBase(readBase)
-              .setNumSoftClipped(1)
               .setRangeOffset(clipPos)
               .setRangeLength(cigarElement.getLength)
               .setReferenceBase(null)

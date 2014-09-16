@@ -29,7 +29,7 @@ case class Rod(position: ReferencePosition, pileups: List[Pileup]) {
   // all bases must be at the same position
   require(pileups.forall(ReferencePosition(_) == position))
 
-  lazy val isSingleSample: Boolean = pileups.map(_.getRecordGroupSample).distinct.length == 1
+  lazy val isSingleSample: Boolean = pileups.map(_.getSampleId).distinct.length == 1
 
   /**
    * Splits this rod out by samples.
@@ -40,7 +40,7 @@ case class Rod(position: ReferencePosition, pileups: List[Pileup]) {
     if (isSingleSample) {
       List(new Rod(position, pileups))
     } else {
-      pileups.groupBy(_.getRecordGroupSample).values.toList.map(pg => new Rod(position, pg))
+      pileups.groupBy(_.getSampleId).values.toList.map(pg => new Rod(position, pg))
     }
   }
 }

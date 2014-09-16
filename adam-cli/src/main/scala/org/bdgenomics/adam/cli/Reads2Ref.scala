@@ -50,9 +50,6 @@ class Reads2RefArgs extends Args4jBase with ParquetArgs {
   @option(name = "-mapq", usage = "Minimal mapq value allowed for a read (default = 30)")
   var minMapq: Long = Reads2RefArgs.MIN_MAPQ_DEFAULT
 
-  @option(name = "-aggregate", usage = "Aggregates data at each pileup position, to reduce storage cost.")
-  var aggregate: Boolean = false
-
   @option(name = "-allowNonPrimaryAlignments", usage = "Converts reads that are not at their primary alignment positions to pileups.")
   var nonPrimary: Boolean = true
 }
@@ -71,13 +68,7 @@ class Reads2Ref(protected val args: Reads2RefArgs) extends ADAMSparkCommand[Read
 
     val coverage = pileupCount / readCount
 
-    if (args.aggregate) {
-      pileups.adamAggregatePileups(coverage.toInt).adamSave(args.pileupOutput,
-        blockSize = args.blockSize, pageSize = args.pageSize, compressCodec = args.compressionCodec,
-        disableDictionaryEncoding = args.disableDictionary)
-    } else {
-      pileups.adamSave(args.pileupOutput, blockSize = args.blockSize, pageSize = args.pageSize,
-        compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
-    }
+    pileups.adamSave(args.pileupOutput, blockSize = args.blockSize, pageSize = args.pageSize,
+      compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
   }
 }
