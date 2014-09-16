@@ -262,7 +262,7 @@ object MdTag {
     // loop over all cigar elements
     cigar.getCigarElements.foreach(cigarElement => {
       cigarElement.getOperator match {
-        case CigarOperator.M => {
+        case CigarOperator.M | CigarOperator.EQ | CigarOperator.X => {
           for (i <- 0 until cigarElement.getLength) {
             if (read(readPos) == reference(refPos)) {
               matchCount += 1
@@ -416,19 +416,13 @@ class MdTag(
     // loop over all cigar elements
     cigar.getCigarElements.foreach(cigarElement => {
       cigarElement.getOperator match {
-        case CigarOperator.M => {
+        case CigarOperator.M | CigarOperator.EQ | CigarOperator.X => {
           // if we are a match, loop over bases in element
           for (i <- 0 until cigarElement.getLength) {
             // if a mismatch, get from the mismatch set, else pull from read
-            if (mismatches.contains(referencePos)) {
-              reference += {
-                mismatches.get(referencePos) match {
-                  case Some(base) => base
-                  case _          => throw new IllegalStateException("Could not find mismatching base at cigar offset" + i)
-                }
-              }
-            } else {
-              reference += readSequence(readPos)
+            mismatches.get(referencePos) match {
+              case Some(base) => reference += base
+              case _          => reference += readSequence(readPos)
             }
 
             readPos += 1
