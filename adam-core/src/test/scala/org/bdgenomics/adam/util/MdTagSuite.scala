@@ -367,43 +367,32 @@ class MdTagSuite extends FunSuite {
     assert(tag.toString === "8")
   }
 
+  def testTag(read: String,
+              reference: String,
+              cigarStr: String,
+              start: Long,
+              expectedTag: String,
+              expectedStart: Long,
+              expectedEnd: Long): Unit = {
+    val tag = MdTag(read, reference, CIGAR_CODEC.decode(cigarStr), start)
+    assert(tag.toString == expectedTag)
+    assert(tag.start == expectedStart)
+    assert(tag.end == expectedEnd)
+  }
+
   test("create new md tag from read vs. reference, perfect alignment match, 1 mismatch") {
-    val read = "ACCATAGA"
-    val reference = "ACAATAGA"
-    val cigar = CIGAR_CODEC.decode("8M")
-    val start = 0L
-
-    val tag = MdTag(read, reference, cigar, start)
-
-    assert(tag.toString === "2A5")
-    assert(tag.start === 0L)
-    assert(tag.end === 7L)
+    testTag("ACCATAGA", "ACAATAGA", "8M", 0, "2A5", 0, 7)
   }
 
   test("create new md tag from read vs. reference, alignment with deletion") {
-    val read = "ACCATAGA"
-    val reference = "ACCATTTAGA"
-    val cigar = CIGAR_CODEC.decode("5M2D3M")
-    val start = 5L
-
-    val tag = MdTag(read, reference, cigar, start)
-
-    assert(tag.toString === "5^TT3")
-    assert(tag.start === 5L)
-    assert(tag.end === 14L)
+    testTag("ACCATAGA", "ACCATTTAGA", "5M2D3M", 5, "5^TT3", 5, 14L)
   }
 
   test("create new md tag from read vs. reference, alignment with insert") {
-    val read = "ACCCATAGA"
-    val reference = "ACCATAGA"
-    val cigar = CIGAR_CODEC.decode("3M1I5M")
-    val start = 10L
-
-    val tag = MdTag(read, reference, cigar, start)
-
-    assert(tag.toString === "8")
-    assert(tag.start === 10L)
-    assert(tag.end === 17L)
+    testTag("ACCCATAGA", "ACCATAGA", "3M1I5M", 10, "8", 10, 17)
   }
 
+  test("handle '=' and 'X' operators") {
+    testTag("ACCCAAGT", "ACCATAGA", "3=2X2=1X", 0, "3A0T2A0", 0, 7)
+  }
 }
