@@ -19,7 +19,7 @@ package org.bdgenomics.adam.models
 
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import htsjdk.samtools.{ SAMFileReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
+import htsjdk.samtools.{ SamReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
 import org.apache.avro.specific.SpecificRecord
 import scala.collection._
 
@@ -35,7 +35,7 @@ object SequenceDictionary {
     new SequenceDictionary(dict.getSequences.map(SequenceRecord.fromSAMSequenceRecord).toVector)
   }
   def apply(header: SAMFileHeader): SequenceDictionary = SequenceDictionary(header.getSequenceDictionary)
-  def apply(reader: SAMFileReader): SequenceDictionary = SequenceDictionary(reader.getFileHeader)
+  def apply(reader: SamReader): SequenceDictionary = SequenceDictionary(reader.getFileHeader)
 
   def toSAMSequenceDictionary(dictionary: SequenceDictionary): SAMSequenceDictionary = {
     new SAMSequenceDictionary(dictionary.records.map(SequenceRecord.toSAMSequenceRecord).toList)
@@ -70,7 +70,7 @@ object SequenceDictionary {
     new SequenceDictionary(samDictRecords.map(SequenceRecord.fromSAMSequenceRecord).toVector)
   }
 
-  def fromSAMReader(samReader: SAMFileReader): SequenceDictionary =
+  def fromSAMReader(samReader: SamReader): SequenceDictionary =
     fromSAMHeader(samReader.getFileHeader)
 }
 
