@@ -21,6 +21,7 @@ import org.bdgenomics.adam.models.{ ReferencePosition, TagType, Attribute }
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import org.scalatest.FunSuite
+import org.scalatest.exceptions.TestFailedException
 
 class RichAlignmentRecordSuite extends FunSuite {
 
@@ -63,7 +64,7 @@ class RichAlignmentRecordSuite extends FunSuite {
         assert(optics.tile == 86)
         assert(optics.x == 16767)
         assert(optics.y == 3088)
-      case None => assert(Some("Failed to parse valid Illumina read name"))
+      case None => throw new TestFailedException("Failed to parse valid Illumina read name", 4)
     }
   }
 
