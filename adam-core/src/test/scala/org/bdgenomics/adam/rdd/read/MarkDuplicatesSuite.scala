@@ -180,4 +180,16 @@ class MarkDuplicatesSuite extends SparkFunSuite {
     assert(MarkDuplicates.score(record) == 2000)
   }
 
+  sparkTest("read pairs that cross chromosomes") {
+    val poorPairs = for (
+      i <- 0 until 10;
+      read <- createPair("ref0", 10, "ref1", 210, avgPhredScore = 20, readName = "poor%d".format(i))
+    ) yield read
+    val bestPair = createPair("ref0", 10, "ref1", 210, avgPhredScore = 30, readName = "best")
+    val marked = markDuplicates(bestPair ++ poorPairs: _*)
+    val (dups, nonDups) = marked.partition(_.getDuplicateRead)
+    assert(nonDups.size == 2 && nonDups.forall(p => p.getReadName.toString == "best"))
+    assert(dups.forall(p => p.getReadName.startsWith("poor")))
+  }
+
 }
