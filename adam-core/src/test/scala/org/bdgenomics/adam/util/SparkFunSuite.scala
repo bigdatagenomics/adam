@@ -26,6 +26,12 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
 
   var sc: SparkContext = _
   var maybeLevels: Option[Map[String, Level]] = None
+  val appName: String = "adam"
+  val master: String = "local[4]"
+  val properties: Map[String, String] = Map(("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
+    ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
+    ("spark.kryoserializer.buffer.mb", "4"),
+    ("spark.kryo.referenceTracking", "true"))
 
   def setupSparkContext(sparkName: String, silenceSpark: Boolean = true) {
     // Silence the Spark logs if requested
@@ -36,13 +42,12 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
       val driverPort = s.getLocalPort
       s.close()
       val conf = new SparkConf(false)
-        .setAppName("adam: " + sparkName)
-        .setMaster("local[4]")
+        .setAppName(appName + ": " + sparkName)
+        .setMaster(master)
         .set("spark.driver.port", driverPort.toString)
-        .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-        .set("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator")
-        .set("spark.kryoserializer.buffer.mb", "4")
-        .set("spark.kryo.referenceTracking", "true")
+
+      properties.foreach(kv => conf.set(kv._1, kv._2))
+
       sc = new SparkContext(conf)
     }
   }
