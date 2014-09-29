@@ -27,13 +27,13 @@ export SPARK_DRIVER_MEMORY=8g
 pushd $ADAM_TMP_DIR
 
 if [[ $HADOOP_VERSION == "1.0.4" ]]; then
-    wget http://d3kbcqa49mib13.cloudfront.net/spark-1.0.1-bin-hadoop1.tgz
-    tar xzvf spark-1.0.1-bin-hadoop1.tgz
-    export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.0.1-bin-hadoop1"
+    wget http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop1.tgz
+    tar xzvf spark-1.1.0-bin-hadoop1.tgz
+    export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.1.0-bin-hadoop1"
 else
-    wget http://d3kbcqa49mib13.cloudfront.net/spark-1.0.1-bin-hadoop2.tgz
-    tar xzvf spark-1.0.1-bin-hadoop2.tgz
-    export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.0.1-bin-hadoop2"
+    wget http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz
+    tar xzvf spark-1.1.0-bin-hadoop2.3.tgz
+    export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.1.0-bin-hadoop2.3"
 fi
 
 ADAM="./bin/adam-submit "

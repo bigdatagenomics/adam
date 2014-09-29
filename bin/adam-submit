@@ -49,7 +49,10 @@ fi
 # submit the job to Spark
 "$SPARK_SUBMIT" \
   --class org.bdgenomics.adam.cli.ADAMMain \
-  --properties-file "$ADAM_REPO"/bin/adam-spark-defaults.conf \
+  --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+  --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
+  --conf spark.kryoserializer.buffer.mb=4 \
+  --conf spark.kryo.referenceTracking=true \
   --jars "$ADAM_JARS" \
   "$ADAM_CLI_JAR" \
   "$@"
