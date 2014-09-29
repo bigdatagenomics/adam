@@ -21,7 +21,7 @@ source code to encode and decode the records which is error prone and an unnecce
 hassle.
 
 In contrast, the [ADAM specification for storing reads]
-(https://github.com/bigdatagenomics/bdg-formats/blob/master/src/main/resources/avro/adam.avdl)
+(https://github.com/bigdatagenomics/bdg-formats/blob/master/src/main/resources/avro/bdg.avdl)
 is defined in the Avro Interface Description Language (IDL) which is directly converted
 into source code. Avro supports a number of computer languages. ADAM uses Java; you could 
 just as easily use this Avro IDL description as the basis for a Python project. Avro
