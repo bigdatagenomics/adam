@@ -23,6 +23,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.BaseFeature
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.features.ADAMFeaturesContext._
+import org.bdgenomics.formats.avro.Feature
 import org.kohsuke.args4j.Argument
 
 object Features2ADAM extends ADAMCommandCompanion {
@@ -52,11 +53,13 @@ class Features2ADAM(val args: Features2ADAMArgs)
     // regex: anything . (extension) EOL
     val extensionPattern = """.*[.]([^.]*)$""".r
     val extensionPattern(extension) = args.featuresFile
-    val features: RDD[_ <: BaseFeature] = extension.toLowerCase match {
+    val features: RDD[Feature] = extension.toLowerCase match {
+      case "gff"        => sc.adamGTFFeatureLoad(args.featuresFile) // TODO(Timothy) write a GFF-specific loader?
+      case "gtf"        => sc.adamGTFFeatureLoad(args.featuresFile)
       case "bed"        => sc.adamBEDFeatureLoad(args.featuresFile)
       case "narrowPeak" => sc.adamNarrowPeakFeatureLoad(args.featuresFile)
     }
-    features.map(f => f.feature).adamSave(args.outputPath, blockSize = args.blockSize,
+    features.adamSave(args.outputPath, blockSize = args.blockSize,
       pageSize = args.pageSize, compressCodec = args.compressionCodec,
       disableDictionaryEncoding = args.disableDictionary)
   }

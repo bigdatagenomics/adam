@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
+import org.bdgenomics.formats.avro.{ Feature, AlignmentRecord, NucleotideContigFragment }
 import scala.math.{ max, min }
 
 object ReferenceRegionWithOrientation {
@@ -148,6 +148,10 @@ object ReferenceRegion {
     } else {
       None
     }
+  }
+
+  def apply(feature: Feature): ReferenceRegion = {
+    new ReferenceRegion(feature.getContig.getContigName.toString, feature.getStart, feature.getEnd)
   }
 }
 
