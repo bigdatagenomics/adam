@@ -63,6 +63,89 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
     }
   }
 
+  (1 to 4) foreach { testNumber =>
+    val inputName = "interleaved_fastq_sample%d.fq".format(testNumber)
+    val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
+
+    sparkTest("import records from interleaved FASTQ: %d".format(testNumber)) {
+
+      val reads = ADAMAlignmentRecordContext.adamInterleavedFastqLoad(sc, path)
+      if (testNumber == 1) {
+        assert(reads.count === 6)
+        assert(reads.filter(_.getReadPaired).count === 6)
+        assert(reads.filter(_.getFirstOfPair).count === 3)
+        assert(reads.filter(_.getSecondOfPair).count === 3)
+      } else {
+        assert(reads.count === 4)
+        assert(reads.filter(_.getReadPaired).count === 4)
+        assert(reads.filter(_.getFirstOfPair).count === 2)
+        assert(reads.filter(_.getSecondOfPair).count === 2)
+      }
+
+      assert(reads.collect.forall(_.getSequence.toString.length === 250))
+      assert(reads.collect.forall(_.getQual.toString.length === 250))
+    }
+  }
+
+  (1 to 4) foreach { testNumber =>
+    val inputName = "interleaved_fastq_sample%d.fq".format(testNumber)
+    val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
+
+    sparkTest("import records from single ended FASTQ: %d".format(testNumber)) {
+
+      val reads = ADAMAlignmentRecordContext.adamUnpairedFastqLoad(sc, path)
+      if (testNumber == 1) {
+        assert(reads.count === 6)
+        assert(reads.filter(_.getReadPaired).count === 0)
+      } else if (testNumber == 4) {
+        assert(reads.count === 4)
+        assert(reads.filter(_.getReadPaired).count === 0)
+      } else {
+        assert(reads.count === 5)
+        assert(reads.filter(_.getReadPaired).count === 0)
+      }
+
+      assert(reads.collect.forall(_.getSequence.toString.length === 250))
+      assert(reads.collect.forall(_.getQual.toString.length === 250))
+    }
+  }
+
+  sparkTest("read properly paired fastq") {
+    val path1 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_1.fq").getFile
+    val path2 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_2.fq").getFile
+    val reads = new ADAMAlignmentRecordContext(sc).adamFastqLoad(path1, path2)
+
+    assert(reads.count === 6)
+    assert(reads.filter(_.getReadPaired).count === 6)
+    assert(reads.filter(_.getProperPair).count === 6)
+    assert(reads.filter(_.getFirstOfPair).count === 3)
+    assert(reads.filter(_.getSecondOfPair).count === 3)
+  }
+
+  sparkTest("read properly paired fastq and force pair fixing") {
+    val path1 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_1.fq").getFile
+    val path2 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_2.fq").getFile
+    val reads = new ADAMAlignmentRecordContext(sc).adamFastqLoad(path1, path2, true)
+
+    assert(reads.count === 6)
+    assert(reads.filter(_.getReadPaired).count === 6)
+    assert(reads.filter(_.getProperPair).count === 6)
+    assert(reads.filter(_.getFirstOfPair).count === 3)
+    assert(reads.filter(_.getSecondOfPair).count === 3)
+  }
+
+  sparkTest("read improperly paired fastq by noting size mismatch") {
+    val path1 = ClassLoader.getSystemClassLoader.getResource("improper_pairs_1.fq").getFile
+    val path2 = ClassLoader.getSystemClassLoader.getResource("improper_pairs_2.fq").getFile
+    val reads = new ADAMAlignmentRecordContext(sc).adamFastqLoad(path1, path2)
+
+    assert(reads.count === 4)
+    assert(reads.filter(_.getReadPaired).count === 4)
+    assert(reads.filter(_.getProperPair).count === 4)
+    assert(reads.filter(_.getFirstOfPair).count === 2)
+    assert(reads.filter(_.getSecondOfPair).count === 2)
+  }
+
   /*
    Little helper function -- because apparently createTempFile creates an actual file, not
    just a name?  Whereas, this returns the name of something that could be mkdir'ed, in the

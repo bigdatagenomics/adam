@@ -33,6 +33,7 @@ import org.bdgenomics.adam.instrumentation.ADAMMetricsListener
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
+import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Pileup }
@@ -93,23 +94,6 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
   private[rdd] def adamBamLoadReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
     RecordGroupDictionary.fromSAMHeader(samHeader)
-  }
-
-  protected[rdd] def adamBamLoad(filePath: String): RDD[AlignmentRecord] = {
-    log.info("Reading legacy BAM file format %s to create RDD".format(filePath))
-
-    // We need to separately read the header, so that we can inject the sequence dictionary
-    // data into each individual Read (see the argument to samRecordConverter.convert,
-    // below).
-    val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
-    val seqDict = adamBamDictionaryLoad(samHeader)
-    val readGroups = adamBamLoadReadGroups(samHeader)
-
-    val job = HadoopUtil.newJob(sc)
-    val records = sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],
-      classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
-    val samRecordConverter = new SAMRecordConverter
-    records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
   }
 
   private[rdd] def adamParquetLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
@@ -211,7 +195,33 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a BAM file")
       }
-      val reads = adamBamLoad(filePath).asInstanceOf[RDD[T]]
+      val reads = ADAMAlignmentRecordContext.adamBamLoad(sc, filePath).asInstanceOf[RDD[T]]
+      if (predicate.isDefined) {
+        val predicateClass = predicate.get
+        val filter = predicateClass.newInstance()
+        filter(reads)
+      } else {
+        reads
+      }
+    } else if (filePath.endsWith(".ifq") && classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
+
+      if (projection.isDefined) {
+        log.warn("Projection is ignored when loading an interleaved FASTQ file")
+      }
+      val reads = ADAMAlignmentRecordContext.adamInterleavedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
+      if (predicate.isDefined) {
+        val predicateClass = predicate.get
+        val filter = predicateClass.newInstance()
+        filter(reads)
+      } else {
+        reads
+      }
+    } else if ((filePath.endsWith(".fastq") || filePath.endsWith(".fq")) && classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
+
+      if (projection.isDefined) {
+        log.warn("Projection is ignored when loading a FASTQ file")
+      }
+      val reads = ADAMAlignmentRecordContext.adamUnpairedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
       if (predicate.isDefined) {
         val predicateClass = predicate.get
         val filter = predicateClass.newInstance()

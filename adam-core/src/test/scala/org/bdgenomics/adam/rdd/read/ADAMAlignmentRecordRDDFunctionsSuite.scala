@@ -254,7 +254,7 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends SparkFunSuite {
     val tempFile = Files.createTempDirectory("reads12")
     rdd12A.adamSAMSave(tempFile.toAbsolutePath.toString + "/reads12.sam", asSam = true)
 
-    val rdd12B: RDD[AlignmentRecord] = sc.adamBamLoad(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
+    val rdd12B: RDD[AlignmentRecord] = ADAMAlignmentRecordContext.adamBamLoad(sc, tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
 
     assert(rdd12B.count() === rdd12A.count())
 
