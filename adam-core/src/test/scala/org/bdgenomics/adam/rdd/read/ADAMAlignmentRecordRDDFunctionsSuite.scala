@@ -276,4 +276,27 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends SparkFunSuite {
 
     sam.collect().foreach(r => assert(r.getReadMapped))
   }
+
+  sparkTest("round trip from ADAM to FASTQ and back to ADAM produces equivalent Read values") {
+    val reads12Path = Thread.currentThread().getContextClassLoader.getResource("interleaved_fastq_sample1.fq").getFile
+    val rdd12A: RDD[AlignmentRecord] = sc.adamLoad(reads12Path)
+
+    val tempFile = Files.createTempDirectory("reads12")
+    rdd12A.adamSaveAsFastq(tempFile.toAbsolutePath.toString + "/reads12.fq")
+
+    val rdd12B: RDD[AlignmentRecord] = sc.adamLoad(tempFile.toAbsolutePath.toString + "/reads12.fq")
+
+    assert(rdd12B.count() === rdd12A.count())
+
+    val reads12A = rdd12A.collect()
+    val reads12B = rdd12B.collect()
+
+    (0 until reads12A.length) foreach {
+      case i: Int =>
+        val (readA, readB) = (reads12A(i), reads12B(i))
+        assert(readA.getSequence === readB.getSequence)
+        assert(readA.getQual === readB.getQual)
+        assert(readA.getReadName === readB.getReadName)
+    }
+  }
 }

@@ -28,6 +28,9 @@ import org.scalatest.FunSuite
 
 class AlignmentRecordConverterSuite extends FunSuite {
 
+  // allocate converters
+  val adamRecordConverter = new AlignmentRecordConverter
+
   def make_read(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0): AlignmentRecord = {
     val sequence: String = "A" * length
     AlignmentRecord.newBuilder()
@@ -63,9 +66,6 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val dict = SequenceDictionary(seqRecForDict)
     val readGroups = new RecordGroupDictionary(Seq())
 
-    // allocate converters
-    val adamRecordConverter = new AlignmentRecordConverter
-
     // convert read
     val toSAM = adamRecordConverter.convert(adamRead,
       SAMFileHeaderWritable(adamRecordConverter.createSAMHeader(dict,
@@ -84,5 +84,21 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(toSAM.getAttribute("MD") === "2^AAA2")
   }
 
+  test("convert a read to fastq") {
+    val adamRead = AlignmentRecord.newBuilder()
+      .setSequence("ACACCAACATG")
+      .setQual(".+**.+;:**.")
+      .setReadName("thebestread")
+      .build()
+
+    val fastq = adamRecordConverter.convertToFastq(adamRead)
+      .toString
+      .split('\n')
+
+    assert(fastq(0) === "@thebestread")
+    assert(fastq(1) === "ACACCAACATG")
+    assert(fastq(2) === "+")
+    assert(fastq(3) === ".+**.+;:**.")
+  }
 }
 
