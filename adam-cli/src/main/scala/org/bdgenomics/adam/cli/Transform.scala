@@ -70,6 +70,8 @@ class TransformArgs extends Args4jBase with ParquetArgs {
   var repartition: Int = -1
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
+  @Args4jOption(required = false, name = "-sort_fastq_output", usage = "Sets whether to sort the FASTQ output, if saving as FASTQ. False by default. Ignored if not saving as FASTQ.")
+  var sortFastqOutput: Boolean = false
 }
 
 class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[TransformArgs] with Logging {
@@ -133,11 +135,14 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
     } else if (args.outputPath.endsWith(".bam")) {
       log.info("Saving data in BAM format")
       adamRecords.adamSAMSave(args.outputPath, asSam = false)
+    } else if (args.outputPath.endsWith(".fq") || args.outputPath.endsWith(".fastq") ||
+      args.outputPath.endsWith(".ifq")) {
+      log.info("Saving data in FASTQ format.")
+      adamRecords.adamSaveAsFastq(args.outputPath, args.sortFastqOutput)
     } else {
       log.info("Saving data in ADAM format")
       adamRecords.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
         compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
     }
   }
-
 }

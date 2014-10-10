@@ -384,4 +384,26 @@ class ADAMAlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends ADAMSeq
   def adamTrimLowQualityReadGroups(phredThreshold: Int = 20): RDD[AlignmentRecord] = {
     TrimReads(rdd, phredThreshold)
   }
+
+  /**
+   * Saves reads in FASTQ format.
+   *
+   * @param fileName Path to save files at.
+   * @param sort Whether to sort the FASTQ files by read name or not. Defaults
+   *             to false. Sorting the output will recover pair order, if desired.
+   */
+  def adamSaveAsFastq(fileName: String, sort: Boolean = false) {
+    val arc = new AlignmentRecordConverter
+
+    // sort the rdd if desired
+    val outputRdd = if (sort) {
+      rdd.sortBy(_.getReadName.toString)
+    } else {
+      rdd
+    }
+
+    // convert the rdd and save as a text file
+    outputRdd.map(arc.convertToFastq)
+      .saveAsTextFile(fileName)
+  }
 }

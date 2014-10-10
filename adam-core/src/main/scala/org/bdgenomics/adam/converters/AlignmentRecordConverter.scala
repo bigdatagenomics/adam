@@ -26,6 +26,24 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 class AlignmentRecordConverter extends Serializable {
 
   /**
+   * Converts a single record to FASTQ. FASTQ format is:
+   *
+   * @readName
+   * sequence
+   * +<optional readname>
+   * ASCII quality scores
+   *
+   * @param adamRecord Read to convert to FASTQ.
+   * @return Returns this read in string form.
+   */
+  def convertToFastq(adamRecord: AlignmentRecord): String = {
+    "@" + adamRecord.getReadName + "\n" +
+      adamRecord.getSequence + "\n" +
+      "+\n" +
+      adamRecord.getQual
+  }
+
+  /**
    * Converts a single ADAM record into a SAM record.
    *
    * @param adamRecord ADAM formatted alignment record to convert.
