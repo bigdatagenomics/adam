@@ -80,12 +80,14 @@ dependencies
 You might want to add the following to your `.bashrc` to make running `adam` easier:
 
 ```
-alias adam="${ADAM_HOME}/bin/adam-submit"
+alias adam-local="${ADAM_HOME}/adam-cli/target/appassembler/bin/adam"
+alias adam-submit="${ADAM_HOME}/bin/adam-submit"
 alias adam-shell="${ADAM_HOME}/bin/adam-shell"
 ```
 
-`$ADAM_HOME` should be the path to where you have checked ADAM out on your local filesystem.
-These scripts wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You'll need
+`$ADAM_HOME` should be the path to where you have checked ADAM out on your local filesystem. 
+The first alias should be used for running ADAM jobs that operate locally. The latter two aliases 
+call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You'll need
 to have the Spark binaries on your system; prebuilt binaries can be downloaded from the
 [Spark website](http://spark.apache.org/downloads.html). Currently, we build for
 [Spark 1.0.1, and Hadoop 2.2.0 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.0.1-bin-hadoop2.tgz).
