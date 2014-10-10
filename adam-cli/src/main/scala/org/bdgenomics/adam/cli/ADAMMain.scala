@@ -55,7 +55,8 @@ object ADAMMain extends Logging {
           Fasta2ADAM,
           Reads2Ref,
           MpileupCommand,
-          Features2ADAM
+          Features2ADAM,
+          WigFix2Bed
         )
       ),
       CommandGroup(

@@ -47,7 +47,6 @@ class Features2ADAMSuite extends FunSuite {
 
     val schema = Projection(featureId, contig, start, strand)
     val lister = new ParquetLister[Feature](Some(schema))
-
     val converted = lister.materialize(outputPath).toSeq
 
     assert(converted.size === 10)
@@ -64,6 +63,48 @@ class Features2ADAMSuite extends FunSuite {
     */
 
     assert(converted.find(_.getContig.getContigName != "chr1").isEmpty)
+  }
+
+  test("can convert a simple wigfix file") {
+    val loader = Thread.currentThread().getContextClassLoader
+    val inputPath = loader.getResource("features/chr5.phyloP46way.trunc.wigFix").getPath
+    val bedFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".bed")
+    val bedPath = bedFile.getAbsolutePath
+    val outputFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".adam")
+    val outputPath = outputFile.getAbsolutePath
+
+    // We have to do this, since the features2adam won't work if the file already exists,
+    // but the "createTempFile" method actually creates the file (on some systems?)
+    assert(bedFile.delete(), "Couldn't delete (empty) temp file")
+    assert(outputFile.delete(), "Couldn't delete (empty) temp file")
+
+    // convert to BED
+    val bedArgLine = "-wig %s -bed %s".format(inputPath, bedPath).split("\\s+")
+    val bedArgs: Wig2BedArgs = Args4j.apply[Wig2BedArgs](bedArgLine)
+    val wigFix2Bed = new WigFix2Bed(bedArgs)
+    wigFix2Bed.run()
+
+    // convert to ADAM Features
+    val adamArgLine = "%s %s".format(bedPath, outputPath).split("\\s+")
+    val adamArgs: Features2ADAMArgs = Args4j.apply[Features2ADAMArgs](adamArgLine)
+    val features2Adam = new Features2ADAM(adamArgs)
+    features2Adam.run()
+
+    val schema = Projection(featureId, contig, start, end, value)
+    val lister = new ParquetLister[Feature](Some(schema))
+
+    val converted = lister.materialize(outputPath).toSeq
+
+    assert(converted.size === 10)
+    assert(converted(0).getContig.getContigName == "chr5")
+    assert(converted(0).getStart == 13939)
+    assert(converted(0).getEnd == 13940)
+    assert(converted(0).getValue == 0.067)
+    assert(converted(6).getContig.getContigName == "chr5")
+    assert(converted(6).getStart == 15295)
+    assert(converted(9).getStart == 15298)
+    assert(converted(9).getEnd == 15299)
+    assert(converted(9).getValue == 0.139)
   }
 
 }
