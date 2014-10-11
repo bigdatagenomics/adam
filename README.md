@@ -90,7 +90,7 @@ The first alias should be used for running ADAM jobs that operate locally. The l
 call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You'll need
 to have the Spark binaries on your system; prebuilt binaries can be downloaded from the
 [Spark website](http://spark.apache.org/downloads.html). Currently, we build for
-[Spark 1.0.1, and Hadoop 2.2.0 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.0.1-bin-hadoop2.tgz).
+[Spark 1.1, and Hadoop 2.3 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz).
 
 Once this alias is in place, you can run adam by simply typing `adam` at the commandline, e.g.
 
