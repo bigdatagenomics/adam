@@ -26,13 +26,13 @@
         .highlight {
             font-weight:700;
         }
-        h2 {
-            text-align: center;
-            margin: 0 0 10px 0;
-            color: #999999;
-            font-weight:300;
-        }
-        ul {
+	    h2 {
+	        text-align: center;
+	        margin: 0 0 10px 0;
+	        color: #999999;
+	        font-weight:300;
+	    }
+	    ul {
             list-style-type: none;
             margin: 0;
             padding: 0 5px 0 5px;
@@ -62,7 +62,10 @@
             pointer-events: none;
         }
         rect {
-            fill: slategray;
+            fill: red;
+        }
+        altrect {
+            fill: slategrey;
         }
         input[type="text"] {
             height: 22px;
@@ -156,7 +159,7 @@
         var trackHeight = parseInt(${trackHeight}, 10);
         var numTracks = parseInt(${numTracks}, 10);
         var height = (numTracks+1) * trackHeight;
-        var jsonLocation = "/reads/" + refName + "?start=" + start + "&end=" + end;
+        var jsonLocation = "/variants/" + refName + "?start=" + start + "&end=" + end;
 
         var svgContainer = d3.select("body")
                              .append("svg")
@@ -169,10 +172,12 @@
 
         d3.json(jsonLocation, function(error, data) {
             data.forEach(function(d) {
-                d.readName = d.readName;
+                d.contigName = d.contigName;
                 d.start = +d.start;
                 d.end = +d.end;
                 d.track = +d.track;
+                d.alleles = d.alleles;
+                
             });
 
             // Add the rectangles
@@ -189,7 +194,7 @@
                                             div.transition()
                                             .duration(200)
                                             .style("opacity", .9);
-                                            div .html(d.readName)
+                                            div .html(d.alleles)
                                             .style("left", (d3.event.pageX) + "px")
                                             .style("top", (d3.event.pageY - 28) + "px");
                                         })
@@ -283,7 +288,7 @@
         function update(newStart, newEnd) {
             start = newStart;
             end = newEnd;
-            jsonLocation = ("/reads/" + refName + "?start=" + start + "&end=" + end);
+            jsonLocation = ("/variants/" + refName + "?start=" + start + "&end=" + end);
             var numTracks = 0;
 
             d3.json(jsonLocation, function(error, data) {
@@ -291,6 +296,7 @@
                     d.readName = d.readName;
                     d.start = +d.start;
                     d.end = +d.end;
+                    d.alleles = d.alleles;
                     if (d.track > numTracks) { numTracks = d.track; }
                 });
 
@@ -322,7 +328,7 @@
                                                 div.transition()
                                                 .duration(200)
                                                 .style("opacity", .9);
-                                                div .html(d.readName)
+                                                div .html(d.alleles)
                                                 .style("left", (d3.event.pageX) + "px")
                                                 .style("top", (d3.event.pageY - 28) + "px");
                                             })

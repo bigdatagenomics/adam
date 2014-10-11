@@ -34,9 +34,11 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext
+import org.bdgenomics.adam.rdd.variation.VariationContext._
+
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.HadoopUtil
-import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Pileup }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Pileup, Genotype }
 import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -271,6 +273,32 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       Some(applyPredicate(reads, predicate))
     } else
       None
+  }
+
+  def maybeLoadVcf[U <: ADAMPredicate[Genotype]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None): Option[RDD[Genotype]] = {
+    if (filePath.endsWith(".vcf")) {
+      if (projection.isDefined) {
+        log.warn("Projection is ignored when loading a VCF file")
+      }
+      val variants = sc.adamVCFLoad(filePath)
+        .flatMap(_.genotypes)
+
+      Some(applyPredicate(variants, predicate))
+    } else
+      None
+  }
+
+  def loadGenotypes[U <: ADAMPredicate[Genotype]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None): RDD[Genotype] = {
+    maybeLoadVcf(filePath, predicate, projection)
+      .getOrElse(
+        adamLoad[Genotype, U](filePath, predicate, projection)
+      )
   }
 
   def loadAlignments[U <: ADAMPredicate[AlignmentRecord]](
