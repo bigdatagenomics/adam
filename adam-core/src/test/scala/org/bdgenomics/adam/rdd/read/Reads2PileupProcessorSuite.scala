@@ -51,11 +51,6 @@ class Reads2PileupProcessorSuite extends FunSuite {
       .fold(List[Int]())(_ ::: _) === quals)
     assert(pileups.forall(r => r.getReadBase == r.getReferenceBase))
     assert(pileups.forall(_.getMapQuality == 30))
-    assert(pileups.forall(_.getReadStart == 1L))
-    assert(pileups.forall(_.getReadEnd == 6L))
-    assert(pileups.forall(_.getCountAtPosition == 1))
-    assert(pileups.forall(_.getNumReverseStrand == 0))
-    assert(pileups.forall(_.getNumSoftClipped == 0))
     assert(pileups.forall(_.getRangeLength == null))
   }
 
@@ -90,11 +85,6 @@ class Reads2PileupProcessorSuite extends FunSuite {
     assert(pileups.filter(_.getPosition == 5L).forall(r => r.getReadBase != r.getReferenceBase))
     assert(pileups.filter(_.getPosition == 5L).forall(r => r.getReferenceBase == Base.A))
     assert(pileups.forall(_.getMapQuality == 30))
-    assert(pileups.forall(_.getReadStart == 1L))
-    assert(pileups.forall(_.getReadEnd == 6L))
-    assert(pileups.forall(_.getCountAtPosition == 1))
-    assert(pileups.forall(_.getNumReverseStrand == 0))
-    assert(pileups.forall(_.getNumSoftClipped == 0))
     assert(pileups.forall(_.getRangeLength == null))
   }
 

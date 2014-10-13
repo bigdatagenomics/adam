@@ -19,18 +19,23 @@ package org.bdgenomics.adam.rdd.features
 
 import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ NarrowPeakFeature, BEDFeature }
+import org.bdgenomics.formats.avro.Feature
 
 object ADAMFeaturesContext {
   implicit def sparkContextToADAMFeaturesContext(sc: SparkContext): ADAMFeaturesContext = new ADAMFeaturesContext(sc)
 }
 
 class ADAMFeaturesContext(sc: SparkContext) extends Serializable with Logging {
-  def adamBEDFeatureLoad(filePath: String): RDD[BEDFeature] = {
-    sc.textFile(filePath).map(new BEDParser().parse)
+
+  def adamGTFFeatureLoad(filePath: String): RDD[Feature] = {
+    sc.textFile(filePath).flatMap(new GTFParser().parse)
   }
 
-  def adamNarrowPeakFeatureLoad(filePath: String): RDD[NarrowPeakFeature] = {
-    sc.textFile(filePath).map(new NarrowPeakParser().parse)
+  def adamBEDFeatureLoad(filePath: String): RDD[Feature] = {
+    sc.textFile(filePath).flatMap(new BEDParser().parse)
+  }
+
+  def adamNarrowPeakFeatureLoad(filePath: String): RDD[Feature] = {
+    sc.textFile(filePath).flatMap(new NarrowPeakParser().parse)
   }
 }

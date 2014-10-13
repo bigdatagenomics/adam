@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.models.{ ReferenceRegion, ReferenceMapping }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, FlatGenotype }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Feature, FlatGenotype }
 
 /**
  * A common location in which to drop some ReferenceMapping implementations.
@@ -32,17 +32,17 @@ object ReferenceMappingContext {
   }
 
   implicit object AlignmentRecordReferenceMapping extends ReferenceMapping[AlignmentRecord] with Serializable {
-    def getReferenceName(value: AlignmentRecord): String =
-      value.getContig.getContigName.toString
-
-    def getReferenceRegion(value: AlignmentRecord): ReferenceRegion =
-      ReferenceRegion(value).orNull
+    override def getReferenceName(value: AlignmentRecord): String = value.getContig.getContigName.toString
+    override def getReferenceRegion(value: AlignmentRecord): ReferenceRegion = ReferenceRegion(value).orNull
   }
 
   implicit object ReferenceRegionReferenceMapping extends ReferenceMapping[ReferenceRegion] with Serializable {
-    def getReferenceName(value: ReferenceRegion): String =
-      value.referenceName.toString
+    override def getReferenceName(value: ReferenceRegion): String = value.referenceName.toString
+    override def getReferenceRegion(value: ReferenceRegion): ReferenceRegion = value
+  }
 
-    def getReferenceRegion(value: ReferenceRegion): ReferenceRegion = value
+  implicit object FeatureReferenceMapping extends ReferenceMapping[Feature] with Serializable {
+    override def getReferenceName(value: Feature): String = value.getContig.getContigName.toString
+    override def getReferenceRegion(value: Feature): ReferenceRegion = ReferenceRegion(value)
   }
 }

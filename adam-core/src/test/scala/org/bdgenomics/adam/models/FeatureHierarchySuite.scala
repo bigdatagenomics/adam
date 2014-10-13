@@ -15,18 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.projections
+package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.formats.avro.{ Contig, Feature }
+import org.scalatest.FunSuite
 
-/**
- * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
- * in sync with any changes to Feature.
- *
- * This enumeration is necessary because Parquet needs the field string names
- * for predicates and projections.
- */
-object FeatureField extends FieldEnumeration(Feature.SCHEMA$) {
+class FeatureHierarchySuite extends FunSuite {
 
-  val featureId, featureType, source, contig, start, end, strand, value, dbxrefs, parentIds, attributes = SchemaValue
+  test("Feature values converted into GTFFeatures retain their aligned positions in the fields of ReferenceRegion") {
+    val contig = Contig.newBuilder().setContigName("chr1").build()
+    val f = Feature.newBuilder()
+      .setContig(contig)
+      .setStart(1000L)
+      .setEnd(2000L)
+      .setFeatureId("id")
+      .build()
+
+    val bf = new GTFFeature(f)
+
+    assert(bf.getSeqname === "chr1")
+    assert(bf.getStart === 1000L)
+    assert(bf.getEnd === 2000L)
+    assert(bf.feature.getFeatureId === "id")
+  }
 }

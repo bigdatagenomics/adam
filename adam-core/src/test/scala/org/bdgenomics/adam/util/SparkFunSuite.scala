@@ -105,5 +105,17 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
   def sparkTest(name: String)(body: => Unit) {
     sparkTest(name, silenceSpark = true)(body)
   }
+
+  /**
+   * Finds the full path of a "test file," usually in the src/test/resources directory.
+   * @param name The path of the file w/r/t src/test/resources
+   * @return The absolute path of the file
+   * @throws IllegalArgumentException if the file doesn't exist
+   */
+  def testFile(name: String): String = {
+    val url = ClassLoader.getSystemClassLoader.getResource(name)
+    if (url == null) { throw new IllegalArgumentException("Couldn't find resource \"%s\"".format(name)) }
+    url.getFile
+  }
 }
 

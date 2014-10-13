@@ -34,7 +34,6 @@ object ADAMMain extends Logging {
         FindReads,
         CalculateDepth,
         CountKmers,
-        PileupAggregator,
         Transform,
         /* TODO (nealsid): Reimplement in terms of new schema
 	  ComputeVariants
@@ -52,6 +51,7 @@ object ADAMMain extends Logging {
         Features2ADAM)),
       CommandGroup("PRINT", List(
         PrintADAM,
+        PrintGenes,
         FlagStat,
         VizReads,
         PrintTags,

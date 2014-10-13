@@ -23,18 +23,6 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.formats.avro._
 
 class ADAMPileupRDDFunctions(rdd: RDD[Pileup]) extends Serializable with Logging {
-  /**
-   * Aggregates pileup bases together.
-   *
-   * @param coverage Coverage value is used to increase number of reducer operators.
-   * @return RDD with aggregated bases.
-   *
-   * @see RodRDDFunctions#adamAggregateRods
-   */
-  def adamAggregatePileups(coverage: Int = 30): RDD[Pileup] = {
-    val helper = new PileupAggregator
-    helper.aggregate(rdd, coverage)
-  }
 
   /**
    * Converts ungrouped pileup bases into reference grouped bases.
@@ -68,20 +56,6 @@ class ADAMRodRDDFunctions(rdd: RDD[Rod]) extends Serializable with Logging {
    */
   def adamDivideRodsBySamples(): RDD[(ReferencePosition, List[Rod])] = {
     rdd.keyBy(_.position).map(r => (r._1, r._2.splitBySamples()))
-  }
-
-  /**
-   * Inside of a rod, aggregates pileup bases together.
-   *
-   * @return RDD with aggregated rods.
-   *
-   * @see ADAMPileupRDDFunctions#adamAggregatePileups
-   */
-  def adamAggregateRods(): RDD[Rod] = {
-    val helper = new PileupAggregator
-    rdd.map(r => (r.position, r.pileups))
-      .map(kv => (kv._1, helper.flatten(kv._2)))
-      .map(kv => new Rod(kv._1, kv._2))
   }
 
   /**

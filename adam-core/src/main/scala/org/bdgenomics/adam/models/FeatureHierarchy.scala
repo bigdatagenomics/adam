@@ -17,33 +17,125 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.formats.avro.{ Strand, Feature }
 
-class BaseFeature(val feature: Feature) {
-  def featureId = feature.getFeatureId
-  def contig = feature.getContig
-  def start = feature.getStart
-  def end = feature.getEnd
+import scala.collection.JavaConversions
+import scala.collection.JavaConversions._
+import scala.collection._
+
+object BaseFeature {
+
+  def strandChar(strand: Strand): Char =
+    strand match {
+      case Strand.Forward     => '+'
+      case Strand.Reverse     => '-'
+      case Strand.Independent => '.'
+    }
+
+  def frameChar(feature: Feature): Char = {
+    val opt: Map[CharSequence, CharSequence] = feature.getAttributes
+    opt.get("frame").map(_.charAt(0)).getOrElse('.')
+  }
+
+  def attributeString(feature: Feature): String =
+    feature.getAttributes.mkString(",")
+
+  def attrs(f: Feature): Map[CharSequence, CharSequence] =
+    JavaConversions.mapAsScalaMap(f.getAttributes)
+
+  def attributeString(feature: Feature, attrName: String): Option[String] =
+    attrs(feature).get(attrName).map(_.toString)
+
+  def attributeLong(feature: Feature, attrName: String): Option[Long] =
+    attrs(feature).get(attrName).map(_.toString).map(_.toLong)
+
+  def attributeDouble(feature: Feature, attrName: String): Option[Double] =
+    attrs(feature).get(attrName).map(_.toString).map(_.toDouble)
+
+  def attributeInt(feature: Feature, attrName: String): Option[Int] =
+    attrs(feature).get(attrName).map(_.toString).map(_.toInt)
 }
 
-class BEDFeature(feature: Feature) extends BaseFeature(feature) {
-  def name = feature.getTrackName
-  def score = feature.getValue
-  def strand = feature.getStrand
-  def thickStart = feature.getThickStart
-  def thickEnd = feature.getThickEnd
-  def itemRgb = feature.getItemRgb
-  def blockCount = feature.getBlockCount
-  def blockSizes = feature.getBlockSizes
-  def blockStarts = feature.getBlockStarts
+class BaseFeature(val feature: Feature) extends Serializable {
+  override def toString: String = feature.toString
 }
 
-class NarrowPeakFeature(feature: Feature) extends BaseFeature(feature) {
-  def name = feature.getTrackName
-  def score = feature.getValue
-  def strand = feature.getStrand
-  def signalValue = feature.getSignalValue
-  def pValue = feature.getPValue
-  def qValue = feature.getQValue
-  def peak = feature.getPeak
+class GTFFeature(override val feature: Feature) extends BaseFeature(feature) {
+  def getSeqname: String = feature.getContig.getContigName.toString
+
+  def getSource: String = feature.getSource.toString
+
+  def getFeature: String = feature.getFeatureType.toString
+
+  def getStart: Long = feature.getStart
+
+  def getEnd: Long = feature.getEnd
+
+  def getScore: Double = feature.getValue
+
+  def getStrand: Char = BaseFeature.strandChar(feature.getStrand)
+
+  def getFrame: Char = BaseFeature.frameChar(feature)
+
+  def getAttribute: String = BaseFeature.attributeString(feature)
+}
+
+object BEDFeature {
+
+  def parseBlockSizes(attribute: Option[String]): Array[Int] =
+    attribute.getOrElse("").split(",").map(_.toInt)
+
+  def parseBlockStarts(attribute: Option[String]): Array[Int] =
+    attribute.getOrElse("").split(",").map(_.toInt)
+}
+
+class BEDFeature(override val feature: Feature) extends BaseFeature(feature) {
+  def getChrom: String = feature.getContig.getContigName.toString
+
+  def getChromStart: Long = feature.getStart
+
+  def getChromEnd: Long = feature.getEnd
+
+  def getName: String = feature.getFeatureId.toString
+
+  def getScore: Double = feature.getValue
+
+  def getStrand: Char = BaseFeature.strandChar(feature.getStrand)
+
+  def getThickStart: Option[Long] = BaseFeature.attributeLong(feature, "thickStart")
+
+  def getThickEnd: Option[Long] = BaseFeature.attributeLong(feature, "thickEnd")
+
+  def getItemRGB: Option[String] = BaseFeature.attributeString(feature, "itemRgb")
+
+  def getBlockCount: Option[Int] = BaseFeature.attributeInt(feature, "blockCount")
+
+  def getBlockSizes: Array[Int] = BEDFeature.parseBlockSizes(BaseFeature.attributeString(feature, "blockSizes"))
+
+  def getBlockStarts: Array[Int] = BEDFeature.parseBlockStarts(BaseFeature.attributeString(feature, "blockStarts"))
+}
+
+/**
+ * See: http://genome.ucsc.edu/FAQ/FAQformat.html#format12
+ */
+class NarrowPeakFeature(override val feature: Feature) extends BaseFeature(feature) {
+  def getChrom: String = feature.getContig.getContigName.toString
+
+  def getChromStart: Long = feature.getStart
+
+  def getChromEnd: Long = feature.getEnd
+
+  def getName: String = feature.getFeatureId.toString
+
+  def getScore: Double = feature.getValue
+
+  def getStrand: Char = BaseFeature.strandChar(feature.getStrand)
+
+  def getSignalValue: Option[Double] = BaseFeature.attributeDouble(feature, "signalValue")
+
+  def getPValue: Option[Double] = BaseFeature.attributeDouble(feature, "pValue")
+
+  def getQValue: Option[Double] = BaseFeature.attributeDouble(feature, "qValue")
+
+  def getPeak: Option[Long] = BaseFeature.attributeLong(feature, "peak")
 }
