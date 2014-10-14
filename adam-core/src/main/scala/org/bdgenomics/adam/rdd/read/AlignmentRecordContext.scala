@@ -42,12 +42,12 @@ import org.seqdoop.hadoop_bam.{
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 import parquet.hadoop.util.ContextUtil
 
-object ADAMAlignmentRecordContext extends Serializable with Logging {
+object AlignmentRecordContext extends Serializable with Logging {
   // Add ADAM Spark context methods
-  implicit def adamContextToADAMContext(ac: ADAMContext): ADAMAlignmentRecordContext = new ADAMAlignmentRecordContext(ac.sc)
+  implicit def adamContextToADAMContext(ac: ADAMContext): AlignmentRecordContext = new AlignmentRecordContext(ac.sc)
 
   // Add methods specific to Read RDDs
-  implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new ADAMAlignmentRecordRDDFunctions(rdd)
+  implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
 
   private[rdd] def adamBamLoad(sc: SparkContext,
                                filePath: String): RDD[AlignmentRecord] = {
@@ -90,14 +90,14 @@ object ADAMAlignmentRecordContext extends Serializable with Logging {
   }
 }
 
-class ADAMAlignmentRecordContext(val sc: SparkContext) extends Serializable with Logging {
+class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Logging {
 
   def adamFastqLoad(firstPairPath: String,
                     secondPairPath: String,
                     fixPairs: Boolean = false): RDD[AlignmentRecord] = {
     // load rdds
-    val firstPairRdd = ADAMAlignmentRecordContext.adamUnpairedFastqLoad(sc, firstPairPath)
-    val secondPairRdd = ADAMAlignmentRecordContext.adamUnpairedFastqLoad(sc, secondPairPath)
+    val firstPairRdd = AlignmentRecordContext.adamUnpairedFastqLoad(sc, firstPairPath)
+    val secondPairRdd = AlignmentRecordContext.adamUnpairedFastqLoad(sc, secondPairPath)
 
     // cache rdds
     firstPairRdd.cache()

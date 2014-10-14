@@ -22,7 +22,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.BaseFeature
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.features.ADAMFeaturesContext._
+import org.bdgenomics.adam.rdd.features.FeaturesContext._
 import org.bdgenomics.formats.avro.Feature
 import org.kohsuke.args4j.Argument
 

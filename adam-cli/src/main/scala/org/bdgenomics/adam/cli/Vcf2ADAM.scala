@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
+import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD

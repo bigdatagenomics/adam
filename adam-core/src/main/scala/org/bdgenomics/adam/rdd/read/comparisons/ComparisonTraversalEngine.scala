@@ -27,16 +27,16 @@ import org.bdgenomics.adam.metrics.filters.GeneratorFilter
 import org.bdgenomics.adam.models.ReadBucket
 import org.bdgenomics.adam.projections.{ FieldValue, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
-import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext
+import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordContext
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.reflect.ClassTag
 
 class ComparisonTraversalEngine(schema: Seq[FieldValue], input1: RDD[AlignmentRecord], input2: RDD[AlignmentRecord])(implicit sc: SparkContext) {
   def this(schema: Seq[FieldValue], input1Paths: Seq[Path], input2Paths: Seq[Path])(implicit sc: SparkContext) =
     this(schema,
-      new ADAMAlignmentRecordContext(sc).loadADAMFromPaths(input1Paths),
-      new ADAMAlignmentRecordContext(sc).loadADAMFromPaths(input2Paths))(sc)
+      new AlignmentRecordContext(sc).loadADAMFromPaths(input1Paths),
+      new AlignmentRecordContext(sc).loadADAMFromPaths(input2Paths))(sc)
 
   lazy val projection = Projection(schema: _*)
 

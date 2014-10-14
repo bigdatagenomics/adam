@@ -21,7 +21,7 @@ import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
-import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
+import org.bdgenomics.adam.rdd.variation.VariationContext._
 
 class ADAMVariationRDDFunctionsSuite extends SparkFunSuite {
 
@@ -48,7 +48,7 @@ class ADAMVariationRDDFunctionsSuite extends SparkFunSuite {
       .build()
 
     val vc = VariantContext.buildFromGenotypes(List(genotype0, genotype1))
-    val samples = sc.parallelize(List(vc)).adamGetCallsetSamples()
+    val samples = sc.parallelize(List(vc)).getCallsetSamples()
 
     assert(samples.count(_ == "you") === 1)
     assert(samples.count(_ == "me") === 1)

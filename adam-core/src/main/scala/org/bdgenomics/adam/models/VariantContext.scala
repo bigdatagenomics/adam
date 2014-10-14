@@ -23,7 +23,7 @@ import org.bdgenomics.adam.rich.RichVariant._
 
 /**
  * Note: VariantContext inherits its name from the Picard VariantContext, and is not related to the SparkContext object.
- * If you're looking for the latter, see [[org.bdgenomics.adam.rdd.variation.ADAMVariationContext]]
+ * If you're looking for the latter, see [[org.bdgenomics.adam.rdd.variation.VariationContext]]
  */
 
 object VariantContext {

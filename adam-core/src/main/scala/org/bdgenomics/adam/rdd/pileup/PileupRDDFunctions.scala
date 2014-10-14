@@ -22,7 +22,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.formats.avro._
 
-class ADAMPileupRDDFunctions(rdd: RDD[Pileup]) extends Serializable with Logging {
+class PileupRDDFunctions(rdd: RDD[Pileup]) extends Serializable with Logging {
 
   /**
    * Converts ungrouped pileup bases into reference grouped bases.
@@ -37,14 +37,14 @@ class ADAMPileupRDDFunctions(rdd: RDD[Pileup]) extends Serializable with Logging
   }
 }
 
-class ADAMRodRDDFunctions(rdd: RDD[Rod]) extends Serializable with Logging {
+class RodRDDFunctions(rdd: RDD[Rod]) extends Serializable with Logging {
   /**
    * Given an RDD of rods, splits the rods up by the specific sample they correspond to.
    * Returns a flat RDD.
    *
    * @return Rods split up by samples and _not_ grouped together.
    */
-  def adamSplitRodsBySamples(): RDD[Rod] = {
+  def splitRodsBySamples(): RDD[Rod] = {
     rdd.flatMap(_.splitBySamples())
   }
 
@@ -54,7 +54,7 @@ class ADAMRodRDDFunctions(rdd: RDD[Rod]) extends Serializable with Logging {
    *
    * @return Rods split up by samples and grouped together by position.
    */
-  def adamDivideRodsBySamples(): RDD[(ReferencePosition, List[Rod])] = {
+  def divideRodsBySamples(): RDD[(ReferencePosition, List[Rod])] = {
     rdd.keyBy(_.position).map(r => (r._1, r._2.splitBySamples()))
   }
 
@@ -68,7 +68,7 @@ class ADAMRodRDDFunctions(rdd: RDD[Rod]) extends Serializable with Logging {
    *
    * @return Average coverage across mapped loci.
    */
-  def adamRodCoverage(): Double = {
+  def rodCoverage(): Double = {
     val totalBases: Long = rdd.map(_.pileups.length.toLong).reduce(_ + _)
 
     // coverage is the total count of bases, over the total number of loci

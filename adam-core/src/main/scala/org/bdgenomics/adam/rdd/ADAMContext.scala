@@ -33,7 +33,7 @@ import org.bdgenomics.adam.instrumentation.ADAMMetricsListener
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
-import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext
+import org.bdgenomics.adam.rdd.read.AlignmentRecordContext
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Pileup }
@@ -195,7 +195,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a BAM file")
       }
-      val reads = ADAMAlignmentRecordContext.adamBamLoad(sc, filePath).asInstanceOf[RDD[T]]
+      val reads = AlignmentRecordContext.adamBamLoad(sc, filePath).asInstanceOf[RDD[T]]
       if (predicate.isDefined) {
         val predicateClass = predicate.get
         val filter = predicateClass.newInstance()
@@ -208,7 +208,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading an interleaved FASTQ file")
       }
-      val reads = ADAMAlignmentRecordContext.adamInterleavedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
+      val reads = AlignmentRecordContext.adamInterleavedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
       if (predicate.isDefined) {
         val predicateClass = predicate.get
         val filter = predicateClass.newInstance()
@@ -221,7 +221,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a FASTQ file")
       }
-      val reads = ADAMAlignmentRecordContext.adamUnpairedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
+      val reads = AlignmentRecordContext.adamUnpairedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
       if (predicate.isDefined) {
         val predicateClass = predicate.get
         val filter = predicateClass.newInstance()

@@ -15,27 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.features
+package org.bdgenomics.adam.rdd.pileup
 
-import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.adam.models._
+import org.bdgenomics.formats.avro.Pileup
 
-object ADAMFeaturesContext {
-  implicit def sparkContextToADAMFeaturesContext(sc: SparkContext): ADAMFeaturesContext = new ADAMFeaturesContext(sc)
-}
+object PileupContext {
 
-class ADAMFeaturesContext(sc: SparkContext) extends Serializable with Logging {
+  // Add methods specific to the Pileup RDDs
+  implicit def rddToPileupRDD(rdd: RDD[Pileup]) = new PileupRDDFunctions(rdd)
 
-  def adamGTFFeatureLoad(filePath: String): RDD[Feature] = {
-    sc.textFile(filePath).flatMap(new GTFParser().parse)
-  }
-
-  def adamBEDFeatureLoad(filePath: String): RDD[Feature] = {
-    sc.textFile(filePath).flatMap(new BEDParser().parse)
-  }
-
-  def adamNarrowPeakFeatureLoad(filePath: String): RDD[Feature] = {
-    sc.textFile(filePath).flatMap(new NarrowPeakParser().parse)
-  }
+  // Add methods specific to the Rod RDDs
+  implicit def rddToRodRDD(rdd: RDD[Rod]) = new RodRDDFunctions(rdd)
 }

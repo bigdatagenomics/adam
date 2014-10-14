@@ -25,15 +25,15 @@ import org.bdgenomics.adam.converters.FastaConverter
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.NucleotideContigFragment
 
-object ADAMNucleotideContigFragmentContext {
+object NucleotideContigFragmentContext {
   // Add ADAM Spark context methods
-  implicit def sparkContextToADAMContext(sc: SparkContext): ADAMNucleotideContigFragmentContext = new ADAMNucleotideContigFragmentContext(sc)
+  implicit def sparkContextToADAMContext(sc: SparkContext): NucleotideContigFragmentContext = new NucleotideContigFragmentContext(sc)
 
   // Add methods specific to the ADAMNucleotideContig RDDs
-  implicit def rddToContigFragmentRDD(rdd: RDD[NucleotideContigFragment]) = new ADAMNucleotideContigFragmentRDDFunctions(rdd)
+  implicit def rddToContigFragmentRDD(rdd: RDD[NucleotideContigFragment]) = new NucleotideContigFragmentRDDFunctions(rdd)
 }
 
-class ADAMNucleotideContigFragmentContext(val sc: SparkContext) extends Serializable with Logging {
+class NucleotideContigFragmentContext(val sc: SparkContext) extends Serializable with Logging {
 
   def adamSequenceLoad(filePath: String, fragmentLength: Long): RDD[NucleotideContigFragment] = {
     if (filePath.endsWith(".fasta") || filePath.endsWith(".fa")) {

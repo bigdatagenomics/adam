@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.pileup
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.pileup.ADAMPileupContext._
+import org.bdgenomics.adam.rdd.pileup.PileupContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro._
 
@@ -139,7 +139,7 @@ class ADAMPileupRDDFunctionsSuite extends SparkFunSuite {
     assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
     assert(rods.filter(_.isSingleSample).count === 0)
 
-    val split = rods.adamSplitRodsBySamples()
+    val split = rods.splitRodsBySamples()
 
     assert(split.count === 2)
     assert(split.filter(_.position.pos == 1L).count === 2)
@@ -175,7 +175,7 @@ class ADAMPileupRDDFunctionsSuite extends SparkFunSuite {
     assert(rods.filter(_.position.pos == 1L).flatMap(_.pileups).filter(_.getReadBase == Base.C).count === 1)
     assert(rods.filter(_.isSingleSample).count === 1)
 
-    val split = rods.adamSplitRodsBySamples()
+    val split = rods.splitRodsBySamples()
 
     assert(split.count === 1)
     assert(split.filter(_.isSingleSample).count === 1)
@@ -200,7 +200,7 @@ class ADAMPileupRDDFunctionsSuite extends SparkFunSuite {
     val pileups: RDD[Pileup] = sc.parallelize(List(p0, p1))
 
     val coverage = pileups.adamPileupsToRods(1)
-      .adamRodCoverage()
+      .rodCoverage()
 
     // floating point, so apply tolerance
     assert(coverage > 0.99 && coverage < 1.01)
@@ -225,7 +225,7 @@ class ADAMPileupRDDFunctionsSuite extends SparkFunSuite {
     val pileups: RDD[Pileup] = sc.parallelize(List(p0, p1))
 
     val coverage = pileups.adamPileupsToRods(1)
-      .adamRodCoverage()
+      .rodCoverage()
 
     // floating point, so apply tolerance
     assert(coverage > 1.99 && coverage < 2.01)

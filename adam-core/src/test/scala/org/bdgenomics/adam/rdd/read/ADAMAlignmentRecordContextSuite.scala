@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
@@ -53,7 +53,7 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
 
     saved.adamSave(loc)
     try {
-      val loaded = new ADAMAlignmentRecordContext(sc).loadADAMFromPaths(Seq(path))
+      val loaded = new AlignmentRecordContext(sc).loadADAMFromPaths(Seq(path))
 
       assert(loaded.count() === saved.count())
     } catch {
@@ -69,7 +69,7 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
 
     sparkTest("import records from interleaved FASTQ: %d".format(testNumber)) {
 
-      val reads = ADAMAlignmentRecordContext.adamInterleavedFastqLoad(sc, path)
+      val reads = AlignmentRecordContext.adamInterleavedFastqLoad(sc, path)
       if (testNumber == 1) {
         assert(reads.count === 6)
         assert(reads.filter(_.getReadPaired).count === 6)
@@ -93,7 +93,7 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
 
     sparkTest("import records from single ended FASTQ: %d".format(testNumber)) {
 
-      val reads = ADAMAlignmentRecordContext.adamUnpairedFastqLoad(sc, path)
+      val reads = AlignmentRecordContext.adamUnpairedFastqLoad(sc, path)
       if (testNumber == 1) {
         assert(reads.count === 6)
         assert(reads.filter(_.getReadPaired).count === 0)
@@ -113,7 +113,7 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
   sparkTest("read properly paired fastq") {
     val path1 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_1.fq").getFile
     val path2 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_2.fq").getFile
-    val reads = new ADAMAlignmentRecordContext(sc).adamFastqLoad(path1, path2)
+    val reads = new AlignmentRecordContext(sc).adamFastqLoad(path1, path2)
 
     assert(reads.count === 6)
     assert(reads.filter(_.getReadPaired).count === 6)
@@ -125,7 +125,7 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
   sparkTest("read properly paired fastq and force pair fixing") {
     val path1 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_1.fq").getFile
     val path2 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_2.fq").getFile
-    val reads = new ADAMAlignmentRecordContext(sc).adamFastqLoad(path1, path2, true)
+    val reads = new AlignmentRecordContext(sc).adamFastqLoad(path1, path2, true)
 
     assert(reads.count === 6)
     assert(reads.filter(_.getReadPaired).count === 6)
@@ -137,7 +137,7 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
   sparkTest("read improperly paired fastq by noting size mismatch") {
     val path1 = ClassLoader.getSystemClassLoader.getResource("improper_pairs_1.fq").getFile
     val path2 = ClassLoader.getSystemClassLoader.getResource("improper_pairs_2.fq").getFile
-    val reads = new ADAMAlignmentRecordContext(sc).adamFastqLoad(path1, path2)
+    val reads = new AlignmentRecordContext(sc).adamFastqLoad(path1, path2)
 
     assert(reads.count === 4)
     assert(reads.filter(_.getReadPaired).count === 4)
