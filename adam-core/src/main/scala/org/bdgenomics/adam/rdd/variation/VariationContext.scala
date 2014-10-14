@@ -24,18 +24,18 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.{ VariantContext, SequenceDictionary }
-import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
+import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.{ DatabaseVariantAnnotation, Genotype }
 import parquet.hadoop.util.ContextUtil
 
-object ADAMVariationContext {
-  implicit def sparkContextToADAMVariationContext(sc: SparkContext): ADAMVariationContext = new ADAMVariationContext(sc)
+object VariationContext {
+  implicit def sparkContextToVariationContext(sc: SparkContext): VariationContext = new VariationContext(sc)
   implicit def rddToVariantContextRDD(rdd: RDD[VariantContext]) = new VariantContextRDDFunctions(rdd)
   implicit def rddToADAMGenotypeRDD(rdd: RDD[Genotype]) = new GenotypeRDDFunctions(rdd)
 }
 
-class ADAMVariationContext(@transient val sc: SparkContext) extends Serializable with Logging {
+class VariationContext(@transient val sc: SparkContext) extends Serializable with Logging {
   /**
    * This method will create a new RDD of VariantContext objects
    * @param filePath: input VCF file to read
@@ -75,7 +75,7 @@ class ADAMVariationContext(@transient val sc: SparkContext) extends Serializable
     log.info("Writing %s file to %s".format(vcfFormat, filePath))
 
     // Initialize global header object required by Hadoop VCF Writer
-    val header = variants.adamGetCallsetSamples()
+    val header = variants.getCallsetSamples()
     val bcastHeader = sc.broadcast(header)
     val mp = variants.mapPartitionsWithIndex((idx, iter) => {
       log.warn("Setting header for partition " + idx)

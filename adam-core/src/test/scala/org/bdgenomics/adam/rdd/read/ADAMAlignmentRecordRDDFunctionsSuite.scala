@@ -21,7 +21,7 @@ import java.nio.file.Files
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro._
 import scala.util.Random
@@ -254,7 +254,7 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends SparkFunSuite {
     val tempFile = Files.createTempDirectory("reads12")
     rdd12A.adamSAMSave(tempFile.toAbsolutePath.toString + "/reads12.sam", asSam = true)
 
-    val rdd12B: RDD[AlignmentRecord] = ADAMAlignmentRecordContext.adamBamLoad(sc, tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
+    val rdd12B: RDD[AlignmentRecord] = AlignmentRecordContext.adamBamLoad(sc, tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
 
     assert(rdd12B.count() === rdd12A.count())
 

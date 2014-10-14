@@ -53,7 +53,7 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
 
   }
 
-  def adamGetCallsetSamples(): List[String] = {
+  def getCallsetSamples(): List[String] = {
     rdd.flatMap(c => c.genotypes.map(_.getSampleId).toSeq.distinct)
       .distinct
       .map(_.toString)

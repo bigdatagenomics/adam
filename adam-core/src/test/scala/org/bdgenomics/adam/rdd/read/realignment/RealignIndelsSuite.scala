@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read.realignment
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ Consensus, ReferencePosition }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord

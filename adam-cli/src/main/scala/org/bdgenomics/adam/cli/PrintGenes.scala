@@ -20,7 +20,7 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.features.ADAMFeaturesContext._
+import org.bdgenomics.adam.rdd.features.FeaturesContext._
 import org.bdgenomics.adam.models.GeneContext._
 import org.bdgenomics.adam.rdd.features.GeneFeatureRDD._
 import org.bdgenomics.formats.avro.Feature

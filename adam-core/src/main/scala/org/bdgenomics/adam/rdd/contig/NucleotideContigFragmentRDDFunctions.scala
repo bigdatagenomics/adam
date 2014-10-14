@@ -37,7 +37,7 @@ import parquet.hadoop.util.ContextUtil
 import scala.math.max
 import scala.Some
 
-class ADAMNucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[NucleotideContigFragment](rdd) {
+class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[NucleotideContigFragment](rdd) {
 
   /**
    * Rewrites the contig IDs of a FASTA reference set to match the contig IDs present in a

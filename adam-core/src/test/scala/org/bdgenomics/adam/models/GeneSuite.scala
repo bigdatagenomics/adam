@@ -26,7 +26,7 @@ import GeneContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.features.GeneFeatureRDD._
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.adam.rdd.features.ADAMFeaturesContext._
+import org.bdgenomics.adam.rdd.features.FeaturesContext._
 import org.bdgenomics.formats.avro.Feature
 
 import scala.io.Source

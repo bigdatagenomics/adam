@@ -19,7 +19,7 @@ package org.bdgenomics.adam.util
 
 import org.bdgenomics.adam.models.{ VariantContext, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
+import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.apache.spark.rdd.RDD
 import htsjdk.variant.vcf.{
   VCFHeader,
@@ -60,7 +60,7 @@ object VcfHeaderUtils {
    */
   def makeHeader(rdd: RDD[VariantContext]): VCFHeader = {
     val sequenceDict = rdd.adamGetSequenceDictionary()
-    val samples = rdd.adamGetCallsetSamples()
+    val samples = rdd.getCallsetSamples()
 
     makeHeader(sequenceDict, samples)
   }

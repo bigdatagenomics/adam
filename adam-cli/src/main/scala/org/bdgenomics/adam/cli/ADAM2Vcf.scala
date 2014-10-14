@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
+import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
