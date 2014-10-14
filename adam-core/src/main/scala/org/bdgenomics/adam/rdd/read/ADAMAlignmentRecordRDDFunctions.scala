@@ -38,6 +38,7 @@ import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
+import scala.math.{ log => mathLog }
 
 class ADAMAlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {
 
@@ -371,6 +372,36 @@ class ADAMAlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends ADAMSeq
    */
   def adamTrimReads(trimStart: Int, trimEnd: Int, readGroup: String = null): RDD[AlignmentRecord] = {
     TrimReads(rdd, trimStart, trimEnd, readGroup)
+  }
+
+  /**
+   * Trims N's from the start and end of all reads in an RDD.
+   *
+   * @return Returns an RDD of trimmed reads.
+   */
+  def adamTrimNs(): RDD[AlignmentRecord] = {
+    TrimReads.trimNs(rdd)
+  }
+
+  /**
+   * Runs error correction by training a model to determine erroneous k-mers by depth.
+   *
+   * @param qmerLength Length of k-mers to use.
+   * @param fixingThreshold Phred-scaled threshold to require all corrections to surpass.
+   * @param ploidy The median ploidy of the sample being evaluated.
+   * @param maxIterations The maximum number of iterations to use in iterative steps.
+   * @param emThreshold The threshold to use for deciding whether a probability
+   *                    change is sufficiently small that we should stop running EM.
+   * @param missingKmerProbability The probability to assign to erroneous k-mers.
+   * @return Returns an RDD of corrected reads.
+   */
+  def adamCorrectErrors(qmerLength: Int = 20,
+                        fixingThreshold: Int = 10,
+                        ploidy: Int = 2,
+                        maxIterations: Int = 10,
+                        emThreshold: Double = mathLog(0.5),
+                        missingKmerProbability: Double = 0.05): RDD[AlignmentRecord] = {
+    ErrorCorrection(rdd, qmerLength, maxIterations, fixingThreshold, emThreshold, missingKmerProbability, ploidy)
   }
 
   /**

@@ -128,9 +128,67 @@ private[rdd] object TrimReads extends Logging {
       }
     })
   }
+
+  def trimNs(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
+    val tr = new TrimReads
+    rdd.map(tr.trimNs)
+  }
 }
 
 private[correction] class TrimReads extends Serializable {
+
+  private def dropWhileRight(s: String, op: Char => Boolean): Int = {
+    val sEndIdx = s.length - 1
+
+    @tailrec def dropHelper(l: Int): Int = {
+      if (!op(s(sEndIdx - l))) {
+        l
+      } else {
+        dropHelper(l + 1)
+      }
+    }
+
+    dropHelper(0)
+  }
+
+  /**
+   * Trims N's from the ends of a read.
+   *
+   * @param read Read to trim.
+   * @return Returns this same read with the N's trimmed off of the ends.
+   */
+  def trimNs(read: AlignmentRecord): AlignmentRecord = {
+
+    // unpack sequence and quality
+    val seq = read.getSequence.toString
+    val qual = read.getQual.toString
+
+    // trim from front of read
+    val tfSeq = seq.dropWhile(b => b == 'N' || b == 'n')
+    val toDropLeft = seq.length - tfSeq.length
+    val tfQual = qual.drop(toDropLeft)
+
+    // find number of bases to trim from end and trim
+    val toDropRight = dropWhileRight(tfSeq, b => b == 'N' || b == 'n')
+    val trSeq = tfSeq.dropRight(toDropRight)
+    val trQual = tfQual.dropRight(toDropRight)
+
+    // if we changed the read, rebuild, else emit old read
+    if (toDropRight == 0 && toDropLeft == 0) {
+      read
+    } else {
+      // update start/end trim
+      val trimStart = Option(read.getBasesTrimmedFromStart).fold(toDropLeft)(_ + toDropLeft)
+      val trimEnd = Option(read.getBasesTrimmedFromEnd).fold(toDropRight)(_ + toDropRight)
+
+      AlignmentRecord.newBuilder(read)
+        .setSequence(trSeq)
+        .setQual(trQual)
+        .setBasesTrimmedFromStart(trimStart)
+        .setBasesTrimmedFromEnd(trimEnd)
+        .build()
+    }
+  }
 
   /**
    * Converts a read into an array of doubles which are the base quality scores
