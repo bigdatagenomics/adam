@@ -29,16 +29,15 @@ object ADAMMain extends Logging {
 
   private val commandGroups =
     List(
-      CommandGroup(
-        "ADAM ACTIONS",
-        List(
-          CompareADAM,
-          FindReads,
-          CalculateDepth,
-          CountKmers,
-          Transform,
-          Adam2Fastq,
-          /* TODO (nealsid): Reimplement in terms of new schema
+      CommandGroup("ADAM ACTIONS", List(
+        CompareADAM,
+        FindReads,
+        CountReads,
+        CalculateDepth,
+        CountKmers,
+	Adam2Fastq,
+        Transform,
+        /* TODO (nealsid): Reimplement in terms of new schema
 	  ComputeVariants
 	*/
           PluginExecutor
