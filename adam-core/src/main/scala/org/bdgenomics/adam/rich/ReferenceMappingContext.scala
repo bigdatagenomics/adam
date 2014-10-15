@@ -25,24 +25,30 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, Feature, Genotype }
  */
 object ReferenceMappingContext {
 
-  implicit object GenotypeReferenceMapping extends ReferenceMapping[Genotype] with Serializable {
-    override def getReferenceName(value: Genotype): String = value.getVariant.getContig.getContigName.toString
-    override def getReferenceRegion(value: Genotype): ReferenceRegion =
-      ReferenceRegion(value.getVariant.getContig.getContigName.toString, value.getVariant.getStart, value.getVariant.getEnd)
+  implicit object FlatGenotypeReferenceMapping extends ReferenceMapping[FlatGenotype] with Serializable {
+    override def getReferenceName(value: FlatGenotype): String = value.getReferenceName.toString
+    override def getReferenceRegion(value: FlatGenotype): ReferenceRegion =
+      ReferenceRegion(value.getReferenceName.toString, value.getPosition, value.getPosition)
+    override def hasReferenceRegion(value: FlatGenotype): Boolean =
+      value.getReferenceName != null && value.getPosition != null
   }
 
   implicit object AlignmentRecordReferenceMapping extends ReferenceMapping[AlignmentRecord] with Serializable {
     override def getReferenceName(value: AlignmentRecord): String = value.getContig.getContigName.toString
     override def getReferenceRegion(value: AlignmentRecord): ReferenceRegion = ReferenceRegion(value).orNull
+    override def hasReferenceRegion(value: AlignmentRecord): Boolean = value.getReadMapped
   }
 
   implicit object ReferenceRegionReferenceMapping extends ReferenceMapping[ReferenceRegion] with Serializable {
     override def getReferenceName(value: ReferenceRegion): String = value.referenceName.toString
     override def getReferenceRegion(value: ReferenceRegion): ReferenceRegion = value
+    override def hasReferenceRegion(value: ReferenceRegion): Boolean = true
   }
 
   implicit object FeatureReferenceMapping extends ReferenceMapping[Feature] with Serializable {
     override def getReferenceName(value: Feature): String = value.getContig.getContigName.toString
     override def getReferenceRegion(value: Feature): ReferenceRegion = ReferenceRegion(value)
+    override def hasReferenceRegion(value: Feature): Boolean =
+      value.getContig.getContigName != null && value.getStart != null && value.getEnd != null
   }
 }

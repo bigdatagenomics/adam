@@ -20,4 +20,5 @@ package org.bdgenomics.adam.models
 trait ReferenceMapping[T] {
   def getReferenceName(value: T): String
   def getReferenceRegion(value: T): ReferenceRegion
+  def hasReferenceRegion(value: T): Boolean
 }
