@@ -147,7 +147,7 @@ object ReferenceRegion {
 case class ReferenceRegion(referenceName: String, start: Long, end: Long) extends Ordered[ReferenceRegion] with Interval {
 
   assert(start >= 0)
-  assert(end > start)
+  assert(end >= start)
 
   def width: Long = end - start
 
@@ -199,10 +199,8 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
    * @param region Region to compare against.
    * @return True if regions are adjacent.
    */
-  def isAdjacent(region: ReferenceRegion): Boolean = distance(region) match {
-    case Some(d) => d == 1
-    case None    => false
-  }
+  def isAdjacent(region: ReferenceRegion): Boolean =
+    distance(region).map(_ == 1).getOrElse(false)
 
   /**
    * Returns the distance between this reference region and a point in the reference space.
