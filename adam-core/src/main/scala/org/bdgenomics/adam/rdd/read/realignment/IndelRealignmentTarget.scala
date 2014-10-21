@@ -141,6 +141,10 @@ object IndelRealignmentTarget {
 class IndelRealignmentTarget(val variation: Option[ReferenceRegion],
                              val readRange: ReferenceRegion) extends Logging {
 
+  override def toString(): String = {
+    variation + " over " + readRange
+  }
+
   /**
    * Merges two indel realignment targets.
    *
