@@ -134,6 +134,7 @@ class AlignmentRecordConverter extends Serializable {
     Option(adamRecord.getFailedVendorQualityChecks)
       .foreach(v => builder.setReadFailsVendorQualityCheckFlag(v.booleanValue))
     Option(adamRecord.getMismatchingPositions)
+      .map(_.toString)
       .foreach(builder.setAttribute("MD", _))
 
     // add all other tags
