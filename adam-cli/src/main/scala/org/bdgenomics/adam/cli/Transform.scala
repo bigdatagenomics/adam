@@ -20,6 +20,7 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
@@ -50,8 +51,18 @@ class TransformArgs extends Args4jBase with ParquetArgs {
   var recalibrateBaseQualities: Boolean = false
   @Args4jOption(required = false, name = "-known_snps", usage = "Sites-only VCF giving location of known SNPs")
   var knownSnpsFile: String = null
-  @Args4jOption(required = false, name = "-realignIndels", usage = "Locally realign indels present in reads.")
+  @Args4jOption(required = false, name = "-realign_indels", usage = "Locally realign indels present in reads.")
   var locallyRealign: Boolean = false
+  @Args4jOption(required = false, name = "-known_indels", usage = "VCF file including locations of known INDELs. If none is provided, default consensus model will be used.")
+  var knownIndelsFile: String = null
+  @Args4jOption(required = false, name = "-max_indel_size", usage = "The maximum length of an INDEL to realign to. Default value is 500.")
+  var maxIndelSize = 500
+  @Args4jOption(required = false, name = "-max_consensus_number", usage = "The maximum number of consensus to try realigning a target region to. Default value is 30.")
+  var maxConsensusNumber = 30
+  @Args4jOption(required = false, name = "-log_odds_threshold", usage = "The log-odds threshold for accepting a realignment. Default value is 5.0.")
+  var lodThreshold = 5.0
+  @Args4jOption(required = false, name = "-max_target_size", usage = "The maximum length of a target region to attempt realigning. Default length is 3000.")
+  var maxTargetSize = 3000
   @Args4jOption(required = false, name = "-trimReads", usage = "Apply a fixed trim to the prefix and suffix of all reads/reads in a specific read group.")
   var trimReads: Boolean = false
   @Args4jOption(required = false, name = "-trimFromStart", usage = "Trim to be applied to start of read.")
@@ -115,7 +126,16 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
 
     if (args.locallyRealign) {
       log.info("Locally realigning indels.")
-      adamRecords = adamRecords.adamRealignIndels()
+      val consensusGenerator = Option(args.knownIndelsFile)
+        .fold(new ConsensusGeneratorFromReads().asInstanceOf[ConsensusGenerator])(
+          new ConsensusGeneratorFromKnowns(_, sc).asInstanceOf[ConsensusGenerator])
+
+      adamRecords = adamRecords.adamRealignIndels(consensusGenerator,
+        false,
+        args.maxIndelSize,
+        args.maxConsensusNumber,
+        args.lodThreshold,
+        args.maxTargetSize)
     }
 
     if (args.coalesce != -1) {
