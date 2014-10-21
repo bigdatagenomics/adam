@@ -23,7 +23,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 class RealignIndelsSuite extends SparkFunSuite {
 
@@ -178,4 +178,32 @@ class RealignIndelsSuite extends SparkFunSuite {
     assert(ri.sumMismatchQuality(read) === 800)
   }
 
+  test("we shouldn't try to realign a region with no target") {
+    val ctg = Contig.newBuilder()
+      .setContigName("chr1")
+      .build()
+    val reads = Seq(AlignmentRecord.newBuilder()
+      .setContig(ctg)
+      .setStart(1L)
+      .setEnd(4L)
+      .setSequence("AAA")
+      .setQual("...")
+      .setCigar("3M")
+      .setMismatchingPositions("3")
+      .build(), AlignmentRecord.newBuilder()
+      .setContig(ctg)
+      .setStart(9L)
+      .setEnd(12L)
+      .setSequence("AAA")
+      .setQual("...")
+      .setCigar("3M")
+      .setMismatchingPositions("3")
+      .build()).map(RichAlignmentRecord(_))
+      .toIterable
+    val ri = new RealignIndels()
+
+    // this should be a NOP
+    assert(ri.realignTargetGroup(None.asInstanceOf[Option[IndelRealignmentTarget]],
+      reads).size === 2)
+  }
 }
