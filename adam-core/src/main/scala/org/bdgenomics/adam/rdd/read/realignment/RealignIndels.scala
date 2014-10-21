@@ -464,21 +464,30 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
     }
 
     // we only want to convert once so let's get it over with
-    val rich_rdd = sortedRdd.map(new RichAlignmentRecord(_))
+    val richRdd = sortedRdd.map(new RichAlignmentRecord(_))
+    richRdd.cache()
 
     // find realignment targets
     log.info("Generating realignment targets...")
-    val targets: TreeSet[IndelRealignmentTarget] = RealignmentTargetFinder(rich_rdd,
+    val targets: TreeSet[IndelRealignmentTarget] = RealignmentTargetFinder(richRdd,
       maxIndelSize,
       maxTargetSize)
 
-    // map reads to targets
-    log.info("Grouping reads by target...")
-    val readsMappedToTarget = RealignIndels.mapTargets(rich_rdd, targets)
+    // we should only attempt realignment if the target set isn't empty
+    if (targets.isEmpty) {
+      val readRdd = richRdd.map(r => r.record)
+      richRdd.unpersist()
+      readRdd
+    } else {
+      // map reads to targets
+      log.info("Grouping reads by target...")
+      val readsMappedToTarget = RealignIndels.mapTargets(richRdd, targets)
+      richRdd.unpersist()
 
-    // realign target groups
-    log.info("Sorting reads by reference in ADAM RDD")
-    readsMappedToTarget.flatMap(realignTargetGroup).map(r => r.record)
+      // realign target groups
+      log.info("Sorting reads by reference in ADAM RDD")
+      readsMappedToTarget.flatMap(realignTargetGroup).map(r => r.record)
+    }
   }
 
 }

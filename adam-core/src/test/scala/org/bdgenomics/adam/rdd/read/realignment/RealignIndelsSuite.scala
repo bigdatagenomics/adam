@@ -189,6 +189,7 @@ class RealignIndelsSuite extends SparkFunSuite {
       .setSequence("AAA")
       .setQual("...")
       .setCigar("3M")
+      .setReadMapped(true)
       .setMismatchingPositions("3")
       .build(), AlignmentRecord.newBuilder()
       .setContig(ctg)
@@ -197,6 +198,7 @@ class RealignIndelsSuite extends SparkFunSuite {
       .setSequence("AAA")
       .setQual("...")
       .setCigar("3M")
+      .setReadMapped(true)
       .setMismatchingPositions("3")
       .build()).map(RichAlignmentRecord(_))
       .toIterable
@@ -205,5 +207,51 @@ class RealignIndelsSuite extends SparkFunSuite {
     // this should be a NOP
     assert(ri.realignTargetGroup(None.asInstanceOf[Option[IndelRealignmentTarget]],
       reads).size === 2)
+  }
+
+  sparkTest("we shouldn't try to realign reads with no indel evidence") {
+    val ctg = Contig.newBuilder()
+      .setContigName("chr1")
+      .build()
+    val reads = sc.parallelize(Seq(AlignmentRecord.newBuilder()
+      .setContig(ctg)
+      .setStart(1L)
+      .setEnd(4L)
+      .setSequence("AAA")
+      .setQual("...")
+      .setCigar("3M")
+      .setReadMapped(true)
+      .setMismatchingPositions("3")
+      .build(), AlignmentRecord.newBuilder()
+      .setContig(ctg)
+      .setStart(10L)
+      .setEnd(13L)
+      .setSequence("AAA")
+      .setQual("...")
+      .setCigar("3M")
+      .setReadMapped(true)
+      .setMismatchingPositions("3")
+      .build(), AlignmentRecord.newBuilder()
+      .setContig(ctg)
+      .setStart(4L)
+      .setEnd(7L)
+      .setSequence("AAA")
+      .setQual("...")
+      .setCigar("3M")
+      .setReadMapped(true)
+      .setMismatchingPositions("3")
+      .build(), AlignmentRecord.newBuilder()
+      .setContig(ctg)
+      .setStart(7L)
+      .setEnd(10L)
+      .setSequence("AAA")
+      .setQual("...")
+      .setCigar("3M")
+      .setReadMapped(true)
+      .setMismatchingPositions("3")
+      .build()))
+
+    // this should be a NOP
+    assert(RealignIndels(reads).count === 4)
   }
 }
