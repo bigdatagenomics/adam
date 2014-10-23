@@ -34,8 +34,8 @@ the typical data access pattern is column oriented, e.g. search for bases at a
 specific position in a reference genome. The BAM specification tries to support
 this pattern by defining a format for a separate index file. However, this index
 needs to be regenerated anytime your BAM file changes which is costly. The index
-does help cost down on file seeks but the columnar store ADAM uses reduces seeks
-even more.
+does help keep the cost down on file seeks but the columnar store ADAM uses reduces
+the cost of seeks even more.
 
 Once you convert your BAM file to ADAM, it can be directly accessed by 
 [Hadoop Map-Reduce](http://hadoop.apache.org), [Spark](http://spark-project.org/), 

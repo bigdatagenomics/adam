@@ -88,7 +88,8 @@ object FlagStat {
   def apply(rdd: RDD[AlignmentRecord]) = {
     rdd.map {
       p =>
-        val mateMappedToDiffChromosome = p.getReadPaired && p.getReadMapped && p.getMateMapped && !isSameContig(p.getContig, p.getMateContig)
+        val mateMappedToDiffChromosome =
+          p.getReadPaired && p.getReadMapped && p.getMateMapped && !isSameContig(p.getContig, p.getMateContig)
         val (primaryDuplicates, secondaryDuplicates) = DuplicateMetrics(p)
         new FlagStatMetrics(1,
           primaryDuplicates, secondaryDuplicates,

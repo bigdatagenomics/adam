@@ -82,10 +82,13 @@ object ADAMMain extends Logging {
     if (args.size < 1) {
       printCommands()
     } else {
-      var commands = new ListBuffer[ADAMCommandCompanion]
-      commandGroups.foreach(grp =>
-        grp.commands.foreach(cmd =>
-          commands += cmd))
+
+      val commands =
+        for {
+          grp <- commandGroups
+          cmd <- grp.commands
+        } yield cmd
+
       commands.find(_.commandName == args(0)) match {
         case None => printCommands()
         case Some(cmd) =>

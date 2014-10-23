@@ -39,7 +39,8 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
 
-class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {
+class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
+    extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {
 
   /**
    * Calculates the subset of the RDD whose AlignmentRecords overlap the corresponding

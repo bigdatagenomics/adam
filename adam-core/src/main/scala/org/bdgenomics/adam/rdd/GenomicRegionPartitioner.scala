@@ -32,16 +32,13 @@ import scala.math._
  *                 the total number of partitions is numParts + 1, with the "+1" resulting from one
  *                 extra partition that is used to capture null or UNMAPPED values of the ReferencePosition
  *                 type.
- * @param seqLengths a map relating sequence name-to-length and indicating the set and length of all extant
+ * @param seqLengths a map relating sequence-name to length and indicating the set and length of all extant
  *                   sequences in the genome.
  */
-class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[String, Long]) extends Partitioner with Logging {
+case class GenomicRegionPartitioner(numParts: Int, seqLengths: Map[String, Long]) extends Partitioner with Logging {
 
   log.info("Have genomic region partitioner with " + numParts + " partitions, and sequences:")
   seqLengths.foreach(kv => log.info("Contig " + kv._1 + " with length " + kv._2))
-
-  def this(numParts: Int, seqDict: SequenceDictionary) =
-    this(numParts, GenomicRegionPartitioner.extractLengthMap(seqDict))
 
   val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
   val lengths: Seq[Long] = names.map(seqLengths(_))
@@ -87,24 +84,16 @@ class GenomicRegionPartitioner(val numParts: Int, val seqLengths: Map[String, Lo
     }
   }
 
-  override def equals(x: Any): Boolean = {
-    x match {
-      case y: GenomicRegionPartitioner =>
-        y.numPartitions == numPartitions && names == y.names && lengths == y.lengths
-      case _ => false
-    }
-  }
-
   override def toString(): String = {
     return "%d parts, %d partitions, %s" format (parts, numPartitions, cumulativeLengths.toString)
   }
 
-  override def hashCode(): Int = 37 * (37 * parts + names.hashCode()) + lengths.hashCode()
 }
 
 object GenomicRegionPartitioner {
 
-  def apply(N: Int, lengths: Map[String, Long]) = new GenomicRegionPartitioner(N, lengths)
+  def apply(numParts: Int, seqDict: SequenceDictionary): GenomicRegionPartitioner =
+    GenomicRegionPartitioner(numParts, extractLengthMap(seqDict))
 
   def extractLengthMap(seqDict: SequenceDictionary): Map[String, Long] =
     Map(seqDict.records.toSeq.map(rec => (rec.name.toString, rec.length)): _*)

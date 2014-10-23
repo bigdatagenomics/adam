@@ -59,28 +59,8 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fa
       println(adamFasta.adamGetSequenceDictionary())
     }
 
-    val remapped = if (args.reads != "") {
-      val readDict = new ADAMContext(sc).adamDictionaryLoad[AlignmentRecord](args.reads)
-
-      if (args.verbose) {
-        println("Remapping with:")
-        println(readDict)
-      }
-
-      val remapFasta = adamFasta.adamRewriteContigIds(readDict)
-
-      if (args.verbose) {
-        println("After remapping, have:")
-        println(remapFasta.adamGetSequenceDictionary())
-      }
-
-      remapFasta
-    } else {
-      adamFasta
-    }
-
     log.info("Writing records to disk.")
-    remapped.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
+    adamFasta.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
       compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
   }
 }
