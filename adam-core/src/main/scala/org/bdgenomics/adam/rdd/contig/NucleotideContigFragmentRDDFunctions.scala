@@ -40,44 +40,6 @@ import scala.Some
 class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[NucleotideContigFragment](rdd) {
 
   /**
-   * Rewrites the contig IDs of a FASTA reference set to match the contig IDs present in a
-   * different sequence dictionary. Sequences are matched by name.
-   *
-   * @note Contigs with names that aren't present in the provided dictionary are filtered out of the RDD.
-   *
-   * @param sequenceDict A sequence dictionary containing the preferred IDs for the contigs.
-   * @return New set of contigs with IDs rewritten.
-   */
-  def adamRewriteContigIds(sequenceDict: SequenceDictionary): RDD[NucleotideContigFragment] = {
-    // broadcast sequence dictionary
-    val bcastDict = rdd.context.broadcast(sequenceDict)
-
-    /**
-     * Remaps a single contig.
-     *
-     * @param fragment Contig to remap.
-     * @param dictionary A sequence dictionary containing the IDs to use for remapping.
-     * @return An option containing the remapped contig if it's sequence name was found in the dictionary.
-     */
-    def remapContig(fragment: NucleotideContigFragment, dictionary: SequenceDictionary): Option[NucleotideContigFragment] = {
-      val name: CharSequence = fragment.getContig.getContigName
-
-      if (dictionary.containsRefName(name)) {
-        // NB : this is a no-op in the non-ref-id world. Should we delete it?
-        val newFragment = NucleotideContigFragment.newBuilder(fragment)
-          .setContig(fragment.getContig)
-          .build()
-        Some(newFragment)
-      } else {
-        None
-      }
-    }
-
-    // remap all contigs
-    rdd.flatMap(c => remapContig(c, bcastDict.value))
-  }
-
-  /**
    * From a set of contigs, returns the base sequence that corresponds to a region of the reference.
    *
    * @throws UnsupportedOperationException Throws exception if query region is not found.

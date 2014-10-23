@@ -37,7 +37,7 @@ if [ "$num_versions" -gt "1" ]; then
   echo "Please remove all but one."
   exit 1
 fi
-ADAM_CLI_JAR=$(ls "$ADAM_REPO"/adam-cli/target/appassembler/repo/org/bdgenomics/adam/adam-cli/*/adam-cli-*.jar)
+ADAM_CLI_JAR="$(ls "$ADAM_REPO"/adam-cli/target/appassembler/repo/org/bdgenomics/adam/adam-cli/*/adam-cli-*.jar)"
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then
