@@ -188,9 +188,12 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
    * @tparam T The type of records to return
    * @return An RDD with records of the specified type
    */
-  def adamLoad[T <% SpecificRecord: Manifest, U <: ADAMPredicate[T]](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
+  def adamLoad[T <% SpecificRecord: Manifest, U <: ADAMPredicate[T]](filePath: String,
+                                                                     predicate: Option[Class[U]] = None,
+                                                                     projection: Option[Schema] = None): RDD[T] = {
 
-    if (filePath.endsWith(".bam") || filePath.endsWith(".sam") && classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
+    if (filePath.endsWith(".bam") ||
+      filePath.endsWith(".sam") && classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
 
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a BAM file")
