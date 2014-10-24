@@ -24,13 +24,6 @@ import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 class RegionJoinSuite extends SparkFunSuite {
-  var seqDict: SequenceDictionary = _
-
-  before {
-    seqDict = SequenceDictionary(
-      SequenceRecord("chr1", 5, url = "test://chrom1"),
-      SequenceRecord("chr2", 5, url = "tes=t://chrom2"))
-  }
 
   test("alternating returns an alternating seq of items") {
     import NonoverlappingRegions._
@@ -53,14 +46,14 @@ class RegionJoinSuite extends SparkFunSuite {
 
   test("Single region returns itself") {
     val region = new ReferenceRegion("chr1", 1, 2)
-    val regions = new NonoverlappingRegions(seqDict, Seq(region))
+    val regions = new NonoverlappingRegions(Seq(region))
     val result = regions.findOverlappingRegions(region)
     assert(result.size === 1)
     assert(result.head === region)
   }
 
   test("Two adjacent regions will be merged") {
-    val regions = new NonoverlappingRegions(seqDict, Seq(
+    val regions = new NonoverlappingRegions(Seq(
       ReferenceRegion("chr1", 10, 20),
       ReferenceRegion("chr1", 20, 30)))
 
@@ -72,7 +65,7 @@ class RegionJoinSuite extends SparkFunSuite {
     val region2 = new ReferenceRegion("chr1", 3, 5)
     val testRegion3 = new ReferenceRegion("chr1", 1, 4)
     val testRegion1 = new ReferenceRegion("chr1", 4, 5)
-    val regions = new NonoverlappingRegions(seqDict, Seq(region1, region2))
+    val regions = new NonoverlappingRegions(Seq(region1, region2))
 
     // this should be 2, not 3, because binaryRegionSearch is (now) no longer returning
     // ReferenceRegions in which no original RR's were placed (i.e. the 'gaps').
@@ -86,7 +79,7 @@ class RegionJoinSuite extends SparkFunSuite {
     val region2 = new ReferenceRegion("chr1", 2, 4)
     val region3 = new ReferenceRegion("chr1", 3, 5)
     val testRegion = new ReferenceRegion("chr1", 1, 4)
-    val regions = new NonoverlappingRegions(seqDict, Seq(region1, region2, region3))
+    val regions = new NonoverlappingRegions(Seq(region1, region2, region3))
     assert(regions.findOverlappingRegions(testRegion).size === 1)
   }
 
@@ -109,7 +102,7 @@ class RegionJoinSuite extends SparkFunSuite {
     val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
     val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
 
-    val baseMapping = new NonoverlappingRegions(seqDict, Seq(AlignmentRecordReferenceMapping.getReferenceRegion(baseRecord)))
+    val baseMapping = new NonoverlappingRegions(Seq(AlignmentRecordReferenceMapping.getReferenceRegion(baseRecord)))
     val regions1 = baseMapping.findOverlappingRegions(AlignmentRecordReferenceMapping.getReferenceRegion(record1))
     val regions2 = baseMapping.findOverlappingRegions(AlignmentRecordReferenceMapping.getReferenceRegion(record2))
     assert(regions1.size === 1)
@@ -142,7 +135,6 @@ class RegionJoinSuite extends SparkFunSuite {
 
     assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
-      seqDict,
       rdd1,
       rdd2).aggregate(true)(
         RegionJoinSuite.merge,
@@ -150,7 +142,6 @@ class RegionJoinSuite extends SparkFunSuite {
 
     assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
-      seqDict,
       rdd1,
       rdd2)
       .aggregate(0)(
@@ -182,7 +173,6 @@ class RegionJoinSuite extends SparkFunSuite {
 
     assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
-      seqDict,
       baseRdd,
       recordsRdd)
       .aggregate(true)(
@@ -191,7 +181,6 @@ class RegionJoinSuite extends SparkFunSuite {
 
     assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
-      seqDict,
       baseRdd,
       recordsRdd).count() === 2)
   }
@@ -235,7 +224,6 @@ class RegionJoinSuite extends SparkFunSuite {
 
     assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
-      seqDict,
       baseRdd,
       recordsRdd)
       .aggregate(true)(
@@ -244,7 +232,6 @@ class RegionJoinSuite extends SparkFunSuite {
 
     assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
-      seqDict,
       baseRdd,
       recordsRdd).count() === 3)
   }
@@ -292,7 +279,6 @@ class RegionJoinSuite extends SparkFunSuite {
       .leftOuterJoin(
         RegionJoin.partitionAndJoin(
           sc,
-          seqDict,
           baseRdd,
           recordsRdd))
       .filter({
