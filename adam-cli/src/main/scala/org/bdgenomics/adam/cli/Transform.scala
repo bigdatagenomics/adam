@@ -49,6 +49,8 @@ class TransformArgs extends Args4jBase with ParquetArgs {
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
   var recalibrateBaseQualities: Boolean = false
+  @Args4jOption(required = false, name = "-dump_observations", usage = "Local path to dump BQSR observations to. Outputs CSV format.")
+  var observationsPath: String = null
   @Args4jOption(required = false, name = "-known_snps", usage = "Sites-only VCF giving location of known SNPs")
   var knownSnpsFile: String = null
   @Args4jOption(required = false, name = "-realign_indels", usage = "Locally realign indels present in reads.")
@@ -130,7 +132,7 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
       log.info("Recalibrating base qualities")
       val variants: RDD[RichVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
       val knownSnps = SnpTable(variants)
-      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps))
+      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps), Option(args.observationsPath))
     }
 
     if (args.qualityBasedTrim && !args.trimBeforeBQSR) {

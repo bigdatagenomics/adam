@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
+import java.io._
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
 import org.apache.spark.broadcast.Broadcast
@@ -35,7 +36,8 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  */
 class BaseQualityRecalibration(
   val input: RDD[DecadentRead],
-  val knownSnps: Broadcast[SnpTable])
+  val knownSnps: Broadcast[SnpTable],
+  val dumpObservationTableFile: Option[String] = None)
     extends Serializable with Logging {
 
   // Additional covariates to use when computing the correction
@@ -45,9 +47,6 @@ class BaseQualityRecalibration(
   // Bases with quality less than this will be skipped and left alone
   // TODO: parameterize
   val minAcceptableQuality = QualityScore(5)
-
-  // Debug: Print the ObservationTable to stdout
-  val dumpObservationTable = false
 
   // Debug: Log the visited/skipped residues to bqsr-visits.dump
   val enableVisitLogging = false
@@ -83,9 +82,12 @@ class BaseQualityRecalibration(
       aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
   }
 
-  if (dumpObservationTable) {
-    println(observed.toCSV)
-  }
+  dumpObservationTableFile.foreach(p => {
+    val writer = new PrintWriter(new File(p))
+
+    writer.write(observed.toCSV)
+    writer.close()
+  })
 
   val result: RDD[AlignmentRecord] = {
     val recalibrator = Recalibrator(observed, minAcceptableQuality)
@@ -120,6 +122,8 @@ class BaseQualityRecalibration(
 }
 
 object BaseQualityRecalibration {
-  def apply(rdd: RDD[AlignmentRecord], knownSnps: Broadcast[SnpTable]): RDD[AlignmentRecord] =
+  def apply(rdd: RDD[AlignmentRecord],
+            knownSnps: Broadcast[SnpTable],
+            observationDumpFile: Option[String] = None): RDD[AlignmentRecord] =
     new BaseQualityRecalibration(cloy(rdd), knownSnps).result
 }
