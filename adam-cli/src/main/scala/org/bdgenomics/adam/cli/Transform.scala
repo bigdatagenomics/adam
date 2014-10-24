@@ -112,18 +112,6 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
       adamRecords = adamRecords.adamMarkDuplicates()
     }
 
-    if (args.recalibrateBaseQualities) {
-      log.info("Recalibrating base qualities")
-      val variants: RDD[RichVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
-      val knownSnps = SnpTable(variants)
-      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps))
-    }
-
-    if (args.qualityBasedTrim && !args.trimBeforeBQSR) {
-      log.info("Applying quality based trim.")
-      adamRecords = adamRecords.adamTrimLowQualityReadGroups(args.qualityThreshold)
-    }
-
     if (args.locallyRealign) {
       log.info("Locally realigning indels.")
       val consensusGenerator = Option(args.knownIndelsFile)
@@ -136,6 +124,18 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
         args.maxConsensusNumber,
         args.lodThreshold,
         args.maxTargetSize)
+    }
+
+    if (args.recalibrateBaseQualities) {
+      log.info("Recalibrating base qualities")
+      val variants: RDD[RichVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
+      val knownSnps = SnpTable(variants)
+      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps))
+    }
+
+    if (args.qualityBasedTrim && !args.trimBeforeBQSR) {
+      log.info("Applying quality based trim.")
+      adamRecords = adamRecords.adamTrimLowQualityReadGroups(args.qualityThreshold)
     }
 
     if (args.coalesce != -1) {
