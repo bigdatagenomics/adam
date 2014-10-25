@@ -70,8 +70,6 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
     val adamRDD: RDD[AlignmentRecord] = sc.adamLoad(args.adamInputPath, projection = Some(proj))
     val mappedRDD = adamRDD.filter(_.getReadMapped)
 
-    val seqDict = sc.adamDictionaryLoad[AlignmentRecord](args.adamInputPath)
-
     /*
      * The following is the code I _want_ to be able to run.  However, in order to do this,
      * we need to modify the adamVariantContextLoad method to not fail when the VCF is missing
@@ -87,13 +85,13 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
       .map(ctx => (ReferenceRegion(ctx.position), ctx.variants.map(_.getId).mkString(",")))
       .collect().toMap
     */
-    val vcf: RDD[(ReferenceRegion, String)] = loadPositions(sc, seqDict, args.vcfInputPath)
+    val vcf: RDD[(ReferenceRegion, String)] = loadPositions(sc, args.vcfInputPath)
     val variantPositions = vcf.map(_._1)
     val variantNames = vcf.collect().toMap
 
     val joinedRDD: RDD[(ReferenceRegion, AlignmentRecord)] =
       if (args.cartesian) RegionJoin.cartesianFilter(variantPositions, mappedRDD)
-      else RegionJoin.partitionAndJoin(sc, seqDict, variantPositions, mappedRDD)
+      else RegionJoin.partitionAndJoin(sc, variantPositions, mappedRDD)
 
     val depths: RDD[(ReferenceRegion, Int)] =
       joinedRDD.map { case (region, record) => (region, 1) }.reduceByKey(_ + _).sortByKey()
@@ -121,8 +119,6 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
    * In the long run however, this should be replaced, as above, with a call to adamLoadVariantContext.
    *
    * @param sc A SparkContext
-   * @param seqDict The sequence dictionary containing the refIds for all the contig/chromosomes listed
-   *                in the file named in 'path'.
    * @param path The filesystem location fo the VCF-like file to load
    * @return An RDD of ReferenceRegion,String pairs where each ReferenceRegion is the location of a
    *         variant and each paired String is the display name of that variant.
@@ -130,16 +126,12 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
    * @throws IllegalArgumentException if the file contains a chromosome name that is not in the
    *                                  SequenceDictionary
    */
-  private def loadPositions(sc: SparkContext, seqDict: SequenceDictionary, path: String): RDD[(ReferenceRegion, String)] = {
+  private def loadPositions(sc: SparkContext, path: String): RDD[(ReferenceRegion, String)] = {
     sc.parallelize(Source.fromFile(path).getLines().filter(!_.startsWith("#")).map {
       line =>
         {
           val array = line.split("\t")
           val chrom = array(0)
-          if (!seqDict.containsRefName(chrom)) {
-            throw new IllegalArgumentException("chromosome name \"%s\" wasn't in the sequence dictionary (%s)".format(
-              chrom, seqDict.records.map(_.name).mkString(",")))
-          }
           val start = array(1).toLong
           val name = array(2)
           val end = start + array(3).length
