@@ -37,6 +37,7 @@ object ADAMMain extends Logging {
           CalculateDepth,
           CountKmers,
           Transform,
+          Adam2Fastq,
           /* TODO (nealsid): Reimplement in terms of new schema
 	  ComputeVariants
 	*/

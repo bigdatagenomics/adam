@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read
 
+import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.Text
 import org.apache.spark.SparkContext._
@@ -75,7 +76,8 @@ class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Log
    */
   def adamFastqLoad(firstPairPath: String,
                     secondPairPath: String,
-                    fixPairs: Boolean = false): RDD[AlignmentRecord] = {
+                    fixPairs: Boolean = false,
+                    validationStringency: ValidationStringency = ValidationStringency.LENIENT): RDD[AlignmentRecord] = {
     // load rdds
     val firstPairRdd = AlignmentRecordContext.adamUnpairedFastqLoad(sc, firstPairPath)
     val secondPairRdd = AlignmentRecordContext.adamUnpairedFastqLoad(sc, secondPairPath)
@@ -99,9 +101,37 @@ class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Log
         .setSecondOfPair(true)
         .build())
     } else {
+
+      val firstRDDKeyedByReadName = firstPairRdd.keyBy(_.getReadName.toString.dropRight(2))
+      val secondRDDKeyedByReadName = secondPairRdd.keyBy(_.getReadName.toString.dropRight(2))
+
       // all paired end reads should have the same name, except for the last two
-      // characters, which will be {/1, /2}
-      firstPairRdd.keyBy(_.getReadName.toString.dropRight(2)).join(secondPairRdd.keyBy(_.getReadName.toString.dropRight(2)))
+      // characters, which will be _1/_2
+      val joinedRDD: RDD[(String, (AlignmentRecord, AlignmentRecord))] =
+        if (validationStringency == ValidationStringency.STRICT) {
+          firstRDDKeyedByReadName.cogroup(secondRDDKeyedByReadName).map {
+            case (readName, (firstReads, secondReads)) =>
+              (firstReads.toList, secondReads.toList) match {
+                case (firstRead :: Nil, secondRead :: Nil) =>
+                  (readName, (firstRead, secondRead))
+                case _ =>
+                  throw new Exception(
+                    "Expected %d first reads and %d second reads for name %s; expected exactly one of each:\n%s\n%s".format(
+                      firstReads.size,
+                      secondReads.size,
+                      readName,
+                      firstReads.map(_.getReadName.toString).mkString("\t", "\n\t", ""),
+                      secondReads.map(_.getReadName.toString).mkString("\t", "\n\t", "")
+                    )
+                  )
+              }
+          }
+
+        } else {
+          firstRDDKeyedByReadName.join(secondRDDKeyedByReadName)
+        }
+
+      joinedRDD
         .flatMap(kv => Seq(AlignmentRecord.newBuilder(kv._2._1)
           .setReadPaired(true)
           .setProperPair(true)

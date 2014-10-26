@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd.read
 
 import java.nio.file.Files
+import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -294,6 +295,47 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends SparkFunSuite {
     (0 until reads12A.length) foreach {
       case i: Int =>
         val (readA, readB) = (reads12A(i), reads12B(i))
+        assert(readA.getSequence === readB.getSequence)
+        assert(readA.getQual === readB.getQual)
+        assert(readA.getReadName === readB.getReadName)
+    }
+  }
+
+  sparkTest("round trip from ADAM to paired-FASTQ and back to ADAM produces equivalent Read values") {
+    val path1 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_1.fq").getFile
+    val path2 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_2.fq").getFile
+    val rddA =
+      new AlignmentRecordContext(sc).adamFastqLoad(
+        path1,
+        path2,
+        fixPairs = true,
+        validationStringency = ValidationStringency.STRICT
+      )
+
+    assert(rddA.count() == 6)
+
+    val tempFile = Files.createTempDirectory("reads")
+    val tempPath1 = tempFile.toAbsolutePath.toString + "/reads1.fq"
+    val tempPath2 = tempFile.toAbsolutePath.toString + "/reads2.fq"
+
+    rddA.adamSaveAsPairedFastq(tempPath1, tempPath2, validationStringency = ValidationStringency.STRICT)
+
+    val rddB: RDD[AlignmentRecord] =
+      new AlignmentRecordContext(sc).adamFastqLoad(
+        tempPath1,
+        tempPath2,
+        fixPairs = true,
+        validationStringency = ValidationStringency.STRICT
+      )
+
+    assert(rddB.count() === rddA.count())
+
+    val readsA = rddA.collect()
+    val readsB = rddB.collect()
+
+    (0 until readsA.length) foreach {
+      case i: Int =>
+        val (readA, readB) = (readsA(i), readsB(i))
         assert(readA.getSequence === readB.getSequence)
         assert(readA.getQual === readB.getQual)
         assert(readA.getReadName === readB.getReadName)
