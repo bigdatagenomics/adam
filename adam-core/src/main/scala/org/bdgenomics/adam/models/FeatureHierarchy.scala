@@ -33,14 +33,14 @@ object BaseFeature {
     }
 
   def frameChar(feature: Feature): Char = {
-    val opt: Map[CharSequence, CharSequence] = feature.getAttributes
+    val opt: Map[String, String] = feature.getAttributes
     opt.get("frame").map(_.charAt(0)).getOrElse('.')
   }
 
   def attributeString(feature: Feature): String =
     feature.getAttributes.mkString(",")
 
-  def attrs(f: Feature): Map[CharSequence, CharSequence] =
+  def attrs(f: Feature): Map[String, String] =
     JavaConversions.mapAsScalaMap(f.getAttributes)
 
   def attributeString(feature: Feature, attrName: String): Option[String] =

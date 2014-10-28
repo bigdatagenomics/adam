@@ -88,10 +88,10 @@ class VCFLine(vcfLine: String, val samples: Array[String], sampleIndices: Seq[In
   val position = array(1).toInt
   val id = array(2)
   val ref = array(3)
-  val alts: List[CharSequence] = array(4).split(",").toList
+  val alts: List[String] = array(4).split(",").toList
   val qual = array(5) match {
-    case "."             => null
-    case x: CharSequence => x.toDouble
+    case "."       => null
+    case x: String => x.toDouble
   }
   val filter = array(6)
 
@@ -128,7 +128,7 @@ object VCFLineConverter {
         None
       } else {
         val gts = sampleFieldMap("GT").split("\\||/").map(_.toInt)
-        val genotypes: Seq[CharSequence] = gts.map(idx => line.alleleArray(idx))
+        val genotypes: Seq[String] = gts.map(idx => line.alleleArray(idx))
         val sampleId = line.samples(i)
 
         val flatGenotype = FlatGenotype.newBuilder()

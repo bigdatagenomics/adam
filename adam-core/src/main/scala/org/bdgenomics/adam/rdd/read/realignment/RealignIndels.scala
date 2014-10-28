@@ -326,6 +326,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
 
             // if read alignment is improved by aligning against new consensus, realign
             if (remapping != -1) {
+
               realignedReadCount += 1
 
               // bump up mapping quality by 10
@@ -335,24 +336,26 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
               builder.setStart(refStart + remapping)
 
               // recompute cigar
-              val newCigar: Cigar = if (refStart + remapping >= bestConsensus.index.start && refStart + remapping <= bestConsensus.index.end - 1) {
+              val newCigar: Cigar = {
                 // if element overlaps with consensus indel, modify cigar with indel
-                val (idElement, endLength) = if (bestConsensus.index.start == bestConsensus.index.end - 1) {
+                val (idElement, endLength, endPenalty) = if (bestConsensus.index.start == bestConsensus.index.end - 1) {
                   (new CigarElement(bestConsensus.consensus.length, CigarOperator.I),
-                    r.getSequence.length - bestConsensus.consensus.length - (bestConsensus.index.start - (refStart + remapping)))
+                    r.getSequence.length - bestConsensus.consensus.length - (bestConsensus.index.start - (refStart + remapping)),
+                    -bestConsensus.consensus.length)
                 } else {
                   (new CigarElement((bestConsensus.index.end - 1 - bestConsensus.index.start).toInt, CigarOperator.D),
-                    r.getSequence.length - (bestConsensus.index.start - (refStart + remapping)))
+                    r.getSequence.length - (bestConsensus.index.start - (refStart + remapping)),
+                    bestConsensus.consensus.length)
                 }
 
-                val cigarElements = List[CigarElement](new CigarElement((refStart + remapping - bestConsensus.index.start).toInt, CigarOperator.M),
+                // compensate the end
+                builder.setEnd(refStart + remapping + r.getSequence.length + endPenalty)
+
+                val cigarElements = List[CigarElement](new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
                   idElement,
                   new CigarElement(endLength.toInt, CigarOperator.M))
 
                 new Cigar(cigarElements)
-              } else {
-                // else, new cigar is all matches
-                new Cigar(List[CigarElement](new CigarElement(r.getSequence.length, CigarOperator.M)))
               }
 
               // update mdtag and cigar

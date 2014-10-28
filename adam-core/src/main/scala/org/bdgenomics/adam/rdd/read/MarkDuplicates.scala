@@ -62,7 +62,7 @@ private[rdd] object MarkDuplicates extends Serializable {
   def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
 
     // Group by library and left position
-    def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket)): (Option[ReferencePositionWithOrientation], CharSequence) = {
+    def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket)): (Option[ReferencePositionWithOrientation], String) = {
       (p._1.read1refPos, p._2.allReads.head.getRecordGroupLibrary)
     }
 

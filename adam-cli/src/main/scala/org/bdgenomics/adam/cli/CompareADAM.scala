@@ -61,7 +61,7 @@ object CompareADAM extends ADAMCommandCompanion with Serializable {
     new CompareADAM(Args4j[CompareADAMArgs](cmdLine))
   }
 
-  type GeneratedResults[A] = RDD[(CharSequence, Seq[A])]
+  type GeneratedResults[A] = RDD[(String, Seq[A])]
 
   /**
    * @see CompareADAMArgs.recurse1, CompareADAMArgs.recurse2
