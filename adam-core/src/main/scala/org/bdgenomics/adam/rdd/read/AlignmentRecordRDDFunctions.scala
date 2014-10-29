@@ -215,8 +215,18 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     MarkDuplicates(rdd)
   }
 
-  def adamBQSR(knownSnps: Broadcast[SnpTable]): RDD[AlignmentRecord] = {
-    BaseQualityRecalibration(rdd, knownSnps)
+  /**
+   * Runs base quality score recalibration on a set of reads. Uses a table of
+   * known SNPs to mask true variation during the recalibration process.
+   *
+   * @param knownSnps A table of known SNPs to mask valid variants.
+   * @param observationDumpFile An optional local path to dump recalibration
+   *                            observations to.
+   * @return Returns an RDD of recalibrated reads.
+   */
+  def adamBQSR(knownSnps: Broadcast[SnpTable],
+               observationDumpFile: Option[String] = None): RDD[AlignmentRecord] = {
+    BaseQualityRecalibration(rdd, knownSnps, observationDumpFile)
   }
 
   /**

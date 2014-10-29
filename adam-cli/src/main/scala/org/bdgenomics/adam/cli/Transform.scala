@@ -49,6 +49,8 @@ class TransformArgs extends Args4jBase with ParquetArgs {
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
   var recalibrateBaseQualities: Boolean = false
+  @Args4jOption(required = false, name = "-dump_observations", usage = "Local path to dump BQSR observations to. Outputs CSV format.")
+  var observationsPath: String = null
   @Args4jOption(required = false, name = "-known_snps", usage = "Sites-only VCF giving location of known SNPs")
   var knownSnpsFile: String = null
   @Args4jOption(required = false, name = "-realign_indels", usage = "Locally realign indels present in reads.")
@@ -112,18 +114,6 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
       adamRecords = adamRecords.adamMarkDuplicates()
     }
 
-    if (args.recalibrateBaseQualities) {
-      log.info("Recalibrating base qualities")
-      val variants: RDD[RichVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
-      val knownSnps = SnpTable(variants)
-      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps))
-    }
-
-    if (args.qualityBasedTrim && !args.trimBeforeBQSR) {
-      log.info("Applying quality based trim.")
-      adamRecords = adamRecords.adamTrimLowQualityReadGroups(args.qualityThreshold)
-    }
-
     if (args.locallyRealign) {
       log.info("Locally realigning indels.")
       val consensusGenerator = Option(args.knownIndelsFile)
@@ -136,6 +126,18 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
         args.maxConsensusNumber,
         args.lodThreshold,
         args.maxTargetSize)
+    }
+
+    if (args.recalibrateBaseQualities) {
+      log.info("Recalibrating base qualities")
+      val variants: RDD[RichVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
+      val knownSnps = SnpTable(variants)
+      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps), Option(args.observationsPath))
+    }
+
+    if (args.qualityBasedTrim && !args.trimBeforeBQSR) {
+      log.info("Applying quality based trim.")
+      adamRecords = adamRecords.adamTrimLowQualityReadGroups(args.qualityThreshold)
     }
 
     if (args.coalesce != -1) {
