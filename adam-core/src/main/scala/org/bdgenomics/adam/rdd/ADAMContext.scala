@@ -219,7 +219,8 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       } else {
         reads
       }
-    } else if ((filePath.endsWith(".fastq") || filePath.endsWith(".fq")) && classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
+    } else if ((filePath.endsWith(".fastq") || filePath.endsWith(".fq")) &&
+      classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
 
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a FASTQ file")

@@ -283,6 +283,7 @@
               <alignParameters>true</alignParameters>
               <alignSingleLineCaseStatements>true</alignSingleLineCaseStatements>
               <doubleIndentClassDeclaration>true</doubleIndentClassDeclaration>
+              <preserveDanglingCloseParenthesis>true</preserveDanglingCloseParenthesis>
             </configuration>
           </execution>
         </executions>

@@ -92,6 +92,13 @@ object AlignmentRecordContext extends Serializable with Logging {
 
 class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Logging {
 
+  /**
+   * Load AlignmentRecords from two paired-end FASTQ files.
+   *
+   * @param firstPairPath Path to read first-mates from
+   * @param secondPairPath Path to read second-mates from
+   * @param fixPairs Iff true, joins the first- and second-reads around their read name (minus the /1 or /2 suffix)
+   */
   def adamFastqLoad(firstPairPath: String,
                     secondPairPath: String,
                     fixPairs: Boolean = false): RDD[AlignmentRecord] = {
@@ -119,7 +126,7 @@ class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Log
         .build())
     } else {
       // all paired end reads should have the same name, except for the last two
-      // characters, which will be _1/_2
+      // characters, which will be {/1, /2}
       firstPairRdd.keyBy(_.getReadName.toString.dropRight(2)).join(secondPairRdd.keyBy(_.getReadName.toString.dropRight(2)))
         .flatMap(kv => Seq(AlignmentRecord.newBuilder(kv._2._1)
           .setReadPaired(true)

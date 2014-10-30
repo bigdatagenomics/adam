@@ -87,8 +87,22 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     // write file to disk
     val conf = rdd.context.hadoopConfiguration
     asSam match {
-      case true  => withKey.saveAsNewAPIHadoopFile(filePath, classOf[LongWritable], classOf[SAMRecordWritable], classOf[ADAMSAMOutputFormat[LongWritable]], conf)
-      case false => withKey.saveAsNewAPIHadoopFile(filePath, classOf[LongWritable], classOf[SAMRecordWritable], classOf[ADAMBAMOutputFormat[LongWritable]], conf)
+      case true =>
+        withKey.saveAsNewAPIHadoopFile(
+          filePath,
+          classOf[LongWritable],
+          classOf[SAMRecordWritable],
+          classOf[ADAMSAMOutputFormat[LongWritable]],
+          conf
+        )
+      case false =>
+        withKey.saveAsNewAPIHadoopFile(
+          filePath,
+          classOf[LongWritable],
+          classOf[SAMRecordWritable],
+          classOf[ADAMBAMOutputFormat[LongWritable]],
+          conf
+        )
     }
   }
 
