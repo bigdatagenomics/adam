@@ -35,7 +35,7 @@ object Vcf2ADAM extends ADAMCommandCompanion {
   }
 }
 
-class Vcf2ADAMArgs extends Args4jBase with ParquetArgs {
+class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   @Args4jOption(required = false, name = "-dict", usage = "Reference dictionary")
   var dictionaryFile: File = _
 
@@ -67,11 +67,6 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] wi
       adamVariants.flatMap(p => p.genotypes)
     }
 
-    gts.adamSave(
-      args.outputPath,
-      blockSize = args.blockSize,
-      pageSize = args.pageSize,
-      compressCodec = args.compressionCodec,
-      disableDictionaryEncoding = args.disableDictionary)
+    gts.adamParquetSave(args)
   }
 }

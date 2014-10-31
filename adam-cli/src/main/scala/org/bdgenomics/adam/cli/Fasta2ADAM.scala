@@ -20,10 +20,8 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentContext._
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentContext
-import org.bdgenomics.formats.avro.AlignmentRecord
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object Fasta2ADAM extends ADAMCommandCompanion {
@@ -35,7 +33,7 @@ object Fasta2ADAM extends ADAMCommandCompanion {
   }
 }
 
-class Fasta2ADAMArgs extends Args4jBase with ParquetArgs {
+class Fasta2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(required = true, metaVar = "FASTA", usage = "The FASTA file to convert", index = 0)
   var fastaFile: String = null
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM data", index = 1)
@@ -60,8 +58,7 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fa
     }
 
     log.info("Writing records to disk.")
-    adamFasta.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
-      compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
+    adamFasta.adamParquetSave(args)
   }
 }
 

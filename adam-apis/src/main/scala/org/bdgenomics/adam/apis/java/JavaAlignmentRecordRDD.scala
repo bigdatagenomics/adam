@@ -39,11 +39,13 @@ class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord]) extends Seriali
                pageSize: java.lang.Integer,
                compressCodec: CompressionCodecName,
                disableDictionaryEncoding: java.lang.Boolean) {
-    jrdd.rdd.adamSave(filePath,
+    jrdd.rdd.adamParquetSave(
+      filePath,
       blockSize,
       pageSize,
       compressCodec,
-      disableDictionaryEncoding)
+      disableDictionaryEncoding
+    )
   }
 
   /**
@@ -52,7 +54,7 @@ class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord]) extends Seriali
    * @param filePath Path to save the file at.
    */
   def adamSave(filePath: java.lang.String) {
-    jrdd.rdd.adamSave(filePath)
+    jrdd.rdd.adamParquetSave(filePath)
   }
 
   /**
@@ -67,7 +69,7 @@ class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord]) extends Seriali
   }
 
   /**
-   * Saves this RDD to disk as a SAM/BAM file.
+   * Saves this RDD to disk as a SAM file.
    *
    * @param filePath Path to save the file at.
    */

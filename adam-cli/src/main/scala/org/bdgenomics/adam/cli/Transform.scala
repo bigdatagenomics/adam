@@ -23,6 +23,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.rich.RichVariant
@@ -38,7 +39,7 @@ object Transform extends ADAMCommandCompanion {
   }
 }
 
-class TransformArgs extends Args4jBase with ParquetArgs {
+class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to apply the transforms to", index = 0)
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
@@ -151,20 +152,6 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
       adamRecords = adamRecords.adamSortReadsByReferencePosition()
     }
 
-    if (args.outputPath.endsWith(".sam")) {
-      log.info("Saving data in SAM format")
-      adamRecords.adamSAMSave(args.outputPath)
-    } else if (args.outputPath.endsWith(".bam")) {
-      log.info("Saving data in BAM format")
-      adamRecords.adamSAMSave(args.outputPath, asSam = false)
-    } else if (args.outputPath.endsWith(".fq") || args.outputPath.endsWith(".fastq") ||
-      args.outputPath.endsWith(".ifq")) {
-      log.info("Saving data in FASTQ format.")
-      adamRecords.adamSaveAsFastq(args.outputPath, args.sortFastqOutput)
-    } else {
-      log.info("Saving data in ADAM format")
-      adamRecords.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
-        compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
-    }
+    adamRecords.adamSave(args)
   }
 }

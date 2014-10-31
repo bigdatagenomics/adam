@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.cli
 
+import org.bdgenomics.adam.rdd.{ ADAMSaveArgs, ADAMParquetArgs }
 import org.kohsuke.args4j.Option
 import parquet.hadoop.metadata.CompressionCodecName
 
-trait ParquetArgs extends Args4jBase {
+trait ParquetArgs extends Args4jBase with ADAMParquetArgs {
   @Option(required = false, name = "-parquet_block_size", usage = "Parquet block size (default = 128mb)")
   var blockSize = 128 * 1024 * 1024
   @Option(required = false, name = "-parquet_page_size", usage = "Parquet page size (default = 1mb)")
@@ -28,8 +29,9 @@ trait ParquetArgs extends Args4jBase {
   @Option(required = false, name = "-parquet_compression_codec", usage = "Parquet compression codec")
   var compressionCodec = CompressionCodecName.GZIP
   @Option(name = "-parquet_disable_dictionary", usage = "Disable dictionary encoding")
-  var disableDictionary = false
+  override var disableDictionaryEncoding = false
   @Option(required = false, name = "-parquet_logging_level", usage = "Parquet logging level (default = severe)")
   var logLevel = "SEVERE"
 }
 
+trait ParquetSaveArgs extends ParquetArgs with ADAMSaveArgs

@@ -51,7 +51,7 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
     val loc = tempLocation()
     val path = new Path(loc)
 
-    saved.adamSave(loc)
+    saved.adamParquetSave(loc)
     try {
       val loaded = new AlignmentRecordContext(sc).loadADAMFromPaths(Seq(path))
 
@@ -150,7 +150,7 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
    Little helper function -- because apparently createTempFile creates an actual file, not
    just a name?  Whereas, this returns the name of something that could be mkdir'ed, in the
    same location as createTempFile() uses, so therefore the returned path from this method
-   should be suitable for adamSave().
+   should be suitable for adamParquetSave().
    */
   def tempLocation(suffix: String = "adam"): String = {
     val tempFile = File.createTempFile("ADAMContextSuite", "")

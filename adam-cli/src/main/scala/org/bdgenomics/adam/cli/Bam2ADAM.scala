@@ -61,7 +61,12 @@ class Bam2ADAM(args: Bam2ADAMArgs) extends ADAMCommand {
 
           val parquetWriter = new AvroParquetWriter[AlignmentRecord](
             new Path(args.outputPath + "/part%d".format(threadNum)),
-            AlignmentRecord.SCHEMA$, args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
+            AlignmentRecord.SCHEMA$,
+            args.compressionCodec,
+            args.blockSize,
+            args.pageSize,
+            !args.disableDictionaryEncoding
+          )
 
           val samRecordConverter = new SAMRecordConverter
 

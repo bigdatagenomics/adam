@@ -54,7 +54,7 @@ object VcfAnnotation2ADAM extends ADAMCommandCompanion {
   }
 }
 
-class VcfAnnotation2ADAMArgs extends Args4jBase with ParquetArgs {
+class VcfAnnotation2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(required = true, metaVar = "VCF", usage = "The VCF file with annotations to convert", index = 0)
   var vcfFile: String = _
   @Argument(required = true, metaVar = "ADAM", usage = "Location to write ADAM Variant annotations data", index = 1)
@@ -76,11 +76,9 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkComm
       val keyedAnnotations = existingAnnotations.keyBy(anno => new RichVariant(anno.getVariant))
       val joinedAnnotations = keyedAnnotations.join(annotations.keyBy(anno => new RichVariant(anno.getVariant)))
       val mergedAnnotations = joinedAnnotations.map(kv => VariantAnnotationConverter.mergeAnnotations(kv._2._1, kv._2._2))
-      mergedAnnotations.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
-        compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
+      mergedAnnotations.adamParquetSave(args)
     } else {
-      annotations.adamSave(args.outputPath, blockSize = args.blockSize, pageSize = args.pageSize,
-        compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
+      annotations.adamParquetSave(args)
     }
 
     log.info("Added %d annotation records".format(annotations.count()))
