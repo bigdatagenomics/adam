@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.rdd.features
 
-import org.bdgenomics.adam.util.SparkFunSuite
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.features.FeaturesContext._
+import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.Feature
 
 class FeatureParsingSuite extends SparkFunSuite {

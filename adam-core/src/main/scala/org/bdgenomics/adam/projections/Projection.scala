@@ -18,8 +18,9 @@
 package org.bdgenomics.adam.projections
 
 import org.apache.avro.Schema
-import scala.collection.JavaConversions._
 import org.apache.avro.Schema.Field
+
+import scala.collection.JavaConversions._
 
 /**
  * Avro utility object to create a projection of a Schema

@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import java.io._
+
 import org.bdgenomics.adam.util.{ HadoopUtil, SparkFunSuite }
 
 class PluginExecutorSuite extends SparkFunSuite {

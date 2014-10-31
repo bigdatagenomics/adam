@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.parquet_reimpl.index
 
-import org.bdgenomics.adam.rdd.{ ParquetRowGroup, Footer }
+import org.bdgenomics.adam.rdd.{ Footer, ParquetRowGroup }
 
 /**
  * Any class which represents an entry (line?) in an index file should extend this class.

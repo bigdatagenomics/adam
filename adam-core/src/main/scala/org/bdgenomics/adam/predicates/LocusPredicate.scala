@@ -17,14 +17,14 @@
  */
 package org.bdgenomics.adam.predicates
 
-import parquet.filter.{ RecordFilter, UnboundRecordFilter }
-
 import java.lang.Iterable
+
+import org.bdgenomics.adam.projections.AlignmentRecordField
 import parquet.column.ColumnReader
 import parquet.filter.AndRecordFilter.and
 import parquet.filter.ColumnPredicates.equalTo
 import parquet.filter.ColumnRecordFilter.column
-import org.bdgenomics.adam.projections.AlignmentRecordField
+import parquet.filter.{ RecordFilter, UnboundRecordFilter }
 
 class LocusPredicate extends UnboundRecordFilter {
 

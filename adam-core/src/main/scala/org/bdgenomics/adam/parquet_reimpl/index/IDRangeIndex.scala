@@ -18,10 +18,11 @@
 package org.bdgenomics.adam.parquet_reimpl.index
 
 import java.io._
-import scala.io.Source
-import scala.Some
+
+import org.bdgenomics.adam.io.{ ByteAccess, FileLocator }
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.io.{ FileLocator, ByteAccess }
+
+import scala.io.Source
 
 /**
  * And identifier-range index is an index on both genomic ranges and sample identifiers simultaneously --

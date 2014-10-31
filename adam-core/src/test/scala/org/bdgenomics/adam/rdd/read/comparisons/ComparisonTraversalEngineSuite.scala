@@ -53,7 +53,7 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
     val a = sc.parallelize(Seq(a0, a1))
     val b = sc.parallelize(Seq(b0, b1))
 
-    import AlignmentRecordField._
+    import org.bdgenomics.adam.projections.AlignmentRecordField._
     val fields = Seq(recordGroupId, readName, contig, start, primaryAlignment, readPaired, readMapped)
 
     val engine = new ComparisonTraversalEngine(fields, a, b)(sc)
@@ -101,7 +101,7 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
     val a = sc.parallelize(Seq(a0, a1, a2))
     val b = sc.parallelize(Seq(b0, b1, b2))
 
-    import AlignmentRecordField._
+    import org.bdgenomics.adam.projections.AlignmentRecordField._
     val fields = Seq(recordGroupId, readName, contig, start, primaryAlignment, readPaired, readMapped)
 
     val engine = new ComparisonTraversalEngine(fields, a, b)(sc)

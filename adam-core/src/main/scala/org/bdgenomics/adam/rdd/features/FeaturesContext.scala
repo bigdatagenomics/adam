@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.features
 
-import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
+import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.formats.avro.Feature
 
 object FeaturesContext {

@@ -22,7 +22,7 @@ import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.plugins.{ AccessControl, ADAMPlugin }
+import org.bdgenomics.adam.plugins.{ ADAMPlugin, AccessControl }
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord

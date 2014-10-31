@@ -34,9 +34,9 @@
 package org.bdgenomics.adam.converters
 
 import htsjdk.variant.variantcontext.VariantContext
+import htsjdk.variant.vcf._
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
-import htsjdk.variant.vcf._
 import org.bdgenomics.formats.avro.{ DatabaseVariantAnnotation, Genotype, VariantCallingAnnotations }
 
 object AttrKey {

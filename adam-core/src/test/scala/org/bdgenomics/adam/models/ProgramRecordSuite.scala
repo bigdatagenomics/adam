@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.models
 
 import htsjdk.samtools.SAMProgramRecord
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.scalatest.FunSuite
 
 class ProgramRecordSuite extends FunSuite {

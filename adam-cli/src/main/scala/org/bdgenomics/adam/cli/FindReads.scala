@@ -17,18 +17,20 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
-import org.apache.spark.SparkContext
-import org.apache.hadoop.mapreduce.Job
-import scala.collection.Seq
-import java.util.regex.Pattern
-import org.apache.hadoop.fs.{ Path, FileSystem }
 import java.io.OutputStreamWriter
+import java.util.regex.Pattern
+
+import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.ReadBucket
-import org.bdgenomics.adam.metrics.{ DefaultComparisons, BucketComparisons }
 import org.bdgenomics.adam.metrics.filters.{ CombinedFilter, GeneratorFilter }
+import org.bdgenomics.adam.metrics.{ BucketComparisons, DefaultComparisons }
+import org.bdgenomics.adam.models.ReadBucket
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
+
+import scala.collection.Seq
 
 /**
  * FindReads is an auxiliary command to CompareADAM -- whereas CompareADAM takes two ADAM files (which

@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.DecadentRead
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.util.QualityScore
 import org.bdgenomics.formats.avro.AlignmentRecord
+
 import scala.math.{ exp, log }
 
 class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)

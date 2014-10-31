@@ -23,6 +23,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.util._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Base, Pileup }
+
 import scala.collection.JavaConverters._
 import scala.collection.immutable.StringOps
 

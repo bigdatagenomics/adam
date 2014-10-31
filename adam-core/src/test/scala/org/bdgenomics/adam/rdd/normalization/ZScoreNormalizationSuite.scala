@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.normalization
 
-import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.util.SparkFunSuite
+
 import scala.math.{ abs, sqrt }
 
 class ZScoreNormalizationSuite extends SparkFunSuite {

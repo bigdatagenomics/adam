@@ -17,12 +17,14 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import org.scalatest.FunSuite
 import java.io._
-import org.apache.spark.Logging
 import java.util.concurrent.TimeUnit
-import scala.util.control.Breaks._
+
+import org.apache.spark.Logging
+import org.scalatest.FunSuite
+
 import scala.concurrent.duration._
+import scala.util.control.Breaks._
 
 class SparkMetricsSuite extends FunSuite with Logging {
 

@@ -22,7 +22,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.api.java.{ JavaRDD, JavaSparkContext }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.plugins.ADAMPlugin
-import org.bdgenomics.adam.rdd.ADAMContext._
 
 private[java] abstract class JavaADAMPlugin[Input, Output] extends ADAMPlugin[Input, Output] with Serializable {
   final override def projection: Option[Schema] = Option(recordProjection)

@@ -17,8 +17,9 @@
  */
 package org.bdgenomics.adam.util
 
-import org.scalatest.FunSuite
 import java.io.File
+
+import org.scalatest.FunSuite
 
 class CredentialsPropertiesTestSuite extends FunSuite {
 

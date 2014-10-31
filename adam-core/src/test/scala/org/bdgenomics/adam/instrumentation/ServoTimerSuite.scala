@@ -17,11 +17,13 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import org.scalatest.FunSuite
-import com.netflix.servo.monitor.MonitorConfig
 import java.util.concurrent.TimeUnit
+
+import com.netflix.servo.monitor.MonitorConfig
+import com.netflix.servo.tag.{ Tag, Tags }
 import org.bdgenomics.adam.instrumentation.ServoTimer._
-import com.netflix.servo.tag.{ Tags, Tag }
+import org.scalatest.FunSuite
+
 import scala.collection.JavaConversions._
 
 class ServoTimerSuite extends FunSuite {

@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.util
 
 import htsjdk.samtools.SAMRecord.SAMTagAndValue
-import org.bdgenomics.adam.models.{ TagType, Attribute }
+import org.bdgenomics.adam.models.{ Attribute, TagType }
 
 /**
  * AttributeUtils is a utility object for parsing optional fields from a BAM file, or

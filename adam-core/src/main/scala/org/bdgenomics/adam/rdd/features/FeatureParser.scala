@@ -19,10 +19,11 @@ package org.bdgenomics.adam.rdd.features
 
 import java.io.File
 import java.util.UUID
-import org.bdgenomics.formats.avro.{ Contig, Strand, Feature }
+
+import org.bdgenomics.formats.avro.{ Contig, Feature, Strand }
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-
 import scala.io.Source
 
 trait FeatureParser extends Serializable {

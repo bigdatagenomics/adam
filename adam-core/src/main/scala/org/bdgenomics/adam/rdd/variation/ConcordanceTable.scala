@@ -18,8 +18,10 @@
 package org.bdgenomics.adam.rdd.variation
 
 import java.util.EnumSet
-import scala.collection.JavaConverters._
+
 import org.bdgenomics.formats.avro.GenotypeType
+
+import scala.collection.JavaConverters._
 
 object ConcordanceTable {
   def apply() = new ConcordanceTable()
@@ -43,7 +45,7 @@ object ConcordanceTable {
  * to "truth" genotypes.
  */
 class ConcordanceTable {
-  import ConcordanceTable._
+  import org.bdgenomics.adam.rdd.variation.ConcordanceTable._
 
   private val table_ = Array.fill[Long](GenotypeType.values.length, GenotypeType.values.length)(0L)
 

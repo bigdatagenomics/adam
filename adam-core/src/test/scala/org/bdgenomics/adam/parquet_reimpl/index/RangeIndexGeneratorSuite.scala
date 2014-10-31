@@ -18,9 +18,9 @@
 package org.bdgenomics.adam.parquet_reimpl.index
 
 import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.parquet_reimpl.index.ReferenceFoldingContext._
 import org.bdgenomics.formats.avro.FlatGenotype
 import org.scalatest.FunSuite
-import ReferenceFoldingContext._
 
 class RangeIndexGeneratorSuite extends FunSuite {
 

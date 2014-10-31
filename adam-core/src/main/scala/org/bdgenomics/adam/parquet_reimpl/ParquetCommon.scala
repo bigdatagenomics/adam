@@ -18,14 +18,16 @@
 
 import java.io.{ ByteArrayInputStream, InputStream }
 import java.nio.charset.Charset
+
 import org.bdgenomics.adam.rdd.CompressionCodecEnum.CompressionCodec
 import parquet.column.page.PageReader
-import parquet.format.{ ColumnChunk, RowGroup, FileMetaData }
 import parquet.format.converter.ParquetMetadataConverter
+import parquet.format.{ ColumnChunk, FileMetaData, RowGroup }
 import parquet.org.apache.thrift.protocol.TCompactProtocol
 import parquet.org.apache.thrift.transport.TIOStreamTransport
 import parquet.schema.MessageType
 import parquet.schema.PrimitiveType.PrimitiveTypeName
+
 import scala.collection.JavaConversions._
 import scala.math._
 
@@ -43,15 +45,16 @@ package parquet.format.converter {
 
 package org.bdgenomics.adam.rdd {
 
-  import parquet.format.converter.MyConverter
   import java.nio.ByteBuffer
-  import parquet.column.page.{ DictionaryPage, Page }
-  import parquet.format.{ PageType, PageHeader }
+
+  import org.apache.hadoop.conf.Configuration
+  import org.apache.hadoop.io.compress.{ CodecPool, CompressionCodec => HadoopCompressionCodec }
+  import org.bdgenomics.adam.io.ByteAccess
   import parquet.bytes.BytesInput
   import parquet.column.ColumnDescriptor
-  import org.apache.hadoop.io.compress.{ CompressionCodec => HadoopCompressionCodec, CodecPool }
-  import org.apache.hadoop.conf.Configuration
-  import org.bdgenomics.adam.io.ByteAccess
+  import parquet.column.page.{ DictionaryPage, Page }
+  import parquet.format.converter.MyConverter
+  import parquet.format.{ PageHeader, PageType }
 
   object ParquetCommon {
 

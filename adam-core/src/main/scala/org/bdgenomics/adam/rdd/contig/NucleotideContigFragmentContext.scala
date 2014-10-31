@@ -19,8 +19,8 @@ package org.bdgenomics.adam.rdd.contig
 
 import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
+import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.converters.FastaConverter
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.NucleotideContigFragment

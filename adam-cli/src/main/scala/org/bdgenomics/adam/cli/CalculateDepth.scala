@@ -17,19 +17,20 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
-import org.kohsuke.args4j.spi.BooleanOptionHandler
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
-import org.bdgenomics.adam.projections.Projection
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.projections.AlignmentRecordField._
+import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.RegionJoin
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.kohsuke.args4j.spi.BooleanOptionHandler
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
+
 import scala.io._
 
 /**

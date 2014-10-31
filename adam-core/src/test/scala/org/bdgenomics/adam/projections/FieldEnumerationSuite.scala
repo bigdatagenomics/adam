@@ -19,6 +19,7 @@ package org.bdgenomics.adam.projections
 
 import java.io.File
 import java.util.logging.Level
+
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }

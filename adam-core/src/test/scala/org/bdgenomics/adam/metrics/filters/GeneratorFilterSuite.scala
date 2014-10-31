@@ -17,9 +17,8 @@
  */
 package org.bdgenomics.adam.metrics.filters
 
-import org.scalatest._
-
 import org.bdgenomics.adam.metrics
+import org.scalatest._
 
 class GeneratorFilterSuite extends FunSuite {
 

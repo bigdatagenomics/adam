@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.metrics.filters
 
-import org.bdgenomics.adam.metrics.{ CombinedComparisons, BucketComparisons }
 import org.bdgenomics.adam.metrics
+import org.bdgenomics.adam.metrics.{ BucketComparisons, CombinedComparisons }
 
 /**
  * Used by FindReads, a GeneratorFilter is a predicate on values, which also wraps a particular

@@ -18,9 +18,9 @@
 
 package org.bdgenomics.adam.rich
 
-import org.scalatest.FunSuite
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.scalatest.FunSuite
 
 class DecadentReadSuite extends FunSuite {
 

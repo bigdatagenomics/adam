@@ -17,13 +17,15 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.rich.RichVariant
-import org.bdgenomics.adam.rich.DecadentRead._
+import java.io.File
+
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rich.DecadentRead._
+import org.bdgenomics.adam.rich.RichVariant
+
 import scala.collection.immutable._
 import scala.collection.mutable
-import java.io.File
 
 class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable with Logging {
   log.info("SNP table has %s contigs and %s entries".format(table.size, table.values.map(_.size).sum))

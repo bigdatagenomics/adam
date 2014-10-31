@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ Genotype, DatabaseVariantAnnotation, Variant }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.rich.RichVariant._
+import org.bdgenomics.formats.avro.{ DatabaseVariantAnnotation, Genotype, Variant }
 
 /**
  * Note: VariantContext inherits its name from the Picard VariantContext, and is not related to the SparkContext object.

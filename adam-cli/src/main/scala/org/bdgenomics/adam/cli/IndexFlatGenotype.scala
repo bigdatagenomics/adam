@@ -18,11 +18,12 @@
 package org.bdgenomics.adam.cli
 
 import java.io.{ ByteArrayOutputStream, FileOutputStream, OutputStream }
+
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.parquet_reimpl.index._
-import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.FlatGenotypeField._
+import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.formats.avro.FlatGenotype
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 

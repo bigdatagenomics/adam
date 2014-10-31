@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.metrics
 
+import java.util.regex.Pattern
+
+import org.bdgenomics.adam.metrics.filters.ComparisonsFilter
 import org.bdgenomics.adam.models.ReadBucket
 import org.bdgenomics.adam.projections.FieldValue
-import java.util.regex.Pattern
-import org.bdgenomics.adam.metrics.filters.ComparisonsFilter
 
 trait BucketComparisons[+T] {
   /**
@@ -163,7 +164,7 @@ abstract class BooleanComparisons extends BucketComparisons[Boolean] {
    *         output of 'this' (i.e. T values)
    */
   def createFilter(filterDef: String): ComparisonsFilter[Boolean] = {
-    import BucketComparisons._
+    import org.bdgenomics.adam.metrics.BucketComparisons._
 
     val parsedFilter = parseFilterString(filterDef)
     parsedFilter.assertFilterValues(name, "=")
@@ -182,7 +183,7 @@ abstract class LongComparisons extends BucketComparisons[Long] {
    *         output of 'this' (i.e. T values)
    */
   def createFilter(filterDef: String): ComparisonsFilter[Long] = {
-    import BucketComparisons._
+    import org.bdgenomics.adam.metrics.BucketComparisons._
 
     val parsedFilter = parseFilterString(filterDef)
     parsedFilter.assertFilterValues(name, "=", ">", "<")
@@ -209,7 +210,7 @@ abstract class PointComparisons extends BucketComparisons[(Int, Int)] {
    *         output of 'this' (i.e. T values)
    */
   def createFilter(filterDef: String): ComparisonsFilter[(Int, Int)] = {
-    import BucketComparisons._
+    import org.bdgenomics.adam.metrics.BucketComparisons._
 
     val parsedFilter = parseFilterString(filterDef)
     parsedFilter.assertFilterValues(name, "=", "!=")

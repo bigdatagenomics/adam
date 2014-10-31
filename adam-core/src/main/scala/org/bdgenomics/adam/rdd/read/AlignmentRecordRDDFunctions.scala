@@ -17,16 +17,12 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import org.seqdoop.hadoop_bam.SAMRecordWritable
 import htsjdk.samtools.SAMFileHeader
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.SparkContext._
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.algorithms.consensus.{
-  ConsensusGenerator,
-  ConsensusGeneratorFromReads
-}
+import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -38,6 +34,7 @@ import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
+import org.seqdoop.hadoop_bam.SAMRecordWritable
 
 class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {

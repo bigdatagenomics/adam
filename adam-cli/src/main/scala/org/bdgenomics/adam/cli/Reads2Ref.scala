@@ -22,10 +22,9 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.pileup.PileupContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Pileup }
-import org.kohsuke.args4j.{ Option => option, Argument }
+import org.kohsuke.args4j.{ Argument, Option => option }
 
 object Reads2Ref extends ADAMCommandCompanion {
   val commandName: String = "reads2ref"

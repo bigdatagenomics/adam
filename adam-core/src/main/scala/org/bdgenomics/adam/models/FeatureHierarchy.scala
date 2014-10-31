@@ -17,11 +17,10 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ Strand, Feature }
+import org.bdgenomics.formats.avro.{ Feature, Strand }
 
-import scala.collection.JavaConversions
 import scala.collection.JavaConversions._
-import scala.collection._
+import scala.collection.{ JavaConversions, _ }
 
 object BaseFeature {
 

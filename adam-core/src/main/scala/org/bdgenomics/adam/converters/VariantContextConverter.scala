@@ -17,11 +17,13 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.formats.avro._
-import org.bdgenomics.adam.models.{ VariantContext => ADAMVariantContext, SequenceDictionary }
-import htsjdk.variant.variantcontext.{ VariantContext => BroadVariantContext, VariantContextBuilder, Allele, GenotypeLikelihoods, GenotypesContext }
-import scala.collection.JavaConversions._
 import java.util.Collections
+
+import htsjdk.variant.variantcontext.{ Allele, GenotypeLikelihoods, GenotypesContext, VariantContextBuilder, VariantContext => BroadVariantContext }
+import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext => ADAMVariantContext }
+import org.bdgenomics.formats.avro._
+
+import scala.collection.JavaConversions._
 
 object VariantContextConverter {
   private val NON_REF_ALLELE = Allele.create("<NON_REF>", false /* !Reference */ )
@@ -67,7 +69,7 @@ object VariantContextConverter {
  * GATK VariantContext should be implemented in this class.
  */
 class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable {
-  import VariantContextConverter._
+  import org.bdgenomics.adam.converters.VariantContextConverter._
 
   // Mappings between the CHROM names typically used and the more specific RefSeq accessions
   private lazy val contigToRefSeq: Map[String, String] = dict match {

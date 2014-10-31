@@ -18,13 +18,13 @@
 package org.bdgenomics.adam.algorithms.consensus
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ Consensus, ReferenceRegion, ReferencePosition }
+import org.bdgenomics.adam.models.{ Consensus, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichCigar._
-import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
+import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.adam.util.NormalizationUtils._
 import org.bdgenomics.formats.avro.AlignmentRecord
 

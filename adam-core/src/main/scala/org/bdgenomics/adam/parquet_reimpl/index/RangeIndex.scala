@@ -18,8 +18,10 @@
 package org.bdgenomics.adam.parquet_reimpl.index
 
 import java.io._
-import org.bdgenomics.adam.io.{ FileLocator, ByteAccess }
+
+import org.bdgenomics.adam.io.{ ByteAccess, FileLocator }
 import org.bdgenomics.adam.models.ReferenceRegion
+
 import scala.io.Source
 
 /**
