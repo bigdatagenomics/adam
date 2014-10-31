@@ -116,22 +116,6 @@
       <artifactId>kryo</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>chill-avro</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>chill-bijection_${scala.artifact.suffix}</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>bijection-avro_${scala.artifact.suffix}</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>chill_${scala.artifact.suffix}</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.scoverage</groupId>
       <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
     </dependency>
