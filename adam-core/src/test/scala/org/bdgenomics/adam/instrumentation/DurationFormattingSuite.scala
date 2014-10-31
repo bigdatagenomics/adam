@@ -17,10 +17,12 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import org.scalatest.FunSuite
-import scala.concurrent.duration.Duration
-import org.bdgenomics.adam.instrumentation.DurationFormatting.formatDuration
 import java.util.concurrent.TimeUnit._
+
+import org.bdgenomics.adam.instrumentation.DurationFormatting.formatDuration
+import org.scalatest.FunSuite
+
+import scala.concurrent.duration.Duration
 
 class DurationFormattingSuite extends FunSuite {
 

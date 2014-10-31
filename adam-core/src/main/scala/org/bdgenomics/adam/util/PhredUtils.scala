@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-import scala.math.{ pow, log10 }
+import scala.math.{ log10, pow }
 
 object PhredUtils {
 

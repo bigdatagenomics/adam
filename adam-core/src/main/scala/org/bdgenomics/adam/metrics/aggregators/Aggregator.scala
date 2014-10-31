@@ -18,8 +18,9 @@
 package org.bdgenomics.adam.metrics.aggregators
 
 import java.io.Writer
-import org.bdgenomics.adam.util.Histogram
+
 import org.bdgenomics.adam.metrics
+import org.bdgenomics.adam.util.Histogram
 
 trait Aggregator[SingleType, AggType <: Aggregated[SingleType]] extends Serializable {
 

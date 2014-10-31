@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.predicates
 
-import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.projections.AlignmentRecordField
+import org.bdgenomics.formats.avro._
+import org.scalatest.FunSuite
 
 class RecordConditionSuite extends FunSuite {
 

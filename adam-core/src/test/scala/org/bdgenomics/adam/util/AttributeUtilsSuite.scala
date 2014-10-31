@@ -17,13 +17,13 @@
  */
 package org.bdgenomics.adam.util
 
-import org.scalatest._
 import htsjdk.samtools.SAMRecord.SAMTagAndValue
 import org.bdgenomics.adam.models.{ Attribute, TagType }
+import org.scalatest._
 
 class AttributeUtilsSuite extends FunSuite {
 
-  import AttributeUtils._
+  import org.bdgenomics.adam.util.AttributeUtils._
 
   test("parseTags returns a reasonable set of tagStrings") {
     val tags = parseAttributes("XT:i:3\tXU:Z:foo,bar")
@@ -60,7 +60,7 @@ class AttributeUtilsSuite extends FunSuite {
 
 class AttributeSuite extends FunSuite {
 
-  import AttributeUtils._
+  import org.bdgenomics.adam.util.AttributeUtils._
 
   test("test SAMTagAndValue parsing") {
     assert(convertSAMTagAndValue(new SAMTagAndValue("XY", 3)) === Attribute("XY", TagType.Integer, 3))

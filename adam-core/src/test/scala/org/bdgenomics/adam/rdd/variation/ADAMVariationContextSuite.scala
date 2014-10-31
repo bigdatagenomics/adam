@@ -17,13 +17,15 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import com.google.common.io.Files
 import java.io.File
+
+import com.google.common.io.Files
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.util.SparkFunSuite
-import org.bdgenomics.formats.avro.{ GenotypeAllele, Genotype, Variant, Contig }
+import org.bdgenomics.formats.avro.{ Contig, Genotype, GenotypeAllele, Variant }
+
 import scala.collection.JavaConversions._
 
 class ADAMVariationContextSuite extends SparkFunSuite {

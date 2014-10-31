@@ -33,12 +33,11 @@
 
 package org.bdgenomics.adam.predicates
 
-import parquet.filter.ColumnPredicates.Predicate
-import parquet.column.ColumnReader
-import parquet.filter.UnboundRecordFilter
-import parquet.filter.ColumnRecordFilter._
 import org.bdgenomics.adam.predicates.ColumnReaderInput.ColumnReaderInput
-import scala.Predef._
+import parquet.column.ColumnReader
+import parquet.filter.ColumnPredicates.Predicate
+import parquet.filter.ColumnRecordFilter._
+import parquet.filter.UnboundRecordFilter
 
 object ColumnReaderInput extends Serializable {
   trait ColumnReaderInput[T] extends Serializable {

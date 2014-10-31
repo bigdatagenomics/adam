@@ -20,26 +20,17 @@ package org.bdgenomics.adam.rdd.read
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.spark.SparkContext._
-import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.converters.{
-  FastqRecordConverter,
-  SAMRecordConverter
-}
-import org.bdgenomics.adam.io.{
-  InterleavedFastqInputFormat,
-  SingleFastqInputFormat
-}
+import org.apache.spark.{ Logging, SparkContext }
+import org.bdgenomics.adam.converters.{ FastqRecordConverter, SAMRecordConverter }
+import org.bdgenomics.adam.io.{ InterleavedFastqInputFormat, SingleFastqInputFormat }
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMContext
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.seqdoop.hadoop_bam.{
-  AnySAMInputFormat,
-  SAMRecordWritable
-}
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
+import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, SAMRecordWritable }
 import parquet.hadoop.util.ContextUtil
 
 object AlignmentRecordContext extends Serializable with Logging {

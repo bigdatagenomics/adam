@@ -18,15 +18,17 @@
 package org.bdgenomics.adam.parquet_reimpl
 
 import java.io._
+
+import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.spark.Logging
-import org.apache.avro.Schema
+import org.bdgenomics.adam.io.{ ByteAccess, FileLocator, LocalFileLocator }
 import org.bdgenomics.adam.rdd._
-import org.bdgenomics.adam.io.{ FileLocator, LocalFileLocator, ByteAccess }
 import parquet.avro.{ AvroSchemaConverter, UsableAvroRecordMaterializer }
-import parquet.schema.MessageType
 import parquet.filter.UnboundRecordFilter
 import parquet.io.api.RecordMaterializer
+import parquet.schema.MessageType
+
 import scala.reflect._
 
 /**

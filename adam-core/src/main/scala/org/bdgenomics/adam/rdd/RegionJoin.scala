@@ -17,11 +17,12 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceMapping, ReferenceRegion }
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
-import scala.Predef._
 import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{ ReferenceMapping, ReferenceRegion }
+
+import scala.Predef._
 import scala.reflect.ClassTag
 
 /**

@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import htsjdk.samtools.{ SamReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
+import htsjdk.samtools.{ SAMFileHeader, SAMSequenceDictionary, SAMSequenceRecord, SamReader }
 import org.apache.avro.specific.SpecificRecord
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, NucleotideContigFragment }
+
 import scala.collection._
 
 /**

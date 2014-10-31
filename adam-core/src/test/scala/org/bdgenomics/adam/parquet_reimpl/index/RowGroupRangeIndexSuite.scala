@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.parquet_reimpl.index
 
 import java.io.File
+
 import org.scalatest.FunSuite
 
 class RowGroupRangeIndexSuite extends FunSuite {

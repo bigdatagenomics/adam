@@ -33,10 +33,11 @@
 
 package org.bdgenomics.adam.predicates
 
-import parquet.filter.{ RecordFilter, UnboundRecordFilter }
 import java.lang.Iterable
-import parquet.column.ColumnReader
+
 import org.apache.spark.rdd.RDD
+import parquet.column.ColumnReader
+import parquet.filter.{ RecordFilter, UnboundRecordFilter }
 
 /**
  *

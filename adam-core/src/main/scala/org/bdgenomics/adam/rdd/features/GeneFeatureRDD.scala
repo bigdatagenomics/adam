@@ -18,11 +18,12 @@
 package org.bdgenomics.adam.rdd.features
 
 import org.apache.spark.Logging
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rich.ReferenceMappingContext.FeatureReferenceMapping
-import org.bdgenomics.formats.avro.{ Strand, Feature }
+import org.bdgenomics.formats.avro.{ Feature, Strand }
+
 import scala.collection.JavaConversions._
 
 object GeneFeatureRDD {

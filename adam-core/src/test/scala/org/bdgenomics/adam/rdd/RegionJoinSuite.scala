@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.apache.spark.SparkContext._
-import org.bdgenomics.adam.models.{ ReferenceMapping, ReferenceRegion, SequenceDictionary, SequenceRecord }
+import org.bdgenomics.adam.models.{ ReferenceMapping, ReferenceRegion }
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
@@ -26,7 +26,7 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 class RegionJoinSuite extends SparkFunSuite {
 
   test("alternating returns an alternating seq of items") {
-    import NonoverlappingRegions._
+    import org.bdgenomics.adam.rdd.NonoverlappingRegions._
 
     assert(alternating(Seq(), includeFirst = true) === Seq())
     assert(alternating(Seq(1), includeFirst = true) === Seq(1))

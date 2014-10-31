@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd.read.correction
 
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite
+
 import scala.math.abs
 
 class ErrorCorrectionSuite extends FunSuite {

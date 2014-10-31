@@ -17,11 +17,10 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.spark.Logging
-import scala.Some
-import scala.collection.mutable.ListBuffer
-import org.bdgenomics.adam.util.ParquetLogger
 import java.util.logging.Level._
+
+import org.apache.spark.Logging
+import org.bdgenomics.adam.util.ParquetLogger
 
 object ADAMMain extends Logging {
 

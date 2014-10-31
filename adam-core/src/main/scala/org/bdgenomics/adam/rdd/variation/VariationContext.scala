@@ -17,16 +17,16 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.seqdoop.hadoop_bam._
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.converters.VariantContextConverter
-import org.bdgenomics.adam.models.{ VariantContext, SequenceDictionary }
+import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
 import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.{ DatabaseVariantAnnotation, Genotype }
+import org.seqdoop.hadoop_bam._
 import parquet.hadoop.util.ContextUtil
 
 object VariationContext {

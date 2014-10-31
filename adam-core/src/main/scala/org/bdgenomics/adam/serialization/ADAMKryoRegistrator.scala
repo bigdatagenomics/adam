@@ -17,14 +17,12 @@
  */
 package org.bdgenomics.adam.serialization
 
-import com.esotericsoftware.kryo.{ Kryo, Serializer }
-import com.esotericsoftware.kryo.io.{ Input, Output }
+import com.esotericsoftware.kryo.Kryo
 import com.twitter.chill.avro.AvroSerializer
 import org.apache.spark.serializer.KryoRegistrator
-import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.realignment._
-import scala.reflect.ClassTag
+import org.bdgenomics.formats.avro._
 
 class ADAMKryoRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo) {

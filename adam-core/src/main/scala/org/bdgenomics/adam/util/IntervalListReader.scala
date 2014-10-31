@@ -17,13 +17,14 @@
  */
 package org.bdgenomics.adam.util
 
-import java.io.{ FileInputStream, File }
-import scala.collection._
-import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
-import htsjdk.samtools.util.IntervalList
-import scala.collection.JavaConverters._
+import java.io.{ File, FileInputStream }
+
 import htsjdk.samtools.SAMTextHeaderCodec
-import htsjdk.samtools.util.BufferedLineReader
+import htsjdk.samtools.util.{ BufferedLineReader, IntervalList }
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
+
+import scala.collection.JavaConverters._
+import scala.collection._
 
 /**
  * Reads GATK-style interval list files

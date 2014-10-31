@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.read.realignment
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord
+
 import scala.annotation.tailrec
 import scala.collection.immutable.TreeSet
 

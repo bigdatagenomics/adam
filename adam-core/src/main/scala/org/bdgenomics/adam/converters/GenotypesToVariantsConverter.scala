@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.util._
+
 import scala.math.{ pow, sqrt }
 
 private[adam] class GenotypesToVariantsConverter(validateSamples: Boolean = false,

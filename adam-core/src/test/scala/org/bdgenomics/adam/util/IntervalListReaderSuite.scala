@@ -17,9 +17,10 @@
  */
 package org.bdgenomics.adam.util
 
-import org.scalatest._
 import java.io.File
+
 import org.bdgenomics.adam.models.ReferenceRegion
+import org.scalatest._
 
 class IntervalListReaderSuite extends FunSuite {
 

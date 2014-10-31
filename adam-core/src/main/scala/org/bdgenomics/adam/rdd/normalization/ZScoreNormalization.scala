@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd.normalization
 
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
+
 import scala.math.sqrt
 
 object ZScoreNormalization extends Serializable with Logging {

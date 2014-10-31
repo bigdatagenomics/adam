@@ -17,20 +17,11 @@
  */
 package org.bdgenomics.adam.util
 
-import org.bdgenomics.adam.models.{ VariantContext, SequenceDictionary }
+import htsjdk.variant.vcf.{ VCFConstants, VCFContigHeaderLine, VCFHeader, VCFHeaderLine, VCFHeaderLineCount, VCFHeaderLineType, VCFInfoHeaderLine, VCFStandardHeaderLines }
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.VariationContext._
-import org.apache.spark.rdd.RDD
-import htsjdk.variant.vcf.{
-  VCFHeader,
-  VCFHeaderLine,
-  VCFInfoHeaderLine,
-  VCFContigHeaderLine,
-  VCFConstants,
-  VCFStandardHeaderLines,
-  VCFHeaderLineCount,
-  VCFHeaderLineType
-}
 
 /**
  * Convenience object for building a VCF header from sequence data.

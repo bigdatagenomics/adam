@@ -19,6 +19,7 @@ package org.bdgenomics.adam.parquet_reimpl.index
 
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.formats.avro.FlatGenotype
+
 import scala.math._
 
 /**

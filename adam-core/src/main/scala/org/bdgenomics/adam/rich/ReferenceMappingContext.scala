@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.adam.models.{ ReferenceRegion, ReferenceMapping }
+import org.bdgenomics.adam.models.{ ReferenceMapping, ReferenceRegion }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Feature, FlatGenotype }
 
 /**

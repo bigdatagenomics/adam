@@ -28,6 +28,7 @@ package org.bdgenomics.adam.parquet_reimpl {
   import parquet.avro.{ AvroSchemaConverter, UsableAvroRecordMaterializer }
   import parquet.filter.UnboundRecordFilter
   import parquet.schema.MessageType
+
   import scala.reflect._
 
   /**

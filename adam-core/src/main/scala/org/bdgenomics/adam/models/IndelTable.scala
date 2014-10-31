@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.models
 
-import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.formats.avro.Variant
 

@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.models
 
-import org.scalatest._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.scalatest._
 
 class ReferenceRegionSuite extends FunSuite {
 

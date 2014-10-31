@@ -18,11 +18,13 @@
 package org.bdgenomics.adam.rich
 
 import java.util.regex.Pattern
+
 import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator, TextCigarCodec }
 import org.bdgenomics.adam.models.{ Attribute, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._
 import org.bdgenomics.formats.avro.AlignmentRecord
+
 import scala.collection.immutable.NumericRange
 
 object RichAlignmentRecord {

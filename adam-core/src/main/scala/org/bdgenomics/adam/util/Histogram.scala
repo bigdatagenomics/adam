@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.util
 
 import java.io.{ StringWriter, Writer }
+
 import org.bdgenomics.adam.metrics.aggregators.Aggregated
 
 class Histogram[T](val valueToCount: Map[T, Int]) extends Aggregated[T] with Serializable {

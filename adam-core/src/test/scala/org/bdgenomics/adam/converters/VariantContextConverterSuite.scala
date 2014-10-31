@@ -18,11 +18,13 @@
 package org.bdgenomics.adam.converters
 
 import java.io.File
+
 import htsjdk.samtools.SAMFileReader
-import org.bdgenomics.adam.models.{ VariantContext => ADAMVariantContext, SequenceDictionary }
-import org.bdgenomics.formats.avro._
 import htsjdk.variant.variantcontext.{ Allele, GenotypeBuilder, GenotypeType, VariantContextBuilder }
+import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext => ADAMVariantContext }
+import org.bdgenomics.formats.avro._
 import org.scalatest.FunSuite
+
 import scala.collection.JavaConversions._
 
 class VariantContextConverterSuite extends FunSuite {

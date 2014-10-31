@@ -17,13 +17,14 @@
  */
 package org.bdgenomics.adam.metrics
 
-import org.bdgenomics.formats.avro.AlignmentRecord
-import org.bdgenomics.adam.projections.FieldValue
+import org.bdgenomics.adam.models.ReadBucket
 import org.bdgenomics.adam.projections.AlignmentRecordField._
+import org.bdgenomics.adam.projections.FieldValue
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.util.Util._
+import org.bdgenomics.formats.avro.AlignmentRecord
+
 import scala.collection.Map
-import org.bdgenomics.adam.models.ReadBucket
 
 object DefaultComparisons {
 

@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.rdd.normalization
 
-import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.util.SparkFunSuite
-import scala.math.{ abs, sqrt }
+
+import scala.math.abs
 
 class LengthNormalizationSuite extends SparkFunSuite {
   def fpEquals(n1: Double, n2: Double, epsilon: Double = 1e-6): Boolean = {
