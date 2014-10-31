@@ -18,8 +18,8 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
+import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._

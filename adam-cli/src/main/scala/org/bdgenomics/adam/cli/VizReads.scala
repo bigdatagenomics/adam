@@ -30,8 +30,8 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 import org.fusesource.scalate.TemplateEngine
 import org.json4s._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
-import org.scalatra.json._
 import org.scalatra.ScalatraServlet
+import org.scalatra.json._
 
 object VizReads extends ADAMCommandCompanion {
   val commandName: String = "viz"

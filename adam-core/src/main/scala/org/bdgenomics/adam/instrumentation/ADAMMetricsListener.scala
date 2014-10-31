@@ -17,7 +17,8 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import org.apache.spark.scheduler.{ StageInfo, SparkListenerStageCompleted, SparkListenerTaskEnd, SparkListener }
+import org.apache.spark.scheduler.{ SparkListener, SparkListenerStageCompleted, SparkListenerTaskEnd, StageInfo }
+
 import scala.concurrent.duration._
 
 /**

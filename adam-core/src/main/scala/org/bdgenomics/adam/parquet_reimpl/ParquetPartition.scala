@@ -17,18 +17,16 @@
  */
 package org.bdgenomics.adam.parquet_reimpl
 
-import parquet.filter.UnboundRecordFilter
-import parquet.io.api.RecordMaterializer
-import parquet.io.ColumnIOFactory
-import parquet.column.page.{ PageReadStore, PageReader }
-import parquet.column.ColumnDescriptor
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.compress.{ CompressionCodec => HadoopCompressionCodec }
 import org.apache.spark.Partition
-import org.bdgenomics.adam.rdd._
-import org.bdgenomics.adam.rdd.ParquetColumnDescriptor
-import org.bdgenomics.adam.rdd.ParquetRowGroup
 import org.bdgenomics.adam.io.{ ByteAccess, FileLocator }
+import org.bdgenomics.adam.rdd.{ ParquetColumnDescriptor, ParquetRowGroup, _ }
+import parquet.column.ColumnDescriptor
+import parquet.column.page.{ PageReadStore, PageReader }
+import parquet.filter.UnboundRecordFilter
+import parquet.io.ColumnIOFactory
+import parquet.io.api.RecordMaterializer
 
 /**
  *

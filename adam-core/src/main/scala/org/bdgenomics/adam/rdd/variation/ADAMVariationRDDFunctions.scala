@@ -17,17 +17,14 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
+import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{
-  VariantContext,
-  SequenceRecord
-}
+import org.bdgenomics.adam.models.{ SequenceRecord, VariantContext }
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
-import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.rich.RichGenotype._
-import org.bdgenomics.formats.avro.{ Genotype, GenotypeType, DatabaseVariantAnnotation }
+import org.bdgenomics.adam.rich.RichVariant
+import org.bdgenomics.formats.avro.{ DatabaseVariantAnnotation, Genotype, GenotypeType }
 
 class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceDictionaryRDDAggregator[VariantContext](rdd) {
 

@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.converters
 
+import java.io.File
+
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.contig.ADAMNucleotideContigFragmentContext
 import org.bdgenomics.adam.util.SparkFunSuite
-import java.io.File
 
 class FastaConverterSuite extends SparkFunSuite {
 

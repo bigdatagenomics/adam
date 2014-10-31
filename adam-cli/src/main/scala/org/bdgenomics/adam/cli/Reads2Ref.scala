@@ -25,7 +25,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.pileup.ADAMPileupContext._
 import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Pileup }
-import org.kohsuke.args4j.{ Option => option, Argument }
+import org.kohsuke.args4j.{ Argument, Option => option }
 
 object Reads2Ref extends ADAMCommandCompanion {
   val commandName: String = "reads2ref"

@@ -18,12 +18,13 @@
 package org.bdgenomics.adam.rdd.read
 
 import java.nio.file.Files
+
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro._
+
 import scala.util.Random
 
 class ADAMAlignmentRecordRDDFunctionsSuite extends SparkFunSuite {

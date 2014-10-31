@@ -17,9 +17,10 @@
  */
 package org.bdgenomics.adam.io
 
+import java.io.InputStream
+
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.GetObjectRequest
-import java.io.InputStream
 
 class S3ByteAccess(client: AmazonS3, bucket: String, keyName: String) extends ByteAccess {
   assert(bucket != null)

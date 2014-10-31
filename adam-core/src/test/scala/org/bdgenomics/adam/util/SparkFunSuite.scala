@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.util
 
-import org.scalatest.{ Tag, BeforeAndAfter, FunSuite }
-import org.apache.spark.{ SparkConf, SparkContext }
 import java.net.ServerSocket
+
 import org.apache.log4j.Level
+import org.apache.spark.{ SparkConf, SparkContext }
+import org.scalatest.{ BeforeAndAfter, FunSuite, Tag }
 
 trait SparkFunSuite extends FunSuite with BeforeAndAfter {
 

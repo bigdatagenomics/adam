@@ -17,9 +17,10 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.rich.RichGenotype._
+import org.bdgenomics.formats.avro._
+import org.scalatest.FunSuite
+
 import scala.collection.JavaConversions._
 
 class RichGenotypeSuite extends FunSuite {

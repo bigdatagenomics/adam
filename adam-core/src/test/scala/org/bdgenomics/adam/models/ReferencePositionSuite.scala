@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.models
 
-import org.scalatest.FunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Genotype, Pileup, Variant }
+import org.scalatest.FunSuite
 
 class ReferencePositionSuite extends FunSuite {
 

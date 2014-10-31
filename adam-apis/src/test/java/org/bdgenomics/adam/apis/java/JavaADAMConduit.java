@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.apis.java;
 
+import org.apache.spark.api.java.JavaRDD;
+import org.bdgenomics.formats.avro.AlignmentRecord;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.spark.api.java.JavaRDD;
-import org.bdgenomics.adam.apis.java.JavaADAMContext;
-import org.bdgenomics.formats.avro.AlignmentRecord;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD to

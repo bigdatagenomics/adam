@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.algorithms.smithwaterman
 
 import org.scalatest.FunSuite
+
 import scala.math.abs
 
 class SmithWatermanSuite extends FunSuite {

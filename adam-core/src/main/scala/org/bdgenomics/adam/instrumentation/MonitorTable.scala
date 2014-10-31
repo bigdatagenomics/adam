@@ -17,9 +17,11 @@
  */
 package org.bdgenomics.adam.instrumentation
 
+import java.io.PrintStream
+
 import com.netflix.servo.monitor.{ CompositeMonitor, Monitor }
 import com.netflix.servo.tag.Tag
-import java.io.PrintStream
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 

@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.rdd.ADAMContext._
-import htsjdk.samtools.{ SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary }
-import org.scalatest.FunSuite
 import java.io.File
+
+import htsjdk.samtools.{ SAMFileReader, SAMSequenceDictionary, SAMSequenceRecord }
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.scalatest.FunSuite
 
 class SequenceDictionarySuite extends FunSuite {
   test("Convert from sam sequence record and back") {

@@ -17,19 +17,17 @@
  */
 package org.bdgenomics.adam.cli
 
+import java.io.{ BufferedWriter, OutputStreamWriter }
+
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
-import org.apache.hadoop.mapreduce.Job
-import org.apache.hadoop.fs.{ Path, FileSystem }
-import org.apache.hadoop.conf.Configuration
-import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.{
-  GenotypesSummary,
-  GenotypesSummaryFormatting
-}
+import org.bdgenomics.adam.rdd.variation.{ GenotypesSummary, GenotypesSummaryFormatting }
+import org.bdgenomics.formats.avro.Genotype
 import org.kohsuke.args4j
-import java.io.{ OutputStreamWriter, BufferedWriter }
 
 object SummarizeGenotypes extends ADAMCommandCompanion {
 

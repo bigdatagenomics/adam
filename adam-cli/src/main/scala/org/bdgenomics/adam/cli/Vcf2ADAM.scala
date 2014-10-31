@@ -17,14 +17,15 @@
  */
 package org.bdgenomics.adam.cli
 
+import java.io.File
+
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
-import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{ Logging, SparkContext }
-import org.apache.spark.rdd.RDD
-import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
-import java.io.File
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object Vcf2ADAM extends ADAMCommandCompanion {
   val commandName = "vcf2adam"

@@ -20,7 +20,7 @@ package org.bdgenomics.adam.parquet_reimpl.index
 import org.apache.avro.Schema
 import org.bdgenomics.adam.io.FileLocator
 import org.bdgenomics.adam.parquet_reimpl.{ ParquetPartition, ParquetSchemaType }
-import org.bdgenomics.adam.rdd.{ ParquetCommon, Footer }
+import org.bdgenomics.adam.rdd.{ Footer, ParquetCommon }
 import parquet.avro.AvroSchemaConverter
 import parquet.format.FileMetaData
 import parquet.schema.MessageType

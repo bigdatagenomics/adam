@@ -33,7 +33,7 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 
   test("alternating returns an alternating seq of items") {
-    import NonoverlappingRegions._
+    import org.bdgenomics.adam.rdd.NonoverlappingRegions._
 
     assert(alternating(Seq(), includeFirst = true) === Seq())
     assert(alternating(Seq(1), includeFirst = true) === Seq(1))

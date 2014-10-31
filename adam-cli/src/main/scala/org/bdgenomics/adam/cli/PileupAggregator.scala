@@ -17,13 +17,13 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.formats.avro.Pileup
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.pileup.ADAMPileupContext._
-import org.kohsuke.args4j.Argument
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.pileup.ADAMPileupContext._
+import org.bdgenomics.formats.avro.Pileup
+import org.kohsuke.args4j.Argument
 
 object PileupAggregator extends ADAMCommandCompanion {
   val commandName: String = "aggregate_pileups"

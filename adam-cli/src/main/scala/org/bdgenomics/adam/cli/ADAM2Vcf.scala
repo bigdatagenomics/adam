@@ -17,16 +17,16 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.formats.avro.Genotype
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
-import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
+import java.io.File
+
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
-import org.apache.hadoop.mapreduce.Job
-import java.io.File
 import org.bdgenomics.adam.models.SequenceDictionary
-import scala.Option
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.variation.ADAMVariationContext._
+import org.bdgenomics.formats.avro.Genotype
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object ADAM2Vcf extends ADAMCommandCompanion {
 

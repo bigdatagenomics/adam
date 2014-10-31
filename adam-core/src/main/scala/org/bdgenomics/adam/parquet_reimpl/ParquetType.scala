@@ -17,8 +17,9 @@
  */
 package org.bdgenomics.adam.parquet_reimpl
 
-import parquet.schema._
 import parquet.schema.PrimitiveType.PrimitiveTypeName
+import parquet.schema._
+
 import scala.collection.JavaConversions._
 
 /**

@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.rdd.features
 
-import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ NarrowPeakFeature, BEDFeature }
+import org.apache.spark.{ Logging, SparkContext }
+import org.bdgenomics.adam.models.{ BEDFeature, NarrowPeakFeature }
 
 object ADAMFeaturesContext {
   implicit def sparkContextToADAMFeaturesContext(sc: SparkContext): ADAMFeaturesContext = new ADAMFeaturesContext(sc)

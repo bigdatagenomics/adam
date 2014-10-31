@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro._
-import org.bdgenomics.adam.rdd.ADAMContext._
-import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
+import com.esotericsoftware.kryo.{ Kryo, Serializer }
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro._
+
 import scala.annotation.tailrec
 
 object ReferencePositionWithOrientation {

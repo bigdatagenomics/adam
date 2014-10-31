@@ -30,7 +30,7 @@ object DuplicateMetrics {
   val empty = new DuplicateMetrics(0, 0, 0, 0)
 
   def apply(record: AlignmentRecord): (DuplicateMetrics, DuplicateMetrics) = {
-    import FlagStat.b2i
+    import org.bdgenomics.adam.rdd.read.FlagStat.b2i
 
     def isPrimary(record: AlignmentRecord): Boolean = {
       record.getDuplicateRead && record.getPrimaryAlignment

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.adam.models.{ ReferencePosition, TagType, Attribute }
+import org.bdgenomics.adam.models.{ Attribute, ReferencePosition, TagType }
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import org.scalatest.FunSuite

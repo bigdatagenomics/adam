@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.scalatest.FunSuite
 import org.bdgenomics.formats.avro.FlatGenotype
+import org.scalatest.FunSuite
 
 class VCFLineParserSuite extends FunSuite {
 

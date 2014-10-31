@@ -22,9 +22,10 @@ import org.bdgenomics.adam.rdd.variation.GenotypesSummary.StatisticsMap
 import org.bdgenomics.adam.rdd.variation.GenotypesSummaryCounts.ReferenceAndAlternate
 import org.bdgenomics.adam.rich.RichVariant._
 import org.bdgenomics.formats.avro.{ Genotype, GenotypeAllele }
+
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.collection.immutable.Map
+import scala.collection.mutable
 
 /**
  * Simple counts of various properties across a set of genotypes.

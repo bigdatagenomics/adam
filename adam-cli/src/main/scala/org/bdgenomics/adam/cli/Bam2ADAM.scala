@@ -19,6 +19,7 @@ package org.bdgenomics.adam.cli
 
 import java.io.File
 import java.util.concurrent._
+
 import htsjdk.samtools._
 import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.converters.SAMRecordConverter
@@ -26,6 +27,7 @@ import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import parquet.avro.AvroParquetWriter
+
 import scala.collection.JavaConversions._
 
 object Bam2ADAM extends ADAMCommandCompanion {

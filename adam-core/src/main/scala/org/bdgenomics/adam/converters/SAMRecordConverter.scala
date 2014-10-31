@@ -18,9 +18,10 @@
 package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.{ CigarElement, SAMReadGroupRecord, SAMRecord }
-import org.bdgenomics.adam.models.{ SequenceRecord, Attribute, RecordGroupDictionary, SequenceDictionary }
+import org.bdgenomics.adam.models.{ Attribute, RecordGroupDictionary, SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.util.AttributeUtils
 import org.bdgenomics.formats.avro.AlignmentRecord
+
 import scala.collection.JavaConverters._
 
 class SAMRecordConverter extends Serializable {

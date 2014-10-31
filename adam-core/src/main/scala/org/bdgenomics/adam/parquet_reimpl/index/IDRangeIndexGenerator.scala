@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.parquet_reimpl.index
 
 import java.io._
+
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.spark.Logging
@@ -29,6 +30,7 @@ import parquet.avro.{ AvroSchemaConverter, UsableAvroRecordMaterializer }
 import parquet.filter.UnboundRecordFilter
 import parquet.io.api.RecordMaterializer
 import parquet.schema.MessageType
+
 import scala.collection.mutable
 import scala.reflect._
 

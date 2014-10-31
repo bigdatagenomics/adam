@@ -22,6 +22,7 @@ import org.bdgenomics.adam.projections.FlatGenotypeField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.formats.avro.FlatGenotype
 import org.kohsuke.args4j.Argument
+
 import scala.collection.JavaConversions._
 
 object PrintParquet extends ADAMCommandCompanion {

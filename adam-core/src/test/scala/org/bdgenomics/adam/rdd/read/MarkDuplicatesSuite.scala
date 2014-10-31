@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd.read
 
 import java.util.UUID
+
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.ADAMAlignmentRecordContext._
 import org.bdgenomics.adam.util.SparkFunSuite

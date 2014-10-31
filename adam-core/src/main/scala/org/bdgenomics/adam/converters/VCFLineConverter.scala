@@ -18,7 +18,9 @@
 package org.bdgenomics.adam.converters
 
 import java.io._
+
 import org.bdgenomics.formats.avro.FlatGenotype
+
 import scala.collection.JavaConversions._
 
 /**

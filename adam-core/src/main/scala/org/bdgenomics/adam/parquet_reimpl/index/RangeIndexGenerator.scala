@@ -18,10 +18,11 @@
 package org.bdgenomics.adam.parquet_reimpl.index
 
 import java.io._
+
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.spark.Logging
-import org.bdgenomics.adam.io.{ FileLocator, LocalFileLocator, ByteAccess }
+import org.bdgenomics.adam.io.{ ByteAccess, FileLocator, LocalFileLocator }
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.parquet_reimpl._
 import org.bdgenomics.adam.rdd._
@@ -29,6 +30,7 @@ import parquet.avro.{ AvroSchemaConverter, UsableAvroRecordMaterializer }
 import parquet.filter.UnboundRecordFilter
 import parquet.io.api.RecordMaterializer
 import parquet.schema.MessageType
+
 import scala.reflect._
 
 class RangeIndexGenerator[T <: IndexedRecord](indexableSchema: Option[Schema] = None)(implicit referenceFolder: ReferenceFolder[T], classTag: ClassTag[T])

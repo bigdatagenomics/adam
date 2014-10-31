@@ -17,9 +17,9 @@
  */
 package org.bdgenomics.adam.io
 
-import org.bdgenomics.adam.util.SparkFunSuite
-import org.apache.spark.rdd.RDD
 import org.apache.hadoop.io.Text
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.util.SparkFunSuite
 
 class SingleFastqInputFormatSuite extends SparkFunSuite {
   (1 to 4) foreach { testNumber =>

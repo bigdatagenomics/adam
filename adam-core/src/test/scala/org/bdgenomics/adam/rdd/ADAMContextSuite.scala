@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd
 
 import java.io.File
 import java.util.UUID
+
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.predicates.HighQualityReadPredicate

@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.cli
 
-import java.io.{ PrintStream, ByteArrayOutputStream }
+import java.io.{ ByteArrayOutputStream, PrintStream }
 
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{ SparkConf, Logging, SparkContext }
-import org.bdgenomics.adam.instrumentation.{ DurationFormatting, ADAMMetricsListener, ADAMMetrics }
+import org.apache.spark.{ Logging, SparkConf, SparkContext }
+import org.bdgenomics.adam.instrumentation.{ ADAMMetrics, ADAMMetricsListener, DurationFormatting }
 import org.bdgenomics.adam.util.HadoopUtil
 
 trait ADAMCommandCompanion {

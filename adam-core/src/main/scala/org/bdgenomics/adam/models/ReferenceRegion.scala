@@ -21,6 +21,7 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
+
 import scala.math.{ max, min }
 
 object ReferenceRegionWithOrientation {

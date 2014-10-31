@@ -33,12 +33,12 @@
 
 package org.bdgenomics.adam.predicates
 
-import org.apache.avro.specific.SpecificRecord
 import org.apache.avro.Schema
 import org.apache.avro.Schema.Field
+import org.apache.avro.specific.SpecificRecord
+import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import parquet.filter.{ AndRecordFilter, OrRecordFilter, UnboundRecordFilter }
 
-import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import scala.annotation.tailrec
 
 private[predicates] object RecordCondition {

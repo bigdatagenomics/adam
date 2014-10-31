@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd.read.recalibration
 
 import java.io.File
+
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.rdd.ADAMContext._

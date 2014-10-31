@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.instrumentation
 
 import java.io.PrintStream
+
 import org.apache.commons.lang.StringUtils
 import org.bdgenomics.adam.instrumentation.Alignment.Alignment
 

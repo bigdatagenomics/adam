@@ -18,8 +18,8 @@
 package org.bdgenomics.adam.plugins
 
 import org.apache.avro.Schema
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 /**
  * Defines the interface for a Plugin for the ADAMSystem.

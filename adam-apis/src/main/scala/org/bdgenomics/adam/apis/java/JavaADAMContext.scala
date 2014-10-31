@@ -19,13 +19,9 @@ package org.bdgenomics.adam.apis.java
 
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaSparkContext
-import org.bdgenomics.adam.instrumentation.ADAMMetricsListener
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro._
-
-import scala.collection.JavaConversions._
 
 object JavaADAMContext {
   // convert to and from java/scala implementations

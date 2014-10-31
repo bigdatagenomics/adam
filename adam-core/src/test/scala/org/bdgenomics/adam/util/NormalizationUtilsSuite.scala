@@ -18,8 +18,8 @@
 package org.bdgenomics.adam.util
 
 import htsjdk.samtools.TextCigarCodec
-import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite
 

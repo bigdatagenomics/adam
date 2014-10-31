@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import java.io.{ File, FileInputStream }
+
 import htsjdk.samtools._
 import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.converters.{ VCFLine, VCFLineConverter, VCFLineParser }

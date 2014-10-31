@@ -20,11 +20,12 @@ package org.bdgenomics.adam.rdd.read.correction
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils
+import org.bdgenomics.formats.avro.AlignmentRecord
+
 import scala.annotation.tailrec
-import scala.math.{ log => mathLog, exp }
+import scala.math.{ exp, log => mathLog }
 
 private[rdd] object TrimReads extends Logging {
 

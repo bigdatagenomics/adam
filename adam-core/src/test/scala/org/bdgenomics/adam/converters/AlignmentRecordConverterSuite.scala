@@ -17,13 +17,8 @@
  */
 package org.bdgenomics.adam.converters
 
+import org.bdgenomics.adam.models.{ RecordGroupDictionary, SAMFileHeaderWritable, SequenceDictionary, SequenceRecord }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
-import org.bdgenomics.adam.models.{
-  RecordGroupDictionary,
-  SAMFileHeaderWritable,
-  SequenceDictionary,
-  SequenceRecord
-}
 import org.scalatest.FunSuite
 
 class AlignmentRecordConverterSuite extends FunSuite {

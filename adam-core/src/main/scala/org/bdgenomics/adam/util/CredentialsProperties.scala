@@ -17,10 +17,12 @@
  */
 package org.bdgenomics.adam.util
 
-import java.io.{ FileInputStream, File }
-import org.apache.spark.Logging
-import scala.io.Source
+import java.io.{ File, FileInputStream }
+
 import com.amazonaws.auth.AWSCredentials
+import org.apache.spark.Logging
+
+import scala.io.Source
 
 /**
  * CredentialsProperties is a wrapper class which extracts Amazon S3 keys (although it could be

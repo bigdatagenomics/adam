@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.rdd.features
 
-import org.bdgenomics.adam.util.SparkFunSuite
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ NarrowPeakFeature, BEDFeature }
+import org.bdgenomics.adam.models.{ BEDFeature, NarrowPeakFeature }
 import org.bdgenomics.adam.rdd.features.ADAMFeaturesContext._
+import org.bdgenomics.adam.util.SparkFunSuite
 
 class FeatureParsingSuite extends SparkFunSuite {
 

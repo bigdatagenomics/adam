@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.pileup
 
-import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.{ Base, Contig, Pileup }

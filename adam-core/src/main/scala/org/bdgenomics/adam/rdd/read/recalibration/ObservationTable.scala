@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.util.QualityScore
-import org.bdgenomics.adam.util.Util
+import org.bdgenomics.adam.util.{ QualityScore, Util }
+
 import scala.collection.mutable
 
 /**

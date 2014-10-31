@@ -19,10 +19,10 @@ package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.contig.ADAMNucleotideContigFragmentContext._
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.contig.ADAMNucleotideContigFragmentContext
+import org.bdgenomics.adam.rdd.contig.ADAMNucleotideContigFragmentContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 

@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.features
 
+import org.bdgenomics.adam.models.{ BEDFeature, BaseFeature, NarrowPeakFeature }
 import org.bdgenomics.formats.avro.{ Contig, Feature, Strand }
-import org.bdgenomics.adam.models.{ BaseFeature, NarrowPeakFeature, BEDFeature }
 
 trait FeatureParser[FT <: BaseFeature] extends Serializable {
   def parse(line: String): FT

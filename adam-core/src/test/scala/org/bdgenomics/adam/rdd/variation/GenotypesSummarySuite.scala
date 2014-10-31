@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.GenotypesSummaryCounts.ReferenceAndAlternate
 import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.formats.avro._
 
 class GenotypesSummarySuite extends SparkFunSuite {
 

@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.models
 
 import java.util.Date
+
 import htsjdk.samtools.{ SAMFileHeader, SAMFileReader, SAMReadGroupRecord }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
