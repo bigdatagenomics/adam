@@ -19,23 +19,61 @@ package org.bdgenomics.adam.serialization
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
-import com.twitter.chill.avro.AvroSerializer
+import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputStream }
+import org.apache.avro.io.{ BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory }
+import org.apache.avro.specific.{ SpecificDatumWriter, SpecificDatumReader, SpecificRecord }
 import org.apache.spark.serializer.KryoRegistrator
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.realignment._
 import scala.reflect.ClassTag
 
+case class InputStreamWithDecoder(size: Int) {
+  val buffer = new Array[Byte](size)
+  val stream = new FastByteArrayInputStream(buffer)
+  val decoder = DecoderFactory.get().directBinaryDecoder(stream, null.asInstanceOf[BinaryDecoder])
+}
+
+// NOTE: This class is not thread-safe; however, Spark guarantees that only a single thread will access it.
+class AvroSerializer[T <: SpecificRecord: ClassTag] extends Serializer[T] {
+  val reader = new SpecificDatumReader[T](scala.reflect.classTag[T].runtimeClass.asInstanceOf[Class[T]])
+  val writer = new SpecificDatumWriter[T](scala.reflect.classTag[T].runtimeClass.asInstanceOf[Class[T]])
+  var in = InputStreamWithDecoder(1024)
+  val outstream = new FastByteArrayOutputStream()
+  val encoder = EncoderFactory.get().directBinaryEncoder(outstream, null.asInstanceOf[BinaryEncoder])
+
+  setAcceptsNull(false)
+
+  def write(kryo: Kryo, kryoOut: Output, record: T) = {
+    outstream.reset()
+    writer.write(record, encoder)
+    kryoOut.writeInt(outstream.array.length, true)
+    kryoOut.write(outstream.array)
+  }
+
+  def read(kryo: Kryo, kryoIn: Input, klazz: Class[T]): T = this.synchronized {
+    val len = kryoIn.readInt(true)
+    if (len > in.size) {
+      in = InputStreamWithDecoder(len + 1024)
+    }
+    in.stream.reset()
+    // Read Kryo bytes into input buffer
+    kryoIn.readBytes(in.buffer, 0, len)
+    // Read the Avro object from the buffer
+    reader.read(null.asInstanceOf[T], in.decoder)
+  }
+}
+
 class ADAMKryoRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo) {
-    kryo.register(classOf[AlignmentRecord], AvroSerializer.SpecificRecordSerializer[AlignmentRecord])
-    kryo.register(classOf[Pileup], AvroSerializer.SpecificRecordSerializer[Pileup])
-    kryo.register(classOf[Genotype], AvroSerializer.SpecificRecordSerializer[Genotype])
-    kryo.register(classOf[Variant], AvroSerializer.SpecificRecordSerializer[Variant])
-    kryo.register(classOf[FlatGenotype], AvroSerializer.SpecificRecordSerializer[FlatGenotype])
-    kryo.register(classOf[DatabaseVariantAnnotation], AvroSerializer.SpecificRecordSerializer[DatabaseVariantAnnotation])
-    kryo.register(classOf[NucleotideContigFragment], AvroSerializer.SpecificRecordSerializer[NucleotideContigFragment])
-    kryo.register(classOf[Feature], AvroSerializer.SpecificRecordSerializer[Feature])
+    kryo.register(classOf[AlignmentRecord], new AvroSerializer[AlignmentRecord]())
+    kryo.register(classOf[Pileup], new AvroSerializer[Pileup]())
+    kryo.register(classOf[Genotype], new AvroSerializer[Genotype]())
+    kryo.register(classOf[Variant], new AvroSerializer[Variant]())
+    kryo.register(classOf[FlatGenotype], new AvroSerializer[FlatGenotype]())
+    kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation]())
+    kryo.register(classOf[NucleotideContigFragment], new AvroSerializer[NucleotideContigFragment]())
+    kryo.register(classOf[Feature], new AvroSerializer[Feature]())
     kryo.register(classOf[ReferencePositionWithOrientation], new ReferencePositionWithOrientationSerializer)
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)

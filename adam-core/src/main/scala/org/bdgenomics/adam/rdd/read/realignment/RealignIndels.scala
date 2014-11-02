@@ -357,6 +357,8 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
 
               // update mdtag and cigar
               builder.setMismatchingPositions(MdTag.moveAlignment(r, newCigar, reference.drop(remapping), refStart + remapping).toString())
+              builder.setOldPosition(r.getStart())
+              builder.setOldCigar(r.getCigar())
               builder.setCigar(newCigar.toString)
               new RichAlignmentRecord(builder.build())
             } else

@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.converters
 
-import htsjdk.samtools.{ CigarElement, SAMReadGroupRecord, SAMRecord }
 import org.bdgenomics.adam.models.{ SequenceRecord, Attribute, RecordGroupDictionary, SequenceDictionary }
+import htsjdk.samtools.{ SAMUtils, CigarElement, SAMReadGroupRecord, SAMRecord }
 import org.bdgenomics.adam.util.AttributeUtils
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConverters._
@@ -53,6 +53,7 @@ class SAMRecordConverter extends Serializable {
       .setBasesTrimmedFromStart(startTrim)
       .setBasesTrimmedFromEnd(endTrim)
       .setQual(samRecord.getBaseQualityString)
+      .setOrigQual(SAMUtils.phredToFastq(samRecord.getOriginalBaseQualities))
 
     // Only set the reference information if the read is aligned, matching the mate reference
     // This prevents looking up a -1 in the sequence dictionary
@@ -64,6 +65,12 @@ class SAMRecordConverter extends Serializable {
       val start: Int = samRecord.getAlignmentStart
       assert(start != 0, "Start cannot equal 0 if contig is set.")
       builder.setStart((start - 1).asInstanceOf[Long])
+
+      // set OP and OC flags, if applicable
+      if (samRecord.getAttribute("OP") != null) {
+        builder.setOldPosition(samRecord.getIntegerAttribute("OP").toLong - 1)
+        builder.setOldCigar(samRecord.getStringAttribute("OC"))
+      }
 
       val end = samRecord.getCigar.getCigarElements
         .asScala
@@ -148,8 +155,6 @@ class SAMRecordConverter extends Serializable {
         attr =>
           if (attr.tag == "MD") {
             builder.setMismatchingPositions(attr.value.toString)
-          } else if (attr.tag == "OQ") {
-            builder.setOrigQual(attr.value.toString)
           } else {
             tags ::= AttributeUtils.convertSAMTagAndValue(attr)
           }

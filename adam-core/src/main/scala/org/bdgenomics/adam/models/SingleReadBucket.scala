@@ -21,7 +21,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
-import com.twitter.chill.avro.AvroSerializer
+import org.bdgenomics.adam.serialization.AvroSerializer
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 
@@ -51,7 +51,7 @@ case class SingleReadBucket(primaryMapped: Iterable[AlignmentRecord] = Seq.empty
 }
 
 class SingleReadBucketSerializer extends Serializer[SingleReadBucket] {
-  val recordSerializer = AvroSerializer.SpecificRecordSerializer[AlignmentRecord]
+  val recordSerializer = new AvroSerializer[AlignmentRecord]()
 
   def writeArray(kryo: Kryo, output: Output, reads: Seq[AlignmentRecord]): Unit = {
     output.writeInt(reads.size, true)

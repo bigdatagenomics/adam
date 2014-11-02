@@ -19,7 +19,7 @@ package org.bdgenomics.adam.models
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
-import com.twitter.chill.avro.AvroSerializer
+import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 /**
@@ -48,7 +48,7 @@ case class ReadBucket(unpairedPrimaryMappedReads: Iterable[AlignmentRecord] = Se
 }
 
 class ReadBucketSerializer extends Serializer[ReadBucket] {
-  val recordSerializer = AvroSerializer.SpecificRecordSerializer[AlignmentRecord]
+  val recordSerializer = new AvroSerializer[AlignmentRecord]()
 
   def writeArray(kryo: Kryo, output: Output, reads: Iterable[AlignmentRecord]): Unit = {
     output.writeInt(reads.size, true)

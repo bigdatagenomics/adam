@@ -115,7 +115,8 @@ class AlignmentRecordConverter extends Serializable {
 
           // set the cigar, if provided
           Option(adamRecord.getCigar).map(_.toString).foreach(builder.setCigarString)
-
+          // set the old cigar, if provided
+          Option(adamRecord.getOldCigar).map(_.toString).foreach(v => builder.setAttribute("OC", v))
           // set mapping flags
           Option(adamRecord.getReadNegativeStrand)
             .foreach(v => builder.setReadNegativeStrandFlag(v.booleanValue))
@@ -125,6 +126,8 @@ class AlignmentRecordConverter extends Serializable {
             .foreach(v => builder.setSupplementaryAlignmentFlag(v.booleanValue))
           Option(adamRecord.getStart)
             .foreach(s => builder.setAlignmentStart(s.toInt + 1))
+          Option(adamRecord.getOldPosition)
+            .foreach(s => builder.setAttribute("OP", s.toInt + 1))
           Option(adamRecord.getMapq).foreach(v => builder.setMappingQuality(v))
         } else {
           // mapping quality must be 0 if read is unmapped

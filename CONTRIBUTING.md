@@ -11,11 +11,14 @@ let your code do the talking for you if you like.
 
 You can find us on Freenode IRC in the #adamdev room.
 
-## Check the issue tracker
+## Check the issue tracker and pull requests
 
 Before you write too much code, check the [open issues in the ADAM issue tracker](https://github.com/bigdatagenomics/adam/issues?state=open)
-to see if someone else has already filed an issue related to your work or is already working on it. If not, go ahead and 
-[open a new issue](https://github.com/bigdatagenomics/adam/issues/new).
+or [open pull requests](https://github.com/bigdatagenomics/adam/pulls) to see if someone else is already working on it. If the issue is
+a new one, and you've already written the code to address the issue, simply [submit a pull request](https://help.github.com/articles/creating-a-pull-request).
+If you haven't written any code but plan to, go ahead and [open a new issue](https://github.com/bigdatagenomics/adam/issues/new) and assign
+it to yourself to socialize your work. When you submit your PR, please reference this pull request so that it will be automatically closed
+when the PR is merged.
 
 The issue tracker has a list of ["pick me up!"](https://github.com/bigdatagenomics/adam/issues?labels=pick+me+up%21&page=1&state=open) issues
 that are good tasks to help you get familiar with ADAM; they don't require an understanding of genomics and are fairly
@@ -46,10 +49,8 @@ or "topic" branches.
 * Use your feature branch in the pull request. Any changes that you push to your feature branch will automatically
 be shown in the pull request.  If your feature branch is not based off the latest master, you will be asked to rebase
 it before it is merged. This ensures that the commit history is linear, which makes the commit history easier to read.
-* Before contributing code to ADAM, check the [Github issue tracker](https://github.com/bigdatagenomics/adam/issues).
-If there is not an open ticket for what you would like to work on, please open it. When you submit your changes to ADAM,
-reference the issue from the pull request so that it will [be closed when your pull request is merged](https://github.com/blog/1506-closing-issues-via-pull-requests).
-Also, please reference the issue number in your commit.
+* Remember to reference any issues that your pull request fixes in the commit message. This will ensure that the issue
+is automatically closed when the PR is merged.
 * Run the ./scripts/format-source script in order to format the code and ensure correct license headers
   ```
   $ ./scripts/format-source

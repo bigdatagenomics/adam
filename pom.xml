@@ -26,7 +26,6 @@
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
-    <chill.version>0.5.0</chill.version>
   </properties>
   
   <modules>
@@ -299,40 +298,6 @@
         <version>2.21</version>
       </dependency>
       <dependency>
-        <groupId>com.twitter</groupId>
-        <artifactId>chill-avro</artifactId>
-        <version>${chill.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>com.twitter</groupId>
-            <artifactId>chill_2.11</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.twitter</groupId>
-            <artifactId>chill-bijection_2.11</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.twitter</groupId>
-            <artifactId>bijection-avro_2.11</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>com.twitter</groupId>
-        <artifactId>bijection-avro_${scala.artifact.suffix}</artifactId>
-        <version>0.7.0</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twitter</groupId>
-        <artifactId>chill-bijection_${scala.artifact.suffix}</artifactId>
-        <version>${chill.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twitter</groupId>
-        <artifactId>chill_${scala.artifact.suffix}</artifactId>
-        <version>${chill.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.scoverage</groupId>
         <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
         <version>${scoverage.version}</version>
@@ -340,7 +305,7 @@
       <dependency>
         <groupId>org.bdgenomics.bdg-formats</groupId>
         <artifactId>bdg-formats</artifactId>
-        <version>0.3.1</version>
+        <version>0.3.2</version>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>
@@ -416,10 +381,6 @@
           <exclusion>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.twitter</groupId>
-            <artifactId>chill_${scala.artifact.suffix}</artifactId>
           </exclusion>
           <exclusion>
             <groupId>org.apache.hadoop</groupId>
