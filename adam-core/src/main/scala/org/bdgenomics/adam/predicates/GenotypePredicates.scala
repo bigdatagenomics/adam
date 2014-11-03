@@ -21,7 +21,7 @@ import org.bdgenomics.formats.avro.Genotype
 
 class GenotypeRecordPASSPredicate extends ADAMPredicate[Genotype] {
 
-  override val recordCondition = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
+  override val recordCondition = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils(true)))
 
 }
 

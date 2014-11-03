@@ -82,7 +82,8 @@ private[predicates] object RecordCondition {
  *
  */
 private[predicates] class RecordCondition[T <% SpecificRecord: Manifest] private (val filter: T => Boolean,
-                                                                                  val recordFilter: UnboundRecordFilter) extends Serializable {
+                                                                                  val recordFilter: UnboundRecordFilter)
+    extends Serializable {
 
   // Combine two predicates through an AND
   def and(other: RecordCondition[T]): RecordCondition[T] = &&(other)
