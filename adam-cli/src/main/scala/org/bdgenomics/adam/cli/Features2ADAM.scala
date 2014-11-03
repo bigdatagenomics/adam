@@ -35,7 +35,7 @@ object Features2ADAM extends ADAMCommandCompanion {
   }
 }
 
-class Features2ADAMArgs extends Args4jBase with ParquetArgs {
+class Features2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(required = true, metaVar = "FEATURES",
     usage = "The features file to convert (e.g., .bed, .gff)", index = 0)
   var featuresFile: String = _
@@ -59,8 +59,6 @@ class Features2ADAM(val args: Features2ADAMArgs)
       case "bed"        => sc.adamBEDFeatureLoad(args.featuresFile)
       case "narrowPeak" => sc.adamNarrowPeakFeatureLoad(args.featuresFile)
     }
-    features.adamSave(args.outputPath, blockSize = args.blockSize,
-      pageSize = args.pageSize, compressCodec = args.compressionCodec,
-      disableDictionaryEncoding = args.disableDictionary)
+    features.adamParquetSave(args)
   }
 }

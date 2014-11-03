@@ -30,7 +30,7 @@ import org.bdgenomics.adam.algorithms.consensus.{
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
+import org.bdgenomics.adam.rdd.{ ADAMSaveArgs, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.rdd.read.correction.{ ErrorCorrection, TrimReads }
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
@@ -62,6 +62,36 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         rec.getStart < query.end &&
         rec.getEnd > query.start
     rdd.filter(overlapsQuery)
+  }
+
+  def maybeSaveBam(args: ADAMSaveArgs): Boolean = {
+    if (args.outputPath.endsWith(".sam")) {
+      log.info("Saving data in SAM format")
+      rdd.adamSAMSave(args.outputPath)
+      true
+    } else if (args.outputPath.endsWith(".bam")) {
+      log.info("Saving data in BAM format")
+      rdd.adamSAMSave(args.outputPath, asSam = false)
+      true
+    } else
+      false
+  }
+
+  def maybeSaveFastq(args: ADAMSaveAnyArgs): Boolean = {
+    if (args.outputPath.endsWith(".fq") || args.outputPath.endsWith(".fastq") ||
+      args.outputPath.endsWith(".ifq")) {
+      rdd.adamSaveAsFastq(args.outputPath, args.sortFastqOutput)
+      true
+    } else
+      false
+  }
+
+  def adamAlignedRecordSave(args: ADAMSaveArgs) = {
+    maybeSaveBam(args) || { rdd.adamParquetSave(args); true }
+  }
+
+  def adamSave(args: ADAMSaveAnyArgs) = {
+    maybeSaveBam(args) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
   }
 
   /**
@@ -418,6 +448,8 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *             to false. Sorting the output will recover pair order, if desired.
    */
   def adamSaveAsFastq(fileName: String, sort: Boolean = false) {
+    log.info("Saving data in FASTQ format.")
+
     val arc = new AlignmentRecordConverter
 
     // sort the rdd if desired

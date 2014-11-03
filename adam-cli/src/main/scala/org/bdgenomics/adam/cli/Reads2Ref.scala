@@ -40,12 +40,12 @@ object Reads2RefArgs {
   val MIN_MAPQ_DEFAULT: Long = 30L
 }
 
-class Reads2RefArgs extends Args4jBase with ParquetArgs {
+class Reads2RefArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(metaVar = "ADAMREADS", required = true, usage = "ADAM read-oriented data", index = 0)
   var readInput: String = _
 
   @Argument(metaVar = "DIR", required = true, usage = "Location to create reference-oriented ADAM data", index = 1)
-  var pileupOutput: String = _
+  var outputPath: String = _
 
   @option(name = "-mapq", usage = "Minimal mapq value allowed for a read (default = 30)")
   var minMapq: Long = Reads2RefArgs.MIN_MAPQ_DEFAULT
@@ -68,7 +68,6 @@ class Reads2Ref(protected val args: Reads2RefArgs) extends ADAMSparkCommand[Read
 
     val coverage = pileupCount / readCount
 
-    pileups.adamSave(args.pileupOutput, blockSize = args.blockSize, pageSize = args.pageSize,
-      compressCodec = args.compressionCodec, disableDictionaryEncoding = args.disableDictionary)
+    pileups.adamParquetSave(args)
   }
 }

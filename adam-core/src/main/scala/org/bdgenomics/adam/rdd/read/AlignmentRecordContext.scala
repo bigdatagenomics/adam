@@ -18,14 +18,11 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.{ LongWritable, Text }
+import org.apache.hadoop.io.Text
 import org.apache.spark.SparkContext._
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.converters.{
-  FastqRecordConverter,
-  SAMRecordConverter
-}
+import org.bdgenomics.adam.converters.FastqRecordConverter
 import org.bdgenomics.adam.io.{
   InterleavedFastqInputFormat,
   SingleFastqInputFormat
@@ -35,11 +32,6 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.seqdoop.hadoop_bam.{
-  AnySAMInputFormat,
-  SAMRecordWritable
-}
-import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 import parquet.hadoop.util.ContextUtil
 
 object AlignmentRecordContext extends Serializable with Logging {
@@ -48,24 +40,6 @@ object AlignmentRecordContext extends Serializable with Logging {
 
   // Add methods specific to Read RDDs
   implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
-
-  private[rdd] def adamBamLoad(sc: SparkContext,
-                               filePath: String): RDD[AlignmentRecord] = {
-    log.info("Reading legacy BAM file format %s to create RDD".format(filePath))
-
-    // We need to separately read the header, so that we can inject the sequence dictionary
-    // data into each individual Read (see the argument to samRecordConverter.convert,
-    // below).
-    val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
-    val seqDict = sc.adamBamDictionaryLoad(samHeader)
-    val readGroups = sc.adamBamLoadReadGroups(samHeader)
-
-    val job = HadoopUtil.newJob(sc)
-    val records = sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],
-      classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
-    val samRecordConverter = new SAMRecordConverter
-    records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
-  }
 
   private[rdd] def adamInterleavedFastqLoad(sc: SparkContext,
                                             filePath: String): RDD[AlignmentRecord] = {

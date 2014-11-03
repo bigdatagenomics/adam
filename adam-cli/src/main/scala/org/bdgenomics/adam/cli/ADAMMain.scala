@@ -29,36 +29,49 @@ object ADAMMain extends Logging {
 
   private val commandGroups =
     List(
-      CommandGroup("ADAM ACTIONS", List(
-        CompareADAM,
-        FindReads,
-        CalculateDepth,
-        CountKmers,
-        Transform,
-        /* TODO (nealsid): Reimplement in terms of new schema
+      CommandGroup(
+        "ADAM ACTIONS",
+        List(
+          CompareADAM,
+          FindReads,
+          CalculateDepth,
+          CountKmers,
+          Transform,
+          /* TODO (nealsid): Reimplement in terms of new schema
 	  ComputeVariants
 	*/
-        PluginExecutor)),
-      CommandGroup("CONVERSION OPERATIONS", List(
-        Bam2ADAM,
-        Vcf2FlatGenotype,
-        Vcf2ADAM,
-        VcfAnnotation2ADAM,
-        ADAM2Vcf,
-        Fasta2ADAM,
-        Reads2Ref,
-        MpileupCommand,
-        Features2ADAM)),
-      CommandGroup("PRINT", List(
-        PrintADAM,
-        PrintGenes,
-        FlagStat,
-        VizReads,
-        PrintTags,
-        ListDict,
-        SummarizeGenotypes,
-        AlleleCount,
-        BuildInformation)))
+          PluginExecutor
+        )
+      ),
+      CommandGroup(
+        "CONVERSION OPERATIONS",
+        List(
+          Bam2ADAM,
+          Vcf2FlatGenotype,
+          Vcf2ADAM,
+          VcfAnnotation2ADAM,
+          ADAM2Vcf,
+          Fasta2ADAM,
+          Reads2Ref,
+          MpileupCommand,
+          Features2ADAM
+        )
+      ),
+      CommandGroup(
+        "PRINT",
+        List(
+          PrintADAM,
+          PrintGenes,
+          FlagStat,
+          VizReads,
+          PrintTags,
+          ListDict,
+          SummarizeGenotypes,
+          AlleleCount,
+          BuildInformation
+        )
+      )
+    )
 
   private def printCommands() {
     println("\n")

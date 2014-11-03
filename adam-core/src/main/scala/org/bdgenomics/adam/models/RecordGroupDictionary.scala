@@ -104,21 +104,22 @@ object RecordGroup {
    * @return Returns a filled Option if record group data is attached to the read, else returns None.
    */
   def apply(read: AlignmentRecord): Option[RecordGroup] = {
-    Option(read.getRecordGroupSample).fold(None.asInstanceOf[Option[RecordGroup]])(rgs => {
-      Option(read.getRecordGroupName).fold(None.asInstanceOf[Option[RecordGroup]])(rgn => {
-        Some(new RecordGroup(rgs.toString,
-          rgn.toString,
-          Option(read.getRecordGroupSequencingCenter).map(_.toString),
-          Option(read.getRecordGroupDescription).map(_.toString),
-          Option(read.getRecordGroupRunDateEpoch).map(_.toLong),
-          Option(read.getRecordGroupFlowOrder).map(_.toString),
-          Option(read.getRecordGroupKeySequence).map(_.toString),
-          Option(read.getRecordGroupLibrary).map(_.toString),
-          Option(read.getRecordGroupPredictedMedianInsertSize).map(_.toInt),
-          Option(read.getRecordGroupPlatform).map(_.toString),
-          Option(read.getRecordGroupPlatformUnit).map(_.toString)))
-      })
-    })
+    for {
+      rgs <- Option(read.getRecordGroupSample)
+      rgn <- Option(read.getRecordGroupName)
+    } yield new RecordGroup(
+      rgs.toString,
+      rgn.toString,
+      Option(read.getRecordGroupSequencingCenter).map(_.toString),
+      Option(read.getRecordGroupDescription).map(_.toString),
+      Option(read.getRecordGroupRunDateEpoch).map(_.toLong),
+      Option(read.getRecordGroupFlowOrder).map(_.toString),
+      Option(read.getRecordGroupKeySequence).map(_.toString),
+      Option(read.getRecordGroupLibrary).map(_.toString),
+      Option(read.getRecordGroupPredictedMedianInsertSize).map(_.toInt),
+      Option(read.getRecordGroupPlatform).map(_.toString),
+      Option(read.getRecordGroupPlatformUnit).map(_.toString)
+    )
   }
 
   /**

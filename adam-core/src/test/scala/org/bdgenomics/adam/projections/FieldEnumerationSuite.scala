@@ -44,7 +44,7 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
 
     // Convert the reads12.sam file into a parquet file
     val bamReads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
-    bamReads.adamSave(readsParquetFile.getAbsolutePath)
+    bamReads.adamParquetSave(readsParquetFile.getAbsolutePath)
   }
 
   after {

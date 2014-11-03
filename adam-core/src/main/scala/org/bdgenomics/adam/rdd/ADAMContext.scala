@@ -96,21 +96,33 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     RecordGroupDictionary.fromSAMHeader(samHeader)
   }
 
-  private[rdd] def adamParquetLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None): RDD[T] = {
+  private[rdd] def adamParquetLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None): RDD[T] = {
+
     log.info("Reading the ADAM file at %s to create RDD".format(filePath))
     val job = HadoopUtil.newJob(sc)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])
+
     if (predicate.isDefined) {
       log.info("Using the specified push-down predicate")
       ParquetInputFormat.setUnboundRecordFilter(job, predicate.get)
     }
+
     if (projection.isDefined) {
       log.info("Using the specified projection schema")
       AvroParquetInputFormat.setRequestedProjection(job, projection.get)
     }
-    val records = sc.newAPIHadoopFile(filePath,
-      classOf[ParquetInputFormat[T]], classOf[Void], manifest[T].runtimeClass.asInstanceOf[Class[T]],
-      ContextUtil.getConfiguration(job)).map(p => p._2)
+
+    val records = sc.newAPIHadoopFile(
+      filePath,
+      classOf[ParquetInputFormat[T]],
+      classOf[Void],
+      manifest[T].runtimeClass.asInstanceOf[Class[T]],
+      ContextUtil.getConfiguration(job)
+    ).map(p => p._2)
+
     if (predicate.isDefined) {
       // Strip the nulls that the predicate returns
       records.filter(p => p != null.asInstanceOf[T])
@@ -180,6 +192,28 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     }
   }
 
+  def applyPredicate[T <% SpecificRecord: Manifest, U <: ADAMPredicate[T]](reads: RDD[T],
+                                                                           predicateOpt: Option[Class[U]]): RDD[T] =
+    predicateOpt.map(_.newInstance()(reads)).getOrElse(reads)
+
+  private[rdd] def adamBamLoad(filePath: String): RDD[AlignmentRecord] = {
+    log.info("Reading legacy BAM file format %s to create RDD".format(filePath))
+
+    // We need to separately read the header, so that we can inject the sequence dictionary
+    // data into each individual Read (see the argument to samRecordConverter.convert,
+    // below).
+    val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
+    val seqDict = adamBamDictionaryLoad(samHeader)
+    val readGroups = adamBamLoadReadGroups(samHeader)
+
+    val job = HadoopUtil.newJob(sc)
+    val records = sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],
+      classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+    val samRecordConverter = new SAMRecordConverter
+
+    records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
+  }
+
   /**
    * This method will create a new RDD.
    * @param filePath The path to the input data
@@ -188,9 +222,10 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
    * @tparam T The type of records to return
    * @return An RDD with records of the specified type
    */
-  def adamLoad[T <% SpecificRecord: Manifest, U <: ADAMPredicate[T]](filePath: String,
-                                                                     predicate: Option[Class[U]] = None,
-                                                                     projection: Option[Schema] = None): RDD[T] = {
+  def adamLoad[T <% SpecificRecord: Manifest, U <: ADAMPredicate[T]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None): RDD[T] = {
 
     if (filePath.endsWith(".bam") ||
       filePath.endsWith(".sam") && classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
@@ -198,27 +233,20 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a BAM file")
       }
-      val reads = AlignmentRecordContext.adamBamLoad(sc, filePath).asInstanceOf[RDD[T]]
-      if (predicate.isDefined) {
-        val predicateClass = predicate.get
-        val filter = predicateClass.newInstance()
-        filter(reads)
-      } else {
-        reads
-      }
+
+      val reads = adamBamLoad(filePath).asInstanceOf[RDD[T]]
+
+      applyPredicate(reads, predicate)
+
     } else if (filePath.endsWith(".ifq") && classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
 
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading an interleaved FASTQ file")
       }
       val reads = AlignmentRecordContext.adamInterleavedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
-      if (predicate.isDefined) {
-        val predicateClass = predicate.get
-        val filter = predicateClass.newInstance()
-        filter(reads)
-      } else {
-        reads
-      }
+
+      applyPredicate(reads, predicate)
+
     } else if ((filePath.endsWith(".fastq") || filePath.endsWith(".fq")) &&
       classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
 
@@ -226,13 +254,9 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
         log.warn("Projection is ignored when loading a FASTQ file")
       }
       val reads = AlignmentRecordContext.adamUnpairedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
-      if (predicate.isDefined) {
-        val predicateClass = predicate.get
-        val filter = predicateClass.newInstance()
-        filter(reads)
-      } else {
-        reads
-      }
+
+      applyPredicate(reads, predicate)
+
     } else {
       adamParquetLoad(filePath, predicate, projection)
     }

@@ -83,7 +83,7 @@ class Vcf2FlatGenotype(args: Vcf2FlatGenotypeArgs) extends ADAMCommand {
       new AvroParquetWriter[FlatGenotype](
         new Path(args.outputPath + "/part_%d".format(index)),
         FlatGenotype.SCHEMA$,
-        args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionary)
+        args.compressionCodec, args.blockSize, args.pageSize, !args.disableDictionaryEncoding)
 
     // create a new writer for each file to be output
     val writers = indexedSamples.map(_._1).distinct.map(i => createWriter(i))
