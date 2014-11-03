@@ -17,9 +17,11 @@
  */
 package org.bdgenomics.adam.rdd.read
 
+import java.io.StringWriter
+
+import htsjdk.samtools.{ ValidationStringency, SAMTextHeaderCodec, SAMTextWriter, SAMFileHeader }
 import org.apache.spark.storage.StorageLevel
 import org.seqdoop.hadoop_bam.SAMRecordWritable
-import htsjdk.samtools.{ ValidationStringency, SAMFileHeader }
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.SparkContext._
@@ -93,6 +95,26 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
   def adamSave(args: ADAMSaveAnyArgs) = {
     maybeSaveBam(args) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
+  }
+
+  def adamSAMString: String = {
+    // convert the records
+    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM()
+
+    val records = convertRecords.coalesce(1, shuffle = true).collect()
+
+    val samHeaderCodec = new SAMTextHeaderCodec
+    samHeaderCodec.setValidationStringency(ValidationStringency.SILENT)
+
+    val samStringWriter = new StringWriter()
+    samHeaderCodec.encode(samStringWriter, header);
+
+    val samWriter: SAMTextWriter = new SAMTextWriter(samStringWriter)
+    //samWriter.writeHeader(stringHeaderWriter.toString)
+
+    records.foreach(record => samWriter.writeAlignment(record.get))
+
+    samStringWriter.toString
   }
 
   /**
