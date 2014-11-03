@@ -20,7 +20,6 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMSaveArgs
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
@@ -31,7 +30,7 @@ class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to view", index = 0)
   var inputPath: String = null
 
-  @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write output data", index = 1)
+  @Argument(required = false, metaVar = "OUTPUT", usage = "Location to write output data", index = 1)
   var outputPath: String = null
 
   @Args4jOption(
@@ -48,6 +47,18 @@ class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveArgs {
     usage = "Restrict to reads that match none of the bits in <N>")
   var matchNoBits: Int = 0
 
+  @Args4jOption(
+    required = false,
+    name = "-c",
+    usage = "Print count of matching records, instead of the records themselves")
+  var printCount: Boolean = false
+
+  @Args4jOption(
+    required = false,
+    name = "-o",
+    metaVar = "<FILE>",
+    usage = "Output to <FILE>; can also pass <FILE> as the second argument")
+  var outputPathArg: String = null
 }
 
 object View extends ADAMCommandCompanion {
@@ -55,10 +66,20 @@ object View extends ADAMCommandCompanion {
   val commandDescription = "View certain reads from an alignment-record file."
 
   def apply(cmdLine: Array[String]): View = {
-    new View(Args4j[ViewArgs](cmdLine))
+    val args = Args4j[ViewArgs](cmdLine)
+    if (args.outputPath == null && args.outputPathArg != null) {
+      args.outputPath = args.outputPathArg
+    }
+    new View(args)
   }
 }
 
+/**
+ * The `adam view` command implements some of the functionality of `samtools view`, specifically the -f, -F, -c, and -o
+ * options, in an optionally distributed fashion.
+ *
+ * It is agnostic to its input and output being SAM, BAM, or ADAM files; when printing to stdout it prints SAM.
+ */
 class View(val args: ViewArgs) extends ADAMSparkCommand[ViewArgs] {
   val companion = View
 
@@ -107,6 +128,14 @@ class View(val args: ViewArgs) extends ADAMSparkCommand[ViewArgs] {
       reads = reads.filter(read => allFilters.forall(_(read)))
     }
 
-    reads.adamAlignedRecordSave(args)
+    if (args.outputPath != null)
+      reads.adamAlignedRecordSave(args)
+    else {
+      if (args.printCount) {
+        println(reads.count())
+      } else {
+        println(reads.adamSAMString)
+      }
+    }
   }
 }
