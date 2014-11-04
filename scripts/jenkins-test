@@ -42,12 +42,16 @@ echo "Fetching BAM file"
 BAM=mouse_chrM.bam
 READS="$BAM".reads
 PILEUPS="$BAM".pileup
+rm -rf "$BAM"
 wget https://s3.amazonaws.com/bdgenomics-test/"$BAM"
 echo "Converting BAM to ADAM read format"
+rm -rf "$READS"
 "$ADAM" bam2adam -samtools_validation lenient "$BAM" "$READS"
 echo "Converting BAM to ADAM read format with sorting"
+rm -rf "$READS".sorted
 "$ADAM" transform -sort_reads "$READS" "$READS".sorted
 echo "Converting read file to pileup format"
+rm -rf "$PILEUPS"
 "$ADAM" reads2ref "$READS" "$PILEUPS"
 echo "Reading reads"
 "$ADAM" print "$READS" 1>/dev/null 2>/dev/null
