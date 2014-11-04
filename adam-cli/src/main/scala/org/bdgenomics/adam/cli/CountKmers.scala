@@ -21,6 +21,7 @@ import java.util.logging.Level
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.util.ParquetLogger
@@ -60,7 +61,9 @@ class CountKmers(protected val args: CountKmersArgs) extends ADAMSparkCommand[Co
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     // read from disk
-    var adamRecords: RDD[AlignmentRecord] = sc.adamLoad(args.inputPath)
+    var adamRecords: RDD[AlignmentRecord] = sc.adamLoad(
+      args.inputPath,
+      projection = Some(Projection(AlignmentRecordField.sequence)))
 
     if (args.repartition != -1) {
       log.info("Repartitioning reads to '%d' partitions".format(args.repartition))
