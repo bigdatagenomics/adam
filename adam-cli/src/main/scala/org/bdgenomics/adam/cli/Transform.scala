@@ -91,9 +91,10 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
 class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[TransformArgs] with Logging {
   val companion = Transform
 
-  def run(sc: SparkContext, job: Job) {
+  def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
 
-    var adamRecords: RDD[AlignmentRecord] = sc.adamLoad(args.inputPath)
+    var adamRecords = rdd
+    val sc = rdd.context
 
     if (args.repartition != -1) {
       log.info("Repartitioning reads to to '%d' partitions".format(args.repartition))
@@ -152,6 +153,10 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
       adamRecords = adamRecords.adamSortReadsByReferencePosition()
     }
 
-    adamRecords.adamSave(args)
+    adamRecords
+  }
+
+  def run(sc: SparkContext, job: Job) {
+    this.apply(sc.adamLoad(args.inputPath)).adamSave(args)
   }
 }
