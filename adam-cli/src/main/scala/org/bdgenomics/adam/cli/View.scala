@@ -45,7 +45,21 @@ class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveArgs {
     name = "-F",
     metaVar = "N",
     usage = "Restrict to reads that match none of the bits in <N>")
-  var matchNoBits: Int = 0
+  var mismatchAllBits: Int = 0
+
+  @Args4jOption(
+    required = false,
+    name = "-g",
+    metaVar = "N",
+    usage = "Restrict to reads that match any of the bits in <N>")
+  var matchSomeBits: Int = 0
+
+  @Args4jOption(
+    required = false,
+    name = "-G",
+    metaVar = "N",
+    usage = "Restrict to reads that mismatch at least one of the bits in <N>")
+  var mismatchSomeBits: Int = 0
 
   @Args4jOption(
     required = false,
@@ -85,11 +99,11 @@ class View(val args: ViewArgs) extends ADAMSparkCommand[ViewArgs] {
 
   type ReadFilter = (AlignmentRecord => Boolean)
 
-  def getFilters(n: Int, ensureValue: Boolean = true): List[ReadFilter] = {
+  def getFilters(n: Int, matchValue: Boolean = true): List[ReadFilter] = {
     def getFilter(bit: Int, fn: ReadFilter): Option[ReadFilter] =
       if ((n & bit) > 0)
         Some(
-          fn(_) == ensureValue
+          fn(_) == matchValue
         )
       else
         None
@@ -120,12 +134,20 @@ class View(val args: ViewArgs) extends ADAMSparkCommand[ViewArgs] {
 
     var reads: RDD[AlignmentRecord] = sc.adamLoad(args.inputPath)
 
-    val filters: List[ReadFilter] = getFilters(args.matchAllBits)
-    val notFilters: List[ReadFilter] = getFilters(args.matchNoBits, ensureValue = false)
-    val allFilters = filters ++ notFilters
+    val matchAllFilters: List[ReadFilter] = getFilters(args.matchAllBits, matchValue = true)
+    val mismatchAllFilters: List[ReadFilter] = getFilters(args.mismatchAllBits, matchValue = false)
+    val allFilters = matchAllFilters ++ mismatchAllFilters
 
-    if (allFilters.nonEmpty) {
-      reads = reads.filter(read => allFilters.forall(_(read)))
+    val matchSomeFilters: List[ReadFilter] = getFilters(args.matchSomeBits, matchValue = true)
+    val mismatchSomeFilters: List[ReadFilter] = getFilters(args.mismatchSomeBits, matchValue = false)
+    val someFilters = matchSomeFilters ++ mismatchSomeFilters
+
+    if (allFilters.nonEmpty || someFilters.nonEmpty) {
+      reads = reads.filter(read =>
+        allFilters.forall(_(read)) &&
+          (matchSomeFilters.isEmpty || matchSomeFilters.exists(_(read))) &&
+          (mismatchSomeFilters.isEmpty || mismatchSomeFilters.exists(_(read)))
+      )
     }
 
     if (args.outputPath != null)
