@@ -18,13 +18,17 @@
 package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.models.{ SequenceRecord, Attribute, RecordGroupDictionary, SequenceDictionary }
-import htsjdk.samtools.{ SAMUtils, CigarElement, SAMReadGroupRecord, SAMRecord }
-import org.bdgenomics.adam.util.AttributeUtils
+import htsjdk.samtools.{ValidationStringency, SAMUtils, CigarElement, SAMReadGroupRecord, SAMRecord}
+import org.bdgenomics.adam.util.{ValidationLogging, AttributeUtils}
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConverters._
 
-class SAMRecordConverter extends Serializable {
-  def convert(samRecord: SAMRecord, dict: SequenceDictionary, readGroups: RecordGroupDictionary): AlignmentRecord = {
+class SAMRecordConverter(validationStringency: ValidationStringency = ValidationStringency.STRICT)
+    extends Serializable
+    with ValidationLogging  {
+  def convert(samRecord: SAMRecord,
+              dict: SequenceDictionary,
+              readGroups: RecordGroupDictionary): AlignmentRecord = {
 
     val cigar: String = samRecord.getCigarString
     val startTrim = if (cigar == "*") {
@@ -63,7 +67,7 @@ class SAMRecordConverter extends Serializable {
 
       // set read alignment flag
       val start: Int = samRecord.getAlignmentStart
-      assert(start != 0, "Start cannot equal 0 if contig is set.")
+      errorIf(start != 0, "Start cannot equal 0 if contig is set.")
       builder.setStart((start - 1).asInstanceOf[Long])
 
       // set OP and OC flags, if applicable
