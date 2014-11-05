@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import org.bdgenomics.adam.rdd.{ ADAMSaveArgs, ADAMParquetArgs }
-import org.kohsuke.args4j.Option
+import org.kohsuke.args4j.{ Argument, Option }
 import parquet.hadoop.metadata.CompressionCodecName
 
 trait ParquetArgs extends Args4jBase with ADAMParquetArgs {
@@ -35,3 +35,15 @@ trait ParquetArgs extends Args4jBase with ADAMParquetArgs {
 }
 
 trait ParquetSaveArgs extends ParquetArgs with ADAMSaveArgs
+
+trait LoadFileArgs {
+  @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to load as input", index = 0)
+  var inputPath: String = null
+}
+
+trait SaveFileArgs {
+  @Argument(required = true, metaVar = "OUTPUT", usage = "The ADAM, BAM or SAM file to save as output", index = 1)
+  var outputPath: String = null
+}
+
+trait ParquetLoadSaveArgs extends ParquetSaveArgs with LoadFileArgs with SaveFileArgs
