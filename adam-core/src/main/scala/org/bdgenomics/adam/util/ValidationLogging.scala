@@ -17,9 +17,23 @@
  */
 package org.bdgenomics.adam.util
 
-/**
- * Created by ryan on 11/5/14.
- */
-class ValidationLogging {
+import htsjdk.samtools.{ SAMFormatException, ValidationStringency }
+import org.apache.spark.Logging
 
+trait ValidationLogging extends Logging {
+  def validationStringency: ValidationStringency
+
+  // Adapted from HTSJDK's SAMLineConverter
+  def error(reason: String) {
+    if (validationStringency == ValidationStringency.STRICT) {
+      throw new SAMFormatException(reason)
+    } else if (validationStringency == ValidationStringency.LENIENT) {
+      log.warn("Ignoring SAM validation error due to lenient parsing:")
+      log.warn(reason)
+    }
+  }
+
+  def errorIf(condition: Boolean, reason: String) =
+    if (condition)
+      error(reason)
 }

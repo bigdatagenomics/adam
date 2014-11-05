@@ -18,14 +18,15 @@
 package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.models.{ SequenceRecord, Attribute, RecordGroupDictionary, SequenceDictionary }
-import htsjdk.samtools.{ValidationStringency, SAMUtils, CigarElement, SAMReadGroupRecord, SAMRecord}
-import org.bdgenomics.adam.util.{ValidationLogging, AttributeUtils}
+import htsjdk.samtools.{ ValidationStringency, SAMUtils, CigarElement, SAMReadGroupRecord, SAMRecord }
+import org.bdgenomics.adam.util.{ ValidationLogging, AttributeUtils }
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConverters._
 
-class SAMRecordConverter(validationStringency: ValidationStringency = ValidationStringency.STRICT)
+class SAMRecordConverter(val validationStringency: ValidationStringency = ValidationStringency.STRICT)
     extends Serializable
-    with ValidationLogging  {
+    with ValidationLogging {
+
   def convert(samRecord: SAMRecord,
               dict: SequenceDictionary,
               readGroups: RecordGroupDictionary): AlignmentRecord = {
@@ -67,7 +68,7 @@ class SAMRecordConverter(validationStringency: ValidationStringency = Validation
 
       // set read alignment flag
       val start: Int = samRecord.getAlignmentStart
-      errorIf(start != 0, "Start cannot equal 0 if contig is set.")
+      errorIf(start == 0, "Start cannot equal 0 if contig is set. SAMRecord: %s".format(samRecord.toString))
       builder.setStart((start - 1).asInstanceOf[Long])
 
       // set OP and OC flags, if applicable
@@ -102,6 +103,10 @@ class SAMRecordConverter(validationStringency: ValidationStringency = Validation
         }
         if (!samRecord.getNotPrimaryAlignmentFlag) {
           builder.setPrimaryAlignment(true)
+          errorIf(
+            samRecord.getSupplementaryAlignmentFlag,
+            "Primary alignment should not have supplementary flag set (put another way: 0x800 should imply 0x100)"
+          )
         } else {
           // if the read is not a primary alignment, it can be either secondary or supplementary
           // - secondary: not the best linear alignment
