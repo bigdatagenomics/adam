@@ -33,8 +33,10 @@ class Adam2FastqArgs extends ParquetLoadSaveArgs {
   var outputPath2: String = null
   @Args4JOption(required = false, name = "-samtools_validation", usage = "SAM tools validation level; when STRICT, checks that all reads are paired.")
   var validationStringency = ValidationStringency.LENIENT
-  @Args4JOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
+  @Args4JOption(required = false, name = "-repartition", usage = "Set the number of intermediate partitions to operate on.")
   var repartition: Int = -1
+  @Args4JOption(required = false, name = "-coalesce", usage = "Iff true, collapse the output fastq(s) to one shard (each)")
+  var coalesce: Boolean = false
   @Args4JOption(required = false, name = "-persist-level", usage = "Persist() intermediate RDDs")
   var persistLevel: String = null
   @Args4JOption(required = false, name = "-no-projection", usage = "Disable projection on records. No great reason to do this, but useful for testing / comparison.")
@@ -77,7 +79,8 @@ class Adam2Fastq(val args: Adam2FastqArgs) extends ADAMSparkCommand[Adam2FastqAr
       args.outputPath,
       args.outputPath2,
       validationStringency = args.validationStringency,
-      persistLevel = Option(args.persistLevel).map(StorageLevel.fromString(_))
+      persistLevel = Option(args.persistLevel).map(StorageLevel.fromString(_)),
+      coalesce = args.coalesce
     )
   }
 
