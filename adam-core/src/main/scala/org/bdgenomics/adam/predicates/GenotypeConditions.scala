@@ -22,7 +22,7 @@ import org.bdgenomics.formats.avro.Genotype
 
 object GenotypeConditions {
 
-  val isPassing = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
+  val isPassing = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils(true)))
 
   def hasMinReadDepth(minReadDepth: Int) = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.readDepth", (x: Int) => x > minReadDepth))
 

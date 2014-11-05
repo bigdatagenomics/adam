@@ -70,7 +70,7 @@ class RecordConditionSuite extends FunSuite {
       .setVariantCallingAnnotations(failFilterAnnotation)
       .build
 
-    val isPassing = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils.isTrue))
+    val isPassing = RecordCondition[Genotype](FieldCondition("variantCallingAnnotations.variantIsPassing", PredicateUtils(true)))
 
     assert(isPassing(passGenotype))
     assert(!isPassing(failGenotype))
@@ -120,7 +120,7 @@ class RecordConditionSuite extends FunSuite {
 
   test("create record condition from non-equality field conditions") {
     val highQualityReadCondition = RecordCondition[AlignmentRecord](
-      FieldCondition(AlignmentRecordField.readMapped.toString(), PredicateUtils.isTrue),
+      FieldCondition(AlignmentRecordField.readMapped.toString(), PredicateUtils(true)),
       FieldCondition(AlignmentRecordField.mapq.toString(), (x: Int) => x > 10))
 
     val highQualityRead = AlignmentRecord.newBuilder
