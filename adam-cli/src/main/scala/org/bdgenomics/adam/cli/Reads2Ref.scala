@@ -22,7 +22,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.pileup.PileupContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Pileup }
 import org.kohsuke.args4j.{ Option => option, Argument }
@@ -36,19 +35,12 @@ object Reads2Ref extends ADAMCommandCompanion {
   }
 }
 
-object Reads2RefArgs {
-  val MIN_MAPQ_DEFAULT: Long = 30L
-}
-
 class Reads2RefArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(metaVar = "ADAMREADS", required = true, usage = "ADAM read-oriented data", index = 0)
   var readInput: String = _
 
   @Argument(metaVar = "DIR", required = true, usage = "Location to create reference-oriented ADAM data", index = 1)
   var outputPath: String = _
-
-  @option(name = "-mapq", usage = "Minimal mapq value allowed for a read (default = 30)")
-  var minMapq: Long = Reads2RefArgs.MIN_MAPQ_DEFAULT
 
   @option(name = "-allowNonPrimaryAlignments", usage = "Converts reads that are not at their primary alignment positions to pileups.")
   var nonPrimary: Boolean = true
@@ -60,13 +52,7 @@ class Reads2Ref(protected val args: Reads2RefArgs) extends ADAMSparkCommand[Read
   def run(sc: SparkContext, job: Job) {
     val reads: RDD[AlignmentRecord] = sc.adamLoad(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
 
-    val readCount = reads.count()
-
     val pileups: RDD[Pileup] = reads.adamRecords2Pileup(args.nonPrimary)
-
-    val pileupCount = pileups.count()
-
-    val coverage = pileupCount / readCount
 
     pileups.adamParquetSave(args)
   }
