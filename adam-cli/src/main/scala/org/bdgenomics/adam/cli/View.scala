@@ -130,10 +130,7 @@ class View(val args: ViewArgs) extends ADAMSparkCommand[ViewArgs] {
     ).flatten
   }
 
-  def run(sc: SparkContext, job: Job) = {
-
-    var reads: RDD[AlignmentRecord] = sc.adamLoad(args.inputPath)
-
+  def applyFilters(reads: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
     val matchAllFilters: List[ReadFilter] = getFilters(args.matchAllBits, matchValue = true)
     val mismatchAllFilters: List[ReadFilter] = getFilters(args.mismatchAllBits, matchValue = false)
     val allFilters = matchAllFilters ++ mismatchAllFilters
@@ -143,12 +140,18 @@ class View(val args: ViewArgs) extends ADAMSparkCommand[ViewArgs] {
     val someFilters = matchSomeFilters ++ mismatchSomeFilters
 
     if (allFilters.nonEmpty || someFilters.nonEmpty) {
-      reads = reads.filter(read =>
+      reads.filter(read =>
         allFilters.forall(_(read)) &&
           (matchSomeFilters.isEmpty || matchSomeFilters.exists(_(read))) &&
           (mismatchSomeFilters.isEmpty || mismatchSomeFilters.exists(_(read)))
       )
-    }
+    } else
+      reads
+  }
+
+  def run(sc: SparkContext, job: Job) = {
+
+    val reads: RDD[AlignmentRecord] = applyFilters(sc.adamLoad(args.inputPath))
 
     if (args.outputPath != null)
       reads.adamAlignedRecordSave(args)
