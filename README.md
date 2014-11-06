@@ -211,6 +211,30 @@ took 55 seconds. On larger files, the difference in speed is even more dramatic.
 because it's multi-threaded and distributed and uses a columnar storage format (with a
 projected schema that only materializes the read flags instead of the whole read). 
 
+# count_kmers
+
+You can also use ADAM to count all K-mers present across all reads in the
+`.adam` file using `count_kmers`.  Try this:
+
+````
+$ adam-local count_kmers /tmp/small.adam /tmp/kmers.adam 10
+$ head /tmp/kmers.adam/part-*
+TTTTAAGGTT, 1
+TTCCGATTTT, 1
+GAGCAGCCTT, 1
+CCTGCTGTAT, 1
+AATTGGCACT, 1
+GGCCAGGACT, 1
+GCAGTCCCTC, 1
+AACTTTGAAT, 1
+GATGACGTGG, 1
+CTGTCCCTGT, 1
+````
+
+Each line contains part-* file(s) with line-based records that contain two
+comma-delimited values.  The first value is the K-mer itself and the second
+value is the number of times that K-mer occurred in the input file.  
+
 # Running on a cluster
 
 We provide the `adam-submit` and `adam-shell` commands under the `bin` directory. These can
