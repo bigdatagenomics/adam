@@ -92,10 +92,10 @@ to have the Spark binaries on your system; prebuilt binaries can be downloaded f
 [Spark website](http://spark.apache.org/downloads.html). Currently, we build for
 [Spark 1.1, and Hadoop 2.3 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz).
 
-Once this alias is in place, you can run adam by simply typing `adam` at the commandline, e.g.
+Once this alias is in place, you can run adam by simply typing `adam-local` at the commandline, e.g.
 
 ```
-$ adam
+$ adam-local
 
      e            888~-_              e                 e    e
     d8b           888   \            d8b               d8b  d8b
@@ -122,63 +122,91 @@ Choose one of the following commands:
 ```
 
 ADAM outputs all the commands that are available for you to run. To get
-help for a specific command, run `adam <command>` without any additional arguments.
+help for a specific command, run `adam-local <command>` without any additional arguments.
 
 ````
-$ adam transform --help
+$ adam-local transform
 Argument "INPUT" is required
- INPUT                                  : The ADAM, BAM or SAM file to apply
-                                          the transforms to
- OUTPUT                                 : Location to write the transformed
-                                          data in ADAM/Parquet format
- -coalesce N                            : Set the number of partitions written
-                                          to the ADAM output directory
- -dbsnp_sites VAL                       : dbsnp sites file
- -h (-help, --help, -?)                 : Print help
- -mark_duplicate_reads                  : Mark duplicate reads
- -parquet_block_size N                  : Parquet block size (default = 128mb)
- -parquet_compression_codec [UNCOMPRESS : Parquet compression codec
- ED | SNAPPY | GZIP | LZO]              :  
- -parquet_disable_dictionary            : Disable dictionary encoding
- -parquet_page_size N                   : Parquet page size (default = 1mb)
- -recalibrate_base_qualities            : Recalibrate the base quality scores
-                                          (ILLUMINA only)
- -sort_reads                            : Sort the reads by referenceId and
-                                          read position
- -spark_env KEY=VALUE                   : Add Spark environment variable
- -spark_home PATH                       : Spark home
- -spark_jar JAR                         : Add Spark jar
- -spark_master VAL                      : Spark Master (default = "local[#cores]
-                                          ")
+ INPUT                                                           : The ADAM, BAM or SAM file to apply the transforms to
+ OUTPUT                                                          : Location to write the transformed data in ADAM/Parquet format
+ -coalesce N                                                     : Set the number of partitions written to the ADAM output directory
+ -dump_observations VAL                                          : Local path to dump BQSR observations to. Outputs CSV format.
+ -h (-help, --help, -?)                                          : Print help
+ -known_indels VAL                                               : VCF file including locations of known INDELs. If none is provided, default
+                                                                   consensus model will be used.
+ -known_snps VAL                                                 : Sites-only VCF giving location of known SNPs
+ -log_odds_threshold N                                           : The log-odds threshold for accepting a realignment. Default value is 5.0.
+ -mark_duplicate_reads                                           : Mark duplicate reads
+ -max_consensus_number N                                         : The maximum number of consensus to try realigning a target region to. Default
+                                                                   value is 30.
+ -max_indel_size N                                               : The maximum length of an INDEL to realign to. Default value is 500.
+ -max_target_size N                                              : The maximum length of a target region to attempt realigning. Default length is
+                                                                   3000.
+ -parquet_block_size N                                           : Parquet block size (default = 128mb)
+ -parquet_compression_codec [UNCOMPRESSED | SNAPPY | GZIP | LZO] : Parquet compression codec
+ -parquet_disable_dictionary                                     : Disable dictionary encoding
+ -parquet_logging_level VAL                                      : Parquet logging level (default = severe)
+ -parquet_page_size N                                            : Parquet page size (default = 1mb)
+ -print_metrics                                                  : Print metrics to the log on completion
+ -qualityBasedTrim                                               : Trims reads based on quality scores of prefix/suffixes across read group.
+ -qualityThreshold N                                             : Phred scaled quality threshold used for trimming. If omitted, Phred 20 is used.
+ -realign_indels                                                 : Locally realign indels present in reads.
+ -recalibrate_base_qualities                                     : Recalibrate the base quality scores (ILLUMINA only)
+ -repartition N                                                  : Set the number of partitions to map data to
+ -sort_fastq_output                                              : Sets whether to sort the FASTQ output, if saving as FASTQ. False by default.
+                                                                   Ignored if not saving as FASTQ.
+ -sort_reads                                                     : Sort the reads by referenceId and read position
+ -trimBeforeBQSR                                                 : Performs quality based trim before running BQSR. Default is to run quality based
+                                                                   trim after BQSR.
+ -trimFromEnd N                                                  : Trim to be applied to end of read.
+ -trimFromStart N                                                : Trim to be applied to start of read.
+ -trimReadGroup VAL                                              : Read group to be trimmed. If omitted, all reads are trimmed.
+ -trimReads                                                      : Apply a fixed trim to the prefix and suffix of all reads/reads in a specific read
+                                                                   group.
 
+````
+
+If you followed along above, now try making your first `.adam` file like this:
+
+````
+adam-local transform $ADAM_HOME/adam-core/src/test/resources/small.sam /tmp/small.adam
 ````
 
 # flagstat
 
 Once you have data converted to ADAM, you can gather statistics from the ADAM file using `flagstat`.
-This command will output stats identically to the samtools `flagstat` command, e.g.
+This command will output stats identically to the samtools `flagstat` command.
+
+If you followed along above, now try gathering some statistics:
 
 ````
-$ adam flagstat NA12878_chr20.adam
-51554029 + 0 in total (QC-passed reads + QC-failed reads)
-0 + 0 duplicates
-50849935 + 0 mapped (98.63%:0.00%)
-51554029 + 0 paired in sequencing
-25778679 + 0 read1
-25775350 + 0 read2
-49874394 + 0 properly paired (96.74%:0.00%)
-50145841 + 0 with itself and mate mapped
-704094 + 0 singletons (1.37%:0.00%)
-158721 + 0 with mate mapped to a different chr
-105812 + 0 with mate mapped to a different chr (mapQ>=5)
+$ adam-local flagstat /tmp/small.adam
+20 + 0 in total (QC-passed reads + QC-failed reads)
+0 + 0 primary duplicates
+0 + 0 primary duplicates - both read and mate mapped
+0 + 0 primary duplicates - only read mapped
+0 + 0 primary duplicates - cross chromosome
+0 + 0 secondary duplicates
+0 + 0 secondary duplicates - both read and mate mapped
+0 + 0 secondary duplicates - only read mapped
+0 + 0 secondary duplicates - cross chromosome
+20 + 0 mapped (100.00%:0.00%)
+0 + 0 paired in sequencing
+0 + 0 read1
+0 + 0 read2
+0 + 0 properly paired (0.00%:0.00%)
+0 + 0 with itself and mate mapped
+0 + 0 singletons (0.00%:0.00%)
+0 + 0 with mate mapped to a different chr
+0 + 0 with mate mapped to a different chr (mapQ>=5)
 ````
 
 In practice, you'll find that the ADAM `flagstat` command takes orders of magnitude less
-time than samtools to compute these statistics. For example, on a MacBook Pro the command 
-above took 17 seconds to run while `samtools flagstat NA12878_chr20.bam` took 55 secs.
-On larger files, the difference in speed is even more dramatic. ADAM is faster because
-it's multi-threaded and distributed and uses a columnar storage format (with a projected
-schema that only materializes the read flags instead of the whole read). 
+time than samtools to compute these statistics. For example, on a MacBook Pro
+`flagstat NA12878_chr20.bam` took 17 seconds to run while `samtools flagstat NA12878_chr20.bam`
+took 55 seconds. On larger files, the difference in speed is even more dramatic. ADAM is faster
+because it's multi-threaded and distributed and uses a columnar storage format (with a
+projected schema that only materializes the read flags instead of the whole read). 
 
 # Running on a cluster
 
