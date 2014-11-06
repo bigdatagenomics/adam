@@ -172,6 +172,9 @@ If you followed along above, now try making your first `.adam` file like this:
 adam-submit transform $ADAM_HOME/adam-core/src/test/resources/small.sam /tmp/small.adam
 ````
 
+... and if you didn't obtain your copy of adam from github, you can [grab `small.sam` from here](https://raw.githubusercontent.com/bigdatagenomics/adam/master/adam-core/src/test/resources/small.sam).
+
+
 # flagstat
 
 Once you have data converted to ADAM, you can gather statistics from the ADAM file using `flagstat`.
