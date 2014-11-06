@@ -125,7 +125,7 @@ ADAM outputs all the commands that are available for you to run. To get
 help for a specific command, run `adam-local <command>` without any additional arguments.
 
 ````
-$ adam-local transform
+$ adam-submit transform
 Argument "INPUT" is required
  INPUT                                                           : The ADAM, BAM or SAM file to apply the transforms to
  OUTPUT                                                          : Location to write the transformed data in ADAM/Parquet format
@@ -169,7 +169,7 @@ Argument "INPUT" is required
 If you followed along above, now try making your first `.adam` file like this:
 
 ````
-adam-local transform $ADAM_HOME/adam-core/src/test/resources/small.sam /tmp/small.adam
+adam-submit transform $ADAM_HOME/adam-core/src/test/resources/small.sam /tmp/small.adam
 ````
 
 # flagstat
