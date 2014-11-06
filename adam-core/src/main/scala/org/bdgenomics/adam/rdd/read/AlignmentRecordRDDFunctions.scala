@@ -451,7 +451,8 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   def adamSaveAsPairedFastq(fileName1: String,
                             fileName2: String,
                             validationStringency: ValidationStringency = ValidationStringency.LENIENT,
-                            persistLevel: Option[StorageLevel] = None): Unit = {
+                            persistLevel: Option[StorageLevel] = None,
+                            coalesce: Boolean = false): Unit = {
     def maybePersist[T](r: RDD[T]): Unit = {
       persistLevel.foreach(r.persist(_))
     }
@@ -520,15 +521,25 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     val arc = new AlignmentRecordConverter
 
-    firstInPairRecords
-      .sortBy(_.getReadName.toString)
-      .map(record => arc.convertToFastq(record, maybeAddSuffix = true))
-      .saveAsTextFile(fileName1)
+    var fqRecords =
+      firstInPairRecords
+        .sortBy(_.getReadName.toString)
+        .map(record => arc.convertToFastq(record, maybeAddSuffix = true))
 
-    secondInPairRecords
-      .sortBy(_.getReadName.toString)
-      .map(record => arc.convertToFastq(record, maybeAddSuffix = true))
-      .saveAsTextFile(fileName2)
+    if (coalesce)
+      fqRecords = fqRecords.coalesce(1, shuffle = true)
+
+    fqRecords.saveAsTextFile(fileName1)
+
+    var fq2Records =
+      secondInPairRecords
+        .sortBy(_.getReadName.toString)
+        .map(record => arc.convertToFastq(record, maybeAddSuffix = true))
+
+    if (coalesce)
+      fq2Records = fq2Records.coalesce(1, shuffle = true)
+
+    fq2Records.saveAsTextFile(fileName2)
 
     maybeUnpersist(firstInPairRecords)
     maybeUnpersist(secondInPairRecords)
