@@ -69,7 +69,8 @@ object ADAMMain extends Logging {
           ListDict,
           SummarizeGenotypes,
           AlleleCount,
-          BuildInformation
+          BuildInformation,
+          View
         )
       )
     )
