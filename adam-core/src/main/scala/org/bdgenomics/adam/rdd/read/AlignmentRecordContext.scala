@@ -47,8 +47,13 @@ object AlignmentRecordContext extends Serializable with Logging {
     log.info("Reading interleaved FASTQ file format %s to create RDD".format(filePath))
 
     val job = HadoopUtil.newJob(sc)
-    val records = sc.newAPIHadoopFile(filePath, classOf[InterleavedFastqInputFormat], classOf[Void],
-      classOf[Text], ContextUtil.getConfiguration(job))
+    val records = sc.newAPIHadoopFile(
+      filePath,
+      classOf[InterleavedFastqInputFormat],
+      classOf[Void],
+      classOf[Text],
+      ContextUtil.getConfiguration(job)
+    )
     val fastqRecordConverter = new FastqRecordConverter
     records.flatMap(fastqRecordConverter.convertPair)
   }
@@ -58,8 +63,13 @@ object AlignmentRecordContext extends Serializable with Logging {
     log.info("Reading unpaired FASTQ file format %s to create RDD".format(filePath))
 
     val job = HadoopUtil.newJob(sc)
-    val records = sc.newAPIHadoopFile(filePath, classOf[SingleFastqInputFormat], classOf[Void],
-      classOf[Text], ContextUtil.getConfiguration(job))
+    val records = sc.newAPIHadoopFile(
+      filePath,
+      classOf[SingleFastqInputFormat],
+      classOf[Void],
+      classOf[Text],
+      ContextUtil.getConfiguration(job)
+    )
     val fastqRecordConverter = new FastqRecordConverter
     records.map(fastqRecordConverter.convertRead)
   }
@@ -132,17 +142,20 @@ class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Log
         }
 
       joinedRDD
-        .flatMap(kv => Seq(AlignmentRecord.newBuilder(kv._2._1)
-          .setReadPaired(true)
-          .setProperPair(true)
-          .setFirstOfPair(true)
-          .setSecondOfPair(false)
-          .build(), AlignmentRecord.newBuilder(kv._2._2)
-          .setReadPaired(true)
-          .setProperPair(true)
-          .setFirstOfPair(false)
-          .setSecondOfPair(true)
-          .build()))
+        .flatMap(kv => Seq(
+          AlignmentRecord.newBuilder(kv._2._1)
+            .setReadPaired(true)
+            .setProperPair(true)
+            .setFirstOfPair(true)
+            .setSecondOfPair(false)
+            .build(),
+          AlignmentRecord.newBuilder(kv._2._2)
+            .setReadPaired(true)
+            .setProperPair(true)
+            .setFirstOfPair(false)
+            .setSecondOfPair(true)
+            .build()
+        ))
     }
 
     // uncache temp rdds

@@ -314,6 +314,17 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends SparkFunSuite {
 
     assert(rddA.count() == 6)
 
+    rddA.foreach(read => {
+      if (read.getFirstOfPair == read.getSecondOfPair)
+        throw new Exception(
+          "Exactly one of first-,second-of-pair should be true for %s: %s %s".format(
+            read.toString,
+            read.getFirstOfPair,
+            read.getSecondOfPair
+          )
+        )
+    })
+
     val tempFile = Files.createTempDirectory("reads")
     val tempPath1 = tempFile.toAbsolutePath.toString + "/reads1.fq"
     val tempPath2 = tempFile.toAbsolutePath.toString + "/reads2.fq"

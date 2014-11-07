@@ -31,7 +31,7 @@ import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 class Adam2FastqArgs extends ParquetLoadSaveArgs {
   @Argument(required = false, metaVar = "OUTPUT", usage = "When writing FASTQ data, all second-in-pair reads will go here, if this argument is provided", index = 2)
   var outputPath2: String = null
-  @Args4JOption(required = false, name = "-samtools_validation", usage = "SAM tools validation level; when STRICT, checks that all reads are paired.")
+  @Args4JOption(required = false, name = "-validation", usage = "SAM tools validation level; when STRICT, checks that all reads are paired.")
   var validationStringency = ValidationStringency.LENIENT
   @Args4JOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
   var repartition: Int = -1
@@ -60,7 +60,9 @@ class Adam2Fastq(val args: Adam2FastqArgs) extends ADAMSparkCommand[Adam2FastqAr
           Projection(
             AlignmentRecordField.readName,
             AlignmentRecordField.sequence,
-            AlignmentRecordField.origQual
+            AlignmentRecordField.qual,
+            AlignmentRecordField.firstOfPair,
+            AlignmentRecordField.secondOfPair
           )
         )
       else
@@ -73,9 +75,9 @@ class Adam2Fastq(val args: Adam2FastqArgs) extends ADAMSparkCommand[Adam2FastqAr
       reads = reads.repartition(args.repartition)
     }
 
-    reads.adamSaveAsPairedFastq(
+    reads.adamSaveAsFastq(
       args.outputPath,
-      args.outputPath2,
+      Option(args.outputPath2),
       validationStringency = args.validationStringency,
       persistLevel = Option(args.persistLevel).map(StorageLevel.fromString(_))
     )

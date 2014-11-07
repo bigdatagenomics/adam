@@ -83,7 +83,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   def maybeSaveFastq(args: ADAMSaveAnyArgs): Boolean = {
     if (args.outputPath.endsWith(".fq") || args.outputPath.endsWith(".fastq") ||
       args.outputPath.endsWith(".ifq")) {
-      rdd.adamSaveAsFastq(args.outputPath, args.sortFastqOutput)
+      rdd.adamSaveAsFastq(args.outputPath, sort = args.sortFastqOutput)
       true
     } else
       false
@@ -520,7 +520,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     maybePersist(firstInPairRecords)
     val numFirstInPairRecords = firstInPairRecords.count()
 
-    val secondInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(!_.getFirstOfPair)
+    val secondInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(_.getSecondOfPair)
     maybePersist(secondInPairRecords)
     val numSecondInPairRecords = secondInPairRecords.count()
 
@@ -534,6 +534,17 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         numSecondInPairRecords
       )
     )
+
+    if (validationStringency == ValidationStringency.STRICT) {
+      firstInPairRecords.foreach(read =>
+        if (read.getSecondOfPair)
+          throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName))
+      )
+      secondInPairRecords.foreach(read =>
+        if (read.getFirstOfPair)
+          throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName))
+      )
+    }
 
     assert(
       numFirstInPairRecords == numSecondInPairRecords,
@@ -564,11 +575,19 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *             to false. Sorting the output will recover pair order, if desired.
    */
   def adamSaveAsFastq(fileName: String,
+                      fileName2Opt: Option[String] = None,
                       sort: Boolean = false,
-                      fileName2Opt: Option[String] = None) {
+                      validationStringency: ValidationStringency = ValidationStringency.LENIENT,
+                      persistLevel: Option[StorageLevel] = None) {
     log.info("Saving data in FASTQ format.")
     fileName2Opt match {
-      case Some(fileName2) => adamSaveAsPairedFastq(fileName, fileName2)
+      case Some(fileName2) =>
+        adamSaveAsPairedFastq(
+          fileName,
+          fileName2,
+          validationStringency = validationStringency,
+          persistLevel = persistLevel
+        )
       case _ =>
         val arc = new AlignmentRecordConverter
 
@@ -580,7 +599,9 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         }
 
         // convert the rdd and save as a text file
-        outputRdd.map(record => arc.convertToFastq(record)).saveAsTextFile(fileName)
+        outputRdd
+          .map(record => arc.convertToFastq(record))
+          .saveAsTextFile(fileName)
     }
   }
 }

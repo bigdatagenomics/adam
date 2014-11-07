@@ -36,7 +36,8 @@ class AlignmentRecordConverter extends Serializable {
    * @param adamRecord Read to convert to FASTQ.
    * @return Returns this read in string form.
    */
-  def convertToFastq(adamRecord: AlignmentRecord, maybeAddSuffix: Boolean = false): String = {
+  def convertToFastq(adamRecord: AlignmentRecord,
+                     maybeAddSuffix: Boolean = false): String = {
     val readNameSuffix =
       if (maybeAddSuffix &&
         !AlignmentRecordConverter.readNameHasPairedSuffix(adamRecord) &&
@@ -51,7 +52,12 @@ class AlignmentRecordConverter extends Serializable {
         ""
       }
 
-    "@%s%s\n%s\n+\n%s".format(adamRecord.getReadName, readNameSuffix, adamRecord.getSequence, adamRecord.getQual)
+    "@%s%s\n%s\n+\n%s".format(
+      adamRecord.getReadName,
+      readNameSuffix,
+      adamRecord.getSequence,
+      adamRecord.getQual
+    )
   }
 
   /**
