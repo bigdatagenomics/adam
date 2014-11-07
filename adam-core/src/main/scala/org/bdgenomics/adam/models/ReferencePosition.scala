@@ -27,7 +27,7 @@ object ReferencePositionWithOrientation {
 
   def apply(record: AlignmentRecord): Option[ReferencePositionWithOrientation] = {
     if (record.getReadMapped) {
-      Some(new ReferencePositionWithOrientation(ReferencePosition(record), record.getReadNegativeStrand))
+      Some(new ReferencePositionWithOrientation(ReferencePosition(record).get, record.getReadNegativeStrand))
     } else {
       None
     }
@@ -35,7 +35,7 @@ object ReferencePositionWithOrientation {
 
   def fivePrime(record: AlignmentRecord): Option[ReferencePositionWithOrientation] = {
     if (record.getReadMapped) {
-      Some(new ReferencePositionWithOrientation(ReferencePosition.fivePrime(record), record.getReadNegativeStrand))
+      Some(new ReferencePositionWithOrientation(ReferencePosition.fivePrime(record).get, record.getReadNegativeStrand))
     } else {
       None
     }
@@ -57,7 +57,7 @@ object ReferencePositionWithOrientation {
    */
   def liftOverToReference(idx: Long,
                           mapping: Seq[ReferenceRegionWithOrientation]): ReferencePositionWithOrientation = {
-    val negativeStrand = mapping.headOption.fold(false)(_.negativeStrand)
+    val negativeStrand = mapping.head.negativeStrand
 
     @tailrec def liftOverHelper(regions: Iterator[ReferenceRegionWithOrientation],
                                 idx: Long): ReferencePositionWithOrientation = {
@@ -81,7 +81,7 @@ object ReferencePositionWithOrientation {
           }
 
           // return
-          ReferencePositionWithOrientation(Some(ReferencePosition(chr, pos)),
+          ReferencePositionWithOrientation(ReferencePosition(chr, pos),
             negativeStrand)
         } else {
           // recurse
@@ -91,11 +91,15 @@ object ReferencePositionWithOrientation {
     }
 
     // call out to helper
-    liftOverHelper(mapping.toIterator, idx)
+    if (negativeStrand) {
+      liftOverHelper(mapping.reverseIterator, idx)
+    } else {
+      liftOverHelper(mapping.toIterator, idx)
+    }
   }
 }
 
-case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition],
+case class ReferencePositionWithOrientation(refPos: ReferencePosition,
                                             negativeStrand: Boolean)
     extends Ordered[ReferencePositionWithOrientation] {
 
@@ -113,8 +117,7 @@ case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition],
    * is out of the range of the mappings given.
    */
   def liftOverFromReference(mapping: Seq[ReferenceRegionWithOrientation]): Long = {
-    assert(refPos.isDefined, "Cannot lift an undefined position.")
-    val pos = refPos.get.pos
+    val pos = refPos.pos
 
     @tailrec def liftOverHelper(regions: Iterator[ReferenceRegionWithOrientation],
                                 idx: Long = 0L): Long = {
@@ -148,16 +151,7 @@ case class ReferencePositionWithOrientation(refPos: Option[ReferencePosition],
   }
 
   override def compare(that: ReferencePositionWithOrientation): Int = {
-    if (refPos.isEmpty && that.refPos.isEmpty) {
-      return 0
-    }
-    if (refPos.isEmpty) {
-      return -1
-    }
-    if (that.refPos.isEmpty) {
-      return 1
-    }
-    val posCompare = refPos.get.compare(that.refPos.get)
+    val posCompare = refPos.compare(that.refPos)
     if (posCompare != 0) {
       posCompare
     } else {
@@ -282,25 +276,13 @@ class ReferencePositionWithOrientationSerializer extends Serializer[ReferencePos
 
   def write(kryo: Kryo, output: Output, obj: ReferencePositionWithOrientation) = {
     output.writeBoolean(obj.negativeStrand)
-    obj.refPos match {
-      case None =>
-        output.writeBoolean(false)
-      case Some(refPos) =>
-        output.writeBoolean(true)
-        referencePositionSerializer.write(kryo, output, refPos)
-    }
+    referencePositionSerializer.write(kryo, output, obj.refPos)
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[ReferencePositionWithOrientation]): ReferencePositionWithOrientation = {
     val negativeStrand = input.readBoolean()
-    val hasPos = input.readBoolean()
-    hasPos match {
-      case false =>
-        new ReferencePositionWithOrientation(None, negativeStrand)
-      case true =>
-        val referencePosition = referencePositionSerializer.read(kryo, input, classOf[ReferencePosition])
-        new ReferencePositionWithOrientation(Some(referencePosition), negativeStrand)
-    }
+    val referencePosition = referencePositionSerializer.read(kryo, input, classOf[ReferencePosition])
+    new ReferencePositionWithOrientation(referencePosition, negativeStrand)
   }
 }
 

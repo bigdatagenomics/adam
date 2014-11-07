@@ -30,7 +30,7 @@ class IndelTableSuite extends SparkFunSuite {
   }
 
   test("check for indels in a contig that doesn't exist") {
-    assert(indelTable.getIndelsInRegion(ReferenceRegion("0", 0L, 0L)).length === 0)
+    assert(indelTable.getIndelsInRegion(ReferenceRegion("0", 0L, 1L)).length === 0)
   }
 
   test("check for indels in a region without known indels") {
