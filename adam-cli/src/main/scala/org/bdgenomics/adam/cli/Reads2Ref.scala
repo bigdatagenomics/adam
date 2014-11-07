@@ -50,7 +50,7 @@ class Reads2Ref(protected val args: Reads2RefArgs) extends ADAMSparkCommand[Read
   val companion = Reads2Ref
 
   def run(sc: SparkContext, job: Job) {
-    val reads: RDD[AlignmentRecord] = sc.adamLoad(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
 
     val pileups: RDD[Pileup] = reads.adamRecords2Pileup(args.nonPrimary)
 

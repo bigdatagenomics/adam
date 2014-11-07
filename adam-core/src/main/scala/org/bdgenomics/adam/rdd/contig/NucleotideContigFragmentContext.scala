@@ -47,7 +47,7 @@ class NucleotideContigFragmentContext(val sc: SparkContext) extends Serializable
       log.info("Converting FASTA to ADAM.")
       FastaConverter(remapData, fragmentLength)
     } else {
-      sc.adamParquetLoad(filePath)
+      sc.adamLoad(filePath)
     }
   }
 }

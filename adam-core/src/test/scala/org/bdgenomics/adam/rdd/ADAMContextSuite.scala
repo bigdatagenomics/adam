@@ -33,19 +33,19 @@ class ADAMContextSuite extends SparkFunSuite {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("unmapped.sam").getFile
 
     // Convert the reads12.sam file into a parquet file
-    val bamReads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
+    val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
     assert(bamReads.count === 200)
   }
 
   sparkTest("can read a small .SAM file") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
-    val reads: RDD[AlignmentRecord] = sc.adamLoad(path)
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
     assert(reads.count() === 20)
   }
 
   sparkTest("can filter a .SAM file based on quality") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
-    val reads: RDD[AlignmentRecord] = sc.adamLoad(path, predicate = Some(classOf[HighQualityReadPredicate]))
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path, predicate = Some(classOf[HighQualityReadPredicate]))
     assert(reads.count() === 18)
   }
 

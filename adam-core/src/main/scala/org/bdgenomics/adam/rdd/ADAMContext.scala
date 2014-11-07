@@ -96,7 +96,15 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     RecordGroupDictionary.fromSAMHeader(samHeader)
   }
 
-  private[rdd] def adamParquetLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](
+  /**
+   * This method will create a new RDD.
+   * @param filePath The path to the input data
+   * @param predicate An optional pushdown predicate to use when reading the data
+   * @param projection An option projection schema to use when reading the data
+   * @tparam T The type of records to return
+   * @return An RDD with records of the specified type
+   */
+  def adamLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](
     filePath: String,
     predicate: Option[Class[U]] = None,
     projection: Option[Schema] = None): RDD[T] = {
@@ -173,7 +181,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
         throw new IllegalArgumentException("If you're reading a BAM/SAM file, the record type must be Read")
 
     } else {
-      val projected: RDD[T] = adamParquetLoad[T, UnboundRecordFilter](filePath, None, projection = Some(projection))
+      val projected: RDD[T] = adamLoad[T, UnboundRecordFilter](filePath, None, projection = Some(projection))
 
       val recs: RDD[SequenceRecord] =
         if (isADAMRecord) {
@@ -214,52 +222,61 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
   }
 
-  /**
-   * This method will create a new RDD.
-   * @param filePath The path to the input data
-   * @param predicate An optional pushdown predicate to use when reading the data
-   * @param projection An option projection schema to use when reading the data
-   * @tparam T The type of records to return
-   * @return An RDD with records of the specified type
-   */
-  def adamLoad[T <% SpecificRecord: Manifest, U <: ADAMPredicate[T]](
+  def maybeLoadBam[U <: ADAMPredicate[AlignmentRecord]](
     filePath: String,
     predicate: Option[Class[U]] = None,
-    projection: Option[Schema] = None): RDD[T] = {
+    projection: Option[Schema] = None): Option[RDD[AlignmentRecord]] = {
 
-    if (filePath.endsWith(".bam") ||
-      filePath.endsWith(".sam") && classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
+    if (filePath.endsWith(".bam") || filePath.endsWith(".sam")) {
 
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a BAM file")
       }
 
-      val reads = adamBamLoad(filePath).asInstanceOf[RDD[T]]
+      val reads = adamBamLoad(filePath)
 
-      applyPredicate(reads, predicate)
+      Some(applyPredicate(reads, predicate))
+    } else
+      None
+  }
 
-    } else if (filePath.endsWith(".ifq") && classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
+  def maybeLoadFastq[U <: ADAMPredicate[AlignmentRecord]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None): Option[RDD[AlignmentRecord]] = {
+
+    if (filePath.endsWith(".ifq")) {
 
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading an interleaved FASTQ file")
       }
-      val reads = AlignmentRecordContext.adamInterleavedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
+      val reads = AlignmentRecordContext.adamInterleavedFastqLoad(sc, filePath)
 
-      applyPredicate(reads, predicate)
+      Some(applyPredicate(reads, predicate))
 
-    } else if ((filePath.endsWith(".fastq") || filePath.endsWith(".fq")) &&
-      classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)) {
+    } else if ((filePath.endsWith(".fastq") || filePath.endsWith(".fq"))) {
 
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a FASTQ file")
       }
-      val reads = AlignmentRecordContext.adamUnpairedFastqLoad(sc, filePath).asInstanceOf[RDD[T]]
+      val reads = AlignmentRecordContext.adamUnpairedFastqLoad(sc, filePath)
 
-      applyPredicate(reads, predicate)
+      Some(applyPredicate(reads, predicate))
+    } else
+      None
+  }
 
-    } else {
-      adamParquetLoad(filePath, predicate, projection)
-    }
+  def loadAlignments[U <: ADAMPredicate[AlignmentRecord]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None): RDD[AlignmentRecord] = {
+
+    maybeLoadBam(filePath, predicate, projection)
+      .orElse(
+        maybeLoadFastq(filePath, predicate, projection)
+      ).getOrElse(
+          adamLoad[AlignmentRecord, U](filePath, predicate, projection)
+        )
   }
 
   /**

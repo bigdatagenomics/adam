@@ -41,7 +41,7 @@ class ViewSuite extends SparkFunSuite {
         )
       )
 
-    reads = transform.apply(sc.adamLoad(inputSamPath)).collect()
+    reads = transform.apply(sc.loadAlignments(inputSamPath)).collect()
     readsCount = reads.size.toInt
   }
 

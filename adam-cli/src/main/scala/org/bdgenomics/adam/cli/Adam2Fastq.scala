@@ -68,7 +68,7 @@ class Adam2Fastq(val args: Adam2FastqArgs) extends ADAMSparkCommand[Adam2FastqAr
       else
         None
 
-    var reads: RDD[AlignmentRecord] = sc.adamLoad(args.inputPath, projection = projectionOpt)
+    var reads: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = projectionOpt)
 
     if (args.repartition != -1) {
       log.info("Repartitioning reads to to '%d' partitions".format(args.repartition))

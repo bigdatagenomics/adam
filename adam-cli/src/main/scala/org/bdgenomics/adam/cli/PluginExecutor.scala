@@ -111,7 +111,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
       }
     }
 
-    val firstRdd: RDD[AlignmentRecord] = load[AlignmentRecord](sc, args.input, plugin.projection)
+    val firstRdd: RDD[AlignmentRecord] = sc.loadAlignments(args.input, projection = plugin.projection)
 
     val input = filter match {
       case None             => firstRdd

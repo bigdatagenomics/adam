@@ -62,7 +62,7 @@ class PrintTags(protected val args: PrintTagsArgs) extends ADAMSparkCommand[Prin
     val toCount = if (args.count != null) args.count.split(",").toSet else Set()
 
     val proj = Projection(attributes, primaryAlignment, readMapped, readPaired, failedVendorQualityChecks)
-    val rdd: RDD[AlignmentRecord] = sc.adamLoad(args.inputPath, projection = Some(proj))
+    val rdd: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(proj))
     val filtered = rdd.filter(rec => !rec.getFailedVendorQualityChecks)
 
     if (args.list != null) {

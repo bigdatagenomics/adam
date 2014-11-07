@@ -45,7 +45,7 @@ class MpileupCommand(protected val args: MpileupArgs) extends ADAMSparkCommand[M
 
   def run(sc: SparkContext, job: Job) {
 
-    val reads: RDD[AlignmentRecord] = sc.adamLoad(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(args.readInput, Some(classOf[UniqueMappedReadPredicate]))
 
     val pileups = new PileupTraversable(reads)
     for (pileup <- pileups) {

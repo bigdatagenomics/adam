@@ -33,7 +33,7 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     val snpsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.snps").getFile
     val obsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1-ref.observed").getFile
 
-    val reads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
     val snps = sc.broadcast(SnpTable(new File(snpsFilepath)))
 
     val bqsr = new BaseQualityRecalibration(cloy(reads), snps)
@@ -54,7 +54,7 @@ class BaseQualityRecalibrationSuite extends SparkFunSuite {
     val snpsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.vcf").getFile
     val obsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1-ref.observed").getFile
 
-    val reads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
     val variants: RDD[RichVariant] = sc.adamVCFLoad(snpsFilepath).map(_.variant)
     val snps = sc.broadcast(SnpTable(variants))
 
