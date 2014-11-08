@@ -22,7 +22,8 @@ import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
   VariantContext,
-  SequenceRecord
+  SequenceRecord,
+  ReferenceRegion
 }
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
 import org.bdgenomics.adam.rich.RichVariant
@@ -100,5 +101,13 @@ class GenotypeRDDFunctions(rdd: RDD[Genotype]) extends Serializable with Logging
       (l: ConcordanceTable, r: ConcordanceTable) => l.add(r))
 
     bySample
+  }
+
+  def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {
+    def overlapsQuery(rec: Genotype): Boolean =
+      rec.getVariant.getContig.getContigName.toString == query.referenceName &&
+        rec.getVariant.getStart < query.end &&
+        rec.getVariant.getEnd > query.start
+    rdd.filter(overlapsQuery)
   }
 }
