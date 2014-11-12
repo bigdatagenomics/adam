@@ -29,7 +29,6 @@ import org.bdgenomics.adam.parquet_reimpl.index._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.util._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, FlatGenotype }
-import org.bdgenomics.services.ClasspathFileLocator
 import parquet.column.ColumnReader
 import parquet.filter.{ RecordFilter, UnboundRecordFilter }
 
@@ -45,6 +44,15 @@ class RDDFunSuite extends SparkFunSuite {
 
   def resourceLocator(resourceName: String): FileLocator =
     new LocalFileLocator(resourceFile(resourceName))
+}
+
+class AvroMultiParquetRDDSuite extends RDDFunSuite {
+
+  sparkTest("test load parquet_test directory loads all reads from two files") {
+    val locator = new ClasspathFileLocator("parquet_test")
+    val multiLoader = new AvroMultiParquetRDD[AlignmentRecord](sc, locator, null, None)
+    assert(multiLoader.count() === 400)
+  }
 }
 
 class AvroIndexedParquetRDDSuite extends RDDFunSuite {
