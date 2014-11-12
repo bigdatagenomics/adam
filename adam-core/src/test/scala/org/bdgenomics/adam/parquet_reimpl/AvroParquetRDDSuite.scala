@@ -20,19 +20,18 @@ package org.bdgenomics.adam.parquet_reimpl
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream, File }
 import java.lang.Iterable
 import java.net.URI
-
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.parquet_reimpl.filters.{ FilterTuple, SerializableUnboundRecordFilter }
 import org.bdgenomics.adam.parquet_reimpl.index.ReferenceFoldingContext._
 import org.bdgenomics.adam.parquet_reimpl.index._
-import org.bdgenomics.adam.projections.Projection
+import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.util._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, FlatGenotype }
-import org.bdgenomics.services.ClasspathFileLocator
 import parquet.column.ColumnReader
 import parquet.filter.{ RecordFilter, UnboundRecordFilter }
-
+import parquet.filter.ColumnPredicates.equalTo
+import parquet.filter.ColumnRecordFilter.column
 import scala.collection.JavaConversions._
 import scala.io.Source
 
@@ -45,6 +44,48 @@ class RDDFunSuite extends SparkFunSuite {
 
   def resourceLocator(resourceName: String): FileLocator =
     new LocalFileLocator(resourceFile(resourceName))
+}
+
+class AvroMultiParquetRDDSuite extends RDDFunSuite {
+
+  lazy val credentials = new CredentialsProperties(Some(new File(System.getProperty("user.home") + "/spark.conf")))
+    .awsCredentials(Some("s3"))
+
+  sparkTest("test load parquet_test directory loads all reads from two files") {
+    val locator = new ClasspathFileLocator("parquet_test")
+    val multiLoader = new AvroMultiParquetRDD[AlignmentRecord](sc, locator, null, None)
+    assert(multiLoader.count() === 400)
+  }
+
+  sparkTest("Retrieve records from a multi-partition Parquet directory through S3", silenceSpark = true, NetworkConnected, S3Test) {
+
+    val locator = new S3FileLocator(credentials, "bdgenomics-test", "NA12878.adam")
+    val rdd = new AvroMultiParquetRDD[AlignmentRecord](
+      sc,
+      locator,
+      null,
+      None)
+
+    assert(rdd.count() === 565)
+  }
+
+  sparkTest("Retrieve records from a multi-partition Parquet directory through S3 and apply both a projection and a predicate", silenceSpark = true, NetworkConnected, S3Test) {
+
+    class DuplicatesOnlyPredicate extends UnboundRecordFilter {
+      def bind(readers: Iterable[ColumnReader]): RecordFilter = {
+        column(AlignmentRecordField.duplicateRead.toString(), equalTo(true)).bind(readers)
+      }
+    }
+
+    val locator = new S3FileLocator(credentials, "bdgenomics-test", "NA12878.adam")
+    val rdd = new AvroMultiParquetRDD[AlignmentRecord](
+      sc,
+      locator,
+      new DuplicatesOnlyPredicate,
+      Some(Projection(AlignmentRecordField.duplicateRead)))
+
+    assert(rdd.count() === 107)
+  }
 }
 
 class AvroIndexedParquetRDDSuite extends RDDFunSuite {
@@ -191,9 +232,6 @@ class AvroParquetRDDSuite extends SparkFunSuite {
   lazy val credentials = new CredentialsProperties(Some(new File(System.getProperty("user.home") + "/spark.conf")))
     .awsCredentials(Some("s3"))
 
-  lazy val bucketName = System.getenv("BUCKET_NAME")
-  lazy val parquetLocation = System.getenv("PARQUET_LOCATION")
-
   sparkTest("Retrieve records from a Parquet file through classpath") {
     val locator = new ClasspathFileLocator("reads-0-2-0")
     val rdd = new AvroParquetRDD[AlignmentRecord](
@@ -228,7 +266,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
   sparkTest("Retrieve records from a Parquet file through S3", silenceSpark = true, NetworkConnected, S3Test) {
 
-    val locator = new S3FileLocator(credentials, bucketName, parquetLocation)
+    val locator = new S3FileLocator(credentials, "bdgenomics-test", "reads-0-2-0")
     val rdd = new AvroParquetRDD[AlignmentRecord](
       sc,
       null,
@@ -291,7 +329,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
 
     val schema = Projection(readName, start, contig)
 
-    val locator = new S3FileLocator(credentials, bucketName, parquetLocation)
+    val locator = new S3FileLocator(credentials, "bdgenomics-test", "reads-0-2-0")
     val rdd = new AvroParquetRDD[AlignmentRecord](
       sc,
       null,
@@ -359,7 +397,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     val schema = Projection(readName, start, sequence)
     val filter = new ReadNameFilter("simread:1:189606653:true")
 
-    val locator = new S3FileLocator(credentials, bucketName, parquetLocation)
+    val locator = new S3FileLocator(credentials, "bdgenomics-test", "reads-0-2-0")
     val rdd = new AvroParquetRDD[AlignmentRecord](
       sc,
       filter,

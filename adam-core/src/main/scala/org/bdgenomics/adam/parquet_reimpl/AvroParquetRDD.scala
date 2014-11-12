@@ -73,13 +73,13 @@ package org.bdgenomics.adam.parquet_reimpl {
        */
 
       /*
-    Step 1: find the relevant index entries
-     */
+  Step 1: find the relevant index entries
+   */
       val entries: Iterable[IDRangeIndexEntry] = index.findIndexEntries(filter.indexPredicate)
 
       /*
-    Step 2: get the parquet file metadata.
-     */
+  Step 2: get the parquet file metadata.
+   */
       val parquetFiles: Map[String, ParquetFileMetadata] = entries.map(_.path).toSeq.distinct.map {
         case parquetFilePath: String =>
           val parquetLocator = dataRootLocator.relativeLocator(parquetFilePath)
@@ -87,8 +87,8 @@ package org.bdgenomics.adam.parquet_reimpl {
       }.toMap
 
       /*
-    Step 3: build the ParquetPartition values.
-     */
+  Step 3: build the ParquetPartition values.
+   */
       entries.toArray.map {
         case IDRangeIndexEntry(path, i, sample, range) => parquetFiles(path).partition(i)
       }
@@ -103,6 +103,58 @@ package org.bdgenomics.adam.parquet_reimpl {
       val avroRecordMaterializer = new UsableAvroRecordMaterializer[T](requestedMessageType, reqSchema)
 
       parquetPartition.materializeRecords(byteAccess, avroRecordMaterializer, filter.recordFilter)
+    }
+  }
+
+  class AvroMultiParquetRDD[T <: IndexedRecord: ClassTag](@transient sc: SparkContext,
+                                                          private val dataRootLocator: FileLocator,
+                                                          private val filter: UnboundRecordFilter,
+                                                          @transient private val requestedSchema: Option[Schema])
+
+      extends RDD[T](sc, Nil) {
+
+    def convertAvroSchema(schema: Option[Schema], fileMessageType: MessageType): MessageType =
+      schema match {
+        case None    => fileMessageType
+        case Some(s) => new AvroSchemaConverter().convert(s)
+      }
+
+    override protected def getPartitions: Array[Partition] = {
+
+      val childLocators = dataRootLocator.childLocators()
+
+      val rgSchemaTypes = childLocators.flatMap {
+        case loc =>
+          val fileMetadata = ParquetCommon.readFileMetadata(loc.bytes)
+          val footer = new Footer(fileMetadata)
+          val fileMessageType = ParquetCommon.parseMessageType(fileMetadata)
+          val fileSchema = new ParquetSchemaType(fileMessageType)
+          val requestedMessage = convertAvroSchema(requestedSchema, fileMessageType)
+          val requested = new ParquetSchemaType(requestedMessage)
+
+          footer.rowGroups.map {
+            case rg => (rg, loc, requested, fileSchema)
+          }
+      }
+
+      rgSchemaTypes.zipWithIndex.map {
+        case (tuple, i) =>
+          tuple match {
+            case (rg, parquetFile, requested, fileSchema) =>
+              new ParquetPartition(parquetFile, i, rg, requested, fileSchema)
+          }
+      }.toArray
+    }
+
+    override def compute(split: Partition, context: TaskContext): Iterator[T] = {
+      val reqSchema = classTag[T].runtimeClass.newInstance().asInstanceOf[T].getSchema
+      val parquetPartition = split.asInstanceOf[ParquetPartition]
+      val byteAccess = parquetPartition.locator.bytes
+      def requestedMessageType = parquetPartition.requestedSchema.convertToParquet()
+
+      val avroRecordMaterializer = new UsableAvroRecordMaterializer[T](requestedMessageType, reqSchema)
+
+      parquetPartition.materializeRecords(byteAccess, avroRecordMaterializer, filter)
     }
   }
 
