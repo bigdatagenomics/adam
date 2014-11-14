@@ -19,11 +19,11 @@ package org.bdgenomics.adam.cli
 
 import java.io._
 
-import org.bdgenomics.adam.parquet_reimpl.ParquetLister
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.FeatureField._
 import org.bdgenomics.adam.util.{ HadoopUtil, ADAMFunSuite }
 import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.utils.parquet.ParquetLister
 
 class Features2ADAMSuite extends ADAMFunSuite {
 
