@@ -109,7 +109,7 @@ class ComparisonsSuite extends ADAMFunSuite {
   }
 
   sparkTest("Mismatched mapped positions histogram generated") {
-    import org.bdgenomics.adam.util.Histogram
+    import org.bdgenomics.utils.metrics.Histogram
 
     assert(Histogram(MappedPosition.matchedByName(bucket, bucket)).valueToCount(0) === 1)
     assert(Histogram(MappedPosition.matchedByName(bucket, bucketMovedChromosome)).valueToCount.get(0).isEmpty)

@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.metrics.filters
 
 import org.bdgenomics.adam.metrics.{ CombinedComparisons, BucketComparisons }
-import org.bdgenomics.adam.metrics
+import org.bdgenomics.utils.metrics.{ Collection => BDGCollection }
 
 /**
  * Used by FindReads, a GeneratorFilter is a predicate on values, which also wraps a particular
@@ -47,11 +47,11 @@ abstract class ComparisonsFilter[+T](val comparison: BucketComparisons[T]) exten
  * CombinedFilter lifts a Sequence of GeneratorFilter[T] filters into a single GeneratorFilter (which filters
  * a vector, here reified as a metrics.Collection value, of Seq[T]).
  */
-class CombinedFilter[T](val filters: Seq[GeneratorFilter[T]]) extends GeneratorFilter[metrics.Collection[Seq[T]]] {
+class CombinedFilter[T](val filters: Seq[GeneratorFilter[T]]) extends GeneratorFilter[BDGCollection[Seq[T]]] {
 
   def passesFilter(value: Any): Boolean = {
     value match {
-      case valueCollection: metrics.Collection[_] =>
+      case valueCollection: BDGCollection[_] =>
         filters.zip(valueCollection.values).forall {
           case (f: GeneratorFilter[T], values: Seq[T]) =>
             values.exists(f.passesFilter(_))
@@ -59,5 +59,5 @@ class CombinedFilter[T](val filters: Seq[GeneratorFilter[T]]) extends GeneratorF
     }
   }
 
-  def comparison: BucketComparisons[metrics.Collection[Seq[T]]] = new CombinedComparisons[T](filters.map(_.comparison))
+  def comparison: BucketComparisons[BDGCollection[Seq[T]]] = new CombinedComparisons[T](filters.map(_.comparison))
 }

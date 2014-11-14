@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.metrics
 
-import org.bdgenomics.adam.models.ReadBucket
-import org.bdgenomics.adam.projections.FieldValue
 import java.util.regex.Pattern
 import org.bdgenomics.adam.metrics.filters.ComparisonsFilter
+import org.bdgenomics.adam.models.ReadBucket
+import org.bdgenomics.adam.projections.FieldValue
+import org.bdgenomics.utils.metrics.Collection
 
 trait BucketComparisons[+T] {
   /**
@@ -108,13 +109,6 @@ object BucketComparisons {
   class WrapperFilter[T](generator: BucketComparisons[T], f: (Any) => Boolean) extends ComparisonsFilter[T](generator) {
     def passesFilter(value: Any): Boolean = f(value)
   }
-}
-
-class Collection[T](val values: Seq[T]) extends Serializable {
-}
-
-object Collection {
-  def apply[T](values: Traversable[T]): Collection[T] = new Collection[T](values.toSeq)
 }
 
 class CombinedComparisons[T](inner: Seq[BucketComparisons[T]]) extends BucketComparisons[Collection[Seq[T]]] with Serializable {
