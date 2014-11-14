@@ -15,11 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.services
+package org.bdgenomics.adam.io
 
-import java.io.File
-
-import org.bdgenomics.adam.io.{ ByteAccess, FileLocator, LocalFileByteAccess }
+import java.io.{ FileFilter, File }
 
 class ClasspathFileLocator(classpath: String) extends FileLocator {
   override def relativeLocator(relativePath: String): FileLocator =
@@ -37,5 +35,15 @@ class ClasspathFileLocator(classpath: String) extends FileLocator {
   override def parentLocator(): Option[FileLocator] = FileLocator.parseSlash(classpath) match {
     case Some((parent, child)) => Some(new ClasspathFileLocator(parent))
     case None                  => None
+  }
+
+  override def childLocators(): Iterable[FileLocator] = {
+    val url = Thread.currentThread().getContextClassLoader.getResource(classpath)
+    val f = new File(url.getFile)
+    f.listFiles(new FileFilter() {
+      override def accept(p1: File): Boolean = p1.isFile && p1.canRead
+    }).map { file =>
+      new LocalFileLocator(file)
+    }
   }
 }

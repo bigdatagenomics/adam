@@ -18,7 +18,11 @@
 package org.bdgenomics.adam.io
 
 import com.amazonaws.auth.AWSCredentials
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.model.{ ObjectListing, ListObjectsRequest }
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client }
+
+import scala.collection.mutable
+import scala.collection.JavaConversions._
 
 class S3FileLocator(val credentials: AWSCredentials, val bucket: String, val key: String) extends FileLocator {
 
@@ -31,4 +35,28 @@ class S3FileLocator(val credentials: AWSCredentials, val bucket: String, val key
     new S3FileLocator(credentials, bucket, "%s/%s".format(key.stripSuffix("/"), relativePath))
 
   override def bytes: ByteAccess = new S3ByteAccess(new AmazonS3Client(credentials), bucket, key)
+
+  override def childLocators(): Iterable[FileLocator] = {
+    val s3client = new AmazonS3Client()
+
+    val listObjectsRequest = new ListObjectsRequest()
+      .withBucketName(bucket)
+      .withPrefix(key)
+
+    var objectListing: ObjectListing = null
+    val keys: mutable.ListBuffer[String] = mutable.ListBuffer[String]()
+
+    do {
+      objectListing = s3client.listObjects(listObjectsRequest)
+
+      objectListing.getObjectSummaries.foreach { objectSummary =>
+        keys += objectSummary.getKey
+      }
+
+      listObjectsRequest.setMarker(objectListing.getNextMarker)
+
+    } while (objectListing.isTruncated)
+
+    keys.map { k => new S3FileLocator(credentials, bucket, k) }
+  }
 }
