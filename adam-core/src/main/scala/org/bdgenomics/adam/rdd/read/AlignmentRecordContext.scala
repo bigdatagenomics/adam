@@ -180,7 +180,7 @@ class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Log
   def loadADAMFromPaths(paths: Seq[Path]): RDD[AlignmentRecord] = {
     def loadADAMs(path: Path): (SequenceDictionary, RDD[AlignmentRecord]) = {
       val dict = sc.adamDictionaryLoad[AlignmentRecord](path.toString)
-      val rdd: RDD[AlignmentRecord] = sc.adamLoad(path.toString)
+      val rdd: RDD[AlignmentRecord] = sc.loadAlignments(path.toString)
       (dict, rdd)
     }
 

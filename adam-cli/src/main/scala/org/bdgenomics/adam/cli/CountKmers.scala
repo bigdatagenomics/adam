@@ -61,7 +61,7 @@ class CountKmers(protected val args: CountKmersArgs) extends ADAMSparkCommand[Co
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     // read from disk
-    var adamRecords: RDD[AlignmentRecord] = sc.adamLoad(
+    var adamRecords: RDD[AlignmentRecord] = sc.loadAlignments(
       args.inputPath,
       projection = Some(Projection(AlignmentRecordField.sequence)))
 

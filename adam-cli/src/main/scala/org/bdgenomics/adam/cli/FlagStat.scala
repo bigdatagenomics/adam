@@ -61,7 +61,7 @@ class FlagStat(protected val args: FlagStatArgs) extends ADAMSparkCommand[FlagSt
       AlignmentRecordField.mapq,
       AlignmentRecordField.failedVendorQualityChecks)
 
-    val adamFile: RDD[AlignmentRecord] = sc.adamLoad(args.inputPath, projection = Some(projection))
+    val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection))
 
     val (failedVendorQuality, passedVendorQuality) = adamFile.adamFlagStat()
 

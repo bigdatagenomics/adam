@@ -95,7 +95,7 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
       import org.bdgenomics.adam.projections.AlignmentRecordField._
       Projection(contig, start, readName, readMapped)
     }
-    val rdd: RDD[AlignmentRecord] = sc.adamLoad(filename, projection = Some(p))
+    val rdd: RDD[AlignmentRecord] = sc.loadAlignments(filename, projection = Some(p))
 
     assert(rdd.count() === 200)
 

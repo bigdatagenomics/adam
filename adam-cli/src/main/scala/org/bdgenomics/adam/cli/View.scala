@@ -151,7 +151,7 @@ class View(val args: ViewArgs) extends ADAMSparkCommand[ViewArgs] {
 
   def run(sc: SparkContext, job: Job) = {
 
-    val reads: RDD[AlignmentRecord] = applyFilters(sc.adamLoad(args.inputPath))
+    val reads: RDD[AlignmentRecord] = applyFilters(sc.loadAlignments(args.inputPath))
 
     if (args.outputPath != null)
       reads.adamAlignedRecordSave(args)

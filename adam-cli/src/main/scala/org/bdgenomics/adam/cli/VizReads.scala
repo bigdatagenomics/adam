@@ -165,7 +165,7 @@ class VizReads(protected val args: VizReadsArgs) extends ADAMSparkCommand[VizRea
     VizReads.refName = args.refName
 
     val proj = Projection(contig, readMapped, readName, start, end)
-    VizReads.reads = sc.adamLoad(args.inputPath, projection = Some(proj))
+    VizReads.reads = sc.loadAlignments(args.inputPath, projection = Some(proj))
 
     val server = new org.eclipse.jetty.server.Server(8080)
     val handlers = new org.eclipse.jetty.server.handler.ContextHandlerCollection()

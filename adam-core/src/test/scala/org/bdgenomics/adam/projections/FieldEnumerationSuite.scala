@@ -43,7 +43,7 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
       cleanParquet(readsParquetFile)
 
     // Convert the reads12.sam file into a parquet file
-    val bamReads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
+    val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
     bamReads.adamParquetSave(readsParquetFile.getAbsolutePath)
   }
 
@@ -75,7 +75,7 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
 
     val p1 = Projection(AlignmentRecordField.readName)
 
-    val reads1: RDD[AlignmentRecord] = sc.adamLoad(readsParquetFile.getAbsolutePath, projection = Some(p1))
+    val reads1: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFile.getAbsolutePath, projection = Some(p1))
 
     assert(reads1.count() === 200)
 
@@ -85,7 +85,7 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
 
     val p2 = Projection(AlignmentRecordField.readName, AlignmentRecordField.readMapped)
 
-    val reads2: RDD[AlignmentRecord] = sc.adamLoad(readsParquetFile.getAbsolutePath, projection = Some(p2))
+    val reads2: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFile.getAbsolutePath, projection = Some(p2))
 
     assert(reads2.count() === 200)
 

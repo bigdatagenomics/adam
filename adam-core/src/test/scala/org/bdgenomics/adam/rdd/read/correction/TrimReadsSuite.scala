@@ -135,7 +135,7 @@ class TrimReadsSuite extends SparkFunSuite {
 
   sparkTest("adaptively trim reads") {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.sam").getFile
-    val reads: RDD[AlignmentRecord] = sc.adamLoad(readsFilepath)
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
 
     // put all reads into a single read group
     val readsSingleRG = reads.map(read => {

@@ -67,7 +67,7 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
 
     val proj = Projection(contig, start, cigar, readMapped)
 
-    val adamRDD: RDD[AlignmentRecord] = sc.adamLoad(args.adamInputPath, projection = Some(proj))
+    val adamRDD: RDD[AlignmentRecord] = sc.loadAlignments(args.adamInputPath, projection = Some(proj))
     val mappedRDD = adamRDD.filter(_.getReadMapped)
 
     /*

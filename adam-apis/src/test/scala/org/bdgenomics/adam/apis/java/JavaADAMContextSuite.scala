@@ -36,7 +36,7 @@ class JavaADAMContextSuite extends SparkFunSuite {
 
   sparkTest("can read a small .SAM file inside of java") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
-    val reads: RDD[AlignmentRecord] = sc.adamLoad(path)
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
 
     val newReads: JavaAlignmentRecordRDD = JavaADAMConduit.conduit(reads)
 

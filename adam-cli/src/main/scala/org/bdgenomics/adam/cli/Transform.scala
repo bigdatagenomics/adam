@@ -157,6 +157,6 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
   }
 
   def run(sc: SparkContext, job: Job) {
-    this.apply(sc.adamLoad(args.inputPath)).adamSave(args)
+    this.apply(sc.loadAlignments(args.inputPath)).adamSave(args)
   }
 }

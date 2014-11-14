@@ -240,7 +240,7 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("characterizeTags counts tags in a SAM file correctly") {
     val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
-    val sam: RDD[AlignmentRecord] = sc.adamLoad(filePath)
+    val sam: RDD[AlignmentRecord] = sc.loadAlignments(filePath)
 
     val mapCounts: Map[String, Long] = Map(sam.adamCharacterizeTags().collect(): _*)
     assert(mapCounts("NM") === 200)
@@ -250,7 +250,7 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("round trip from ADAM to SAM and back to ADAM produces equivalent Read values") {
     val reads12Path = Thread.currentThread().getContextClassLoader.getResource("reads12.sam").getFile
-    val rdd12A: RDD[AlignmentRecord] = sc.adamLoad(reads12Path)
+    val rdd12A: RDD[AlignmentRecord] = sc.loadAlignments(reads12Path)
 
     val tempFile = Files.createTempDirectory("reads12")
     rdd12A.adamSAMSave(tempFile.toAbsolutePath.toString + "/reads12.sam", asSam = true)
@@ -273,19 +273,19 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends SparkFunSuite {
 
   sparkTest("SAM conversion sets read mapped flag properly") {
     val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
-    val sam: RDD[AlignmentRecord] = sc.adamLoad(filePath)
+    val sam: RDD[AlignmentRecord] = sc.loadAlignments(filePath)
 
     sam.collect().foreach(r => assert(r.getReadMapped))
   }
 
   sparkTest("round trip from ADAM to FASTQ and back to ADAM produces equivalent Read values") {
     val reads12Path = Thread.currentThread().getContextClassLoader.getResource("interleaved_fastq_sample1.fq").getFile
-    val rdd12A: RDD[AlignmentRecord] = sc.adamLoad(reads12Path)
+    val rdd12A: RDD[AlignmentRecord] = sc.loadAlignments(reads12Path)
 
     val tempFile = Files.createTempDirectory("reads12")
     rdd12A.adamSaveAsFastq(tempFile.toAbsolutePath.toString + "/reads12.fq")
 
-    val rdd12B: RDD[AlignmentRecord] = sc.adamLoad(tempFile.toAbsolutePath.toString + "/reads12.fq")
+    val rdd12B: RDD[AlignmentRecord] = sc.loadAlignments(tempFile.toAbsolutePath.toString + "/reads12.fq")
 
     assert(rdd12B.count() === rdd12A.count())
 
