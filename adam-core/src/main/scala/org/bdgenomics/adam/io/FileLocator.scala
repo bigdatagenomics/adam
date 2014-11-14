@@ -35,8 +35,52 @@ package org.bdgenomics.adam.io
  */
 trait FileLocator extends Serializable {
 
+  /**
+   * Creates a FileLocator that represents the 'parent' (if one exists) of the current
+   * Locator.  For example, if the current locator is a file, then this should return
+   * a locator for the directory in which the file lives.  If the current locator is an
+   * S3 key, then the parent locator is determined by dividing the key on the '/' character
+   * and returning the key with the last /-delimited segment removed, and so on.
+   *
+   * @return Some(locator) if the parent exists, None otherwise.
+   */
   def parentLocator(): Option[FileLocator]
+
+  /**
+   * Searches and returns an iterable of FileLocators representing the children (if they
+   * exist) of the current Locator.  For example, if the current locator is an S3FileLocator,
+   * then this does a "ListObjects" query against the S3 interface and returns the objects
+   * which are children to this key.  If the current Locator is a directory in a filesystem,
+   * then the childLocators returns the list of Locators for files/directories within this
+   * directory, and so on.
+   *
+   * @return An iterable of FileLocators, each corresponding to a child of this locator; the
+   *         iterable is empty if none exist.
+   */
+  def childLocators(): Iterable[FileLocator]
+
+  /**
+   * Returns a 'relative' Locator, whose location is relative to the current locator.
+   * This is equivalent (in spirit) to the operation of 'relative' URLs and resolution of
+   * URLs relative to a base URL, in the HTTP URL spec (and indeed, it defaults to that
+   * resolution in the case of HTTPFileLocator, which wraps URLs directly).
+   *
+   * In other types of FileLocators, this creates relative paths in a filesystem (for
+   * LocalFileLocator) or relative keys (by appending) in S3FileLocator.
+   *
+   * @param relativePath The relative fragment of a location, given as a string. The returned
+   *                     FileLocator will have a location that is the location of this base
+   *                     Locator 'plus' the relative string, combined in a system-appropriate way.
+   * @return The relative FileLocator created by resolving the 'relativePath' against the
+   *         location of this base Locator.
+   */
   def relativeLocator(relativePath: String): FileLocator
+
+  /**
+   * Gives direct access to the bytes of the resource underlying this locator.
+   *
+   * @return A ByteAccess object allowing random access to the bytes of the underlying resource.
+   */
   def bytes: ByteAccess
 }
 
