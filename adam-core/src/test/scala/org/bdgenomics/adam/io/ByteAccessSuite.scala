@@ -21,7 +21,8 @@ import com.amazonaws.services.s3.AmazonS3Client
 import java.io.{ File, PrintWriter }
 import java.net.{ ServerSocket, URI }
 import java.util.concurrent.atomic.AtomicInteger
-import org.bdgenomics.adam.util.{ CredentialsProperties, NetworkConnected, S3Test }
+import org.bdgenomics.adam.util.CredentialsProperties
+import org.bdgenomics.utils.misc.{ NetworkConnected, S3Test }
 import org.scalatest.FunSuite
 
 class ByteAccessSuite extends FunSuite {

@@ -20,7 +20,6 @@ package org.bdgenomics.adam.parquet_reimpl
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream, File }
 import java.lang.Iterable
 import java.net.URI
-
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.parquet_reimpl.filters.{ FilterTuple, SerializableUnboundRecordFilter }
@@ -30,13 +29,13 @@ import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.util._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, FlatGenotype }
 import org.bdgenomics.services.ClasspathFileLocator
+import org.bdgenomics.utils.misc.{ NetworkConnected, S3Test }
 import parquet.column.ColumnReader
 import parquet.filter.{ RecordFilter, UnboundRecordFilter }
-
 import scala.collection.JavaConversions._
 import scala.io.Source
 
-class RDDFunSuite extends SparkFunSuite {
+class RDDFunSuite extends ADAMFunSuite {
 
   def resourceFile(resourceName: String): File = {
     val path = Thread.currentThread().getContextClassLoader.getResource(resourceName).getFile
@@ -186,7 +185,7 @@ object RDDFunSuite {
 
 }
 
-class AvroParquetRDDSuite extends SparkFunSuite {
+class AvroParquetRDDSuite extends ADAMFunSuite {
 
   lazy val credentials = new CredentialsProperties(Some(new File(System.getProperty("user.home") + "/spark.conf")))
     .awsCredentials(Some("s3"))
@@ -210,7 +209,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     assert(rdd.count() === 200)
   }
 
-  sparkTest("Retrieve records from a Parquet file through HTTP", silenceSpark = true, NetworkConnected) {
+  sparkTest("Retrieve records from a Parquet file through HTTP", NetworkConnected) {
     val locator = new HTTPFileLocator(URI.create("https://s3.amazonaws.com/bdgenomics-test/reads-0-2-0"))
     val rdd = new AvroParquetRDD[AlignmentRecord](
       sc,
@@ -226,7 +225,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     assert(rdd.count() === 200)
   }
 
-  sparkTest("Retrieve records from a Parquet file through S3", silenceSpark = true, NetworkConnected, S3Test) {
+  sparkTest("Retrieve records from a Parquet file through S3", NetworkConnected, S3Test) {
 
     val locator = new S3FileLocator(credentials, bucketName, parquetLocation)
     val rdd = new AvroParquetRDD[AlignmentRecord](
@@ -264,7 +263,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     assert(rdd.count() === 200)
   }
 
-  sparkTest("Using a projection works with HTTP", silenceSpark = true, NetworkConnected) {
+  sparkTest("Using a projection works with HTTP", NetworkConnected) {
 
     import org.bdgenomics.adam.projections.AlignmentRecordField._
 
@@ -285,7 +284,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     assert(rdd.count() === 200)
   }
 
-  sparkTest("Using a projection works with S3", silenceSpark = true, NetworkConnected, S3Test) {
+  sparkTest("Using a projection works with S3", NetworkConnected, S3Test) {
 
     import org.bdgenomics.adam.projections.AlignmentRecordField._
 
@@ -329,7 +328,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     assert(rdd.count() === 1)
   }
 
-  sparkTest("Using a filter works with HTTP", silenceSpark = true, NetworkConnected) {
+  sparkTest("Using a filter works with HTTP", NetworkConnected) {
 
     import org.bdgenomics.adam.projections.AlignmentRecordField._
 
@@ -352,7 +351,7 @@ class AvroParquetRDDSuite extends SparkFunSuite {
     assert(rdd.count() === 1)
   }
 
-  sparkTest("Using a filter works with S3", silenceSpark = true, NetworkConnected, S3Test) {
+  sparkTest("Using a filter works with S3", NetworkConnected, S3Test) {
 
     import org.bdgenomics.adam.projections.AlignmentRecordField._
 

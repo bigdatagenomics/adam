@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 
 import org.apache.spark.SparkContext.IntAccumulatorParam
 import org.scalatest.concurrent.{ IntegrationPatience, Eventually }
 
-class ADAMMetricsListenerSuite extends SparkFunSuite with Eventually with IntegrationPatience {
+class ADAMMetricsListenerSuite extends ADAMFunSuite with Eventually with IntegrationPatience {
 
   sparkTest("Listener accumulates metrics when registered with Spark") {
 

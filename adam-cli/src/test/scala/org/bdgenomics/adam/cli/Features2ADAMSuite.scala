@@ -22,10 +22,10 @@ import java.io._
 import org.bdgenomics.adam.parquet_reimpl.ParquetLister
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.FeatureField._
-import org.bdgenomics.adam.util.{ HadoopUtil, SparkFunSuite }
+import org.bdgenomics.adam.util.{ HadoopUtil, ADAMFunSuite }
 import org.bdgenomics.formats.avro.Feature
 
-class Features2ADAMSuite extends SparkFunSuite {
+class Features2ADAMSuite extends ADAMFunSuite {
 
   ignore("can convert a simple BED file") {
 

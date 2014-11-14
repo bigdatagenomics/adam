@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.io
 
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.apache.spark.rdd.RDD
 import org.apache.hadoop.io.Text
 
-class InterleavedFastqInputFormatSuite extends SparkFunSuite {
+class InterleavedFastqInputFormatSuite extends ADAMFunSuite {
   (1 to 4) foreach { testNumber =>
     val inputName = "interleaved_fastq_sample%d.fq".format(testNumber)
     val expectedOutputName = inputName + ".output"

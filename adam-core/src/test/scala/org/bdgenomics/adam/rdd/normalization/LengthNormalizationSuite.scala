@@ -19,10 +19,10 @@ package org.bdgenomics.adam.rdd.normalization
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import scala.math.{ abs, sqrt }
 
-class LengthNormalizationSuite extends SparkFunSuite {
+class LengthNormalizationSuite extends ADAMFunSuite {
   def fpEquals(n1: Double, n2: Double, epsilon: Double = 1e-6): Boolean = {
     abs(n1 - n2) < epsilon
   }

@@ -17,14 +17,14 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.rdd.variation.VariationContext._
 import scala.collection.JavaConversions._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
-class GenotypeRDDFunctionsSuite extends SparkFunSuite {
+class GenotypeRDDFunctionsSuite extends ADAMFunSuite {
   def v0 = Variant.newBuilder
     .setContig(Contig.newBuilder.setContigName("11").build)
     .setStart(17409572)

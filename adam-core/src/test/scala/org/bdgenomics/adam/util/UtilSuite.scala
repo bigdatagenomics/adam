@@ -19,7 +19,7 @@ package org.bdgenomics.adam.util
 
 import org.bdgenomics.formats.avro.Contig
 
-class UtilSuite extends SparkFunSuite {
+class UtilSuite extends ADAMFunSuite {
 
   test("isSameConfig") {
     val a = Contig.newBuilder().setContigName("foo")

@@ -21,11 +21,11 @@ import java.io.File
 import java.util.logging.Level
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }
+import org.bdgenomics.adam.util.{ ParquetLogger, ADAMFunSuite }
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.BeforeAndAfter
 
-class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
+class FieldEnumerationSuite extends ADAMFunSuite with BeforeAndAfter {
 
   var readsFilepath: String = null
   var readsParquetFile: File = null

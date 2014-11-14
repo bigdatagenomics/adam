@@ -23,7 +23,8 @@ import com.amazonaws.services.s3.AmazonS3Client
 import java.io.File
 import org.bdgenomics.adam.rdd.ParquetCommon
 import org.bdgenomics.adam.io.{ HTTPRangedByteAccess, LocalFileByteAccess, S3ByteAccess }
-import org.bdgenomics.adam.util.{ S3Test, NetworkConnected, CredentialsProperties }
+import org.bdgenomics.adam.util.CredentialsProperties
+import org.bdgenomics.utils.misc.{ NetworkConnected, S3Test }
 import org.scalatest.FunSuite
 
 class ParquetCommonSuite extends FunSuite {

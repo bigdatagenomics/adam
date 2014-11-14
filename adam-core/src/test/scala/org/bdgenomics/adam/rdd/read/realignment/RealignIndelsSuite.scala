@@ -22,10 +22,10 @@ import org.bdgenomics.adam.models.{ Consensus, ReferencePosition }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
-class RealignIndelsSuite extends SparkFunSuite {
+class RealignIndelsSuite extends ADAMFunSuite {
 
   def mason_reads: RDD[AlignmentRecord] = {
     val path = ClassLoader.getSystemClassLoader.getResource("small_realignment_targets.sam").getFile

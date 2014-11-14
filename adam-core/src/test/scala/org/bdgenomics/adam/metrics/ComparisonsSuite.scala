@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.metrics
 
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import org.bdgenomics.adam.models.SingleReadBucket
 
-class ComparisonsSuite extends SparkFunSuite {
+class ComparisonsSuite extends ADAMFunSuite {
   var bucket: SingleReadBucket = null
   var bucketMapq: SingleReadBucket = null
   var bucketMapqUnset: SingleReadBucket = null

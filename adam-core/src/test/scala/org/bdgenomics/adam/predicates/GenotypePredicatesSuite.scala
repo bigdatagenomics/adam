@@ -23,7 +23,7 @@ import java.io.File
 import org.apache.commons.io.FileUtils
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.{ ParquetLogger, SparkFunSuite }
+import org.bdgenomics.adam.util.{ ParquetLogger, ADAMFunSuite }
 import org.bdgenomics.formats.avro.{
   Contig,
   Genotype,
@@ -31,7 +31,7 @@ import org.bdgenomics.formats.avro.{
   VariantCallingAnnotations
 }
 
-class GenotypePredicatesSuite extends SparkFunSuite {
+class GenotypePredicatesSuite extends ADAMFunSuite {
 
   sparkTest("Load only only PASSing records") {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)

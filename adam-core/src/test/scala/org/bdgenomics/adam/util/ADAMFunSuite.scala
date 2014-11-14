@@ -17,32 +17,14 @@
  */
 package org.bdgenomics.adam.util
 
-import org.apache.log4j.{ Level, Logger }
+import org.bdgenomics.utils.misc.SparkFunSuite
 
-object SparkLogUtil {
+trait ADAMFunSuite extends SparkFunSuite {
 
-  /**
-   * set all loggers to the given log level.  Returns a map of the value of every logger
-   * @param level Log4j level
-   * @param loggers Loggers to apply level to
-   * @return
-   */
-  def setLogLevels(level: org.apache.log4j.Level, loggers: TraversableOnce[String]) = {
-    loggers.map {
-      loggerName =>
-        val logger = Logger.getLogger(loggerName)
-        val prevLevel = logger.getLevel
-        logger.setLevel(level)
-        loggerName -> prevLevel
-    }.toMap
-  }
-
-  /**
-   * turn off most of spark logging.  Returns a map of the previous values so you can turn logging back to its
-   * former values
-   */
-  def silenceSpark() = {
-    setLogLevels(Level.WARN, Seq("spark", "org.eclipse.jetty", "akka"))
-  }
-
+  override val appName: String = "adam"
+  override val properties: Map[String, String] = Map(("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
+    ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
+    ("spark.kryoserializer.buffer.mb", "4"),
+    ("spark.kryo.referenceTracking", "true"))
 }
+

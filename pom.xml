@@ -23,6 +23,8 @@
     <avro.version>1.7.6</avro.version>
     <spark.version>1.2.0</spark.version>
     <parquet.version>1.6.0rc4</parquet.version>
+    <utils.version>0.0.1</utils.version>
+    <utils.version>0.0.1-SNAPSHOT</utils.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
@@ -306,6 +308,13 @@
         <groupId>org.bdgenomics.bdg-formats</groupId>
         <artifactId>bdg-formats</artifactId>
         <version>0.4.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bdgenomics.bdg-utils</groupId>
+        <artifactId>bdg-utils-misc</artifactId>
+        <version>${utils.version}</version>
+        <type>test-jar</type>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>

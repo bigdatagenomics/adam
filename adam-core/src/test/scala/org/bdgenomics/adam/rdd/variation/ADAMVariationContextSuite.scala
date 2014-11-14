@@ -22,11 +22,11 @@ import java.io.File
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.variation.VariationContext._
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ GenotypeAllele, Genotype, Variant, Contig }
 import scala.collection.JavaConversions._
 
-class ADAMVariationContextSuite extends SparkFunSuite {
+class ADAMVariationContextSuite extends ADAMFunSuite {
   val tempDir = Files.createTempDir()
 
   def variants: RDD[VariantContext] = {

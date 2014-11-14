@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ Contig, Variant }
 
-class IndelTableSuite extends SparkFunSuite {
+class IndelTableSuite extends ADAMFunSuite {
 
   // indel table containing a 1 bp deletion at chr1, pos 1000
   val indelTable = new IndelTable(Map("1" -> Iterable(Consensus("", ReferenceRegion("1", 1000L, 1002L)))))

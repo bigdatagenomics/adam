@@ -20,9 +20,9 @@ package org.bdgenomics.adam.rdd.variation
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.GenotypesSummaryCounts.ReferenceAndAlternate
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 
-class GenotypesSummarySuite extends SparkFunSuite {
+class GenotypesSummarySuite extends ADAMFunSuite {
 
   private def homRef = List(GenotypeAllele.Ref, GenotypeAllele.Ref)
   private def het = List(GenotypeAllele.Alt, GenotypeAllele.Ref)

@@ -25,13 +25,13 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import GeneContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.features.GeneFeatureRDD._
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.adam.rdd.features.FeaturesContext._
 import org.bdgenomics.formats.avro.Feature
 
 import scala.io.Source
 
-class GeneSuite extends SparkFunSuite {
+class GeneSuite extends ADAMFunSuite {
 
   sparkTest("can load a set of gene models from an Ensembl GTF file") {
     val path = testFile("features/Homo_sapiens.GRCh37.75.trun100.gtf")

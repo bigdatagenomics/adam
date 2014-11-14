@@ -18,11 +18,11 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-class ViewSuite extends SparkFunSuite {
+class ViewSuite extends ADAMFunSuite {
 
   val inputSamPath = testFile("flag-values.sam")
 

@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.rdd.features
 
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.features.FeaturesContext._
 import org.bdgenomics.formats.avro.Feature
 
-class FeatureParsingSuite extends SparkFunSuite {
+class FeatureParsingSuite extends ADAMFunSuite {
 
   sparkTest("Can read a .gtf file") {
     val path = testFile("features/Homo_sapiens.GRCh37.75.trun20.gtf")

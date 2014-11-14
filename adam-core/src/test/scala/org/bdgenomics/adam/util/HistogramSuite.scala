@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-class HistogramSuite extends SparkFunSuite {
+class HistogramSuite extends ADAMFunSuite {
   sparkTest("Histogram addition works") {
     assert((Histogram[Long](1) ++ Histogram[Long](1)).valueToCount(1) === 2)
   }
