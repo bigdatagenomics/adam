@@ -117,6 +117,10 @@
       <artifactId>bdg-utils-parquet</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.bdgenomics.bdg-utils</groupId>
+      <artifactId>bdg-utils-metrics</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.scoverage</groupId>
       <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
     </dependency>

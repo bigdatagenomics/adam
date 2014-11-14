@@ -17,10 +17,12 @@
  */
 package org.bdgenomics.adam.instrumentation
 
+import org.bdgenomics.utils.instrumentation.{ Metrics, SparkMetrics }
+
 /**
  * Contains metrics for ADAM. Currently this consists only of metrics collected from Spark, but there may be others in the future.
  */
-class ADAMMetrics {
+class ADAMMetrics extends Metrics {
 
   val adamSparkMetrics = new ADAMSparkMetrics()
 

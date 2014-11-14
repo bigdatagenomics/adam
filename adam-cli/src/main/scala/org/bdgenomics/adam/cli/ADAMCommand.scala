@@ -21,8 +21,9 @@ import java.io.{ PrintStream, ByteArrayOutputStream }
 
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ SparkConf, Logging, SparkContext }
-import org.bdgenomics.adam.instrumentation.{ DurationFormatting, ADAMMetricsListener, ADAMMetrics }
+import org.bdgenomics.adam.instrumentation.ADAMMetrics
 import org.bdgenomics.adam.util.HadoopUtil
+import org.bdgenomics.utils.instrumentation.{ DurationFormatting, MetricsListener }
 
 trait ADAMCommandCompanion {
   val commandName: String
@@ -47,7 +48,7 @@ trait ADAMSparkCommand[A <: Args4jBase] extends ADAMCommand with Logging {
 
   def run() {
     val start = System.nanoTime()
-    val metricsListener = if (args.printMetrics) Some(new ADAMMetricsListener(new ADAMMetrics())) else None
+    val metricsListener = if (args.printMetrics) Some(new MetricsListener(new ADAMMetrics())) else None
     val conf = new SparkConf().setAppName("adam: " + companion.commandName)
     if (conf.getOption("spark.master").isEmpty) {
       conf.setMaster("local[%d]".format(Runtime.getRuntime.availableProcessors()))
@@ -60,7 +61,7 @@ trait ADAMSparkCommand[A <: Args4jBase] extends ADAMCommand with Logging {
     printMetrics(totalTime, metricsListener)
   }
 
-  def printMetrics(totalTime: Long, metricsListener: Option[ADAMMetricsListener]) {
+  def printMetrics(totalTime: Long, metricsListener: Option[MetricsListener]) {
     metricsListener.foreach(listener => {
       // Set the output buffer size to 4KB by default
       val bytes = new ByteArrayOutputStream(1024 * 4)
@@ -69,7 +70,7 @@ trait ADAMSparkCommand[A <: Args4jBase] extends ADAMCommand with Logging {
       out.println()
       out.println("Overall Duration: " + DurationFormatting.formatNanosecondDuration(totalTime))
       out.println()
-      listener.adamMetrics.adamSparkMetrics.print(out)
+      listener.metrics.sparkMetrics.print(out)
       logInfo("Metrics:" + bytes.toString("UTF-8"))
     })
   }
