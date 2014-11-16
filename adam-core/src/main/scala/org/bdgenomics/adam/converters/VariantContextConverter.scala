@@ -137,7 +137,8 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
             // TODO: Collapse other alternate alleles into a single set of probabilities.
             if (g.hasPL) {
               val oldPLs = g.getPL
-              val newPLs = GenotypeLikelihoods.getPLIndecesOfAlleles(0, idx).map(oldPLs(_))
+              val maxIdx = oldPLs.length
+              val newPLs = GenotypeLikelihoods.getPLIndecesOfAlleles(0, idx).filter(_ < maxIdx).map(oldPLs(_))
               // Normalize new likelihoods in log-space
               gb.PL(newPLs.map(_ - newPLs.min))
             }
