@@ -60,7 +60,7 @@ class ComparisonTraversalEngineSuite extends SparkFunSuite {
 
     val generator = MappedPosition
 
-    val generated: RDD[(CharSequence, Seq[Long])] = engine.generate(generator)
+    val generated: RDD[(String, Seq[Long])] = engine.generate(generator)
 
     val genMap = Map(generated.collect().map { case (key, value) => (key.toString, value) }: _*)
 

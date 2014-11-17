@@ -122,13 +122,13 @@ class FindReads(protected val args: FindReadsArgs) extends ADAMSparkCommand[Find
 
     val generated: CompareADAM.GeneratedResults[Any] = engine.generate(generator)
 
-    val filtered: RDD[(CharSequence, Seq[Any])] = generated.filter {
-      case (name: CharSequence, values: Seq[Any]) =>
+    val filtered: RDD[(String, Seq[Any])] = generated.filter {
+      case (name: String, values: Seq[Any]) =>
         values.exists(filter.passesFilter)
     }
 
     val filteredJoined = engine.joined.join(filtered).map {
-      case (name: CharSequence, ((bucket1: ReadBucket, bucket2: ReadBucket), generated: Seq[Any])) => {
+      case (name: String, ((bucket1: ReadBucket, bucket2: ReadBucket), generated: Seq[Any])) => {
         val rec1 = bucket1.allReads().head
         val rec2 = bucket2.allReads().head
         (name, "%s:%d".format(rec1.getContig.getContigName, rec1.getStart), "%s:%d".format(rec2.getContig.getContigName, rec2.getStart))

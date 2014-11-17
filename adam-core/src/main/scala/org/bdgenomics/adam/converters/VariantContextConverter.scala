@@ -35,7 +35,7 @@ object VariantContextConverter {
     else GenotypeAllele.Alt
   }
 
-  private def convertAllele(allele: CharSequence, isRef: Boolean = false): Seq[Allele] = {
+  private def convertAllele(allele: String, isRef: Boolean = false): Seq[Allele] = {
     if (allele == null)
       Seq()
     else

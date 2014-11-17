@@ -52,7 +52,7 @@ object GTFParser {
    * @param attributeField The original string of tokens
    * @return The Map of attributes
    */
-  def parseAttrs(attributeField: String): Map[CharSequence, CharSequence] =
+  def parseAttrs(attributeField: String): Map[String, String] =
     attributeField.split(";").flatMap {
       case token: String =>
         attr_regex.findFirstMatchIn(token).map(m => (m.group(1), m.group(2)))
@@ -106,7 +106,7 @@ class GTFParser extends FeatureParser {
         case _            => (attrs.get("id"), None)
       }
     _id.foreach(f.setFeatureId)
-    _parentId.foreach(parentId => f.setParentIds(List[CharSequence](parentId)))
+    _parentId.foreach(parentId => f.setParentIds(List[String](parentId)))
 
     f.setAttributes(attrs)
 
@@ -149,7 +149,7 @@ class BEDParser extends FeatureParser {
         case _   => Strand.Independent
       })
     }
-    val attributes = new ArrayBuffer[(CharSequence, CharSequence)]()
+    val attributes = new ArrayBuffer[(String, String)]()
     if (fields.length > 6) {
       attributes += ("thickStart" -> fields(6))
     }
@@ -210,7 +210,7 @@ class NarrowPeakParser extends FeatureParser {
         case _   => Strand.Independent
       })
     }
-    val attributes = new ArrayBuffer[(CharSequence, CharSequence)]()
+    val attributes = new ArrayBuffer[(String, String)]()
     if (fields.length > 6) {
       attributes += ("signalValue" -> fields(6))
     }

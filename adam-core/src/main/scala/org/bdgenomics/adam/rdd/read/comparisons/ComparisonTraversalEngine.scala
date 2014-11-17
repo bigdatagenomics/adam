@@ -61,17 +61,17 @@ class ComparisonTraversalEngine(schema: Seq[FieldValue], input1: RDD[AlignmentRe
     }.count()
   }
 
-  def generate[T](generator: BucketComparisons[T]): RDD[(CharSequence, Seq[T])] =
+  def generate[T](generator: BucketComparisons[T]): RDD[(String, Seq[T])] =
     ComparisonTraversalEngine.generate[T](joined, generator)
 
-  def find[T](filter: GeneratorFilter[T]): RDD[CharSequence] =
+  def find[T](filter: GeneratorFilter[T]): RDD[String] =
     ComparisonTraversalEngine.find[T](joined, filter)
 }
 
 object ComparisonTraversalEngine {
 
-  type JoinedType = RDD[(CharSequence, (ReadBucket, ReadBucket))]
-  type GeneratedType[T] = RDD[(CharSequence, Seq[T])]
+  type JoinedType = RDD[(String, (ReadBucket, ReadBucket))]
+  type GeneratedType[T] = RDD[(String, Seq[T])]
 
   def generate[T](joined: JoinedType, generator: BucketComparisons[T]): GeneratedType[T] =
     joined.map {
@@ -79,7 +79,7 @@ object ComparisonTraversalEngine {
         (name, generator.matchedByName(bucket1, bucket2))
     }
 
-  def find[T](joined: JoinedType, filter: GeneratorFilter[T]): RDD[CharSequence] =
+  def find[T](joined: JoinedType, filter: GeneratorFilter[T]): RDD[String] =
     joined.filter {
       case (name, (bucket1, bucket2)) =>
         filter.comparison.matchedByName(bucket1, bucket2).exists(filter.passesFilter)

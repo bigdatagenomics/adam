@@ -31,8 +31,8 @@ object ImplicitJavaConversions {
     seqAsJavaList(list.map(i => i: java.lang.Integer))
   }
 
-  implicit def charSequenceToString(cs: CharSequence): String = cs.toString
+  //  implicit def charSequenceToString(cs: CharSequence): String = cs.toString
 
-  implicit def charSequenceToList(cs: CharSequence): List[Char] = cs.toList
+  //  implicit def charSequenceToList(cs: CharSequence): List[Char] = cs.toList
 
 }

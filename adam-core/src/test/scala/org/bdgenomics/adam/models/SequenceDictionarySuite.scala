@@ -142,13 +142,9 @@ class SequenceDictionarySuite extends FunSuite {
       record("chr3"))
     val str0: String = "chr0"
     val str1: java.lang.String = "chr1"
-    val str2: CharSequence = "chr2"
-    val str3: java.lang.CharSequence = "chr3"
 
     assert(dict.containsRefName(str0))
     assert(dict.containsRefName(str1))
-    assert(dict.containsRefName(str2))
-    assert(dict.containsRefName(str3))
   }
 
   test("Apply on name works correctly for different String types") {
@@ -159,13 +155,9 @@ class SequenceDictionarySuite extends FunSuite {
       record("chr3"))
     val str0: String = "chr0"
     val str1: java.lang.String = "chr1"
-    val str2: CharSequence = "chr2"
-    val str3: java.lang.CharSequence = "chr3"
 
     assert(dict(str0).get.name === "chr0")
     assert(dict(str1).get.name === "chr1")
-    assert(dict(str2).get.name === "chr2")
-    assert(dict(str3).get.name === "chr3")
   }
 
   def record(name: String, length: Long = 1000, url: Option[String] = None, md5: Option[String] = None): SequenceRecord =

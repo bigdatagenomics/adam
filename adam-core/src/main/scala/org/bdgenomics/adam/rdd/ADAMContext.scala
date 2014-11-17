@@ -68,9 +68,9 @@ object ADAMContext {
     seqAsJavaList(list.map(i => i: java.lang.Integer))
   }
 
-  implicit def charSequenceToString(cs: CharSequence): String = cs.toString
+  //  implicit def charSequenceToString(cs: CharSequence): String = cs.toString
 
-  implicit def charSequenceToList(cs: CharSequence): List[Char] = cs.toCharArray.toList
+  //  implicit def charSequenceToList(cs: CharSequence): List[Char] = cs.toCharArray.toList
 
   implicit def mapToJavaMap[A, B](map: Map[A, B]): java.util.Map[A, B] = mapAsJavaMap(map)
 
