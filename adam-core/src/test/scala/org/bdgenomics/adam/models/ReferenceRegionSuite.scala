@@ -138,7 +138,7 @@ class ReferenceRegionSuite extends FunSuite {
       .setEnd(6L)
       .setContig(Contig.newBuilder
         .setContigName("chr1")
-        .setContigLength(10)
+        .setContigLength(10L)
         .build)
       .build()
 
@@ -265,24 +265,19 @@ class ReferenceRegionSuite extends FunSuite {
 
   test("comparison tests for oriented reference region vs position") {
     assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)
-      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 10L)), negativeStrand = false)))
+      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 10L), negativeStrand = false)))
     assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = true)
-      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 17L)), negativeStrand = true)))
+      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 17L), negativeStrand = true)))
 
     assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = false)
-      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 17L)), negativeStrand = true)))
+      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 17L), negativeStrand = true)))
     assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = true)
-      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 10L)), negativeStrand = false)))
-
-    assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = false)
-      .contains(ReferencePositionWithOrientation(None.asInstanceOf[Option[ReferencePosition]], negativeStrand = true)))
-    assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = true)
-      .contains(ReferencePositionWithOrientation(None.asInstanceOf[Option[ReferencePosition]], negativeStrand = false)))
+      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 10L), negativeStrand = false)))
 
     assert(!ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)
-      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr2", 10L)), negativeStrand = false)))
+      .contains(ReferencePositionWithOrientation(ReferencePosition("chr2", 10L), negativeStrand = false)))
     assert(!ReferenceRegionWithOrientation("chr1", 20L, 50L, negativeStrand = true)
-      .contains(ReferencePositionWithOrientation(Some(ReferencePosition("chr1", 100L)), negativeStrand = true)))
+      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 100L), negativeStrand = true)))
   }
 
   test("overlap tests for oriented reference region") {
@@ -291,10 +286,6 @@ class ReferenceRegionSuite extends FunSuite {
     assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = true)
       .overlaps(ReferenceRegionWithOrientation("chr1", 5L, 15L, negativeStrand = true)))
 
-    val rrf = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 12L, 22L), negativeStrand = false)
-    val rrr = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 8L, 8L), negativeStrand = true)
-    assert(!rrf.overlaps(rrr))
-
     assert(!ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)
       .overlaps(ReferenceRegionWithOrientation("chr2", 10L, 20L, negativeStrand = false)))
     assert(!ReferenceRegionWithOrientation("chr1", 20L, 50L, negativeStrand = true)
@@ -302,8 +293,8 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("check the width of a reference region") {
-    assert(ReferenceRegion("chr1", 100, 201).width === 100)
-    assert(ReferenceRegionWithOrientation("chr2", 200, 401, negativeStrand = false).width === 200)
-    assert(ReferenceRegionWithOrientation("chr3", 399, 1000, negativeStrand = true).width === 600)
+    assert(ReferenceRegion("chr1", 100, 201).width === 101)
+    assert(ReferenceRegionWithOrientation("chr2", 200, 401, negativeStrand = false).width === 201)
+    assert(ReferenceRegionWithOrientation("chr3", 399, 1000, negativeStrand = true).width === 601)
   }
 }
