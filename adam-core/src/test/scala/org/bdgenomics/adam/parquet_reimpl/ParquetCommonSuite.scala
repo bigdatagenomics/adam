@@ -30,9 +30,6 @@ class ParquetCommonSuite extends FunSuite {
   lazy val credentials = new CredentialsProperties(Some(new File(System.getProperty("user.home") + "/spark.conf")))
     .awsCredentials(Some("s3"))
 
-  lazy val bucketName = System.getenv("bucket-name")
-  lazy val parquetLocation = System.getenv("parquet-location")
-
   val filename = Thread.currentThread().getContextClassLoader.getResource("small_adam.fgenotype").getFile
   val s3Filename = ""
 
@@ -51,8 +48,8 @@ class ParquetCommonSuite extends FunSuite {
 
   test("Reading a footer from S3", NetworkConnected, S3Test) {
     val byteAccess = new S3ByteAccess(new AmazonS3Client(credentials),
-      bucketName,
-      parquetLocation)
+      "bdgenomics-test",
+      "reads-0-2-0")
     val footer = ParquetCommon.readFooter(byteAccess)
     assert(footer.rowGroups.length === 1)
   }
