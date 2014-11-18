@@ -104,6 +104,9 @@ class VizReadsArgs extends Args4jBase with ParquetArgs {
 
   @Argument(required = true, metaVar = "REFNAME", usage = "The reference to view", index = 1)
   var refName: String = null
+
+  @Args4jOption(required = false, name = "-port", usage = "The port to bind to for visualization. The default is 8080.")
+  var port: Int = 8080
 }
 
 class VizServlet extends ScalatraServlet with JacksonJsonSupport {
@@ -167,12 +170,12 @@ class VizReads(protected val args: VizReadsArgs) extends ADAMSparkCommand[VizRea
     val proj = Projection(contig, readMapped, readName, start, end)
     VizReads.reads = sc.loadAlignments(args.inputPath, projection = Some(proj))
 
-    val server = new org.eclipse.jetty.server.Server(8080)
+    val server = new org.eclipse.jetty.server.Server(args.port)
     val handlers = new org.eclipse.jetty.server.handler.ContextHandlerCollection()
     server.setHandler(handlers)
     handlers.addHandler(new org.eclipse.jetty.webapp.WebAppContext("adam-cli/src/main/webapp", "/"))
     server.start()
-    println("View the visualization at: 8080")
+    println("View the visualization at: " + args.port)
     println("Frequency visualization at: /freq")
     println("Overlapping reads visualization at: /reads")
     server.join()
