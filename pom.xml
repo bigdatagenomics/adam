@@ -350,6 +350,7 @@
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-client</artifactId>
         <version>${hadoop.version}</version>
+        <scope>provided</scope>
         <exclusions>
           <exclusion>
             <groupId>asm</groupId>
@@ -377,6 +378,7 @@
         <groupId>org.apache.spark</groupId>
         <artifactId>spark-core_${scala.artifact.suffix}</artifactId>
         <version>${spark.version}</version>
+        <scope>provided</scope>
         <exclusions>
           <exclusion>
             <groupId>org.apache.hadoop</groupId>
