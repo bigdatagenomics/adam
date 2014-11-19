@@ -22,7 +22,7 @@
     <scala.artifact.suffix>2.10</scala.artifact.suffix>
     <avro.version>1.7.6</avro.version>
     <spark.version>1.1.0</spark.version>
-    <parquet.version>1.4.3</parquet.version>
+    <parquet.version>1.6.0rc4</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>

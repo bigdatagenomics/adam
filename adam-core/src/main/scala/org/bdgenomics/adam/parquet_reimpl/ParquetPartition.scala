@@ -114,7 +114,13 @@ object ParquetPartition {
 
     val columnIOFactory: ColumnIOFactory = new ColumnIOFactory
     val columnIO = columnIOFactory.getColumnIO(requestedSchema.convertToParquet(), actualSchema.convertToParquet())
-    val reader = columnIO.getRecordReader[T](pageReadStore, recordMaterializer, filter)
+
+    // TODO: Use Scala Option instead of null
+    val reader = if (filter == null.asInstanceOf[UnboundRecordFilter]) {
+      columnIO.getRecordReader[T](pageReadStore, recordMaterializer)
+    } else {
+      columnIO.getRecordReader[T](pageReadStore, recordMaterializer, filter)
+    }
 
     new Iterator[T] {
       var recordsRead = 0
