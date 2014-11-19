@@ -17,7 +17,7 @@ By default, ADAM depends on [Spark](http://spark.apache.org) 1.0.0 and [Hadoop](
 
 If you are building a downstream project that includes ADAM, and you want to build for a non-2.2.0 Hadoop version and are using [Maven](http://maven.apache.org) or SBT, you will need to add an explicit dependency on the hadoop-client artifact for the version of Hadoop you want to build for. In this dependency, you will also need to exclude the `javax.servlet` class. In a Maven pom.xml, this will look like:
 
-```
+```xml
 <dependency>
   <groupId>org.apache.hadoop</groupId>
   <artifactId>hadoop-client</artifactId>

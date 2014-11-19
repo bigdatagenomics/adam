@@ -1,7 +1,9 @@
 \documentclass[$if(fontsize)$$fontsize$,$endif$$if(lang)$$lang$,$endif$]{$documentclass$}
+\usepackage[cm]{fullpage}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
+
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
 % use microtype if available
@@ -35,19 +37,24 @@ $if(mathfont)$
 $endif$
 \fi
 
+
+
 \usepackage{fancyhdr}
+\setlength{\headheight}{15.2pt}
 \pagestyle{fancy}
 \pagenumbering{arabic}
 \lhead{\itshape $title$}
 \chead{}
 \rhead{\itshape{\nouppercase{\leftmark}}}
-\lfoot{Git version:$version$}
+\lfoot{git:$version$}
 \cfoot{http://bdgenomics.org/}
 \rfoot{\thepage}
 
-$if(geometry)$
-\usepackage[$for(geometry)$$geometry$$sep$,$endfor$]{geometry}
-$endif$
+
+
+%$if(geometry)$
+%\usepackage[$for(geometry)$$geometry$$sep$,$endfor$]{geometry}
+%$endif$
 $if(natbib)$
 \usepackage{natbib}
 \bibliographystyle{plainnat}
