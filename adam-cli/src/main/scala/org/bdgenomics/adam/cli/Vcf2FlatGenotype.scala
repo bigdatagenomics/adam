@@ -116,14 +116,15 @@ class Vcf2FlatGenotype(args: Vcf2FlatGenotypeArgs) extends ADAMCommand {
           }
           i += lineCount
         }
-
-        vcfReader.close()
-        writers.foreach(_.close())
-
-        System.err.flush()
-        System.out.flush()
-        println("\nFinished! Converted %d lines total.".format(i))
     }
+
+    vcfReader.close()
+    writers.foreach(_.close())
+
+    System.err.flush()
+    System.out.flush()
+    println("\nFinished! Converted %d lines total.".format(i))
+
   }
 }
 
