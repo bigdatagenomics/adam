@@ -26,7 +26,9 @@ export SPARK_EC2_SCRIPT="/path/to/spark-0.8.1/ec2/spark-ec2"   # CHANGE ME
 Set up some aliases for commands to the spark ec2 script,
 
 ```bash
-alias spark_ec2_launch="$SPARK_EC2_SCRIPT -k $MY_KEYPAIR -i $MY_KEYFILE -s $MY_CLUSTER_SIZE --zone us-east-1c --instance-type=$MY_INSTANCE_TYPE launch $MY_CLUSTER_NAME"
+alias spark_ec2_launch="$SPARK_EC2_SCRIPT -k $MY_KEYPAIR \
+-i $MY_KEYFILE -s $MY_CLUSTER_SIZE --zone us-east-1c \
+--instance-type=$MY_INSTANCE_TYPE launch $MY_CLUSTER_NAME"
 alias spark_ec2_stop="$SPARK_EC2_SCRIPT stop $MY_CLUSTER_NAME"
 alias spark_ec2_start="$SPARK_EC2_SCRIPT -i $MY_KEYFILE start $MY_CLUSTER_NAME"
 alias spark_ec2_destroy="$SPARK_EC2_SCRIPT destroy $MY_CLUSTER_NAME"

@@ -6,11 +6,14 @@ You will need to have [Maven](http://maven.apache.org/) installed in order to bu
 > version of Hadoop, please edit the build configuration in the `<properties>` section of
 > the `pom.xml` file.
 
-```
+```bash
 $ git clone https://github.com/bigdatagenomics/adam.git
 $ cd adam
 $ export "MAVEN_OPTS=-Xmx512m -XX:MaxPermSize=128m"
 $ mvn clean package -DskipTests
+```
+Outputs
+```
 ...
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
@@ -31,7 +34,7 @@ dependencies
 
 You might want to add the following to your `.bashrc` to make running `adam` easier:
 
-```
+```bash
 alias adam-local="bash ${ADAM_HOME}/adam-cli/target/appassembler/bin/adam"
 alias adam-submit="${ADAM_HOME}/bin/adam-submit"
 alias adam-shell="${ADAM_HOME}/bin/adam-shell"
@@ -46,9 +49,11 @@ to have the Spark binaries on your system; prebuilt binaries can be downloaded f
 
 Once this alias is in place, you can run adam by simply typing `adam` at the commandline, e.g.
 
-```
+```bash
 $ adam
-
+```
+Outputs:
+```
      e            888~-_              e                 e    e
     d8b           888   \            d8b               d8b  d8b
    /Y88b          888    |          /Y88b             d888bdY88b
@@ -76,8 +81,11 @@ Choose one of the following commands:
 ADAM outputs all the commands that are available for you to run. To get
 help for a specific command, run `adam <command>` without any additional arguments.
 
-````
+```bash
 $ adam transform --help
+```
+Outputs:
+```
 Argument "INPUT" is required
  INPUT                                  : The ADAM, BAM or SAM file to apply
                                           the transforms to
@@ -103,4 +111,4 @@ Argument "INPUT" is required
  -spark_master VAL                      : Spark Master (default = "local[#cores]
                                           ")
 
-````
+```
