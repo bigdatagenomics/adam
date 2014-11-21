@@ -33,8 +33,8 @@ import parquet.avro.AvroParquetWriter
  * a subset of the samples.
  */
 object Vcf2FlatGenotype extends ADAMCommandCompanion {
-  val commandName: String = "vcf2fgenotype"
-  val commandDescription: String = "Single-node VCF to ADAM converter (Note: the 'transform' command can take SAM or BAM as input)"
+  val commandName: String = "vcf2flatgenotype"
+  val commandDescription: String = "Single-node VCF to flat-schema'd ADAM converter"
 
   def apply(cmdLine: Array[String]): ADAMCommand = {
     new Vcf2FlatGenotype(Args4j[Vcf2FlatGenotypeArgs](cmdLine))
