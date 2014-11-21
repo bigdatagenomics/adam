@@ -29,6 +29,7 @@ fi
 
 if [ -z "$SPARK_HOME" ]; then
   echo "Attempting to use 'pyspark' on default path; you might need to set SPARK_HOME"
+  echo ""
   SPARK_SHELL=pyspark
 else
   SPARK_SHELL="$SPARK_HOME"/bin/pyspark
