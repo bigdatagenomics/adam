@@ -47,6 +47,9 @@ class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
 
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
+
+  @Args4jOption(required = false, name = "-onlyvariants", usage = "Output Variant objects instead of Genotypes")
+  var onlyvariants: Boolean = false
 }
 
 class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] with DictionaryCommand with Logging {
@@ -59,14 +62,18 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] wi
       log.info("Using contig translation")
 
     var adamVariants: RDD[VariantContext] = sc.adamVCFLoad(args.vcfPath, dict = dictionary)
-
-    val gts = if (args.coalesce > 1) {
-      adamVariants.coalesce(args.coalesce, true)
-        .flatMap(p => p.genotypes)
-    } else {
-      adamVariants.flatMap(p => p.genotypes)
+    if (args.coalesce > 1) {
+      adamVariants = adamVariants.coalesce(args.coalesce, true)
     }
 
-    gts.adamParquetSave(args)
+    if (args.onlyvariants) {
+      adamVariants
+        .map(v => v.variant.variant)
+        .adamParquetSave(args)
+    } else {
+      adamVariants
+        .flatMap(p => p.genotypes)
+        .adamParquetSave(args)
+    }
   }
 }
