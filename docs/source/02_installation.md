@@ -32,10 +32,9 @@ reads and pileups, run flagstat, etc. We use this script to test that ADAM is wo
 ADAM is packaged via [appassembler](http://mojo.codehaus.org/appassembler/appassembler-maven-plugin/) and includes all necessary
 dependencies
 
-You might want to add the following to your `.bashrc` to make running `adam` easier:
+You might want to add the following to your `.bashrc` to make running ADAM easier:
 
 ```bash
-alias adam-local="bash ${ADAM_HOME}/adam-cli/target/appassembler/bin/adam"
 alias adam-submit="${ADAM_HOME}/bin/adam-submit"
 alias adam-shell="${ADAM_HOME}/bin/adam-shell"
 ```
@@ -47,10 +46,10 @@ to have the Spark binaries on your system; prebuilt binaries can be downloaded f
 [Spark website](http://spark.apache.org/downloads.html). Currently, we build for
 [Spark 1.1, and Hadoop 2.3 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz).
 
-Once this alias is in place, you can run adam by simply typing `adam` at the commandline, e.g.
+Once this alias is in place, you can run ADAM by simply typing `adam-submit` at the commandline, e.g.
 
 ```bash
-$ adam
+$ adam-submit
 ```
 Outputs:
 ```
@@ -79,10 +78,10 @@ Choose one of the following commands:
 ```
 
 ADAM outputs all the commands that are available for you to run. To get
-help for a specific command, run `adam <command>` without any additional arguments.
+help for a specific command, run `adam-submit <command>` without any additional arguments.
 
 ```bash
-$ adam transform --help
+$ adam-submit transform --help
 ```
 Outputs:
 ```

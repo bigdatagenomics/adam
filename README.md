@@ -80,7 +80,6 @@ dependencies
 You might want to add the following to your `.bashrc` to make running `adam` easier:
 
 ```
-alias adam-local="bash ${ADAM_HOME}/adam-cli/target/appassembler/bin/adam"
 alias adam-submit="${ADAM_HOME}/bin/adam-submit"
 alias adam-shell="${ADAM_HOME}/bin/adam-shell"
 ```
@@ -92,10 +91,10 @@ to have the Spark binaries on your system; prebuilt binaries can be downloaded f
 [Spark website](http://spark.apache.org/downloads.html). Currently, we build for
 [Spark 1.1, and Hadoop 2.3 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz).
 
-Once this alias is in place, you can run adam by simply typing `adam-local` at the commandline, e.g.
+Once this alias is in place, you can run adam by simply typing `adam-submit` at the commandline, e.g.
 
 ```
-$ adam-local
+$ adam-submit
 
      e            888~-_              e                 e    e
     d8b           888   \            d8b               d8b  d8b
@@ -122,7 +121,7 @@ Choose one of the following commands:
 ```
 
 ADAM outputs all the commands that are available for you to run. To get
-help for a specific command, run `adam-local <command>` without any additional arguments.
+help for a specific command, run `adam-submit <command>` without any additional arguments.
 
 ````
 $ adam-submit transform
@@ -183,7 +182,7 @@ This command will output stats identically to the samtools `flagstat` command.
 If you followed along above, now try gathering some statistics:
 
 ````
-$ adam-local flagstat /tmp/small.adam
+$ adam-submit flagstat /tmp/small.adam
 20 + 0 in total (QC-passed reads + QC-failed reads)
 0 + 0 primary duplicates
 0 + 0 primary duplicates - both read and mate mapped
@@ -217,7 +216,7 @@ You can also use ADAM to count all K-mers present across all reads in the
 `.adam` file using `count_kmers`.  Try this:
 
 ````
-$ adam-local count_kmers /tmp/small.adam /tmp/kmers.adam 10
+$ adam-submit count_kmers /tmp/small.adam /tmp/kmers.adam 10
 $ head /tmp/kmers.adam/part-*
 TTTTAAGGTT, 1
 TTCCGATTTT, 1
