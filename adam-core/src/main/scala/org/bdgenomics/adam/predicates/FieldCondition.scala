@@ -62,8 +62,7 @@ object ColumnReaderInput extends Serializable {
   }
 }
 
-private[predicates] case class FieldCondition[T](fieldName: String,
-                                                 filter: T => Boolean)(implicit converter: ColumnReaderInput[T])
+case class FieldCondition[T](fieldName: String, filter: T => Boolean)(implicit converter: ColumnReaderInput[T])
     extends Predicate {
 
   def apply(input: Any): Boolean = {
@@ -78,7 +77,7 @@ private[predicates] case class FieldCondition[T](fieldName: String,
 
 }
 
-private[predicates] object FieldCondition {
+object FieldCondition {
 
   def apply(field: AlignmentRecordField.Value,
             filterValue: Boolean)(implicit converter: ColumnReaderInput[Boolean]): FieldCondition[Boolean] = {

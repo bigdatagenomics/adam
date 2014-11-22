@@ -41,7 +41,7 @@ import parquet.filter.{ AndRecordFilter, OrRecordFilter, UnboundRecordFilter }
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import scala.annotation.tailrec
 
-private[predicates] object RecordCondition {
+object RecordCondition {
 
   // Convert predicate on single field to predicate on record
   def getRecordPredicate[T <: SpecificRecord: Manifest, U](condition: FieldCondition[U]): T => Boolean = {
@@ -81,8 +81,7 @@ private[predicates] object RecordCondition {
  *  with Parquet stored files
  *
  */
-private[predicates] class RecordCondition[T <% SpecificRecord: Manifest] private (val filter: T => Boolean,
-                                                                                  val recordFilter: UnboundRecordFilter)
+class RecordCondition[T <% SpecificRecord: Manifest](val filter: T => Boolean, val recordFilter: UnboundRecordFilter)
     extends Serializable {
 
   // Combine two predicates through an AND
