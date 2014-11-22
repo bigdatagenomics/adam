@@ -48,6 +48,9 @@ object ColumnReaderInput extends Serializable {
   implicit object ColumnReaderInputInt extends ColumnReaderInput[Int] {
     def convert(input: ColumnReader): Int = input.getInteger
   }
+  implicit object ColumnReaderInputLong extends ColumnReaderInput[Long] {
+    def convert(input: ColumnReader): Long = input.getLong
+  }
   implicit object ColumnReaderInputString extends ColumnReaderInput[String] {
     def convert(input: ColumnReader): String = input.getBinary.toStringUsingUTF8
   }
