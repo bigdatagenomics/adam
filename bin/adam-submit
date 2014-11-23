@@ -41,8 +41,8 @@ ADAM_CLI_JAR="$(ls "$ADAM_REPO"/adam-cli/target/appassembler/repo/org/bdgenomics
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then
-  echo "Attempting to use 'spark-submit' on default path; you might need to set SPARK_HOME"
-  SPARK_SUBMIT=spark-submit
+  echo "SPARK_HOME must be set for 'adam-submit'"
+  exit 1
 else
   SPARK_SUBMIT="$SPARK_HOME"/bin/spark-submit
 fi
