@@ -32,6 +32,8 @@
     <module>adam-core</module>
     <module>adam-apis</module>
     <module>adam-cli</module>
+    <!-- distribution should be last -->
+    <module>distribution</module>
   </modules>
   
   <licenses>

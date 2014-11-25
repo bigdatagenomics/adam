@@ -18,16 +18,25 @@
 #
 
 # Figure out where ADAM is installed
-ADAM_REPO="$(cd `dirname $0`/..; pwd)"
+SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
-# Next three commands set CLASSPATH like appassembler
-BASEDIR="$ADAM_REPO"/adam-cli/target/appassembler
-REPO="$BASEDIR"/repo
-if [ ! -f "$BASEDIR"/bin/adam ]; then
+# Setup CLASSPATH like appassembler
+
+# Assume we're running in a binary distro
+ADAM_CMD="$SCRIPT_DIR/bin/adam"
+REPO="$SCRIPT_DIR/repo"
+
+# Fallback to source repo
+if [ ! -f $ADAM_CMD ]; then
+ADAM_CMD="$SCRIPT_DIR/adam-cli/target/appassembler/bin/adam"
+REPO="$SCRIPT_DIR/adam-cli/target/appassembler/repo"
+fi
+
+if [ ! -f "$ADAM_CMD" ]; then
   echo "Failed to find appassembler scripts in $BASEDIR/bin"
   echo "You need to build ADAM before running this program"
   exit 1
 fi
-eval $(cat "$BASEDIR"/bin/adam | grep "^CLASSPATH")
+eval $(cat "$ADAM_CMD" | grep "^CLASSPATH")
 
 echo "$CLASSPATH"

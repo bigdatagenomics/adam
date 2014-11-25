@@ -61,7 +61,7 @@ popd
 
 pushd "$PROJECT_ROOT"
 ./scripts/format-source
-if grep --quiet "dirty" <(git describe --dirty --tags)
+if test -n "$(git status --porcelain)"
 then
         echo "Please run './scripts/format-source'"
         exit 1
