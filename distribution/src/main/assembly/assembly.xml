@@ -50,12 +50,14 @@
             <directoryMode>0755</directoryMode>
             <fileMode>0755</fileMode>
         </fileSet>
+		<!--
         <fileSet>
             <directory>../docs/output</directory>
             <outputDirectory>docs</outputDirectory>
             <directoryMode>0755</directoryMode>
             <fileMode>0644</fileMode>
         </fileSet>
+		-->
     </fileSets>
     <!--
       <dependencySets>

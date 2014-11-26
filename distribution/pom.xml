@@ -14,6 +14,7 @@
     <name>ADAM: Distribution</name>
     <build>
         <plugins>
+			<!--
             <plugin>
                 <artifactId>exec-maven-plugin</artifactId>
                 <groupId>org.codehaus.mojo</groupId>
@@ -31,6 +32,7 @@
                     </execution>
                 </executions>
             </plugin>
+			-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
