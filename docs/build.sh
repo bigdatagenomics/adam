@@ -3,6 +3,7 @@
 git_version=$(git rev-parse --short HEAD)
 
 output_dir="output"
+rm $output_dir/* 2>/dev/null
 pdf_output="$output_dir/ADAM_v$git_version.pdf"
 html_output="$output_dir/ADAM_v$git_version.html"
 date_str=$(date '+%Y-%m-%d')
@@ -11,6 +12,12 @@ title="ADAM User Guide"
 date="$date_str git:$git_version"
 author="http://bdgenomics.org/"
 highlight_style="tango"
+
+which pandoc >/dev/null 2>&1
+if [ $? -ne "0" ]; then
+	echo "WARNING! Pandoc not found on path. Documentation will not be generated!"
+	exit 0
+fi
 
 # Generate a PDF of the docs
 pandoc -N --template=template.tex \

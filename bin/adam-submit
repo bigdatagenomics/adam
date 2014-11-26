@@ -18,26 +18,34 @@
 #
 
 # Figure out where ADAM is installed
-ADAM_REPO="$(cd `dirname $0`/..; pwd)"
+SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
 # Get list of required jars for ADAM
-ADAM_JARS=$("$ADAM_REPO"/bin/compute-adam-jars.sh)
+ADAM_JARS=$("$SCRIPT_DIR"/bin/compute-adam-jars.sh)
+
+# Binary distribution
+REPO_DIR="$SCRIPT_DIR/repo"
+if [ ! -d "$REPO_DIR" ]; then
+# Fallback to source directory
+REPO_DIR="$SCRIPT_DIR/adam-cli/target/appassembler/repo/"
+fi
 
 # Find the ADAM CLI jar
-num_versions=$(ls "$ADAM_REPO"/adam-cli/target/appassembler/repo/org/bdgenomics/adam/adam-cli | wc -l)
+CLI_DIR="$REPO_DIR/org/bdgenomics/adam/adam-cli"
+num_versions=$(ls "$CLI_DIR" | wc -l)
 if [ "$num_versions" -eq "0" ]; then
-  echo "Failed to find adam-cli jar in $ADAM_REPO/adam-cli/target/appassembler/repo/org/bdgenomics/adam/adam-cli"
+  echo "Failed to find adam-cli jar in $CLI_DIR"
   echo "You need to build ADAM before running this program."
   exit 1
 fi
 if [ "$num_versions" -gt "1" ]; then
-  versions_list=$(ls "$ADAM_REPO"/adam-cli/target/appassembler/repo/org/bdgenomics/adam/adam-cli)
-  echo "Found multiple ADAM CLI versions in $ADAM_REPO/adam-cli/target/appassembler/repo/org/bdgenomics/adam/adam-cli:"
+  versions_list=$(ls "$CLI_DIR")
+  echo "Found multiple ADAM CLI versions in $CLI_DIR:"
   echo "$versions_list"
   echo "Please remove all but one."
   exit 1
 fi
-ADAM_CLI_JAR="$(ls "$ADAM_REPO"/adam-cli/target/appassembler/repo/org/bdgenomics/adam/adam-cli/*/adam-cli-*.jar)"
+ADAM_CLI_JAR=$(ls $CLI_DIR/*/adam-cli-*.jar)
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then
