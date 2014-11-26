@@ -3,7 +3,6 @@
 git_version=$(git rev-parse --short HEAD)
 
 output_dir="output"
-rm $output_dir/* 2>/dev/null
 pdf_output="$output_dir/ADAM_v$git_version.pdf"
 html_output="$output_dir/ADAM_v$git_version.html"
 date_str=$(date '+%Y-%m-%d')
