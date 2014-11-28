@@ -37,6 +37,7 @@ import parquet.hadoop.metadata.CompressionCodecName
 import parquet.hadoop.util.ContextUtil
 import scala.math.max
 import scala.Some
+import ReferenceRegionContext._
 
 class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[NucleotideContigFragment](rdd) {
 
@@ -78,7 +79,7 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
       assert(kv1._1.isAdjacent(kv2._1), "Regions being joined must be adjacent. For: " +
         kv1 + ", " + kv2)
 
-      (kv1._1.merge(kv2._1), if (kv1._1.compare(kv2._1) <= 0) {
+      (kv1._1.merge(kv2._1), if (ReferenceRegionOrdering.compare(kv1._1, kv2._1) <= 0) {
         kv1._2 + kv2._2
       } else {
         kv2._2 + kv1._2
@@ -94,7 +95,7 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
         .map(kv => getString(kv))
         .reduce(reducePairs)
 
-      assert(pair._1.compare(region) == 0,
+      assert(ReferenceRegionOrdering.compare(pair._1, region) == 0,
         "Merging fragments returned a different region than requested.")
 
       pair._2

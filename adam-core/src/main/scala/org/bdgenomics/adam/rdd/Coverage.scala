@@ -21,8 +21,9 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import scala.math._
-import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
+import org.bdgenomics.adam.models.{ ReferenceRegionContext, ReferenceRegionOrdering, SequenceDictionary, ReferenceRegion }
 import PairingRDD._
+import ReferenceRegionContext._
 
 /**
  * A base is 'covered' by a region set if any region in the set contains the base itself.
@@ -97,7 +98,7 @@ class Coverage(val window: Long) extends Serializable {
       case (None, None)         => 0
       case (None, Some(r2))     => -1
       case (Some(r1), None)     => 1
-      case (Some(r1), Some(r2)) => r1.compareTo(r2)
+      case (Some(r1), Some(r2)) => ReferenceRegionOrdering.compare(r1, r2)
     }
 
   case class OrientedPoint(chrom: String, pos: Long, polarity: Boolean) extends Ordered[OrientedPoint] with Serializable {

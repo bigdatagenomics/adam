@@ -21,7 +21,7 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import htsjdk.samtools.CigarOperator
 import org.apache.spark.Logging
-import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.models.{ ReferenceRegionOrdering, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
@@ -51,7 +51,8 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @param b Indel realignment target to compare.
    * @return Comparison done by starting position.
    */
-  def compare(a: IndelRealignmentTarget, b: IndelRealignmentTarget): Int = a.readRange compare b.readRange
+  def compare(a: IndelRealignmentTarget, b: IndelRealignmentTarget): Int =
+    ReferenceRegionOrdering.compare(a.readRange, b.readRange)
 
   /**
    * Check to see if an indel realignment target contains the given read.
@@ -76,7 +77,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
   def lt(target: IndelRealignmentTarget, read: RichAlignmentRecord): Boolean = {
     val region = read.readRegion
 
-    region.forall(r => target.readRange.compare(r) < 0)
+    region.forall(r => ReferenceRegionOrdering.compare(target.readRange, r) < 0)
   }
 
   /**
