@@ -23,15 +23,14 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ ReferenceRegionContext, SequenceDictionary, ReferenceRegion }
+import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
+import org.bdgenomics.adam.models.ReferenceRegionContext._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.BroadcastRegionJoin
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.io._
-
-import ReferenceRegionContext._
 
 /**
  * CalculateDepth (accessible as the command 'depth' through the CLI) takes two arguments,

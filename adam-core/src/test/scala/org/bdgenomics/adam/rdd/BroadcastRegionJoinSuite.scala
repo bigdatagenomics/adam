@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
@@ -126,19 +127,19 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val record1 = builder.build()
     val record2 = builder.build()
 
-    val rdd1 = sc.parallelize(Seq(record1)).keyBy(ReferenceRegion(_).get)
-    val rdd2 = sc.parallelize(Seq(record2)).keyBy(ReferenceRegion(_).get)
+    val rdd1: RDD[(ReferenceRegion, AlignmentRecord)] = sc.parallelize(Seq(record1)).keyBy(ReferenceRegion(_).get)
+    val rdd2: RDD[(ReferenceRegion, AlignmentRecord)] = sc.parallelize(Seq(record2)).keyBy(ReferenceRegion(_).get)
 
     assert(BroadcastRegionJoinSuite.getReferenceRegion(record1) ===
       BroadcastRegionJoinSuite.getReferenceRegion(record2))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin(
       rdd1,
       rdd2).aggregate(true)(
         BroadcastRegionJoinSuite.merge,
         BroadcastRegionJoinSuite.and))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin(
       rdd1,
       rdd2)
       .aggregate(0)(
@@ -168,14 +169,14 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion(_).get)
     val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_).get)
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin(
       baseRdd,
       recordsRdd)
       .aggregate(true)(
         BroadcastRegionJoinSuite.merge,
         BroadcastRegionJoinSuite.and))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin(
       baseRdd,
       recordsRdd).count() === 2)
   }
@@ -202,7 +203,7 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
       .build()
     val builtRef2 = AlignmentRecord.newBuilder()
       .setContig(contig2)
-      .setStart(1)
+      .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
       .setEnd(2L)
@@ -217,14 +218,14 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_).get)
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_).get)
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin(
       baseRdd,
       recordsRdd)
       .aggregate(true)(
         BroadcastRegionJoinSuite.merge,
         BroadcastRegionJoinSuite.and))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin(
       baseRdd,
       recordsRdd).count() === 3)
   }
