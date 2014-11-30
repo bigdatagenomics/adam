@@ -17,11 +17,10 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import org.scalatest.FunSuite
-import com.netflix.servo.monitor.MonitorConfig
+import com.netflix.servo.tag.{ Tag, Tags }
 import java.util.concurrent.TimeUnit
 import org.bdgenomics.adam.instrumentation.ServoTimer._
-import com.netflix.servo.tag.{ Tags, Tag }
+import org.scalatest.FunSuite
 import scala.collection.JavaConversions._
 
 class ServoTimerSuite extends FunSuite {
@@ -64,8 +63,8 @@ class ServoTimerSuite extends FunSuite {
     val timer = createTimer()
     timer.recordMillis(100)
     timer.recordMillis(201)
-    timer.recordMillis(200)
     timer.recordMillis(99)
+    timer.recordMillis(200)
     assert(fromNanos(timer.getMin) === 99)
     assert(fromNanos(getTaggedValue(timer, MinTag).longValue()) === 99)
   }
@@ -76,9 +75,6 @@ class ServoTimerSuite extends FunSuite {
     assert(timer.getMonitors.get(0).getConfig.getTags.getValue("myTag") === null)
     timer.addTag(Tags.newTag("myTag", "tagValue"))
     assert(timer.getConfig.getTags.getValue("myTag") === "tagValue")
-    timer.getMonitors.foreach(subMonitor => {
-      assert(subMonitor.getConfig.getTags.getValue("myTag") === "tagValue")
-    })
   }
 
   test("Nanosecond timings recorded correctly") {
@@ -107,7 +103,7 @@ class ServoTimerSuite extends FunSuite {
   }
 
   def createTimer(): ServoTimer = {
-    new ServoTimer(MonitorConfig.builder("testTimer").build())
+    new ServoTimer("testTimer")
   }
 
 }

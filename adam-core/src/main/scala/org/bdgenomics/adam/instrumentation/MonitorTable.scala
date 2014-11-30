@@ -61,7 +61,7 @@ class MonitorTable(headerRow: Array[TableHeader], rows: Array[Monitor[_]]) {
       else
         return value.toString
     })
-    ""
+    "-"
   }
 
 }

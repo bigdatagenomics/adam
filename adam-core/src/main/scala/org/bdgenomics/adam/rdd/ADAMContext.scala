@@ -25,11 +25,10 @@ import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.rdd.RDD
-import org.apache.spark.scheduler.StatsReportListener
+import org.apache.spark.rdd.{ ADAMInstrumentedOrderedRDDFunctions, ADAMInstrumentedPairRDDFunctions, ADAMInstrumentedRDDFunctions, RDD }
 import org.apache.spark.{ Logging, SparkConf, SparkContext }
 import org.bdgenomics.adam.converters.SAMRecordConverter
-import org.bdgenomics.adam.instrumentation.ADAMMetricsListener
+import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
@@ -43,6 +42,7 @@ import parquet.hadoop.ParquetInputFormat
 import parquet.hadoop.util.ContextUtil
 import scala.collection.JavaConversions._
 import scala.collection.Map
+import scala.reflect.ClassTag
 
 object ADAMContext {
   // Add ADAM Spark context methods
@@ -50,6 +50,15 @@ object ADAMContext {
 
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToADAMRDD[T <% SpecificRecord: Manifest](rdd: RDD[T]) = new ADAMRDDFunctions(rdd)
+
+  // Add RDD methods for recording metrics
+  implicit def rddToMetricsRDD[T](rdd: RDD[T]) = new ADAMInstrumentedRDDFunctions(rdd)
+
+  // Add RDD methods for recording metrics for pairs
+  implicit def rddToPairMetricsRDD[K, V](rdd: RDD[(K, V)])(implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null) = new ADAMInstrumentedPairRDDFunctions(rdd)
+
+  // Add RDD methods for recording metrics for ordered records
+  implicit def rddToOrderedMetricsRDD[K: Ordering: ClassTag, V: ClassTag](rdd: RDD[(K, V)]) = new ADAMInstrumentedOrderedRDDFunctions[K, V](rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
@@ -107,7 +116,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
   def adamLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](
     filePath: String,
     predicate: Option[Class[U]] = None,
-    projection: Option[Schema] = None): RDD[T] = {
+    projection: Option[Schema] = None): RDD[T] = ParquetLoad.time {
 
     log.info("Reading the ADAM file at %s to create RDD".format(filePath))
     val job = HadoopUtil.newJob(sc)
@@ -204,7 +213,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
                                                                            predicateOpt: Option[Class[U]]): RDD[T] =
     predicateOpt.map(_.newInstance()(reads)).getOrElse(reads)
 
-  private[rdd] def adamBamLoad(filePath: String): RDD[AlignmentRecord] = {
+  private[rdd] def adamBamLoad(filePath: String): RDD[AlignmentRecord] = BAMLoad.time {
     log.info("Reading legacy BAM file format %s to create RDD".format(filePath))
 
     // We need to separately read the header, so that we can inject the sequence dictionary
@@ -269,7 +278,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
   def loadAlignments[U <: ADAMPredicate[AlignmentRecord]](
     filePath: String,
     predicate: Option[Class[U]] = None,
-    projection: Option[Schema] = None): RDD[AlignmentRecord] = {
+    projection: Option[Schema] = None): RDD[AlignmentRecord] = LoadAlignmentRecords.time {
 
     maybeLoadBam(filePath, predicate, projection)
       .orElse(

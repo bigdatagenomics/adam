@@ -21,14 +21,15 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 
 object SingleReadBucket extends Logging {
   def apply(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
-    rdd.groupBy(p => (p.getRecordGroupName, p.getReadName))
-      .map(kv => {
+    rdd.adamGroupBy(p => (p.getRecordGroupName, p.getReadName))
+      .adamMap(kv => {
         val (_, reads) = kv
 
         // split by mapping

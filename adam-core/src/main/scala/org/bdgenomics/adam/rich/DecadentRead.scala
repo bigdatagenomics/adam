@@ -47,7 +47,7 @@ object DecadentRead {
    *   2. To clog, to glut, or satisfy, as the appetite; to satiate.
    *   3. To fill up or choke up; to stop up.
    */
-  def cloy(rdd: RDD[AlignmentRecord]): RDD[DecadentRead] = rdd.map(DecadentRead.apply)
+  def cloy(rdd: RDD[AlignmentRecord]): RDD[DecadentRead] = rdd.adamMap(DecadentRead.apply)
 
   // The inevitable counterpart of the above.
   implicit def decay(rdd: RDD[DecadentRead]): RDD[AlignmentRecord] = rdd.map(_.record)

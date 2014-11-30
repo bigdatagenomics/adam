@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{ ReferencePositionPair, ReferencePositionWithOrientation, SingleReadBucket }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
@@ -51,7 +52,7 @@ private[rdd] object MarkDuplicates extends Serializable {
   }
 
   private def markReads(reads: Iterable[(ReferencePositionPair, SingleReadBucket)], primaryAreDups: Boolean, secondaryAreDups: Boolean,
-                        ignore: Option[(ReferencePositionPair, SingleReadBucket)] = None) {
+                        ignore: Option[(ReferencePositionPair, SingleReadBucket)] = None) = MarkReads.time {
     reads.foreach(read => {
       if (ignore.isEmpty || read != ignore.get) {
         markReadsInBucket(read._2, primaryAreDups, secondaryAreDups)
@@ -71,8 +72,8 @@ private[rdd] object MarkDuplicates extends Serializable {
       p._1.read2refPos
     }
 
-    rdd.adamSingleReadBuckets().keyBy(ReferencePositionPair(_)).groupBy(leftPositionAndLibrary)
-      .flatMap(kv => {
+    rdd.adamSingleReadBuckets().adamKeyBy(ReferencePositionPair(_)).adamGroupBy(leftPositionAndLibrary)
+      .adamFlatMap(kv => PerformDuplicateMarking.time {
 
         val leftPos: Option[ReferencePositionWithOrientation] = kv._1._1
         val readsAtLeftPos: Iterable[(ReferencePositionPair, SingleReadBucket)] = kv._2

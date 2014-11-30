@@ -23,6 +23,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils
+import org.bdgenomics.adam.instrumentation.Timers._
 import scala.annotation.tailrec
 import scala.math.{ log => mathLog, exp }
 
@@ -39,11 +40,11 @@ private[rdd] object TrimReads extends Logging {
     val tr = new TrimReads
 
     // get read length
-    val readLength = rdd.first().getSequence.length
+    val readLength = rdd.adamFirst().getSequence.length
 
     // map read quality scores into doubles
     log.info("Collecting read quality scores.")
-    val doubleRdd: RDD[((String, Int), Double)] = rdd.flatMap(tr.readToDoubles)
+    val doubleRdd: RDD[((String, Int), Double)] = rdd.adamFlatMap(tr.readToDoubles)
       .cache()
 
     // reduce this by key, and also get counts
@@ -113,13 +114,13 @@ private[rdd] object TrimReads extends Logging {
             rg: String = null): RDD[AlignmentRecord] = {
     assert(trimStart >= 0 && trimEnd >= 0,
       "Trim parameters must be positive.")
-    assert(rdd.first().getSequence.length > trimStart + trimEnd,
+    assert(rdd.adamFirst().getSequence.length > trimStart + trimEnd,
       "Cannot trim more than the length of the read.")
 
     log.info("Trimming reads.")
 
     val tr = new TrimReads
-    rdd.map(read => {
+    rdd.adamMap(read => {
       // only trim reads that are in this read group
       if (read.getRecordGroupName == rg || rg == null) {
         tr.trimRead(read, trimStart, trimEnd)
@@ -251,7 +252,7 @@ private[correction] class TrimReads extends Serializable {
    * @param startPos Start position of the alignment.
    * @return Returns a tuple containing the (updated cigar, updated alignment start position).
    */
-  def trimCigar(cigar: String, trimStart: Int, trimEnd: Int, startPos: Long): (String, Long) = {
+  def trimCigar(cigar: String, trimStart: Int, trimEnd: Int, startPos: Long): (String, Long) = TrimCigar.time {
     @tailrec def trimFront(c: String, trim: Int, start: Long): (String, Long) = {
       if (trim <= 0) {
         (c, start)
@@ -343,7 +344,7 @@ private[correction] class TrimReads extends Serializable {
    * @param trimEnd Number of bases to trim from the end of the read.
    * @return Trimmed read.
    */
-  def trimRead(read: AlignmentRecord, trimStart: Int, trimEnd: Int): AlignmentRecord = {
+  def trimRead(read: AlignmentRecord, trimStart: Int, trimEnd: Int): AlignmentRecord = TrimRead.time {
     // trim sequence and quality value
     val seq: String = read.getSequence.toString.drop(trimStart).dropRight(trimEnd)
     val qual: String = read.getQual.toString.drop(trimStart).dropRight(trimEnd)

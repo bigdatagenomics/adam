@@ -22,6 +22,7 @@ import org.bdgenomics.adam.models.{ RecordGroupDictionary, SAMFileHeaderWritable
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.instrumentation.Timers._
 
 class AlignmentRecordConverter extends Serializable {
 
@@ -67,7 +68,7 @@ class AlignmentRecordConverter extends Serializable {
    * @param header SAM file header to use.
    * @return Returns the record converted to SAMtools format. Can be used for output to SAM/BAM.
    */
-  def convert(adamRecord: AlignmentRecord, header: SAMFileHeaderWritable): SAMRecord = {
+  def convert(adamRecord: AlignmentRecord, header: SAMFileHeaderWritable): SAMRecord = ConvertToSAMRecord.time {
 
     // get read group dictionary from header
     val rgDict = header.header.getSequenceDictionary
