@@ -22,6 +22,15 @@ import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.instrumentation._
 import scala.reflect.ClassTag
 
+/**
+ * Contains methods for instrumenting Spark RDD operations in ADAM. To instrument a particular operation, simply
+ * import the implicits from [[org.bdgenomics.adam.rdd.ADAMContext]] and replace calls to RDD operations with
+ * the versions prefixed by `adam`. For example, replace calls to `map` with `adamMap`.
+ *
+ * This class does not try to provide a comprehensive set of all RDD operations -- instead it is just those
+ * that are currently instrumented in ADAM. However, it is generally very easy to add a new operation --
+ * see the documentation in [[InstrumentedRDDFunctions]] for further details.
+ */
 class ADAMInstrumentedRDDFunctions[T](self: RDD[T]) extends InstrumentedRDDFunctions() {
 
   def adamGroupBy[K](f: T => K)(implicit kt: ClassTag[K]): RDD[(K, Iterable[T])] = {
