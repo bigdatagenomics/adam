@@ -23,6 +23,10 @@ SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 # Get list of required jars for ADAM
 ADAM_JARS=$("$SCRIPT_DIR"/bin/compute-adam-jars.sh)
 
+if [ ! -z "$ADDL_JARS" ]; then
+  ADAM_JARS="$ADAM_JARS","$ADDL_JARS"
+fi
+
 # Binary distribution
 REPO_DIR="$SCRIPT_DIR/repo"
 if [ ! -d "$REPO_DIR" ]; then

@@ -23,7 +23,7 @@ ADAM_REPO="$(cd `dirname $0`/..; pwd)"
 CLASSPATH=$("$ADAM_REPO"/bin/compute-adam-classpath.sh)
 ADAM_JARS=$("$ADAM_REPO"/bin/compute-adam-jars.sh)
 
-if [ ! -z "$ADDL_JARS"]; then
+if [ ! -z "$ADDL_JARS" ]; then
   ADAM_JARS="$ADAM_JARS","$ADDL_JARS"
 fi
 
