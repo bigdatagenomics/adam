@@ -1,3 +1,3 @@
 #!/bin/sh
 
-mvn release:rollback
+mvn -P distribution release:rollback

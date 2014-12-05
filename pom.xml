@@ -32,8 +32,6 @@
     <module>adam-core</module>
     <module>adam-apis</module>
     <module>adam-cli</module>
-    <!-- distribution should be last -->
-    <module>distribution</module>
   </modules>
   
   <licenses>
@@ -468,6 +466,16 @@
   </dependencyManagement>
 
   <profiles>
+    <profile>
+      <id>distribution</id>
+      <modules>
+        <module>adam-core</module>
+        <module>adam-apis</module>
+        <module>adam-cli</module>
+        <!-- distribution should be last -->
+        <module>distribution</module>
+      </modules>
+    </profile>
     <!-- Only build coverage in when we want to run coverage -->
     <profile>
       <id>coverage</id>

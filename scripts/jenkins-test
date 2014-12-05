@@ -10,7 +10,7 @@ HADOOP_VERSION="$(grep "<hadoop.version>" "$PROJECT_ROOT/pom.xml"  | head -2 | t
 echo "Testing ADAM version ${VERSION} on Hadoop ${HADOOP_VERSION}"
 
 export MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=1g"
-mvn test -Dnetworkconnected -Dhadoop.version="${HADOOP_VERSION}"
+mvn test -P distribution -Dnetworkconnected -Dhadoop.version="${HADOOP_VERSION}"
 
 ADAM_TMP_DIR="$(mktemp -d -t "adamTestXXXXXXX")"
 # Just to be paranoid.. use a directory internal to the ADAM_TMP_DIR
