@@ -133,12 +133,7 @@ object Metrics {
    * Generates a new sequence ID for operations that we wish to appear in sequence
    */
   def generateNewSequenceId(): Int = {
-    val newValue = sequenceIdGenerator.incrementAndGet()
-    if (newValue < 0) {
-      // This really shouldn't happen, but just in case...
-      throw new IllegalStateException("Out of sequence IDs!")
-    }
-    newValue
+    sequenceIdGenerator.incrementAndGet()
   }
 
   private def printRddOperations(out: PrintStream, sparkStageTimings: Seq[StageTiming],
@@ -166,7 +161,6 @@ object Metrics {
     })
 
     renderTable(out, "Spark Operations", rddMonitors, createRDDOperationsHeader())
-
   }
 
   private def createRDDOperationsHeader(): ArrayBuffer[TableHeader] = {
@@ -231,7 +225,9 @@ object Metrics {
 
     val children = new mutable.ArrayBuffer[TreeNode]()
 
-    // We subtract the time taken for RDD operations from all of its ancestors, since the time is misleading
+    // Since Spark executes RDD operations lazily (some take no time at all, and some take all the time)
+    // it would be confusing to include the time taken to execute a method on an RDD in its parent timings.
+    // Therefore we subtract the time taken for RDD operations from all of its ancestors.
     adjustTimingsForRddOperations()
 
     def addChild(node: TreeNode) = {
@@ -280,9 +276,8 @@ object Metrics {
 
     private def addToRows(rows: mutable.Buffer[Monitor[_]], treePath: String,
                           servoTimer: ServoTimer, isInSparkWorker: Boolean) = {
-      // For RDD Operations the time taken is misleading since Spark executes operations lazily
-      // (most take no time at all and the last one typically takes all of the time). So for RDD operations we
-      // create a new monitor that just contains the count.
+      // For RDD operations we create a new monitor that just contains the count, since Since Spark executes
+      // RDD operations lazily and so the time taken isn't very useful.
       if (timingPath.isRDDOperation) {
         val newConfig = servoTimer.getConfig.withAdditionalTag(Tags.newTag(TreePathTagKey, treePath))
         val count = new LongGauge(newConfig.withAdditionalTag(ServoTimer.CountTag))

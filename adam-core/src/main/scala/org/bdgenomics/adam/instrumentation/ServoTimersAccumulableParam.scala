@@ -96,12 +96,14 @@ class TimingPath(val timerName: String, val parentPath: Option[TimingPath], val 
       if (this eq that) {
         true
       }
-      // This is ordered with timerName first, as that is likely to be a much cheaper comparison
-      // and is likely to identify a TimingPath uniquely most of the time (String.equals checks
-      // for reference equality, and since timer names are likely to be interned this should be cheap).
-      timerName == that.timerName && otherFieldsEqual(that) &&
-        (if (parentPath.isDefined) that.parentPath.isDefined && parentPath.get.equals(that.parentPath.get)
-        else !that.parentPath.isDefined)
+      else {
+        // This is ordered with timerName first, as that is likely to be a much cheaper comparison
+        // and is likely to identify a TimingPath uniquely most of the time (String.equals checks
+        // for reference equality, and since timer names are likely to be interned this should be cheap).
+        timerName == that.timerName && otherFieldsEqual(that) &&
+          (if (parentPath.isDefined) that.parentPath.isDefined && parentPath.get.equals(that.parentPath.get)
+          else !that.parentPath.isDefined)
+      }
     case _ => false
   }
 
