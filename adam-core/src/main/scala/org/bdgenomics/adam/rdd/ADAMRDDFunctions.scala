@@ -21,9 +21,9 @@ import java.util.logging.Level
 import org.apache.avro.specific.SpecificRecord
 import org.apache.spark.Logging
 import org.apache.spark.rdd.{ InstrumentedOutputFormat, RDD }
+import org.apache.spark.rdd.MetricsContext._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.{
   HadoopUtil,
   ParquetLogger
@@ -77,9 +77,9 @@ class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Seria
     ParquetOutputFormat.setPageSize(job, pageSize)
     AvroParquetOutputFormat.setSchema(job, manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema)
     // Add the Void Key
-    val recordToSave = rdd.adamMap(p => (null, p))
+    val recordToSave = rdd.map(p => (null, p))
     // Save the values to the ADAM/Parquet file
-    recordToSave.adamSaveAsNewAPIHadoopFile(filePath,
+    recordToSave.saveAsNewAPIHadoopFile(filePath,
       classOf[java.lang.Void], manifest[T].runtimeClass.asInstanceOf[Class[T]], classOf[InstrumentedADAMAvroParquetOutputFormat],
       ContextUtil.getConfiguration(job))
   }

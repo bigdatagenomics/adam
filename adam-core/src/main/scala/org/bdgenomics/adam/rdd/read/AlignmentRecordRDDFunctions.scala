@@ -24,7 +24,7 @@ import org.apache.spark.storage.StorageLevel
 import org.seqdoop.hadoop_bam.SAMRecordWritable
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{
   ConsensusGenerator,
@@ -130,7 +130,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM()
 
     // add keys to our records
-    val withKey = convertRecords.adamKeyBy(v => new LongWritable(v.get.getAlignmentStart))
+    val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
 
     // attach header to output format
     asSam match {
@@ -142,7 +142,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     val conf = rdd.context.hadoopConfiguration
     asSam match {
       case true =>
-        withKey.adamSaveAsNewAPIHadoopFile(
+        withKey.saveAsNewAPIHadoopFile(
           filePath,
           classOf[LongWritable],
           classOf[SAMRecordWritable],
@@ -150,7 +150,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
           conf
         )
       case false =>
-        withKey.adamSaveAsNewAPIHadoopFile(
+        withKey.saveAsNewAPIHadoopFile(
           filePath,
           classOf[LongWritable],
           classOf[SAMRecordWritable],
@@ -198,7 +198,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     val hdrBcast = rdd.context.broadcast(SAMFileHeaderWritable(header))
 
     // map across RDD to perform conversion
-    val convertedRDD: RDD[SAMRecordWritable] = rdd.adamMap(r => {
+    val convertedRDD: RDD[SAMRecordWritable] = rdd.map(r => {
       // must wrap record for serializability
       val srw = new SAMRecordWritable()
       srw.set(adamRecordConverter.convert(r, hdrBcast.value))
@@ -267,7 +267,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
       }
     }
 
-    rdd.adamMap(p => {
+    rdd.map(p => {
       val referencePos = ReferencePosition(p) match {
         case None =>
           // Move unmapped reads to the end of the file
@@ -276,7 +276,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         case Some(pos) => pos
       }
       (referencePos, p)
-    }).adamSortByKey().adamMap(p => p._2)
+    }).sortByKey().map(p => p._2)
   }
 
   def adamMarkDuplicates(): RDD[AlignmentRecord] = MarkDuplicatesInDriver.time {

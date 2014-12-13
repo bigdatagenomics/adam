@@ -40,11 +40,11 @@ private[rdd] object TrimReads extends Logging {
     val tr = new TrimReads
 
     // get read length
-    val readLength = rdd.adamFirst().getSequence.length
+    val readLength = rdd.first().getSequence.length
 
     // map read quality scores into doubles
     log.info("Collecting read quality scores.")
-    val doubleRdd: RDD[((String, Int), Double)] = rdd.adamFlatMap(tr.readToDoubles)
+    val doubleRdd: RDD[((String, Int), Double)] = rdd.flatMap(tr.readToDoubles)
       .cache()
 
     // reduce this by key, and also get counts
@@ -114,13 +114,13 @@ private[rdd] object TrimReads extends Logging {
             rg: String = null): RDD[AlignmentRecord] = {
     assert(trimStart >= 0 && trimEnd >= 0,
       "Trim parameters must be positive.")
-    assert(rdd.adamFirst().getSequence.length > trimStart + trimEnd,
+    assert(rdd.first().getSequence.length > trimStart + trimEnd,
       "Cannot trim more than the length of the read.")
 
     log.info("Trimming reads.")
 
     val tr = new TrimReads
-    rdd.adamMap(read => {
+    rdd.map(read => {
       // only trim reads that are in this read group
       if (read.getRecordGroupName == rg || rg == null) {
         tr.trimRead(read, trimStart, trimEnd)

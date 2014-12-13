@@ -112,6 +112,11 @@ object Metrics {
   }
 
   /**
+   * Returns `true` if metrics are being recorded for the current thread, or `false` otherwise
+   */
+  def isRecording: Boolean = Metrics.Recorder.value.isDefined
+
+  /**
    * Prints the metrics recorded by this instance to the specified [[PrintStream]], using the specified
    * [[SparkMetrics]] to print details of any Spark operations that have occurred.
    */

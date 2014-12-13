@@ -68,7 +68,7 @@ class BaseQualityRecalibration(
       covariates(read).zip(read.residues).
         filter { case (key, residue) => shouldIncludeResidue(residue) }
 
-    input.adamFilter(shouldIncludeRead).adamFlatMap(observe)
+    input.filter(shouldIncludeRead).flatMap(observe)
   }
 
   if (enableVisitLogging) {
@@ -79,8 +79,8 @@ class BaseQualityRecalibration(
 
   val observed: ObservationTable = {
     dataset.
-      adamMap { case (key, residue) => (key, Observation(residue.isSNP)) }.
-      adamAggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
+      map { case (key, residue) => (key, Observation(residue.isSNP)) }.
+      aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
   }
 
   dumpObservationTableFile.foreach(p => {
@@ -92,7 +92,7 @@ class BaseQualityRecalibration(
 
   val result: RDD[AlignmentRecord] = {
     val recalibrator = Recalibrator(observed, minAcceptableQuality)
-    input.adamMap(recalibrator)
+    input.map(recalibrator)
   }
 
   private def dumpVisits(filename: String) = {

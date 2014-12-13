@@ -133,7 +133,7 @@ class SparkMetricsSuite extends FunSuite with Logging {
   }
 
   private def addValue(timer: TaskTimer, value: Long, host: String, stage: Int) {
-    implicit val taskContext = TaskContext(host, stage)
+    implicit val taskContext = SparkTaskContext(host, stage)
     timer += value
   }
 

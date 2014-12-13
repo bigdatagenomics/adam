@@ -17,18 +17,21 @@
  */
 package org.apache.spark.rdd
 
+import org.apache.spark.SparkContext.rddToOrderedRDDFunctions
+import org.apache.spark.rdd.InstrumentedRDD._
 import scala.reflect.ClassTag
 
 /**
- * Functions which permit creation of instrumented RDDs, as well as the ability to stop instrumentation by
- * calling the `unInstrument` method. For more details and usage instructions see the [[MetricsContext]] class.
+ * A version of [[OrderedRDDFunctions]] which enables instrumentation of its operations. For more details
+ * and usage instructions see the [[MetricsContext]] class.
  */
-class InstrumentedRDDFunctions[T: ClassTag](self: RDD[T]) {
-  def instrument(): RDD[T] = {
-    InstrumentedRDD.instrument(self)
+class InstrumentedOrderedRDDFunctions[K: Ordering: ClassTag, V: ClassTag](self: RDD[(K, V)]) extends Serializable {
+
+  def sortByKey(ascending: Boolean = true, numPartitions: Int = self.partitions.size): RDD[(K, V)] = self match {
+    case instrumented: InstrumentedRDD[_] => recordOperation {
+      instrument(self.sortByKey(ascending, numPartitions))
+    }
+    case _ => self.sortByKey(ascending, numPartitions)
   }
-  def unInstrument(): RDD[T] = self match {
-    case instrumentedRDD: InstrumentedRDD[T] => instrumentedRDD.decoratedRDD
-    case _                                   => self
-  }
+
 }

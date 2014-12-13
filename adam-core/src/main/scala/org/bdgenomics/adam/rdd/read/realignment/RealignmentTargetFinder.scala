@@ -109,12 +109,12 @@ class RealignmentTargetFinder extends Serializable with Logging {
      * are targets which do not show snp/indel evidence. we order these targets by reference position, and
      * merge targets who have overlapping positions
      */
-    val targets = reads.adamFlatMap(IndelRealignmentTarget(_, maxIndelSize))
-      .adamFilter(t => !t.isEmpty)
+    val targets = reads.flatMap(IndelRealignmentTarget(_, maxIndelSize))
+      .filter(t => !t.isEmpty)
 
-    val targetSet: TargetSet = TargetSet(targets.adamMapPartitions(iter => SortTargets.time { iter.toArray.sorted(TargetOrdering).toIterator })
-      .adamMap(createTargetSet)
-      .adamFold(TargetSet())((t1: TargetSet, t2: TargetSet) => joinTargets(t1, t2))
+    val targetSet: TargetSet = TargetSet(targets.mapPartitions(iter => SortTargets.time { iter.toArray.sorted(TargetOrdering).toIterator })
+      .map(createTargetSet)
+      .fold(TargetSet())((t1: TargetSet, t2: TargetSet) => joinTargets(t1, t2))
       .set.filter(_.readRange.length <= maxTargetSize))
 
     targetSet

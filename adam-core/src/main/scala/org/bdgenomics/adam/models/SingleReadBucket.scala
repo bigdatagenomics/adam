@@ -28,8 +28,8 @@ import org.apache.spark.rdd.RDD
 
 object SingleReadBucket extends Logging {
   def apply(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
-    rdd.adamGroupBy(p => (p.getRecordGroupName, p.getReadName))
-      .adamMap(kv => {
+    rdd.groupBy(p => (p.getRecordGroupName, p.getReadName))
+      .map(kv => {
         val (_, reads) = kv
 
         // split by mapping

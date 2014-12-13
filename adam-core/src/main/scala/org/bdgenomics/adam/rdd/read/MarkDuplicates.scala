@@ -72,8 +72,8 @@ private[rdd] object MarkDuplicates extends Serializable {
       p._1.read2refPos
     }
 
-    rdd.adamSingleReadBuckets().adamKeyBy(ReferencePositionPair(_)).adamGroupBy(leftPositionAndLibrary)
-      .adamFlatMap(kv => PerformDuplicateMarking.time {
+    rdd.adamSingleReadBuckets().keyBy(ReferencePositionPair(_)).groupBy(leftPositionAndLibrary)
+      .flatMap(kv => PerformDuplicateMarking.time {
 
         val leftPos: Option[ReferencePositionWithOrientation] = kv._1._1
         val readsAtLeftPos: Iterable[(ReferencePositionPair, SingleReadBucket)] = kv._2

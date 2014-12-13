@@ -21,7 +21,6 @@ import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator }
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.ADAMContext.{ rddToMetricsRDD, rddToOrderedMetricsRDD }
 import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.models.{ Consensus, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -167,7 +166,7 @@ private[rdd] object RealignIndels extends Serializable with Logging {
 
     // group reads by target
     val broadcastTargets = rich_rdd.context.broadcast(zippedTargets)
-    val readsMappedToTarget = rich_rdd.adamGroupBy(mapToTarget(_, broadcastTargets.value))
+    val readsMappedToTarget = rich_rdd.groupBy(mapToTarget(_, broadcastTargets.value))
       .map(kv => {
         val (k, v) = kv
 
@@ -461,16 +460,16 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
    */
   def realignIndels(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
     val sortedRdd = if (dataIsSorted) {
-      rdd.adamFilter(r => r.getReadMapped)
+      rdd.filter(r => r.getReadMapped)
     } else {
-      val sr = rdd.adamFilter(r => r.getReadMapped)
-        .adamKeyBy(r => ReferencePosition(r).get)
-        .adamSortByKey()
-      sr.adamMap(kv => kv._2)
+      val sr = rdd.filter(r => r.getReadMapped)
+        .keyBy(r => ReferencePosition(r).get)
+        .sortByKey()
+      sr.map(kv => kv._2)
     }
 
     // we only want to convert once so let's get it over with
-    val richRdd = sortedRdd.adamMap(new RichAlignmentRecord(_))
+    val richRdd = sortedRdd.map(new RichAlignmentRecord(_))
     richRdd.cache()
 
     // find realignment targets
@@ -492,7 +491,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
 
       // realign target groups
       log.info("Sorting reads by reference in ADAM RDD")
-      readsMappedToTarget.adamFlatMap(realignTargetGroup).map(r => r.record)
+      readsMappedToTarget.flatMap(realignTargetGroup).map(r => r.record)
     }
   }
 

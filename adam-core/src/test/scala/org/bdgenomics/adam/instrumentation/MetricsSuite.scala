@@ -27,12 +27,19 @@ import scala.concurrent.duration.Duration
 
 class MetricsSuite extends SparkFunSuite with Logging with BeforeAndAfterAll {
 
+  sparkBefore("Before") {
+    Metrics.initialize(sc)
+  }
+
+  sparkAfter("After") {
+    Metrics.stopRecording()
+  }
+
   sparkTest("Timer metrics are computed correctly") {
 
     val testingClock = new TestingClock()
 
     val testTimers = new TestTimers(testingClock)
-    Metrics.initialize(sc)
 
     testTimers.timer1.time {
       testingClock.currentTime += 30000000
@@ -80,7 +87,6 @@ class MetricsSuite extends SparkFunSuite with Logging with BeforeAndAfterAll {
     val testingClock = new TestingClock()
 
     val testTimers = new TestTimers(testingClock)
-    Metrics.initialize(sc)
 
     timeRddOperations(testTimers, testingClock)
 

@@ -17,6 +17,8 @@
  */
 package org.bdgenomics.adam.rdd
 
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.instrumentation.Metrics
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, SAMRecordWritable }
 import java.util.regex.Pattern
@@ -25,7 +27,7 @@ import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.rdd.{ ADAMInstrumentedOrderedRDDFunctions, ADAMInstrumentedPairRDDFunctions, ADAMInstrumentedRDDFunctions, RDD }
+import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.{ Logging, SparkConf, SparkContext }
 import org.bdgenomics.adam.converters.SAMRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -50,15 +52,6 @@ object ADAMContext {
 
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToADAMRDD[T <% SpecificRecord: Manifest](rdd: RDD[T]) = new ADAMRDDFunctions(rdd)
-
-  // Add RDD methods for recording metrics
-  implicit def rddToMetricsRDD[T](rdd: RDD[T]) = new ADAMInstrumentedRDDFunctions(rdd)
-
-  // Add RDD methods for recording metrics for pairs
-  implicit def rddToPairMetricsRDD[K, V](rdd: RDD[(K, V)])(implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null) = new ADAMInstrumentedPairRDDFunctions(rdd)
-
-  // Add RDD methods for recording metrics for ordered records
-  implicit def rddToOrderedMetricsRDD[K: Ordering: ClassTag, V: ClassTag](rdd: RDD[(K, V)]) = new ADAMInstrumentedOrderedRDDFunctions[K, V](rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
@@ -138,13 +131,16 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       classOf[Void],
       manifest[T].runtimeClass.asInstanceOf[Class[T]],
       ContextUtil.getConfiguration(job)
-    ).map(p => p._2)
+    )
+
+    val instrumented = if (Metrics.isRecording) records.instrument() else records
+    val mapped = instrumented.map(p => p._2)
 
     if (predicate.isDefined) {
       // Strip the nulls that the predicate returns
-      records.filter(p => p != null.asInstanceOf[T])
+      mapped.filter(p => p != null.asInstanceOf[T])
     } else {
-      records
+      mapped
     }
   }
 
@@ -280,12 +276,13 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     predicate: Option[Class[U]] = None,
     projection: Option[Schema] = None): RDD[AlignmentRecord] = LoadAlignmentRecords.time {
 
-    maybeLoadBam(filePath, predicate, projection)
+    val rdd = maybeLoadBam(filePath, predicate, projection)
       .orElse(
         maybeLoadFastq(filePath, predicate, projection)
       ).getOrElse(
           adamLoad[AlignmentRecord, U](filePath, predicate, projection)
         )
+    if (Metrics.isRecording) rdd.instrument() else rdd
   }
 
   /**

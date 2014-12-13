@@ -138,7 +138,7 @@ class TaskTimer(name: String) {
   val overallTimings = buildTimer(name)
   val timingsByHost = new mutable.HashMap[String, ServoTimer]
   val timingsByStageId = new mutable.HashMap[Int, ServoTimer]
-  def +=(millisecondTiming: Long)(implicit taskContext: TaskContext) = {
+  def +=(millisecondTiming: Long)(implicit taskContext: SparkTaskContext) = {
     recordMillis(overallTimings, millisecondTiming)
     recordMillis(timingsByHost.getOrElseUpdate(taskContext.hostname,
       buildTimer(name, newTag(HostTagKey, taskContext.hostname))), millisecondTiming)
@@ -165,6 +165,6 @@ class TaskTimer(name: String) {
   }
 }
 
-case class TaskContext(hostname: String, stageId: Int)
+case class SparkTaskContext(hostname: String, stageId: Int)
 
 case class StageTiming(stageId: Int, stageName: Option[String], duration: Duration)

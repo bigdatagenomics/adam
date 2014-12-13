@@ -99,7 +99,7 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
 
     if (args.repartition != -1) {
       log.info("Repartitioning reads to to '%d' partitions".format(args.repartition))
-      adamRecords = adamRecords.adamRepartition(args.repartition)
+      adamRecords = adamRecords.repartition(args.repartition)
     }
 
     if (args.trimReads) {
@@ -144,7 +144,7 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
 
     if (args.coalesce != -1) {
       log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
-      adamRecords = adamRecords.adamCoalesce(args.coalesce, shuffle = true)
+      adamRecords = adamRecords.coalesce(args.coalesce, shuffle = true)
     }
 
     // NOTE: For now, sorting needs to be the last transform
