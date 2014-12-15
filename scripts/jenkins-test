@@ -27,11 +27,11 @@ export SPARK_DRIVER_MEMORY=8g
 pushd "$ADAM_TMP_DIR"
 
 if [[ $HADOOP_VERSION == "1.0.4" ]]; then
-    wget http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop1.tgz
+    wget -q http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop1.tgz
     tar xzvf spark-1.1.0-bin-hadoop1.tgz
     export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.1.0-bin-hadoop1"
 else
-    wget http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz
+    wget -q http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz
     tar xzvf spark-1.1.0-bin-hadoop2.3.tgz
     export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.1.0-bin-hadoop2.3"
 fi
@@ -43,7 +43,7 @@ BAM=mouse_chrM.bam
 READS="$BAM".reads
 PILEUPS="$BAM".pileup
 rm -rf "$BAM"
-wget https://s3.amazonaws.com/bdgenomics-test/"$BAM"
+wget -q https://s3.amazonaws.com/bdgenomics-test/"$BAM"
 echo "Converting BAM to ADAM read format"
 rm -rf "$READS"
 "$ADAM" bam2adam -samtools_validation lenient "$BAM" "$READS"
