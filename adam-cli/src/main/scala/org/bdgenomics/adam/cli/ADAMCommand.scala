@@ -78,12 +78,13 @@ trait ADAMSparkCommand[A <: Args4jBase] extends ADAMCommand with Logging {
     if (args.printMetrics && metricsListener.isDefined) {
       // Set the output buffer size to 4KB by default
       val bytes = new ByteArrayOutputStream(1024 * 4)
-      val out = new PrintStream(bytes)
+      val out = new PrintStream(bytes, false, "UTF-8")
       out.println("Metrics:")
       out.println()
       Metrics.print(out, Some(metricsListener.get.adamMetrics.adamSparkMetrics.stageTimes))
       out.println()
       metricsListener.get.adamMetrics.adamSparkMetrics.print(out)
+      out.flush()
       logInfo(bytes.toString("UTF-8"))
     }
   }

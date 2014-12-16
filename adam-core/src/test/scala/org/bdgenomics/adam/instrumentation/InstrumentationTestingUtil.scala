@@ -48,9 +48,10 @@ object InstrumentationTestingUtil extends FunSuite {
 
   def renderTableFromMetricsObject(sparkStageTimings: Option[Seq[StageTiming]] = None): String = {
     val bytes = new ByteArrayOutputStream()
-    val out = new PrintStream(bytes)
+    val out = new PrintStream(bytes, false, "UTF-8")
     Metrics.print(out, sparkStageTimings)
-    bytes.toString("UTF8")
+    out.flush()
+    bytes.toString("UTF-8")
   }
 
   def rowsOfTable(table: String): List[String] = {
