@@ -404,6 +404,12 @@
         <groupId>org.seqdoop</groupId>
         <artifactId>hadoop-bam</artifactId>
         <version>7.0.0</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.seqdoop</groupId>
@@ -435,12 +441,11 @@
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk</artifactId>
         <version>1.7.5</version>
-        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
-        <version>4.3.2</version>
+        <version>4.2.6</version>
       </dependency>
       <dependency>
         <groupId>com.netflix.servo</groupId>
