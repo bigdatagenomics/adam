@@ -34,7 +34,7 @@ public class JavaADAMConduit {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
-        String fileName = tempDir.toString() + "/testRdd";
+        String fileName = tempDir.toString() + "/testRdd.adam";
         recordRdd.adamSave(fileName);
 
         // create a new adam context and load the file

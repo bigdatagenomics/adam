@@ -109,6 +109,12 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     predicate: Option[Class[U]] = None,
     projection: Option[Schema] = None): RDD[T] = {
 
+    if (!filePath.endsWith(".adam")) {
+      throw new IllegalArgumentException(
+        "Expected '.adam' extension on file being loaded in ADAM format: %s".format(filePath)
+      )
+    }
+
     log.info("Reading the ADAM file at %s to create RDD".format(filePath))
     val job = HadoopUtil.newJob(sc)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])

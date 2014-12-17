@@ -40,7 +40,8 @@ ADAM="./bin/adam-submit"
 
 echo "Fetching BAM file"
 BAM=mouse_chrM.bam
-READS="$BAM".reads
+READS="$BAM".reads.adam
+SORTED_READS="$BAM".reads.sorted.adam
 PILEUPS="$BAM".pileup
 rm -rf "$BAM"
 wget -q https://s3.amazonaws.com/bdgenomics-test/"$BAM"
@@ -48,8 +49,8 @@ echo "Converting BAM to ADAM read format"
 rm -rf "$READS"
 "$ADAM" bam2adam -samtools_validation lenient "$BAM" "$READS"
 echo "Converting BAM to ADAM read format with sorting"
-rm -rf "$READS".sorted
-"$ADAM" transform -sort_reads "$READS" "$READS".sorted
+rm -rf "$SORTED_READS"
+"$ADAM" transform -sort_reads "$READS" "$SORTED_READS"
 echo "Converting read file to pileup format"
 rm -rf "$PILEUPS"
 "$ADAM" reads2ref "$READS" "$PILEUPS"
