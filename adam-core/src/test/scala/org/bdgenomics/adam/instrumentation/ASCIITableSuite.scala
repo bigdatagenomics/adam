@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import java.io.{ ByteArrayOutputStream, PrintStream }
+import java.io.{ PrintWriter, StringWriter }
 import org.scalatest.FunSuite
 
 class ASCIITableSuite extends FunSuite {
@@ -59,10 +59,11 @@ class ASCIITableSuite extends FunSuite {
   }
 
   private def getRenderedTable(table: ASCIITable): String = {
-    val bytes = new ByteArrayOutputStream()
-    val out = new PrintStream(bytes)
+    val stringWriter = new StringWriter()
+    val out = new PrintWriter(stringWriter)
     table.print(out)
-    bytes.toString("UTF8")
+    out.flush()
+    stringWriter.getBuffer.toString
   }
 
   def expectedRendering =

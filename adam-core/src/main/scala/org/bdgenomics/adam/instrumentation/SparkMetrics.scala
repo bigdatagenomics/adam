@@ -19,7 +19,7 @@ package org.bdgenomics.adam.instrumentation
 
 import com.netflix.servo.tag.Tag
 import com.netflix.servo.tag.Tags.newTag
-import java.io.PrintStream
+import java.io.PrintWriter
 import org.bdgenomics.adam.instrumentation.InstrumentationFunctions.{ formatNanos, renderTable }
 import org.bdgenomics.adam.instrumentation.ServoTimer._
 import org.bdgenomics.adam.instrumentation.SparkMetrics._
@@ -39,7 +39,7 @@ abstract class SparkMetrics {
   // Maps the stage ID and name to the duration of the stage in nanoseconds
   val stageTimes = new mutable.ArrayBuffer[StageTiming]()
 
-  def print(out: PrintStream) = {
+  def print(out: PrintWriter) = {
     val overallMonitors = taskTimers.map(_.getOverallTimings).sortBy(-_.getTotalTime)
     val ordering = getOrdering(overallMonitors)
     val monitorsByHost = taskTimers.flatMap(_.getHostTimings).sorted(ordering)

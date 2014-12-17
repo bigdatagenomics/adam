@@ -17,13 +17,12 @@
  */
 package org.bdgenomics.adam.cli
 
-import java.io.{ PrintStream, ByteArrayOutputStream }
+import java.io.{ StringWriter, PrintWriter }
 
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ SparkConf, Logging, SparkContext }
 import org.bdgenomics.adam.instrumentation._
 import org.bdgenomics.adam.util.HadoopUtil
-import scala.Some
 
 trait ADAMCommandCompanion {
   val commandName: String
@@ -77,15 +76,15 @@ trait ADAMSparkCommand[A <: Args4jBase] extends ADAMCommand with Logging {
     logInfo("Overall Duration: " + DurationFormatting.formatNanosecondDuration(totalTime))
     if (args.printMetrics && metricsListener.isDefined) {
       // Set the output buffer size to 4KB by default
-      val bytes = new ByteArrayOutputStream(1024 * 4)
-      val out = new PrintStream(bytes, false, "UTF-8")
+      val stringWriter = new StringWriter()
+      val out = new PrintWriter(stringWriter)
       out.println("Metrics:")
       out.println()
       Metrics.print(out, Some(metricsListener.get.adamMetrics.adamSparkMetrics.stageTimes))
       out.println()
       metricsListener.get.adamMetrics.adamSparkMetrics.print(out)
       out.flush()
-      logInfo(bytes.toString("UTF-8"))
+      logInfo(stringWriter.getBuffer.toString)
     }
   }
 

@@ -19,7 +19,7 @@ package org.bdgenomics.adam.instrumentation
 
 import com.netflix.servo.monitor.{ BasicCompositeMonitor, LongGauge, Monitor, MonitorConfig }
 import com.netflix.servo.tag.{ Tag, Tags }
-import java.io.PrintStream
+import java.io.PrintWriter
 import java.util.concurrent.atomic.AtomicInteger
 import org.apache.spark.rdd.Timer
 import org.apache.spark.{ Accumulable, SparkContext }
@@ -117,10 +117,10 @@ object Metrics {
   def isRecording: Boolean = Metrics.Recorder.value.isDefined
 
   /**
-   * Prints the metrics recorded by this instance to the specified [[PrintStream]], using the specified
+   * Prints the metrics recorded by this instance to the specified [[PrintWriter]], using the specified
    * [[SparkMetrics]] to print details of any Spark operations that have occurred.
    */
-  def print(out: PrintStream, sparkStageTimings: Option[Seq[StageTiming]]) {
+  def print(out: PrintWriter, sparkStageTimings: Option[Seq[StageTiming]]) {
     if (!Metrics.Recorder.value.isDefined) {
       throw new IllegalStateException("Trying to print metrics for an uninitialized Metrics class! " +
         "Call the initialize method to initialize it.")
@@ -141,7 +141,7 @@ object Metrics {
     sequenceIdGenerator.incrementAndGet()
   }
 
-  private def printRddOperations(out: PrintStream, sparkStageTimings: Seq[StageTiming],
+  private def printRddOperations(out: PrintWriter, sparkStageTimings: Seq[StageTiming],
                                  accumulable: Accumulable[ServoTimers, RecordedTiming]) {
 
     // First, extract a list of the RDD operations, sorted by sequence ID (the order in which they occurred)

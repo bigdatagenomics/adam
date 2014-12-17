@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import java.io.{ BufferedReader, ByteArrayOutputStream, PrintStream, StringReader }
+import java.io.{ PrintWriter, StringWriter, BufferedReader, StringReader }
 import org.scalatest.FunSuite
 import scala.util.control.Breaks._
 
@@ -47,11 +47,11 @@ object InstrumentationTestingUtil extends FunSuite {
   }
 
   def renderTableFromMetricsObject(sparkStageTimings: Option[Seq[StageTiming]] = None): String = {
-    val bytes = new ByteArrayOutputStream()
-    val out = new PrintStream(bytes, false, "UTF-8")
+    val stringWriter = new StringWriter()
+    val out = new PrintWriter(stringWriter)
     Metrics.print(out, sparkStageTimings)
     out.flush()
-    bytes.toString("UTF-8")
+    stringWriter.getBuffer.toString
   }
 
   def rowsOfTable(table: String): List[String] = {

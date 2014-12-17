@@ -18,14 +18,14 @@
 package org.bdgenomics.adam.instrumentation
 
 import com.netflix.servo.monitor.Monitor
-import java.io.PrintStream
+import java.io.PrintWriter
 
 /**
  * Helper functions for instrumentation
  */
 object InstrumentationFunctions {
 
-  def renderTable(out: PrintStream, name: String, timers: Seq[Monitor[_]], header: Seq[TableHeader]) = {
+  def renderTable(out: PrintWriter, name: String, timers: Seq[Monitor[_]], header: Seq[TableHeader]) = {
     val monitorTable = new MonitorTable(header.toArray, timers.toArray)
     out.println(name)
     monitorTable.print(out)

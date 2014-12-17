@@ -138,10 +138,11 @@ class SparkMetricsSuite extends FunSuite with Logging {
   }
 
   private def getRenderedTable(myMetrics: MyMetrics): String = {
-    val bytes = new ByteArrayOutputStream()
-    val out = new PrintStream(bytes)
+    val stringWriter = new StringWriter()
+    val out = new PrintWriter(stringWriter)
     myMetrics.print(out)
-    bytes.toString("UTF8")
+    out.flush()
+    stringWriter.getBuffer.toString
   }
 
   private def fromNanos(value: Long): Long = {

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import java.io.{ BufferedReader, ByteArrayOutputStream, PrintStream, StringReader }
+import java.io.{ PrintWriter, StringWriter, BufferedReader, StringReader }
 import org.apache.spark.Logging
 import org.apache.spark.rdd.Timer
 import org.bdgenomics.adam.instrumentation.InstrumentationTestingUtil._
@@ -193,11 +193,11 @@ class MetricsSuite extends SparkFunSuite with Logging with BeforeAndAfterAll {
   }
 
   private def getRenderedTable(sparkStageTimings: Option[Seq[StageTiming]]): String = {
-    val bytes = new ByteArrayOutputStream()
-    val out = new PrintStream(bytes)
+    val stringWriter = new StringWriter()
+    val out = new PrintWriter(stringWriter)
     Metrics.print(out, sparkStageTimings)
-    val renderedTable = bytes.toString("UTF8")
-    renderedTable
+    out.flush()
+    stringWriter.getBuffer.toString
   }
 
   class TestTimers(testingClock: TestingClock) extends Metrics(testingClock) {
