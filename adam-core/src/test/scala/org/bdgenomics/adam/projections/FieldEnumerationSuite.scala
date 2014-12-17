@@ -36,7 +36,7 @@ class FieldEnumerationSuite extends SparkFunSuite with BeforeAndAfter {
     readsFilepath = ClassLoader.getSystemClassLoader.getResource("reads12.sam").getFile
     val file = new File(readsFilepath)
 
-    readsParquetFile = new File(file.getParentFile, "test_reads12_parquet")
+    readsParquetFile = new File(file.getParentFile, "test_reads12_parquet.adam")
 
     // Erase old test files, if they exist.
     if (readsParquetFile.exists())

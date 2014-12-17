@@ -60,7 +60,7 @@ class GenotypePredicatesSuite extends SparkFunSuite {
         .setSampleId("NA12878")
         .build()))
 
-    val genotypesParquetFile = new File(Files.createTempDir(), "genotypes")
+    val genotypesParquetFile = new File(Files.createTempDir(), "genotypes.adam")
     genotypes.adamParquetSave(genotypesParquetFile.getAbsolutePath)
 
     val gts1: RDD[Genotype] = sc.adamLoad(
@@ -95,7 +95,7 @@ class GenotypePredicatesSuite extends SparkFunSuite {
         .setVariant(v0)
         .setVariantCallingAnnotations(failFilterAnnotation).build()))
 
-    val genotypesParquetFile = new File(Files.createTempDir(), "genotypes")
+    val genotypesParquetFile = new File(Files.createTempDir(), "genotypes.adam")
     genotypes.adamParquetSave(genotypesParquetFile.getAbsolutePath)
 
     val gts: RDD[Genotype] = sc.adamLoad(genotypesParquetFile.getAbsolutePath)
