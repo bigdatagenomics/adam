@@ -95,8 +95,7 @@ class TimingPath(val timerName: String, val parentPath: Option[TimingPath], val 
       // It's quite likely that this will succeed, since we try to cache TimingPath objects and reuse them
       if (this eq that) {
         true
-      }
-      else {
+      } else {
         // This is ordered with timerName first, as that is likely to be a much cheaper comparison
         // and is likely to identify a TimingPath uniquely most of the time (String.equals checks
         // for reference equality, and since timer names are likely to be interned this should be cheap).
