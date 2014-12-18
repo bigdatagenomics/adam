@@ -69,7 +69,8 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkComm
   def run(sc: SparkContext, job: Job) {
     log.info("Reading VCF file from %s".format(args.vcfFile))
     val annotations: RDD[DatabaseVariantAnnotation] = sc.adamVCFAnnotationLoad(args.vcfFile)
-    log.info("Converted %d records".format(annotations.count))
+    val count = annotations.count()
+    log.info("Converted %d records".format(count))
 
     if (args.currentAnnotations != null) {
       val existingAnnotations: RDD[DatabaseVariantAnnotation] = sc.adamLoad(args.currentAnnotations)
@@ -81,8 +82,7 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkComm
       annotations.adamParquetSave(args)
     }
 
-    log.info("Added %d annotation records".format(annotations.count()))
-
+    log.info("Added %d annotation records".format(count))
   }
 
 }
