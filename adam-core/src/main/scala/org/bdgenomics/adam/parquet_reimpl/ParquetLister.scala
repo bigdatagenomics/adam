@@ -97,7 +97,7 @@ class ParquetLister[T <: IndexedRecord](indexableSchema: Option[Schema] = None)(
       logInfo("Indexing file %s, relative path %s".format(fullPath, relativePath))
       materialize(rootLocator, relativePath)
     } else {
-      val childFiles = file.listFiles().filter(f => f.isFile && !f.getName.startsWith("."))
+      val childFiles = file.listFiles().filter(f => f.isFile && !f.getName.startsWith(".") && f.getName != "_SUCCESS")
       childFiles.flatMap {
         case f =>
           val childRelativePath = "%s/%s".format(relativePath, f.getName)
