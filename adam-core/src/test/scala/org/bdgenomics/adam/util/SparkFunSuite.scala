@@ -31,7 +31,8 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
   val properties: Map[String, String] = Map(("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
     ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
     ("spark.kryoserializer.buffer.mb", "4"),
-    ("spark.kryo.referenceTracking", "true"))
+    ("spark.kryo.referenceTracking", "true"),
+    ("spark.driver.allowMultipleContexts", "true"))
 
   def setupSparkContext(sparkName: String, silenceSpark: Boolean = true) {
     // Silence the Spark logs if requested
