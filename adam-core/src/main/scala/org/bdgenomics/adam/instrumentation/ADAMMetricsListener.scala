@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import org.apache.spark.scheduler.{ StageInfo, SparkListenerStageCompleted, SparkListenerTaskEnd, SparkListener }
+import org.apache.spark.scheduler.{ SparkListener, SparkListenerStageCompleted, SparkListenerTaskEnd, StageInfo }
 import scala.concurrent.duration._
 
 /**
@@ -41,7 +41,7 @@ class ADAMMetricsListener(val adamMetrics: ADAMMetrics) extends SparkListener {
     val taskMetrics = Option(taskEnd.taskMetrics)
     val taskInfo = Option(taskEnd.taskInfo)
 
-    implicit val taskContext = TaskContext(
+    implicit val taskContext = SparkTaskContext(
       if (taskMetrics.isDefined && taskMetrics.get.hostname != null) taskMetrics.get.hostname else "unknown",
       taskEnd.stageId)
 

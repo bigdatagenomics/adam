@@ -17,8 +17,11 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import org.seqdoop.hadoop_bam.KeyIgnoringBAMOutputFormat
+import org.seqdoop.hadoop_bam.{ SAMRecordWritable, KeyIgnoringBAMOutputFormat }
 import htsjdk.samtools.SAMFileHeader
+import org.apache.spark.rdd.InstrumentedOutputFormat
+import org.apache.hadoop.mapreduce.OutputFormat
+import org.bdgenomics.adam.instrumentation.Timers
 
 object ADAMBAMOutputFormat extends Serializable {
 
@@ -63,5 +66,10 @@ class ADAMBAMOutputFormat[K]
     extends KeyIgnoringBAMOutputFormat[K] with Serializable {
 
   setSAMHeader(ADAMBAMOutputFormat.getHeader)
+}
+
+class InstrumentedADAMBAMOutputFormat[K] extends InstrumentedOutputFormat[K, org.seqdoop.hadoop_bam.SAMRecordWritable] {
+  override def timerName(): String = Timers.WriteBAMRecord.timerName
+  override def outputFormatClass(): Class[_ <: OutputFormat[K, SAMRecordWritable]] = classOf[ADAMBAMOutputFormat[K]]
 }
 

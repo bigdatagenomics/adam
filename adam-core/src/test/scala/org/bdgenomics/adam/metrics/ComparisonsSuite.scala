@@ -20,6 +20,7 @@ package org.bdgenomics.adam.metrics
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import org.bdgenomics.adam.models.SingleReadBucket
+import org.bdgenomics.adam.instrumentation.Metrics
 
 class ComparisonsSuite extends SparkFunSuite {
   var bucket: SingleReadBucket = null

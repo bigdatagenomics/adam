@@ -21,12 +21,13 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.DecadentRead
 import org.bdgenomics.adam.util.QualityScore
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.instrumentation.Timers._
 import scala.math.{ exp, log }
 
 class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)
     extends (DecadentRead => AlignmentRecord) with Serializable {
 
-  def apply(read: DecadentRead): AlignmentRecord = {
+  def apply(read: DecadentRead): AlignmentRecord = RecalibrateRead.time {
     val record: AlignmentRecord = read.record
     AlignmentRecord.newBuilder(record).
       setQual(QualityScore.toString(computeQual(read))).

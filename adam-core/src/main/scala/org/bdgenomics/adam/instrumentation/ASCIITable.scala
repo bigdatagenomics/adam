@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import java.io.PrintStream
+import java.io.PrintWriter
 import org.apache.commons.lang.StringUtils
 import org.bdgenomics.adam.instrumentation.Alignment.Alignment
 
@@ -37,9 +37,9 @@ class ASCIITable(header: Array[ASCIITableHeader], rows: Array[Array[String]]) {
   })
 
   /**
-   * Prints this table to the specified [[PrintStream]]
+   * Prints this table to the specified [[PrintWriter]]
    */
-  def print(out: PrintStream) {
+  def print(out: PrintWriter) {
     val columnWidths = new Array[Int](header.length)
     updateColumnWidths(columnWidths, header.map(_.name))
     rows.foreach(row => {
@@ -52,7 +52,7 @@ class ASCIITable(header: Array[ASCIITableHeader], rows: Array[Array[String]]) {
     printSeparator(out, columnWidths)
   }
 
-  private def printSeparator(out: PrintStream, columnWidths: Array[Int]) = {
+  private def printSeparator(out: PrintWriter, columnWidths: Array[Int]) = {
     columnWidths.foreach(columnWidth => {
       out.print('+')
       out.print(StringUtils.repeat("-", getRealColumnWidth(columnWidth)))
@@ -60,13 +60,13 @@ class ASCIITable(header: Array[ASCIITableHeader], rows: Array[Array[String]]) {
     out.println('+')
   }
 
-  private def printRows(out: PrintStream, rows: Array[Array[String]], header: Array[ASCIITableHeader], columnWidths: Array[Int]) = {
+  private def printRows(out: PrintWriter, rows: Array[Array[String]], header: Array[ASCIITableHeader], columnWidths: Array[Int]) = {
     rows.foreach(row => {
       printRow(out, row, header.map(_.alignment), columnWidths)
     })
   }
 
-  private def printRow(out: PrintStream, row: Array[String], alignments: Array[Alignment], columnWidths: Array[Int]) {
+  private def printRow(out: PrintWriter, row: Array[String], alignments: Array[Alignment], columnWidths: Array[Int]) {
     var i = 0
     row.foreach(column => {
       out.print('|')

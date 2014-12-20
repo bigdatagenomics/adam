@@ -21,6 +21,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD

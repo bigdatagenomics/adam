@@ -21,6 +21,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus._
+import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
@@ -132,8 +133,7 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
 
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
-      val variants: RDD[RichVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
-      val knownSnps = SnpTable(variants)
+      val knownSnps: SnpTable = createKnownSnpsTable(sc)
       adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps), Option(args.observationsPath))
     }
 
@@ -159,4 +159,10 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
   def run(sc: SparkContext, job: Job) {
     this.apply(sc.loadAlignments(args.inputPath)).adamSave(args)
   }
+
+  private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {
+    val variants: RDD[RichVariant] = sc.adamVCFLoad(args.knownSnpsFile).map(_.variant)
+    SnpTable(variants)
+  }
+
 }

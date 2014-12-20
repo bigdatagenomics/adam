@@ -17,11 +17,11 @@
  */
 package org.bdgenomics.adam.instrumentation
 
-import org.scalatest.FunSuite
 import java.io._
-import org.apache.spark.Logging
 import java.util.concurrent.TimeUnit
-import scala.util.control.Breaks._
+import org.apache.spark.Logging
+import org.bdgenomics.adam.instrumentation.InstrumentationTestingUtil._
+import org.scalatest.FunSuite
 import scala.concurrent.duration._
 
 class SparkMetricsSuite extends FunSuite with Logging {
@@ -57,8 +57,12 @@ class SparkMetricsSuite extends FunSuite with Logging {
     myMetrics.recordStageDuration(1, Some("stage1"), Duration(100, MILLISECONDS))
     myMetrics.recordStageDuration(2, None, Duration(200, MILLISECONDS))
 
-    assert(fromNanos(myMetrics.stageTimes.get("1: stage1").get.getNumber.longValue()) === 100)
-    assert(fromNanos(myMetrics.stageTimes.get("2: unknown").get.getNumber.longValue()) === 200)
+    val stage1 = myMetrics.stageTimes.filter(_.stageId == 1).iterator.next()
+    assert(stage1.stageName.get === "stage1")
+    assert(fromNanos(stage1.duration.toNanos) === 100)
+    val stage2 = myMetrics.stageTimes.filter(_.stageId == 2).iterator.next()
+    assert(stage2.stageName === None)
+    assert(fromNanos(stage2.duration.toNanos) === 200)
 
   }
 
@@ -83,9 +87,6 @@ class SparkMetricsSuite extends FunSuite with Logging {
 
     val renderedTable = getRenderedTable(myMetrics)
     val reader = new BufferedReader(new StringReader(renderedTable))
-
-    val expectedStageDurations = getExpectedStageDurations
-    checkTable("Stage Durations", expectedStageDurations, reader)
 
     val expectedOverallValues = getExpectedOverallValues
     checkTable("Task Timings", expectedOverallValues, reader)
@@ -131,61 +132,17 @@ class SparkMetricsSuite extends FunSuite with Logging {
       Array("Metric 1", "1: unknown", "212 ms", "2", "106 ms", "100 ms", "112 ms"))
   }
 
-  private def checkTable(name: String, expectedValues: Array[Array[String]], reader: BufferedReader) = {
-    advanceReaderToName(name, reader)
-    var index = 0
-    breakable {
-      while (true) {
-        val line = reader.readLine()
-        if (line == null) {
-          fail("Read past the end of the reader")
-        }
-        if (line.startsWith("|")) {
-          // Remove the intial pipe symbol or we will get an extra empty cell at the start
-          val splitLine = line.substring(1).split('|')
-          compareLines(splitLine, expectedValues(index))
-          index += 1
-          if (index > expectedValues.length - 1) {
-            break()
-          }
-        }
-      }
-    }
-  }
-
-  private def advanceReaderToName(name: String, reader: BufferedReader) = {
-    breakable {
-      while (true) {
-        val line = reader.readLine()
-        if (line == null) {
-          fail("Could not find name [" + name + "]")
-        }
-        if (line.startsWith(name)) {
-          break()
-        }
-      }
-    }
-  }
-
-  private def compareLines(actual: Array[String], expected: Array[String]) = {
-    assert(actual.length === expected.length)
-    var expectedIndex = 0
-    actual.foreach(actualCell => {
-      assert(actualCell.trim === expected(expectedIndex))
-      expectedIndex += 1
-    })
-  }
-
   private def addValue(timer: TaskTimer, value: Long, host: String, stage: Int) {
-    implicit val taskContext = TaskContext(host, stage)
+    implicit val taskContext = SparkTaskContext(host, stage)
     timer += value
   }
 
   private def getRenderedTable(myMetrics: MyMetrics): String = {
-    val bytes = new ByteArrayOutputStream()
-    val out = new PrintStream(bytes)
+    val stringWriter = new StringWriter()
+    val out = new PrintWriter(stringWriter)
     myMetrics.print(out)
-    bytes.toString("UTF8")
+    out.flush()
+    stringWriter.getBuffer.toString
   }
 
   private def fromNanos(value: Long): Long = {

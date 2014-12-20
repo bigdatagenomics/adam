@@ -18,8 +18,8 @@
 package org.bdgenomics.adam.instrumentation
 
 import java.text.DecimalFormat
-import scala.concurrent.duration.Duration
 import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.Duration
 
 /**
  * Functions for formatting durations. The following rules are applied:

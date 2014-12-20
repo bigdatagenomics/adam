@@ -25,6 +25,7 @@ import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.instrumentation.Timers._
 import scala.collection.immutable.TreeSet
 
 object ZippedTargetOrdering extends Ordering[(IndelRealignmentTarget, Int)] {
@@ -101,7 +102,7 @@ object IndelRealignmentTarget {
    * @return Set of generated realignment targets.
    */
   def apply(read: RichAlignmentRecord,
-            maxIndelSize: Int): Seq[IndelRealignmentTarget] = {
+            maxIndelSize: Int): Seq[IndelRealignmentTarget] = CreateIndelRealignmentTargets.time {
 
     val region = read.readRegion.get
     val refId = read.record.getContig.getContigName

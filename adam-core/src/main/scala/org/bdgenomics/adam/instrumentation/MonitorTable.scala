@@ -19,7 +19,7 @@ package org.bdgenomics.adam.instrumentation
 
 import com.netflix.servo.monitor.{ CompositeMonitor, Monitor }
 import com.netflix.servo.tag.Tag
-import java.io.PrintStream
+import java.io.PrintWriter
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 
@@ -36,7 +36,7 @@ import scala.collection.mutable.ArrayBuffer
  */
 class MonitorTable(headerRow: Array[TableHeader], rows: Array[Monitor[_]]) {
 
-  def print(out: PrintStream) = {
+  def print(out: PrintWriter) = {
     val tableHeader = headerRow.map(e => { new ASCIITableHeader(e.name, e.alignment) })
     val tableRows = createRows()
     val table = new ASCIITable(tableHeader, tableRows)
@@ -61,7 +61,7 @@ class MonitorTable(headerRow: Array[TableHeader], rows: Array[Monitor[_]]) {
       else
         return value.toString
     })
-    ""
+    "-"
   }
 
 }
