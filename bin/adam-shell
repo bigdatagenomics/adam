@@ -41,5 +41,8 @@ fi
   --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
   --conf spark.kryoserializer.buffer.mb=4 \
   --conf spark.kryo.referenceTracking=true \
+  ${ADAM_OPTS:- } \
+  --conf spark.executor.memory=${ADAM_EXECUTOR_MEMORY:-"4g"} \
+  --driver-memory ${ADAM_DRIVER_MEMORY:-"4g"} \
   --jars "$ADAM_JARS" \
   "$@"
