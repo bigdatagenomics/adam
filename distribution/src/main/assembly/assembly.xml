@@ -21,6 +21,30 @@
             <outputDirectory>.</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>../adam-core/target/site/scaladocs</directory>
+            <outputDirectory>scaladocs</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../adam-core/target/apidocs</directory>
+            <outputDirectory>javadocs</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../adam-apis/target/site/scaladocs</directory>
+            <outputDirectory>scaladocs</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../adam-apis/target/apidocs</directory>
+            <outputDirectory>javadocs</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../adam-cli/target/site/scaladocs</directory>
+            <outputDirectory>scaladocs</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../adam-cli/target/apidocs</directory>
+            <outputDirectory>javadocs</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>../adam-cli/target/appassembler/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <excludes>
