@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd
 
 import java.io.File
 import java.util.UUID
+import com.google.common.io.Files
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.predicates.HighQualityReadPredicate
@@ -35,6 +36,23 @@ class ADAMContextSuite extends SparkFunSuite {
     // Convert the reads12.sam file into a parquet file
     val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
     assert(bamReads.count === 200)
+  }
+
+  sparkTest("sc.adamLoad should not load a file without a type specified") {
+    //load an existing file from the resources and save it as an ADAM file.
+    //This way we are not dependent on the ADAM format (as we would if we used a pre-made ADAM file)
+    //but we are dependent on the unmapped.sam file existing, maybe I should make a new one
+    val readsFilepath = ClassLoader.getSystemClassLoader.getResource("unmapped.sam").getFile
+    val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
+    //save it as an Adam file so we can test the Adam loader
+    val bamReadsAdamFile = new File(Files.createTempDir(), "bamReads.adam")
+    bamReads.adamParquetSave(bamReadsAdamFile.getAbsolutePath)
+    intercept[IllegalArgumentException] {
+      val noReturnType = sc.adamLoad(bamReadsAdamFile.getAbsolutePath)
+    }
+    //finally just make sure we did not break anything,we came might as well
+    val returnType: RDD[AlignmentRecord] = sc.adamLoad(bamReadsAdamFile.getAbsolutePath)
+    assert(manifest[returnType.type] != manifest[RDD[Nothing]])
   }
 
   sparkTest("can read a small .SAM file") {

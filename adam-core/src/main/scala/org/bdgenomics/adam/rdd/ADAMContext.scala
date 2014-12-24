@@ -49,7 +49,7 @@ object ADAMContext {
   implicit def sparkContextToADAMContext(sc: SparkContext): ADAMContext = new ADAMContext(sc)
 
   // Add generic RDD methods for all types of ADAM RDDs
-  implicit def rddToADAMRDD[T <% SpecificRecord: Manifest](rdd: RDD[T]) = new ADAMRDDFunctions(rdd)
+  implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): ADAMRDDFunctions[T] = new ADAMRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
@@ -104,10 +104,12 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
    * @tparam T The type of records to return
    * @return An RDD with records of the specified type
    */
-  def adamLoad[T <% SpecificRecord: Manifest, U <: UnboundRecordFilter](
-    filePath: String,
-    predicate: Option[Class[U]] = None,
-    projection: Option[Schema] = None): RDD[T] = {
+  def adamLoad[T, U <: UnboundRecordFilter](filePath: String, predicate: Option[Class[U]] = None, projection: Option[Schema] = None)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): RDD[T] = {
+    //make sure a type was specified
+    //not using require as to make the message clearer
+    if (manifest[T] == manifest[scala.Nothing])
+      throw new IllegalArgumentException("Type inference failed; when loading please specify a specific type. " +
+        "e.g.:\nval reads: RDD[AlignmentRecord] = ...\nbut not\nval reads = ...\nwithout a return type")
 
     if (!filePath.endsWith(".adam")) {
       throw new IllegalArgumentException(
@@ -157,7 +159,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
    * @return A sequenceDictionary containing the names and indices of all the sequences to which the records
    *         in the corresponding file are aligned.
    */
-  def adamDictionaryLoad[T <% SpecificRecord: Manifest](filePath: String): SequenceDictionary = {
+  def adamDictionaryLoad[T](filePath: String)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): SequenceDictionary = {
 
     // This funkiness is required because (a) ADAMRecords require a different projection from any
     // other flattened schema, and (b) because the SequenceRecord.fromADAMRecord, below, is going
@@ -206,8 +208,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     }
   }
 
-  def applyPredicate[T <% SpecificRecord: Manifest, U <: ADAMPredicate[T]](reads: RDD[T],
-                                                                           predicateOpt: Option[Class[U]]): RDD[T] =
+  def applyPredicate[T, U <: ADAMPredicate[T]](reads: RDD[T], predicateOpt: Option[Class[U]])(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): RDD[T] =
     predicateOpt.map(_.newInstance()(reads)).getOrElse(reads)
 
   private[rdd] def adamBamLoad(filePath: String): RDD[AlignmentRecord] = {
@@ -260,7 +261,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
       Some(applyPredicate(reads, predicate))
 
-    } else if ((filePath.endsWith(".fastq") || filePath.endsWith(".fq"))) {
+    } else if (filePath.endsWith(".fastq") || filePath.endsWith(".fq")) {
 
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a FASTQ file")
