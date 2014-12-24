@@ -23,7 +23,7 @@ import org.bdgenomics.adam.rich.ReferenceMappingContext._
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
-class RegionJoinSuite extends SparkFunSuite {
+class BroadcastRegionJoinSuite extends SparkFunSuite {
 
   test("alternating returns an alternating seq of items") {
     import NonoverlappingRegions._
@@ -130,23 +130,23 @@ class RegionJoinSuite extends SparkFunSuite {
     val rdd1 = sc.parallelize(Seq(record1))
     val rdd2 = sc.parallelize(Seq(record2))
 
-    assert(RegionJoinSuite.getReferenceRegion(record1) ===
-      RegionJoinSuite.getReferenceRegion(record2))
+    assert(BroadcastRegionJoinSuite.getReferenceRegion(record1) ===
+      BroadcastRegionJoinSuite.getReferenceRegion(record2))
 
-    assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
       rdd1,
       rdd2).aggregate(true)(
-        RegionJoinSuite.merge,
-        RegionJoinSuite.and))
+        BroadcastRegionJoinSuite.merge,
+        BroadcastRegionJoinSuite.and))
 
-    assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
       rdd1,
       rdd2)
       .aggregate(0)(
-        RegionJoinSuite.count,
-        RegionJoinSuite.sum) === 1)
+        BroadcastRegionJoinSuite.count,
+        BroadcastRegionJoinSuite.sum) === 1)
   }
 
   sparkTest("Overlapping reference regions") {
@@ -171,15 +171,15 @@ class RegionJoinSuite extends SparkFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord))
     val recordsRdd = sc.parallelize(Seq(record1, record2))
 
-    assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
       baseRdd,
       recordsRdd)
       .aggregate(true)(
-        RegionJoinSuite.merge,
-        RegionJoinSuite.and))
+        BroadcastRegionJoinSuite.merge,
+        BroadcastRegionJoinSuite.and))
 
-    assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
       baseRdd,
       recordsRdd).count() === 2)
@@ -222,15 +222,15 @@ class RegionJoinSuite extends SparkFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3))
 
-    assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
       baseRdd,
       recordsRdd)
       .aggregate(true)(
-        RegionJoinSuite.merge,
-        RegionJoinSuite.and))
+        BroadcastRegionJoinSuite.merge,
+        BroadcastRegionJoinSuite.and))
 
-    assert(RegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
       baseRdd,
       recordsRdd).count() === 3)
@@ -273,11 +273,11 @@ class RegionJoinSuite extends SparkFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3))
 
-    assert(RegionJoin.cartesianFilter(
+    assert(BroadcastRegionJoin.cartesianFilter(
       baseRdd,
       recordsRdd)
       .leftOuterJoin(
-        RegionJoin.partitionAndJoin(
+        BroadcastRegionJoin.partitionAndJoin(
           sc,
           baseRdd,
           recordsRdd))
@@ -292,7 +292,7 @@ class RegionJoinSuite extends SparkFunSuite {
   }
 }
 
-object RegionJoinSuite {
+object BroadcastRegionJoinSuite {
   def getReferenceRegion[T](record: T)(implicit mapping: ReferenceMapping[T]): ReferenceRegion =
     mapping.getReferenceRegion(record)
 

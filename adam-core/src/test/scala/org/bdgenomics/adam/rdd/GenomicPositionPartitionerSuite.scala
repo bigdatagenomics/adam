@@ -27,35 +27,35 @@ import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import scala.util.Random
 
-class GenomicRegionPartitionerSuite extends SparkFunSuite {
+class GenomicPositionPartitionerSuite extends SparkFunSuite {
 
   test("partitions the UNMAPPED ReferencePosition into the top partition") {
-    val parter = GenomicRegionPartitioner(10, SequenceDictionary(record("foo", 1000)))
+    val parter = GenomicPositionPartitioner(10, SequenceDictionary(record("foo", 1000)))
 
     assert(parter.numPartitions === 11)
     assert(parter.getPartition(ReferencePosition.UNMAPPED) === 10)
   }
 
   test("partitioning into N pieces on M total sequence length, where N > M, results in M partitions") {
-    val parter = GenomicRegionPartitioner(10, SequenceDictionary(record("foo", 9)))
+    val parter = GenomicPositionPartitioner(10, SequenceDictionary(record("foo", 9)))
     assert(parter.numPartitions === 10)
   }
 
   test("correctly partitions a single dummy sequence into two pieces") {
-    val parter = GenomicRegionPartitioner(2, SequenceDictionary(record("foo", 10)))
+    val parter = GenomicPositionPartitioner(2, SequenceDictionary(record("foo", 10)))
     assert(parter.getPartition(ReferencePosition("foo", 3)) === 0)
     assert(parter.getPartition(ReferencePosition("foo", 7)) === 1)
   }
 
   test("correctly counts cumulative lengths") {
-    val parter = GenomicRegionPartitioner(3, SequenceDictionary(record("foo", 20), record("bar", 10)))
+    val parter = GenomicPositionPartitioner(3, SequenceDictionary(record("foo", 20), record("bar", 10)))
 
     assert(parter.cumulativeLengths("bar") === 0)
     assert(parter.cumulativeLengths("foo") === 10)
   }
 
   test("correctly partitions positions across two dummy sequences") {
-    val parter = GenomicRegionPartitioner(3, SequenceDictionary(record("bar", 20), record("foo", 10)))
+    val parter = GenomicPositionPartitioner(3, SequenceDictionary(record("bar", 20), record("foo", 10)))
     // check easy examples
     assert(parter.getPartition(ReferencePosition("foo", 8)) === 2)
     assert(parter.getPartition(ReferencePosition("foo", 18)) === 3)
@@ -89,7 +89,7 @@ class GenomicRegionPartitionerSuite extends SparkFunSuite {
     val parts = 1
 
     val dict = sc.adamDictionaryLoad[AlignmentRecord](filename)
-    val parter = GenomicRegionPartitioner(parts, dict)
+    val parter = GenomicPositionPartitioner(parts, dict)
 
     val p = {
       import org.bdgenomics.adam.projections.AlignmentRecordField._
