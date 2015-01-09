@@ -31,10 +31,10 @@ import scala.reflect.ClassTag
  * Different implementations will have different performance characteristics -- and new implementations
  * will likely be added in the future, see the notes to each individual method for more details.
  */
-object RegionJoin {
+object BroadcastRegionJoin {
 
   /**
-   * Performs a region join between two RDDs.
+   * Performs a region join between two RDDs (broadcast join).
    *
    * This implementation first _collects_ the left-side RDD; therefore, if the left-side RDD is large
    * or otherwise idiosyncratic in a spatial sense (i.e. contains a set of regions whose unions overlap

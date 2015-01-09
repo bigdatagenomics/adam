@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.models.{ ReferencePosition, SequenceDictionary }
+import org.bdgenomics.adam.models.{ ReferenceRegion, ReferenceMapping, ReferencePosition, SequenceDictionary }
 import org.apache.spark.{ Logging, Partitioner }
 import scala.math._
 
 /**
- * GenomicRegionPartitioner partitions ReferencePosition objects into separate, spatially-coherent
+ * GenomicPositionPartitioner partitions ReferencePosition objects into separate, spatially-coherent
  * regions of the genome.
  *
  * This can be used to organize genomic data for computation that is spatially distributed (e.g. GATK and Queue's
@@ -35,9 +35,9 @@ import scala.math._
  * @param seqLengths a map relating sequence-name to length and indicating the set and length of all extant
  *                   sequences in the genome.
  */
-case class GenomicRegionPartitioner(numParts: Int, seqLengths: Map[String, Long]) extends Partitioner with Logging {
+case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Long]) extends Partitioner with Logging {
 
-  log.info("Have genomic region partitioner with " + numParts + " partitions, and sequences:")
+  log.info("Have genomic position partitioner with " + numParts + " partitions, and sequences:")
   seqLengths.foreach(kv => log.info("Contig " + kv._1 + " with length " + kv._2))
 
   val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
@@ -80,7 +80,7 @@ case class GenomicRegionPartitioner(numParts: Int, seqLengths: Map[String, Long]
       case refpos: ReferencePosition  => getPart(refpos.referenceName, refpos.pos)
 
       // only ReferencePosition values are partitioned using this partitioner
-      case _                          => throw new IllegalArgumentException("Only ReferencePosition values can be partitioned by GenomicRegionPartitioner")
+      case _                          => throw new IllegalArgumentException("Only ReferencePosition values can be partitioned by GenomicPositionPartitioner")
     }
   }
 
@@ -90,11 +90,41 @@ case class GenomicRegionPartitioner(numParts: Int, seqLengths: Map[String, Long]
 
 }
 
-object GenomicRegionPartitioner {
+object GenomicPositionPartitioner {
 
-  def apply(numParts: Int, seqDict: SequenceDictionary): GenomicRegionPartitioner =
-    GenomicRegionPartitioner(numParts, extractLengthMap(seqDict))
+  def apply(numParts: Int, seqDict: SequenceDictionary): GenomicPositionPartitioner =
+    GenomicPositionPartitioner(numParts, extractLengthMap(seqDict))
 
   def extractLengthMap(seqDict: SequenceDictionary): Map[String, Long] =
     Map(seqDict.records.toSeq.map(rec => (rec.name.toString, rec.length)): _*)
+}
+
+case class GenomicRegionPartitioner[T: ReferenceMapping](partitionSize: Long, seqLengths: Map[String, Long], start: Boolean = true) extends Partitioner with Logging {
+  private val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
+  private val lengths: Seq[Long] = names.map(seqLengths(_))
+  private val parts: Seq[Int] = lengths.map(v => round(ceil(v.toDouble / partitionSize)).toInt)
+  private val cumulParts: Map[String, Int] = Map(names.zip(parts.scan(0)(_ + _)): _*)
+
+  private def extractReferenceRegion(k: T)(implicit tMapping: ReferenceMapping[T]): ReferenceRegion = {
+    tMapping.getReferenceRegion(k)
+  }
+
+  private def computePartition(refReg: ReferenceRegion): Int = {
+    val pos = if (start) refReg.start else (refReg.end - 1)
+    (cumulParts(refReg.referenceName) + pos / partitionSize).toInt
+  }
+
+  override def numPartitions: Int = parts.sum
+
+  override def getPartition(key: Any): Int = {
+    key match {
+      case mappable: T => computePartition(extractReferenceRegion(mappable))
+      case _           => throw new IllegalArgumentException("Only ReferenceMappable values can be partitioned by GenomicRegionPartitioner")
+    }
+  }
+}
+
+object GenomicRegionPartitioner {
+  def apply[T: ReferenceMapping](partitionSize: Long, seqDict: SequenceDictionary): GenomicRegionPartitioner[T] =
+    GenomicRegionPartitioner(partitionSize, GenomicPositionPartitioner.extractLengthMap(seqDict))
 }
