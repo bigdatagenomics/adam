@@ -93,7 +93,7 @@ class Features2ADAMSuite extends FunSuite {
     val schema = Projection(featureId, contig, start, end, value)
     val lister = new ParquetLister[Feature](Some(schema))
 
-    val converted = lister.materialize(outputPath).toSeq
+    val converted = lister.materialize(outputPath).toSeq.sortBy(f => f.getStart)
 
     assert(converted.size === 10)
     assert(converted(0).getContig.getContigName == "chr5")
