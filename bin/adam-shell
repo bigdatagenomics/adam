@@ -20,12 +20,14 @@
 # Figure out where ADAM is installed
 ADAM_REPO="$(cd `dirname $0`/..; pwd)"
 
-CLASSPATH=$("$ADAM_REPO"/bin/compute-adam-classpath.sh)
 ADAM_JARS=$("$ADAM_REPO"/bin/compute-adam-jars.sh)
 
 if [ ! -z "$ADDL_JARS" ]; then
   ADAM_JARS="$ADAM_JARS","$ADDL_JARS"
 fi
+
+# append ADAM_JARS to the --jars option, if any
+NEW_OPTIONS=$("$ADAM_REPO"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
 
 if [ -z "$SPARK_HOME" ]; then
   echo "Attempting to use 'spark-shell' on default path; you might need to set SPARK_HOME"
@@ -44,5 +46,4 @@ fi
   ${ADAM_OPTS:- } \
   --conf spark.executor.memory=${ADAM_EXECUTOR_MEMORY:-"4g"} \
   --driver-memory ${ADAM_DRIVER_MEMORY:-"4g"} \
-  --jars "$ADAM_JARS" \
-  "$@"
+  $NEW_OPTIONS

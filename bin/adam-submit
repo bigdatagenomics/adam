@@ -27,6 +27,9 @@ if [ ! -z "$ADDL_JARS" ]; then
   ADAM_JARS="$ADAM_JARS","$ADDL_JARS"
 fi
 
+# append ADAM_JARS to the --jars option, if any
+NEW_OPTIONS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
+
 # Binary distribution
 REPO_DIR="$SCRIPT_DIR/repo"
 if [ ! -d "$REPO_DIR" ]; then
@@ -67,7 +70,7 @@ function usage() {
 }
 source "$SPARK_HOME"/bin/utils.sh
 SUBMIT_USAGE_FUNCTION=usage
-gatherSparkSubmitOpts "$@"
+gatherSparkSubmitOpts $NEW_OPTIONS
 
 # submit the job to Spark
 "$SPARK_SUBMIT" \
@@ -79,7 +82,6 @@ gatherSparkSubmitOpts "$@"
   ${ADAM_OPTS:- } \
   --conf spark.executor.memory=${ADAM_EXECUTOR_MEMORY:-"4g"} \
   --driver-memory ${ADAM_DRIVER_MEMORY:-"4g"} \
-  --jars "$ADAM_JARS" \
   "${SUBMISSION_OPTS[@]}" \
   "$ADAM_CLI_JAR" \
   "${APPLICATION_OPTS[@]}"
