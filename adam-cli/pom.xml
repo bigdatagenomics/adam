@@ -8,7 +8,7 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-cli</artifactId>
+  <artifactId>adam-cli_${scala.artifact.suffix}</artifactId>
   <packaging>jar</packaging>
   <name>ADAM: CLI</name>
   <build>

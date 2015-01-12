@@ -8,7 +8,7 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-apis</artifactId>
+  <artifactId>adam-apis_${scala.artifact.suffix}</artifactId>
   <packaging>jar</packaging>
   <name>ADAM: APIs for Java</name>
   <build>

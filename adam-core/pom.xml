@@ -7,7 +7,7 @@
     <version>0.15.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>adam-core</artifactId>
+  <artifactId>adam-core_${scala.artifact.suffix}</artifactId>
   <packaging>jar</packaging>
   <name>ADAM: Core</name>
   <build>
