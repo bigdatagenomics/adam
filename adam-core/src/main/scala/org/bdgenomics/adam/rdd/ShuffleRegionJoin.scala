@@ -29,6 +29,16 @@ import scala.reflect.ClassTag
 
 object ShuffleRegionJoin {
 
+  implicit val manualRegionOrdering = new Ordering[(ReferenceRegion, Int)] {
+    override def compare(x: (ReferenceRegion, Int), y: (ReferenceRegion, Int)) = {
+      if (x._1 != y._1) {
+        x._1.compare(y._1)
+      } else {
+        x._2.compare(y._2)
+      }
+    }
+  }
+
   /**
    * Performs a region join between two RDDs (shuffle join).
    *
