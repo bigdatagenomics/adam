@@ -77,6 +77,7 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
         private long pos;
         // file:  the file being read
         private Path file;
+        //number of lines in the first read
         private int readLines;
 
         /*reader is used to determine the position of the first record and to determine the number of lines in 
@@ -125,15 +126,14 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
             Text buffer = new Text();
             int bytesRead = 0;
 
-            if (true) { // (start > 0) // use start>0 to assume that files start with valid data
                 // Advance to the start of the first record
-                // We use a temporary LineReader to read lines until we find the
+                // We use reader to read lines until we find the
                 // position of the right one.  We then seek the file to that position.
                 stream.seek(start);
                 reader = new LineReader(stream);
 
-                outerLoop:do {
-                    bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start)); //reader must start at @ line
+                do {
+                    bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start)); 
                     int bufferLength = buffer.getLength();
                     if (bytesRead > 0 && (bufferLength <= 0 ||
                                           buffer.getBytes()[0] != '@')) {
@@ -143,7 +143,8 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
                         //
                         // If this isn't the start of a record, we want to backtrack to its end
                         long backtrackPosition = start + bytesRead; 
-                        //returns number of lines in read. If read is wrong format, it returns -1
+
+                        //determines if read is fastq and if it is single/multi lined. Returns number of lines, and -1 if not fastq format.
                         int lines = getLineInfo();
                         
                         if(lines==-1){
@@ -151,6 +152,7 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
                             start = backtrackPosition;
                             stream.seek(start);
                             reader = new LineReader(stream);
+                            
                         }else{
                                 readLines = lines; //to avoid calling getLineInfo on the first read again, the line info is saved
                                 break; //all good!
@@ -161,7 +163,6 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
                 } while (bytesRead > 0);
 
                 stream.seek(start);
-            }
 
             pos = start;
         }
@@ -235,47 +236,49 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
         public String makePositionMessage() {
             return file.toString() + ":" + pos;
         }
+        private int getLineInfo() throws IOException {
+            Text buffer = new Text();
+            int sequenceLines=1;
+            int bytesRead = 0;
 
-    private int getLineInfo() throws IOException {
-        Text buffer = new Text();
-        int sequenceLines=1;
-        int bytesRead = 0;
-                //starts at @title line. Read 2 lines and test if you have reached +secondTitle
-        bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
-        bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
-
-        if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
-
-            //read is 1 line. Read 2 more lines to set position the reader at the next @title line
+            //starts at @title line. Read 2 lines and see if you have reached +secondTitle
             bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
             bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
-            return sequenceLines; // all good!
 
-        } else {
+            if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
 
-            String bufferString = buffer.toString();
-                    //check if the record is multiline and we are still reading the sequence data
-            while(bytesRead > 0 && buffer.getLength() > 0 && bufferString.matches("[A-Z|a-z]*")){ 
+                //read is 1 line. Read 2 more lines to position the reader at the next @title line
+                bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
+                bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
+                return sequenceLines; // all good!
 
-                        //read another line, and count the number that are read.
-                bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
-                sequenceLines++; 
+            } else {
+                String bufferString = buffer.toString();
+                
+                //regex string that matches only IUPAC codes
+                String iupacRegex = "[A-Y-[J,O,X]|.|-]+";
 
-                        //check if we have reached the second title line
-                if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') { 
+                //check if the record is multiline and we are still reading the sequence data
+                while(bytesRead > 0 && buffer.getLength() > 0 && bufferString.matches(iupacRegex)){ 
 
-                            //number of lines has been determined. Set reader to next read's @title line.
-                    for(int x = 0; x<=sequenceLines; x++){
-                        bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start)); 
+                    //read another line, and count the number that are read.
+                    bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
+                    sequenceLines++; 
+
+                    //check if we have reached the second title line
+                    if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') { 
+
+                        //number of lines has been determined. Set reader to next read's @title line.
+                        for(int x = 0; x<=sequenceLines; x++){
+                            bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start)); 
+                        }
+                        return sequenceLines; // all good!
                     }
-                            return sequenceLines; // all good!
+                    bufferString = buffer.toString();
                 }
-                bufferString = buffer.toString();
             }
+            return -1;
         }
-        return -1;
-    }
-
         protected boolean lowLevelFastqRead(Text readName, Text value) throws IOException {
             // ID line
             readName.clear();
@@ -293,13 +296,13 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
                 //it has not been called
                 sequenceLines = getLineInfo();
             }else{
-                //it has been called
+                //it has been called. Take line info from readLines and set it to -2.
                 sequenceLines=readLines;
                 readLines=-2;
             }
 
             // sequence
-            for(int x = 0; x<sequenceLines; x++){
+            for(int x = 0; x<sequenceLines; x++) {
             appendLineInto(value, false);
             }
 
@@ -307,7 +310,7 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
             appendLineInto(value, false);
 
             // quality
-            for(int x = 0; x<sequenceLines; x++){
+            for(int x = 0; x<sequenceLines; x++) {
             appendLineInto(value, false);
             }
             

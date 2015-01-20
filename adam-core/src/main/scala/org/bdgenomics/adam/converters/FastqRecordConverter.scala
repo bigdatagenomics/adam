@@ -83,17 +83,35 @@ class FastqRecordConverter extends Serializable with Logging {
   }
 
   def parseMultiLine(element: String): Array[String] = {
+    //regex string for a new line that is followed by a +
     val fastqRegex = "\\n(?=\\+)"
 
+    //The read can be split at the fist new line, since the @title can only be one line long
     val splitOne = element.split("\\n", 2)
+
+    //We don't know how many lines make up the sequence data, but we know it is ended by a new line followed by a +
+    //This pattern will not show up in the sequence data itself, since it is limited to IUPAC codes
     val splitTwo = splitOne(1).split(fastqRegex, 2)
-    val count = splitTwo(0).length
+
+    //The read can again be split at the new line, since the +title can only be one line
     val splitThree = splitTwo(1).split("\\n", 2)
-    val (qual, rest) = splitThree(1).splitAt(count + 1) //include \n 
+
+    //get the sequence data's length
+    val count = splitTwo(0).length
+
+    //The sequence and quality lines have the same length, so 'count' tells us 
+    //where the quality line ends. 'count +1' includes the newline in 'qual'
+    val (qual, rest) = splitThree(1).splitAt(count + 1)
+
+    //create the full read, and remove newline characters
     val read = Array(splitOne(0), splitTwo(0).filterNot(_ == '\n'), splitThree(0), qual.filterNot(_ == '\n'))
+
+    //test if there is more data to be read (i.e. the second half of an interleaved read)
     if (rest.filterNot(_ == '\n').isEmpty) {
+      //there is none, so the read is returned
       return read
     } else {
+      //interleaved read. Process the rest of it
       val list = parseMultiLine(rest.toString)
       return Array(read, list).flatten
     }

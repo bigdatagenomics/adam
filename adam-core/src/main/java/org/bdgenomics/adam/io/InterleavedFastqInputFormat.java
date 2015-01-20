@@ -129,13 +129,12 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
             Text buffer = new Text();
             int bytesRead = 0;
             
-            if (true) { // (start > 0) // use start>0 to assume that files start with valid data
                 // Advance to the start of the first record that ends with /1
                 // We use a temporary LineReader to read lines until we find the
                 // position of the right one.  We then seek the file to that position.
                 stream.seek(start);
                 reader = new LineReader(stream);
-                outerloop:do {
+                do {
                     bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
                     int bufferLength = buffer.getLength();
                     if (bytesRead > 0 && (bufferLength <= 0 ||
@@ -157,6 +156,7 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
                             start = backtrackPosition;
                             stream.seek(start);
                             reader = new LineReader(stream);
+                            
                         }else{
                                 readLines = lines; //to avoid calling getLineInfo on the first read again, the line info is saved
                                 break; //all good!
@@ -167,7 +167,6 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
                 } while (bytesRead > 0);
 
                 stream.seek(start);
-            }
 
             pos = start;
         }
@@ -245,20 +244,26 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
             Text buffer = new Text();
             int sequenceLines=1;
             int bytesRead = 0;
+
             //starts at @title line. Read 2 lines and see if you have reached +secondTitle
             bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
             bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
+
             if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
 
-                //read is 1 line. Read 2 more lines to set position the reader at the next @title line
+                //read is 1 line. Read 2 more lines to position the reader at the next @title line
                 bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
                 bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
                 return sequenceLines; // all good!
-            } else {
 
+            } else {
                 String bufferString = buffer.toString();
+                
+                //regex string that matches only IUPAC codes
+                String iupacRegex = "[A-Y-[J,O,X]|.|-]+";
+
                 //check if the record is multiline and we are still reading the sequence data
-                while(bytesRead > 0 && buffer.getLength() > 0 && bufferString.matches("[A-Z|a-z]*")){ 
+                while(bytesRead > 0 && buffer.getLength() > 0 && bufferString.matches(iupacRegex)){ 
 
                     //read another line, and count the number that are read.
                     bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));

@@ -172,7 +172,7 @@ class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
    same location as createTempFile() uses, so therefore the returned path from this method
    should be suitable for adamParquetSave().
    */
-  def tempLocation(suffix: String = "adam"): String = {
+  def tempLocation(suffix: String = ".adam"): String = {
     val tempFile = File.createTempFile("ADAMContextSuite", "")
     val tempDir = tempFile.getParentFile
     new File(tempDir, tempFile.getName + suffix).getAbsolutePath
