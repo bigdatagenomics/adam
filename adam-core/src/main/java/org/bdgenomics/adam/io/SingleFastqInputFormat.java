@@ -127,7 +127,7 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
 
             if (true) { // (start > 0) // use start>0 to assume that files start with valid data
                 // Advance to the start of the first record
-                // We use a temporary LineReader to read lines until we find the
+                // We use reader to read lines until we find the
                 // position of the right one.  We then seek the file to that position.
                 stream.seek(start);
                 reader = new LineReader(stream);
