@@ -20,12 +20,20 @@ package org.bdgenomics.adam.converters
 import org.apache.hadoop.io.Text
 import org.apache.spark.Logging
 import org.bdgenomics.formats.avro.AlignmentRecord
+import java.util.regex._
 
 class FastqRecordConverter extends Serializable with Logging {
 
   def convertPair(element: (Void, Text)): Iterable[AlignmentRecord] = {
-    val lines = element._2.toString.split('\n')
-    assert(lines.length == 8, "Record has wrong format:\n" + element._2.toString)
+    val temp = element._2.toString.split('\n')
+    var lines = Array[String]("")
+    //true if read is multiline
+    if (temp.length > 8) {
+      lines = parseMultiLine(element._2.toString)
+    } else {
+      lines = temp
+    }
+    assert(lines.length == 8, "Record has wrong format:\n" + lines(0) + " " + lines(1) + " " + lines.length)
 
     // get fields for first read in pair
     val firstReadName = lines(0).drop(1)
@@ -74,8 +82,52 @@ class FastqRecordConverter extends Serializable with Logging {
         .build())
   }
 
+  def parseMultiLine(element: String): Array[String] = {
+    //regex string for a new line that is followed by a +
+    val fastqRegex = "\\n(?=\\+)"
+
+    //The read can be split at the fist new line, since the @title can only be one line long
+    val splitOne = element.split("\\n", 2)
+
+    //We don't know how many lines make up the sequence data, but we know it is ended by a new line followed by a +
+    //This pattern will not show up in the sequence data itself, since it is limited to IUPAC codes
+    val splitTwo = splitOne(1).split(fastqRegex, 2)
+
+    //The read can again be split at the new line, since the +title can only be one line
+    val splitThree = splitTwo(1).split("\\n", 2)
+
+    //get the sequence data's length
+    val count = splitTwo(0).length
+
+    //The sequence and quality lines have the same length, so 'count' tells us 
+    //where the quality line ends. 'count +1' includes the newline in 'qual'
+    val (qual, rest) = splitThree(1).splitAt(count + 1)
+
+    //create the full read, and remove newline characters
+    val read = Array(splitOne(0), splitTwo(0).filterNot(_ == '\n'), splitThree(0), qual.filterNot(_ == '\n'))
+
+    //test if there is more data to be read (i.e. the second half of an interleaved read)
+    if (rest.filterNot(_ == '\n').isEmpty) {
+      //there is none, so the read is returned
+      return read
+    } else {
+      //interleaved read. Process the rest of it
+      val list = parseMultiLine(rest.toString)
+      return Array(read, list).flatten
+    }
+
+  }
+
   def convertRead(element: (Void, Text)): AlignmentRecord = {
-    val lines = element._2.toString.split('\n')
+    val temp = element._2.toString.split('\n')
+    var lines = Array[String]("")
+    //true if read is multiline
+    if (temp.length > 4) {
+      lines = parseMultiLine(element._2.toString)
+    } else {
+      lines = temp
+    }
+
     assert(lines.length == 4, "Record has wrong format:\n" + element._2.toString)
 
     // get fields for first read in pair
