@@ -20,12 +20,20 @@ package org.bdgenomics.adam.converters
 import org.apache.hadoop.io.Text
 import org.apache.spark.Logging
 import org.bdgenomics.formats.avro.AlignmentRecord
+import java.util.regex._
 
 class FastqRecordConverter extends Serializable with Logging {
 
   def convertPair(element: (Void, Text)): Iterable[AlignmentRecord] = {
-    val lines = element._2.toString.split('\n')
-    assert(lines.length == 8, "Record has wrong format:\n" + element._2.toString)
+    val temp = element._2.toString.split('\n')
+    var lines = Array[String]("")
+    //true if read is multiline
+    if (temp.length > 8) {
+      lines = parseMultiLine(element._2.toString)
+    } else {
+      lines = temp
+    }
+    assert(lines.length == 8, "Record has wrong format:\n" + lines(0) + " " + lines(1) + " " + lines.length)
 
     // get fields for first read in pair
     val firstReadName = lines(0).drop(1)
@@ -74,8 +82,34 @@ class FastqRecordConverter extends Serializable with Logging {
         .build())
   }
 
+  def parseMultiLine(element: String): Array[String] = {
+    val fastqRegex = "\\n(?=\\+)"
+
+    val splitOne = element.split("\\n", 2)
+    val splitTwo = splitOne(1).split(fastqRegex, 2)
+    val count = splitTwo(0).length
+    val splitThree = splitTwo(1).split("\\n", 2)
+    val (qual, rest) = splitThree(1).splitAt(count + 1) //include \n 
+    val read = Array(splitOne(0), splitTwo(0).filterNot(_ == '\n'), splitThree(0), qual.filterNot(_ == '\n'))
+    if (rest.filterNot(_ == '\n').isEmpty) {
+      return read
+    } else {
+      val list = parseMultiLine(rest.toString)
+      return Array(read, list).flatten
+    }
+
+  }
+
   def convertRead(element: (Void, Text)): AlignmentRecord = {
-    val lines = element._2.toString.split('\n')
+    val temp = element._2.toString.split('\n')
+    var lines = Array[String]("")
+    //true if read is multiline
+    if (temp.length > 4) {
+      lines = parseMultiLine(element._2.toString)
+    } else {
+      lines = temp
+    }
+
     assert(lines.length == 4, "Record has wrong format:\n" + element._2.toString)
 
     // get fields for first read in pair
