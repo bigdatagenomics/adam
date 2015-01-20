@@ -50,7 +50,7 @@ class InterleavedFastqInputFormatSuite extends SparkFunSuite {
       assert(testOutput.toString() == expectedOutputData)
     }
   }
-  sparkTest("multiline interleaved FASTQ hadoop reader") {
+  sparkTest("interleaved multiline FASTQ hadoop reader") {
     val inputName = "interleaved_multiline_fastq.fq"
     val expectedOutputName = inputName + ".output"
     val expectedOutputPath = ClassLoader.getSystemClassLoader.getResource(expectedOutputName).getFile
