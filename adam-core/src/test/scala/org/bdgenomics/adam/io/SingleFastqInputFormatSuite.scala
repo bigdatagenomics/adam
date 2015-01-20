@@ -50,5 +50,30 @@ class SingleFastqInputFormatSuite extends SparkFunSuite {
       assert(testOutput.toString() == expectedOutputData)
     }
   }
+  sparkTest("interleaved multiline FASTQ hadoop reader") {
+    val inputName = "interleaved_multiline_fastq.fq"
+    val expectedOutputName = "single_" + inputName.drop(12) + ".output"
+    val expectedOutputPath = ClassLoader.getSystemClassLoader.getResource(expectedOutputName).getFile
+    val expectedOutputData = scala.io.Source.fromFile(expectedOutputPath).mkString
+    def ifq_reader: RDD[(Void, Text)] = {
+      val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
+      sc.newAPIHadoopFile(path,
+        classOf[SingleFastqInputFormat],
+        classOf[Void],
+        classOf[Text])
+    }
+    val ifq_reads = ifq_reader.collect()
+
+    val testOutput = new StringBuilder()
+
+    ifq_reads.foreach(pair => {
+      testOutput.append(">>>fastq record start>>>\n")
+      testOutput.append(pair._2)
+      testOutput.append("<<<fastq record end<<<\n")
+    })
+
+    assert(testOutput.toString() == expectedOutputData)
+
+  }
 }
 

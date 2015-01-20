@@ -64,6 +64,9 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
          *
          * For now I'm going to assume single-line sequences.  This works for our sequencing
          * application.  We'll see if someone complains in other applications.
+         *
+         * Multiline sequences are now supported. A separate line reader determines the number 
+         * of lines in the read before lineReader parses them.
          */
         
         // start:  first valid data index
@@ -74,8 +77,14 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
         private long pos;
         // file:  the file being read
         private Path file;
-        
+        private int readLines;
+
+        /*reader is used to determine the position of the first record and to determine the number of lines in 
+        *each record before they are parsed by lineReader
+        */
+        private LineReader reader; 
         private LineReader lineReader;
+       
         private InputStream inputStream;
         private Text currentValue;
         private byte[] newline = "\n".getBytes();
@@ -106,7 +115,6 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
                 inputStream = codec.createInputStream(fileIn);
                 end = Long.MAX_VALUE; // read until the end of the file
             }
-
             lineReader = new LineReader(inputStream);
         }
 
@@ -115,17 +123,17 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
          */
         private void positionAtFirstRecord(FSDataInputStream stream) throws IOException {
             Text buffer = new Text();
+            int bytesRead = 0;
 
             if (true) { // (start > 0) // use start>0 to assume that files start with valid data
                 // Advance to the start of the first record
                 // We use a temporary LineReader to read lines until we find the
                 // position of the right one.  We then seek the file to that position.
                 stream.seek(start);
-                LineReader reader = new LineReader(stream);
+                reader = new LineReader(stream);
 
-                int bytesRead = 0;
-                do {
-                    bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
+                outerLoop:do {
+                    bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start)); //reader must start at @ line
                     int bufferLength = buffer.getLength();
                     if (bytesRead > 0 && (bufferLength <= 0 ||
                                           buffer.getBytes()[0] != '@')) {
@@ -134,19 +142,22 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
                         // line starts with @.  Read two more and verify that it starts with a +
                         //
                         // If this isn't the start of a record, we want to backtrack to its end
-                        long backtrackPosition = start + bytesRead;
-
-                        bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
-                        bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
-                        if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
-                            break; // all good!
-                        } else {
+                        long backtrackPosition = start + bytesRead; 
+                        //returns number of lines in read. If read is wrong format, it returns -1
+                        int lines = getLineInfo();
+                        
+                        if(lines==-1){
                             // backtrack to the end of the record we thought was the start.
                             start = backtrackPosition;
                             stream.seek(start);
                             reader = new LineReader(stream);
-                        }
+                        }else{
+                                readLines = lines; //to avoid calling getLineInfo on the first read again, the line info is saved
+                                break; //all good!
+                            }
+                        
                     }
+
                 } while (bytesRead > 0);
 
                 stream.seek(start);
@@ -225,6 +236,46 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
             return file.toString() + ":" + pos;
         }
 
+    private int getLineInfo() throws IOException {
+        Text buffer = new Text();
+        int sequenceLines=1;
+        int bytesRead = 0;
+                //starts at @title line. Read 2 lines and test if you have reached +secondTitle
+        bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
+        bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
+
+        if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
+
+            //read is 1 line. Read 2 more lines to set position the reader at the next @title line
+            bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
+            bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
+            return sequenceLines; // all good!
+
+        } else {
+
+            String bufferString = buffer.toString();
+                    //check if the record is multiline and we are still reading the sequence data
+            while(bytesRead > 0 && buffer.getLength() > 0 && bufferString.matches("[A-Z|a-z]*")){ 
+
+                        //read another line, and count the number that are read.
+                bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
+                sequenceLines++; 
+
+                        //check if we have reached the second title line
+                if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') { 
+
+                            //number of lines has been determined. Set reader to next read's @title line.
+                    for(int x = 0; x<=sequenceLines; x++){
+                        bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start)); 
+                    }
+                            return sequenceLines; // all good!
+                }
+                bufferString = buffer.toString();
+            }
+        }
+        return -1;
+    }
+
         protected boolean lowLevelFastqRead(Text readName, Text value) throws IOException {
             // ID line
             readName.clear();
@@ -236,15 +287,30 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
                 throw new RuntimeException("unexpected fastq record didn't start with '@' at " + makePositionMessage() + ". Line: " + readName + ". \n");
 
             value.append(readName.getBytes(), 0, readName.getLength());
+            int sequenceLines;
+            //check if getLineInfo has already been called on this read
+            if(readLines==-2){
+                //it has not been called
+                sequenceLines = getLineInfo();
+            }else{
+                //it has been called
+                sequenceLines=readLines;
+                readLines=-2;
+            }
 
             // sequence
+            for(int x = 0; x<sequenceLines; x++){
             appendLineInto(value, false);
+            }
 
             // separator line
             appendLineInto(value, false);
 
             // quality
+            for(int x = 0; x<sequenceLines; x++){
             appendLineInto(value, false);
+            }
+            
 
             return true;
         }
