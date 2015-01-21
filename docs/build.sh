@@ -7,6 +7,8 @@ pdf_output="$output_dir/ADAM_v$git_version.pdf"
 html_output="$output_dir/ADAM_v$git_version.html"
 date_str=$(date '+%Y-%m-%d')
 
+mkdir -p ${output_dir}
+
 title="ADAM User Guide"
 date="$date_str git:$git_version"
 author="http://bdgenomics.org/"
