@@ -116,10 +116,6 @@
       <artifactId>kryo</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.scoverage</groupId>
-      <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.bdgenomics.bdg-formats</groupId>
       <artifactId>bdg-formats</artifactId>
     </dependency>
@@ -205,6 +201,12 @@
           </plugin>
         </plugins>
       </build>
+      <dependencies>
+        <dependency>
+          <groupId>org.scoverage</groupId>
+          <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>default</id>

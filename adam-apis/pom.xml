@@ -103,11 +103,11 @@
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core</artifactId>
+      <artifactId>adam-core_${scala.artifact.suffix}</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core</artifactId>
+      <artifactId>adam-core_${scala.artifact.suffix}</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

@@ -25,7 +25,6 @@
     <parquet.version>1.6.0rc4</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.2.0</hadoop.version>
-    <scoverage.version>0.99.2</scoverage.version>
   </properties>
   
   <modules>
@@ -298,11 +297,6 @@
         <version>2.21</version>
       </dependency>
       <dependency>
-        <groupId>org.scoverage</groupId>
-        <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
-        <version>${scoverage.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.bdgenomics.bdg-formats</groupId>
         <artifactId>bdg-formats</artifactId>
         <version>0.4.0</version>
@@ -324,24 +318,24 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-core</artifactId>
+        <artifactId>adam-core_${scala.artifact.suffix}</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-core</artifactId>
+        <artifactId>adam-core_${scala.artifact.suffix}</artifactId>
         <version>${project.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-apis</artifactId>
+        <artifactId>adam-apis_${scala.artifact.suffix}</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-apis</artifactId>
+        <artifactId>adam-apis_${scala.artifact.suffix}</artifactId>
         <version>${project.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
@@ -462,18 +456,18 @@
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.fusesource.scalate</groupId>
-        <artifactId>scalate-core_2.10</artifactId>
-        <version>1.6.1</version>
+        <groupId>org.scalatra.scalate</groupId>
+        <artifactId>scalate-core_${scala.artifact.suffix}</artifactId>
+        <version>1.7.0</version>
       </dependency>
       <dependency>
         <groupId>org.scalatra</groupId>
-        <artifactId>scalatra-json_2.10</artifactId>
+        <artifactId>scalatra-json_${scala.artifact.suffix}</artifactId>
         <version>2.3.0</version>
       </dependency>
       <dependency>
         <groupId>org.scalatra</groupId>
-        <artifactId>scalatra_2.10</artifactId>
+        <artifactId>scalatra_${scala.artifact.suffix}</artifactId>
         <version>2.3.0</version>
       </dependency>
       <dependency>
@@ -570,6 +564,9 @@
     <!-- Only build coverage in when we want to run coverage -->
     <profile>
       <id>coverage</id>
+      <properties>
+        <scoverage.version>0.99.2</scoverage.version>
+      </properties>
       <build>
         <plugins>
           <plugin>
@@ -636,8 +633,17 @@
               </compilerPlugins>
             </configuration>
           </plugin>
-        </plugins>
+        </plugins>        
       </build>
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>org.scoverage</groupId>
+            <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
+            <version>${scoverage.version}</version>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
     </profile>
     <!-- Only sign artifacts when we are performing a release, not snapshots -->
     <profile>

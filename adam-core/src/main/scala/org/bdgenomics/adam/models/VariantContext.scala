@@ -86,8 +86,5 @@ class VariantContext(
     val variant: RichVariant,
     val genotypes: Iterable[Genotype],
     val databases: Option[DatabaseVariantAnnotation] = None) {
-  def this(variant: RichVariant, genotypes: Iterable[Genotype], database: Option[DatabaseVariantAnnotation] = None) = {
-    this(ReferencePosition(variant), variant, genotypes, database)
-  }
 }
 

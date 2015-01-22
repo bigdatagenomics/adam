@@ -65,9 +65,9 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
 
 class GenotypeRDDFunctions(rdd: RDD[Genotype]) extends Serializable with Logging {
   def toVariantContext(): RDD[VariantContext] = {
-    rdd.keyBy({ g => RichVariant.variantToRichVariant(g.getVariant) })
+    rdd.keyBy(_.getVariant)
       .groupByKey
-      .map { case (v: RichVariant, g) => new VariantContext(v, g, None) }
+      .map(kv => VariantContext(kv._1, kv._2))
   }
 
   /**
