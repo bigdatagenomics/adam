@@ -19,14 +19,16 @@ package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.models.VariantContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ OrderedTrackedLayout, ReferenceRegion }
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
-import org.bdgenomics.adam.rich.ReferenceMappingContext.AlignmentRecordReferenceMapping
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.rdd.variation.VariationContext._
+import org.bdgenomics.adam.rich.ReferenceMappingContext._
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Genotype, GenotypeAllele }
 import org.fusesource.scalate.TemplateEngine
 import org.json4s._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -40,8 +42,9 @@ object VizReads extends ADAMCommandCompanion {
   var refName = ""
   var inputPath = ""
   var reads: RDD[AlignmentRecord] = null
+  var variants: RDD[Genotype] = null
 
-  val trackHeight = 5
+  val trackHeight = 10
   val width = 1200
   val height = 400
   val base = 50
@@ -57,6 +60,19 @@ object VizReads extends ADAMCommandCompanion {
     for ((rec, track) <- layout.trackAssignments) {
       val aRec = rec.asInstanceOf[AlignmentRecord]
       tracks += new TrackJson(aRec.getReadName, aRec.getStart, aRec.getEnd, track)
+    }
+    tracks.toList
+  }
+
+  def printVariationJson(layout: OrderedTrackedLayout[Genotype]): List[VariationJson] = {
+    var tracks = new scala.collection.mutable.ListBuffer[VariationJson]
+
+    for ((rec, track) <- layout.trackAssignments) {
+      val aRec = rec.asInstanceOf[Genotype]
+      val referenceAllele = aRec.getVariant.getReferenceAllele
+      val alternateAllele = aRec.getVariant.getAlternateAllele
+      tracks += new VariationJson(aRec.getVariant.getContig.getContigName, aRec.getAlleles.mkString(" / "), aRec.getVariant.getStart, aRec.getVariant.getEnd, track)
+
     }
     tracks.toList
   }
@@ -96,6 +112,7 @@ object VizReads extends ADAMCommandCompanion {
 }
 
 case class TrackJson(readName: String, start: Long, end: Long, track: Long)
+case class VariationJson(contigName: String, alleles: String, start: Long, end: Long, track: Long)
 case class FreqJson(base: Long, freq: Long)
 
 class VizReadsArgs extends Args4jBase with ParquetArgs {
@@ -111,7 +128,7 @@ class VizReadsArgs extends Args4jBase with ParquetArgs {
 
 class VizServlet extends ScalatraServlet with JacksonJsonSupport {
   protected implicit val jsonFormats: Formats = DefaultFormats
-  var regInfo = ReferenceRegion(VizReads.refName, 0, 100)
+  var regInfo = ReferenceRegion(VizReads.refName, 0, 200)
   var filteredLayout: OrderedTrackedLayout[AlignmentRecord] = null
   var filteredArray: Array[AlignmentRecord] = null
 
@@ -159,6 +176,30 @@ class VizServlet extends ScalatraServlet with JacksonJsonSupport {
     filteredArray = VizReads.reads.filterByOverlappingRegion(regInfo).collect()
     VizReads.printJsonFreq(filteredArray, regInfo)
   }
+
+  get("/variants/?") {
+    contentType = "text/html"
+
+    val input = VizReads.variants.filterByOverlappingRegion(regInfo).collect()
+    val filteredGenotypeTrack = new OrderedTrackedLayout(input)
+    val templateEngine = new TemplateEngine
+    val displayMap = Map("regInfo" -> (regInfo.referenceName, regInfo.start.toString, regInfo.end.toString),
+      "width" -> VizReads.width.toString,
+      "base" -> VizReads.base.toString,
+      "numTracks" -> filteredGenotypeTrack.numTracks.toString,
+      "trackHeight" -> VizReads.trackHeight.toString)
+    templateEngine.layout("adam-cli/src/main/webapp/WEB-INF/layouts/variants.ssp",
+      displayMap)
+  }
+
+  get("/variants/:ref") {
+    contentType = formats("json")
+
+    regInfo = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
+    val input = VizReads.variants.filterByOverlappingRegion(regInfo).collect()
+    val filteredGenotypeTrack = new OrderedTrackedLayout(input)
+    VizReads.printVariationJson(filteredGenotypeTrack)
+  }
 }
 
 class VizReads(protected val args: VizReadsArgs) extends ADAMSparkCommand[VizReadsArgs] {
@@ -168,7 +209,14 @@ class VizReads(protected val args: VizReadsArgs) extends ADAMSparkCommand[VizRea
     VizReads.refName = args.refName
 
     val proj = Projection(contig, readMapped, readName, start, end)
-    VizReads.reads = sc.loadAlignments(args.inputPath, projection = Some(proj))
+
+    if (args.inputPath.endsWith(".bam") || args.inputPath.endsWith(".sam") || args.inputPath.endsWith(".align.adam")) {
+      VizReads.reads = sc.loadAlignments(args.inputPath, projection = Some(proj))
+    }
+
+    if (args.inputPath.endsWith(".vcf") || args.inputPath.endsWith(".gt.adam")) {
+      VizReads.variants = sc.loadGenotypes(args.inputPath, projection = Some(proj))
+    }
 
     val server = new org.eclipse.jetty.server.Server(args.port)
     val handlers = new org.eclipse.jetty.server.handler.ContextHandlerCollection()
@@ -178,7 +226,7 @@ class VizReads(protected val args: VizReadsArgs) extends ADAMSparkCommand[VizRea
     println("View the visualization at: " + args.port)
     println("Frequency visualization at: /freq")
     println("Overlapping reads visualization at: /reads")
+    println("Variant visualization at: /variants")
     server.join()
   }
-
 }
