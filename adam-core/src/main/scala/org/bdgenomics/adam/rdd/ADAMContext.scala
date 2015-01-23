@@ -231,7 +231,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
   }
 
-  def maybeLoadBam[U <: ADAMPredicate[AlignmentRecord]](
+  private def maybeLoadBam[U <: ADAMPredicate[AlignmentRecord]](
     filePath: String,
     predicate: Option[Class[U]] = None,
     projection: Option[Schema] = None): Option[RDD[AlignmentRecord]] = {
@@ -249,7 +249,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       None
   }
 
-  def maybeLoadFastq[U <: ADAMPredicate[AlignmentRecord]](
+  private def maybeLoadFastq[U <: ADAMPredicate[AlignmentRecord]](
     filePath: String,
     predicate: Option[Class[U]] = None,
     projection: Option[Schema] = None): Option[RDD[AlignmentRecord]] = {
