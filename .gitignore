@@ -9,3 +9,4 @@ build
 *.adam*
 *.log
 .*.swp
+.DS_Store
