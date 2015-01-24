@@ -8,11 +8,11 @@ import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.adam.rdd.read.FlagStat._
 
-class flagstat_test extends SparkFunSuite with java.io.Serializable   {
+class FlagStatTest extends SparkFunSuite  {
 
   sparkTest("Standard FlagStat test"){
 
-    val inputpath = ClassLoader.getSystemClassLoader.getResource("features/NA12878.adam").getFile
+    val inputpath = ClassLoader.getSystemClassLoader.getResource("features/NA12878.sam").getFile
     val argLine = "%s".format(inputpath).split("\\s+")
 
     val args: FlagStatArgs = Args4j.apply[FlagStatArgs](argLine)
@@ -32,8 +32,6 @@ class flagstat_test extends SparkFunSuite with java.io.Serializable   {
       AlignmentRecordField.properPair,
       AlignmentRecordField.mapq,
       AlignmentRecordField.failedVendorQualityChecks)
-
-    //val reads: RDD[AlignmentRecord] = sc.loadAlignments(inputpath, projection = Some(projection))
 
     val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection))
 
@@ -120,17 +118,5 @@ class flagstat_test extends SparkFunSuite with java.io.Serializable   {
 
     assert(passedVendorQuality.withMateMappedToDiffChromosomeMapQ5 == 0 && failedVendorQuality.withMateMappedToDiffChromosomeMapQ5 == 0,
       ": The values of passed and failed vendor quality (mate mapped to a different chromosome, mapQ>=5) were not the expected values")
-
-
-
-
-
-
-
   }
-
-
-
 }
-
-
