@@ -275,7 +275,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       None
   }
 
-  def maybeLoadVcf[U <: ADAMPredicate[Genotype]](
+  private def maybeLoadVcf[U <: ADAMPredicate[Genotype]](
     filePath: String,
     predicate: Option[Class[U]] = None,
     projection: Option[Schema] = None): Option[RDD[Genotype]] = {
