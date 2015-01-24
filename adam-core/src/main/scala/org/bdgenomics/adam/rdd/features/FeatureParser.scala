@@ -98,11 +98,11 @@ class GTFParser extends FeatureParser {
 
     val (_id, _parentId) =
       feature match {
-        case "gene"       => (Option(attrs("gene_id")), None)
-        case "transcript" => (Option(attrs("transcript_id")), Option(attrs("gene_id")))
-        case "exon"       => (Option(attrs("exon_id")), Option(attrs("transcript_id")))
-        case "CDS"        => (attrs.get("id"), Option(attrs("transcript_id")))
-        case "UTR"        => (attrs.get("id"), Option(attrs("transcript_id")))
+        case "gene"       => (attrs.get("gene_id"), None)
+        case "transcript" => (attrs.get("transcript_id"), attrs.get("gene_id"))
+        case "exon"       => (attrs.get("exon_id"), attrs.get("transcript_id"))
+        case "CDS"        => (attrs.get("id"), attrs.get("transcript_id"))
+        case "UTR"        => (attrs.get("id"), attrs.get("transcript_id"))
         case _            => (attrs.get("id"), None)
       }
     _id.foreach(f.setFeatureId)
