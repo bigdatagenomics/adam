@@ -19,7 +19,6 @@ package org.bdgenomics.adam.util
 
 import org.scalatest.{ Tag, BeforeAndAfter, FunSuite }
 import org.apache.spark.{ SparkConf, SparkContext }
-import java.net.ServerSocket
 import org.apache.log4j.Level
 
 trait SparkFunSuite extends FunSuite with BeforeAndAfter {
@@ -32,25 +31,36 @@ trait SparkFunSuite extends FunSuite with BeforeAndAfter {
     ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
     ("spark.kryoserializer.buffer.mb", "4"),
     ("spark.kryo.referenceTracking", "true"),
-    ("spark.driver.allowMultipleContexts", "true"))
+    ("spark.driver.allowMultipleContexts", "true"),
+    ("spark.ui.enabled", "false"))
+  val testPortRange = 50000 until 60000
+  val rnd = new scala.util.Random
+
+  private def nextTestPort = {
+    testPortRange.start + rnd.nextInt(testPortRange.length)
+  }
 
   def setupSparkContext(sparkName: String, silenceSpark: Boolean = true) {
     // Silence the Spark logs if requested
     maybeLevels = if (silenceSpark) Some(SparkLogUtil.silenceSpark()) else None
-    synchronized {
-      // Find an unused port
-      val s = new ServerSocket(0)
-      val driverPort = s.getLocalPort
-      s.close()
+    var maybeSc: Option[SparkContext] = None
+
+    while (maybeSc.isEmpty) {
       val conf = new SparkConf(false)
         .setAppName(appName + ": " + sparkName)
         .setMaster(master)
-        .set("spark.driver.port", driverPort.toString)
-
+        .set("spark.driver.port", nextTestPort.toString)
       properties.foreach(kv => conf.set(kv._1, kv._2))
-
-      sc = new SparkContext(conf)
+      try {
+        maybeSc = Some(new SparkContext(conf))
+      } catch {
+        // Retry in the case of a bind exception
+        case bindException: java.net.BindException =>
+        // Throw all other exceptions
+        case e: Exception                          => throw e
+      }
     }
+    sc = maybeSc.get
   }
 
   def teardownSparkContext() {
