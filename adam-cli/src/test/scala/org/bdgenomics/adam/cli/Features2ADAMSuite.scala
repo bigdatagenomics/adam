@@ -22,10 +22,10 @@ import java.io._
 import org.bdgenomics.adam.parquet_reimpl.ParquetLister
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.FeatureField._
+import org.bdgenomics.adam.util.{ HadoopUtil, SparkFunSuite }
 import org.bdgenomics.formats.avro.Feature
-import org.scalatest.FunSuite
 
-class Features2ADAMSuite extends FunSuite {
+class Features2ADAMSuite extends SparkFunSuite {
 
   ignore("can convert a simple BED file") {
 
@@ -43,7 +43,8 @@ class Features2ADAMSuite extends FunSuite {
     val args: Features2ADAMArgs = Args4j.apply[Features2ADAMArgs](argLine)
 
     val features2Adam = new Features2ADAM(args)
-    features2Adam.run()
+    val job = HadoopUtil.newJob()
+    features2Adam.run(sc, job)
 
     val schema = Projection(featureId, contig, start, strand)
     val lister = new ParquetLister[Feature](Some(schema))
@@ -65,7 +66,7 @@ class Features2ADAMSuite extends FunSuite {
     assert(converted.find(_.getContig.getContigName != "chr1").isEmpty)
   }
 
-  test("can convert a simple wigfix file") {
+  sparkTest("can convert a simple wigfix file") {
     val loader = Thread.currentThread().getContextClassLoader
     val inputPath = loader.getResource("features/chr5.phyloP46way.trunc.wigFix").getPath
     val bedFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".bed")
@@ -88,7 +89,8 @@ class Features2ADAMSuite extends FunSuite {
     val adamArgLine = "%s %s".format(bedPath, outputPath).split("\\s+")
     val adamArgs: Features2ADAMArgs = Args4j.apply[Features2ADAMArgs](adamArgLine)
     val features2Adam = new Features2ADAM(adamArgs)
-    features2Adam.run()
+    val job = HadoopUtil.newJob()
+    features2Adam.run(sc, job)
 
     val schema = Projection(featureId, contig, start, end, value)
     val lister = new ParquetLister[Feature](Some(schema))
