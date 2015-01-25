@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+set -e -x
+
+VERSION="$(grep "<version>" "$PROJECT_ROOT/pom.xml"  | head -2 | tail -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')"
+HADOOP_VERSION="$(grep "<hadoop.version>" "$PROJECT_ROOT/pom.xml"  | head -2 | tail -1 | sed 's/ *<hadoop.version>//g' | sed 's/<\/hadoop.version>//g')"
+echo "Testing ADAM version ${VERSION} on Hadoop ${HADOOP_VERSION}"
+
+export MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=1g"
+mvn test -P distribution -Dnetworkconnected -Dhadoop.version="${HADOOP_VERSION}"
+
+ADAM_TMP_DIR="$(mktemp -d -t "adamTestXXXXXXX")"
+# Just to be paranoid.. use a directory internal to the ADAM_TMP_DIR
+ADAM_TMP_DIR="$ADAM_TMP_DIR/deleteMePleaseThisIsNoLongerNeeded"
+mkdir "$ADAM_TMP_DIR"
+
+pushd "$PROJECT_ROOT"
+# Copy the jar into our temp space for testing
+cp -r . "$ADAM_TMP_DIR"
+popd
+
+export SPARK_DRIVER_MEMORY=8g
+
+pushd "$ADAM_TMP_DIR"
+
+if [[ $HADOOP_VERSION == "1.0.4" ]]; then
+    wget -q http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop1.tgz
+    tar xzvf spark-1.1.0-bin-hadoop1.tgz
+    export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.1.0-bin-hadoop1"
+else
+    wget -q http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz
+    tar xzvf spark-1.1.0-bin-hadoop2.3.tgz
+    export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.1.0-bin-hadoop2.3"
+fi
+
+ADAM="./bin/adam-submit"
+
+echo "Fetching BAM file"
+BAM=mouse_chrM.bam
+READS="$BAM".reads.adam
+SORTED_READS="$BAM".reads.sorted.adam
+PILEUPS="$BAM".pileup
+rm -rf "$BAM"
+wget -q https://s3.amazonaws.com/bdgenomics-test/"$BAM"
+echo "Converting BAM to ADAM read format"
+rm -rf "$READS"
+"$ADAM" bam2adam -samtools_validation lenient "$BAM" "$READS"
+echo "Converting BAM to ADAM read format with sorting"
+rm -rf "$SORTED_READS"
+"$ADAM" transform -sort_reads "$READS" "$SORTED_READS"
+echo "Converting read file to pileup format"
+rm -rf "$PILEUPS"
+"$ADAM" reads2ref "$READS" "$PILEUPS"
+echo "Reading reads"
+"$ADAM" print "$READS" 1>/dev/null 2>/dev/null
+"$ADAM" flagstat "$READS"
+rm -rf "$ADAM_TMP_DIR"
+popd
+
+pushd "$PROJECT_ROOT"
+./scripts/format-source
+if test -n "$(git status --porcelain)"
+then
+        echo "Please run './scripts/format-source'"
+        exit 1
+fi
+popd
+
+echo
+echo "All the tests passed"
+echo
