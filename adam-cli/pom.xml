@@ -8,7 +8,7 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-cli</artifactId>
+  <artifactId>adam-cli_${scala.artifact.suffix}</artifactId>
   <packaging>jar</packaging>
   <name>ADAM: CLI</name>
   <build>
@@ -107,30 +107,26 @@
       <artifactId>spark-core_${scala.artifact.suffix}</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.scoverage</groupId>
-      <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.bdgenomics.bdg-formats</groupId>
       <artifactId>bdg-formats</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core</artifactId>
+      <artifactId>adam-core_${scala.artifact.suffix}</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core</artifactId>
+      <artifactId>adam-core_${scala.artifact.suffix}</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-apis</artifactId>
+      <artifactId>adam-apis_${scala.artifact.suffix}</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-apis</artifactId>
+      <artifactId>adam-apis_${scala.artifact.suffix}</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -147,16 +143,16 @@
       <artifactId>args4j</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.fusesource.scalate</groupId>
-      <artifactId>scalate-core_2.10</artifactId>
+      <groupId>org.scalatra.scalate</groupId>
+      <artifactId>scalate-core_${scala.artifact.suffix}</artifactId>
     </dependency>
     <dependency>
       <groupId>org.scalatra</groupId>
-      <artifactId>scalatra-json_2.10</artifactId>
+      <artifactId>scalatra-json_${scala.artifact.suffix}</artifactId>
     </dependency>
     <dependency>
       <groupId>org.scalatra</groupId>
-      <artifactId>scalatra_2.10</artifactId>
+      <artifactId>scalatra_${scala.artifact.suffix}</artifactId>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
@@ -184,6 +180,12 @@
           </plugin>
         </plugins>
       </build>
+      <dependencies>
+        <dependency>
+          <groupId>org.scoverage</groupId>
+          <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>default</id>
