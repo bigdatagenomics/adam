@@ -30,7 +30,7 @@ import org.bdgenomics.adam.rdd.read.comparisons.ComparisonTraversalEngine
 import org.bdgenomics.adam.util._
 import org.bdgenomics.utils.metrics.{ Collection, Histogram }
 import org.bdgenomics.utils.metrics.aggregators.{ HistogramAggregator, CombinedAggregator, AggregatedCollection, Writable }
-import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
+import org.kohsuke.args4j.{ Option => Args4jOption, Argument, CmdLineParser }
 import scala.collection.Seq
 
 /**
@@ -98,10 +98,10 @@ object CompareADAM extends ADAMCommandCompanion with Serializable {
 
 class CompareADAMArgs extends Args4jBase with ParquetArgs with Serializable {
 
-  @Argument(required = true, metaVar = "INPUT1", usage = "The first ADAM file to compare", index = 0)
+  @Argument(required = false, metaVar = "INPUT1", usage = "The first ADAM file to compare", index = 0)
   val input1Path: String = null
 
-  @Argument(required = true, metaVar = "INPUT2", usage = "The second ADAM file to compare", index = 1)
+  @Argument(required = false, metaVar = "INPUT2", usage = "The second ADAM file to compare", index = 1)
   val input2Path: String = null
 
   @Args4jOption(required = false, name = "-recurse1", metaVar = "REGEX",
@@ -174,13 +174,21 @@ class CompareADAM(protected val args: CompareADAMArgs) extends ADAMSparkCommand[
 
   def run(sc: SparkContext, job: Job): Unit = {
 
-    if (args.listComparisons) {
+    // Work around for -list_comparisons (doesn't require @Arguments)
+    if (!args.listComparisons) {
+      if (args.input1Path == null || args.input2Path == null) {
+        val options = new CompareADAMArgs
+        val parser = new CmdLineParser(options)
+        println("\n2 Arguments (files) must be given as input.\n")
+        parser.printUsage(System.err)
+        sys.exit(1)
+      }
+    } else {
       println("\nAvailable comparisons:")
       DefaultComparisons.comparisons.foreach {
         generator =>
           println("\t%10s : %s".format(generator.name, generator.description))
       }
-
       return
     }
 
@@ -242,6 +250,4 @@ class CompareADAM(protected val args: CompareADAMArgs) extends ADAMSparkCommand[
       }
     }
   }
-
 }
-
