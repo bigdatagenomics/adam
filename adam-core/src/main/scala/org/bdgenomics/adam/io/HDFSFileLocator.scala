@@ -17,10 +17,25 @@
  */
 package org.bdgenomics.adam.io
 
-class ByteArrayLocator(val byteData: Array[Byte]) extends FileLocator {
-  override def relativeLocator(relativePath: String): FileLocator = this
-  override def parentLocator(): Option[FileLocator] = None
-  override def bytes: ByteAccess = new ByteArrayByteAccess(byteData)
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 
-  override def childLocators(): Iterable[FileLocator] = Seq()
+/**
+ * A locator for files in HDFS.
+ */
+class HDFSFileLocator(val conf: Configuration, val path: Path) extends FileLocator {
+  override def parentLocator(): Option[FileLocator] =
+    Some(new HDFSFileLocator(conf, path.getParent))
+
+  override def relativeLocator(relativePath: String): FileLocator =
+    new HDFSFileLocator(conf, new Path(path, relativePath))
+
+  override def bytes: ByteAccess = {
+    val length = path.getFileSystem(conf).getFileStatus(path).getLen
+    val stream = () => path.getFileSystem(conf).open(path)
+    new InputStreamByteAccess(stream, length)
+  }
+
+  override def childLocators(): Iterable[FileLocator] =
+    path.getFileSystem(conf).listStatus(path).map(file => new HDFSFileLocator(conf, file.getPath))
 }

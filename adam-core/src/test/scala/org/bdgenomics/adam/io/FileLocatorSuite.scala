@@ -85,3 +85,14 @@ class ByteArrayLocatorSuite extends FunSuite {
     assert(read === Array[Byte](3, 4, 5))
   }
 }
+
+class ClasspathLocatorSuite extends FunSuite {
+
+  test("test loading a directory resource") {
+    val locator = new ClasspathFileLocator("parquet_test")
+    assert(locator.childLocators().size === 2)
+
+    val children = locator.childLocators().toSeq
+    assert(children(0).bytes.length === 23301)
+  }
+}

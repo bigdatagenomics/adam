@@ -29,9 +29,6 @@ class ByteAccessSuite extends FunSuite {
   lazy val credentials = new CredentialsProperties(Some(new File(System.getProperty("user.home") + "/spark.conf")))
     .awsCredentials(Some("s3"))
 
-  lazy val bucketName = System.getenv("BUCKET_NAME")
-  lazy val parquetLocation = System.getenv("PARQUET_LOCATION")
-
   test("ByteArrayByteAccess returns arbitrary subsets of bytes correctly") {
     val bytes = Array[Byte](0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
     val access = new ByteArrayByteAccess(bytes)
@@ -116,8 +113,8 @@ class ByteAccessSuite extends FunSuite {
 
   test("Testing S3 byte access", NetworkConnected, S3Test) {
     val byteAccess = new S3ByteAccess(new AmazonS3Client(credentials),
-      bucketName,
-      parquetLocation)
+      "bdgenomics-test",
+      "reads-0-2-0")
     assert(byteAccess.readFully(0, 1)(0) === 80)
   }
 }

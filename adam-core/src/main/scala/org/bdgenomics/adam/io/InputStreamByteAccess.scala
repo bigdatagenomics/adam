@@ -17,10 +17,12 @@
  */
 package org.bdgenomics.adam.io
 
-class ByteArrayLocator(val byteData: Array[Byte]) extends FileLocator {
-  override def relativeLocator(relativePath: String): FileLocator = this
-  override def parentLocator(): Option[FileLocator] = None
-  override def bytes: ByteAccess = new ByteArrayByteAccess(byteData)
+import java.io.InputStream
 
-  override def childLocators(): Iterable[FileLocator] = Seq()
+class InputStreamByteAccess(createStream: () => InputStream, val length: Long) extends ByteAccess {
+  override def readByteStream(offset: Long, length: Int): InputStream = {
+    val stream = createStream()
+    stream.skip(offset)
+    stream
+  }
 }
