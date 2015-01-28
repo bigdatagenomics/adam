@@ -19,9 +19,12 @@ package org.bdgenomics.adam.rdd.read.realignment
 
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.utils.instrumentation.Timers._
 import scala.annotation.tailrec
 import scala.collection.immutable.TreeSet
+import com.sun.xml.internal.bind.v2.TODO
 
 object RealignmentTargetFinder {
 
@@ -83,7 +86,7 @@ class RealignmentTargetFinder extends Serializable with Logging {
    * @return A merged set of targets.
    */
   def joinTargets(first: TargetSet,
-                  second: TargetSet): TargetSet = {
+                  second: TargetSet): TargetSet = JoinTargets.time {
     new TargetSet(joinTargets(first.set, second.set))
   }
 
@@ -95,7 +98,7 @@ class RealignmentTargetFinder extends Serializable with Logging {
    */
   def findTargets(reads: RDD[RichAlignmentRecord],
                   maxIndelSize: Int = 500,
-                  maxTargetSize: Int = 3000): TargetSet = {
+                  maxTargetSize: Int = 3000): TargetSet = FindTargets.time {
 
     def createTargetSet(target: IndelRealignmentTarget): TargetSet = {
       val tmp = new TreeSet()(TargetOrdering)
@@ -109,7 +112,7 @@ class RealignmentTargetFinder extends Serializable with Logging {
     val targets = reads.flatMap(IndelRealignmentTarget(_, maxIndelSize))
       .filter(t => !t.isEmpty)
 
-    val targetSet: TargetSet = TargetSet(targets.mapPartitions(iter => iter.toArray.sorted(TargetOrdering).toIterator)
+    val targetSet: TargetSet = TargetSet(targets.mapPartitions(iter => SortTargets.time { iter.toArray.sorted(TargetOrdering).toIterator })
       .map(createTargetSet)
       .fold(TargetSet())((t1: TargetSet, t2: TargetSet) => joinTargets(t1, t2))
       .set.filter(_.readRange.length <= maxTargetSize))

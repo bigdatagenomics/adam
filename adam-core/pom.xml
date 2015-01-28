@@ -119,11 +119,11 @@
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.bdg-utils</groupId>
-      <artifactId>bdg-utils-parquet</artifactId>
+      <artifactId>bdg-utils-metrics</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.bdg-utils</groupId>
-      <artifactId>bdg-utils-metrics</artifactId>
+      <artifactId>bdg-utils-parquet</artifactId>
     </dependency>
     <dependency>
       <groupId>com.esotericsoftware.kryo</groupId>
@@ -185,6 +185,26 @@
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_${scala.artifact.suffix}</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.netflix.servo</groupId>
+      <artifactId>servo-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
   </dependencies>
   <profiles>

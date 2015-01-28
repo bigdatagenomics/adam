@@ -17,19 +17,12 @@
  */
 package org.bdgenomics.adam.cli
 
-import java.io.{
-  ByteArrayOutputStream,
-  PrintStream,
-  PrintWriter
-}
+import java.io.{ StringWriter, PrintWriter }
+
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ SparkConf, Logging, SparkContext }
+import org.bdgenomics.utils.instrumentation._
 import org.bdgenomics.adam.util.HadoopUtil
-import org.bdgenomics.utils.instrumentation.{
-  DurationFormatting,
-  MetricsListener,
-  RecordedMetrics
-}
 
 trait ADAMCommandCompanion {
   val commandName: String
@@ -54,30 +47,45 @@ trait ADAMSparkCommand[A <: Args4jBase] extends ADAMCommand with Logging {
 
   def run() {
     val start = System.nanoTime()
-    val metricsListener = if (args.printMetrics) Some(new MetricsListener(new RecordedMetrics())) else None
     val conf = new SparkConf().setAppName("adam: " + companion.commandName)
     if (conf.getOption("spark.master").isEmpty) {
       conf.setMaster("local[%d]".format(Runtime.getRuntime.availableProcessors()))
     }
     val sc = new SparkContext(conf)
     val job = HadoopUtil.newJob()
-    metricsListener.foreach(sc.addSparkListener(_))
+    val metricsListener = initializeMetrics(sc)
     run(sc, job)
     val totalTime = System.nanoTime() - start
     printMetrics(totalTime, metricsListener)
   }
 
-  def printMetrics(totalTime: Long, metricsListener: Option[MetricsListener]) {
-    metricsListener.foreach(listener => {
-      // Set the output buffer size to 4KB by default
-      val bytes = new ByteArrayOutputStream(1024 * 4)
-      val out = new PrintStream(bytes)
-      out.println()
-      out.println()
-      out.println("Overall Duration: " + DurationFormatting.formatNanosecondDuration(totalTime))
-      out.println()
-      listener.metrics.sparkMetrics.print(new PrintWriter(out))
-      logInfo("Metrics:" + bytes.toString("UTF-8"))
-    })
+  def initializeMetrics(sc: SparkContext): Option[MetricsListener] = {
+    if (args.printMetrics) {
+      val metricsListener = new MetricsListener(new RecordedMetrics())
+      sc.addSparkListener(metricsListener)
+      Metrics.initialize(sc)
+      Some(metricsListener)
+    } else {
+      // This avoids recording metrics if we have a recorder left over from previous use of this thread
+      Metrics.stopRecording()
+      None
+    }
   }
+
+  def printMetrics(totalTime: Long, metricsListener: Option[MetricsListener]) {
+    logInfo("Overall Duration: " + DurationFormatting.formatNanosecondDuration(totalTime))
+    if (args.printMetrics && metricsListener.isDefined) {
+      // Set the output buffer size to 4KB by default
+      val stringWriter = new StringWriter()
+      val out = new PrintWriter(stringWriter)
+      out.println("Metrics:")
+      out.println()
+      Metrics.print(out, Some(metricsListener.get.metrics.sparkMetrics.stageTimes))
+      out.println()
+      metricsListener.get.metrics.sparkMetrics.print(out)
+      out.flush()
+      logInfo(stringWriter.getBuffer.toString)
+    }
+  }
+
 }
