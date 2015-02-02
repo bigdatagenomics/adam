@@ -1,5 +1,7 @@
 ADAM
 ====
+
+[![Join the chat at https://gitter.im/bigdatagenomics/adam](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bigdatagenomics/adam?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 A genomics processing engine and specialized file format built using [Apache Avro](http://avro.apache.org), 
 [Apache Spark](http://spark.incubator.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.
 
