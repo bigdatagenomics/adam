@@ -19,12 +19,13 @@ package org.bdgenomics.adam.rdd.read.comparisons
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.metrics.MappedPosition
-import org.bdgenomics.adam.metrics.aggregators.HistogramAggregator
 import org.bdgenomics.adam.projections.AlignmentRecordField
-import org.bdgenomics.adam.util.{ Histogram, SparkFunSuite }
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.utils.metrics.Histogram
+import org.bdgenomics.utils.metrics.aggregators.HistogramAggregator
 
-class ComparisonTraversalEngineSuite extends SparkFunSuite {
+class ComparisonTraversalEngineSuite extends ADAMFunSuite {
 
   sparkTest("generate works on a simple RDD") {
     val c0 = Contig.newBuilder

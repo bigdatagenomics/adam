@@ -15,12 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.instrumentation
+package org.bdgenomics.adam.util
 
-/**
- * Represents alignment of a cell in a table
- */
-object Alignment extends Enumeration {
-  type Alignment = Value
-  val Left, Right, Center = Value
+import org.bdgenomics.utils.misc.SparkFunSuite
+
+trait ADAMFunSuite extends SparkFunSuite {
+
+  override val appName: String = "adam"
+  override val properties: Map[String, String] = Map(("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
+    ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
+    ("spark.kryoserializer.buffer.mb", "4"),
+    ("spark.kryo.referenceTracking", "true"))
 }
+

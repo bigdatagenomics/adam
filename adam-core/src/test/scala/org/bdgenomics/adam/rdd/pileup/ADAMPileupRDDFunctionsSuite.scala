@@ -19,10 +19,10 @@ package org.bdgenomics.adam.rdd.pileup
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.pileup.PileupContext._
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 
-class ADAMPileupRDDFunctionsSuite extends SparkFunSuite {
+class ADAMPileupRDDFunctionsSuite extends ADAMFunSuite {
 
   sparkTest("can convert pileups to rods, bases at different pos, same reference") {
     val contig = Contig.newBuilder

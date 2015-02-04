@@ -17,13 +17,13 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.variation.VariationContext._
 
-class ADAMVariationRDDFunctionsSuite extends SparkFunSuite {
+class ADAMVariationRDDFunctionsSuite extends ADAMFunSuite {
 
   sparkTest("recover samples from variant context") {
     val variant0 = Variant.newBuilder()

@@ -21,10 +21,10 @@ import java.io.File
 import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
-class ADAMAlignmentRecordContextSuite extends SparkFunSuite {
+class ADAMAlignmentRecordContextSuite extends ADAMFunSuite {
 
   sparkTest("loadADAMFromPaths can load simple RDDs that have just been saved") {
     val contig = Contig.newBuilder

@@ -21,11 +21,11 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.{ DuplicateMetrics, FlagStatMetrics }
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.adam.rdd.read.FlagStat._
 
-class FlagStatTest extends SparkFunSuite {
+class FlagStatTest extends ADAMFunSuite {
 
   sparkTest("Standard FlagStat test") {
 

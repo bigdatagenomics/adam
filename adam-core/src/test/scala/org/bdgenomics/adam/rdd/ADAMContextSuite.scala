@@ -25,10 +25,10 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.predicates.HighQualityReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-class ADAMContextSuite extends SparkFunSuite {
+class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("sc.adamLoad should not fail on unmapped reads") {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("unmapped.sam").getFile

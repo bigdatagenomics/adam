@@ -27,6 +27,7 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import org.bdgenomics.adam.util.MdTag
+import org.bdgenomics.utils.instrumentation.Timers._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.annotation.tailrec
 import scala.collection.immutable.{ NumericRange, TreeSet }
@@ -156,7 +157,7 @@ private[rdd] object RealignIndels extends Serializable with Logging {
    *
    * @see mapToTarget
    */
-  def mapTargets(rich_rdd: RDD[RichAlignmentRecord], targets: TreeSet[IndelRealignmentTarget]): RDD[(Option[IndelRealignmentTarget], Iterable[RichAlignmentRecord])] = {
+  def mapTargets(rich_rdd: RDD[RichAlignmentRecord], targets: TreeSet[IndelRealignmentTarget]): RDD[(Option[IndelRealignmentTarget], Iterable[RichAlignmentRecord])] = MapTargets.time {
     val tmpZippedTargets = targets.zip(0 until targets.count(t => true))
     var tmpZippedTargets2 = new TreeSet[(IndelRealignmentTarget, Int)]()(ZippedTargetOrdering)
     tmpZippedTargets.foreach(t => tmpZippedTargets2 = tmpZippedTargets2 + t)
@@ -180,7 +181,7 @@ private[rdd] object RealignIndels extends Serializable with Logging {
   /**
    * From a set of reads, returns the reference sequence that they overlap.
    */
-  def getReferenceFromReads(reads: Iterable[RichAlignmentRecord]): (String, Long, Long) = {
+  def getReferenceFromReads(reads: Iterable[RichAlignmentRecord]): (String, Long, Long) = GetReferenceFromReads.time {
     var tossedReads = 0
 
     // get reference and range from a single read
@@ -230,7 +231,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
    * @return A sequence of reads which have either been realigned if there is a sufficiently good alternative
    * consensus, or not realigned if there is not a sufficiently good consensus.
    */
-  def realignTargetGroup(targetGroup: (Option[IndelRealignmentTarget], Iterable[RichAlignmentRecord])): Iterable[RichAlignmentRecord] = {
+  def realignTargetGroup(targetGroup: (Option[IndelRealignmentTarget], Iterable[RichAlignmentRecord])): Iterable[RichAlignmentRecord] = RealignTargetGroup.time {
     val (target, reads) = targetGroup
 
     if (target.isEmpty) {
@@ -394,7 +395,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
    * @param qualities Integer sequence of phred scaled base quality scores.
    * @return Tuple of (mismatch quality score, alignment offset).
    */
-  def sweepReadOverReferenceForQuality(read: String, reference: String, qualities: Seq[Int]): (Int, Int) = {
+  def sweepReadOverReferenceForQuality(read: String, reference: String, qualities: Seq[Int]): (Int, Int) = SweepReadOverReferenceForQuality.time {
 
     var qualityScores = List[(Int, Int)]()
 
@@ -464,7 +465,6 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
       val sr = rdd.filter(r => r.getReadMapped)
         .keyBy(r => ReferencePosition(r).get)
         .sortByKey()
-
       sr.map(kv => kv._2)
     }
 

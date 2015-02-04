@@ -19,7 +19,7 @@ package org.bdgenomics.adam.metrics.filters
 
 import org.scalatest._
 
-import org.bdgenomics.adam.metrics
+import org.bdgenomics.utils.metrics.{ Collection => BDGCollection }
 
 class GeneratorFilterSuite extends FunSuite {
 
@@ -39,8 +39,8 @@ class GeneratorFilterSuite extends FunSuite {
     assert(!f1.passesFilter(fail1))
     assert(f2.passesFilter(pass2))
 
-    val pass = metrics.Collection(Seq(Seq(pass1), Seq(pass2)))
-    val fail = metrics.Collection(Seq(Seq(fail1), Seq(pass2)))
+    val pass = BDGCollection(Seq(Seq(pass1), Seq(pass2)))
+    val fail = BDGCollection(Seq(Seq(fail1), Seq(pass2)))
 
     val f12 = new CombinedFilter[Int](Seq(f1, f2))
 

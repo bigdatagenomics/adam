@@ -22,10 +22,10 @@ import org.apache.spark.api.java.JavaRDD._
 import org.apache.spark.api.java.JavaRDD
 import org.bdgenomics.adam.predicates.HighQualityReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-class JavaADAMContextSuite extends SparkFunSuite {
+class JavaADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can read a small .SAM file") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile

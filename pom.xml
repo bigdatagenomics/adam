@@ -26,6 +26,7 @@
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
+    <utils.version>0.1.1</utils.version>
   </properties>
   
   <modules>
@@ -347,6 +348,23 @@
         <scope>test</scope>
       </dependency>
       <dependency>
+        <groupId>org.bdgenomics.bdg-utils</groupId>
+        <artifactId>bdg-utils-misc</artifactId>
+        <version>${utils.version}</version>
+        <type>test-jar</type>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.bdgenomics.bdg-utils</groupId>
+        <artifactId>bdg-utils-parquet</artifactId>
+        <version>${utils.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bdgenomics.bdg-utils</groupId>
+        <artifactId>bdg-utils-metrics</artifactId>
+        <version>${utils.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-client</artifactId>
         <version>${hadoop.version}</version>
@@ -476,7 +494,12 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>14.0.1</version>
-        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>1.9.5</version>
+        <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>

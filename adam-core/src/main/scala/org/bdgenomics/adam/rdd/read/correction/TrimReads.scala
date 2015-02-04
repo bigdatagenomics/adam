@@ -23,6 +23,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils
+import org.bdgenomics.utils.instrumentation.Timers._
 import scala.annotation.tailrec
 import scala.math.{ log => mathLog, exp }
 
@@ -251,7 +252,7 @@ private[correction] class TrimReads extends Serializable {
    * @param startPos Start position of the alignment.
    * @return Returns a tuple containing the (updated cigar, updated alignment start position).
    */
-  def trimCigar(cigar: String, trimStart: Int, trimEnd: Int, startPos: Long): (String, Long) = {
+  def trimCigar(cigar: String, trimStart: Int, trimEnd: Int, startPos: Long): (String, Long) = TrimCigar.time {
     @tailrec def trimFront(c: String, trim: Int, start: Long): (String, Long) = {
       if (trim <= 0) {
         (c, start)
@@ -343,7 +344,7 @@ private[correction] class TrimReads extends Serializable {
    * @param trimEnd Number of bases to trim from the end of the read.
    * @return Trimmed read.
    */
-  def trimRead(read: AlignmentRecord, trimStart: Int, trimEnd: Int): AlignmentRecord = {
+  def trimRead(read: AlignmentRecord, trimStart: Int, trimEnd: Int): AlignmentRecord = TrimRead.time {
     // trim sequence and quality value
     val seq: String = read.getSequence.toString.drop(trimStart).dropRight(trimEnd)
     val qual: String = read.getQual.toString.drop(trimStart).dropRight(trimEnd)

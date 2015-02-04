@@ -24,10 +24,10 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.rich.DecadentRead._
 import org.bdgenomics.adam.rich.RichVariant
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-class BaseQualityRecalibrationSuite extends SparkFunSuite {
+class BaseQualityRecalibrationSuite extends ADAMFunSuite {
   sparkTest("BQSR Test Input #1") {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.sam").getFile
     val snpsFilepath = ClassLoader.getSystemClassLoader.getResource("bqsr1.snps").getFile

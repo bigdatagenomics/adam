@@ -22,7 +22,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.metrics.BucketComparisons
-import org.bdgenomics.adam.metrics.aggregators.{ Aggregated, Aggregator }
 import org.bdgenomics.adam.metrics.filters.GeneratorFilter
 import org.bdgenomics.adam.models.ReadBucket
 import org.bdgenomics.adam.projections.{ FieldValue, Projection }
@@ -30,6 +29,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordContext
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.metrics.aggregators.{ Aggregated, Aggregator }
 import scala.reflect.ClassTag
 
 class ComparisonTraversalEngine(schema: Seq[FieldValue], input1: RDD[AlignmentRecord], input2: RDD[AlignmentRecord])(implicit sc: SparkContext) {

@@ -21,10 +21,10 @@ import org.apache.spark.HashPartitioner
 import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.models.{ ReferenceMapping, ReferenceRegion, SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
-class ShuffleRegionJoinSuite extends SparkFunSuite {
+class ShuffleRegionJoinSuite extends ADAMFunSuite {
   val partitionSize = 3
   var seqDict: SequenceDictionary = _
 

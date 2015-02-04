@@ -18,9 +18,9 @@
 package org.bdgenomics.adam.cli
 
 import java.io._
-import org.bdgenomics.adam.util.{ HadoopUtil, SparkFunSuite }
+import org.bdgenomics.adam.util.{ HadoopUtil, ADAMFunSuite }
 
-class PluginExecutorSuite extends SparkFunSuite {
+class PluginExecutorSuite extends ADAMFunSuite {
 
   sparkTest("take10 works correctly on example SAM") {
 

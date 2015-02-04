@@ -19,9 +19,9 @@ package org.bdgenomics.adam.rdd
 
 import PairingRDD._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 
-class PairingRDDSuite extends SparkFunSuite {
+class PairingRDDSuite extends ADAMFunSuite {
 
   sparkTest("sliding on an empty RDD returns an empty RDD") {
     val rdd: RDD[Int] = sc.emptyRDD

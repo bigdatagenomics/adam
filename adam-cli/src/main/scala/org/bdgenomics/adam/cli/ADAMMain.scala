@@ -48,7 +48,6 @@ object ADAMMain extends Logging {
         "CONVERSION OPERATIONS",
         List(
           Bam2ADAM,
-          Vcf2FlatGenotype,
           Vcf2ADAM,
           VcfAnnotation2ADAM,
           ADAM2Vcf,

@@ -20,11 +20,11 @@ package org.bdgenomics.adam.rdd
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 
 import scala.reflect.ClassTag
 
-class CoverageSuite extends SparkFunSuite {
+class CoverageSuite extends ADAMFunSuite {
 
   private def region(start: Long, end: Long) = ReferenceRegion("seq", start, end)
 

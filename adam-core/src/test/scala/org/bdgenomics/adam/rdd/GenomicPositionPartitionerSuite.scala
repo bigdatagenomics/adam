@@ -23,11 +23,11 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ ReferencePosition, SequenceRecord, SequenceDictionary }
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import scala.util.Random
 
-class GenomicPositionPartitionerSuite extends SparkFunSuite {
+class GenomicPositionPartitionerSuite extends ADAMFunSuite {
 
   test("partitions the UNMAPPED ReferencePosition into the top partition") {
     val parter = GenomicPositionPartitioner(10, SequenceDictionary(record("foo", 1000)))

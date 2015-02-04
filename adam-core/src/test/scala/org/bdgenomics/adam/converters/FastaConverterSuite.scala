@@ -19,10 +19,10 @@ package org.bdgenomics.adam.converters
 
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentContext
-import org.bdgenomics.adam.util.SparkFunSuite
+import org.bdgenomics.adam.util.ADAMFunSuite
 import java.io.File
 
-class FastaConverterSuite extends SparkFunSuite {
+class FastaConverterSuite extends ADAMFunSuite {
 
   val converter = new FastaConverter(1000)
 
