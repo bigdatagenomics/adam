@@ -25,7 +25,6 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.AlignmentRecord

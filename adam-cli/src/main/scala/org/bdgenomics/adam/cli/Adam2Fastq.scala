@@ -26,7 +26,6 @@ import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.kohsuke.args4j.{ Option => Args4JOption, Argument }
-import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 
 class Adam2FastqArgs extends ParquetLoadSaveArgs {
   @Argument(required = false, metaVar = "OUTPUT", usage = "When writing FASTQ data, all second-in-pair reads will go here, if this argument is provided", index = 2)

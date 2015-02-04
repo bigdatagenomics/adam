@@ -22,12 +22,11 @@ import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import scala.util.Random
 
-class ADAMAlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
+class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
 
   sparkTest("sorting reads") {
     val random = new Random("sorting".hashCode)
@@ -305,7 +304,7 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val path1 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_1.fq").getFile
     val path2 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_2.fq").getFile
     val rddA =
-      new AlignmentRecordContext(sc).adamFastqLoad(
+      AlignmentRecordContext.adamFastqLoad(sc,
         path1,
         path2,
         fixPairs = true,
@@ -332,7 +331,7 @@ class ADAMAlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     rddA.adamSaveAsPairedFastq(tempPath1, tempPath2, validationStringency = ValidationStringency.STRICT)
 
     val rddB: RDD[AlignmentRecord] =
-      new AlignmentRecordContext(sc).adamFastqLoad(
+      AlignmentRecordContext.adamFastqLoad(sc,
         tempPath1,
         tempPath2,
         fixPairs = true,

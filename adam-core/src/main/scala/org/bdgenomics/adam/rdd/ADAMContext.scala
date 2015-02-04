@@ -34,9 +34,8 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
-import org.bdgenomics.adam.rdd.read.AlignmentRecordContext
+import org.bdgenomics.adam.rdd.read.{ AlignmentRecordContext, AlignmentRecordRDDFunctions }
 import org.bdgenomics.adam.rdd.variation.VariationContext._
-
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Pileup, Genotype }
@@ -54,6 +53,9 @@ object ADAMContext {
 
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): ADAMRDDFunctions[T] = new ADAMRDDFunctions(rdd)
+
+  // Add methods specific to Read RDDs
+  implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
@@ -318,6 +320,21 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
           adamLoad[AlignmentRecord, U](filePath, predicate, projection)
         )
     if (Metrics.isRecording) rdd.instrument() else rdd
+  }
+
+  /**
+   * Takes a sequence of Path objects (e.g. the return value of findFiles).  Treats each path as
+   * corresponding to a Read set -- loads each Read set, converts each set to use the
+   * same SequenceDictionary, and returns the union of the RDDs.
+   *
+   * (GenomeBridge is using this to load BAMs that have been split into multiple files per sample,
+   * for example, one-BAM-per-chromosome.)
+   *
+   * @param paths The locations of the parquet files to load
+   * @return a single RDD[Read] that contains the union of the AlignmentRecords in the argument paths.
+   */
+  def loadAlignmentsFromPaths(paths: Seq[Path]): RDD[AlignmentRecord] = {
+    sc.union(paths.map(p => loadAlignments(p.toString)))
   }
 
   /**

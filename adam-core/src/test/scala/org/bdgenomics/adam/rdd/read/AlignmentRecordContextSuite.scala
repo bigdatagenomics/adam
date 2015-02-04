@@ -20,48 +20,10 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 class ADAMAlignmentRecordContextSuite extends ADAMFunSuite {
-
-  sparkTest("loadADAMFromPaths can load simple RDDs that have just been saved") {
-    val contig = Contig.newBuilder
-      .setContigName("abc")
-      .setContigLength(1000000)
-      .setReferenceURL("http://abc")
-      .build
-
-    val a0 = AlignmentRecord.newBuilder()
-      .setRecordGroupName("group0")
-      .setReadName("read0")
-      .setContig(contig)
-      .setStart(100)
-      .setPrimaryAlignment(true)
-      .setReadPaired(false)
-      .setReadMapped(true)
-      .build()
-    val a1 = AlignmentRecord.newBuilder(a0)
-      .setReadName("read1")
-      .setStart(200)
-      .build()
-
-    val saved = sc.parallelize(Seq(a0, a1))
-    val loc = tempLocation()
-    val path = new Path(loc)
-
-    saved.adamParquetSave(loc)
-    try {
-      val loaded = new AlignmentRecordContext(sc).loadADAMFromPaths(Seq(path))
-
-      assert(loaded.count() === saved.count())
-    } catch {
-      case (e: Exception) =>
-        println(e)
-        throw e
-    }
-  }
 
   (1 to 4) foreach { testNumber =>
     val inputName = "interleaved_fastq_sample%d.fq".format(testNumber)
@@ -128,54 +90,6 @@ class ADAMAlignmentRecordContextSuite extends ADAMFunSuite {
     assert(reads.filter(_.getReadPaired).count === 0)
     assert(reads.collect.forall(_.getSequence.toString.length === 250))
     assert(reads.collect.forall(_.getQual.toString.length === 250))
-  }
-
-  sparkTest("read properly paired fastq") {
-    val path1 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_1.fq").getFile
-    val path2 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_2.fq").getFile
-    val reads = new AlignmentRecordContext(sc).adamFastqLoad(path1, path2)
-
-    assert(reads.count === 6)
-    assert(reads.filter(_.getReadPaired).count === 6)
-    assert(reads.filter(_.getProperPair).count === 6)
-    assert(reads.filter(_.getFirstOfPair).count === 3)
-    assert(reads.filter(_.getSecondOfPair).count === 3)
-  }
-
-  sparkTest("read properly paired fastq and force pair fixing") {
-    val path1 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_1.fq").getFile
-    val path2 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_2.fq").getFile
-    val reads = new AlignmentRecordContext(sc).adamFastqLoad(path1, path2, true)
-
-    assert(reads.count === 6)
-    assert(reads.filter(_.getReadPaired).count === 6)
-    assert(reads.filter(_.getProperPair).count === 6)
-    assert(reads.filter(_.getFirstOfPair).count === 3)
-    assert(reads.filter(_.getSecondOfPair).count === 3)
-  }
-
-  sparkTest("read improperly paired fastq by noting size mismatch") {
-    val path1 = ClassLoader.getSystemClassLoader.getResource("improper_pairs_1.fq").getFile
-    val path2 = ClassLoader.getSystemClassLoader.getResource("improper_pairs_2.fq").getFile
-    val reads = new AlignmentRecordContext(sc).adamFastqLoad(path1, path2)
-
-    assert(reads.count === 4)
-    assert(reads.filter(_.getReadPaired).count === 4)
-    assert(reads.filter(_.getProperPair).count === 4)
-    assert(reads.filter(_.getFirstOfPair).count === 2)
-    assert(reads.filter(_.getSecondOfPair).count === 2)
-  }
-
-  /*
-   Little helper function -- because apparently createTempFile creates an actual file, not
-   just a name?  Whereas, this returns the name of something that could be mkdir'ed, in the
-   same location as createTempFile() uses, so therefore the returned path from this method
-   should be suitable for adamParquetSave().
-   */
-  def tempLocation(suffix: String = ".adam"): String = {
-    val tempFile = File.createTempFile("ADAMContextSuite", "")
-    val tempDir = tempFile.getParentFile
-    new File(tempDir, tempFile.getName + suffix).getAbsolutePath
   }
 }
 
