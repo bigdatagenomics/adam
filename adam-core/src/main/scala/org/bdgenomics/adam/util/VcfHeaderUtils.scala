@@ -19,7 +19,6 @@ package org.bdgenomics.adam.util
 
 import org.bdgenomics.adam.models.{ VariantContext, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.apache.spark.rdd.RDD
 import htsjdk.variant.vcf.{
   VCFHeader,

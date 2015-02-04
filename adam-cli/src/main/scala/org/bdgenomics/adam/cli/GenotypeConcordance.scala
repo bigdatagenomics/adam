@@ -25,7 +25,6 @@ import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.bdgenomics.adam.predicates.GenotypeRecordPASSPredicate
 import org.bdgenomics.adam.projections.GenotypeField
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.rdd.variation.ConcordanceTable
 import org.bdgenomics.formats.avro.Genotype
 

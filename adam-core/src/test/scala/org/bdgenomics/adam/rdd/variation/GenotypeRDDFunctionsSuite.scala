@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro._
-import org.bdgenomics.adam.rdd.variation.VariationContext._
-import scala.collection.JavaConversions._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.formats.avro._
+import scala.collection.JavaConversions._
 
 class GenotypeRDDFunctionsSuite extends ADAMFunSuite {
   def v0 = Variant.newBuilder
@@ -56,7 +56,7 @@ class GenotypeRDDFunctionsSuite extends ADAMFunSuite {
   sparkTest("concordance of identical VCFs should be 1.0") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.vcf").getFile
 
-    val gts: RDD[Genotype] = sc.adamVCFLoad(path).flatMap(_.genotypes)
+    val gts: RDD[Genotype] = sc.loadGenotypes(path)
     assert(gts.filter(_.getSampleId == "NA12878").count === 5)
 
     val tables = gts.concordanceWith(gts).collectAsMap

@@ -36,7 +36,6 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
-import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro._
 import org.apache.spark.rdd.RDD
@@ -68,12 +67,12 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkComm
 
   def run(sc: SparkContext, job: Job) {
     log.info("Reading VCF file from %s".format(args.vcfFile))
-    val annotations: RDD[DatabaseVariantAnnotation] = sc.adamVCFAnnotationLoad(args.vcfFile)
+    val annotations: RDD[DatabaseVariantAnnotation] = sc.loadVariantAnnotations(args.vcfFile)
     val count = annotations.count()
     log.info("Converted %d records".format(count))
 
     if (args.currentAnnotations != null) {
-      val existingAnnotations: RDD[DatabaseVariantAnnotation] = sc.adamLoad(args.currentAnnotations)
+      val existingAnnotations: RDD[DatabaseVariantAnnotation] = sc.loadVariantAnnotations(args.currentAnnotations)
       val keyedAnnotations = existingAnnotations.keyBy(anno => new RichVariant(anno.getVariant))
       val joinedAnnotations = keyedAnnotations.join(annotations.keyBy(anno => new RichVariant(anno.getVariant)))
       val mergedAnnotations = joinedAnnotations.map(kv => VariantAnnotationConverter.mergeAnnotations(kv._2._1, kv._2._2))

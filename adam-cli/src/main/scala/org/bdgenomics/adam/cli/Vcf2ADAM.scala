@@ -19,7 +19,6 @@ package org.bdgenomics.adam.cli
 
 import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
@@ -61,7 +60,7 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] wi
     if (dictionary.isDefined)
       log.info("Using contig translation")
 
-    var adamVariants: RDD[VariantContext] = sc.adamVCFLoad(args.vcfPath, dict = dictionary)
+    var adamVariants: RDD[VariantContext] = sc.loadGenotypes(args.vcfPath, sd = dictionary).toVariantContext
     if (args.coalesce > 1) {
       adamVariants = adamVariants.coalesce(args.coalesce, true)
     }
