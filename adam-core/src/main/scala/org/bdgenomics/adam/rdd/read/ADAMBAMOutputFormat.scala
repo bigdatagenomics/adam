@@ -21,7 +21,7 @@ import org.seqdoop.hadoop_bam.{ SAMRecordWritable, KeyIgnoringBAMOutputFormat }
 import htsjdk.samtools.SAMFileHeader
 import org.apache.spark.rdd.InstrumentedOutputFormat
 import org.apache.hadoop.mapreduce.OutputFormat
-import org.bdgenomics.utils.instrumentation.Timers
+import org.bdgenomics.adam.instrumentation.Timers
 
 object ADAMBAMOutputFormat extends Serializable {
 

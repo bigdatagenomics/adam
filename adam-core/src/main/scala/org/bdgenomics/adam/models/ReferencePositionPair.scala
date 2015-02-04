@@ -21,7 +21,7 @@ import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import org.apache.spark.Logging
 import Ordering.Option
-import org.bdgenomics.utils.instrumentation.Timers.CreateReferencePositionPair
+import org.bdgenomics.adam.instrumentation.Timers.CreateReferencePositionPair
 
 object ReferencePositionPair extends Logging {
   def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = CreateReferencePositionPair.time {
