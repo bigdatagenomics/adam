@@ -22,6 +22,7 @@ import java.util.UUID
 import com.google.common.io.Files
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.predicates.HighQualityReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
@@ -196,6 +197,92 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("features/wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val annot: RDD[Feature] = sc.loadFeatures(path)
     assert(annot.count === 10)
+  }
+
+  sparkTest("can read a small .vcf file") {
+    val path = ClassLoader.getSystemClassLoader.getResource("small.vcf").getFile
+
+    val vcs: RDD[VariantContext] = sc.loadGenotypes(path).toVariantContext
+    assert(vcs.count === 5)
+
+    val vc = vcs.first
+    assert(vc.genotypes.size === 3)
+
+    val gt = vc.genotypes.head
+    assert(gt.getVariantCallingAnnotations != null)
+    assert(gt.getVariantCallingAnnotations.getReadDepth === 69)
+    // Recall we are testing parsing, so we assert that our value is
+    // the same as should have been parsed
+    assert(gt.getVariantCallingAnnotations.getClippingRankSum === java.lang.Float.valueOf("0.138"))
+  }
+
+  (1 to 4) foreach { testNumber =>
+    val inputName = "interleaved_fastq_sample%d.ifq".format(testNumber)
+    val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
+
+    sparkTest("import records from interleaved FASTQ: %d".format(testNumber)) {
+
+      val reads = sc.loadAlignments(path)
+      if (testNumber == 1) {
+        assert(reads.count === 6)
+        assert(reads.filter(_.getReadPaired).count === 6)
+        assert(reads.filter(_.getFirstOfPair).count === 3)
+        assert(reads.filter(_.getSecondOfPair).count === 3)
+      } else {
+        assert(reads.count === 4)
+        assert(reads.filter(_.getReadPaired).count === 4)
+        assert(reads.filter(_.getFirstOfPair).count === 2)
+        assert(reads.filter(_.getSecondOfPair).count === 2)
+      }
+
+      assert(reads.collect.forall(_.getSequence.toString.length === 250))
+      assert(reads.collect.forall(_.getQual.toString.length === 250))
+    }
+  }
+
+  sparkTest("import records from interleaved multiline FASTQ") {
+    val path = ClassLoader.getSystemClassLoader.getResource("interleaved_multiline_fastq.ifq").getFile
+    val reads = sc.loadAlignments(path)
+
+    assert(reads.count === 6)
+    assert(reads.filter(_.getReadPaired).count === 6)
+    assert(reads.filter(_.getFirstOfPair).count === 3)
+    assert(reads.filter(_.getSecondOfPair).count === 3)
+    assert(reads.collect.forall(_.getSequence.toString.length === 250))
+    assert(reads.collect.forall(_.getQual.toString.length === 250))
+  }
+
+  (1 to 4) foreach { testNumber =>
+    val inputName = "fastq_sample%d.fq".format(testNumber)
+    val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
+
+    sparkTest("import records from single ended FASTQ: %d".format(testNumber)) {
+
+      val reads = sc.loadAlignments(path)
+      if (testNumber == 1) {
+        assert(reads.count === 6)
+        assert(reads.filter(_.getReadPaired).count === 0)
+      } else if (testNumber == 4) {
+        assert(reads.count === 4)
+        assert(reads.filter(_.getReadPaired).count === 0)
+      } else {
+        assert(reads.count === 5)
+        assert(reads.filter(_.getReadPaired).count === 0)
+      }
+
+      assert(reads.collect.forall(_.getSequence.toString.length === 250))
+      assert(reads.collect.forall(_.getQual.toString.length === 250))
+    }
+  }
+
+  sparkTest("import records from single ended multiline FASTQ") {
+    val path = ClassLoader.getSystemClassLoader.getResource("multiline_fastq.fq").getFile
+    val reads = sc.loadAlignments(path)
+
+    assert(reads.count === 6, "")
+    assert(reads.filter(_.getReadPaired).count === 0)
+    assert(reads.collect.forall(_.getSequence.toString.length === 250))
+    assert(reads.collect.forall(_.getQual.toString.length === 250))
   }
 }
 
