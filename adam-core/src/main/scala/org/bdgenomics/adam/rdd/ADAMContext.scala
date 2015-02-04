@@ -17,10 +17,6 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.utils.instrumentation.Metrics
-import org.seqdoop.hadoop_bam.util.SAMHeaderReader
-import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, SAMRecordWritable }
 import java.util.regex.Pattern
 import htsjdk.samtools.SAMFileHeader
 import org.apache.avro.Schema
@@ -28,6 +24,7 @@ import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
+import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.{ Logging, SparkConf, SparkContext }
 import org.bdgenomics.adam.converters.{ FastaConverter, SAMRecordConverter }
@@ -39,10 +36,14 @@ import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDDFunctions
 import org.bdgenomics.adam.rdd.features._
 import org.bdgenomics.adam.rdd.pileup.{ PileupRDDFunctions, RodRDDFunctions }
 import org.bdgenomics.adam.rdd.read.{ AlignmentRecordContext, AlignmentRecordRDDFunctions }
-import org.bdgenomics.adam.rdd.variation.VariationContext._
+import org.bdgenomics.adam.rdd.variation._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro._
+import org.bdgenomics.utils.instrumentation.Timers._
+import org.bdgenomics.utils.instrumentation.Metrics
+import org.seqdoop.hadoop_bam.util.SAMHeaderReader
+import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, SAMRecordWritable }
 import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -69,6 +70,10 @@ object ADAMContext {
 
   // Add methods specific to the ADAMNucleotideContig RDDs
   implicit def rddToContigFragmentRDD(rdd: RDD[NucleotideContigFragment]) = new NucleotideContigFragmentRDDFunctions(rdd)
+
+  // implicit conversions for variant related rdds
+  implicit def rddToVariantContextRDD(rdd: RDD[VariantContext]) = new VariantContextRDDFunctions(rdd)
+  implicit def rddToADAMGenotypeRDD(rdd: RDD[Genotype]) = new GenotypeRDDFunctions(rdd)
 
   // add gene feature rdd functions
   implicit def convertBaseFeatureRDDToGeneFeatureRDD(rdd: RDD[Feature]) = new GeneFeatureRDDFunctions(rdd)
@@ -298,18 +303,9 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       None
   }
 
-  private def maybeLoadVcf[U <: ADAMPredicate[Genotype]](
-    filePath: String,
-    predicate: Option[Class[U]] = None,
-    projection: Option[Schema] = None): Option[RDD[Genotype]] = {
+  private def maybeLoadVcf(filePath: String, sd: Option[SequenceDictionary]): Option[RDD[VariantContext]] = {
     if (filePath.endsWith(".vcf")) {
-      if (projection.isDefined) {
-        log.warn("Projection is ignored when loading a VCF file")
-      }
-      val variants = sc.adamVCFLoad(filePath)
-        .flatMap(_.genotypes)
-
-      Some(applyPredicate(variants, predicate))
+      Some(VariationContext.adamVCFLoad(filePath, sc, sd))
     } else
       None
   }
@@ -358,6 +354,34 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     }
   }
 
+  private def maybeLoadVcfAnnotations[U <: ADAMPredicate[DatabaseVariantAnnotation]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None,
+    sd: Option[SequenceDictionary]): Option[RDD[DatabaseVariantAnnotation]] = {
+    if (filePath.endsWith(".vcf")) {
+      if (projection.isDefined) {
+        log.warn("Projection is ignored when loading a VCF file")
+      }
+      val annotations = VariationContext.adamVCFAnnotationLoad(filePath, sc, sd)
+
+      Some(applyPredicate(annotations, predicate))
+    } else
+      None
+  }
+
+  def loadVariantAnnotations[U <: ADAMPredicate[DatabaseVariantAnnotation]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None,
+    sd: Option[SequenceDictionary] = None): RDD[DatabaseVariantAnnotation] = {
+    maybeLoadVcfAnnotations(filePath, predicate, projection, sd)
+      .getOrElse({
+        sd.foreach(sd => log.warn("Sequence dictionary for translation ignored if loading ADAM from Parquet."))
+        adamLoad[DatabaseVariantAnnotation, U](filePath, predicate, projection)
+      })
+  }
+
   def loadFeatures[U <: ADAMPredicate[Feature]](
     filePath: String,
     predicate: Option[Class[U]] = None,
@@ -393,11 +417,25 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
   def loadGenotypes[U <: ADAMPredicate[Genotype]](
     filePath: String,
     predicate: Option[Class[U]] = None,
-    projection: Option[Schema] = None): RDD[Genotype] = {
-    maybeLoadVcf(filePath, predicate, projection)
-      .getOrElse(
+    projection: Option[Schema] = None,
+    sd: Option[SequenceDictionary] = None): RDD[Genotype] = {
+    maybeLoadVcf(filePath, sd)
+      .fold({
+        sd.foreach(sd => log.warn("Sequence dictionary for translation ignored if loading ADAM from Parquet."))
         adamLoad[Genotype, U](filePath, predicate, projection)
-      )
+      })(vcRdd => applyPredicate(vcRdd.flatMap(_.genotypes), predicate))
+  }
+
+  def loadVariants[U <: ADAMPredicate[Variant]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None,
+    sd: Option[SequenceDictionary] = None): RDD[Variant] = {
+    maybeLoadVcf(filePath, sd)
+      .fold({
+        sd.foreach(sd => log.warn("Sequence dictionary for translation ignored if loading ADAM from Parquet."))
+        adamLoad[Variant, U](filePath, predicate, projection)
+      })(vcRdd => applyPredicate(vcRdd.map(_.variant.variant), predicate))
   }
 
   def loadAlignments[U <: ADAMPredicate[AlignmentRecord]](

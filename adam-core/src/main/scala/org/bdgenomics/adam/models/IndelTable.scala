@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.variation.VariationContext._
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Variant
 
 class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Serializable with Logging {
@@ -54,8 +54,8 @@ object IndelTable {
    * @return Returns a table with the known indels populated.
    */
   def apply(knownIndelsFile: String, sc: SparkContext): IndelTable = {
-    val rdd: RDD[VariantContext] = sc.adamVCFLoad(knownIndelsFile)
-    apply(rdd.map(_.variant.variant))
+    val rdd: RDD[Variant] = sc.loadVariants(knownIndelsFile)
+    apply(rdd)
   }
 
   /**

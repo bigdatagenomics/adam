@@ -17,11 +17,13 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro._
+import com.google.common.io.Files
+import java.io.File
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
-import org.bdgenomics.adam.rdd.variation.VariationContext._
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.formats.avro._
 
 class ADAMVariationRDDFunctionsSuite extends ADAMFunSuite {
 
@@ -78,4 +80,28 @@ class ADAMVariationRDDFunctionsSuite extends ADAMFunSuite {
     assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
   }
 
+  val tempDir = Files.createTempDir()
+
+  def variants: RDD[VariantContext] = {
+    val v0 = Variant.newBuilder
+      .setContig(Contig.newBuilder.setContigName("chr11").build)
+      .setStart(17409572)
+      .setReferenceAllele("T")
+      .setAlternateAllele("C")
+      .build
+
+    val g0 = Genotype.newBuilder().setVariant(v0)
+      .setSampleId("NA12878")
+      .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
+      .build
+
+    sc.parallelize(List(
+      VariantContext(v0, Seq(g0))))
+  }
+
+  sparkTest("can write, then read in .vcf file") {
+    val path = new File(tempDir, "test.vcf")
+    variants.adamVCFSave(path.getAbsolutePath)
+    assert(path.exists)
+  }
 }

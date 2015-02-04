@@ -27,29 +27,11 @@ import org.bdgenomics.formats.avro.{ GenotypeAllele, Genotype, Variant, Contig }
 import scala.collection.JavaConversions._
 
 class ADAMVariationContextSuite extends ADAMFunSuite {
-  val tempDir = Files.createTempDir()
-
-  def variants: RDD[VariantContext] = {
-    val v0 = Variant.newBuilder
-      .setContig(Contig.newBuilder.setContigName("chr11").build)
-      .setStart(17409572)
-      .setReferenceAllele("T")
-      .setAlternateAllele("C")
-      .build
-
-    val g0 = Genotype.newBuilder().setVariant(v0)
-      .setSampleId("NA12878")
-      .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
-      .build
-
-    sc.parallelize(List(
-      VariantContext(v0, Seq(g0))))
-  }
 
   sparkTest("can read a small .vcf file") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.vcf").getFile
 
-    val vcs: RDD[VariantContext] = sc.adamVCFLoad(path)
+    val vcs: RDD[VariantContext] = VariationContext.adamVCFLoad(path, sc)
     assert(vcs.count === 5)
 
     val vc = vcs.first
@@ -61,11 +43,5 @@ class ADAMVariationContextSuite extends ADAMFunSuite {
     // Recall we are testing parsing, so we assert that our value is
     // the same as should have been parsed
     assert(gt.getVariantCallingAnnotations.getClippingRankSum === java.lang.Float.valueOf("0.138"))
-  }
-
-  sparkTest("can write, then read in .vcf file") {
-    val path = new File(tempDir, "test.vcf")
-    sc.adamVCFSave(path.getAbsolutePath, variants)
-    assert(path.exists)
   }
 }

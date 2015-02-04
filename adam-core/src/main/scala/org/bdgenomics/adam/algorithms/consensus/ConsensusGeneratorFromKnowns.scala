@@ -22,8 +22,8 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
-import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.formats.avro.Variant
 
 class ConsensusGeneratorFromKnowns(file: String, sc: SparkContext) extends ConsensusGenerator {
 
@@ -36,10 +36,9 @@ class ConsensusGeneratorFromKnowns(file: String, sc: SparkContext) extends Conse
    * @return Returns an option which wraps an RDD of indel realignment targets.
    */
   def targetsToAdd(): Option[RDD[IndelRealignmentTarget]] = {
-    val rdd: RDD[VariantContext] = sc.adamVCFLoad(file)
+    val rdd: RDD[Variant] = sc.loadVariants(file)
 
-    Some(rdd.map(_.variant.variant)
-      .filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
+    Some(rdd.filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
       .map(v => ReferenceRegion(v.getContig.getContigName, v.getStart, v.getStart + v.getReferenceAllele.length))
       .map(r => new IndelRealignmentTarget(Some(r), r)))
   }
