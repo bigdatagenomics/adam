@@ -21,7 +21,6 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMSaveArgs
-import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.bdgenomics.adam.rdd.ADAMContext._

@@ -35,15 +35,10 @@ import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.AlignmentRecord
 import parquet.hadoop.util.ContextUtil
 
-object AlignmentRecordContext extends Serializable with Logging {
-  // Add ADAM Spark context methods
-  implicit def adamContextToADAMContext(ac: ADAMContext): AlignmentRecordContext = new AlignmentRecordContext(ac.sc)
+private[rdd] object AlignmentRecordContext extends Serializable with Logging {
 
-  // Add methods specific to Read RDDs
-  implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
-
-  private[rdd] def adamInterleavedFastqLoad(sc: SparkContext,
-                                            filePath: String): RDD[AlignmentRecord] = {
+  def adamInterleavedFastqLoad(sc: SparkContext,
+                               filePath: String): RDD[AlignmentRecord] = {
     log.info("Reading interleaved FASTQ file format %s to create RDD".format(filePath))
 
     val job = HadoopUtil.newJob(sc)
@@ -58,8 +53,8 @@ object AlignmentRecordContext extends Serializable with Logging {
     records.flatMap(fastqRecordConverter.convertPair)
   }
 
-  private[rdd] def adamUnpairedFastqLoad(sc: SparkContext,
-                                         filePath: String): RDD[AlignmentRecord] = {
+  def adamUnpairedFastqLoad(sc: SparkContext,
+                            filePath: String): RDD[AlignmentRecord] = {
     log.info("Reading unpaired FASTQ file format %s to create RDD".format(filePath))
 
     val job = HadoopUtil.newJob(sc)
@@ -73,9 +68,6 @@ object AlignmentRecordContext extends Serializable with Logging {
     val fastqRecordConverter = new FastqRecordConverter
     records.map(fastqRecordConverter.convertRead)
   }
-}
-
-class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Logging {
 
   /**
    * Load AlignmentRecords from two paired-end FASTQ files.
@@ -84,7 +76,8 @@ class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Log
    * @param secondPairPath Path to read second-mates from
    * @param fixPairs Iff true, joins the first- and second-reads around their read name (minus the /1 or /2 suffix)
    */
-  def adamFastqLoad(firstPairPath: String,
+  def adamFastqLoad(sc: SparkContext,
+                    firstPairPath: String,
                     secondPairPath: String,
                     fixPairs: Boolean = false,
                     validationStringency: ValidationStringency = ValidationStringency.LENIENT): RDD[AlignmentRecord] = {
@@ -164,28 +157,5 @@ class AlignmentRecordContext(val sc: SparkContext) extends Serializable with Log
 
     // return
     finalRdd
-  }
-
-  /**
-   * Takes a sequence of Path objects (e.g. the return value of findFiles).  Treats each path as
-   * corresponding to a Read set -- loads each Read set, converts each set to use the
-   * same SequenceDictionary, and returns the union of the RDDs.
-   *
-   * (GenomeBridge is using this to load BAMs that have been split into multiple files per sample,
-   * for example, one-BAM-per-chromosome.)
-   *
-   * @param paths The locations of the parquet files to load
-   * @return a single RDD[Read] that contains the union of the AlignmentRecords in the argument paths.
-   */
-  def loadADAMFromPaths(paths: Seq[Path]): RDD[AlignmentRecord] = {
-    def loadADAMs(path: Path): (SequenceDictionary, RDD[AlignmentRecord]) = {
-      val dict = sc.adamDictionaryLoad[AlignmentRecord](path.toString)
-      val rdd: RDD[AlignmentRecord] = sc.loadAlignments(path.toString)
-      (dict, rdd)
-    }
-
-    // Remapreferenceid code deleted since we don't remap sequence
-    // dictionaries anymore.
-    sc.union(paths.map(loadADAMs).map(v => v._2))
   }
 }
