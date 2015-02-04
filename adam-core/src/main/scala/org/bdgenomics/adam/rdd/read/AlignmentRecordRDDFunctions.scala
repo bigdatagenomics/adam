@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.rdd.read
 
 import java.io.StringWriter
-
 import htsjdk.samtools.{ ValidationStringency, SAMTextHeaderCodec, SAMTextWriter, SAMFileHeader }
 import org.apache.spark.storage.StorageLevel
 import org.seqdoop.hadoop_bam.SAMRecordWritable
@@ -35,7 +34,6 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ ADAMSaveArgs, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
-import org.bdgenomics.adam.rdd.read.AlignmentRecordContext._
 import org.bdgenomics.adam.rdd.read.correction.{ ErrorCorrection, TrimReads }
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
@@ -604,5 +602,74 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
           .map(record => arc.convertToFastq(record))
           .saveAsTextFile(fileName)
     }
+  }
+
+  /**
+   * Reassembles read pairs from two sets of unpaired reads. The assumption is that the two sets
+   * were _originally_ paired together.
+   *
+   * @note The RDD that this is called on should be the RDD with the first read from the pair.
+   *
+   * @param secondPairRdd The rdd containing the second read from the pairs.
+   * @param validationStringency How stringently to validate the reads.
+   * @return Returns an RDD with the pair information recomputed.
+   */
+  def adamRePairReads(secondPairRdd: RDD[AlignmentRecord],
+                      validationStringency: ValidationStringency = ValidationStringency.LENIENT): RDD[AlignmentRecord] = {
+    // cache rdds
+    val firstPairRdd = rdd.cache()
+    secondPairRdd.cache()
+
+    val firstRDDKeyedByReadName = firstPairRdd.keyBy(_.getReadName.toString.dropRight(2))
+    val secondRDDKeyedByReadName = secondPairRdd.keyBy(_.getReadName.toString.dropRight(2))
+
+    // all paired end reads should have the same name, except for the last two
+    // characters, which will be _1/_2
+    val joinedRDD: RDD[(String, (AlignmentRecord, AlignmentRecord))] =
+      if (validationStringency == ValidationStringency.STRICT) {
+        firstRDDKeyedByReadName.cogroup(secondRDDKeyedByReadName).map {
+          case (readName, (firstReads, secondReads)) =>
+            (firstReads.toList, secondReads.toList) match {
+              case (firstRead :: Nil, secondRead :: Nil) =>
+                (readName, (firstRead, secondRead))
+              case _ =>
+                throw new Exception(
+                  "Expected %d first reads and %d second reads for name %s; expected exactly one of each:\n%s\n%s".format(
+                    firstReads.size,
+                    secondReads.size,
+                    readName,
+                    firstReads.map(_.getReadName.toString).mkString("\t", "\n\t", ""),
+                    secondReads.map(_.getReadName.toString).mkString("\t", "\n\t", "")
+                  )
+                )
+            }
+        }
+
+      } else {
+        firstRDDKeyedByReadName.join(secondRDDKeyedByReadName)
+      }
+
+    val finalRdd = joinedRDD
+      .flatMap(kv => Seq(
+        AlignmentRecord.newBuilder(kv._2._1)
+          .setReadPaired(true)
+          .setProperPair(true)
+          .setFirstOfPair(true)
+          .setSecondOfPair(false)
+          .build(),
+        AlignmentRecord.newBuilder(kv._2._2)
+          .setReadPaired(true)
+          .setProperPair(true)
+          .setFirstOfPair(false)
+          .setSecondOfPair(true)
+          .build()
+      ))
+
+    // uncache temp rdds
+    firstPairRdd.unpersist()
+    secondPairRdd.unpersist()
+
+    // return
+    finalRdd
   }
 }

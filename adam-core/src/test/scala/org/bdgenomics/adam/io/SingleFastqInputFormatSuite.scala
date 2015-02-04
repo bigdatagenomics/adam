@@ -23,12 +23,12 @@ import org.apache.hadoop.io.Text
 
 class SingleFastqInputFormatSuite extends ADAMFunSuite {
   (1 to 4) foreach { testNumber =>
-    val inputName = "interleaved_fastq_sample%d.fq".format(testNumber)
-    val expectedOutputName = "single_" + inputName.drop(12) + ".output"
+    val inputName = "fastq_sample%d.fq".format(testNumber)
+    val expectedOutputName = "single_" + inputName + ".output"
     val expectedOutputPath = ClassLoader.getSystemClassLoader.getResource(expectedOutputName).getFile
     val expectedOutputData = scala.io.Source.fromFile(expectedOutputPath).mkString
 
-    sparkTest("interleaved FASTQ hadoop reader: %s->%s".format(inputName, expectedOutputName)) {
+    sparkTest("FASTQ hadoop reader: %s->%s".format(inputName, expectedOutputName)) {
       def ifq_reader: RDD[(Void, Text)] = {
         val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
         sc.newAPIHadoopFile(path,
@@ -50,9 +50,9 @@ class SingleFastqInputFormatSuite extends ADAMFunSuite {
       assert(testOutput.toString() == expectedOutputData)
     }
   }
-  sparkTest("interleaved multiline FASTQ hadoop reader") {
-    val inputName = "interleaved_multiline_fastq.fq"
-    val expectedOutputName = "single_" + inputName.drop(12) + ".output"
+  sparkTest("multiline FASTQ hadoop reader") {
+    val inputName = "multiline_fastq.fq"
+    val expectedOutputName = "single_" + inputName + ".output"
     val expectedOutputPath = ClassLoader.getSystemClassLoader.getResource(expectedOutputName).getFile
     val expectedOutputData = scala.io.Source.fromFile(expectedOutputPath).mkString
     def ifq_reader: RDD[(Void, Text)] = {

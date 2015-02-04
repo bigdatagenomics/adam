@@ -27,23 +27,23 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.{ Logging, SparkConf, SparkContext }
-import org.bdgenomics.adam.converters.{ FastaConverter, SAMRecordConverter }
+import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
+import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDDFunctions
 import org.bdgenomics.adam.rdd.features._
 import org.bdgenomics.adam.rdd.pileup.{ PileupRDDFunctions, RodRDDFunctions }
-import org.bdgenomics.adam.rdd.read.{ AlignmentRecordContext, AlignmentRecordRDDFunctions }
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDDFunctions
 import org.bdgenomics.adam.rdd.variation._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.utils.instrumentation.Timers._
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
-import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, SAMRecordWritable }
+import org.seqdoop.hadoop_bam._
 import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -284,28 +284,57 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
     if (filePath.endsWith(".ifq")) {
 
+      log.info("Reading interleaved FASTQ file format %s to create RDD".format(filePath))
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading an interleaved FASTQ file")
       }
-      val reads = AlignmentRecordContext.adamInterleavedFastqLoad(sc, filePath)
 
-      Some(applyPredicate(reads, predicate))
+      val job = HadoopUtil.newJob(sc)
+      val records = sc.newAPIHadoopFile(
+        filePath,
+        classOf[InterleavedFastqInputFormat],
+        classOf[Void],
+        classOf[Text],
+        ContextUtil.getConfiguration(job)
+      )
 
+      // convert records
+      val fastqRecordConverter = new FastqRecordConverter
+      Some(applyPredicate(records.flatMap(fastqRecordConverter.convertPair), predicate))
     } else if (filePath.endsWith(".fastq") || filePath.endsWith(".fq")) {
 
+      log.info("Reading unpaired FASTQ file format %s to create RDD".format(filePath))
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a FASTQ file")
       }
-      val reads = AlignmentRecordContext.adamUnpairedFastqLoad(sc, filePath)
 
-      Some(applyPredicate(reads, predicate))
+      val job = HadoopUtil.newJob(sc)
+      val records = sc.newAPIHadoopFile(
+        filePath,
+        classOf[SingleFastqInputFormat],
+        classOf[Void],
+        classOf[Text],
+        ContextUtil.getConfiguration(job)
+      )
+
+      // convert records
+      val fastqRecordConverter = new FastqRecordConverter
+      Some(applyPredicate(records.map(fastqRecordConverter.convertRead), predicate))
     } else
       None
   }
 
   private def maybeLoadVcf(filePath: String, sd: Option[SequenceDictionary]): Option[RDD[VariantContext]] = {
     if (filePath.endsWith(".vcf")) {
-      Some(VariationContext.adamVCFLoad(filePath, sc, sd))
+      log.info("Reading VCF file from %s".format(filePath))
+      val job = HadoopUtil.newJob(sc)
+      val vcc = new VariantContextConverter(sd)
+      val records = sc.newAPIHadoopFile(
+        filePath,
+        classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
+        ContextUtil.getConfiguration(job))
+
+      Some(records.flatMap(p => vcc.convert(p._2.get)))
     } else
       None
   }
@@ -360,12 +389,19 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     projection: Option[Schema] = None,
     sd: Option[SequenceDictionary]): Option[RDD[DatabaseVariantAnnotation]] = {
     if (filePath.endsWith(".vcf")) {
+      log.info("Reading VCF file from %s".format(filePath))
       if (projection.isDefined) {
         log.warn("Projection is ignored when loading a VCF file")
       }
-      val annotations = VariationContext.adamVCFAnnotationLoad(filePath, sc, sd)
 
-      Some(applyPredicate(annotations, predicate))
+      val job = HadoopUtil.newJob(sc)
+      val vcc = new VariantContextConverter(sd)
+      val records = sc.newAPIHadoopFile(
+        filePath,
+        classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
+        ContextUtil.getConfiguration(job))
+
+      Some(applyPredicate(records.map(p => vcc.convertToAnnotation(p._2.get)), predicate))
     } else
       None
   }
