@@ -22,7 +22,7 @@ import org.bdgenomics.adam.models.{ RecordGroupDictionary, SAMFileHeaderWritable
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.bdgenomics.utils.instrumentation.Timers._
+import org.bdgenomics.adam.instrumentation.Timers._
 
 class AlignmentRecordConverter extends Serializable {
 

@@ -21,7 +21,7 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.DecadentRead
 import org.bdgenomics.adam.util.QualityScore
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.bdgenomics.utils.instrumentation.Timers._
+import org.bdgenomics.adam.instrumentation.Timers._
 import scala.math.{ exp, log }
 
 class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)

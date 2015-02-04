@@ -22,7 +22,7 @@ import org.apache.avro.specific.SpecificRecord
 import org.apache.spark.Logging
 import org.apache.spark.rdd.{ InstrumentedOutputFormat, RDD }
 import org.apache.spark.rdd.MetricsContext._
-import org.bdgenomics.utils.instrumentation.Timers._
+import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.util.{
   HadoopUtil,

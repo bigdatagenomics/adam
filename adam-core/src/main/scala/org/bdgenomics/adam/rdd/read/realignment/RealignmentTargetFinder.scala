@@ -21,7 +21,7 @@ import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.utils.instrumentation.Timers._
+import org.bdgenomics.adam.instrumentation.Timers._
 import scala.annotation.tailrec
 import scala.collection.immutable.TreeSet
 import com.sun.xml.internal.bind.v2.TODO

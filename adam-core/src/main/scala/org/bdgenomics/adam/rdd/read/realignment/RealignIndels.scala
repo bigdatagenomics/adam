@@ -27,7 +27,7 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import org.bdgenomics.adam.util.MdTag
-import org.bdgenomics.utils.instrumentation.Timers._
+import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.annotation.tailrec
 import scala.collection.immutable.{ NumericRange, TreeSet }
