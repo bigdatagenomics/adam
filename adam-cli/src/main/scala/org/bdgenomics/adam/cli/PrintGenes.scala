@@ -18,15 +18,12 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.features.FeaturesContext._
-import org.bdgenomics.adam.models.GeneContext._
-import org.bdgenomics.adam.rdd.features.GeneFeatureRDD._
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Feature
 import org.kohsuke.args4j.{ Option => option, Argument }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.apache.spark.SparkContext
 
 object PrintGenes extends ADAMCommandCompanion {
   val commandName: String = "print_genes"
@@ -48,8 +45,7 @@ class PrintGenes(protected val args: PrintGenesArgs)
   val companion = PrintGenes
 
   def run(sc: SparkContext, job: Job): Unit = {
-    val features: RDD[Feature] = sc.adamGTFFeatureLoad(args.gtfInput)
-    val genes: RDD[Gene] = features.asGenes()
+    val genes: RDD[Gene] = sc.loadGenes(args.gtfInput)
 
     genes.map(printGene).collect().foreach(println)
   }

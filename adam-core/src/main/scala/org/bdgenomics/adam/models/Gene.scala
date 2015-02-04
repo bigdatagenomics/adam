@@ -19,7 +19,7 @@ package org.bdgenomics.adam.models
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.features.GeneFeatureRDD._
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.SequenceUtils
 import org.bdgenomics.formats.avro.{ Strand, Feature }
 
@@ -213,22 +213,6 @@ case class CDS(transcriptId: String, strand: Boolean, region: ReferenceRegion)
  */
 case class UTR(transcriptId: String, strand: Boolean, region: ReferenceRegion)
     extends BlockExtractable(strand, region) {
-}
-
-object GeneContext {
-  implicit def sparkContextToGeneContext(sc: SparkContext): GeneContext = new GeneContext(sc)
-}
-
-class GeneContext(sc: SparkContext) {
-
-  // This import has to go here and not at the top level, because there's a
-  // conflict with another implicit used in asGenes, below.
-  import org.bdgenomics.adam.rdd.ADAMContext._
-
-  def loadGTFGenes(filename: String): RDD[Gene] = {
-    val features: RDD[Feature] = sc.adamLoad(filename)
-    features.asGenes()
-  }
 }
 
 object ReferenceUtils {
