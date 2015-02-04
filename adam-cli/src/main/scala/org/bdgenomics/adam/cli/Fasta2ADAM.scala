@@ -20,8 +20,6 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentContext
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object Fasta2ADAM extends ADAMCommandCompanion {
@@ -51,7 +49,7 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fa
 
   def run(sc: SparkContext, job: Job) {
     log.info("Loading FASTA data from disk.")
-    val adamFasta = new NucleotideContigFragmentContext(sc).adamSequenceLoad(args.fastaFile, args.fragmentLength)
+    val adamFasta = sc.loadSequence(args.fastaFile, fragmentLength = args.fragmentLength)
     if (args.verbose) {
       println("FASTA contains:")
       println(adamFasta.adamGetSequenceDictionary())

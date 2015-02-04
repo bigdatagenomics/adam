@@ -20,11 +20,10 @@ package org.bdgenomics.adam.rdd.contig
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 
-class ADAMRDDFunctionsSuite extends ADAMFunSuite {
+class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
 
   sparkTest("generate sequence dict from fasta") {
     val contig0 = Contig.newBuilder

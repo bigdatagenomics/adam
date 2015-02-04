@@ -26,14 +26,16 @@ import htsjdk.samtools.SAMFileHeader
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.{ FileSystem, Path }
-import org.apache.hadoop.io.LongWritable
+import org.apache.hadoop.io.{ LongWritable, Text }
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.{ Logging, SparkConf, SparkContext }
-import org.bdgenomics.adam.converters.SAMRecordConverter
+import org.bdgenomics.adam.converters.{ FastaConverter, SAMRecordConverter }
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDDFunctions
 import org.bdgenomics.adam.rdd.pileup.{ PileupRDDFunctions, RodRDDFunctions }
 import org.bdgenomics.adam.rdd.read.{ AlignmentRecordContext, AlignmentRecordRDDFunctions }
 import org.bdgenomics.adam.rdd.variation.VariationContext._
@@ -63,6 +65,9 @@ object ADAMContext {
 
   // Add methods specific to the Rod RDDs
   implicit def rddToRodRDD(rdd: RDD[Rod]) = new RodRDDFunctions(rdd)
+
+  // Add methods specific to the ADAMNucleotideContig RDDs
+  implicit def rddToContigFragmentRDD(rdd: RDD[NucleotideContigFragment]) = new NucleotideContigFragmentRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
@@ -303,6 +308,39 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       Some(applyPredicate(variants, predicate))
     } else
       None
+  }
+
+  private def maybeLoadFasta[U <: ADAMPredicate[NucleotideContigFragment]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None,
+    fragmentLength: Long): Option[RDD[NucleotideContigFragment]] = {
+    if (filePath.endsWith(".fasta") || filePath.endsWith(".fa")) {
+      val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(filePath,
+        classOf[TextInputFormat],
+        classOf[LongWritable],
+        classOf[Text])
+
+      val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
+
+      log.info("Converting FASTA to ADAM.")
+      Some(FastaConverter(remapData, fragmentLength))
+    } else {
+      None
+    }
+  }
+
+  def loadSequence[U <: ADAMPredicate[NucleotideContigFragment]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None,
+    fragmentLength: Long = 10000): RDD[NucleotideContigFragment] = {
+    maybeLoadFasta(filePath,
+      predicate,
+      projection,
+      fragmentLength).getOrElse(
+        adamLoad[NucleotideContigFragment, U](filePath, predicate, projection)
+      )
   }
 
   def loadGenotypes[U <: ADAMPredicate[Genotype]](
