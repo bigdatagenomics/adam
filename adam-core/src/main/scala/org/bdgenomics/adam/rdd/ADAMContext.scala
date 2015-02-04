@@ -36,6 +36,7 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDDFunctions
+import org.bdgenomics.adam.rdd.features._
 import org.bdgenomics.adam.rdd.pileup.{ PileupRDDFunctions, RodRDDFunctions }
 import org.bdgenomics.adam.rdd.read.{ AlignmentRecordContext, AlignmentRecordRDDFunctions }
 import org.bdgenomics.adam.rdd.variation.VariationContext._
@@ -68,6 +69,9 @@ object ADAMContext {
 
   // Add methods specific to the ADAMNucleotideContig RDDs
   implicit def rddToContigFragmentRDD(rdd: RDD[NucleotideContigFragment]) = new NucleotideContigFragmentRDDFunctions(rdd)
+
+  // add gene feature rdd functions
+  implicit def convertBaseFeatureRDDToGeneFeatureRDD(rdd: RDD[Feature]) = new GeneFeatureRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
@@ -328,6 +332,49 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     } else {
       None
     }
+  }
+
+  private def maybeLoadGTF(filePath: String): Option[RDD[Feature]] = {
+    if (filePath.endsWith(".gtf") || filePath.endsWith(".gff")) {
+      Some(sc.textFile(filePath).flatMap(new GTFParser().parse))
+    } else {
+      None
+    }
+  }
+
+  private def maybeLoadBED(filePath: String): Option[RDD[Feature]] = {
+    if (filePath.endsWith(".bed")) {
+      Some(sc.textFile(filePath).flatMap(new BEDParser().parse))
+    } else {
+      None
+    }
+  }
+
+  private def maybeLoadNarrowPeak(filePath: String): Option[RDD[Feature]] = {
+    if (filePath.toLowerCase.endsWith(".narrowpeak")) {
+      Some(sc.textFile(filePath).flatMap(new NarrowPeakParser().parse))
+    } else {
+      None
+    }
+  }
+
+  def loadFeatures[U <: ADAMPredicate[Feature]](
+    filePath: String,
+    predicate: Option[Class[U]] = None,
+    projection: Option[Schema] = None): RDD[Feature] = {
+    maybeLoadBED(filePath).orElse(
+      maybeLoadGTF(filePath)
+    ).orElse(
+        maybeLoadNarrowPeak(filePath)
+      ).fold(adamLoad[Feature, U](filePath, predicate, projection))(applyPredicate(_, predicate))
+  }
+
+  def loadGenes[U <: ADAMPredicate[Feature]](filePath: String,
+                                             predicate: Option[Class[U]] = None,
+                                             projection: Option[Schema] = None): RDD[Gene] = {
+    new GeneFeatureRDDFunctions(maybeLoadGTF(filePath)
+      .fold(adamLoad[Feature, U](filePath, predicate, projection))(applyPredicate(_, predicate)))
+      .asGenes()
   }
 
   def loadSequence[U <: ADAMPredicate[NucleotideContigFragment]](

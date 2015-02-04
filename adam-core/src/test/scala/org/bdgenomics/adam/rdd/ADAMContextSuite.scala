@@ -26,7 +26,7 @@ import org.bdgenomics.adam.predicates.HighQualityReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro._
 
 class ADAMContextSuite extends ADAMFunSuite {
 
@@ -177,6 +177,25 @@ class ADAMContextSuite extends ADAMFunSuite {
     val tempFile = File.createTempFile("ADAMContextSuite", "")
     val tempDir = tempFile.getParentFile
     new File(tempDir, tempFile.getName + suffix).getAbsolutePath
+  }
+
+  sparkTest("Can read a .gtf file") {
+    val path = testFile("features/Homo_sapiens.GRCh37.75.trun20.gtf")
+    val features: RDD[Feature] = sc.loadFeatures(path)
+    assert(features.count === 15)
+  }
+
+  sparkTest("Can read a .bed file") {
+    // note: this .bed doesn't actually conform to the UCSC BED spec...sigh...
+    val path = testFile("features/gencode.v7.annotation.trunc10.bed")
+    val features: RDD[Feature] = sc.loadFeatures(path)
+    assert(features.count === 10)
+  }
+
+  sparkTest("Can read a .narrowPeak file") {
+    val path = testFile("features/wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val annot: RDD[Feature] = sc.loadFeatures(path)
+    assert(annot.count === 10)
   }
 }
 

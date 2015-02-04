@@ -19,23 +19,18 @@ package org.bdgenomics.adam.models
 
 import java.io.{ FileInputStream, File }
 import java.util.zip.GZIPInputStream
-
 import org.apache.spark.SparkContext._
-import org.bdgenomics.adam.rdd.ADAMContext._
-import GeneContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.features.GeneFeatureRDD._
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.adam.rdd.features.FeaturesContext._
 import org.bdgenomics.formats.avro.Feature
-
 import scala.io.Source
 
 class GeneSuite extends ADAMFunSuite {
 
   sparkTest("can load a set of gene models from an Ensembl GTF file") {
     val path = testFile("features/Homo_sapiens.GRCh37.75.trun100.gtf")
-    val features: RDD[Feature] = sc.adamGTFFeatureLoad(path)
+    val features: RDD[Feature] = sc.loadFeatures(path)
 
     val genes: RDD[Gene] = features.asGenes()
     assert(genes.count() === 4)
@@ -49,7 +44,7 @@ class GeneSuite extends ADAMFunSuite {
 
   sparkTest("can load a set of gene models from a Gencode GTF file") {
     val path = testFile("features/gencode.v19.annotation.chr20.250k.gtf")
-    val features: RDD[Feature] = sc.adamGTFFeatureLoad(path)
+    val features: RDD[Feature] = sc.loadFeatures(path)
 
     val genes: RDD[Gene] = features.asGenes()
     assert(genes.count() === 8)
@@ -102,7 +97,7 @@ class GeneSuite extends ADAMFunSuite {
         (key.split("\\|").head, seq)
     }
 
-    val features: RDD[Feature] = sc.adamGTFFeatureLoad(path)
+    val features: RDD[Feature] = sc.loadFeatures(path)
     val genes: RDD[Gene] = features.asGenes()
     val transcripts: Seq[Transcript] = genes.flatMap(g => g.transcripts).take(100)
 

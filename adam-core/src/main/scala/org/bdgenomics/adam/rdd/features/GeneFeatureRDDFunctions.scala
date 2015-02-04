@@ -25,19 +25,13 @@ import org.bdgenomics.adam.rich.ReferenceMappingContext.FeatureReferenceMapping
 import org.bdgenomics.formats.avro.{ Strand, Feature }
 import scala.collection.JavaConversions._
 
-object GeneFeatureRDD {
-  implicit def convertBaseFeatureRDDToGeneFeatureRDD(rdd: RDD[Feature]): GeneFeatureRDD =
-    new GeneFeatureRDD(rdd)
+class GeneFeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Logging {
 
-  def strand(str: Strand): Boolean =
-    str match {
-      case Strand.Forward     => true
-      case Strand.Reverse     => false
-      case Strand.Independent => true
-    }
-}
-
-class GeneFeatureRDD(featureRDD: RDD[Feature]) extends Serializable with Logging {
+  private def strand(str: Strand): Boolean = str match {
+    case Strand.Forward     => true
+    case Strand.Reverse     => false
+    case Strand.Independent => true
+  }
 
   def asGenes(): RDD[Gene] = {
 
@@ -77,7 +71,7 @@ class GeneFeatureRDD(featureRDD: RDD[Feature]) extends Serializable with Logging
         case ("exon", ftr: Feature) =>
           val ids: Seq[String] = ftr.getParentIds.map(_.toString)
           ids.map(transcriptId => (transcriptId,
-            Exon(ftr.getFeatureId.toString, transcriptId, GeneFeatureRDD.strand(ftr.getStrand), FeatureReferenceMapping.getReferenceRegion(ftr))))
+            Exon(ftr.getFeatureId.toString, transcriptId, strand(ftr.getStrand), FeatureReferenceMapping.getReferenceRegion(ftr))))
       }.groupByKey()
 
     val cdsByTranscript: RDD[(String, Iterable[CDS])] =
@@ -85,7 +79,7 @@ class GeneFeatureRDD(featureRDD: RDD[Feature]) extends Serializable with Logging
         case ("CDS", ftr: Feature) =>
           val ids: Seq[String] = ftr.getParentIds.map(_.toString)
           ids.map(transcriptId => (transcriptId,
-            CDS(transcriptId, GeneFeatureRDD.strand(ftr.getStrand), FeatureReferenceMapping.getReferenceRegion(ftr))))
+            CDS(transcriptId, strand(ftr.getStrand), FeatureReferenceMapping.getReferenceRegion(ftr))))
       }.groupByKey()
 
     val utrsByTranscript: RDD[(String, Iterable[UTR])] =
@@ -93,7 +87,7 @@ class GeneFeatureRDD(featureRDD: RDD[Feature]) extends Serializable with Logging
         case ("UTR", ftr: Feature) =>
           val ids: Seq[String] = ftr.getParentIds.map(_.toString)
           ids.map(transcriptId => (transcriptId,
-            UTR(transcriptId, GeneFeatureRDD.strand(ftr.getStrand), FeatureReferenceMapping.getReferenceRegion(ftr))))
+            UTR(transcriptId, strand(ftr.getStrand), FeatureReferenceMapping.getReferenceRegion(ftr))))
       }.groupByKey()
 
     // Step #3
@@ -113,7 +107,7 @@ class GeneFeatureRDD(featureRDD: RDD[Feature]) extends Serializable with Logging
             val geneIds: Seq[String] = tgtf.getParentIds.map(_.toString) // should be length 1
             geneIds.map(geneId => (geneId,
               Transcript(transcriptId, Seq(transcriptId), geneId,
-                GeneFeatureRDD.strand(tgtf.getStrand),
+                strand(tgtf.getStrand),
                 exons, cds.getOrElse(Seq()), utrs.getOrElse(Seq()))))
         }.groupByKey()
 
@@ -123,7 +117,7 @@ class GeneFeatureRDD(featureRDD: RDD[Feature]) extends Serializable with Logging
     }.leftOuterJoin(transcriptsByGene).map {
       case (geneId: String, (ggtf: Feature, transcripts: Option[Iterable[Transcript]])) =>
         Gene(geneId, Seq(geneId),
-          GeneFeatureRDD.strand(ggtf.getStrand),
+          strand(ggtf.getStrand),
           transcripts.getOrElse(Seq()))
     }
 
