@@ -34,11 +34,12 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
+import org.bdgenomics.adam.rdd.pileup.{ PileupRDDFunctions, RodRDDFunctions }
 import org.bdgenomics.adam.rdd.read.{ AlignmentRecordContext, AlignmentRecordRDDFunctions }
 import org.bdgenomics.adam.rdd.variation.VariationContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.HadoopUtil
-import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Pileup, Genotype }
+import org.bdgenomics.formats.avro._
 import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import parquet.filter.UnboundRecordFilter
 import parquet.hadoop.ParquetInputFormat
@@ -56,6 +57,12 @@ object ADAMContext {
 
   // Add methods specific to Read RDDs
   implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
+
+  // Add methods specific to the Pileup RDDs
+  implicit def rddToPileupRDD(rdd: RDD[Pileup]) = new PileupRDDFunctions(rdd)
+
+  // Add methods specific to the Rod RDDs
+  implicit def rddToRodRDD(rdd: RDD[Rod]) = new RodRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
