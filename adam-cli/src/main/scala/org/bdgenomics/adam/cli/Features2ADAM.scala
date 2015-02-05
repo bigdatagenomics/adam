@@ -57,7 +57,7 @@ class Features2ADAM(val args: Features2ADAMArgs)
       case "gff"        => sc.adamGTFFeatureLoad(args.featuresFile) // TODO(Timothy) write a GFF-specific loader?
       case "gtf"        => sc.adamGTFFeatureLoad(args.featuresFile)
       case "bed"        => sc.adamBEDFeatureLoad(args.featuresFile)
-      case "narrowPeak" => sc.adamNarrowPeakFeatureLoad(args.featuresFile)
+      case "narrowpeak" => sc.adamNarrowPeakFeatureLoad(args.featuresFile)
     }
     features.adamParquetSave(args)
   }
