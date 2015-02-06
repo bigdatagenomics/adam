@@ -17,11 +17,18 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.bdgenomics.formats.avro._
-import org.bdgenomics.adam.models.{ VariantContext => ADAMVariantContext, SequenceDictionary }
-import htsjdk.variant.variantcontext.{ VariantContext => BroadVariantContext, VariantContextBuilder, Allele, GenotypeLikelihoods, GenotypesContext }
-import scala.collection.JavaConversions._
+import htsjdk.variant.variantcontext.{
+  Allele,
+  GenotypesContext,
+  GenotypeLikelihoods,
+  VariantContext => BroadVariantContext,
+  VariantContextBuilder
+}
 import java.util.Collections
+import org.apache.spark.Logging
+import org.bdgenomics.adam.models.{ VariantContext => ADAMVariantContext, SequenceDictionary }
+import org.bdgenomics.formats.avro._
+import scala.collection.JavaConversions._
 
 object VariantContextConverter {
   private val NON_REF_ALLELE = Allele.create("<NON_REF>", false /* !Reference */ )
@@ -66,7 +73,7 @@ object VariantContextConverter {
  * If an annotation has a corresponding set of fields in the VCF standard, a conversion to/from the
  * GATK VariantContext should be implemented in this class.
  */
-class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable {
+class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable with Logging {
   import VariantContextConverter._
 
   // Mappings between the CHROM names typically used and the more specific RefSeq accessions
@@ -300,30 +307,40 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     vc.databases.flatMap(d => Option(d.getDbSnpId)).foreach(d => vcb.id("rs" + d))
 
     // TODO: Extract provenance INFO fields
-    vcb.genotypes(vc.genotypes.map(g => {
-      val gb = new htsjdk.variant.variantcontext.GenotypeBuilder(
-        g.getSampleId.toString, VariantContextConverter.convertAlleles(g))
+    try {
+      vcb.genotypes(vc.genotypes.map(g => {
+        val gb = new htsjdk.variant.variantcontext.GenotypeBuilder(
+          g.getSampleId.toString, VariantContextConverter.convertAlleles(g))
 
-      Option(g.getIsPhased).foreach(gb.phased(_))
-      Option(g.getGenotypeQuality).foreach(gb.GQ(_))
-      Option(g.getReadDepth).foreach(gb.DP(_))
+        Option(g.getIsPhased).foreach(gb.phased(_))
+        Option(g.getGenotypeQuality).foreach(gb.GQ(_))
+        Option(g.getReadDepth).foreach(gb.DP(_))
 
-      if (g.getReferenceReadDepth != null && g.getAlternateReadDepth != null)
-        gb.AD(Array(g.getReferenceReadDepth, g.getAlternateReadDepth))
+        if (g.getReferenceReadDepth != null && g.getAlternateReadDepth != null)
+          gb.AD(Array(g.getReferenceReadDepth, g.getAlternateReadDepth))
 
-      if (g.getVariantCallingAnnotations != null) {
-        val callAnnotations = g.getVariantCallingAnnotations()
-        if (callAnnotations.getVariantFilters != null)
-          gb.filters(callAnnotations.getVariantFilters.map(_.toString))
+        if (g.getVariantCallingAnnotations != null) {
+          val callAnnotations = g.getVariantCallingAnnotations()
+          if (callAnnotations.getVariantFilters != null)
+            gb.filters(callAnnotations.getVariantFilters.map(_.toString))
+        }
+
+        if (g.getGenotypeLikelihoods != null && !g.getGenotypeLikelihoods.isEmpty)
+          gb.PL(g.getGenotypeLikelihoods.map(p => p: Int).toArray)
+
+        gb.make
+      }))
+
+      vcb.make
+    } catch {
+      case t: Throwable => {
+        log.error("Encountered error when converting variant context with variant: \n" +
+          vc.variant.variant + "\n" +
+          "and genotypes: \n" +
+          vc.genotypes.mkString("\n"))
+        throw t
       }
-
-      if (g.getGenotypeLikelihoods != null && !g.getGenotypeLikelihoods.isEmpty)
-        gb.PL(g.getGenotypeLikelihoods.map(p => p: Int).toArray)
-
-      gb.make
-    }))
-
-    vcb.make
+    }
   }
 
 }
