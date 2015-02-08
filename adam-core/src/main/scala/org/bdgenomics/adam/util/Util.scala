@@ -27,14 +27,4 @@ object Util {
     val rightMD5 = Option(right).map(_.getContigMD5)
     leftName == rightName && (leftMD5.isEmpty || rightMD5.isEmpty || leftMD5 == rightMD5)
   }
-
-  def hashCombine(parts: Int*): Int =
-    if (parts.tail == Nil)
-      parts.head
-    else
-      hashCombine2(parts.head, hashCombine(parts.tail: _*))
-
-  // Based on hash_combine from the C++ Boost library
-  private def hashCombine2(first: Int, second: Int) =
-    second + 0x9E3779B9 + (first << 6) + (first >> 2)
 }
