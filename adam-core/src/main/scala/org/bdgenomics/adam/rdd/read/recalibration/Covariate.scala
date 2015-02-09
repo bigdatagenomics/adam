@@ -63,18 +63,19 @@ abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
  * Represents a tuple containing a value for each covariate.
  *
  * The values for mandatory covariates are stored in member fields and optional
- * covariate valuess are in `extras`.
+ * covariate values are in `extras`.
  */
 class CovariateKey(
     val readGroup: String,
     val quality: QualityScore,
     val extras: Seq[Option[Covariate#Value]]) extends Serializable {
 
-  def parts: Seq[Any] = Seq(readGroup, quality) ++ extras
-
   def containsNone: Boolean = extras.exists(_.isEmpty)
 
-  override def toString: String = "[" + parts.mkString(", ") + "]"
+  override def toString: String = {
+    def parts: Seq[Any] = Seq(readGroup, quality) ++ extras
+    "[" + parts.mkString(", ") + "]"
+  }
 
   override def equals(other: Any) = other match {
     case that: CovariateKey =>
@@ -82,7 +83,13 @@ class CovariateKey(
     case _ => false
   }
 
-  override def hashCode = Util.hashCombine(0xD20D1E51, parts.hashCode)
+  override val hashCode: Int = {
+    41 * (
+      41 * (
+        41 + readGroup.hashCode
+      ) + quality.hashCode
+    ) + extras.hashCode
+  }
 }
 
 /**
@@ -123,7 +130,8 @@ class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
     case _                    => false
   }
 
-  override def hashCode = Util.hashCombine(0x48C35799, extras.hashCode)
+  override def hashCode = extras.hashCode
+
 }
 
 object CovariateSpace {

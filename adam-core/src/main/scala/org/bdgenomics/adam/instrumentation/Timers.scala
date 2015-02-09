@@ -48,7 +48,11 @@ object Timers extends Metrics {
   // Recalibrate Base Qualities
   val BQSRInDriver = timer("Base Quality Recalibration")
   val CreateKnownSnpsTable = timer("Create Known SNPs Table")
+  val ComputeCovariates = timer("Compute Covariates")
+  val ObservationAccumulatorComb = timer("Observation Accumulator: comb")
+  val ObservationAccumulatorSeq = timer("Observation Accumulator: seq")
   val RecalibrateRead = timer("Recalibrate Read")
+  val ComputeQualityScore = timer("Compute Quality Score")
 
   // Realign Indels
   val RealignIndelsInDriver = timer("Realign Indels")

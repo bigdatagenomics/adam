@@ -36,7 +36,7 @@ class QualityScore(val phred: Int) extends Ordered[QualityScore] with Serializab
     case _                  => false
   }
 
-  override def hashCode: Int = Util.hashCombine(0x26C2E0BA, phred.hashCode)
+  override def hashCode: Int = phred
 }
 
 object QualityScore {
