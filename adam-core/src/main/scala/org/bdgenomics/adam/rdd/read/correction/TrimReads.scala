@@ -252,7 +252,7 @@ private[correction] class TrimReads extends Serializable {
    * @param startPos Start position of the alignment.
    * @return Returns a tuple containing the (updated cigar, updated alignment start position).
    */
-  def trimCigar(cigar: String, trimStart: Int, trimEnd: Int, startPos: Long): (String, Long) = TrimCigar.time {
+  def trimCigar(cigar: String, trimStart: Int, trimEnd: Int, startPos: Long, endPos: Long): (String, Long, Long) = TrimCigar.time {
     @tailrec def trimFront(c: String, trim: Int, start: Long): (String, Long) = {
       if (trim <= 0) {
         (c, start)
@@ -289,32 +289,43 @@ private[correction] class TrimReads extends Serializable {
       }
     }
 
-    def trimBack(c: String, trim: Int): String = {
-      @tailrec def trimBackHelper(ch: String, t: Int): String = {
+    def trimBack(c: String, trim: Int, end: Long): (String, Long) = {
+      @tailrec def trimBackHelper(ch: String, t: Int, e: Long): (String, Long) = {
         if (t <= 0) {
-          ch.reverse
+          (ch.reverse, e)
         } else {
           val count = ch.drop(1).takeWhile(_.isDigit).reverse.toInt
           val operator = ch.head
           val withoutOp = ch.drop(1).dropWhile(_.isDigit)
 
-          val (cNew, tNew) = if (operator == 'D' || operator == 'N') {
-            // must trim all the way through a reference deletion or skip
-            (withoutOp, t)
-          } else if (count == 1) {
-            (withoutOp, t - 1)
-          } else {
-            (operator.toString + (count - 1).toString.reverse + withoutOp, t - 1)
+          def eNext(): Long = {
+            if (operator == 'M' ||
+              operator == '=' ||
+              operator == 'X') {
+              // if we are trimming into an alignment match, we must update the start position
+              e - 1
+            } else {
+              e
+            }
           }
 
-          trimBackHelper(cNew, tNew)
+          val (cNew, tNew, eNew) = if (operator == 'D' || operator == 'N') {
+            // must trim all the way through a reference deletion or skip
+            (withoutOp, t, e - count)
+          } else if (count == 1) {
+            (withoutOp, t - 1, eNext())
+          } else {
+            (operator.toString + (count - 1).toString.reverse + withoutOp, t - 1, eNext())
+          }
+
+          trimBackHelper(cNew, tNew, eNew)
         }
       }
 
       if (trim <= 0) {
-        c
+        (c, end)
       } else {
-        trimBackHelper(c.reverse, trim)
+        trimBackHelper(c.reverse, trim, end)
       }
     }
 
@@ -331,8 +342,9 @@ private[correction] class TrimReads extends Serializable {
     }
 
     val (cigarFrontTrimmed, newStart) = trimFront(cigar, trimStart, startPos)
+    val (cigarBackTrimmed, newEnd) = trimBack(cigarFrontTrimmed, trimEnd, endPos)
 
-    (trimPrefix + trimBack(cigarFrontTrimmed, trimEnd) + trimSuffix, newStart)
+    (trimPrefix + cigarBackTrimmed + trimSuffix, newStart, newEnd)
   }
 
   /**
@@ -358,11 +370,12 @@ private[correction] class TrimReads extends Serializable {
 
     // clean up cigar and read start position
     Option(read.getCigar).filter(_ != "*")
-      .map(trimCigar(_, trimStart, trimEnd, read.getStart))
+      .map(trimCigar(_, trimStart, trimEnd, read.getStart, read.getEnd))
       .foreach(p => {
-        val (c, s) = p
+        val (c, s, e) = p
         builder.setCigar(c)
           .setStart(s)
+          .setEnd(e)
 
         // also, clean up md tag
         Option(read.getMismatchingPositions).map(trimMdTag(_, trimStart, trimEnd))
