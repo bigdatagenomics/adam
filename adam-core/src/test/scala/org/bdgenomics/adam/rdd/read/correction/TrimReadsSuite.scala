@@ -45,31 +45,31 @@ class TrimReadsSuite extends ADAMFunSuite {
 
   test("trim a few cigars that just have clipping and matches") {
     // trim a single element incompletely
-    assert(ec.trimCigar("2S10M", 1, 0, 0L) === ("1H1S10M", 0L))
-    assert(ec.trimCigar("10M3S", 0, 2, 0L) === ("10M1S2H", 0L))
-    assert(ec.trimCigar("2S10M3S", 1, 2, 0L) === ("1H1S10M1S2H", 0L))
+    assert(ec.trimCigar("2S10M", 1, 0, 0L, 10L) === ("1H1S10M", 0L, 10L))
+    assert(ec.trimCigar("10M3S", 0, 2, 0L, 10L) === ("10M1S2H", 0L, 10L))
+    assert(ec.trimCigar("2S10M3S", 1, 2, 0L, 10L) === ("1H1S10M1S2H", 0L, 10L))
 
     // trim a single element completely
-    assert(ec.trimCigar("2S10M", 2, 0, 0L) === ("2H10M", 0L))
-    assert(ec.trimCigar("10M3S", 0, 3, 0L) === ("10M3H", 0L))
-    assert(ec.trimCigar("2S10M3S", 2, 3, 0L) === ("2H10M3H", 0L))
+    assert(ec.trimCigar("2S10M", 2, 0, 0L, 10L) === ("2H10M", 0L, 10L))
+    assert(ec.trimCigar("10M3S", 0, 3, 0L, 10L) === ("10M3H", 0L, 10L))
+    assert(ec.trimCigar("2S10M3S", 2, 3, 0L, 10L) === ("2H10M3H", 0L, 10L))
 
     // trim into multiple elements
-    assert(ec.trimCigar("2S10M", 3, 0, 0L) === ("3H9M", 1L))
-    assert(ec.trimCigar("10M3S", 0, 4, 0L) === ("9M4H", 0L))
-    assert(ec.trimCigar("2S10M3S", 3, 4, 0L) === ("3H8M4H", 1L))
+    assert(ec.trimCigar("2S10M", 3, 0, 0L, 10L) === ("3H9M", 1L, 10L))
+    assert(ec.trimCigar("10M3S", 0, 4, 0L, 10L) === ("9M4H", 0L, 9L))
+    assert(ec.trimCigar("2S10M3S", 3, 4, 0L, 10L) === ("3H8M4H", 1L, 9L))
   }
 
   test("trim cigars with indels") {
     // trim through a deletion
-    assert(ec.trimCigar("2S2M2D4M", 5, 0, 0L) === ("5H3M", 5L))
-    assert(ec.trimCigar("4M1D1M", 0, 3, 0L) === ("2M3H", 0L))
-    assert(ec.trimCigar("2S2M2N4M", 5, 0, 0L) === ("5H3M", 5L))
-    assert(ec.trimCigar("4M1N1M", 0, 3, 0L) === ("2M3H", 0L))
+    assert(ec.trimCigar("2S2M2D4M", 5, 0, 0L, 8L) === ("5H3M", 5L, 8L))
+    assert(ec.trimCigar("4M1D1M", 0, 3, 0L, 6L) === ("2M3H", 0L, 2L))
+    assert(ec.trimCigar("2S2M2N4M", 5, 0, 0L, 8L) === ("5H3M", 5L, 8L))
+    assert(ec.trimCigar("4M1N1M", 0, 3, 0L, 6L) === ("2M3H", 0L, 2L))
 
     // trim into an insert
-    assert(ec.trimCigar("2M2I10M", 3, 0, 0L) === ("3H1I10M", 2L))
-    assert(ec.trimCigar("10M3I1M", 0, 3, 0L) === ("10M1I3H", 0L))
+    assert(ec.trimCigar("2M2I10M", 3, 0, 0L, 12L) === ("3H1I10M", 2L, 12L))
+    assert(ec.trimCigar("10M3I1M", 0, 3, 0L, 11L) === ("10M1I3H", 0L, 10L))
   }
 
   test("trim a few reads") {
@@ -89,13 +89,31 @@ class TrimReadsSuite extends ADAMFunSuite {
       .setQual("##/9:::::::::##")
       .setCigar("2S11M2S")
       .setStart(5L)
+      .setEnd(16L)
       .build
     val trimmedRead2 = ec.trimRead(read2, 2, 2)
 
     assert(trimmedRead2.getSequence.toString === "TCGCCCACTCA")
     assert(trimmedRead2.getQual.toString === "/9:::::::::")
     assert(trimmedRead2.getStart === 5L)
+    assert(trimmedRead2.getEnd === 16L)
     assert(trimmedRead2.getCigar.toString === "2H11M2H")
+
+    // trim from both ends, read with cigar
+    val read3 = AlignmentRecord.newBuilder
+      .setSequence("ACTCGCCCACTCAAA")
+      .setQual("##/9:::::::::##")
+      .setCigar("15M")
+      .setStart(5L)
+      .setEnd(20L)
+      .build
+    val trimmedRead3 = ec.trimRead(read3, 4, 3)
+
+    assert(trimmedRead3.getSequence.toString === "GCCCACTC")
+    assert(trimmedRead3.getQual.toString === "::::::::")
+    assert(trimmedRead3.getStart === 9L)
+    assert(trimmedRead3.getEnd === 17L)
+    assert(trimmedRead3.getCigar.toString === "4H8M3H")
   }
 
   sparkTest("correctly trim an RDD of reads") {
