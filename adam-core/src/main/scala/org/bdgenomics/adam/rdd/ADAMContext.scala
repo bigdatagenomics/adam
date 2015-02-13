@@ -108,6 +108,8 @@ object ADAMContext {
   implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
 }
 
+import ADAMContext._
+
 class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
   private[rdd] def adamBamDictionaryLoad(filePath: String): SequenceDictionary = {
@@ -482,9 +484,15 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     val rdd = maybeLoadBam(filePath, predicate, projection)
       .orElse(
         maybeLoadFastq(filePath, predicate, projection)
-      ).getOrElse(
+      ).orElse(
+          maybeLoadFasta(filePath, None, None, 10000).map(_.toReads)
+            .map(applyPredicate(_, predicate)))
+      .getOrElse(
+        if (filePath.endsWith("contig.adam")) {
+          applyPredicate(adamLoad[NucleotideContigFragment, UnboundRecordFilter](filePath).toReads, predicate)
+        } else {
           adamLoad[AlignmentRecord, U](filePath, predicate, projection)
-        )
+        })
     if (Metrics.isRecording) rdd.instrument() else rdd
   }
 

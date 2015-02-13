@@ -22,6 +22,7 @@ import org.apache.avro.specific.SpecificRecord
 import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.converters.FragmentConverter
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
@@ -38,6 +39,16 @@ import scala.math.max
 import scala.Some
 
 class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[NucleotideContigFragment](rdd) {
+
+  /**
+   * Converts an RDD of nucleotide contig fragments into reads. Adjacent contig fragments are
+   * combined.
+   *
+   * @return Returns an RDD of reads.
+   */
+  def toReads(): RDD[AlignmentRecord] = {
+    FragmentConverter.convertRdd(rdd)
+  }
 
   /**
    * From a set of contigs, returns the base sequence that corresponds to a region of the reference.
