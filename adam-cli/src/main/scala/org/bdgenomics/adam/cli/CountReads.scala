@@ -23,10 +23,8 @@ import java.util.regex.Pattern
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.SequenceRecord
 import org.bdgenomics.adam.projections.{ Projection, AlignmentRecordField }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.features.FeaturesContext._
 import org.bdgenomics.adam.rdd.features.ReadCounter
 import org.bdgenomics.formats.avro.{ Feature, AlignmentRecord }
 import org.kohsuke.args4j.Argument
@@ -74,7 +72,7 @@ class CountReads(protected val args: CountReadsArgs) extends ADAMSparkCommand[Co
 
     try {
       // TODO(twd) should relax the assumption that these are in GTF format...
-      val features: RDD[Feature] = sc.adamGTFFeatureLoad(args.featurePath)
+      val features: RDD[Feature] = sc.loadFeatures(args.featurePath)
 
       val reads: RDD[AlignmentRecord] = sc.adamLoad(args.readPath, projection = Some(projection))
 

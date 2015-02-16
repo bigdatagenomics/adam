@@ -18,12 +18,29 @@
 package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.models.{ ReferenceRegion, ReferenceMapping }
-import org.bdgenomics.formats.avro.{ FlatGenotype, AlignmentRecord, Feature }
+import org.bdgenomics.formats.avro._
 
 /**
  * A common location in which to drop some ReferenceMapping implementations.
  */
 object ReferenceMappingContext {
+
+  implicit object VariantReferenceMapping extends ReferenceMapping[Variant] with Serializable {
+    override def getReferenceName(value: Variant): String = value.getContig.getContigName.toString
+    override def getReferenceRegion(value: Variant): ReferenceRegion =
+      ReferenceRegion(value.getContig.getContigName, value.getStart, value.getEnd)
+    override def hasReferenceRegion(value: Variant): Boolean =
+      value.getContig.getContigName != null && value.getStart != null
+  }
+
+  implicit object GenotypeReferenceMapping extends ReferenceMapping[Genotype] with Serializable {
+    override def getReferenceName(value: Genotype): String =
+      VariantReferenceMapping.getReferenceName(value.getVariant)
+    override def getReferenceRegion(value: Genotype): ReferenceRegion =
+      VariantReferenceMapping.getReferenceRegion(value.getVariant)
+    override def hasReferenceRegion(value: Genotype): Boolean =
+      VariantReferenceMapping.hasReferenceRegion(value.getVariant)
+  }
 
   implicit object FlatGenotypeReferenceMapping extends ReferenceMapping[FlatGenotype] with Serializable {
     override def getReferenceName(value: FlatGenotype): String = value.getReferenceName.toString
