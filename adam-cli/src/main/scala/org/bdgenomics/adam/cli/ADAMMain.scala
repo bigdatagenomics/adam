@@ -35,13 +35,13 @@ object ADAMMain extends Logging {
         CountReads,
         CalculateDepth,
         CountKmers,
-	Adam2Fastq,
+        Adam2Fastq,
         Transform,
         /* TODO (nealsid): Reimplement in terms of new schema
 	  ComputeVariants
 	*/
-          PluginExecutor
-        )
+        PluginExecutor
+      )
       ),
       CommandGroup(
         "CONVERSION OPERATIONS",

@@ -21,7 +21,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.RegionJoin
+import org.bdgenomics.adam.rdd.BroadcastRegionJoin
 import org.bdgenomics.adam.rich.ReferenceMappingContext._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Feature }
 
@@ -42,7 +42,7 @@ object ReadCounter {
                           reads: RDD[AlignmentRecord]): RDD[(Feature, Int)] = {
 
     val joined: RDD[(Feature, AlignmentRecord)] =
-      RegionJoin.partitionAndJoin(sc, dict, features, reads)
+      BroadcastRegionJoin.partitionAndJoin(sc, features, reads)
 
     val counted: RDD[(Feature, Int)] = joined.groupBy(_._1).map {
       case ((key: Feature, values: Iterable[(Feature, AlignmentRecord)])) => key -> values.size
