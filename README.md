@@ -1,51 +1,201 @@
 ADAM
 ====
 
-[![Join the chat at https://gitter.im/bigdatagenomics/adam](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bigdatagenomics/adam?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-A genomics processing engine and specialized file format built using [Apache Avro](http://avro.apache.org), 
-[Apache Spark](http://spark.incubator.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.
-
 # Introduction
 
-Current genomic file formats are not designed for
-distributed processing. ADAM addresses this by explicitly defining data
-formats as [Apache Avro](http://avro.apache.org) objects and storing them in 
-[Parquet](http://parquet.io) files. [Apache Spark](http://spark.incubator.apache.org/)
-is used as the cluster execution system.
+* Follow our Twitter account at [https://twitter.com/bigdatagenomics/](https://twitter.com/bigdatagenomics/)
+* Chat with ADAM developers at [https://gitter.im/bigdatagenomics/adam](https://gitter.im/bigdatagenomics/adam)
+* Join our mailing list at [http://bdgenomics.org/mail](http://bdgenomics.org/mail)
+* Checkout the current build status at [https://amplab.cs.berkeley.edu/jenkins/](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/)
+* Download official releases at [https://github.com/bigdatagenomics/adam/releases](https://github.com/bigdatagenomics/adam/releases)
+* View our software artifacts on Maven Central at [http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics)
+* See our snapshots at [https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)
+* Look at our CHANGES file at [https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md)
 
-## Explicitly defined format
+ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.incubator.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.  
 
-The [Sequencing Alignment Map (SAM) and Binary Alignment Map (BAM)
-file specification](http://samtools.sourceforge.net/SAM1.pdf) defines a data format 
-for storing reads from aligners. The specification is well-written but provides
-no tools for developers to implement the format. Developers have to hand-craft 
-source code to encode and decode the records which is error prone and an unneccesary
-hassle.
+## Apache Spark
 
-In contrast, the [ADAM specification for storing reads]
-(https://github.com/bigdatagenomics/bdg-formats/blob/master/src/main/resources/avro/bdg.avdl)
-is defined in the Avro Interface Description Language (IDL) which is directly converted
-into source code. Avro supports a number of computer languages. ADAM uses Java; you could 
-just as easily use this Avro IDL description as the basis for a Python project. Avro
-currently supports c, c++, csharp, java, javascript, php, python and ruby. 
+[Apache Spark](http://spark.incubator.apache.org/) allows developers to write algorithms in succinct code that can run fast locally, on an in-house cluster or on Amazon, Google or Microsoft clouds. 
 
-## Ready for distributed processing
+For example, the following code snippet will print the top 10 21-mers in `NA2114` from 1000 Genomes.
 
-The SAM/BAM format is record-oriented with a single record for each read. However,
-the typical data access pattern is column oriented, e.g. search for bases at a
-specific position in a reference genome. The BAM specification tries to support
-this pattern by defining a format for a separate index file. However, this index
-needs to be regenerated anytime your BAM file changes which is costly. The index
-does help keep the cost down on file seeks but the columnar store ADAM uses reduces
-the cost of seeks even more.
+```scala
+val ac = new ADAMContext(sc)
+// Load alignments from disk
+val reads = ac.loadAlignments(
+  "/data/NA21144.chrom11.ILLUMINA.adam",
+  predicate = Some(classOf[ExamplePredicate]),
+  projection = Some(Projection(
+    AlignmentRecordField.sequence,
+    AlignmentRecordField.readMapped,
+    AlignmentRecordField.mapq)))
+// Generate, count and sort 21-mers
+val kmers = reads.flatMap { read =>
+  read.getSequence.sliding(21).map(k => (k, 1L))
+}.reduceByKey((k1: Long, k2: Long) => k1 + k2)
+  .map(_.swap)
+  .sortByKey(ascending = false)
+// Print the top 10 most common 21-mers
+kmers.take(10).foreach(println)
+```
 
-Once you convert your BAM file to ADAM, it can be directly accessed by 
-[Hadoop Map-Reduce](http://hadoop.apache.org), [Spark](http://spark-project.org/), 
-[Shark](http://shark.cs.berkeley.edu), [Impala](https://github.com/cloudera/impala), 
-[Pig](http://pig.apache.org), [Hive](http://hive.apache.org), whatever. Using
-ADAM will unlock your genomic data and make it available to a broader range of
-systems.
+Executing this Spark job will output the following:
+
+```
+(121771,TTTTTTTTTTTTTTTTTTTTT)
+(44317,ACACACACACACACACACACA)
+(44023,TGTGTGTGTGTGTGTGTGTGT)
+(42474,CACACACACACACACACACAC)
+(42095,GTGTGTGTGTGTGTGTGTGTG)
+(33797,TAATCCCAGCACTTTGGGAGG)
+(33081,AATCCCAGCACTTTGGGAGGC)
+(32775,TGTAATCCCAGCACTTTGGGA)
+(32484,CCTCCCAAAGTGCTGGGATTA)
+```
+
+You don't need to be Scala developer to use ADAM. You could also run the following ADAM CLI command for the same result:
+
+```bash
+$ adam-submit count_kmers \
+       /data/NA21144.chrom11.ILLUMINA.adam \
+       /data/results.txt 21
+```
+
+## Apache Parquet
+
+[Apache Parquet](http://parquet.incubator.apache.org) is a columnar storage format available to any project in the Hadoop ecosystem, regardless of the choice of data processing framework, data model or programming language.
+
+- Parquet compresses legacy genomic formats using standard columnar techniques (e.g. RLE, dictionary encoding). ADAM files are typically ~20% smaller than compressed binary files.
+- Parquet integrates with:
+    - **Query engines**: Hive, Impala, HAWQ, IBM Big SQL, Drill, Tajo, Pig, Presto
+    - **Frameworks**: Spark, MapReduce, Cascading, Crunch, Scalding, Kite
+    - **Data models**: Avro, Thrift, ProtocolBuffers, POJOs
+- Parquet is simply a file format which makes it easy to sync and share data using tools like `distcp`, `rsync`, etc
+- Parquet provides a command-line tool, `parquet.hadoop.PrintFooter`, which reports useful compression statistics 
+
+In the counting k-mers example above, you can see there is a defined *predicate* and *projection*. The *predicate* allows rapid filtering of rows while a *projection* allows you to efficiently materialize only specific columns for analysis. For this k-mer counting example, we filter out any records that are not mapped or have a `MAPQ` less than 20 using a `predicate` and only materialize the `Sequence`, `ReadMapped` flag and `MAPQ` columns and skip over all other fields like `Reference` or `Start` position, e.g.
+
+Sequence| ReadMapped | MAPQ | ~~Reference~~ | ~~Start~~ | ...
+--------|------------|------|-----------|-------|-------
+~~GGTCCAT~~ | ~~false~~ | - | ~~chrom1~~ | - | ...
+TACTGAA | true | 30 | ~~chrom1~~ | ~~34232~~ | ...
+~~TTGAATG~~ | ~~true~~ | ~~17~~ | ~~chrom1~~ | ~~309403~~ | ...
+
+## Apache Avro
+
+- Apache Avro is a data serialization system ([http://avro.apache.org](http://avro.apache.org))
+- All Big Data Genomics schemas are published at [https://github.com/bigdatagenomics/bdg-formats](https://github.com/bigdatagenomics/bdg-formats)
+- Having explicit schemas and self-describing data makes integrating, sharing and evolving formats easier
+
+Our Avro schemas are directly converted into source code using Avro tools. Avro supports a number of computer languages. ADAM uses Java; you could 
+just as easily use this Avro IDL description as the basis for a Python project. Avro currently supports c, c++, csharp, java, javascript, php, python and ruby. 
+
+## More than k-mer counting
+
+ADAM does much more than just k-mer counting. Running the ADAM CLI without arguments or with `--help` will display available commands, e.g.
+
+$ adam
+
+```
+     e            888~-_              e                 e    e
+    d8b           888   \            d8b               d8b  d8b
+   /Y88b          888    |          /Y88b             d888bdY88b
+  /  Y88b         888    |         /  Y88b           / Y88Y Y888b
+ /____Y88b        888   /         /____Y88b         /   YY   Y888b
+/      Y88b       888_-~         /      Y88b       /          Y888b
+
+Choose one of the following commands:
+
+ADAM ACTIONS
+             compare : Compare two ADAM files based on read name
+           findreads : Find reads that match particular individual or comparative criteria
+               depth : Calculate the depth from a given ADAM file, at each variant in a VCF
+         count_kmers : Counts the k-mers/q-mers from a read dataset.
+           transform : Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations
+          adam2fastq : Convert BAM to FASTQ files
+              plugin : Executes an ADAMPlugin
+
+CONVERSION OPERATIONS
+            bam2adam : Single-node BAM to ADAM converter (Note: the 'transform' command can take SAM or BAM as input)
+            vcf2adam : Convert a VCF file to the corresponding ADAM format
+           anno2adam : Convert a annotation file (in VCF format) to the corresponding ADAM format
+            adam2vcf : Convert an ADAM variant to the VCF ADAM format
+          fasta2adam : Converts a text FASTA sequence file into an ADAMNucleotideContig Parquet file which represents assembled sequences.
+           reads2ref : Convert an ADAM read-oriented file to an ADAM reference-oriented file
+             mpileup : Output the samtool mpileup text from ADAM reference-oriented data
+       features2adam : Convert a file with sequence features into corresponding ADAM format
+          wigfix2bed : Locally convert a wigFix file to BED format
+
+PRINT
+               print : Print an ADAM formatted file
+         print_genes : Load a GTF file containing gene annotations and print the corresponding gene models
+            flagstat : Print statistics on reads in an ADAM file (similar to samtools flagstat)
+                 viz : Generates images from sections of the genome
+          print_tags : Prints the values and counts of all tags in a set of records
+            listdict : Print the contents of an ADAM sequence dictionary
+ summarize_genotypes : Print statistics of genotypes and variants in an ADAM file
+         allelecount : Calculate Allele frequencies
+           buildinfo : Display build information (use this for bug reports)
+                view : View certain reads from an alignment-record file.
+```
+
+You can learn more about a command, by calling it without arguments or with `--help`, e.g.
+
+```
+$ adam transform
+Argument "INPUT" is required
+ INPUT                                                           : The ADAM, BAM or SAM file to apply the transforms to
+ OUTPUT                                                          : Location to write the transformed data in ADAM/Parquet format
+ -coalesce N                                                     : Set the number of partitions written to the ADAM output directory
+ -dump_observations VAL                                          : Local path to dump BQSR observations to. Outputs CSV format.
+ -h (-help, --help, -?)                                          : Print help
+ -known_indels VAL                                               : VCF file including locations of known INDELs. If none is provided, default
+                                                                   consensus model will be used.
+ -known_snps VAL                                                 : Sites-only VCF giving location of known SNPs
+ -log_odds_threshold N                                           : The log-odds threshold for accepting a realignment. Default value is 5.0.
+ -mark_duplicate_reads                                           : Mark duplicate reads
+ -max_consensus_number N                                         : The maximum number of consensus to try realigning a target region to. Default
+                                                                   value is 30.
+ -max_indel_size N                                               : The maximum length of an INDEL to realign to. Default value is 500.
+ -max_target_size N                                              : The maximum length of a target region to attempt realigning. Default length is
+                                                                   3000.
+ -parquet_block_size N                                           : Parquet block size (default = 128mb)
+ -parquet_compression_codec [UNCOMPRESSED | SNAPPY | GZIP | LZO] : Parquet compression codec
+ -parquet_disable_dictionary                                     : Disable dictionary encoding
+ -parquet_logging_level VAL                                      : Parquet logging level (default = severe)
+ -parquet_page_size N                                            : Parquet page size (default = 1mb)
+ -print_metrics                                                  : Print metrics to the log on completion
+ -qualityBasedTrim                                               : Trims reads based on quality scores of prefix/suffixes across read group.
+ -qualityThreshold N                                             : Phred scaled quality threshold used for trimming. If omitted, Phred 20 is used.
+ -realign_indels                                                 : Locally realign indels present in reads.
+ -recalibrate_base_qualities                                     : Recalibrate the base quality scores (ILLUMINA only)
+ -repartition N                                                  : Set the number of partitions to map data to
+ -sort_fastq_output                                              : Sets whether to sort the FASTQ output, if saving as FASTQ. False by default.
+                                                                   Ignored if not saving as FASTQ.
+ -sort_reads                                                     : Sort the reads by referenceId and read position
+ -trimBeforeBQSR                                                 : Performs quality based trim before running BQSR. Default is to run quality based
+                                                                   trim after BQSR.
+ -trimFromEnd N                                                  : Trim to be applied to end of read.
+ -trimFromStart N                                                : Trim to be applied to start of read.
+ -trimReadGroup VAL                                              : Read group to be trimmed. If omitted, all reads are trimmed.
+ -trimReads                                                      : Apply a fixed trim to the prefix and suffix of all reads/reads in a specific read
+                                                                   group.
+```
+
+The ADAM transform command allows you to mark duplicates, run base quality score recalibration (BQSR) and other pre-processing steps on your data.
+
+There are also a number of projects built on ADAM, e.g.
+
+- [RNAdam](https://github.com/bigdatagenomics/RNAdam) provides an RNA pipeline on top of ADAM with isoform quantification and fusion transcription detection
+- [Avocado](https://github.com/bigdatagenomics/avocado) is a variant caller built on top of ADAM for germline and somatic calling
+- [PacMin](https://github.com/bigdatagenomics/PacMin) is an assembler for PacBio reads
+- A `Mutect` port is nearly feature complete
+- Read error correction
+- a graphing and genome visualization library
+- [BDG-Services](https://github.com/bigdatagenomics/bdg-services) is a library for accessing a running Spark cluster through web-services or a [Thrift](https://thrift.apache.org/)- interface
+- [Short read assembly](http://www.github.com/fnothaft/xASSEMBLEx)
+- Variant filtration (train model via `MLlib`)
 
 # Getting Started
 
@@ -248,20 +398,6 @@ ADAM allows users to create plugins via the [ADAMPlugin](https://github.com/bigd
 trait. These plugins are then imported using the Java classpath at runtime. To add to the classpath when
 using appassembler, use the `$CLASSPATH_PREFIX` environment variable. For an example of how to use
 the plugin interface, please see the [adam-plugins repo](https://github.com/heuermh/adam-plugins).
-
-# Getting In Touch
-
-## Mailing List
-
-[The ADAM mailing list](https://groups.google.com/forum/#!forum/adam-developers) is a good
-way to sync up with other people who use ADAM including the core developers. You can subscribe
-by sending an email to `adam-developers+subscribe@googlegroups.com` or just post using
-the [web forum page](https://groups.google.com/forum/#!forum/adam-developers).
-
-## IRC Channel
-
-A lot of the developers are hanging on the [#adamdev](http://webchat.freenode.net/?channels=adamdev)
-freenode.net channel. Come join us and ask questions.
 
 # License
 
