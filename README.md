@@ -66,7 +66,7 @@ $ adam-submit count_kmers \
 
 [Apache Parquet](http://parquet.incubator.apache.org) is a columnar storage format available to any project in the Hadoop ecosystem, regardless of the choice of data processing framework, data model or programming language.
 
-- Parquet compresses legacy genomic formats using standard columnar techniques (e.g. RLE, dictionary encoding). ADAM files are typically ~20% smaller than compressed binary files.
+- Parquet compresses legacy genomic formats using standard columnar techniques (e.g. RLE, dictionary encoding). ADAM files are typically ~20% smaller than compressed BAM files.
 - Parquet integrates with:
     - **Query engines**: Hive, Impala, HAWQ, IBM Big SQL, Drill, Tajo, Pig, Presto
     - **Frameworks**: Spark, MapReduce, Cascading, Crunch, Scalding, Kite
