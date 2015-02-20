@@ -15,10 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.models
+package org.bdgenomics.adam.exceptions
 
-trait ReferenceMapping[T] {
-  def getReferenceName(value: T): String
-  def getReferenceRegion(value: T): ReferenceRegion
-  def hasReferenceRegion(value: T): Boolean
+/**
+ * An exception which indicates that a record was unmapped -- it is thrown during
+ * processing steps which require all records to be mapped to genomic coordinates.
+ *
+ * @param msg A custom message
+ */
+class UnmappedException(msg: String) extends Exception(msg) {
+  def this(x: Any) = this("\"%s\" didn't have reference coordinates".format(x))
 }

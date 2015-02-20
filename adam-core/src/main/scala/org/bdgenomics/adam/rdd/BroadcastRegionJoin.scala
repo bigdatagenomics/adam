@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
+import org.bdgenomics.adam.exceptions.UnmappedException
 import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceMapping, ReferenceRegion }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
@@ -73,6 +74,9 @@ object BroadcastRegionJoin {
                                                 tManifest: ClassTag[T],
                                                 uManifest: ClassTag[U]): RDD[(T, U)] = {
 
+    val filteredLeft: RDD[T] = baseRDD.filter(tMapping.hasReferenceRegion)
+    val filteredRight: RDD[U] = joinedRDD.filter(uMapping.hasReferenceRegion)
+
     /**
      * Original Join Design:
      *
@@ -99,7 +103,7 @@ object BroadcastRegionJoin {
     // First, we group the regions in the left side of the join by their referenceName,
     // and collect them.
     val collectedLeft: Seq[(String, Iterable[ReferenceRegion])] =
-      baseRDD
+      filteredLeft
         .map(t => (tMapping.getReferenceName(t), tMapping.getReferenceRegion(t))) // RDD[(String,ReferenceRegion)]
         .groupBy(_._1) // RDD[(String,Seq[(String,ReferenceRegion)])]
         .map(t => (t._1, t._2.map(_._2))) // RDD[(String,Seq[ReferenceRegion])]
@@ -116,16 +120,15 @@ object BroadcastRegionJoin {
 
     // each element of the left-side RDD should have exactly one partition.
     val smallerKeyed: RDD[(ReferenceRegion, T)] =
-      baseRDD.keyBy(t => regions.value.regionsFor(t).head)
+      filteredLeft.keyBy(t => regions.value.regionsFor(t).head)
 
     // each element of the right-side RDD may have 0, 1, or more than 1 corresponding partition.
     val largerKeyed: RDD[(ReferenceRegion, U)] =
-      joinedRDD.filter(regions.value.filter(_))
+      filteredRight.filter(regions.value.filter(_))
         .flatMap(t => regions.value.regionsFor(t).map((r: ReferenceRegion) => (r, t)))
 
     // this is (essentially) performing a cartesian product within each partition...
-    val joined: RDD[(ReferenceRegion, (T, U))] =
-      smallerKeyed.join(largerKeyed)
+    val joined: RDD[(ReferenceRegion, (T, U))] = smallerKeyed.join(largerKeyed)
 
     // ... so we need to filter the final pairs to make sure they're overlapping.
     val filtered: RDD[(ReferenceRegion, (T, U))] = joined.filter({
@@ -300,8 +303,12 @@ class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializ
    *         here is 'true'.
    */
   def hasRegionsFor[U](regionable: U)(implicit mapping: ReferenceMapping[U]): Boolean = {
-    val region = mapping.getReferenceRegion(regionable)
-    !(region.end <= endpoints.head || region.start >= endpoints.last)
+    try {
+      val region = mapping.getReferenceRegion(regionable)
+      !(region.end <= endpoints.head || region.start >= endpoints.last)
+    } catch {
+      case npe: NullPointerException => throw new UnmappedException(regionable)
+    }
   }
 
   override def toString: String =

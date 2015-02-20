@@ -18,31 +18,54 @@
 package org.bdgenomics.adam.rich
 
 import org.bdgenomics.adam.models.{ ReferenceRegion, ReferenceMapping }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Feature, Genotype }
+import org.bdgenomics.formats.avro._
 
 /**
  * A common location in which to drop some ReferenceMapping implementations.
  */
 object ReferenceMappingContext {
 
+  implicit object VariantReferenceMapping extends ReferenceMapping[Variant] with Serializable {
+    override def getReferenceName(value: Variant): String = value.getContig.getContigName.toString
+    override def getReferenceRegion(value: Variant): ReferenceRegion =
+      ReferenceRegion(value.getContig.getContigName, value.getStart, value.getEnd)
+    override def hasReferenceRegion(value: Variant): Boolean =
+      value.getContig.getContigName != null && value.getStart != null
+  }
+
   implicit object GenotypeReferenceMapping extends ReferenceMapping[Genotype] with Serializable {
-    override def getReferenceName(value: Genotype): String = value.getVariant.getContig.getContigName.toString
+    override def getReferenceName(value: Genotype): String =
+      VariantReferenceMapping.getReferenceName(value.getVariant)
     override def getReferenceRegion(value: Genotype): ReferenceRegion =
-      ReferenceRegion(value.getVariant.getContig.getContigName.toString, value.getVariant.getStart, value.getVariant.getEnd)
+      VariantReferenceMapping.getReferenceRegion(value.getVariant)
+    override def hasReferenceRegion(value: Genotype): Boolean =
+      VariantReferenceMapping.hasReferenceRegion(value.getVariant)
+  }
+
+  implicit object FlatGenotypeReferenceMapping extends ReferenceMapping[FlatGenotype] with Serializable {
+    override def getReferenceName(value: FlatGenotype): String = value.getReferenceName.toString
+    override def getReferenceRegion(value: FlatGenotype): ReferenceRegion =
+      ReferenceRegion(value.getReferenceName.toString, value.getPosition, value.getPosition)
+    override def hasReferenceRegion(value: FlatGenotype): Boolean =
+      value.getReferenceName != null && value.getPosition != null
   }
 
   implicit object AlignmentRecordReferenceMapping extends ReferenceMapping[AlignmentRecord] with Serializable {
     override def getReferenceName(value: AlignmentRecord): String = value.getContig.getContigName.toString
     override def getReferenceRegion(value: AlignmentRecord): ReferenceRegion = ReferenceRegion(value).orNull
+    override def hasReferenceRegion(value: AlignmentRecord): Boolean = value.getReadMapped
   }
 
   implicit object ReferenceRegionReferenceMapping extends ReferenceMapping[ReferenceRegion] with Serializable {
     override def getReferenceName(value: ReferenceRegion): String = value.referenceName.toString
     override def getReferenceRegion(value: ReferenceRegion): ReferenceRegion = value
+    override def hasReferenceRegion(value: ReferenceRegion): Boolean = true
   }
 
   implicit object FeatureReferenceMapping extends ReferenceMapping[Feature] with Serializable {
     override def getReferenceName(value: Feature): String = value.getContig.getContigName.toString
     override def getReferenceRegion(value: Feature): ReferenceRegion = ReferenceRegion(value)
+    override def hasReferenceRegion(value: Feature): Boolean =
+      value.getContig.getContigName != null && value.getStart != null && value.getEnd != null
   }
 }
