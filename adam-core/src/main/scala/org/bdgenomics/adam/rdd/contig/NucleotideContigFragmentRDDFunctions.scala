@@ -108,4 +108,36 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
     // variant context contains a single locus
     Set(SequenceRecord.fromADAMContigFragment(elem))
   }
+
+  /**
+   * For all adjacent records in the RDD, we extend the records so that the adjacent
+   * records now overlap by _n_ bases, where _n_ is the flank length.
+   *
+   * @param flankLength The length to extend adjacent records by.
+   * @param optSd An optional sequence dictionary. If none is provided, we recompute the
+   *              sequence dictionary on the fly. Default is None.
+   * @return Returns the RDD, with all adjacent fragments extended with flanking sequence.
+   */
+  def flankAdjacentFragments(flankLength: Int,
+                             optSd: Option[SequenceDictionary] = None): RDD[NucleotideContigFragment] = {
+    FlankReferenceFragments(rdd, optSd.getOrElse(adamGetSequenceDictionary), flankLength)
+  }
+
+  /**
+   * Counts the k-mers contained in a FASTA contig.
+   *
+   * @param kmerLength The length of k-mers to count.
+   * @param optSd An optional sequence dictionary. If none is provided, we recompute the
+   *              sequence dictionary on the fly. Default is None.
+   * @return Returns an RDD containing k-mer/count pairs.
+   */
+  def countKmers(kmerLength: Int,
+                 optSd: Option[SequenceDictionary] = None): RDD[(String, Long)] = {
+    flankAdjacentFragments(kmerLength, optSd).flatMap(r => {
+      // cut each read into k-mers, and attach a count of 1L
+      r.getFragmentSequence
+        .sliding(kmerLength)
+        .map(k => (k, 1L))
+    }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
+  }
 }
