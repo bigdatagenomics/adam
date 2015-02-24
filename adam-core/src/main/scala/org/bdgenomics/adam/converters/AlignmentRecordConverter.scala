@@ -90,8 +90,6 @@ class AlignmentRecordConverter extends Serializable {
       .foreach(v => builder.setAttribute("LB", v.toString))
     Option(adamRecord.getRecordGroupPlatformUnit)
       .foreach(v => builder.setAttribute("PU", v.toString))
-    Option(adamRecord.getRecordGroupSample)
-      .foreach(v => builder.setAttribute("SM", v.toString))
 
     // set the reference name, and alignment position, for mate
     Option(adamRecord.getMateContig)

@@ -20,6 +20,7 @@ package org.bdgenomics.adam.converters
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
+  RecordGroup,
   SAMFileHeaderWritable,
   SequenceDictionary,
   SequenceRecord
@@ -52,7 +53,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val adamRead = make_read(3L, "2M3D2M", "2^AAA2", 4)
 
     // add reference details
-    adamRead.setRecordGroupName("testname")
+    adamRead.setRecordGroupName("record_group")
+    adamRead.setRecordGroupSample("sample")
     adamRead.setContig(Contig.newBuilder()
       .setContigName("referencetest")
       .build())
@@ -66,7 +68,10 @@ class AlignmentRecordConverterSuite extends FunSuite {
     // make sequence dictionary
     val seqRecForDict = SequenceRecord("referencetest", 5, "test://chrom1")
     val dict = SequenceDictionary(seqRecForDict)
-    val readGroups = new RecordGroupDictionary(Seq())
+
+    //make read group dictionary
+    val readGroup = new RecordGroup(adamRead.getRecordGroupSample(), adamRead.getRecordGroupName())
+    val readGroups = new RecordGroupDictionary(Seq(readGroup))
 
     // convert read
     val toSAM = adamRecordConverter.convert(adamRead,
@@ -86,6 +91,10 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(toSAM.getAttribute("MD") === "2^AAA2")
     assert(toSAM.getIntegerAttribute("OP") === 13)
     assert(toSAM.getStringAttribute("OC") === "2^AAA3")
+    //make sure that we didn't set the SM attribute.
+    //issue #452 https://github.com/bigdatagenomics/adam/issues/452
+    assert(toSAM.getAttribute("SM") === null)
+    assert(toSAM.getHeader().getReadGroup("record_group").getSample() === "sample")
   }
 
   test("convert a read to fastq") {
