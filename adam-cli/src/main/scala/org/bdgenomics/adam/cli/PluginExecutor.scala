@@ -82,10 +82,6 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
       .asInstanceOf[AccessControl[Input]]
   }
 
-  def load[Input <% SpecificRecord: Manifest](sc: SparkContext, locations: String, projection: Option[Schema]): RDD[Input] = {
-    sc.adamLoad[Input, ADAMPredicate[Input]](locations, projection = projection)
-  }
-
   def output[Output](sc: SparkContext, output: RDD[Output]) {
     output.map(_.toString).collect().foreach(println)
   }
