@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.models.{ ReferenceRegion, ReferenceMapping, ReferencePosition, SequenceDictionary }
+import org.bdgenomics.adam.models.{ ReferenceRegion, ReferencePosition, SequenceDictionary }
 import org.apache.spark.{ Logging, Partitioner }
 import scala.math._
 
@@ -99,15 +99,11 @@ object GenomicPositionPartitioner {
     Map(seqDict.records.toSeq.map(rec => (rec.name.toString, rec.length)): _*)
 }
 
-case class GenomicRegionPartitioner[T: ReferenceMapping](partitionSize: Long, seqLengths: Map[String, Long], start: Boolean = true) extends Partitioner with Logging {
+case class GenomicRegionPartitioner(partitionSize: Long, seqLengths: Map[String, Long], start: Boolean = true) extends Partitioner with Logging {
   private val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
   private val lengths: Seq[Long] = names.map(seqLengths(_))
   private val parts: Seq[Int] = lengths.map(v => round(ceil(v.toDouble / partitionSize)).toInt)
   private val cumulParts: Map[String, Int] = Map(names.zip(parts.scan(0)(_ + _)): _*)
-
-  private def extractReferenceRegion(k: T)(implicit tMapping: ReferenceMapping[T]): ReferenceRegion = {
-    tMapping.getReferenceRegion(k)
-  }
 
   private def computePartition(refReg: ReferenceRegion): Int = {
     val pos = if (start) refReg.start else (refReg.end - 1)
@@ -118,13 +114,13 @@ case class GenomicRegionPartitioner[T: ReferenceMapping](partitionSize: Long, se
 
   override def getPartition(key: Any): Int = {
     key match {
-      case mappable: T => computePartition(extractReferenceRegion(mappable))
-      case _           => throw new IllegalArgumentException("Only ReferenceMappable values can be partitioned by GenomicRegionPartitioner")
+      case region: ReferenceRegion => computePartition(region)
+      case _                       => throw new IllegalArgumentException("Only ReferenceMappable values can be partitioned by GenomicRegionPartitioner")
     }
   }
 }
 
 object GenomicRegionPartitioner {
-  def apply[T: ReferenceMapping](partitionSize: Long, seqDict: SequenceDictionary): GenomicRegionPartitioner[T] =
+  def apply(partitionSize: Long, seqDict: SequenceDictionary): GenomicRegionPartitioner =
     GenomicRegionPartitioner(partitionSize, GenomicPositionPartitioner.extractLengthMap(seqDict))
 }

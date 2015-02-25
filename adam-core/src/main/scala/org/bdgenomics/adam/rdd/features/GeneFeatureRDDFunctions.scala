@@ -21,7 +21,6 @@ import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rich.ReferenceMappingContext.FeatureReferenceMapping
 import org.bdgenomics.formats.avro.{ Strand, Feature }
 import scala.collection.JavaConversions._
 
@@ -71,7 +70,7 @@ class GeneFeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable wit
         case ("exon", ftr: Feature) =>
           val ids: Seq[String] = ftr.getParentIds.map(_.toString)
           ids.map(transcriptId => (transcriptId,
-            Exon(ftr.getFeatureId.toString, transcriptId, strand(ftr.getStrand), FeatureReferenceMapping.getReferenceRegion(ftr))))
+            Exon(ftr.getFeatureId.toString, transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))))
       }.groupByKey()
 
     val cdsByTranscript: RDD[(String, Iterable[CDS])] =
@@ -79,7 +78,7 @@ class GeneFeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable wit
         case ("CDS", ftr: Feature) =>
           val ids: Seq[String] = ftr.getParentIds.map(_.toString)
           ids.map(transcriptId => (transcriptId,
-            CDS(transcriptId, strand(ftr.getStrand), FeatureReferenceMapping.getReferenceRegion(ftr))))
+            CDS(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))))
       }.groupByKey()
 
     val utrsByTranscript: RDD[(String, Iterable[UTR])] =
@@ -87,7 +86,7 @@ class GeneFeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable wit
         case ("UTR", ftr: Feature) =>
           val ids: Seq[String] = ftr.getParentIds.map(_.toString)
           ids.map(transcriptId => (transcriptId,
-            UTR(transcriptId, strand(ftr.getStrand), FeatureReferenceMapping.getReferenceRegion(ftr))))
+            UTR(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))))
       }.groupByKey()
 
     // Step #3

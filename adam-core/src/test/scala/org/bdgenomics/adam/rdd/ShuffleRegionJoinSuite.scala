@@ -19,8 +19,7 @@ package org.bdgenomics.adam.rdd
 
 import org.apache.spark.HashPartitioner
 import org.apache.spark.SparkContext._
-import org.bdgenomics.adam.models.{ ReferenceMapping, ReferenceRegion, SequenceDictionary, SequenceRecord }
-import org.bdgenomics.adam.rich.ReferenceMappingContext._
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
@@ -53,8 +52,8 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
     val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord))
-    val recordsRdd = sc.parallelize(Seq(record1, record2))
+    val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion(_).get)
+    val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_).get)
 
     assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
@@ -108,8 +107,8 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val baseRecord1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setEnd(5L).build()
     val baseRecord2 = AlignmentRecord.newBuilder(builtRef2).setCigar("4M").setEnd(5L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2))
-    val recordsRdd = sc.parallelize(Seq(record1, record2, record3))
+    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_).get)
+    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_).get)
 
     assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       sc,
@@ -163,8 +162,8 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val baseRecord1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setEnd(5L).build()
     val baseRecord2 = AlignmentRecord.newBuilder(builtRef2).setCigar("4M").setEnd(5L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2))
-    val recordsRdd = sc.parallelize(Seq(record1, record2, record3))
+    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_).get)
+    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_).get)
 
     assert(BroadcastRegionJoin.cartesianFilter(
       baseRdd,
@@ -188,8 +187,8 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
 }
 
 object ShuffleRegionJoinSuite {
-  def getReferenceRegion[T](record: T)(implicit mapping: ReferenceMapping[T]): ReferenceRegion =
-    mapping.getReferenceRegion(record)
+  def getReferenceRegion(record: AlignmentRecord): ReferenceRegion =
+    ReferenceRegion(record).get
 
   def merge(prev: Boolean, next: (AlignmentRecord, AlignmentRecord)): Boolean =
     prev && getReferenceRegion(next._1).overlaps(getReferenceRegion(next._2))
