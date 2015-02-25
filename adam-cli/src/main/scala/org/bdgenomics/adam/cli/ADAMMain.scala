@@ -53,8 +53,6 @@ object ADAMMain extends Logging {
           VcfAnnotation2ADAM,
           ADAM2Vcf,
           Fasta2ADAM,
-          Reads2Ref,
-          MpileupCommand,
           Features2ADAM,
           WigFix2Bed
         )

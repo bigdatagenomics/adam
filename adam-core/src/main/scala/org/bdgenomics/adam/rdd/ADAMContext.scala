@@ -35,7 +35,6 @@ import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDDFunctions
 import org.bdgenomics.adam.rdd.features._
-import org.bdgenomics.adam.rdd.pileup.{ PileupRDDFunctions, RodRDDFunctions }
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDDFunctions
 import org.bdgenomics.adam.rdd.variation._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -61,12 +60,6 @@ object ADAMContext {
 
   // Add methods specific to Read RDDs
   implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
-
-  // Add methods specific to the Pileup RDDs
-  implicit def rddToPileupRDD(rdd: RDD[Pileup]) = new PileupRDDFunctions(rdd)
-
-  // Add methods specific to the Rod RDDs
-  implicit def rddToRodRDD(rdd: RDD[Rod]) = new RodRDDFunctions(rdd)
 
   // Add methods specific to the ADAMNucleotideContig RDDs
   implicit def rddToContigFragmentRDD(rdd: RDD[NucleotideContigFragment]) = new NucleotideContigFragmentRDDFunctions(rdd)
