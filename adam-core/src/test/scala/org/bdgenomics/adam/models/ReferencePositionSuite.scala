@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest.FunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Genotype, Pileup, Variant }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Genotype, Variant }
 
 class ReferencePositionSuite extends FunSuite {
 
@@ -94,22 +94,6 @@ class ReferencePositionSuite extends FunSuite {
     val refPosOpt = ReferencePosition(read)
 
     assert(refPosOpt.isEmpty)
-  }
-
-  test("create reference position from pileup") {
-    val contig = Contig.newBuilder
-      .setContigName("chr2")
-      .build
-
-    val pileup = Pileup.newBuilder()
-      .setPosition(2L)
-      .setContig(contig)
-      .build()
-
-    val refPos = ReferencePosition(pileup)
-
-    assert(refPos.referenceName === "chr2")
-    assert(refPos.pos === 2L)
   }
 
   test("create reference position from variant") {

@@ -67,7 +67,6 @@ class AvroSerializer[T <: SpecificRecord: ClassTag] extends Serializer[T] {
 class ADAMKryoRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo) {
     kryo.register(classOf[AlignmentRecord], new AvroSerializer[AlignmentRecord]())
-    kryo.register(classOf[Pileup], new AvroSerializer[Pileup]())
     kryo.register(classOf[Genotype], new AvroSerializer[Genotype]())
     kryo.register(classOf[Variant], new AvroSerializer[Variant]())
     kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation]())

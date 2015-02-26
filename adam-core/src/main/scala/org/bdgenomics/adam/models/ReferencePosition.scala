@@ -245,17 +245,6 @@ object ReferencePosition {
       None
     }
   }
-
-  /**
-   * Generates a reference position from a pileup base. Pileups are mapped by definition, so no
-   * option wrapper is required.
-   *
-   * @param pileup A single pileup base.
-   * @return The reference position of this pileup.
-   */
-  def apply(pileup: Pileup): ReferencePosition = {
-    new ReferencePosition(pileup.getContig.getContigName, pileup.getPosition)
-  }
 }
 
 case class ReferencePosition(referenceName: String, pos: Long) extends Ordered[ReferencePosition] {
