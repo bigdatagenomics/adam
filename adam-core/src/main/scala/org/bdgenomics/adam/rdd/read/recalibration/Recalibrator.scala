@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
+import org.bdgenomics.adam.rich.DecadentRead.Residue
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.DecadentRead
 import org.bdgenomics.adam.util.QualityScore
@@ -55,12 +56,8 @@ object Recalibrator {
 class RecalibrationTable(
   // covariates for this recalibration
   val covariates: CovariateSpace,
-  // marginal by read group
-  val globalTable: Map[String, Aggregate],
-  // marginal by read group and quality
-  val qualityTable: Map[(String, QualityScore), Aggregate],
-  // marginals for each optional covariate by read group and quality
-  val extraTables: IndexedSeq[Map[(String, QualityScore, Option[Covariate#Value]), Aggregate]])
+  // marginal and quality scores by read group,
+  val globalTable: Map[String, (Aggregate, QualityTable)])
     extends (DecadentRead => Seq[QualityScore]) with Serializable {
 
   // TODO: parameterize?
@@ -68,14 +65,20 @@ class RecalibrationTable(
 
   val maxLogP = log(maxQualScore.errorProbability)
 
-  def apply(read: DecadentRead): Seq[QualityScore] =
-    covariates(read).map(lookup)
+  def apply(read: DecadentRead): Seq[QualityScore] = {
+    val globalEntry: Option[(Aggregate, QualityTable)] = globalTable.get(read.readGroup)
+    val globalDelta = computeGlobalDelta(globalEntry)
+    val extraValues: IndexedSeq[Seq[Option[Covariate#Value]]] = getExtraValues(read)
+    read.residues.zipWithIndex.map(lookup(_, globalEntry, globalDelta, extraValues))
+  }
 
-  def lookup(key: CovariateKey): QualityScore = {
-    val residueLogP = log(key.quality.errorProbability)
-    val globalDelta = computeGlobalDelta(key)
-    val qualityDelta = computeQualityDelta(key, residueLogP + globalDelta)
-    val extrasDelta = computeExtrasDelta(key, residueLogP + globalDelta + qualityDelta)
+  def lookup(residueWithIndex: (Residue, Int), globalEntry: Option[(Aggregate, QualityTable)], globalDelta: Double,
+             extraValues: IndexedSeq[Seq[Option[Covariate#Value]]]): QualityScore = {
+    val (residue, index) = residueWithIndex
+    val residueLogP = log(residue.quality.errorProbability)
+    val qualityEntry: Option[(Aggregate, ExtrasTables)] = getQualityEntry(residue.quality, globalEntry)
+    val qualityDelta = computeQualityDelta(qualityEntry, residueLogP + globalDelta)
+    val extrasDelta = computeExtrasDelta(qualityEntry, index, extraValues, residueLogP + globalDelta + qualityDelta)
     val correctedLogP = residueLogP + globalDelta + qualityDelta + extrasDelta
     qualityFromLogP(correctedLogP)
   }
@@ -85,41 +88,78 @@ class RecalibrationTable(
     QualityScore.fromErrorProbability(exp(boundedLogP))
   }
 
-  def computeGlobalDelta(key: CovariateKey): Double = {
-    globalTable.get(key.readGroup).
-      map(bucket => log(bucket.empiricalErrorProbability) - log(bucket.reportedErrorProbability)).
+  def computeGlobalDelta(globalEntry: Option[(Aggregate, QualityTable)]): Double = {
+    globalEntry.map(bucket => log(bucket._1.empiricalErrorProbability) - log(bucket._1.reportedErrorProbability)).
       getOrElse(0.0)
   }
 
-  def computeQualityDelta(key: CovariateKey, offset: Double): Double = {
-    qualityTable.get((key.readGroup, key.quality)).
-      map(aggregate => log(aggregate.empiricalErrorProbability) - offset).
+  def getQualityEntry(quality: QualityScore,
+                      globalEntry: Option[(Aggregate, QualityTable)]): Option[(Aggregate, ExtrasTables)] = {
+    globalEntry.flatMap(_._2.table.get(quality))
+  }
+
+  def computeQualityDelta(qualityEntry: Option[(Aggregate, ExtrasTables)], offset: Double): Double = {
+    qualityEntry.map(bucket => log(bucket._1.empiricalErrorProbability) - offset).
       getOrElse(0.0)
   }
 
-  def computeExtrasDelta(key: CovariateKey, offset: Double): Double = {
+  def computeExtrasDelta(maybeQualityEntry: Option[(Aggregate, ExtrasTables)], residueIndex: Int,
+                         extraValues: IndexedSeq[Seq[Option[Covariate#Value]]], offset: Double): Double = {
     // Returns sum(delta for each extra covariate)
-    assert(extraTables.size == key.extras.size)
-    extraTables.zip(key.extras).map {
-      case (_, None) => 0.0
-      case (table, Some(value)) =>
-        table.get((key.readGroup, key.quality, Some(value))).
+    maybeQualityEntry.map(qualityEntry => {
+      val extrasTables = qualityEntry._2.extrasTables
+      assert(extrasTables.size == extraValues.size)
+      var extrasDelta = 0.0
+      var index = 0
+      extraValues.foreach(residueValues => {
+        val table = extrasTables(index)
+        extrasDelta += table.get(residueValues(residueIndex)).
           map(aggregate => log(aggregate.empiricalErrorProbability) - offset).
           getOrElse(0.0)
-    }.fold(0.0)(_ + _)
+        index += 1
+      })
+      extrasDelta
+    }).getOrElse(0.0)
   }
+
+  def getExtraValues(read: DecadentRead): IndexedSeq[Seq[Option[Covariate#Value]]] = GetExtraValues.time {
+    covariates.extras.map(extra => extra(read))
+  }
+
 }
 
 object RecalibrationTable {
+
   def apply(observed: ObservationTable): RecalibrationTable = {
     // The ".map(identity)" calls are needed to force the result to be serializable.
-    // See https://issues.scala-lang.org/browse/SI-7005
-    def aggregateExtra(idx: Int) = observed.
-      aggregate((k, v) => (k.readGroup, k.quality, k.extras(idx))).
-      map(identity)
-    val globalTables = observed.aggregate((k, v) => k.readGroup).map(identity)
-    val qualityTables = observed.aggregate((k, v) => (k.readGroup, k.quality)).map(identity)
-    val extrasTables = Range(0, observed.space.extras.length).map(aggregateExtra)
-    new RecalibrationTable(observed.space, globalTables, qualityTables, extrasTables)
+    val globalTable: Map[String, (Aggregate, QualityTable)] = observed.entries.groupBy(_._1.readGroup).map(globalEntry => {
+      (globalEntry._1, (aggregateObservations(globalEntry._2), new QualityTable(computeQualityTable(globalEntry, observed.space))))
+    }).map(identity)
+    new RecalibrationTable(observed.space, globalTable)
   }
+
+  def computeQualityTable(globalEntry: (String, Map[CovariateKey, Observation]),
+                          space: CovariateSpace): Map[QualityScore, (Aggregate, ExtrasTables)] = {
+    globalEntry._2.groupBy(_._1.quality).map(qualityEntry => {
+      (qualityEntry._1, (aggregateObservations(qualityEntry._2), new ExtrasTables(computeExtrasTables(qualityEntry._2, space))))
+    }).map(identity)
+  }
+
+  def computeExtrasTables(table: Map[CovariateKey, Observation],
+                          space: CovariateSpace): IndexedSeq[Map[Option[Covariate#Value], Aggregate]] = {
+    Range(0, space.extras.length).map(index => {
+      table.groupBy(_._1.extras(index)).map(extraEntry => {
+        (extraEntry._1, aggregateObservations(extraEntry._2))
+      }).map(identity)
+    })
+  }
+
+  def aggregateObservations[K](observations: Map[CovariateKey, Observation]): Aggregate = {
+    observations.map { case (oldKey, obs) => Aggregate(oldKey, obs) }.fold(Aggregate.empty)(_ + _)
+  }
+
 }
+
+class QualityTable(val table: Map[QualityScore, (Aggregate, ExtrasTables)]) extends Serializable
+
+class ExtrasTables(val extrasTables: IndexedSeq[Map[Option[Covariate#Value], Aggregate]]) extends Serializable

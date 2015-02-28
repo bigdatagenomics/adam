@@ -53,6 +53,7 @@ object Timers extends Metrics {
   val ObservationAccumulatorSeq = timer("Observation Accumulator: seq")
   val RecalibrateRead = timer("Recalibrate Read")
   val ComputeQualityScore = timer("Compute Quality Score")
+  val GetExtraValues = timer("Get Extra Values")
 
   // Realign Indels
   val RealignIndelsInDriver = timer("Realign Indels")
