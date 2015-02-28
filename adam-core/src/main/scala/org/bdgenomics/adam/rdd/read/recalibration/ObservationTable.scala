@@ -114,14 +114,6 @@ class ObservationTable(
     val space: CovariateSpace,
     val entries: Map[CovariateKey, Observation]) extends Serializable {
 
-  // `func' computes the aggregation key
-  def aggregate[K](func: (CovariateKey, Observation) => K): Map[K, Aggregate] = {
-    val grouped = entries.groupBy { case (key, value) => func(key, value) }
-    val newEntries = grouped.mapValues(bucket =>
-      bucket.map { case (oldKey, obs) => Aggregate(oldKey, obs) }.fold(Aggregate.empty)(_ + _))
-    newEntries.toMap
-  }
-
   override def toString = entries.map { case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
 
   // Format as CSV compatible with GATK's output
