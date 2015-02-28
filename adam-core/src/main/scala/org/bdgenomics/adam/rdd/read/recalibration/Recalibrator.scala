@@ -109,12 +109,16 @@ class RecalibrationTable(
     maybeQualityEntry.map(qualityEntry => {
       val extrasTables = qualityEntry._2.extrasTables
       assert(extrasTables.size == extraValues.size)
-      extrasTables.zip(extraValues).map(entry => {
-        val (table, residueValues) = entry
-        table.get(residueValues(residueIndex)).
+      var extrasDelta = 0.0
+      var index = 0
+      extraValues.foreach(residueValues => {
+        val table = extrasTables(index)
+        extrasDelta += table.get(residueValues(residueIndex)).
           map(aggregate => log(aggregate.empiricalErrorProbability) - offset).
           getOrElse(0.0)
-      }).fold(0.0)(_ + _)
+        index += 1
+      })
+      extrasDelta
     }).getOrElse(0.0)
   }
 
@@ -134,13 +138,15 @@ object RecalibrationTable {
     new RecalibrationTable(observed.space, globalTable)
   }
 
-  def computeQualityTable(globalEntry: (String, Map[CovariateKey, Observation]), space: CovariateSpace): Map[QualityScore, (Aggregate, ExtrasTables)] = {
+  def computeQualityTable(globalEntry: (String, Map[CovariateKey, Observation]),
+      space: CovariateSpace): Map[QualityScore, (Aggregate, ExtrasTables)] = {
     globalEntry._2.groupBy(_._1.quality).map(qualityEntry => {
       (qualityEntry._1, (aggregateObservations(qualityEntry._2), new ExtrasTables(computeExtrasTables(qualityEntry._2, space))))
     }).map(identity)
   }
 
-  def computeExtrasTables(table: Map[CovariateKey, Observation], space: CovariateSpace): IndexedSeq[Map[Option[Covariate#Value], Aggregate]] = {
+  def computeExtrasTables(table: Map[CovariateKey, Observation],
+      space: CovariateSpace): IndexedSeq[Map[Option[Covariate#Value], Aggregate]] = {
     Range(0, space.extras.length).map(index => {
       table.groupBy(_._1.extras(index)).map(extraEntry => {
         (extraEntry._1, aggregateObservations(extraEntry._2))
