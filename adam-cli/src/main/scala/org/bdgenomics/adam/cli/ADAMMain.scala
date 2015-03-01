@@ -32,8 +32,6 @@ object ADAMMain extends Logging {
       CommandGroup(
         "ADAM ACTIONS",
         List(
-          CompareADAM,
-          FindReads,
           CalculateDepth,
           CountKmers,
           CountContigKmers,
