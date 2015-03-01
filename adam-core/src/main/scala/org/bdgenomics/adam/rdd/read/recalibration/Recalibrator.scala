@@ -139,14 +139,14 @@ object RecalibrationTable {
   }
 
   def computeQualityTable(globalEntry: (String, Map[CovariateKey, Observation]),
-      space: CovariateSpace): Map[QualityScore, (Aggregate, ExtrasTables)] = {
+                          space: CovariateSpace): Map[QualityScore, (Aggregate, ExtrasTables)] = {
     globalEntry._2.groupBy(_._1.quality).map(qualityEntry => {
       (qualityEntry._1, (aggregateObservations(qualityEntry._2), new ExtrasTables(computeExtrasTables(qualityEntry._2, space))))
     }).map(identity)
   }
 
   def computeExtrasTables(table: Map[CovariateKey, Observation],
-      space: CovariateSpace): IndexedSeq[Map[Option[Covariate#Value], Aggregate]] = {
+                          space: CovariateSpace): IndexedSeq[Map[Option[Covariate#Value], Aggregate]] = {
     Range(0, space.extras.length).map(index => {
       table.groupBy(_._1.extras(index)).map(extraEntry => {
         (extraEntry._1, aggregateObservations(extraEntry._2))
