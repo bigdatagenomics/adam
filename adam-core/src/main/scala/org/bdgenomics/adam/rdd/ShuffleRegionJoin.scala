@@ -21,8 +21,7 @@ package org.bdgenomics.adam.rdd
 import org.apache.spark.{ Logging, Partitioner, SparkContext }
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion, ReferenceMapping }
-
+import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
 import scala.collection.mutable.ListBuffer
 import scala.math._
 import scala.reflect.ClassTag
@@ -40,15 +39,11 @@ object ShuffleRegionJoin {
    * the object in each bin.  Finally, each bin independently performs a chromsweep sort-merge join.
    *
    * @param sc A SparkContext for the cluster that will perform the join
-   * @param leftRDD The 'left' side of the join, a set of values which correspond (through an implicit
-   *                ReferenceMapping) to regions on the genome.
-   * @param rightRDD The 'right' side of the join, a set of values which correspond (through an implicit
-   *                 ReferenceMapping) to regions on the genome
+   * @param leftRDD The 'left' side of the join
+   * @param rightRDD The 'right' side of the join
    * @param seqDict A SequenceDictionary -- every region corresponding to either the leftRDD or rightRDD
    *                values must be mapped to a chromosome with an entry in this dictionary.
    * @param partitionSize The size of the genome bin in nucleotides.  Controls the parallelism of the join.
-   * @param tMapping implicit reference mapping for leftRDD regions
-   * @param uMapping implicit reference mapping for rightRDD regions
    * @param tManifest implicit type of leftRDD
    * @param uManifest implicit type of rightRDD
    * @tparam T type of leftRDD
@@ -57,12 +52,10 @@ object ShuffleRegionJoin {
    *         corresponding to x overlaps the region corresponding to y.
    */
   def partitionAndJoin[T, U](sc: SparkContext,
-                             leftRDD: RDD[T],
-                             rightRDD: RDD[U],
+                             leftRDD: RDD[(ReferenceRegion, T)],
+                             rightRDD: RDD[(ReferenceRegion, U)],
                              seqDict: SequenceDictionary,
-                             partitionSize: Long)(implicit tMapping: ReferenceMapping[T],
-                                                  uMapping: ReferenceMapping[U],
-                                                  tManifest: ClassTag[T],
+                             partitionSize: Long)(implicit tManifest: ClassTag[T],
                                                   uManifest: ClassTag[U]): RDD[(T, U)] = {
     // Create the set of bins across the genome for parallel processing
     val seqLengths = Map(seqDict.records.toSeq.map(rec => (rec.name.toString, rec.length)): _*)
@@ -71,15 +64,15 @@ object ShuffleRegionJoin {
     // Key each RDD element to its corresponding bin
     // Elements may be replicated if they overlap multiple bins
     val keyedLeft: RDD[((ReferenceRegion, Int), T)] =
-      leftRDD.flatMap(x => {
-        val region = tMapping.getReferenceRegion(x)
+      leftRDD.flatMap(kv => {
+        val (region, x) = kv
         val lo = bins.value.getStartBin(region)
         val hi = bins.value.getEndBin(region)
         (lo to hi).map(i => ((region, i), x))
       })
     val keyedRight: RDD[((ReferenceRegion, Int), U)] =
-      rightRDD.flatMap(y => {
-        val region = uMapping.getReferenceRegion(y)
+      rightRDD.flatMap(kv => {
+        val (region, y) = kv
         val lo = bins.value.getStartBin(region)
         val hi = bins.value.getEndBin(region)
         (lo to hi).map(i => ((region, i), y))

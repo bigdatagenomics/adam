@@ -28,7 +28,6 @@ import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.BroadcastRegionJoin
-import org.bdgenomics.adam.rich.ReferenceMappingContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.io._
 
@@ -90,8 +89,8 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCo
     val variantNames = vcf.collect().toMap
 
     val joinedRDD: RDD[(ReferenceRegion, AlignmentRecord)] =
-      if (args.cartesian) BroadcastRegionJoin.cartesianFilter(variantPositions, mappedRDD)
-      else BroadcastRegionJoin.partitionAndJoin(sc, variantPositions, mappedRDD)
+      if (args.cartesian) BroadcastRegionJoin.cartesianFilter(variantPositions.keyBy(v => v), mappedRDD.keyBy(ReferenceRegion(_).get))
+      else BroadcastRegionJoin.partitionAndJoin(sc, variantPositions.keyBy(v => v), mappedRDD.keyBy(ReferenceRegion(_).get))
 
     val depths: RDD[(ReferenceRegion, Int)] =
       joinedRDD.map { case (region, record) => (region, 1) }.reduceByKey(_ + _).sortByKey()
