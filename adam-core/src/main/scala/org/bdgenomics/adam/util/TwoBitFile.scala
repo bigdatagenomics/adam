@@ -54,7 +54,7 @@ object TwoBitFile {
  *
  * @param byteAccess ByteAccess pointing to a .2bit file.
  */
-class TwoBitFile(byteAccess: ByteAccess) {
+class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
   // load file into memory
   val bytes = ByteBuffer.wrap(byteAccess.readFully(0, byteAccess.length().toInt))
   val numSeq = readHeader()
