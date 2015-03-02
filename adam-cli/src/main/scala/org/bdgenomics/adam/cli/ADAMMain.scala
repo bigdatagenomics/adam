@@ -32,8 +32,6 @@ object ADAMMain extends Logging {
       CommandGroup(
         "ADAM ACTIONS",
         List(
-          CompareADAM,
-          FindReads,
           CalculateDepth,
           CountKmers,
           CountContigKmers,
@@ -66,7 +64,6 @@ object ADAMMain extends Logging {
           VizReads,
           PrintTags,
           ListDict,
-          SummarizeGenotypes,
           AlleleCount,
           BuildInformation,
           View

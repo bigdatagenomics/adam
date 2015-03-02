@@ -121,39 +121,6 @@ class GenotypeRDDFunctions(rdd: RDD[Genotype]) extends Serializable with Logging
       .map { case (v: RichVariant, g) => new VariantContext(v, g, None) }
   }
 
-  /**
-   * Compute the per-sample ConcordanceTable for this genotypes vs. the supplied
-   * truth dataset. Only genotypes with ploidy <= 2 will be considered.
-   * @param truth Truth genotypes
-   * @return PairedRDD of sample -> ConcordanceTable
-   */
-  def concordanceWith(truth: RDD[Genotype]): RDD[(String, ConcordanceTable)] = {
-    // Concordance approach only works for ploidy <= 2, e.g. diploid/haploid
-    val keyedTest = rdd.filter(_.ploidy <= 2)
-      .keyBy(g => (g.getVariant, g.getSampleId.toString): (RichVariant, String))
-    val keyedTruth = truth.filter(_.ploidy <= 2)
-      .keyBy(g => (g.getVariant, g.getSampleId.toString): (RichVariant, String))
-
-    val inTest = keyedTest.leftOuterJoin(keyedTruth)
-    val justInTruth = keyedTruth.subtractByKey(inTest)
-
-    // Compute RDD[sample -> ConcordanceTable] across variants/samples
-    val inTestPairs = inTest.map({
-      case ((_, sample), (l, Some(r))) => sample -> (l.getType, r.getType)
-      case ((_, sample), (l, None))    => sample -> (l.getType, GenotypeType.NO_CALL)
-    })
-    val justInTruthPairs = justInTruth.map({ // "truth-only" entries
-      case ((_, sample), r) => sample -> (GenotypeType.NO_CALL, r.getType)
-    })
-
-    val bySample = inTestPairs.union(justInTruthPairs).combineByKey(
-      (p: (GenotypeType, GenotypeType)) => ConcordanceTable(p),
-      (l: ConcordanceTable, r: (GenotypeType, GenotypeType)) => l.add(r),
-      (l: ConcordanceTable, r: ConcordanceTable) => l.add(r))
-
-    bySample
-  }
-
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {
     def overlapsQuery(rec: Genotype): Boolean =
       rec.getVariant.getContig.getContigName.toString == query.referenceName &&
