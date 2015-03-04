@@ -30,10 +30,11 @@ class FastqRecordConverter extends Serializable with Logging {
     //true if read is multiline
     if (temp.length > 8) {
       lines = parseMultiLine(element._2.toString)
+      assert(lines.length == 8, "Multiline record has wrong format:\n" + lines(0) + " " + lines(1) + " " + lines.length + " from " + temp.mkString(";"))
     } else {
       lines = temp
+      assert(lines.length == 8, "Record has wrong format:\n" + lines(0) + " " + lines(1) + " " + lines.length + " from " + temp.mkString(";"))
     }
-    assert(lines.length == 8, "Record has wrong format:\n" + lines(0) + " " + lines(1) + " " + lines.length)
 
     // get fields for first read in pair
     val firstReadName = lines(0).drop(1)
@@ -41,7 +42,8 @@ class FastqRecordConverter extends Serializable with Logging {
     val firstReadQualities = lines(3)
 
     assert(firstReadSequence.length == firstReadQualities.length,
-      "Read " + firstReadName + " has different sequence and qual length.")
+      "First of pair read " + firstReadName + " has different sequence (" + firstReadSequence +
+        ") and qual (" + firstReadQualities + " length.")
 
     // get fields for second read in pair
     val secondReadName = lines(4).drop(1)
@@ -49,7 +51,8 @@ class FastqRecordConverter extends Serializable with Logging {
     val secondReadQualities = lines(7)
 
     assert(secondReadSequence.length == secondReadQualities.length,
-      "Read " + secondReadName + " has different sequence and qual length.")
+      "Second of pair read " + secondReadName + " has different sequence (" + secondReadSequence +
+        ") and qual (" + secondReadQualities + ") length.")
 
     // build and return iterators
     Iterable(AlignmentRecord.newBuilder()

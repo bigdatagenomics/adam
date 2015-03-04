@@ -50,6 +50,7 @@ class SingleFastqInputFormatSuite extends ADAMFunSuite {
       assert(testOutput.toString() == expectedOutputData)
     }
   }
+
   sparkTest("multiline FASTQ hadoop reader") {
     val inputName = "multiline_fastq.fq"
     val expectedOutputName = "single_" + inputName + ".output"
@@ -73,7 +74,6 @@ class SingleFastqInputFormatSuite extends ADAMFunSuite {
     })
 
     assert(testOutput.toString() == expectedOutputData)
-
   }
 }
 
