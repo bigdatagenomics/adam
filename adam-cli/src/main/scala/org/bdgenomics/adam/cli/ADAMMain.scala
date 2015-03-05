@@ -33,7 +33,7 @@ object ADAMMain extends Logging {
         "ADAM ACTIONS",
         List(
           CalculateDepth,
-          CountKmers,
+          CountReadKmers,
           CountContigKmers,
           Transform,
           Adam2Fastq,
