@@ -31,7 +31,7 @@ object CountContigKmers extends ADAMCommandCompanion {
   val commandDescription = "Counts the k-mers/q-mers from a read dataset."
 
   def apply(cmdLine: Array[String]) = {
-    new CountKmers(Args4j[CountKmersArgs](cmdLine))
+    new CountContigKmers(Args4j[CountContigKmersArgs](cmdLine))
   }
 }
 
