@@ -49,7 +49,8 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fa
 
   def run(sc: SparkContext, job: Job) {
     log.info("Loading FASTA data from disk.")
-    val adamFasta = sc.loadSequence(args.fastaFile, fragmentLength = args.fragmentLength)
+    val adamFasta = sc.loadFasta(args.fastaFile, fragmentLength = args.fragmentLength)
+
     if (args.verbose) {
       println("FASTA contains:")
       println(adamFasta.adamGetSequenceDictionary())

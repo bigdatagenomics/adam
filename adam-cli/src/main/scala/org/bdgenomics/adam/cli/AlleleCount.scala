@@ -70,8 +70,7 @@ class AlleleCount(val args: AlleleCountArgs) extends ADAMSparkCommand[AlleleCoun
 
   def run(sc: SparkContext, job: Job) {
 
-    val adamVariants: RDD[Genotype] = sc.adamLoad(args.adamFile)
+    val adamVariants: RDD[Genotype] = sc.loadGenotypes(args.adamFile)
     AlleleCountHelper.countAlleles(adamVariants, args)
-
   }
 }
