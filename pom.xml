@@ -423,6 +423,11 @@
         <version>${parquet.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>parquet-scala_2.10</artifactId>
+        <version>${parquet.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.seqdoop</groupId>
         <artifactId>hadoop-bam</artifactId>
         <version>7.0.0</version>

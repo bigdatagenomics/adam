@@ -28,6 +28,8 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
+import parquet.filter2.dsl.Dsl._
+import parquet.filter2.predicate.FilterPredicate
 
 class ADAMContextSuite extends ADAMFunSuite {
 
@@ -64,7 +66,8 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can filter a .SAM file based on quality") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path, predicate = Some(classOf[HighQualityReadPredicate]))
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
+      .filter(a => (a.getReadMapped && a.getMapq > 30))
     assert(reads.count() === 18)
   }
 
@@ -283,6 +286,21 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reads.filter(_.getReadPaired).count === 0)
     assert(reads.collect.forall(_.getSequence.toString.length === 250))
     assert(reads.collect.forall(_.getQual.toString.length === 250))
+  }
+
+  sparkTest("filter on load using the filter2 API") {
+    val path = ClassLoader.getSystemClassLoader.getResource("bqsr1.vcf").getFile
+
+    val variants: RDD[Variant] = sc.loadVariants(path)
+    assert(variants.count === 681)
+
+    val loc = tempLocation()
+    variants.adamParquetSave(loc, 1024, 1024) // force more than one row group (block)
+
+    val pred: FilterPredicate = (LongColumn("start") === 16097631L)
+    // the following only reads one row group
+    val adamVariants: RDD[Variant] = sc.loadVariants(loc, predicate = Some(pred))
+    assert(adamVariants.count === 1)
   }
 }
 
