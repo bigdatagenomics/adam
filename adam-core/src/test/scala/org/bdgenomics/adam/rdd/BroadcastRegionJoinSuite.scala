@@ -133,14 +133,12 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
       BroadcastRegionJoinSuite.getReferenceRegion(record2))
 
     assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       rdd1,
       rdd2).aggregate(true)(
         BroadcastRegionJoinSuite.merge,
         BroadcastRegionJoinSuite.and))
 
     assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       rdd1,
       rdd2)
       .aggregate(0)(
@@ -171,7 +169,6 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_).get)
 
     assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       baseRdd,
       recordsRdd)
       .aggregate(true)(
@@ -179,7 +176,6 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
         BroadcastRegionJoinSuite.and))
 
     assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       baseRdd,
       recordsRdd).count() === 2)
   }
@@ -222,7 +218,6 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_).get)
 
     assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       baseRdd,
       recordsRdd)
       .aggregate(true)(
@@ -230,7 +225,6 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
         BroadcastRegionJoinSuite.and))
 
     assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       baseRdd,
       recordsRdd).count() === 3)
   }
@@ -277,7 +271,6 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
       recordsRdd)
       .leftOuterJoin(
         BroadcastRegionJoin.partitionAndJoin(
-          sc,
           baseRdd,
           recordsRdd))
       .filter({
