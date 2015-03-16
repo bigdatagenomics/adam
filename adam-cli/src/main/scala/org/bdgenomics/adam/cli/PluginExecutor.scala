@@ -23,7 +23,6 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.plugins.{ AccessControl, ADAMPlugin }
-import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -118,5 +117,4 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
 
     output(sc, results)
   }
-
 }

@@ -426,7 +426,6 @@
         <groupId>com.twitter</groupId>
         <artifactId>parquet-scala_2.10</artifactId>
         <version>${parquet.version}</version>
-        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.seqdoop</groupId>
