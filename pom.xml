@@ -27,6 +27,7 @@
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
     <utils.version>0.1.1</utils.version>
+    <htsjdk.version>1.129</htsjdk.version>
   </properties>
   
   <modules>
@@ -432,16 +433,17 @@
         <groupId>org.seqdoop</groupId>
         <artifactId>hadoop-bam</artifactId>
         <version>7.0.0</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.seqdoop</groupId>
+            <artifactId>htsjdk</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.seqdoop</groupId>
-        <artifactId>cofoja</artifactId>
-        <version>1.1-r150</version>
-      </dependency>
-      <dependency>
-        <groupId>org.seqdoop</groupId>
+        <groupId>com.github.samtools</groupId>
         <artifactId>htsjdk</artifactId>
-        <version>1.118</version>
+        <version>${htsjdk.version}</version>
       </dependency>
       <dependency>
         <groupId>args4j</groupId>
