@@ -96,11 +96,15 @@ class GTFParser extends FeatureParser {
     }
     f.setStrand(_strand)
 
+    val exonId: Option[String] = attrs.get("exon_id").orElse {
+      attrs.get("transcript_id").flatMap(t => attrs.get("exon_number").map(e => t + "_" + e))
+    }
+
     val (_id, _parentId) =
       feature match {
         case "gene"       => (attrs.get("gene_id"), None)
         case "transcript" => (attrs.get("transcript_id"), attrs.get("gene_id"))
-        case "exon"       => (attrs.get("exon_id"), attrs.get("transcript_id"))
+        case "exon"       => (exonId, attrs.get("transcript_id"))
         case "CDS"        => (attrs.get("id"), attrs.get("transcript_id"))
         case "UTR"        => (attrs.get("id"), attrs.get("transcript_id"))
         case _            => (attrs.get("id"), None)
