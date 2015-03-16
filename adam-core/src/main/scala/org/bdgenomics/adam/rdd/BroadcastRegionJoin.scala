@@ -31,7 +31,7 @@ import scala.reflect.ClassTag
  * Different implementations will have different performance characteristics -- and new implementations
  * will likely be added in the future, see the notes to each individual method for more details.
  */
-object BroadcastRegionJoin {
+object BroadcastRegionJoin extends RegionJoin {
 
   /**
    * Performs a region join between two RDDs (broadcast join).
@@ -62,10 +62,11 @@ object BroadcastRegionJoin {
    * @return An RDD of pairs (x, y), where x is from baseRDD, y is from joinedRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
-  def partitionAndJoin[T, U](sc: SparkContext,
-                             baseRDD: RDD[(ReferenceRegion, T)],
+  def partitionAndJoin[T, U](baseRDD: RDD[(ReferenceRegion, T)],
                              joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
                                                                    uManifest: ClassTag[U]): RDD[(T, U)] = {
+
+    val sc = baseRDD.context
 
     /**
      * Original Join Design:
@@ -165,7 +166,7 @@ object BroadcastRegionJoin {
  *
  * @param regions The input-set of regions.
  */
-class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializable {
+private[rdd] class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializable {
 
   assert(regions != null, "regions parameter cannot be null")
 
@@ -299,7 +300,7 @@ class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializ
     "%s:%d-%d (%s)".format(referenceName, endpoints.head, endpoints.last, endpoints.mkString(","))
 }
 
-object NonoverlappingRegions {
+private[rdd] object NonoverlappingRegions {
 
   def apply[T](values: Seq[(ReferenceRegion, T)]) =
     new NonoverlappingRegions(values.map(_._1))
@@ -322,7 +323,7 @@ object NonoverlappingRegions {
  *                be valid reference names with respect to the sequence
  *                dictionary.
  */
-class MultiContigNonoverlappingRegions(
+private[rdd] class MultiContigNonoverlappingRegions(
     regions: Seq[(String, Iterable[ReferenceRegion])]) extends Serializable {
 
   assert(regions != null,
@@ -338,7 +339,7 @@ class MultiContigNonoverlappingRegions(
     regionMap.get(value._1.referenceName).fold(false)(_.hasRegionsFor(value))
 }
 
-object MultiContigNonoverlappingRegions {
+private[rdd] object MultiContigNonoverlappingRegions {
   def apply[T](values: Seq[(ReferenceRegion, T)]): MultiContigNonoverlappingRegions = {
     new MultiContigNonoverlappingRegions(
       values.map(kv => (kv._1.referenceName, kv._1))

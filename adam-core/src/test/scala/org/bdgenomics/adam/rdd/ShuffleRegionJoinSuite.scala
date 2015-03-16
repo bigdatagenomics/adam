@@ -56,7 +56,6 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_).get)
 
     assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       baseRdd,
       recordsRdd,
       seqDict,
@@ -66,7 +65,6 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
         ShuffleRegionJoinSuite.and))
 
     assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       baseRdd,
       recordsRdd,
       seqDict,
@@ -111,7 +109,6 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_).get)
 
     assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       baseRdd,
       recordsRdd,
       seqDict,
@@ -121,7 +118,6 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
         ShuffleRegionJoinSuite.and))
 
     assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      sc,
       baseRdd,
       recordsRdd,
       seqDict,
@@ -170,7 +166,6 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
       recordsRdd)
       .leftOuterJoin(
         ShuffleRegionJoin.partitionAndJoin(
-          sc,
           baseRdd,
           recordsRdd,
           seqDict,
