@@ -299,7 +299,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
     val pred: FilterPredicate = (LongColumn("start") === 16097631L)
     // the following only reads one row group
-    val adamVariants: RDD[Variant] = sc.loadVariants(loc, predicate = Some(pred))
+    val adamVariants: RDD[Variant] = sc.loadParquetVariants(loc, predicate = Some(pred))
     assert(adamVariants.count === 1)
   }
 }

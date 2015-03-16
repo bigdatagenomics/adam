@@ -381,119 +381,112 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
   def loadVariantAnnotations(
     filePath: String,
-    predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None,
     sd: Option[SequenceDictionary] = None): RDD[DatabaseVariantAnnotation] = {
     if (filePath.endsWith(".vcf")) {
-      log.info("Loading " + filePath + " as VCF, and converting to variant annotations. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as VCF, and converting to variant annotations. Projection is ignored.")
       loadVcfAnnotations(filePath, sd)
     } else {
       log.info("Loading " + filePath + " as Parquet containing DatabaseVariantAnnotations.")
       sd.foreach(sd => log.warn("Sequence dictionary for translation ignored if loading ADAM from Parquet."))
-      loadParquetVariantAnnotations(filePath, predicate, projection)
+      loadParquetVariantAnnotations(filePath, None, projection)
     }
   }
 
   def loadFeatures(
     filePath: String,
-    predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None): RDD[Feature] = {
 
     if (filePath.endsWith(".bed")) {
-      log.info("Loading " + filePath + " as BED and converting to features. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as BED and converting to features. Projection is ignored.")
       loadBED(filePath)
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
-      log.info("Loading " + filePath + " as GTF/GFF and converting to features. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as GTF/GFF and converting to features. Projection is ignored.")
       loadGTF(filePath)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
-      log.info("Loading " + filePath + " as NarrowPeak and converting to features. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as NarrowPeak and converting to features. Projection is ignored.")
       loadNarrowPeak(filePath)
     } else {
       log.info("Loading " + filePath + " as Parquet containing Features.")
-      loadParquetFeatures(filePath, predicate, projection)
+      loadParquetFeatures(filePath, None, projection)
     }
   }
 
   def loadGenes(filePath: String,
-                predicate: Option[FilterPredicate] = None,
                 projection: Option[Schema] = None): RDD[Gene] = {
     import ADAMContext._
-    loadFeatures(filePath, predicate, projection).asGenes()
+    loadFeatures(filePath, projection).asGenes()
   }
 
   def loadSequence(
     filePath: String,
-    predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None,
     fragmentLength: Long = 10000): RDD[NucleotideContigFragment] = {
     if (filePath.endsWith(".fa") ||
       filePath.endsWith(".fasta")) {
-      log.info("Loading " + filePath + " as FASTA and converting to NucleotideContigFragment. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as FASTA and converting to NucleotideContigFragment. Projection is ignored.")
       loadFasta(filePath,
         fragmentLength)
     } else {
       log.info("Loading " + filePath + " as Parquet containing NucleotideContigFragments.")
-      loadParquetFragments(filePath, predicate, projection)
+      loadParquetFragments(filePath, None, projection)
     }
   }
 
   def loadGenotypes(
     filePath: String,
-    predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None,
     sd: Option[SequenceDictionary] = None): RDD[Genotype] = {
     if (filePath.endsWith(".vcf")) {
-      log.info("Loading " + filePath + " as VCF, and converting to Genotypes. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as VCF, and converting to Genotypes. Projection is ignored.")
       loadVcf(filePath, sd).flatMap(_.genotypes)
     } else {
       log.info("Loading " + filePath + " as Parquet containing Genotypes. Sequence dictionary for translation is ignored.")
-      loadParquetGenotypes(filePath, predicate, projection)
+      loadParquetGenotypes(filePath, None, projection)
     }
   }
 
   def loadVariants(
     filePath: String,
-    predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None,
     sd: Option[SequenceDictionary] = None): RDD[Variant] = {
     if (filePath.endsWith(".vcf")) {
-      log.info("Loading " + filePath + " as VCF, and converting to Variants. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as VCF, and converting to Variants. Projection is ignored.")
       loadVcf(filePath, sd).map(_.variant.variant)
     } else {
       log.info("Loading " + filePath + " as Parquet containing Variants. Sequence dictionary for translation is ignored.")
-      loadParquetVariants(filePath, predicate, projection)
+      loadParquetVariants(filePath, None, projection)
     }
   }
 
   def loadAlignments(
     filePath: String,
-    predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None): RDD[AlignmentRecord] = LoadAlignmentRecords.time {
 
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam")) {
-      log.info("Loading " + filePath + " as SAM/BAM and converting to AlignmentRecords. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as SAM/BAM and converting to AlignmentRecords. Projection is ignored.")
       loadBam(filePath)
     } else if (filePath.endsWith(".ifq")) {
-      log.info("Loading " + filePath + " as interleaved FASTQ and converting to AlignmentRecords. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as interleaved FASTQ and converting to AlignmentRecords. Projection is ignored.")
       loadInterleavedFastq(filePath)
     } else if (filePath.endsWith(".fq") ||
       filePath.endsWith(".fastq")) {
-      log.info("Loading " + filePath + " as unpaired FASTQ and converting to AlignmentRecords. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as unpaired FASTQ and converting to AlignmentRecords. Projection is ignored.")
       loadUnpairedFastq(filePath)
     } else if (filePath.endsWith(".fa") ||
       filePath.endsWith(".fasta")) {
-      log.info("Loading " + filePath + " as FASTA and converting to AlignmentRecords. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as FASTA and converting to AlignmentRecords. Projection is ignored.")
       import ADAMContext._
       loadFasta(filePath, fragmentLength = 10000).toReads
     } else if (filePath.endsWith("contig.adam")) {
-      log.info("Loading " + filePath + " as Parquet of NucleotideContigFragment and converting to AlignmentRecords. Predicate and projection are ignored.")
+      log.info("Loading " + filePath + " as Parquet of NucleotideContigFragment and converting to AlignmentRecords. Projection is ignored.")
       adamLoad[NucleotideContigFragment](filePath).toReads
     } else {
       log.info("Loading " + filePath + " as Parquet of AlignmentRecords.")
-      loadParquetAlignments(filePath, predicate, projection)
+      loadParquetAlignments(filePath, None, projection)
     }
   }
 
