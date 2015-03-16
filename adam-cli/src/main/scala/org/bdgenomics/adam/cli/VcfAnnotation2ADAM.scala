@@ -38,7 +38,6 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.VariantAnnotationConverter
-import org.bdgenomics.adam.predicates.ADAMPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro._
@@ -68,7 +67,7 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkComm
 
   def run(sc: SparkContext, job: Job) {
     log.info("Reading VCF file from %s".format(args.vcfFile))
-    val annotations: RDD[DatabaseVariantAnnotation] = sc.loadVcfAnnotations[ADAMPredicate[DatabaseVariantAnnotation]](args.vcfFile)
+    val annotations: RDD[DatabaseVariantAnnotation] = sc.loadVcfAnnotations(args.vcfFile)
 
     if (args.currentAnnotations != null) {
       val existingAnnotations: RDD[DatabaseVariantAnnotation] = sc.loadVariantAnnotations(args.currentAnnotations)

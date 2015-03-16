@@ -63,9 +63,9 @@ class GenotypePredicatesSuite extends ADAMFunSuite {
     val genotypesParquetFile = new File(Files.createTempDir(), "genotypes.adam")
     genotypes.adamParquetSave(genotypesParquetFile.getAbsolutePath)
 
-    val gts1: RDD[Genotype] = sc.loadParquetGenotypes(
-      genotypesParquetFile.getAbsolutePath,
-      predicate = Some(classOf[GenotypeRecordPASSPredicate]))
+    val gts1: RDD[Genotype] =
+      sc.loadParquetGenotypes(genotypesParquetFile.getAbsolutePath)
+        .filter(_.getVariantCallingAnnotations.getVariantIsPassing)
     assert(gts1.count === 1)
 
     FileUtils.deleteDirectory(genotypesParquetFile.getParentFile)
