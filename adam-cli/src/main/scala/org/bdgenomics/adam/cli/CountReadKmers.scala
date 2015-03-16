@@ -27,16 +27,16 @@ import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-object CountKmers extends ADAMCommandCompanion {
+object CountReadKmers extends ADAMCommandCompanion {
   val commandName = "count_kmers"
   val commandDescription = "Counts the k-mers/q-mers from a read dataset."
 
   def apply(cmdLine: Array[String]) = {
-    new CountKmers(Args4j[CountKmersArgs](cmdLine))
+    new CountReadKmers(Args4j[CountReadKmersArgs](cmdLine))
   }
 }
 
-class CountKmersArgs extends Args4jBase with ParquetArgs {
+class CountReadKmersArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to count kmers from", index = 0)
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location for storing k-mer counts", index = 1)
@@ -51,8 +51,8 @@ class CountKmersArgs extends Args4jBase with ParquetArgs {
   var repartition: Int = -1
 }
 
-class CountKmers(protected val args: CountKmersArgs) extends ADAMSparkCommand[CountKmersArgs] with Logging {
-  val companion = CountKmers
+class CountReadKmers(protected val args: CountReadKmersArgs) extends ADAMSparkCommand[CountReadKmersArgs] with Logging {
+  val companion = CountReadKmers
 
   def run(sc: SparkContext, job: Job) {
 

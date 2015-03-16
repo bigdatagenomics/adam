@@ -34,14 +34,14 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{ Logging, SparkContext }
-import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro._
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
+import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.VariantAnnotationConverter
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichVariant
+import org.bdgenomics.formats.avro._
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object VcfAnnotation2ADAM extends ADAMCommandCompanion {
 
@@ -67,9 +67,7 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkComm
 
   def run(sc: SparkContext, job: Job) {
     log.info("Reading VCF file from %s".format(args.vcfFile))
-    val annotations: RDD[DatabaseVariantAnnotation] = sc.loadVariantAnnotations(args.vcfFile)
-    val count = annotations.count()
-    log.info("Converted %d records".format(count))
+    val annotations: RDD[DatabaseVariantAnnotation] = sc.loadVcfAnnotations(args.vcfFile)
 
     if (args.currentAnnotations != null) {
       val existingAnnotations: RDD[DatabaseVariantAnnotation] = sc.loadVariantAnnotations(args.currentAnnotations)
@@ -80,8 +78,5 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkComm
     } else {
       annotations.adamParquetSave(args)
     }
-
-    log.info("Added %d annotation records".format(count))
   }
-
 }

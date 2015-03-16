@@ -59,7 +59,7 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends ADAMSparkCommand[ADAM2VcfArgs] wi
     if (dictionary.isDefined)
       log.info("Using contig translation")
 
-    val adamGTs: RDD[Genotype] = sc.adamLoad(args.adamFile)
+    val adamGTs: RDD[Genotype] = sc.loadParquetGenotypes(args.adamFile)
 
     val coalescedRDD = if (args.coalesce > 0) {
       adamGTs.coalesce(args.coalesce, true)

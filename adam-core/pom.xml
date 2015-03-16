@@ -170,6 +170,10 @@
       <artifactId>parquet-avro</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.twitter</groupId>
+      <artifactId>parquet-scala_2.10</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.seqdoop</groupId>
       <artifactId>hadoop-bam</artifactId>
     </dependency>

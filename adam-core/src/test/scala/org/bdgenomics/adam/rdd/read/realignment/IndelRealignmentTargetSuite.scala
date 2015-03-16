@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rdd.read.realignment
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.predicates.UniqueMappedReadPredicate
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -30,12 +29,12 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
   // Note: this can't be lazy vals because Spark won't find the RDDs after the first test
   def mason_reads: RDD[RichAlignmentRecord] = {
     val path = ClassLoader.getSystemClassLoader.getResource("small_realignment_targets.sam").getFile
-    sc.loadAlignments[UniqueMappedReadPredicate](path).map(RichAlignmentRecord(_))
+    sc.loadAlignments(path).map(RichAlignmentRecord(_))
   }
 
   def artificial_reads: RDD[RichAlignmentRecord] = {
     val path = ClassLoader.getSystemClassLoader.getResource("artificial.sam").getFile
-    sc.loadAlignments[UniqueMappedReadPredicate](path).map(RichAlignmentRecord(_))
+    sc.loadAlignments(path).map(RichAlignmentRecord(_))
   }
 
   def make_read(start: Long, cigar: String, mdtag: String, length: Int, refLength: Int, id: Int = 0): RichAlignmentRecord = {
