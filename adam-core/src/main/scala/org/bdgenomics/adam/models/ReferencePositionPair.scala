@@ -27,47 +27,27 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 object ReferencePositionPair extends Logging {
-  private def posForRead(read: AlignmentRecord): Option[ReferencePosition] = {
-    Some(RichAlignmentRecord(read).fivePrimeReferencePosition)
-  }
-
   def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = CreateReferencePositionPair.time {
-    singleReadBucket.primaryMapped.toSeq.lift(0) match {
-      case None =>
-        // No mapped reads
-        new ReferencePositionPair(None, None)
-      case Some(read1) =>
-        val read1pos = posForRead(read1)
-        if (read1.getReadPaired && read1.getMateMapped) {
-          singleReadBucket.primaryMapped.toSeq.lift(1) match {
-            case None =>
-              // Orphaned read. Missing its mate.
-              log.warn("%s denoted mate as mapped but mate does not exist".format(read1.getReadName))
-              new ReferencePositionPair(read1pos, None)
-            case Some(read2) =>
-              // Both reads are mapped
-              val read2pos = posForRead(read2)
-              if (read1pos.get.disorient.compareTo(read2pos.get.disorient) < 0) {
-                new ReferencePositionPair(read1pos, read2pos)
-              } else {
-                new ReferencePositionPair(read2pos, read1pos)
-              }
-          }
-        } else {
-          singleReadBucket.primaryMapped.toSeq.lift(1) match {
-            case None =>
-              // Mate is not mapped...
-              new ReferencePositionPair(read1pos, None)
-            case Some(read2) =>
-              val read2pos = posForRead(read2)
-              log.warn("%s claimed to not have mate but mate found".format(read1.getReadName))
-              if (read1pos.get.disorient.compareTo(read2pos.get.disorient) < 0) {
-                new ReferencePositionPair(read1pos, read2pos)
-              } else {
-                new ReferencePositionPair(read2pos, read1pos)
-              }
-          }
-        }
+    val firstOfPair = (singleReadBucket.primaryMapped.filter(_.getFirstOfPair) ++
+      singleReadBucket.unmapped.filter(_.getFirstOfPair)).toSeq
+    val secondOfPair = (singleReadBucket.primaryMapped.filter(_.getSecondOfPair) ++
+      singleReadBucket.unmapped.filter(_.getSecondOfPair)).toSeq
+
+    def getPos(r: AlignmentRecord): ReferencePosition = {
+      if (r.getReadMapped) {
+        new RichAlignmentRecord(r).fivePrimeReferencePosition
+      } else {
+        ReferencePosition(r.getSequence, 0L)
+      }
+    }
+
+    if (firstOfPair.size + secondOfPair.size > 0) {
+      new ReferencePositionPair(firstOfPair.lift(0).map(getPos),
+        secondOfPair.lift(0).map(getPos))
+    } else {
+      new ReferencePositionPair((singleReadBucket.primaryMapped ++
+        singleReadBucket.unmapped).toSeq.lift(0).map(getPos),
+        None)
     }
   }
 }

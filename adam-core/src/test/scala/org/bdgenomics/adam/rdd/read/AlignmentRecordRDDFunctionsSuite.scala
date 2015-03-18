@@ -41,6 +41,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
         val start = random.nextInt(1000000)
         builder.setContig(contig).setStart(start).setEnd(start)
       }
+      builder.setReadName((0 until 20).map(i => (random.nextInt(100) + 64)).mkString)
       builder.build()
     }
     val rdd = sc.parallelize(reads)

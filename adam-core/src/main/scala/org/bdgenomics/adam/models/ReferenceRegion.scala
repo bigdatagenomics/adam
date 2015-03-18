@@ -124,8 +124,7 @@ object ReferenceRegion {
  */
 case class ReferenceRegion(referenceName: String, start: Long, end: Long, orientation: Strand = Strand.Independent) extends Comparable[ReferenceRegion] with Interval {
 
-  assert(start >= 0)
-  assert(end >= start)
+  assert(start >= 0 && end >= start, "Failed when trying to create region %s %d %d on %s strand.".format(referenceName, start, end, orientation))
 
   def width: Long = end - start
 

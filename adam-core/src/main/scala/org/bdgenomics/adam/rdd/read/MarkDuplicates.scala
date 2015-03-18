@@ -118,9 +118,7 @@ private[rdd] object MarkDuplicates extends Serializable {
               } else {
                 markReads(reads, areDups = true)
               }
-
             })
-
         }
 
         readsAtLeftPos.flatMap(read => { read._2.allReads })

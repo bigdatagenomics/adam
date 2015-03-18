@@ -24,6 +24,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Strand }
 import scala.collection.immutable.NumericRange
+import scala.math.max
 
 object RichAlignmentRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
@@ -108,16 +109,16 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
 
   // Returns the position of the unclipped end if the read is mapped, None otherwise
   lazy val unclippedEnd: Long = {
-    samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(record.getEnd)({
+    max(0L, samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(record.getEnd)({
       (pos, cigarEl) => pos + cigarEl.getLength
-    })
+    }))
   }
 
   // Returns the position of the unclipped start if the read is mapped, None otherwise.
   lazy val unclippedStart: Long = {
-    samtoolsCigar.getCigarElements.takeWhile(isClipped).foldLeft(record.getStart)({
+    max(0L, samtoolsCigar.getCigarElements.takeWhile(isClipped).foldLeft(record.getStart)({
       (pos, cigarEl) => pos - cigarEl.getLength
-    })
+    }))
   }
 
   // Return the 5 prime position.
@@ -126,12 +127,19 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   }
 
   def fivePrimeReferencePosition: ReferencePosition = {
-    val strand = if (record.getReadNegativeStrand) {
-      Strand.Reverse
-    } else {
-      Strand.Forward
+    try {
+      val strand = if (record.getReadNegativeStrand) {
+        Strand.Reverse
+      } else {
+        Strand.Forward
+      }
+      ReferencePosition(record.getContig.getContigName, fivePrimePosition, strand)
+    } catch {
+      case e: Throwable => {
+        println("caught " + e + " when trying to get position for " + record)
+        throw e
+      }
     }
-    ReferencePosition(record.getContig.getContigName, fivePrimePosition, strand)
   }
 
   // Does this read overlap with the given reference position?

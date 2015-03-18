@@ -246,33 +246,14 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     log.info("Sorting reads by reference position")
 
     // NOTE: In order to keep unmapped reads from swamping a single partition
-    // we place them in a range of referenceIds at the end of the file.
-    // The referenceId is an Int and typical only a few dozen values are even used.
-    // These referenceId values are not stored; they are only used during sorting.
-    val unmappedReferenceNames = new Iterator[String] with Serializable {
-      var currentOffsetFromEnd = 0
-
-      def hasNext: Boolean = true
-
-      def next(): String = {
-        currentOffsetFromEnd += 1
-        if (currentOffsetFromEnd > 10000) {
-          currentOffsetFromEnd = 0
-        }
-        // NB : this is really ugly - any better way to manufacture
-        // string values that are greater than anything else we care
-        // about?
-        "unmapped" + (Int.MaxValue - currentOffsetFromEnd).toString
-      }
-    }
-
-    rdd.map(p => {
-      val referencePos = if (p.getReadMapped) {
-        ReferencePosition(p)
+    // we sort the unmapped reads by read name. we prefix with "ZZZ" to ensure
+    // that the read name is lexicographically "after" the contig names
+    rdd.keyBy(r => {
+      if (r.getReadMapped) {
+        ReferencePosition(r)
       } else {
-        ReferencePosition(unmappedReferenceNames.next(), 0)
+        ReferencePosition("ZZZ%s".format(r.getReadName), 0)
       }
-      (referencePos, p)
     }).sortByKey().map(p => p._2)
   }
 
