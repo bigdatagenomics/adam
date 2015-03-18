@@ -78,7 +78,7 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
       assert(kv1._1.isAdjacent(kv2._1), "Regions being joined must be adjacent. For: " +
         kv1 + ", " + kv2)
 
-      (kv1._1.merge(kv2._1), if (kv1._1.compare(kv2._1) <= 0) {
+      (kv1._1.merge(kv2._1), if (kv1._1.compareTo(kv2._1) <= 0) {
         kv1._2 + kv2._2
       } else {
         kv2._2 + kv1._2
@@ -94,7 +94,7 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
         .map(kv => getString(kv))
         .reduce(reducePairs)
 
-      assert(pair._1.compare(region) == 0,
+      assert(pair._1.compareTo(region) == 0,
         "Merging fragments returned a different region than requested.")
 
       pair._2
