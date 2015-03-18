@@ -40,7 +40,8 @@ object ADAMMain extends Logging {
           /* TODO (nealsid): Reimplement in terms of new schema
 	  ComputeVariants
 	*/
-          PluginExecutor
+          PluginExecutor,
+          Flatten
         )
       ),
       CommandGroup(

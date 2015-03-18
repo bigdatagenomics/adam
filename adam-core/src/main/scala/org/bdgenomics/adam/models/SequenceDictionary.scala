@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.models
 
+import org.apache.avro.generic.IndexedRecord
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import htsjdk.samtools.{ SamReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
-import org.apache.avro.specific.SpecificRecord
 import scala.collection._
 
 /**
@@ -273,7 +273,7 @@ object SequenceRecord {
       Set()
   }
 
-  def fromSpecificRecord(rec: SpecificRecord): SequenceRecord = {
+  def fromSpecificRecord(rec: IndexedRecord): SequenceRecord = {
     val schema = rec.getSchema
     if (schema.getField("referenceId") != null) {
       SequenceRecord(

@@ -18,7 +18,8 @@
 package org.bdgenomics.adam.rdd
 
 import java.util.logging.Level
-import org.apache.avro.specific.SpecificRecord
+import org.apache.avro.Schema
+import org.apache.avro.generic.IndexedRecord
 import org.apache.spark.Logging
 import org.apache.spark.rdd.{ InstrumentedOutputFormat, RDD }
 import org.apache.spark.rdd.MetricsContext._
@@ -50,7 +51,7 @@ trait ADAMSaveAnyArgs extends ADAMSaveArgs {
   var sortFastqOutput: Boolean
 }
 
-class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Serializable with Logging {
+class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serializable with Logging {
 
   def adamParquetSave(args: ADAMSaveArgs): Unit = {
     adamParquetSave(
@@ -66,7 +67,8 @@ class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Seria
                       blockSize: Int = 128 * 1024 * 1024,
                       pageSize: Int = 1 * 1024 * 1024,
                       compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
-                      disableDictionaryEncoding: Boolean = false): Unit = SaveAsADAM.time {
+                      disableDictionaryEncoding: Boolean = false,
+                      schema: Option[Schema] = None): Unit = SaveAsADAM.time {
     log.info("Saving data in ADAM format")
 
     if (!filePath.endsWith(".adam")) {
@@ -79,7 +81,9 @@ class ADAMRDDFunctions[T <% SpecificRecord: Manifest](rdd: RDD[T]) extends Seria
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
     ParquetOutputFormat.setBlockSize(job, blockSize)
     ParquetOutputFormat.setPageSize(job, pageSize)
-    AvroParquetOutputFormat.setSchema(job, manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema)
+    AvroParquetOutputFormat.setSchema(job,
+      if (schema.isDefined) schema.get
+      else manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema)
     // Add the Void Key
     val recordToSave = rdd.map(p => (null, p))
     // Save the values to the ADAM/Parquet file
@@ -146,7 +150,7 @@ abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
  * @tparam T A type defined in Avro that contains the reference identification fields.
  * @param rdd RDD over which aggregation is supported.
  */
-class ADAMSpecificRecordSequenceDictionaryRDDAggregator[T <% SpecificRecord: Manifest](rdd: RDD[T])
+class ADAMSpecificRecordSequenceDictionaryRDDAggregator[T <% IndexedRecord: Manifest](rdd: RDD[T])
     extends ADAMSequenceDictionaryRDDAggregator[T](rdd) {
 
   def getSequenceRecordsFromElement(elem: T): Set[SequenceRecord] = {
