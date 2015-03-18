@@ -22,7 +22,7 @@ import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator, TextCigarCodec }
 import org.bdgenomics.adam.models.{ Attribute, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Strand }
 import scala.collection.immutable.NumericRange
 
 object RichAlignmentRecord {
@@ -139,6 +139,17 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
     }
   }
 
+  def fivePrimeReferencePosition: Option[ReferencePosition] = {
+    fivePrimePosition.map(rp => {
+      val strand = if (record.getReadNegativeStrand) {
+        Strand.Reverse
+      } else {
+        Strand.Forward
+      }
+      ReferencePosition(record.getContig.getContigName, rp, strand)
+    })
+  }
+
   // Does this read overlap with the given reference position?
   def overlapsReferencePosition(pos: ReferencePosition): Option[Boolean] = {
     readRegion.map(_.contains(pos))
@@ -164,8 +175,8 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   }
 
   def getReferenceContext(readOffset: Int, referencePosition: Long, cigarElem: CigarElement, elemOffset: Int): ReferenceSequenceContext = {
-    val position = if (ReferencePosition.mappedPositionCheck(record)) {
-      Some(new ReferencePosition(record.getContig.getContigName.toString, referencePosition))
+    val position = if (record.getReadMapped) {
+      Some(ReferencePosition(record.getContig.getContigName, referencePosition))
     } else {
       None
     }

@@ -51,7 +51,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @param b Indel realignment target to compare.
    * @return Comparison done by starting position.
    */
-  def compare(a: IndelRealignmentTarget, b: IndelRealignmentTarget): Int = a.readRange compare b.readRange
+  def compare(a: IndelRealignmentTarget, b: IndelRealignmentTarget): Int = a.readRange compareTo b.readRange
 
   /**
    * Check to see if an indel realignment target contains the given read.
@@ -76,7 +76,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
   def lt(target: IndelRealignmentTarget, read: RichAlignmentRecord): Boolean = {
     val region = read.readRegion
 
-    region.forall(r => target.readRange.compare(r) < 0)
+    region.forall(r => target.readRange.compareTo(r) < 0)
   }
 
   /**

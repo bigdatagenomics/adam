@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest._
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Strand }
 
 class ReferenceRegionSuite extends FunSuite {
 
@@ -233,68 +233,21 @@ class ReferenceRegionSuite extends FunSuite {
   def point(refName: String, pos: Long): ReferencePosition =
     ReferencePosition(refName, pos)
 
-  test("build oriented reference region from non-oriented") {
-    val rrf = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = false)
-    assert(rrf.referenceName === "chr1")
-    assert(rrf.start === 10L)
-    assert(rrf.end === 20L)
-    assert(!rrf.negativeStrand)
-
-    val rrr = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = true)
-    assert(rrr.referenceName === "chr1")
-    assert(rrr.start === 10L)
-    assert(rrr.end === 20L)
-    assert(rrr.negativeStrand)
-  }
-
-  test("comparison tests for oriented reference region") {
-    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)
-      .contains(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)))
-    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = true)
-      .contains(ReferenceRegionWithOrientation("chr1", 15L, 17L, negativeStrand = true)))
-
-    val rrf = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = false)
-    val rrr = ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = true)
-    assert(!rrf.contains(rrr))
-
-    assert(!ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)
-      .contains(ReferenceRegionWithOrientation("chr2", 10L, 20L, negativeStrand = false)))
-    assert(!ReferenceRegionWithOrientation("chr1", 20L, 50L, negativeStrand = true)
-      .contains(ReferenceRegionWithOrientation("chr1", 50L, 100L, negativeStrand = true)))
-  }
-
-  test("comparison tests for oriented reference region vs position") {
-    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)
-      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 10L), negativeStrand = false)))
-    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = true)
-      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 17L), negativeStrand = true)))
-
-    assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = false)
-      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 17L), negativeStrand = true)))
-    assert(!ReferenceRegionWithOrientation(ReferenceRegion("chr1", 10L, 20L), negativeStrand = true)
-      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 10L), negativeStrand = false)))
-
-    assert(!ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)
-      .contains(ReferencePositionWithOrientation(ReferencePosition("chr2", 10L), negativeStrand = false)))
-    assert(!ReferenceRegionWithOrientation("chr1", 20L, 50L, negativeStrand = true)
-      .contains(ReferencePositionWithOrientation(ReferencePosition("chr1", 100L), negativeStrand = true)))
-  }
-
   test("overlap tests for oriented reference region") {
-    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)
-      .overlaps(ReferenceRegionWithOrientation("chr1", 15L, 25L, negativeStrand = false)))
-    assert(ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = true)
-      .overlaps(ReferenceRegionWithOrientation("chr1", 5L, 15L, negativeStrand = true)))
+    assert(ReferenceRegion("chr1", 10L, 20L, Strand.Forward)
+      .overlaps(ReferenceRegion("chr1", 15L, 25L, Strand.Forward)))
+    assert(ReferenceRegion("chr1", 10L, 20L, Strand.Reverse)
+      .overlaps(ReferenceRegion("chr1", 5L, 15L, Strand.Reverse)))
 
-    assert(!ReferenceRegionWithOrientation("chr1", 10L, 20L, negativeStrand = false)
-      .overlaps(ReferenceRegionWithOrientation("chr2", 10L, 20L, negativeStrand = false)))
-    assert(!ReferenceRegionWithOrientation("chr1", 20L, 50L, negativeStrand = true)
-      .overlaps(ReferenceRegionWithOrientation("chr1", 51L, 100L, negativeStrand = true)))
+    assert(!ReferenceRegion("chr1", 10L, 20L, Strand.Forward)
+      .overlaps(ReferenceRegion("chr2", 10L, 20L, Strand.Forward)))
+    assert(!ReferenceRegion("chr1", 20L, 50L, Strand.Reverse)
+      .overlaps(ReferenceRegion("chr1", 51L, 100L, Strand.Reverse)))
   }
 
   test("check the width of a reference region") {
     assert(ReferenceRegion("chr1", 100, 201).width === 101)
-    assert(ReferenceRegionWithOrientation("chr2", 200, 401, negativeStrand = false).width === 201)
-    assert(ReferenceRegionWithOrientation("chr3", 399, 1000, negativeStrand = true).width === 601)
+    assert(ReferenceRegion("chr2", 200, 401, Strand.Forward).width === 201)
+    assert(ReferenceRegion("chr3", 399, 1000, Strand.Reverse).width === 601)
   }
 }

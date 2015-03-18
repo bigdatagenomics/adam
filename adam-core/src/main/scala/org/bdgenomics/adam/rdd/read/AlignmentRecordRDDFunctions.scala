@@ -32,6 +32,7 @@ import org.bdgenomics.adam.algorithms.consensus.{
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
+import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ ADAMSaveArgs, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rdd.read.correction.{ ErrorCorrection, TrimReads }
@@ -266,12 +267,10 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     }
 
     rdd.map(p => {
-      val referencePos = ReferencePosition(p) match {
-        case None =>
-          // Move unmapped reads to the end of the file
-          ReferencePosition(
-            unmappedReferenceNames.next(), Long.MaxValue)
-        case Some(pos) => pos
+      val referencePos = if (p.getReadMapped) {
+        ReferencePosition(p)
+      } else {
+        ReferencePosition(unmappedReferenceNames.next(), 0)
       }
       (referencePos, p)
     }).sortByKey().map(p => p._2)
