@@ -76,12 +76,8 @@ object ReferenceRegion {
    * @param record Read to create region from.
    * @return Region corresponding to inclusive region of read alignment, if read is mapped.
    */
-  def apply(record: AlignmentRecord): Option[ReferenceRegion] = {
-    if (record.getReadMapped) {
-      Some(ReferenceRegion(record.getContig.getContigName.toString, record.getStart, record.getEnd))
-    } else {
-      None
-    }
+  def apply(record: AlignmentRecord): ReferenceRegion = {
+    ReferenceRegion(record.getContig.getContigName.toString, record.getStart, record.getEnd)
   }
 
   /**

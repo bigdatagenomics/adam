@@ -122,11 +122,12 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("create region from unmapped read fails") {
-    val read = AlignmentRecord.newBuilder()
-      .setReadMapped(false)
-      .build()
-
-    assert(ReferenceRegion(read).isEmpty)
+    intercept[NullPointerException] {
+      val read = AlignmentRecord.newBuilder()
+        .setReadMapped(false)
+        .build()
+      ReferenceRegion(read)
+    }
   }
 
   test("create region from mapped read contains read start and end") {
@@ -142,18 +143,16 @@ class ReferenceRegionSuite extends FunSuite {
         .build)
       .build()
 
-    assert(ReferenceRegion(read).isDefined)
-    assert(ReferenceRegion(read).get.contains(point("chr1", 1L)))
-    assert(ReferenceRegion(read).get.contains(point("chr1", 5L)))
-
-    assert(!ReferenceRegion(read).get.contains(point("chr1", 6L)))
+    assert(ReferenceRegion(read).contains(point("chr1", 1L)))
+    assert(ReferenceRegion(read).contains(point("chr1", 5L)))
+    assert(!ReferenceRegion(read).contains(point("chr1", 6L)))
   }
 
   test("validate that adjacent regions can be merged") {
     val r1 = region("chr1", 0L, 6L)
     val r2 = region("chr1", 6L, 10L)
 
-    assert(r1.distance(r2).get === 1)
+    assert(r1.distance(r2) === Some(1))
     assert(r1.isAdjacent(r2))
     assert(r1.merge(r2) == region("chr1", 0L, 10L))
   }
@@ -200,11 +199,7 @@ class ReferenceRegionSuite extends FunSuite {
       .setMismatchingPositions("5")
       .build()
 
-    val region = ReferenceRegion(read)
-
-    assert(region.isDefined)
-
-    val r = region.get
+    val r = ReferenceRegion(read)
 
     assert(r.referenceName === "chrM")
     assert(r.start === 5L)

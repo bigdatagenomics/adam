@@ -28,7 +28,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 
 object ReferencePositionPair extends Logging {
   private def posForRead(read: AlignmentRecord): Option[ReferencePosition] = {
-    RichAlignmentRecord(read).fivePrimeReferencePosition
+    Some(RichAlignmentRecord(read).fivePrimeReferencePosition)
   }
 
   def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = CreateReferencePositionPair.time {

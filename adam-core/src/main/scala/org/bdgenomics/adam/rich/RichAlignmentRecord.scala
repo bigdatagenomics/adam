@@ -70,8 +70,6 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
 
   lazy val referenceLength: Int = RichAlignmentRecord.referenceLengthFromCigar(record.getCigar.toString)
 
-  lazy val readRegion = ReferenceRegion(this)
-
   // Returns the quality scores as a list of bytes
   lazy val qualityScores: Array[Int] = {
     record.getQual.toString.toCharArray.map(q => q - 33)
@@ -109,55 +107,45 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   }
 
   // Returns the position of the unclipped end if the read is mapped, None otherwise
-  lazy val unclippedEnd: Option[Long] = {
-    if (record.getReadMapped) {
-      Some(samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(record.getEnd) {
-        (pos, cigarEl) => pos + cigarEl.getLength
-      })
-    } else {
-      None
-    }
-  }
-
-  // Returns the position of the unclipped start if the read is mapped, None otherwise.
-  lazy val unclippedStart: Option[Long] = {
-    if (record.getReadMapped) {
-      Some(samtoolsCigar.getCigarElements.takeWhile(isClipped).foldLeft(record.getStart) {
-        (pos, cigarEl) => pos - cigarEl.getLength
-      })
-    } else {
-      None
-    }
-  }
-
-  // Return the 5 prime position.
-  def fivePrimePosition: Option[Long] = {
-    if (record.getReadMapped) {
-      if (record.getReadNegativeStrand) unclippedEnd else unclippedStart
-    } else {
-      None
-    }
-  }
-
-  def fivePrimeReferencePosition: Option[ReferencePosition] = {
-    fivePrimePosition.map(rp => {
-      val strand = if (record.getReadNegativeStrand) {
-        Strand.Reverse
-      } else {
-        Strand.Forward
-      }
-      ReferencePosition(record.getContig.getContigName, rp, strand)
+  lazy val unclippedEnd: Long = {
+    samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(record.getEnd)({
+      (pos, cigarEl) => pos + cigarEl.getLength
     })
   }
 
+  // Returns the position of the unclipped start if the read is mapped, None otherwise.
+  lazy val unclippedStart: Long = {
+    samtoolsCigar.getCigarElements.takeWhile(isClipped).foldLeft(record.getStart)({
+      (pos, cigarEl) => pos - cigarEl.getLength
+    })
+  }
+
+  // Return the 5 prime position.
+  def fivePrimePosition: Long = {
+    if (record.getReadNegativeStrand) unclippedEnd else unclippedStart
+  }
+
+  def fivePrimeReferencePosition: ReferencePosition = {
+    val strand = if (record.getReadNegativeStrand) {
+      Strand.Reverse
+    } else {
+      Strand.Forward
+    }
+    ReferencePosition(record.getContig.getContigName, fivePrimePosition, strand)
+  }
+
   // Does this read overlap with the given reference position?
-  def overlapsReferencePosition(pos: ReferencePosition): Option[Boolean] = {
-    readRegion.map(_.contains(pos))
+  def overlapsReferencePosition(pos: ReferencePosition): Boolean = {
+    if (record.getReadMapped) {
+      ReferenceRegion(record).overlaps(pos)
+    } else {
+      false
+    }
   }
 
   // Does this read mismatch the reference at the given reference position?
   def isMismatchAtReferencePosition(pos: ReferencePosition): Option[Boolean] = {
-    if (mdTag.isEmpty || !overlapsReferencePosition(pos).get) {
+    if (mdTag.isEmpty || !overlapsReferencePosition(pos)) {
       None
     } else {
       mdTag.map(!_.isMatch(pos))
@@ -206,7 +194,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
 
   lazy val referenceContexts: Seq[Option[ReferenceSequenceContext]] = {
     if (record.getReadMapped) {
-      val resultTuple = samtoolsCigar.getCigarElements.foldLeft((unclippedStart.get, List[Option[ReferenceSequenceContext]]()))((runningPos, elem) => {
+      val resultTuple = samtoolsCigar.getCigarElements.foldLeft((unclippedStart, List[Option[ReferenceSequenceContext]]()))((runningPos, elem) => {
         // runningPos is a tuple, the first element holds the starting position of the next CigarOperator
         // and the second element is the list of positions up to this point
         val op = elem.getOperator

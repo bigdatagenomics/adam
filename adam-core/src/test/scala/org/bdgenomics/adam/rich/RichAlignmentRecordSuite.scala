@@ -39,9 +39,9 @@ class RichAlignmentRecordSuite extends FunSuite {
     val recordWithoutClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(42L).setEnd(52L).build()
     val recordWithClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("2S8M").setStart(42L).setEnd(50L).build()
     val recordWithHardClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("3H2S5M4S").setStart(42L).setEnd(47L).build()
-    assert(recordWithoutClipping.unclippedStart == Some(42L))
-    assert(recordWithClipping.unclippedStart == Some(40L))
-    assert(recordWithHardClipping.unclippedStart == Some(37L))
+    assert(recordWithoutClipping.unclippedStart == 42L)
+    assert(recordWithClipping.unclippedStart == 40L)
+    assert(recordWithHardClipping.unclippedStart == 37L)
   }
 
   test("Unclipped End") {
@@ -49,10 +49,9 @@ class RichAlignmentRecordSuite extends FunSuite {
     val recordWithoutClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10L).setEnd(20L).build()
     val recordWithClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("8M2S").setStart(10L).setEnd(18L).build()
     val recordWithHardClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("6M2S2H").setStart(10L).setEnd(16L).build()
-    assert(unmappedRead.unclippedEnd == None)
-    assert(recordWithoutClipping.unclippedEnd == Some(20L))
-    assert(recordWithClipping.unclippedEnd == Some(20L))
-    assert(recordWithHardClipping.unclippedEnd == Some(20L))
+    assert(recordWithoutClipping.unclippedEnd == 20L)
+    assert(recordWithClipping.unclippedEnd == 20L)
+    assert(recordWithHardClipping.unclippedEnd == 20L)
   }
 
   test("Illumina Optics") {
@@ -132,7 +131,7 @@ class RichAlignmentRecordSuite extends FunSuite {
     val unmappedRead = AlignmentRecord.newBuilder().setReadMapped(false).setStart(0L).setCigar("10M").setEnd(10L).build()
 
     val overlaps = unmappedRead.overlapsReferencePosition(ReferencePosition("chr1", 10))
-    assert(overlaps == None)
+    assert(!overlaps)
   }
 
   test("read overlap reference position") {
@@ -140,11 +139,10 @@ class RichAlignmentRecordSuite extends FunSuite {
     val contig = Contig.newBuilder.setContigName("chr1").build
     val record = RichAlignmentRecord(AlignmentRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10L).setEnd(20L).setContig(contig).build())
 
-    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 10)) == Some(true))
-
-    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 14)) == Some(true))
-    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 19)) == Some(true))
-    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 20)) == Some(false))
+    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 10)) == true)
+    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 14)) == true)
+    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 19)) == true)
+    assert(record.overlapsReferencePosition(ReferencePosition("chr1", 20)) == false)
   }
 
   test("read overlap same position different contig") {
@@ -152,7 +150,7 @@ class RichAlignmentRecordSuite extends FunSuite {
     val contig = Contig.newBuilder.setContigName("chr1").build
     val record = RichAlignmentRecord(AlignmentRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(10L).setEnd(20L).setContig(contig).build())
 
-    assert(record.overlapsReferencePosition(ReferencePosition("chr2", 10)) == Some(false))
+    assert(record.overlapsReferencePosition(ReferencePosition("chr2", 10)) == false)
   }
 
 }
