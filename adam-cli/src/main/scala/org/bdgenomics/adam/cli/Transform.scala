@@ -85,6 +85,14 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var coalesce: Int = -1
   @Args4jOption(required = false, name = "-sort_fastq_output", usage = "Sets whether to sort the FASTQ output, if saving as FASTQ. False by default. Ignored if not saving as FASTQ.")
   var sortFastqOutput: Boolean = false
+  @Args4jOption(required = false, name = "-force_load_bam", usage = "Forces Transform to load from BAM/SAM.")
+  var forceLoadBam: Boolean = false
+  @Args4jOption(required = false, name = "-force_load_fastq", usage = "Forces Transform to load from unpaired FASTQ.")
+  var forceLoadFastq: Boolean = false
+  @Args4jOption(required = false, name = "-force_load_ifastq", usage = "Forces Transform to load from interleaved FASTQ.")
+  var forceLoadIFastq: Boolean = false
+  @Args4jOption(required = false, name = "-force_load_parquet", usage = "Forces Transform to load from Parquet.")
+  var forceLoadParquet: Boolean = false
 }
 
 class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[TransformArgs] with Logging {
@@ -155,7 +163,19 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
   }
 
   def run(sc: SparkContext, job: Job) {
-    this.apply(sc.loadAlignments(args.inputPath)).adamSave(args)
+    this.apply({
+      if (args.forceLoadBam) {
+        sc.loadBam(args.inputPath)
+      } else if (args.forceLoadFastq) {
+        sc.loadUnpairedFastq(args.inputPath)
+      } else if (args.forceLoadIFastq) {
+        sc.loadInterleavedFastq(args.inputPath)
+      } else if (args.forceLoadParquet) {
+        sc.loadParquetAlignments(args.inputPath)
+      } else {
+        sc.loadAlignments(args.inputPath)
+      }
+    }).adamSave(args)
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {

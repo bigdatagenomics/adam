@@ -94,7 +94,6 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
 
   def +(record: SequenceRecord): SequenceDictionary = this ++ SequenceDictionary(record)
   def ++(that: SequenceDictionary): SequenceDictionary = {
-    assert(this.isCompatibleWith(that))
     new SequenceDictionary(records ++ that.records.filter(r => !byName.contains(r.name)))
   }
 
