@@ -229,12 +229,29 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
   def loadBam(
     filePath: String): RDD[AlignmentRecord] = {
 
-    // We need to separately read the header, so that we can inject the sequence dictionary
-    // data into each individual Read (see the argument to samRecordConverter.convert,
-    // below).
-    val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
-    val seqDict = adamBamDictionaryLoad(samHeader)
-    val readGroups = adamBamLoadReadGroups(samHeader)
+    val (seqDict, readGroups) = FileSystem.get(sc.hadoopConfiguration)
+      .globStatus(new Path(filePath))
+      .map(fs => fs.getPath)
+      .flatMap(fp => {
+
+        try {
+          // We need to separately read the header, so that we can inject the sequence dictionary
+          // data into each individual Read (see the argument to samRecordConverter.convert,
+          // below).
+          val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
+          log.info("Loaded header from " + fp)
+          val sd = adamBamDictionaryLoad(samHeader)
+          val rg = adamBamLoadReadGroups(samHeader)
+          Some((sd, rg))
+        } catch {
+          case _: Throwable => {
+            log.error("Loading failed for " + fp)
+            None
+          }
+        }
+      }).reduce((kv1, kv2) => {
+        (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
+      })
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],

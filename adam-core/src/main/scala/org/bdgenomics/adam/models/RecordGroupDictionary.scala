@@ -71,6 +71,10 @@ class RecordGroupDictionary(val recordGroups: Seq[RecordGroup]) extends Serializ
   assert(recordGroupMap.size == recordGroups.length,
     "Read group dictionary contains multiple samples with identical read group names.")
 
+  def ++(that: RecordGroupDictionary): RecordGroupDictionary = {
+    new RecordGroupDictionary(recordGroups ++ that.recordGroups)
+  }
+
   /**
    * Returns the numerical index for a given record group name.
    *
