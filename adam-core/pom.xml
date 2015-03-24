@@ -178,11 +178,7 @@
       <artifactId>hadoop-bam</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.seqdoop</groupId>
-      <artifactId>cofoja</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.seqdoop</groupId>
+      <groupId>com.github.samtools</groupId>
       <artifactId>htsjdk</artifactId>
     </dependency>
     <dependency>
