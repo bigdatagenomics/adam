@@ -53,7 +53,7 @@ class Coverage(val window: Long) extends Serializable {
    * @return an RDD containing the ReferenceRegions corresponding to the coverage regions
    *         of the input set 'coveringRegions'
    */
-  def findCoverageRegions(coveringRegions: RDD[ReferenceRegion]): RDD[ReferenceRegion] = {
+  def findCoverageRegions[R <: ReferenceRegion](coveringRegions: RDD[R]): RDD[ReferenceRegion] = {
 
     // First, map each input region to a window
     val windowKeyedRegions: RDD[(Region, Region)] = coveringRegions.flatMap(regionToWindows)
