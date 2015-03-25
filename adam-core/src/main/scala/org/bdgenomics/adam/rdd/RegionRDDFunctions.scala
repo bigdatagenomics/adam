@@ -170,6 +170,17 @@ class RegionKeyedRDDFunctions[R <: ReferenceRegion, V](rdd: RDD[(R, V)])(implici
 
 object RegionRDDFunctions extends Serializable {
 
+  /**
+   * Given a size, produces an 'expander function,' which translates ReferenceRegion values
+   * into ReferenceRegions that are larger (on each end) by the given size. The start of the expanded
+   * region will never be negative -- although the end of the expanded region is unbounded.
+   *
+   * @param range The size of the expansion, on one end (if this is N, the ReferenceRegions produced
+   *              by the expander function will be at most 2N bases larger).
+   * @param r The region argument to the expander function.
+   * @tparam Region The expander function has an argument type parameter, which must be a subtype of ReferenceRegion
+   * @return The expanded region.
+   */
   def expander[Region <: ReferenceRegion](range: Long)(r: Region): ReferenceRegion =
     ReferenceRegion(r.referenceName, max(0, r.start - range), r.end + range)
 
