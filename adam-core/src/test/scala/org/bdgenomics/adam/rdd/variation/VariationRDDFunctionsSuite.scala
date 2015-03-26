@@ -101,7 +101,7 @@ class ADAMVariationRDDFunctionsSuite extends ADAMFunSuite {
 
   sparkTest("can write, then read in .vcf file") {
     val path = new File(tempDir, "test.vcf")
-    variants.adamVCFSave(path.getAbsolutePath)
+    variants.saveAsVcf(path.getAbsolutePath)
     assert(path.exists)
   }
 }

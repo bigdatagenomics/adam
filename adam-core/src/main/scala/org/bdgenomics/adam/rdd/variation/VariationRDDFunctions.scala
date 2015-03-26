@@ -23,6 +23,7 @@ import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.{
+  ReferencePosition,
   ReferenceRegion,
   SequenceDictionary,
   SequenceRecord,
@@ -67,7 +68,20 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
       .toList
   }
 
-  def adamVCFSave(filePath: String, dict: Option[SequenceDictionary] = None) = {
+  /**
+   * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
+   * and saves to disk as VCF.
+   *
+   * @param filePath The filepath to save to.
+   * @param dict An optional sequence dictionary. Default is none.
+   * @param sortOnSave Whether to sort before saving. Sort is run after coalescing.
+   *                   Default is false (no sort).
+   * @param coalesceTo Optionally coalesces the RDD down to _n_ partitions. Default is none.
+   */
+  def saveAsVcf(filePath: String,
+                dict: Option[SequenceDictionary] = None,
+                sortOnSave: Boolean = false,
+                coalesceTo: Option[Int] = None) = {
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
@@ -94,15 +108,27 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
       log.warn("Had more than 0 elements after map partitions call to set VCF header across cluster.")
     }
 
-    // TODO: Sort variants according to sequence dictionary (if supplied)
+    // convert the variants to htsjdk vc
     val converter = new VariantContextConverter(dict)
     val gatkVCs: RDD[VariantContextWritable] = rdd.map(v => {
       val vcw = new VariantContextWritable
       vcw.set(converter.convert(v))
       vcw
     })
-    val withKey = gatkVCs.keyBy(v => new LongWritable(v.get.getStart))
 
+    // coalesce the rdd if requested
+    val coalescedVCs = coalesceTo.fold(gatkVCs)(p => gatkVCs.repartition(p))
+
+    // sort if requested
+    val withKey = if (sortOnSave) {
+      coalescedVCs.keyBy(v => ReferencePosition(v.get.getChr(), v.get.getStart()))
+        .sortByKey()
+        .map(kv => (new LongWritable(kv._1.pos), kv._2))
+    } else {
+      coalescedVCs.keyBy(v => new LongWritable(v.get.getStart))
+    }
+
+    // save to disk
     val conf = rdd.context.hadoopConfiguration
     conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
     withKey.saveAsNewAPIHadoopFile(filePath,
