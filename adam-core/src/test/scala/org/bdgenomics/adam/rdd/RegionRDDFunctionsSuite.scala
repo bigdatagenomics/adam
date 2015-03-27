@@ -26,6 +26,18 @@ import org.bdgenomics.utils.misc.SparkFunSuite
 
 class RegionRDDFunctionsSuite extends SparkFunSuite {
 
+  sparkTest("union of two simple overlapping regions returns a single union region") {
+    val r1: ReferenceRegion = ReferenceRegion("chr1", 1000, 2000)
+    val r2: ReferenceRegion = ReferenceRegion("chr1", 1500, 3000)
+
+    val rdd1 = sc.parallelize(Seq(r1))
+    val rdd2 = sc.parallelize(Seq(r2))
+
+    val unioned = rdd1.spatialUnion(rdd2)
+
+    assert(unioned.collect() === Array(ReferenceRegion("chr1", 1000, 3000)))
+  }
+
   sparkTest("joinByOverlap on an overlapping pair returns one pair") {
     val r1: ReferenceRegion = ReferenceRegion("chr1", 1000, 2000)
     val r2: ReferenceRegion = ReferenceRegion("chr1", 1500, 3000)

@@ -146,6 +146,22 @@ class RegionRDDFunctions[Region <: ReferenceRegion](rdd: RDD[Region])(implicit k
           (window, values.size)
       }
 
+  private val coverage = new Coverage(100)
+
+  def spatialUnion[R2 <: ReferenceRegion](other: RDD[R2])(implicit r2: ClassTag[R2]): RDD[ReferenceRegion] = {
+    val rdd1: RDD[ReferenceRegion] = rdd.map(_.asInstanceOf[ReferenceRegion])
+    val rdd2: RDD[ReferenceRegion] = other.map(_.asInstanceOf[ReferenceRegion])
+    coverage.findCoverageRegions(rdd1.union(rdd2))
+  }
+
+  def spatialIntersection[R2 <: ReferenceRegion](other: RDD[R2])(implicit r2: ClassTag[R2]): RDD[ReferenceRegion] = {
+    val joined: RDD[ReferenceRegion] = rdd.joinByOverlap(other).flatMap(p => RegionRDDFunctions.intersect(p._1, p._2))
+    coverage.findCoverageRegions(joined)
+  }
+
+  def spatialDifference[R2 <: ReferenceRegion](other: RDD[R2])(implicit r2: ClassTag[R2]): RDD[ReferenceRegion] = {
+    ???
+  }
 }
 
 class OrientedRegionRDDFunctions[Region <: ReferenceRegionWithOrientation](rdd: RDD[Region])(implicit kt: ClassTag[Region]) extends Serializable {
@@ -183,6 +199,13 @@ object RegionRDDFunctions extends Serializable {
    */
   def expander[Region <: ReferenceRegion](range: Long)(r: Region): ReferenceRegion =
     ReferenceRegion(r.referenceName, max(0, r.start - range), r.end + range)
+
+  def intersect[R1 <: ReferenceRegion, R2 <: ReferenceRegion](r1: R1, r2: R2): Option[ReferenceRegion] =
+    if (r1.overlaps(r2)) {
+      Some(r1.intersection(r2))
+    } else {
+      None
+    }
 
   implicit def rddToRegionRDDFunctions[R <: ReferenceRegion](rdd: RDD[R])(implicit kt: ClassTag[R]): RegionRDDFunctions[R] =
     new RegionRDDFunctions[R](rdd)
