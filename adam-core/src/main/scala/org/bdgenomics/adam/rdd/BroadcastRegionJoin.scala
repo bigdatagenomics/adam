@@ -52,7 +52,6 @@ object BroadcastRegionJoin extends RegionJoin {
    * Finally, within each separate partition, we essentially perform a cartesian-product-and-filter
    * operation.  The result is the region-join.
    *
-   * @param sc A SparkContext for the cluster that will perform the join
    * @param baseRDD The 'left' side of the join
    * @param joinedRDD The 'right' side of the join
    * @param tManifest implicit type of baseRDD
@@ -62,9 +61,8 @@ object BroadcastRegionJoin extends RegionJoin {
    * @return An RDD of pairs (x, y), where x is from baseRDD, y is from joinedRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
-  def partitionAndJoin[T, U](baseRDD: RDD[(ReferenceRegion, T)],
-                             joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                                                   uManifest: ClassTag[U]): RDD[(T, U)] = {
+  override def partitionAndJoin[RT <: ReferenceRegion, T, RU <: ReferenceRegion, U](baseRDD: RDD[(RT, T)], joinedRDD: RDD[(RU, U)])(implicit tManifest: ClassTag[T],
+                                                                                                                                    uManifest: ClassTag[U]): RDD[(T, U)] = {
 
     val sc = baseRDD.context
 
@@ -149,6 +147,7 @@ object BroadcastRegionJoin extends RegionJoin {
         t._1.overlaps(u._1)
     }).map(p => (p._1._2, p._2._2))
   }
+
 }
 
 /**
@@ -273,7 +272,6 @@ private[rdd] class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) ext
    * region corresponding to this input.
    *
    * @param regionable The input, which corresponds to a region
-   * @param mapping The implicit mapping to turn the input into a region
    * @tparam U The type of the input
    * @return An Iterable[ReferenceRegion], where each element of the Iterable is a nonoverlapping-region
    *         defined by 1 or more input-set regions.
@@ -287,7 +285,6 @@ private[rdd] class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) ext
    * completely outside the hull of all the input-set regions.
    *
    * @param regionable The input value
-   * @param mapping an implicity mapping of the input value to a ReferenceRegion
    * @tparam U
    * @return a boolean -- the input value should only participate in the regionJoin if the return value
    *         here is 'true'.
@@ -326,8 +323,7 @@ private[rdd] object NonoverlappingRegions {
 private[rdd] class MultiContigNonoverlappingRegions(
     regions: Seq[(String, Iterable[ReferenceRegion])]) extends Serializable {
 
-  assert(regions != null,
-    "Regions was set to null")
+  assert(regions != null, "Regions was set to null")
 
   val regionMap: Map[String, NonoverlappingRegions] =
     Map(regions.map(r => (r._1, new NonoverlappingRegions(r._2))): _*)

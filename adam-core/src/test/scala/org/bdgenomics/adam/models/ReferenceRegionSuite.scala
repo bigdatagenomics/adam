@@ -22,6 +22,11 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 class ReferenceRegionSuite extends FunSuite {
 
+  test("ReferenceRegion.apply returns a reference region") {
+    val r1 = ReferenceRegion("chr1", 1000, 2000)
+    assert(r1 !== null)
+  }
+
   test("contains(: ReferenceRegion)") {
     assert(region("chr0", 10, 100).contains(region("chr0", 50, 70)))
     assert(region("chr0", 10, 100).contains(region("chr0", 10, 100)))

@@ -24,6 +24,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
+import org.bdgenomics.adam.models.ReferenceRegionContext._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.rdd.ADAMContext._

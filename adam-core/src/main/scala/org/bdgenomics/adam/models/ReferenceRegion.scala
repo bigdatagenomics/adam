@@ -52,7 +52,7 @@ object ReferenceRegionWithOrientation {
  *                       reverse strand of the reference region.
  */
 case class ReferenceRegionWithOrientation(region: ReferenceRegion,
-                                          negativeStrand: Boolean) extends Ordered[ReferenceRegionWithOrientation] {
+                                          negativeStrand: Boolean) {
   def width: Long = region.width
 
   def contains(other: ReferencePositionWithOrientation): Boolean = {
@@ -67,13 +67,30 @@ case class ReferenceRegionWithOrientation(region: ReferenceRegion,
     region.overlaps(other.region) && negativeStrand == other.negativeStrand
   }
 
-  def compare(that: ReferenceRegionWithOrientation): Int = {
-    val regionCompare = region.compare(that.region)
-    if (regionCompare != 0) {
-      regionCompare
-    } else {
-      negativeStrand.compare(that.negativeStrand)
-    }
+  /**
+   * Creates a new ReferenceRegionWithOrientation, with either the start or
+   * end field modified so that the overall region has a width equal to the
+   * given target length.
+   *
+   * If the region is on the negative strand, then the start value is modified,
+   * otherwise, if the region is on the positive strand, then the end value is
+   * incremented.
+   *
+   * @param targetLength the desired width of the new region
+   * @return The new region whose width==targetLength
+   */
+  def extend(targetLength: Long): ReferenceRegionWithOrientation = {
+    require(targetLength >= 0)
+    require(targetLength > width)
+
+    val diff = targetLength - width
+
+    if (negativeStrand)
+      ReferenceRegionWithOrientation(
+        ReferenceRegion(region.referenceName, region.start - diff, region.end), negativeStrand)
+    else
+      ReferenceRegionWithOrientation(
+        ReferenceRegion(region.referenceName, region.start, region.end + diff), negativeStrand)
   }
 
   def toReferenceRegion: ReferenceRegion = region
@@ -83,6 +100,23 @@ case class ReferenceRegionWithOrientation(region: ReferenceRegion,
   def start: Long = region.start
 
   def end: Long = region.end
+}
+
+object ReferenceRegionContext {
+  implicit val referenceRegionOrdering = ReferenceRegionOrdering
+  implicit val referenceRegionWithOrientationOrdering = ReferenceRegionWithOrientationOrdering
+}
+
+object ReferenceRegionWithOrientationOrdering extends Ordering[ReferenceRegionWithOrientation] {
+
+  def compare(this_ : ReferenceRegionWithOrientation, that: ReferenceRegionWithOrientation): Int = {
+    val regionCompare = ReferenceRegionOrdering.compare(this_.region, that.region)
+    if (regionCompare != 0) {
+      regionCompare
+    } else {
+      this_.negativeStrand.compare(that.negativeStrand)
+    }
+  }
 }
 
 object ReferenceRegion {
@@ -135,6 +169,17 @@ object ReferenceRegion {
   }
 }
 
+object ReferenceRegionOrdering extends Ordering[ReferenceRegion] {
+
+  override def compare(this_ : ReferenceRegion, that: ReferenceRegion): Int =
+    if (this_.referenceName != that.referenceName)
+      this_.referenceName.compareTo(that.referenceName)
+    else if (this_.start != that.start)
+      this_.start.compareTo(that.start)
+    else
+      this_.end.compareTo(that.end)
+}
+
 /**
  * Represents a contiguous region of the reference genome.
  *
@@ -144,10 +189,10 @@ object ReferenceRegion {
  *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
  *            half-open interval.
  */
-case class ReferenceRegion(referenceName: String, start: Long, end: Long) extends Ordered[ReferenceRegion] with Interval {
+case class ReferenceRegion(referenceName: String, start: Long, end: Long) extends Interval {
 
-  assert(start >= 0)
-  assert(end >= start)
+  assert(start >= 0, "ReferenceRegion doesn't allow a negative start coordinate (here provided %d)".format(start))
+  assert(end >= start, "ReferenceRegion requires end >= start (here provided %d,%d)".format(start, end))
 
   def width: Long = end - start
 
@@ -254,14 +299,6 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
 
   def overlaps(other: ReferenceRegion): Boolean =
     referenceName == other.referenceName && end > other.start && start < other.end
-
-  def compare(that: ReferenceRegion): Int =
-    if (referenceName != that.referenceName)
-      referenceName.compareTo(that.referenceName)
-    else if (start != that.start)
-      start.compareTo(that.start)
-    else
-      end.compareTo(that.end)
 
   def length(): Long = {
     end - start

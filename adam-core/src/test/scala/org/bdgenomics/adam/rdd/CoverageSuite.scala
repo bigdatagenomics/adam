@@ -105,7 +105,7 @@ class CoverageSuite extends ADAMFunSuite {
   sparkTest("find empty coverage") {
     implicit val sparkContext = sc
     val c = new Coverage(100L)
-    assert(c.findCoverageRegions(Seq()).collect() === Array())
+    assert(c.findCoverageRegions(Seq[ReferenceRegion]()).collect() === Array[ReferenceRegion]())
   }
 
   sparkTest("find coverage of one region") {
