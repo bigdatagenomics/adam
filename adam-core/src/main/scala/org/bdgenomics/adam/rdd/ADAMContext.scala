@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd
 import java.util.regex.Pattern
 import htsjdk.samtools.SAMFileHeader
 import org.apache.avro.Schema
+import org.apache.avro.generic.IndexedRecord
 import org.apache.avro.specific.SpecificRecord
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.{ LongWritable, Text }
@@ -55,7 +56,7 @@ object ADAMContext {
   implicit def sparkContextToADAMContext(sc: SparkContext): ADAMContext = new ADAMContext(sc)
 
   // Add generic RDD methods for all types of ADAM RDDs
-  implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): ADAMRDDFunctions[T] = new ADAMRDDFunctions(rdd)
+  implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => IndexedRecord, ev2: Manifest[T]): ADAMRDDFunctions[T] = new ADAMRDDFunctions(rdd)
 
   // Add methods specific to Read RDDs
   implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
