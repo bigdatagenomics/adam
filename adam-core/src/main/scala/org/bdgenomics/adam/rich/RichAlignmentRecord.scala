@@ -22,8 +22,9 @@ import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator, TextCigarCodec }
 import org.bdgenomics.adam.models.{ Attribute, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Strand }
 import scala.collection.immutable.NumericRange
+import scala.math.max
 
 object RichAlignmentRecord {
   val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
@@ -70,8 +71,6 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
 
   lazy val referenceLength: Int = RichAlignmentRecord.referenceLengthFromCigar(record.getCigar.toString)
 
-  lazy val readRegion = ReferenceRegion(this)
-
   // Returns the quality scores as a list of bytes
   lazy val qualityScores: Array[Int] = {
     record.getQual.toString.toCharArray.map(q => q - 33)
@@ -109,44 +108,52 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   }
 
   // Returns the position of the unclipped end if the read is mapped, None otherwise
-  lazy val unclippedEnd: Option[Long] = {
-    if (record.getReadMapped) {
-      Some(samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(record.getEnd) {
-        (pos, cigarEl) => pos + cigarEl.getLength
-      })
-    } else {
-      None
-    }
+  lazy val unclippedEnd: Long = {
+    max(0L, samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(record.getEnd)({
+      (pos, cigarEl) => pos + cigarEl.getLength
+    }))
   }
 
   // Returns the position of the unclipped start if the read is mapped, None otherwise.
-  lazy val unclippedStart: Option[Long] = {
-    if (record.getReadMapped) {
-      Some(samtoolsCigar.getCigarElements.takeWhile(isClipped).foldLeft(record.getStart) {
-        (pos, cigarEl) => pos - cigarEl.getLength
-      })
-    } else {
-      None
-    }
+  lazy val unclippedStart: Long = {
+    max(0L, samtoolsCigar.getCigarElements.takeWhile(isClipped).foldLeft(record.getStart)({
+      (pos, cigarEl) => pos - cigarEl.getLength
+    }))
   }
 
   // Return the 5 prime position.
-  def fivePrimePosition: Option[Long] = {
-    if (record.getReadMapped) {
-      if (record.getReadNegativeStrand) unclippedEnd else unclippedStart
-    } else {
-      None
+  def fivePrimePosition: Long = {
+    if (record.getReadNegativeStrand) unclippedEnd else unclippedStart
+  }
+
+  def fivePrimeReferencePosition: ReferencePosition = {
+    try {
+      val strand = if (record.getReadNegativeStrand) {
+        Strand.Reverse
+      } else {
+        Strand.Forward
+      }
+      ReferencePosition(record.getContig.getContigName, fivePrimePosition, strand)
+    } catch {
+      case e: Throwable => {
+        println("caught " + e + " when trying to get position for " + record)
+        throw e
+      }
     }
   }
 
   // Does this read overlap with the given reference position?
-  def overlapsReferencePosition(pos: ReferencePosition): Option[Boolean] = {
-    readRegion.map(_.contains(pos))
+  def overlapsReferencePosition(pos: ReferencePosition): Boolean = {
+    if (record.getReadMapped) {
+      ReferenceRegion(record).overlaps(pos)
+    } else {
+      false
+    }
   }
 
   // Does this read mismatch the reference at the given reference position?
   def isMismatchAtReferencePosition(pos: ReferencePosition): Option[Boolean] = {
-    if (mdTag.isEmpty || !overlapsReferencePosition(pos).get) {
+    if (mdTag.isEmpty || !overlapsReferencePosition(pos)) {
       None
     } else {
       mdTag.map(!_.isMatch(pos))
@@ -164,8 +171,8 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   }
 
   def getReferenceContext(readOffset: Int, referencePosition: Long, cigarElem: CigarElement, elemOffset: Int): ReferenceSequenceContext = {
-    val position = if (ReferencePosition.mappedPositionCheck(record)) {
-      Some(new ReferencePosition(record.getContig.getContigName.toString, referencePosition))
+    val position = if (record.getReadMapped) {
+      Some(ReferencePosition(record.getContig.getContigName, referencePosition))
     } else {
       None
     }
@@ -195,7 +202,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
 
   lazy val referenceContexts: Seq[Option[ReferenceSequenceContext]] = {
     if (record.getReadMapped) {
-      val resultTuple = samtoolsCigar.getCigarElements.foldLeft((unclippedStart.get, List[Option[ReferenceSequenceContext]]()))((runningPos, elem) => {
+      val resultTuple = samtoolsCigar.getCigarElements.foldLeft((unclippedStart, List[Option[ReferenceSequenceContext]]()))((runningPos, elem) => {
         // runningPos is a tuple, the first element holds the starting position of the next CigarOperator
         // and the second element is the list of positions up to this point
         val op = elem.getOperator

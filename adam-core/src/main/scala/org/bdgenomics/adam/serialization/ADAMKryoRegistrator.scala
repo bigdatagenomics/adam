@@ -78,7 +78,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation]())
     kryo.register(classOf[Dbxref], new AvroSerializer[Dbxref]())
     kryo.register(classOf[Feature], new AvroSerializer[Feature]())
-    kryo.register(classOf[ReferencePositionWithOrientation], new ReferencePositionWithOrientationSerializer)
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)
     kryo.register(classOf[SingleReadBucket], new SingleReadBucketSerializer)

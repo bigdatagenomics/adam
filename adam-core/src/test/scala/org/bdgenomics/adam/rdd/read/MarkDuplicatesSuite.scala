@@ -28,7 +28,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     AlignmentRecord.newBuilder().setReadMapped(false).build()
   }
 
-  def createMappedRead(referenceName: String, position: Long,
+  def createMappedRead(referenceName: String, start: Long, end: Long,
                        readName: String = UUID.randomUUID().toString, avgPhredScore: Int = 20,
                        numClippedBases: Int = 0, isPrimaryAlignment: Boolean = true,
                        isNegativeStrand: Boolean = false) = {
@@ -37,15 +37,15 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     val cigar = if (numClippedBases > 0) "%dS%dM".format(numClippedBases, 100 - numClippedBases) else "100M"
 
     val contig = Contig.newBuilder
-      .setContigName("reference%s".format(referenceName))
+      .setContigName(referenceName)
       .build
 
     AlignmentRecord.newBuilder()
       .setContig(contig)
-      .setStart(position)
+      .setStart(start)
       .setQual(qual)
       .setCigar(cigar)
-      .setEnd(if (isNegativeStrand) position - 100 + numClippedBases else position + 100 - numClippedBases)
+      .setEnd(end)
       .setReadMapped(true)
       .setPrimaryAlignment(isPrimaryAlignment)
       .setReadName(readName)
@@ -56,8 +56,8 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       .build()
   }
 
-  def createPair(firstReferenceName: String, firstPosition: Long,
-                 secondReferenceName: String, secondPosition: Long,
+  def createPair(firstReferenceName: String, firstStart: Long, firstEnd: Long,
+                 secondReferenceName: String, secondStart: Long, secondEnd: Long,
                  readName: String = UUID.randomUUID().toString,
                  avgPhredScore: Int = 20): Seq[AlignmentRecord] = {
     val firstContig = Contig.newBuilder
@@ -68,19 +68,19 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       .setContigName(secondReferenceName)
       .build
 
-    val firstOfPair = createMappedRead(firstReferenceName, firstPosition,
+    val firstOfPair = createMappedRead(firstReferenceName, firstStart, firstEnd,
       readName = readName, avgPhredScore = avgPhredScore)
     firstOfPair.setFirstOfPair(true)
     firstOfPair.setMateMapped(true)
     firstOfPair.setMateContig(secondContig)
-    firstOfPair.setMateAlignmentStart(secondPosition)
+    firstOfPair.setMateAlignmentStart(secondStart)
     firstOfPair.setReadPaired(true)
-    val secondOfPair = createMappedRead(secondReferenceName, secondPosition,
+    val secondOfPair = createMappedRead(secondReferenceName, secondStart, secondEnd,
       readName = readName, avgPhredScore = avgPhredScore, isNegativeStrand = true)
     secondOfPair.setSecondOfPair(true)
     secondOfPair.setMateMapped(true)
     secondOfPair.setMateContig(firstContig)
-    secondOfPair.setMateAlignmentStart(firstPosition)
+    secondOfPair.setMateAlignmentStart(firstStart)
     secondOfPair.setReadPaired(true)
     Seq(firstOfPair, secondOfPair)
   }
@@ -90,15 +90,15 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   }
 
   sparkTest("single read") {
-    val read = createMappedRead("0", 100)
+    val read = createMappedRead("0", 100, 200)
     val marked = markDuplicates(read)
     // Can't have duplicates with a single read, should return the read unchanged.
     assert(marked(0) == read)
   }
 
   sparkTest("reads at different positions") {
-    val read1 = createMappedRead("0", 42)
-    val read2 = createMappedRead("0", 43)
+    val read1 = createMappedRead("0", 42, 142)
+    val read2 = createMappedRead("0", 43, 143)
     val marked = markDuplicates(read1, read2)
     // Reads shouldn't be modified
     assert(marked.contains(read1) && marked.contains(read2))
@@ -106,9 +106,9 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
 
   sparkTest("reads at the same position") {
     val poorReads = for (i <- 0 until 10) yield {
-      createMappedRead("1", 42, avgPhredScore = 20, readName = "poor%d".format(i))
+      createMappedRead("1", 42, 142, avgPhredScore = 20, readName = "poor%d".format(i))
     }
-    val bestRead = createMappedRead("1", 42, avgPhredScore = 30, readName = "best")
+    val bestRead = createMappedRead("1", 42, 142, avgPhredScore = 30, readName = "best")
     val marked = markDuplicates(List(bestRead) ++ poorReads: _*)
     val (dups, nonDup) = marked.partition(p => p.getDuplicateRead)
     assert(nonDup.size == 1 && nonDup(0) == bestRead)
@@ -117,12 +117,12 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
 
   sparkTest("reads at the same position with clipping") {
     val poorClippedReads = for (i <- 0 until 5) yield {
-      createMappedRead("1", 44, numClippedBases = 2, avgPhredScore = 20, readName = "poorClipped%d".format(i))
+      createMappedRead("1", 44, 142, numClippedBases = 2, avgPhredScore = 20, readName = "poorClipped%d".format(i))
     }
     val poorUnclippedReads = for (i <- 0 until 5) yield {
-      createMappedRead("1", 42, avgPhredScore = 20, readName = "poorUnclipped%d".format(i))
+      createMappedRead("1", 42, 142, avgPhredScore = 20, readName = "poorUnclipped%d".format(i))
     }
-    val bestRead = createMappedRead("1", 42, avgPhredScore = 30, readName = "best")
+    val bestRead = createMappedRead("1", 42, 142, avgPhredScore = 30, readName = "best")
     val marked = markDuplicates(List(bestRead) ++ poorClippedReads ++ poorUnclippedReads: _*)
     val (dups, nonDup) = marked.partition(p => p.getDuplicateRead)
     assert(nonDup.size == 1 && nonDup(0) == bestRead)
@@ -131,9 +131,9 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
 
   sparkTest("reads on reverse strand") {
     val poorReads = for (i <- 0 until 7) yield {
-      createMappedRead("10", 42, isNegativeStrand = true, avgPhredScore = 20, readName = "poor%d".format(i))
+      createMappedRead("10", 42, 142, isNegativeStrand = true, avgPhredScore = 20, readName = "poor%d".format(i))
     }
-    val bestRead = createMappedRead("10", 42, isNegativeStrand = true, avgPhredScore = 30, readName = "best")
+    val bestRead = createMappedRead("10", 42, 142, isNegativeStrand = true, avgPhredScore = 30, readName = "best")
     val marked = markDuplicates(List(bestRead) ++ poorReads: _*)
     val (dups, nonDup) = marked.partition(p => p.getDuplicateRead)
     assert(nonDup.size == 1 && nonDup(0) == bestRead)
@@ -151,9 +151,9 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   sparkTest("read pairs") {
     val poorPairs = for (
       i <- 0 until 10;
-      read <- createPair("0", 10, "0", 210, avgPhredScore = 20, readName = "poor%d".format(i))
+      read <- createPair("0", 10, 110, "0", 110, 210, avgPhredScore = 20, readName = "poor%d".format(i))
     ) yield read
-    val bestPair = createPair("0", 10, "0", 210, avgPhredScore = 30, readName = "best")
+    val bestPair = createPair("0", 10, 110, "0", 110, 210, avgPhredScore = 30, readName = "best")
     val marked = markDuplicates(bestPair ++ poorPairs: _*)
     val (dups, nonDups) = marked.partition(_.getDuplicateRead)
     assert(nonDups.size == 2 && nonDups.forall(p => p.getReadName.toString == "best"))
@@ -162,10 +162,10 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
 
   sparkTest("read pairs with fragments") {
     val fragments = for (i <- 0 until 10) yield {
-      createMappedRead("2", 33, avgPhredScore = 40, readName = "fragment%d".format(i))
+      createMappedRead("2", 33, 133, avgPhredScore = 40, readName = "fragment%d".format(i))
     }
     // Even though the phred score is lower, pairs always score higher than fragments
-    val pairs = createPair("2", 33, "2", 200, avgPhredScore = 20, readName = "pair")
+    val pairs = createPair("2", 33, 133, "2", 100, 200, avgPhredScore = 20, readName = "pair")
     val marked = markDuplicates(fragments ++ pairs: _*)
     val (dups, nonDups) = marked.partition(_.getDuplicateRead)
     assert(nonDups.size == 2 && nonDups.forall(p => p.getReadName.toString == "pair"))
@@ -182,9 +182,9 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   sparkTest("read pairs that cross chromosomes") {
     val poorPairs = for (
       i <- 0 until 10;
-      read <- createPair("ref0", 10, "ref1", 210, avgPhredScore = 20, readName = "poor%d".format(i))
+      read <- createPair("ref0", 10, 110, "ref1", 110, 210, avgPhredScore = 20, readName = "poor%d".format(i))
     ) yield read
-    val bestPair = createPair("ref0", 10, "ref1", 210, avgPhredScore = 30, readName = "best")
+    val bestPair = createPair("ref0", 10, 110, "ref1", 110, 210, avgPhredScore = 30, readName = "best")
     val marked = markDuplicates(bestPair ++ poorPairs: _*)
     val (dups, nonDups) = marked.partition(_.getDuplicateRead)
     assert(nonDups.size == 2 && nonDups.forall(p => p.getReadName.toString == "best"))

@@ -20,72 +20,54 @@ package org.bdgenomics.adam.models
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.{ Feature, AlignmentRecord, NucleotideContigFragment }
+import org.bdgenomics.formats.avro._
 import scala.math.{ max, min }
 
-object ReferenceRegionWithOrientation {
-
-  /**
-   * Builds an oriented reference region from the individual parameters
-   *
-   * @param referenceName The name of the sequence (chromosome) in the reference genome
-   * @param start The 0-based residue-coordinate for the start of the region
-   * @param end The 0-based residue-coordinate for the first residue <i>after</i> the start
-   *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
-   *            half-open interval.
-   * @param negativeStrand Boolean flag as to whether the region is on the forward or
-   *                       reverse strand of the reference region.
-   */
-  def apply(referenceName: String,
-            start: Long,
-            end: Long,
-            negativeStrand: Boolean): ReferenceRegionWithOrientation = {
-    ReferenceRegionWithOrientation(ReferenceRegion(referenceName, start, end), negativeStrand)
-  }
-}
-
-/**
- * Represents a contiguous region of the reference genome with strand information.
- *
- * @param region The genomic locus as a ReferenceRegion
- * @param negativeStrand Boolean flag as to whether the region is on the forward or
- *                       reverse strand of the reference region.
- */
-case class ReferenceRegionWithOrientation(region: ReferenceRegion,
-                                          negativeStrand: Boolean) extends Ordered[ReferenceRegionWithOrientation] {
-  def width: Long = region.width
-
-  def contains(other: ReferencePositionWithOrientation): Boolean = {
-    negativeStrand == other.negativeStrand && region.contains(other.refPos)
-  }
-
-  def contains(other: ReferenceRegionWithOrientation): Boolean = {
-    region.contains(other.region) && negativeStrand == other.negativeStrand
-  }
-
-  def overlaps(other: ReferenceRegionWithOrientation): Boolean = {
-    region.overlaps(other.region) && negativeStrand == other.negativeStrand
-  }
-
-  def compare(that: ReferenceRegionWithOrientation): Int = {
-    val regionCompare = region.compare(that.region)
-    if (regionCompare != 0) {
-      regionCompare
+trait ReferenceOrdering[T <: ReferenceRegion] extends Ordering[T] {
+  private def regionCompare(a: T,
+                            b: T): Int = {
+    if (a.referenceName != b.referenceName) {
+      a.referenceName.compareTo(b.referenceName)
+    } else if (a.start != b.start) {
+      a.start.compareTo(b.start)
     } else {
-      negativeStrand.compare(that.negativeStrand)
+      a.end.compareTo(b.end)
     }
   }
 
-  def toReferenceRegion: ReferenceRegion = region
+  def compare(a: T,
+              b: T): Int = {
+    val rc = regionCompare(a, b)
+    if (rc == 0) {
+      a.orientation.ordinal compare b.orientation.ordinal
+    } else {
+      rc
+    }
+  }
+}
 
-  def referenceName: String = region.referenceName
+trait OptionalReferenceOrdering[T <: ReferenceRegion] extends Ordering[Option[T]] {
+  val baseOrdering: ReferenceOrdering[T]
 
-  def start: Long = region.start
+  def compare(a: Option[T],
+              b: Option[T]): Int = (a, b) match {
+    case (None, None)         => 0
+    case (Some(pa), Some(pb)) => baseOrdering.compare(pa, pb)
+    case (Some(pa), None)     => -1
+    case (None, Some(pb))     => -1
+  }
+}
 
-  def end: Long = region.end
+object RegionOrdering extends ReferenceOrdering[ReferenceRegion] {
+}
+object OptionalRegionOrdering extends OptionalReferenceOrdering[ReferenceRegion] {
+  val baseOrdering = RegionOrdering
 }
 
 object ReferenceRegion {
+
+  implicit def orderingForPositions = RegionOrdering
+  implicit def orderingForOptionalPositions = OptionalRegionOrdering
 
   /**
    * Generates a reference region from read data. Returns None if the read is not mapped;
@@ -94,12 +76,8 @@ object ReferenceRegion {
    * @param record Read to create region from.
    * @return Region corresponding to inclusive region of read alignment, if read is mapped.
    */
-  def apply(record: AlignmentRecord): Option[ReferenceRegion] = {
-    if (record.getReadMapped) {
-      Some(ReferenceRegion(record.getContig.getContigName.toString, record.getStart, record.getEnd))
-    } else {
-      None
-    }
+  def apply(record: AlignmentRecord): ReferenceRegion = {
+    ReferenceRegion(record.getContig.getContigName.toString, record.getStart, record.getEnd)
   }
 
   /**
@@ -144,12 +122,13 @@ object ReferenceRegion {
  *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
  *            half-open interval.
  */
-case class ReferenceRegion(referenceName: String, start: Long, end: Long) extends Ordered[ReferenceRegion] with Interval {
+case class ReferenceRegion(referenceName: String, start: Long, end: Long, orientation: Strand = Strand.Independent) extends Comparable[ReferenceRegion] with Interval {
 
-  assert(start >= 0)
-  assert(end >= start)
+  assert(start >= 0 && end >= start, "Failed when trying to create region %s %d %d on %s strand.".format(referenceName, start, end, orientation))
 
   def width: Long = end - start
+
+  def disorient: ReferenceRegion = new ReferenceRegion(referenceName, start, end)
 
   /**
    * Merges two reference regions that are contiguous.
@@ -189,6 +168,7 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
    * @see merge
    */
   def hull(region: ReferenceRegion): ReferenceRegion = {
+    assert(orientation == region.orientation, "Cannot compute convex hull of differently oriented regions.")
     assert(referenceName == region.referenceName, "Cannot compute convex hull of regions on different references.")
     ReferenceRegion(referenceName, min(start, region.start), max(end, region.end))
   }
@@ -203,28 +183,6 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
     distance(region).map(_ == 1).getOrElse(false)
 
   /**
-   * Returns the distance between this reference region and a point in the reference space.
-   *
-   * @note Distance here is defined as the minimum distance between any point within this region, and
-   * the point we are measuring against. If the point is within this region, its distance will be 0.
-   * Else, the distance will be greater than or equal to 1.
-   *
-   * @param other Point to compare against.
-   * @return Returns an option containing the distance between two points. If the point is not in
-   * our reference space, we return an empty option (None).
-   */
-  def distance(other: ReferencePosition): Option[Long] =
-    if (referenceName == other.referenceName)
-      if (other.pos < start)
-        Some(start - other.pos)
-      else if (other.pos >= end)
-        Some(other.pos - end + 1)
-      else
-        Some(0)
-    else
-      None
-
-  /**
    * Returns the distance between this reference region and another region in the reference space.
    *
    * @note Distance here is defined as the minimum distance between any point within this region, and
@@ -236,7 +194,7 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
    * our reference space, we return an empty option (None).
    */
   def distance(other: ReferenceRegion): Option[Long] =
-    if (referenceName == other.referenceName)
+    if (referenceName == other.referenceName && orientation == other.orientation)
       if (overlaps(other))
         Some(0)
       else if (other.start >= end)
@@ -246,22 +204,27 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
     else
       None
 
-  def contains(other: ReferencePosition): Boolean =
-    referenceName == other.referenceName && start <= other.pos && end > other.pos
+  def contains(other: ReferencePosition): Boolean = {
+    orientation == other.orientation &&
+      referenceName == other.referenceName &&
+      start <= other.pos && end > other.pos
+  }
 
-  def contains(other: ReferenceRegion): Boolean =
-    referenceName == other.referenceName && start <= other.start && end >= other.end
+  def contains(other: ReferenceRegion): Boolean = {
+    orientation == other.orientation &&
+      referenceName == other.referenceName &&
+      start <= other.start && end >= other.end
+  }
 
-  def overlaps(other: ReferenceRegion): Boolean =
-    referenceName == other.referenceName && end > other.start && start < other.end
+  def overlaps(other: ReferenceRegion): Boolean = {
+    orientation == other.orientation &&
+      referenceName == other.referenceName &&
+      end > other.start && start < other.end
+  }
 
-  def compare(that: ReferenceRegion): Int =
-    if (referenceName != that.referenceName)
-      referenceName.compareTo(that.referenceName)
-    else if (start != that.start)
-      start.compareTo(that.start)
-    else
-      end.compareTo(that.end)
+  def compareTo(that: ReferenceRegion): Int = {
+    RegionOrdering.compare(this, that)
+  }
 
   def length(): Long = {
     end - start
@@ -269,16 +232,20 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long) extend
 }
 
 class ReferenceRegionSerializer extends Serializer[ReferenceRegion] {
+  private val enumValues = Strand.values()
+
   def write(kryo: Kryo, output: Output, obj: ReferenceRegion) = {
     output.writeString(obj.referenceName)
     output.writeLong(obj.start)
     output.writeLong(obj.end)
+    output.writeInt(obj.orientation.ordinal())
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[ReferenceRegion]): ReferenceRegion = {
     val referenceName = input.readString()
     val start = input.readLong()
     val end = input.readLong()
-    new ReferenceRegion(referenceName, start, end)
+    val orientation = input.readInt()
+    new ReferenceRegion(referenceName, start, end, enumValues(orientation))
   }
 }

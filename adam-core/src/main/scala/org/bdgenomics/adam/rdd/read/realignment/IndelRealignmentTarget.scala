@@ -51,7 +51,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @param b Indel realignment target to compare.
    * @return Comparison done by starting position.
    */
-  def compare(a: IndelRealignmentTarget, b: IndelRealignmentTarget): Int = a.readRange compare b.readRange
+  def compare(a: IndelRealignmentTarget, b: IndelRealignmentTarget): Int = a.readRange compareTo b.readRange
 
   /**
    * Check to see if an indel realignment target contains the given read.
@@ -61,9 +61,11 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @return True if read alignment is contained in target span.
    */
   def contains(target: IndelRealignmentTarget, read: AlignmentRecord): Boolean = {
-    val reg = RichAlignmentRecord(read).readRegion
-
-    reg.forall(r => target.readRange.overlaps(r))
+    if (read.getReadMapped) {
+      target.readRange.overlaps(ReferenceRegion(read))
+    } else {
+      false
+    }
   }
 
   /**
@@ -74,9 +76,11 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @return True if start of read is before the start of the indel alignment target.
    */
   def lt(target: IndelRealignmentTarget, read: RichAlignmentRecord): Boolean = {
-    val region = read.readRegion
-
-    region.forall(r => target.readRange.compare(r) < 0)
+    if (read.getReadMapped) {
+      target.readRange.compareTo(ReferenceRegion(read.record)) < 0
+    } else {
+      false
+    }
   }
 
   /**
@@ -104,7 +108,7 @@ object IndelRealignmentTarget {
   def apply(read: RichAlignmentRecord,
             maxIndelSize: Int): Seq[IndelRealignmentTarget] = CreateIndelRealignmentTargets.time {
 
-    val region = read.readRegion.get
+    val region = ReferenceRegion(read.record)
     val refId = read.record.getContig.getContigName
     var pos = List[ReferenceRegion]()
     var referencePos = read.record.getStart

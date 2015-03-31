@@ -22,6 +22,7 @@ import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
+import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.models.{ Consensus, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
@@ -463,7 +464,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
       rdd.filter(r => r.getReadMapped)
     } else {
       val sr = rdd.filter(r => r.getReadMapped)
-        .keyBy(r => ReferencePosition(r).get)
+        .keyBy(ReferencePosition(_))
         .sortByKey()
       sr.map(kv => kv._2)
     }

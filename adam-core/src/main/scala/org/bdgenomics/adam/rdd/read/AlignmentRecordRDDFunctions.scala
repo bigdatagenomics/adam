@@ -32,6 +32,7 @@ import org.bdgenomics.adam.algorithms.consensus.{
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
+import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ ADAMSaveArgs, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rdd.read.correction.{ ErrorCorrection, TrimReads }
@@ -245,35 +246,14 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     log.info("Sorting reads by reference position")
 
     // NOTE: In order to keep unmapped reads from swamping a single partition
-    // we place them in a range of referenceIds at the end of the file.
-    // The referenceId is an Int and typical only a few dozen values are even used.
-    // These referenceId values are not stored; they are only used during sorting.
-    val unmappedReferenceNames = new Iterator[String] with Serializable {
-      var currentOffsetFromEnd = 0
-
-      def hasNext: Boolean = true
-
-      def next(): String = {
-        currentOffsetFromEnd += 1
-        if (currentOffsetFromEnd > 10000) {
-          currentOffsetFromEnd = 0
-        }
-        // NB : this is really ugly - any better way to manufacture
-        // string values that are greater than anything else we care
-        // about?
-        "unmapped" + (Int.MaxValue - currentOffsetFromEnd).toString
+    // we sort the unmapped reads by read name. we prefix with "ZZZ" to ensure
+    // that the read name is lexicographically "after" the contig names
+    rdd.keyBy(r => {
+      if (r.getReadMapped) {
+        ReferencePosition(r)
+      } else {
+        ReferencePosition("ZZZ%s".format(r.getReadName), 0)
       }
-    }
-
-    rdd.map(p => {
-      val referencePos = ReferencePosition(p) match {
-        case None =>
-          // Move unmapped reads to the end of the file
-          ReferencePosition(
-            unmappedReferenceNames.next(), Long.MaxValue)
-        case Some(pos) => pos
-      }
-      (referencePos, p)
     }).sortByKey().map(p => p._2)
   }
 

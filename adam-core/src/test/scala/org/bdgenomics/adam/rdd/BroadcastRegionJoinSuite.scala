@@ -101,9 +101,9 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
     val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
 
-    val baseMapping = new NonoverlappingRegions(Seq(ReferenceRegion(baseRecord).get))
-    val regions1 = baseMapping.findOverlappingRegions(ReferenceRegion(record1).get)
-    val regions2 = baseMapping.findOverlappingRegions(ReferenceRegion(record2).get)
+    val baseMapping = new NonoverlappingRegions(Seq(ReferenceRegion(baseRecord)))
+    val regions1 = baseMapping.findOverlappingRegions(ReferenceRegion(record1))
+    val regions2 = baseMapping.findOverlappingRegions(ReferenceRegion(record2))
     assert(regions1.size === 1)
     assert(regions2.size === 1)
     assert(regions1.head === regions2.head)
@@ -126,8 +126,8 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val record1 = builder.build()
     val record2 = builder.build()
 
-    val rdd1 = sc.parallelize(Seq(record1)).keyBy(ReferenceRegion(_).get)
-    val rdd2 = sc.parallelize(Seq(record2)).keyBy(ReferenceRegion(_).get)
+    val rdd1 = sc.parallelize(Seq(record1)).keyBy(ReferenceRegion(_))
+    val rdd2 = sc.parallelize(Seq(record2)).keyBy(ReferenceRegion(_))
 
     assert(BroadcastRegionJoinSuite.getReferenceRegion(record1) ===
       BroadcastRegionJoinSuite.getReferenceRegion(record2))
@@ -165,8 +165,8 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
     val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion(_).get)
-    val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_).get)
+    val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion(_))
+    val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_))
 
     assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       baseRdd,
@@ -214,8 +214,8 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val baseRecord1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setEnd(5L).build()
     val baseRecord2 = AlignmentRecord.newBuilder(builtRef2).setCigar("4M").setEnd(5L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_).get)
-    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_).get)
+    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_))
+    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_))
 
     assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
       baseRdd,
@@ -263,8 +263,8 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val baseRecord1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setEnd(5L).build()
     val baseRecord2 = AlignmentRecord.newBuilder(builtRef2).setCigar("4M").setEnd(5L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_).get)
-    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_).get)
+    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_))
+    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_))
 
     assert(BroadcastRegionJoin.cartesianFilter(
       baseRdd,
@@ -286,7 +286,7 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
 
 object BroadcastRegionJoinSuite {
   def getReferenceRegion(record: AlignmentRecord): ReferenceRegion =
-    ReferenceRegion(record).get
+    ReferenceRegion(record)
 
   def merge(prev: Boolean, next: (AlignmentRecord, AlignmentRecord)): Boolean =
     prev && getReferenceRegion(next._1).overlaps(getReferenceRegion(next._2))
