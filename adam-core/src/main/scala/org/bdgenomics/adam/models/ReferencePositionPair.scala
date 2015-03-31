@@ -19,18 +19,25 @@ package org.bdgenomics.adam.models
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
-import org.apache.spark.Logging
 import Ordering.Option
+import org.apache.spark.Logging
 import org.bdgenomics.adam.instrumentation.Timers.CreateReferencePositionPair
+import org.bdgenomics.adam.models.ReferenceRegion._
+import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 object ReferencePositionPair extends Logging {
+  private def posForRead(read: AlignmentRecord): Option[ReferencePosition] = {
+    RichAlignmentRecord(read).fivePrimeReferencePosition
+  }
+
   def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = CreateReferencePositionPair.time {
     singleReadBucket.primaryMapped.toSeq.lift(0) match {
       case None =>
         // No mapped reads
         new ReferencePositionPair(None, None)
       case Some(read1) =>
-        val read1pos = ReferencePositionWithOrientation.fivePrime(read1)
+        val read1pos = posForRead(read1)
         if (read1.getReadPaired && read1.getMateMapped) {
           singleReadBucket.primaryMapped.toSeq.lift(1) match {
             case None =>
@@ -39,8 +46,8 @@ object ReferencePositionPair extends Logging {
               new ReferencePositionPair(read1pos, None)
             case Some(read2) =>
               // Both reads are mapped
-              val read2pos = ReferencePositionWithOrientation.fivePrime(read2)
-              if (read1pos < read2pos) {
+              val read2pos = posForRead(read2)
+              if (read1pos.get.disorient.compareTo(read2pos.get.disorient) < 0) {
                 new ReferencePositionPair(read1pos, read2pos)
               } else {
                 new ReferencePositionPair(read2pos, read1pos)
@@ -52,9 +59,9 @@ object ReferencePositionPair extends Logging {
               // Mate is not mapped...
               new ReferencePositionPair(read1pos, None)
             case Some(read2) =>
-              val read2pos = ReferencePositionWithOrientation.fivePrime(read2)
+              val read2pos = posForRead(read2)
               log.warn("%s claimed to not have mate but mate found".format(read1.getReadName))
-              if (read1pos < read2pos) {
+              if (read1pos.get.disorient.compareTo(read2pos.get.disorient) < 0) {
                 new ReferencePositionPair(read1pos, read2pos)
               } else {
                 new ReferencePositionPair(read2pos, read1pos)
@@ -65,13 +72,13 @@ object ReferencePositionPair extends Logging {
   }
 }
 
-case class ReferencePositionPair(read1refPos: Option[ReferencePositionWithOrientation],
-                                 read2refPos: Option[ReferencePositionWithOrientation])
+case class ReferencePositionPair(read1refPos: Option[ReferencePosition],
+                                 read2refPos: Option[ReferencePosition])
 
 class ReferencePositionPairSerializer extends Serializer[ReferencePositionPair] {
-  val rps = new ReferencePositionWithOrientationSerializer()
+  val rps = new ReferencePositionSerializer()
 
-  def writeOptionalReferencePos(kryo: Kryo, output: Output, optRefPos: Option[ReferencePositionWithOrientation]) = {
+  def writeOptionalReferencePos(kryo: Kryo, output: Output, optRefPos: Option[ReferencePosition]) = {
     optRefPos match {
       case None =>
         output.writeBoolean(false)
@@ -81,10 +88,10 @@ class ReferencePositionPairSerializer extends Serializer[ReferencePositionPair] 
     }
   }
 
-  def readOptionalReferencePos(kryo: Kryo, input: Input): Option[ReferencePositionWithOrientation] = {
+  def readOptionalReferencePos(kryo: Kryo, input: Input): Option[ReferencePosition] = {
     val exists = input.readBoolean()
     if (exists) {
-      Some(rps.read(kryo, input, classOf[ReferencePositionWithOrientation]))
+      Some(rps.read(kryo, input, classOf[ReferencePosition]))
     } else {
       None
     }
