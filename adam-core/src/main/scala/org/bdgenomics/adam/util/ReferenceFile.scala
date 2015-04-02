@@ -23,9 +23,9 @@ import org.bdgenomics.adam.models.ReferenceRegion
 /**
  * File that contains a reference assembly that can be broadcasted
  */
-trait ReferenceFile {
+trait ReferenceFile extends Serializable {
   /**
-   * Extract reference sequence from the .2bit data.
+   * Extract reference sequence from the file.
    *
    * @param region The desired ReferenceRegion to extract.
    * @return The reference sequence at the desired locus.
