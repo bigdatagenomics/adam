@@ -68,7 +68,11 @@ function usage() {
   echo "adam-submit <spark-args> <adam-args>"
   exit 0
 }
-source "$SPARK_HOME"/bin/utils.sh
+if [ -f "$SPARK_HOME"/libexec/bin/utils.sh ]; then
+  source "$SPARK_HOME"/libexec/bin/utils.sh
+else
+  source "$SPARK_HOME"/bin/utils.sh
+fi
 SUBMIT_USAGE_FUNCTION=usage
 gatherSparkSubmitOpts $NEW_OPTIONS
 
