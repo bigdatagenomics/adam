@@ -49,6 +49,9 @@ class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
 
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
+
+  @Args4jOption(required = false, name = "-sort_on_save", usage = "Sort the VCF output.")
+  var sort: Boolean = false
 }
 
 class ADAM2Vcf(val args: ADAM2VcfArgs) extends ADAMSparkCommand[ADAM2VcfArgs] with DictionaryCommand with Logging {
@@ -61,12 +64,13 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends ADAMSparkCommand[ADAM2VcfArgs] wi
 
     val adamGTs: RDD[Genotype] = sc.loadParquetGenotypes(args.adamFile)
 
-    val coalescedRDD = if (args.coalesce > 0) {
-      adamGTs.coalesce(args.coalesce, true)
+    val coalesce = if (args.coalesce > 0) {
+      Some(args.coalesce)
     } else {
-      adamGTs
+      None
     }
 
-    coalescedRDD.toVariantContext.adamVCFSave(args.outputPath, dict = dictionary)
+    adamGTs.toVariantContext
+      .saveAsVcf(args.outputPath, dict = dictionary, sortOnSave = args.sort, coalesceTo = coalesce)
   }
 }
