@@ -434,7 +434,7 @@
         <version>7.0.0</version>
         <exclusions>
           <exclusion>
-            <groupId>com.seqdoop</groupId>
+            <groupId>org.seqdoop</groupId>
             <artifactId>htsjdk</artifactId>
           </exclusion>
         </exclusions>

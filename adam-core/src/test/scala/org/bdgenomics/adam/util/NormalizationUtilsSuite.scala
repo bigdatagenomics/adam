@@ -25,8 +25,6 @@ import org.scalatest.FunSuite
 
 class NormalizationUtilsSuite extends FunSuite {
 
-  val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
-
   test("cannot move an indel left if there are no bases to it's left") {
     assert(NormalizationUtils.numberOfPositionsToShiftIndel("ATC", "") === 0)
   }
@@ -69,13 +67,13 @@ class NormalizationUtilsSuite extends FunSuite {
   }
 
   test("shift an indel left by 0 in a cigar") {
-    val cigar = CIGAR_CODEC.decode("10M10D10M")
+    val cigar = TextCigarCodec.decode("10M10D10M")
 
     assert(cigar === NormalizationUtils.shiftIndel(cigar, 1, 0))
   }
 
   test("shift an indel left by 1 in a cigar") {
-    val cigar = CIGAR_CODEC.decode("10M10D10M")
+    val cigar = TextCigarCodec.decode("10M10D10M")
 
     val newCigar = NormalizationUtils.shiftIndel(cigar, 1, 1)
 

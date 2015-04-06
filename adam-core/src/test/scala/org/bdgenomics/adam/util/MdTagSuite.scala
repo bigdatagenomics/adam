@@ -24,8 +24,6 @@ import org.scalatest.FunSuite
 
 class MdTagSuite extends FunSuite {
 
-  val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
-
   test("null md tag") {
     MdTag(null, 0L)
   }
@@ -65,7 +63,7 @@ class MdTagSuite extends FunSuite {
     // example
     // Cigar = 101I
     // MD:Z:0
-    val tag = MdTag("ACATAC", "", CIGAR_CODEC.decode("6I"), 1L)
+    val tag = MdTag("ACATAC", "", TextCigarCodec.decode("6I"), 1L)
     assert(tag.start === 1L)
     assert(tag.toString === "0")
   }
@@ -277,7 +275,7 @@ class MdTagSuite extends FunSuite {
       .setMismatchingPositions("27G0G0^GGGGGGGGAA8G0G0G0G0G0G0G0G0G0G13")
       .build()
 
-    val newCigar = CIGAR_CODEC.decode("27M10D33M")
+    val newCigar = TextCigarCodec.decode("27M10D33M")
 
     val newTag = MdTag.moveAlignment(read, newCigar)
 
@@ -293,7 +291,7 @@ class MdTagSuite extends FunSuite {
       .setMismatchingPositions("27G0G0^GGGGGGGGAA8G0G0G0G0G0G0G0G0G0G13")
       .build()
 
-    val newCigar = CIGAR_CODEC.decode("60M")
+    val newCigar = TextCigarCodec.decode("60M")
 
     val newTag = MdTag.moveAlignment(read, newCigar, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
 
@@ -311,7 +309,7 @@ class MdTagSuite extends FunSuite {
       .setMismatchingPositions("27G0G0^GGGGGGGGAA8G0G0G0G0G0G0G0G0G0G13")
       .build()
 
-    val newCigar = CIGAR_CODEC.decode("60M")
+    val newCigar = TextCigarCodec.decode("60M")
 
     val newTag = MdTag.moveAlignment(read, newCigar, "GGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
 
@@ -329,7 +327,7 @@ class MdTagSuite extends FunSuite {
       .setMismatchingPositions("27G0G0^GGGGGGGGAA8G0G0G0G0G0G0G0G0G0G13")
       .build()
 
-    val newCigar = CIGAR_CODEC.decode("10M10D50M")
+    val newCigar = TextCigarCodec.decode("10M10D50M")
 
     val newTag = MdTag.moveAlignment(read, newCigar, "AAAAAAAAAAGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
 
@@ -347,7 +345,7 @@ class MdTagSuite extends FunSuite {
       .setMismatchingPositions("27G0G0^GGGGGGGGAA8G0G0G0G0G0G0G0G0G0G13")
       .build()
 
-    val newCigar = CIGAR_CODEC.decode("10I50M")
+    val newCigar = TextCigarCodec.decode("10I50M")
 
     val newTag = MdTag.moveAlignment(read, newCigar, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 100L)
 
@@ -359,7 +357,7 @@ class MdTagSuite extends FunSuite {
   test("create new md tag from read vs. reference, perfect match") {
     val read = "ACCATAGA"
     val reference = "ACCATAGA"
-    val cigar = CIGAR_CODEC.decode("8M")
+    val cigar = TextCigarCodec.decode("8M")
     val start = 0L
 
     val tag = MdTag(read, reference, cigar, start)
@@ -374,7 +372,7 @@ class MdTagSuite extends FunSuite {
               expectedTag: String,
               expectedStart: Long,
               expectedEnd: Long): Unit = {
-    val tag = MdTag(read, reference, CIGAR_CODEC.decode(cigarStr), start)
+    val tag = MdTag(read, reference, TextCigarCodec.decode(cigarStr), start)
     assert(tag.toString == expectedTag)
     assert(tag.start == expectedStart)
     assert(tag.end == expectedEnd)
