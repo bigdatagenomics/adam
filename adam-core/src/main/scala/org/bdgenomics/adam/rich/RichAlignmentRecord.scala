@@ -27,7 +27,6 @@ import scala.collection.immutable.NumericRange
 import scala.math.max
 
 object RichAlignmentRecord {
-  val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
   val ILLUMINA_READNAME_REGEX = "[a-zA-Z0-9]+:[0-9]:([0-9]+):([0-9]+):([0-9]+).*".r
 
   val cigarPattern = Pattern.compile("([0-9]+)([MIDNSHPX=])")
@@ -90,7 +89,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   }
 
   lazy val samtoolsCigar: Cigar = {
-    RichAlignmentRecord.CIGAR_CODEC.decode(record.getCigar.toString)
+    TextCigarCodec.decode(record.getCigar.toString)
   }
 
   // Returns the MdTag if the read is mapped, None otherwise

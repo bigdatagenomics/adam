@@ -20,10 +20,6 @@ package org.bdgenomics.adam.algorithms.smithwaterman
 import htsjdk.samtools.{ Cigar, TextCigarCodec }
 import scala.annotation.tailrec
 
-private[smithwaterman] object SmithWaterman {
-  val CIGAR_CODEC: TextCigarCodec = TextCigarCodec.getSingleton
-}
-
 abstract class SmithWaterman(xSequence: String, ySequence: String) extends Serializable {
 
   lazy val (scoringMatrix, moveMatrix) = buildScoringMatrix()
@@ -178,7 +174,7 @@ abstract class SmithWaterman(xSequence: String, ySequence: String) extends Seria
     val (cX, cY, xI, yI) = move(moveMatrix, sy, sx, "", "")
 
     // get cigars and return
-    (SmithWaterman.CIGAR_CODEC.decode(cX), SmithWaterman.CIGAR_CODEC.decode(cY), xI, yI)
+    (TextCigarCodec.decode(cX), TextCigarCodec.decode(cY), xI, yI)
   }
 
 }
