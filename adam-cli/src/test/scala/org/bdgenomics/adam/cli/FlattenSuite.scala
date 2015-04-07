@@ -20,11 +20,8 @@ package org.bdgenomics.adam.cli
 import java.io._
 
 import org.apache.avro.generic.GenericRecord
-import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.util.{ ADAMFunSuite, HadoopUtil }
 import org.bdgenomics.formats.avro.Genotype
-import org.bdgenomics.utils.parquet.ParquetLister
-import parquet.avro.AvroParquetReader
 
 class FlattenSuite extends ADAMFunSuite {
 
@@ -60,9 +57,8 @@ class FlattenSuite extends ADAMFunSuite {
     val flattenJob = HadoopUtil.newJob()
     flatten.run(sc, flattenJob)
 
-    val reader = new AvroParquetReader[GenericRecord](new Path(flatPath,
-      "part-r-00000.gz.parquet"))
-    val flatRecords = Iterator.continually(reader.read()).takeWhile(_ != null).toSeq
+    val flatLister = new ParquetLister[GenericRecord]()
+    val flatRecords = flatLister.materialize(flatPath).toSeq
 
     assert(flatRecords.size === 15)
     assert(flatRecords(0).get("sampleId") === "NA12878")
