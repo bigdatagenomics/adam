@@ -32,9 +32,9 @@ class AlignmentRecordConverterSuite extends FunSuite {
   // allocate converters
   val adamRecordConverter = new AlignmentRecordConverter
 
-  def make_read(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0): AlignmentRecord = {
+  def make_read(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0, nullQuality: Boolean = false): AlignmentRecord = {
     val sequence: String = "A" * length
-    AlignmentRecord.newBuilder()
+    val builder = AlignmentRecord.newBuilder()
       .setReadName("read" + id.toString)
       .setStart(start)
       .setReadMapped(true)
@@ -42,11 +42,15 @@ class AlignmentRecordConverterSuite extends FunSuite {
       .setSequence(sequence)
       .setReadNegativeStrand(false)
       .setMapq(60)
-      .setQual(sequence) // no typo, we just don't care
       .setMismatchingPositions(mdtag)
       .setOldPosition(12)
       .setOldCigar("2^AAA3")
-      .build()
+
+    if (!nullQuality) {
+      builder.setQual(sequence) // no typo, we just don't care
+    }
+
+    builder.build()
   }
 
   test("testing the fields in a converted ADAM Read") {
@@ -88,6 +92,54 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(toSAM.getReadNegativeStrandFlag === false)
     assert(toSAM.getMappingQuality === 60)
     assert(toSAM.getBaseQualityString === sequence)
+    assert(toSAM.getAttribute("MD") === "2^AAA2")
+    assert(toSAM.getIntegerAttribute("OP") === 13)
+    assert(toSAM.getStringAttribute("OC") === "2^AAA3")
+    //make sure that we didn't set the SM attribute.
+    //issue #452 https://github.com/bigdatagenomics/adam/issues/452
+    assert(toSAM.getAttribute("SM") === null)
+    assert(toSAM.getHeader().getReadGroup("record_group").getSample() === "sample")
+  }
+
+  test("converting a read with null quality is OK") {
+    val adamRead = make_read(3L, "2M3D2M", "2^AAA2", 4, nullQuality = true)
+
+    // add reference details
+    adamRead.setRecordGroupName("record_group")
+    adamRead.setRecordGroupSample("sample")
+    adamRead.setContig(Contig.newBuilder()
+      .setContigName("referencetest")
+      .build())
+    adamRead.setMateContig(Contig.newBuilder()
+      .setContigName("matereferencetest")
+      .setContigLength(6L)
+      .setReferenceURL("test://chrom1")
+      .build())
+    adamRead.setMateAlignmentStart(6L)
+
+    // make sequence dictionary
+    val seqRecForDict = SequenceRecord("referencetest", 5, "test://chrom1")
+    val dict = SequenceDictionary(seqRecForDict)
+
+    //make read group dictionary
+    val readGroup = new RecordGroup(adamRead.getRecordGroupSample(), adamRead.getRecordGroupName())
+    val readGroups = new RecordGroupDictionary(Seq(readGroup))
+
+    // convert read
+    val toSAM = adamRecordConverter.convert(adamRead,
+      SAMFileHeaderWritable(adamRecordConverter.createSAMHeader(dict,
+        readGroups)))
+
+    // validate conversion
+    val sequence = "A" * 4
+    assert(toSAM.getReadName === ("read" + 0.toString))
+    assert(toSAM.getAlignmentStart === 4)
+    assert(toSAM.getReadUnmappedFlag === false)
+    assert(toSAM.getCigarString === "2M3D2M")
+    assert(toSAM.getReadString === sequence)
+    assert(toSAM.getReadNegativeStrandFlag === false)
+    assert(toSAM.getMappingQuality === 60)
+    assert(toSAM.getBaseQualityString === "*")
     assert(toSAM.getAttribute("MD") === "2^AAA2")
     assert(toSAM.getIntegerAttribute("OP") === 13)
     assert(toSAM.getStringAttribute("OC") === "2^AAA3")
