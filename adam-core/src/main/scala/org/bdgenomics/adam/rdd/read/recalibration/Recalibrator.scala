@@ -30,10 +30,14 @@ class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: Qual
 
   def apply(read: DecadentRead): AlignmentRecord = RecalibrateRead.time {
     val record: AlignmentRecord = read.record
-    AlignmentRecord.newBuilder(record).
-      setQual(QualityScore.toString(computeQual(read))).
-      setOrigQual(record.getQual).
-      build()
+    if (record.getQual != null) {
+      AlignmentRecord.newBuilder(record)
+        .setQual(QualityScore.toString(computeQual(read)))
+        .setOrigQual(record.getQual)
+        .build()
+    } else {
+      record
+    }
   }
 
   def computeQual(read: DecadentRead): Seq[QualityScore] = ComputeQualityScore.time {

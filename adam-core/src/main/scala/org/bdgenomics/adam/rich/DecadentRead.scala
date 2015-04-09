@@ -58,7 +58,8 @@ class DecadentRead(val record: RichAlignmentRecord) extends Logging {
   require(!record.getPrimaryAlignment || record.getReadMapped, "Unaligned read can't be a primary alignment")
 
   // Should have quality scores for all residues
-  require(record.getSequence.length == record.qualityScores.length, "sequence and qualityScores must be same length")
+  require(record.getQual == null ||
+    record.getSequence.length == record.qualityScores.length, "sequence and qualityScores must be same length")
 
   // MapQ should be valid
   require(record.getMapq == null || (record.getMapq >= 0 && record.getMapq <= 93), "MapQ must be in [0, 255]")

@@ -55,6 +55,7 @@ class BaseQualityRecalibration(
   val dataset: RDD[(CovariateKey, Residue)] = {
     def shouldIncludeRead(read: DecadentRead) =
       read.isCanonicalRecord &&
+        read.record.record.getQual != null &&
         read.alignmentQuality.exists(_ > QualityScore.zero) &&
         read.passedQualityChecks
 
