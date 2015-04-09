@@ -79,7 +79,10 @@ class AlignmentRecordConverter extends Serializable {
     // set canonically necessary fields
     builder.setReadName(adamRecord.getReadName.toString)
     builder.setReadString(adamRecord.getSequence)
-    builder.setBaseQualityString(adamRecord.getQual)
+    adamRecord.getQual match {
+      case null      => builder.setBaseQualityString("*")
+      case s: String => builder.setBaseQualityString(s)
+    }
 
     // set read group flags
     Option(adamRecord.getRecordGroupName)

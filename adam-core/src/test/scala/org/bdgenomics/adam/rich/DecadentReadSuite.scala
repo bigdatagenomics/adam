@@ -68,4 +68,21 @@ class DecadentReadSuite extends FunSuite {
     assert(residueSeq.head.referencePosition === ReferencePosition("chr1", 1000))
   }
 
+  test("build a decadent read from a read with null qual") {
+    val contig = Contig.newBuilder
+      .setContigName("chr1")
+      .build
+
+    val hardClippedRead = RichAlignmentRecord(AlignmentRecord
+      .newBuilder()
+      .setReadMapped(true)
+      .setStart(1000)
+      .setContig(contig)
+      .setMismatchingPositions("10")
+      .setSequence("AACCTTGGC")
+      .setCigar("9M1H").build())
+
+    val record = DecadentRead(hardClippedRead)
+    assert(record.residues.size === 9)
+  }
 }
