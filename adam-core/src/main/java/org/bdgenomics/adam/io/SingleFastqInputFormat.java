@@ -283,7 +283,6 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
             // ID line
             readName.clear();
             long skipped = appendLineInto(readName, true);
-            pos += skipped;
             if (skipped == 0)
                 return false; // EOF
             if (readName.getBytes()[0] != '@')
