@@ -50,6 +50,7 @@ class InterleavedFastqInputFormatSuite extends ADAMFunSuite {
       assert(testOutput.toString() == expectedOutputData)
     }
   }
+
   sparkTest("interleaved multiline FASTQ hadoop reader") {
     val inputName = "interleaved_multiline_fastq.ifq"
     val expectedOutputName = inputName + ".output"
@@ -74,7 +75,6 @@ class InterleavedFastqInputFormatSuite extends ADAMFunSuite {
     })
 
     assert(testOutput.toString() == expectedOutputData)
-
   }
 }
 
