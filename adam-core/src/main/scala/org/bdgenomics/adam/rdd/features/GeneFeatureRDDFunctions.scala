@@ -122,5 +122,13 @@ class GeneFeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable wit
 
     genes
   }
+
+  def filterByOverlappingRegion(query: ReferenceRegion): RDD[Feature] = {
+    def overlapsQuery(rec: Feature): Boolean =
+      rec.getContig.getContigName.toString == query.referenceName &&
+        rec.getStart < query.end &&
+        rec.getEnd > query.start
+    featureRDD.filter(overlapsQuery)
+  }
 }
 
