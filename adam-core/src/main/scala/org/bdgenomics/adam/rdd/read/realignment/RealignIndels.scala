@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.read.realignment
 
 import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator }
 import org.apache.spark.Logging
-import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.models.ReferenceRegion._
