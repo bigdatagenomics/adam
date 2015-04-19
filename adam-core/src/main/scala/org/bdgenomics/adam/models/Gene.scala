@@ -20,7 +20,6 @@ package org.bdgenomics.adam.models
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.SequenceUtils
 import org.bdgenomics.formats.avro.{ Strand, Feature }
 
 /**
@@ -100,7 +99,7 @@ case class Transcript(id: String,
     if (strand)
       referenceSequence.substring(minStart, maxEnd)
     else
-      SequenceUtils.reverseComplement(referenceSequence.substring(minStart, maxEnd))
+      Alphabet.dna.reverseComplement(referenceSequence.substring(minStart, maxEnd))
   }
 
   /**
@@ -178,7 +177,7 @@ abstract class BlockExtractable(strand: Boolean, region: ReferenceRegion)
     if (strand)
       referenceSequence.substring(region.start.toInt, region.end.toInt)
     else
-      SequenceUtils.reverseComplement(referenceSequence.substring(region.start.toInt, region.end.toInt))
+      Alphabet.dna.reverseComplement(referenceSequence.substring(region.start.toInt, region.end.toInt))
 }
 
 /**
