@@ -61,7 +61,7 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] wi
       log.info("Using contig translation")
 
     var adamVariants: RDD[VariantContext] = sc.loadVcf(args.vcfPath, sd = dictionary)
-    if (args.coalesce > 1) {
+    if (args.coalesce > 0) {
       adamVariants = adamVariants.coalesce(args.coalesce, true)
     }
 
