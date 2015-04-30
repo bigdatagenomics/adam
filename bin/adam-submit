@@ -38,21 +38,23 @@ REPO_DIR="$SCRIPT_DIR/adam-cli/target/appassembler/repo/"
 fi
 
 # Find the ADAM CLI jar
-CLI_DIR="$REPO_DIR/org/bdgenomics/adam/adam-cli"
-num_versions=$(ls "$CLI_DIR" | wc -l)
+ADAM_DIR="$REPO_DIR/org/bdgenomics/adam/"
+num_versions=$(ls ${ADAM_DIR} | grep cli | wc -l)
 if [ "$num_versions" -eq "0" ]; then
-  echo "Failed to find adam-cli jar in $CLI_DIR"
+  echo "Failed to find adam-cli jar in $ADAM_DIR"
   echo "You need to build ADAM before running this program."
   exit 1
 fi
 if [ "$num_versions" -gt "1" ]; then
-  versions_list=$(ls "$CLI_DIR")
-  echo "Found multiple ADAM CLI versions in $CLI_DIR:"
+  versions_list=$(ls "$ADAM_DIR" | grep cli)
+  echo "Found multiple ADAM CLI versions in $ADAM_DIR:"
   echo "$versions_list"
   echo "Please remove all but one."
   exit 1
 fi
-ADAM_CLI_JAR=$(ls $CLI_DIR/*/adam-cli-*.jar)
+CLI=$(ls "$ADAM_DIR" | grep cli)
+CLI_DIR="${ADAM_DIR}/${CLI}"
+ADAM_CLI_JAR=$(ls $CLI_DIR/*/adam-cli_2.1[01]-*.jar)
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then

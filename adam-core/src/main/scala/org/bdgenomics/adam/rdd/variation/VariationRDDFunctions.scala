@@ -144,7 +144,7 @@ class GenotypeRDDFunctions(rdd: RDD[Genotype]) extends Serializable with Logging
   def toVariantContext(): RDD[VariantContext] = {
     rdd.keyBy({ g => RichVariant.variantToRichVariant(g.getVariant) })
       .groupByKey
-      .map { case (v: RichVariant, g) => new VariantContext(v, g, None) }
+      .map { case (v: RichVariant, g) => new VariantContext(ReferencePosition(v), v, g, None) }
   }
 
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {
