@@ -23,13 +23,14 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.projections.{ Projection, AlignmentRecordField }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.Argument
 
-object FlagStat extends ADAMCommandCompanion {
+object FlagStat extends BDGCommandCompanion {
   val commandName: String = "flagstat"
   val commandDescription: String = "Print statistics on reads in an ADAM file (similar to samtools flagstat)"
 
-  def apply(cmdLine: Array[String]): ADAMCommand = {
+  def apply(cmdLine: Array[String]): BDGCommand = {
     new FlagStat(Args4j[FlagStatArgs](cmdLine))
   }
 }
@@ -39,8 +40,8 @@ class FlagStatArgs extends Args4jBase with ParquetArgs {
   val inputPath: String = null
 }
 
-class FlagStat(protected val args: FlagStatArgs) extends ADAMSparkCommand[FlagStatArgs] {
-  val companion: ADAMCommandCompanion = FlagStat
+class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagStatArgs] {
+  val companion: BDGCommandCompanion = FlagStat
 
   def run(sc: SparkContext, job: Job): Unit = {
 

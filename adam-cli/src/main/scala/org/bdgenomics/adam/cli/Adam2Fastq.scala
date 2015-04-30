@@ -25,6 +25,7 @@ import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Option => Args4JOption, Argument }
 
 class Adam2FastqArgs extends ParquetLoadSaveArgs {
@@ -40,7 +41,7 @@ class Adam2FastqArgs extends ParquetLoadSaveArgs {
   var disableProjection: Boolean = false
 }
 
-object Adam2Fastq extends ADAMCommandCompanion {
+object Adam2Fastq extends BDGCommandCompanion {
   override val commandName = "adam2fastq"
   override val commandDescription = "Convert BAM to FASTQ files"
 
@@ -48,7 +49,7 @@ object Adam2Fastq extends ADAMCommandCompanion {
     new Adam2Fastq(Args4j[Adam2FastqArgs](cmdLine))
 }
 
-class Adam2Fastq(val args: Adam2FastqArgs) extends ADAMSparkCommand[Adam2FastqArgs] {
+class Adam2Fastq(val args: Adam2FastqArgs) extends BDGSparkCommand[Adam2FastqArgs] {
   override val companion = Adam2Fastq
 
   override def run(sc: SparkContext, job: Job): Unit = {

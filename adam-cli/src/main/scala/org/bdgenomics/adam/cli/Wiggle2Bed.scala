@@ -19,6 +19,7 @@
 package org.bdgenomics.adam.cli
 
 import java.io.PrintWriter
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.Option
 import scala.io.Source
 
@@ -37,7 +38,7 @@ class Wig2BedArgs extends Args4jBase {
  * guarantees where the sync markers are.  This makes it difficult to use as a
  * "splittable" format, and necessitates processing the file locally.
  */
-object WigFix2Bed extends ADAMCommandCompanion {
+object WigFix2Bed extends BDGCommandCompanion {
   val commandName = "wigfix2bed"
   val commandDescription = "Locally convert a wigFix file to BED format"
 
@@ -51,7 +52,7 @@ object WigFix2Bed extends ADAMCommandCompanion {
   }
 }
 
-class WigFix2Bed(val args: Wig2BedArgs) extends ADAMCommand {
+class WigFix2Bed(val args: Wig2BedArgs) extends BDGCommand {
   val companion = WigFix2Bed
 
   def run() {

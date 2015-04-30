@@ -24,6 +24,7 @@ import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option }
 
 /**
@@ -31,11 +32,11 @@ import org.kohsuke.args4j.{ Argument, Option }
  * tags found in those fields along with the number of records that have each particular
  * tag.
  */
-object PrintTags extends ADAMCommandCompanion {
+object PrintTags extends BDGCommandCompanion {
   val commandName: String = "print_tags"
   val commandDescription: String = "Prints the values and counts of all tags in a set of records"
 
-  def apply(cmdLine: Array[String]): ADAMCommand = {
+  def apply(cmdLine: Array[String]): BDGCommand = {
     new PrintTags(Args4j[PrintTagsArgs](cmdLine))
   }
 }
@@ -54,8 +55,8 @@ class PrintTagsArgs extends Args4jBase with ParquetArgs {
 
 }
 
-class PrintTags(protected val args: PrintTagsArgs) extends ADAMSparkCommand[PrintTagsArgs] {
-  val companion: ADAMCommandCompanion = PrintTags
+class PrintTags(protected val args: PrintTagsArgs) extends BDGSparkCommand[PrintTagsArgs] {
+  val companion: BDGCommandCompanion = PrintTags
 
   def run(sc: SparkContext, job: Job): Unit = {
     val toCount = if (args.count != null) args.count.split(",").toSet else Set()

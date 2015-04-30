@@ -127,6 +127,10 @@
       <artifactId>utils-io_2.10</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.bdgenomics.utils</groupId>
+      <artifactId>utils-cli_2.10</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.esotericsoftware.kryo</groupId>
       <artifactId>kryo</artifactId>
     </dependency>

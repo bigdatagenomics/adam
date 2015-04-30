@@ -16,16 +16,17 @@
  * limitations under the License.
  */
 package org.bdgenomics.adam.cli
-import org.apache.spark.rdd.RDD
 
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.FlagStat._
 import org.bdgenomics.adam.rdd.read.{ DuplicateMetrics, FlagStatMetrics }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.bdgenomics.adam.rdd.read.FlagStat._
+import org.bdgenomics.utils.cli.Args4j
 
-class FlagStatTest extends ADAMFunSuite {
+class FlagStatSuite extends ADAMFunSuite {
 
   sparkTest("Standard FlagStat test") {
 

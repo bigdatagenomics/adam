@@ -22,13 +22,14 @@ import org.apache.spark.SparkContext
 import org.bdgenomics.adam.models.SequenceRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.Argument
 
-object ListDict extends ADAMCommandCompanion {
+object ListDict extends BDGCommandCompanion {
   val commandName: String = "listdict"
   val commandDescription: String = "Print the contents of an ADAM sequence dictionary"
 
-  def apply(cmdLine: Array[String]): ADAMCommand = {
+  def apply(cmdLine: Array[String]): BDGCommand = {
     new ListDict(Args4j[ListDictArgs](cmdLine))
   }
 }
@@ -38,8 +39,8 @@ class ListDictArgs extends Args4jBase with ParquetArgs {
   val inputPath: String = null
 }
 
-class ListDict(protected val args: ListDictArgs) extends ADAMSparkCommand[ListDictArgs] {
-  val companion: ADAMCommandCompanion = ListDict
+class ListDict(protected val args: ListDictArgs) extends BDGSparkCommand[ListDictArgs] {
+  val companion: BDGCommandCompanion = ListDict
 
   def run(sc: SparkContext, job: Job): Unit = {
     val dict = sc.adamDictionaryLoad[AlignmentRecord](args.inputPath)

@@ -23,13 +23,15 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.{ Flattener, HadoopUtil }
+import org.bdgenomics.adam.util.Flattener
+import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.instrumentation.Metrics
+import org.bdgenomics.utils.misc.HadoopUtil
 import org.kohsuke.args4j.Argument
 import parquet.avro.AvroParquetInputFormat
 import parquet.hadoop.util.ContextUtil
 
-object Flatten extends ADAMCommandCompanion {
+object Flatten extends BDGCommandCompanion {
   val commandName = "flatten"
   val commandDescription = "Convert a ADAM format file to a version with a flattened " +
     "schema, suitable for querying with tools like Impala"
@@ -48,7 +50,7 @@ class FlattenArgs extends Args4jBase with ParquetSaveArgs {
   var outputPath: String = null
 }
 
-class Flatten(val args: FlattenArgs) extends ADAMSparkCommand[FlattenArgs] with Logging {
+class Flatten(val args: FlattenArgs) extends BDGSparkCommand[FlattenArgs] with Logging {
   val companion = Flatten
 
   def run(sc: SparkContext, job: Job) {

@@ -29,6 +29,7 @@ import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.BroadcastRegionJoin
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
 import scala.io._
 
 /**
@@ -38,12 +39,12 @@ import scala.io._
  * It then reports, on standard out, the location and name of each variant along with the
  * calculated depth.
  */
-object CalculateDepth extends ADAMCommandCompanion {
+object CalculateDepth extends BDGCommandCompanion {
   val commandName: String = "depth"
   val commandDescription: String = "Calculate the depth from a given ADAM file, " +
     "at each variant in a VCF"
 
-  def apply(cmdLine: Array[String]): ADAMCommand = {
+  def apply(cmdLine: Array[String]): BDGCommand = {
     new CalculateDepth(Args4j[CalculateDepthArgs](cmdLine))
   }
 }
@@ -59,8 +60,8 @@ class CalculateDepthArgs extends Args4jBase with ParquetArgs {
   val cartesian: Boolean = false
 }
 
-class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCommand[CalculateDepthArgs] {
-  val companion: ADAMCommandCompanion = CalculateDepth
+class CalculateDepth(protected val args: CalculateDepthArgs) extends BDGSparkCommand[CalculateDepthArgs] {
+  val companion: BDGCommandCompanion = CalculateDepth
 
   def run(sc: SparkContext, job: Job): Unit = {
 

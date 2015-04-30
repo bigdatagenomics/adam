@@ -23,9 +23,10 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Option => option, Argument }
 
-object PrintGenes extends ADAMCommandCompanion {
+object PrintGenes extends BDGCommandCompanion {
   val commandName: String = "print_genes"
   val commandDescription: String = "Load a GTF file containing gene annotations and print the corresponding gene models"
 
@@ -40,7 +41,7 @@ class PrintGenesArgs extends Args4jBase with ParquetArgs with Serializable {
 }
 
 class PrintGenes(protected val args: PrintGenesArgs)
-    extends ADAMSparkCommand[PrintGenesArgs] with Serializable {
+    extends BDGSparkCommand[PrintGenesArgs] with Serializable {
 
   val companion = PrintGenes
 

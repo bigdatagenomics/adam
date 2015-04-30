@@ -18,10 +18,11 @@
 package org.bdgenomics.adam.cli
 
 import java.io._
-
 import org.apache.avro.generic.GenericRecord
-import org.bdgenomics.adam.util.{ ADAMFunSuite, HadoopUtil }
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.Genotype
+import org.bdgenomics.utils.cli.Args4j
+import org.bdgenomics.utils.misc.HadoopUtil
 
 class FlattenSuite extends ADAMFunSuite {
 

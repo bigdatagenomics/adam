@@ -21,6 +21,7 @@ import org.apache.hadoop.fs.{ FileSystem, Path }
 import parquet.avro.AvroParquetReader
 import org.apache.avro.generic.IndexedRecord
 import org.apache.spark.SparkContext
+import org.bdgenomics.utils.misc.HadoopUtil
 
 class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) extends Traversable[T] {
   def this(sc: SparkContext, file: String) = this(sc, new Path(file))

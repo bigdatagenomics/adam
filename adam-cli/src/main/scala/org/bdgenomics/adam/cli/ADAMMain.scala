@@ -17,15 +17,16 @@
  */
 package org.bdgenomics.adam.cli
 
+import java.util.logging.Level._
 import org.apache.spark.Logging
+import org.bdgenomics.adam.util.ParquetLogger
+import org.bdgenomics.utils.cli._
 import scala.Some
 import scala.collection.mutable.ListBuffer
-import org.bdgenomics.adam.util.ParquetLogger
-import java.util.logging.Level._
 
 object ADAMMain extends Logging {
 
-  case class CommandGroup(name: String, commands: List[ADAMCommandCompanion])
+  case class CommandGroup(name: String, commands: List[BDGCommandCompanion])
 
   private val commandGroups =
     List(

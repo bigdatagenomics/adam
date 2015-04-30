@@ -32,8 +32,8 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.rich.RichGenotype._
-import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.{ Genotype, GenotypeType, DatabaseVariantAnnotation }
+import org.bdgenomics.utils.misc.HadoopUtil
 import org.seqdoop.hadoop_bam._
 
 class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceDictionaryRDDAggregator[VariantContext](rdd) with Logging {

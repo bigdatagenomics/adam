@@ -20,12 +20,12 @@ package org.bdgenomics.adam.cli
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.ADAMSaveArgs
-import org.bdgenomics.formats.avro.AlignmentRecord
-import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveArgs {
+class ViewArgs extends Args4jBase with ParquetArgs with SaveArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to view", index = 0)
   var inputPath: String = null
 
@@ -74,7 +74,7 @@ class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveArgs {
   var outputPathArg: String = null
 }
 
-object View extends ADAMCommandCompanion {
+object View extends BDGCommandCompanion {
   val commandName = "view"
   val commandDescription = "View certain reads from an alignment-record file."
 
@@ -93,7 +93,7 @@ object View extends ADAMCommandCompanion {
  *
  * It is agnostic to its input and output being SAM, BAM, or ADAM files; when printing to stdout it prints SAM.
  */
-class View(val args: ViewArgs) extends ADAMSparkCommand[ViewArgs] {
+class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
   val companion = View
 
   type ReadFilter = (AlignmentRecord => Boolean)

@@ -24,15 +24,16 @@ import org.apache.hadoop.fs.Path
 import org.bdgenomics.adam.converters.SAMRecordConverter
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import parquet.avro.AvroParquetWriter
 import scala.collection.JavaConversions._
 
-object Bam2ADAM extends ADAMCommandCompanion {
+object Bam2ADAM extends BDGCommandCompanion {
   val commandName: String = "bam2adam"
   val commandDescription: String = "Single-node BAM to ADAM converter (Note: the 'transform' command can take SAM or BAM as input)"
 
-  def apply(cmdLine: Array[String]): ADAMCommand = {
+  def apply(cmdLine: Array[String]): BDGCommand = {
     new Bam2ADAM(Args4j[Bam2ADAMArgs](cmdLine))
   }
 }
@@ -50,7 +51,7 @@ class Bam2ADAMArgs extends Args4jBase with ParquetArgs {
   var qSize = 10000
 }
 
-class Bam2ADAM(args: Bam2ADAMArgs) extends ADAMCommand {
+class Bam2ADAM(args: Bam2ADAMArgs) extends BDGCommand {
   val companion = Bam2ADAM
   val blockingQueue = new LinkedBlockingQueue[Option[(SAMRecord, SequenceDictionary, RecordGroupDictionary)]](args.qSize)
 

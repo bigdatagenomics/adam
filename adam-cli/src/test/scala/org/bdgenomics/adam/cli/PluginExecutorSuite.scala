@@ -18,7 +18,8 @@
 package org.bdgenomics.adam.cli
 
 import java.io._
-import org.bdgenomics.adam.util.{ HadoopUtil, ADAMFunSuite }
+import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.utils.misc.HadoopUtil
 
 class PluginExecutorSuite extends ADAMFunSuite {
 
