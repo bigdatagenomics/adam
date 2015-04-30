@@ -55,7 +55,7 @@ class CountReadKmersArgs extends Args4jBase with ParquetArgs {
 class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCommand[CountReadKmersArgs] with Logging {
   val companion = CountReadKmers
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
 
     // Quiet Parquet...
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)

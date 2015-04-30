@@ -98,7 +98,7 @@ class PrintADAM(protected val args: PrintADAMArgs) extends BDGSparkCommand[Print
     })
   }
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     val output = Option(args.outputFile)
     args.filesToPrint.foreach(file => {
       displayRaw(sc, file, pretty = args.prettyRaw, output = output)

@@ -69,7 +69,7 @@ object AlleleCountHelper extends Serializable {
 class AlleleCount(val args: AlleleCountArgs) extends BDGSparkCommand[AlleleCountArgs] with Logging {
   val companion = AlleleCount
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
 
     val adamVariants: RDD[Genotype] = sc.loadGenotypes(args.adamFile)
     AlleleCountHelper.countAlleles(adamVariants, args)

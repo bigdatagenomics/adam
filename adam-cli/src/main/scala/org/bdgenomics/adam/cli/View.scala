@@ -148,7 +148,7 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
       reads
   }
 
-  def run(sc: SparkContext, job: Job) = {
+  def run(sc: SparkContext) = {
 
     val reads: RDD[AlignmentRecord] = applyFilters(sc.loadAlignments(args.inputPath))
 

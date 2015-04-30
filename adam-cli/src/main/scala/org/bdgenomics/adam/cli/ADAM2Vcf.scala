@@ -58,7 +58,7 @@ class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
 class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] with DictionaryCommand with Logging {
   val companion = ADAM2Vcf
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     var dictionary: Option[SequenceDictionary] = loadSequenceDictionary(args.dictionaryFile)
     if (dictionary.isDefined)
       log.info("Using contig translation")

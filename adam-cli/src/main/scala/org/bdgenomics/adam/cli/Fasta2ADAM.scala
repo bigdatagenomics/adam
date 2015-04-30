@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
@@ -48,7 +47,7 @@ class Fasta2ADAMArgs extends Args4jBase with ParquetSaveArgs {
 class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fasta2ADAMArgs] with Logging {
   val companion = Fasta2ADAM
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     log.info("Loading FASTA data from disk.")
     val adamFasta = sc.loadFasta(args.fastaFile, fragmentLength = args.fragmentLength)
 

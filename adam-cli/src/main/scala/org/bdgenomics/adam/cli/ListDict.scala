@@ -42,7 +42,7 @@ class ListDictArgs extends Args4jBase with ParquetArgs {
 class ListDict(protected val args: ListDictArgs) extends BDGSparkCommand[ListDictArgs] {
   val companion: BDGCommandCompanion = ListDict
 
-  def run(sc: SparkContext, job: Job): Unit = {
+  def run(sc: SparkContext): Unit = {
     val dict = sc.adamDictionaryLoad[AlignmentRecord](args.inputPath)
 
     dict.records.foreach {

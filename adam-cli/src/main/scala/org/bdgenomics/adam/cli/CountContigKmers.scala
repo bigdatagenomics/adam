@@ -50,7 +50,7 @@ class CountContigKmersArgs extends Args4jBase with ParquetArgs {
 class CountContigKmers(protected val args: CountContigKmersArgs) extends BDGSparkCommand[CountContigKmersArgs] with Logging {
   val companion = CountContigKmers
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
 
     // Quiet Parquet...
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)

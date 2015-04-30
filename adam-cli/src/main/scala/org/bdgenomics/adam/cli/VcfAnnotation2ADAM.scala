@@ -50,7 +50,7 @@ class VcfAnnotation2ADAMArgs extends Args4jBase with ParquetSaveArgs {
 class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends BDGSparkCommand[VcfAnnotation2ADAMArgs] with Logging {
   val companion = VcfAnnotation2ADAM
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     log.info("Reading VCF file from %s".format(args.vcfFile))
     val annotations: RDD[DatabaseVariantAnnotation] = sc.loadVcfAnnotations(args.vcfFile)
 

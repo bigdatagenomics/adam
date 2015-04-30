@@ -163,7 +163,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     adamRecords
   }
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     this.apply({
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)

@@ -22,7 +22,6 @@ import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.FeatureField._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.utils.cli.Args4j
-import org.bdgenomics.utils.misc.HadoopUtil
 import org.bdgenomics.formats.avro.Feature
 
 class Features2ADAMSuite extends ADAMFunSuite {
@@ -43,8 +42,7 @@ class Features2ADAMSuite extends ADAMFunSuite {
     val args: Features2ADAMArgs = Args4j.apply[Features2ADAMArgs](argLine)
 
     val features2Adam = new Features2ADAM(args)
-    val job = HadoopUtil.newJob()
-    features2Adam.run(sc, job)
+    features2Adam.run(sc)
 
     val schema = Projection(featureId, contig, start, strand)
     val lister = new ParquetLister[Feature](Some(schema))
@@ -89,8 +87,7 @@ class Features2ADAMSuite extends ADAMFunSuite {
     val adamArgLine = "%s %s".format(bedPath, outputPath).split("\\s+")
     val adamArgs: Features2ADAMArgs = Args4j.apply[Features2ADAMArgs](adamArgLine)
     val features2Adam = new Features2ADAM(adamArgs)
-    val job = HadoopUtil.newJob()
-    features2Adam.run(sc, job)
+    features2Adam.run(sc)
 
     val schema = Projection(featureId, contig, start, end, value)
     val lister = new ParquetLister[Feature](Some(schema))

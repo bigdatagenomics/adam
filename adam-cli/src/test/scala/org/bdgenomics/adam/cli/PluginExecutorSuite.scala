@@ -19,7 +19,6 @@ package org.bdgenomics.adam.cli
 
 import java.io._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.utils.misc.HadoopUtil
 
 class PluginExecutorSuite extends ADAMFunSuite {
 
@@ -38,7 +37,7 @@ class PluginExecutorSuite extends ADAMFunSuite {
     val pluginExecutor = new PluginExecutor(args)
 
     val bytesWritten = new ByteArrayOutputStream()
-    scala.Console.withOut(bytesWritten)(pluginExecutor.run(sc, HadoopUtil.newJob()))
+    scala.Console.withOut(bytesWritten)(pluginExecutor.run(sc))
 
     val outputString = bytesWritten.toString
 
@@ -61,7 +60,7 @@ class PluginExecutorSuite extends ADAMFunSuite {
     val pluginExecutor = new PluginExecutor(args)
 
     val bytesWritten = new ByteArrayOutputStream()
-    scala.Console.withOut(bytesWritten)(pluginExecutor.run(sc, HadoopUtil.newJob()))
+    scala.Console.withOut(bytesWritten)(pluginExecutor.run(sc))
 
     val outputString = bytesWritten.toString
 
@@ -86,7 +85,7 @@ class PluginExecutorSuite extends ADAMFunSuite {
     val pluginExecutor = new PluginExecutor(args)
 
     val bytesWritten = new ByteArrayOutputStream()
-    scala.Console.withOut(bytesWritten)(pluginExecutor.run(sc, HadoopUtil.newJob()))
+    scala.Console.withOut(bytesWritten)(pluginExecutor.run(sc))
 
     val outputString = bytesWritten.toString
 

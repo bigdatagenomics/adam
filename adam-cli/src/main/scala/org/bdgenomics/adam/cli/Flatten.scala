@@ -19,7 +19,6 @@ package org.bdgenomics.adam.cli
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -53,7 +52,7 @@ class FlattenArgs extends Args4jBase with ParquetSaveArgs {
 class Flatten(val args: FlattenArgs) extends BDGSparkCommand[FlattenArgs] with Logging {
   val companion = Flatten
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(

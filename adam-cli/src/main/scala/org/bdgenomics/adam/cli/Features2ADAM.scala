@@ -48,7 +48,7 @@ class Features2ADAM(val args: Features2ADAMArgs)
     extends BDGSparkCommand[Features2ADAMArgs] {
   val companion = Features2ADAM
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     sc.loadFeatures(args.featuresFile).adamParquetSave(args)
   }
 }
