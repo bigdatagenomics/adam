@@ -85,7 +85,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
     output.map(_.toString).collect().foreach(println)
   }
 
-  def run(sc: SparkContext, job: Job): Unit = {
+  def run(sc: SparkContext): Unit = {
     val plugin = loadPlugin[AlignmentRecord, Any](args.plugin)
     val accessControl = loadAccessControl[AlignmentRecord](args.accessControl)
 

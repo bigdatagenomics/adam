@@ -26,10 +26,6 @@ import org.bdgenomics.adam.converters.FragmentConverter
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
-import org.bdgenomics.adam.util.{
-  HadoopUtil,
-  ParquetLogger
-}
 import org.bdgenomics.formats.avro._
 import parquet.avro.AvroParquetOutputFormat
 import parquet.hadoop.ParquetOutputFormat

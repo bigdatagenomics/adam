@@ -54,7 +54,7 @@ class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
 class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] with DictionaryCommand with Logging {
   val companion = Vcf2ADAM
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
 
     var dictionary: Option[SequenceDictionary] = loadSequenceDictionary(args.dictionaryFile)
     if (dictionary.isDefined)

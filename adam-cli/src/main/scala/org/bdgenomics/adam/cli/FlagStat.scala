@@ -42,7 +42,7 @@ class FlagStatArgs extends Args4jBase with ParquetArgs {
 class FlagStat(protected val args: FlagStatArgs) extends ADAMSparkCommand[FlagStatArgs] {
   val companion: ADAMCommandCompanion = FlagStat
 
-  def run(sc: SparkContext, job: Job): Unit = {
+  def run(sc: SparkContext): Unit = {
 
     val projection = Projection(
       AlignmentRecordField.readMapped,
