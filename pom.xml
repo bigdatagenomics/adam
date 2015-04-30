@@ -26,7 +26,7 @@
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
-    <utils.version>0.1.1</utils.version>
+    <utils.version>0.2.0</utils.version>
     <htsjdk.version>1.129</htsjdk.version>
   </properties>
   
@@ -349,20 +349,20 @@
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>org.bdgenomics.bdg-utils</groupId>
-        <artifactId>bdg-utils-misc</artifactId>
+        <groupId>org.bdgenomics.utils</groupId>
+        <artifactId>utils-misc_${scala.artifact.suffix}</artifactId>
         <version>${utils.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>org.bdgenomics.bdg-utils</groupId>
-        <artifactId>bdg-utils-parquet</artifactId>
+        <groupId>org.bdgenomics.utils</groupId>
+        <artifactId>utils-io_${scala.artifact.suffix}</artifactId>
         <version>${utils.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.bdgenomics.bdg-utils</groupId>
-        <artifactId>bdg-utils-metrics</artifactId>
+        <groupId>org.bdgenomics.utils</groupId>
+        <artifactId>utils-metrics_${scala.artifact.suffix}</artifactId>
         <version>${utils.version}</version>
       </dependency>
       <dependency>
