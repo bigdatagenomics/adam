@@ -36,6 +36,15 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     assert(parter.getPartition(ReferencePosition.UNMAPPED) === 10)
   }
 
+  test("if we do not have a contig for a record, we throw an IAE") {
+    val parter = GenomicPositionPartitioner(10, SequenceDictionary(record("foo", 1000)))
+
+    assert(parter.numPartitions === 11)
+    intercept[IllegalArgumentException] {
+      parter.getPartition(ReferencePosition("chrFoo", 10))
+    }
+  }
+
   test("partitioning into N pieces on M total sequence length, where N > M, results in M partitions") {
     val parter = GenomicPositionPartitioner(10, SequenceDictionary(record("foo", 9)))
     assert(parter.numPartitions === 10)
