@@ -77,10 +77,15 @@ case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Lon
       case ReferencePosition.UNMAPPED => parts
 
       // everything else gets assigned normally.
-      case refpos: ReferencePosition  => getPart(refpos.referenceName, refpos.pos)
+      case refpos: ReferencePosition => {
+        require(seqLengths.contains(refpos.referenceName),
+          "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(refpos,
+            seqLengths.keys.mkString("\n")))
+        getPart(refpos.referenceName, refpos.pos)
+      }
 
       // only ReferencePosition values are partitioned using this partitioner
-      case _                          => throw new IllegalArgumentException("Only ReferencePosition values can be partitioned by GenomicPositionPartitioner")
+      case _ => throw new IllegalArgumentException("Only ReferencePosition values can be partitioned by GenomicPositionPartitioner")
     }
   }
 
@@ -114,8 +119,13 @@ case class GenomicRegionPartitioner(partitionSize: Long, seqLengths: Map[String,
 
   override def getPartition(key: Any): Int = {
     key match {
-      case region: ReferenceRegion => computePartition(region)
-      case _                       => throw new IllegalArgumentException("Only ReferenceMappable values can be partitioned by GenomicRegionPartitioner")
+      case region: ReferenceRegion => {
+        require(seqLengths.contains(region.referenceName),
+          "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(region,
+            seqLengths.keys.mkString("\n")))
+        computePartition(region)
+      }
+      case _ => throw new IllegalArgumentException("Only ReferenceMappable values can be partitioned by GenomicRegionPartitioner")
     }
   }
 }
