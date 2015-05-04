@@ -222,11 +222,11 @@ object ReferenceUtils {
     def folder(acc: Seq[ReferenceRegion], tref: ReferenceRegion): Seq[ReferenceRegion] =
       acc match {
         case Seq() => Seq(tref)
-        case (first: ReferenceRegion) +: Seq(rest) =>
+        case (first: ReferenceRegion) +: rest =>
           if (first.overlaps(tref))
-            first.hull(tref) +: Seq(rest)
+            first.hull(tref) +: rest
           else
-            tref +: first +: Seq(rest)
+            tref +: first +: rest
       }
 
     refs.toSeq.sorted.foldLeft(Seq[ReferenceRegion]())(folder)
