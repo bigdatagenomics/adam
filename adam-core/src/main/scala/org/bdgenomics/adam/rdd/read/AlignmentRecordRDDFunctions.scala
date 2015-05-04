@@ -35,7 +35,6 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ ADAMSaveArgs, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
-import org.bdgenomics.adam.rdd.read.correction.{ ErrorCorrection, TrimReads }
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -225,23 +224,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
   }
 
-  /**
-   * Cuts reads into _q_-mers, and then finds the _q_-mer weight. Q-mers are described in:
-   *
-   * Kelley, David R., Michael C. Schatz, and Steven L. Salzberg. "Quake: quality-aware detection
-   * and correction of sequencing errors." Genome Biol 11.11 (2010): R116.
-   *
-   * _Q_-mers are _k_-mers weighted by the quality score of the bases in the _k_-mer.
-   *
-   * @param qmerLength The value of _q_ to use for cutting _q_-mers.
-   * @return Returns an RDD containing q-mer/weight pairs.
-   *
-   * @see adamCountKmers
-   */
-  def adamCountQmers(qmerLength: Int): RDD[(String, Double)] = {
-    ErrorCorrection.countQmers(rdd, qmerLength)
-  }
-
   def adamSortReadsByReferencePosition(): RDD[AlignmentRecord] = SortReads.time {
     log.info("Sorting reads by reference position")
 
@@ -347,33 +329,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     assert(tagName.length == 2,
       "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName))
     rdd.filter(RichAlignmentRecord(_).tags.exists(_.tag == tagName))
-  }
-
-  /**
-   * Trims bases from the start and end of all reads in an RDD.
-   *
-   * @param trimStart Number of bases to trim from the start of the read.
-   * @param trimEnd Number of bases to trim from the end of the read.
-   * @param readGroup Optional parameter specifying which read group to trim. If omitted,
-   * all reads are trimmed.
-   * @return Returns an RDD of trimmed reads.
-   *
-   * @note Trimming parameters must be >= 0.
-   */
-  def adamTrimReads(trimStart: Int, trimEnd: Int, readGroup: String = null): RDD[AlignmentRecord] = TrimReadsInDriver.time {
-    TrimReads(rdd, trimStart, trimEnd, readGroup)
-  }
-
-  /**
-   * Trims low quality read prefix/suffixes. The average read prefix/suffix quality is
-   * calculated from the Phred scaled qualities for read bases. We trim suffixes/prefixes
-   * that are below a user provided threshold.
-   *
-   * @param phredThreshold Phred score for trimming. Defaut value is 20.
-   * @return Returns an RDD of trimmed reads.
-   */
-  def adamTrimLowQualityReadGroups(phredThreshold: Int = 20): RDD[AlignmentRecord] = TrimLowQualityInDriver.time {
-    TrimReads(rdd, phredThreshold)
   }
 
   /**
