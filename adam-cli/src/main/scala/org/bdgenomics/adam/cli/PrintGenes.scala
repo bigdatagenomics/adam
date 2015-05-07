@@ -29,7 +29,7 @@ object PrintGenes extends ADAMCommandCompanion {
   val commandName: String = "print_genes"
   val commandDescription: String = "Load a GTF file containing gene annotations and print the corresponding gene models"
 
-  def apply(cmdLine: Array[String]) = {
+  def apply(cmdLine: Array[String]): ADAMCommand = {
     new PrintGenes(Args4j[PrintGenesArgs](cmdLine))
   }
 }
@@ -44,7 +44,7 @@ class PrintGenes(protected val args: PrintGenesArgs)
 
   val companion = PrintGenes
 
-  def run(sc: SparkContext, job: Job): Unit = {
+  def run(sc: SparkContext): Unit = {
     val genes: RDD[Gene] = sc.loadGenes(args.gtfInput)
 
     genes.map(printGene).collect().foreach(println)

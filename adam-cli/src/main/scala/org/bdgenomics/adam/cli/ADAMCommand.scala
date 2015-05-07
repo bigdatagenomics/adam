@@ -19,10 +19,8 @@ package org.bdgenomics.adam.cli
 
 import java.io.{ StringWriter, PrintWriter }
 
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ SparkConf, Logging, SparkContext }
 import org.bdgenomics.utils.instrumentation._
-import org.bdgenomics.adam.util.HadoopUtil
 
 trait ADAMCommandCompanion {
   val commandName: String
@@ -43,7 +41,7 @@ trait ADAMCommand extends Runnable {
 trait ADAMSparkCommand[A <: Args4jBase] extends ADAMCommand with Logging {
   protected val args: A
 
-  def run(sc: SparkContext, job: Job)
+  def run(sc: SparkContext): Unit
 
   def run() {
     val start = System.nanoTime()
@@ -52,9 +50,8 @@ trait ADAMSparkCommand[A <: Args4jBase] extends ADAMCommand with Logging {
       conf.setMaster("local[%d]".format(Runtime.getRuntime.availableProcessors()))
     }
     val sc = new SparkContext(conf)
-    val job = HadoopUtil.newJob()
     val metricsListener = initializeMetrics(sc)
-    run(sc, job)
+    run(sc)
     val totalTime = System.nanoTime() - start
     printMetrics(totalTime, metricsListener)
   }

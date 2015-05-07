@@ -62,7 +62,7 @@ class CalculateDepthArgs extends Args4jBase with ParquetArgs {
 class CalculateDepth(protected val args: CalculateDepthArgs) extends ADAMSparkCommand[CalculateDepthArgs] {
   val companion: ADAMCommandCompanion = CalculateDepth
 
-  def run(sc: SparkContext, job: Job): Unit = {
+  def run(sc: SparkContext): Unit = {
 
     val proj = Projection(contig, start, cigar, readMapped)
 

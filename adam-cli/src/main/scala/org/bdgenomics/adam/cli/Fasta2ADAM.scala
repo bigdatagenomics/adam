@@ -47,7 +47,7 @@ class Fasta2ADAMArgs extends Args4jBase with ParquetSaveArgs {
 class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fasta2ADAMArgs] with Logging {
   val companion = Fasta2ADAM
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     log.info("Loading FASTA data from disk.")
     val adamFasta = sc.loadFasta(args.fastaFile, fragmentLength = args.fragmentLength)
 

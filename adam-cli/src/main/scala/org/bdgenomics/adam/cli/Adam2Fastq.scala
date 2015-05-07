@@ -51,7 +51,7 @@ object Adam2Fastq extends ADAMCommandCompanion {
 class Adam2Fastq(val args: Adam2FastqArgs) extends ADAMSparkCommand[Adam2FastqArgs] {
   override val companion = Adam2Fastq
 
-  override def run(sc: SparkContext, job: Job): Unit = {
+  override def run(sc: SparkContext): Unit = {
 
     val projectionOpt =
       if (!args.disableProjection)

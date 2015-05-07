@@ -133,7 +133,7 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
     adamRecords
   }
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     this.apply({
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)
