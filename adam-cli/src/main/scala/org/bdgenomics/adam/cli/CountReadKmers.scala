@@ -44,8 +44,6 @@ class CountReadKmersArgs extends Args4jBase with ParquetArgs {
   var outputPath: String = null
   @Argument(required = true, metaVar = "KMER_LENGTH", usage = "Length of k-mers", index = 2)
   var kmerLength: Int = 0
-  @Args4jOption(required = false, name = "-countQmers", usage = "Counts q-mers instead of k-mers.")
-  var countQmers: Boolean = false
   @Args4jOption(required = false, name = "-printHistogram", usage = "Prints a histogram of counts.")
   var printHistogram: Boolean = false
   @Args4jOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
@@ -71,11 +69,7 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
     }
 
     // count kmers
-    val countedKmers = if (args.countQmers) {
-      adamRecords.adamCountQmers(args.kmerLength)
-    } else {
-      adamRecords.adamCountKmers(args.kmerLength).map(kv => (kv._1, kv._2.toDouble))
-    }
+    val countedKmers = adamRecords.adamCountKmers(args.kmerLength)
 
     // cache counted kmers
     countedKmers.cache()
@@ -90,11 +84,7 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
     }
 
     // save as text file
-    if (args.countQmers) {
-      countedKmers.map(kv => kv._1 + ", " + kv._2)
-    } else {
-      countedKmers.map(kv => kv._1 + ", " + kv._2.toLong)
-    }.saveAsTextFile(args.outputPath)
+    countedKmers.saveAsTextFile(args.outputPath)
   }
 
 }
