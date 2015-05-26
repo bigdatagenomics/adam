@@ -3,14 +3,14 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.bdgenomics.adam</groupId>
-    <artifactId>adam-parent</artifactId>
+    <artifactId>adam-parent_2.10</artifactId>
     <version>0.16.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-cli</artifactId>
+  <artifactId>adam-cli_2.10</artifactId>
   <packaging>jar</packaging>
-  <name>ADAM: CLI</name>
+  <name>ADAM_2.10: CLI</name>
   <build>
     <plugins>
       <plugin>
@@ -104,25 +104,29 @@
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_${scala.artifact.suffix}</artifactId>
+      <artifactId>spark-core_2.10</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.bdgenomics.bdg-utils</groupId>
-      <artifactId>bdg-utils-misc</artifactId>
+      <groupId>org.bdgenomics.utils</groupId>
+      <artifactId>utils-misc_2.10</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.bdgenomics.bdg-utils</groupId>
-      <artifactId>bdg-utils-parquet</artifactId>
+      <groupId>org.bdgenomics.utils</groupId>
+      <artifactId>utils-io_2.10</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.bdgenomics.bdg-utils</groupId>
-      <artifactId>bdg-utils-metrics</artifactId>
+      <groupId>org.bdgenomics.utils</groupId>
+      <artifactId>utils-cli_2.10</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bdgenomics.utils</groupId>
+      <artifactId>utils-metrics_2.10</artifactId>
     </dependency>
     <dependency>
       <groupId>org.scoverage</groupId>
-      <artifactId>scalac-scoverage-plugin_${scala.artifact.suffix}</artifactId>
+      <artifactId>scalac-scoverage-plugin_2.10</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.bdg-formats</groupId>
@@ -130,21 +134,21 @@
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core</artifactId>
+      <artifactId>adam-core_2.10</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core</artifactId>
+      <artifactId>adam-core_2.10</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-apis</artifactId>
+      <artifactId>adam-apis_2.10</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-apis</artifactId>
+      <artifactId>adam-apis_2.10</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -161,20 +165,8 @@
       <artifactId>args4j</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.fusesource.scalate</groupId>
-      <artifactId>scalate-core_2.10</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.scalatra</groupId>
-      <artifactId>scalatra-json_2.10</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.scalatra</groupId>
-      <artifactId>scalatra_2.10</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala.artifact.suffix}</artifactId>
+      <artifactId>scalatest_2.10</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

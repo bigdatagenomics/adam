@@ -15,22 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
-* Copyright (c) 2014. Mount Sinai School of Medicine
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
-
 package org.bdgenomics.adam.cli
 
 import org.apache.hadoop.mapreduce.Job
@@ -41,9 +25,10 @@ import org.bdgenomics.adam.converters.VariantAnnotationConverter
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro._
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-object VcfAnnotation2ADAM extends ADAMCommandCompanion {
+object VcfAnnotation2ADAM extends BDGCommandCompanion {
 
   val commandName = "anno2adam"
   val commandDescription = "Convert a annotation file (in VCF format) to the corresponding ADAM format"
@@ -62,10 +47,10 @@ class VcfAnnotation2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   var currentAnnotations: String = null
 }
 
-class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends ADAMSparkCommand[VcfAnnotation2ADAMArgs] with Logging {
+class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends BDGSparkCommand[VcfAnnotation2ADAMArgs] with Logging {
   val companion = VcfAnnotation2ADAM
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     log.info("Reading VCF file from %s".format(args.vcfFile))
     val annotations: RDD[DatabaseVariantAnnotation] = sc.loadVcfAnnotations(args.vcfFile)
 

@@ -23,9 +23,10 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.BaseFeature
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.Argument
 
-object Features2ADAM extends ADAMCommandCompanion {
+object Features2ADAM extends BDGCommandCompanion {
   val commandName = "features2adam"
   val commandDescription = "Convert a file with sequence features into corresponding ADAM format"
 
@@ -44,10 +45,10 @@ class Features2ADAMArgs extends Args4jBase with ParquetSaveArgs {
 }
 
 class Features2ADAM(val args: Features2ADAMArgs)
-    extends ADAMSparkCommand[Features2ADAMArgs] {
+    extends BDGSparkCommand[Features2ADAMArgs] {
   val companion = Features2ADAM
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     sc.loadFeatures(args.featuresFile).adamParquetSave(args)
   }
 }

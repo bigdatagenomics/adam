@@ -23,9 +23,10 @@ import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.{ Genotype, GenotypeAllele }
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.Argument
 
-object AlleleCount extends ADAMCommandCompanion {
+object AlleleCount extends BDGCommandCompanion {
   val commandName = "allelecount"
   val commandDescription = "Calculate Allele frequencies"
 
@@ -65,10 +66,10 @@ object AlleleCountHelper extends Serializable {
   }
 }
 
-class AlleleCount(val args: AlleleCountArgs) extends ADAMSparkCommand[AlleleCountArgs] with Logging {
+class AlleleCount(val args: AlleleCountArgs) extends BDGSparkCommand[AlleleCountArgs] with Logging {
   val companion = AlleleCount
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
 
     val adamVariants: RDD[Genotype] = sc.loadGenotypes(args.adamFile)
     AlleleCountHelper.countAlleles(adamVariants, args)

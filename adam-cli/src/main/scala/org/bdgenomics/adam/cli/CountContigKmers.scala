@@ -24,9 +24,10 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.formats.avro.NucleotideContigFragment
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-object CountContigKmers extends ADAMCommandCompanion {
+object CountContigKmers extends BDGCommandCompanion {
   val commandName = "count_contig_kmers"
   val commandDescription = "Counts the k-mers/q-mers from a read dataset."
 
@@ -46,10 +47,10 @@ class CountContigKmersArgs extends Args4jBase with ParquetArgs {
   var printHistogram: Boolean = false
 }
 
-class CountContigKmers(protected val args: CountContigKmersArgs) extends ADAMSparkCommand[CountContigKmersArgs] with Logging {
+class CountContigKmers(protected val args: CountContigKmersArgs) extends BDGSparkCommand[CountContigKmersArgs] with Logging {
   val companion = CountContigKmers
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
 
     // Quiet Parquet...
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)

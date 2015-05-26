@@ -18,17 +18,17 @@
 package org.bdgenomics.adam.cli
 
 import java.util
-
 import org.apache.avro.generic.{ GenericDatumWriter, IndexedRecord }
 import org.apache.avro.io.EncoderFactory
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.util.ParquetFileTraversable
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 import scala.collection.JavaConversions._
 
-object PrintADAM extends ADAMCommandCompanion {
+object PrintADAM extends BDGCommandCompanion {
   val commandName: String = "print"
   val commandDescription: String = "Print an ADAM formatted file"
 
@@ -48,7 +48,7 @@ class PrintADAMArgs extends Args4jBase {
   var prettyRaw: Boolean = false
 }
 
-class PrintADAM(protected val args: PrintADAMArgs) extends ADAMSparkCommand[PrintADAMArgs] {
+class PrintADAM(protected val args: PrintADAMArgs) extends BDGSparkCommand[PrintADAMArgs] {
   val companion = PrintADAM
 
   /**
@@ -98,7 +98,7 @@ class PrintADAM(protected val args: PrintADAMArgs) extends ADAMSparkCommand[Prin
     })
   }
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     val output = Option(args.outputFile)
     args.filesToPrint.foreach(file => {
       displayRaw(sc, file, pretty = args.prettyRaw, output = output)

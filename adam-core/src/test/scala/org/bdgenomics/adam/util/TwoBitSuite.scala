@@ -19,7 +19,7 @@ package org.bdgenomics.adam.util
 
 import java.io.File
 
-import org.bdgenomics.utils.parquet.io.LocalFileByteAccess
+import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.scalatest.FunSuite
 

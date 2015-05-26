@@ -21,6 +21,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli.Args4j
 
 class ViewSuite extends ADAMFunSuite {
 

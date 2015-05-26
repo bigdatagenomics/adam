@@ -17,16 +17,16 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-object Fasta2ADAM extends ADAMCommandCompanion {
+object Fasta2ADAM extends BDGCommandCompanion {
   val commandName: String = "fasta2adam"
   val commandDescription: String = "Converts a text FASTA sequence file into an ADAMNucleotideContig Parquet file which represents assembled sequences."
 
-  def apply(cmdLine: Array[String]): ADAMCommand = {
+  def apply(cmdLine: Array[String]): BDGCommand = {
     new Fasta2ADAM(Args4j[Fasta2ADAMArgs](cmdLine))
   }
 }
@@ -44,10 +44,10 @@ class Fasta2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   var fragmentLength: Long = 10000L
 }
 
-class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends ADAMSparkCommand[Fasta2ADAMArgs] with Logging {
+class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fasta2ADAMArgs] with Logging {
   val companion = Fasta2ADAM
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     log.info("Loading FASTA data from disk.")
     val adamFasta = sc.loadFasta(args.fastaFile, fragmentLength = args.fragmentLength)
 

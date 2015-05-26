@@ -25,9 +25,10 @@ import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-object CountReadKmers extends ADAMCommandCompanion {
+object CountReadKmers extends BDGCommandCompanion {
   val commandName = "count_kmers"
   val commandDescription = "Counts the k-mers/q-mers from a read dataset."
 
@@ -49,10 +50,10 @@ class CountReadKmersArgs extends Args4jBase with ParquetArgs {
   var repartition: Int = -1
 }
 
-class CountReadKmers(protected val args: CountReadKmersArgs) extends ADAMSparkCommand[CountReadKmersArgs] with Logging {
+class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCommand[CountReadKmersArgs] with Logging {
   val companion = CountReadKmers
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
 
     // Quiet Parquet...
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)

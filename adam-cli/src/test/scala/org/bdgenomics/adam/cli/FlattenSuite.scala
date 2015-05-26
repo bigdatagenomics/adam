@@ -18,10 +18,11 @@
 package org.bdgenomics.adam.cli
 
 import java.io._
-
 import org.apache.avro.generic.GenericRecord
-import org.bdgenomics.adam.util.{ ADAMFunSuite, HadoopUtil }
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.Genotype
+import org.bdgenomics.utils.cli.Args4j
+import org.bdgenomics.utils.misc.HadoopUtil
 
 class FlattenSuite extends ADAMFunSuite {
 
@@ -40,8 +41,7 @@ class FlattenSuite extends ADAMFunSuite {
     val argLine = "%s %s".format(inputPath, outputPath).split("\\s+")
     val args: Vcf2ADAMArgs = Args4j.apply[Vcf2ADAMArgs](argLine)
     val vcf2Adam = new Vcf2ADAM(args)
-    val job = HadoopUtil.newJob()
-    vcf2Adam.run(sc, job)
+    vcf2Adam.run(sc)
 
     val lister = new ParquetLister[Genotype]()
     val records = lister.materialize(outputPath).toSeq
@@ -54,8 +54,7 @@ class FlattenSuite extends ADAMFunSuite {
     val flattenArgLine = "%s %s".format(outputPath, flatPath).split("\\s+")
     val flattenArgs: FlattenArgs = Args4j.apply[FlattenArgs](flattenArgLine)
     val flatten = new Flatten(flattenArgs)
-    val flattenJob = HadoopUtil.newJob()
-    flatten.run(sc, flattenJob)
+    flatten.run(sc)
 
     val flatLister = new ParquetLister[GenericRecord]()
     val flatRecords = flatLister.materialize(flatPath).toSeq

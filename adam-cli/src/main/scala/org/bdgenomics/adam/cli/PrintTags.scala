@@ -17,25 +17,25 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.kohsuke.args4j.{ Argument, Option }
+import org.bdgenomics.utils.cli._
+import org.kohsuke.args4j.{ Argument, Option => A4JOption }
 
 /**
  * Reads in the tagStrings field of every record, and prints out the set of unique
  * tags found in those fields along with the number of records that have each particular
  * tag.
  */
-object PrintTags extends ADAMCommandCompanion {
+object PrintTags extends BDGCommandCompanion {
   val commandName: String = "print_tags"
   val commandDescription: String = "Prints the values and counts of all tags in a set of records"
 
-  def apply(cmdLine: Array[String]): ADAMCommand = {
+  def apply(cmdLine: Array[String]): BDGCommand = {
     new PrintTags(Args4j[PrintTagsArgs](cmdLine))
   }
 }
@@ -44,20 +44,20 @@ class PrintTagsArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM file to scan for tags", index = 0)
   val inputPath: String = null
 
-  @Option(required = false, name = "-list",
+  @A4JOption(required = false, name = "-list",
     usage = "When value is set to <N>, also lists the first N attribute fields for ADAMRecords in the input")
   var list: String = null
 
-  @Option(required = false, name = "-count",
+  @A4JOption(required = false, name = "-count",
     usage = "comma-separated list of tag names; for each tag listed, we print the distinct values and their counts")
   var count: String = null
 
 }
 
-class PrintTags(protected val args: PrintTagsArgs) extends ADAMSparkCommand[PrintTagsArgs] {
-  val companion: ADAMCommandCompanion = PrintTags
+class PrintTags(protected val args: PrintTagsArgs) extends BDGSparkCommand[PrintTagsArgs] {
+  val companion: BDGCommandCompanion = PrintTags
 
-  def run(sc: SparkContext, job: Job): Unit = {
+  override def run(sc: SparkContext): Unit = {
     val toCount = if (args.count != null) args.count.split(",").toSet else Set()
 
     val proj = Projection(attributes, primaryAlignment, readMapped, readPaired, failedVendorQualityChecks)

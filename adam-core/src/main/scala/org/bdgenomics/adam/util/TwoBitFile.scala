@@ -19,7 +19,7 @@
 package org.bdgenomics.adam.util
 
 import java.nio.{ ByteOrder, ByteBuffer }
-import org.bdgenomics.utils.parquet.io.ByteAccess
+import org.bdgenomics.utils.io.ByteAccess
 import org.bdgenomics.adam.models.ReferenceRegion
 
 object TwoBitFile {

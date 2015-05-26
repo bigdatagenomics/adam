@@ -25,6 +25,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.plugins.{ AccessControl, ADAMPlugin }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 /**
@@ -38,11 +39,11 @@ import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
  * plugin. The org.bdgenomics.adam.plugins.ADAMPlugin interface defines the
  * class that will run using this command.
  */
-object PluginExecutor extends ADAMCommandCompanion {
+object PluginExecutor extends BDGCommandCompanion {
   val commandName: String = "plugin"
   val commandDescription: String = "Executes an ADAMPlugin"
 
-  def apply(cmdLine: Array[String]): ADAMCommand = {
+  def apply(cmdLine: Array[String]): BDGCommand = {
     new PluginExecutor(Args4j[PluginExecutorArgs](cmdLine))
   }
 }
@@ -62,8 +63,8 @@ class PluginExecutorArgs extends Args4jBase with ParquetArgs {
   var pluginArgs: String = ""
 }
 
-class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCommand[PluginExecutorArgs] {
-  val companion: ADAMCommandCompanion = PluginExecutor
+class PluginExecutor(protected val args: PluginExecutorArgs) extends BDGSparkCommand[PluginExecutorArgs] {
+  val companion: BDGCommandCompanion = PluginExecutor
 
   def loadPlugin[Input <% SpecificRecord: Manifest, Output](pluginName: String): ADAMPlugin[Input, Output] = {
     Thread.currentThread()
@@ -85,7 +86,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends ADAMSparkCo
     output.map(_.toString).collect().foreach(println)
   }
 
-  def run(sc: SparkContext, job: Job): Unit = {
+  def run(sc: SparkContext): Unit = {
     val plugin = loadPlugin[AlignmentRecord, Any](args.plugin)
     val accessControl = loadAccessControl[AlignmentRecord](args.accessControl)
 

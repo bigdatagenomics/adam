@@ -27,9 +27,10 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-object Transform extends ADAMCommandCompanion {
+object Transform extends BDGCommandCompanion {
   val commandName = "transform"
   val commandDescription = "Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations"
 
@@ -81,7 +82,7 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var forceLoadParquet: Boolean = false
 }
 
-class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[TransformArgs] with Logging {
+class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
   val companion = Transform
 
   def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
@@ -133,7 +134,7 @@ class Transform(protected val args: TransformArgs) extends ADAMSparkCommand[Tran
     adamRecords
   }
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     this.apply({
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)

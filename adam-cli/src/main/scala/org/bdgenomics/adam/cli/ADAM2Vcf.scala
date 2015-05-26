@@ -17,17 +17,18 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.formats.avro.Genotype
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
+import java.io.File
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.hadoop.mapreduce.Job
-import java.io.File
 import org.bdgenomics.adam.models.SequenceDictionary
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.Genotype
+import org.bdgenomics.utils.cli._
+import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import scala.Option
 
-object ADAM2Vcf extends ADAMCommandCompanion {
+object ADAM2Vcf extends BDGCommandCompanion {
 
   val commandName = "adam2vcf"
   val commandDescription = "Convert an ADAM variant to the VCF ADAM format"
@@ -54,10 +55,10 @@ class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
   var sort: Boolean = false
 }
 
-class ADAM2Vcf(val args: ADAM2VcfArgs) extends ADAMSparkCommand[ADAM2VcfArgs] with DictionaryCommand with Logging {
+class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] with DictionaryCommand with Logging {
   val companion = ADAM2Vcf
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
     var dictionary: Option[SequenceDictionary] = loadSequenceDictionary(args.dictionaryFile)
     if (dictionary.isDefined)
       log.info("Using contig translation")

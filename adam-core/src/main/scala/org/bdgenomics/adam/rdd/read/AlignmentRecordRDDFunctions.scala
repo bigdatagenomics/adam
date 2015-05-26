@@ -32,14 +32,14 @@ import org.bdgenomics.adam.algorithms.consensus.{
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ ADAMSaveArgs, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
+import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
+import org.bdgenomics.utils.cli.SaveArgs
 
 class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {
@@ -66,7 +66,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     rdd.filter(overlapsQuery)
   }
 
-  def maybeSaveBam(args: ADAMSaveArgs): Boolean = {
+  def maybeSaveBam(args: SaveArgs): Boolean = {
     if (args.outputPath.endsWith(".sam")) {
       log.info("Saving data in SAM format")
       rdd.adamSAMSave(args.outputPath)
@@ -88,7 +88,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
       false
   }
 
-  def adamAlignedRecordSave(args: ADAMSaveArgs) = {
+  def adamAlignedRecordSave(args: SaveArgs) = {
     maybeSaveBam(args) || { rdd.adamParquetSave(args); true }
   }
 

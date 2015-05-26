@@ -17,16 +17,18 @@
  */
 package org.bdgenomics.adam.cli
 
-object BuildInformation extends ADAMCommandCompanion {
+import org.bdgenomics.utils.cli._
+
+object BuildInformation extends BDGCommandCompanion {
   val commandName: String = "buildinfo"
   val commandDescription: String = "Display build information (use this for bug reports)"
 
-  def apply(cmdLine: Array[String]): ADAMCommand = {
+  def apply(cmdLine: Array[String]): BDGCommand = {
     new BuildInformation()
   }
 }
 
-class BuildInformation() extends ADAMCommand {
+class BuildInformation() extends BDGCommand {
   val companion = BuildInformation
 
   def run() = {

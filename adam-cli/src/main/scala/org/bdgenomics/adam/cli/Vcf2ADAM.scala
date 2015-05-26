@@ -17,15 +17,16 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import java.io.File
 
-object Vcf2ADAM extends ADAMCommandCompanion {
+object Vcf2ADAM extends BDGCommandCompanion {
   val commandName = "vcf2adam"
   val commandDescription = "Convert a VCF file to the corresponding ADAM format"
 
@@ -51,10 +52,10 @@ class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   var onlyvariants: Boolean = false
 }
 
-class Vcf2ADAM(val args: Vcf2ADAMArgs) extends ADAMSparkCommand[Vcf2ADAMArgs] with DictionaryCommand with Logging {
+class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] with DictionaryCommand with Logging {
   val companion = Vcf2ADAM
 
-  def run(sc: SparkContext, job: Job) {
+  def run(sc: SparkContext) {
 
     var dictionary: Option[SequenceDictionary] = loadSequenceDictionary(args.dictionaryFile)
     if (dictionary.isDefined)

@@ -32,8 +32,8 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.rich.RichGenotype._
-import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro.{ Genotype, GenotypeType, DatabaseVariantAnnotation }
+import org.bdgenomics.utils.misc.HadoopUtil
 import org.seqdoop.hadoop_bam._
 
 class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceDictionaryRDDAggregator[VariantContext](rdd) with Logging {
@@ -144,7 +144,7 @@ class GenotypeRDDFunctions(rdd: RDD[Genotype]) extends Serializable with Logging
   def toVariantContext(): RDD[VariantContext] = {
     rdd.keyBy({ g => RichVariant.variantToRichVariant(g.getVariant) })
       .groupByKey
-      .map { case (v: RichVariant, g) => new VariantContext(v, g, None) }
+      .map { case (v: RichVariant, g) => new VariantContext(ReferencePosition(v), v, g, None) }
   }
 
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {

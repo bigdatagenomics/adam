@@ -38,9 +38,9 @@ import org.bdgenomics.adam.rdd.features._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDDFunctions
 import org.bdgenomics.adam.rdd.variation._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.HadoopUtil
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.instrumentation.Metrics
+import org.bdgenomics.utils.misc.HadoopUtil
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 import org.seqdoop.hadoop_bam._
 import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
