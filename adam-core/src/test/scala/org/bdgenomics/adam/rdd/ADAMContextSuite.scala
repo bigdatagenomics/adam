@@ -284,18 +284,6 @@ class ADAMContextSuite extends ADAMFunSuite {
     }
   }
 
-  sparkTest("import records from interleaved multiline FASTQ") {
-    val path = ClassLoader.getSystemClassLoader.getResource("interleaved_multiline_fastq.ifq").getFile
-    val reads = sc.loadAlignments(path)
-
-    assert(reads.count === 6)
-    assert(reads.filter(_.getReadPaired).count === 6)
-    assert(reads.filter(_.getFirstOfPair).count === 3)
-    assert(reads.filter(_.getSecondOfPair).count === 3)
-    assert(reads.collect.forall(_.getSequence.toString.length === 250))
-    assert(reads.collect.forall(_.getQual.toString.length === 250))
-  }
-
   (1 to 4) foreach { testNumber =>
     val inputName = "fastq_sample%d.fq".format(testNumber)
     val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
@@ -317,16 +305,6 @@ class ADAMContextSuite extends ADAMFunSuite {
       assert(reads.collect.forall(_.getSequence.toString.length === 250))
       assert(reads.collect.forall(_.getQual.toString.length === 250))
     }
-  }
-
-  sparkTest("import records from single ended multiline FASTQ") {
-    val path = ClassLoader.getSystemClassLoader.getResource("multiline_fastq.fq").getFile
-    val reads = sc.loadAlignments(path)
-
-    assert(reads.count === 6, "")
-    assert(reads.filter(_.getReadPaired).count === 0)
-    assert(reads.collect.forall(_.getSequence.toString.length === 250))
-    assert(reads.collect.forall(_.getQual.toString.length === 250))
   }
 
   sparkTest("filter on load using the filter2 API") {

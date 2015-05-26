@@ -82,13 +82,8 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
         private long pos;
         // file:  the file being read
         private Path file;
-        //number of lines in first read
-        private int readLines;
-
         
         private LineReader lineReader;
-        private LineReader reader;
-
         private InputStream inputStream;
         private Text currentValue;
         private byte[] newline = "\n".getBytes();
@@ -119,6 +114,7 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
                 inputStream = codec.createInputStream(fileIn);
                 end = Long.MAX_VALUE; // read until the end of the file
             }
+
             lineReader = new LineReader(inputStream);
         }
 
@@ -127,13 +123,15 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
          */
         private void positionAtFirstRecord(FSDataInputStream stream) throws IOException {
             Text buffer = new Text();
-            int bytesRead = 0;
-            
+
+            if (true) { // (start > 0) // use start>0 to assume that files start with valid data
                 // Advance to the start of the first record that ends with /1
                 // We use a temporary LineReader to read lines until we find the
                 // position of the right one.  We then seek the file to that position.
                 stream.seek(start);
-                reader = new LineReader(stream);
+                LineReader reader = new LineReader(stream);
+
+                int bytesRead = 0;
                 do {
                     bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
                     int bufferLength = buffer.getLength();
@@ -148,25 +146,21 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
                         // If this isn't the start of a record, we want to backtrack to its end
                         long backtrackPosition = start + bytesRead;
 
-                        //determines if read is fastq and if it is single/multi lined. Returns number of lines, and -1 if not fastq format.
-                        int lines = getLineInfo();
-                        
-                        if(lines==-1){
-                                // backtrack to the end of the record we thought was the start.
+                        bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
+                        bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
+                        if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
+                            break; // all good!
+                        } else {
+                            // backtrack to the end of the record we thought was the start.
                             start = backtrackPosition;
                             stream.seek(start);
                             reader = new LineReader(stream);
-                            
-                        }else{
-                                readLines = lines; //to avoid calling getLineInfo on the first read again, the line info is saved
-                                break; //all good!
-                            }
-
+                        }
                     }
-
                 } while (bytesRead > 0);
 
                 stream.seek(start);
+            }
 
             pos = start;
         }
@@ -240,49 +234,7 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
         public String makePositionMessage() {
             return file.toString() + ":" + pos;
         }
-        private int getLineInfo() throws IOException {
-            Text buffer = new Text();
-            int sequenceLines=1;
-            int bytesRead = 0;
 
-            //starts at @title line. Read 2 lines and see if you have reached +secondTitle
-            bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
-            bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
-
-            if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
-
-                //read is 1 line. Read 2 more lines to position the reader at the next @title line
-                bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
-                bytesRead = reader.readLine(buffer,(int)Math.min(MAX_LINE_LENGTH, end - start));
-                return sequenceLines; // all good!
-
-            } else {
-                String bufferString = buffer.toString();
-                
-                //regex string that matches only IUPAC codes
-                String iupacRegex = "[A-Y-[J,O,X]|.|-]+";
-
-                //check if the record is multiline and we are still reading the sequence data
-                while(bytesRead > 0 && buffer.getLength() > 0 && bufferString.matches(iupacRegex)){ 
-
-                    //read another line, and count the number that are read.
-                    bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
-                    sequenceLines++; 
-
-                    //check if we have reached the second title line
-                    if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') { 
-
-                        //number of lines has been determined. Set reader to next read's @title line.
-                        for(int x = 0; x<=sequenceLines; x++){
-                            bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start)); 
-                        }
-                        return sequenceLines; // all good!
-                    }
-                    bufferString = buffer.toString();
-                }
-            }
-            return -1;
-        }
         protected boolean lowLevelFastqRead(Text readName, Text value) throws IOException {
             // ID line
             readName.clear();
@@ -294,30 +246,15 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
                 throw new RuntimeException("unexpected fastq record didn't start with '@' at " + makePositionMessage() + ". Line: " + readName + ". \n");
 
             value.append(readName.getBytes(), 0, readName.getLength());
-            int sequenceLines;
-            
-            //check if getLineInfo has already been called on this read
-            if(readLines==-2){
-                //it has not yet been called
-                sequenceLines = getLineInfo();
-            }else{
-                //it has been called. Take line info from readLines and set it to -2.
-                sequenceLines=readLines;
-                readLines=-2;
-            }
 
             // sequence
-            for(int x = 0; x<sequenceLines; x++){
             appendLineInto(value, false);
-            }
 
             // separator line
             appendLineInto(value, false);
 
             // quality
-            for(int x = 0; x<sequenceLines; x++){
             appendLineInto(value, false);
-            }
 
             return true;
         }
@@ -334,17 +271,17 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
                 Text readName2 = new Text();
 
                 value.clear();
+
                 // first read of the pair
                 boolean gotData = lowLevelFastqRead(readName1, value);
-
 
                 if (!gotData)
                     return false;
 
+
+
                 // second read of the pair
-
                 gotData = lowLevelFastqRead(readName2, value);
-
 
                 if (!gotData)
                     return false;
