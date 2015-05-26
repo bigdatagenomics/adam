@@ -21,8 +21,6 @@ import java.util.logging.Level._
 import org.apache.spark.Logging
 import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.utils.cli._
-import scala.Some
-import scala.collection.mutable.ListBuffer
 
 object ADAMMain extends Logging {
 

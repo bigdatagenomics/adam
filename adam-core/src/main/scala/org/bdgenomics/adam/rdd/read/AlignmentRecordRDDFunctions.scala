@@ -32,7 +32,6 @@ import org.bdgenomics.adam.algorithms.consensus.{
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
