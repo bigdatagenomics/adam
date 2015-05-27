@@ -58,10 +58,6 @@ class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serial
                       schema: Option[Schema] = None): Unit = SaveAsADAM.time {
     log.info("Saving data in ADAM format")
 
-    if (!filePath.endsWith(".adam")) {
-      log.error("Filename does not end with *.adam extension. File will be saved, but must be renamed to be opened.")
-    }
-
     val job = HadoopUtil.newJob(rdd.context)
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
     ParquetOutputFormat.setCompression(job, compressCodec)
