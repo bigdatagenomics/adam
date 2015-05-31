@@ -150,7 +150,7 @@ class IntervalListParser extends Serializable {
           (if (fields.length < 5 || fields(4) == ".") {
             (Nil, Map())
           } else {
-            val a = fields(4).split(';').map(field => field.split('|') match {
+            val a = fields(4).split(Array(';', ',')).map(field => field.split('|') match {
               case Array(key, value) =>
                 key match {
                   case "gn" | "ens" | "vega" | "ccds" => (Some(Dbxref.newBuilder().setDb(key).setAccession(value).build()), None)
