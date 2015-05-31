@@ -147,7 +147,7 @@ class IntervalListParser extends Serializable {
         }
 
         val (dbxrfs, attrs: Map[String, String]) =
-          (if (fields.length < 5 || fields(4) == ".") {
+          (if (fields.length < 5 || fields(4) == "." || fields(4) == "-") {
             (Nil, Map())
           } else {
             val a = fields(4).split(Array(';', ',')).map(field => field.split('|') match {
