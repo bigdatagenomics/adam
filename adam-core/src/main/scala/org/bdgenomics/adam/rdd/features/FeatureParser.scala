@@ -19,7 +19,8 @@ package org.bdgenomics.adam.rdd.features
 
 import java.io.File
 import java.util.UUID
-import org.bdgenomics.formats.avro.{ Contig, Strand, Feature }
+import org.bdgenomics.adam.models.SequenceRecord
+import org.bdgenomics.formats.avro.{ Dbxref, Contig, Strand, Feature }
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 
@@ -116,6 +117,72 @@ class GTFParser extends FeatureParser {
 
     Seq(f.build())
   }
+}
+
+class IntervalListParser extends Serializable {
+  def parse(line: String): (Option[SequenceRecord], Option[Feature]) = {
+    val fields = line.split("[ \t]+")
+    if (fields.length < 2) {
+      (None, None)
+    } else {
+      if (fields(0).startsWith("@")) {
+        if (fields(0).startsWith("@SQ")) {
+          val (name, length, url, md5) = {
+            val attrs = fields.drop(1).map(field => field.split(":", 2) match {
+              case Array(key, value) => key -> value
+              case x                 => throw new Exception(s"Expected fields of the form 'key:value' in field $field but got: $x. Line:\n$line")
+            }).toMap
+
+            // Require that all @SQ lines have name, length, url, md5.
+            (attrs("SN"), attrs("LN").toLong, attrs("UR"), attrs("M5"))
+          }
+
+          (Some(SequenceRecord(name, length, md5, url)), None)
+        } else {
+          (None, None)
+        }
+      } else {
+        if (fields.length < 4) {
+          throw new Exception(s"Invalid line: $line")
+        }
+
+        val (dbxrfs, attrs: Map[String, String]) =
+          (if (fields.length < 5 || fields(4) == ".") {
+            (Nil, Map())
+          } else {
+            val a = fields(4).split(';').map(field => field.split('|') match {
+              case Array(key, value) =>
+                key match {
+                  case "gn" | "ens" | "vega" | "ccds" => (Some(Dbxref.newBuilder().setDb(key).setAccession(value).build()), None)
+                  case _                              => (None, Some(key -> value))
+                }
+              case x => throw new Exception(s"Expected fields of the form 'key:value' but got: $field. Line:\n$line")
+            })
+
+            (a.flatMap(_._1).toList, a.flatMap(_._2).toMap)
+          })
+
+        (
+          None,
+          Some(
+            Feature.newBuilder()
+              .setContig(Contig.newBuilder().setContigName(fields(0)).build())
+              .setStart(fields(1).toLong)
+              .setEnd(fields(2).toLong)
+              .setStrand(fields(3) match {
+                case "+" => Strand.Forward
+                case "-" => Strand.Reverse
+                case _   => Strand.Independent
+              })
+              .setAttributes(attrs)
+              .setDbxrefs(dbxrfs)
+              .build()
+          )
+        )
+      }
+    }
+  }
+
 }
 
 class BEDParser extends FeatureParser {
