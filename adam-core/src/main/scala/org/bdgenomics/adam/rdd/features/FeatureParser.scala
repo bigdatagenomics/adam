@@ -156,7 +156,7 @@ class IntervalListParser extends Serializable {
                   case "gn" | "ens" | "vega" | "ccds" => (Some(Dbxref.newBuilder().setDb(key).setAccession(value).build()), None)
                   case _                              => (None, Some(key -> value))
                 }
-              case x => throw new Exception(s"Expected fields of the form 'key:value' but got: $field. Line:\n$line")
+              case x => throw new Exception(s"Expected fields of the form 'key|value;' but got: $field. Line:\n$line")
             })
 
             (a.flatMap(_._1).toList, a.flatMap(_._2).toMap)
