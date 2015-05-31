@@ -211,11 +211,36 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(first.getContig.getContigLength == 249250621L)
     assert(first.getContig.getReferenceURL == "file:/gs01/projects/ngs/resources/gatk/2.3/ucsc.hg19.parmasked.fasta")
     assert(first.getContig.getContigMD5 == "1b22b98cdeb4a9304cb5d48026a85128")
+    assert(
+      first
+        .getDbxrefs
+        .map(dbxref => dbxref.getDb -> dbxref.getAccession)
+        .groupBy(_._1)
+        .mapValues(_.map(_._2).toSet) ==
+        Map(
+          "gn" -> Set("DDX11L1", "RP11-34P13.2"),
+          "ens" -> Set("ENSG00000223972", "ENSG00000227232"),
+          "vega" -> Set("OTTHUMG00000000958", "OTTHUMG00000000961")
+        )
+    )
 
     val last = arr.find(f => f.getContig.getContigName == "chrY" && f.getStart == 27190032L && f.getEnd == 27190210L).get
     assert(last.getContig.getContigLength == 59373566L)
     assert(last.getContig.getReferenceURL == "file:/gs01/projects/ngs/resources/gatk/2.3/ucsc.hg19.parmasked.fasta")
     assert(last.getContig.getContigMD5 == "3393b0779f142dc59f4cfcc22b61c1ee")
+    assert(
+      last
+        .getDbxrefs
+        .map(dbxref => dbxref.getDb -> dbxref.getAccession)
+        .groupBy(_._1)
+        .mapValues(_.map(_._2).toSet) ==
+        Map(
+          "gn" -> Set("BPY2C"),
+          "ccds" -> Set("CCDS44030"),
+          "ens" -> Set("ENSG00000185894"),
+          "vega" -> Set("OTTHUMG00000045199")
+        )
+    )
   }
 
   sparkTest("can read a small .vcf file") {
