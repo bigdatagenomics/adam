@@ -97,7 +97,7 @@ object BroadcastRegionJoin extends RegionJoin {
       baseRDD
         .map(kv => (kv._1.referenceName, kv._1)) // RDD[(String,ReferenceRegion)]
         .groupBy(_._1) // RDD[(String,Seq[(String,ReferenceRegion)])]
-        .map(t => (t._1, t._2.map(_._2))) // RDD[(String,Seq[ReferenceRegion])]
+        .mapValues(_.map(_._2)) // RDD[(String,Seq[ReferenceRegion])]
         .collect() // Iterable[(String,Seq[ReferenceRegion])]
         .toSeq // Seq[(String,Seq[ReferenceRegion])]
 
@@ -268,7 +268,7 @@ private[rdd] class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) ext
 
   /**
    * Given a "regionable" value (corresponds to a ReferencRegion through an implicit ReferenceMapping),
-   * return the set of nonoverlapping-regions to be used as a partitions for the input value in a
+   * return the set of nonoverlapping-regions to be used as partitions for the input value in a
    * region-join.  Basically, return the set of any non-empty nonoverlapping-regions that overlap the
    * region corresponding to this input.
    *

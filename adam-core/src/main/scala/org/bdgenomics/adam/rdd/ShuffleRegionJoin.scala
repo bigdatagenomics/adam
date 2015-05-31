@@ -51,7 +51,7 @@ object ShuffleRegionJoin extends RegionJoin {
    *
    * This implementation is shuffle-based, so does not require collecting one side into memory
    * like BroadcastRegionJoin.  It basically performs a global sort of each RDD by genome position
-   * and then does a sort-merge join, similar to the chromsweep implementatio in bedtools.  More
+   * and then does a sort-merge join, similar to the chromsweep implementation in bedtools.  More
    * specifically, it first defines a set of bins across the genome, then assigns each object in the
    * RDDs to each bin that they overlap (replicating if necessary), performs the shuffle, and sorts
    * the object in each bin.  Finally, each bin independently performs a chromsweep sort-merge join.
@@ -213,19 +213,20 @@ private case class ManualRegionPartitioner(partitions: Int) extends Partitioner 
  * one of the two regions starts in the corresponding genome bin.  For this reason, we must
  * take in the partition's genome coords
  *
- * @param region The ReferenceRegion corresponding to this partition, to ensure no duplicate
- *               join results across the whole RDD
+ * @param binRegion The ReferenceRegion corresponding to this partition, to ensure no duplicate
+ *                  join results across the whole RDD
  * @param leftIter The left iterator
  * @param rightIter The right iterator
  * @tparam T type of leftIter
  * @tparam U type of rightIter
  */
-private case class SortedIntervalPartitionJoin[T, U](region: ReferenceRegion, leftIter: Iterator[((ReferenceRegion, Int), T)], rightIter: Iterator[((ReferenceRegion, Int), U)])
+private case class SortedIntervalPartitionJoin[T, U](binRegion: ReferenceRegion,
+                                                     leftIter: Iterator[((ReferenceRegion, Int), T)],
+                                                     rightIter: Iterator[((ReferenceRegion, Int), U)])
     extends Iterator[(T, U)] with Serializable {
   // inspired by bedtools2 chromsweep
   private val left: BufferedIterator[((ReferenceRegion, Int), T)] = leftIter.buffered
   private val right: BufferedIterator[((ReferenceRegion, Int), U)] = rightIter.buffered
-  private val binRegion: ReferenceRegion = region
   // stores the current set of joined pairs
   private var hits: List[(T, U)] = List.empty
   // stores the rightIter values that might overlap the current value from the leftIter
@@ -255,7 +256,7 @@ private case class SortedIntervalPartitionJoin[T, U](region: ReferenceRegion, le
         advanceCache(nextLeftRegion.end)
       }
       // ...and whether I need to prune the cache
-      if (prevLeftRegion == null || nextLeftRegion.start > prevLeftRegion.start) {
+      if (prevLeftRegion == null) {
         pruneCache(nextLeftRegion.start)
       }
       // at this point, we effectively do a cross-product and filter; this could probably
