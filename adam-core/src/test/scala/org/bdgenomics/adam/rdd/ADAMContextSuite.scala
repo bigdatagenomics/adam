@@ -201,6 +201,48 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(annot.count === 10)
   }
 
+  sparkTest("Can read a .interval_list file") {
+    val path = testFile("features/SeqCap_EZ_Exome_v3.hg19.interval_list")
+    val annot: RDD[Feature] = sc.loadFeatures(path)
+    assert(annot.count == 369)
+    val arr = annot.collect
+
+    val first = arr.find(f => f.getContig.getContigName == "chr1" && f.getStart == 14416L && f.getEnd == 14499L).get
+    assert(first.getContig.getContigLength == 249250621L)
+    assert(first.getContig.getReferenceURL == "file:/gs01/projects/ngs/resources/gatk/2.3/ucsc.hg19.parmasked.fasta")
+    assert(first.getContig.getContigMD5 == "1b22b98cdeb4a9304cb5d48026a85128")
+    assert(
+      first
+        .getDbxrefs
+        .map(dbxref => dbxref.getDb -> dbxref.getAccession)
+        .groupBy(_._1)
+        .mapValues(_.map(_._2).toSet) ==
+        Map(
+          "gn" -> Set("DDX11L1", "RP11-34P13.2"),
+          "ens" -> Set("ENSG00000223972", "ENSG00000227232"),
+          "vega" -> Set("OTTHUMG00000000958", "OTTHUMG00000000961")
+        )
+    )
+
+    val last = arr.find(f => f.getContig.getContigName == "chrY" && f.getStart == 27190032L && f.getEnd == 27190210L).get
+    assert(last.getContig.getContigLength == 59373566L)
+    assert(last.getContig.getReferenceURL == "file:/gs01/projects/ngs/resources/gatk/2.3/ucsc.hg19.parmasked.fasta")
+    assert(last.getContig.getContigMD5 == "3393b0779f142dc59f4cfcc22b61c1ee")
+    assert(
+      last
+        .getDbxrefs
+        .map(dbxref => dbxref.getDb -> dbxref.getAccession)
+        .groupBy(_._1)
+        .mapValues(_.map(_._2).toSet) ==
+        Map(
+          "gn" -> Set("BPY2C"),
+          "ccds" -> Set("CCDS44030"),
+          "ens" -> Set("ENSG00000185894"),
+          "vega" -> Set("OTTHUMG00000045199")
+        )
+    )
+  }
+
   sparkTest("can read a small .vcf file") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.vcf").getFile
 

@@ -370,6 +370,26 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     if (Metrics.isRecording) records.instrument() else records
   }
 
+  def loadIntervalList(filePath: String): RDD[Feature] = {
+    val parsedLines = sc.textFile(filePath).map(new IntervalListParser().parse)
+    val (seqDict, records) = (SequenceDictionary(parsedLines.flatMap(_._1).collect(): _*), parsedLines.flatMap(_._2))
+    val seqDictMap = seqDict.records.map(sr => sr.name -> sr).toMap
+    val recordsWithContigs = for {
+      record <- records
+      seqRecord <- seqDictMap.get(record.getContig.getContigName)
+    } yield Feature.newBuilder(record)
+      .setContig(
+        Contig.newBuilder()
+          .setContigName(seqRecord.name)
+          .setReferenceURL(seqRecord.url.getOrElse(null))
+          .setContigMD5(seqRecord.md5.getOrElse(null))
+          .setContigLength(seqRecord.length)
+          .build()
+      )
+      .build()
+    if (Metrics.isRecording) recordsWithContigs.instrument() else recordsWithContigs
+  }
+
   def loadParquetFeatures(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
@@ -418,18 +438,21 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     projection: Option[Schema] = None): RDD[Feature] = {
 
     if (filePath.endsWith(".bed")) {
-      log.info("Loading " + filePath + " as BED and converting to features. Projection is ignored.")
+      log.info(s"Loading $filePath as BED and converting to features. Projection is ignored.")
       loadBED(filePath)
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
-      log.info("Loading " + filePath + " as GTF/GFF and converting to features. Projection is ignored.")
+      log.info(s"Loading $filePath as GTF/GFF and converting to features. Projection is ignored.")
       loadGTF(filePath)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
-      log.info("Loading " + filePath + " as NarrowPeak and converting to features. Projection is ignored.")
+      log.info(s"Loading $filePath as NarrowPeak and converting to features. Projection is ignored.")
       loadNarrowPeak(filePath)
+    } else if (filePath.endsWith(".interval_list")) {
+      log.info(s"Loading $filePath as IntervalList and converting to features. Projection is ignored.")
+      loadIntervalList(filePath)
     } else {
-      log.info("Loading " + filePath + " as Parquet containing Features.")
+      log.info(s"Loading $filePath as Parquet containing Features.")
       loadParquetFeatures(filePath, None, projection)
     }
   }
