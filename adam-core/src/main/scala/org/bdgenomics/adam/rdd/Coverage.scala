@@ -147,6 +147,7 @@ class Coverage(val window: Long) extends Serializable {
             OrientedPoint(r1.referenceName, r1.end, false),
             OrientedPoint(r2.referenceName, r2.start, true))
         }
+      case _ => Seq()
     }
     val paired = points.pair()
     val pairedAndFiltered = paired.filter(p =>
