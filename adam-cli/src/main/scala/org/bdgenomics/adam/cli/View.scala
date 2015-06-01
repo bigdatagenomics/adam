@@ -17,15 +17,15 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-class ViewArgs extends Args4jBase with ParquetArgs with SaveArgs {
+class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveAnyArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to view", index = 0)
   var inputPath: String = null
 
@@ -72,6 +72,12 @@ class ViewArgs extends Args4jBase with ParquetArgs with SaveArgs {
     metaVar = "<FILE>",
     usage = "Output to <FILE>; can also pass <FILE> as the second argument")
   var outputPathArg: String = null
+
+  @Args4jOption(required = false, name = "-sort_fastq_output", usage = "Sets whether to sort the FASTQ output, if saving as FASTQ. False by default. Ignored if not saving as FASTQ.")
+  var sortFastqOutput: Boolean = false
+
+  @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
+  var asSingleFile: Boolean = false
 }
 
 object View extends BDGCommandCompanion {
