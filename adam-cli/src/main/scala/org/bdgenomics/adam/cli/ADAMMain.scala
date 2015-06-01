@@ -46,6 +46,7 @@ object ADAMMain extends Logging {
       CommandGroup(
         "CONVERSION OPERATIONS",
         List(
+          Adam2Bam,
           Vcf2ADAM,
           VcfAnnotation2ADAM,
           ADAM2Vcf,
