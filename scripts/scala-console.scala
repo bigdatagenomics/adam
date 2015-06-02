@@ -11,4 +11,4 @@ import org.bdgenomics.formats.avro.Variant
 import org.bdgenomics.formats.avro.VariantCallingAnnotations
 import org.bdgenomics.formats.avro.VariantEffect
 println("\nYou can call ADAMContext methods on sc")
-println("Load a file using: sc.adamLoad(\"<Path to file>\");")
+println("Load a file using: sc.loadParquet(\"<Path to file>\");")

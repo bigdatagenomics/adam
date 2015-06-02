@@ -92,7 +92,7 @@ class PluginExecutor(protected val args: PluginExecutorArgs) extends BDGSparkCom
 
     // Create an optional combined filter so that pass-through is not penalized
     //
-    // Eventually, these filters should be passed down through to the adamLoad instead of operating on the RDDs.
+    // Eventually, these filters should be passed down through to the loadParquet instead of operating on the RDDs.
     // This would prevent unnecessary loading from disk; for instance, if you are attempting to access multiple ADAM
     // files, but only permissioned for one, you could save a lot of IO by only loading the ones you are permissioned to
     // see. This is related to Issue #62: Predicate to filter conversion.
