@@ -171,8 +171,8 @@ class IntervalListParser extends Serializable {
           Some(
             Feature.newBuilder()
               .setContig(Contig.newBuilder().setContigName(fields(0)).build())
-              .setStart(fields(1).toLong)
-              .setEnd(fields(2).toLong)
+              .setStart(fields(1).toLong - 1)
+              .setEnd(fields(2).toLong - 1)
               .setStrand(fields(3) match {
                 case "+" => Strand.Forward
                 case "-" => Strand.Reverse
