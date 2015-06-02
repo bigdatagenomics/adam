@@ -263,7 +263,7 @@ object SequenceRecord {
    */
   def fromADAMRecord(rec: AlignmentRecord): Set[SequenceRecord] = {
     assert(rec != null, "Read was null")
-    if ((!rec.getReadPaired || rec.getFirstOfPair) && (rec.getContig != null || rec.getMateContig != null)) {
+    if (rec.getContig != null || rec.getMateContig != null) {
       // The contig should be null for unmapped read
       List(Option(rec.getContig), Option(rec.getMateContig))
         .flatten
