@@ -25,7 +25,7 @@
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
     <utils.version>0.2.1</utils.version>
-    <htsjdk.version>1.129</htsjdk.version>
+    <htsjdk.version>1.133</htsjdk.version>
   </properties>
   
   <modules>
