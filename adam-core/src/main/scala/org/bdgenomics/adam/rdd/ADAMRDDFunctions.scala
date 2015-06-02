@@ -18,12 +18,13 @@
 package org.bdgenomics.adam.rdd
 
 import java.util.logging.Level
+
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
-import org.apache.hadoop.mapreduce.{ OutputFormat => NewOutputFormat, _ }
+import org.apache.hadoop.mapreduce.{ OutputFormat => NewOutputFormat }
 import org.apache.spark.Logging
-import org.apache.spark.rdd.{ InstrumentedOutputFormat, RDD }
 import org.apache.spark.rdd.MetricsContext._
+import org.apache.spark.rdd.{ InstrumentedOutputFormat, RDD }
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.util.ParquetLogger
@@ -36,6 +37,7 @@ import parquet.hadoop.util.ContextUtil
 
 trait ADAMSaveAnyArgs extends SaveArgs {
   var sortFastqOutput: Boolean
+  var asRegularFile: Boolean
 }
 
 class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serializable with Logging {
