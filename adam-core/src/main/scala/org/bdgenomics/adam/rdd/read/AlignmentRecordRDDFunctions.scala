@@ -19,6 +19,8 @@ package org.bdgenomics.adam.rdd.read
 
 import java.io.StringWriter
 import htsjdk.samtools.{ ValidationStringency, SAMTextHeaderCodec, SAMTextWriter, SAMFileHeader }
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{ Path, FileSystem }
 import org.apache.spark.storage.StorageLevel
 import org.seqdoop.hadoop_bam.SAMRecordWritable
 import org.apache.hadoop.io.LongWritable
@@ -66,14 +68,14 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     rdd.filter(overlapsQuery)
   }
 
-  def maybeSaveBam(args: SaveArgs): Boolean = {
+  def maybeSaveBam(args: SaveArgs, asRegularFile: Boolean = false): Boolean = {
     if (args.outputPath.endsWith(".sam")) {
       log.info("Saving data in SAM format")
-      rdd.adamSAMSave(args.outputPath)
+      rdd.adamSAMSave(args.outputPath, asRegularFile = asRegularFile)
       true
     } else if (args.outputPath.endsWith(".bam")) {
       log.info("Saving data in BAM format")
-      rdd.adamSAMSave(args.outputPath, asSam = false)
+      rdd.adamSAMSave(args.outputPath, asSam = false, asRegularFile = asRegularFile)
       true
     } else
       false
@@ -93,7 +95,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   }
 
   def adamSave(args: ADAMSaveAnyArgs) = {
-    maybeSaveBam(args) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
+    maybeSaveBam(args, asRegularFile = args.asRegularFile) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
   }
 
   def adamSAMString: String = {
@@ -122,7 +124,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @param filePath Path to save files to.
    * @param asSam Selects whether to save as SAM or BAM. The default value is true (save in SAM format).
    */
-  def adamSAMSave(filePath: String, asSam: Boolean = true) = SAMSave.time {
+  def adamSAMSave(filePath: String, asSam: Boolean = true, asRegularFile: Boolean = false) = SAMSave.time {
 
     // convert the records
     val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM()
@@ -155,6 +157,16 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
           classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
           conf
         )
+    }
+    if (asRegularFile) {
+      log.info("make regular BAM/SAM file (not hadoop)")
+      val conf = new Configuration()
+      val fs = FileSystem.get(conf)
+      val ouputParentDir = filePath.substring(0, filePath.lastIndexOf("/") + 1)
+      val tmpPath = ouputParentDir + "tmp" + System.currentTimeMillis().toString
+      fs.rename(new Path(filePath + "/part-r-00000"), new Path(tmpPath))
+      fs.delete(new Path(filePath), true)
+      fs.rename(new Path(tmpPath), new Path(filePath))
     }
   }
 
