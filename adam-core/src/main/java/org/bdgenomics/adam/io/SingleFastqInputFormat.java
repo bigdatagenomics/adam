@@ -26,12 +26,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.util.LineReader;
+import org.bdgenomics.adam.util.ADAMHadoopUtil;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -288,7 +288,7 @@ public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
     public RecordReader<Void, Text> createRecordReader(
             InputSplit genericSplit,
             TaskAttemptContext context) throws IOException, InterruptedException {
-        context.setStatus(genericSplit.toString());
+        ADAMHadoopUtil.setTaskAttemptContextStatus(context, genericSplit.toString());
 
         // cast as per example in TextInputFormat
         return new SingleFastqRecordReader(context.getConfiguration(), 
