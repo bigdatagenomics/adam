@@ -56,7 +56,6 @@ object ShuffleRegionJoin extends RegionJoin {
    * RDDs to each bin that they overlap (replicating if necessary), performs the shuffle, and sorts
    * the object in each bin.  Finally, each bin independently performs a chromsweep sort-merge join.
    *
-   * @param sc A SparkContext for the cluster that will perform the join
    * @param leftRDD The 'left' side of the join
    * @param rightRDD The 'right' side of the join
    * @param seqDict A SequenceDictionary -- every region corresponding to either the leftRDD or rightRDD
@@ -256,7 +255,7 @@ private case class SortedIntervalPartitionJoin[T, U](binRegion: ReferenceRegion,
         advanceCache(nextLeftRegion.end)
       }
       // ...and whether I need to prune the cache
-      if (prevLeftRegion == null) {
+      if (prevLeftRegion == null || nextLeftRegion.start > prevLeftRegion.start) {
         pruneCache(nextLeftRegion.start)
       }
       // at this point, we effectively do a cross-product and filter; this could probably

@@ -3,8 +3,8 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-parent</artifactId>
-        <version>0.16.1-SNAPSHOT</version>
+        <artifactId>adam-parent_2.10</artifactId>
+        <version>0.17.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

@@ -153,8 +153,12 @@ class IntervalListParser extends Serializable {
             val a = fields(4).split(Array(';', ',')).map(field => field.split('|') match {
               case Array(key, value) =>
                 key match {
-                  case "gn" | "ens" | "vega" | "ccds" => (Some(Dbxref.newBuilder().setDb(key).setAccession(value).build()), None)
-                  case _                              => (None, Some(key -> value))
+                  case "gn" | "ens" | "vega" | "ccds" =>
+                    (
+                      Some(Dbxref.newBuilder().setDb(key).setAccession(value).build()),
+                      None
+                    )
+                  case _ => (None, Some(key -> value))
                 }
               case x => throw new Exception(s"Expected fields of the form 'key|value;' but got: $field. Line:\n$line")
             })
@@ -167,8 +171,8 @@ class IntervalListParser extends Serializable {
           Some(
             Feature.newBuilder()
               .setContig(Contig.newBuilder().setContigName(fields(0)).build())
-              .setStart(fields(1).toLong)
-              .setEnd(fields(2).toLong)
+              .setStart(fields(1).toLong - 1)
+              .setEnd(fields(2).toLong - 1)
               .setStrand(fields(3) match {
                 case "+" => Strand.Forward
                 case "-" => Strand.Reverse

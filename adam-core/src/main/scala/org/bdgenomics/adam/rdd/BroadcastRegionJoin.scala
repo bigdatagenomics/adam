@@ -52,7 +52,6 @@ object BroadcastRegionJoin extends RegionJoin {
    * Finally, within each separate partition, we essentially perform a cartesian-product-and-filter
    * operation.  The result is the region-join.
    *
-   * @param sc A SparkContext for the cluster that will perform the join
    * @param baseRDD The 'left' side of the join
    * @param joinedRDD The 'right' side of the join
    * @param tManifest implicit type of baseRDD

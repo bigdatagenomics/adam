@@ -69,7 +69,7 @@ object ADAMContext {
   implicit def rddToADAMGenotypeRDD(rdd: RDD[Genotype]) = new GenotypeRDDFunctions(rdd)
 
   // add gene feature rdd functions
-  implicit def convertBaseFeatureRDDToGeneFeatureRDD(rdd: RDD[Feature]) = new GeneFeatureRDDFunctions(rdd)
+  implicit def convertBaseFeatureRDDToFeatureRDD(rdd: RDD[Feature]) = new FeatureRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
@@ -126,7 +126,9 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
    * @tparam T The type of records to return
    * @return An RDD with records of the specified type
    */
-  private[rdd] def adamLoad[T](filePath: String, predicate: Option[FilterPredicate] = None, projection: Option[Schema] = None)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): RDD[T] = {
+  def loadParquet[T](filePath: String,
+                     predicate: Option[FilterPredicate] = None,
+                     projection: Option[Schema] = None)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): RDD[T] = {
     //make sure a type was specified
     //not using require as to make the message clearer
     if (manifest[T] == manifest[scala.Nothing])
@@ -208,7 +210,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
         throw new IllegalArgumentException("If you're reading a BAM/SAM file, the record type must be Read")
 
     } else {
-      val projected: RDD[T] = adamLoad[T](filePath, None, projection = Some(projection))
+      val projected: RDD[T] = loadParquet[T](filePath, None, projection = Some(projection))
 
       val recs: RDD[SequenceRecord] =
         if (isADAMRecord) {
@@ -269,7 +271,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     filePath: String,
     predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None): RDD[AlignmentRecord] = {
-    adamLoad[AlignmentRecord](filePath, predicate, projection)
+    loadParquet[AlignmentRecord](filePath, predicate, projection)
   }
 
   def loadInterleavedFastq(
@@ -324,14 +326,14 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     filePath: String,
     predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None): RDD[Genotype] = {
-    adamLoad[Genotype](filePath, predicate, projection)
+    loadParquet[Genotype](filePath, predicate, projection)
   }
 
   def loadParquetVariants(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None): RDD[Variant] = {
-    adamLoad[Variant](filePath, predicate, projection)
+    loadParquet[Variant](filePath, predicate, projection)
   }
 
   def loadFasta(
@@ -352,7 +354,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     filePath: String,
     predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None): RDD[NucleotideContigFragment] = {
-    adamLoad[NucleotideContigFragment](filePath, predicate, projection)
+    loadParquet[NucleotideContigFragment](filePath, predicate, projection)
   }
 
   def loadGTF(filePath: String): RDD[Feature] = {
@@ -394,7 +396,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     filePath: String,
     predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None): RDD[Feature] = {
-    adamLoad[Feature](filePath, predicate, projection)
+    loadParquet[Feature](filePath, predicate, projection)
   }
 
   def loadVcfAnnotations(
@@ -416,7 +418,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     filePath: String,
     predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None): RDD[DatabaseVariantAnnotation] = {
-    adamLoad[DatabaseVariantAnnotation](filePath, predicate, projection)
+    loadParquet[DatabaseVariantAnnotation](filePath, predicate, projection)
   }
 
   def loadVariantAnnotations(
@@ -526,7 +528,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       loadFasta(filePath, fragmentLength = 10000).toReads
     } else if (filePath.endsWith("contig.adam")) {
       log.info("Loading " + filePath + " as Parquet of NucleotideContigFragment and converting to AlignmentRecords. Projection is ignored.")
-      adamLoad[NucleotideContigFragment](filePath).toReads
+      loadParquet[NucleotideContigFragment](filePath).toReads
     } else {
       log.info("Loading " + filePath + " as Parquet of AlignmentRecords.")
       loadParquetAlignments(filePath, None, projection)

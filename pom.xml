@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.bdgenomics.adam</groupId>
   <artifactId>adam-parent_2.10</artifactId>
-  <version>0.16.1-SNAPSHOT</version>
+  <version>0.17.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>ADAM_2.10</name>
   <description>A fast, scalable genome analysis system</description>
@@ -25,7 +25,7 @@
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
     <utils.version>0.2.1</utils.version>
-    <htsjdk.version>1.129</htsjdk.version>
+    <htsjdk.version>1.133</htsjdk.version>
   </properties>
   
   <modules>
