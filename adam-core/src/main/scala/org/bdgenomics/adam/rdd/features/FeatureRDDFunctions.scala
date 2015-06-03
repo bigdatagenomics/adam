@@ -24,7 +24,7 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.formats.avro.{ Strand, Feature }
 import scala.collection.JavaConversions._
 
-class GeneFeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Logging {
+class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Logging {
 
   private def strand(str: Strand): Boolean = str match {
     case Strand.Forward     => true
