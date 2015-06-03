@@ -255,7 +255,7 @@ private case class SortedIntervalPartitionJoin[T, U](binRegion: ReferenceRegion,
         advanceCache(nextLeftRegion.end)
       }
       // ...and whether I need to prune the cache
-      if (prevLeftRegion == null) {
+      if (prevLeftRegion == null || nextLeftRegion.start > prevLeftRegion.start) {
         pruneCache(nextLeftRegion.start)
       }
       // at this point, we effectively do a cross-product and filter; this could probably
