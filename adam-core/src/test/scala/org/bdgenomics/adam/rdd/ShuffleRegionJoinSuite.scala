@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.apache.spark.HashPartitioner
 import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -55,20 +54,26 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion(_))
     val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_))
 
-    assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      baseRdd,
-      recordsRdd,
-      seqDict,
-      partitionSize)
-      .aggregate(true)(
-        ShuffleRegionJoinSuite.merge,
-        ShuffleRegionJoinSuite.and))
+    assert(
+      ShuffleRegionJoin(seqDict, partitionSize)
+        .partitionAndJoin[AlignmentRecord, AlignmentRecord](
+          baseRdd,
+          recordsRdd
+        )
+        .aggregate(true)(
+          ShuffleRegionJoinSuite.merge,
+          ShuffleRegionJoinSuite.and
+        )
+    )
 
-    assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      baseRdd,
-      recordsRdd,
-      seqDict,
-      partitionSize).count() === 2)
+    assert(
+      ShuffleRegionJoin(seqDict, partitionSize)
+        .partitionAndJoin[AlignmentRecord, AlignmentRecord](
+          baseRdd,
+          recordsRdd
+        )
+        .count() === 2
+    )
   }
 
   sparkTest("Multiple reference regions do not throw exception") {
@@ -108,20 +113,26 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_))
 
-    assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      baseRdd,
-      recordsRdd,
-      seqDict,
-      partitionSize)
-      .aggregate(true)(
-        ShuffleRegionJoinSuite.merge,
-        ShuffleRegionJoinSuite.and))
+    assert(
+      ShuffleRegionJoin(seqDict, partitionSize)
+        .partitionAndJoin[AlignmentRecord, AlignmentRecord](
+          baseRdd,
+          recordsRdd
+        )
+        .aggregate(true)(
+          ShuffleRegionJoinSuite.merge,
+          ShuffleRegionJoinSuite.and
+        )
+    )
 
-    assert(ShuffleRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
-      baseRdd,
-      recordsRdd,
-      seqDict,
-      partitionSize).count() === 3)
+    assert(
+      ShuffleRegionJoin(seqDict, partitionSize)
+        .partitionAndJoin[AlignmentRecord, AlignmentRecord](
+          baseRdd,
+          recordsRdd
+        )
+        .count() === 3
+    )
   }
 
   sparkTest("RegionJoin2 contains the same results as cartesianRegionJoin") {
@@ -161,23 +172,27 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_))
 
-    assert(BroadcastRegionJoin.cartesianFilter(
-      baseRdd,
-      recordsRdd)
-      .leftOuterJoin(
-        ShuffleRegionJoin.partitionAndJoin(
-          baseRdd,
-          recordsRdd,
-          seqDict,
-          partitionSize))
-      .filter({
-        case ((_: AlignmentRecord, (cartesian: AlignmentRecord, region: Option[AlignmentRecord]))) =>
-          region match {
-            case None         => false
-            case Some(record) => cartesian == record
-          }
-      })
-      .count() === 3)
+    assert(
+      BroadcastRegionJoin.cartesianFilter(
+        baseRdd,
+        recordsRdd
+      )
+        .leftOuterJoin(
+          ShuffleRegionJoin(seqDict, partitionSize)
+            .partitionAndJoin(
+              baseRdd,
+              recordsRdd
+            )
+        )
+        .filter({
+          case ((_: AlignmentRecord, (cartesian: AlignmentRecord, region: Option[AlignmentRecord]))) =>
+            region match {
+              case None         => false
+              case Some(record) => cartesian == record
+            }
+        })
+        .count() === 3
+    )
   }
 }
 
