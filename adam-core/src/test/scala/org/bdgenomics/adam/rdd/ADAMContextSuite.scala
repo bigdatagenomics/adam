@@ -32,7 +32,7 @@ import parquet.filter2.predicate.FilterPredicate
 
 class ADAMContextSuite extends ADAMFunSuite {
 
-  sparkTest("sc.adamLoad should not fail on unmapped reads") {
+  sparkTest("sc.loadParquet should not fail on unmapped reads") {
     val readsFilepath = ClassLoader.getSystemClassLoader.getResource("unmapped.sam").getFile
 
     // Convert the reads12.sam file into a parquet file
@@ -40,7 +40,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(bamReads.count === 200)
   }
 
-  sparkTest("sc.adamLoad should not load a file without a type specified") {
+  sparkTest("sc.loadParquet should not load a file without a type specified") {
     //load an existing file from the resources and save it as an ADAM file.
     //This way we are not dependent on the ADAM format (as we would if we used a pre-made ADAM file)
     //but we are dependent on the unmapped.sam file existing, maybe I should make a new one
@@ -50,10 +50,10 @@ class ADAMContextSuite extends ADAMFunSuite {
     val bamReadsAdamFile = new File(Files.createTempDir(), "bamReads.adam")
     bamReads.adamParquetSave(bamReadsAdamFile.getAbsolutePath)
     intercept[IllegalArgumentException] {
-      val noReturnType = sc.adamLoad(bamReadsAdamFile.getAbsolutePath)
+      val noReturnType = sc.loadParquet(bamReadsAdamFile.getAbsolutePath)
     }
     //finally just make sure we did not break anything,we came might as well
-    val returnType: RDD[AlignmentRecord] = sc.adamLoad(bamReadsAdamFile.getAbsolutePath)
+    val returnType: RDD[AlignmentRecord] = sc.loadParquet(bamReadsAdamFile.getAbsolutePath)
     assert(manifest[returnType.type] != manifest[RDD[Nothing]])
   }
 
@@ -207,7 +207,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(annot.count == 369)
     val arr = annot.collect
 
-    val first = arr.find(f => f.getContig.getContigName == "chr1" && f.getStart == 14416L && f.getEnd == 14499L).get
+    val first = arr.find(f => f.getContig.getContigName == "chr1" && f.getStart == 14415L && f.getEnd == 14498L).get
     assert(first.getContig.getContigLength == 249250621L)
     assert(first.getContig.getReferenceURL == "file:/gs01/projects/ngs/resources/gatk/2.3/ucsc.hg19.parmasked.fasta")
     assert(first.getContig.getContigMD5 == "1b22b98cdeb4a9304cb5d48026a85128")
@@ -224,7 +224,7 @@ class ADAMContextSuite extends ADAMFunSuite {
         )
     )
 
-    val last = arr.find(f => f.getContig.getContigName == "chrY" && f.getStart == 27190032L && f.getEnd == 27190210L).get
+    val last = arr.find(f => f.getContig.getContigName == "chrY" && f.getStart == 27190031L && f.getEnd == 27190209L).get
     assert(last.getContig.getContigLength == 59373566L)
     assert(last.getContig.getReferenceURL == "file:/gs01/projects/ngs/resources/gatk/2.3/ucsc.hg19.parmasked.fasta")
     assert(last.getContig.getContigMD5 == "3393b0779f142dc59f4cfcc22b61c1ee")
@@ -284,18 +284,6 @@ class ADAMContextSuite extends ADAMFunSuite {
     }
   }
 
-  sparkTest("import records from interleaved multiline FASTQ") {
-    val path = ClassLoader.getSystemClassLoader.getResource("interleaved_multiline_fastq.ifq").getFile
-    val reads = sc.loadAlignments(path)
-
-    assert(reads.count === 6)
-    assert(reads.filter(_.getReadPaired).count === 6)
-    assert(reads.filter(_.getFirstOfPair).count === 3)
-    assert(reads.filter(_.getSecondOfPair).count === 3)
-    assert(reads.collect.forall(_.getSequence.toString.length === 250))
-    assert(reads.collect.forall(_.getQual.toString.length === 250))
-  }
-
   (1 to 4) foreach { testNumber =>
     val inputName = "fastq_sample%d.fq".format(testNumber)
     val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
@@ -317,16 +305,6 @@ class ADAMContextSuite extends ADAMFunSuite {
       assert(reads.collect.forall(_.getSequence.toString.length === 250))
       assert(reads.collect.forall(_.getQual.toString.length === 250))
     }
-  }
-
-  sparkTest("import records from single ended multiline FASTQ") {
-    val path = ClassLoader.getSystemClassLoader.getResource("multiline_fastq.fq").getFile
-    val reads = sc.loadAlignments(path)
-
-    assert(reads.count === 6, "")
-    assert(reads.filter(_.getReadPaired).count === 0)
-    assert(reads.collect.forall(_.getSequence.toString.length === 250))
-    assert(reads.collect.forall(_.getQual.toString.length === 250))
   }
 
   sparkTest("filter on load using the filter2 API") {

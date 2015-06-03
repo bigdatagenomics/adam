@@ -68,7 +68,7 @@ class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
 
 class RichAlignmentRecord(val record: AlignmentRecord) {
 
-  lazy val referenceLength: Int = RichAlignmentRecord.referenceLengthFromCigar(record.getCigar.toString)
+  lazy val referenceLength: Int = RichAlignmentRecord.referenceLengthFromCigar(record.getCigar)
 
   // Returns the quality scores as a list of bytes
   lazy val qualityScores: Array[Int] = {
@@ -76,7 +76,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   }
 
   // Parse the tags ("key:type:value" triples)
-  lazy val tags: Seq[Attribute] = AttributeUtils.parseAttributes(record.getAttributes.toString)
+  lazy val tags: Seq[Attribute] = AttributeUtils.parseAttributes(record.getAttributes)
 
   // Parses the readname to Illumina optics information
   lazy val illuminaOptics: Option[IlluminaOptics] = {

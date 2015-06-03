@@ -178,12 +178,30 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
   }
 
   def convertToAnnotation(vc: BroadVariantContext): DatabaseVariantAnnotation = {
-    assert(false, "TODO")
-    /*
-    val variant = createADAMVariant(vc)
+    val variant = vc.getAlternateAlleles.toList match {
+      case List(NON_REF_ALLELE) => {
+        createADAMVariant(vc, None /* No alternate allele */ )
+      }
+      case List(allele) => {
+        assert(allele.isNonReference,
+          "Assertion failed when converting: " + vc.toString)
+        createADAMVariant(vc, Some(allele.getDisplayString))
+      }
+      case List(allele, NON_REF_ALLELE) => {
+        assert(allele.isNonReference,
+          "Assertion failed when converting: " + vc.toString)
+        createADAMVariant(vc, Some(allele.getDisplayString))
+      }
+      case alleles :+ NON_REF_ALLELE => {
+        throw new IllegalArgumentException("Multi-allelic site with non-ref symbolic allele " +
+          vc.toString)
+      }
+      case _ => {
+        throw new IllegalArgumentException("Multi-allelic site " + vc.toString)
+      }
+    }
+
     extractVariantDatabaseAnnotation(variant, vc)
-    */
-    new DatabaseVariantAnnotation()
   }
 
   private def createContig(vc: BroadVariantContext): Contig = {
