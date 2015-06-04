@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [ $# -gt 1 ]; then
+  echo "Usage: $0 [git sha]" >&2
+  exit 1
+fi
+
+sha=
+if [ $# -gt 0 ]; then
+  sha="$1"
+  git checkout "$sha"
+else
+  if [ $(expr "$(git status --porcelain | wc -l)") -ne 0 ]; then
+    echo "Git repository not clean!" >&2
+    exit 1
+  fi
+  sha="$(git --no-pager log --no-walk --format=%h)"
+fi
+
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion="$sha"
+mvn install -Dmaven.test.skip -DskipTests -Plocal
+
