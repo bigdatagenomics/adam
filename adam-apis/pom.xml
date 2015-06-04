@@ -98,24 +98,12 @@
       <artifactId>spark-core_2.10</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.bdgenomics.utils</groupId>
-      <artifactId>utils-misc_2.10</artifactId>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.bdgenomics.bdg-formats</groupId>
       <artifactId>bdg-formats</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
       <artifactId>adam-core_2.10</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core_2.10</artifactId>
-      <type>test-jar</type>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.scala-lang</groupId>
@@ -128,6 +116,20 @@
     <dependency>
       <groupId>args4j</groupId>
       <artifactId>args4j</artifactId>
+    </dependency>
+
+    <!-- Test dependencies -->
+    <dependency>
+      <groupId>org.bdgenomics.utils</groupId>
+      <artifactId>utils-misc_2.10</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bdgenomics.adam</groupId>
+      <artifactId>adam-core_2.10</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>

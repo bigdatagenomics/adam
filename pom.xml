@@ -346,29 +346,8 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-core_2.10</artifactId>
-        <version>${project.version}</version>
-        <type>test-jar</type>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.bdgenomics.adam</groupId>
         <artifactId>adam-apis_2.10</artifactId>
         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-apis_2.10</artifactId>
-        <version>${project.version}</version>
-        <type>test-jar</type>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-misc_2.10</artifactId>
-        <version>${utils.version}</version>
-        <type>test-jar</type>
-        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
@@ -476,12 +455,6 @@
         <version>2.0.23</version>
       </dependency>
       <dependency>
-        <groupId>org.scalatest</groupId>
-        <artifactId>scalatest_2.10</artifactId>
-        <version>2.2.2</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
         <version>1.7.5</version>
@@ -522,6 +495,35 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>14.0.1</version>
+      </dependency>
+
+      <!-- Test dependencies -->
+      <dependency>
+        <groupId>org.bdgenomics.adam</groupId>
+        <artifactId>adam-core_2.10</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.bdgenomics.adam</groupId>
+        <artifactId>adam-apis_2.10</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.bdgenomics.utils</groupId>
+        <artifactId>utils-misc_2.10</artifactId>
+        <version>${utils.version}</version>
+        <type>test-jar</type>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest_2.10</artifactId>
+        <version>2.2.2</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
