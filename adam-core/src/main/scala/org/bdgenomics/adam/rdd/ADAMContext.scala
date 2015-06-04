@@ -74,6 +74,9 @@ object ADAMContext {
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
 
+  implicit def recordToRegion(r: AlignmentRecord): ReferenceRegion = ReferenceRegion(r)
+  implicit def featureToRegion(f: Feature): ReferenceRegion = ReferenceRegion(f)
+
   // implicit java to scala type conversions
   implicit def listToJavaList[A](list: List[A]): java.util.List[A] = seqAsJavaList(list)
 
