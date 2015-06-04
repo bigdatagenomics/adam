@@ -375,6 +375,17 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     rdd.filter(RichAlignmentRecord(_).tags.exists(_.tag == tagName))
   }
 
+  def filterToRegion(f: Feature, padding: Int = 0): RDD[AlignmentRecord] = {
+    for {
+      r <- rdd
+      rContig <- Option(r.getContig)
+      fContig <- Option(f.getContig)
+      if rContig.getContigName == fContig.getContigName
+      if r.getStart < (f.getEnd + padding)
+      if r.getEnd < (f.getStart - padding)
+    } yield r
+  }
+
   /**
    * Saves these AlignmentRecords to two FASTQ files: one for the first mate in each pair, and the other for the second.
    *
