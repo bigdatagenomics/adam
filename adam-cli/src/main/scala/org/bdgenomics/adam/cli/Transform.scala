@@ -17,8 +17,9 @@
  */
 package org.bdgenomics.adam.cli
 
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.SnpTable
@@ -79,8 +80,6 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var forceLoadIFastq: Boolean = false
   @Args4jOption(required = false, name = "-force_load_parquet", usage = "Forces Transform to load from Parquet.")
   var forceLoadParquet: Boolean = false
-  @Args4jOption(required = false, name = "-as_regular_file", usage = "Saves OUTPUT as regular file instead of using Hadoop OutputFormat")
-  var asRegularFile: Boolean = false
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {

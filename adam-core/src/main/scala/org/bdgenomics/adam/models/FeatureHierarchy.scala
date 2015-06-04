@@ -61,11 +61,11 @@ class BaseFeature(val feature: Feature) extends Serializable {
 }
 
 class GTFFeature(override val feature: Feature) extends BaseFeature(feature) {
-  def getSeqname: String = feature.getContig.getContigName
+  def getSeqname: String = feature.getContig.getContigName.toString
 
-  def getSource: String = feature.getSource
+  def getSource: String = feature.getSource.toString
 
-  def getFeature: String = feature.getFeatureType
+  def getFeature: String = feature.getFeatureType.toString
 
   def getStart: Long = feature.getStart
 

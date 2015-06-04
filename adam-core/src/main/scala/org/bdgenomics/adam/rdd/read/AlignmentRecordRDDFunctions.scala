@@ -19,8 +19,6 @@ package org.bdgenomics.adam.rdd.read
 
 import java.io.StringWriter
 import htsjdk.samtools.{ ValidationStringency, SAMTextHeaderCodec, SAMTextWriter, SAMFileHeader }
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{ Path, FileSystem }
 import org.apache.spark.storage.StorageLevel
 import org.seqdoop.hadoop_bam.SAMRecordWritable
 import org.apache.hadoop.io.LongWritable
@@ -59,23 +57,23 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @return The subset of AlignmentRecords (corresponding to either primary or secondary alignments) that
    *         overlap the query region.
    */
-  def filterByOverlappingRegion(query: ReferenceRegion, padding: Int = 0): RDD[AlignmentRecord] = {
+  def filterByOverlappingRegion(query: ReferenceRegion): RDD[AlignmentRecord] = {
     def overlapsQuery(rec: AlignmentRecord): Boolean =
       rec.getReadMapped &&
-        rec.getContig.getContigName == query.referenceName &&
-        rec.getStart < (query.end + padding) &&
-        rec.getEnd > (query.start - padding)
+        rec.getContig.getContigName.toString == query.referenceName &&
+        rec.getStart < query.end &&
+        rec.getEnd > query.start
     rdd.filter(overlapsQuery)
   }
 
-  def maybeSaveBam(args: SaveArgs, asRegularFile: Boolean = false): Boolean = {
+  def maybeSaveBam(args: SaveArgs): Boolean = {
     if (args.outputPath.endsWith(".sam")) {
       log.info("Saving data in SAM format")
-      rdd.adamSAMSave(args.outputPath, asRegularFile = asRegularFile)
+      rdd.adamSAMSave(args.outputPath)
       true
     } else if (args.outputPath.endsWith(".bam")) {
       log.info("Saving data in BAM format")
-      rdd.adamSAMSave(args.outputPath, asSam = false, asRegularFile = asRegularFile)
+      rdd.adamSAMSave(args.outputPath, asSam = false)
       true
     } else
       false
@@ -95,7 +93,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   }
 
   def adamSave(args: ADAMSaveAnyArgs) = {
-    maybeSaveBam(args, asRegularFile = args.asRegularFile) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
+    maybeSaveBam(args) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
   }
 
   def adamSAMString: String = {
@@ -124,7 +122,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @param filePath Path to save files to.
    * @param asSam Selects whether to save as SAM or BAM. The default value is true (save in SAM format).
    */
-  def adamSAMSave(filePath: String, asSam: Boolean = true, asRegularFile: Boolean = false) = SAMSave.time {
+  def adamSAMSave(filePath: String, asSam: Boolean = true) = SAMSave.time {
 
     // convert the records
     val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM()
@@ -134,23 +132,22 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     val bcastHeader = rdd.context.broadcast(header)
     val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
-      log.info(s"Setting ${if (asSam) "SAM" else "BAM"} header for partition $idx")
+      log.warn(s"Setting ${if (asSam) "SAM" else "BAM"} header for partition $idx")
       val header = bcastHeader.value
       synchronized {
-        // perform map partition call to ensure that the SAM/BAM header is set on all
+        // perform map partition call to ensure that the VCF header is set on all
         // nodes in the cluster; see:
-        // https://github.com/bigdatagenomics/adam/issues/353,
-        // https://github.com/bigdatagenomics/adam/issues/676
+        // https://github.com/bigdatagenomics/adam/issues/353
 
         asSam match {
           case true =>
             ADAMSAMOutputFormat.clearHeader()
             ADAMSAMOutputFormat.addHeader(header)
-            log.info(s"Set SAM header for partition $idx")
+            log.warn(s"Set SAM header for partition $idx")
           case false =>
             ADAMBAMOutputFormat.clearHeader()
             ADAMBAMOutputFormat.addHeader(header)
-            log.info(s"Set BAM header for partition $idx")
+            log.warn(s"Set BAM header for partition $idx")
         }
       }
       Iterator[Int]()
@@ -158,7 +155,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     // force value check, ensure that computation happens
     if (mp != 0) {
-      log.error("Had more than 0 elements after map partitions call to set VCF header across cluster.")
+      log.warn("Had more than 0 elements after map partitions call to set VCF header across cluster.")
     }
 
     // attach header to output format
@@ -166,11 +163,9 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
       case true =>
         ADAMSAMOutputFormat.clearHeader()
         ADAMSAMOutputFormat.addHeader(header)
-        log.info(s"Set SAM header on driver")
       case false =>
         ADAMBAMOutputFormat.clearHeader()
         ADAMBAMOutputFormat.addHeader(header)
-        log.info(s"Set BAM header on driver")
     }
 
     // write file to disk
@@ -192,16 +187,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
           classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
           conf
         )
-    }
-    if (asRegularFile) {
-      log.info("make regular BAM/SAM file (not hadoop)")
-      val conf = new Configuration()
-      val fs = FileSystem.get(conf)
-      val ouputParentDir = filePath.substring(0, filePath.lastIndexOf("/") + 1)
-      val tmpPath = ouputParentDir + "tmp" + System.currentTimeMillis().toString
-      fs.rename(new Path(filePath + "/part-r-00000"), new Path(tmpPath))
-      fs.delete(new Path(filePath), true)
-      fs.rename(new Path(tmpPath), new Path(filePath))
     }
   }
 
@@ -376,18 +361,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     assert(tagName.length == 2,
       "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName))
     rdd.filter(RichAlignmentRecord(_).tags.exists(_.tag == tagName))
-  }
-
-  def filterToRegion(f: Feature, padding: Int = 0): RDD[AlignmentRecord] = {
-    val fb = rdd.context.broadcast(f)
-    for {
-      r <- rdd
-      rContig <- Option(r.getContig)
-      fContig <- Option(fb.value.getContig)
-      if rContig.getContigName == fContig.getContigName
-      if r.getStart < (fb.value.getEnd + padding)
-      if r.getEnd < (fb.value.getStart - padding)
-    } yield r
   }
 
   /**

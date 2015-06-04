@@ -83,7 +83,7 @@ gatherSparkSubmitOpts $NEW_OPTIONS
   --class org.bdgenomics.adam.cli.ADAMMain \
   --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
   --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
-  --conf spark.kryoserializer.buffer=4 \
+  --conf spark.kryoserializer.buffer.mb=4 \
   --conf spark.kryo.referenceTracking=true \
   ${ADAM_OPTS:- } \
   --conf spark.executor.memory=${ADAM_EXECUTOR_MEMORY:-"4g"} \

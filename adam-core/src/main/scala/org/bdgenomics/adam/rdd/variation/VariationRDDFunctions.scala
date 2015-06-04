@@ -86,33 +86,27 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
     rdd.cache()
-    log.info(s"Writing $vcfFormat file to $filePath")
+    log.info("Writing %s file to %s".format(vcfFormat, filePath))
 
     // Initialize global header object required by Hadoop VCF Writer
     val header = getCallsetSamples()
     val bcastHeader = rdd.context.broadcast(header)
     val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
-      log.info(s"Setting header for partition $idx")
+      log.warn("Setting header for partition " + idx)
       synchronized {
         // perform map partition call to ensure that the VCF header is set on all
         // nodes in the cluster; see:
-        // https://github.com/bigdatagenomics/adam/issues/353,
-        // https://github.com/bigdatagenomics/adam/issues/676
-        ADAMVCFOutputFormat.clearHeader()
+        // https://github.com/bigdatagenomics/adam/issues/353
         ADAMVCFOutputFormat.setHeader(bcastHeader.value)
-        log.info(s"Set VCF header for partition $idx")
+        log.warn("Set VCF header for partition " + idx)
       }
       Iterator[Int]()
     }).count()
 
     // force value check, ensure that computation happens
     if (mp != 0) {
-      log.error("Had more than 0 elements after map partitions call to set VCF header across cluster.")
+      log.warn("Had more than 0 elements after map partitions call to set VCF header across cluster.")
     }
-
-    ADAMVCFOutputFormat.clearHeader()
-    ADAMVCFOutputFormat.setHeader(bcastHeader.value)
-    log.info("Set VCF header on driver")
 
     // convert the variants to htsjdk vc
     val converter = new VariantContextConverter(dict)
