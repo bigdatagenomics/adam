@@ -376,13 +376,14 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   }
 
   def filterToRegion(f: Feature, padding: Int = 0): RDD[AlignmentRecord] = {
+    val fb = rdd.context.broadcast(f)
     for {
       r <- rdd
       rContig <- Option(r.getContig)
-      fContig <- Option(f.getContig)
+      fContig <- Option(fb.value.getContig)
       if rContig.getContigName == fContig.getContigName
-      if r.getStart < (f.getEnd + padding)
-      if r.getEnd < (f.getStart - padding)
+      if r.getStart < (fb.value.getEnd + padding)
+      if r.getEnd < (fb.value.getStart - padding)
     } yield r
   }
 
