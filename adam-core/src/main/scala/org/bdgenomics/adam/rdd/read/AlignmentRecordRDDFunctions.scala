@@ -59,12 +59,12 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @return The subset of AlignmentRecords (corresponding to either primary or secondary alignments) that
    *         overlap the query region.
    */
-  def filterByOverlappingRegion(query: ReferenceRegion): RDD[AlignmentRecord] = {
+  def filterByOverlappingRegion(query: ReferenceRegion, padding: Int = 0): RDD[AlignmentRecord] = {
     def overlapsQuery(rec: AlignmentRecord): Boolean =
       rec.getReadMapped &&
-        rec.getContig.getContigName.toString == query.referenceName &&
-        rec.getStart < query.end &&
-        rec.getEnd > query.start
+        rec.getContig.getContigName == query.referenceName &&
+        rec.getStart < (query.end + padding) &&
+        rec.getEnd > (query.start - padding)
     rdd.filter(overlapsQuery)
   }
 
