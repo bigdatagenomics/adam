@@ -77,7 +77,7 @@ object ReferenceRegion {
    * @return Region corresponding to inclusive region of read alignment, if read is mapped.
    */
   def apply(record: AlignmentRecord): ReferenceRegion = {
-    ReferenceRegion(record.getContig.getContigName.toString, record.getStart, record.getEnd)
+    ReferenceRegion(record.getContig.getContigName, record.getStart, record.getEnd)
   }
 
   /**
@@ -109,7 +109,7 @@ object ReferenceRegion {
   }
 
   def apply(feature: Feature): ReferenceRegion = {
-    new ReferenceRegion(feature.getContig.getContigName.toString, feature.getStart, feature.getEnd)
+    new ReferenceRegion(feature.getContig.getContigName, feature.getStart, feature.getEnd)
   }
 }
 
