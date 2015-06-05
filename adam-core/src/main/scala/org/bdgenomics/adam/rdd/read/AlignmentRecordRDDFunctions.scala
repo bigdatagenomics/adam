@@ -18,30 +18,27 @@
 package org.bdgenomics.adam.rdd.read
 
 import java.io.StringWriter
-import htsjdk.samtools.{ ValidationStringency, SAMTextHeaderCodec, SAMTextWriter, SAMFileHeader }
+
+import htsjdk.samtools.{SAMFileHeader, SAMTextHeaderCodec, SAMTextWriter, ValidationStringency}
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{ Path, FileSystem }
-import org.apache.spark.storage.StorageLevel
-import org.seqdoop.hadoop_bam.SAMRecordWritable
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.algorithms.consensus.{
-  ConsensusGenerator,
-  ConsensusGeneratorFromReads
-}
+import org.apache.spark.storage.StorageLevel
+import org.bdgenomics.adam.algorithms.consensus.{ConsensusGenerator, ConsensusGeneratorFromReads}
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
+import org.bdgenomics.adam.rdd.{ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator}
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.utils.cli.SaveArgs
+import org.seqdoop.hadoop_bam.SAMRecordWritable
 
 class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {
@@ -68,14 +65,14 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     rdd.filter(overlapsQuery)
   }
 
-  def maybeSaveBam(args: SaveArgs, asRegularFile: Boolean = false): Boolean = {
+  def maybeSaveBam(args: ADAMSaveAnyArgs): Boolean = {
     if (args.outputPath.endsWith(".sam")) {
       log.info("Saving data in SAM format")
-      rdd.adamSAMSave(args.outputPath, asRegularFile = asRegularFile)
+      rdd.adamSAMSave(args.outputPath, asSingleFile = args.asSingleFile)
       true
     } else if (args.outputPath.endsWith(".bam")) {
       log.info("Saving data in BAM format")
-      rdd.adamSAMSave(args.outputPath, asSam = false, asRegularFile = asRegularFile)
+      rdd.adamSAMSave(args.outputPath, asSam = false, asSingleFile = args.asSingleFile)
       true
     } else
       false
@@ -90,12 +87,12 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
       false
   }
 
-  def adamAlignedRecordSave(args: SaveArgs) = {
+  def adamAlignedRecordSave(args: ADAMSaveAnyArgs) = {
     maybeSaveBam(args) || { rdd.adamParquetSave(args); true }
   }
 
   def adamSave(args: ADAMSaveAnyArgs) = {
-    maybeSaveBam(args, asRegularFile = args.asRegularFile) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
+    maybeSaveBam(args) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
   }
 
   def adamSAMString: String = {
@@ -124,13 +121,15 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @param filePath Path to save files to.
    * @param asSam Selects whether to save as SAM or BAM. The default value is true (save in SAM format).
    */
-  def adamSAMSave(filePath: String, asSam: Boolean = true, asRegularFile: Boolean = false) = SAMSave.time {
+  def adamSAMSave(filePath: String, asSam: Boolean = true, asSingleFile: Boolean = false) = SAMSave.time {
 
     // convert the records
     val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM()
 
     // add keys to our records
-    val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
+    val withKey =
+      if(asSingleFile) convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart)).coalesce(1)
+      else convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
 
     val bcastHeader = rdd.context.broadcast(header)
     val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
@@ -190,7 +189,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
           conf
         )
     }
-    if (asRegularFile) {
+    if (asSingleFile) {
       log.info("make regular BAM/SAM file (not hadoop)")
       val conf = new Configuration()
       val fs = FileSystem.get(conf)

@@ -37,7 +37,7 @@ import parquet.hadoop.util.ContextUtil
 
 trait ADAMSaveAnyArgs extends SaveArgs {
   var sortFastqOutput: Boolean
-  var asRegularFile: Boolean
+  var asSingleFile: Boolean
 }
 
 class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serializable with Logging {

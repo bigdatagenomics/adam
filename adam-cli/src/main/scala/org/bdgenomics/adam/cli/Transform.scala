@@ -79,8 +79,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var forceLoadIFastq: Boolean = false
   @Args4jOption(required = false, name = "-force_load_parquet", usage = "Forces Transform to load from Parquet.")
   var forceLoadParquet: Boolean = false
-  @Args4jOption(required = false, name = "-as_regular_file", usage = "Saves OUTPUT as regular file instead of using Hadoop OutputFormat")
-  var asRegularFile: Boolean = false
+  @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
+  var asSingleFile: Boolean = false
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
