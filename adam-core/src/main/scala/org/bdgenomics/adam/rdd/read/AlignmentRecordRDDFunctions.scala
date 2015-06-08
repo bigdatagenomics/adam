@@ -132,22 +132,23 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     val bcastHeader = rdd.context.broadcast(header)
     val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
-      log.warn(s"Setting ${if (asSam) "SAM" else "BAM"} header for partition $idx")
+      log.info(s"Setting ${if (asSam) "SAM" else "BAM"} header for partition $idx")
       val header = bcastHeader.value
       synchronized {
-        // perform map partition call to ensure that the VCF header is set on all
+        // perform map partition call to ensure that the SAM/BAM header is set on all
         // nodes in the cluster; see:
-        // https://github.com/bigdatagenomics/adam/issues/353
+        // https://github.com/bigdatagenomics/adam/issues/353,
+        // https://github.com/bigdatagenomics/adam/issues/676
 
         asSam match {
           case true =>
             ADAMSAMOutputFormat.clearHeader()
             ADAMSAMOutputFormat.addHeader(header)
-            log.warn(s"Set SAM header for partition $idx")
+            log.info(s"Set SAM header for partition $idx")
           case false =>
             ADAMBAMOutputFormat.clearHeader()
             ADAMBAMOutputFormat.addHeader(header)
-            log.warn(s"Set BAM header for partition $idx")
+            log.info(s"Set BAM header for partition $idx")
         }
       }
       Iterator[Int]()
@@ -155,7 +156,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     // force value check, ensure that computation happens
     if (mp != 0) {
-      log.warn("Had more than 0 elements after map partitions call to set VCF header across cluster.")
+      log.error("Had more than 0 elements after map partitions call to set VCF header across cluster.")
     }
 
     // attach header to output format
@@ -163,9 +164,11 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
       case true =>
         ADAMSAMOutputFormat.clearHeader()
         ADAMSAMOutputFormat.addHeader(header)
+        log.info(s"Set SAM header on driver")
       case false =>
         ADAMBAMOutputFormat.clearHeader()
         ADAMBAMOutputFormat.addHeader(header)
+        log.info(s"Set BAM header on driver")
     }
 
     // write file to disk
