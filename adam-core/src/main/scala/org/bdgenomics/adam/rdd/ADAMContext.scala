@@ -43,10 +43,10 @@ import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.misc.HadoopUtil
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 import org.seqdoop.hadoop_bam._
-import parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
-import parquet.filter2.predicate.FilterPredicate
-import parquet.hadoop.ParquetInputFormat
-import parquet.hadoop.util.ContextUtil
+import org.apache.parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
+import org.apache.parquet.filter2.predicate.FilterPredicate
+import org.apache.parquet.hadoop.ParquetInputFormat
+import org.apache.parquet.hadoop.util.ContextUtil
 import scala.collection.JavaConversions._
 import scala.collection.Map
 import scala.reflect.ClassTag

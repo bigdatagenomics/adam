@@ -20,7 +20,7 @@ package org.bdgenomics.adam.apis.java
 import org.apache.spark.api.java.JavaRDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro._
-import parquet.hadoop.metadata.CompressionCodecName
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
 
 class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord]) extends Serializable {
 

@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.util
 
 import org.apache.hadoop.fs.{ FileSystem, Path }
-import parquet.avro.AvroParquetReader
+import org.apache.parquet.avro.AvroParquetReader
 import org.apache.avro.generic.IndexedRecord
 import org.apache.spark.SparkContext
 import org.bdgenomics.utils.misc.HadoopUtil

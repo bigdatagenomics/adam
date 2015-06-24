@@ -24,8 +24,8 @@ import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.Logging
-import parquet.avro.AvroReadSupport
-import parquet.hadoop.ParquetReader
+import org.apache.parquet.avro.AvroReadSupport
+import org.apache.parquet.hadoop.ParquetReader
 
 import scala.reflect.ClassTag
 
