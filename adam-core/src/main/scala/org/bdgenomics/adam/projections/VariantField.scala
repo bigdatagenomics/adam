@@ -20,6 +20,6 @@ package org.bdgenomics.adam.projections
 import org.bdgenomics.formats.avro.Variant
 
 object VariantField extends FieldEnumeration(Variant.SCHEMA$) {
-	
+
   val contig, start, end, referenceAllele, variantAllele = SchemaValue
 }
