@@ -1,6 +1,0 @@
-Hadoop-BAM, picard and samtools do not publish any
-Maven artifacts. 
-
-The 'create-hadoop-bam-repo.sh' script works around this
-problem by generating a Maven repo to
-be included in the ADAM project. 
