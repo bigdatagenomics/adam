@@ -25,28 +25,22 @@ import org.scalatest.FunSuite
 class MdTagSuite extends FunSuite {
 
   test("null md tag") {
-    MdTag(null, 0L)
+    MdTag(null, 0L, TextCigarCodec.decode(""))
   }
 
   test("zero length md tag") {
-    MdTag("", 0L)
+    MdTag("", 0L, TextCigarCodec.decode(""))
   }
 
   test("md tag with non-digit initial value") {
     intercept[IllegalArgumentException] {
-      MdTag("ACTG0", 0L)
+      MdTag("ACTG0", 0L, TextCigarCodec.decode("4M"))
     }
   }
 
   test("md tag invalid base") {
     intercept[IllegalArgumentException] {
-      MdTag("0ACTZ", 0L)
-    }
-  }
-
-  test("md tag with no digit at end") {
-    intercept[IllegalArgumentException] {
-      MdTag("0ACTG", 0L)
+      MdTag("0ACTZ", 0L, TextCigarCodec.decode("4M"))
     }
   }
 
@@ -54,7 +48,7 @@ class MdTagSuite extends FunSuite {
     // example
     // Cigar = 101I
     // MD:Z:0
-    val tag = MdTag("0", 1L)
+    val tag = MdTag("0", 1L, TextCigarCodec.decode("101I"))
     assert(tag.start === 1L)
     assert(tag.toString === "0")
   }
@@ -69,43 +63,43 @@ class MdTagSuite extends FunSuite {
   }
 
   test("md tag pure insertion equality") {
-    val tag0 = MdTag("0", 1L)
-    val tag1 = MdTag("0", 1L)
-    val tag2 = MdTag("0", 3L)
+    val tag0 = MdTag("0", 1L, TextCigarCodec.decode("6I"))
+    val tag1 = MdTag("0", 1L, TextCigarCodec.decode("6I"))
+    val tag2 = MdTag("0", 3L, TextCigarCodec.decode("6I"))
     assert(tag0.equals(tag1))
     assert(!tag0.equals(tag2))
   }
 
   test("md tag equality and hashcode") {
-    val md1 = MdTag("0A0", 0L)
-    val md1Dup = MdTag("0A0", 0L)
+    val md1 = MdTag("0A0", 0L, TextCigarCodec.decode("1M"))
+    val md1Dup = MdTag("0A0", 0L, TextCigarCodec.decode("1M"))
     assert(md1 == md1Dup)
     assert(md1.hashCode == md1Dup.hashCode)
 
-    val md2 = MdTag("100C0^C20", 0L)
-    val md2Dup = MdTag("100C0^C20", 0L)
+    val md2 = MdTag("100C0^C20", 0L, TextCigarCodec.decode("101M1D20M"))
+    val md2Dup = MdTag("100C0^C20", 0L, TextCigarCodec.decode("101M1D20M"))
     assert(md2 == md2Dup)
     assert(md2.hashCode == md2Dup.hashCode)
 
-    val md3 = MdTag("22^A79", 0L)
-    val md3Dup = MdTag("22^A79", 0L)
+    val md3 = MdTag("22^A79", 0L, TextCigarCodec.decode("22M1D79M"))
+    val md3Dup = MdTag("22^A79", 0L, TextCigarCodec.decode("22M1D79M"))
     assert(md3 == md3Dup)
     assert(md3.hashCode == md3Dup.hashCode)
   }
 
   test("valid md tags") {
-    val md1 = MdTag("0A0", 0L)
+    val md1 = MdTag("0A0", 0L, TextCigarCodec.decode("1M"))
     assert(md1.mismatchedBase(0) == Some('A'))
     assert(md1.countOfMismatches === 1)
 
-    val md2 = MdTag("100", 0L)
+    val md2 = MdTag("100", 0L, TextCigarCodec.decode("100M"))
     for (i <- 0 until 100) {
       assert(md2.isMatch(i))
     }
     assert(!md2.isMatch(-1))
     assert(md2.countOfMismatches === 0)
 
-    val md3 = MdTag("100C2", 0L)
+    val md3 = MdTag("100C2", 0L, TextCigarCodec.decode("103M"))
     for (i <- 0 until 100) {
       assert(md3.isMatch(i))
     }
@@ -116,7 +110,7 @@ class MdTagSuite extends FunSuite {
       assert(md3.isMatch(i))
     }
 
-    val md4 = MdTag("100C0^C20", 0L)
+    val md4 = MdTag("100C0^C20", 0L, TextCigarCodec.decode("101M1D20M"))
     for (i <- 0 until 100) {
       assert(md4.isMatch(i))
     }
@@ -127,14 +121,14 @@ class MdTagSuite extends FunSuite {
     }
 
     val deletedString = "ACGTACGTACGT"
-    val md5 = MdTag("0^" + deletedString + "10", 0L)
+    val md5 = MdTag("0^" + deletedString + "10", 0L, TextCigarCodec.decode("12D10M"))
     for (i <- 0 until deletedString.length) {
       assert(md5.deletedBase(i) == Some(deletedString charAt i))
     }
 
     assert(md5.countOfMismatches === 0)
 
-    val md6 = MdTag("22^A79", 0L)
+    val md6 = MdTag("22^A79", 0L, TextCigarCodec.decode("22M1D79M"))
     for (i <- 0 until 22) {
       assert(md6.isMatch(i))
     }
@@ -144,7 +138,7 @@ class MdTagSuite extends FunSuite {
     }
 
     // seen in 1000G, causes errors in 9c05baa2e0e9c59cbf56e241b8ae3a7b87402fa2
-    val md7 = MdTag("39r36c23", 0L)
+    val md7 = MdTag("39r36c23", 0L, TextCigarCodec.decode("100M"))
     for (i <- 0 until 39) {
       assert(md7.isMatch(i))
     }
@@ -157,34 +151,34 @@ class MdTagSuite extends FunSuite {
       assert(md7.isMatch(i))
     }
 
-    val mdy = MdTag("34Y18G46", 0L)
+    val mdy = MdTag("34Y18G46", 0L, TextCigarCodec.decode("100M"))
     assert(mdy.mismatchedBase(34) == Some('Y'))
     assert(mdy.countOfMismatches === 2)
 
   }
 
   test("get start of read with no mismatches or deletions") {
-    val tag = MdTag("60", 1L)
+    val tag = MdTag("60", 1L, TextCigarCodec.decode("60M"))
 
     assert(tag.start === 1L)
   }
 
   test("get start of read with no mismatches, but with a deletion at the start") {
-    val tag = MdTag("0^AC60", 5L)
+    val tag = MdTag("0^AC60", 5L, TextCigarCodec.decode("2D60M"))
 
     assert(tag.start === 5L)
   }
 
   test("get start of read with mismatches at the start") {
-    val tag = MdTag("0AC60", 10L)
+    val tag = MdTag("0AC60", 10L, TextCigarCodec.decode("62M"))
 
     assert(tag.start === 10L)
   }
 
   test("get end of read with no mismatches or deletions") {
-    val tag = MdTag("60", 1L)
+    val tag = MdTag("60", 1L, TextCigarCodec.decode("60M"))
 
-    assert(tag.end() === 60L)
+    assert(tag.end === 60L)
   }
 
   test("check that mdtag and rich record return same end") {
@@ -197,51 +191,118 @@ class MdTagSuite extends FunSuite {
       .setReadMapped(true)
       .build()
 
-    assert(read.mdTag.get.end() === read.getEnd)
+    assert(read.mdTag.get.end === read.getEnd)
   }
 
   test("get end of read with no mismatches, but a deletion at end") {
-    val tag = MdTag("60^AC0", 1L)
+    val tag = MdTag("60^AC0", 1L, TextCigarCodec.decode("60M2D"))
 
-    assert(tag.end() === 62L)
+    assert(tag.end === 62L)
   }
 
-  test("get end of read with mismatches and a deletion at end") {
-    val tag = MdTag("60^AC0A0C0", 1L)
+  test("CIGAR with N operator") {
+    val tag = MdTag("5^A2", 1L, TextCigarCodec.decode("5M100N1D2M"))
+    for (i <- 1L to 5L)
+      assert(tag.isMatch(i))
 
-    assert(tag.end() === 64L)
+    for (i <- 107L to 108L)
+      assert(tag.isMatch(i))
+
+    assert(tag.end === 108)
+  }
+
+  test("CIGAR with multiple N operators") {
+    val tag = MdTag("20", 1L, TextCigarCodec.decode("5M100N10M100N5M"))
+
+    for (i <- 106L to 115L)
+      assert(tag.isMatch(i))
+
+    for (i <- 216L to 220L)
+      assert(tag.isMatch(i))
+
+    assert(tag.end === 220)
+  }
+  
+  test("Get correct matches for MDTag with mismatches and deletions") {
+
+    val tag1 = MdTag("40A5^TTT54", 0L, TextCigarCodec.decode("46M3D54M"))
+    assert(tag1.hasMismatches === true)
+    assert(tag1.end() ===  102)
+    assert(tag1.isMatch(25)  === true)
+    assert(tag1.isMatch(39)  === true)
+    assert(tag1.isMatch(40)  === false)
+    assert(tag1.isMatch(41)  === true)
+
+    assert(tag1.mismatchedBase(40)  === Some('A'))
+
+
+    val tag2 = MdTag("40A5^TTT0G53", 0L, TextCigarCodec.decode("46M3D54M"))
+    assert(tag2.hasMismatches === true)
+    assert(tag2.end() ===  102)
+    assert(tag2.isMatch(25)  === true)
+    assert(tag2.isMatch(39)  === true)
+    assert(tag2.isMatch(40)  === false)
+    assert(tag2.isMatch(41)  === true)
+    
+    assert(tag2.mismatchedBase(40)  === Some('A'))
+    assert(tag2.mismatchedBase(49)  === Some('G'))
+    assert(tag2.isMatch(50)  === true)
+  }
+  
+  
+  test("Get correct matches base from MDTag and CIGAR with N") {
+    val tag1 = MdTag("100", 0L, TextCigarCodec.decode("100M"))
+    assert(tag1.hasMismatches === false)
+    assert(tag1.end ===  99)
+    assert(tag1.isMatch(25)  === true)
+
+    val tag2 = MdTag("100", 0L, TextCigarCodec.decode("50M100N50M"))
+    assert(tag2.hasMismatches === false)
+    assert(tag2.end() ===  199)
+    assert(tag2.isMatch(25)  === true)
+    assert(tag2.isMatch(100)  === false)
+    assert(tag2.isMatch(175) == true)
+
+
+  }
+  
+
+  test("get end of read with mismatches and a deletion at end") {
+    val tag = MdTag("60^AC0A0C0", 1L, TextCigarCodec.decode("60M2D2M"))
+
+    assert(tag.end === 64L)
   }
 
   test("get correct string out of mdtag with no mismatches") {
-    val tag = MdTag("60", 1L)
+    val tag = MdTag("60", 1L, TextCigarCodec.decode("60M"))
 
     assert(tag.toString === "60")
   }
 
   test("get correct string out of mdtag with mismatches at start") {
-    val tag = MdTag("0A0C10", 100L)
+    val tag = MdTag("0A0C10", 100L, TextCigarCodec.decode("12M"))
 
     assert(tag.toString === "0A0C10")
   }
 
   test("get correct string out of mdtag with deletion at end") {
-    val tag = MdTag("10^GG0", 200L)
+    val tag = MdTag("10^GG0", 200L, TextCigarCodec.decode("10M2D"))
 
     assert(tag.start === 200L)
-    assert(tag.end() === 211L)
+    assert(tag.end === 211L)
     assert(tag.toString === "10^GG0")
   }
 
   test("get correct string out of mdtag with mismatches at end") {
-    val tag = MdTag("10G0G0", 200L)
+    val tag = MdTag("10G0G0", 200L, TextCigarCodec.decode("12M"))
 
     assert(tag.start === 200L)
-    assert(tag.end() === 211L)
+    assert(tag.end === 211L)
     assert(tag.toString === "10G0G0")
   }
 
   test("get correct string out of complex mdtag") {
-    val tag = MdTag("0AT0^GC0", 5123L)
+    val tag = MdTag("0AT0^GC0", 5123L, TextCigarCodec.decode("2M2D"))
 
     assert(tag.toString === "0A0T0^GC0")
   }
@@ -297,7 +358,7 @@ class MdTagSuite extends FunSuite {
 
     assert(newTag.toString === "60")
     assert(newTag.start === 100L)
-    assert(newTag.end() === 159L)
+    assert(newTag.end === 159L)
   }
 
   test("rewrite alignment to two mismatches followed by all matches") {
@@ -315,7 +376,7 @@ class MdTagSuite extends FunSuite {
 
     assert(newTag.toString === "0G0G58")
     assert(newTag.start === 100L)
-    assert(newTag.end() === 159L)
+    assert(newTag.end === 159L)
   }
 
   test("rewrite alignment to include a deletion but otherwise all matches") {
@@ -333,7 +394,7 @@ class MdTagSuite extends FunSuite {
 
     assert(newTag.toString === "10^GGGGGGGGGG50")
     assert(newTag.start === 100L)
-    assert(newTag.end() === 169L)
+    assert(newTag.end === 169L)
   }
 
   test("rewrite alignment to include an insertion at the start of the read but otherwise all matches") {
@@ -351,7 +412,7 @@ class MdTagSuite extends FunSuite {
 
     assert(newTag.toString === "50")
     assert(newTag.start === 100L)
-    assert(newTag.end() === 149L)
+    assert(newTag.end === 149L)
   }
 
   test("create new md tag from read vs. reference, perfect match") {
