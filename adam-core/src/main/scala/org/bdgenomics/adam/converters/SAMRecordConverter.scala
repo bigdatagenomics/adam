@@ -92,12 +92,7 @@ class SAMRecordConverter extends Serializable with Logging {
           builder.setOldCigar(samRecord.getStringAttribute("OC"))
         }
 
-        val end = samRecord.getCigar.getCigarElements
-          .asScala
-          .filter((p: CigarElement) => p.getOperator.consumesReferenceBases())
-          .foldLeft(start - 1) {
-            (pos, cigarEl) => pos + cigarEl.getLength
-          }
+        val end = start.toLong - 1 + samRecord.getCigar.getReferenceLength
         builder.setEnd(end)
         // set mapping quality
         val mapq: Int = samRecord.getMappingQuality
