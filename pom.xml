@@ -20,11 +20,11 @@
     <java.version>1.7</java.version>
     <avro.version>1.7.6</avro.version>
     <spark.version>1.2.0</spark.version>
-    <parquet.version>1.6.0rc4</parquet.version>
+    <parquet.version>1.7.0</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
-    <utils.version>0.2.1</utils.version>
+    <utils.version>0.2.2</utils.version>
     <htsjdk.version>1.133</htsjdk.version>
   </properties>
   
@@ -421,12 +421,12 @@
         <version>${avro.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.twitter</groupId>
+        <groupId>org.apache.parquet</groupId>
         <artifactId>parquet-avro</artifactId>
         <version>${parquet.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.twitter</groupId>
+        <groupId>org.apache.parquet</groupId>
         <artifactId>parquet-scala_2.10</artifactId>
         <version>${parquet.version}</version>
         <exclusions>

@@ -30,10 +30,10 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.utils.cli.SaveArgs
 import org.bdgenomics.utils.misc.HadoopUtil
-import parquet.avro.AvroParquetOutputFormat
-import parquet.hadoop.ParquetOutputFormat
-import parquet.hadoop.metadata.CompressionCodecName
-import parquet.hadoop.util.ContextUtil
+import org.apache.parquet.avro.AvroParquetOutputFormat
+import org.apache.parquet.hadoop.ParquetOutputFormat
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.parquet.hadoop.util.ContextUtil
 
 trait ADAMSaveAnyArgs extends SaveArgs {
   var sortFastqOutput: Boolean

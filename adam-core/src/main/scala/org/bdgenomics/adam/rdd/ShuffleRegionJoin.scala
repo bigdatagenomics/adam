@@ -17,34 +17,16 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.apache.spark.{ Logging, Partitioner, SparkContext }
+import org.apache.spark.Partitioner
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion._
-import org.bdgenomics.adam.models.{ SequenceDictionary, SequenceRecord, ReferenceRegion }
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
 import scala.collection.mutable.ListBuffer
 import scala.math._
 import scala.reflect.ClassTag
 
-object ShuffleRegionJoin extends RegionJoin {
-
-  private var sd = new SequenceDictionary(Vector[SequenceRecord]())
-
-  def setSequenceDictionary(_sd: SequenceDictionary) {
-    sd = _sd
-  }
-
-  def partitionAndJoin[T, U](leftRDD: RDD[(ReferenceRegion, T)],
-                             rightRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                                                  uManifest: ClassTag[U]): RDD[(T, U)] = {
-
-    // we will compute these parameters from the datasets we've got
-    val maxPartitions = max(leftRDD.partitions.length.toLong, rightRDD.partitions.length.toLong)
-    val partitionSize = sd.records.map(_.length).sum / maxPartitions
-
-    partitionAndJoin(leftRDD, rightRDD, sd, partitionSize)
-  }
+case class ShuffleRegionJoin(sd: SequenceDictionary, partitionSize: Long) extends RegionJoin {
 
   /**
    * Performs a region join between two RDDs (shuffle join).
@@ -58,9 +40,6 @@ object ShuffleRegionJoin extends RegionJoin {
    *
    * @param leftRDD The 'left' side of the join
    * @param rightRDD The 'right' side of the join
-   * @param seqDict A SequenceDictionary -- every region corresponding to either the leftRDD or rightRDD
-   *                values must be mapped to a chromosome with an entry in this dictionary.
-   * @param partitionSize The size of the genome bin in nucleotides.  Controls the parallelism of the join.
    * @param tManifest implicit type of leftRDD
    * @param uManifest implicit type of rightRDD
    * @tparam T type of leftRDD
@@ -69,14 +48,12 @@ object ShuffleRegionJoin extends RegionJoin {
    *         corresponding to x overlaps the region corresponding to y.
    */
   def partitionAndJoin[T, U](leftRDD: RDD[(ReferenceRegion, T)],
-                             rightRDD: RDD[(ReferenceRegion, U)],
-                             seqDict: SequenceDictionary,
-                             partitionSize: Long)(implicit tManifest: ClassTag[T],
-                                                  uManifest: ClassTag[U]): RDD[(T, U)] = {
+                             rightRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
+                                                                  uManifest: ClassTag[U]): RDD[(T, U)] = {
     val sc = leftRDD.context
 
     // Create the set of bins across the genome for parallel processing
-    val seqLengths = Map(seqDict.records.toSeq.map(rec => (rec.name.toString, rec.length)): _*)
+    val seqLengths = Map(sd.records.toSeq.map(rec => (rec.name.toString, rec.length)): _*)
     val bins = sc.broadcast(GenomeBins(partitionSize, seqLengths))
 
     // Key each RDD element to its corresponding bin

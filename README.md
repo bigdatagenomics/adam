@@ -210,7 +210,7 @@ You will need to have [Maven](http://maven.apache.org/) installed in order to bu
 ```
 $ git clone https://github.com/bigdatagenomics/adam.git
 $ cd adam
-$ export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
+$ export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=256m"
 $ mvn clean package -DskipTests
 ...
 [INFO] ------------------------------------------------------------------------

@@ -27,8 +27,8 @@ import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.misc.HadoopUtil
 import org.kohsuke.args4j.Argument
-import parquet.avro.AvroParquetInputFormat
-import parquet.hadoop.util.ContextUtil
+import org.apache.parquet.avro.AvroParquetInputFormat
+import org.apache.parquet.hadoop.util.ContextUtil
 
 object Flatten extends BDGCommandCompanion {
   val commandName = "flatten"
@@ -57,7 +57,7 @@ class Flatten(val args: FlattenArgs) extends BDGSparkCommand[FlattenArgs] with L
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
       args.inputPath,
-      classOf[AvroParquetInputFormat],
+      classOf[AvroParquetInputFormat[IndexedRecord]],
       classOf[Void],
       classOf[IndexedRecord],
       ContextUtil.getConfiguration(job)

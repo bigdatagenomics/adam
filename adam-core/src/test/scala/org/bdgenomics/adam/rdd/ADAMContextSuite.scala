@@ -27,8 +27,8 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
-import parquet.filter2.dsl.Dsl._
-import parquet.filter2.predicate.FilterPredicate
+import org.apache.parquet.filter2.dsl.Dsl._
+import org.apache.parquet.filter2.predicate.FilterPredicate
 
 class ADAMContextSuite extends ADAMFunSuite {
 
