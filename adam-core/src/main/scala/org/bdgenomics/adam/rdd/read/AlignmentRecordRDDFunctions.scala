@@ -19,22 +19,22 @@ package org.bdgenomics.adam.rdd.read
 
 import java.io.StringWriter
 
-import htsjdk.samtools.{SAMFileHeader, SAMTextHeaderCodec, SAMTextWriter, ValidationStringency}
+import htsjdk.samtools.{ SAMFileHeader, SAMTextHeaderCodec, SAMTextWriter, ValidationStringency }
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.bdgenomics.adam.algorithms.consensus.{ConsensusGenerator, ConsensusGeneratorFromReads}
+import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
-import org.bdgenomics.adam.rdd.{ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator}
+import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
@@ -128,7 +128,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     // add keys to our records
     val withKey =
-      if(asSingleFile) convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart)).coalesce(1)
+      if (asSingleFile) convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart)).coalesce(1)
       else convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
 
     val bcastHeader = rdd.context.broadcast(header)
@@ -193,7 +193,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         )
     }
     if (asSingleFile) {
-      log.info("make regular BAM/SAM file (not hadoop)")
+      log.info(s"Writing single ${if (asSam) "SAM" else "BAM"} file (not Hadoop-style directory)")
       val conf = new Configuration()
       val fs = FileSystem.get(conf)
       val ouputParentDir = filePath.substring(0, filePath.lastIndexOf("/") + 1)
