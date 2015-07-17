@@ -27,7 +27,7 @@ import org.bdgenomics.adam.models.{ TagType, Attribute }
  */
 object AttributeUtils {
 
-  val attrRegex = RegExp("([^:]{2}):([AifZHB]):(.*)")
+  val attrRegex = RegExp("([^:]{2,4}):([AifZHB]):(.*)")
 
   def convertSAMTagAndValue(attr: SAMTagAndValue): Attribute = {
     attr.value match {
