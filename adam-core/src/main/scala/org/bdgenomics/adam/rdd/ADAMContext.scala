@@ -22,7 +22,7 @@ import htsjdk.samtools.SAMFileHeader
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.avro.specific.SpecificRecord
-import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.fs.{ FileSystem, FileStatus, Path }
 import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 import org.apache.spark.rdd.RDD
@@ -50,6 +50,7 @@ import org.apache.parquet.hadoop.util.ContextUtil
 import scala.collection.JavaConversions._
 import scala.collection.Map
 import scala.reflect.ClassTag
+import htsjdk.samtools.IndexedBamInputFormat
 
 object ADAMContext {
   // Add ADAM Spark context methods
@@ -264,6 +265,58 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
 
+    records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
+  }
+
+  /**
+   * Functions like loadBam, but uses bam index files to look at fewer blocks,
+   * and only returns records within a specified ReferenceRegion. Bam index file required.
+   * @param filePath The path to the input data. Currently this path must correspond to
+   *        a single Bam file. The bam index file associated needs to have the same name.
+   * @param viewRegion The ReferenceRegion we are filtering on
+   */
+  def loadIndexedBam(
+    filePath: String, viewRegion: ReferenceRegion): RDD[AlignmentRecord] = {
+    val path = new Path(filePath)
+    val fs = FileSystem.get(path.toUri, sc.hadoopConfiguration)
+    assert(!fs.isDirectory(path))
+    val bamfile: Array[FileStatus] = fs.globStatus(path)
+    require(bamfile.size == 1)
+    val (seqDict, readGroups) = bamfile
+      .map(fs => fs.getPath)
+      .flatMap(fp => {
+        try {
+          // We need to separately read the header, so that we can inject the sequence dictionary
+          // data into each individual Read (see the argument to samRecordConverter.convert,
+          // below).
+          val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
+
+          log.info("Loaded header from " + fp)
+          val sd = adamBamDictionaryLoad(samHeader)
+          val rg = adamBamLoadReadGroups(samHeader)
+          Some((sd, rg))
+        } catch {
+          case _: Throwable => {
+            log.error("Loading failed for " + fp)
+            None
+          }
+        }
+      }).reduce((kv1, kv2) => {
+        (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
+      })
+
+    val samDict = SAMHeaderReader.readSAMHeaderFrom(path, sc.hadoopConfiguration).getSequenceDictionary
+    IndexedBamInputFormat.setVars(new Path(filePath),
+      new Path(filePath + ".bai"),
+      viewRegion,
+      samDict)
+
+    val job = HadoopUtil.newJob(sc)
+
+    val records = sc.newAPIHadoopFile(filePath, classOf[IndexedBamInputFormat], classOf[LongWritable],
+      classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+    if (Metrics.isRecording) records.instrument() else records
+    val samRecordConverter = new SAMRecordConverter
     records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
   }
 
