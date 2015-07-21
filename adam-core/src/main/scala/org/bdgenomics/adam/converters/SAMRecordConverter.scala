@@ -28,7 +28,8 @@ import org.bdgenomics.adam.models.{
   Attribute,
   RecordGroupDictionary,
   SequenceDictionary,
-  SequenceRecord
+  SequenceRecord,
+  TagType
 }
 import org.bdgenomics.adam.util.AttributeUtils
 import org.bdgenomics.formats.avro.AlignmentRecord
@@ -168,8 +169,12 @@ class SAMRecordConverter extends Serializable with Logging {
         }
       }
 
+      var tags = List[Attribute]()
+      val tlen = samRecord.getInferredInsertSize
+      if (tlen != 0) {
+        tags ::= Attribute("TLEN", TagType.Integer, tlen)
+      }
       if (samRecord.getAttributes != null) {
-        var tags = List[Attribute]()
         samRecord.getAttributes.asScala.foreach {
           attr =>
             if (attr.tag == "MD") {
@@ -178,6 +183,8 @@ class SAMRecordConverter extends Serializable with Logging {
               tags ::= AttributeUtils.convertSAMTagAndValue(attr)
             }
         }
+      }
+      if (!tags.isEmpty) {
         builder.setAttributes(tags.mkString("\t"))
       }
 
