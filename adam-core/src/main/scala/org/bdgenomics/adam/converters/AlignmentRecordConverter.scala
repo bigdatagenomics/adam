@@ -163,7 +163,11 @@ class AlignmentRecordConverter extends Serializable {
     if (adamRecord.getAttributes != null) {
       val mp = RichAlignmentRecord(adamRecord).tags
       mp.foreach(a => {
-        builder.setAttribute(a.tag, a.value)
+        if (a.tag == "TLEN") {
+          builder.setInferredInsertSize(a.value.asInstanceOf[Integer])
+        } else {
+          builder.setAttribute(a.tag, a.value)
+        }
       })
     }
 
