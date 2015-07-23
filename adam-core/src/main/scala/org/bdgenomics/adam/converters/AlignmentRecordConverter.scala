@@ -18,11 +18,10 @@
 package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.{ SAMFileHeader, SAMRecord }
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, SAMFileHeaderWritable, SequenceDictionary }
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.instrumentation.Timers._
+import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.bdgenomics.adam.instrumentation.Timers._
 
 class AlignmentRecordConverter extends Serializable {
 
@@ -56,8 +55,14 @@ class AlignmentRecordConverter extends Serializable {
     "@%s%s\n%s\n+\n%s".format(
       adamRecord.getReadName,
       readNameSuffix,
-      adamRecord.getSequence,
-      adamRecord.getQual
+      if (adamRecord.getReadMapped && adamRecord.getReadNegativeStrand)
+        Alphabet.dna.reverseComplement(adamRecord.getSequence)
+      else
+        adamRecord.getSequence,
+      if (adamRecord.getReadMapped && adamRecord.getReadNegativeStrand)
+        adamRecord.getQual.reverse
+      else
+        adamRecord.getQual
     )
   }
 

@@ -17,6 +17,9 @@
  */
 package org.bdgenomics.adam.converters
 
+import java.io.File
+
+import htsjdk.samtools.{ SamReaderFactory, SAMRecord }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
@@ -27,12 +30,14 @@ import org.bdgenomics.adam.models.{
 }
 import org.scalatest.FunSuite
 
+import scala.collection.JavaConversions._
+
 class AlignmentRecordConverterSuite extends FunSuite {
 
   // allocate converters
   val adamRecordConverter = new AlignmentRecordConverter
 
-  def make_read(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0, nullQuality: Boolean = false): AlignmentRecord = {
+  def makeRead(start: Long, cigar: String, mdtag: String, length: Int, id: Int = 0, nullQuality: Boolean = false): AlignmentRecord = {
     val sequence: String = "A" * length
     val builder = AlignmentRecord.newBuilder()
       .setReadName("read" + id.toString)
@@ -54,7 +59,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
   }
 
   test("testing the fields in a converted ADAM Read") {
-    val adamRead = make_read(3L, "2M3D2M", "2^AAA2", 4)
+    val adamRead = makeRead(3L, "2M3D2M", "2^AAA2", 4)
 
     // add reference details
     adamRead.setRecordGroupName("record_group")
@@ -102,7 +107,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
   }
 
   test("converting a read with null quality is OK") {
-    val adamRead = make_read(3L, "2M3D2M", "2^AAA2", 4, nullQuality = true)
+    val adamRead = makeRead(3L, "2M3D2M", "2^AAA2", 4, nullQuality = true)
 
     // add reference details
     adamRead.setRecordGroupName("record_group")
@@ -164,6 +169,81 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(fastq(1) === "ACACCAACATG")
     assert(fastq(2) === "+")
     assert(fastq(3) === ".+**.+;:**.")
+  }
+
+  def getSAMRecordFromReadName(readName: String): (AlignmentRecord, AlignmentRecord) = {
+    val samToADAMConverter = new SAMRecordConverter
+    val SAMTestFile = new File(getClass.getClassLoader.getResource("bqsr1.sam").getFile)
+    val newSAMReader = SamReaderFactory.makeDefault().open(SAMTestFile)
+
+    // Obtain SAMRecord
+    val newSAMRecord = newSAMReader.iterator().dropWhile(r => r.getReadName != readName)
+    val newSequenceRecord = new SequenceRecord("22", 51304566)
+    val newSequenceDictionary = SequenceDictionary(newSequenceRecord)
+    val firstRecord = samToADAMConverter.convert(newSAMRecord.next(), newSequenceDictionary, new RecordGroupDictionary(Seq()))
+    val secondRecord = samToADAMConverter.convert(newSAMRecord.next(), newSequenceDictionary, new RecordGroupDictionary(Seq()))
+    (firstRecord, secondRecord)
+  }
+
+  test("reverse complement reads when converting to fastq") {
+
+    // SRR062634.10022079      83      22      16082719        0       5S95M   =       16082635        -179    
+    // AAGTAGCTGGGACTACACGCACGCACCACCATGCCTGGCTAATTTTTGTATTTTTAGTAGAGATGAGGTTTCACCATATTGGCCAGGCTGGTTTTGAATT    
+    // #####EB5BB<840&:2?>A?-AC8=,5@AABCB?CEDBDC@6BB,CA0CB,B-DEDEDEDEA:D?DE5EBEC?E?5?D:AEEEDEDDEEE=BEEBDD-?    
+    // RG:Z:SRR062634  XC:i:95 XT:A:R  NM:i:2  SM:i:0  AM:i:0  X0:i:3  X1:i:0  XM:i:2  XO:i:0  XG:i:0  MD:Z:15G0T78    
+    // XA:Z:GL000244.1,+31092,100M,2;14,+19760216,100M,2;
+
+    val (firstRecord, secondRecord) = getSAMRecordFromReadName("SRR062634.10022079")
+
+    val firstRecordFastq = adamRecordConverter.convertToFastq(firstRecord, maybeAddSuffix = true)
+      .toString
+      .split('\n')
+
+    assert(firstRecordFastq(0) === "@SRR062634.10022079/2")
+    assert(firstRecordFastq(1) === "CTGGAGTGCAGTGGCATGATTTCAGCTCACTGTCGTCTCTGCCTCCCTGACTCAAGTGATTCTCCTGCCTCAGCCTCCCACGTCGCTCGGACTCCACGCC")
+    assert(firstRecordFastq(2) === "+")
+    assert(firstRecordFastq(3) === "A:=D5D5E?D?DDD:.@@@@=?EE=DADDB@D=DD??ED=:CCCC?D:E=EEB=-C>C=@=EEEEB5EC-?A>=C-C?DC+34+4A>-?5:=/-A=@>>:")
+
+    val secondRecordFastq = adamRecordConverter.convertToFastq(secondRecord, maybeAddSuffix = true)
+      .toString
+      .split('\n')
+
+    assert(secondRecordFastq(0) === "@SRR062634.10022079/1")
+    assert(secondRecordFastq(1) === "AATTCAAAACCAGCCTGGCCAATATGGTGAAACCTCATCTCTACTAAAAATACAAAAATTAGCCAGGCATGGTGGTGCGTGCGTGTAGTCCCAGCTACTT")
+    assert(secondRecordFastq(2) === "+")
+    assert(secondRecordFastq(3) === "?-DDBEEB=EEEDDEDEEEA:D?5?E?CEBE5ED?D:AEDEDEDED-B,BC0AC,BB6@CDBDEC?BCBAA@5,=8CA-?A>?2:&048<BB5BE#####")
+
+  }
+
+  test("converting to fastq with unmapped reads") {
+    //SRR062634.10448889      117     22      16079761        0       *       =       16079761        0       
+    // TTTCTTTCTTTTATATATATATACACACACACACACACACACACACATATATGTATATATACACGTATATGTATGTATATATGTATATATACACGTATAT    
+    // @DF>C;FDC=EGEGGEFDGEFDD?DFDEEGFGFGGGDGGGGGGGEGGGGFGGGFGGGGGGFGGFGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    
+    // RG:Z:SRR062634
+
+    val (secondRecord, firstRecord) = getSAMRecordFromReadName("SRR062634.10448889")
+
+    val firstRecordFastq = adamRecordConverter.convertToFastq(firstRecord, maybeAddSuffix = true)
+      .toString
+      .split('\n')
+
+    assert(firstRecord.getReadMapped)
+    assert(firstRecord.getReadNegativeStrand)
+    assert(firstRecordFastq(0) === "@SRR062634.10448889/2")
+    assert(firstRecordFastq(1) === "ACCTGTCTCAGCCTCCCAAAGTGCTGCGATTACAGTCATGAGCCACCGCACTTGGCTGGGTTTTCGTTTTCTTTCTTTTATATATATATACACACACACA")
+    assert(firstRecordFastq(2) === "+")
+    assert(firstRecordFastq(3) === "GGGGGGGGGGGGGGGGGGGGGEGGGGGGGGGGGGGGGGGGGGGGGGGFGEGEEDGGFDF?AEEEBDADEEDEEE;DFC@'B:B=B=B=BADCBCBCA=DA")
+
+    val secondRecordFastq = adamRecordConverter.convertToFastq(secondRecord, maybeAddSuffix = true)
+      .toString
+      .split('\n')
+
+    assert(!secondRecord.getReadMapped)
+    assert(!secondRecord.getReadNegativeStrand)
+    assert(secondRecordFastq(0) === "@SRR062634.10448889/1")
+    assert(secondRecordFastq(1) === secondRecord.getSequence)
+    assert(secondRecordFastq(2) === "+")
+    assert(secondRecordFastq(3) === secondRecord.getQual)
   }
 }
 
