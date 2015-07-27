@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -26,7 +25,7 @@ import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
-import org.kohsuke.args4j.{ Option => Args4JOption, Argument }
+import org.kohsuke.args4j.{ Argument, Option => Args4JOption }
 
 class Adam2FastqArgs extends ParquetLoadSaveArgs {
   @Argument(required = false, metaVar = "OUTPUT", usage = "When writing FASTQ data, all second-in-pair reads will go here, if this argument is provided", index = 2)
@@ -39,6 +38,8 @@ class Adam2FastqArgs extends ParquetLoadSaveArgs {
   var persistLevel: String = null
   @Args4JOption(required = false, name = "-no-projection", usage = "Disable projection on records. No great reason to do this, but useful for testing / comparison.")
   var disableProjection: Boolean = false
+  @Args4JOption(required = false, name = "-output-oq", usage = "Output the original sequencing quality scores")
+  var outputOriginalBaseQualities = false
 }
 
 object Adam2Fastq extends BDGCommandCompanion {
@@ -62,7 +63,8 @@ class Adam2Fastq(val args: Adam2FastqArgs) extends BDGSparkCommand[Adam2FastqArg
             AlignmentRecordField.sequence,
             AlignmentRecordField.qual,
             AlignmentRecordField.firstOfPair,
-            AlignmentRecordField.secondOfPair
+            AlignmentRecordField.secondOfPair,
+            AlignmentRecordField.origQual
           )
         )
       else
@@ -78,6 +80,7 @@ class Adam2Fastq(val args: Adam2FastqArgs) extends BDGSparkCommand[Adam2FastqArg
     reads.adamSaveAsFastq(
       args.outputPath,
       Option(args.outputPath2),
+      outputOriginalBaseQualities = args.outputOriginalBaseQualities,
       validationStringency = args.validationStringency,
       persistLevel = Option(args.persistLevel).map(StorageLevel.fromString(_))
     )

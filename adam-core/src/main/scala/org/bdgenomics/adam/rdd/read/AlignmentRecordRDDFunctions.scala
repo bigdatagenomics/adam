@@ -386,6 +386,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    */
   def adamSaveAsPairedFastq(fileName1: String,
                             fileName2: String,
+                            outputOriginalBaseQualities: Boolean = false,
                             validationStringency: ValidationStringency = ValidationStringency.LENIENT,
                             persistLevel: Option[StorageLevel] = None): Unit = {
     def maybePersist[T](r: RDD[T]): Unit = {
@@ -469,12 +470,12 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     firstInPairRecords
       .sortBy(_.getReadName.toString)
-      .map(record => arc.convertToFastq(record, maybeAddSuffix = true))
+      .map(record => arc.convertToFastq(record, maybeAddSuffix = true, outputOriginalBaseQualities = outputOriginalBaseQualities))
       .saveAsTextFile(fileName1)
 
     secondInPairRecords
       .sortBy(_.getReadName.toString)
-      .map(record => arc.convertToFastq(record, maybeAddSuffix = true))
+      .map(record => arc.convertToFastq(record, maybeAddSuffix = true, outputOriginalBaseQualities = outputOriginalBaseQualities))
       .saveAsTextFile(fileName2)
 
     maybeUnpersist(firstInPairRecords)
@@ -485,11 +486,13 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * Saves reads in FASTQ format.
    *
    * @param fileName Path to save files at.
+   * @param outputOriginalBaseQualities Output the original base qualities (OQ) if available as opposed to those from BQSR
    * @param sort Whether to sort the FASTQ files by read name or not. Defaults
    *             to false. Sorting the output will recover pair order, if desired.
    */
   def adamSaveAsFastq(fileName: String,
                       fileName2Opt: Option[String] = None,
+                      outputOriginalBaseQualities: Boolean = false,
                       sort: Boolean = false,
                       validationStringency: ValidationStringency = ValidationStringency.LENIENT,
                       persistLevel: Option[StorageLevel] = None) {
@@ -499,6 +502,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         adamSaveAsPairedFastq(
           fileName,
           fileName2,
+          outputOriginalBaseQualities = outputOriginalBaseQualities,
           validationStringency = validationStringency,
           persistLevel = persistLevel
         )
@@ -514,7 +518,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
         // convert the rdd and save as a text file
         outputRdd
-          .map(record => arc.convertToFastq(record))
+          .map(record => arc.convertToFastq(record, outputOriginalBaseQualities = outputOriginalBaseQualities))
           .saveAsTextFile(fileName)
     }
   }
