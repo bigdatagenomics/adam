@@ -37,7 +37,8 @@ class AlignmentRecordConverter extends Serializable {
    * @return Returns this read in string form.
    */
   def convertToFastq(adamRecord: AlignmentRecord,
-                     maybeAddSuffix: Boolean = false): String = {
+                     maybeAddSuffix: Boolean = false,
+                     outputOriginalBaseQualities: Boolean = false): String = {
     val readNameSuffix =
       if (maybeAddSuffix &&
         !AlignmentRecordConverter.readNameHasPairedSuffix(adamRecord) &&
@@ -52,6 +53,12 @@ class AlignmentRecordConverter extends Serializable {
         ""
       }
 
+    val qualityScores =
+      if (outputOriginalBaseQualities && adamRecord.getOrigQual != null)
+        adamRecord.getOrigQual
+      else
+        adamRecord.getQual
+
     "@%s%s\n%s\n+\n%s".format(
       adamRecord.getReadName,
       readNameSuffix,
@@ -60,9 +67,9 @@ class AlignmentRecordConverter extends Serializable {
       else
         adamRecord.getSequence,
       if (adamRecord.getReadMapped && adamRecord.getReadNegativeStrand)
-        adamRecord.getQual.reverse
+        qualityScores.reverse
       else
-        adamRecord.getQual
+        qualityScores
     )
   }
 
