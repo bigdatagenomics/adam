@@ -209,6 +209,8 @@ class MdTagSuite extends FunSuite {
       assert(tag.isMatch(i))
 
     assert(tag.end === 108)
+    assert(tag.toString === "5^A2")
+    
   }
 
   test("CIGAR with multiple N operators") {
@@ -221,6 +223,7 @@ class MdTagSuite extends FunSuite {
       assert(tag.isMatch(i))
 
     assert(tag.end === 220)
+    assert(tag.toString === "20")
   }
   
   test("Get correct matches for MDTag with mismatches and deletions") {

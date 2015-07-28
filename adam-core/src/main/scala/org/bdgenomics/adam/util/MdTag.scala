@@ -537,7 +537,7 @@ class MdTag(
 
           // add deleted base
           mdString += deletions(i)
-        } else {
+        } else if (mismatches.contains(i)) {
           // write match count before mismatch
           if (lastWasMatch) {
             mdString += matchRun.toString
