@@ -19,28 +19,28 @@
 package htsjdk.samtools
 
 import htsjdk.samtools.util.BlockCompressedFilePointerUtil
+import java.io.File
 import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.JobContext
 import org.apache.hadoop.mapreduce.RecordReader
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.hadoop.mapreduce.TaskAttemptContext
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
-import org.seqdoop.hadoop_bam.BAMInputFormat
-import org.seqdoop.hadoop_bam.FileVirtualSplit
-import org.seqdoop.hadoop_bam.SAMRecordWritable
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.io.BAMFilteredRecordReader
-import org.apache.hadoop.io.LongWritable
-import java.io.File
+import org.seqdoop.hadoop_bam.BAMInputFormat
+import org.seqdoop.hadoop_bam.FileVirtualSplit
+import org.seqdoop.hadoop_bam.SAMRecordWritable
 import scala.collection.mutable
 
 object IndexedBamInputFormat {
 
-  var optFilePath: Option[Path] = None
-  var optIndexFilePath: Option[Path] = None
-  var optViewRegion: Option[ReferenceRegion] = None
-  var optDict: Option[SAMSequenceDictionary] = None
+  private var optFilePath: Option[Path] = None
+  private var optIndexFilePath: Option[Path] = None
+  private var optViewRegion: Option[ReferenceRegion] = None
+  private var optDict: Option[SAMSequenceDictionary] = None
 
   def apply(filePath: Path, indexFilePath: Path, viewRegion: ReferenceRegion, dict: SAMSequenceDictionary) {
     optFilePath = Some(filePath)
@@ -71,8 +71,11 @@ class IndexedBamInputFormat extends BAMInputFormat {
 
     val idxFile: File = new File(indexFilePath.toString)
     if (!idxFile.exists()) {
+      // If no index, get splits normally (probabilitically)
+      // Though we don't filter the splits, we only return records in a filtered ReferenceRegion (see BAMFilteredRecordReader)
       super.getSplits(job)
     } else {
+      // Use index to get the chunks for a specific region, then use them to create InputSplits
       val filePath = IndexedBamInputFormat.optFilePath.get
       val viewRegion = IndexedBamInputFormat.optViewRegion.get
       val refName = viewRegion.referenceName
@@ -81,10 +84,12 @@ class IndexedBamInputFormat extends BAMInputFormat {
       val end = viewRegion.end.toInt
       val dbbfi: DiskBasedBAMFileIndex = new DiskBasedBAMFileIndex(idxFile, dict)
       val referenceIndex: Int = dict.getSequenceIndex(refName)
-      var regions: List[Chunk] = dbbfi.getSpanOverlapping(referenceIndex, start, end).getChunks
+      // Get the chunks in the region we want (chunks give start and end file pointers into a BAM file)
+      var regions: List[Chunk] = dbbfi.getSpanOverlapping(referenceIndex, start, end).getChunks 
 
       var splits = new mutable.ListBuffer[FileVirtualSplit]()
-      for (chunk <- regions) {
+      for (chunk <- regions) { 
+        // Create InputSplits from chunks in a given region
         val start: Long = chunk.getChunkStart()
         val end: Long = chunk.getChunkEnd()
         val locs = Array[String]()

@@ -18,6 +18,11 @@
 
 package org.bdgenomics.adam.io
 
+import hbparquet.hadoop.util.ContextUtil
+import htsjdk.samtools.BAMRecordCodec
+import htsjdk.samtools.ValidationStringency
+import htsjdk.samtools.SAMRecord
+import htsjdk.samtools.util.BlockCompressedInputStream
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.FSDataInputStream
@@ -26,10 +31,6 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.hadoop.mapreduce.RecordReader
 import org.apache.hadoop.mapreduce.TaskAttemptContext
-import htsjdk.samtools.BAMRecordCodec
-import htsjdk.samtools.ValidationStringency
-import htsjdk.samtools.SAMRecord
-import htsjdk.samtools.util.BlockCompressedInputStream
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 import org.seqdoop.hadoop_bam.util.WrapSeekable
@@ -37,11 +38,10 @@ import org.seqdoop.hadoop_bam.SAMRecordWritable
 import org.seqdoop.hadoop_bam.BAMRecordReader
 import org.seqdoop.hadoop_bam.FileVirtualSplit
 import org.seqdoop.hadoop_bam.BAMInputFormat
-import hbparquet.hadoop.util.ContextUtil
 import scala.annotation.tailrec
 
 object BAMFilteredRecordReader {
-  var optViewRegion: Option[ReferenceRegion] = None
+  private var optViewRegion: Option[ReferenceRegion] = None
 
   def apply(viewRegion: ReferenceRegion) {
     optViewRegion = Some(viewRegion)
@@ -66,6 +66,7 @@ class BAMFilteredRecordReader extends BAMRecordReader {
   var isInitialized: Boolean = false
 
   override def initialize(spl: InputSplit, ctx: TaskAttemptContext) {
+    // Check to ensure this method is only be called once (see Hadoop API)
     if (isInitialized) {
       close()
     }
@@ -81,6 +82,7 @@ class BAMFilteredRecordReader extends BAMRecordReader {
 
     val in: FSDataInputStream = fs.open(file)
 
+    // Sets codec to translate between in-memory and disk representation of record
     codec = new BAMRecordCodec(SAMHeaderReader.readSAMHeaderFrom(in, conf))
 
     in.seek(0)
@@ -89,20 +91,16 @@ class BAMFilteredRecordReader extends BAMRecordReader {
       new WrapSeekable[FSDataInputStream](
         in, fs.getFileStatus(file).getLen(), file))
 
+    // Gets BGZF virtual offset for the split
     val virtualStart = split.getStartVirtualOffset()
 
     fileStart = virtualStart >>> 16
     virtualEnd = split.getEndVirtualOffset()
 
+    // Starts looking from the BGZF virtual offset
     bci.seek(virtualStart)
+    // Reads records from this input stream
     codec.setInputStream(bci)
-
-    if (BAMInputFormat.DEBUG_BAM_SPLITTER) {
-      val recordStart: Long = virtualStart & 0xffff
-      System.err.println("XXX inizialized BAMRecordReader byte offset: " +
-        fileStart + " record offset: " + recordStart)
-    }
-
   }
 
   override def close() = {
@@ -119,7 +117,9 @@ class BAMFilteredRecordReader extends BAMRecordReader {
 
   /**
    * This method gets the nextKeyValue for our RecordReader, but filters by only
-   * returning records within a specified ReferenceRegion
+   * returning records within a specified ReferenceRegion.
+   * This function is tale recursive to avoid stack overflow when predicate data
+   * can be sparse.
    */
   @tailrec final override def nextKeyValue(): Boolean = {
     if (bci.getFilePointer() >= virtualEnd) {
@@ -133,6 +133,8 @@ class BAMFilteredRecordReader extends BAMRecordReader {
         r.setValidationStringency(this.stringency)
       }
 
+      // This if/else block pushes the predicate down onto a BGZIP block that contains 
+      // data in our specified region.
       if (r == null) {
         false
       } else {
