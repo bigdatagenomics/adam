@@ -43,7 +43,7 @@ import scala.annotation.tailrec
 object BAMFilteredRecordReader {
   private var optViewRegion: Option[ReferenceRegion] = None
 
-  def apply(viewRegion: ReferenceRegion) {
+  def setRegion(viewRegion: ReferenceRegion) {
     optViewRegion = Some(viewRegion)
   }
 }
@@ -118,7 +118,7 @@ class BAMFilteredRecordReader extends BAMRecordReader {
   /**
    * This method gets the nextKeyValue for our RecordReader, but filters by only
    * returning records within a specified ReferenceRegion.
-   * This function is tale recursive to avoid stack overflow when predicate data
+   * This function is tail recursive to avoid stack overflow when predicate data
    * can be sparse.
    */
   @tailrec final override def nextKeyValue(): Boolean = {
@@ -133,8 +133,8 @@ class BAMFilteredRecordReader extends BAMRecordReader {
         r.setValidationStringency(this.stringency)
       }
 
-      // This if/else block pushes the predicate down onto a BGZIP block that contains 
-      // data in our specified region.
+      // This if/else block pushes the predicate down onto a BGZIP block that 
+      // the index has said contains data in our specified region.
       if (r == null) {
         false
       } else {

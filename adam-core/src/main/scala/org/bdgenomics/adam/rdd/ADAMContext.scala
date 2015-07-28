@@ -270,9 +270,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
   /**
    * Functions like loadBam, but uses bam index files to look at fewer blocks,
-   * and only returns records within a specified ReferenceRegion. If no bam index file
-   * exists, loadIndexedBam makes no use of indexing, but still returns records filtered
-   * by ReferenceRegion.
+   * and only returns records within a specified ReferenceRegion. Bam index file required.
    * @param filePath The path to the input data. Currently this path must correspond to
    *        a single Bam file. The bam index file associated needs to have the same name.
    * @param viewRegion The ReferenceRegion we are filtering on
@@ -308,7 +306,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       })
 
     val samDict = SAMHeaderReader.readSAMHeaderFrom(path, sc.hadoopConfiguration).getSequenceDictionary
-    val indexedbam = IndexedBamInputFormat(new Path(filePath),
+    IndexedBamInputFormat.setVars(new Path(filePath),
       new Path(filePath + ".bai"),
       viewRegion,
       samDict)
