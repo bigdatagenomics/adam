@@ -68,7 +68,7 @@ class DecadentRead(val record: RichAlignmentRecord) extends Logging {
   require(!record.getReadMapped || record.getStart >= 0, "Invalid alignment start index")
 
   // Sanity check on referencePositions
-  require(record.referencePositions.length == record.getSequence.length)
+  require(record.referencePositions.length == record.getSequence.length, s"Reference positions are not the same length as the sequence, ${record.referencePositions.length} != ${record.getSequence.length}")
 
   /**
    * In biochemistry and molecular biology, a "residue" refers to a specific

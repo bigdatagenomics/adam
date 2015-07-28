@@ -95,7 +95,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   // Returns the MdTag if the read is mapped, None otherwise
   lazy val mdTag: Option[MdTag] = {
     if (record.getReadMapped && record.getMismatchingPositions != null) {
-      Some(MdTag(record.getMismatchingPositions, record.getStart))
+      Some(MdTag(record.getMismatchingPositions, record.getStart, TextCigarCodec.decode(record.getCigar)))
     } else {
       None
     }
