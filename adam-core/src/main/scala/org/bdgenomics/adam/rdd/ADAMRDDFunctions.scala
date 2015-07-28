@@ -144,6 +144,6 @@ class ADAMSpecificRecordSequenceDictionaryRDDAggregator[T <% IndexedRecord: Mani
 }
 
 class InstrumentedADAMAvroParquetOutputFormat extends InstrumentedOutputFormat[Void, IndexedRecord] {
-  override def outputFormatClass(): Class[_ <: NewOutputFormat[Void, IndexedRecord]] = classOf[AvroParquetOutputFormat]
+  override def outputFormatClass(): Class[_ <: NewOutputFormat[Void, IndexedRecord]] = classOf[AvroParquetOutputFormat[IndexedRecord]]
   override def timerName(): String = WriteADAMRecord.timerName
 }
