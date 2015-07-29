@@ -89,7 +89,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   }
 
   lazy val samtoolsCigar: Cigar = {
-    TextCigarCodec.decode(record.getCigar.toString)
+    TextCigarCodec.decode(record.getCigar)
   }
 
   // Returns the MdTag if the read is mapped, None otherwise

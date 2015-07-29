@@ -226,6 +226,138 @@ class MdTagSuite extends FunSuite {
     assert(tag.toString === "20")
   }
 
+  test("Get correct matches for mdtag with insertion") {
+    val tag = MdTag("10", 0L, TextCigarCodec.decode("5M3I5M"))
+    assert(tag.end === 9)
+
+    (0 until 9).foreach(locus => assert(tag.isMatch(locus)))
+
+    assert(tag.toString === "10")
+  }
+
+  test("Get correct matches for mdtag with mismatches and insertion") {
+    val tag = MdTag("2A7", 0L, TextCigarCodec.decode("5M3I5M"))
+    assert(tag.end === 9)
+
+    assert(tag.isMatch(0))
+    assert(tag.isMatch(1))
+    assert(tag.mismatches(2) === 'A')
+    (3 until 9).foreach(locus => assert(tag.isMatch(locus)))
+
+    assert(tag.toString === "2A7")
+  }
+
+  test("Get correct matches for mdtag with insertion between mismatches") {
+    val tag = MdTag("2A4A2", 0L, TextCigarCodec.decode("5M3I5M"))
+    assert(tag.end === 9)
+
+    assert(tag.isMatch(0))
+    assert(tag.isMatch(1))
+    assert(tag.mismatches(2L) === 'A')
+
+    assert(tag.mismatches(7L) === 'A')
+    assert(tag.isMatch(8))
+    assert(tag.isMatch(9))
+
+    assert(tag.toString === "2A4A2")
+  }
+
+  test("Get correct matches for mdtag with intron between mismatches") {
+    val tag = MdTag("2A4A2", 0L, TextCigarCodec.decode("5M3N5M"))
+    assert(tag.end === 12)
+
+    assert(tag.isMatch(0))
+    assert(tag.isMatch(1))
+    assert(tag.mismatches(2L) === 'A')
+    assert(tag.isMatch(3))
+    assert(tag.isMatch(4))
+
+    assert(!tag.isMatch(5))
+    assert(!tag.isMatch(6))
+    assert(!tag.isMatch(7))
+
+    assert(tag.isMatch(8))
+    assert(tag.isMatch(9))
+
+    assert(tag.mismatches(10L) === 'A')
+    assert(tag.isMatch(11))
+    assert(tag.isMatch(12))
+
+    assert(tag.toString === "2A4A2")
+  }
+
+  test("Get correct matches for mdtag with intron and deletion between mismatches") {
+    val tag = MdTag("2A4A0^AAA2", 0L, TextCigarCodec.decode("5M3N3M3D2M"))
+    assert(tag.end === 15)
+
+    assert(tag.isMatch(0))
+    assert(tag.isMatch(1))
+    assert(tag.mismatches(2L) === 'A')
+    assert(tag.isMatch(3))
+    assert(tag.isMatch(4))
+
+    assert(!tag.isMatch(5))
+    assert(!tag.isMatch(6))
+    assert(!tag.isMatch(7))
+
+    assert(tag.isMatch(8))
+    assert(tag.isMatch(9))
+
+    assert(tag.mismatches(10L) === 'A')
+
+    assert(tag.deletions(11L) === 'A')
+    assert(tag.deletions(12L) === 'A')
+    assert(tag.deletions(13L) === 'A')
+
+    assert(tag.toString === "2A4A0^AAA2")
+  }
+
+  test("Throw exception when number of deleted bases in mdtag disagrees with CIGAR") {
+    intercept[IllegalArgumentException] {
+      MdTag("2A4A0^AAA2", 0L, TextCigarCodec.decode("5M3N3M4D2M"))
+    }
+  }
+
+  test("Get correct matches for mdtag with mismatch, insertion and deletion") {
+    val tag = MdTag("2A3^AAA4", 0L, TextCigarCodec.decode("5M3I1M3D4M"))
+    assert(tag.end === 12)
+
+    assert(tag.isMatch(0))
+    assert(tag.isMatch(1))
+    assert(tag.mismatches(2L) === 'A')
+
+    (3 to 5).foreach(locus => assert(tag.isMatch(locus)))
+
+    assert(tag.deletedBase(6L) === Some('A'))
+    assert(tag.deletedBase(7L) === Some('A'))
+    assert(tag.deletedBase(8L) === Some('A'))
+
+    (9 to 12).foreach(locus => assert(tag.isMatch(locus)))
+
+    assert(tag.toString === "2A3^AAA4")
+  }
+
+  test("Get correct matches for mdtag with mismatches, insertion and deletion") {
+    val tag = MdTag("2A3^AAA2A1", 0L, TextCigarCodec.decode("5M3I1M3D4M"))
+    assert(tag.end === 12)
+
+    assert(tag.isMatch(0))
+    assert(tag.isMatch(1))
+    assert(tag.mismatches(2L) === 'A')
+
+    (3 to 5).foreach(locus => assert(tag.isMatch(locus)))
+
+    assert(tag.deletedBase(6L) === Some('A'))
+    assert(tag.deletedBase(7L) === Some('A'))
+    assert(tag.deletedBase(8L) === Some('A'))
+
+    (9 to 10).foreach(locus => assert(tag.isMatch(locus)))
+
+    assert(tag.mismatches(11L) === 'A')
+
+    assert(tag.toString === "2A3^AAA2A1")
+  }
+
   test("Get correct matches for MDTag with mismatches and deletions") {
 
     val tag1 = MdTag("40A5^TTT54", 0L, TextCigarCodec.decode("46M3D54M"))
@@ -237,6 +369,7 @@ class MdTagSuite extends FunSuite {
     assert(tag1.isMatch(41) === true)
 
     assert(tag1.mismatchedBase(40) === Some('A'))
+    assert(tag1.toString === "40A5^TTT54")
 
     val tag2 = MdTag("40A5^TTT0G53", 0L, TextCigarCodec.decode("46M3D54M"))
     assert(tag2.hasMismatches === true)
@@ -249,6 +382,22 @@ class MdTagSuite extends FunSuite {
     assert(tag2.mismatchedBase(40) === Some('A'))
     assert(tag2.mismatchedBase(49) === Some('G'))
     assert(tag2.isMatch(50) === true)
+    assert(tag2.toString === "40A5^TTT0G53")
+
+    val tag3 = MdTag("2^GA5^TC6", 0L, TextCigarCodec.decode("2M2D1M2I2M4I2M2D6M"))
+    (0 to 1).foreach(l => assert(tag3.isMatch(l)))
+    (2 to 3).foreach(l => assert(!tag3.isMatch(l)))
+    (4 to 8).foreach(l => assert(tag3.isMatch(l)))
+    (9 to 10).foreach(l => assert(!tag3.isMatch(l)))
+    (11 to 16).foreach(l => assert(tag3.isMatch(l)))
+
+    assert(tag3.deletedBase(2) == Some('G'))
+    assert(tag3.deletedBase(3) == Some('A'))
+
+    assert(tag3.deletedBase(9) == Some('T'))
+    assert(tag3.deletedBase(10) == Some('C'))
+
+    assert(tag3.toString === "2^GA5^TC6")
   }
 
   test("Get correct matches base from MDTag and CIGAR with N") {
