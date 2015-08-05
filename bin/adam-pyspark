@@ -33,6 +33,10 @@ if [ -z "$SPARK_HOME" ]; then
 else
   PYSPARK="$SPARK_HOME"/bin/pyspark
 fi
+if [ -z "$PYSPARK" ]; then
+  echo "SPARK_HOME not set and pyspark not on PATH; Aborting."
+  exit 1
+fi
 echo "Using PYSPARK=$PYSPARK"
 
 # submit the job to Spark

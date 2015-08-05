@@ -30,6 +30,10 @@ if [ -z "$SPARK_HOME" ]; then
 else
   SPARK_SHELL="$SPARK_HOME"/bin/spark-shell
 fi
+if [ -z "$SPARK_SHELL" ]; then
+  echo "SPARK_HOME not set and spark-shell not on PATH; Aborting."
+  exit 1
+fi
 echo "Using SPARK_SHELL=$SPARK_SHELL"
 
 # submit the job to Spark

@@ -84,6 +84,10 @@ if [ -z "$SPARK_HOME" ]; then
 else
   SPARK_SUBMIT="$SPARK_HOME"/bin/spark-submit
 fi
+if [ -z "$SPARK_SUBMIT" ]; then
+  echo "SPARK_HOME not set and spark-submit not on PATH; Aborting."
+  exit 1
+fi
 echo "Using SPARK_SUBMIT=$SPARK_SUBMIT"
 
 # submit the job to Spark
