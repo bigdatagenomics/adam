@@ -54,7 +54,7 @@ SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 ADAM_JARS=$("$SCRIPT_DIR"/bin/compute-adam-jars.sh)
 
 # append ADAM_JARS to the --jars option, if any
-SPARK_ARGS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars "$ADAM_JARS" "$SPARK_ARGS")
+SPARK_ARGS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars $ADAM_JARS $SPARK_ARGS)
 
 # Assume we're in a binary distribution
 REPO_DIR="$SCRIPT_DIR/repo"
