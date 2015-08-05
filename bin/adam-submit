@@ -29,7 +29,7 @@ for ARG; do
     break
   fi
 done
-if [[ $DOUBLE_DASH == "False" -a $# -gt 0 ]]; then
+if [[ $DOUBLE_DASH == "False" && $# -gt 0 ]]; then
   echo "Failed to find '--' in argument list."
   echo "Usage: adam-submit <spark-args> -- <adam-args>"
   exit 1
