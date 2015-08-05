@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-# usage: adam-submit <spark-args> -- <adam-args>
+# usage: adam-submit [<spark-args> --] <adam-args>
 
 set -e
 

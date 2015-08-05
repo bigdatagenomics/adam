@@ -78,10 +78,10 @@ Choose one of the following commands:
 ```
 
 ADAM outputs all the commands that are available for you to run. To get
-help for a specific command, run `adam-submit -- <command>` without any additional arguments.
+help for a specific command, run `adam-submit <command>` without any additional arguments.
 
 ```bash
-$ adam-submit -- transform --help
+$ adam-submit transform --help
 ```
 Outputs:
 ```

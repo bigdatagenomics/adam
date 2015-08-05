@@ -77,7 +77,7 @@ object ADAMMain extends Logging {
                |  /  Y88b         888    |         /  Y88b           / Y88Y Y888b
                | /____Y88b        888   /         /____Y88b         /   YY   Y888b
                |/      Y88b       888_-~         /      Y88b       /          Y888b""".stripMargin('|'))
-    println("\nUsage: adam-submit <spark-args> -- <adam-args>")
+    println("\nUsage: adam-submit [<spark-args> --] <adam-args>")
     println("\nChoose one of the following commands:")
     commandGroups.foreach { grp =>
       println("\n%s".format(grp.name))

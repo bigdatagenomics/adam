@@ -57,7 +57,7 @@ Executing this Spark job will output the following:
 You don't need to be Scala developer to use ADAM. You could also run the following ADAM CLI command for the same result:
 
 ```bash
-$ adam-submit -- count_kmers \
+$ adam-submit count_kmers \
        /data/NA21144.chrom11.ILLUMINA.adam \
        /data/results.txt 21
 ```
@@ -274,10 +274,10 @@ Choose one of the following commands:
 ```
 
 ADAM outputs all the commands that are available for you to run. To get
-help for a specific command, run `adam-submit -- <command>` without any additional arguments.
+help for a specific command, run `adam-submit <command>` without any additional arguments.
 
 ````
-$ adam-submit -- transform
+$ adam-submit transform
 Argument "INPUT" is required
  INPUT                                                           : The ADAM, BAM or SAM file to apply the transforms to
  OUTPUT                                                          : Location to write the transformed data in ADAM/Parquet format
@@ -321,7 +321,7 @@ Argument "INPUT" is required
 If you followed along above, now try making your first `.adam` file like this:
 
 ````
-adam-submit -- transform $ADAM_HOME/adam-core/src/test/resources/small.sam /tmp/small.adam
+adam-submit transform $ADAM_HOME/adam-core/src/test/resources/small.sam /tmp/small.adam
 ````
 
 ... and if you didn't obtain your copy of adam from github, you can [grab `small.sam` from here](https://raw.githubusercontent.com/bigdatagenomics/adam/master/adam-core/src/test/resources/small.sam).
@@ -335,7 +335,7 @@ This command will output stats identically to the samtools `flagstat` command.
 If you followed along above, now try gathering some statistics:
 
 ````
-$ adam-submit -- flagstat /tmp/small.adam
+$ adam-submit flagstat /tmp/small.adam
 20 + 0 in total (QC-passed reads + QC-failed reads)
 0 + 0 primary duplicates
 0 + 0 primary duplicates - both read and mate mapped
@@ -369,7 +369,7 @@ You can also use ADAM to count all K-mers present across all reads in the
 `.adam` file using `count_kmers`.  Try this:
 
 ````
-$ adam-submit -- count_kmers /tmp/small.adam /tmp/kmers.adam 10
+$ adam-submit count_kmers /tmp/small.adam /tmp/kmers.adam 10
 $ head /tmp/kmers.adam/part-*
 TTTTAAGGTT, 1
 TTCCGATTTT, 1
