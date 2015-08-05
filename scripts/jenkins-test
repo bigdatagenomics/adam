@@ -47,16 +47,16 @@ rm -rf "$BAM"
 wget -q https://s3.amazonaws.com/bdgenomics-test/"$BAM"
 echo "Converting BAM to ADAM read format"
 rm -rf "$READS"
-"$ADAM" transform "$BAM" "$READS"
+"$ADAM" --  transform "$BAM" "$READS"
 echo "Converting BAM to ADAM read format with sorting"
 rm -rf "$SORTED_READS"
-"$ADAM" transform -sort_reads "$READS" "$SORTED_READS"
+"$ADAM" -- transform -sort_reads "$READS" "$SORTED_READS"
 echo "Converting read file to pileup format"
 rm -rf "$PILEUPS"
-"$ADAM" reads2ref "$READS" "$PILEUPS"
+"$ADAM" -- reads2ref "$READS" "$PILEUPS"
 echo "Reading reads"
-"$ADAM" print "$READS" 1>/dev/null 2>/dev/null
-"$ADAM" flagstat "$READS"
+"$ADAM" -- print "$READS" 1>/dev/null 2>/dev/null
+"$ADAM" -- flagstat "$READS"
 rm -rf "$ADAM_TMP_DIR"
 popd
 

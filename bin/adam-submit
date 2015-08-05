@@ -19,6 +19,34 @@
 
 # usage: adam-submit <spark-args> -- <adam-args>
 
+set -e
+
+# Validate that args are split by "--" into Spark and ADAM args
+DOUBLE_DASH="False"
+for ARG; do
+  if [[ $ARG == "--" ]]; then
+    DOUBLE_DASH="True"
+    break
+  fi
+done
+if [[ $DOUBLE_DASH == "False" -a $# -gt 0 ]]; then
+  echo "Failed to find '--' in argument list."
+  echo "Usage: adam-submit <spark-args> -- <adam-args>"
+  exit 1
+fi
+
+# Split Spark args from the ADAM args
+SPARK_ARGS=()
+for ARG in "$@"; do
+  shift
+  if [[ $ARG == "--" ]]; then
+    ADAM_ARGS="$@"
+    break
+  fi
+  SPARK_ARGS+=("$ARG")
+done
+SPARK_ARGS="${SPARK_ARGS[@]}"
+
 # Figure out where ADAM is installed
 SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
@@ -26,7 +54,7 @@ SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 ADAM_JARS=$("$SCRIPT_DIR"/bin/compute-adam-jars.sh)
 
 # append ADAM_JARS to the --jars option, if any
-NEW_OPTIONS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
+SPARK_ARGS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars "$ADAM_JARS" "$SPARK_ARGS")
 
 # Assume we're in a binary distribution
 REPO_DIR="$SCRIPT_DIR/repo"
@@ -62,9 +90,6 @@ else
   SPARK_SUBMIT="$SPARK_HOME"/bin/spark-submit
 fi
 
-# Split args into Spark args and ADAM args
-SPARK_ARGS=${NEW_OPTIONS%% -- *}
-ADAM_ARGS=${NEW_OPTIONS##* -- }
 
 # submit the job to Spark
 "$SPARK_SUBMIT" \

@@ -4,7 +4,7 @@ Once you have data converted to ADAM, you can gather statistics from the ADAM fi
 This command will output stats identically to the samtools `flagstat` command, e.g.
 
 ```bash
-$ adam-submit flagstat NA12878_chr20.adam
+$ adam-submit -- flagstat NA12878_chr20.adam
 ```
 Outputs:
 ```
