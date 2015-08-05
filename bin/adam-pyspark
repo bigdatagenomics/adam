@@ -29,15 +29,14 @@ NEW_OPTIONS=$("$ADAM_REPO"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
 NEW_OPTIONS=$("$ADAM_REPO"/bin/append_to_option.py ":" --driver-class-path "$CLASSPATH" "$NEW_OPTIONS")
 
 if [ -z "$SPARK_HOME" ]; then
-  echo "Attempting to use 'pyspark' on default path; you might need to set SPARK_HOME"
-  echo ""
-  SPARK_SHELL=pyspark
+  PYSPARK=$(which pyspark)
 else
-  SPARK_SHELL="$SPARK_HOME"/bin/pyspark
+  PYSPARK="$SPARK_HOME"/bin/pyspark
 fi
+echo "Using PYSPARK=$PYSPARK"
 
 # submit the job to Spark
-"$SPARK_SHELL" \
+"$PYSPARK" \
   --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
   --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
   $NEW_OPTIONS

@@ -80,12 +80,11 @@ ADAM_CLI_JAR=$(ls $CLI_DIR/*/adam-cli_2.1[01]-*.jar)
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then
-  echo "SPARK_HOME must be set for 'adam-submit'"
-  exit 1
+  SPARK_SUBMIT=$(which spark-submit)
 else
   SPARK_SUBMIT="$SPARK_HOME"/bin/spark-submit
 fi
-
+echo "Using SPARK_SUBMIT=$SPARK_SUBMIT"
 
 # submit the job to Spark
 "$SPARK_SUBMIT" \

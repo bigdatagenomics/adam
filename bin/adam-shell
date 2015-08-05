@@ -26,12 +26,11 @@ ADAM_JARS=$("$ADAM_REPO"/bin/compute-adam-jars.sh)
 NEW_OPTIONS=$("$ADAM_REPO"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
 
 if [ -z "$SPARK_HOME" ]; then
-  echo "Attempting to use 'spark-shell' on default path; you might need to set SPARK_HOME"
-  echo ""
-  SPARK_SHELL=spark-shell
+  SPARK_SHELL=$(which spark-shell)
 else
   SPARK_SHELL="$SPARK_HOME"/bin/spark-shell
 fi
+echo "Using SPARK_SHELL=$SPARK_SHELL"
 
 # submit the job to Spark
 "$SPARK_SHELL" \
