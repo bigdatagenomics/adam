@@ -17,28 +17,50 @@
 # limitations under the License.
 #
 
+# usage: adam-submit [<spark-args> --] <adam-args>
+
+set -e
+
+# Split args into Spark and ADAM args
+DD=False  # DD is "double dash"
+PRE_DD=()
+POST_DD=()
+for ARG in "$@"; do
+  shift
+  if [[ $ARG == "--" ]]; then
+    DD=True
+    POST_DD=( "$@" )
+    break
+  fi
+  PRE_DD+=("$ARG")
+done
+
+if [[ $DD == True ]]; then
+  SPARK_ARGS="${PRE_DD[@]}"
+  ADAM_ARGS="${POST_DD[@]}"
+else
+  SPARK_ARGS=()
+  ADAM_ARGS="${PRE_DD[@]}"
+fi
+
 # Figure out where ADAM is installed
 SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
 # Get list of required jars for ADAM
 ADAM_JARS=$("$SCRIPT_DIR"/bin/compute-adam-jars.sh)
 
-if [ ! -z "$ADDL_JARS" ]; then
-  ADAM_JARS="$ADAM_JARS","$ADDL_JARS"
-fi
-
 # append ADAM_JARS to the --jars option, if any
-NEW_OPTIONS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
+SPARK_ARGS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars $ADAM_JARS $SPARK_ARGS)
 
-# Binary distribution
+# Assume we're in a binary distribution
 REPO_DIR="$SCRIPT_DIR/repo"
 if [ ! -d "$REPO_DIR" ]; then
-# Fallback to source directory
-REPO_DIR="$SCRIPT_DIR/adam-cli/target/appassembler/repo/"
+  # Fallback to source directory
+  REPO_DIR="$SCRIPT_DIR/adam-cli/target/appassembler/repo"
 fi
 
 # Find the ADAM CLI jar
-ADAM_DIR="$REPO_DIR/org/bdgenomics/adam/"
+ADAM_DIR="$REPO_DIR/org/bdgenomics/adam"
 num_versions=$(ls ${ADAM_DIR} | grep cli | wc -l)
 if [ "$num_versions" -eq "0" ]; then
   echo "Failed to find adam-cli jar in $ADAM_DIR"
@@ -58,36 +80,21 @@ ADAM_CLI_JAR=$(ls $CLI_DIR/*/adam-cli_2.1[01]-*.jar)
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then
-  echo "SPARK_HOME must be set for 'adam-submit'"
-  exit 1
+  SPARK_SUBMIT=$(which spark-submit)
 else
   SPARK_SUBMIT="$SPARK_HOME"/bin/spark-submit
 fi
-
-# Split args into Spark args and ADAM args
-# NOTE: if Spark uses gatherSparkSubmitOpts in spark-submit, this is unnecessary
-function usage() {
-  echo "adam-submit <spark-args> <adam-args>"
-  exit 0
-}
-if [ -f "$SPARK_HOME"/libexec/bin/utils.sh ]; then
-  source "$SPARK_HOME"/libexec/bin/utils.sh
-else
-  source "$SPARK_HOME"/bin/utils.sh
+if [ -z "$SPARK_SUBMIT" ]; then
+  echo "SPARK_HOME not set and spark-submit not on PATH; Aborting."
+  exit 1
 fi
-SUBMIT_USAGE_FUNCTION=usage
-gatherSparkSubmitOpts $NEW_OPTIONS
+echo "Using SPARK_SUBMIT=$SPARK_SUBMIT"
 
 # submit the job to Spark
 "$SPARK_SUBMIT" \
   --class org.bdgenomics.adam.cli.ADAMMain \
   --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
   --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
-  --conf spark.kryoserializer.buffer.mb=4 \
-  --conf spark.kryo.referenceTracking=true \
-  ${ADAM_OPTS:- } \
-  --conf spark.executor.memory=${ADAM_EXECUTOR_MEMORY:-"4g"} \
-  --driver-memory ${ADAM_DRIVER_MEMORY:-"4g"} \
-  "${SUBMISSION_OPTS[@]}" \
-  "$ADAM_CLI_JAR" \
-  "${APPLICATION_OPTS[@]}"
+  $SPARK_ARGS \
+  $ADAM_CLI_JAR \
+  $ADAM_ARGS

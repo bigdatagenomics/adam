@@ -22,28 +22,22 @@ ADAM_REPO="$(cd `dirname $0`/..; pwd)"
 
 ADAM_JARS=$("$ADAM_REPO"/bin/compute-adam-jars.sh)
 
-if [ ! -z "$ADDL_JARS" ]; then
-  ADAM_JARS="$ADAM_JARS","$ADDL_JARS"
-fi
-
 # append ADAM_JARS to the --jars option, if any
 NEW_OPTIONS=$("$ADAM_REPO"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
 
 if [ -z "$SPARK_HOME" ]; then
-  echo "Attempting to use 'spark-shell' on default path; you might need to set SPARK_HOME"
-  echo ""
-  SPARK_SHELL=spark-shell
+  SPARK_SHELL=$(which spark-shell)
 else
   SPARK_SHELL="$SPARK_HOME"/bin/spark-shell
 fi
+if [ -z "$SPARK_SHELL" ]; then
+  echo "SPARK_HOME not set and spark-shell not on PATH; Aborting."
+  exit 1
+fi
+echo "Using SPARK_SHELL=$SPARK_SHELL"
 
 # submit the job to Spark
 "$SPARK_SHELL" \
   --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
   --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
-  --conf spark.kryoserializer.buffer.mb=4 \
-  --conf spark.kryo.referenceTracking=true \
-  ${ADAM_OPTS:- } \
-  --conf spark.executor.memory=${ADAM_EXECUTOR_MEMORY:-"4g"} \
-  --driver-memory ${ADAM_DRIVER_MEMORY:-"4g"} \
   $NEW_OPTIONS

@@ -23,27 +23,24 @@ ADAM_REPO="$(cd `dirname $0`/..; pwd)"
 CLASSPATH=$("$ADAM_REPO"/bin/compute-adam-classpath.sh)
 ADAM_JARS=$("$ADAM_REPO"/bin/compute-adam-jars.sh)
 
-if [ ! -z "$ADDL_JARS" ]; then
-  ADAM_JARS="$ADAM_JARS","$ADDL_JARS"
-fi
-
 # append ADAM_JARS to the --jars option, if any
 NEW_OPTIONS=$("$ADAM_REPO"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
 # append CLASSPATH to the --driver-class-path
 NEW_OPTIONS=$("$ADAM_REPO"/bin/append_to_option.py ":" --driver-class-path "$CLASSPATH" "$NEW_OPTIONS")
 
 if [ -z "$SPARK_HOME" ]; then
-  echo "Attempting to use 'pyspark' on default path; you might need to set SPARK_HOME"
-  echo ""
-  SPARK_SHELL=pyspark
+  PYSPARK=$(which pyspark)
 else
-  SPARK_SHELL="$SPARK_HOME"/bin/pyspark
+  PYSPARK="$SPARK_HOME"/bin/pyspark
 fi
+if [ -z "$PYSPARK" ]; then
+  echo "SPARK_HOME not set and pyspark not on PATH; Aborting."
+  exit 1
+fi
+echo "Using PYSPARK=$PYSPARK"
 
 # submit the job to Spark
-"$SPARK_SHELL" \
+"$PYSPARK" \
   --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
   --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
-  --conf spark.kryoserializer.buffer.mb=4 \
-  --conf spark.kryo.referenceTracking=true \
   $NEW_OPTIONS
