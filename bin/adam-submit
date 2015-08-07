@@ -48,35 +48,11 @@ SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
 # Get list of required jars for ADAM
 ADAM_JARS=$("$SCRIPT_DIR"/bin/compute-adam-jars.sh)
+ADAM_CLI_JAR=${ADAM_JARS##*,}
+ADAM_JARS=$(echo "$ADAM_JARS" | rev | cut -d',' -f2- | rev)
 
 # append ADAM_JARS to the --jars option, if any
 SPARK_ARGS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars $ADAM_JARS $SPARK_ARGS)
-
-# Assume we're in a binary distribution
-REPO_DIR="$SCRIPT_DIR/repo"
-if [ ! -d "$REPO_DIR" ]; then
-  # Fallback to source directory
-  REPO_DIR="$SCRIPT_DIR/adam-cli/target/appassembler/repo"
-fi
-
-# Find the ADAM CLI jar
-ADAM_DIR="$REPO_DIR/org/bdgenomics/adam"
-num_versions=$(ls ${ADAM_DIR} | grep cli | wc -l)
-if [ "$num_versions" -eq "0" ]; then
-  echo "Failed to find adam-cli jar in $ADAM_DIR"
-  echo "You need to build ADAM before running this program."
-  exit 1
-fi
-if [ "$num_versions" -gt "1" ]; then
-  versions_list=$(ls "$ADAM_DIR" | grep cli)
-  echo "Found multiple ADAM CLI versions in $ADAM_DIR:"
-  echo "$versions_list"
-  echo "Please remove all but one."
-  exit 1
-fi
-CLI=$(ls "$ADAM_DIR" | grep cli)
-CLI_DIR="${ADAM_DIR}/${CLI}"
-ADAM_CLI_JAR=$(ls $CLI_DIR/*/adam-cli_2.1[01]-*.jar)
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then
