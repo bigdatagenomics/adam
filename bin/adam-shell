@@ -22,6 +22,12 @@ ADAM_REPO="$(cd `dirname $0`/..; pwd)"
 
 ADAM_JARS=$("$ADAM_REPO"/bin/compute-adam-jars.sh)
 
+# does the user have ADAM_OPTS set? if yes, then warn
+if [[ -z $@ && -n "$ADAM_OPTS" ]]; then
+    echo "WARNING: Passing Spark arguments via ADAM_OPTS was recently removed."
+    echo "Run adam-shell instead as adam-shell <spark-args>"
+fi
+
 # append ADAM_JARS to the --jars option, if any
 NEW_OPTIONS=$("$ADAM_REPO"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
 

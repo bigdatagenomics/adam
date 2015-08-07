@@ -43,6 +43,12 @@ else
   ADAM_ARGS="${PRE_DD[@]}"
 fi
 
+# does the user have ADAM_OPTS set? if yes, then warn
+if [[ $DD == False && -n "$ADAM_OPTS" ]]; then
+    echo "WARNING: Passing Spark arguments via ADAM_OPTS was recently removed."
+    echo "Run adam-submit instead as adam-submit <spark-args> -- <adam-args>"
+fi
+
 # Figure out where ADAM is installed
 SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
