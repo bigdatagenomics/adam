@@ -24,8 +24,9 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.Variant
+import scala.transient
 
-class ConsensusGeneratorFromKnowns(file: String, sc: SparkContext) extends ConsensusGenerator {
+class ConsensusGeneratorFromKnowns(file: String, @transient sc: SparkContext) extends ConsensusGenerator {
 
   val indelTable = sc.broadcast(IndelTable(file, sc))
 
