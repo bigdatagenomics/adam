@@ -3,16 +3,15 @@ ADAM
 
 # Introduction
 
-* Follow our Twitter account at [https://twitter.com/bigdatagenomics/](https://twitter.com/bigdatagenomics/)
-* Chat with ADAM developers at [https://gitter.im/bigdatagenomics/adam](https://gitter.im/bigdatagenomics/adam)
-* Join our mailing list at [http://bdgenomics.org/mail](http://bdgenomics.org/mail)
-* Checkout the current build status at [https://amplab.cs.berkeley.edu/jenkins/](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/)
-* Download official releases at [https://github.com/bigdatagenomics/adam/releases](https://github.com/bigdatagenomics/adam/releases)
-* View our software artifacts on Maven Central at [http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics)
-* See our snapshots at [https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)
-* Look at our CHANGES file at [https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md)
+ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.incubator.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed. Some quick links: 
 
-ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.incubator.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.  
+* [Follow our Twitter account](https://twitter.com/bigdatagenomics/).
+* [Chat with ADAM developers in Gitter](https://gitter.im/bigdatagenomics/adam).
+* [Join our mailing list](http://bdgenomics.org/mail).
+* [Checkout the current build status](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/).
+* [Download official releases](https://github.com/bigdatagenomics/adam/releases).
+* [View our software artifacts on Maven Central](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) ([…including snapshots](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)).
+* [Look at our CHANGES file](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md).
 
 ## Apache Spark
 
@@ -95,9 +94,9 @@ just as easily use this Avro IDL description as the basis for a Python project. 
 
 ADAM does much more than just k-mer counting. Running the ADAM CLI without arguments or with `--help` will display available commands, e.g.
 
-$ adam
-
 ```
+$ bin/adam-submit  # from the root of a binary distribution or clone of this repository
+
      e            888~-_              e                 e    e
     d8b           888   \            d8b               d8b  d8b
    /Y88b          888    |          /Y88b             d888bdY88b
@@ -123,7 +122,6 @@ CONVERSION OPERATIONS
             adam2vcf : Convert an ADAM variant to the VCF ADAM format
           fasta2adam : Converts a text FASTA sequence file into an ADAMNucleotideContig Parquet file which represents assembled sequences.
            reads2ref : Convert an ADAM read-oriented file to an ADAM reference-oriented file
-             mpileup : Output the samtool mpileup text from ADAM reference-oriented data
        features2adam : Convert a file with sequence features into corresponding ADAM format
           wigfix2bed : Locally convert a wigFix file to BED format
 
@@ -143,7 +141,7 @@ PRINT
 You can learn more about a command, by calling it without arguments or with `--help`, e.g.
 
 ```
-$ adam transform
+$ bin/adam-submit transform
 Argument "INPUT" is required
  INPUT                                                           : The ADAM, BAM or SAM file to apply the transforms to
  OUTPUT                                                          : Location to write the transformed data in ADAM/Parquet format
@@ -237,14 +235,14 @@ alias adam-submit="${ADAM_HOME}/bin/adam-submit"
 alias adam-shell="${ADAM_HOME}/bin/adam-shell"
 ```
 
-`$ADAM_HOME` should be the path to where you have checked ADAM out on your local filesystem. 
-The first alias should be used for running ADAM jobs that operate locally. The latter two aliases 
-call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You'll need
-to have the Spark binaries on your system; prebuilt binaries can be downloaded from the
-[Spark website](http://spark.apache.org/downloads.html). Currently, we build for
-[Spark 1.1, and Hadoop 2.3 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz).
+`$ADAM_HOME` should be the path to a [binary release](https://github.com/bigdatagenomics/adam/releases) or a clone of this repository on your local filesystem. 
 
-Once this alias is in place, you can run adam by simply typing `adam-submit` at the commandline, e.g.
+These aliases call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You'll need
+to have the Spark binaries on your system and the `$SPARK_HOME` environment variable pointing to them; prebuilt binaries can be downloaded from the
+[Spark website](http://spark.apache.org/downloads.html). Currently, our continuous builds use
+[Spark 1.1.0 built against Hadoop 2.3 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz), but more recent Spark distributions should also work.
+
+Once these aliases are in place, you can run adam by simply typing `adam-submit` at the commandline, e.g.
 
 ```
 $ adam-submit
@@ -261,7 +259,6 @@ Choose one of the following commands:
            transform : Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations
             flagstat : Print statistics on reads in an ADAM file (similar to samtools flagstat)
            reads2ref : Convert an ADAM read-oriented file to an ADAM reference-oriented file
-             mpileup : Output the samtool mpileup text from ADAM reference-oriented data
                print : Print an ADAM formatted file
    aggregate_pileups : Aggregate pileups in an ADAM reference-oriented file
             listdict : Print the contents of an ADAM sequence dictionary
@@ -389,8 +386,8 @@ value is the number of times that K-mer occurred in the input file.
 
 # Running on a cluster
 
-We provide the `adam-submit` and `adam-shell` commands under the `bin` directory. These can
-be used to submit ADAM jobs to a spark cluster, or to run ADAM interactively.
+The `adam-submit` and `adam-shell` commands can also
+be used to submit ADAM jobs to a Spark cluster, or to run ADAM interactively.
 
 ## Running Plugins
 
