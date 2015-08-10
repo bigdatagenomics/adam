@@ -13,7 +13,7 @@ ADAM is a genomics analysis platform with specialized file formats built using [
 * [View our software artifacts on Maven Central](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) ([…including snapshots](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)).
 * [Look at our CHANGES file](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md).
 
-# <span name="kmer-counting">Hello World: Counting K-mers</span>
+## Hello World: Counting K-mers
 
 Here's an example ADAM CLI command that will count 10-mers in [a test `.sam` file that lives in this repository](https://github.com/bigdatagenomics/adam/blob/master/adam-core/src/test/resources/small.sam):
 
@@ -32,7 +32,7 @@ $ head /tmp/kmers.adam/part-*
 (CTGTCCCTGT,1)
 ```
 
-## <span name="examples">More than K-mer Counting</span>
+## More than K-mer Counting
 
 ADAM does much more than just k-mer counting. Running the ADAM CLI without arguments or with `--help` will display available commands, e.g.
 
@@ -49,21 +49,19 @@ $ adam-submit
 Choose one of the following commands:
 
 ADAM ACTIONS
-             compare : Compare two ADAM files based on read name
-           findreads : Find reads that match particular individual or comparative criteria
                depth : Calculate the depth from a given ADAM file, at each variant in a VCF
          count_kmers : Counts the k-mers/q-mers from a read dataset.
+  count_contig_kmers : Counts the k-mers/q-mers from a read dataset.
            transform : Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations
           adam2fastq : Convert BAM to FASTQ files
               plugin : Executes an ADAMPlugin
+             flatten : Convert a ADAM format file to a version with a flattened schema, suitable for querying with tools like Impala
 
 CONVERSION OPERATIONS
-            bam2adam : Single-node BAM to ADAM converter (Note: the 'transform' command can take SAM or BAM as input)
             vcf2adam : Convert a VCF file to the corresponding ADAM format
            anno2adam : Convert a annotation file (in VCF format) to the corresponding ADAM format
             adam2vcf : Convert an ADAM variant to the VCF ADAM format
           fasta2adam : Converts a text FASTA sequence file into an ADAMNucleotideContig Parquet file which represents assembled sequences.
-           reads2ref : Convert an ADAM read-oriented file to an ADAM reference-oriented file
        features2adam : Convert a file with sequence features into corresponding ADAM format
           wigfix2bed : Locally convert a wigFix file to BED format
 
@@ -71,13 +69,12 @@ PRINT
                print : Print an ADAM formatted file
          print_genes : Load a GTF file containing gene annotations and print the corresponding gene models
             flagstat : Print statistics on reads in an ADAM file (similar to samtools flagstat)
-                 viz : Generates images from sections of the genome
           print_tags : Prints the values and counts of all tags in a set of records
             listdict : Print the contents of an ADAM sequence dictionary
- summarize_genotypes : Print statistics of genotypes and variants in an ADAM file
          allelecount : Calculate Allele frequencies
            buildinfo : Display build information (use this for bug reports)
                 view : View certain reads from an alignment-record file.
+
 ```
 
 You can learn more about a command, by calling it without arguments or with `--help`, e.g.
@@ -89,6 +86,10 @@ Argument "INPUT" is required
  OUTPUT                                                          : Location to write the transformed data in ADAM/Parquet format
  -coalesce N                                                     : Set the number of partitions written to the ADAM output directory
  -dump_observations VAL                                          : Local path to dump BQSR observations to. Outputs CSV format.
+ -force_load_bam                                                 : Forces Transform to load from BAM/SAM.
+ -force_load_fastq                                               : Forces Transform to load from unpaired FASTQ.
+ -force_load_ifastq                                              : Forces Transform to load from interleaved FASTQ.
+ -force_load_parquet                                             : Forces Transform to load from Parquet.
  -h (-help, --help, -?)                                          : Print help
  -known_indels VAL                                               : VCF file including locations of known INDELs. If none is provided, default
                                                                    consensus model will be used.
@@ -106,36 +107,15 @@ Argument "INPUT" is required
  -parquet_logging_level VAL                                      : Parquet logging level (default = severe)
  -parquet_page_size N                                            : Parquet page size (default = 1mb)
  -print_metrics                                                  : Print metrics to the log on completion
- -qualityBasedTrim                                               : Trims reads based on quality scores of prefix/suffixes across read group.
- -qualityThreshold N                                             : Phred scaled quality threshold used for trimming. If omitted, Phred 20 is used.
  -realign_indels                                                 : Locally realign indels present in reads.
  -recalibrate_base_qualities                                     : Recalibrate the base quality scores (ILLUMINA only)
  -repartition N                                                  : Set the number of partitions to map data to
  -sort_fastq_output                                              : Sets whether to sort the FASTQ output, if saving as FASTQ. False by default.
                                                                    Ignored if not saving as FASTQ.
  -sort_reads                                                     : Sort the reads by referenceId and read position
- -trimBeforeBQSR                                                 : Performs quality based trim before running BQSR. Default is to run quality based
-                                                                   trim after BQSR.
- -trimFromEnd N                                                  : Trim to be applied to end of read.
- -trimFromStart N                                                : Trim to be applied to start of read.
- -trimReadGroup VAL                                              : Read group to be trimmed. If omitted, all reads are trimmed.
- -trimReads                                                      : Apply a fixed trim to the prefix and suffix of all reads/reads in a specific read
-                                                                   group.
-```
+ ```
 
 The ADAM `transform` command allows you to mark duplicates, run base quality score recalibration (BQSR) and other pre-processing steps on your data.
-
-There are also a number of projects built on ADAM, e.g.
-
-- [RNAdam](https://github.com/bigdatagenomics/RNAdam) provides an RNA pipeline on top of ADAM with isoform quantification and fusion transcription detection
-- [Avocado](https://github.com/bigdatagenomics/avocado) is a variant caller built on top of ADAM for germline and somatic calling
-- [PacMin](https://github.com/bigdatagenomics/PacMin) is an assembler for PacBio reads
-- A `Mutect` port is nearly feature complete
-- Read error correction
-- a graphing and genome visualization library
-- [BDG-Services](https://github.com/bigdatagenomics/bdg-services) is a library for accessing a running Spark cluster through web-services or a [Thrift](https://thrift.apache.org/)- interface
-- [Short read assembly](http://www.github.com/fnothaft/xASSEMBLEx)
-- Variant filtration (train model via `MLlib`)
 
 # Getting Started
 
@@ -188,7 +168,7 @@ alias adam-shell="${ADAM_HOME}/bin/adam-shell"
 
 `$ADAM_HOME` should be the path to a [binary release][releases] or a clone of this repository on your local filesystem. 
 
-These aliases call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM.Once they are in place, you can run adam by simply typing `adam-submit` at the command line, [as demonstrated above](./#examples).
+These aliases call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM.Once they are in place, you can run adam by simply typing `adam-submit` at the command line, [as demonstrated above](./README.md#more-than-k-mer-counting).
 
 ## Running ADAM
 
@@ -244,7 +224,7 @@ projected schema that only materializes the read flags instead of the whole read
 
 The `adam-shell` command opens an interpreter that you can run ad-hoc ADAM commands in.
 
-For example, the following code snippet will generate a result similar to [the k-mer-counting example above](./#kmer-counting), but with the k-mers sorted in descending order of their number of occurrences:
+For example, the following code snippet will generate a result similar to [the k-mer-counting example above](./README.md#hello-world-counting-k-mers), but with the k-mers sorted in descending order of their number of occurrences:
 
 ```scala
 $ adam-shell
@@ -340,6 +320,20 @@ TACTGAA | true | 30 | ~~chrom1~~ | ~~34232~~ | ...
 
 Our Avro schemas are directly converted into source code using Avro tools. Avro supports a number of computer languages. ADAM uses Java; you could 
 just as easily use this Avro IDL description as the basis for a Python project. Avro currently supports c, c++, csharp, java, javascript, php, python and ruby. 
+
+# Downstream Applications
+
+There are a number of projects built on ADAM, e.g.
+
+- [RNAdam](https://github.com/bigdatagenomics/RNAdam) provides an RNA pipeline on top of ADAM with isoform quantification and fusion transcription detection
+- [Avocado](https://github.com/bigdatagenomics/avocado) is a variant caller built on top of ADAM for germline and somatic calling
+- [PacMin](https://github.com/bigdatagenomics/PacMin) is an assembler for PacBio reads
+- A `Mutect` port is nearly feature complete
+- Read error correction
+- a graphing and genome visualization library
+- [BDG-Services](https://github.com/bigdatagenomics/bdg-services) is a library for accessing a running Spark cluster through web-services or a [Thrift](https://thrift.apache.org/)- interface
+- [Short read assembly](http://www.github.com/fnothaft/xASSEMBLEx)
+- Variant filtration (train model via `MLlib`)
 
 # License
 
