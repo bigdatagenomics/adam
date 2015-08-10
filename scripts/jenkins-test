@@ -6,11 +6,10 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$DIR/.."
 
 VERSION="$(grep "<version>" "$PROJECT_ROOT/pom.xml"  | head -2 | tail -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')"
-HADOOP_VERSION="$(grep "<hadoop.version>" "$PROJECT_ROOT/pom.xml"  | head -2 | tail -1 | sed 's/ *<hadoop.version>//g' | sed 's/<\/hadoop.version>//g')"
-echo "Testing ADAM version ${VERSION} on Hadoop ${HADOOP_VERSION}"
+echo "Testing ADAM version ${VERSION} on Spark ${SPARK_VERSION} and Hadoop ${HADOOP_VERSION}"
 
 export MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=1g"
-mvn test -P distribution -Dnetworkconnected -Dhadoop.version="${HADOOP_VERSION}"
+mvn test -P distribution -Dnetworkconnected -Dhadoop.version="${HADOOP_VERSION}" -Dspark.version="${SPARK_VERSION}"
 
 ADAM_TMP_DIR="$(mktemp -d -t "adamTestXXXXXXX")"
 # Just to be paranoid.. use a directory internal to the ADAM_TMP_DIR
@@ -26,15 +25,23 @@ export SPARK_DRIVER_MEMORY=8g
 
 pushd "$ADAM_TMP_DIR"
 
-if [[ $HADOOP_VERSION == "1.0.4" ]]; then
-    wget -q http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop1.tgz
-    tar xzvf spark-1.1.0-bin-hadoop1.tgz
-    export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.1.0-bin-hadoop1"
+
+if [[ $HADOOP_VERSION =~ ^1\.0 ]]; then
+    HADOOP=hadoop1
+elif [[ $HADOOP_VERSION =~ ^2\.6 ]]; then
+    HADOOP=hadoop2.6
+elif [[ $HADOOP_VERSION =~ ^2\.3 ]]; then
+    HADOOP=hadoop2.3
 else
-    wget -q http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz
-    tar xzvf spark-1.1.0-bin-hadoop2.3.tgz
-    export SPARK_HOME="${ADAM_TMP_DIR}/spark-1.1.0-bin-hadoop2.3"
+    echo "Unknown Hadoop version."
+    exit 1
 fi
+
+SPARK="spark-${SPARK_VERSION}"
+
+wget -q http://d3kbcqa49mib13.cloudfront.net/${SPARK}-bin-${HADOOP}.tgz
+tar xzvf ${SPARK}-bin-${HADOOP}.tgz
+export SPARK_HOME="${ADAM_TMP_DIR}/${SPARK}-bin-${HADOOP}"
 
 ADAM="./bin/adam-submit"
 
