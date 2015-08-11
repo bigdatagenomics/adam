@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import htsjdk.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 
-object Consensus {
+object Consensus extends Serializable {
 
   def generateAlternateConsensus(sequence: String, start: ReferencePosition, cigar: Cigar): Option[Consensus] = {
 
