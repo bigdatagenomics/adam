@@ -27,14 +27,14 @@ ADAM_CMD="$SCRIPT_DIR/bin/adam"
 REPO="$SCRIPT_DIR/repo"
 
 # Fallback to source repo
-if [ ! -f $ADAM_CMD ]; then
-ADAM_CMD="$SCRIPT_DIR/adam-cli/target/appassembler/bin/adam"
-REPO="$SCRIPT_DIR/adam-cli/target/appassembler/repo"
+if [ ! -f "$ADAM_CMD" ]; then
+  ADAM_CMD="$SCRIPT_DIR/adam-cli/target/appassembler/bin/adam"
+  REPO="$SCRIPT_DIR/adam-cli/target/appassembler/repo"
 fi
 
 if [ ! -f "$ADAM_CMD" ]; then
-  echo "Failed to find appassembler scripts in $BASEDIR/bin"
-  echo "You need to build ADAM before running this program"
+  echo "Failed to find appassembler scripts in $BASEDIR/bin" 1>&2
+  echo "You need to build ADAM before running this program" 1>&2
   exit 1
 fi
 eval $(cat "$ADAM_CMD" | grep "^CLASSPATH")

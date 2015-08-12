@@ -54,6 +54,8 @@ SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
 # Get list of required jars for ADAM
 ADAM_JARS=$("$SCRIPT_DIR"/bin/compute-adam-jars.sh)
+
+# Split out the CLI jar, since it will be passed to Spark as the "primary resource".
 ADAM_CLI_JAR=${ADAM_JARS##*,}
 ADAM_JARS=$(echo "$ADAM_JARS" | rev | cut -d',' -f2- | rev)
 

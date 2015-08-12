@@ -17,13 +17,15 @@
 # limitations under the License.
 #
 
+set -e
+
 # Figure out where ADAM is installed
 ADAM_REPO="$(cd `dirname $0`/..; pwd)"
 
-CLASSPATH=$("$ADAM_REPO"/bin/compute-adam-classpath.sh)
+CLASSPATH="$(. "$ADAM_REPO"/bin/compute-adam-classpath.sh)"
 
 # list of jars to ship with spark; trim off the first from the CLASSPATH --> this is /etc
 # TODO: brittle? assumes appassembler always puts the $BASE/etc first and the CLI jar last
-ADAM_JARS=$(echo "$CLASSPATH" | tr ":" "\n" | tail -n +2 | perl -pe 's/\n/,/ unless eof' )
+ADAM_JARS="$(echo "$CLASSPATH" | tr ":" "\n" | tail -n +2 | perl -pe 's/\n/,/ unless eof' )"
 
 echo "$ADAM_JARS"
