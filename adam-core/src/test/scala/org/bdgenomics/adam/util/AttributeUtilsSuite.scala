@@ -39,6 +39,16 @@ class AttributeUtilsSuite extends FunSuite {
     assert(tags(1).value === "foo,bar")
   }
 
+  test("parseTags works with NumericSequence tagType") {
+    val tags = parseAttributes("jM:B:c,-1\tjI:B:i,-1,1")
+
+    assert(tags(0).tag === "jM")
+    assert(tags(0).tagType === TagType.NumericSequence)
+    assert(tags(0).value.asInstanceOf[Array[Number]].sameElements(Array(-1)))
+    assert(tags(1).value.asInstanceOf[Array[Number]].sameElements(Array(-1, 1)))
+
+  }
+
   test("empty string is parsed as zero tagStrings") {
     assert(parseAttributes("") === Seq[Attribute]())
   }
