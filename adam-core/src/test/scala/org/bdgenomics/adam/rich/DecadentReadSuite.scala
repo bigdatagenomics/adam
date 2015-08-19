@@ -18,11 +18,14 @@
 
 package org.bdgenomics.adam.rich
 
-import org.scalatest.FunSuite
+import htsjdk.samtools.ValidationStringency
+import org.apache.spark.SparkException
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferencePosition
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
-class DecadentReadSuite extends FunSuite {
+class DecadentReadSuite extends ADAMFunSuite {
 
   test("reference position of decadent read") {
     val contig = Contig.newBuilder
@@ -84,5 +87,75 @@ class DecadentReadSuite extends FunSuite {
 
     val record = DecadentRead(hardClippedRead)
     assert(record.residues.size === 9)
+  }
+
+  test("converting bad read should fail") {
+    val readBad = AlignmentRecord.newBuilder()
+      .setContig(Contig.newBuilder()
+        .setContigName("1")
+        .build())
+      .setStart(248262648L)
+      .setEnd(248262721L)
+      .setMapq(23)
+      .setSequence("GATCTTTTCAACAGTTACAGCAGAAAGTTTTCATGGAGAAATGGAATCACACTTCAAATGATTTCATTTTGTTGGG")
+      .setQual("IBBHEFFEKFCKFHFACKFIJFJDCFHFEEDJBCHIFIDDBCGJDBBJAJBJFCIDCACHBDEBHADDDADDAED;")
+      .setCigar("4S1M1D71M")
+      .setReadMapped(true)
+      .setMismatchingPositions("3^C71")
+      .build()
+
+    intercept[IllegalArgumentException] {
+      DecadentRead(readBad)
+    }
+  }
+
+  def badGoodReadRDD: RDD[AlignmentRecord] = {
+    val readBad = AlignmentRecord.newBuilder()
+      .setContig(Contig.newBuilder()
+        .setContigName("1")
+        .build())
+      .setStart(248262648L)
+      .setEnd(248262721L)
+      .setMapq(23)
+      .setSequence("GATCTTTTCAACAGTTACAGCAGAAAGTTTTCATGGAGAAATGGAATCACACTTCAAATGATTTCATTTTGTTGGG")
+      .setQual("IBBHEFFEKFCKFHFACKFIJFJDCFHFEEDJBCHIFIDDBCGJDBBJAJBJFCIDCACHBDEBHADDDADDAED;")
+      .setCigar("4S1M1D71M")
+      .setReadMapped(true)
+      .setMismatchingPositions("3^C71")
+      .build()
+    val readGood = AlignmentRecord.newBuilder()
+      .setContig(Contig.newBuilder()
+        .setContigName("1")
+        .build())
+      .setStart(248262648L)
+      .setEnd(248262721L)
+      .setMapq(23)
+      .setSequence("GATCTTTTCAACAGTTACAGCAGAAAGTTTTCATGGAGAAATGGAATCACACTTCAAATGATTTCATTTTGTTGGG")
+      .setQual("IBBHEFFEKFCKFHFACKFIJFJDCFHFEEDJBCHIFIDDBCGJDBBJAJBJFCIDCACHBDEBHADDDADDAED;")
+      .setCigar("4S1M1D71M")
+      .setReadMapped(true)
+      .setMismatchingPositions("1^C71")
+      .build()
+    sc.parallelize(Seq(readBad, readGood))
+  }
+
+  sparkTest("convert an RDD that has an bad read in it with loose validation") {
+    val rdd = badGoodReadRDD
+    val decadent = DecadentRead.cloy(rdd, ValidationStringency.LENIENT)
+      .repartition(2)
+      .collect()
+    assert(decadent.size === 2)
+    assert(decadent.count(_._1.isDefined) === 1)
+    assert(decadent.count(_._1.isEmpty) === 1)
+    assert(decadent.count(_._2.isDefined) === 1)
+    assert(decadent.count(_._2.isEmpty) === 1)
+  }
+
+  sparkTest("converting an RDD that has an bad read in it with strict validation will throw an error") {
+    val rdd = badGoodReadRDD
+    intercept[SparkException] {
+      // need count to force computation
+      DecadentRead.cloy(rdd).count
+    }
   }
 }

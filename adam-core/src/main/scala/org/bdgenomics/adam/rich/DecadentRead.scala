@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
+import htsjdk.samtools.ValidationStringency
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferencePosition
@@ -25,7 +26,7 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.util.{ MdTag, QualityScore }
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-object DecadentRead {
+object DecadentRead extends Logging with Serializable {
   type Residue = DecadentRead#Residue
 
   // Constructors
@@ -47,7 +48,25 @@ object DecadentRead {
    *   2. To clog, to glut, or satisfy, as the appetite; to satiate.
    *   3. To fill up or choke up; to stop up.
    */
-  def cloy(rdd: RDD[AlignmentRecord]): RDD[DecadentRead] = rdd.map(DecadentRead.apply)
+  def cloy(rdd: RDD[AlignmentRecord],
+           strictness: ValidationStringency = ValidationStringency.STRICT): RDD[(Option[DecadentRead], Option[AlignmentRecord])] = {
+    rdd.map(r => {
+      try {
+        val dr = DecadentRead.apply(r)
+        (Some(dr), None)
+      } catch {
+        case e: Throwable => {
+          if (strictness == ValidationStringency.STRICT) {
+            throw e
+          } else {
+            log.warn("Converting read %s to decadent read failed with %s. Skipping...".format(
+              r, e))
+            (None, Some(r))
+          }
+        }
+      }
+    })
+  }
 
   // The inevitable counterpart of the above.
   implicit def decay(rdd: RDD[DecadentRead]): RDD[AlignmentRecord] = rdd.map(_.record)

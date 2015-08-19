@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
+import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.algorithms.consensus._
@@ -49,6 +50,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
   var recalibrateBaseQualities: Boolean = false
+  @Args4jOption(required = false, name = "-strict_bqsr", usage = "Run BQSR with strict validation.")
+  var strictBQSR: Boolean = false
   @Args4jOption(required = false, name = "-dump_observations", usage = "Local path to dump BQSR observations to. Outputs CSV format.")
   var observationsPath: String = null
   @Args4jOption(required = false, name = "-known_snps", usage = "Sites-only VCF giving location of known SNPs")
@@ -118,7 +121,14 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
       val knownSnps: SnpTable = createKnownSnpsTable(sc)
-      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps), Option(args.observationsPath))
+      val stringency = if (args.strictBQSR) {
+        ValidationStringency.STRICT
+      } else {
+        ValidationStringency.LENIENT
+      }
+      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps),
+        Option(args.observationsPath),
+        stringency)
     }
 
     if (args.coalesce != -1) {
