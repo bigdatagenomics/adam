@@ -56,7 +56,7 @@ class DinucCovariate extends AbstractCovariate[(Char, Char)] {
       case 'T' => 'A'
       case 'C' => 'G'
       case 'G' => 'C'
-      case 'N' => 'N'
+      case 'W' | 'S' | 'Y' | 'R' | 'M' | 'K' | 'B' | 'D' | 'V' | 'H' | 'N' => 'N'
     }
   }
 
