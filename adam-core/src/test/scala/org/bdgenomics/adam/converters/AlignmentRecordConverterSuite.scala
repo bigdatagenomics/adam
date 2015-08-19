@@ -195,6 +195,9 @@ class AlignmentRecordConverterSuite extends FunSuite {
 
     val (firstRecord, secondRecord) = getSAMRecordFromReadName("SRR062634.10022079")
 
+    assert(firstRecord.getReadNum === 1)
+    assert(secondRecord.getReadNum === 0)
+
     val firstRecordFastq = adamRecordConverter.convertToFastq(firstRecord, maybeAddSuffix = true)
       .toString
       .split('\n')
@@ -222,6 +225,9 @@ class AlignmentRecordConverterSuite extends FunSuite {
     // RG:Z:SRR062634
 
     val (secondRecord, firstRecord) = getSAMRecordFromReadName("SRR062634.10448889")
+
+    assert(firstRecord.getReadNum === 1)
+    assert(secondRecord.getReadNum === 0)
 
     val firstRecordFastq = adamRecordConverter.convertToFastq(firstRecord, maybeAddSuffix = true)
       .toString

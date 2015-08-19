@@ -150,10 +150,10 @@ class SAMRecordConverter extends Serializable with Logging {
             builder.setProperPair(true)
           }
           if (samRecord.getFirstOfPairFlag) {
-            builder.setFirstOfPair(true)
+            builder.setReadNum(0)
           }
           if (samRecord.getSecondOfPairFlag) {
-            builder.setSecondOfPair(true)
+            builder.setReadNum(1)
           }
         }
         if (samRecord.getDuplicateReadFlag) {
@@ -167,7 +167,7 @@ class SAMRecordConverter extends Serializable with Logging {
       var tags = List[Attribute]()
       val tlen = samRecord.getInferredInsertSize
       if (tlen != 0) {
-        tags ::= Attribute("TLEN", TagType.Integer, tlen)
+        builder.setInferredInsertSize(tlen)
       }
       if (samRecord.getAttributes != null) {
         samRecord.getAttributes.asScala.foreach {

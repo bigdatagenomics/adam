@@ -260,10 +260,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
     val gt = vc.genotypes.head
     assert(gt.getVariantCallingAnnotations != null)
-    assert(gt.getVariantCallingAnnotations.getReadDepth === 69)
-    // Recall we are testing parsing, so we assert that our value is
-    // the same as should have been parsed
-    assert(gt.getVariantCallingAnnotations.getClippingRankSum === java.lang.Float.valueOf("0.138"))
+    assert(gt.getReadDepth === 15)
   }
 
   (1 to 4) foreach { testNumber =>
@@ -276,13 +273,13 @@ class ADAMContextSuite extends ADAMFunSuite {
       if (testNumber == 1) {
         assert(reads.count === 6)
         assert(reads.filter(_.getReadPaired).count === 6)
-        assert(reads.filter(_.getFirstOfPair).count === 3)
-        assert(reads.filter(_.getSecondOfPair).count === 3)
+        assert(reads.filter(_.getReadNum == 0).count === 3)
+        assert(reads.filter(_.getReadNum == 1).count === 3)
       } else {
         assert(reads.count === 4)
         assert(reads.filter(_.getReadPaired).count === 4)
-        assert(reads.filter(_.getFirstOfPair).count === 2)
-        assert(reads.filter(_.getSecondOfPair).count === 2)
+        assert(reads.filter(_.getReadNum == 0).count === 2)
+        assert(reads.filter(_.getReadNum == 1).count === 2)
       }
 
       assert(reads.collect.forall(_.getSequence.toString.length === 250))

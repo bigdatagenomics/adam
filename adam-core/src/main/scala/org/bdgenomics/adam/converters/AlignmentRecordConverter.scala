@@ -42,13 +42,8 @@ class AlignmentRecordConverter extends Serializable {
     val readNameSuffix =
       if (maybeAddSuffix &&
         !AlignmentRecordConverter.readNameHasPairedSuffix(adamRecord) &&
-        adamRecord.getFirstOfPair != null) {
-        "/" + (
-          if (adamRecord.getFirstOfPair)
-            "1"
-          else
-            "2"
-        )
+        adamRecord.getReadPaired) {
+        "/%d".format(adamRecord.getReadNum + 1)
       } else {
         ""
       }
@@ -114,6 +109,10 @@ class AlignmentRecordConverter extends Serializable {
     Option(adamRecord.getMateAlignmentStart)
       .foreach(s => builder.setMateAlignmentStart(s.toInt + 1))
 
+    // set template length
+    Option(adamRecord.getInferredInsertSize)
+      .foreach(s => builder.setInferredInsertSize(s.toInt))
+
     // set flags
     Option(adamRecord.getReadPaired).foreach(p => {
       builder.setReadPairedFlag(p.booleanValue)
@@ -126,9 +125,9 @@ class AlignmentRecordConverter extends Serializable {
           .foreach(v => builder.setMateUnmappedFlag(!v.booleanValue))
         Option(adamRecord.getProperPair)
           .foreach(v => builder.setProperPairFlag(v.booleanValue))
-        Option(adamRecord.getFirstOfPair)
+        Option(adamRecord.getReadNum == 0)
           .foreach(v => builder.setFirstOfPairFlag(v.booleanValue))
-        Option(adamRecord.getSecondOfPair)
+        Option(adamRecord.getReadNum == 1)
           .foreach(v => builder.setSecondOfPairFlag(v.booleanValue))
       }
     })
@@ -175,11 +174,7 @@ class AlignmentRecordConverter extends Serializable {
     if (adamRecord.getAttributes != null) {
       val mp = RichAlignmentRecord(adamRecord).tags
       mp.foreach(a => {
-        if (a.tag == "TLEN") {
-          builder.setInferredInsertSize(a.value.asInstanceOf[Integer])
-        } else {
-          builder.setAttribute(a.tag, a.value)
-        }
+        builder.setAttribute(a.tag, a.value)
       })
     }
 

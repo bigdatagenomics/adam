@@ -70,14 +70,14 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
 
     val firstOfPair = createMappedRead(firstReferenceName, firstStart, firstEnd,
       readName = readName, avgPhredScore = avgPhredScore)
-    firstOfPair.setFirstOfPair(true)
+    firstOfPair.setReadNum(0)
     firstOfPair.setMateMapped(true)
     firstOfPair.setMateContig(secondContig)
     firstOfPair.setMateAlignmentStart(secondStart)
     firstOfPair.setReadPaired(true)
     val secondOfPair = createMappedRead(secondReferenceName, secondStart, secondEnd,
       readName = readName, avgPhredScore = avgPhredScore, isNegativeStrand = true)
-    secondOfPair.setSecondOfPair(true)
+    secondOfPair.setReadNum(1)
     secondOfPair.setMateMapped(true)
     secondOfPair.setMateContig(firstContig)
     secondOfPair.setMateAlignmentStart(firstStart)

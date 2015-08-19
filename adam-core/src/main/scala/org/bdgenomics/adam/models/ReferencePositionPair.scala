@@ -28,10 +28,10 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 
 object ReferencePositionPair extends Logging {
   def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = CreateReferencePositionPair.time {
-    val firstOfPair = (singleReadBucket.primaryMapped.filter(_.getFirstOfPair) ++
-      singleReadBucket.unmapped.filter(_.getFirstOfPair)).toSeq
-    val secondOfPair = (singleReadBucket.primaryMapped.filter(_.getSecondOfPair) ++
-      singleReadBucket.unmapped.filter(_.getSecondOfPair)).toSeq
+    val firstOfPair = (singleReadBucket.primaryMapped.filter(_.getReadNum == 0) ++
+      singleReadBucket.unmapped.filter(_.getReadNum == 0)).toSeq
+    val secondOfPair = (singleReadBucket.primaryMapped.filter(_.getReadNum == 1) ++
+      singleReadBucket.unmapped.filter(_.getReadNum == 1)).toSeq
 
     def getPos(r: AlignmentRecord): ReferencePosition = {
       if (r.getReadMapped) {

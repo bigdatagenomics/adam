@@ -459,11 +459,11 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     maybeUnpersist(rdd.unpersist())
 
-    val firstInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(_.getFirstOfPair)
+    val firstInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(_.getReadNum == 0)
     maybePersist(firstInPairRecords)
     val numFirstInPairRecords = firstInPairRecords.count()
 
-    val secondInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(_.getSecondOfPair)
+    val secondInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(_.getReadNum == 1)
     maybePersist(secondInPairRecords)
     val numSecondInPairRecords = secondInPairRecords.count()
 
@@ -480,11 +480,11 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     if (validationStringency == ValidationStringency.STRICT) {
       firstInPairRecords.foreach(read =>
-        if (read.getSecondOfPair)
+        if (read.getReadNum == 1)
           throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName))
       )
       secondInPairRecords.foreach(read =>
-        if (read.getFirstOfPair)
+        if (read.getReadNum == 0)
           throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName))
       )
     }
@@ -601,14 +601,12 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         AlignmentRecord.newBuilder(kv._2._1)
           .setReadPaired(true)
           .setProperPair(true)
-          .setFirstOfPair(true)
-          .setSecondOfPair(false)
+          .setReadNum(0)
           .build(),
         AlignmentRecord.newBuilder(kv._2._2)
           .setReadPaired(true)
           .setProperPair(true)
-          .setFirstOfPair(false)
-          .setSecondOfPair(true)
+          .setReadNum(1)
           .build()
       ))
 

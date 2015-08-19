@@ -17,11 +17,12 @@
  */
 package org.bdgenomics.adam.converters
 
-import java.io.File
 import htsjdk.samtools.SAMFileReader
-import org.bdgenomics.adam.models.{ VariantContext => ADAMVariantContext, SequenceDictionary }
-import org.bdgenomics.formats.avro._
 import htsjdk.variant.variantcontext.{ Allele, GenotypeBuilder, GenotypeType, VariantContextBuilder }
+import java.io.File
+import org.bdgenomics.adam.models.{ VariantContext => ADAMVariantContext, SequenceDictionary }
+import org.bdgenomics.adam.util.PhredUtils
+import org.bdgenomics.formats.avro._
 import org.scalatest.FunSuite
 import scala.collection.JavaConversions._
 
@@ -231,11 +232,17 @@ class VariantContextConverterSuite extends FunSuite {
     val adamGT2 = adamVCs(1).genotypes.head
     assert(adamGT1.getAlleles.sameElements(List(GenotypeAllele.Alt, GenotypeAllele.OtherAlt)))
     assert(adamGT1.getAlternateReadDepth === 2)
-    assert(adamGT1.getGenotypeLikelihoods.sameElements(List(59, 0, 181)))
+    assert(adamGT1.getGenotypeLikelihoods
+      .map(f => f: scala.Float)
+      .map(PhredUtils.logProbabilityToPhred)
+      .sameElements(List(59, 0, 256)))
 
     assert(adamGT2.getAlleles.sameElements(List(GenotypeAllele.OtherAlt, GenotypeAllele.Alt)))
     assert(adamGT2.getAlternateReadDepth === 3)
-    assert(adamGT2.getGenotypeLikelihoods.sameElements(List(58, 0, 101)))
+    assert(adamGT2.getGenotypeLikelihoods
+      .map(f => f: scala.Float)
+      .map(PhredUtils.logProbabilityToPhred)
+      .sameElements(List(58, 0, 101)))
   }
 
   test("Convert gVCF reference records to ADAM") {
@@ -257,6 +264,9 @@ class VariantContextConverterSuite extends FunSuite {
     assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.Ref, GenotypeAllele.Ref)))
     assert(adamGT.getMinReadDepth === 38)
     assert(adamGT.getGenotypeLikelihoods.isEmpty)
-    assert(adamGT.getNonReferenceLikelihoods.sameElements(List(0, 1, 2)))
+    assert(adamGT.getNonReferenceLikelihoods
+      .map(f => f: scala.Float)
+      .map(PhredUtils.logProbabilityToPhred)
+      .sameElements(List(0, 1, 2)))
   }
 }

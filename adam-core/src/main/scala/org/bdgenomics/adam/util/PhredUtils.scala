@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-import scala.math.{ pow, log10 }
+import scala.math.{ exp, pow, log, log10 }
 
 object PhredUtils {
 
@@ -29,15 +29,31 @@ object PhredUtils {
     phredToErrorProbabilityCache.map { p => 1.0 - p }
   }
 
-  def phredToSuccessProbability(phred: Int): Double = phredToSuccessProbabilityCache(phred)
+  def phredToLogProbability(phred: Int): Float = log(phredToSuccessProbability(phred)).toFloat
 
-  def phredToErrorProbability(phred: Int): Double = phredToErrorProbabilityCache(phred)
+  def phredToSuccessProbability(phred: Int): Double = if (phred < 255) {
+    phredToSuccessProbabilityCache(phred)
+  } else {
+    phredToSuccessProbabilityCache(255)
+  }
+
+  def phredToErrorProbability(phred: Int): Double = if (phred < 255) {
+    phredToErrorProbabilityCache(phred)
+  } else {
+    phredToErrorProbabilityCache(255)
+  }
 
   private def probabilityToPhred(p: Double): Int = math.round(-10.0 * log10(p)).toInt
 
   def successProbabilityToPhred(p: Double): Int = probabilityToPhred(1.0 - p)
 
   def errorProbabilityToPhred(p: Double): Int = probabilityToPhred(p)
+
+  def logProbabilityToPhred(p: Float): Int = if (p == 0.0) {
+    256
+  } else {
+    successProbabilityToPhred(exp(p))
+  }
 
   def main(args: Array[String]) = {
     phredToErrorProbabilityCache.zipWithIndex.foreach(p => println("%3d = %f".format(p._2, p._1)))

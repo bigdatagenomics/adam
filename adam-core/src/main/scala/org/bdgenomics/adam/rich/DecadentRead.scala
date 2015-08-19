@@ -161,9 +161,9 @@ class DecadentRead(val record: RichAlignmentRecord) extends Logging {
 
   def isPaired: Boolean = record.getReadPaired
 
-  def isFirstOfPair: Boolean = isPaired && !record.getSecondOfPair
+  def isFirstOfPair: Boolean = isPaired && record.getReadNum == 0
 
-  def isSecondOfPair: Boolean = isPaired && record.getSecondOfPair
+  def isSecondOfPair: Boolean = isPaired && record.getReadNum == 1
 
   def isNegativeRead: Boolean = record.getReadNegativeStrand
 
