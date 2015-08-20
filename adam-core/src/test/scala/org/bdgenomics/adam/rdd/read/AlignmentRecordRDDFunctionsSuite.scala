@@ -286,7 +286,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val tempPath1 = tempFile.toAbsolutePath.toString + "/reads.sam"
 
     reads.adamSortReadsByReferencePosition()
-      .adamSAMSave(tempPath1)
+      .adamSAMSave(tempPath1, isSorted = true)
 
     val file1 = Source.fromFile(tempPath1 + "/part-r-00000")
     val file2 = Source.fromFile(ClassLoader.getSystemClassLoader
