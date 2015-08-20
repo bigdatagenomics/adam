@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputS
 import org.apache.avro.io.{ BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory }
 import org.apache.avro.specific.{ SpecificDatumWriter, SpecificDatumReader, SpecificRecord }
 import org.apache.spark.serializer.KryoRegistrator
+import org.bdgenomics.adam.util.{ TwoBitFileSerializer, TwoBitFile }
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.realignment._
@@ -84,5 +85,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[IndelRealignmentTarget])
     kryo.register(classOf[TargetSet], new TargetSetSerializer)
     kryo.register(classOf[ZippedTargetSet], new ZippedTargetSetSerializer)
+    kryo.register(classOf[TwoBitFile], new TwoBitFileSerializer)
   }
 }

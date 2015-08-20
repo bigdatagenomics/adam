@@ -143,11 +143,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
 
   // Does this read overlap with the given reference position?
   def overlapsReferencePosition(pos: ReferencePosition): Boolean = {
-    if (record.getReadMapped) {
-      ReferenceRegion(record).overlaps(pos)
-    } else {
-      false
-    }
+    ReferenceRegion.opt(record).exists(_.overlaps(pos))
   }
 
   // Does this read mismatch the reference at the given reference position?

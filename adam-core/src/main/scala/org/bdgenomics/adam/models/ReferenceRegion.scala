@@ -76,6 +76,19 @@ object ReferenceRegion {
    * @param record Read to create region from.
    * @return Region corresponding to inclusive region of read alignment, if read is mapped.
    */
+  def opt(record: AlignmentRecord): Option[ReferenceRegion] = {
+    if (record.getReadMapped) {
+      Some(
+        ReferenceRegion(
+          record.getContig.getContigName,
+          record.getStart,
+          record.getEnd
+        )
+      )
+    } else
+      None
+  }
+
   def apply(record: AlignmentRecord): ReferenceRegion = {
     ReferenceRegion(record.getContig.getContigName, record.getStart, record.getEnd)
   }
@@ -96,15 +109,17 @@ object ReferenceRegion {
    * @return Region corresponding to inclusive region of contig fragment.
    */
   def apply(fragment: NucleotideContigFragment): Option[ReferenceRegion] = {
-    val contig = fragment.getContig
-    if (contig != null && contig.getContigName != null &&
-      fragment.getFragmentStartPosition != null) {
-      val fragmentSequence = fragment.getFragmentSequence
-      Some(ReferenceRegion(contig.getContigName,
+    for {
+      contig <- Option(fragment.getContig)
+      contigName <- Option(contig.getContigName)
+      startPosition <- Option(fragment.getFragmentStartPosition)
+      fragmentSequence = fragment.getFragmentSequence
+    } yield {
+      ReferenceRegion(
+        contig.getContigName,
         fragment.getFragmentStartPosition,
-        fragment.getFragmentStartPosition + fragmentSequence.length))
-    } else {
-      None
+        fragment.getFragmentStartPosition + fragmentSequence.length
+      )
     }
   }
 

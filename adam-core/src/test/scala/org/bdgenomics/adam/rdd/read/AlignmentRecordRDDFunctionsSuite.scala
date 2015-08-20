@@ -20,7 +20,6 @@ package org.bdgenomics.adam.rdd.read
 import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
@@ -134,7 +133,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val reads12A = rdd12A.collect()
     val reads12B = rdd12B.collect()
 
-    (0 until reads12A.length) foreach {
+    reads12A.indices.foreach {
       case i: Int =>
         val (readA, readB) = (reads12A(i), reads12B(i))
         assert(readA.getSequence === readB.getSequence)
