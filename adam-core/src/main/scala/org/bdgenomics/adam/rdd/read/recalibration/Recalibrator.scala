@@ -26,18 +26,20 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import scala.math.{ exp, log }
 
 class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)
-    extends (DecadentRead => AlignmentRecord) with Serializable {
+    extends Serializable {
 
-  def apply(read: DecadentRead): AlignmentRecord = RecalibrateRead.time {
-    val record: AlignmentRecord = read.record
-    if (record.getQual != null) {
-      AlignmentRecord.newBuilder(record)
-        .setQual(QualityScore.toString(computeQual(read)))
-        .setOrigQual(record.getQual)
-        .build()
-    } else {
-      record
-    }
+  def apply(r: (Option[DecadentRead], Option[AlignmentRecord])): AlignmentRecord = RecalibrateRead.time {
+    r._1.fold(r._2.get)(read => {
+      val record: AlignmentRecord = read.record
+      if (record.getQual != null) {
+        AlignmentRecord.newBuilder(record)
+          .setQual(QualityScore.toString(computeQual(read)))
+          .setOrigQual(record.getQual)
+          .build()
+      } else {
+        record
+      }
+    })
   }
 
   def computeQual(read: DecadentRead): Seq[QualityScore] = ComputeQualityScore.time {

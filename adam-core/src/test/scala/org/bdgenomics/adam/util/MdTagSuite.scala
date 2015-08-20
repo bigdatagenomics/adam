@@ -602,4 +602,10 @@ class MdTagSuite extends FunSuite {
   test("handle '=' and 'X' operators") {
     testTag("ACCCAAGT", "ACCATAGA", "3=2X2=1X", 0, "3A0T2A0", 0, 7)
   }
+
+  test("CIGAR/MD tag mismatch should cause errors") {
+    intercept[MatchError] {
+      MdTag("3^C71", 1L, TextCigarCodec.decode("4S1M1D71M"))
+    }
+  }
 }

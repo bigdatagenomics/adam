@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
+import htsjdk.samtools.ValidationStringency
 import java.io._
 import org.apache.spark.SparkContext._
 import org.apache.spark.Logging
@@ -35,7 +36,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  * quality scores.
  */
 class BaseQualityRecalibration(
-  val input: RDD[DecadentRead],
+  val input: RDD[(Option[DecadentRead], Option[AlignmentRecord])],
   val knownSnps: Broadcast[SnpTable],
   val dumpObservationTableFile: Option[String] = None)
     extends Serializable with Logging {
@@ -68,7 +69,7 @@ class BaseQualityRecalibration(
       covariates(read).zip(read.residues).
         filter { case (key, residue) => shouldIncludeResidue(residue) }
 
-    input.filter(shouldIncludeRead).flatMap(observe)
+    input.flatMap(_._1).filter(shouldIncludeRead).flatMap(observe)
   }
 
   if (enableVisitLogging) {
@@ -92,7 +93,7 @@ class BaseQualityRecalibration(
 
   val result: RDD[AlignmentRecord] = {
     val recalibrator = Recalibrator(observed, minAcceptableQuality)
-    input.map(recalibrator)
+    input.map(recalibrator(_))
   }
 
   private def dumpVisits(filename: String) = {
@@ -103,7 +104,7 @@ class BaseQualityRecalibration(
         (if (read.record.getSecondOfPair) "2" else "")
 
     val readLengths =
-      input.map(read => (readId(read), read.residues.length)).collectAsMap()
+      input.flatMap(_._1).map(read => (readId(read), read.residues.length)).collectAsMap()
 
     val visited = dataset.
       map { case (key, residue) => (readId(residue.read), Seq(residue.offset)) }.
@@ -125,6 +126,7 @@ class BaseQualityRecalibration(
 object BaseQualityRecalibration {
   def apply(rdd: RDD[AlignmentRecord],
             knownSnps: Broadcast[SnpTable],
-            observationDumpFile: Option[String] = None): RDD[AlignmentRecord] =
-    new BaseQualityRecalibration(cloy(rdd), knownSnps).result
+            observationDumpFile: Option[String] = None,
+            validationStringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] =
+    new BaseQualityRecalibration(cloy(rdd, validationStringency), knownSnps).result
 }

@@ -299,8 +299,9 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @return Returns an RDD of recalibrated reads.
    */
   def adamBQSR(knownSnps: Broadcast[SnpTable],
-               observationDumpFile: Option[String] = None): RDD[AlignmentRecord] = BQSRInDriver.time {
-    BaseQualityRecalibration(rdd, knownSnps, observationDumpFile)
+               observationDumpFile: Option[String] = None,
+               validationStringency: ValidationStringency = ValidationStringency.LENIENT): RDD[AlignmentRecord] = BQSRInDriver.time {
+    BaseQualityRecalibration(rdd, knownSnps, observationDumpFile, validationStringency)
   }
 
   /**
