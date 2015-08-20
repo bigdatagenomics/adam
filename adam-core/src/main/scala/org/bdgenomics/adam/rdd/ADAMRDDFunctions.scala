@@ -22,7 +22,7 @@ import java.util.logging.Level
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.mapreduce.{ OutputFormat => NewOutputFormat }
-import org.apache.spark.Logging
+import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.{ InstrumentedOutputFormat, RDD }
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -86,6 +86,9 @@ class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serial
  * @param rdd RDD over which aggregation is supported.
  */
 abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Serializable with Logging {
+
+  @transient lazy val sc: SparkContext = rdd.sparkContext
+
   /**
    * For a single RDD element, returns 0+ sequence record elements.
    *

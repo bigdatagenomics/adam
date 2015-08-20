@@ -20,7 +20,6 @@ package org.bdgenomics.adam.rdd.read
 import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
@@ -134,7 +133,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val reads12A = rdd12A.collect()
     val reads12B = rdd12B.collect()
 
-    (0 until reads12A.length) foreach {
+    reads12A.indices.foreach {
       case i: Int =>
         val (readA, readB) = (reads12A(i), reads12B(i))
         assert(readA.getSequence === readB.getSequence)
@@ -232,5 +231,186 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     reads.adamSAMSave(actualSortedPath, isSorted = true, asSingleFile = true)
 
     checkFiles(resourcePath("ordered.sam"), actualSortedPath)
+  }
+
+  val chr1 = Contig.newBuilder().setContigName("chr1").build()
+  val chr2 = Contig.newBuilder().setContigName("chr2").build()
+
+  def makeFrags(frags: (Contig, Int, String)*): RDD[NucleotideContigFragment] =
+    sc.parallelize(
+      for {
+        (contig, start, seq) <- frags
+      } yield NucleotideContigFragment.newBuilder().setContig(contig).setFragmentStartPosition(start.toLong).setFragmentSequence(seq).build()
+    )
+
+  def makeReads(reads: (Contig, Int, Int, String, String)*): RDD[AlignmentRecord] =
+    sc.parallelize(
+      for {
+        (contig, start, end, seq, cigar) <- reads
+      } yield AlignmentRecord
+        .newBuilder
+        .setContig(contig)
+        .setStart(start.toLong)
+        .setEnd(end.toLong)
+        .setSequence(seq)
+        .setCigar(cigar)
+        .setReadMapped(true)
+        .build()
+    )
+
+  sparkTest("test adding MDTags over boundary") {
+
+    val frags = makeFrags(
+      (chr1, 0, "TTTTTTTTTT"),
+      (chr1, 10, "A")
+    )
+
+    val reads = makeReads(
+      (chr1, 9, 11, "TA", "2M"),
+      (chr1, 9, 11, "TG", "2M"),
+      (chr1, 9, 11, "GA", "2M"),
+      (chr1, 9, 11, "TAA", "2M1I"),
+      (chr1, 9, 11, "A", "1D1M"),
+      (chr1, 9, 11, "G", "1D1M")
+    )
+
+    val taggedReads = reads.adamAddMDTags(frags).collect.map(_.getMismatchingPositions)
+    assert(taggedReads.length === 6)
+    assert(taggedReads(0) === "2")
+    assert(taggedReads(1) === "1A0")
+    assert(taggedReads(2) === "0T1")
+    assert(taggedReads(3) === "2")
+    assert(taggedReads(4) === "0^T1")
+    assert(taggedReads(5) === "0^T0A0")
+  }
+
+  sparkTest("test adding MDTags; reads span full contig") {
+    val frags = makeFrags(
+      (chr1, 0, "AAAAAAAAAA"),
+      (chr1, 10, "CCCCCCCCCC"),
+      (chr1, 20, "GGGGGGGG")
+    )
+
+    val reads = makeReads(
+      // Full reference contig
+      (chr1, 0, 28, "AAAAAAAAAACCCCCCCCCCGGGGGGGG", "28M"),
+      (chr1, 0, 28, "TAAAAAAAAACCCCCCCCCCGGGGGGGG", "28M"),
+      (chr1, 0, 28, "AAAAAAAAAACCCCCCCCCCGGGGGGGT", "28M"),
+      (chr1, 0, 28, "AAAAAAAAATTCCCCCCCCCGGGGGGGG", "28M"),
+      (chr1, 0, 28, "AAAAAAAAAACCCCCCCCCTTGGGGGGG", "28M")
+    )
+
+    val taggedReads = reads.adamAddMDTags(frags).collect.map(_.getMismatchingPositions)
+    assert(taggedReads.length === 5)
+
+    assert(taggedReads(0) === "28")
+    assert(taggedReads(1) === "0A27")
+    assert(taggedReads(2) === "27G0")
+    assert(taggedReads(3) === "9A0C17")
+    assert(taggedReads(4) === "19C0G7")
+  }
+
+  sparkTest("test adding MDTags; reads start inside first fragment") {
+    val frags = makeFrags(
+      (chr1, 0, "AAAAAAAAAA"),
+      (chr1, 10, "CCCCCCCCCC"),
+      (chr1, 20, "GGGGGGGG")
+    )
+
+    val reads = makeReads(
+      // Start inside the first fragment
+      (chr1, 1, 28, "AAAAAAAAACCCCCCCCCCGGGGGGGG", "27M"),
+      (chr1, 1, 28, "TAAAAAAAACCCCCCCCCCGGGGGGGG", "27M"),
+      (chr1, 1, 28, "AAAAAAAAACCCCCCCCCCGGGGGGGT", "27M"),
+      (chr1, 1, 28, "AAAAAAAATTCCCCCCCCCGGGGGGGG", "27M"),
+      (chr1, 1, 28, "AAAAAAAAACCCCCCCCCTTGGGGGGG", "27M")
+    )
+
+    val taggedReads = reads.adamAddMDTags(frags).collect.map(_.getMismatchingPositions)
+    assert(taggedReads.length === 5)
+
+    assert(taggedReads(0) === "27")
+    assert(taggedReads(1) === "0A26")
+    assert(taggedReads(2) === "26G0")
+    assert(taggedReads(3) === "8A0C17")
+    assert(taggedReads(4) === "18C0G7")
+  }
+
+  sparkTest("test adding MDTags; reads end inside last fragment") {
+    val frags = makeFrags(
+      (chr1, 0, "AAAAAAAAAA"),
+      (chr1, 10, "CCCCCCCCCC"),
+      (chr1, 20, "GGGGGGGG")
+    )
+
+    val reads = makeReads(
+      // End inside the last fragment
+      (chr1, 0, 27, "AAAAAAAAAACCCCCCCCCCGGGGGGG", "27M"),
+      (chr1, 0, 27, "TAAAAAAAAACCCCCCCCCCGGGGGGG", "27M"),
+      (chr1, 0, 27, "AAAAAAAAAACCCCCCCCCCGGGGGGT", "27M"),
+      (chr1, 0, 27, "AAAAAAAAATTCCCCCCCCCGGGGGGG", "27M"),
+      (chr1, 0, 27, "AAAAAAAAAACCCCCCCCCTTGGGGGG", "27M")
+    )
+
+    val taggedReads = reads.adamAddMDTags(frags).collect.map(_.getMismatchingPositions)
+    assert(taggedReads.length === 5)
+
+    assert(taggedReads(0) === "27")
+    assert(taggedReads(1) === "0A26")
+    assert(taggedReads(2) === "26G0")
+    assert(taggedReads(3) === "9A0C16")
+    assert(taggedReads(4) === "19C0G6")
+  }
+
+  sparkTest("test adding MDTags; reads start inside first fragment and end inside last fragment") {
+    val frags = makeFrags(
+      (chr1, 0, "AAAAAAAAAA"),
+      (chr1, 10, "CCCCCCCCCC"),
+      (chr1, 20, "GGGGGGGG")
+    )
+
+    val reads = makeReads(
+      (chr1, 1, 27, "AAAAAAAAACCCCCCCCCCGGGGGGG", "26M"),
+      (chr1, 1, 27, "TAAAAAAAACCCCCCCCCCGGGGGGG", "26M"),
+      (chr1, 1, 27, "AAAAAAAAACCCCCCCCCCGGGGGGT", "26M"),
+      (chr1, 1, 27, "AAAAAAAATTCCCCCCCCCGGGGGGG", "26M"),
+      (chr1, 1, 27, "AAAAAAAAACCCCCCCCCTTGGGGGG", "26M")
+    )
+
+    val taggedReads = reads.adamAddMDTags(frags).collect.map(_.getMismatchingPositions)
+    assert(taggedReads.length === 5)
+
+    assert(taggedReads(0) === "26")
+    assert(taggedReads(1) === "0A25")
+    assert(taggedReads(2) === "25G0")
+    assert(taggedReads(3) === "8A0C16")
+    assert(taggedReads(4) === "18C0G6")
+  }
+
+  sparkTest("test adding MDTags; reads start and end in middle fragements") {
+    val frags = makeFrags(
+      (chr1, 0, "TTTTTTTTTT"),
+      (chr1, 10, "AAAAAAAAAA"),
+      (chr1, 20, "CCCCCCCCCC"),
+      (chr1, 30, "GGGGGGGGGG"),
+      (chr1, 40, "TTTTTTTTTT")
+    )
+
+    val reads = makeReads(
+      (chr1, 15, 35, "AAAAACCCCCCCCCCGGGGG", "20M"),
+      (chr1, 15, 35, "TAAAACCCCCCCCCCGGGGG", "20M"),
+      (chr1, 15, 35, "AAAAACCCCCCCCCCGGGGT", "20M"),
+      (chr1, 15, 35, "AAAATTCCCCCCCCCGGGGG", "20M"),
+      (chr1, 15, 35, "AAAAACCCCCCCCCTTGGGG", "20M")
+    )
+
+    val taggedReads = reads.adamAddMDTags(frags).collect.map(_.getMismatchingPositions)
+    assert(taggedReads.length === 5)
+
+    assert(taggedReads(0) === "20")
+    assert(taggedReads(1) === "0A19")
+    assert(taggedReads(2) === "19G0")
+    assert(taggedReads(3) === "4A0C14")
+    assert(taggedReads(4) === "14C0G4")
   }
 }

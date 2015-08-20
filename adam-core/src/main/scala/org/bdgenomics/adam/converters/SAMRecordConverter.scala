@@ -179,7 +179,7 @@ class SAMRecordConverter extends Serializable with Logging {
             }
         }
       }
-      if (!tags.isEmpty) {
+      if (tags.nonEmpty) {
         builder.setAttributes(tags.mkString("\t"))
       }
 

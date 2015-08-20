@@ -90,6 +90,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var fastqRecordGroup: String = null
   @Args4jOption(required = false, name = "-concat", usage = "Concatenate this file with <INPUT> and write the result to <OUTPUT>")
   var concatFilename: String = null
+  @Args4jOption(required = false, name = "-add_md_tags", usage = "Add MD Tags to reads based on the FASTA (or equivalent) file passed to this option.")
+  var mdTagsReferenceFile: String = null
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
@@ -124,7 +126,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         args.maxIndelSize,
         args.maxConsensusNumber,
         args.lodThreshold,
-        args.maxTargetSize)
+        args.maxTargetSize
+      )
     }
 
     if (args.recalibrateBaseQualities) {
@@ -146,6 +149,11 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     if (args.sortReads) {
       log.info("Sorting reads")
       adamRecords = adamRecords.adamSortReadsByReferencePosition()
+    }
+
+    if (args.mdTagsReferenceFile != null) {
+      log.info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
+      adamRecords = adamRecords.adamAddMDTags(args.mdTagsReferenceFile)
     }
 
     adamRecords
