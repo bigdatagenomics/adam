@@ -93,7 +93,7 @@ object AttributeUtils {
       case TagType.Float        => java.lang.Float.valueOf(valueStr)
       case TagType.String       => valueStr
       case TagType.ByteSequence => valueStr.map(c => java.lang.Byte.valueOf("" + c))
-      case TagType.NumericSequence => valueStr.split(",").map(c => {
+      case TagType.NumericSequence => valueStr.substring(2).split(",").map(c => {
         if (c.contains(".")) java.lang.Float.valueOf(c)
         else Integer.valueOf(c)
       })
