@@ -109,11 +109,19 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    * @return Returns a SAM formatted sequence dictionary.
    */
   def toSAMSequenceDictionary: SAMSequenceDictionary = {
-    new SAMSequenceDictionary(records.map(_ toSAMSequenceRecord).toList)
+    import SequenceRecord._
+    new SAMSequenceDictionary(records.sorted.map(_ toSAMSequenceRecord).toList)
   }
 
   override def toString: String = {
     records.map(_.toString).fold("SequenceDictionary{")(_ + "\n" + _) + "}"
+  }
+}
+
+object SequenceOrdering extends Ordering[SequenceRecord] {
+  def compare(a: SequenceRecord,
+              b: SequenceRecord): Int = {
+    a.name.compareTo(b.name)
   }
 }
 
@@ -182,6 +190,8 @@ class SequenceRecord(
 object SequenceRecord {
   val REFSEQ_TAG = "REFSEQ"
   val GENBANK_TAG = "GENBANK"
+
+  implicit def ordering = SequenceOrdering
 
   def apply(name: String,
             length: Long,
