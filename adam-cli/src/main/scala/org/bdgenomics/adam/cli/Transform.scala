@@ -158,7 +158,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       } else {
         sc.loadAlignments(args.inputPath)
       }
-    }).adamSave(args)
+    }).adamSave(args, args.sortReads)
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {

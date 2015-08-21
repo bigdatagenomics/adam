@@ -1,0 +1,10 @@
+@HD	VN:1.4	SO:coordinate
+@SQ	SN:1	LN:1000
+@SQ	SN:2	LN:1000
+@SQ     SN:3    LN:1000
+@SQ     SN:4    LN:2000
+A       0       1       1       50      10M     *       0       0       ACACACACAC      **********
+E       0       2       101     45      10M     *       0       0       ACACACACAC      **********
+D       0       2       501     55      10M2S   *       0       0       ACACACACACAC    ************
+B       0       3       11      40      4M2I4M  *       0       0       ACACACACAC      **********
+C       0       4       1001    25      8M      *       0       0       ACACACAC        ********
