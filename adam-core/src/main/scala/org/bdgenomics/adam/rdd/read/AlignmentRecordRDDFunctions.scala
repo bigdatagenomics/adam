@@ -22,6 +22,8 @@ import htsjdk.samtools.{ SAMFileHeader, SAMTextHeaderCodec, SAMTextWriter, TextC
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.LongWritable
+// NOTE(ryan): this is necessary for Spark <= 1.2.1.
+import org.apache.spark.SparkContext.LongAccumulatorParam
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
