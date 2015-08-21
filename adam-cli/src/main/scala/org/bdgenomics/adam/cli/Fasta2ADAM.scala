@@ -42,6 +42,8 @@ class Fasta2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   var reads: String = ""
   @Args4jOption(required = false, name = "-fragment_length", usage = "Sets maximum fragment length. Default value is 10,000. Values greater than 1e9 should be avoided.")
   var fragmentLength: Long = 10000L
+  @Args4jOption(required = false, name = "-repartition", usage = "Sets the number of output partitions to write, if desired.")
+  var partitions: Int = -1
 }
 
 class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fasta2ADAMArgs] with Logging {
@@ -57,7 +59,13 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fas
     }
 
     log.info("Writing records to disk.")
-    adamFasta.adamParquetSave(args)
+    val finalFasta = if (args.partitions > 0) {
+      adamFasta.repartition(args.partitions)
+    } else {
+      adamFasta
+    }
+
+    finalFasta.adamParquetSave(args)
   }
 }
 
