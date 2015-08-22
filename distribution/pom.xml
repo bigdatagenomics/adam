@@ -3,14 +3,14 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-parent_2.11</artifactId>
+        <artifactId>adam-parent_2.10</artifactId>
         <version>0.17.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>adam-distribution_2.11</artifactId>
+    <artifactId>adam-distribution_2.10</artifactId>
     <packaging>pom</packaging>
-    <name>ADAM_2.11: Distribution</name>
+    <name>ADAM_2.10: Distribution</name>
     <build>
         <plugins>
 			<!--
