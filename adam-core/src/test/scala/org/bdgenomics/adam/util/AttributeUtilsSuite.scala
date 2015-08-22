@@ -78,6 +78,12 @@ class AttributeSuite extends FunSuite {
     assert(convertSAMTagAndValue(new SAMTagAndValue("XY", 3.0f)) === Attribute("XY", TagType.Float, 3.0f))
     assert(convertSAMTagAndValue(new SAMTagAndValue("XY", 'a')) === Attribute("XY", TagType.Character, 'a'))
 
+    val intArray = Array(1, 2, 3)
+    assert(
+      convertSAMTagAndValue(new SAMTagAndValue("XY", intArray)) ===
+        Attribute("XY", TagType.NumericSequence, intArray)
+    )
+
     val byteArray: Array[java.lang.Byte] = Seq(java.lang.Byte.valueOf("0"), java.lang.Byte.valueOf("1")).toArray
     assert(convertSAMTagAndValue(new SAMTagAndValue("XY", byteArray)) === Attribute("XY", TagType.ByteSequence, byteArray))
   }
