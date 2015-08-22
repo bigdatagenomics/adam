@@ -18,12 +18,10 @@
 package org.bdgenomics.adam.rdd.read
 
 import java.io.StringWriter
-import htsjdk.samtools.{ SAMFileHeader, SAMTextHeaderCodec, SAMTextWriter, TextCigarCodec, ValidationStringency }
+import htsjdk.samtools.{ SAMFileHeader, SAMTextHeaderCodec, SAMTextWriter, ValidationStringency }
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.LongWritable
-// NOTE(ryan): this is necessary for Spark <= 1.2.1.
-import org.apache.spark.SparkContext.LongAccumulatorParam
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
@@ -35,9 +33,9 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
-import org.bdgenomics.adam.rdd.{ ShuffleRegionJoin, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
+import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.{ MdTag, MapTools }
+import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.SAMRecordWritable
 
