@@ -61,11 +61,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @return True if read alignment is contained in target span.
    */
   def contains(target: IndelRealignmentTarget, read: AlignmentRecord): Boolean = {
-    if (read.getReadMapped) {
-      target.readRange.overlaps(ReferenceRegion(read))
-    } else {
-      false
-    }
+    ReferenceRegion.opt(read).exists(target.readRange.overlaps)
   }
 
   /**
@@ -76,11 +72,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
    * @return True if start of read is before the start of the indel alignment target.
    */
   def lt(target: IndelRealignmentTarget, read: RichAlignmentRecord): Boolean = {
-    if (read.getReadMapped) {
-      target.readRange.compareTo(ReferenceRegion(read.record)) < 0
-    } else {
-      false
-    }
+    ReferenceRegion.opt(read.record).exists(target.readRange.compareTo(_) < 0)
   }
 
   /**

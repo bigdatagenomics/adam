@@ -35,7 +35,7 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
-import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
+import org.bdgenomics.adam.rdd.{ ShuffleRegionJoin, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.{ MdTag, MapTools }
 import org.bdgenomics.formats.avro._
@@ -295,77 +295,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         ReferencePosition(s"~~~${r.getReadName}", 0)
       }
     }).sortByKey().map(_._2)
-  }
-
-  def adamAddMDTags(referenceFile: String, fragmentLengthOpt: Option[Int] = None): RDD[AlignmentRecord] =
-    adamAddMDTags(
-      fragmentLengthOpt match {
-        case Some(fragmentLength) =>
-          sc.loadSequence(referenceFile, fragmentLength = fragmentLength)
-        case _ =>
-          sc.loadSequence(referenceFile)
-      }
-    )
-
-  def adamAddMDTags(referenceFragments: RDD[NucleotideContigFragment]): RDD[AlignmentRecord] = {
-    val collectedRefMap =
-      referenceFragments
-        .groupBy(_.getContig.getContigName)
-        .mapValues(_.toSeq.sortBy(_.getFragmentStartPosition))
-        .collectAsMap
-        .toMap
-
-    log.info(s"Found contigs named: ${collectedRefMap.keys.mkString(", ")}")
-
-    val refMapB = sc.broadcast(collectedRefMap)
-
-    val mdTagsAdded = sc.accumulator(0L, "MDTags Added")
-    val mdTagsExtant = sc.accumulator(0L, "MDTags Extant")
-    val unmappedReads = sc.accumulator(0L, "Unmapped Reads")
-
-    def getRefSeq(contigName: String, refStart: Long, refEnd: Long): String =
-      refMapB
-        .value
-        .getOrElse(
-          contigName,
-          throw new Exception(
-            s"Contig $contigName not found in reference map with keys: ${refMapB.value.keys.mkString(", ")}"
-          )
-        )
-        .dropWhile(f => f.getFragmentStartPosition + f.getFragmentSequence.length < refStart)
-        .takeWhile(_.getFragmentStartPosition < refEnd)
-        .map(frag => {
-          frag.getFragmentSequence.substring(
-            math.max(0L, refStart - frag.getFragmentStartPosition).toInt,
-            math.min(frag.getFragmentSequence.length, refEnd - frag.getFragmentStartPosition).toInt
-          )
-        })
-        .mkString("")
-
-    rdd.map(read => {
-      (for {
-        contig <- Option(read.getContig)
-        contigName <- Option(contig.getContigName)
-        if read.getReadMapped
-        referenceStart = read.getStart
-        referenceLength = read.referenceLength
-        referenceEnd = referenceStart + referenceLength
-        refSeq = getRefSeq(contigName, referenceStart, referenceEnd)
-        cigar = TextCigarCodec.decode(read.getCigar)
-        mdTag = MdTag(read.getSequence, refSeq, cigar, referenceStart)
-      } yield {
-        if (read.getMismatchingPositions != null) {
-          mdTagsExtant += 1
-        } else {
-          read.setMismatchingPositions(mdTag.toString)
-          mdTagsAdded += 1
-        }
-        read
-      }).getOrElse({
-        unmappedReads += 1
-        read
-      })
-    })
   }
 
   def adamMarkDuplicates(): RDD[AlignmentRecord] = MarkDuplicatesInDriver.time {

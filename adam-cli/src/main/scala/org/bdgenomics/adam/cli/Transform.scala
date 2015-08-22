@@ -25,6 +25,7 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
+import org.bdgenomics.adam.rdd.read.MDTagging
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
@@ -92,6 +93,12 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var concatFilename: String = null
   @Args4jOption(required = false, name = "-add_md_tags", usage = "Add MD Tags to reads based on the FASTA (or equivalent) file passed to this option.")
   var mdTagsReferenceFile: String = null
+  @Args4jOption(required = false, name = "-md_tag_broadcast", usage = "When adding MD tags to reads, use a broadcast join (as opposed to shuffle join).")
+  var mdTagsBroadcast: Boolean = false
+  @Args4jOption(required = false, name = "-md_tag_fragment_size", usage = "When adding MD tags to reads, load the reference in fragments of this size.")
+  var mdTagsFragmentSize: Long = 10000L
+  @Args4jOption(required = false, name = "-md_tag_overwrite", usage = "When adding MD tags to reads, overwrite existing incorrect tags.")
+  var mdTagsOverwrite: Boolean = false
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
@@ -103,6 +110,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
     var adamRecords = rdd
     val sc = rdd.context
+
+    val stringencyOpt = Option(args.stringency).map(ValidationStringency.valueOf(_))
 
     if (args.repartition != -1) {
       log.info("Repartitioning reads to to '%d' partitions".format(args.repartition))
@@ -153,7 +162,15 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
     if (args.mdTagsReferenceFile != null) {
       log.info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
-      adamRecords = adamRecords.adamAddMDTags(args.mdTagsReferenceFile)
+      adamRecords =
+        MDTagging(
+          adamRecords,
+          args.mdTagsReferenceFile,
+          broadcast = args.mdTagsBroadcast,
+          fragmentLength = args.mdTagsFragmentSize,
+          overwriteExistingTags = args.mdTagsOverwrite,
+          validationStringency = stringencyOpt.getOrElse(ValidationStringency.STRICT)
+        )
     }
 
     adamRecords
