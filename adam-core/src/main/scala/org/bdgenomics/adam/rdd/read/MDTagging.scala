@@ -21,7 +21,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import htsjdk.samtools.{ TextCigarCodec, ValidationStringency }
 import org.apache.spark.Logging
 // NOTE(ryan): this is necessary for Spark <= 1.2.1.
-import org.apache.spark.SparkContext.LongAccumulatorParam
+import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ShuffleRegionJoin
