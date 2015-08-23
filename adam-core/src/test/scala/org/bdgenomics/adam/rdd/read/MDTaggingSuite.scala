@@ -76,7 +76,7 @@ class MDTaggingSuite extends ADAMFunSuite {
 
     for (i <- List(1, 10)) {
       check(MDTagging(reads, makeFrags(fs: _*), partitionSize = i))
-      check(MDTagging(reads, makeFrags(fs: _*), partitionSize = i, broadcast = true))
+      check(MDTagging(reads, makeFrags(fs: _*), partitionSize = i, shuffle = true))
     }
   }
 
