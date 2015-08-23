@@ -30,8 +30,8 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
 
 case class MDTagging(reads: RDD[AlignmentRecord],
                      referenceFragments: RDD[NucleotideContigFragment],
-                     broadcast: Boolean = false,
-                     partitionSize: Long = 10000,
+                     shuffle: Boolean = false,
+                     partitionSize: Long = 1000000,
                      overwriteExistingTags: Boolean = false,
                      validationStringency: ValidationStringency = ValidationStringency.STRICT) extends Logging {
   @transient val sc = reads.sparkContext
@@ -42,17 +42,16 @@ case class MDTagging(reads: RDD[AlignmentRecord],
   val incorrectMDTags = sc.accumulator(0L, "Incorrect Extant MDTags")
 
   val taggedReads =
-    if (broadcast) {
-      addMDTagsBroadcast
-    } else {
+    (if (shuffle) {
       addMDTagsShuffle
-    }
+    } else {
+      addMDTagsBroadcast
+    }).cache
 
   def maybeMDTagRead(read: AlignmentRecord, refSeq: String): AlignmentRecord = {
 
     val cigar = TextCigarCodec.decode(read.getCigar)
     val mdTag = MdTag(read.getSequence, refSeq, cigar, read.getStart)
-    //    println(s"maybeMDTagRead: ${read.getSequence}, $refSeq, $cigar, $mdTag, ${read.getMismatchingPositions}")
     if (read.getMismatchingPositions != null) {
       mdTagsExtant += 1
       if (mdTag.toString != read.getMismatchingPositions) {
@@ -137,10 +136,7 @@ case class MDTagging(reads: RDD[AlignmentRecord],
         region <- ReferenceRegion.opt(read)
       } yield region -> read
 
-    //    println(s"${readsWithRegions.count} readsWithRegions")
-
     val sd = reads.adamGetSequenceDictionary()
-    //    println(s"${sd.records.length} seqdict records")
 
     val readsWithFragments =
       ShuffleRegionJoin(sd, partitionSize)
@@ -148,32 +144,14 @@ case class MDTagging(reads: RDD[AlignmentRecord],
         .groupByKey
         .mapValues(_.toSeq.sortBy(_.getFragmentStartPosition))
 
-    //    println(s"${readsWithFragments.count} readsWithFragments")
-    //
-    //    println("looping..")
-    //    val rdd =
-    //      readsWithFragments.map(p => {
-    //        println(s"in: $p")
-    //        val (read, fragments) = p
-    //        maybeMDTagRead(read, getReferenceBasesForRead(read, fragments))
-    //      }) ++ unmappedReads
-    //
-    //    val collected = rdd.collect
-    //
-    //    println(s"${readsWithFragments.count} readsWithFragments, ${collected.length}: $collected")
-    //
-    //    rdd
     (for {
       (read, fragments) <- readsWithFragments
     } yield {
-      //          println("in loop..")
       maybeMDTagRead(read, getReferenceBasesForRead(read, fragments))
     }) ++ unmappedReads
   }
 
   private def getReferenceBasesForRead(read: AlignmentRecord, fragments: Seq[NucleotideContigFragment]): String = {
-    //    val frags = fragments.map(clipFragment(_, read))
-    //    println(s"getReferenceBasesForRead: ${read.getSequence}, frags: $frags, ${frags.mkString("")}")
     fragments.map(clipFragment(_, read)).mkString("")
   }
 
@@ -200,7 +178,7 @@ case class MDTagging(reads: RDD[AlignmentRecord],
 object MDTagging {
   def apply(reads: RDD[AlignmentRecord],
             referenceFile: String,
-            broadcast: Boolean,
+            shuffle: Boolean,
             fragmentLength: Long,
             overwriteExistingTags: Boolean,
             validationStringency: ValidationStringency): RDD[AlignmentRecord] = {
@@ -208,7 +186,7 @@ object MDTagging {
     new MDTagging(
       reads,
       sc.loadSequence(referenceFile, fragmentLength = fragmentLength),
-      broadcast = broadcast,
+      shuffle = shuffle,
       partitionSize = fragmentLength,
       overwriteExistingTags,
       validationStringency
