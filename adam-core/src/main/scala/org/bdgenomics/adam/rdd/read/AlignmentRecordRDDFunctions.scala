@@ -284,15 +284,16 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     log.info("Sorting reads by reference position")
 
     // NOTE: In order to keep unmapped reads from swamping a single partition
-    // we sort the unmapped reads by read name. we prefix with "ZZZ" to ensure
-    // that the read name is lexicographically "after" the contig names
+    // we sort the unmapped reads by read name. We prefix with tildes ("~";
+    // ASCII 126) to ensure that the read name is lexicographically "after" the
+    // contig names.
     rdd.keyBy(r => {
       if (r.getReadMapped) {
         ReferencePosition(r)
       } else {
-        ReferencePosition("ZZZ%s".format(r.getReadName), 0)
+        ReferencePosition(s"~~~${r.getReadName}", 0)
       }
-    }).sortByKey().map(p => p._2)
+    }).sortByKey().map(_._2)
   }
 
   def adamMarkDuplicates(): RDD[AlignmentRecord] = MarkDuplicatesInDriver.time {
