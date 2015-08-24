@@ -239,9 +239,9 @@ object SequenceRecord {
 
   def fromADAMContig(contig: Contig): SequenceRecord = {
     SequenceRecord(
-      contig.getContigName.toString,
+      contig.getContigName,
       contig.getContigLength,
-      md5 = contig.getContigName,
+      md5 = contig.getContigMD5,
       url = contig.getReferenceURL,
       assembly = contig.getAssembly,
       species = contig.getSpecies)
