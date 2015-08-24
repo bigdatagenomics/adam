@@ -24,7 +24,7 @@
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>0.99.2</scoverage.version>
-    <utils.version>0.2.2</utils.version>
+    <utils.version>0.2.3</utils.version>
     <htsjdk.version>1.133</htsjdk.version>
   </properties>
   
