@@ -19,7 +19,9 @@
 package org.bdgenomics.adam.util
 
 import java.nio.{ ByteOrder, ByteBuffer }
-import org.bdgenomics.utils.io.ByteAccess
+import com.esotericsoftware.kryo.io.{ Output, Input }
+import com.esotericsoftware.kryo.{ Kryo, Serializer }
+import org.bdgenomics.utils.io.{ ByteArrayByteAccess, ByteAccess }
 import org.bdgenomics.adam.models.ReferenceRegion
 
 object TwoBitFile {
@@ -97,7 +99,13 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
    * @return The reference sequence at the desired locus.
    */
   def extract(region: ReferenceRegion): String = {
-    val record = seqRecords(region.referenceName)
+    val record =
+      seqRecords.getOrElse(
+        region.referenceName,
+        throw new Exception(
+          s"Contig ${region.referenceName} not found in reference map with keys: ${seqRecords.keys.toList.sortBy(x => x).mkString(", ")}"
+        )
+      )
     val contigLength = record.dnaSize
     assert(region.start >= 0)
     assert(region.end <= contigLength.toLong)
@@ -122,6 +130,20 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
       sb += nt
     })
     sb.toString()
+  }
+}
+
+class TwoBitFileSerializer extends Serializer[TwoBitFile] {
+  override def write(kryo: Kryo, output: Output, obj: TwoBitFile): Unit = {
+    val arr = obj.bytes.array()
+    output.writeInt(arr.length)
+    output.write(arr)
+  }
+
+  override def read(kryo: Kryo, input: Input, klazz: Class[TwoBitFile]): TwoBitFile = {
+    val length = input.readInt()
+    val bytes = input.readBytes(length)
+    new TwoBitFile(new ByteArrayByteAccess(bytes))
   }
 }
 

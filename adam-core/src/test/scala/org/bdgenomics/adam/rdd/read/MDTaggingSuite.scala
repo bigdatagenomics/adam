@@ -18,8 +18,9 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.adam.util.{ ReferenceContigMap, ADAMFunSuite }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
+import org.bdgenomics.utils.misc.SparkFunSuite
 
 class MDTaggingSuite extends ADAMFunSuite {
   val chr1 =
@@ -75,8 +76,7 @@ class MDTaggingSuite extends ADAMFunSuite {
     }
 
     for (i <- List(1, 10)) {
-      check(MDTagging(reads, makeFrags(fs: _*), partitionSize = i))
-      check(MDTagging(reads, makeFrags(fs: _*), partitionSize = i, shuffle = true))
+      check(MDTagging(reads, ReferenceContigMap(makeFrags(fs: _*)), partitionSize = i))
     }
   }
 

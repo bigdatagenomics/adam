@@ -93,8 +93,6 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var concatFilename: String = null
   @Args4jOption(required = false, name = "-add_md_tags", usage = "Add MD Tags to reads based on the FASTA (or equivalent) file passed to this option.")
   var mdTagsReferenceFile: String = null
-  @Args4jOption(required = false, name = "-md_tag_shuffle", usage = "When adding MD tags to reads, use a shuffle join (as opposed to default region join).")
-  var mdTagsShuffle: Boolean = false
   @Args4jOption(required = false, name = "-md_tag_fragment_size", usage = "When adding MD tags to reads, load the reference in fragments of this size.")
   var mdTagsFragmentSize: Long = 1000000L
   @Args4jOption(required = false, name = "-md_tag_overwrite", usage = "When adding MD tags to reads, overwrite existing incorrect tags.")
@@ -166,7 +164,6 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         MDTagging(
           adamRecords,
           args.mdTagsReferenceFile,
-          shuffle = args.mdTagsShuffle,
           fragmentLength = args.mdTagsFragmentSize,
           overwriteExistingTags = args.mdTagsOverwrite,
           validationStringency = stringencyOpt.getOrElse(ValidationStringency.STRICT)

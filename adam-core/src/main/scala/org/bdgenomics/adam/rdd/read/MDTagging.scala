@@ -24,13 +24,11 @@ import org.apache.spark.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.rdd.ShuffleRegionJoin
-import org.bdgenomics.adam.util.MdTag
-import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
+import org.bdgenomics.adam.util.{ ReferenceFile, MdTag }
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 case class MDTagging(reads: RDD[AlignmentRecord],
-                     referenceFragments: RDD[NucleotideContigFragment],
-                     shuffle: Boolean = false,
+                     @transient referenceFile: ReferenceFile,
                      partitionSize: Long = 1000000,
                      overwriteExistingTags: Boolean = false,
                      validationStringency: ValidationStringency = ValidationStringency.STRICT) extends Logging {
@@ -41,12 +39,7 @@ case class MDTagging(reads: RDD[AlignmentRecord],
   val numUnmappedReads = sc.accumulator(0L, "Unmapped Reads")
   val incorrectMDTags = sc.accumulator(0L, "Incorrect Extant MDTags")
 
-  val taggedReads =
-    (if (shuffle) {
-      addMDTagsShuffle
-    } else {
-      addMDTagsBroadcast
-    }).cache
+  val taggedReads = addMDTagsBroadcast.cache
 
   def maybeMDTagRead(read: AlignmentRecord, refSeq: String): AlignmentRecord = {
 
@@ -75,118 +68,32 @@ case class MDTagging(reads: RDD[AlignmentRecord],
   }
 
   def addMDTagsBroadcast(): RDD[AlignmentRecord] = {
-    val collectedRefMap =
-      referenceFragments
-        .groupBy(_.getContig.getContigName)
-        .mapValues(_.toSeq.sortBy(_.getFragmentStartPosition))
-        .collectAsMap
-        .toMap
-
-    log.info(s"Found contigs named: ${collectedRefMap.keys.mkString(", ")}")
-
-    val refMapB = sc.broadcast(collectedRefMap)
-
-    def getRefSeq(contigName: String, read: AlignmentRecord): String = {
-      val readStart = read.getStart
-      val readEnd = readStart + read.referenceLength
-
-      val fragments =
-        refMapB
-          .value
-          .getOrElse(
-            contigName,
-            throw new Exception(
-              s"Contig $contigName not found in reference map with keys: ${refMapB.value.keys.mkString(", ")}"
-            )
-          )
-          .dropWhile(f => f.getFragmentStartPosition + f.getFragmentSequence.length < readStart)
-          .takeWhile(_.getFragmentStartPosition < readEnd)
-
-      getReferenceBasesForRead(read, fragments)
-    }
+    val referenceFileB = sc.broadcast(referenceFile)
     reads.map(read => {
       (for {
         contig <- Option(read.getContig)
         contigName <- Option(contig.getContigName)
         if read.getReadMapped
       } yield {
-        maybeMDTagRead(read, getRefSeq(contigName, read))
+        maybeMDTagRead(read, referenceFileB.value.extract(ReferenceRegion(read)))
       }).getOrElse({
         numUnmappedReads += 1
         read
       })
     })
   }
-
-  def addMDTagsShuffle(): RDD[AlignmentRecord] = {
-    val fragsWithRegions =
-      for {
-        fragment <- referenceFragments
-        region <- ReferenceRegion(fragment)
-      } yield {
-        region -> fragment
-      }
-
-    val unmappedReads = reads.filter(!_.getReadMapped)
-    numUnmappedReads += unmappedReads.count
-
-    val readsWithRegions =
-      for {
-        read <- reads
-        region <- ReferenceRegion.opt(read)
-      } yield region -> read
-
-    val sd = reads.adamGetSequenceDictionary()
-
-    val readsWithFragments =
-      ShuffleRegionJoin(sd, partitionSize)
-        .partitionAndJoin(readsWithRegions, fragsWithRegions)
-        .groupByKey
-        .mapValues(_.toSeq.sortBy(_.getFragmentStartPosition))
-
-    (for {
-      (read, fragments) <- readsWithFragments
-    } yield {
-      maybeMDTagRead(read, getReferenceBasesForRead(read, fragments))
-    }) ++ unmappedReads
-  }
-
-  private def getReferenceBasesForRead(read: AlignmentRecord, fragments: Seq[NucleotideContigFragment]): String = {
-    fragments.map(clipFragment(_, read)).mkString("")
-  }
-
-  private def clipFragment(fragment: NucleotideContigFragment, read: AlignmentRecord): String = {
-    clipFragment(fragment, read.getStart, read.getStart + read.referenceLength)
-  }
-  private def clipFragment(fragment: NucleotideContigFragment, start: Long, end: Long): String = {
-    val min =
-      math.max(
-        0L,
-        start - fragment.getFragmentStartPosition
-      ).toInt
-
-    val max =
-      math.min(
-        fragment.getFragmentSequence.length,
-        end - fragment.getFragmentStartPosition
-      ).toInt
-
-    fragment.getFragmentSequence.substring(min, max)
-  }
 }
 
 object MDTagging {
   def apply(reads: RDD[AlignmentRecord],
             referenceFile: String,
-            shuffle: Boolean,
             fragmentLength: Long,
             overwriteExistingTags: Boolean,
             validationStringency: ValidationStringency): RDD[AlignmentRecord] = {
     val sc = reads.sparkContext
     new MDTagging(
       reads,
-      sc.loadSequence(referenceFile, fragmentLength = fragmentLength),
-      shuffle = shuffle,
+      sc.loadReferenceFile(referenceFile, fragmentLength = fragmentLength),
       partitionSize = fragmentLength,
       overwriteExistingTags,
       validationStringency

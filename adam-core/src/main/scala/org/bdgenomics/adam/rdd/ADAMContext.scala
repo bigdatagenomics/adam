@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
+import java.io.File
 import java.io.FileNotFoundException
 import java.util.regex.Pattern
 import htsjdk.samtools.{ IndexedBamInputFormat, SAMFileHeader, ValidationStringency }
@@ -45,8 +46,10 @@ import org.bdgenomics.adam.rdd.fragment.FragmentRDDFunctions
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDDFunctions
 import org.bdgenomics.adam.rdd.variation._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.util.{ TwoBitFile, ReferenceContigMap, ReferenceFile }
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.instrumentation.Metrics
+import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.HadoopUtil
 import org.seqdoop.hadoop_bam._
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
@@ -610,6 +613,15 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
                 projection: Option[Schema] = None): RDD[Gene] = {
     import ADAMContext._
     loadFeatures(filePath, projection).asGenes()
+  }
+
+  def loadReferenceFile(filePath: String, fragmentLength: Long): ReferenceFile = {
+    if (filePath.endsWith(".2bit")) {
+      //TODO(ryan): S3ByteAccess
+      new TwoBitFile(new LocalFileByteAccess(new File(filePath)))
+    } else {
+      ReferenceContigMap(loadSequence(filePath, fragmentLength = fragmentLength))
+    }
   }
 
   def loadSequence(
