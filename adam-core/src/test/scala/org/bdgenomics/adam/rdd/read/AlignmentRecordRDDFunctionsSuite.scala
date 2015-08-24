@@ -164,7 +164,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val reads12A = rdd12A.collect()
     val reads12B = rdd12B.collect()
 
-    (0 until reads12A.length) foreach {
+    reads12A.indices.foreach {
       case i: Int =>
         val (readA, readB) = (reads12A(i), reads12B(i))
         assert(readA.getSequence === readB.getSequence)
@@ -206,7 +206,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val readsA = rddA.collect()
     val readsB = rddB.collect()
 
-    (0 until readsA.length) foreach {
+    readsA.indices.foreach {
       case i: Int =>
         val (readA, readB) = (readsA(i), readsB(i))
         assert(readA.getSequence === readB.getSequence)
@@ -216,87 +216,22 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
   }
 
   sparkTest("writing a small sorted file as SAM should produce the expected result") {
-    val reads = sc.parallelize(Seq(AlignmentRecord.newBuilder()
-      .setContig(Contig.newBuilder()
-        .setContigName("1")
-        .setContigLength(1000L)
-        .build())
-      .setStart(0L)
-      .setEnd(10L)
-      .setSequence("ACACACACAC")
-      .setQual("**********")
-      .setMapq(50)
-      .setCigar("10M")
-      .setReadName("A")
-      .build(),
-      AlignmentRecord.newBuilder()
-        .setContig(Contig.newBuilder()
-          .setContigName("3")
-          .setContigLength(1000L)
-          .build())
-        .setStart(10L)
-        .setEnd(20L)
-        .setSequence("ACACACACAC")
-        .setQual("**********")
-        .setMapq(40)
-        .setCigar("4M2I4M")
-        .setReadName("B")
-        .build(),
-      AlignmentRecord.newBuilder()
-        .setContig(Contig.newBuilder()
-          .setContigName("4")
-          .setContigLength(2000L)
-          .build())
-        .setStart(1000L)
-        .setEnd(1008L)
-        .setSequence("ACACACAC")
-        .setQual("********")
-        .setMapq(25)
-        .setCigar("8M")
-        .setReadName("C")
-        .build(),
-      AlignmentRecord.newBuilder()
-        .setContig(Contig.newBuilder()
-          .setContigName("2")
-          .setContigLength(1000L)
-          .build())
-        .setStart(500L)
-        .setEnd(510L)
-        .setSequence("ACACACACACAC")
-        .setQual("************")
-        .setMapq(55)
-        .setCigar("10M2S")
-        .setReadName("D")
-        .build(),
-      AlignmentRecord.newBuilder()
-        .setContig(Contig.newBuilder()
-          .setContigName("2")
-          .setContigLength(1000L)
-          .build())
-        .setStart(100L)
-        .setEnd(110L)
-        .setSequence("ACACACACAC")
-        .setQual("**********")
-        .setMapq(45)
-        .setCigar("10M")
-        .setReadName("E")
-        .build()), 1)
 
-    val tempFile = Files.createTempDirectory("sam")
-    val tempPath1 = tempFile.toAbsolutePath.toString + "/reads.sam"
+    val unsortedPath = ClassLoader.getSystemClassLoader.getResource("unsorted.sam").getFile
+    val reads = sc.loadBam(unsortedPath)
 
-    reads.adamSortReadsByReferencePosition()
-      .adamSAMSave(tempPath1, isSorted = true)
+    val actualSortedPath = Files.createTempDirectory("sam").toAbsolutePath.toString + "/sorted.sam"
+    reads.adamSortReadsByReferencePosition().adamSAMSave(actualSortedPath, isSorted = true, asSingleFile = true)
 
-    val file1 = Source.fromFile(tempPath1 + "/part-r-00000")
-    val file2 = Source.fromFile(ClassLoader.getSystemClassLoader
-      .getResource("sorted.sam").getFile)
+    val actualSortedFile = Source.fromFile(actualSortedPath)
+    val actualSortedLines = actualSortedFile.getLines.toList
 
-    val f1lines = file1.getLines
-    val f2lines = file2.getLines
+    val expectedSortedFile = Source.fromFile(ClassLoader.getSystemClassLoader.getResource("sorted.sam").getFile)
+    val expectedSortedLines = expectedSortedFile.getLines.toList
 
-    assert(f1lines.size === f2lines.size)
-    f1lines.zip(f2lines)
-      .foreach(p => assert(p._1 === p._2))
+    assert(expectedSortedLines.size === actualSortedLines.size)
+    expectedSortedLines.zip(actualSortedLines).foreach(p => {
+      assert(p._1 === p._2)
+    })
   }
 }

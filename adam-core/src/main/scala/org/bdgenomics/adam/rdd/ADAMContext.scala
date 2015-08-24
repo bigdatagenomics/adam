@@ -245,13 +245,15 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
           // data into each individual Read (see the argument to samRecordConverter.convert,
           // below).
           val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
-          log.info("Loaded header from " + fp)
+          log.info(s"Loaded header from $fp")
           val sd = adamBamDictionaryLoad(samHeader)
           val rg = adamBamLoadReadGroups(samHeader)
           Some((sd, rg))
         } catch {
-          case _: Throwable => {
-            log.error("Loading failed for " + fp)
+          case e: Throwable => {
+            log.error(
+              s"Loading failed for $fp:n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
+            )
             None
           }
         }
