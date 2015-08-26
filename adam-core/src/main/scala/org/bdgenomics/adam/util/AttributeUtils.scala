@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.util
 
 import htsjdk.samtools.SAMRecord.SAMTagAndValue
+import htsjdk.samtools.TagValueAndUnsignedArrayFlag
 import org.bdgenomics.adam.models.{ TagType, Attribute }
 
 /**
@@ -27,18 +28,27 @@ import org.bdgenomics.adam.models.{ TagType, Attribute }
  */
 object AttributeUtils {
 
-  val attrRegex = RegExp("([^:]{2,4}):([AifZHB]):(.*)")
+  val attrRegex = RegExp("([^:]{2,4}):([AifZHB]):([cCiIsSf]{1},)?(.*)")
 
   def convertSAMTagAndValue(attr: SAMTagAndValue): Attribute = {
-    attr.value match {
-      case x: java.lang.Integer   => Attribute(attr.tag, TagType.Integer, x)
-      case x: java.lang.Character => Attribute(attr.tag, TagType.Character, x)
-      case x: java.lang.Float     => Attribute(attr.tag, TagType.Float, x)
-      case x: java.lang.String    => Attribute(attr.tag, TagType.String, x)
-      case x: Array[Int]          => Attribute(attr.tag, TagType.NumericSequence, x)
-      case Array(_*)              => Attribute(attr.tag, TagType.ByteSequence, attr.value.asInstanceOf[Array[java.lang.Byte]])
-      // It appears from the code, that 'H' is encoded as a String as well? I'm not sure
-      // how to pull that out here.
+    if (attr.value.isInstanceOf[TagValueAndUnsignedArrayFlag]) {
+      attr.value.asInstanceOf[TagValueAndUnsignedArrayFlag].value match {
+        case x: Array[Int]   => Attribute(attr.tag, TagType.NumericUnsignedIntSequence, x.asInstanceOf[Array[Int]])
+        case x: Array[Byte]  => Attribute(attr.tag, TagType.NumericUnsignedByteSequence, x.asInstanceOf[Array[Byte]])
+        case x: Array[Short] => Attribute(attr.tag, TagType.NumericUnsignedShortSequence, x.asInstanceOf[Array[Short]])
+      }
+    } else {
+      attr.value match {
+        case x: java.lang.Integer   => Attribute(attr.tag, TagType.Integer, x)
+        case x: java.lang.Character => Attribute(attr.tag, TagType.Character, x)
+        case x: java.lang.Float     => Attribute(attr.tag, TagType.Float, x)
+        case x: java.lang.String    => Attribute(attr.tag, TagType.String, x)
+        case x: Array[Int]          => Attribute(attr.tag, TagType.NumericIntSequence, x.asInstanceOf[Array[Int]])
+        case x: Array[Byte]         => Attribute(attr.tag, TagType.NumericByteSequence, x.asInstanceOf[Array[Byte]])
+        case x: Array[Short]        => Attribute(attr.tag, TagType.NumericShortSequence, x.asInstanceOf[Array[Short]])
+        case x: Array[Float]        => Attribute(attr.tag, TagType.NumericFloatSequence, x.asInstanceOf[Array[Float]])
+        // attr.value for type 'H' is indistinguishable from 'B:c', so both will be saved as NumericByteSequence.
+      }
     }
   }
 
@@ -61,27 +71,37 @@ object AttributeUtils {
    */
   def parseAttribute(encoded: String): Attribute = {
     attrRegex.matches(encoded) match {
-      case Some(m) => createAttribute(m.group(1), m.group(2), m.group(3))
+      case Some(m) => createAttribute(m.group(1), m.group(2), m.group(3), m.group(4))
       case None =>
         throw new IllegalArgumentException(
           "attribute string \"%s\" doesn't match format attrTuple:type:value".format(encoded))
     }
   }
 
-  private def createAttribute(attrTuple: (String, String, String)): Attribute = {
+  private def createAttribute(attrTuple: (String, String, String, String)): Attribute = {
     val tagName = attrTuple._1
     val tagTypeString = attrTuple._2
-    val valueStr = attrTuple._3
+    val tagArrayString = attrTuple._3
+    val valueStr = attrTuple._4
+
+    val fullTagString = if (tagArrayString == null) tagTypeString else
+      tagTypeString ++ ":" ++ tagArrayString
 
     // partial match, but these letters should be (per the SAM file format spec)
     // the only legal values of the tagTypeString anyway.
-    val tagType = tagTypeString match {
-      case "A" => TagType.Character
-      case "i" => TagType.Integer
-      case "f" => TagType.Float
-      case "Z" => TagType.String
-      case "H" => TagType.ByteSequence
-      case "B" => TagType.NumericSequence
+    val tagType = fullTagString match {
+      case "A"    => TagType.Character
+      case "i"    => TagType.Integer
+      case "f"    => TagType.Float
+      case "Z"    => TagType.String
+      case "H"    => TagType.ByteSequence
+      case "B:c," => TagType.NumericByteSequence
+      case "B:i," => TagType.NumericIntSequence
+      case "B:s," => TagType.NumericShortSequence
+      case "B:C," => TagType.NumericUnsignedByteSequence
+      case "B:I," => TagType.NumericUnsignedIntSequence
+      case "B:S," => TagType.NumericUnsignedShortSequence
+      case "B:f," => TagType.NumericFloatSequence
     }
 
     Attribute(tagName, tagType, typedStringToValue(tagType, valueStr))
@@ -89,15 +109,18 @@ object AttributeUtils {
 
   private def typedStringToValue(tagType: TagType.Value, valueStr: String): Any = {
     tagType match {
-      case TagType.Character    => valueStr(0)
-      case TagType.Integer      => Integer.valueOf(valueStr)
-      case TagType.Float        => java.lang.Float.valueOf(valueStr)
-      case TagType.String       => valueStr
-      case TagType.ByteSequence => valueStr.map(c => java.lang.Byte.valueOf("" + c))
-      case TagType.NumericSequence => valueStr.substring(2).split(",").map(c => {
-        if (c.contains(".")) java.lang.Float.valueOf(c)
-        else Integer.valueOf(c)
-      })
+      case TagType.Character                    => valueStr(0)
+      case TagType.Integer                      => Integer.valueOf(valueStr)
+      case TagType.Float                        => java.lang.Float.valueOf(valueStr)
+      case TagType.String                       => valueStr
+      case TagType.ByteSequence                 => valueStr.map(c => java.lang.Byte.valueOf("" + c))
+      case TagType.NumericByteSequence          => valueStr.split(",").map(c => java.lang.Byte.valueOf("" + c))
+      case TagType.NumericShortSequence         => valueStr.split(",").map(c => java.lang.Short.valueOf("" + c))
+      case TagType.NumericIntSequence           => valueStr.split(",").map(c => java.lang.Integer.valueOf("" + c))
+      case TagType.NumericUnsignedByteSequence  => valueStr.split(",").map(c => java.lang.Byte.valueOf("" + c))
+      case TagType.NumericUnsignedShortSequence => valueStr.split(",").map(c => java.lang.Short.valueOf("" + c))
+      case TagType.NumericUnsignedIntSequence   => valueStr.split(",").map(c => java.lang.Integer.valueOf("" + c))
+      case TagType.NumericFloatSequence         => valueStr.split(",").map(c => java.lang.Float.valueOf("" + c))
     }
   }
 }
