@@ -19,7 +19,7 @@
         <configuration>
           <programs>
             <program>
-              <mainClass>org.bdgenomics.adam.cli.ADAMMain</mainClass>
+              <mainClass>org.bdgenomics.adam.cli.ADAMAppassemblerMain</mainClass>
               <id>adam</id>
             </program>
           </programs>
