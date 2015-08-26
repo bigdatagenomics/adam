@@ -29,7 +29,22 @@ package org.bdgenomics.adam.models
  * @param value The 'value' half of the pair.
  */
 case class Attribute(tag: String, tagType: TagType.Value, value: Any) {
-  override def toString: String = "%s:%s:%s".format(tag, tagType, value.toString)
+  override def toString: String = {
+    val byteSequenceTypes = Array(TagType.NumericByteSequence, TagType.NumericUnsignedByteSequence)
+    val intSequenceTypes = Array(TagType.NumericIntSequence, TagType.NumericUnsignedIntSequence)
+    val shortSequenceTypes = Array(TagType.NumericShortSequence, TagType.NumericUnsignedShortSequence)
+    if (byteSequenceTypes contains tagType) {
+      "%s:%s,%s".format(tag, tagType, value.asInstanceOf[Array[Byte]].mkString(","))
+    } else if (shortSequenceTypes contains tagType) {
+      "%s:%s,%s".format(tag, tagType, value.asInstanceOf[Array[Short]].mkString(","))
+    } else if (intSequenceTypes contains tagType) {
+      "%s:%s,%s".format(tag, tagType, value.asInstanceOf[Array[Int]].mkString(","))
+    } else if (tagType == TagType.NumericFloatSequence) {
+      "%s:%s,%s".format(tag, tagType, value.asInstanceOf[Array[Float]].mkString(","))
+    } else {
+      "%s:%s:%s".format(tag, tagType, value.toString)
+    }
+  }
 }
 
 object TagType extends Enumeration {
@@ -45,6 +60,12 @@ object TagType extends Enumeration {
   val Float = TypeValue("f")
   val String = TypeValue("Z")
   val ByteSequence = TypeValue("H")
-  val NumericSequence = TypeValue("B")
+  val NumericByteSequence = TypeValue("B:c")
+  val NumericIntSequence = TypeValue("B:i")
+  val NumericShortSequence = TypeValue("B:s")
+  val NumericUnsignedByteSequence = TypeValue("B:C")
+  val NumericUnsignedIntSequence = TypeValue("B:I")
+  val NumericUnsignedShortSequence = TypeValue("B:S")
+  val NumericFloatSequence = TypeValue("B:f")
 
 }

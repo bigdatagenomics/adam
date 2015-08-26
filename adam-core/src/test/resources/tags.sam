@@ -1,0 +1,9 @@
+@HD	VN:1.4	SO:coordinate
+@SQ	SN:1	LN:1000
+StandardTags	0	1	1	255	10M	*	0	0	ACACACACAC	**********	NM:i:0	MD:Z:10 XS:A:-
+MDTagWithEdits	0	1	1	255	10M	*	0	0	ACAGACACTC	**********	NM:i:2	MD:Z:3G4T1
+HexByteArray	0	1	1	255	10M	*	0	0	ACACACACAC	**********	NM:i:0	MD:Z:10	XB:H:010203
+LengthOneArrays	0	1	1	255	10M	*	0	0	ACACACACAC	**********	NM:i:0	MD:Z:10	XB:B:c,1	XI:B:i,1	XS:B:s,1	XF:B:f,1
+LongerArrays	0	1	1	255	10M	*	0	0	ACACACACAC	**********	NM:i:0	MD:Z:10	XB:B:c,1,2,3	XI:B:i,1,2,3	XS:B:s,1,2,3	XS:B:f,1,2,3
+SignedArrays	0	1	1	255	10M	*	0	0	ACACACACAC	**********	NM:i:0	MD:Z:10	XB:B:c,-1	XI:B:i,-1	XS:B:s,-1
+UnsignedArrays	0	1	1	255	10M	*	0	0	ACACACACAC	**********	NM:i:0	MD:Z:10	XB:B:C,1,2,3	XI:B:I,1,2,3	XS:B:S,1,2,3

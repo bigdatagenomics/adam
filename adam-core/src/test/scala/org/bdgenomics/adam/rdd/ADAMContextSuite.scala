@@ -63,6 +63,12 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reads.count() === 20)
   }
 
+  sparkTest("can read a small .SAM with all attribute tag types") {
+    val path = ClassLoader.getSystemClassLoader.getResource("tags.sam").getFile
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
+    assert(reads.count() === 7)
+  }
+
   sparkTest("can filter a .SAM file based on quality") {
     val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
