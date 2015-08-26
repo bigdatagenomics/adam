@@ -44,7 +44,6 @@ import java.io.InputStream;
  * found at https://github.com/HadoopGenomics/Hadoop-BAM/blob/master/src/main/java/org/seqdoop/hadoop_bam/FastqInputFormat.java
  *
  * @author Frank Austin Nothaft (fnothaft@berkeley.edu)
- * @date September 2014
  */
 public class SingleFastqInputFormat extends FileInputFormat<Void,Text> {
     

@@ -52,7 +52,6 @@ import java.io.InputStream;
  * found at https://github.com/HadoopGenomics/Hadoop-BAM/blob/master/src/main/java/org/seqdoop/hadoop_bam/FastqInputFormat.java
  *
  * @author Jeremy Elson (jelson@microsoft.com)
- * @date Feb 2014
  */
 public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
     
