@@ -52,15 +52,29 @@ fi
 # Figure out where ADAM is installed
 SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
-# Get list of required jars for ADAM
-ADAM_JARS=$("$SCRIPT_DIR"/bin/compute-adam-jars.sh)
+# Find ADAM cli assembly jar
+ADAM_CLI_JAR=
+if [ -f "$SCRIPT_DIR/repo" ]; then
+  ASSEMBLY_DIR="$SCRIPT_DIR/repo"
+else
+  ASSEMBLY_DIR="$SCRIPT_DIR/adam-cli/target"
+fi
 
-# Split out the CLI jar, since it will be passed to Spark as the "primary resource".
-ADAM_CLI_JAR=${ADAM_JARS##*,}
-ADAM_JARS=$(echo "$ADAM_JARS" | rev | cut -d',' -f2- | rev)
+num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam-cli.*[^javadoc]\.jar$" | wc -l)"
+if [ "$num_jars" -eq "0" ]; then
+  echo "Failed to find ADAM cli assembly in $ASSEMBLY_DIR." 1>&2
+  echo "You need to build ADAM before running this program." 1>&2
+  exit 1
+fi
+ASSEMBLY_JARS="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam-cli.*[^javadoc]\.jar$" || true)"
+if [ "$num_jars" -gt "1" ]; then
+  echo "Found multiple ADAM cli assembly jars in $ASSEMBLY_DIR:" 1>&2
+  echo "$ASSEMBLY_JARS" 1>&2
+  echo "Please remove all but one jar." 1>&2
+  exit 1
+fi
 
-# append ADAM_JARS to the --jars option, if any
-SPARK_ARGS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars $ADAM_JARS $SPARK_ARGS)
+ADAM_CLI_JAR="${ASSEMBLY_DIR}/${ASSEMBLY_JARS}"
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then

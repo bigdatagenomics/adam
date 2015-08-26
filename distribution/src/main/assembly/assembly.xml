@@ -45,25 +45,10 @@
             <outputDirectory>javadocs</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../adam-cli/target/appassembler/bin</directory>
-            <outputDirectory>bin</outputDirectory>
-            <excludes>
-                <exclude>*.bat</exclude>
-            </excludes>
-            <directoryMode>0755</directoryMode>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>../adam-cli/target/appassembler/bin</directory>
-            <outputDirectory>bin</outputDirectory>
+            <directory>../adam-cli/target</directory>
             <includes>
-                <include>*.bat</include>
+              <include>adam-cli_*.jar</include>
             </includes>
-            <directoryMode>0755</directoryMode>
-            <fileMode>0644</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>../adam-cli/target/appassembler/repo</directory>
             <outputDirectory>repo</outputDirectory>
             <directoryMode>0755</directoryMode>
             <fileMode>0644</fileMode>
@@ -74,20 +59,5 @@
             <directoryMode>0755</directoryMode>
             <fileMode>0755</fileMode>
         </fileSet>
-		<!--
-        <fileSet>
-            <directory>../docs/output</directory>
-            <outputDirectory>docs</outputDirectory>
-            <directoryMode>0755</directoryMode>
-            <fileMode>0644</fileMode>
-        </fileSet>
-		-->
     </fileSets>
-    <!--
-      <dependencySets>
-        <dependencySet>
-          <outputDirectory>repo</outputDirectory>
-        </dependencySet>
-      </dependencySets>
-    -->
 </assembly>
