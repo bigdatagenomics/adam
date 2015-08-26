@@ -18,9 +18,7 @@
 #
 
 # Figure out where ADAM is installed
-ADAM_REPO="$(cd `dirname $0`/..; pwd)"
-
-ADAM_JARS=$("$ADAM_REPO"/bin/compute-adam-jars.sh)
+SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
 # does the user have ADAM_OPTS set? if yes, then warn
 if [[ -z $@ && -n "$ADAM_OPTS" ]]; then
@@ -28,8 +26,34 @@ if [[ -z $@ && -n "$ADAM_OPTS" ]]; then
     echo "Run adam-shell instead as adam-shell <spark-args>"
 fi
 
+# Find ADAM cli assembly jar
+ADAM_CLI_JAR=
+if [ -f "$SCRIPT_DIR/repo" ]; then
+  ASSEMBLY_DIR="$SCRIPT_DIR/repo"
+else
+  ASSEMBLY_DIR="$SCRIPT_DIR/adam-cli/target"
+fi
+
+num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam-cli.*[^javadoc]\.jar$" | wc -l)"
+if [ "$num_jars" -eq "0" ]; then
+  echo "Failed to find ADAM cli assembly in $ASSEMBLY_DIR." 1>&2
+  echo "You need to build ADAM before running this program." 1>&2
+  exit 1
+fi
+ASSEMBLY_JARS="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam-cli.*[^javadoc]\.jar$" || true)"
+if [ "$num_jars" -gt "1" ]; then
+  echo "Found multiple ADAM cli assembly jars in $ASSEMBLY_DIR:" 1>&2
+  echo "$ASSEMBLY_JARS" 1>&2
+  echo "Please remove all but one jar." 1>&2
+  exit 1
+fi
+
+ADAM_CLI_JAR="${ASSEMBLY_DIR}/${ASSEMBLY_JARS}"
+
 # append ADAM_JARS to the --jars option, if any
-NEW_OPTIONS=$("$ADAM_REPO"/bin/append_to_option.py , --jars "$ADAM_JARS" "$@")
+NEW_OPTIONS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars "$ADAM_CLI_JAR" "$@")
+
+echo "$NEW_OPTIONS"
 
 if [ -z "$SPARK_HOME" ]; then
   SPARK_SHELL=$(which spark-shell)
