@@ -81,11 +81,10 @@ object AttributeUtils {
   private def createAttribute(attrTuple: (String, String, String, String)): Attribute = {
     val tagName = attrTuple._1
     val tagTypeString = attrTuple._2
-    val tagArrayString = attrTuple._3
+    val tagArrayString: Option[String] = Option(attrTuple._3)
     val valueStr = attrTuple._4
 
-    val fullTagString = if (tagArrayString == null) tagTypeString else
-      tagTypeString ++ ":" ++ tagArrayString
+    val fullTagString = tagArrayString.fold(tagTypeString)(arrayString => "%s:%s".format(tagTypeString, arrayString))
 
     // partial match, but these letters should be (per the SAM file format spec)
     // the only legal values of the tagTypeString anyway.
