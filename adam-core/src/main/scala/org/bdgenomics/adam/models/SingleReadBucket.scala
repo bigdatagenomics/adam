@@ -17,14 +17,18 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.AlignmentRecord
-
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.serialization.AvroSerializer
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.serialization.AvroSerializer
+import org.bdgenomics.formats.avro.{
+  AlignmentRecord,
+  Fragment,
+  Sequence
+}
+import scala.collection.JavaConversions._
 
 object SingleReadBucket extends Logging {
   def apply(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
@@ -48,6 +52,35 @@ case class SingleReadBucket(primaryMapped: Iterable[AlignmentRecord] = Seq.empty
   // Note: not a val in order to save serialization/memory cost
   def allReads = {
     primaryMapped ++ secondaryMapped ++ unmapped
+  }
+
+  def toFragment: Fragment = {
+    // take union of all reads, as we will need this for building and
+    // want to pay the cost exactly once
+    val unionReads = allReads
+
+    // start building fragment
+    val builder = Fragment.newBuilder()
+      .setReadName(unionReads.head.getReadName)
+      .setAlignments(seqAsJavaList(allReads.toSeq))
+
+    // is an insert size defined for this fragment?
+    primaryMapped.headOption
+      .foreach(r => {
+        Option(r.getInferredInsertSize).foreach(is => {
+          builder.setFragmentSize(is.toInt)
+        })
+      })
+
+    // set platform unit, if known
+    Option(unionReads.head.getRecordGroupPlatformUnit)
+      .foreach(p => builder.setInstrument(p))
+
+    // set record group name, if known
+    Option(unionReads.head.getRecordGroupName)
+      .foreach(n => builder.setRunId(n))
+
+    builder.build()
   }
 }
 

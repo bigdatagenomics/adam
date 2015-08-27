@@ -92,7 +92,7 @@ abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
    * @param elem Element from which to extract sequence records.
    * @return A seq of sequence records.
    */
-  def getSequenceRecordsFromElement(elem: T): scala.collection.Set[SequenceRecord]
+  def getSequenceRecordsFromElement(elem: T): Set[SequenceRecord]
 
   /**
    * Aggregates together a sequence dictionary from the different individual reference sequences

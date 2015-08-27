@@ -28,6 +28,7 @@ object Timers extends Metrics {
   val LoadAlignmentRecords = timer("Load Alignment Records")
   val BAMLoad = timer("BAM File Load")
   val ParquetLoad = timer("Parquet File Load")
+  val LoadFragments = timer("Load Fragments")
 
   // Trim Reads
   val TrimReadsInDriver = timer("Trim Reads")

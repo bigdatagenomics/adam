@@ -21,17 +21,20 @@ import htsjdk.samtools.{ SAMFileHeader, SAMRecord }
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment, Sequence }
+import scala.collection.JavaConversions._
 
 class AlignmentRecordConverter extends Serializable {
 
   /**
    * Converts a single record to FASTQ. FASTQ format is:
    *
+   * {{{
    * @readName
    * sequence
    * +<optional readname>
    * ASCII quality scores
+   * }}}
    *
    * @param adamRecord Read to convert to FASTQ.
    * @return Returns this read in string form.
@@ -196,6 +199,18 @@ class AlignmentRecordConverter extends Serializable {
     rgd.recordGroups.foreach(group => samHeader.addReadGroup(group.toSAMReadGroupRecord()))
 
     samHeader
+  }
+
+  /**
+   * Converts a fragment to a set of reads.
+   *
+   * @param fragment Fragment to convert.
+   * @return The collection of alignments described by the fragment. If the fragment
+   *         doesn't contain any alignments, this method will return one unaligned
+   *         AlignmentRecord per sequence in the Fragment.
+   */
+  def convertFragment(fragment: Fragment): Iterable[AlignmentRecord] = {
+    asScalaBuffer(fragment.getAlignments).toIterable
   }
 }
 

@@ -17,10 +17,8 @@
  */
 package org.bdgenomics.adam.converters
 
-import java.io.File
-
 import htsjdk.samtools.{ SamReaderFactory, SAMRecord }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import java.io.File
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
   RecordGroup,
@@ -28,8 +26,13 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   SequenceRecord
 }
+import org.bdgenomics.formats.avro.{
+  AlignmentRecord,
+  Contig,
+  Fragment,
+  Sequence
+}
 import org.scalatest.FunSuite
-
 import scala.collection.JavaConversions._
 
 class AlignmentRecordConverterSuite extends FunSuite {
@@ -250,6 +253,83 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(secondRecordFastq(1) === secondRecord.getSequence)
     assert(secondRecordFastq(2) === "+")
     assert(secondRecordFastq(3) === secondRecord.getQual)
+  }
+
+  test("converting a fragment with no alignments should yield unaligned reads") {
+    val alignments = List(
+      AlignmentRecord.newBuilder()
+        .setSequence("ACCCACAGTA")
+        .setQual("**********")
+        .setReadNum(0)
+        .setReadName("testRead")
+        .setReadPaired(true)
+        .build(),
+      AlignmentRecord.newBuilder()
+        .setSequence("GGGAAACCCTTT")
+        .setQual(";;;;;;......")
+        .setReadName("testRead")
+        .setReadNum(1)
+        .setReadPaired(true)
+        .build())
+
+    val fragment = Fragment.newBuilder()
+      .setReadName("testRead")
+      .setAlignments(seqAsJavaList(alignments))
+      .build()
+
+    val reads = adamRecordConverter.convertFragment(fragment)
+    assert(reads.size === 2)
+
+    val read1 = reads.find(_.getReadNum == 0)
+    assert(read1.isDefined)
+    assert(read1.get.getSequence === "ACCCACAGTA")
+    assert(read1.get.getQual() === "**********")
+    assert(read1.get.getReadName === "testRead")
+    assert(!read1.get.getReadMapped)
+    assert(read1.get.getReadPaired)
+
+    val read2 = reads.find(_.getReadNum == 1)
+    assert(read2.isDefined)
+    assert(read2.get.getSequence === "GGGAAACCCTTT")
+    assert(read2.get.getQual() === ";;;;;;......")
+    assert(read2.get.getReadName === "testRead")
+    assert(!read2.get.getReadMapped)
+    assert(read2.get.getReadPaired)
+  }
+
+  test("converting a fragment with alignments should restore the alignments") {
+    val alignments = List(AlignmentRecord.newBuilder()
+      .setReadMapped(true)
+      .setContig(Contig.newBuilder()
+        .setContigName("1")
+        .build())
+      .setStart(10L)
+      .setEnd(20L)
+      .setReadName("testRead")
+      .setCigar("10M")
+      .setReadNegativeStrand(true)
+      .setSequence("TACTGTGGGT")
+      .setQual("?????*****")
+      .build())
+    val fragment = Fragment.newBuilder()
+      .setReadName("testRead")
+      .setAlignments(seqAsJavaList(alignments))
+      .build()
+
+    val reads = adamRecordConverter.convertFragment(fragment)
+    assert(reads.size === 1)
+    val read = reads.head
+
+    assert(read.getReadName === "testRead")
+    assert(read.getReadNum === 0)
+    assert(read.getReadMapped)
+    assert(read.getReadNegativeStrand)
+    assert(read.getStart === 10L)
+    assert(read.getEnd === 20L)
+    assert(read.getCigar === "10M")
+    assert(read.getSequence === "TACTGTGGGT")
+    assert(read.getQual === "?????*****")
+    assert(read.getContig.getContigName === "1")
   }
 }
 

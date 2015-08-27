@@ -44,7 +44,7 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
    * @param elem Element from which to extract sequence records.
    * @return A seq of sequence records.
    */
-  def getSequenceRecordsFromElement(elem: VariantContext): scala.collection.Set[SequenceRecord] = {
+  def getSequenceRecordsFromElement(elem: VariantContext): Set[SequenceRecord] = {
     elem.genotypes.map(gt => SequenceRecord.fromSpecificRecord(gt.getVariant)).toSet
   }
 

@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.rdd.read
 
 import java.io.StringWriter
-
 import htsjdk.samtools.{ SAMFileHeader, SAMTextHeaderCodec, SAMTextWriter, ValidationStringency }
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
@@ -210,8 +209,8 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     }
   }
 
-  def getSequenceRecordsFromElement(elem: AlignmentRecord): scala.collection.Set[SequenceRecord] = {
-    SequenceRecord.fromADAMRecord(elem)
+  def getSequenceRecordsFromElement(elem: AlignmentRecord): Set[SequenceRecord] = {
+    SequenceRecord.fromADAMRecord(elem).toSet
   }
 
   /**
@@ -616,5 +615,9 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     // return
     finalRdd
+  }
+
+  def toFragments: RDD[Fragment] = {
+    adamSingleReadBuckets.map(_.toFragment)
   }
 }

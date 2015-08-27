@@ -51,7 +51,9 @@ object ADAMMain extends Logging {
           ADAM2Vcf,
           Fasta2ADAM,
           Features2ADAM,
-          WigFix2Bed
+          WigFix2Bed,
+          Fragments2Reads,
+          Reads2Fragments
         )
       ),
       CommandGroup(

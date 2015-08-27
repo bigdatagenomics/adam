@@ -102,5 +102,9 @@ class AlphabetSuite extends ADAMFunSuite {
     assert("CGxATAT" == Alphabet.dna.reverseComplement("ATATxcg"))
   }
 
+  test("map unknown bases to N") {
+    assert(4 == Alphabet.dna.size)
+    assert("CGNATAT" == Alphabet.dna.reverseComplement("ATATxcg", (c: Char) => Symbol('N', 'N')))
+  }
 }
 
