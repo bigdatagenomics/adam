@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.contig
 
+import com.google.common.base.Splitter
 import java.util.logging.Level
 import org.apache.avro.specific.SpecificRecord
 import org.apache.spark.Logging
@@ -33,6 +34,7 @@ import org.apache.parquet.avro.AvroParquetOutputFormat
 import org.apache.parquet.hadoop.ParquetOutputFormat
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.parquet.hadoop.util.ContextUtil
+import scala.collection.JavaConversions._
 import scala.math.max
 import scala.Some
 
@@ -46,6 +48,59 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
    */
   def toReads(): RDD[AlignmentRecord] = {
     FragmentConverter.convertRdd(rdd)
+  }
+
+  /**
+   * Save nucleotide contig fragments in FASTA format.
+   *
+   * @param fileName file name
+   * @param lineWidth hard wrap FASTA formatted sequence at line width, default 60
+   */
+  def saveAsFasta(fileName: String, lineWidth: Int = 60) = {
+
+    def isFragment(record: NucleotideContigFragment): Boolean = {
+      Option(record.fragmentNumber).isDefined && Option(record.numberOfFragmentsInContig).fold(false)(_ > 1)
+    }
+
+    def toFasta(record: NucleotideContigFragment): String = {
+      val sb = new StringBuilder()
+      sb.append(">")
+      sb.append(record.contig.contigName)
+      Option(record.description).foreach(n => sb.append(" ").append(n))
+      if (isFragment(record)) {
+        sb.append(" fragment %d of %d".format(record.fragmentNumber + 1, record.numberOfFragmentsInContig))
+      }
+      for (line <- Splitter.fixedLength(lineWidth).split(record.fragmentSequence)) {
+        sb.append("\n")
+        sb.append(line)
+      }
+      sb.toString
+    }
+
+    rdd.map(toFasta).saveAsTextFile(fileName)
+  }
+
+  /**
+   * Merge fragments by contig name.
+   */
+  def mergeFragments(): RDD[NucleotideContigFragment] = {
+
+    def merge(first: NucleotideContigFragment, second: NucleotideContigFragment): NucleotideContigFragment = {
+      val merged = NucleotideContigFragment.newBuilder(first)
+        .setFragmentNumber(null)
+        .setFragmentStartPosition(null)
+        .setNumberOfFragmentsInContig(null)
+        .setFragmentSequence(first.fragmentSequence + second.fragmentSequence)
+        .build
+
+      merged
+    }
+
+    rdd
+      .sortBy(fragment => (fragment.contig.contigName, Option(fragment.fragmentNumber).map(_.toInt).getOrElse(-1)))
+      .map(fragment => (fragment.contig.contigName, fragment))
+      .reduceByKey(merge)
+      .values
   }
 
   /**
