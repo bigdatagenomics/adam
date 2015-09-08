@@ -94,9 +94,9 @@ object BroadcastRegionJoin extends RegionJoin {
     // and collect them.
     val collectedLeft: Seq[(String, Iterable[ReferenceRegion])] =
       baseRDD
-        .map(kv => (kv._1.referenceName, kv._1)) // RDD[(String,ReferenceRegion)]
-        .groupBy(_._1) // RDD[(String,Seq[(String,ReferenceRegion)])]
-        .mapValues(_.map(_._2)) // RDD[(String,Seq[ReferenceRegion])]
+        .map(_._1) // RDD[ReferenceRegion]
+        .keyBy(_.referenceName) // RDD[(String,ReferenceRegion)]
+        .groupByKey() // RDD[(String,Seq[ReferenceRegion])]
         .collect() // Iterable[(String,Seq[ReferenceRegion])]
         .toSeq // Seq[(String,Seq[ReferenceRegion])]
 
