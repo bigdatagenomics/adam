@@ -19,8 +19,8 @@ package org.bdgenomics.adam.models
 
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro._
+
 import scala.math.{ max, min }
 
 trait ReferenceOrdering[T <: ReferenceRegion] extends Ordering[T] {
@@ -228,6 +228,15 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long, orient
 
   def length(): Long = {
     end - start
+  }
+
+  override def hashCode: Int = {
+    var result = 37
+    result = 41 * result + (if (referenceName != null) referenceName.hashCode else 0)
+    result = 41 * result + (if (start != null) start.hashCode else 0)
+    result = 41 * result + (if (end != null) end.hashCode else 0)
+    result = 41 * result + (if (orientation != null) orientation.ordinal() else 0)
+    result
   }
 }
 
