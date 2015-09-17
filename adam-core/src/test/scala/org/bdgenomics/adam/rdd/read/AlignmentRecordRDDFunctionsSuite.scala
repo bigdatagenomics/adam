@@ -17,8 +17,9 @@
  */
 package org.bdgenomics.adam.rdd.read
 
+import java.io.File
 import java.nio.file.Files
-import htsjdk.samtools.ValidationStringency
+import htsjdk.samtools.{SamReaderFactory, SamReader, ValidationStringency}
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -219,14 +220,17 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
 
     val unsortedPath = ClassLoader.getSystemClassLoader.getResource("unsorted.sam").getFile
     val reads = sc.loadBam(unsortedPath)
+    val header = SamReaderFactory.makeDefault().getFileHeader(new File(unsortedPath))
+    val seqDict = SequenceDictionary(header)
 
-    val actualSortedPath = Files.createTempDirectory("sam").toAbsolutePath.toString + "/sorted.sam"
-    reads.adamSortReadsByReferencePosition().adamSAMSave(actualSortedPath, isSorted = true, asSingleFile = true)
+    val actualSortedPath = Files.createTempDirectory("sam").toAbsolutePath.toString + "/sorted_by_header.sam"
+    reads.adamSortReadsBySequenceDictionary(seqDict)
+      .adamSAMSave(actualSortedPath, true, true, true, header)
 
     val actualSortedFile = Source.fromFile(actualSortedPath)
     val actualSortedLines = actualSortedFile.getLines.toList
 
-    val expectedSortedFile = Source.fromFile(ClassLoader.getSystemClassLoader.getResource("sorted.sam").getFile)
+    val expectedSortedFile = Source.fromFile(ClassLoader.getSystemClassLoader.getResource("sorted_by_header.sam").getFile)
     val expectedSortedLines = expectedSortedFile.getLines.toList
 
     assert(expectedSortedLines.size === actualSortedLines.size)

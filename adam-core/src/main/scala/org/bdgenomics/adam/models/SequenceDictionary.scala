@@ -109,8 +109,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    * @return Returns a SAM formatted sequence dictionary.
    */
   def toSAMSequenceDictionary: SAMSequenceDictionary = {
-    import SequenceRecord._
-    new SAMSequenceDictionary(records.sorted.map(_ toSAMSequenceRecord).toList)
+    new SAMSequenceDictionary(records.map(_ toSAMSequenceRecord).toList)
   }
 
   override def toString: String = {

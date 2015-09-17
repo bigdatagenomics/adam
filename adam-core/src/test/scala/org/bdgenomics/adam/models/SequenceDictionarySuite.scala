@@ -192,7 +192,7 @@ class SequenceDictionarySuite extends FunSuite {
     toSSD.assertSameDictionary(ssd)
   }
 
-  test("conversion to sam sequence dictionary has correct sort order") {
+  test("conversion to sam sequence dictionary maintains sequence order") {
     val sd = new SequenceDictionary(Vector(SequenceRecord("MT", 1000L),
       SequenceRecord("4", 1000L),
       SequenceRecord("1", 1000L),
@@ -201,11 +201,11 @@ class SequenceDictionarySuite extends FunSuite {
       SequenceRecord("X", 1000L)))
     val ssd = sd.toSAMSequenceDictionary
     val seq = ssd.getSequences
-    assert(seq.get(0).getSequenceName === "1")
-    assert(seq.get(1).getSequenceName === "2")
-    assert(seq.get(2).getSequenceName === "3")
-    assert(seq.get(3).getSequenceName === "4")
-    assert(seq.get(4).getSequenceName === "MT")
+    assert(seq.get(0).getSequenceName === "MT")
+    assert(seq.get(1).getSequenceName === "4")
+    assert(seq.get(2).getSequenceName === "1")
+    assert(seq.get(3).getSequenceName === "3")
+    assert(seq.get(4).getSequenceName === "2")
     assert(seq.get(5).getSequenceName === "X")
   }
 }
