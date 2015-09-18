@@ -73,3 +73,14 @@ class InstrumentedADAMBAMOutputFormat[K] extends InstrumentedOutputFormat[K, org
   override def outputFormatClass(): Class[_ <: OutputFormat[K, SAMRecordWritable]] = classOf[ADAMBAMOutputFormat[K]]
 }
 
+class ADAMBAMOutputFormatHeaderLess[K]
+    extends KeyIgnoringBAMOutputFormat[K] with Serializable {
+
+  setSAMHeader(ADAMBAMOutputFormat.getHeader)
+  setWriteHeader(false)
+}
+
+class InstrumentedADAMBAMOutputFormatHeaderLess[K] extends InstrumentedOutputFormat[K, org.seqdoop.hadoop_bam.SAMRecordWritable] {
+  override def timerName(): String = Timers.WriteBAMRecord.timerName
+  override def outputFormatClass(): Class[_ <: OutputFormat[K, SAMRecordWritable]] = classOf[ADAMBAMOutputFormatHeaderLess[K]]
+}
