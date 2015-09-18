@@ -74,7 +74,7 @@ class InstrumentedADAMBAMOutputFormat[K] extends InstrumentedOutputFormat[K, org
 }
 
 class ADAMBAMOutputFormatHeaderLess[K]
-  extends KeyIgnoringBAMOutputFormat[K] with Serializable {
+    extends KeyIgnoringBAMOutputFormat[K] with Serializable {
 
   setSAMHeader(ADAMBAMOutputFormat.getHeader)
   setWriteHeader(false)

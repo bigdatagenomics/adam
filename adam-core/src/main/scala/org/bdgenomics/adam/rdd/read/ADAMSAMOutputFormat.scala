@@ -74,7 +74,7 @@ class InstrumentedADAMSAMOutputFormat[K] extends InstrumentedOutputFormat[K, org
 }
 
 class ADAMSAMOutputFormatHeaderLess[K]
-  extends KeyIgnoringAnySAMOutputFormat[K](SAMFormat.valueOf("SAM")) with Serializable {
+    extends KeyIgnoringAnySAMOutputFormat[K](SAMFormat.valueOf("SAM")) with Serializable {
 
   setSAMHeader(ADAMSAMOutputFormat.getHeader)
   setWriteHeader(false)
