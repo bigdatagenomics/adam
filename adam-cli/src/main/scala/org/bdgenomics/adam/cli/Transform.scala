@@ -110,8 +110,9 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         .fold(new ConsensusGeneratorFromReads().asInstanceOf[ConsensusGenerator])(
           new ConsensusGeneratorFromKnowns(_, sc).asInstanceOf[ConsensusGenerator])
 
-      adamRecords = adamRecords.adamRealignIndels(consensusGenerator,
-        false,
+      adamRecords = adamRecords.adamRealignIndels(
+        consensusGenerator,
+        isSorted = false,
         args.maxIndelSize,
         args.maxConsensusNumber,
         args.lodThreshold,

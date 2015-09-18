@@ -19,10 +19,11 @@ package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.rdd.ADAMContext._
 import htsjdk.samtools.{ SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary }
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.scalatest.FunSuite
 import java.io.File
 
-class SequenceDictionarySuite extends FunSuite {
+class SequenceDictionarySuite extends ADAMFunSuite {
   test("Convert from sam sequence record and back") {
     val sr = new SAMSequenceRecord("1", 1000)
     sr.setAttribute(SAMSequenceRecord.URI_TAG, "http://bigdatagenomics.github.io/1")
@@ -39,7 +40,7 @@ class SequenceDictionarySuite extends FunSuite {
   }
 
   test("Convert from SAM sequence dictionary file (with extra fields)") {
-    val path = ClassLoader.getSystemClassLoader.getResource("dict_with_accession.dict").getFile
+    val path = resourcePath("dict_with_accession.dict")
     val ssd = SAMFileReader.getSequenceDictionary(new File(path))
 
     val chr1 = ssd.getSequence("1") // Validate that extra fields are parsed
@@ -53,7 +54,7 @@ class SequenceDictionarySuite extends FunSuite {
   }
 
   test("merge into existing dictionary") {
-    val path = ClassLoader.getSystemClassLoader.getResource("dict_with_accession.dict").getFile
+    val path = resourcePath("dict_with_accession.dict")
     val ssd = SAMFileReader.getSequenceDictionary(new File(path))
 
     val asd = SequenceDictionary(ssd)
@@ -66,7 +67,7 @@ class SequenceDictionarySuite extends FunSuite {
   }
 
   test("Convert from SAM sequence dictionary and back") {
-    val path = ClassLoader.getSystemClassLoader.getResource("dict_with_accession.dict").getFile
+    val path = resourcePath("dict_with_accession.dict")
     val ssd = SAMFileReader.getSequenceDictionary(new File(path))
     val asd = SequenceDictionary(ssd)
     ssd.assertSameDictionary(SequenceDictionary.toSAMSequenceDictionary(asd))
@@ -160,8 +161,8 @@ class SequenceDictionarySuite extends FunSuite {
     assert(dict(str1).get.name === "chr1")
   }
 
-  def record(name: String, length: Long = 1000, url: Option[String] = None, md5: Option[String] = None): SequenceRecord =
-    new SequenceRecord(name, length, url = url, md5 = md5)
+  def record(name: String, length: Long = 1000, md5: Option[String] = None): SequenceRecord =
+    SequenceRecord(name, length).copy(md5 = md5)
 
   test("convert from sam sequence record and back") {
     val sr = new SAMSequenceRecord("chr0", 1000)

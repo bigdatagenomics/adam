@@ -28,7 +28,7 @@ class ConsensusGeneratorFromReadsSuite extends ADAMFunSuite {
   val cg = new ConsensusGeneratorFromReads
 
   def artificial_reads: RDD[AlignmentRecord] = {
-    val path = ClassLoader.getSystemClassLoader.getResource("artificial.sam").getFile
+    val path = resourcePath("artificial.sam")
     sc.loadAlignments(path)
   }
 

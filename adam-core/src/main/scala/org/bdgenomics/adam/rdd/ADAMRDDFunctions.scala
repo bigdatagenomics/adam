@@ -100,7 +100,7 @@ abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
    *
    * @return A sequence dictionary describing the reference contigs in this dataset.
    */
-  def adamGetSequenceDictionary(): SequenceDictionary = {
+  def adamGetSequenceDictionary(performLexSort: Boolean = false): SequenceDictionary = {
     def mergeRecords(l: List[SequenceRecord], rec: T): List[SequenceRecord] = {
       val recs = getSequenceRecordsFromElement(rec)
 
@@ -118,8 +118,16 @@ abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
       SequenceDictionary(recs: _*)
     }
 
-    rdd.mapPartitions(iter => Iterator(foldIterator(iter)), preservesPartitioning = true)
-      .reduce(_ ++ _)
+    val sd =
+      rdd
+        .mapPartitions(iter => Iterator(foldIterator(iter)), preservesPartitioning = true)
+        .reduce(_ ++ _)
+
+    if (performLexSort) {
+      implicit val ordering = SequenceOrderingByName
+      SequenceDictionary(sd.records.map(_.copy(referenceIndex = None)).sorted: _*)
+    } else
+      sd
   }
 
 }

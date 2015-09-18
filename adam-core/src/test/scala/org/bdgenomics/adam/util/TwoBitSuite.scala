@@ -23,9 +23,9 @@ import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.scalatest.FunSuite
 
-class TwoBitSuite extends FunSuite {
+class TwoBitSuite extends ADAMFunSuite {
   test("correctly read sequence from .2bit file") {
-    val file = new File(ClassLoader.getSystemClassLoader.getResource("hg19.chrM.2bit").getFile)
+    val file = new File(resourcePath("hg19.chrM.2bit"))
     val byteAccess = new LocalFileByteAccess(file)
     val twoBitFile = new TwoBitFile(byteAccess)
     assert(twoBitFile.numSeq == 1)

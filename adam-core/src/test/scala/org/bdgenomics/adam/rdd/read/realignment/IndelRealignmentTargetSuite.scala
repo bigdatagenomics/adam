@@ -28,12 +28,12 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
 
   // Note: this can't be lazy vals because Spark won't find the RDDs after the first test
   def mason_reads: RDD[RichAlignmentRecord] = {
-    val path = ClassLoader.getSystemClassLoader.getResource("small_realignment_targets.sam").getFile
+    val path = resourcePath("small_realignment_targets.sam")
     sc.loadAlignments(path).map(RichAlignmentRecord(_))
   }
 
   def artificial_reads: RDD[RichAlignmentRecord] = {
-    val path = ClassLoader.getSystemClassLoader.getResource("artificial.sam").getFile
+    val path = resourcePath("artificial.sam")
     sc.loadAlignments(path).map(RichAlignmentRecord(_))
   }
 

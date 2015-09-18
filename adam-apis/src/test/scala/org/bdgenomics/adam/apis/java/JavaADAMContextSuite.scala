@@ -27,14 +27,14 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 class JavaADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can read a small .SAM file") {
-    val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
+    val path = resourcePath("small.sam")
     val ctx = new JavaADAMContext(sc)
     val reads: JavaAlignmentRecordRDD = ctx.adamRecordLoad(path)
     assert(reads.jrdd.count() === 20)
   }
 
   sparkTest("can read a small .SAM file inside of java") {
-    val path = ClassLoader.getSystemClassLoader.getResource("small.sam").getFile
+    val path = resourcePath("small.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
 
     val newReads: JavaAlignmentRecordRDD = JavaADAMConduit.conduit(reads)

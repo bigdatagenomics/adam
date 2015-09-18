@@ -27,13 +27,13 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 class RealignIndelsSuite extends ADAMFunSuite {
 
   def mason_reads: RDD[AlignmentRecord] = {
-    val path = ClassLoader.getSystemClassLoader.getResource("small_realignment_targets.sam").getFile
+    val path = resourcePath("small_realignment_targets.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
     reads
   }
 
   def artificial_reads: RDD[AlignmentRecord] = {
-    val path = ClassLoader.getSystemClassLoader.getResource("artificial.sam").getFile
+    val path = resourcePath("artificial.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
     reads
   }
@@ -45,7 +45,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   def gatk_artificial_realigned_reads: RDD[AlignmentRecord] = {
-    val path = ClassLoader.getSystemClassLoader.getResource("artificial.realigned.sam").getFile
+    val path = resourcePath("artificial.realigned.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
     reads
   }

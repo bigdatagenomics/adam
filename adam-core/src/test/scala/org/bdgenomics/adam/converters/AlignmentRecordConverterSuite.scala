@@ -181,7 +181,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
 
     // Obtain SAMRecord
     val newSAMRecord = newSAMReader.iterator().dropWhile(r => r.getReadName != readName)
-    val newSequenceRecord = new SequenceRecord("22", 51304566)
+    val newSequenceRecord = SequenceRecord("22", 51304566)
     val newSequenceDictionary = SequenceDictionary(newSequenceRecord)
     val firstRecord = samToADAMConverter.convert(newSAMRecord.next(), newSequenceDictionary, new RecordGroupDictionary(Seq()))
     val secondRecord = samToADAMConverter.convert(newSAMRecord.next(), newSequenceDictionary, new RecordGroupDictionary(Seq()))

@@ -80,6 +80,8 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   private val byName: Map[String, SequenceRecord] = records.view.map(r => r.name -> r).toMap
   assert(byName.size == records.length, "SequenceRecords with duplicate names aren't permitted")
 
+  private val hasSequenceOrdering = records.forall(_.referenceIndex.isDefined)
+
   def isCompatibleWith(that: SequenceDictionary): Boolean = {
     for (record <- that.records) {
       val myRecord = byName.get(record.name)
@@ -109,7 +111,11 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    * @return Returns a SAM formatted sequence dictionary.
    */
   def toSAMSequenceDictionary: SAMSequenceDictionary = {
-    import SequenceRecord._
+    implicit val ordering: Ordering[SequenceRecord] =
+      if (hasSequenceOrdering)
+        SequenceOrderingByRefIdx
+      else
+        SequenceOrderingByName
     new SAMSequenceDictionary(records.sorted.map(_ toSAMSequenceRecord).toList)
   }
 
@@ -118,10 +124,24 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   }
 }
 
-object SequenceOrdering extends Ordering[SequenceRecord] {
+object SequenceOrderingByName extends Ordering[SequenceRecord] {
   def compare(a: SequenceRecord,
               b: SequenceRecord): Int = {
     a.name.compareTo(b.name)
+  }
+}
+
+object SequenceOrderingByRefIdx extends Ordering[SequenceRecord] {
+  def compare(a: SequenceRecord,
+              b: SequenceRecord): Int = {
+    (for {
+      aRefIdx <- a.referenceIndex
+      bRefIdx <- b.referenceIndex
+    } yield {
+      aRefIdx.compareTo(bRefIdx)
+    }).getOrElse(
+      throw new Exception(s"Missing reference index when comparing SequenceRecords: $a, $b")
+    )
   }
 }
 
@@ -129,15 +149,16 @@ object SequenceOrdering extends Ordering[SequenceRecord] {
  * Utility class within the SequenceDictionary; represents unique reference name-to-id correspondence
  *
  */
-class SequenceRecord(
-    val name: String,
-    val length: Long,
-    val url: Option[String] = None,
-    val md5: Option[String] = None,
-    val refseq: Option[String] = None,
-    val genbank: Option[String] = None,
-    val assembly: Option[String] = None,
-    val species: Option[String] = None) extends Serializable {
+case class SequenceRecord(
+    name: String,
+    length: Long,
+    url: Option[String],
+    md5: Option[String],
+    refseq: Option[String],
+    genbank: Option[String],
+    assembly: Option[String],
+    species: Option[String],
+    referenceIndex: Option[Int]) extends Serializable {
 
   assert(name != null && !name.isEmpty, "SequenceRecord.name is null or empty")
   assert(length > 0, "SequenceRecord.length <= 0")
@@ -170,6 +191,8 @@ class SequenceRecord(
     // set genbank accession number if available
     genbank.foreach(rec.setAttribute("GENBANK", _))
 
+    referenceIndex.foreach(rec.setSequenceIndex)
+
     // return record
     rec
   }
@@ -191,8 +214,6 @@ object SequenceRecord {
   val REFSEQ_TAG = "REFSEQ"
   val GENBANK_TAG = "GENBANK"
 
-  implicit def ordering = SequenceOrdering
-
   def apply(name: String,
             length: Long,
             md5: String = null,
@@ -200,7 +221,8 @@ object SequenceRecord {
             refseq: String = null,
             genbank: String = null,
             assembly: String = null,
-            species: String = null): SequenceRecord = {
+            species: String = null,
+            referenceIndex: Option[Int] = None): SequenceRecord = {
     new SequenceRecord(
       name,
       length,
@@ -209,7 +231,9 @@ object SequenceRecord {
       Option(refseq).map(_.toString),
       Option(genbank).map(_.toString),
       Option(assembly).map(_.toString),
-      Option(species).map(_.toString))
+      Option(species).map(_.toString),
+      referenceIndex
+    )
   }
 
   /*
@@ -227,7 +251,9 @@ object SequenceRecord {
       refseq = record.getAttribute(REFSEQ_TAG),
       genbank = record.getAttribute(GENBANK_TAG),
       assembly = record.getAssembly,
-      species = record.getAttribute(SAMSequenceRecord.SPECIES_TAG))
+      species = record.getAttribute(SAMSequenceRecord.SPECIES_TAG),
+      referenceIndex = if (record.getSequenceIndex == -1) None else Some(record.getSequenceIndex)
+    )
 
   }
   def toSAMSequenceRecord(record: SequenceRecord): SAMSequenceRecord = {
@@ -244,7 +270,9 @@ object SequenceRecord {
       md5 = contig.getContigMD5,
       url = contig.getReferenceURL,
       assembly = contig.getAssembly,
-      species = contig.getSpecies)
+      species = contig.getSpecies,
+      referenceIndex = Option(contig.getReferenceIndex).map(Integer2int)
+    )
   }
 
   def toADAMContig(record: SequenceRecord): Contig = {
@@ -255,6 +283,7 @@ object SequenceRecord {
     record.url.foreach(builder.setReferenceURL)
     record.assembly.foreach(builder.setAssembly)
     record.species.foreach(builder.setSpecies)
+    record.referenceIndex.foreach(builder.setReferenceIndex(_))
     builder.build
   }
 
@@ -289,7 +318,8 @@ object SequenceRecord {
       SequenceRecord(
         rec.get(schema.getField("referenceName").pos()).toString,
         rec.get(schema.getField("referenceLength").pos()).asInstanceOf[Long],
-        url = rec.get(schema.getField("referenceUrl").pos()).toString)
+        url = rec.get(schema.getField("referenceUrl").pos()).toString
+      )
     } else if (schema.getField("contig") != null) {
       val pos = schema.getField("contig").pos()
       fromADAMContig(rec.get(pos).asInstanceOf[Contig])

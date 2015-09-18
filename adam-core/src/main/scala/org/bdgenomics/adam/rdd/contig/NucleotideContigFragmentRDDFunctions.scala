@@ -118,7 +118,7 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
    */
   def flankAdjacentFragments(flankLength: Int,
                              optSd: Option[SequenceDictionary] = None): RDD[NucleotideContigFragment] = {
-    FlankReferenceFragments(rdd, optSd.getOrElse(adamGetSequenceDictionary), flankLength)
+    FlankReferenceFragments(rdd, optSd.getOrElse(adamGetSequenceDictionary(performLexSort = false)), flankLength)
   }
 
   /**

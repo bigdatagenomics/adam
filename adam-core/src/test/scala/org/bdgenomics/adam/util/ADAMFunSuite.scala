@@ -17,7 +17,11 @@
  */
 package org.bdgenomics.adam.util
 
+import java.nio.file.Files
+
 import org.bdgenomics.utils.misc.SparkFunSuite
+
+import scala.io.Source
 
 trait ADAMFunSuite extends SparkFunSuite {
 
@@ -25,5 +29,26 @@ trait ADAMFunSuite extends SparkFunSuite {
   override val properties: Map[String, String] = Map(("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
     ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
     ("spark.kryo.referenceTracking", "true"))
+
+  def resourcePath(path: String) = ClassLoader.getSystemClassLoader.getResource(path).getFile
+  def tmpFile(path: String) = Files.createTempDirectory("").toAbsolutePath.toString + "/" + path
+
+  def checkFiles(expectedPath: String, actualPath: String): Unit = {
+    val actualFile = Source.fromFile(actualPath)
+    val actualLines = actualFile.getLines.toList
+
+    val expectedFile = Source.fromFile(expectedPath)
+    val expectedLines = expectedFile.getLines.toList
+
+    assert(expectedLines.size === actualLines.size)
+    expectedLines.zip(actualLines).zipWithIndex.foreach {
+      case ((expected, actual), idx) =>
+        assert(
+          expected == actual,
+          s"Line ${idx + 1} differs.\nExpected:\n${expectedLines.mkString("\n")}\n\nActual:\n${actualLines.mkString("\n")}"
+        )
+    }
+  }
+
 }
 

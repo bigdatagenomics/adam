@@ -68,11 +68,11 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
                    isSorted: Boolean = false): Boolean = {
     if (args.outputPath.endsWith(".sam")) {
       log.info("Saving data in SAM format")
-      rdd.adamSAMSave(args.outputPath, asSingleFile = args.asSingleFile)
+      rdd.adamSAMSave(args.outputPath, asSingleFile = args.asSingleFile, isSorted = isSorted)
       true
     } else if (args.outputPath.endsWith(".bam")) {
       log.info("Saving data in BAM format")
-      rdd.adamSAMSave(args.outputPath, asSam = false, asSingleFile = args.asSingleFile)
+      rdd.adamSAMSave(args.outputPath, asSam = false, asSingleFile = args.asSingleFile, isSorted = isSorted)
       true
     } else
       false
@@ -234,7 +234,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    */
   def adamConvertToSAM(isSorted: Boolean = false): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
     // collect global summary data
-    val sd = rdd.adamGetSequenceDictionary()
+    val sd = rdd.adamGetSequenceDictionary(isSorted)
     val rgd = rdd.adamGetReadGroupDictionary()
 
     // create conversion object

@@ -122,7 +122,12 @@ object ReferenceRegion {
  *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
  *            half-open interval.
  */
-case class ReferenceRegion(referenceName: String, start: Long, end: Long, orientation: Strand = Strand.Independent) extends Comparable[ReferenceRegion] with Interval {
+case class ReferenceRegion(referenceName: String,
+                           start: Long,
+                           end: Long,
+                           orientation: Strand = Strand.Independent)
+    extends Comparable[ReferenceRegion]
+    with Interval {
 
   assert(start >= 0 && end >= start, "Failed when trying to create region %s %d %d on %s strand.".format(referenceName, start, end, orientation))
 

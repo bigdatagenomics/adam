@@ -174,8 +174,8 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
   }
 
   sparkTest("round trip from ADAM to paired-FASTQ and back to ADAM produces equivalent Read values") {
-    val path1 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_1.fq").getFile
-    val path2 = ClassLoader.getSystemClassLoader.getResource("proper_pairs_2.fq").getFile
+    val path1 = resourcePath("proper_pairs_1.fq")
+    val path2 = resourcePath("proper_pairs_2.fq")
     val rddA = sc.loadAlignments(path1).adamRePairReads(sc.loadAlignments(path2),
       validationStringency = ValidationStringency.STRICT)
 
@@ -205,22 +205,32 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
   }
 
   sparkTest("writing a small sorted file as SAM should produce the expected result") {
-
-    val unsortedPath = ClassLoader.getSystemClassLoader.getResource("unsorted.sam").getFile
+    val unsortedPath = resourcePath("unsorted.sam")
     val reads = sc.loadBam(unsortedPath)
 
-    val actualSortedPath = Files.createTempDirectory("sam").toAbsolutePath.toString + "/sorted.sam"
+    val actualSortedPath = tmpFile("sorted.sam")
     reads.adamSortReadsByReferencePosition().adamSAMSave(actualSortedPath, isSorted = true, asSingleFile = true)
 
-    val actualSortedFile = Source.fromFile(actualSortedPath)
-    val actualSortedLines = actualSortedFile.getLines.toList
+    checkFiles(resourcePath("sorted.sam"), actualSortedPath)
+  }
 
-    val expectedSortedFile = Source.fromFile(ClassLoader.getSystemClassLoader.getResource("sorted.sam").getFile)
-    val expectedSortedLines = expectedSortedFile.getLines.toList
+  sparkTest("writing unordered sam from unordered sam") {
+    val unsortedPath = resourcePath("unordered.sam")
+    val reads = sc.loadBam(unsortedPath)
 
-    assert(expectedSortedLines.size === actualSortedLines.size)
-    expectedSortedLines.zip(actualSortedLines).foreach(p => {
-      assert(p._1 === p._2)
-    })
+    val actualUnorderedPath = tmpFile("unordered.sam")
+    reads.adamSAMSave(actualUnorderedPath, isSorted = false, asSingleFile = true)
+
+    checkFiles(unsortedPath, actualUnorderedPath)
+  }
+
+  sparkTest("writing ordered sam from unordered sam") {
+    val unsortedPath = resourcePath("unordered.sam")
+    val reads = sc.loadBam(unsortedPath).adamSortReadsByReferencePosition
+
+    val actualSortedPath = tmpFile("ordered.sam")
+    reads.adamSAMSave(actualSortedPath, isSorted = true, asSingleFile = true)
+
+    checkFiles(resourcePath("ordered.sam"), actualSortedPath)
   }
 }

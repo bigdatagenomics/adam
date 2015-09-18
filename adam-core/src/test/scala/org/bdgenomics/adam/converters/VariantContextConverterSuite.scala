@@ -21,14 +21,14 @@ import htsjdk.samtools.SAMFileReader
 import htsjdk.variant.variantcontext.{ Allele, GenotypeBuilder, GenotypeType, VariantContextBuilder }
 import java.io.File
 import org.bdgenomics.adam.models.{ VariantContext => ADAMVariantContext, SequenceDictionary }
-import org.bdgenomics.adam.util.PhredUtils
+import org.bdgenomics.adam.util.{ ADAMFunSuite, PhredUtils }
 import org.bdgenomics.formats.avro._
 import org.scalatest.FunSuite
 import scala.collection.JavaConversions._
 
-class VariantContextConverterSuite extends FunSuite {
+class VariantContextConverterSuite extends ADAMFunSuite {
   val dictionary = {
-    val path = ClassLoader.getSystemClassLoader.getResource("dict_with_accession.dict").getFile
+    val path = resourcePath("dict_with_accession.dict")
     SequenceDictionary(SAMFileReader.getSequenceDictionary(new File(path)))
   }
 
@@ -158,7 +158,7 @@ class VariantContextConverterSuite extends FunSuite {
     val converter = new VariantContextConverter
 
     val gatkVC = converter.convert(vc)
-    assert(gatkVC.getChr === "1")
+    assert(gatkVC.getContig === "1")
     assert(gatkVC.getStart === 1)
     assert(gatkVC.getEnd === 1)
     assert(gatkVC.getReference === Allele.create("A", true))
@@ -174,7 +174,7 @@ class VariantContextConverterSuite extends FunSuite {
     val converter = new VariantContextConverter(dict = Some(dictionary))
 
     val gatkVC = converter.convert(vc)
-    assert(gatkVC.getChr === "1")
+    assert(gatkVC.getContig === "1")
   }
 
   test("Convert ADAM SNV w/ genotypes to GATK") {

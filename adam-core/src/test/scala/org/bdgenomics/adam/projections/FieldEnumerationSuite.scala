@@ -33,7 +33,7 @@ class FieldEnumerationSuite extends ADAMFunSuite with BeforeAndAfter {
   sparkBefore("fieldenumerationsuite_before") {
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
-    readsFilepath = ClassLoader.getSystemClassLoader.getResource("reads12.sam").getFile
+    readsFilepath = resourcePath("reads12.sam")
     val file = new File(readsFilepath)
 
     readsParquetFile = new File(file.getParentFile, "test_reads12_parquet.adam")

@@ -94,7 +94,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
   }
 
   sparkTest("test that simple partitioning works okay on a reasonable set of ADAMRecords") {
-    val filename = ClassLoader.getSystemClassLoader.getResource("reads12.sam").getFile
+    val filename = resourcePath("reads12.sam")
     val parts = 1
 
     val dict = sc.adamDictionaryLoad[AlignmentRecord](filename)

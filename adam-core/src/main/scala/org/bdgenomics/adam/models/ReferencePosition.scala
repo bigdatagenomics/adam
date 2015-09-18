@@ -85,8 +85,8 @@ object ReferencePosition extends Serializable {
 
 class ReferencePosition(override val referenceName: String,
                         val pos: Long,
-                        override val orientation: Strand = Strand.Independent) extends ReferenceRegion(referenceName, pos, pos + 1, orientation) {
-}
+                        override val orientation: Strand = Strand.Independent)
+    extends ReferenceRegion(referenceName, pos, pos + 1, orientation)
 
 class ReferencePositionSerializer extends Serializer[ReferencePosition] {
   private val enumValues = Strand.values()
