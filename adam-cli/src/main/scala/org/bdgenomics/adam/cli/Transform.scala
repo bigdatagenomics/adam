@@ -18,11 +18,13 @@
 package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
+import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.SnpTable
+import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.adam.rdd.read.MDTagging
@@ -45,6 +47,10 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
   var outputPath: String = null
+  @Args4jOption(required = false, name = "-limit_projection", usage = "Only project necessary fields. Only works for Parquet files.")
+  var limitProjection: Boolean = false
+  @Args4jOption(required = false, name = "-aligned_read_predicate", usage = "Only load aligned reads. Only works for Parquet files.")
+  var useAlignedReadPredicate: Boolean = false
   @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
   var sortReads: Boolean = false
   @Args4jOption(required = false, name = "-mark_duplicate_reads", usage = "Mark duplicate reads")
@@ -174,6 +180,13 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   }
 
   def run(sc: SparkContext) {
+    // throw exception if aligned read predicate or projection flags are used improperly
+    if ((args.useAlignedReadPredicate || args.limitProjection) &&
+      (args.forceLoadBam || args.forceLoadFastq || args.forceLoadIFastq)) {
+      throw new IllegalArgumentException(
+        "-aligned_read_predicate and -limit_projection only apply to Parquet files, but a non-Parquet force load flag was passed.")
+    }
+
     val rdd =
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)
@@ -181,8 +194,41 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), Option(args.fastqRecordGroup), stringency)
       } else if (args.forceLoadIFastq) {
         sc.loadInterleavedFastq(args.inputPath)
-      } else if (args.forceLoadParquet) {
-        sc.loadParquetAlignments(args.inputPath)
+      } else if (args.forceLoadParquet ||
+        args.limitProjection ||
+        args.useAlignedReadPredicate) {
+        val pred = if (args.useAlignedReadPredicate) {
+          Some((BooleanColumn("readMapped") === true))
+        } else {
+          None
+        }
+        val proj = if (args.limitProjection) {
+          Some(Projection(AlignmentRecordField.contig,
+            AlignmentRecordField.start,
+            AlignmentRecordField.end,
+            AlignmentRecordField.mapq,
+            AlignmentRecordField.readName,
+            AlignmentRecordField.sequence,
+            AlignmentRecordField.cigar,
+            AlignmentRecordField.qual,
+            AlignmentRecordField.recordGroupId,
+            AlignmentRecordField.recordGroupName,
+            AlignmentRecordField.readPaired,
+            AlignmentRecordField.readMapped,
+            AlignmentRecordField.readNegativeStrand,
+            AlignmentRecordField.firstOfPair,
+            AlignmentRecordField.secondOfPair,
+            AlignmentRecordField.primaryAlignment,
+            AlignmentRecordField.duplicateRead,
+            AlignmentRecordField.mismatchingPositions,
+            AlignmentRecordField.secondaryAlignment,
+            AlignmentRecordField.supplementaryAlignment))
+        } else {
+          None
+        }
+        sc.loadParquetAlignments(args.inputPath,
+          predicate = pred,
+          projection = proj)
       } else {
         sc.loadAlignments(
           args.inputPath,
