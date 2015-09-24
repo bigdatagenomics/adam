@@ -419,22 +419,38 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
           record.getReadName.toString.dropRight(2)
       })
 
-    if (validationStringency == ValidationStringency.STRICT) {
-      val readIDsWithCounts: RDD[(String, Int)] = readsByID.mapValues(_.size)
-      val unpairedReadIDsWithCounts: RDD[(String, Int)] = readIDsWithCounts.filter(_._2 != 2)
-      maybePersist(unpairedReadIDsWithCounts)
+    validationStringency match {
+      case ValidationStringency.STRICT | ValidationStringency.LENIENT =>
+        val readIDsWithCounts: RDD[(String, Int)] = readsByID.mapValues(_.size)
+        val unpairedReadIDsWithCounts: RDD[(String, Int)] = readIDsWithCounts.filter(_._2 != 2)
+        maybePersist(unpairedReadIDsWithCounts)
 
-      val numUnpairedReadIDsWithCounts: Long = unpairedReadIDsWithCounts.count()
-      if (numUnpairedReadIDsWithCounts != 0) {
-        val readNameOccurrencesMap: collection.Map[Int, Long] = unpairedReadIDsWithCounts.map(_._2).countByValue()
-        throw new Exception(
-          "Found %d read names that don't occur exactly twice:\n%s\n\nSamples:\n%s".format(
-            numUnpairedReadIDsWithCounts,
-            readNameOccurrencesMap.map(p => "%dx:\t%d".format(p._1, p._2)).mkString("\t", "\n\t", ""),
-            unpairedReadIDsWithCounts.take(100).map(_._1).mkString("\t", "\n\t", "")
-          )
-        )
-      }
+        val numUnpairedReadIDsWithCounts: Long = unpairedReadIDsWithCounts.count()
+        if (numUnpairedReadIDsWithCounts != 0) {
+          val readNameOccurrencesMap: collection.Map[Int, Long] = unpairedReadIDsWithCounts.map(_._2).countByValue()
+
+          val msg =
+            List(
+              s"Found $numUnpairedReadIDsWithCounts read names that don't occur exactly twice:",
+
+              readNameOccurrencesMap.map({
+                case (numOccurrences, numReadNames) => s"${numOccurrences}x:\t$numReadNames"
+              }).take(100).mkString("\t", "\n\t", if (readNameOccurrencesMap.size > 100) "\n\t…" else ""),
+              "",
+
+              "Samples:",
+              unpairedReadIDsWithCounts
+                .take(100)
+                .map(_._1)
+                .mkString("\t", "\n\t", if (numUnpairedReadIDsWithCounts > 100) "\n\t…" else "")
+            ).mkString("\n")
+
+          if (validationStringency == ValidationStringency.STRICT)
+            throw new IllegalArgumentException(msg)
+          else if (validationStringency == ValidationStringency.LENIENT)
+            logError(msg)
+        }
+      case ValidationStringency.SILENT =>
     }
 
     val pairedRecords: RDD[AlignmentRecord] = readsByID.filter(_._2.size == 2).map(_._2).flatMap(x => x)
