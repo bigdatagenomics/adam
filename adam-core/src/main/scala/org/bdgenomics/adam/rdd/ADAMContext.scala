@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd
 
 import java.io.FileNotFoundException
 import java.util.regex.Pattern
-import htsjdk.samtools.SAMFileHeader
+import htsjdk.samtools.{ ValidationStringency, SAMFileHeader, IndexedBamInputFormat }
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.avro.specific.SpecificRecord
@@ -51,7 +51,6 @@ import org.apache.parquet.hadoop.ParquetInputFormat
 import org.apache.parquet.hadoop.util.ContextUtil
 import scala.collection.JavaConversions._
 import scala.collection.Map
-import htsjdk.samtools.IndexedBamInputFormat
 
 object ADAMContext {
   // Add ADAM Spark context methods
@@ -365,8 +364,44 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     records.flatMap(fastqRecordConverter.convertPair)
   }
 
-  def loadUnpairedFastq(
-    filePath: String): RDD[AlignmentRecord] = {
+  def loadFastq(filePath1: String,
+                filePath2Opt: Option[String],
+                stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = {
+    filePath2Opt match {
+      case Some(filePath2) => loadPairedFastq(filePath1, filePath2, stringency)
+      case None            => loadUnpairedFastq(filePath1)
+    }
+  }
+
+  def loadPairedFastq(filePath1: String,
+                      filePath2: String,
+                      stringency: ValidationStringency): RDD[AlignmentRecord] = {
+    val reads1 = loadUnpairedFastq(filePath1, setFirstOfPair = true)
+    val reads2 = loadUnpairedFastq(filePath2, setSecondOfPair = true)
+
+    stringency match {
+      case ValidationStringency.STRICT | ValidationStringency.LENIENT =>
+        val count1 = reads1.cache.count
+        val count2 = reads2.cache.count
+
+        if (count1 != count2) {
+          val msg = s"Fastq 1 ($filePath1) has $count1 reads, fastq 2 ($filePath2) has $count2 reads"
+          if (stringency == ValidationStringency.STRICT)
+            throw new IllegalArgumentException(msg)
+          else {
+            // ValidationStringency.LENIENT
+            logError(msg)
+          }
+        }
+      case ValidationStringency.SILENT =>
+    }
+
+    reads1 ++ reads2
+  }
+
+  def loadUnpairedFastq(filePath: String,
+                        setFirstOfPair: Boolean = false,
+                        setSecondOfPair: Boolean = false): RDD[AlignmentRecord] = {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -380,7 +415,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
-    records.map(fastqRecordConverter.convertRead)
+    records.map(fastqRecordConverter.convertRead(_, setFirstOfPair, setSecondOfPair))
   }
 
   def loadVcf(filePath: String, sd: Option[SequenceDictionary]): RDD[VariantContext] = {
@@ -467,8 +502,8 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
       .setContig(
         Contig.newBuilder()
           .setContigName(seqRecord.name)
-          .setReferenceURL(seqRecord.url.getOrElse(null))
-          .setContigMD5(seqRecord.md5.getOrElse(null))
+          .setReferenceURL(seqRecord.url.orNull)
+          .setContigMD5(seqRecord.md5.orNull)
           .setContigLength(seqRecord.length)
           .build()
       )
