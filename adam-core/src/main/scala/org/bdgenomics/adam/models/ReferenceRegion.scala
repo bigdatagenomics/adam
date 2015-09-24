@@ -180,7 +180,7 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long, orient
    * @return True if regions are adjacent.
    */
   def isAdjacent(region: ReferenceRegion): Boolean =
-    distance(region).map(_ == 1).getOrElse(false)
+    distance(region).exists(_ == 1)
 
   /**
    * Returns the distance between this reference region and another region in the reference space.
@@ -233,8 +233,8 @@ case class ReferenceRegion(referenceName: String, start: Long, end: Long, orient
   override def hashCode: Int = {
     var result = 37
     result = 41 * result + (if (referenceName != null) referenceName.hashCode else 0)
-    result = 41 * result + (if (start != null) start.hashCode else 0)
-    result = 41 * result + (if (end != null) end.hashCode else 0)
+    result = 41 * result + start.hashCode
+    result = 41 * result + end.hashCode
     result = 41 * result + (if (orientation != null) orientation.ordinal() else 0)
     result
   }
