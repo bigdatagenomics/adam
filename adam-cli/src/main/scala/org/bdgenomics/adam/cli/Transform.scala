@@ -50,8 +50,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
   var recalibrateBaseQualities: Boolean = false
-  @Args4jOption(required = false, name = "-strict_bqsr", usage = "Run BQSR with strict validation.")
-  var strictBQSR: Boolean = false
+  @Args4jOption(required = false, name = "-stringency", usage = "Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults to LENIENT")
+  var stringency: String = "LENIENT"
   @Args4jOption(required = false, name = "-dump_observations", usage = "Local path to dump BQSR observations to. Outputs CSV format.")
   var observationsPath: String = null
   @Args4jOption(required = false, name = "-known_snps", usage = "Sites-only VCF giving location of known SNPs")
@@ -84,10 +84,18 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var forceLoadParquet: Boolean = false
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false
+  @Args4jOption(required = false, name = "-paired_fastq", usage = "When converting two (paired) FASTQ files to ADAM, pass the path to the second file here.")
+  var pairedFastqFile: String = null
+  @Args4jOption(required = false, name = "-record_group", usage = "Set converted FASTQs' record-group names to this value; if empty-string is passed, use the basename of the input file, minus the extension.")
+  var fastqRecordGroup: String = null
+  @Args4jOption(required = false, name = "-concat", usage = "Concatenate this file with <INPUT> and write the result to <OUTPUT>")
+  var concatFilename: String = null
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
   val companion = Transform
+
+  val stringency = ValidationStringency.valueOf(args.stringency)
 
   def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
 
@@ -122,14 +130,11 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
       val knownSnps: SnpTable = createKnownSnpsTable(sc)
-      val stringency = if (args.strictBQSR) {
-        ValidationStringency.STRICT
-      } else {
-        ValidationStringency.LENIENT
-      }
-      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps),
+      adamRecords = adamRecords.adamBQSR(
+        sc.broadcast(knownSnps),
         Option(args.observationsPath),
-        stringency)
+        stringency
+      )
     }
 
     if (args.coalesce != -1) {
@@ -147,18 +152,46 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   }
 
   def run(sc: SparkContext) {
-    this.apply({
+    val rdd =
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)
       } else if (args.forceLoadFastq) {
-        sc.loadUnpairedFastq(args.inputPath)
+        sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), Option(args.fastqRecordGroup), stringency)
       } else if (args.forceLoadIFastq) {
         sc.loadInterleavedFastq(args.inputPath)
       } else if (args.forceLoadParquet) {
         sc.loadParquetAlignments(args.inputPath)
       } else {
-        sc.loadAlignments(args.inputPath)
+        sc.loadAlignments(
+          args.inputPath,
+          filePath2Opt = Option(args.pairedFastqFile),
+          recordGroupOpt = Option(args.fastqRecordGroup),
+          stringency = stringency
+        )
       }
+
+    // Optionally load a second RDD and concatenate it with the first.
+    // Paired-FASTQ loading is avoided here because that wouldn't make sense
+    // given that it's already happening above.
+    val concatRddOpt =
+      Option(args.concatFilename).map(concatFilename =>
+        if (args.forceLoadBam) {
+          sc.loadBam(concatFilename)
+        } else if (args.forceLoadIFastq) {
+          sc.loadInterleavedFastq(concatFilename)
+        } else if (args.forceLoadParquet) {
+          sc.loadParquetAlignments(concatFilename)
+        } else {
+          sc.loadAlignments(
+            concatFilename,
+            recordGroupOpt = Option(args.fastqRecordGroup)
+          )
+        }
+      )
+
+    this.apply(concatRddOpt match {
+      case Some(concatRdd) => rdd ++ concatRdd
+      case None            => rdd
     }).adamSave(args, args.sortReads)
   }
 
