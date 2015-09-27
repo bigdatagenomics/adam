@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
+import org.apache.hadoop.fs.{ FileStatus, Path, FileSystem }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.algorithms.consensus._
@@ -84,6 +85,10 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var forceLoadParquet: Boolean = false
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false
+  @Args4jOption(required = false, name = "-recursive", usage = "Recursively search <INPUT> directory for files with extension matching the argument to -input_extension, and convert them to extension <OUTPUT>")
+  var recursive: Boolean = false
+  @Args4jOption(required = false, name = "-input_extension", usage = "When -recursive is enabled, look in the <INPUT> directory for files with this extension. Can include leading '.' or not.")
+  var inputExtension: String = null
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
@@ -110,8 +115,9 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         .fold(new ConsensusGeneratorFromReads().asInstanceOf[ConsensusGenerator])(
           new ConsensusGeneratorFromKnowns(_, sc).asInstanceOf[ConsensusGenerator])
 
-      adamRecords = adamRecords.adamRealignIndels(consensusGenerator,
-        false,
+      adamRecords = adamRecords.adamRealignIndels(
+        consensusGenerator,
+        isSorted = false,
         args.maxIndelSize,
         args.maxConsensusNumber,
         args.lodThreshold,
@@ -145,20 +151,78 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     adamRecords
   }
 
-  def run(sc: SparkContext) {
-    this.apply({
-      if (args.forceLoadBam) {
-        sc.loadBam(args.inputPath)
-      } else if (args.forceLoadFastq) {
-        sc.loadUnpairedFastq(args.inputPath)
-      } else if (args.forceLoadIFastq) {
-        sc.loadInterleavedFastq(args.inputPath)
-      } else if (args.forceLoadParquet) {
-        sc.loadParquetAlignments(args.inputPath)
+  def getInputs(sc: SparkContext, dirname: String, extension: String): Seq[String] = {
+    val conf = sc.hadoopConfiguration
+    val fs = FileSystem.get(conf)
+    val path = new Path(dirname)
+
+    def fileStatuses(fileStatus: FileStatus): Array[FileStatus] = {
+      if (fileStatus.isDir) {
+        fs.listStatus(fileStatus.getPath).flatMap(fileStatuses)
       } else {
-        sc.loadAlignments(args.inputPath)
+        if (fileStatus.getPath.getName.endsWith(extension))
+          Array(fileStatus)
+        else
+          Array()
       }
-    }).adamSave(args, args.sortReads)
+    }
+
+    fileStatuses(fs.getFileStatus(path)).map(_.getPath.toUri.toString)
+  }
+
+  def swapExtensions(filenames: Seq[String], newExtension: String): Seq[String] = {
+    for {
+      filename <- filenames
+      lastDotIdx = filename.lastIndexOf(".")
+      extension = filename.substring(lastDotIdx + 1)
+    } yield {
+      filename.substring(0, lastDotIdx) + newExtension
+    }
+  }
+
+  def run(sc: SparkContext) {
+
+    def run(): Unit = {
+      logInfo(s"Converting ${args.inputPath} to ${args.outputPath}")
+      this.apply({
+        if (args.forceLoadBam) {
+          sc.loadBam(args.inputPath)
+        } else if (args.forceLoadFastq) {
+          sc.loadUnpairedFastq(args.inputPath)
+        } else if (args.forceLoadIFastq) {
+          sc.loadInterleavedFastq(args.inputPath)
+        } else if (args.forceLoadParquet) {
+          sc.loadParquetAlignments(args.inputPath)
+        } else {
+          sc.loadAlignments(args.inputPath)
+        }
+      }).adamSave(args, args.sortReads)
+    }
+
+    if (args.recursive) {
+      args.recursive = false
+      if (args.inputExtension == null) {
+        throw new IllegalArgumentException("Must provide -input_extension argument with -recursive")
+      }
+      if (!args.inputExtension.startsWith(".")) {
+        args.inputExtension = "." + args.inputExtension
+      }
+      val inputs = getInputs(sc, args.inputPath, args.inputExtension)
+      if (!args.outputPath.startsWith(".")) {
+        args.outputPath = "." + args.outputPath
+      }
+      val outputs = swapExtensions(inputs, args.outputPath)
+      logInfo(s"Converting ${inputs.size} files:${inputs.zip(outputs).map(p => s"${p._1} -> ${p._2}").mkString("\n\t", "\n\t", "")}")
+      for {
+        (input, output) <- inputs.zip(outputs)
+      } {
+        args.inputPath = input
+        args.outputPath = output
+        run()
+      }
+    } else {
+      run()
+    }
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {
