@@ -127,10 +127,11 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   def adamSAMSave(filePath: String,
                   asSam: Boolean = true,
                   asSingleFile: Boolean = false,
-                  isSorted: Boolean = false) = SAMSave.time {
+                  isSorted: Boolean = false,
+                  samHeader: SAMFileHeader = null) = SAMSave.time {
 
     // convert the records
-    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM(isSorted)
+    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM(isSorted, samHeader)
 
     // add keys to our records
     val withKey =
@@ -233,16 +234,19 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *
    * @return Returns a SAM/BAM formatted RDD of reads, as well as the file header.
    */
-  def adamConvertToSAM(isSorted: Boolean = false): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
-    // collect global summary data
-    val sd = rdd.adamGetSequenceDictionary()
-    val rgd = rdd.adamGetReadGroupDictionary()
-
+  def adamConvertToSAM(isSorted: Boolean = false, samHeader: SAMFileHeader = null): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
     // create conversion object
     val adamRecordConverter = new AlignmentRecordConverter
 
-    // create header
-    val header = adamRecordConverter.createSAMHeader(sd, rgd)
+
+    // collect global summary data
+    val header = if (samHeader == null) {
+      val sd = rdd.adamGetSequenceDictionary()
+      val rgd = rdd.adamGetReadGroupDictionary()
+      adamRecordConverter.createSAMHeader(sd, rgd)
+    } else {
+      samHeader
+    }
 
     if (isSorted) {
       header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
@@ -294,6 +298,18 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         ReferencePosition(s"~~~${r.getReadName}", 0)
       }
     }).sortByKey().map(_._2)
+  }
+
+  def adamSortReadsBySequenceDictionary(seqDict: SequenceDictionary): RDD[AlignmentRecord] = SortReads.time {
+    log.info("Sorting reads by sequence dictionary and position")
+    // TODO: broadcast this instead?
+    val name2idx = seqDict.records.map(_.name).zipWithIndex.toMap
+    // NOTE: In order to keep unmapped reads from swamping a single partition
+    // we sort the unmapped reads by read name. We prefix with tildes ("~";
+    // ASCII 126) to ensure that the read name is lexicographically "after" the
+    // contig names.
+    rdd.keyBy(r => name2idx.getOrElse(r.getContig.getContigName, Int.MaxValue) -> r.getStart)
+      .sortByKey().map(_._2)
   }
 
   def adamMarkDuplicates(): RDD[AlignmentRecord] = MarkDuplicatesInDriver.time {
