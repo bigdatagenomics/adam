@@ -66,8 +66,24 @@ object ADAMMain extends Logging {
           BuildInformation,
           View
         )
+      ),
+      CommandGroup(
+        "META",
+        List(
+          ExecCommandsFromFile
+        )
       )
     )
+
+  val commands =
+    for {
+      grp <- commandGroups
+      cmd <- grp.commands
+    } yield cmd
+
+  def getCommand(commandName: String): Option[BDGCommandCompanion] = {
+    commands.find(_.commandName == commandName)
+  }
 
   private def printCommands() {
     println("\n")
@@ -93,13 +109,7 @@ object ADAMMain extends Logging {
       printCommands()
     } else {
 
-      val commands =
-        for {
-          grp <- commandGroups
-          cmd <- grp.commands
-        } yield cmd
-
-      commands.find(_.commandName == args(0)) match {
+      getCommand(args(0)) match {
         case None => printCommands()
         case Some(cmd) =>
           init(Args4j[InitArgs](args drop 1, ignoreCmdLineExceptions = true))
