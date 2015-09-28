@@ -89,7 +89,7 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
                |%d + %d singletons (%.2f%%:%.2f%%)
                |%d + %d with mate mapped to a different chr
                |%d + %d with mate mapped to a different chr (mapQ>=5)
-             """.stripMargin('|').format(
+             """.stripMargin('|').trim.format(
       passedVendorQuality.total, failedVendorQuality.total,
       passedVendorQuality.duplicatesPrimary.total, failedVendorQuality.duplicatesPrimary.total,
       passedVendorQuality.duplicatesPrimary.bothMapped, failedVendorQuality.duplicatesPrimary.bothMapped,
@@ -121,7 +121,8 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
         val fs = FileSystem.get(conf)
         val path = new Path(outputPath)
         val outputStream = fs.create(path, true)
-        outputStream.writeUTF(output)
+        outputStream.writeBytes(output)
+        outputStream.writeBytes("\n")
         outputStream.close()
       case None =>
         println(output)
