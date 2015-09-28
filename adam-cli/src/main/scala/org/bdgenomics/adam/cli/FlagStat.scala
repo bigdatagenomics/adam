@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
+import org.apache.hadoop.fs.{ Path, FileSystem }
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -38,6 +39,8 @@ object FlagStat extends BDGCommandCompanion {
 class FlagStatArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM data to return stats for", index = 0)
   val inputPath: String = null
+  @Argument(required = false, metaVar = "OUTPUT", usage = "Optionally write the stats to this file.", index = 1)
+  val outputPath: String = null
 }
 
 class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagStatArgs] {
@@ -67,7 +70,7 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
 
     def percent(fraction: Long, total: Long) = if (total == 0) 0.0 else 100.00 * fraction.toFloat / total
 
-    println("""
+    val output = """
                |%d + %d in total (QC-passed reads + QC-failed reads)
                |%d + %d primary duplicates
                |%d + %d primary duplicates - both read and mate mapped
@@ -110,7 +113,19 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
       percent(passedVendorQuality.singleton, passedVendorQuality.total),
       percent(failedVendorQuality.singleton, failedVendorQuality.total),
       passedVendorQuality.withMateMappedToDiffChromosome, failedVendorQuality.withMateMappedToDiffChromosome,
-      passedVendorQuality.withMateMappedToDiffChromosomeMapQ5, failedVendorQuality.withMateMappedToDiffChromosomeMapQ5))
+      passedVendorQuality.withMateMappedToDiffChromosomeMapQ5, failedVendorQuality.withMateMappedToDiffChromosomeMapQ5)
+
+    Option(args.outputPath) match {
+      case Some(outputPath) =>
+        val conf = sc.hadoopConfiguration
+        val fs = FileSystem.get(conf)
+        val path = new Path(outputPath)
+        val outputStream = fs.create(path, true)
+        outputStream.writeUTF(output)
+        outputStream.close()
+      case None =>
+        println(output)
+    }
   }
 
 }
