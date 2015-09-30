@@ -88,6 +88,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var pairedFastqFile: String = null
   @Args4jOption(required = false, name = "-record_group", usage = "Set converted FASTQs' record-group names to this value; if empty-string is passed, use the basename of the input file, minus the extension.")
   var fastqRecordGroup: String = null
+  @Args4jOption(required = false, name = "-concat", usage = "Concatenate this file with <INPUT> and write the result to <OUTPUT>")
+  var concatFilename: String = null
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
@@ -150,7 +152,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   }
 
   def run(sc: SparkContext) {
-    this.apply({
+    val rdd =
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)
       } else if (args.forceLoadFastq) {
@@ -167,6 +169,29 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
           stringency = stringency
         )
       }
+
+    // Optionally load a second RDD and concatenate it with the first.
+    // Paired-FASTQ loading is avoided here because that wouldn't make sense
+    // given that it's already happening above.
+    val concatRddOpt =
+      Option(args.concatFilename).map(concatFilename =>
+        if (args.forceLoadBam) {
+          sc.loadBam(concatFilename)
+        } else if (args.forceLoadIFastq) {
+          sc.loadInterleavedFastq(concatFilename)
+        } else if (args.forceLoadParquet) {
+          sc.loadParquetAlignments(concatFilename)
+        } else {
+          sc.loadAlignments(
+            concatFilename,
+            recordGroupOpt = Option(args.fastqRecordGroup)
+          )
+        }
+      )
+
+    this.apply(concatRddOpt match {
+      case Some(concatRdd) => rdd ++ concatRdd
+      case None            => rdd
     }).adamSave(args, args.sortReads)
   }
 
