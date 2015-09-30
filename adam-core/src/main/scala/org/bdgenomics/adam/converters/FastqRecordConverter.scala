@@ -114,6 +114,7 @@ class FastqRecordConverter extends Serializable with Logging {
   }
 
   def convertRead(element: (Void, Text),
+                  recordGroupOpt: Option[String] = None,
                   setFirstOfPair: Boolean = false,
                   setSecondOfPair: Boolean = false): AlignmentRecord = {
     val lines = element._2.toString.split('\n')
@@ -147,7 +148,7 @@ class FastqRecordConverter extends Serializable with Logging {
     require(readSequence.length == readQualities.length,
       "Read " + readName + " has different sequence and qual length.")
 
-    AlignmentRecord.newBuilder()
+    val builder = AlignmentRecord.newBuilder()
       .setReadName(readName)
       .setSequence(readSequence)
       .setQual(readQualities)
@@ -163,6 +164,9 @@ class FastqRecordConverter extends Serializable with Logging {
       .setPrimaryAlignment(null)
       .setSecondaryAlignment(null)
       .setSupplementaryAlignment(null)
-      .build()
+
+    recordGroupOpt.foreach(builder.setRecordGroupName)
+
+    builder.build()
   }
 }

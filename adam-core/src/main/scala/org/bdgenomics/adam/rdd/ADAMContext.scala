@@ -364,15 +364,17 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
   def loadFastq(filePath1: String,
                 filePath2Opt: Option[String],
+                recordGroupOpt: Option[String] = None,
                 stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = {
     filePath2Opt match {
-      case Some(filePath2) => loadPairedFastq(filePath1, filePath2, stringency)
+      case Some(filePath2) => loadPairedFastq(filePath1, filePath2, recordGroupOpt, stringency)
       case None            => loadUnpairedFastq(filePath1)
     }
   }
 
   def loadPairedFastq(filePath1: String,
                       filePath2: String,
+                      recordGroupOpt: Option[String],
                       stringency: ValidationStringency): RDD[AlignmentRecord] = {
     val reads1 = loadUnpairedFastq(filePath1, setFirstOfPair = true)
     val reads2 = loadUnpairedFastq(filePath2, setSecondOfPair = true)
@@ -398,6 +400,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
   }
 
   def loadUnpairedFastq(filePath: String,
+                        recordGroupOpt: Option[String] = None,
                         setFirstOfPair: Boolean = false,
                         setSecondOfPair: Boolean = false): RDD[AlignmentRecord] = {
 
@@ -413,7 +416,19 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
-    records.map(fastqRecordConverter.convertRead(_, setFirstOfPair, setSecondOfPair))
+    records.map(
+      fastqRecordConverter.convertRead(
+        _,
+        recordGroupOpt.map(recordGroup =>
+          if (recordGroup.isEmpty)
+            filePath.substring(filePath.lastIndexOf("/") + 1)
+          else
+            recordGroup
+        ),
+        setFirstOfPair,
+        setSecondOfPair
+      )
+    )
   }
 
   def loadVcf(filePath: String, sd: Option[SequenceDictionary]): RDD[VariantContext] = {
@@ -641,6 +656,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     filePath: String,
     projection: Option[Schema] = None,
     filePath2Opt: Option[String] = None,
+    recordGroupOpt: Option[String] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = LoadAlignmentRecords.time {
 
     if (filePath.endsWith(".sam") ||
@@ -653,7 +669,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     } else if (filePath.endsWith(".fq") ||
       filePath.endsWith(".fastq")) {
       log.info("Loading " + filePath + " as unpaired FASTQ and converting to AlignmentRecords. Projection is ignored.")
-      loadFastq(filePath, filePath2Opt, stringency)
+      loadFastq(filePath, filePath2Opt, recordGroupOpt, stringency)
     } else if (filePath.endsWith(".fa") ||
       filePath.endsWith(".fasta")) {
       log.info("Loading " + filePath + " as FASTA and converting to AlignmentRecords. Projection is ignored.")

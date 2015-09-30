@@ -86,6 +86,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var asSingleFile: Boolean = false
   @Args4jOption(required = false, name = "-paired_fastq", usage = "When converting two (paired) FASTQ files to ADAM, pass the path to the second file here.")
   var pairedFastqFile: String = null
+  @Args4jOption(required = false, name = "-record_group", usage = "Set converted FASTQs' record-group names to this value; if empty-string is passed, use the basename of the input file, minus the extension.")
+  var fastqRecordGroup: String = null
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
@@ -152,7 +154,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)
       } else if (args.forceLoadFastq) {
-        sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), stringency)
+        sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), Option(args.fastqRecordGroup), stringency)
       } else if (args.forceLoadIFastq) {
         sc.loadInterleavedFastq(args.inputPath)
       } else if (args.forceLoadParquet) {
@@ -161,6 +163,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         sc.loadAlignments(
           args.inputPath,
           filePath2Opt = Option(args.pairedFastqFile),
+          recordGroupOpt = Option(args.fastqRecordGroup),
           stringency = stringency
         )
       }
