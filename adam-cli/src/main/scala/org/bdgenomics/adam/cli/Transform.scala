@@ -50,8 +50,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
   var recalibrateBaseQualities: Boolean = false
-  @Args4jOption(required = false, name = "-strict_bqsr", usage = "Run BQSR with strict validation.")
-  var strictBQSR: Boolean = false
+  @Args4jOption(required = false, name = "-stringency", usage = "Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults to LENIENT")
+  var stringency: String = "LENIENT"
   @Args4jOption(required = false, name = "-dump_observations", usage = "Local path to dump BQSR observations to. Outputs CSV format.")
   var observationsPath: String = null
   @Args4jOption(required = false, name = "-known_snps", usage = "Sites-only VCF giving location of known SNPs")
@@ -91,6 +91,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
   val companion = Transform
 
+  val stringency = ValidationStringency.valueOf(args.stringency)
+
   def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
 
     var adamRecords = rdd
@@ -124,14 +126,11 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
       val knownSnps: SnpTable = createKnownSnpsTable(sc)
-      val stringency = if (args.strictBQSR) {
-        ValidationStringency.STRICT
-      } else {
-        ValidationStringency.LENIENT
-      }
-      adamRecords = adamRecords.adamBQSR(sc.broadcast(knownSnps),
+      adamRecords = adamRecords.adamBQSR(
+        sc.broadcast(knownSnps),
         Option(args.observationsPath),
-        stringency)
+        stringency
+      )
     }
 
     if (args.coalesce != -1) {
@@ -153,7 +152,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)
       } else if (args.forceLoadFastq) {
-        sc.loadFastq(args.inputPath, Option(args.pairedFastqFile))
+        sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), stringency)
       } else if (args.forceLoadIFastq) {
         sc.loadInterleavedFastq(args.inputPath)
       } else if (args.forceLoadParquet) {
