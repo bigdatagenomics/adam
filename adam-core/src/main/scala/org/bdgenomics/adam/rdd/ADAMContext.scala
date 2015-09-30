@@ -19,15 +19,20 @@ package org.bdgenomics.adam.rdd
 
 import java.io.FileNotFoundException
 import java.util.regex.Pattern
+import htsjdk.samtools.{ IndexedBamInputFormat, SAMFileHeader, ValidationStringency }
 import htsjdk.samtools.{ ValidationStringency, SAMFileHeader, IndexedBamInputFormat }
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.avro.specific.SpecificRecord
-import org.apache.hadoop.fs.{ FileSystem, FileStatus, Path }
+import org.apache.hadoop.fs.{ FileStatus, FileSystem, Path }
 import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-import org.apache.spark.rdd.RDD
+import org.apache.parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
+import org.apache.parquet.filter2.predicate.FilterPredicate
+import org.apache.parquet.hadoop.ParquetInputFormat
+import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.rdd.MetricsContext._
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -43,12 +48,8 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.misc.HadoopUtil
-import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 import org.seqdoop.hadoop_bam._
-import org.apache.parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
-import org.apache.parquet.filter2.predicate.FilterPredicate
-import org.apache.parquet.hadoop.ParquetInputFormat
-import org.apache.parquet.hadoop.util.ContextUtil
+import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 import scala.collection.JavaConversions._
 import scala.collection.Map
 
@@ -103,7 +104,7 @@ object ADAMContext {
   implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
 }
 
-import ADAMContext._
+import org.bdgenomics.adam.rdd.ADAMContext._
 
 class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
