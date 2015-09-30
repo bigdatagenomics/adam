@@ -119,8 +119,28 @@ class FastqRecordConverter extends Serializable with Logging {
     val lines = element._2.toString.split('\n')
     require(lines.length == 4, "Record has wrong format:\n" + element._2.toString)
 
+    def trimTrailingReadNumber(readName: String): String = {
+      if (readName.endsWith("/1")) {
+        if (setSecondOfPair) {
+          throw new Exception(
+            s"Found read name $readName ending in '/1' despite second-of-pair flag being set"
+          )
+        }
+        readName.dropRight(2)
+      } else if (readName.endsWith("/2")) {
+        if (setFirstOfPair) {
+          throw new Exception(
+            s"Found read name $readName ending in '/2' despite first-of-pair flag being set"
+          )
+        }
+        readName.dropRight(2)
+      } else {
+        readName
+      }
+    }
+
     // get fields for first read in pair
-    val readName = lines(0).drop(1)
+    val readName = trimTrailingReadNumber(lines(0).drop(1))
     val readSequence = lines(1)
     val readQualities = lines(3)
 
