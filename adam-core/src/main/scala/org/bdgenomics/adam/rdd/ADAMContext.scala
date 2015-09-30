@@ -639,7 +639,9 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
 
   def loadAlignments(
     filePath: String,
-    projection: Option[Schema] = None): RDD[AlignmentRecord] = LoadAlignmentRecords.time {
+    projection: Option[Schema] = None,
+    filePath2Opt: Option[String] = None,
+    stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = LoadAlignmentRecords.time {
 
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam")) {
@@ -651,7 +653,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
     } else if (filePath.endsWith(".fq") ||
       filePath.endsWith(".fastq")) {
       log.info("Loading " + filePath + " as unpaired FASTQ and converting to AlignmentRecords. Projection is ignored.")
-      loadUnpairedFastq(filePath)
+      loadFastq(filePath, filePath2Opt, stringency)
     } else if (filePath.endsWith(".fa") ||
       filePath.endsWith(".fasta")) {
       log.info("Loading " + filePath + " as FASTA and converting to AlignmentRecords. Projection is ignored.")

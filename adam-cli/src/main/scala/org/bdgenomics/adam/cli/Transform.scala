@@ -158,7 +158,11 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       } else if (args.forceLoadParquet) {
         sc.loadParquetAlignments(args.inputPath)
       } else {
-        sc.loadAlignments(args.inputPath)
+        sc.loadAlignments(
+          args.inputPath,
+          filePath2Opt = Option(args.pairedFastqFile),
+          stringency = stringency
+        )
       }
     }).adamSave(args, args.sortReads)
   }
