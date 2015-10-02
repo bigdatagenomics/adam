@@ -84,6 +84,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var forceLoadParquet: Boolean = false
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false
+  @Args4jOption(required = false, name = "-merge", usage = "Merge Bam or Sam files stored in INPUT as comma-separated paths")
+  var merge: Boolean = false
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
@@ -148,7 +150,9 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
   def run(sc: SparkContext) {
     this.apply({
-      if (args.forceLoadBam) {
+      if (args.merge) {
+        args.inputPath.split(",").map(path => sc.loadBam(path)).reduce(_ union _)
+      } else if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)
       } else if (args.forceLoadFastq) {
         sc.loadUnpairedFastq(args.inputPath)
