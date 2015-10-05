@@ -26,7 +26,8 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.util.{ MdTag, QualityScore }
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-object DecadentRead extends Logging with Serializable {
+@deprecated("Use RichAlignmentRecord wherever possible in new development.", since = "0.18.0")
+private[adam] object DecadentRead extends Logging with Serializable {
   type Residue = DecadentRead#Residue
 
   // Constructors
@@ -72,7 +73,8 @@ object DecadentRead extends Logging with Serializable {
   implicit def decay(rdd: RDD[DecadentRead]): RDD[AlignmentRecord] = rdd.map(_.record)
 }
 
-class DecadentRead(val record: RichAlignmentRecord) extends Logging {
+@deprecated("Use RichAlignmentRecord wherever possible in new development.", since = "0.18.0")
+private[adam] class DecadentRead(val record: RichAlignmentRecord) extends Logging {
   // Can't be a primary alignment unless it has been aligned
   require(!record.getPrimaryAlignment || record.getReadMapped, "Unaligned read can't be a primary alignment")
 
