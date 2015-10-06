@@ -34,4 +34,19 @@ class TwoBitSuite extends ADAMFunSuite {
     assert(twoBitFile.extract(ReferenceRegion("hg19_chrM", 503, 513)) == "CATCCTACCC")
     assert(twoBitFile.extract(ReferenceRegion("hg19_chrM", 16561, 16571)) == "CATCACGATG")
   }
+
+  test("correctly return masked sequences from .2bit file") {
+    val file = new File(resourcePath("hg19.chrM.2bit"))
+    val byteAccess = new LocalFileByteAccess(file)
+    val twoBitFile = new TwoBitFile(byteAccess)
+    assert(twoBitFile.extract(ReferenceRegion("hg19_chrM", 0, 10), true) == "GATCACAGGT")
+    assert(twoBitFile.extract(ReferenceRegion("hg19_chrM", 2600, 2610), true) == "taatcacttg")
+  }
+
+  test("correctly return Ns from .2bit file") {
+    val file = new File(resourcePath("human_g1k_v37_chr1_59kb.2bit"))
+    val byteAccess = new LocalFileByteAccess(file)
+    val twoBitFile = new TwoBitFile(byteAccess)
+    assert(twoBitFile.extract(ReferenceRegion("1", 9990, 10010), true) == "NNNNNNNNNNTAACCCTAAC")
+  }
 }
