@@ -76,6 +76,12 @@ fi
 
 ADAM_CLI_JAR="${ASSEMBLY_DIR}/${ASSEMBLY_JARS}"
 
+# Allow main class to be overridden
+if [ -z "$ADAM_MAIN" ]; then
+  ADAM_MAIN="org.bdgenomics.adam.cli.ADAMMain"
+fi
+echo "Using ADAM_MAIN=$ADAM_MAIN"
+
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then
   SPARK_SUBMIT=$(which spark-submit)
@@ -90,7 +96,7 @@ echo "Using SPARK_SUBMIT=$SPARK_SUBMIT"
 
 # submit the job to Spark
 "$SPARK_SUBMIT" \
-  --class org.bdgenomics.adam.cli.ADAMMain \
+  --class $ADAM_MAIN \
   --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
   --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
   $SPARK_ARGS \
