@@ -22,7 +22,7 @@ import java.util.logging.{ Level, Logger }
 object ParquetLogger {
 
   val hadoopLoggerLevel = (level: Level) => {
-    val parquetHadoopLogger = Logger.getLogger("parquet.hadoop")
+    val parquetHadoopLogger = Logger.getLogger("org.apache.parquet.hadoop")
     parquetHadoopLogger.setLevel(level)
   }
 
