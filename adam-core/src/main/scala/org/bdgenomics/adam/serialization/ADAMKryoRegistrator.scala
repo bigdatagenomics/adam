@@ -20,7 +20,7 @@ package org.bdgenomics.adam.serialization
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputStream }
-import org.apache.avro.io.{ BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory }
+import org.apache.avro.io.{ BinaryEncoder, EncoderFactory }
 import org.apache.avro.specific.{ SpecificDatumWriter, SpecificDatumReader, SpecificRecord }
 import org.apache.spark.serializer.KryoRegistrator
 import org.bdgenomics.adam.util.{ TwoBitFileSerializer, TwoBitFile }
@@ -29,10 +29,10 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.realignment._
 import scala.reflect.ClassTag
 
-case class InputStreamWithDecoder(size: Int) {
+private[serialization] case class InputStreamWithDecoder(size: Int) {
   val buffer = new Array[Byte](size)
   val stream = new FastByteArrayInputStream(buffer)
-  val decoder = DecoderFactory.get().directBinaryDecoder(stream, null.asInstanceOf[BinaryDecoder])
+  val decoder = new BinaryDecoderWithLRUCache(stream)
 }
 
 // NOTE: This class is not thread-safe; however, Spark guarantees that only a single thread will access it.
@@ -52,7 +52,7 @@ class AvroSerializer[T <: SpecificRecord: ClassTag] extends Serializer[T] {
     kryoOut.write(outstream.array)
   }
 
-  def read(kryo: Kryo, kryoIn: Input, klazz: Class[T]): T = this.synchronized {
+  def read(kryo: Kryo, kryoIn: Input, klazz: Class[T]): T = {
     val len = kryoIn.readInt(true)
     if (len > in.size) {
       in = InputStreamWithDecoder(len + 1024)
