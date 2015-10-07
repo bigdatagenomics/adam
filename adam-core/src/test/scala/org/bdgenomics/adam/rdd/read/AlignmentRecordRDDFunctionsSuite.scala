@@ -149,6 +149,38 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     sam.collect().foreach(r => assert(r.getReadMapped))
   }
 
+  sparkTest("convert malformed FASTQ (no quality scores) => SAM => well-formed FASTQ => SAM") {
+    val noqualPath = Thread.currentThread().getContextClassLoader.getResource("fastq_noqual.fq").getFile
+    val tempBase = Files.createTempDirectory("noqual").toAbsolutePath.toString
+
+    //read FASTQ (malformed)
+    val rddA: RDD[AlignmentRecord] = sc.loadFastq(noqualPath, None, None, ValidationStringency.LENIENT)
+
+    //write SAM (fixed and now well-formed)
+    rddA.adamSAMSave(tempBase + "/noqualA.sam")
+
+    //read SAM
+    val rddB: RDD[AlignmentRecord] = sc.loadAlignments(tempBase + "/noqualA.sam")
+
+    //write FASTQ (well-formed)
+    rddB.adamSaveAsFastq(tempBase + "/noqualB.fastq")
+
+    //read FASTQ (well-formed)
+    val rddC: RDD[AlignmentRecord] = sc.loadFastq(tempBase + "/noqualB.fastq", None, None, ValidationStringency.STRICT)
+
+    val noqualA = rddA.collect()
+    val noqualB = rddB.collect()
+    val noqualC = rddC.collect()
+    noqualA.indices.foreach {
+      case i: Int =>
+        val (readA, readB, readC) = (noqualA(i), noqualB(i), noqualC(i))
+        assert(readA.getQual != "*")
+        assert(readB.getQual == "B" * readB.getSequence.length)
+        assert(readB.getQual == readC.getQual)
+    }
+
+  }
+
   sparkTest("round trip from ADAM to FASTQ and back to ADAM produces equivalent Read values") {
     val reads12Path = Thread.currentThread().getContextClassLoader.getResource("fastq_sample1.fq").getFile
     val rdd12A: RDD[AlignmentRecord] = sc.loadAlignments(reads12Path)

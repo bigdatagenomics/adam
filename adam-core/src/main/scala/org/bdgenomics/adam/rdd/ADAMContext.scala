@@ -372,7 +372,7 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
                 stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = {
     filePath2Opt match {
       case Some(filePath2) => loadPairedFastq(filePath1, filePath2, recordGroupOpt, stringency)
-      case None            => loadUnpairedFastq(filePath1)
+      case None            => loadUnpairedFastq(filePath1, stringency = stringency)
     }
   }
 
@@ -380,8 +380,8 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
                       filePath2: String,
                       recordGroupOpt: Option[String],
                       stringency: ValidationStringency): RDD[AlignmentRecord] = {
-    val reads1 = loadUnpairedFastq(filePath1, setFirstOfPair = true)
-    val reads2 = loadUnpairedFastq(filePath2, setSecondOfPair = true)
+    val reads1 = loadUnpairedFastq(filePath1, setFirstOfPair = true, stringency = stringency)
+    val reads2 = loadUnpairedFastq(filePath2, setSecondOfPair = true, stringency = stringency)
 
     stringency match {
       case ValidationStringency.STRICT | ValidationStringency.LENIENT =>
@@ -406,7 +406,8 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
   def loadUnpairedFastq(filePath: String,
                         recordGroupOpt: Option[String] = None,
                         setFirstOfPair: Boolean = false,
-                        setSecondOfPair: Boolean = false): RDD[AlignmentRecord] = {
+                        setSecondOfPair: Boolean = false,
+                        stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -430,7 +431,8 @@ class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
             recordGroup
         ),
         setFirstOfPair,
-        setSecondOfPair
+        setSecondOfPair,
+        stringency
       )
     )
   }
