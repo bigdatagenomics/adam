@@ -51,9 +51,23 @@ class AlignmentRecordConverter extends Serializable {
         ""
       }
 
+    //"B" is used to represent "unknown quality score"
+    //https://en.wikipedia.org/wiki/FASTQ_format#cite_note-7
+    //FastQ format quality score string must be the same length as the sequence string
+    //https://en.wikipedia.org/wiki/FASTQ_format#Format
+    val seqLength =
+      if (adamRecord.getSequence == null)
+        0
+      else
+        adamRecord.getSequence.length
     val qualityScores =
       if (outputOriginalBaseQualities && adamRecord.getOrigQual != null)
-        adamRecord.getOrigQual
+        if (adamRecord.getOrigQual == "*")
+          "B" * seqLength
+        else
+          adamRecord.getOrigQual
+      else if (adamRecord.getQual == null)
+        "B" * seqLength
       else
         adamRecord.getQual
 
