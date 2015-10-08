@@ -53,9 +53,13 @@ private[serialization] class LRUCache[K, V](maxCapacity: Int, loadFactor: Double
  *
  * @param in The input stream of Avro data
  */
-private[serialization] class BinaryDecoderWithLRUCache(in: InputStream, cache: LRUCache[Utf8, Utf8]) extends Decoder {
+private[serialization] class BinaryDecoderWithLRUCache(
+    in: InputStream,
+    maxCachableStringSize: Int,
+    cache: LRUCache[Utf8, Utf8]) extends Decoder {
 
-  def this(in: InputStream, cacheCapacity: Int = 65535) = this(in, new LRUCache[Utf8, Utf8](cacheCapacity))
+  def this(in: InputStream, maxCacheableStringSize: Int = 50, cacheCapacity: Int = 65535) =
+    this(in, maxCacheableStringSize, new LRUCache[Utf8, Utf8](cacheCapacity))
 
   val wrappedDecoder = DecoderFactory.get().directBinaryDecoder(in, null.asInstanceOf[BinaryDecoder])
 
@@ -72,11 +76,19 @@ private[serialization] class BinaryDecoderWithLRUCache(in: InputStream, cache: L
     // from creating a new Utf8 object every time we read a string. This isn't thread-safe, of course,
     // but Spark ensures that each thread has its own serialization infrastructure.
     val readValue = wrappedDecoder.readString(scratchUtf8)
-    if (!cache.containsKey(readValue)) {
-      val valueCopy = new Utf8(readValue)
-      cache.put(valueCopy, valueCopy)
+    if (readValue.length() > maxCachableStringSize) {
+      if (old == null) {
+        new Utf8(readValue)
+      } else {
+        old.set(Option(readValue).map(_.toString).orNull)
+      }
+    } else {
+      if (!cache.containsKey(readValue)) {
+        val valueCopy = new Utf8(readValue)
+        cache.put(valueCopy, valueCopy)
+      }
+      cache.get(readValue)
     }
-    cache.get(readValue)
   }
 
   override def readLong(): Long = wrappedDecoder.readLong()

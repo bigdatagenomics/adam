@@ -36,17 +36,21 @@ class SerializationSuite extends ADAMFunSuite {
   }
 
   test("BinaryDecoderWithLRUCache evicts LRU strings") {
+    val maxCacheableStringLength = 8
     val cacheCapacity = 10
     val cache = new LRUCache[Utf8, Utf8](cacheCapacity)
     val outstream = new FastByteArrayOutputStream()
     val encoder = EncoderFactory.get().directBinaryEncoder(outstream, null.asInstanceOf[BinaryEncoder])
     val writer = new SpecificDatumWriter[AlignmentRecord](AlignmentRecord.SCHEMA$)
 
-    val sequences = Array.tabulate(cacheCapacity * 2 + 1) {
-      i => s"${i}ACTGACTGACTGACTGACTG"
+    val longString = "IAMAREALLYLONGSTRINGTHATSHOULDNTBECACHED"
+    assert(longString.length > maxCacheableStringLength)
+    val sequences = Array.tabulate(cacheCapacity * 3 + 1) {
+      i => if (i % 2 == 0) s"${i}" else longString
     }
+    val shortStrings = sequences.filter(_.length < maxCacheableStringLength)
 
-    val recordsIn = Array.tabulate(cacheCapacity * 2 + 1) {
+    val recordsIn = Array.tabulate(cacheCapacity * 3 + 1) {
       i =>
         {
           AlignmentRecord.newBuilder()
@@ -60,10 +64,10 @@ class SerializationSuite extends ADAMFunSuite {
     }
 
     val inputStream = new FastByteArrayInputStream(outstream.array)
-    val decoder = new BinaryDecoderWithLRUCache(inputStream, cache)
+    val decoder = new BinaryDecoderWithLRUCache(inputStream, maxCacheableStringLength, cache)
     val reader = new SpecificDatumReader[AlignmentRecord](AlignmentRecord.SCHEMA$)
 
-    val recordsOut = Array.tabulate(cacheCapacity * 2 + 1) {
+    val recordsOut = Array.tabulate(cacheCapacity * 3 + 1) {
       i =>
         {
           reader.read(null.asInstanceOf[AlignmentRecord], decoder)
@@ -72,8 +76,10 @@ class SerializationSuite extends ADAMFunSuite {
 
     assert(recordsIn sameElements recordsOut)
     assert(cache.size() == cacheCapacity)
-    0 to cacheCapacity foreach { i => assert(!cache.containsKey(new Utf8(sequences(i)))) }
-    cacheCapacity + 1 to cacheCapacity * 2 foreach { i => assert(cache.containsKey(new Utf8(sequences(i)))) }
+    assert(!cache.containsKey(longString))
+    val (notInCache, inCache) = shortStrings.splitAt(cacheCapacity * 3 - cacheCapacity)
+    notInCache.foreach(str => assert(!cache.containsKey(str)))
+    inCache.foreach(str => assert(cache.containsKey(str)))
   }
 
 }
