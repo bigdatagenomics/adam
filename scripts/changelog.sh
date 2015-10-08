@@ -17,6 +17,8 @@ fi
 
 echo "# ADAM #"
 
+echo "### Version $1 ###"
+
 git log | grep -E "Merge pull request|prepare release" | grep -vi "Revert" | uniq | while read l
 do 
   release=`echo $l | grep "prepare release" | grep -v 2.11 | awk -F'-' '{print $NF}' | awk -F'_' '{ print $1 }'`
