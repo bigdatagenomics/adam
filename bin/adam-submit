@@ -84,7 +84,7 @@ echo "Using ADAM_MAIN=$ADAM_MAIN"
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then
-  SPARK_SUBMIT=$(which spark-submit)
+  SPARK_SUBMIT=$(which spark-submit || echo)
 else
   SPARK_SUBMIT="$SPARK_HOME"/bin/spark-submit
 fi
