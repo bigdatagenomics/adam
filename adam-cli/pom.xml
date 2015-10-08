@@ -179,6 +179,10 @@
       <artifactId>scalatest_2.10</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>net.codingwell</groupId>
+      <artifactId>scala-guice_2.10</artifactId>
+    </dependency>
   </dependencies>
   <profiles>
     <profile>

@@ -512,6 +512,11 @@
         <version>1.9.5</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>net.codingwell</groupId>
+        <artifactId>scala-guice_2.10</artifactId>
+        <version>4.0.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 

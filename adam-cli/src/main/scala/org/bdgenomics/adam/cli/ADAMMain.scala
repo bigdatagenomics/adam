@@ -18,15 +18,16 @@
 package org.bdgenomics.adam.cli
 
 import java.util.logging.Level._
+import javax.inject.Inject
+import com.google.inject.AbstractModule
+import net.codingwell.scalaguice.ScalaModule
 import org.apache.spark.Logging
 import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.utils.cli._
 
-object ADAMMain extends Logging {
+object ADAMMain {
 
-  case class CommandGroup(name: String, commands: List[BDGCommandCompanion])
-
-  private val commandGroups =
+  val defaultCommandGroups =
     List(
       CommandGroup(
         "ADAM ACTIONS",
@@ -72,6 +73,17 @@ object ADAMMain extends Logging {
       )
     )
 
+  def main(args: Array[String]) {
+    new ADAMMain(defaultCommandGroups)(args)
+  }
+}
+
+case class CommandGroup(name: String, commands: List[BDGCommandCompanion])
+
+private class InitArgs extends Args4jBase with ParquetArgs {}
+
+class ADAMMain @Inject() (commandGroups: List[CommandGroup]) extends Logging {
+
   private def printCommands() {
     println("\n")
     println("""     e            888~-_              e                 e    e
@@ -90,7 +102,7 @@ object ADAMMain extends Logging {
     println("\n")
   }
 
-  def main(args: Array[String]) {
+  def apply(args: Array[String]) {
     log.info("ADAM invoked with args: %s".format(argsToString(args)))
     if (args.size < 1) {
       printCommands()
@@ -118,10 +130,14 @@ object ADAMMain extends Logging {
     args.map(escapeArg).mkString(" ")
   }
 
-  class InitArgs extends Args4jBase with ParquetArgs {}
-
   private def init(args: InitArgs) {
     // Set parquet logging (default: severe)
     ParquetLogger.hadoopLoggerLevel(parse(args.logLevel))
+  }
+}
+
+class ADAMModule extends AbstractModule with ScalaModule {
+  def configure {
+    bind[List[CommandGroup]].toInstance(ADAMMain.defaultCommandGroups)
   }
 }
