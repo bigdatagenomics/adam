@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.bdgenomics.adam</groupId>
   <artifactId>adam-parent_2.10</artifactId>
-  <version>0.17.2-SNAPSHOT</version>
+  <version>0.18.0</version>
   <packaging>pom</packaging>
   <name>ADAM_2.10</name>
   <description>A fast, scalable genome analysis system</description>
@@ -45,7 +45,7 @@
     <connection>scm:git:git@github.com:bigdatagenomics/adam.git</connection>
     <developerConnection>scm:git:git@github.com:bigdatagenomics/adam.git</developerConnection>
     <url>scm:git:git@github.com:bigdatagenomics/adam.git</url>
-    <tag>master</tag>
+    <tag>adam-parent-2.10_0.18.0</tag>
   </scm>
   <developers>
     <developer>
