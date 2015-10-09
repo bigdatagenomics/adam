@@ -54,7 +54,7 @@ SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
 # Find ADAM cli assembly jar
 ADAM_CLI_JAR=
-if [ -f "$SCRIPT_DIR/repo" ]; then
+if [ -d "$SCRIPT_DIR/repo" ]; then
   ASSEMBLY_DIR="$SCRIPT_DIR/repo"
 else
   ASSEMBLY_DIR="$SCRIPT_DIR/adam-cli/target"
