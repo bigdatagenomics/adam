@@ -3,14 +3,14 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.bdgenomics.adam</groupId>
-    <artifactId>adam-parent_2.10</artifactId>
+    <artifactId>adam-parent_2.11</artifactId>
     <version>0.17.2-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-apis_2.10</artifactId>
+  <artifactId>adam-apis_2.11</artifactId>
   <packaging>jar</packaging>
-  <name>ADAM_2.10: APIs for Java</name>
+  <name>ADAM_2.11: APIs for Java</name>
   <build>
     <plugins>
       <!-- disable surefire -->
@@ -95,11 +95,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_2.10</artifactId>
+      <artifactId>spark-core_2.11</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>
-      <artifactId>utils-misc_2.10</artifactId>
+      <artifactId>utils-misc_2.11</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -109,11 +109,11 @@
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core_2.10</artifactId>
+      <artifactId>adam-core_2.11</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core_2.10</artifactId>
+      <artifactId>adam-core_2.11</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -131,7 +131,7 @@
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_2.10</artifactId>
+      <artifactId>scalatest_2.11</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
