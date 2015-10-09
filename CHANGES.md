@@ -1,4 +1,12 @@
 # ADAM #
+### Version 0.18.0 ###
+* ISSUE [859](https://github.com/bigdatagenomics/adam/pull/859): [ADAM-857] Corrected handling of env vars in bin scripts
+* ISSUE [844](https://github.com/bigdatagenomics/adam/pull/844): [ADAM-843] Aggressively project out metadata fields.
+* ISSUE [845](https://github.com/bigdatagenomics/adam/pull/845): [ADAM-780] Make DecadentRead package private.
+* ISSUE [852](https://github.com/bigdatagenomics/adam/pull/852): [ADAM-851] Slienced Parquet logging.
+* ISSUE [805](https://github.com/bigdatagenomics/adam/pull/805): Better transform error when file doesn't exist
+* ISSUE [803](https://github.com/bigdatagenomics/adam/pull/803): fix unmapped-read sorting
+* ISSUE [802](https://github.com/bigdatagenomics/adam/pull/802): stop writing contig names as md5 sums
 
 ### Version 0.17.1 ###
 * ISSUE [784](https://github.com/bigdatagenomics/adam/pull/784): [ADAM-783] Write @SQ header lines in sorted order.
