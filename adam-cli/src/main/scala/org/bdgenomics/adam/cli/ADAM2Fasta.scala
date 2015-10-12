@@ -31,7 +31,7 @@ class ADAM2FastaArgs extends ParquetLoadSaveArgs {
   var partitions: Int = 1
   @Args4JOption(required = false, name = "-shuffle", usage = "Shuffle while partitioning, default false")
   var shuffle: Boolean = false
-  @Args4JOption(required = false, name = "-line-width", usage = "Hard wrap FASTA formatted sequence at line width, default 60")
+  @Args4JOption(required = false, name = "-line_width", usage = "Hard wrap FASTA formatted sequence at line width, default 60")
   var lineWidth: Int = 60
 }
 

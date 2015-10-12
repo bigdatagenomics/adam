@@ -48,7 +48,7 @@ class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
 
-  @Args4jOption(required = false, name = "-onlyvariants", usage = "Output Variant objects instead of Genotypes")
+  @Args4jOption(required = false, name = "-only_variants", usage = "Output Variant objects instead of Genotypes")
   var onlyvariants: Boolean = false
 }
 
