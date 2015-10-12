@@ -54,7 +54,7 @@ SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
 # Find ADAM cli assembly jar
 ADAM_CLI_JAR=
-if [ -f "$SCRIPT_DIR/repo" ]; then
+if [ -d "$SCRIPT_DIR/repo" ]; then
   ASSEMBLY_DIR="$SCRIPT_DIR/repo"
 else
   ASSEMBLY_DIR="$SCRIPT_DIR/adam-cli/target"
@@ -84,7 +84,7 @@ echo "Using ADAM_MAIN=$ADAM_MAIN"
 
 # Find spark-submit script
 if [ -z "$SPARK_HOME" ]; then
-  SPARK_SUBMIT=$(which spark-submit)
+  SPARK_SUBMIT=$(which spark-submit || echo)
 else
   SPARK_SUBMIT="$SPARK_HOME"/bin/spark-submit
 fi
