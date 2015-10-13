@@ -55,7 +55,7 @@ private[serialization] class LRUCache[K, V](maxCapacity: Int, loadFactor: Double
  */
 private[serialization] class BinaryDecoderWithLRUCache(
     in: InputStream,
-    maxCachableStringSize: Int,
+    maxCacheableStringSize: Int,
     cache: LRUCache[Utf8, Utf8]) extends Decoder {
 
   def this(in: InputStream, maxCacheableStringSize: Int = 50, cacheCapacity: Int = 65535) =
@@ -76,7 +76,7 @@ private[serialization] class BinaryDecoderWithLRUCache(
     // from creating a new Utf8 object every time we read a string. This isn't thread-safe, of course,
     // but Spark ensures that each thread has its own serialization infrastructure.
     val readValue = wrappedDecoder.readString(scratchUtf8)
-    if (readValue.length() > maxCachableStringSize) {
+    if (readValue.length() > maxCacheableStringSize) {
       if (old == null) {
         new Utf8(readValue)
       } else {
