@@ -48,6 +48,9 @@ class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
 
+  @Args4jOption(required = false, name = "-force_shuffle_coalesce", usage = "Even if the repartitioned RDD has fewer partitions, force a shuffle.")
+  var forceShuffle: Boolean = false
+
   @Args4jOption(required = false, name = "-onlyvariants", usage = "Output Variant objects instead of Genotypes")
   var onlyvariants: Boolean = false
 }
@@ -63,7 +66,11 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] wit
 
     var adamVariants: RDD[VariantContext] = sc.loadVcf(args.vcfPath, sd = dictionary)
     if (args.coalesce > 0) {
-      adamVariants = adamVariants.coalesce(args.coalesce, true)
+      if (args.coalesce > adamVariants.partitions.size || args.forceShuffle) {
+        adamVariants = adamVariants.coalesce(args.coalesce, shuffle = true)
+      } else {
+        adamVariants = adamVariants.coalesce(args.coalesce, shuffle = false)
+      }
     }
 
     if (args.onlyvariants) {
