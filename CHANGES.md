@@ -1,12 +1,36 @@
 # ADAM #
 ### Version 0.18.0 ###
+* ISSUE [860](https://github.com/bigdatagenomics/adam/pull/860): New release and pr-commit scripts
 * ISSUE [859](https://github.com/bigdatagenomics/adam/pull/859): [ADAM-857] Corrected handling of env vars in bin scripts
-* ISSUE [844](https://github.com/bigdatagenomics/adam/pull/844): [ADAM-843] Aggressively project out metadata fields.
-* ISSUE [845](https://github.com/bigdatagenomics/adam/pull/845): [ADAM-780] Make DecadentRead package private.
+* ISSUE [854](https://github.com/bigdatagenomics/adam/pull/854): [ADAM-853] allow main class in adam-submit to be specified
 * ISSUE [852](https://github.com/bigdatagenomics/adam/pull/852): [ADAM-851] Slienced Parquet logging.
+* ISSUE [850](https://github.com/bigdatagenomics/adam/pull/850): [ADAM-848] TwoBitFile now support nBlocks and maskBlocks
+* ISSUE [846](https://github.com/bigdatagenomics/adam/pull/846): Updating maven build plugin dependency versions
+* ISSUE [845](https://github.com/bigdatagenomics/adam/pull/845): [ADAM-780] Make DecadentRead package private.
+* ISSUE [844](https://github.com/bigdatagenomics/adam/pull/844): [ADAM-843] Aggressively project out metadata fields.
+* ISSUE [840](https://github.com/bigdatagenomics/adam/pull/840): fix flagstat output file encoding
+* ISSUE [839](https://github.com/bigdatagenomics/adam/pull/839): let flagstat write to file
+* ISSUE [831](https://github.com/bigdatagenomics/adam/pull/831): Support loading paired fastqs
+* ISSUE [830](https://github.com/bigdatagenomics/adam/pull/830): better validation when saving paired fastqs
+* ISSUE [829](https://github.com/bigdatagenomics/adam/pull/829): fix `Long != null` warnings
+* ISSUE [819](https://github.com/bigdatagenomics/adam/pull/819): Implement custom ReferenceRegion hashcode
+* ISSUE [816](https://github.com/bigdatagenomics/adam/pull/816): [ADAM-793] adding command to convert ADAM nucleotide contig fragments to FASTA files
+* ISSUE [815](https://github.com/bigdatagenomics/adam/pull/815): Upgrade to bdg-formats:0.6.0, add Fragment datatype converters
+* ISSUE [814](https://github.com/bigdatagenomics/adam/pull/814): [ADAM-812] fix for javadoc errors on JDK8
+* ISSUE [813](https://github.com/bigdatagenomics/adam/pull/813): [ADAM-808] build an assembly cli jar with maven shade plugin
+* ISSUE [810](https://github.com/bigdatagenomics/adam/pull/810): [ADAM-807] workaround for ktoso/maven-git-commit-id-plugin#61
+* ISSUE [809](https://github.com/bigdatagenomics/adam/pull/809): [ADAM-785] Add support for all numeric array (TYPE=B) tags
+* ISSUE [806](https://github.com/bigdatagenomics/adam/pull/806): [ADAM-755] updating utils dependency version to 0.2.3
 * ISSUE [805](https://github.com/bigdatagenomics/adam/pull/805): Better transform error when file doesn't exist
 * ISSUE [803](https://github.com/bigdatagenomics/adam/pull/803): fix unmapped-read sorting
 * ISSUE [802](https://github.com/bigdatagenomics/adam/pull/802): stop writing contig names as md5 sums
+* ISSUE [798](https://github.com/bigdatagenomics/adam/pull/798): fix SAM-attr conversion bug; int[]'s not byte[]'s
+* ISSUE [790](https://github.com/bigdatagenomics/adam/pull/790): optionally add MDTags to reads with `transform`
+* ISSUE [782](https://github.com/bigdatagenomics/adam/pull/782): Fix SAM Attribute parser for numeric array tags
+* ISSUE [773](https://github.com/bigdatagenomics/adam/pull/773): [ADAM-772] fix some bash var quoting
+* ISSUE [765](https://github.com/bigdatagenomics/adam/pull/765): [ADAM-752] Build for many combos of Spark/Hadoop versions.
+* ISSUE [764](https://github.com/bigdatagenomics/adam/pull/764): More involved README restructuring
+* ISSUE [762](https://github.com/bigdatagenomics/adam/pull/762): [ADAM-132] allowing list of commands to be injected into adam-cli ADAMMain
 
 ### Version 0.17.1 ###
 * ISSUE [784](https://github.com/bigdatagenomics/adam/pull/784): [ADAM-783] Write @SQ header lines in sorted order.
