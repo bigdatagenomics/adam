@@ -24,14 +24,14 @@ echo "releasing from ${commit} on branch ${branch}"
 git push origin ${branch}
 
 # do scala 2.10 release
-git checkout -b maint-2.10_${release} ${branch}
+git checkout -b maint_2.10-${release} ${branch}
 mvn --batch-mode \
   -P distribution \
   -Dresume=false \
-  -Dtag=adam-parent-2.10_${release} \
+  -Dtag=adam-parent_2.10-${release} \
   -DreleaseVersion=${release} \
   -DdevelopmentVersion=${devel} \
-  -DbranchName=adam-${release} \
+  -DbranchName=adam_2.10-${release} \
   release:clean \
   release:prepare \
   release:perform
@@ -42,16 +42,16 @@ if [ $? != 0 ]; then
 fi
 
 # do scala 2.11 release
-git checkout -b maint-2.11_${release} ${branch}
+git checkout -b maint_2.11-${release} ${branch}
 ./scripts/move_to_scala_2.11.sh
 git commit -a -m "Modifying pom.xml files for 2.11 release."
 mvn --batch-mode \
   -P distribution \
   -Dresume=false \
-  -Dtag=adam-parent-2.11_${release} \
+  -Dtag=adam-parent_2.11-${release} \
   -DreleaseVersion=${release} \
   -DdevelopmentVersion=${devel} \
-  -DbranchName=adam-2.11_${release} \
+  -DbranchName=adam_2.11-${release} \
   release:clean \
   release:prepare \
   release:perform
