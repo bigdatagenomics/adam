@@ -1,4 +1,9 @@
 # ADAM #
+### Version 0.18.1 ###
+* ISSUE [870](https://github.com/bigdatagenomics/adam/pull/870): [ADAM-867] add pull requests missing from 0.18.0 release to CHANGES.md
+* ISSUE [869](https://github.com/bigdatagenomics/adam/pull/869): [ADAM-868] make release branch and tag names consistent
+* ISSUE [862](https://github.com/bigdatagenomics/adam/pull/862): [ADAM-861] use -d to check for repo assembly dir
+
 ### Version 0.18.0 ###
 * ISSUE [860](https://github.com/bigdatagenomics/adam/pull/860): New release and pr-commit scripts
 * ISSUE [859](https://github.com/bigdatagenomics/adam/pull/859): [ADAM-857] Corrected handling of env vars in bin scripts
