@@ -516,7 +516,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
     filePath2Opt match {
       case Some(filePath2) => loadPairedFastq(filePath1, filePath2, recordGroupOpt, stringency)
-      case None            => loadUnpairedFastq(filePath1, stringency = stringency)
+      case None            => loadUnpairedFastq(filePath1, recordGroupOpt, stringency = stringency)
     }
   }
 
