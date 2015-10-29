@@ -178,8 +178,11 @@ class FastqRecordConverter extends Serializable with Logging {
 
     require(
       readSequence.length == readQualities.length,
-      "Read " + readName + " has different sequence and qual length: " +
-        "\n\tsequence=" + readSequence + "\n\tqual=" + readQualities
+      List(
+        s"Read $readName has different sequence and qual length:",
+        s"sequence=$readSequence",
+        s"qual=$readQualities"
+      ).mkString("\n\t")
     )
 
     val builder = AlignmentRecord.newBuilder()

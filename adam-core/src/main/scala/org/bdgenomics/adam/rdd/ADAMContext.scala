@@ -727,10 +727,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     projection: Option[Schema] = None,
     sd: Option[SequenceDictionary] = None): RDD[DatabaseVariantAnnotation] = {
     if (filePath.endsWith(".vcf")) {
-      log.info("Loading " + filePath + " as VCF, and converting to variant annotations. Projection is ignored.")
+      log.info(s"Loading $filePath as VCF, and converting to variant annotations. Projection is ignored.")
       loadVcfAnnotations(filePath, sd)
     } else {
-      log.info("Loading " + filePath + " as Parquet containing DatabaseVariantAnnotations.")
+      log.info(s"Loading $filePath as Parquet containing DatabaseVariantAnnotations.")
       sd.foreach(sd => log.warn("Sequence dictionary for translation ignored if loading ADAM from Parquet."))
       loadParquetVariantAnnotations(filePath, None, projection)
     }
@@ -782,13 +782,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     fragmentLength: Long = 10000): RDD[NucleotideContigFragment] = {
     if (filePath.endsWith(".fa") ||
       filePath.endsWith(".fasta")) {
-      log.info("Loading " + filePath + " as FASTA and converting to NucleotideContigFragment. Projection is ignored.")
+      log.info(s"Loading $filePath as FASTA and converting to NucleotideContigFragment. Projection is ignored.")
       loadFasta(
         filePath,
         fragmentLength
       )
     } else {
-      log.info("Loading " + filePath + " as Parquet containing NucleotideContigFragments.")
+      log.info(s"Loading $filePath as Parquet containing NucleotideContigFragments.")
       loadParquetContigFragments(filePath, None, projection)
     }
   }
@@ -798,10 +798,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     projection: Option[Schema] = None,
     sd: Option[SequenceDictionary] = None): RDD[Genotype] = {
     if (filePath.endsWith(".vcf")) {
-      log.info("Loading " + filePath + " as VCF, and converting to Genotypes. Projection is ignored.")
+      log.info(s"Loading $filePath as VCF, and converting to Genotypes. Projection is ignored.")
       loadVcf(filePath, sd).flatMap(_.genotypes)
     } else {
-      log.info("Loading " + filePath + " as Parquet containing Genotypes. Sequence dictionary for translation is ignored.")
+      log.info(s"Loading $filePath as Parquet containing Genotypes. Sequence dictionary for translation is ignored.")
       loadParquetGenotypes(filePath, None, projection)
     }
   }
@@ -811,10 +811,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     projection: Option[Schema] = None,
     sd: Option[SequenceDictionary] = None): RDD[Variant] = {
     if (filePath.endsWith(".vcf")) {
-      log.info("Loading " + filePath + " as VCF, and converting to Variants. Projection is ignored.")
+      log.info(s"Loading $filePath as VCF, and converting to Variants. Projection is ignored.")
       loadVcf(filePath, sd).map(_.variant.variant)
     } else {
-      log.info("Loading " + filePath + " as Parquet containing Variants. Sequence dictionary for translation is ignored.")
+      log.info(s"Loading $filePath as Parquet containing Variants. Sequence dictionary for translation is ignored.")
       loadParquetVariants(filePath, None, projection)
     }
   }
@@ -859,27 +859,26 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam")) {
-      log.info("Loading " + filePath + " as SAM/BAM and converting to AlignmentRecords. Projection is ignored.")
+      log.info(s"Loading $filePath as SAM/BAM and converting to AlignmentRecords. Projection is ignored.")
       loadBam(filePath, stringency)
     } else if (filePath.endsWith(".ifq")) {
-      log.info("Loading " + filePath + " as interleaved FASTQ and converting to AlignmentRecords. Projection is ignored.")
+      log.info(s"Loading $filePath as interleaved FASTQ and converting to AlignmentRecords. Projection is ignored.")
       loadInterleavedFastq(filePath)
     } else if (filePath.endsWith(".fq") ||
       filePath.endsWith(".fastq")) {
-      log.info("Loading " + filePath + " as unpaired FASTQ and converting to AlignmentRecords. Projection is ignored.")
+      log.info(s"Loading $filePath as unpaired FASTQ and converting to AlignmentRecords. Projection is ignored.")
       loadFastq(filePath, filePath2Opt, recordGroupOpt, stringency)
     } else if (filePath.endsWith(".fa") ||
       filePath.endsWith(".fasta")) {
-      log.info("Loading " + filePath + " as FASTA and converting to AlignmentRecords. Projection is ignored.")
+      log.info(s"Loading $filePath as FASTA and converting to AlignmentRecords. Projection is ignored.")
       import ADAMContext._
       UnalignedReadRDD(loadFasta(filePath, fragmentLength = 10000).toReads,
         RecordGroupDictionary.empty)
     } else if (filePath.endsWith("contig.adam")) {
-      log.info("Loading " + filePath + " as Parquet of NucleotideContigFragment and converting to AlignmentRecords. Projection is ignored.")
-      UnalignedReadRDD(loadParquet[NucleotideContigFragment](filePath).toReads,
-        RecordGroupDictionary.empty)
+      log.info(s"Loading $filePath as Parquet of NucleotideContigFragment and converting to AlignmentRecords. Projection is ignored.")
+      UnalignedReadRDD(loadParquet[NucleotideContigFragment](filePath).toReads, RecordGroupDictionary.empty)
     } else {
-      log.info("Loading " + filePath + " as Parquet of AlignmentRecords.")
+      log.info(s"Loading $filePath as Parquet of AlignmentRecords.")
       loadParquetAlignments(filePath, None, projection)
     }
   }
@@ -887,10 +886,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadFragments(filePath: String): RDD[Fragment] = LoadFragments.time {
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam")) {
-      log.info("Loading " + filePath + " as SAM/BAM and converting to Fragments.")
+      log.info(s"Loading $filePath as SAM/BAM and converting to Fragments.")
       loadBam(filePath).rdd.toFragments
     } else if (filePath.endsWith(".reads.adam")) {
-      log.info("Loading " + filePath + " as ADAM AlignmentRecords and converting to Fragments.")
+      log.info(s"Loading $filePath as ADAM AlignmentRecords and converting to Fragments.")
       loadAlignments(filePath).rdd.toFragments
     } else if (filePath.endsWith(".ifq")) {
       log.info("Loading interleaved FASTQ " + filePath + " and converting to Fragments.")
