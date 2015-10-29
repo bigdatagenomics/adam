@@ -516,7 +516,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
     filePath2Opt match {
       case Some(filePath2) => loadPairedFastq(filePath1, filePath2, recordGroupOpt, stringency)
-      case None            => loadUnpairedFastq(filePath1, stringency = stringency)
+      case None            => loadUnpairedFastq(filePath1, recordGroupOpt, stringency = stringency)
     }
   }
 
@@ -525,8 +525,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     filePath2: String,
     recordGroupOpt: Option[String],
     stringency: ValidationStringency): AlignmentRecordRDD = {
-    val reads1 = loadUnpairedFastq(filePath1, setFirstOfPair = true, stringency = stringency)
-    val reads2 = loadUnpairedFastq(filePath2, setSecondOfPair = true, stringency = stringency)
+    val reads1 = loadUnpairedFastq(filePath1, recordGroupOpt, setFirstOfPair = true, stringency = stringency)
+    val reads2 = loadUnpairedFastq(filePath2, recordGroupOpt, setSecondOfPair = true, stringency = stringency)
 
     stringency match {
       case ValidationStringency.STRICT | ValidationStringency.LENIENT =>
