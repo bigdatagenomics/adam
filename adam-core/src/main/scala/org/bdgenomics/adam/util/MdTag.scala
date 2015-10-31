@@ -158,9 +158,8 @@ object MdTag {
             cigarIdx += 1
             cigarOperatorIndex = 0
 
-          case (CigarOperator.INSERTION | CigarOperator.H | CigarOperator.S, _) =>
+          case (CigarOperator.INSERTION | CigarOperator.H | CigarOperator.S | CigarOperator.P, _) =>
             cigarIdx += 1
-
         }
       }
       new MdTag(referenceStart, matches, mismatches, deletions)
