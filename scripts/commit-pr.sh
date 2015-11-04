@@ -18,12 +18,12 @@ push_url=$(git remote show origin | grep Push | awk '{ print $3 }')
 
 # is origin pointing at the correct repo?
 ec=0
-if [ $fetch_url != "git@github.com:bigdatagenomics/adam.git" ] || [ $fetch_url != "https://github.com/bigdatagenomics/adam.git" ]
+if [ $fetch_url != "git@github.com:bigdatagenomics/adam.git" ] && [ $fetch_url != "https://github.com/bigdatagenomics/adam.git" ]
 then
     echo "Fetch URL doesn't point at ADAM: ${fetch_url}"
     ec=1
 fi
-if [ $push_url != "git@github.com:bigdatagenomics/adam.git" ] || [  $push_url != "https://github.com/bigdatagenomics/adam.git" ]
+if [ $push_url != "git@github.com:bigdatagenomics/adam.git" ] && [  $push_url != "https://github.com/bigdatagenomics/adam.git" ]
 then
     echo "Push URL doesn't point at ADAM: ${push_url}"
     ec=1
