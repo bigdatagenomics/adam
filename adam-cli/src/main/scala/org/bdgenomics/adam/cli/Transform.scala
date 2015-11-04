@@ -79,6 +79,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var repartition: Int = -1
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
+  @Args4jOption(required = false, name = "-force_shuffle_coalesce", usage = "Even if the repartitioned RDD has fewer partitions, force a shuffle.")
+  var forceShuffle: Boolean = false
   @Args4jOption(required = false, name = "-sort_fastq_output", usage = "Sets whether to sort the FASTQ output, if saving as FASTQ. False by default. Ignored if not saving as FASTQ.")
   var sortFastqOutput: Boolean = false
   @Args4jOption(required = false, name = "-force_load_bam", usage = "Forces Transform to load from BAM/SAM.")
@@ -155,7 +157,11 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
     if (args.coalesce != -1) {
       log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
-      adamRecords = adamRecords.coalesce(args.coalesce, shuffle = true)
+      if (args.coalesce > adamRecords.partitions.size || args.forceShuffle) {
+        adamRecords = adamRecords.coalesce(args.coalesce, shuffle = true)
+      } else {
+        adamRecords = adamRecords.coalesce(args.coalesce, shuffle = false)
+      }
     }
 
     // NOTE: For now, sorting needs to be the last transform

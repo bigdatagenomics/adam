@@ -226,6 +226,13 @@ class MdTagSuite extends FunSuite {
     assert(tag.toString === "20")
   }
 
+  test("CIGAR with P operators") {
+    val tag = MdTag("8", 0L, TextCigarCodec.decode("4=1P4="))
+    assert(tag.toString === "8")
+    (0 until 8).foreach(locus => assert(tag.isMatch(locus)))
+
+  }
+
   test("Get correct matches for mdtag with insertion") {
     val tag = MdTag("10", 0L, TextCigarCodec.decode("5M3I5M"))
     assert(tag.end === 9)
