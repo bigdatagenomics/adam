@@ -34,11 +34,11 @@ class Adam2FastqArgs extends ParquetLoadSaveArgs {
   var validationStringency = ValidationStringency.LENIENT
   @Args4JOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
   var repartition: Int = -1
-  @Args4JOption(required = false, name = "-persist-level", usage = "Persist() intermediate RDDs")
+  @Args4JOption(required = false, name = "-persist_level", usage = "Persist() intermediate RDDs")
   var persistLevel: String = null
-  @Args4JOption(required = false, name = "-no-projection", usage = "Disable projection on records. No great reason to do this, but useful for testing / comparison.")
+  @Args4JOption(required = false, name = "-no_projection", usage = "Disable projection on records. No great reason to do this, but useful for testing / comparison.")
   var disableProjection: Boolean = false
-  @Args4JOption(required = false, name = "-output-oq", usage = "Output the original sequencing quality scores")
+  @Args4JOption(required = false, name = "-output_oq", usage = "Output the original sequencing quality scores")
   var outputOriginalBaseQualities = false
 }
 

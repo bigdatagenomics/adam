@@ -51,8 +51,8 @@ class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   @Args4jOption(required = false, name = "-force_shuffle_coalesce", usage = "Even if the repartitioned RDD has fewer partitions, force a shuffle.")
   var forceShuffle: Boolean = false
 
-  @Args4jOption(required = false, name = "-onlyvariants", usage = "Output Variant objects instead of Genotypes")
-  var onlyvariants: Boolean = false
+  @Args4jOption(required = false, name = "-only_variants", usage = "Output Variant objects instead of Genotypes")
+  var onlyVariants: Boolean = false
 }
 
 class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] with DictionaryCommand with Logging {
@@ -73,7 +73,7 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] wit
       }
     }
 
-    if (args.onlyvariants) {
+    if (args.onlyVariants) {
       adamVariants
         .map(v => v.variant.variant)
         .adamParquetSave(args)
