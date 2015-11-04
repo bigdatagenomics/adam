@@ -27,10 +27,10 @@ import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4JOption }
 
 class ADAM2FastaArgs extends ParquetLoadSaveArgs {
-  @Args4JOption(required = false, name = "-partitions", usage = "Number of partitions, default 1")
-  var partitions: Int = 1
-  @Args4JOption(required = false, name = "-shuffle", usage = "Shuffle while partitioning, default false")
-  var shuffle: Boolean = false
+  @Args4JOption(required = false, name = "-coalesce", usage = "Choose the number of partitions to coalesce down to.")
+  var coalesce: Int = -1
+  @Args4JOption(required = false, name = "-force_shuffle_coalesce", usage = "Force shuffle while partitioning, default false.")
+  var forceShuffle: Boolean = false
   @Args4JOption(required = false, name = "-line-width", usage = "Hard wrap FASTA formatted sequence at line width, default 60")
   var lineWidth: Int = 60
 }
@@ -53,9 +53,17 @@ class ADAM2Fasta(val args: ADAM2FastaArgs) extends BDGSparkCommand[ADAM2FastaArg
     val contigFragments: RDD[NucleotideContigFragment] = sc.loadParquet(args.inputPath, projection = Some(proj))
 
     log.info("Merging fragments and writing FASTA to disk.")
-    contigFragments
+    val contigs = contigFragments
       .mergeFragments()
-      .coalesce(args.partitions, args.shuffle)
-      .saveAsFasta(args.outputPath, args.lineWidth)
+    val cc = if (args.coalesce > 0) {
+      if (args.coalesce > contigs.partitions.size || args.forceShuffle) {
+        contigs.coalesce(args.coalesce, shuffle = true)
+      } else {
+        contigs.coalesce(args.coalesce, shuffle = false)
+      }
+    } else {
+      contigs
+    }
+    cc.saveAsFasta(args.outputPath, args.lineWidth)
   }
 }
