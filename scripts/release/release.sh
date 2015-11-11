@@ -15,8 +15,9 @@ devel=$2
 # get current branch
 branch=$(git status -bs | awk '{ print $2 }' | awk -F'.' '{ print $1 }' | head -n 1)
 
-./scripts/changelog.sh $1 | tee CHANGES.md
-git commit -a -m "Modifying changelog."
+# manually edit and commit changelog changes
+#./scripts/changelog.sh $1 | tee CHANGES.md
+#git commit -a -m "Modifying changelog."
 
 commit=$(git log --pretty=format:"%H" | head -n 1)
 echo "releasing from ${commit} on branch ${branch}"

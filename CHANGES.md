@@ -1,4 +1,13 @@
 # ADAM #
+### Version 0.18.2 ###
+* ISSUE [877](https://github.com/bigdatagenomics/adam/pull/877): Minor fix to commit script to support https.
+* ISSUE [876](https://github.com/bigdatagenomics/adam/pull/876): Separate command line argument words by underscores
+* ISSUE [875](https://github.com/bigdatagenomics/adam/pull/875): P Operator parsing for MDTag
+* ISSUE [873](https://github.com/bigdatagenomics/adam/pull/873): [ADAM-872] Modify regex to capture release and SNAPSHOT jars but not javadoc or sources jars
+* ISSUE [866](https://github.com/bigdatagenomics/adam/pull/866): [ADAM-864] Don't force shuffle if reducing partition count.
+* ISSUE [856](https://github.com/bigdatagenomics/adam/pull/856): export valid fastq
+* ISSUE [847](https://github.com/bigdatagenomics/adam/pull/847): Updating build dependency versions to latest minor versions
+
 ### Version 0.18.1 ###
 * ISSUE [870](https://github.com/bigdatagenomics/adam/pull/870): [ADAM-867] add pull requests missing from 0.18.0 release to CHANGES.md
 * ISSUE [869](https://github.com/bigdatagenomics/adam/pull/869): [ADAM-868] make release branch and tag names consistent
