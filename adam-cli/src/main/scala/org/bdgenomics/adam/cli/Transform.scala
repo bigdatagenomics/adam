@@ -19,8 +19,9 @@ package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.parquet.filter2.dsl.Dsl._
-import org.apache.spark.rdd.RDD
 import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.SnpTable
@@ -105,6 +106,10 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var mdTagsFragmentSize: Long = 1000000L
   @Args4jOption(required = false, name = "-md_tag_overwrite", usage = "When adding MD tags to reads, overwrite existing incorrect tags.")
   var mdTagsOverwrite: Boolean = false
+  @Args4jOption(required = false, name = "-cache", usage = "Cache data to avoid recomputing between stages.")
+  var cache: Boolean = false
+  @Args4jOption(required = false, name = "-storage_level", usage = "Set the storage level to use for caching.")
+  var storageLevel: String = "MEMORY_ONLY"
 }
 
 class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
@@ -116,6 +121,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
     var adamRecords = rdd
     val sc = rdd.context
+    val sl = StorageLevel.fromString(args.storageLevel)
 
     val stringencyOpt = Option(args.stringency).map(ValidationStringency.valueOf(_))
 
@@ -130,12 +136,18 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     }
 
     if (args.locallyRealign) {
+      val oldRdd = if (args.cache) {
+        adamRecords.persist(sl)
+      } else {
+        adamRecords
+      }
+
       log.info("Locally realigning indels.")
       val consensusGenerator = Option(args.knownIndelsFile)
         .fold(new ConsensusGeneratorFromReads().asInstanceOf[ConsensusGenerator])(
           new ConsensusGeneratorFromKnowns(_, sc).asInstanceOf[ConsensusGenerator])
 
-      adamRecords = adamRecords.adamRealignIndels(
+      adamRecords = oldRdd.adamRealignIndels(
         consensusGenerator,
         isSorted = false,
         args.maxIndelSize,
@@ -143,16 +155,31 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         args.lodThreshold,
         args.maxTargetSize
       )
+
+      if (args.cache) {
+        oldRdd.unpersist()
+      }
     }
 
     if (args.recalibrateBaseQualities) {
       log.info("Recalibrating base qualities")
+
+      val oldRdd = if (args.cache) {
+        adamRecords.persist(sl)
+      } else {
+        adamRecords
+      }
+
       val knownSnps: SnpTable = createKnownSnpsTable(sc)
-      adamRecords = adamRecords.adamBQSR(
+      adamRecords = oldRdd.adamBQSR(
         sc.broadcast(knownSnps),
         Option(args.observationsPath),
         stringency
       )
+
+      if (args.cache) {
+        oldRdd.unpersist()
+      }
     }
 
     if (args.coalesce != -1) {
@@ -166,8 +193,18 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
     // NOTE: For now, sorting needs to be the last transform
     if (args.sortReads) {
+      val oldRdd = if (args.cache) {
+        adamRecords.persist(sl)
+      } else {
+        adamRecords
+      }
+
       log.info("Sorting reads")
-      adamRecords = adamRecords.adamSortReadsByReferencePosition()
+      adamRecords = oldRdd.adamSortReadsByReferencePosition()
+
+      if (args.cache) {
+        oldRdd.unpersist()
+      }
     }
 
     if (args.mdTagsReferenceFile != null) {
