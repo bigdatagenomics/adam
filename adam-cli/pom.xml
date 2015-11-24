@@ -11,8 +11,35 @@
   <artifactId>adam-cli_2.10</artifactId>
   <packaging>jar</packaging>
   <name>ADAM_2.10: CLI</name>
+  <properties>
+    <maven.build.timestamp>${maven.build.timestamp}</maven.build.timestamp>
+    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+  </properties>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>templating-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>filter-src</id>
+            <goals>
+              <goal>filter-sources</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>pl.project13.maven</groupId>
+        <artifactId>git-commit-id-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -106,7 +133,6 @@
       </plugin>
     </plugins>
   </build>
-
   <dependencies>
     <dependency>
       <groupId>org.apache.hadoop</groupId>

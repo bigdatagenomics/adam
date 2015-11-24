@@ -84,14 +84,28 @@ private class InitArgs extends Args4jBase with ParquetArgs {}
 
 class ADAMMain @Inject() (commandGroups: List[CommandGroup]) extends Logging {
 
+  private def printLogo() {
+    print("\n")
+    println("""       e         888~-_          e             e    e
+               |      d8b        888   \        d8b           d8b  d8b
+               |     /Y88b       888    |      /Y88b         d888bdY88b
+               |    /  Y88b      888    |     /  Y88b       / Y88Y Y888b
+               |   /____Y88b     888   /     /____Y88b     /   YY   Y888b
+               |  /      Y88b    888_-~     /      Y88b   /          Y888b""".stripMargin('|'))
+  }
+
+  private def printVersion() {
+    printLogo()
+    val about = new About()
+    println("\nADAM version: %s".format(about.version()))
+    if (about.isSnapshot()) {
+      println("Commit: %s Build: %s".format(about.commit(), about.buildTimestamp()))
+    }
+    println("Built for: Scala %s and Hadoop %s".format(about.scalaVersion(), about.hadoopVersion()))
+  }
+
   private def printCommands() {
-    println("\n")
-    println("""     e            888~-_              e                 e    e
-               |    d8b           888   \            d8b               d8b  d8b
-               |   /Y88b          888    |          /Y88b             d888bdY88b
-               |  /  Y88b         888    |         /  Y88b           / Y88Y Y888b
-               | /____Y88b        888   /         /____Y88b         /   YY   Y888b
-               |/      Y88b       888_-~         /      Y88b       /          Y888b""".stripMargin('|'))
+    printLogo()
     println("\nUsage: adam-submit [<spark-args> --] <adam-args>")
     println("\nChoose one of the following commands:")
     commandGroups.foreach { grp =>
@@ -106,6 +120,8 @@ class ADAMMain @Inject() (commandGroups: List[CommandGroup]) extends Logging {
     log.info("ADAM invoked with args: %s".format(argsToString(args)))
     if (args.size < 1) {
       printCommands()
+    } else if (args.contains("--version") || args.contains("-version")) {
+      printVersion()
     } else {
 
       val commands =
