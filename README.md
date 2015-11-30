@@ -7,7 +7,7 @@ ADAM is a genomics analysis platform with specialized file formats built using [
 
 * [Follow our Twitter account](https://twitter.com/bigdatagenomics/).
 * [Chat with ADAM developers in Gitter](https://gitter.im/bigdatagenomics/adam).
-* [Join our mailing list](http://bdgenomics.org/mail).
+* [Join our mailing list](http://bdgenomics.org/mail/).
 * [Checkout the current build status](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/).
 * [Download official releases][releases].
 * [View our software artifacts on Maven Central](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) ([…including snapshots](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)).
@@ -325,14 +325,14 @@ just as easily use this Avro IDL description as the basis for a Python project. 
 
 There are a number of projects built on ADAM, e.g.
 
-- [RNAdam](https://github.com/bigdatagenomics/RNAdam) provides an RNA pipeline on top of ADAM with isoform quantification and fusion transcription detection
+- [RNAdam](https://github.com/bigdatagenomics/rice) provides an RNA pipeline on top of ADAM with isoform quantification and fusion transcription detection
 - [Avocado](https://github.com/bigdatagenomics/avocado) is a variant caller built on top of ADAM for germline and somatic calling
 - [PacMin](https://github.com/bigdatagenomics/PacMin) is an assembler for PacBio reads
 - A `Mutect` port is nearly feature complete
 - Read error correction
 - a graphing and genome visualization library
 - [BDG-Services](https://github.com/bigdatagenomics/bdg-services) is a library for accessing a running Spark cluster through web-services or a [Thrift](https://thrift.apache.org/)- interface
-- [Short read assembly](http://www.github.com/fnothaft/xASSEMBLEx)
+- [Short read assembly](https://github.com/fnothaft/xASSEMBLEx)
 - Variant filtration (train model via `MLlib`)
 
 # License
