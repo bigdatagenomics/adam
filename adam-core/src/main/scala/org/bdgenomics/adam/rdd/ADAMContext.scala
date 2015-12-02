@@ -109,7 +109,7 @@ object ADAMContext {
 
 import org.bdgenomics.adam.rdd.ADAMContext._
 
-class ADAMContext(val sc: SparkContext) extends Serializable with Logging {
+class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
 
   private[rdd] def adamBamDictionaryLoad(filePath: String): SequenceDictionary = {
     val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
