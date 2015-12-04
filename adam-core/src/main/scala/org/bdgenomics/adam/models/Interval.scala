@@ -24,11 +24,21 @@ package org.bdgenomics.adam.models
 trait Interval {
 
   /**
+   * @return The start of this interval.
+   */
+  def start: Long
+
+  /**
+   * @return The end of this interval.
+   */
+  def end: Long
+
+  /**
    * A width is the key property of an interval, which can represent a genomic
    * region, a transcript, a gene, etc.
    *
    * @return The width of this interval.
    */
-  def width: Long
+  def width: Long = end - start
 
 }

@@ -149,8 +149,6 @@ case class ReferenceRegion(
 
   assert(start >= 0 && end >= start, "Failed when trying to create region %s %d %d on %s strand.".format(referenceName, start, end, orientation))
 
-  def width: Long = end - start
-
   def disorient: ReferenceRegion = new ReferenceRegion(referenceName, start, end)
 
   /**
