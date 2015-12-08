@@ -38,4 +38,35 @@ class RichGenotype(val genotype: Genotype) {
       case _ => GenotypeType.NO_CALL
     }
   }
+
+  /**
+   * True if all observed alleles are the same (regardless of whether they are ref or alt); if any alleles are no-calls, this method will return false.
+   */
+  def isHom: Boolean = { isHomRef || isHomAlt }
+
+  /**
+   * True if all observed alleles are ref; if any alleles are no-calls, this method will return false.
+   */
+  def isHomRef: Boolean = { getType == GenotypeType.HOM_REF }
+
+  /**
+   * True if all observed alleles are alt; if any alleles are no-calls, this method will return false.
+   */
+  def isHomAlt: Boolean = { getType == GenotypeType.HOM_ALT }
+
+  /**
+   * True if we're het (observed alleles differ); if the ploidy is less than 2 or if any alleles are no-calls, this method will return false.
+   */
+  def isHet: Boolean = { getType == GenotypeType.HET }
+
+  /**
+   * True if this genotype is not actually a genotype but a "no call" (e.g. './.' in VCF). Also true for partial no call genotypes (e.g. '0/.' in VCF)
+   */
+  def isNoCall: Boolean = { getType == GenotypeType.NO_CALL; }
+
+  /**
+   * True if the genotype does not contain any alleles that are not called. e.g. './.' or  '0/.'  in VCF
+   */
+  def isCalled: Boolean = { getType != GenotypeType.NO_CALL }
+
 }
