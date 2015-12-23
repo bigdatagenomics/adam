@@ -67,14 +67,25 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
   def maybeSaveBam(
     args: ADAMSaveAnyArgs,
+    sd: SequenceDictionary,
+    rgd: RecordGroupDictionary,
     isSorted: Boolean = false): Boolean = {
     if (args.outputPath.endsWith(".sam")) {
       log.info("Saving data in SAM format")
-      rdd.adamSAMSave(args.outputPath, asSingleFile = args.asSingleFile, isSorted = isSorted)
+      rdd.adamSAMSave(args.outputPath,
+        sd,
+        rgd,
+        asSingleFile = args.asSingleFile,
+        isSorted = isSorted)
       true
     } else if (args.outputPath.endsWith(".bam")) {
       log.info("Saving data in BAM format")
-      rdd.adamSAMSave(args.outputPath, asSam = false, asSingleFile = args.asSingleFile, isSorted = isSorted)
+      rdd.adamSAMSave(args.outputPath,
+        sd,
+        rgd,
+        asSam = false,
+        asSingleFile = args.asSingleFile,
+        isSorted = isSorted)
       true
     } else
       false
@@ -89,19 +100,26 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
       false
   }
 
-  def adamAlignedRecordSave(args: ADAMSaveAnyArgs) = {
-    maybeSaveBam(args) || { rdd.adamParquetSave(args); true }
+  def adamAlignedRecordSave(args: ADAMSaveAnyArgs,
+                            sd: SequenceDictionary,
+                            rgd: RecordGroupDictionary): Boolean = {
+    maybeSaveBam(args, sd, rgd) || { rdd.adamParquetSave(args); true }
   }
 
   def adamSave(
     args: ADAMSaveAnyArgs,
-    isSorted: Boolean = false) = {
-    maybeSaveBam(args, isSorted) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
+    sd: SequenceDictionary,
+    rgd: RecordGroupDictionary,
+    isSorted: Boolean = false): Boolean = {
+    (maybeSaveBam(args, sd, rgd, isSorted) ||
+      maybeSaveFastq(args) ||
+      { rdd.adamParquetSave(args); true })
   }
 
-  def adamSAMString: String = {
+  def adamSAMString(sd: SequenceDictionary,
+                    rgd: RecordGroupDictionary): String = {
     // convert the records
-    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM()
+    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM(sd, rgd)
 
     val records = convertRecords.coalesce(1, shuffle = true).collect()
 
@@ -128,12 +146,23 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    */
   def adamSAMSave(
     filePath: String,
+    sd: SequenceDictionary,
+    rgd: RecordGroupDictionary,
     asSam: Boolean = true,
     asSingleFile: Boolean = false,
     isSorted: Boolean = false) = SAMSave.time {
+      
+    // if the file is sorted, make sure the sequence dictionary is sorted
+    val sdFinal = if (isSorted) {
+      sd.sorted
+    } else {
+      sd
+    }
 
     // convert the records
-    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM(isSorted)
+    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM(sdFinal,
+      rgd,
+      isSorted)
 
     // add keys to our records
     val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
@@ -257,28 +286,13 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   }
 
   /**
-   * Collects a dictionary summarizing the read groups in an RDD of ADAMRecords.
-   *
-   * @return A dictionary describing the read groups in this RDD.
-   */
-  def adamGetReadGroupDictionary(): RecordGroupDictionary = {
-    val rgNames = rdd.flatMap(RecordGroup(_))
-      .distinct()
-      .collect()
-      .toSeq
-
-    new RecordGroupDictionary(rgNames)
-  }
-
-  /**
    * Converts an RDD of ADAM read records into SAM records.
    *
    * @return Returns a SAM/BAM formatted RDD of reads, as well as the file header.
    */
-  def adamConvertToSAM(isSorted: Boolean = false): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
-    // collect global summary data
-    val sd = rdd.adamGetSequenceDictionary(isSorted)
-    val rgd = rdd.adamGetReadGroupDictionary()
+  def adamConvertToSAM(sd: SequenceDictionary,
+                       rgd: RecordGroupDictionary,
+                       isSorted: Boolean = false): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
 
     // create conversion object
     val adamRecordConverter = new AlignmentRecordConverter
@@ -297,7 +311,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     val convertedRDD: RDD[SAMRecordWritable] = rdd.map(r => {
       // must wrap record for serializability
       val srw = new SAMRecordWritable()
-      srw.set(adamRecordConverter.convert(r, hdrBcast.value))
+      srw.set(adamRecordConverter.convert(r, hdrBcast.value, rgd))
       srw
     })
 
@@ -337,8 +351,8 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     }).sortByKey().map(_._2)
   }
 
-  def adamMarkDuplicates(): RDD[AlignmentRecord] = MarkDuplicatesInDriver.time {
-    MarkDuplicates(rdd)
+  def adamMarkDuplicates(rgd: RecordGroupDictionary): RDD[AlignmentRecord] = MarkDuplicatesInDriver.time {
+    MarkDuplicates(rdd, rgd)
   }
 
   /**
@@ -506,11 +520,11 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     maybeUnpersist(rdd.unpersist())
 
-    val firstInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(_.getReadNum == 0)
+    val firstInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(_.getReadInFragment == 0)
     maybePersist(firstInPairRecords)
     val numFirstInPairRecords = firstInPairRecords.count()
 
-    val secondInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(_.getReadNum == 1)
+    val secondInPairRecords: RDD[AlignmentRecord] = pairedRecords.filter(_.getReadInFragment == 1)
     maybePersist(secondInPairRecords)
     val numSecondInPairRecords = secondInPairRecords.count()
 
@@ -524,15 +538,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         numSecondInPairRecords
       )
     )
-
-    if (validationStringency == ValidationStringency.STRICT) {
-      firstInPairRecords.foreach(read =>
-        if (read.getReadNum == 1)
-          throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName)))
-      secondInPairRecords.foreach(read =>
-        if (read.getReadNum == 0)
-          throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName)))
-    }
 
     assert(
       numFirstInPairRecords == numSecondInPairRecords,
@@ -648,12 +653,12 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
         AlignmentRecord.newBuilder(kv._2._1)
           .setReadPaired(true)
           .setProperPair(true)
-          .setReadNum(0)
+          .setReadInFragment(0)
           .build(),
         AlignmentRecord.newBuilder(kv._2._2)
           .setReadPaired(true)
           .setProperPair(true)
-          .setReadNum(1)
+          .setReadInFragment(1)
           .build()
       ))
 

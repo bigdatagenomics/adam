@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.{ Logging, SparkContext }
+import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.utils.cli._
@@ -47,6 +48,10 @@ class Fragments2Reads(protected val args: Fragments2ReadsArgs) extends BDGSparkC
   val companion = Fragments2Reads
 
   def run(sc: SparkContext) {
-    sc.loadFragments(args.inputPath).toReads.adamSave(args)
+    sc.loadFragments(args.inputPath)
+      .toReads
+      .adamSave(args,
+        SequenceDictionary.empty,
+        RecordGroupDictionary.empty)
   }
 }

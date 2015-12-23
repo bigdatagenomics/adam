@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
   ReferencePosition,
   ReferencePositionPair,
   SingleReadBucket
@@ -62,11 +63,17 @@ private[rdd] object MarkDuplicates extends Serializable {
     })
   }
 
-  def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
+  def apply(rdd: RDD[AlignmentRecord],
+            rgd: RecordGroupDictionary): RDD[AlignmentRecord] = {
 
     // Group by library and left position
-    def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket)): (Option[ReferencePosition], String) = {
-      (p._1.read1refPos, p._2.allReads.head.getRecordGroupLibrary)
+    def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket),
+                               rgd: RecordGroupDictionary): (Option[ReferencePosition], String) = {
+      if (p._2.allReads.head.getRecordGroupName != null) {
+        (p._1.read1refPos, rgd(p._2.allReads.head.getRecordGroupName).library.get)
+      } else {
+        (p._1.read1refPos, null)
+      }
     }
 
     // Group by right position
@@ -76,7 +83,7 @@ private[rdd] object MarkDuplicates extends Serializable {
 
     rdd.adamSingleReadBuckets()
       .keyBy(ReferencePositionPair(_))
-      .groupBy(leftPositionAndLibrary)
+      .groupBy(leftPositionAndLibrary(_, rgd))
       .flatMap(kv => PerformDuplicateMarking.time {
 
         val leftPos: Option[ReferencePosition] = kv._1._1

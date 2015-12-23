@@ -55,14 +55,14 @@ class SAMRecordConverterSuite extends FunSuite {
     assert(testAlignmentRecord.getEnd.toInt === testSAMRecord.getAlignmentEnd)
     assert(testAlignmentRecord.getMapq.toInt === testSAMRecord.getMappingQuality)
     assert(testAlignmentRecord.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
-    assert(testAlignmentRecord.getReadNum == 0)
+    assert(testAlignmentRecord.getReadInFragment == 0)
     assert(testAlignmentRecord.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
     assert(!testAlignmentRecord.getPrimaryAlignment === testSAMRecord.getNotPrimaryAlignmentFlag)
     assert(!testAlignmentRecord.getReadMapped === testSAMRecord.getReadUnmappedFlag)
     assert(testAlignmentRecord.getReadName === testSAMRecord.getReadName)
     assert(testAlignmentRecord.getReadNegativeStrand === testSAMRecord.getReadNegativeStrandFlag)
     assert(!testAlignmentRecord.getReadPaired)
-    assert(testAlignmentRecord.getReadNum != 1)
+    assert(testAlignmentRecord.getReadInFragment != 1)
     assert(testAlignmentRecord.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
   }
 
@@ -95,14 +95,14 @@ class SAMRecordConverterSuite extends FunSuite {
     assert(testAlignmentRecord.getEnd.toInt === testSAMRecord.getAlignmentEnd)
     assert(testAlignmentRecord.getMapq.toInt === testSAMRecord.getMappingQuality)
     assert(testAlignmentRecord.getStart.toInt === (testSAMRecord.getAlignmentStart - 1))
-    assert(testAlignmentRecord.getReadNum == 0)
+    assert(testAlignmentRecord.getReadInFragment == 0)
     assert(testAlignmentRecord.getFailedVendorQualityChecks === testSAMRecord.getReadFailsVendorQualityCheckFlag)
     assert(!testAlignmentRecord.getPrimaryAlignment === testSAMRecord.getNotPrimaryAlignmentFlag)
     assert(!testAlignmentRecord.getReadMapped === testSAMRecord.getReadUnmappedFlag)
     assert(testAlignmentRecord.getReadName === testSAMRecord.getReadName)
     assert(testAlignmentRecord.getReadNegativeStrand === testSAMRecord.getReadNegativeStrandFlag)
     assert(!testAlignmentRecord.getReadPaired)
-    assert(testAlignmentRecord.getReadNum != 1)
+    assert(testAlignmentRecord.getReadInFragment != 1)
     assert(testAlignmentRecord.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
   }
 

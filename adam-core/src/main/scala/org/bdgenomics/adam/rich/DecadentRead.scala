@@ -168,9 +168,9 @@ private[adam] class DecadentRead(val record: RichAlignmentRecord) extends Loggin
 
   def isPaired: Boolean = record.getReadPaired
 
-  def isFirstOfPair: Boolean = isPaired && record.getReadNum == 0
+  def isFirstOfPair: Boolean = isPaired && record.getReadInFragment == 0
 
-  def isSecondOfPair: Boolean = isPaired && record.getReadNum == 1
+  def isSecondOfPair: Boolean = isPaired && record.getReadInFragment == 1
 
   def isNegativeRead: Boolean = record.getReadNegativeStrand
 

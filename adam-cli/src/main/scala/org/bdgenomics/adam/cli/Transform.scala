@@ -24,7 +24,11 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.models.SnpTable
+import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
+  SequenceDictionary,
+  SnpTable
+}
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
@@ -117,7 +121,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
   val stringency = ValidationStringency.valueOf(args.stringency)
 
-  def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
+  def apply(rdd: RDD[AlignmentRecord],
+            rgd: RecordGroupDictionary): RDD[AlignmentRecord] = {
 
     var adamRecords = rdd
     val sc = rdd.context
@@ -132,7 +137,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
     if (args.markDuplicates) {
       log.info("Marking duplicates")
-      adamRecords = adamRecords.adamMarkDuplicates()
+      adamRecords = adamRecords.adamMarkDuplicates(rgd)
     }
 
     if (args.locallyRealign) {
@@ -232,13 +237,15 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       )
     }
 
-    val rdd =
+    val (rdd, sd, rgd) =
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)
       } else if (args.forceLoadFastq) {
-        sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), Option(args.fastqRecordGroup), stringency)
+        (sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), Option(args.fastqRecordGroup), stringency),
+          SequenceDictionary.empty, RecordGroupDictionary.empty)
       } else if (args.forceLoadIFastq) {
-        sc.loadInterleavedFastq(args.inputPath)
+        (sc.loadInterleavedFastq(args.inputPath),
+          SequenceDictionary.empty, RecordGroupDictionary.empty)
       } else if (args.forceLoadParquet ||
         args.limitProjection ||
         args.useAlignedReadPredicate) {
@@ -273,18 +280,18 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         } else {
           None
         }
-        sc.loadParquetAlignments(
+        (sc.loadParquetAlignments(
           args.inputPath,
           predicate = pred,
-          projection = proj
-        )
+          projection = proj),
+          SequenceDictionary.empty, RecordGroupDictionary.empty)
       } else {
-        sc.loadAlignments(
+        (sc.loadAlignments(
           args.inputPath,
           filePath2Opt = Option(args.pairedFastqFile),
           recordGroupOpt = Option(args.fastqRecordGroup),
           stringency = stringency
-        )
+        ), SequenceDictionary.empty, RecordGroupDictionary.empty)
       }
 
     // Optionally load a second RDD and concatenate it with the first.
@@ -293,7 +300,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     val concatRddOpt =
       Option(args.concatFilename).map(concatFilename =>
         if (args.forceLoadBam) {
-          sc.loadBam(concatFilename)
+          sc.loadBam(concatFilename)._1
         } else if (args.forceLoadIFastq) {
           sc.loadInterleavedFastq(concatFilename)
         } else if (args.forceLoadParquet) {
@@ -305,10 +312,17 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
           )
         })
 
+    val sdFinal = if (args.sortReads) {
+      sd.stripIndices
+        .sorted
+    } else {
+      sd
+    }
+
     this.apply(concatRddOpt match {
       case Some(concatRdd) => rdd ++ concatRdd
       case None            => rdd
-    }).adamSave(args, args.sortReads)
+    }, rgd).adamSave(args, sdFinal, rgd, args.sortReads)
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {

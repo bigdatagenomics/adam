@@ -238,7 +238,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  def loadBam(filePath: String): RDD[AlignmentRecord] = {
+  def loadBam(filePath: String): (RDD[AlignmentRecord], SequenceDictionary, RecordGroupDictionary) = {
     val path = new Path(filePath)
     val fs =
       Option(
@@ -289,7 +289,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
 
-    records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
+    (records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups)),
+      seqDict,
+      readGroups)
   }
 
   /**
@@ -691,7 +693,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam")) {
       log.info("Loading " + filePath + " as SAM/BAM and converting to AlignmentRecords. Projection is ignored.")
-      loadBam(filePath)
+      loadBam(filePath)._1
     } else if (filePath.endsWith(".ifq")) {
       log.info("Loading " + filePath + " as interleaved FASTQ and converting to AlignmentRecords. Projection is ignored.")
       loadInterleavedFastq(filePath)
@@ -717,7 +719,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam")) {
       log.info("Loading " + filePath + " as SAM/BAM and converting to Fragments.")
-      loadBam(filePath).toFragments
+      loadBam(filePath)._1.toFragments
     } else if (filePath.endsWith(".reads.adam")) {
       log.info("Loading " + filePath + " as ADAM AlignmentRecords and converting to Fragments.")
       loadAlignments(filePath).toFragments

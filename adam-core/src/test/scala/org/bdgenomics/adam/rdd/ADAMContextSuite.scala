@@ -273,13 +273,13 @@ class ADAMContextSuite extends ADAMFunSuite {
       if (testNumber == 1) {
         assert(reads.count === 6)
         assert(reads.filter(_.getReadPaired).count === 6)
-        assert(reads.filter(_.getReadNum == 0).count === 3)
-        assert(reads.filter(_.getReadNum == 1).count === 3)
+        assert(reads.filter(_.getReadInFragment == 0).count === 3)
+        assert(reads.filter(_.getReadInFragment == 1).count === 3)
       } else {
         assert(reads.count === 4)
         assert(reads.filter(_.getReadPaired).count === 4)
-        assert(reads.filter(_.getReadNum == 0).count === 2)
-        assert(reads.filter(_.getReadNum == 1).count === 2)
+        assert(reads.filter(_.getReadInFragment == 0).count === 2)
+        assert(reads.filter(_.getReadInFragment == 1).count === 2)
       }
 
       assert(reads.collect.forall(_.getSequence.toString.length === 250))

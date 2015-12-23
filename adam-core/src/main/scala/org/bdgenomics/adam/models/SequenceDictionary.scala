@@ -29,7 +29,7 @@ import scala.collection._
  */
 
 object SequenceDictionary {
-  def apply(): SequenceDictionary = new SequenceDictionary()
+  def empty: SequenceDictionary = new SequenceDictionary()
   def apply(records: SequenceRecord*): SequenceDictionary = new SequenceDictionary(records.toVector)
   def apply(dict: SAMSequenceDictionary): SequenceDictionary = {
     new SequenceDictionary(dict.getSequences.map(SequenceRecord.fromSAMSequenceRecord).toVector)
@@ -111,12 +111,20 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    * @return Returns a SAM formatted sequence dictionary.
    */
   def toSAMSequenceDictionary: SAMSequenceDictionary = {
+    new SAMSequenceDictionary(records.map(_ toSAMSequenceRecord).toList)
+  }
+
+  def stripIndices: SequenceDictionary = {
+    new SequenceDictionary(records.map(_.stripIndex))
+  }
+
+  def sorted: SequenceDictionary = {
     implicit val ordering: Ordering[SequenceRecord] =
       if (hasSequenceOrdering)
         SequenceOrderingByRefIdx
       else
         SequenceOrderingByName
-    new SAMSequenceDictionary(records.sorted.map(_ toSAMSequenceRecord).toList)
+    new SequenceDictionary(records.sorted)
   }
 
   override def toString: String = {
@@ -165,7 +173,21 @@ case class SequenceRecord(
   assert(name != null && !name.isEmpty, "SequenceRecord.name is null or empty")
   assert(length > 0, "SequenceRecord.length <= 0")
 
-  override def toString: String = "%s->%s".format(name, length)
+  def stripIndex: SequenceRecord = {
+    SequenceRecord(name,
+      length,
+      url,
+      md5,
+      refseq,
+      genbank,
+      assembly,
+      species,
+      None)
+  }
+
+  override def toString: String = "%s->%s%s".format(name,
+    length,
+    referenceIndex.fold("")(d => ", %d".format(d)))
 
   /**
    * Converts this sequence record into a SAM sequence record.

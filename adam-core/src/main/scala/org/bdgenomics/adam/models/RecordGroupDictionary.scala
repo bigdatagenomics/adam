@@ -20,7 +20,6 @@ package org.bdgenomics.adam.models
 import java.util.Date
 import htsjdk.samtools.{ SAMFileHeader, SAMFileReader, SAMReadGroupRecord }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.AlignmentRecord
 
 object RecordGroupDictionary {
 
@@ -47,6 +46,7 @@ object RecordGroupDictionary {
     fromSAMHeader(samReader.getFileHeader)
   }
 
+  def empty: RecordGroupDictionary = new RecordGroupDictionary(Seq.empty)
 }
 
 /**
@@ -102,32 +102,6 @@ class RecordGroupDictionary(val recordGroups: Seq[RecordGroup]) extends Serializ
 }
 
 object RecordGroup {
-  /**
-   * Creates a record group from read data. Returns a None option if the record group information
-   * is not populated in the read.
-   *
-   * @param read Read to populate data from.
-   * @return Returns a filled Option if record group data is attached to the read, else returns None.
-   */
-  def apply(read: AlignmentRecord): Option[RecordGroup] = {
-    for {
-      rgs <- Option(read.getRecordGroupSample)
-      rgn <- Option(read.getRecordGroupName)
-    } yield new RecordGroup(
-      rgs.toString,
-      rgn.toString,
-      Option(read.getRecordGroupSequencingCenter).map(_.toString),
-      Option(read.getRecordGroupDescription).map(_.toString),
-      Option(read.getRecordGroupRunDateEpoch).map(_.toLong),
-      Option(read.getRecordGroupFlowOrder).map(_.toString),
-      Option(read.getRecordGroupKeySequence).map(_.toString),
-      Option(read.getRecordGroupLibrary).map(_.toString),
-      Option(read.getRecordGroupPredictedMedianInsertSize).map(_.toInt),
-      Option(read.getRecordGroupPlatform).map(_.toString),
-      Option(read.getRecordGroupPlatformUnit).map(_.toString)
-    )
-  }
-
   /**
    * Converts a SAMReadGroupRecord into a RecordGroup.
    *

@@ -99,22 +99,22 @@ object ReadBucket {
   implicit def singleReadBucketToReadBucket(bucket: SingleReadBucket): ReadBucket = {
     // check that reads are either first or second read from fragment
     bucket.primaryMapped.foreach(r => require(
-      r.getReadNum >= 0 && r.getReadNum <= 1,
-      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadNum)
+      r.getReadInFragment >= 0 && r.getReadInFragment <= 1,
+      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadInFragment)
     ))
     bucket.secondaryMapped.foreach(r => require(
-      r.getReadNum >= 0 && r.getReadNum <= 1,
-      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadNum)
+      r.getReadInFragment >= 0 && r.getReadInFragment <= 1,
+      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadInFragment)
     ))
     bucket.unmapped.foreach(r => require(
-      r.getReadNum >= 0 && r.getReadNum <= 1,
-      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadNum)
+      r.getReadInFragment >= 0 && r.getReadInFragment <= 1,
+      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadInFragment)
     ))
 
     val (pairedPrimary, unpairedPrimary) = bucket.primaryMapped.partition(_.getReadPaired)
-    val (pairedFirstPrimary, pairedSecondPrimary) = pairedPrimary.partition(_.getReadNum == 0)
+    val (pairedFirstPrimary, pairedSecondPrimary) = pairedPrimary.partition(_.getReadInFragment == 0)
     val (pairedSecondary, unpairedSecondary) = bucket.secondaryMapped.partition(_.getReadPaired)
-    val (pairedFirstSecondary, pairedSecondSecondary) = pairedSecondary.partition(_.getReadNum == 0)
+    val (pairedFirstSecondary, pairedSecondSecondary) = pairedSecondary.partition(_.getReadInFragment == 0)
 
     new ReadBucket(
       unpairedPrimary,
