@@ -22,13 +22,29 @@ import java.util.UUID
 import com.google.common.io.Files
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.VariantContext
+import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
+  SequenceDictionary,
+  SequenceRecord,
+  VariantContext
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+
+case class TestSaveArgs(var outputPath: String) extends ADAMSaveAnyArgs {
+  var sortFastqOutput = false
+  var asSingleFile = false
+  var blockSize = 128 * 1024 * 1024
+  var pageSize = 1 * 1024 * 1024
+  var compressionCodec = CompressionCodecName.GZIP
+  var logLevel = "SEVERE"
+  var disableDictionaryEncoding = false
+}
 
 class ADAMContextSuite extends ADAMFunSuite {
 
@@ -164,7 +180,9 @@ class ADAMContextSuite extends ADAMFunSuite {
     val loc = tempLocation()
     val path = new Path(loc)
 
-    saved.adamParquetSave(loc)
+    saved.saveAsParquet(TestSaveArgs(loc),
+      new SequenceDictionary(Vector(SequenceRecord.fromADAMContig(contig))),
+      RecordGroupDictionary.empty)
     try {
       val loaded = sc.loadAlignmentsFromPaths(Seq(path))
 

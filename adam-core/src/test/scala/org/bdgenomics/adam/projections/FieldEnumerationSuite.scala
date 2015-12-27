@@ -21,6 +21,7 @@ import java.io.File
 import java.util.logging.Level
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.{ ParquetLogger, ADAMFunSuite }
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.BeforeAndAfter
@@ -43,8 +44,11 @@ class FieldEnumerationSuite extends ADAMFunSuite with BeforeAndAfter {
       cleanParquet(readsParquetFile)
 
     // Convert the reads12.sam file into a parquet file
-    val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
-    bamReads.adamParquetSave(readsParquetFile.getAbsolutePath)
+    val rRdd = sc.loadBam(readsFilepath)
+    val bamReads = rRdd.rdd
+    val sd = rRdd.sequences
+    val rgd = rRdd.recordGroups
+    bamReads.saveAsParquet(TestSaveArgs(readsParquetFile.getAbsolutePath), sd, rgd)
   }
 
   after {

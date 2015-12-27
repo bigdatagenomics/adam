@@ -162,7 +162,7 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
 
   def run(sc: SparkContext) = {
 
-    val reads: RDD[AlignmentRecord] = applyFilters(sc.loadAlignments(args.inputPath))
+    val reads = applyFilters(sc.loadAlignments(args.inputPath))
 
     if (args.outputPath != null)
       reads.adamAlignedRecordSave(args, SequenceDictionary.empty, RecordGroupDictionary.empty)

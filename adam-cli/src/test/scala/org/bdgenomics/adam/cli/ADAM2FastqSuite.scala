@@ -58,6 +58,7 @@ class Adam2FastqSuite extends ADAMFunSuite {
     val reads: RDD[AlignmentRecord] =
       sc
         .loadAlignments(readsFilepath)
+        .rdd
         .filter(r => r.getReadMapped != null && r.getReadMapped)
 
     reads.adamSaveAsFastq(outputFastqR1File, Some(outputFastqR2File), sort = true)

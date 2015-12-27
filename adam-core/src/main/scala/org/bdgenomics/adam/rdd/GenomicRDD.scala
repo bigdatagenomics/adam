@@ -15,30 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.apis.java
+package org.bdgenomics.adam.rdd
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.api.java.JavaRDD._
-import org.apache.spark.api.java.JavaRDD
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.models.SequenceDictionary
 
-class JavaADAMContextSuite extends ADAMFunSuite {
+trait GenomicRDD[T] {
 
-  sparkTest("can read a small .SAM file") {
-    val path = resourcePath("small.sam")
-    val ctx = new JavaADAMContext(sc)
-    val reads = ctx.adamRecordLoad(path)
-    assert(reads.jrdd.count() === 20)
-  }
+  val rdd: RDD[T]
 
-  ignore("can read a small .SAM file inside of java") {
-    val path = resourcePath("small.sam")
-    val aRdd = sc.loadAlignments(path)
+  val sequences: SequenceDictionary
+}
 
-    val newReads = JavaADAMConduit.conduit(aRdd.rdd, aRdd.sequences, aRdd.recordGroups)
+trait Unaligned {
 
-    assert(newReads.jrdd.count() === 20)
-  }
+  val sequences = SequenceDictionary.empty
 }

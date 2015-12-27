@@ -73,6 +73,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation]())
     kryo.register(classOf[NucleotideContigFragment], new AvroSerializer[NucleotideContigFragment]())
     kryo.register(classOf[Contig], new AvroSerializer[Contig]())
+    kryo.register(classOf[RecordGroupMetadata], new AvroSerializer[RecordGroupMetadata]())
     kryo.register(classOf[StructuralVariant], new AvroSerializer[StructuralVariant]())
     kryo.register(classOf[VariantCallingAnnotations], new AvroSerializer[VariantCallingAnnotations]())
     kryo.register(classOf[VariantEffect], new AvroSerializer[VariantEffect]())

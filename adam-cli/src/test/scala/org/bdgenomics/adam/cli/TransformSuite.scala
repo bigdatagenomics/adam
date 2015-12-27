@@ -26,7 +26,7 @@ class TransformSuite extends ADAMFunSuite {
     val inputPath = resourcePath("unordered.sam")
     val actualPath = tmpFile("unordered.sam")
     val expectedPath = inputPath
-    Transform(Array("-force_load_bam", "-single", inputPath, actualPath)).run(sc)
+    Transform(Array("-single", inputPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
@@ -34,26 +34,26 @@ class TransformSuite extends ADAMFunSuite {
     val inputPath = resourcePath("unordered.sam")
     val actualPath = tmpFile("ordered.sam")
     val expectedPath = resourcePath("ordered.sam")
-    Transform(Array("-force_load_bam", "-single", "-sort_reads", inputPath, actualPath)).run(sc)
+    Transform(Array("-single", "-sort_reads", inputPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
-  ignore("unordered sam, to adam, to sam") {
+  sparkTest("unordered sam, to adam, to sam") {
     val inputPath = resourcePath("unordered.sam")
     val intermediateAdamPath = tmpFile("unordered.adam")
     val actualPath = tmpFile("unordered.sam")
     val expectedPath = inputPath
-    Transform(Array("-force_load_bam", inputPath, intermediateAdamPath)).run(sc)
+    Transform(Array(inputPath, intermediateAdamPath)).run(sc)
     Transform(Array("-single", intermediateAdamPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
-  ignore("unordered sam, to adam, to ordered sam") {
+  sparkTest("unordered sam, to adam, to ordered sam") {
     val inputPath = resourcePath("unordered.sam")
     val intermediateAdamPath = tmpFile("unordered.adam")
     val actualPath = tmpFile("ordered.sam")
     val expectedPath = resourcePath("ordered.sam")
-    Transform(Array("-force_load_bam", inputPath, intermediateAdamPath)).run(sc)
+    Transform(Array(inputPath, intermediateAdamPath)).run(sc)
     Transform(Array("-single", "-sort_reads", intermediateAdamPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }

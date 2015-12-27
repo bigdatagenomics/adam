@@ -29,7 +29,11 @@ import scala.collection._
  */
 
 object SequenceDictionary {
+  /**
+   * @return Creates a new, empty SequenceDictionary.
+   */
   def empty: SequenceDictionary = new SequenceDictionary()
+
   def apply(records: SequenceRecord*): SequenceDictionary = new SequenceDictionary(records.toVector)
   def apply(dict: SAMSequenceDictionary): SequenceDictionary = {
     new SequenceDictionary(dict.getSequences.map(SequenceRecord.fromSAMSequenceRecord).toVector)
@@ -114,10 +118,32 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
     new SAMSequenceDictionary(records.map(_ toSAMSequenceRecord).toList)
   }
 
+  /**
+   * Strips indices from a Sequence Dictionary.
+   *
+   * @return This returns a new sequence dictionary devoid of indices. This is
+   *   important for sorting: the default sort in ADAM is based on a lexical
+   *   ordering, while the default sort in SAM is based on sequence indices. If
+   *   the indices are not stripped before a file is saved back to SAM/BAM, the
+   *   SAM/BAM header sequence ordering will not match the sort order of the
+   *   records in the file.
+   *
+   * @see sorted
+   */
   def stripIndices: SequenceDictionary = {
     new SequenceDictionary(records.map(_.stripIndex))
   }
 
+  /**
+   * Sort the records in a sequence dictionary.
+   *
+   * @return Returns a new sequence dictionary where the sequence records are
+   *   sorted. If the sequence records have indices, the records will be sorted
+   *   by their indices. If not, the sequence records will be sorted lexically
+   *   by contig name.
+   *
+   * @see stripIndices
+   */
   def sorted: SequenceDictionary = {
     implicit val ordering: Ordering[SequenceRecord] =
       if (hasSequenceOrdering)
@@ -173,6 +199,9 @@ case class SequenceRecord(
   assert(name != null && !name.isEmpty, "SequenceRecord.name is null or empty")
   assert(length > 0, "SequenceRecord.length <= 0")
 
+  /**
+   * @return Returns a new sequence record with the index unset.
+   */
   def stripIndex: SequenceRecord = {
     SequenceRecord(name,
       length,
