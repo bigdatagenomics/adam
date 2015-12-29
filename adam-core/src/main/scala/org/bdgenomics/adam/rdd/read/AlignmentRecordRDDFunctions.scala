@@ -19,12 +19,11 @@ package org.bdgenomics.adam.rdd.read
 
 import java.io.StringWriter
 import htsjdk.samtools.{ SAMFileHeader, SAMTextHeaderCodec, SAMTextWriter, ValidationStringency }
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.fs.{ Path, FileUtil, FileSystem }
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
-import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd.{ PartitionPruningRDD, RDD }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
@@ -38,6 +37,8 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.SAMRecordWritable
+
+import scala.language.implicitConversions
 
 class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {
@@ -132,9 +133,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM(isSorted)
 
     // add keys to our records
-    val withKey =
-      if (asSingleFile) convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart)).coalesce(1)
-      else convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
+    val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
 
     val bcastHeader = rdd.context.broadcast(header)
     val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
@@ -179,35 +178,72 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
     // write file to disk
     val conf = rdd.context.hadoopConfiguration
-    asSam match {
-      case true =>
-        withKey.saveAsNewAPIHadoopFile(
-          filePath,
-          classOf[LongWritable],
-          classOf[SAMRecordWritable],
-          classOf[InstrumentedADAMSAMOutputFormat[LongWritable]],
-          conf
-        )
-      case false =>
-        withKey.saveAsNewAPIHadoopFile(
-          filePath,
-          classOf[LongWritable],
-          classOf[SAMRecordWritable],
-          classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
-          conf
-        )
-    }
-    if (asSingleFile) {
+
+    if (!asSingleFile) {
+      asSam match {
+        case true =>
+          withKey.saveAsNewAPIHadoopFile(
+            filePath,
+            classOf[LongWritable],
+            classOf[SAMRecordWritable],
+            classOf[InstrumentedADAMSAMOutputFormat[LongWritable]],
+            conf
+          )
+        case false =>
+          withKey.saveAsNewAPIHadoopFile(
+            filePath,
+            classOf[LongWritable],
+            classOf[SAMRecordWritable],
+            classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
+            conf
+          )
+
+      }
+    } else {
       log.info(s"Writing single ${if (asSam) "SAM" else "BAM"} file (not Hadoop-style directory)")
-      val conf = new Configuration()
+      val (outputFormat, headerLessOutputFormat) = asSam match {
+        case true =>
+          (classOf[InstrumentedADAMSAMOutputFormat[LongWritable]],
+            classOf[InstrumentedADAMSAMOutputFormatHeaderLess[LongWritable]])
+
+        case false =>
+          (classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
+            classOf[InstrumentedADAMBAMOutputFormatHeaderLess[LongWritable]])
+      }
+
+      val headPath = filePath + "_head"
+      val tailPath = filePath + "_tail"
+
+      PartitionPruningRDD.create(withKey, i => { i == 0 }).saveAsNewAPIHadoopFile(
+        headPath,
+        classOf[LongWritable],
+        classOf[SAMRecordWritable],
+        outputFormat,
+        conf
+      )
+      PartitionPruningRDD.create(withKey, i => { i != 0 }).saveAsNewAPIHadoopFile(
+        tailPath,
+        classOf[LongWritable],
+        classOf[SAMRecordWritable],
+        headerLessOutputFormat,
+        conf
+      )
+
       val fs = FileSystem.get(conf)
-      val ouputParentDir = filePath.substring(0, filePath.lastIndexOf("/") + 1)
-      val tmpPath = ouputParentDir + "tmp" + System.currentTimeMillis().toString
-      fs.rename(new Path(filePath + "/part-r-00000"), new Path(tmpPath))
-      fs.delete(new Path(filePath), true)
-      fs.rename(new Path(tmpPath), new Path(filePath))
+
+      fs.listStatus(headPath)
+        .find(_.getPath.getName.startsWith("part-r"))
+        .map(fileStatus => FileUtil.copy(fs, fileStatus.getPath, fs, tailPath + "/head", false, false, conf))
+      fs.delete(headPath, true)
+
+      FileUtil.copyMerge(fs, tailPath, fs, filePath, true, conf, null)
+      fs.delete(tailPath, true)
+
     }
+
   }
+
+  implicit def str2Path(str: String): Path = new Path(str)
 
   def getSequenceRecordsFromElement(elem: AlignmentRecord): Set[SequenceRecord] = {
     SequenceRecord.fromADAMRecord(elem).toSet

@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd.read
 
 import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
+import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -263,5 +264,80 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     reads.adamSAMSave(actualSortedPath, isSorted = true, asSingleFile = true)
 
     checkFiles(resourcePath("ordered.sam"), actualSortedPath)
+  }
+
+  sparkTest("write single sam file back") {
+    val inputPath = resourcePath("bqsr1.sam")
+    val tempFile = Files.createTempDirectory("bqsr1")
+    val rdd = sc.loadAlignments(inputPath).cache()
+    rdd.adamSAMSave(tempFile.toAbsolutePath.toString + "/bqsr1.sam",
+      asSam = true,
+      asSingleFile = true)
+    val rdd2 = sc.loadAlignments(tempFile.toAbsolutePath.toString + "/bqsr1.sam")
+      .cache()
+
+    val (fsp1, fsf1) = rdd.adamFlagStat()
+    val (fsp2, fsf2) = rdd2.adamFlagStat()
+
+    assert(rdd.count === rdd2.count)
+    assert(fsp1 === fsp2)
+    assert(fsf1 === fsf2)
+
+    val jrdd = rdd.map(r => ((r.getReadName, r.getReadNum, r.getReadMapped), r))
+      .join(rdd2.map(r => ((r.getReadName, r.getReadNum, r.getReadMapped), r)))
+      .cache()
+
+    assert(rdd.count === jrdd.count)
+
+    jrdd.map(kv => kv._2)
+      .collect
+      .foreach(p => {
+        val (p1, p2) = p
+
+        assert(p1.getReadNum === p2.getReadNum)
+        assert(p1.getReadName === p2.getReadName)
+        assert(p1.getSequence === p2.getSequence)
+        assert(p1.getQual === p2.getQual)
+        assert(p1.getOrigQual === p2.getOrigQual)
+        assert(p1.getRecordGroupSample === p2.getRecordGroupSample)
+        assert(p1.getRecordGroupName === p2.getRecordGroupName)
+        assert(p1.getFailedVendorQualityChecks === p2.getFailedVendorQualityChecks)
+        assert(p1.getBasesTrimmedFromStart === p2.getBasesTrimmedFromStart)
+        assert(p1.getBasesTrimmedFromEnd === p2.getBasesTrimmedFromEnd)
+
+        assert(p1.getReadMapped === p2.getReadMapped)
+        // note: BQSR1.sam has reads that are unmapped, but where the mapping flags are set
+        // that is why we split this check out
+        // the SAM spec doesn't say anything particularly meaningful about this, other than
+        // that some fields should be disregarded if the read is not mapped
+        if (p1.getReadMapped && p2.getReadMapped) {
+          assert(p1.getDuplicateRead === p2.getDuplicateRead)
+          assert(p1.getContig.getContigName === p2.getContig.getContigName)
+          assert(p1.getStart === p2.getStart)
+          assert(p1.getEnd === p2.getEnd)
+          assert(p1.getCigar === p2.getCigar)
+          assert(p1.getOldCigar === p2.getOldCigar)
+          assert(p1.getPrimaryAlignment === p2.getPrimaryAlignment)
+          assert(p1.getSecondaryAlignment === p2.getSecondaryAlignment)
+          assert(p1.getSupplementaryAlignment === p2.getSupplementaryAlignment)
+          assert(p1.getReadNegativeStrand === p2.getReadNegativeStrand)
+        }
+
+        assert(p1.getReadPaired === p2.getReadPaired)
+        // a variety of fields are undefined if the reads are not paired
+        if (p1.getReadPaired && p2.getReadPaired) {
+          assert(p1.getInferredInsertSize === p2.getInferredInsertSize)
+          assert(p1.getProperPair === p2.getProperPair)
+
+          // same caveat about read alignment applies to mates
+          assert(p1.getMateMapped === p2.getMateMapped)
+          if (p1.getMateMapped && p2.getMateMapped) {
+            assert(p1.getMateNegativeStrand === p2.getMateNegativeStrand)
+            assert(p1.getMateContig.getContigName === p2.getMateContig.getContigName)
+            assert(p1.getMateAlignmentStart === p2.getMateAlignmentStart)
+            assert(p1.getMateAlignmentEnd === p2.getMateAlignmentEnd)
+          }
+        }
+      })
   }
 }
