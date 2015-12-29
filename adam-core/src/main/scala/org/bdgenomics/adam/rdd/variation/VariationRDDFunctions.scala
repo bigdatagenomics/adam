@@ -63,7 +63,6 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
   def getCallsetSamples(): List[String] = {
     rdd.flatMap(c => c.genotypes.map(_.getSampleId).toSeq.distinct)
       .distinct
-      .map(_.toString)
       .collect()
       .toList
   }
@@ -155,7 +154,7 @@ class GenotypeRDDFunctions(rdd: RDD[Genotype]) extends Serializable with Logging
 
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {
     def overlapsQuery(rec: Genotype): Boolean =
-      rec.getVariant.getContig.getContigName.toString == query.referenceName &&
+      rec.getVariant.getContig.getContigName == query.referenceName &&
         rec.getVariant.getStart < query.end &&
         rec.getVariant.getEnd > query.start
     rdd.filter(overlapsQuery)

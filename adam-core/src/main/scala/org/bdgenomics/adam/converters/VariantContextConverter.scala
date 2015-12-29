@@ -50,7 +50,7 @@ object VariantContextConverter {
     if (allele == null)
       Seq()
     else
-      Seq(Allele.create(allele.toString, isRef))
+      Seq(Allele.create(allele, isRef))
   }
 
   private def convertAlleles(v: Variant): java.util.Collection[Allele] = {
@@ -62,8 +62,8 @@ object VariantContextConverter {
     if (alleles == null) return Collections.emptyList[Allele]
     else g.getAlleles.map {
       case GenotypeAllele.NoCall                        => Allele.NO_CALL
-      case GenotypeAllele.Ref | GenotypeAllele.OtherAlt => Allele.create(g.getVariant.getReferenceAllele.toString, true)
-      case GenotypeAllele.Alt                           => Allele.create(g.getVariant.getAlternateAllele.toString)
+      case GenotypeAllele.Ref | GenotypeAllele.OtherAlt => Allele.create(g.getVariant.getReferenceAllele, true)
+      case GenotypeAllele.Alt                           => Allele.create(g.getVariant.getAlternateAllele)
     }
   }
 
@@ -322,8 +322,8 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
   def convert(vc: ADAMVariantContext): BroadVariantContext = {
     val variant: Variant = vc.variant
     val vcb = new VariantContextBuilder()
-      .chr(refSeqToContig.getOrElse(variant.getContig.getContigName.toString,
-        variant.getContig.getContigName.toString))
+      .chr(refSeqToContig.getOrElse(variant.getContig.getContigName,
+        variant.getContig.getContigName))
       .start(variant.getStart + 1 /* Recall ADAM is 0-indexed */ )
       .stop(variant.getStart + variant.getReferenceAllele.length)
       .alleles(VariantContextConverter.convertAlleles(variant))
@@ -334,7 +334,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     try {
       vcb.genotypes(vc.genotypes.map(g => {
         val gb = new htsjdk.variant.variantcontext.GenotypeBuilder(
-          g.getSampleId.toString, VariantContextConverter.convertAlleles(g))
+          g.getSampleId, VariantContextConverter.convertAlleles(g))
 
         Option(g.getIsPhased).foreach(gb.phased(_))
         Option(g.getGenotypeQuality).foreach(gb.GQ(_))
@@ -346,7 +346,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
         if (g.getVariantCallingAnnotations != null) {
           val callAnnotations = g.getVariantCallingAnnotations()
           if (callAnnotations.getVariantFilters != null)
-            gb.filters(callAnnotations.getVariantFilters.map(_.toString))
+            gb.filters(callAnnotations.getVariantFilters)
         }
 
         if (g.getGenotypeLikelihoods != null && !g.getGenotypeLikelihoods.isEmpty)

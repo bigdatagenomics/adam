@@ -67,8 +67,8 @@ class ConsensusGeneratorFromKnowns(file: String, @transient sc: SparkContext) ex
     val table = indelTable.value
 
     // get region
-    val start = reads.map(_.record.getStart.toLong).reduce(_ min _)
-    val end = reads.map(_.getEnd.toLong).reduce(_ max _)
+    val start = reads.map(_.record.getStart).min
+    val end = reads.map(_.getEnd).max
     val refId = reads.head.record.getContig.getContigName
 
     val region = ReferenceRegion(refId, start, end + 1)

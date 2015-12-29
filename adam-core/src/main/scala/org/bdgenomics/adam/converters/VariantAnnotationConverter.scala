@@ -113,7 +113,7 @@ object VariantAnnotationConverter extends Serializable {
   private def createFieldMap(keys: Seq[AttrKey], schema: Schema): Map[String, (Int, Object => Object)] = {
     keys.filter(_.attrConverter != null).map(field => {
       val avroField = schema.getField(field.adamKey)
-      field.vcfKey -> (avroField.pos, field.attrConverter)
+      field.vcfKey -> ((avroField.pos, field.attrConverter))
     })(collection.breakOut)
   }
 

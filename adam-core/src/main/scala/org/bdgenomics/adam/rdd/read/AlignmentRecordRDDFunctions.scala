@@ -59,7 +59,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[AlignmentRecord] = {
     def overlapsQuery(rec: AlignmentRecord): Boolean =
       rec.getReadMapped &&
-        rec.getContig.getContigName.toString == query.referenceName &&
+        rec.getContig.getContigName == query.referenceName &&
         rec.getStart < query.end &&
         rec.getEnd > query.start
     rdd.filter(overlapsQuery)
@@ -169,11 +169,11 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
       case true =>
         ADAMSAMOutputFormat.clearHeader()
         ADAMSAMOutputFormat.addHeader(header)
-        log.info(s"Set SAM header on driver")
+        log.info("Set SAM header on driver")
       case false =>
         ADAMBAMOutputFormat.clearHeader()
         ADAMBAMOutputFormat.addHeader(header)
-        log.info(s"Set BAM header on driver")
+        log.info("Set BAM header on driver")
     }
 
     // write file to disk
@@ -309,7 +309,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     rdd.flatMap(r => {
       // cut each read into k-mers, and attach a count of 1L
       r.getSequence
-        .toString
         .sliding(kmerLength)
         .map(k => (k, 1L))
     }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
@@ -449,9 +448,9 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     val readsByID: RDD[(String, Iterable[AlignmentRecord])] =
       rdd.groupBy(record => {
         if (!AlignmentRecordConverter.readNameHasPairedSuffix(record))
-          record.getReadName.toString
+          record.getReadName
         else
-          record.getReadName.toString.dropRight(2)
+          record.getReadName.dropRight(2)
       })
 
     validationStringency match {
@@ -468,9 +467,9 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
             List(
               s"Found $numUnpairedReadIDsWithCounts read names that don't occur exactly twice:",
 
-              readNameOccurrencesMap.map({
+              readNameOccurrencesMap.take(100).map({
                 case (numOccurrences, numReadNames) => s"${numOccurrences}x:\t$numReadNames"
-              }).take(100).mkString("\t", "\n\t", if (readNameOccurrencesMap.size > 100) "\n\t…" else ""),
+              }).mkString("\t", "\n\t", if (readNameOccurrencesMap.size > 100) "\n\t…" else ""),
               "",
 
               "Samples:",
@@ -532,12 +531,12 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     val arc = new AlignmentRecordConverter
 
     firstInPairRecords
-      .sortBy(_.getReadName.toString)
+      .sortBy(_.getReadName)
       .map(record => arc.convertToFastq(record, maybeAddSuffix = true, outputOriginalBaseQualities = outputOriginalBaseQualities))
       .saveAsTextFile(fileName1)
 
     secondInPairRecords
-      .sortBy(_.getReadName.toString)
+      .sortBy(_.getReadName)
       .map(record => arc.convertToFastq(record, maybeAddSuffix = true, outputOriginalBaseQualities = outputOriginalBaseQualities))
       .saveAsTextFile(fileName2)
 
@@ -574,7 +573,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
         // sort the rdd if desired
         val outputRdd = if (sort || fileName2Opt.isDefined) {
-          rdd.sortBy(_.getReadName.toString)
+          rdd.sortBy(_.getReadName)
         } else {
           rdd
         }
@@ -602,8 +601,8 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     val firstPairRdd = rdd.cache()
     secondPairRdd.cache()
 
-    val firstRDDKeyedByReadName = firstPairRdd.keyBy(_.getReadName.toString.dropRight(2))
-    val secondRDDKeyedByReadName = secondPairRdd.keyBy(_.getReadName.toString.dropRight(2))
+    val firstRDDKeyedByReadName = firstPairRdd.keyBy(_.getReadName.dropRight(2))
+    val secondRDDKeyedByReadName = secondPairRdd.keyBy(_.getReadName.dropRight(2))
 
     // all paired end reads should have the same name, except for the last two
     // characters, which will be _1/_2
@@ -620,8 +619,8 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
                     firstReads.size,
                     secondReads.size,
                     readName,
-                    firstReads.map(_.getReadName.toString).mkString("\t", "\n\t", ""),
-                    secondReads.map(_.getReadName.toString).mkString("\t", "\n\t", "")
+                    firstReads.map(_.getReadName).mkString("\t", "\n\t", ""),
+                    secondReads.map(_.getReadName).mkString("\t", "\n\t", "")
                   )
                 )
             }

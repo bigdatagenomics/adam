@@ -71,7 +71,7 @@ object AttributeUtils {
    */
   def parseAttribute(encoded: String): Attribute = {
     attrRegex.matches(encoded) match {
-      case Some(m) => createAttribute(m.group(1), m.group(2), m.group(3), m.group(4))
+      case Some(m) => createAttribute((m.group(1), m.group(2), m.group(3), m.group(4)))
       case None =>
         throw new IllegalArgumentException(
           "attribute string \"%s\" doesn't match format attrTuple:type:value".format(encoded))
@@ -123,4 +123,3 @@ object AttributeUtils {
     }
   }
 }
-

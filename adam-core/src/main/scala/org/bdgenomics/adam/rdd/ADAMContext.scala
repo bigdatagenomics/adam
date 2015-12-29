@@ -145,9 +145,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val job = HadoopUtil.newJob(sc)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])
 
-    if (predicate.isDefined) {
+    predicate.foreach { (pred) =>
       log.info("Using the specified push-down predicate")
-      ParquetInputFormat.setFilterPredicate(job.getConfiguration, predicate.get)
+      ParquetInputFormat.setFilterPredicate(job.getConfiguration, pred)
     }
 
     if (projection.isDefined) {

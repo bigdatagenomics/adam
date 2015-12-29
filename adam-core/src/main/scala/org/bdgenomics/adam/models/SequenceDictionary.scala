@@ -85,7 +85,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   def isCompatibleWith(that: SequenceDictionary): Boolean = {
     for (record <- that.records) {
       val myRecord = byName.get(record.name)
-      if (myRecord.isDefined && myRecord.get != record)
+      if (myRecord.exists(_ != record))
         return false
     }
     true
@@ -171,7 +171,7 @@ case class SequenceRecord(
    * @return A SAM formatted sequence record.
    */
   def toSAMSequenceRecord: SAMSequenceRecord = {
-    val rec = new SAMSequenceRecord(name.toString, length.toInt)
+    val rec = new SAMSequenceRecord(name, length.toInt)
 
     // set md5 if available
     md5.foreach(s => rec.setAttribute(SAMSequenceRecord.MD5_TAG, s.toUpperCase))
@@ -226,12 +226,12 @@ object SequenceRecord {
     new SequenceRecord(
       name,
       length,
-      Option(url).map(_.toString),
-      Option(md5).map(_.toString),
-      Option(refseq).map(_.toString),
-      Option(genbank).map(_.toString),
-      Option(assembly).map(_.toString),
-      Option(species).map(_.toString),
+      Option(url),
+      Option(md5),
+      Option(refseq),
+      Option(genbank),
+      Option(assembly),
+      Option(species),
       referenceIndex
     )
   }
@@ -258,8 +258,8 @@ object SequenceRecord {
   }
   def toSAMSequenceRecord(record: SequenceRecord): SAMSequenceRecord = {
     val sam = new SAMSequenceRecord(record.name, record.length.toInt)
-    record.md5.foreach(v => sam.setAttribute(SAMSequenceRecord.MD5_TAG, v.toString))
-    record.url.foreach(v => sam.setAttribute(SAMSequenceRecord.URI_TAG, v.toString))
+    record.md5.foreach(v => sam.setAttribute(SAMSequenceRecord.MD5_TAG, v))
+    record.url.foreach(v => sam.setAttribute(SAMSequenceRecord.URI_TAG, v))
     sam
   }
 

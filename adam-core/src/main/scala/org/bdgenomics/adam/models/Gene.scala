@@ -92,10 +92,10 @@ case class Transcript(id: String,
    * @return the String representation of this Transcript's spliced mRNA sequence
    */
   def extractTranscribedRNASequence(referenceSequence: String): String = {
-    val minStart = exons.map(_.region.start).toSeq.sorted.head.toInt
+    val minStart = exons.map(_.region.start).toSeq.min.toInt
     // takes the max...
 
-    val maxEnd = -exons.map(-_.region.end).toSeq.sorted.head.toInt
+    val maxEnd = -exons.map(-_.region.end).toSeq.min.toInt
     if (strand)
       referenceSequence.substring(minStart, maxEnd)
     else
@@ -231,4 +231,3 @@ object ReferenceUtils {
     refs.toSeq.sorted.foldLeft(Seq[ReferenceRegion]())(folder)
   }
 }
-

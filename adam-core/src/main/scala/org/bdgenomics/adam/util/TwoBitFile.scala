@@ -114,7 +114,7 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
     val sb = StringBuilder.newBuilder
 
     // define predicate for N blocks
-    val isNBlock = if (record.nBlocks.isEmpty || !record.nBlocks.get.hasRegionsFor(region -> None)) {
+    val isNBlock = if (record.nBlocks.forall(!_.hasRegionsFor(region -> None))) {
       // our region has no overlap with an N block, so the predicate is trivial
       pos: Long => false
     } else {
@@ -123,7 +123,7 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
     }
 
     // define predicate for mask blocks
-    val isMaskBlock = if (record.maskBlocks.isEmpty || !record.maskBlocks.get.hasRegionsFor(region -> None)) {
+    val isMaskBlock = if (record.maskBlocks.forall(!_.hasRegionsFor(region -> None))) {
       // our region has no overlap with a mask block, so the predicate is trivial
       pos: Long => false
     } else {

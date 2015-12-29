@@ -42,7 +42,7 @@ class RichCigar(cigar: Cigar) {
         case CigarOperator.M => 1
         case _               => 0
       }
-    }).reduce(_ + _)
+    }).sum
   }
 
   /**
@@ -67,24 +67,22 @@ class RichCigar(cigar: Cigar) {
                                index: Int,
                                cigarElements: List[CigarElement]): List[CigarElement] = {
       if (index == 1) {
-        val elementToTrim = cigarElements.head
-        val elementToMove: Option[CigarElement] = Some(cigarElements(1))
-        val elementToPad: Option[CigarElement] = if (cigarElements.length > 2) {
-          Some(cigarElements(2))
-        } else {
-          None
+        val elementToTrim = cigarElements.headOption
+        val elementToMove: Option[CigarElement] = PartialFunction.condOpt(cigarElements) {
+          case _ :: x :: _ => x
         }
-        val elementsAfterPad = if (cigarElements.length > 4) {
-          cigarElements.drop(3)
-        } else {
-          List[CigarElement]()
+        val elementToPad: Option[CigarElement] = PartialFunction.condOpt(cigarElements) {
+          case _ :: _ :: x :: _ => x
         }
+        val elementsAfterPad = cigarElements.drop(3)
 
         // if we are at the position to move, then we take one from it and add to the next element
-        val elementMovedLeft: Option[CigarElement] = if (elementToTrim.getLength > 1) {
-          Some(new CigarElement(elementToTrim.getLength - 1, elementToTrim.getOperator))
-        } else {
-          None
+        val elementMovedLeft: Option[CigarElement] = elementToTrim.flatMap { (ett) =>
+          if (ett.getLength > 1) {
+            Some(new CigarElement(ett.getLength - 1, ett.getOperator))
+          } else {
+            None
+          }
         }
 
         // if there are no elements afterwards to pad, add a match operator with length 1 to the end
@@ -102,7 +100,7 @@ class RichCigar(cigar: Cigar) {
       } else if (index == 0 || cigarElements.length < 2) {
         head ::: cigarElements
       } else {
-        moveCigarLeft(head ::: List(cigarElements.head), index - 1, cigarElements.tail)
+        moveCigarLeft(head :+ cigarElements.head, index - 1, cigarElements.tail)
       }
     }
 
@@ -111,7 +109,7 @@ class RichCigar(cigar: Cigar) {
   }
 
   def getLength(): Int = {
-    cigar.getCigarElements.map(_.getLength).reduce(_ + _)
+    cigar.getCigarElements.map(_.getLength).sum
   }
 
   /**

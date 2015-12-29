@@ -108,12 +108,9 @@ private[adam] class DecadentRead(val record: RichAlignmentRecord) extends Loggin
     def quality = QualityScore(record.qualityScores(offset))
 
     def isRegularBase: Boolean = base match {
-      case 'A' => true
-      case 'C' => true
-      case 'T' => true
-      case 'G' => true
-      case 'N' => false
-      case unk => throw new IllegalArgumentException("Encountered unexpected base '%s'".format(unk))
+      case 'A' | 'C' | 'T' | 'G' => true
+      case 'N'                   => false
+      case unk                   => throw new IllegalArgumentException("Encountered unexpected base '%s'".format(unk))
     }
 
     def isMismatch(includeInsertions: Boolean = true): Boolean =
@@ -136,9 +133,9 @@ private[adam] class DecadentRead(val record: RichAlignmentRecord) extends Loggin
         throw new IllegalArgumentException("Residue has no reference location (may be an insertion)"))
   }
 
-  lazy val readGroup: String = record.getRecordGroupName.toString
+  lazy val readGroup: String = record.getRecordGroupName
 
-  private lazy val baseSequence: String = record.getSequence.toString
+  private lazy val baseSequence: String = record.getSequence
 
   lazy val residues: IndexedSeq[Residue] = Range(0, baseSequence.length).map(new Residue(_))
 

@@ -147,9 +147,9 @@ class FastqRecordConverter extends Serializable with Logging {
     val readSequence = lines(1)
 
     if (stringency == ValidationStringency.STRICT && lines(3) == "*" && readSequence.length > 1)
-      throw new Exception(s"Fastq quality must be defined")
+      throw new Exception("Fastq quality must be defined")
     else if (stringency == ValidationStringency.STRICT && lines(3).length != readSequence.length)
-      throw new Exception(s"Fastq sequence and quality strings must have the same length")
+      throw new Exception("Fastq sequence and quality strings must have the same length")
 
     val readQualities =
       if (lines(3) == "*")
@@ -157,7 +157,7 @@ class FastqRecordConverter extends Serializable with Logging {
       else if (lines(3).length < lines(1).length)
         lines(3) + ("B" * (lines(1).length - lines(3).length))
       else if (lines(3).length > lines(1).length)
-        throw new Exception(s"Not implemented")
+        throw new Exception("Not implemented")
       else
         lines(3)
 

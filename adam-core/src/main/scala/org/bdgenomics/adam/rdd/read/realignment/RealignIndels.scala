@@ -187,12 +187,12 @@ private[rdd] object RealignIndels extends Serializable with Logging {
 
     // get reference and range from a single read
     val readRefs = reads.flatMap((r: RichAlignmentRecord) => {
-      if (r.mdTag.isDefined) {
-        Some((r.mdTag.get.getReference(r), r.getStart.toLong to r.getEnd))
-      } else {
+      r.mdTag.fold {
         log.warn("Discarding read " + r.record.getReadName + " during reference re-creation.")
         tossedReads += 1
-        None
+        (None: Option[(String, NumericRange[Long])])
+      } { (tag) =>
+        Some((tag.getReference(r), (r.getStart: Long) to r.getEnd))
       }
     })
       .toSeq
@@ -240,14 +240,14 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
       reads
     } else {
       // bootstrap realigned read set with the reads that need to be realigned
-      var realignedReads = reads.filter(r => r.mdTag.isDefined && !r.mdTag.get.hasMismatches)
+      var realignedReads = reads.filter(r => r.mdTag.exists(!_.hasMismatches))
 
       // get reference from reads
       val (reference, refStart, refEnd) = getReferenceFromReads(reads.map(r => new RichAlignmentRecord(r)))
       val refRegion = ReferenceRegion(reads.head.record.getContig.getContigName, refStart, refEnd)
 
       // preprocess reads and get consensus
-      val readsToClean = consensusModel.preprocessReadsForRealignment(reads.filter(r => !r.mdTag.isDefined || r.mdTag.get.hasMismatches),
+      val readsToClean = consensusModel.preprocessReadsForRealignment(reads.filter(r => r.mdTag.forall(_.hasMismatches)),
         reference,
         refRegion)
       var consensus = consensusModel.findConsensus(readsToClean)
@@ -261,9 +261,9 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
       if (readsToClean.size > 0 && consensus.size > 0) {
 
         // do not check realigned reads - they must match
-        val totalMismatchSumPreCleaning = readsToClean.map(sumMismatchQuality(_)).reduce(_ + _)
+        val totalMismatchSumPreCleaning = readsToClean.map(sumMismatchQuality(_)).sum
 
-        /* list to log the outcome of all consensus trials. stores:  
+        /* list to log the outcome of all consensus trials. stores:
          *  - mismatch quality of reads against new consensus sequence
          *  - the consensus sequence itself
          *  - a map containing each realigned read and it's offset into the new sequence
@@ -280,8 +280,8 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
             val (qual, pos) = sweepReadOverReferenceForQuality(r.getSequence, consensusSequence, r.qualityScores)
             val originalQual = sumMismatchQuality(r)
 
-            // if the read's mismatch quality improves over the original alignment, save 
-            // its alignment in the consensus sequence, else store -1 
+            // if the read's mismatch quality improves over the original alignment, save
+            // its alignment in the consensus sequence, else store -1
             if (qual < originalQual) {
               (r, (qual, pos))
             } else {
@@ -290,7 +290,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
           })
 
           // sum all mismatch qualities to get the total mismatch quality for this alignment
-          val totalQuality = sweptValues.map(_._2._1).reduce(_ + _)
+          val totalQuality = sweptValues.map(_._2._1).sum
 
           // package data
           var readMappings = mutable.Map[RichAlignmentRecord, Int]()
@@ -303,13 +303,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
         })
 
         // perform reduction to pick the consensus with the lowest aggregated mismatch score
-        val bestConsensusTuple = consensusOutcomes.reduce((c1: (Int, Consensus, mutable.Map[RichAlignmentRecord, Int]), c2: (Int, Consensus, mutable.Map[RichAlignmentRecord, Int])) => {
-          if (c1._1 <= c2._1) {
-            c1
-          } else {
-            c2
-          }
-        })
+        val bestConsensusTuple = consensusOutcomes.minBy(_._1)
 
         val (bestConsensusMismatchSum, bestConsensus, bestMappings) = bestConsensusTuple
 
@@ -407,13 +401,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
     }
 
     // perform reduction to get best quality offset
-    qualityScores.reduce((p1: (Int, Int), p2: (Int, Int)) => {
-      if (p1._1 < p2._1) {
-        p1
-      } else {
-        p2
-      }
-    })
+    qualityScores.minBy(_._1)
   }
 
   /**
@@ -433,7 +421,7 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
       .map(_._2)
 
     if (mismatchQualities.length > 0) {
-      mismatchQualities.reduce(_ + _)
+      mismatchQualities.sum
     } else {
       0
     }

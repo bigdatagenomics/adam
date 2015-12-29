@@ -45,7 +45,7 @@ case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Lon
   private val cumuls: Seq[Long] = lengths.scan(0L)(_ + _)
 
   // total # of bases in the sequence dictionary
-  val totalLength: Long = lengths.reduce(_ + _)
+  val totalLength: Long = lengths.sum
 
   // referenceName -> cumulative length before this sequence (using seqDict.records as the implicit ordering)
   val cumulativeLengths: Map[String, Long] = Map(
@@ -101,7 +101,7 @@ object GenomicPositionPartitioner {
     GenomicPositionPartitioner(numParts, extractLengthMap(seqDict))
 
   def extractLengthMap(seqDict: SequenceDictionary): Map[String, Long] =
-    Map(seqDict.records.toSeq.map(rec => (rec.name.toString, rec.length)): _*)
+    Map(seqDict.records.toSeq.map(rec => (rec.name, rec.length)): _*)
 }
 
 case class GenomicRegionPartitioner(partitionSize: Long, seqLengths: Map[String, Long], start: Boolean = true) extends Partitioner with Logging {

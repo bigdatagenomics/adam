@@ -53,7 +53,7 @@ case class ShuffleRegionJoin(sd: SequenceDictionary, partitionSize: Long) extend
     val sc = leftRDD.context
 
     // Create the set of bins across the genome for parallel processing
-    val seqLengths = Map(sd.records.toSeq.map(rec => (rec.name.toString, rec.length)): _*)
+    val seqLengths = Map(sd.records.toSeq.map(rec => (rec.name, rec.length)): _*)
     val bins = sc.broadcast(GenomeBins(partitionSize, seqLengths))
 
     // Key each RDD element to its corresponding bin

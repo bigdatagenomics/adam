@@ -101,7 +101,7 @@ class AlignmentRecordConverter extends Serializable {
     val builder: SAMRecord = new SAMRecord(header.header)
 
     // set canonically necessary fields
-    builder.setReadName(adamRecord.getReadName.toString)
+    builder.setReadName(adamRecord.getReadName)
     builder.setReadString(adamRecord.getSequence)
     adamRecord.getQual match {
       case null      => builder.setBaseQualityString("*")
@@ -110,18 +110,16 @@ class AlignmentRecordConverter extends Serializable {
 
     // set read group flags
     Option(adamRecord.getRecordGroupName)
-      .map(_.toString)
       .map(rgDict.getSequenceIndex)
-      .foreach(v => builder.setAttribute("RG", v.toString))
+      .foreach(v => builder.setAttribute("RG", v))
     Option(adamRecord.getRecordGroupLibrary)
-      .foreach(v => builder.setAttribute("LB", v.toString))
+      .foreach(v => builder.setAttribute("LB", v))
     Option(adamRecord.getRecordGroupPlatformUnit)
-      .foreach(v => builder.setAttribute("PU", v.toString))
+      .foreach(v => builder.setAttribute("PU", v))
 
     // set the reference name, and alignment position, for mate
     Option(adamRecord.getMateContig)
       .map(_.getContigName)
-      .map(_.toString)
       .foreach(builder.setMateReferenceName)
     Option(adamRecord.getMateAlignmentStart)
       .foreach(s => builder.setMateAlignmentStart(s.toInt + 1))
@@ -161,9 +159,9 @@ class AlignmentRecordConverter extends Serializable {
           builder.setReferenceName(adamRecord.getContig.getContigName)
 
           // set the cigar, if provided
-          Option(adamRecord.getCigar).map(_.toString).foreach(builder.setCigarString)
+          Option(adamRecord.getCigar).foreach(builder.setCigarString)
           // set the old cigar, if provided
-          Option(adamRecord.getOldCigar).map(_.toString).foreach(v => builder.setAttribute("OC", v))
+          Option(adamRecord.getOldCigar).foreach(v => builder.setAttribute("OC", v))
           // set mapping flags
           Option(adamRecord.getReadNegativeStrand)
             .foreach(v => builder.setReadNegativeStrandFlag(v.booleanValue))
@@ -184,7 +182,6 @@ class AlignmentRecordConverter extends Serializable {
     Option(adamRecord.getFailedVendorQualityChecks)
       .foreach(v => builder.setReadFailsVendorQualityCheckFlag(v.booleanValue))
     Option(adamRecord.getMismatchingPositions)
-      .map(_.toString)
       .foreach(builder.setAttribute("MD", _))
 
     // add all other tags
@@ -195,7 +192,7 @@ class AlignmentRecordConverter extends Serializable {
       })
     }
 
-    // return sam record 
+    // return sam record
     builder
   }
 

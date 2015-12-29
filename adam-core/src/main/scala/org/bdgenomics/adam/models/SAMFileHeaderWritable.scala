@@ -39,7 +39,7 @@ class SAMFileHeaderWritable(@transient hdr: SAMFileHeader) extends Serializable 
   }
   protected val comments = {
     val cmts: List[java.lang.String] = hdr.getComments
-    cmts.flatMap(Option(_)).map(_.toString) // don't trust samtools to return non-nulls
+    cmts.flatMap(Option(_)) // don't trust samtools to return non-nulls
   }
   protected val rgs = RecordGroupDictionary.fromSAMHeader(hdr)
 

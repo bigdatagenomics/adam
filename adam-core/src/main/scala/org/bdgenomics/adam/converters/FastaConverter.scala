@@ -34,13 +34,13 @@ private[adam] object FastaConverter {
     val (contigName, contigDescription) = parseDescriptionLine(descriptionLine, fileIndex)
 
     private def parseDescriptionLine(descriptionLine: Option[String], id: Long): (Option[String], Option[String]) = {
-      if (descriptionLine.isEmpty) {
+      descriptionLine.fold {
         assert(id == -1L, "Cannot have a headerless line in a file with more than one fragment.")
-        (None, None)
-      } else {
-        val splitIndex = descriptionLine.get.indexOf(' ')
+        (None: Option[String], None: Option[String])
+      } { (dL) =>
+        val splitIndex = dL.indexOf(' ')
         if (splitIndex >= 0) {
-          val split = descriptionLine.get.splitAt(splitIndex)
+          val split = dL.splitAt(splitIndex)
 
           val contigName: String = split._1.stripPrefix(">").trim
           val contigDescription: String = split._2.trim
@@ -48,7 +48,7 @@ private[adam] object FastaConverter {
           (Some(contigName), Some(contigDescription))
 
         } else {
-          (Some(descriptionLine.get.stripPrefix(">").trim), None)
+          (Some(dL.stripPrefix(">").trim), None)
         }
       }
     }
@@ -188,7 +188,7 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
               description: Option[String]): Seq[NucleotideContigFragment] = {
 
     // get sequence length
-    val sequenceLength = sequence.map(_.length).reduce(_ + _)
+    val sequenceLength = sequence.map(_.length).sum
 
     // map sequences into fragments
     val sequencesAsFragments = mapFragments(sequence)

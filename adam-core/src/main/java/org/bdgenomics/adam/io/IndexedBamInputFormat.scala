@@ -57,7 +57,7 @@ class IndexedBamInputFormat extends BAMInputFormat {
   override def createRecordReader(split: InputSplit, ctx: TaskAttemptContext): RecordReader[LongWritable, SAMRecordWritable] = {
     val rr: RecordReader[LongWritable, SAMRecordWritable] = new BAMFilteredRecordReader()
     assert(IndexedBamInputFormat.optViewRegion.isDefined)
-    BAMFilteredRecordReader.setRegion(IndexedBamInputFormat.optViewRegion.get)
+    IndexedBamInputFormat.optViewRegion.foreach { (refReg) => BAMFilteredRecordReader.setRegion(refReg) }
     rr.initialize(split, ctx)
     rr
   }

@@ -126,7 +126,7 @@ object IndelRealignmentTarget {
       })
 
     // if we have indels, emit those targets, else emit a target for this read
-    if (pos.length == 0) {
+    if (pos.isEmpty) {
       Seq(new IndelRealignmentTarget(None, region))
     } else {
       pos.map(ir => new IndelRealignmentTarget(Some(ir), region))
@@ -152,14 +152,11 @@ class IndelRealignmentTarget(val variation: Option[ReferenceRegion],
     assert(readRange.isAdjacent(target.readRange) || readRange.overlaps(target.readRange),
       "Targets do not overlap, and therefore cannot be merged.")
 
-    val newVar = if (variation.isDefined && target.variation.isDefined) {
-      Some(variation.get.hull(target.variation.get))
-    } else if (variation.isDefined) {
-      variation
-    } else if (target.variation.isDefined) {
-      target.variation
-    } else {
-      None
+    val newVar = (variation, target.variation) match {
+      case (Some(v), Some(tv)) => Some(v.hull(tv))
+      case (Some(v), _)        => Some(v)
+      case (_, Some(tv))       => Some(tv)
+      case _                   => None
     }
 
     new IndelRealignmentTarget(newVar, readRange.merge(target.readRange))
@@ -206,4 +203,3 @@ case class TargetSet(set: TreeSet[IndelRealignmentTarget]) extends Serializable 
 
 case class ZippedTargetSet(set: TreeSet[(IndelRealignmentTarget, Int)]) extends Serializable {
 }
-

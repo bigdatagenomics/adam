@@ -42,7 +42,7 @@ class ConsensusGeneratorFromSmithWaterman(wMatch: Double,
                                              region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
     val rds: Iterable[RichAlignmentRecord] = reads.map(r => {
 
-      val sw = new SmithWatermanConstantGapScoring(r.record.getSequence.toString,
+      val sw = new SmithWatermanConstantGapScoring(r.record.getSequence,
         reference,
         wMatch,
         wMismatch,
@@ -52,7 +52,7 @@ class ConsensusGeneratorFromSmithWaterman(wMatch: Double,
 
       // if we realign with fewer than three alignment blocks, then take the new alignment
       if (sw.cigarX.numAlignmentBlocks <= 2) {
-        val mdTag = MdTag(r.record.getSequence.toString,
+        val mdTag = MdTag(r.record.getSequence,
           reference.drop(sw.xStart),
           sw.cigarX,
           region.start)

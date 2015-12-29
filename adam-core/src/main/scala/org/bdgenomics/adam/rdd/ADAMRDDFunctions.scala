@@ -67,8 +67,7 @@ class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serial
     ParquetOutputFormat.setBlockSize(job, blockSize)
     ParquetOutputFormat.setPageSize(job, pageSize)
     AvroParquetOutputFormat.setSchema(job,
-      if (schema.isDefined) schema.get
-      else manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema)
+      schema.getOrElse(manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema))
     // Add the Void Key
     val recordToSave = rdd.map(p => (null, p))
     // Save the values to the ADAM/Parquet file
