@@ -35,14 +35,8 @@ object VcfStringUtils {
   def vcfListToInts(l: String): List[Int] = {
     val valueList = l.split(",").toList
 
-    // TODO: @tailrec 
-    def convertListToInts(l: List[String]): List[Int] = {
-      if (l.length == 0) {
-        List[Int]()
-      } else {
-        clean(l.head).toInt :: convertListToInts(l.tail)
-      }
-    }
+    def convertListToInts(l: List[String]): List[Int] =
+      l.map((s) => clean(s).toInt)
 
     convertListToInts(valueList)
   }
@@ -50,28 +44,16 @@ object VcfStringUtils {
   def vcfListToDoubles(l: String): List[Double] = {
     val valueList = l.split(",").toList
 
-    // TODO: @tailrec 
-    def convertListToDoubles(l: List[String]): List[Double] = {
-      if (l.length == 0) {
-        List[Double]()
-      } else {
-        clean(l.head).toDouble :: convertListToDoubles(l.tail)
-      }
-    }
+    def convertListToDoubles(l: List[String]): List[Double] =
+      l.map((s: String) => clean(s).toDouble)
 
     convertListToDoubles(valueList)
   }
 
   def listToString(l: List[Any]): String = listToString(l.map(_.toString))
 
-  // TODO: @tailrec final 
-  private def stringListToString(l: List[String]): String = {
-    if (l.length == 0) {
-      ""
-    } else {
-      l.head + "," + listToString(l.tail)
-    }
-  }
+  private def stringListToString(l: List[String]): String =
+    l.mkString(",")
 
   def stringToList(s: String): List[String] = s.split(",").toList
 }
