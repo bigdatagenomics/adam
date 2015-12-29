@@ -36,9 +36,10 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConverters._
 
 class SAMRecordConverter extends Serializable with Logging {
-  def convert(samRecord: SAMRecord,
-              dict: SequenceDictionary,
-              readGroups: RecordGroupDictionary): AlignmentRecord = {
+  def convert(
+    samRecord: SAMRecord,
+    dict: SequenceDictionary,
+    readGroups: RecordGroupDictionary): AlignmentRecord = {
     try {
       val cigar: String = samRecord.getCigarString
       val startTrim = if (cigar == "*") {
@@ -79,12 +80,14 @@ class SAMRecordConverter extends Serializable with Logging {
       // This prevents looking up a -1 in the sequence dictionary
       val readReference: Int = samRecord.getReferenceIndex
       if (readReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
-        builder.setContig(SequenceRecord.toADAMContig(dict(samRecord.getReferenceName).get))
+        dict(samRecord.getReferenceName).foreach { (rec) =>
+          builder.setContig(SequenceRecord.toADAMContig(rec))
+        }
 
         // set read alignment flag
         val start: Int = samRecord.getAlignmentStart
         assert(start != 0, "Start cannot equal 0 if contig is set.")
-        builder.setStart((start - 1).asInstanceOf[Long])
+        builder.setStart((start - 1))
 
         // set OP and OC flags, if applicable
         if (samRecord.getAttribute("OP") != null) {
@@ -127,7 +130,9 @@ class SAMRecordConverter extends Serializable with Logging {
       val mateReference: Int = samRecord.getMateReferenceIndex
 
       if (mateReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
-        builder.setMateContig(SequenceRecord.toADAMContig(dict(samRecord.getMateReferenceName).get))
+        dict(samRecord.getMateReferenceName).foreach { (rec) =>
+          builder.setMateContig(SequenceRecord.toADAMContig(rec))
+        }
 
         val mateStart = samRecord.getMateAlignmentStart
         if (mateStart > 0) {

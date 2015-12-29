@@ -37,7 +37,8 @@ trait RegionJoin {
    * @return An RDD of pairs (x, y), where x is from baseRDD, y is from joinedRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
-  def partitionAndJoin[T, U](baseRDD: RDD[(ReferenceRegion, T)],
-                             joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                                                   uManifest: ClassTag[U]): RDD[(T, U)]
+  def partitionAndJoin[T, U](
+    baseRDD: RDD[(ReferenceRegion, T)],
+    joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
+                                          uManifest: ClassTag[U]): RDD[(T, U)]
 }

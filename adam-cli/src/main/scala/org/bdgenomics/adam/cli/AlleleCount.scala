@@ -53,12 +53,14 @@ object AlleleCountHelper extends Serializable {
     }
 
   def countAlleles(adamVariants: RDD[Genotype], args: AlleleCountArgs) {
-    val usefulData = adamVariants.map(p => (p.getVariant.getContig.getContigName,
+    val usefulData = adamVariants.map(p => (
+      p.getVariant.getContig.getContigName,
       p.getVariant.getStart,
       p.getVariant.getReferenceAllele,
       p.getVariant.getAlternateAllele,
       p.getAlleles.get(0),
-      p.getAlleles.get(1)))
+      p.getAlleles.get(1)
+    ))
     val reduced_Variants = usefulData.flatMap(p => Seq((p._1, p._2, p._3, p._4, p._5), (p._1, p._2, p._3, p._4, p._6)))
     val alleles = reduced_Variants.flatMap(chooseAllele)
     alleles.groupBy(identity).map { case (a, b) => "%s\t%s\t%s\t%d".format(a._1, a._2, a._3, b.size) }

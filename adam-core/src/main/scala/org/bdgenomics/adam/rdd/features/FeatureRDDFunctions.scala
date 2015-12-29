@@ -49,7 +49,9 @@ class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Lo
        enough information to create each Transcript, which we do, key each Transcript
        by its geneId, and group the transcripts which share a common gene together.
 
-    4. Finally, find each 'gene'-typed GTFFeature, key it by its geneId, and join with
+    4. Finally, find each 'gene'-typed GTFFeature, key it by its geneId,
+    and join with
+    *
        the transcripts in #3.  Use these joined values to create the final set of
        Gene values.
 
@@ -60,7 +62,7 @@ class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Lo
 
     // Step #1
     val typePartitioned: RDD[(String, Feature)] =
-      featureRDD.keyBy(_.getFeatureType.toString).cache()
+      featureRDD.keyBy(_.getFeatureType).cache()
 
     // Step #2
     val exonsByTranscript: RDD[(String, Iterable[Exon])] =
@@ -68,31 +70,37 @@ class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Lo
         // There really only should be _one_ parent listed in this flatMap, but since
         // getParentIds is modeled as returning a List[], we'll write it this way.
         case ("exon", ftr: Feature) =>
-          val ids: Seq[String] = ftr.getParentIds.map(_.toString)
-          ids.map(transcriptId => (transcriptId,
-            Exon(ftr.getFeatureId.toString, transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))))
+          val ids: Seq[String] = ftr.getParentIds
+          ids.map(transcriptId => (
+            transcriptId,
+            Exon(ftr.getFeatureId, transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))
+          ))
       }.groupByKey()
 
     val cdsByTranscript: RDD[(String, Iterable[CDS])] =
       typePartitioned.filter(_._1 == "CDS").flatMap {
         case ("CDS", ftr: Feature) =>
-          val ids: Seq[String] = ftr.getParentIds.map(_.toString)
-          ids.map(transcriptId => (transcriptId,
-            CDS(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))))
+          val ids: Seq[String] = ftr.getParentIds
+          ids.map(transcriptId => (
+            transcriptId,
+            CDS(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))
+          ))
       }.groupByKey()
 
     val utrsByTranscript: RDD[(String, Iterable[UTR])] =
       typePartitioned.filter(_._1 == "UTR").flatMap {
         case ("UTR", ftr: Feature) =>
-          val ids: Seq[String] = ftr.getParentIds.map(_.toString)
-          ids.map(transcriptId => (transcriptId,
-            UTR(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))))
+          val ids: Seq[String] = ftr.getParentIds
+          ids.map(transcriptId => (
+            transcriptId,
+            UTR(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))
+          ))
       }.groupByKey()
 
     // Step #3
     val transcriptsByGene: RDD[(String, Iterable[Transcript])] =
       typePartitioned.filter(_._1 == "transcript").map {
-        case ("transcript", ftr: Feature) => (ftr.getFeatureId.toString, ftr)
+        case ("transcript", ftr: Feature) => (ftr.getFeatureId, ftr)
       }.join(exonsByTranscript)
         .leftOuterJoin(utrsByTranscript)
         .leftOuterJoin(cdsByTranscript)
@@ -103,16 +111,18 @@ class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Lo
           case (transcriptId: String, (((tgtf: Feature, exons: Iterable[Exon]),
             utrs: Option[Iterable[UTR]]),
             cds: Option[Iterable[CDS]])) =>
-            val geneIds: Seq[String] = tgtf.getParentIds.map(_.toString) // should be length 1
-            geneIds.map(geneId => (geneId,
+            val geneIds: Seq[String] = tgtf.getParentIds // should be length 1
+            geneIds.map(geneId => (
+              geneId,
               Transcript(transcriptId, Seq(transcriptId), geneId,
                 strand(tgtf.getStrand),
-                exons, cds.getOrElse(Seq()), utrs.getOrElse(Seq()))))
+                exons, cds.getOrElse(Seq()), utrs.getOrElse(Seq()))
+            ))
         }.groupByKey()
 
     // Step #4
     val genes = typePartitioned.filter(_._1 == "gene").map {
-      case ("gene", ftr: Feature) => (ftr.getFeatureId.toString, ftr)
+      case ("gene", ftr: Feature) => (ftr.getFeatureId, ftr)
     }.leftOuterJoin(transcriptsByGene).map {
       case (geneId: String, (ggtf: Feature, transcripts: Option[Iterable[Transcript]])) =>
         Gene(geneId, Seq(geneId),
@@ -125,10 +135,9 @@ class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Lo
 
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[Feature] = {
     def overlapsQuery(rec: Feature): Boolean =
-      rec.getContig.getContigName.toString == query.referenceName &&
+      rec.getContig.getContigName == query.referenceName &&
         rec.getStart < query.end &&
         rec.getEnd > query.start
     featureRDD.filter(overlapsQuery)
   }
 }
-

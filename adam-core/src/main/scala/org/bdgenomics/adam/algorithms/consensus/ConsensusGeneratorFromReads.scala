@@ -44,9 +44,10 @@ class ConsensusGeneratorFromReads extends ConsensusGenerator {
    * @param reads Reads to process.
    * @return Reads with indels normalized if they contain a single indel.
    */
-  def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord],
-                                    reference: String,
-                                    region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
+  def preprocessReadsForRealignment(
+    reads: Iterable[RichAlignmentRecord],
+    reference: String,
+    region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
     reads.map(r => {
       // if there are two alignment blocks (sequence matches) then there is a single indel in the read
       if (r.samtoolsCigar.numAlignmentBlocks == 2) {
@@ -74,10 +75,14 @@ class ConsensusGeneratorFromReads extends ConsensusGenerator {
       .flatMap(r => {
         // try to generate a consensus alignment - if a consensus exists, add it to our
         // list of consensuses to test
-        Consensus.generateAlternateConsensus(r.getSequence,
-          ReferencePosition(r.getContig.getContigName,
-            r.getStart),
-          r.samtoolsCigar)
+        Consensus.generateAlternateConsensus(
+          r.getSequence,
+          ReferencePosition(
+            r.getContig.getContigName,
+            r.getStart
+          ),
+          r.samtoolsCigar
+        )
       })
       .toSeq
       .distinct

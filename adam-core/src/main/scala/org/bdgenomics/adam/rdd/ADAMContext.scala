@@ -132,9 +132,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @tparam T The type of records to return
    * @return An RDD with records of the specified type
    */
-  def loadParquet[T](filePath: String,
-                     predicate: Option[FilterPredicate] = None,
-                     projection: Option[Schema] = None)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): RDD[T] = {
+  def loadParquet[T](
+    filePath: String,
+    predicate: Option[FilterPredicate] = None,
+    projection: Option[Schema] = None)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): RDD[T] = {
     //make sure a type was specified
     //not using require as to make the message clearer
     if (manifest[T] == manifest[scala.Nothing])
@@ -145,9 +146,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val job = HadoopUtil.newJob(sc)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])
 
-    if (predicate.isDefined) {
+    predicate.foreach { (pred) =>
       log.info("Using the specified push-down predicate")
-      ParquetInputFormat.setFilterPredicate(job.getConfiguration, predicate.get)
+      ParquetInputFormat.setFilterPredicate(job.getConfiguration, pred)
     }
 
     if (projection.isDefined) {
@@ -202,7 +203,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           AlignmentRecordField.readPaired,
           AlignmentRecordField.firstOfPair,
           AlignmentRecordField.readMapped,
-          AlignmentRecordField.mateMapped)
+          AlignmentRecordField.mateMapped
+        )
       } else if (isADAMContig) {
         Projection(NucleotideContigFragmentField.contig)
       } else {
@@ -229,7 +231,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
       val dict = recs.aggregate(SequenceDictionary())(
         (dict: SequenceDictionary, rec: SequenceRecord) => dict + rec,
-        (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2)
+        (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2
+      )
 
       dict
     }
@@ -327,10 +330,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       })
 
     val samDict = SAMHeaderReader.readSAMHeaderFrom(path, sc.hadoopConfiguration).getSequenceDictionary
-    IndexedBamInputFormat.setVars(new Path(filePath),
+    IndexedBamInputFormat.setVars(
+      new Path(filePath),
       new Path(filePath + ".bai"),
       viewRegion,
-      samDict)
+      samDict
+    )
 
     val job = HadoopUtil.newJob(sc)
 
@@ -366,20 +371,22 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     records.flatMap(fastqRecordConverter.convertPair)
   }
 
-  def loadFastq(filePath1: String,
-                filePath2Opt: Option[String],
-                recordGroupOpt: Option[String] = None,
-                stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = {
+  def loadFastq(
+    filePath1: String,
+    filePath2Opt: Option[String],
+    recordGroupOpt: Option[String] = None,
+    stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = {
     filePath2Opt match {
       case Some(filePath2) => loadPairedFastq(filePath1, filePath2, recordGroupOpt, stringency)
       case None            => loadUnpairedFastq(filePath1, stringency = stringency)
     }
   }
 
-  def loadPairedFastq(filePath1: String,
-                      filePath2: String,
-                      recordGroupOpt: Option[String],
-                      stringency: ValidationStringency): RDD[AlignmentRecord] = {
+  def loadPairedFastq(
+    filePath1: String,
+    filePath2: String,
+    recordGroupOpt: Option[String],
+    stringency: ValidationStringency): RDD[AlignmentRecord] = {
     val reads1 = loadUnpairedFastq(filePath1, setFirstOfPair = true, stringency = stringency)
     val reads2 = loadUnpairedFastq(filePath2, setSecondOfPair = true, stringency = stringency)
 
@@ -403,11 +410,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     reads1 ++ reads2
   }
 
-  def loadUnpairedFastq(filePath: String,
-                        recordGroupOpt: Option[String] = None,
-                        setFirstOfPair: Boolean = false,
-                        setSecondOfPair: Boolean = false,
-                        stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = {
+  def loadUnpairedFastq(
+    filePath: String,
+    recordGroupOpt: Option[String] = None,
+    setFirstOfPair: Boolean = false,
+    setSecondOfPair: Boolean = false,
+    stringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] = {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -428,8 +436,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           if (recordGroup.isEmpty)
             filePath.substring(filePath.lastIndexOf("/") + 1)
           else
-            recordGroup
-        ),
+            recordGroup),
         setFirstOfPair,
         setSecondOfPair,
         stringency
@@ -443,7 +450,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val records = sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
-      ContextUtil.getConfiguration(job))
+      ContextUtil.getConfiguration(job)
+    )
     if (Metrics.isRecording) records.instrument() else records
 
     records.flatMap(p => vcc.convert(p._2.get))
@@ -466,10 +474,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadFasta(
     filePath: String,
     fragmentLength: Long): RDD[NucleotideContigFragment] = {
-    val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(filePath,
+    val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
+      filePath,
       classOf[TextInputFormat],
       classOf[LongWritable],
-      classOf[Text])
+      classOf[Text]
+    )
     if (Metrics.isRecording) fastaData.instrument() else fastaData
 
     val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
@@ -560,7 +570,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val records = sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
-      ContextUtil.getConfiguration(job))
+      ContextUtil.getConfiguration(job)
+    )
     if (Metrics.isRecording) records.instrument() else records
 
     records.map(p => vcc.convertToAnnotation(p._2.get))
@@ -611,8 +622,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  def loadGenes(filePath: String,
-                projection: Option[Schema] = None): RDD[Gene] = {
+  def loadGenes(
+    filePath: String,
+    projection: Option[Schema] = None): RDD[Gene] = {
     import ADAMContext._
     loadFeatures(filePath, projection).asGenes()
   }
@@ -633,8 +645,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (filePath.endsWith(".fa") ||
       filePath.endsWith(".fasta")) {
       log.info("Loading " + filePath + " as FASTA and converting to NucleotideContigFragment. Projection is ignored.")
-      loadFasta(filePath,
-        fragmentLength)
+      loadFasta(
+        filePath,
+        fragmentLength
+      )
     } else {
       log.info("Loading " + filePath + " as Parquet containing NucleotideContigFragments.")
       loadParquetContigFragments(filePath, None, projection)

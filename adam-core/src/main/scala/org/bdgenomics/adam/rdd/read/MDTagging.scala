@@ -27,11 +27,12 @@ import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.util.{ ReferenceFile, MdTag }
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-case class MDTagging(reads: RDD[AlignmentRecord],
-                     @transient referenceFile: ReferenceFile,
-                     partitionSize: Long = 1000000,
-                     overwriteExistingTags: Boolean = false,
-                     validationStringency: ValidationStringency = ValidationStringency.STRICT) extends Logging {
+case class MDTagging(
+    reads: RDD[AlignmentRecord],
+    @transient referenceFile: ReferenceFile,
+    partitionSize: Long = 1000000,
+    overwriteExistingTags: Boolean = false,
+    validationStringency: ValidationStringency = ValidationStringency.STRICT) extends Logging {
   @transient val sc = reads.sparkContext
 
   val mdTagsAdded = sc.accumulator(0L, "MDTags Added")
@@ -85,11 +86,12 @@ case class MDTagging(reads: RDD[AlignmentRecord],
 }
 
 object MDTagging {
-  def apply(reads: RDD[AlignmentRecord],
-            referenceFile: String,
-            fragmentLength: Long,
-            overwriteExistingTags: Boolean,
-            validationStringency: ValidationStringency): RDD[AlignmentRecord] = {
+  def apply(
+    reads: RDD[AlignmentRecord],
+    referenceFile: String,
+    fragmentLength: Long,
+    overwriteExistingTags: Boolean,
+    validationStringency: ValidationStringency): RDD[AlignmentRecord] = {
     val sc = reads.sparkContext
     new MDTagging(
       reads,

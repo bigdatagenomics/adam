@@ -61,7 +61,8 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
     // read from disk
     var adamRecords: RDD[AlignmentRecord] = sc.loadAlignments(
       args.inputPath,
-      projection = Some(Projection(AlignmentRecordField.sequence)))
+      projection = Some(Projection(AlignmentRecordField.sequence))
+    )
 
     if (args.repartition != -1) {
       log.info("Repartitioning reads to '%d' partitions".format(args.repartition))

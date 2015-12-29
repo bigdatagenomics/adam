@@ -20,8 +20,9 @@ package org.bdgenomics.adam.converters
 import org.bdgenomics.adam.util._
 import scala.math.{ pow, sqrt }
 
-private[adam] class GenotypesToVariantsConverter(validateSamples: Boolean = false,
-                                                 failOnValidationError: Boolean = false) extends Serializable {
+private[adam] class GenotypesToVariantsConverter(
+    validateSamples: Boolean = false,
+    failOnValidationError: Boolean = false) extends Serializable {
 
   /**
    * Computes root mean squared (RMS) values for a series of doubles.
@@ -31,7 +32,7 @@ private[adam] class GenotypesToVariantsConverter(validateSamples: Boolean = fals
    */
   def rms(values: Seq[Double]): Double = {
     if (values.length > 0) {
-      sqrt(values.map(pow(_, 2.0)).reduce(_ + _) / values.length.toDouble)
+      sqrt(values.map(pow(_, 2.0)).sum / values.length.toDouble)
     } else {
       0.0
     }
@@ -67,5 +68,5 @@ private[adam] class GenotypesToVariantsConverter(validateSamples: Boolean = fals
    * @param values An array of non-phred scaled genotype quality scores.
    * @return A non-phred scaled variant likelihood.
    */
-  def variantQualityFromGenotypes(values: Seq[Double]): Double = 1.0 - values.reduce(_ * _)
+  def variantQualityFromGenotypes(values: Seq[Double]): Double = 1.0 - values.product
 }

@@ -68,8 +68,10 @@ class RecordGroupDictionary(val recordGroups: Seq[RecordGroup]) extends Serializ
       (name, (group, index))
     }).toMap
 
-  assert(recordGroupMap.size == recordGroups.length,
-    "Read group dictionary contains multiple samples with identical read group names.")
+  assert(
+    recordGroupMap.size == recordGroups.length,
+    "Read group dictionary contains multiple samples with identical read group names."
+  )
 
   def ++(that: RecordGroupDictionary): RecordGroupDictionary = {
     new RecordGroupDictionary(recordGroups ++ that.recordGroups)
@@ -133,9 +135,12 @@ object RecordGroup {
    * @return Returns an equivalent ADAM format record group.
    */
   def apply(samRGR: SAMReadGroupRecord): RecordGroup = {
-    assert(samRGR.getSample != null,
-      "Sample ID is not set for read group " + samRGR.getReadGroupId)
-    new RecordGroup(samRGR.getSample,
+    assert(
+      samRGR.getSample != null,
+      "Sample ID is not set for read group " + samRGR.getReadGroupId
+    )
+    new RecordGroup(
+      samRGR.getSample,
       samRGR.getReadGroupId,
       Option(samRGR.getSequencingCenter).map(_.toString),
       Option(samRGR.getDescription).map(_.toString),
@@ -149,21 +154,23 @@ object RecordGroup {
         i
       }).map(_.toInt),
       Option(samRGR.getPlatform).map(_.toString),
-      Option(samRGR.getPlatformUnit).map(_.toString))
+      Option(samRGR.getPlatformUnit).map(_.toString)
+    )
   }
 }
 
-class RecordGroup(val sample: String,
-                  val recordGroupName: String,
-                  val sequencingCenter: Option[String] = None,
-                  val description: Option[String] = None,
-                  val runDateEpoch: Option[Long] = None,
-                  val flowOrder: Option[String] = None,
-                  val keySequence: Option[String] = None,
-                  val library: Option[String] = None,
-                  val predictedMedianInsertSize: Option[Int] = None,
-                  val platform: Option[String] = None,
-                  val platformUnit: Option[String] = None) extends Serializable {
+class RecordGroup(
+    val sample: String,
+    val recordGroupName: String,
+    val sequencingCenter: Option[String] = None,
+    val description: Option[String] = None,
+    val runDateEpoch: Option[Long] = None,
+    val flowOrder: Option[String] = None,
+    val keySequence: Option[String] = None,
+    val library: Option[String] = None,
+    val predictedMedianInsertSize: Option[Int] = None,
+    val platform: Option[String] = None,
+    val platformUnit: Option[String] = None) extends Serializable {
 
   /**
    * Compares equality to another object. Only checks equality via the sample and

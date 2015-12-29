@@ -65,4 +65,3 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
   }
 
 }
-

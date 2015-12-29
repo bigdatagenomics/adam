@@ -87,7 +87,8 @@ object Flattener {
 
     if (schema.getType ne Schema.Type.UNION) {
       return Schema.createUnion(
-        ListBuffer[Schema](Schema.create(Schema.Type.NULL), schema).asJava)
+        ListBuffer[Schema](Schema.create(Schema.Type.NULL), schema).asJava
+      )
     }
 
     schema // TODO: what about unions that don't contain null?

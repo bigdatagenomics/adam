@@ -27,20 +27,21 @@ object ProgramRecord {
     val id: String = pr.getId
 
     // these fields are optional and can be left null, so must check for null...
-    val commandLine: Option[String] = Option(pr.getCommandLine).map(_.toString)
-    val name: Option[String] = Option(pr.getProgramName).map(_.toString)
-    val version: Option[String] = Option(pr.getProgramVersion).map(_.toString)
-    val previousID: Option[String] = Option(pr.getPreviousProgramGroupId).map(_.toString)
+    val commandLine: Option[String] = Option(pr.getCommandLine)
+    val name: Option[String] = Option(pr.getProgramName)
+    val version: Option[String] = Option(pr.getProgramVersion)
+    val previousID: Option[String] = Option(pr.getPreviousProgramGroupId)
 
     new ProgramRecord(id, commandLine, name, version, previousID)
   }
 }
 
-case class ProgramRecord(id: String,
-                         commandLine: Option[String],
-                         name: Option[String],
-                         version: Option[String],
-                         previousID: Option[String]) {
+case class ProgramRecord(
+    id: String,
+    commandLine: Option[String],
+    name: Option[String],
+    version: Option[String],
+    previousID: Option[String]) {
 
   def toSAMProgramRecord(): SAMProgramRecord = {
     val pr = new SAMProgramRecord(id)
@@ -54,4 +55,3 @@ case class ProgramRecord(id: String,
     pr
   }
 }
-

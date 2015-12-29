@@ -97,7 +97,8 @@ class Aggregate private (
     new Aggregate(
       this.total + that.total,
       this.mismatches + that.mismatches,
-      this.expectedMismatches + that.expectedMismatches)
+      this.expectedMismatches + that.expectedMismatches
+    )
 }
 
 object Aggregate {
