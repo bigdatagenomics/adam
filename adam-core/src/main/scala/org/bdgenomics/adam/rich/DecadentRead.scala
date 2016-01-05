@@ -108,9 +108,13 @@ private[adam] class DecadentRead(val record: RichAlignmentRecord) extends Loggin
     def quality = QualityScore(record.qualityScores(offset))
 
     def isRegularBase: Boolean = base match {
-      case 'A' | 'C' | 'T' | 'G' => true
-      case 'N'                   => false
-      case unk                   => throw new IllegalArgumentException("Encountered unexpected base '%s'".format(unk))
+      case 'A' | 'C' | 'T' | 'G' | 'U'       => true
+      // 2-base alternatives in http://www.bioinformatics.org/sms/iupac.html
+      case 'R' | 'Y' | 'S' | 'W' | 'K' | 'M' => true
+      // 3-base alternatives in http://www.bioinformatics.org/sms/iupac.html
+      case 'B' | 'D' | 'H' | 'V'             => true
+      case 'N'                               => false
+      case unk                               => throw new IllegalArgumentException("Encountered unexpected base '%s'".format(unk))
     }
 
     def isMismatch(includeInsertions: Boolean = true): Boolean =
