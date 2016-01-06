@@ -6,7 +6,7 @@
     <version>7</version>
     <relativePath />
   </parent>
-  
+
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.bdgenomics.adam</groupId>
   <artifactId>adam-parent_2.10</artifactId>
@@ -29,13 +29,13 @@
     <utils.version>0.2.3</utils.version>
     <htsjdk.version>1.139</htsjdk.version>
   </properties>
-  
+
   <modules>
     <module>adam-core</module>
     <module>adam-apis</module>
     <module>adam-cli</module>
   </modules>
-  
+
   <licenses>
     <license>
       <name>Apache License</name>

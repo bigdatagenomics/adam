@@ -73,13 +73,15 @@ case class Gene(id: String, names: Seq[String], strand: Boolean, transcripts: It
  *            transcript
  * @param utrs
  */
-case class Transcript(id: String,
-                      names: Seq[String],
-                      geneId: String,
-                      strand: Boolean,
-                      exons: Iterable[Exon],
-                      cds: Iterable[CDS],
-                      utrs: Iterable[UTR]) {
+case class Transcript(
+  id: String,
+    names: Seq[String],
+    geneId: String,
+    strand: Boolean,
+    exons: Iterable[Exon],
+    cds: Iterable[CDS],
+    utrs: Iterable[UTR]
+) {
 
   lazy val region = exons.map(_.region).reduceLeft[ReferenceRegion]((acc, ex) => acc.hull(ex))
 
@@ -92,10 +94,10 @@ case class Transcript(id: String,
    * @return the String representation of this Transcript's spliced mRNA sequence
    */
   def extractTranscribedRNASequence(referenceSequence: String): String = {
-    val minStart = exons.map(_.region.start).toSeq.sorted.head.toInt
+    val minStart = exons.map(_.region.start).min.toInt
     // takes the max...
 
-    val maxEnd = -exons.map(-_.region.end).toSeq.sorted.head.toInt
+    val maxEnd = exons.map(_.region.end).max.toInt
     if (strand)
       referenceSequence.substring(minStart, maxEnd)
     else
@@ -231,4 +233,3 @@ object ReferenceUtils {
     refs.toSeq.sorted.foldLeft(Seq[ReferenceRegion]())(folder)
   }
 }
-

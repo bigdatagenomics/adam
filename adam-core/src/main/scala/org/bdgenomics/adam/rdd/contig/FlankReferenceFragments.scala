@@ -25,16 +25,20 @@ import org.bdgenomics.formats.avro.NucleotideContigFragment
 
 private[contig] object FlankReferenceFragments extends Serializable {
 
-  def apply(rdd: RDD[NucleotideContigFragment],
-            sd: SequenceDictionary,
-            flankSize: Int): RDD[NucleotideContigFragment] = {
+  def apply(
+    rdd: RDD[NucleotideContigFragment],
+    sd: SequenceDictionary,
+    flankSize: Int
+  ): RDD[NucleotideContigFragment] = {
     rdd.keyBy(ctg => ReferenceRegion(ctg).get)
       .repartitionAndSortWithinPartitions(ReferencePartitioner(sd))
       .mapPartitions(flank(_, flankSize))
   }
 
-  def flank(iter: Iterator[(ReferenceRegion, NucleotideContigFragment)],
-            flankSize: Int): Iterator[NucleotideContigFragment] = {
+  def flank(
+    iter: Iterator[(ReferenceRegion, NucleotideContigFragment)],
+    flankSize: Int
+  ): Iterator[NucleotideContigFragment] = {
     // we need to have at least one element in the iterator
     if (iter.hasNext) {
       // now, we apply a window and flank adjacent segments

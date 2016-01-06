@@ -31,10 +31,16 @@ trait FeatureParser extends Serializable {
 }
 
 class FeatureFile(parser: FeatureParser) extends Serializable {
-  def parse(file: File): Iterator[Feature] =
-    Source.fromFile(file).getLines().flatMap { line =>
-      parser.parse(line)
+  def parse(file: File): Iterator[Feature] = {
+    val src = Source.fromFile(file)
+    try {
+      src.getLines().flatMap { line =>
+        parser.parse(line)
+      }
+    } finally {
+      src.close()
     }
+  }
 }
 
 object GTFParser {
@@ -103,12 +109,11 @@ class GTFParser extends FeatureParser {
 
     val (_id, _parentId) =
       feature match {
-        case "gene"       => (attrs.get("gene_id"), None)
-        case "transcript" => (attrs.get("transcript_id"), attrs.get("gene_id"))
-        case "exon"       => (exonId, attrs.get("transcript_id"))
-        case "CDS"        => (attrs.get("id"), attrs.get("transcript_id"))
-        case "UTR"        => (attrs.get("id"), attrs.get("transcript_id"))
-        case _            => (attrs.get("id"), None)
+        case "gene"        => (attrs.get("gene_id"), None)
+        case "transcript"  => (attrs.get("transcript_id"), attrs.get("gene_id"))
+        case "exon"        => (exonId, attrs.get("transcript_id"))
+        case "CDS" | "UTR" => (attrs.get("id"), attrs.get("transcript_id"))
+        case _             => (attrs.get("id"), None)
       }
     _id.foreach(f.setFeatureId)
     _parentId.foreach(parentId => f.setParentIds(List[String](parentId)))
@@ -303,4 +308,3 @@ class NarrowPeakParser extends FeatureParser {
     Seq(fb.build())
   }
 }
-

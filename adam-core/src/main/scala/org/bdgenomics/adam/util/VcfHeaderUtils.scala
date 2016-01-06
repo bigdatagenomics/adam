@@ -72,14 +72,20 @@ private[util] class VcfHeaderBuilder(samples: List[String]) {
 
   val formatLines: java.util.Set[VCFHeaderLine] = new java.util.HashSet[VCFHeaderLine]()
   val infoLines: java.util.Set[VCFHeaderLine] = new java.util.HashSet[VCFHeaderLine]()
-  val otherLines: Set[VCFHeaderLine] = Set(new VCFInfoHeaderLine(VCFConstants.RMS_BASE_QUALITY_KEY,
+  val otherLines: Set[VCFHeaderLine] = Set(
+    new VCFInfoHeaderLine(
+    VCFConstants.RMS_BASE_QUALITY_KEY,
     1,
     VCFHeaderLineType.Float,
-    "RMS Base Quality"),
-    new VCFInfoHeaderLine(VCFConstants.SAMPLE_NUMBER_KEY,
+    "RMS Base Quality"
+  ),
+    new VCFInfoHeaderLine(
+      VCFConstants.SAMPLE_NUMBER_KEY,
       VCFHeaderLineCount.INTEGER,
       VCFHeaderLineType.Integer,
-      "RMS Mapping Quality"))
+      "RMS Mapping Quality"
+    )
+  )
 
   /**
    * Creates VCF contig lines from a sequence dictionary.
@@ -97,16 +103,20 @@ private[util] class VcfHeaderBuilder(samples: List[String]) {
    * Adds standard VCF header lines to header.
    */
   private def addStandardLines() {
-    val formatKeys = List(VCFConstants.GENOTYPE_KEY,
+    val formatKeys = List(
+      VCFConstants.GENOTYPE_KEY,
       VCFConstants.GENOTYPE_QUALITY_KEY,
-      VCFConstants.GENOTYPE_PL_KEY)
-    val infoKeys = List(VCFConstants.ALLELE_FREQUENCY_KEY,
+      VCFConstants.GENOTYPE_PL_KEY
+    )
+    val infoKeys = List(
+      VCFConstants.ALLELE_FREQUENCY_KEY,
       VCFConstants.ALLELE_COUNT_KEY,
       VCFConstants.ALLELE_NUMBER_KEY,
       VCFConstants.STRAND_BIAS_KEY,
       VCFConstants.RMS_MAPPING_QUALITY_KEY,
       VCFConstants.MAPPING_QUALITY_ZERO_KEY,
-      VCFConstants.DEPTH_KEY)
+      VCFConstants.DEPTH_KEY
+    )
 
     VCFStandardHeaderLines.addStandardFormatLines(formatLines, false, formatKeys)
     VCFStandardHeaderLines.addStandardInfoLines(infoLines, false, infoKeys)

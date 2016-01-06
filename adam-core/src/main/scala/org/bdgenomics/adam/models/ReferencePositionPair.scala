@@ -42,18 +42,24 @@ object ReferencePositionPair extends Logging {
     }
 
     if (firstOfPair.size + secondOfPair.size > 0) {
-      new ReferencePositionPair(firstOfPair.lift(0).map(getPos),
-        secondOfPair.lift(0).map(getPos))
+      new ReferencePositionPair(
+        firstOfPair.lift(0).map(getPos),
+        secondOfPair.lift(0).map(getPos)
+      )
     } else {
-      new ReferencePositionPair((singleReadBucket.primaryMapped ++
+      new ReferencePositionPair(
+        (singleReadBucket.primaryMapped ++
         singleReadBucket.unmapped).toSeq.lift(0).map(getPos),
-        None)
+        None
+      )
     }
   }
 }
 
-case class ReferencePositionPair(read1refPos: Option[ReferencePosition],
-                                 read2refPos: Option[ReferencePosition])
+case class ReferencePositionPair(
+  read1refPos: Option[ReferencePosition],
+  read2refPos: Option[ReferencePosition]
+)
 
 class ReferencePositionPairSerializer extends Serializer[ReferencePositionPair] {
   val rps = new ReferencePositionSerializer()

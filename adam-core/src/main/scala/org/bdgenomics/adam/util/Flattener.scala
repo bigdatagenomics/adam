@@ -39,8 +39,8 @@ object Flattener {
   }
 
   private def flatten(schema: Schema, prefix: String,
-                      accumulator: ListBuffer[Schema.Field],
-                      makeOptional: Boolean = false): ListBuffer[Schema.Field] = {
+    accumulator: ListBuffer[Schema.Field],
+    makeOptional: Boolean = false): ListBuffer[Schema.Field] = {
     for (f: Schema.Field <- schema.getFields) {
       f.schema.getType match {
         case NULL | BOOLEAN | INT | LONG | FLOAT | DOUBLE | BYTES | STRING |
@@ -87,7 +87,8 @@ object Flattener {
 
     if (schema.getType ne Schema.Type.UNION) {
       return Schema.createUnion(
-        ListBuffer[Schema](Schema.create(Schema.Type.NULL), schema).asJava)
+        ListBuffer[Schema](Schema.create(Schema.Type.NULL), schema).asJava
+      )
     }
 
     schema // TODO: what about unions that don't contain null?
@@ -100,7 +101,7 @@ object Flattener {
   }
 
   private def flatten(schema: Schema, record: IndexedRecord, flatRecord: IndexedRecord,
-                      offset: Int): Int = {
+    offset: Int): Int = {
     if (record == null)
       return offset + schema.getFields.size
     var off: Int = offset

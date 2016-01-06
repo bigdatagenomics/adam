@@ -25,8 +25,10 @@ import scala.annotation.tailrec
 
 private[converters] object FragmentCollector extends Serializable {
   def apply(fragment: NucleotideContigFragment): (Contig, FragmentCollector) = {
-    (fragment.getContig,
-      FragmentCollector(Seq((ReferenceRegion(fragment).get, fragment.getFragmentSequence))))
+    (
+      fragment.getContig,
+      FragmentCollector(Seq((ReferenceRegion(fragment).get, fragment.getFragmentSequence)))
+    )
   }
 }
 
@@ -35,8 +37,10 @@ private[converters] case class FragmentCollector(fragments: Seq[(ReferenceRegion
 
 object FragmentConverter extends Serializable {
 
-  private def mergeFragments(f1: FragmentCollector,
-                             f2: FragmentCollector): FragmentCollector = {
+  private def mergeFragments(
+    f1: FragmentCollector,
+    f2: FragmentCollector
+  ): FragmentCollector = {
     assert(!(f1.fragments.isEmpty || f2.fragments.isEmpty))
 
     // join fragments from each and sort
@@ -44,8 +48,10 @@ object FragmentConverter extends Serializable {
 
     var fragmentList = List[(ReferenceRegion, String)]()
 
-    @tailrec def fragmentCombiner(lastFragment: (ReferenceRegion, String),
-                                  iter: Iterator[(ReferenceRegion, String)]) {
+    @tailrec def fragmentCombiner(
+      lastFragment: (ReferenceRegion, String),
+      iter: Iterator[(ReferenceRegion, String)]
+    ) {
       if (!iter.hasNext) {
         // prepend fragment to list
         fragmentList = lastFragment :: fragmentList

@@ -24,8 +24,10 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Variant
 
 class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Serializable with Logging {
-  log.info("Indel table has %s contigs and %s entries".format(table.size,
-    table.values.map(_.size).sum))
+  log.info("Indel table has %s contigs and %s entries".format(
+    table.size,
+    table.values.map(_.size).sum
+  ))
 
   /**
    * Returns all known indels within the given reference region. If none are known, returns an empty Seq.
@@ -67,7 +69,7 @@ object IndelTable {
   def apply(variants: RDD[Variant]): IndelTable = {
     val consensus: Map[String, Iterable[Consensus]] = variants.filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
       .map(v => {
-        val referenceName = v.getContig.getContigName.toString
+        val referenceName = v.getContig.getContigName
         val consensus = if (v.getReferenceAllele.length > v.getAlternateAllele.length) {
           // deletion
           val deletionLength = v.getReferenceAllele.length - v.getAlternateAllele.length
@@ -77,7 +79,7 @@ object IndelTable {
         } else {
           val start = v.getStart + v.getReferenceAllele.length
 
-          Consensus(v.getAlternateAllele.toString.drop(v.getReferenceAllele.length), ReferenceRegion(referenceName, start, start + 1))
+          Consensus(v.getAlternateAllele.drop(v.getReferenceAllele.length), ReferenceRegion(referenceName, start, start + 1))
         }
 
         (referenceName, consensus)

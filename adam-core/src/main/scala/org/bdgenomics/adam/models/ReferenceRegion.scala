@@ -24,8 +24,10 @@ import org.bdgenomics.formats.avro._
 import scala.math.{ max, min }
 
 trait ReferenceOrdering[T <: ReferenceRegion] extends Ordering[T] {
-  private def regionCompare(a: T,
-                            b: T): Int = {
+  private def regionCompare(
+    a: T,
+    b: T
+  ): Int = {
     if (a.referenceName != b.referenceName) {
       a.referenceName.compareTo(b.referenceName)
     } else if (a.start != b.start) {
@@ -35,8 +37,10 @@ trait ReferenceOrdering[T <: ReferenceRegion] extends Ordering[T] {
     }
   }
 
-  def compare(a: T,
-              b: T): Int = {
+  def compare(
+    a: T,
+    b: T
+  ): Int = {
     val rc = regionCompare(a, b)
     if (rc == 0) {
       a.orientation.ordinal compare b.orientation.ordinal
@@ -137,10 +141,12 @@ object ReferenceRegion {
  *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
  *            half-open interval.
  */
-case class ReferenceRegion(referenceName: String,
-                           start: Long,
-                           end: Long,
-                           orientation: Strand = Strand.Independent)
+case class ReferenceRegion(
+  referenceName: String,
+  start: Long,
+  end: Long,
+  orientation: Strand = Strand.Independent
+)
     extends Comparable[ReferenceRegion]
     with Interval {
 

@@ -30,13 +30,15 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  *
  * This is useful as this will usually map a single read in any of the sequences.
  */
-case class ReadBucket(unpairedPrimaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
-                      pairedFirstPrimaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
-                      pairedSecondPrimaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
-                      unpairedSecondaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
-                      pairedFirstSecondaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
-                      pairedSecondSecondaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
-                      unmappedReads: Iterable[AlignmentRecord] = Seq.empty) {
+case class ReadBucket(
+  unpairedPrimaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+    pairedFirstPrimaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+    pairedSecondPrimaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+    unpairedSecondaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+    pairedFirstSecondaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+    pairedSecondSecondaryMappedReads: Iterable[AlignmentRecord] = Seq.empty,
+    unmappedReads: Iterable[AlignmentRecord] = Seq.empty
+) {
   def allReads(): Iterable[AlignmentRecord] =
     unpairedPrimaryMappedReads ++
       pairedFirstPrimaryMappedReads ++
@@ -89,31 +91,40 @@ class ReadBucketSerializer extends Serializer[ReadBucket] {
       unpairedSecondaryReads,
       pairedFirstSecondaryMappedReads,
       pairedSecondSecondaryMappedReads,
-      unmappedReads)
+      unmappedReads
+    )
   }
 }
 
 object ReadBucket {
   implicit def singleReadBucketToReadBucket(bucket: SingleReadBucket): ReadBucket = {
     // check that reads are either first or second read from fragment
-    bucket.primaryMapped.foreach(r => require(r.getReadNum >= 0 && r.getReadNum <= 1,
-      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadNum)))
-    bucket.secondaryMapped.foreach(r => require(r.getReadNum >= 0 && r.getReadNum <= 1,
-      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadNum)))
-    bucket.unmapped.foreach(r => require(r.getReadNum >= 0 && r.getReadNum <= 1,
-      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadNum)))
+    bucket.primaryMapped.foreach(r => require(
+      r.getReadNum >= 0 && r.getReadNum <= 1,
+      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadNum)
+    ))
+    bucket.secondaryMapped.foreach(r => require(
+      r.getReadNum >= 0 && r.getReadNum <= 1,
+      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadNum)
+    ))
+    bucket.unmapped.foreach(r => require(
+      r.getReadNum >= 0 && r.getReadNum <= 1,
+      "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadNum)
+    ))
 
     val (pairedPrimary, unpairedPrimary) = bucket.primaryMapped.partition(_.getReadPaired)
     val (pairedFirstPrimary, pairedSecondPrimary) = pairedPrimary.partition(_.getReadNum == 0)
     val (pairedSecondary, unpairedSecondary) = bucket.secondaryMapped.partition(_.getReadPaired)
     val (pairedFirstSecondary, pairedSecondSecondary) = pairedSecondary.partition(_.getReadNum == 0)
 
-    new ReadBucket(unpairedPrimary,
+    new ReadBucket(
+      unpairedPrimary,
       pairedFirstPrimary,
       pairedSecondPrimary,
       unpairedSecondary,
       pairedFirstSecondary,
       pairedSecondSecondary,
-      bucket.unmapped)
+      bucket.unmapped
+    )
   }
 }

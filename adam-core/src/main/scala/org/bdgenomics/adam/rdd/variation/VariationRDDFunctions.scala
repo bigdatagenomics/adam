@@ -63,7 +63,6 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
   def getCallsetSamples(): List[String] = {
     rdd.flatMap(c => c.genotypes.map(_.getSampleId).toSeq.distinct)
       .distinct
-      .map(_.toString)
       .collect()
       .toList
   }
@@ -78,10 +77,12 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
    *                   Default is false (no sort).
    * @param coalesceTo Optionally coalesces the RDD down to _n_ partitions. Default is none.
    */
-  def saveAsVcf(filePath: String,
-                dict: Option[SequenceDictionary] = None,
-                sortOnSave: Boolean = false,
-                coalesceTo: Option[Int] = None) = {
+  def saveAsVcf(
+    filePath: String,
+    dict: Option[SequenceDictionary] = None,
+    sortOnSave: Boolean = false,
+    coalesceTo: Option[Int] = None
+  ) = {
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
@@ -137,9 +138,11 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
     // save to disk
     val conf = rdd.context.hadoopConfiguration
     conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
-    withKey.saveAsNewAPIHadoopFile(filePath,
+    withKey.saveAsNewAPIHadoopFile(
+      filePath,
       classOf[LongWritable], classOf[VariantContextWritable], classOf[ADAMVCFOutputFormat[LongWritable]],
-      conf)
+      conf
+    )
 
     log.info("Write %d records".format(gatkVCs.count()))
     rdd.unpersist()
@@ -155,7 +158,7 @@ class GenotypeRDDFunctions(rdd: RDD[Genotype]) extends Serializable with Logging
 
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {
     def overlapsQuery(rec: Genotype): Boolean =
-      rec.getVariant.getContig.getContigName.toString == query.referenceName &&
+      rec.getVariant.getContig.getContigName == query.referenceName &&
         rec.getVariant.getStart < query.end &&
         rec.getVariant.getEnd > query.start
     rdd.filter(overlapsQuery)

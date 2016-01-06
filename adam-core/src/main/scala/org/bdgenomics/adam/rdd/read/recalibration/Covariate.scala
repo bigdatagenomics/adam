@@ -68,7 +68,8 @@ abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
 class CovariateKey(
     val readGroup: String,
     val quality: QualityScore,
-    val extras: Seq[Option[Covariate#Value]]) extends Serializable {
+    val extras: Seq[Option[Covariate#Value]]
+) extends Serializable {
 
   def containsNone: Boolean = extras.exists(_.isEmpty)
 

@@ -74,7 +74,8 @@ class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializ
   def mergeRegions(regs: Seq[(ReferenceRegion)]): List[ReferenceRegion] =
     regs.aggregate(List[ReferenceRegion]())(
       (lst: List[ReferenceRegion], p: (ReferenceRegion)) => updateListWithRegion(lst, p),
-      (a, b) => a ++ b)
+      (a, b) => a ++ b
+    )
 
   def binaryPointSearch(pos: Long, lessThan: Boolean): Int = {
     var i = 0
@@ -186,8 +187,10 @@ object NonoverlappingRegions {
  *                dictionary.
  */
 class MultiContigNonoverlappingRegions(regions: Seq[(String, Iterable[ReferenceRegion])]) extends Serializable {
-  assert(regions != null,
-    "Regions was set to null")
+  assert(
+    regions != null,
+    "Regions was set to null"
+  )
 
   val regionMap: Map[String, NonoverlappingRegions] =
     Map(regions.map(r => (r._1, new NonoverlappingRegions(r._2))): _*)
@@ -203,9 +206,10 @@ object MultiContigNonoverlappingRegions {
   def apply[T](values: Seq[(ReferenceRegion, T)]): MultiContigNonoverlappingRegions = {
     new MultiContigNonoverlappingRegions(
       values.map(kv => (kv._1.referenceName, kv._1))
-        .groupBy(t => t._1)
-        .map(t => (t._1, t._2.map(k => k._2)))
-        .toSeq)
+      .groupBy(t => t._1)
+      .map(t => (t._1, t._2.map(k => k._2)))
+      .toSeq
+    )
   }
 }
 

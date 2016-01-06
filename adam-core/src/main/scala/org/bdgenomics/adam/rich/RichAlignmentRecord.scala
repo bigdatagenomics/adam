@@ -72,7 +72,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
 
   // Returns the quality scores as a list of bytes
   lazy val qualityScores: Array[Int] = {
-    record.getQual.toString.toCharArray.map(q => q - 33)
+    record.getQual.toCharArray.map(q => q - 33)
   }
 
   // Parse the tags ("key:type:value" triples)
