@@ -110,15 +110,19 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case List(allele) => {
-        assert(allele.isNonReference,
-          "Assertion failed when converting: " + vc.toString)
+        assert(
+          allele.isNonReference,
+          "Assertion failed when converting: " + vc.toString
+        )
         val variant = createADAMVariant(vc, Some(allele.getDisplayString))
         val genotypes = extractReferenceModelGenotypes(vc, variant, calling_annotations)
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case List(allele, NON_REF_ALLELE) => {
-        assert(allele.isNonReference,
-          "Assertion failed when converting: " + vc.toString)
+        assert(
+          allele.isNonReference,
+          "Assertion failed when converting: " + vc.toString
+        )
         val variant = createADAMVariant(vc, Some(allele.getDisplayString))
         val genotypes = extractReferenceModelGenotypes(vc, variant, calling_annotations)
         return Seq(ADAMVariantContext(variant, genotypes, None))
@@ -189,13 +193,17 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
         createADAMVariant(vc, None /* No alternate allele */ )
       }
       case List(allele) => {
-        assert(allele.isNonReference,
-          "Assertion failed when converting: " + vc.toString)
+        assert(
+          allele.isNonReference,
+          "Assertion failed when converting: " + vc.toString
+        )
         createADAMVariant(vc, Some(allele.getDisplayString))
       }
       case List(allele, NON_REF_ALLELE) => {
-        assert(allele.isNonReference,
-          "Assertion failed when converting: " + vc.toString)
+        assert(
+          allele.isNonReference,
+          "Assertion failed when converting: " + vc.toString
+        )
         createADAMVariant(vc, Some(allele.getDisplayString))
       }
       case alleles :+ NON_REF_ALLELE => {
@@ -245,7 +253,8 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     vc: BroadVariantContext,
     variant: Variant,
     annotations: VariantCallingAnnotations,
-    setPL: (htsjdk.variant.variantcontext.Genotype, Genotype.Builder) => Unit): Seq[Genotype] = {
+    setPL: (htsjdk.variant.variantcontext.Genotype, Genotype.Builder) => Unit
+  ): Seq[Genotype] = {
 
     val genotypes: Seq[Genotype] = vc.getGenotypes.map(
       (g: htsjdk.variant.variantcontext.Genotype) => {
@@ -266,7 +275,8 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
         setPL(g, genotype)
 
         VariantAnnotationConverter.convert(g, genotype.build)
-      }).toSeq
+      }
+    ).toSeq
 
     genotypes
   }
@@ -322,8 +332,10 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
   def convert(vc: ADAMVariantContext): BroadVariantContext = {
     val variant: Variant = vc.variant
     val vcb = new VariantContextBuilder()
-      .chr(refSeqToContig.getOrElse(variant.getContig.getContigName,
-        variant.getContig.getContigName))
+      .chr(refSeqToContig.getOrElse(
+        variant.getContig.getContigName,
+        variant.getContig.getContigName
+      ))
       .start(variant.getStart + 1 /* Recall ADAM is 0-indexed */ )
       .stop(variant.getStart + variant.getReferenceAllele.length)
       .alleles(VariantContextConverter.convertAlleles(variant))
@@ -334,7 +346,8 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     try {
       vcb.genotypes(vc.genotypes.map(g => {
         val gb = new htsjdk.variant.variantcontext.GenotypeBuilder(
-          g.getSampleId, VariantContextConverter.convertAlleles(g))
+          g.getSampleId, VariantContextConverter.convertAlleles(g)
+        )
 
         Option(g.getIsPhased).foreach(gb.phased(_))
         Option(g.getGenotypeQuality).foreach(gb.GQ(_))

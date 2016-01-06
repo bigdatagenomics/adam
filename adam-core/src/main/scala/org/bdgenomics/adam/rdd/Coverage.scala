@@ -145,7 +145,8 @@ class Coverage(val window: Long) extends Serializable {
         } else {
           Seq(
             OrientedPoint(r1.referenceName, r1.end, false),
-            OrientedPoint(r2.referenceName, r2.start, true))
+            OrientedPoint(r2.referenceName, r2.start, true)
+          )
         }
       case _ => Seq()
     }
@@ -164,7 +165,8 @@ class Coverage(val window: Long) extends Serializable {
       dict.records.toSeq.map {
         case seqRecord =>
           ReferenceRegion(seqRecord.name, 0, seqRecord.length)
-      })
+      }
+    )
 
     val windowRegions: RDD[ReferenceRegion] = chromRegions.flatMap {
       case chromRegion =>

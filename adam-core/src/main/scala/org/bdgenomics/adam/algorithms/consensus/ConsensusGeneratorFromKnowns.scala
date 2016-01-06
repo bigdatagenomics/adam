@@ -51,9 +51,11 @@ class ConsensusGeneratorFromKnowns(file: String, @transient sc: SparkContext) ex
    * @param reads Reads to preprocess.
    * @return Preprocessed reads.
    */
-  def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord],
-                                    reference: String,
-                                    region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
+  def preprocessReadsForRealignment(
+    reads: Iterable[RichAlignmentRecord],
+    reference: String,
+    region: ReferenceRegion
+  ): Iterable[RichAlignmentRecord] = {
     reads
   }
 

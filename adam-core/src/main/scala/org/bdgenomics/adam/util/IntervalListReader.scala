@@ -48,6 +48,7 @@ class IntervalListReader(file: File) extends Traversable[(ReferenceRegion, Strin
 
   def foreach[U](f: ((ReferenceRegion, String)) => U) {
     IntervalList.fromFile(file).asScala.foreach(
-      i => f((ReferenceRegion(i.getSequence, i.getStart, i.getEnd), i.getName)))
+      i => f((ReferenceRegion(i.getSequence, i.getStart, i.getEnd), i.getName))
+    )
   }
 }

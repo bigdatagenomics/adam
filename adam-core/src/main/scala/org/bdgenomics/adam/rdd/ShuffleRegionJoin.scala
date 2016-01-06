@@ -47,9 +47,12 @@ case class ShuffleRegionJoin(sd: SequenceDictionary, partitionSize: Long) extend
    * @return An RDD of pairs (x, y), where x is from leftRDD, y is from rightRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
-  def partitionAndJoin[T, U](leftRDD: RDD[(ReferenceRegion, T)],
-                             rightRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                                                  uManifest: ClassTag[U]): RDD[(T, U)] = {
+  def partitionAndJoin[T, U](
+    leftRDD: RDD[(ReferenceRegion, T)],
+    rightRDD: RDD[(ReferenceRegion, U)]
+  )(implicit
+    tManifest: ClassTag[T],
+    uManifest: ClassTag[U]): RDD[(T, U)] = {
     val sc = leftRDD.context
 
     // Create the set of bins across the genome for parallel processing
@@ -196,9 +199,11 @@ private case class ManualRegionPartitioner(partitions: Int) extends Partitioner 
  * @tparam T type of leftIter
  * @tparam U type of rightIter
  */
-private case class SortedIntervalPartitionJoin[T, U](binRegion: ReferenceRegion,
-                                                     leftIter: Iterator[((ReferenceRegion, Int), T)],
-                                                     rightIter: Iterator[((ReferenceRegion, Int), U)])
+private case class SortedIntervalPartitionJoin[T, U](
+  binRegion: ReferenceRegion,
+  leftIter: Iterator[((ReferenceRegion, Int), T)],
+  rightIter: Iterator[((ReferenceRegion, Int), U)]
+)
     extends Iterator[(T, U)] with Serializable {
   // inspired by bedtools2 chromsweep
   private val left: BufferedIterator[((ReferenceRegion, Int), T)] = leftIter.buffered

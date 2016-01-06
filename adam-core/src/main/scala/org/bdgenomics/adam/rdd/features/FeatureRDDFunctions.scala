@@ -71,24 +71,30 @@ class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Lo
         // getParentIds is modeled as returning a List[], we'll write it this way.
         case ("exon", ftr: Feature) =>
           val ids: Seq[String] = ftr.getParentIds
-          ids.map(transcriptId => (transcriptId,
-            Exon(ftr.getFeatureId, transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))))
+          ids.map(transcriptId => (
+            transcriptId,
+            Exon(ftr.getFeatureId, transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))
+          ))
       }.groupByKey()
 
     val cdsByTranscript: RDD[(String, Iterable[CDS])] =
       typePartitioned.filter(_._1 == "CDS").flatMap {
         case ("CDS", ftr: Feature) =>
           val ids: Seq[String] = ftr.getParentIds
-          ids.map(transcriptId => (transcriptId,
-            CDS(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))))
+          ids.map(transcriptId => (
+            transcriptId,
+            CDS(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))
+          ))
       }.groupByKey()
 
     val utrsByTranscript: RDD[(String, Iterable[UTR])] =
       typePartitioned.filter(_._1 == "UTR").flatMap {
         case ("UTR", ftr: Feature) =>
           val ids: Seq[String] = ftr.getParentIds
-          ids.map(transcriptId => (transcriptId,
-            UTR(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))))
+          ids.map(transcriptId => (
+            transcriptId,
+            UTR(transcriptId, strand(ftr.getStrand), ReferenceRegion(ftr))
+          ))
       }.groupByKey()
 
     // Step #3
@@ -106,10 +112,12 @@ class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Lo
             utrs: Option[Iterable[UTR]]),
             cds: Option[Iterable[CDS]])) =>
             val geneIds: Seq[String] = tgtf.getParentIds // should be length 1
-            geneIds.map(geneId => (geneId,
+            geneIds.map(geneId => (
+              geneId,
               Transcript(transcriptId, Seq(transcriptId), geneId,
                 strand(tgtf.getStrand),
-                exons, cds.getOrElse(Seq()), utrs.getOrElse(Seq()))))
+                exons, cds.getOrElse(Seq()), utrs.getOrElse(Seq()))
+            ))
         }.groupByKey()
 
     // Step #4

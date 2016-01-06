@@ -17,9 +17,11 @@
  */
 package org.bdgenomics.adam.algorithms.smithwaterman
 
-abstract class SmithWatermanGapScoringFromFn(xSequence: String,
-                                             ySequence: String,
-                                             scoreFn: (Int, Int, Char, Char) => Double)
+abstract class SmithWatermanGapScoringFromFn(
+  xSequence: String,
+  ySequence: String,
+  scoreFn: (Int, Int, Char, Char) => Double
+)
     extends SmithWaterman(xSequence, ySequence) {
 
   def buildScoringMatrix(): (Array[Array[Double]], Array[Array[Char]]) = {

@@ -75,6 +75,7 @@ class Flatten(val args: FlattenArgs) extends BDGSparkCommand[FlattenArgs] with L
         args.pageSize,
         args.compressionCodec,
         args.disableDictionaryEncoding,
-        Some(flatSchema))
+        Some(flatSchema)
+      )
   }
 }

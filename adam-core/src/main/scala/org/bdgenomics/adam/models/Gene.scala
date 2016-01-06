@@ -73,13 +73,15 @@ case class Gene(id: String, names: Seq[String], strand: Boolean, transcripts: It
  *            transcript
  * @param utrs
  */
-case class Transcript(id: String,
-                      names: Seq[String],
-                      geneId: String,
-                      strand: Boolean,
-                      exons: Iterable[Exon],
-                      cds: Iterable[CDS],
-                      utrs: Iterable[UTR]) {
+case class Transcript(
+  id: String,
+    names: Seq[String],
+    geneId: String,
+    strand: Boolean,
+    exons: Iterable[Exon],
+    cds: Iterable[CDS],
+    utrs: Iterable[UTR]
+) {
 
   lazy val region = exons.map(_.region).reduceLeft[ReferenceRegion]((acc, ex) => acc.hull(ex))
 

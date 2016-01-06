@@ -25,10 +25,12 @@ import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-class ConsensusGeneratorFromSmithWaterman(wMatch: Double,
-                                          wMismatch: Double,
-                                          wInsert: Double,
-                                          wDelete: Double) extends ConsensusGeneratorFromReads {
+class ConsensusGeneratorFromSmithWaterman(
+  wMatch: Double,
+    wMismatch: Double,
+    wInsert: Double,
+    wDelete: Double
+) extends ConsensusGeneratorFromReads {
 
   /**
    * Attempts realignment of all reads using Smith-Waterman. Accepts all realignments that have one
@@ -37,25 +39,31 @@ class ConsensusGeneratorFromSmithWaterman(wMatch: Double,
    * @param reads Reads to process.
    * @return Reads with indels normalized if they contain a single indel.
    */
-  override def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord],
-                                             reference: String,
-                                             region: ReferenceRegion): Iterable[RichAlignmentRecord] = {
+  override def preprocessReadsForRealignment(
+    reads: Iterable[RichAlignmentRecord],
+    reference: String,
+    region: ReferenceRegion
+  ): Iterable[RichAlignmentRecord] = {
     val rds: Iterable[RichAlignmentRecord] = reads.map(r => {
 
-      val sw = new SmithWatermanConstantGapScoring(r.record.getSequence,
+      val sw = new SmithWatermanConstantGapScoring(
+        r.record.getSequence,
         reference,
         wMatch,
         wMismatch,
         wInsert,
-        wDelete)
+        wDelete
+      )
       println("for " + r.record.getReadName + " sw to " + sw.xStart + " with " + sw.cigarX)
 
       // if we realign with fewer than three alignment blocks, then take the new alignment
       if (sw.cigarX.numAlignmentBlocks <= 2) {
-        val mdTag = MdTag(r.record.getSequence,
+        val mdTag = MdTag(
+          r.record.getSequence,
           reference.drop(sw.xStart),
           sw.cigarX,
-          region.start)
+          region.start
+        )
 
         val newRead: RichAlignmentRecord = AlignmentRecord.newBuilder(r)
           .setStart(sw.xStart + region.start)

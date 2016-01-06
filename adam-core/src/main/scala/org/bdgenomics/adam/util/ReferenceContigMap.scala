@@ -67,9 +67,9 @@ object ReferenceContigMap {
   def apply(fragments: RDD[NucleotideContigFragment]): ReferenceContigMap =
     ReferenceContigMap(
       fragments
-        .groupBy(_.getContig.getContigName)
-        .mapValues(_.toSeq.sortBy(_.getFragmentStartPosition))
-        .collectAsMap
-        .toMap
+      .groupBy(_.getContig.getContigName)
+      .mapValues(_.toSeq.sortBy(_.getFragmentStartPosition))
+      .collectAsMap
+      .toMap
     )
 }

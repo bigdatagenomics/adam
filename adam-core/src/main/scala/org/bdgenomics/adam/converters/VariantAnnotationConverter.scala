@@ -63,20 +63,24 @@ object VariantAnnotationConverter extends Serializable {
     AttrKey("geneSymbol", attrAsString _, new VCFInfoHeaderLine("GENE,", 1, VCFHeaderLineType.String, "Gene name")),
     AttrKey("strand", attrAsString _, new VCFInfoHeaderLine("STRAND,", 1, VCFHeaderLineType.String, "Gene strand")),
     AttrKey("cds", attrAsString _, new VCFInfoHeaderLine("CDS,", 1, VCFHeaderLineType.String, "CDS annotation")),
-    AttrKey("cnt", attrAsString _, new VCFInfoHeaderLine("CNT,", 1, VCFHeaderLineType.Integer, "How many samples have this mutation")))
+    AttrKey("cnt", attrAsString _, new VCFInfoHeaderLine("CNT,", 1, VCFHeaderLineType.Integer, "How many samples have this mutation"))
+  )
 
   val DBNSFP_KEYS: List[AttrKey] = List(
     AttrKey("phylop", attrAsFloat _, new VCFInfoHeaderLine("PHYLOP", 1, VCFHeaderLineType.Float, "PhyloP score. The larger the score, the more conserved the site.")),
     AttrKey("siftPred", attrAsString _, new VCFInfoHeaderLine("SIFT_PRED", 1, VCFHeaderLineType.Character, "SIFT Prediction: D (damaging), T (tolerated)")),
     AttrKey("siftScore", attrAsFloat _, new VCFInfoHeaderLine("SIFT_SCORE", 1, VCFHeaderLineType.Float, "SIFT Score")),
-    AttrKey("ancestralAllele", attrAsString _, new VCFInfoHeaderLine("AA", 1, VCFHeaderLineType.String, "Ancestral allele")))
+    AttrKey("ancestralAllele", attrAsString _, new VCFInfoHeaderLine("AA", 1, VCFHeaderLineType.String, "Ancestral allele"))
+  )
 
   val CLINVAR_KEYS: List[AttrKey] = List(
     AttrKey("dbSnpId", attrAsInt _, new VCFInfoHeaderLine("dbSNP ID", 1, VCFHeaderLineType.Integer, "dbSNP ID")),
-    AttrKey("geneSymbol", attrAsString _, new VCFInfoHeaderLine("GENEINFO", 1, VCFHeaderLineType.String, "Pairs each of gene symbol:gene id.  The gene symbol and id are delimited by a colon (:) and each pair is delimited by a vertical bar")))
+    AttrKey("geneSymbol", attrAsString _, new VCFInfoHeaderLine("GENEINFO", 1, VCFHeaderLineType.String, "Pairs each of gene symbol:gene id.  The gene symbol and id are delimited by a colon (:) and each pair is delimited by a vertical bar"))
+  )
 
   val OMIM_KEYS: List[AttrKey] = List(
-    AttrKey("omimId", attrAsString _, new VCFInfoHeaderLine("VAR", 1, VCFHeaderLineType.String, "MIM entry with variant mapped to rsID")))
+    AttrKey("omimId", attrAsString _, new VCFInfoHeaderLine("VAR", 1, VCFHeaderLineType.String, "MIM entry with variant mapped to rsID"))
+  )
 
   val INFO_KEYS: Seq[AttrKey] = Seq(
     AttrKey("fisherStrandBiasPValue", attrAsFloat _, VCFStandardHeaderLines.getInfoLine(VCFConstants.STRAND_BIAS_KEY)),
@@ -85,7 +89,8 @@ object VariantAnnotationConverter extends Serializable {
     AttrKey("mqRankSum", attrAsFloat _, new VCFInfoHeaderLine("MQRankSum", 1, VCFHeaderLineType.Float, "Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities")),
     AttrKey("readPositionRankSum", attrAsFloat _, new VCFInfoHeaderLine("ReadPosRankSum", 1, VCFHeaderLineType.Float, "Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias")),
     AttrKey("vqslod", attrAsFloat _, new VCFInfoHeaderLine("VQSLOD", 1, VCFHeaderLineType.Float, "Log odds ratio of being a true variant versus being false under the trained gaussian mixture model")),
-    AttrKey("culprit", attrAsString _, new VCFInfoHeaderLine("culprit", 1, VCFHeaderLineType.String, "The annotation which was the worst performing in the Gaussian mixture model, likely the reason why the variant was filtered out")))
+    AttrKey("culprit", attrAsString _, new VCFInfoHeaderLine("culprit", 1, VCFHeaderLineType.String, "The annotation which was the worst performing in the Gaussian mixture model, likely the reason why the variant was filtered out"))
+  )
 
   val FORMAT_KEYS: Seq[AttrKey] = Seq(
     AttrKey("alleles", VCFStandardHeaderLines.getFormatLine(VCFConstants.GENOTYPE_KEY)),
@@ -97,7 +102,8 @@ object VariantAnnotationConverter extends Serializable {
     AttrKey("phaseQuality", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_QUALITY_KEY, 1, VCFHeaderLineType.Float, "Read-backed phasing quality")),
     AttrKey("phaseSetId", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY, 1, VCFHeaderLineType.Integer, "Phase set")),
     AttrKey("minReadDepth", attrAsInt _, new VCFFormatHeaderLine("MIN_DP", 1, VCFHeaderLineType.Integer, "Minimum DP observed within the GVCF block")),
-    AttrKey("strandBiasComponents", attrAsInt _, new VCFFormatHeaderLine("SB", 4, VCFHeaderLineType.Integer, "Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.")))
+    AttrKey("strandBiasComponents", attrAsInt _, new VCFFormatHeaderLine("SB", 4, VCFHeaderLineType.Integer, "Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias."))
+  )
 
   lazy val infoHeaderLines: Seq[VCFCompoundHeaderLine] = INFO_KEYS.map(_.hdrLine)
   lazy val formatHeaderLines: Seq[VCFCompoundHeaderLine] = FORMAT_KEYS.map(_.hdrLine)

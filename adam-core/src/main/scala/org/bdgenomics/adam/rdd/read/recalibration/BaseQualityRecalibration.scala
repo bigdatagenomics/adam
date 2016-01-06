@@ -38,7 +38,8 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 class BaseQualityRecalibration(
   val input: RDD[(Option[DecadentRead], Option[AlignmentRecord])],
   val knownSnps: Broadcast[SnpTable],
-  val dumpObservationTableFile: Option[String] = None)
+  val dumpObservationTableFile: Option[String] = None
+)
     extends Serializable with Logging {
 
   // Additional covariates to use when computing the correction
@@ -124,9 +125,11 @@ class BaseQualityRecalibration(
 }
 
 object BaseQualityRecalibration {
-  def apply(rdd: RDD[AlignmentRecord],
-            knownSnps: Broadcast[SnpTable],
-            observationDumpFile: Option[String] = None,
-            validationStringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] =
+  def apply(
+    rdd: RDD[AlignmentRecord],
+    knownSnps: Broadcast[SnpTable],
+    observationDumpFile: Option[String] = None,
+    validationStringency: ValidationStringency = ValidationStringency.STRICT
+  ): RDD[AlignmentRecord] =
     new BaseQualityRecalibration(cloy(rdd, validationStringency), knownSnps).result
 }

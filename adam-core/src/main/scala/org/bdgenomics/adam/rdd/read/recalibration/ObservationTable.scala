@@ -87,7 +87,7 @@ class Aggregate private (
     total: Long, // number of total observations
     mismatches: Long, // number of mismatches observed
     val expectedMismatches: Double // expected number of mismatches based on reported quality scores
-    ) extends Observation(total, mismatches) {
+) extends Observation(total, mismatches) {
 
   require(expectedMismatches <= total)
 
@@ -97,7 +97,8 @@ class Aggregate private (
     new Aggregate(
       this.total + that.total,
       this.mismatches + that.mismatches,
-      this.expectedMismatches + that.expectedMismatches)
+      this.expectedMismatches + that.expectedMismatches
+    )
 }
 
 object Aggregate {
@@ -112,7 +113,8 @@ object Aggregate {
  */
 class ObservationTable(
     val space: CovariateSpace,
-    val entries: Map[CovariateKey, Observation]) extends Serializable {
+    val entries: Map[CovariateKey, Observation]
+) extends Serializable {
 
   override def toString = entries.map { case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
 

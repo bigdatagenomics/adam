@@ -52,12 +52,14 @@ class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serial
     )
   }
 
-  def adamParquetSave(filePath: String,
-                      blockSize: Int = 128 * 1024 * 1024,
-                      pageSize: Int = 1 * 1024 * 1024,
-                      compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
-                      disableDictionaryEncoding: Boolean = false,
-                      schema: Option[Schema] = None): Unit = SaveAsADAM.time {
+  def adamParquetSave(
+    filePath: String,
+    blockSize: Int = 128 * 1024 * 1024,
+    pageSize: Int = 1 * 1024 * 1024,
+    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+    disableDictionaryEncoding: Boolean = false,
+    schema: Option[Schema] = None
+  ): Unit = SaveAsADAM.time {
     log.info("Saving data in ADAM format")
 
     val job = HadoopUtil.newJob(rdd.context)
@@ -66,14 +68,18 @@ class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serial
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
     ParquetOutputFormat.setBlockSize(job, blockSize)
     ParquetOutputFormat.setPageSize(job, pageSize)
-    AvroParquetOutputFormat.setSchema(job,
-      schema.getOrElse(manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema))
+    AvroParquetOutputFormat.setSchema(
+      job,
+      schema.getOrElse(manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema)
+    )
     // Add the Void Key
     val recordToSave = rdd.map(p => (null, p))
     // Save the values to the ADAM/Parquet file
-    recordToSave.saveAsNewAPIHadoopFile(filePath,
+    recordToSave.saveAsNewAPIHadoopFile(
+      filePath,
       classOf[java.lang.Void], manifest[T].runtimeClass.asInstanceOf[Class[T]], classOf[InstrumentedADAMAvroParquetOutputFormat],
-      ContextUtil.getConfiguration(job))
+      ContextUtil.getConfiguration(job)
+    )
   }
 
 }

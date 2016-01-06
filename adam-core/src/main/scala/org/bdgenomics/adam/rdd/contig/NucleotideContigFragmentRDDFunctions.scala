@@ -120,14 +120,18 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
 
       val str = fragmentSequence.drop(trimStart)
         .dropRight(trimEnd)
-      val reg = new ReferenceRegion(fragment._1.referenceName,
+      val reg = new ReferenceRegion(
+        fragment._1.referenceName,
         fragment._1.start + trimStart,
-        fragment._1.end - trimEnd)
+        fragment._1.end - trimEnd
+      )
       (reg, str)
     }
 
-    def reducePairs(kv1: (ReferenceRegion, String),
-                    kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
+    def reducePairs(
+      kv1: (ReferenceRegion, String),
+      kv2: (ReferenceRegion, String)
+    ): (ReferenceRegion, String) = {
       assert(kv1._1.isAdjacent(kv2._1), "Regions being joined must be adjacent. For: " +
         kv1 + ", " + kv2)
 
@@ -147,8 +151,10 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
         .map(kv => getString(kv))
         .reduce(reducePairs)
 
-      assert(pair._1.compareTo(region) == 0,
-        "Merging fragments returned a different region than requested.")
+      assert(
+        pair._1.compareTo(region) == 0,
+        "Merging fragments returned a different region than requested."
+      )
 
       pair._2
     } catch {
@@ -171,8 +177,10 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
    *              sequence dictionary on the fly. Default is None.
    * @return Returns the RDD, with all adjacent fragments extended with flanking sequence.
    */
-  def flankAdjacentFragments(flankLength: Int,
-                             optSd: Option[SequenceDictionary] = None): RDD[NucleotideContigFragment] = {
+  def flankAdjacentFragments(
+    flankLength: Int,
+    optSd: Option[SequenceDictionary] = None
+  ): RDD[NucleotideContigFragment] = {
     FlankReferenceFragments(rdd, optSd.getOrElse(adamGetSequenceDictionary(performLexSort = false)), flankLength)
   }
 
@@ -184,8 +192,10 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
    *              sequence dictionary on the fly. Default is None.
    * @return Returns an RDD containing k-mer/count pairs.
    */
-  def countKmers(kmerLength: Int,
-                 optSd: Option[SequenceDictionary] = None): RDD[(String, Long)] = {
+  def countKmers(
+    kmerLength: Int,
+    optSd: Option[SequenceDictionary] = None
+  ): RDD[(String, Long)] = {
     flankAdjacentFragments(kmerLength, optSd).flatMap(r => {
       // cut each read into k-mers, and attach a count of 1L
       r.getFragmentSequence

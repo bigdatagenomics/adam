@@ -60,9 +60,12 @@ object BroadcastRegionJoin extends RegionJoin {
    * @return An RDD of pairs (x, y), where x is from baseRDD, y is from joinedRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
-  def partitionAndJoin[T, U](baseRDD: RDD[(ReferenceRegion, T)],
-                             joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                                                   uManifest: ClassTag[U]): RDD[(T, U)] = {
+  def partitionAndJoin[T, U](
+    baseRDD: RDD[(ReferenceRegion, T)],
+    joinedRDD: RDD[(ReferenceRegion, U)]
+  )(implicit
+    tManifest: ClassTag[T],
+    uManifest: ClassTag[U]): RDD[(T, U)] = {
 
     val sc = baseRDD.context
 
@@ -139,9 +142,12 @@ object BroadcastRegionJoin extends RegionJoin {
    * realistic sized sets.
    *
    */
-  def cartesianFilter[T, U](baseRDD: RDD[(ReferenceRegion, T)],
-                            joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                                                  uManifest: ClassTag[U]): RDD[(T, U)] = {
+  def cartesianFilter[T, U](
+    baseRDD: RDD[(ReferenceRegion, T)],
+    joinedRDD: RDD[(ReferenceRegion, U)]
+  )(implicit
+    tManifest: ClassTag[T],
+    uManifest: ClassTag[U]): RDD[(T, U)] = {
     baseRDD.cartesian(joinedRDD).filter({
       case (t: (ReferenceRegion, T), u: (ReferenceRegion, U)) =>
         t._1.overlaps(u._1)

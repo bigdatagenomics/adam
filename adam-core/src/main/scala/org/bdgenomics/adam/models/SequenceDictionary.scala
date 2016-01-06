@@ -125,15 +125,19 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
 }
 
 object SequenceOrderingByName extends Ordering[SequenceRecord] {
-  def compare(a: SequenceRecord,
-              b: SequenceRecord): Int = {
+  def compare(
+    a: SequenceRecord,
+    b: SequenceRecord
+  ): Int = {
     a.name.compareTo(b.name)
   }
 }
 
 object SequenceOrderingByRefIdx extends Ordering[SequenceRecord] {
-  def compare(a: SequenceRecord,
-              b: SequenceRecord): Int = {
+  def compare(
+    a: SequenceRecord,
+    b: SequenceRecord
+  ): Int = {
     (for {
       aRefIdx <- a.referenceIndex
       bRefIdx <- b.referenceIndex
@@ -158,7 +162,8 @@ case class SequenceRecord(
     genbank: Option[String],
     assembly: Option[String],
     species: Option[String],
-    referenceIndex: Option[Int]) extends Serializable {
+    referenceIndex: Option[Int]
+) extends Serializable {
 
   assert(name != null && !name.isEmpty, "SequenceRecord.name is null or empty")
   assert(length > 0, "SequenceRecord.length <= 0")
@@ -214,15 +219,17 @@ object SequenceRecord {
   val REFSEQ_TAG = "REFSEQ"
   val GENBANK_TAG = "GENBANK"
 
-  def apply(name: String,
-            length: Long,
-            md5: String = null,
-            url: String = null,
-            refseq: String = null,
-            genbank: String = null,
-            assembly: String = null,
-            species: String = null,
-            referenceIndex: Option[Int] = None): SequenceRecord = {
+  def apply(
+    name: String,
+    length: Long,
+    md5: String = null,
+    url: String = null,
+    refseq: String = null,
+    genbank: String = null,
+    assembly: String = null,
+    species: String = null,
+    referenceIndex: Option[Int] = None
+  ): SequenceRecord = {
     new SequenceRecord(
       name,
       length,

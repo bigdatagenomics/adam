@@ -63,9 +63,11 @@ class RichCigar(cigar: Cigar) {
      * @param cigarElements List of cigar elements to move.
      * @return List of cigar elements with single element moved.
      */
-    @tailrec def moveCigarLeft(head: List[CigarElement],
-                               index: Int,
-                               cigarElements: List[CigarElement]): List[CigarElement] = {
+    @tailrec def moveCigarLeft(
+      head: List[CigarElement],
+      index: Int,
+      cigarElements: List[CigarElement]
+    ): List[CigarElement] = {
       if (index == 1) {
         val elementToTrim = cigarElements.headOption
         val elementToMove: Option[CigarElement] = PartialFunction.condOpt(cigarElements) {

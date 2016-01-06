@@ -64,6 +64,7 @@ class PrintGenes(protected val args: PrintGenesArgs)
       transcript.region.referenceName,
       transcript.region.start, transcript.region.end,
       if (transcript.strand) "+" else "-",
-      transcript.exons.size)
+      transcript.exons.size
+    )
   }
 }

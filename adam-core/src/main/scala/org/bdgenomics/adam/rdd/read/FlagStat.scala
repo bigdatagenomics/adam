@@ -40,10 +40,12 @@ object DuplicateMetrics {
     }
 
     def duplicateMetrics(f: (AlignmentRecord) => Boolean) = {
-      new DuplicateMetrics(b2i(f(record)),
+      new DuplicateMetrics(
+        b2i(f(record)),
         b2i(f(record) && record.getReadMapped && record.getMateMapped),
         b2i(f(record) && record.getReadMapped && !record.getMateMapped),
-        b2i(f(record) && (!isSameContig(record.getContig, record.getMateContig))))
+        b2i(f(record) && (!isSameContig(record.getContig, record.getMateContig)))
+      )
     }
     (duplicateMetrics(isPrimary), duplicateMetrics(isSecondary))
   }
@@ -51,21 +53,24 @@ object DuplicateMetrics {
 
 case class DuplicateMetrics(total: Long, bothMapped: Long, onlyReadMapped: Long, crossChromosome: Long) {
   def +(that: DuplicateMetrics): DuplicateMetrics = {
-    new DuplicateMetrics(total + that.total,
+    new DuplicateMetrics(
+      total + that.total,
       bothMapped + that.bothMapped,
       onlyReadMapped + that.onlyReadMapped,
-      crossChromosome + that.crossChromosome)
+      crossChromosome + that.crossChromosome
+    )
   }
 }
 
 case class FlagStatMetrics(total: Long, duplicatesPrimary: DuplicateMetrics, duplicatesSecondary: DuplicateMetrics,
-                           mapped: Long, pairedInSequencing: Long,
-                           read1: Long, read2: Long, properlyPaired: Long, withSelfAndMateMapped: Long,
-                           singleton: Long, withMateMappedToDiffChromosome: Long,
-                           withMateMappedToDiffChromosomeMapQ5: Long, failedQuality: Boolean) {
+    mapped: Long, pairedInSequencing: Long,
+    read1: Long, read2: Long, properlyPaired: Long, withSelfAndMateMapped: Long,
+    singleton: Long, withMateMappedToDiffChromosome: Long,
+    withMateMappedToDiffChromosomeMapQ5: Long, failedQuality: Boolean) {
   def +(that: FlagStatMetrics): FlagStatMetrics = {
     assert(failedQuality == that.failedQuality, "Can't reduce passedVendorQuality with different failedQuality values")
-    new FlagStatMetrics(total + that.total,
+    new FlagStatMetrics(
+      total + that.total,
       duplicatesPrimary + that.duplicatesPrimary,
       duplicatesSecondary + that.duplicatesSecondary,
       mapped + that.mapped,
@@ -77,7 +82,8 @@ case class FlagStatMetrics(total: Long, duplicatesPrimary: DuplicateMetrics, dup
       singleton + that.singleton,
       withMateMappedToDiffChromosome + that.withMateMappedToDiffChromosome,
       withMateMappedToDiffChromosomeMapQ5 + that.withMateMappedToDiffChromosomeMapQ5,
-      failedQuality)
+      failedQuality
+    )
   }
 }
 
@@ -93,7 +99,8 @@ object FlagStat {
         val mateMappedToDiffChromosome =
           p.getReadPaired && p.getReadMapped && p.getMateMapped && !isSameContig(p.getContig, p.getMateContig)
         val (primaryDuplicates, secondaryDuplicates) = DuplicateMetrics(p)
-        new FlagStatMetrics(1,
+        new FlagStatMetrics(
+          1,
           primaryDuplicates, secondaryDuplicates,
           b2i(b(p.getReadMapped)),
           b2i(b(p.getReadPaired)),
@@ -104,19 +111,21 @@ object FlagStat {
           b2i(b(p.getReadPaired) && b(p.getReadMapped) && b(!p.getMateMapped)),
           b2i(b(mateMappedToDiffChromosome)),
           b2i(b(mateMappedToDiffChromosome && i(p.getMapq) >= 5)),
-          p.getFailedVendorQualityChecks)
+          p.getFailedVendorQualityChecks
+        )
     }.aggregate((FlagStatMetrics.emptyFailedQuality, FlagStatMetrics.emptyPassedQuality))(
       seqOp = {
-        (a, b) =>
-          if (b.failedQuality) {
-            (a._1 + b, a._2)
-          } else {
-            (a._1, a._2 + b)
-          }
-      },
+      (a, b) =>
+        if (b.failedQuality) {
+          (a._1 + b, a._2)
+        } else {
+          (a._1, a._2 + b)
+        }
+    },
       combOp = {
-        (a, b) =>
-          (a._1 + b._1, a._2 + b._2)
-      })
+      (a, b) =>
+        (a._1 + b._1, a._2 + b._2)
+    }
+    )
   }
 }

@@ -72,8 +72,10 @@ object VariantContext {
    */
   def buildFromGenotypes(genotypes: Seq[Genotype]): VariantContext = {
     val position = ReferencePosition(genotypes.head)
-    assert(genotypes.map(ReferencePosition(_)).forall(_ == position),
-      "Genotypes do not all have the same position.")
+    assert(
+      genotypes.map(ReferencePosition(_)).forall(_ == position),
+      "Genotypes do not all have the same position."
+    )
 
     val variant = genotypes.head.getVariant
 
@@ -85,6 +87,7 @@ class VariantContext(
     val position: ReferencePosition,
     val variant: RichVariant,
     val genotypes: Iterable[Genotype],
-    val databases: Option[DatabaseVariantAnnotation] = None) {
+    val databases: Option[DatabaseVariantAnnotation] = None
+) {
 }
 

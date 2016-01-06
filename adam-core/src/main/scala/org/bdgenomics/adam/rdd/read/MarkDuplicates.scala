@@ -55,7 +55,7 @@ private[rdd] object MarkDuplicates extends Serializable {
   }
 
   private def markReads(reads: Iterable[(ReferencePositionPair, SingleReadBucket)], primaryAreDups: Boolean, secondaryAreDups: Boolean,
-                        ignore: Option[(ReferencePositionPair, SingleReadBucket)] = None) = MarkReads.time {
+    ignore: Option[(ReferencePositionPair, SingleReadBucket)] = None) = MarkReads.time {
     reads.foreach(read => {
       if (ignore.forall(_ != read))
         markReadsInBucket(read._2, primaryAreDups, secondaryAreDups)

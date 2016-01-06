@@ -49,7 +49,8 @@ case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Lon
 
   // referenceName -> cumulative length before this sequence (using seqDict.records as the implicit ordering)
   val cumulativeLengths: Map[String, Long] = Map(
-    names.zip(cumuls): _*)
+    names.zip(cumuls): _*
+  )
 
   /**
    * 'parts' is the total number of partitions for non-UNMAPPED ReferencePositions --
@@ -78,9 +79,13 @@ case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Lon
 
       // everything else gets assigned normally.
       case refpos: ReferencePosition => {
-        require(seqLengths.contains(refpos.referenceName),
-          "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(refpos,
-            seqLengths.keys.mkString("\n")))
+        require(
+          seqLengths.contains(refpos.referenceName),
+          "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(
+            refpos,
+            seqLengths.keys.mkString("\n")
+          )
+        )
         getPart(refpos.referenceName, refpos.pos)
       }
 
@@ -120,9 +125,13 @@ case class GenomicRegionPartitioner(partitionSize: Long, seqLengths: Map[String,
   override def getPartition(key: Any): Int = {
     key match {
       case region: ReferenceRegion => {
-        require(seqLengths.contains(region.referenceName),
-          "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(region,
-            seqLengths.keys.mkString("\n")))
+        require(
+          seqLengths.contains(region.referenceName),
+          "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(
+            region,
+            seqLengths.keys.mkString("\n")
+          )
+        )
         computePartition(region)
       }
       case _ => throw new IllegalArgumentException("Only ReferenceMappable values can be partitioned by GenomicRegionPartitioner")

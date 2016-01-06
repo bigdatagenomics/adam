@@ -36,11 +36,13 @@ object ProgramRecord {
   }
 }
 
-case class ProgramRecord(id: String,
-                         commandLine: Option[String],
-                         name: Option[String],
-                         version: Option[String],
-                         previousID: Option[String]) {
+case class ProgramRecord(
+  id: String,
+    commandLine: Option[String],
+    name: Option[String],
+    version: Option[String],
+    previousID: Option[String]
+) {
 
   def toSAMProgramRecord(): SAMProgramRecord = {
     val pr = new SAMProgramRecord(id)

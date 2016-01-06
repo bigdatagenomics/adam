@@ -77,10 +77,12 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
    *                   Default is false (no sort).
    * @param coalesceTo Optionally coalesces the RDD down to _n_ partitions. Default is none.
    */
-  def saveAsVcf(filePath: String,
-                dict: Option[SequenceDictionary] = None,
-                sortOnSave: Boolean = false,
-                coalesceTo: Option[Int] = None) = {
+  def saveAsVcf(
+    filePath: String,
+    dict: Option[SequenceDictionary] = None,
+    sortOnSave: Boolean = false,
+    coalesceTo: Option[Int] = None
+  ) = {
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
@@ -136,9 +138,11 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
     // save to disk
     val conf = rdd.context.hadoopConfiguration
     conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
-    withKey.saveAsNewAPIHadoopFile(filePath,
+    withKey.saveAsNewAPIHadoopFile(
+      filePath,
       classOf[LongWritable], classOf[VariantContextWritable], classOf[ADAMVCFOutputFormat[LongWritable]],
-      conf)
+      conf
+    )
 
     log.info("Write %d records".format(gatkVCs.count()))
     rdd.unpersist()

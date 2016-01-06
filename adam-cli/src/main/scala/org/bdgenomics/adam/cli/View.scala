@@ -36,41 +36,47 @@ class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveAnyArgs {
     required = false,
     name = "-f",
     metaVar = "N",
-    usage = "Restrict to reads that match all of the bits in <N>")
+    usage = "Restrict to reads that match all of the bits in <N>"
+  )
   var matchAllBits: Int = 0
 
   @Args4jOption(
     required = false,
     name = "-F",
     metaVar = "N",
-    usage = "Restrict to reads that match none of the bits in <N>")
+    usage = "Restrict to reads that match none of the bits in <N>"
+  )
   var mismatchAllBits: Int = 0
 
   @Args4jOption(
     required = false,
     name = "-g",
     metaVar = "N",
-    usage = "Restrict to reads that match any of the bits in <N>")
+    usage = "Restrict to reads that match any of the bits in <N>"
+  )
   var matchSomeBits: Int = 0
 
   @Args4jOption(
     required = false,
     name = "-G",
     metaVar = "N",
-    usage = "Restrict to reads that mismatch at least one of the bits in <N>")
+    usage = "Restrict to reads that mismatch at least one of the bits in <N>"
+  )
   var mismatchSomeBits: Int = 0
 
   @Args4jOption(
     required = false,
     name = "-c",
-    usage = "Print count of matching records, instead of the records themselves")
+    usage = "Print count of matching records, instead of the records themselves"
+  )
   var printCount: Boolean = false
 
   @Args4jOption(
     required = false,
     name = "-o",
     metaVar = "<FILE>",
-    usage = "Output to <FILE>; can also pass <FILE> as the second argument")
+    usage = "Output to <FILE>; can also pass <FILE> as the second argument"
+  )
   var outputPathArg: String = null
 
   @Args4jOption(required = false, name = "-sort_fastq_output", usage = "Sets whether to sort the FASTQ output, if saving as FASTQ. False by default. Ignored if not saving as FASTQ.")
@@ -148,8 +154,7 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
       reads.filter(read =>
         allFilters.forall(_(read)) &&
           (matchSomeFilters.isEmpty || matchSomeFilters.exists(_(read))) &&
-          (mismatchSomeFilters.isEmpty || mismatchSomeFilters.exists(_(read)))
-      )
+          (mismatchSomeFilters.isEmpty || mismatchSomeFilters.exists(_(read))))
     } else
       reads
   }

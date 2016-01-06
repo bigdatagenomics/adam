@@ -43,19 +43,23 @@ private[rdd] object RealignIndels extends Serializable with Logging {
    * @param rdd RDD of reads to realign.
    * @return RDD of realigned reads.
    */
-  def apply(rdd: RDD[AlignmentRecord],
-            consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
-            dataIsSorted: Boolean = false,
-            maxIndelSize: Int = 500,
-            maxConsensusNumber: Int = 30,
-            lodThreshold: Double = 5.0,
-            maxTargetSize: Int = 3000): RDD[AlignmentRecord] = {
-    new RealignIndels(consensusModel,
+  def apply(
+    rdd: RDD[AlignmentRecord],
+    consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
+    dataIsSorted: Boolean = false,
+    maxIndelSize: Int = 500,
+    maxConsensusNumber: Int = 30,
+    lodThreshold: Double = 5.0,
+    maxTargetSize: Int = 3000
+  ): RDD[AlignmentRecord] = {
+    new RealignIndels(
+      consensusModel,
       dataIsSorted,
       maxIndelSize,
       maxConsensusNumber,
       lodThreshold,
-      maxTargetSize).realignIndels(rdd)
+      maxTargetSize
+    ).realignIndels(rdd)
   }
 
   /**
@@ -69,8 +73,10 @@ private[rdd] object RealignIndels extends Serializable with Logging {
    *
    * @see mapTargets
    */
-  @tailrec final def mapToTarget(read: RichAlignmentRecord,
-                                 targets: TreeSet[(IndelRealignmentTarget, Int)]): Int = {
+  @tailrec final def mapToTarget(
+    read: RichAlignmentRecord,
+    targets: TreeSet[(IndelRealignmentTarget, Int)]
+  ): Int = {
     // Perform tail call recursive binary search
     if (targets.size == 1) {
       if (TargetOrdering.contains(targets.head._1, read)) {
@@ -103,8 +109,10 @@ private[rdd] object RealignIndels extends Serializable with Logging {
    *
    * @see mapTargets
    */
-  def mapToTarget(read: RichAlignmentRecord,
-                  targets: ZippedTargetSet): Int = {
+  def mapToTarget(
+    read: RichAlignmentRecord,
+    targets: ZippedTargetSet
+  ): Int = {
     mapToTarget(read, targets.set)
   }
 
@@ -121,8 +129,10 @@ private[rdd] object RealignIndels extends Serializable with Logging {
    *
    * @see mapTargets
    */
-  def mapToTargetUnpacked(targetIndex: Int,
-                          targets: TreeSet[(IndelRealignmentTarget, Int)]): Option[IndelRealignmentTarget] = {
+  def mapToTargetUnpacked(
+    targetIndex: Int,
+    targets: TreeSet[(IndelRealignmentTarget, Int)]
+  ): Option[IndelRealignmentTarget] = {
     if (targetIndex < 0) {
       None
     } else {
@@ -217,12 +227,14 @@ private[rdd] object RealignIndels extends Serializable with Logging {
 
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels._
 
-private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
-                                 val dataIsSorted: Boolean = false,
-                                 val maxIndelSize: Int = 500,
-                                 val maxConsensusNumber: Int = 30,
-                                 val lodThreshold: Double = 5.0,
-                                 val maxTargetSize: Int = 3000) extends Serializable with Logging {
+private[rdd] class RealignIndels(
+  val consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
+    val dataIsSorted: Boolean = false,
+    val maxIndelSize: Int = 500,
+    val maxConsensusNumber: Int = 30,
+    val lodThreshold: Double = 5.0,
+    val maxTargetSize: Int = 3000
+) extends Serializable with Logging {
 
   /**
    * Given a target group with an indel realignment target and a group of reads to realign, this method
@@ -247,9 +259,11 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
       val refRegion = ReferenceRegion(reads.head.record.getContig.getContigName, refStart, refEnd)
 
       // preprocess reads and get consensus
-      val readsToClean = consensusModel.preprocessReadsForRealignment(reads.filter(r => r.mdTag.forall(_.hasMismatches)),
+      val readsToClean = consensusModel.preprocessReadsForRealignment(
+        reads.filter(r => r.mdTag.forall(_.hasMismatches)),
         reference,
-        refRegion)
+        refRegion
+      )
       var consensus = consensusModel.findConsensus(readsToClean)
 
       // reduce count of consensus sequences
@@ -347,9 +361,11 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
                 // compensate the end
                 builder.setEnd(refStart + remapping + r.getSequence.length + endPenalty)
 
-                val cigarElements = List[CigarElement](new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
+                val cigarElements = List[CigarElement](
+                  new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
                   idElement,
-                  new CigarElement(endLength.toInt, CigarOperator.M))
+                  new CigarElement(endLength.toInt, CigarOperator.M)
+                )
 
                 new Cigar(cigarElements)
               }
@@ -435,9 +451,11 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
    * @return Mismatch quality of read for current alignment.
    */
   def sumMismatchQuality(read: AlignmentRecord): Int = {
-    sumMismatchQualityIgnoreCigar(read.getSequence,
+    sumMismatchQualityIgnoreCigar(
+      read.getSequence,
       read.mdTag.get.getReference(read),
-      read.qualityScores)
+      read.qualityScores
+    )
   }
 
   /**
@@ -463,9 +481,11 @@ private[rdd] class RealignIndels(val consensusModel: ConsensusGenerator = new Co
 
     // find realignment targets
     log.info("Generating realignment targets...")
-    val targets: TreeSet[IndelRealignmentTarget] = RealignmentTargetFinder(richRdd,
+    val targets: TreeSet[IndelRealignmentTarget] = RealignmentTargetFinder(
+      richRdd,
       maxIndelSize,
-      maxTargetSize)
+      maxTargetSize
+    )
 
     // we should only attempt realignment if the target set isn't empty
     if (targets.isEmpty) {

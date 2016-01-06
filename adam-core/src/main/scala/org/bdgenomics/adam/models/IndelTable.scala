@@ -24,8 +24,10 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Variant
 
 class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Serializable with Logging {
-  log.info("Indel table has %s contigs and %s entries".format(table.size,
-    table.values.map(_.size).sum))
+  log.info("Indel table has %s contigs and %s entries".format(
+    table.size,
+    table.values.map(_.size).sum
+  ))
 
   /**
    * Returns all known indels within the given reference region. If none are known, returns an empty Seq.

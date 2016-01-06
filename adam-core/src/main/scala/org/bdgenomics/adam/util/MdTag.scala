@@ -45,9 +45,11 @@ object MdTag {
    * @param cigar Cigar operators for the read
    * @return Returns a populated MD tag.
    */
-  def apply(mdTagInput: String,
-            referenceStart: Long,
-            cigar: Cigar): MdTag = {
+  def apply(
+    mdTagInput: String,
+    referenceStart: Long,
+    cigar: Cigar
+  ): MdTag = {
 
     var matches = List[NumericRange[Long]]()
     var mismatches = Map[Long, Char]()
@@ -376,7 +378,8 @@ class MdTag(
     val start: Long,
     val matches: immutable.List[NumericRange[Long]],
     val mismatches: immutable.Map[Long, Char],
-    val deletions: immutable.Map[Long, Char]) {
+    val deletions: immutable.Map[Long, Char]
+) {
 
   /**
    * Returns whether a base is a match against the reference.

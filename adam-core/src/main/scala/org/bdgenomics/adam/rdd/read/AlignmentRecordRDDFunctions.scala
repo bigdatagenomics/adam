@@ -65,8 +65,10 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     rdd.filter(overlapsQuery)
   }
 
-  def maybeSaveBam(args: ADAMSaveAnyArgs,
-                   isSorted: Boolean = false): Boolean = {
+  def maybeSaveBam(
+    args: ADAMSaveAnyArgs,
+    isSorted: Boolean = false
+  ): Boolean = {
     if (args.outputPath.endsWith(".sam")) {
       log.info("Saving data in SAM format")
       rdd.adamSAMSave(args.outputPath, asSingleFile = args.asSingleFile, isSorted = isSorted)
@@ -92,8 +94,10 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     maybeSaveBam(args) || { rdd.adamParquetSave(args); true }
   }
 
-  def adamSave(args: ADAMSaveAnyArgs,
-               isSorted: Boolean = false) = {
+  def adamSave(
+    args: ADAMSaveAnyArgs,
+    isSorted: Boolean = false
+  ) = {
     maybeSaveBam(args, isSorted) || maybeSaveFastq(args) || { rdd.adamParquetSave(args); true }
   }
 
@@ -124,10 +128,12 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @param asSam Selects whether to save as SAM or BAM. The default value is true (save in SAM format).
    * @param isSorted If the output is sorted, this will modify the header.
    */
-  def adamSAMSave(filePath: String,
-                  asSam: Boolean = true,
-                  asSingleFile: Boolean = false,
-                  isSorted: Boolean = false) = SAMSave.time {
+  def adamSAMSave(
+    filePath: String,
+    asSam: Boolean = true,
+    asSingleFile: Boolean = false,
+    isSorted: Boolean = false
+  ) = SAMSave.time {
 
     // convert the records
     val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM(isSorted)
@@ -203,12 +209,16 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
       log.info(s"Writing single ${if (asSam) "SAM" else "BAM"} file (not Hadoop-style directory)")
       val (outputFormat, headerLessOutputFormat) = asSam match {
         case true =>
-          (classOf[InstrumentedADAMSAMOutputFormat[LongWritable]],
-            classOf[InstrumentedADAMSAMOutputFormatHeaderLess[LongWritable]])
+          (
+            classOf[InstrumentedADAMSAMOutputFormat[LongWritable]],
+            classOf[InstrumentedADAMSAMOutputFormatHeaderLess[LongWritable]]
+          )
 
         case false =>
-          (classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
-            classOf[InstrumentedADAMBAMOutputFormatHeaderLess[LongWritable]])
+          (
+            classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
+            classOf[InstrumentedADAMBAMOutputFormatHeaderLess[LongWritable]]
+          )
       }
 
       val headPath = filePath + "_head"
@@ -343,9 +353,11 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *                            observations to.
    * @return Returns an RDD of recalibrated reads.
    */
-  def adamBQSR(knownSnps: Broadcast[SnpTable],
-               observationDumpFile: Option[String] = None,
-               validationStringency: ValidationStringency = ValidationStringency.LENIENT): RDD[AlignmentRecord] = BQSRInDriver.time {
+  def adamBQSR(
+    knownSnps: Broadcast[SnpTable],
+    observationDumpFile: Option[String] = None,
+    validationStringency: ValidationStringency = ValidationStringency.LENIENT
+  ): RDD[AlignmentRecord] = BQSRInDriver.time {
     BaseQualityRecalibration(rdd, knownSnps, observationDumpFile, validationStringency)
   }
 
@@ -364,12 +376,14 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *
    * @return Returns an RDD of mapped reads which have been realigned.
    */
-  def adamRealignIndels(consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
-                        isSorted: Boolean = false,
-                        maxIndelSize: Int = 500,
-                        maxConsensusNumber: Int = 30,
-                        lodThreshold: Double = 5.0,
-                        maxTargetSize: Int = 3000): RDD[AlignmentRecord] = RealignIndelsInDriver.time {
+  def adamRealignIndels(
+    consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
+    isSorted: Boolean = false,
+    maxIndelSize: Int = 500,
+    maxConsensusNumber: Int = 30,
+    lodThreshold: Double = 5.0,
+    maxTargetSize: Int = 3000
+  ): RDD[AlignmentRecord] = RealignIndelsInDriver.time {
     RealignIndels(rdd, consensusModel, isSorted, maxIndelSize, maxConsensusNumber, lodThreshold)
   }
 
@@ -406,7 +420,8 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    */
   def adamCharacterizeTagValues(tag: String): Map[Any, Long] = {
     adamFilterRecordsWithTag(tag).flatMap(RichAlignmentRecord(_).tags.find(_.tag == tag)).map(
-      attr => Map(attr.value -> 1L)).reduce {
+      attr => Map(attr.value -> 1L)
+    ).reduce {
         (map1: Map[Any, Long], map2: Map[Any, Long]) =>
           MapTools.add(map1, map2)
       }
@@ -418,8 +433,10 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @return An RDD[Read] containing the subset of records with a tag that matches the given name.
    */
   def adamFilterRecordsWithTag(tagName: String): RDD[AlignmentRecord] = {
-    assert(tagName.length == 2,
-      "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName))
+    assert(
+      tagName.length == 2,
+      "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName)
+    )
     rdd.filter(RichAlignmentRecord(_).tags.exists(_.tag == tagName))
   }
 
@@ -430,11 +447,13 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @param fileName2 Path at which to save a FASTQ file containing the second mate of each pair.
    * @param validationStringency Iff strict, throw an exception if any read in this RDD is not accompanied by its mate.
    */
-  def adamSaveAsPairedFastq(fileName1: String,
-                            fileName2: String,
-                            outputOriginalBaseQualities: Boolean = false,
-                            validationStringency: ValidationStringency = ValidationStringency.LENIENT,
-                            persistLevel: Option[StorageLevel] = None): Unit = {
+  def adamSaveAsPairedFastq(
+    fileName1: String,
+    fileName2: String,
+    outputOriginalBaseQualities: Boolean = false,
+    validationStringency: ValidationStringency = ValidationStringency.LENIENT,
+    persistLevel: Option[StorageLevel] = None
+  ): Unit = {
     def maybePersist[T](r: RDD[T]): Unit = {
       persistLevel.foreach(r.persist(_))
     }
@@ -515,12 +534,10 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     if (validationStringency == ValidationStringency.STRICT) {
       firstInPairRecords.foreach(read =>
         if (read.getReadNum == 1)
-          throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName))
-      )
+          throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName)))
       secondInPairRecords.foreach(read =>
         if (read.getReadNum == 0)
-          throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName))
-      )
+          throw new Exception("Read %s found with first- and second-of-pair set".format(read.getReadName)))
     }
 
     assert(
@@ -552,12 +569,14 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @param sort Whether to sort the FASTQ files by read name or not. Defaults
    *             to false. Sorting the output will recover pair order, if desired.
    */
-  def adamSaveAsFastq(fileName: String,
-                      fileName2Opt: Option[String] = None,
-                      outputOriginalBaseQualities: Boolean = false,
-                      sort: Boolean = false,
-                      validationStringency: ValidationStringency = ValidationStringency.LENIENT,
-                      persistLevel: Option[StorageLevel] = None) {
+  def adamSaveAsFastq(
+    fileName: String,
+    fileName2Opt: Option[String] = None,
+    outputOriginalBaseQualities: Boolean = false,
+    sort: Boolean = false,
+    validationStringency: ValidationStringency = ValidationStringency.LENIENT,
+    persistLevel: Option[StorageLevel] = None
+  ) {
     log.info("Saving data in FASTQ format.")
     fileName2Opt match {
       case Some(fileName2) =>
@@ -595,8 +614,10 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @param validationStringency How stringently to validate the reads.
    * @return Returns an RDD with the pair information recomputed.
    */
-  def adamRePairReads(secondPairRdd: RDD[AlignmentRecord],
-                      validationStringency: ValidationStringency = ValidationStringency.LENIENT): RDD[AlignmentRecord] = {
+  def adamRePairReads(
+    secondPairRdd: RDD[AlignmentRecord],
+    validationStringency: ValidationStringency = ValidationStringency.LENIENT
+  ): RDD[AlignmentRecord] = {
     // cache rdds
     val firstPairRdd = rdd.cache()
     secondPairRdd.cache()

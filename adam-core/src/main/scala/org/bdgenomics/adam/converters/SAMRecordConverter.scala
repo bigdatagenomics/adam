@@ -36,9 +36,11 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConverters._
 
 class SAMRecordConverter extends Serializable with Logging {
-  def convert(samRecord: SAMRecord,
-              dict: SequenceDictionary,
-              readGroups: RecordGroupDictionary): AlignmentRecord = {
+  def convert(
+    samRecord: SAMRecord,
+    dict: SequenceDictionary,
+    readGroups: RecordGroupDictionary
+  ): AlignmentRecord = {
     try {
       val cigar: String = samRecord.getCigarString
       val startTrim = if (cigar == "*") {

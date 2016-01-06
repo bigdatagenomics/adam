@@ -52,7 +52,8 @@ trait Alphabet {
    * @throws IllegalArgumentException if the string contains a symbol which is not in the alphabet
    */
   def reverseComplementExact(s: String): String = {
-    reverseComplement(s,
+    reverseComplement(
+      s,
       (symbol: Char) => throw new IllegalArgumentException("Character %s not found in alphabet.".format(symbol))
     )
   }

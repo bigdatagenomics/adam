@@ -97,8 +97,10 @@ object IndelRealignmentTarget {
    * @param maxIndelSize Maximum allowable size of an indel.
    * @return Set of generated realignment targets.
    */
-  def apply(read: RichAlignmentRecord,
-            maxIndelSize: Int): Seq[IndelRealignmentTarget] = CreateIndelRealignmentTargets.time {
+  def apply(
+    read: RichAlignmentRecord,
+    maxIndelSize: Int
+  ): Seq[IndelRealignmentTarget] = CreateIndelRealignmentTargets.time {
 
     val region = ReferenceRegion(read.record)
     val refId = read.record.getContig.getContigName
@@ -135,8 +137,10 @@ object IndelRealignmentTarget {
   }
 }
 
-class IndelRealignmentTarget(val variation: Option[ReferenceRegion],
-                             val readRange: ReferenceRegion) extends Logging {
+class IndelRealignmentTarget(
+  val variation: Option[ReferenceRegion],
+    val readRange: ReferenceRegion
+) extends Logging {
 
   override def toString(): String = {
     variation + " over " + readRange

@@ -38,19 +38,24 @@ class FastqRecordConverter extends Serializable with Logging {
     val firstReadSequence = lines(1)
     val firstReadQualities = lines(3)
 
-    require(firstReadSequence.length == firstReadQualities.length,
-      "Read " + firstReadName + " has different sequence and qual length.")
+    require(
+      firstReadSequence.length == firstReadQualities.length,
+      "Read " + firstReadName + " has different sequence and qual length."
+    )
 
     // get fields for second read in pair
     val secondReadName = lines(4).drop(1)
     val secondReadSequence = lines(5)
     val secondReadQualities = lines(7)
 
-    require(secondReadSequence.length == secondReadQualities.length,
-      "Read " + secondReadName + " has different sequence and qual length.")
+    require(
+      secondReadSequence.length == secondReadQualities.length,
+      "Read " + secondReadName + " has different sequence and qual length."
+    )
 
     // build and return iterators
-    Iterable(AlignmentRecord.newBuilder()
+    Iterable(
+      AlignmentRecord.newBuilder()
       .setReadName(firstReadName)
       .setSequence(firstReadSequence)
       .setQual(firstReadQualities)
@@ -75,7 +80,8 @@ class FastqRecordConverter extends Serializable with Logging {
         .setPrimaryAlignment(null)
         .setSecondaryAlignment(null)
         .setSupplementaryAlignment(null)
-        .build())
+        .build()
+    )
   }
 
   def convertFragment(element: (Void, Text)): Fragment = {
@@ -87,19 +93,27 @@ class FastqRecordConverter extends Serializable with Logging {
     val firstReadSequence = lines(1)
     val firstReadQualities = lines(3)
 
-    require(firstReadSequence.length == firstReadQualities.length,
-      "Read " + firstReadName + " has different sequence and qual length.")
+    require(
+      firstReadSequence.length == firstReadQualities.length,
+      "Read " + firstReadName + " has different sequence and qual length."
+    )
 
     // get fields for second read in pair
     val secondReadName = lines(4).drop(1)
     val secondReadSequence = lines(5)
     val secondReadQualities = lines(7)
 
-    require(secondReadSequence.length == secondReadQualities.length,
-      "Read " + secondReadName + " has different sequence and qual length.")
-    require(firstReadName == secondReadName,
-      "Reads %s and %s in Fragment have different names.".format(firstReadName,
-        secondReadName))
+    require(
+      secondReadSequence.length == secondReadQualities.length,
+      "Read " + secondReadName + " has different sequence and qual length."
+    )
+    require(
+      firstReadName == secondReadName,
+      "Reads %s and %s in Fragment have different names.".format(
+        firstReadName,
+        secondReadName
+      )
+    )
 
     // build and return record
     Fragment.newBuilder()
@@ -114,11 +128,13 @@ class FastqRecordConverter extends Serializable with Logging {
       .build()
   }
 
-  def convertRead(element: (Void, Text),
-                  recordGroupOpt: Option[String] = None,
-                  setFirstOfPair: Boolean = false,
-                  setSecondOfPair: Boolean = false,
-                  stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecord = {
+  def convertRead(
+    element: (Void, Text),
+    recordGroupOpt: Option[String] = None,
+    setFirstOfPair: Boolean = false,
+    setSecondOfPair: Boolean = false,
+    stringency: ValidationStringency = ValidationStringency.STRICT
+  ): AlignmentRecord = {
     val lines = element._2.toString.split('\n')
     require(lines.length == 4, "Record has wrong format:\n" + element._2.toString)
 
@@ -162,9 +178,11 @@ class FastqRecordConverter extends Serializable with Logging {
       else
         lines(3)
 
-    require(readSequence.length == readQualities.length,
+    require(
+      readSequence.length == readQualities.length,
       "Read " + readName + " has different sequence and qual length: " +
-        "\n\tsequence=" + readSequence + "\n\tqual=" + readQualities)
+        "\n\tsequence=" + readSequence + "\n\tqual=" + readQualities
+    )
 
     val builder = AlignmentRecord.newBuilder()
       .setReadName(readName)

@@ -130,11 +130,13 @@ abstract class SmithWaterman(xSequence: String, ySequence: String) extends Seria
    *
    * @see buildScoringMatrix
    */
-  @tailrec private[smithwaterman] final def move(matrix: Array[Array[Char]],
-                                                 i: Int,
-                                                 j: Int,
-                                                 cX: String,
-                                                 cY: String): (String, String, Int, Int) = {
+  @tailrec private[smithwaterman] final def move(
+    matrix: Array[Array[Char]],
+    i: Int,
+    j: Int,
+    cX: String,
+    cY: String
+  ): (String, String, Int, Int) = {
     if (matrix(i)(j) == 'T') {
       // return if told to terminate
       (cigarFromRNNCigar(cX), cigarFromRNNCigar(cY), i, j)
@@ -160,8 +162,10 @@ abstract class SmithWaterman(xSequence: String, ySequence: String) extends Seria
    * @param moveMatrix Move matrix to track back on.
    * @return Tuple of Cigar for X, Y.
    */
-  private[smithwaterman] def trackback(scoreMatrix: Array[Array[Double]],
-                                       moveMatrix: Array[Array[Char]]): (Cigar, Cigar, Int, Int) = {
+  private[smithwaterman] def trackback(
+    scoreMatrix: Array[Array[Double]],
+    moveMatrix: Array[Array[Char]]
+  ): (Cigar, Cigar, Int, Int) = {
     assert(scoreMatrix.length == xSequence.length + 1)
     assert(scoreMatrix.forall(_.length == ySequence.length + 1))
     assert(moveMatrix.length == xSequence.length + 1)

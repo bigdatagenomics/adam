@@ -49,8 +49,10 @@ private[adam] object DecadentRead extends Logging with Serializable {
    *   2. To clog, to glut, or satisfy, as the appetite; to satiate.
    *   3. To fill up or choke up; to stop up.
    */
-  def cloy(rdd: RDD[AlignmentRecord],
-           strictness: ValidationStringency = ValidationStringency.STRICT): RDD[(Option[DecadentRead], Option[AlignmentRecord])] = {
+  def cloy(
+    rdd: RDD[AlignmentRecord],
+    strictness: ValidationStringency = ValidationStringency.STRICT
+  ): RDD[(Option[DecadentRead], Option[AlignmentRecord])] = {
     rdd.map(r => {
       try {
         val dr = DecadentRead.apply(r)
@@ -61,7 +63,8 @@ private[adam] object DecadentRead extends Logging with Serializable {
             throw e
           } else {
             log.warn("Converting read %s to decadent read failed with %s. Skipping...".format(
-              r, e))
+              r, e
+            ))
             (None, Some(r))
           }
         }
@@ -127,14 +130,16 @@ private[adam] class DecadentRead(val record: RichAlignmentRecord) extends Loggin
 
     def referencePositionOption: Option[ReferencePosition] =
       assumingAligned(
-        record.readOffsetToReferencePosition(offset))
+        record.readOffsetToReferencePosition(offset)
+      )
 
     def referenceSequenceContext: Option[ReferenceSequenceContext] =
       assumingAligned(record.readOffsetToReferenceSequenceContext(offset))
 
     def referencePosition: ReferencePosition =
       referencePositionOption.getOrElse(
-        throw new IllegalArgumentException("Residue has no reference location (may be an insertion)"))
+        throw new IllegalArgumentException("Residue has no reference location (may be an insertion)")
+      )
   }
 
   lazy val readGroup: String = record.getRecordGroupName
