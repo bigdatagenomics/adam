@@ -146,10 +146,11 @@ class FastqRecordConverter extends Serializable with Logging {
     val readName = trimTrailingReadNumber(lines(0).drop(1))
     val readSequence = lines(1)
 
+    lazy val suffix = s"\n=== printing received Fastq record for debugging ===\n${lines.mkString("\n")}\n=== End of debug output for Fastq record ==="
     if (stringency == ValidationStringency.STRICT && lines(3) == "*" && readSequence.length > 1)
-      throw new IllegalArgumentException("Fastq quality must be defined.")
+      throw new IllegalArgumentException(s"Fastq quality must be defined. $suffix")
     else if (stringency == ValidationStringency.STRICT && lines(3).length != readSequence.length)
-      throw new IllegalArgumentException(s"Fastq sequence and quality strings must have the same length.\n Fastq quality string of length ${lines(3).length}, expected ${readSequence.length} from the sequence length.")
+      throw new IllegalArgumentException(s"Fastq sequence and quality strings must have the same length.\n Fastq quality string of length ${lines(3).length}, expected ${readSequence.length} from the sequence length. $suffix")
 
     val readQualities =
       if (lines(3) == "*")
