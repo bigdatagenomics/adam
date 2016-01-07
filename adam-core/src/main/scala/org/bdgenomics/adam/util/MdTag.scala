@@ -45,9 +45,10 @@ object MdTag {
    * @param cigar Cigar operators for the read
    * @return Returns a populated MD tag.
    */
-  def apply(mdTagInput: String,
-            referenceStart: Long,
-            cigar: Cigar): MdTag = {
+  def apply(
+    mdTagInput: String,
+    referenceStart: Long,
+    cigar: Cigar): MdTag = {
 
     var matches = List[NumericRange[Long]]()
     var mismatches = Map[Long, Char]()
@@ -546,11 +547,7 @@ class MdTag(
         } else if (deletions.contains(i)) {
           if (!lastWasDeletion) {
             // write match count before deletion
-            if (lastWasMatch) {
-              mdString += matchRun.toString
-            } else {
-              mdString += "0"
-            }
+            mdString += (if (lastWasMatch) matchRun.toString else "0")
             // add deletion caret
             mdString += "^"
 
@@ -563,11 +560,7 @@ class MdTag(
           mdString += deletions(i)
         } else if (mismatches.contains(i)) {
           // write match count before mismatch
-          if (lastWasMatch) {
-            mdString += matchRun.toString
-          } else {
-            mdString += "0"
-          }
+          mdString += (if (lastWasMatch) matchRun.toString else "0")
 
           mdString += mismatches(i)
 
@@ -578,11 +571,7 @@ class MdTag(
       })
 
       // if we have more matches, write count
-      if (lastWasMatch) {
-        mdString += matchRun.toString
-      } else {
-        mdString += "0"
-      }
+      mdString += (if (lastWasMatch) matchRun.toString else "0")
 
       mdString
     }

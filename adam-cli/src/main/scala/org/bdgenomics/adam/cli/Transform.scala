@@ -145,7 +145,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       log.info("Locally realigning indels.")
       val consensusGenerator = Option(args.knownIndelsFile)
         .fold(new ConsensusGeneratorFromReads().asInstanceOf[ConsensusGenerator])(
-          new ConsensusGeneratorFromKnowns(_, sc).asInstanceOf[ConsensusGenerator])
+          new ConsensusGeneratorFromKnowns(_, sc).asInstanceOf[ConsensusGenerator]
+        )
 
       adamRecords = oldRdd.adamRealignIndels(
         consensusGenerator,
@@ -227,7 +228,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     if ((args.useAlignedReadPredicate || args.limitProjection) &&
       (args.forceLoadBam || args.forceLoadFastq || args.forceLoadIFastq)) {
       throw new IllegalArgumentException(
-        "-aligned_read_predicate and -limit_projection only apply to Parquet files, but a non-Parquet force load flag was passed.")
+        "-aligned_read_predicate and -limit_projection only apply to Parquet files, but a non-Parquet force load flag was passed."
+      )
     }
 
     val rdd =
@@ -246,7 +248,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
           None
         }
         val proj = if (args.limitProjection) {
-          Some(Projection(AlignmentRecordField.contig,
+          Some(Projection(
+            AlignmentRecordField.contig,
             AlignmentRecordField.start,
             AlignmentRecordField.end,
             AlignmentRecordField.mapq,
@@ -265,13 +268,16 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
             AlignmentRecordField.duplicateRead,
             AlignmentRecordField.mismatchingPositions,
             AlignmentRecordField.secondaryAlignment,
-            AlignmentRecordField.supplementaryAlignment))
+            AlignmentRecordField.supplementaryAlignment
+          ))
         } else {
           None
         }
-        sc.loadParquetAlignments(args.inputPath,
+        sc.loadParquetAlignments(
+          args.inputPath,
           predicate = pred,
-          projection = proj)
+          projection = proj
+        )
       } else {
         sc.loadAlignments(
           args.inputPath,
@@ -297,8 +303,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
             concatFilename,
             recordGroupOpt = Option(args.fastqRecordGroup)
           )
-        }
-      )
+        })
 
     this.apply(concatRddOpt match {
       case Some(concatRdd) => rdd ++ concatRdd

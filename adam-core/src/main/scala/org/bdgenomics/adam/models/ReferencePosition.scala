@@ -49,7 +49,7 @@ object ReferencePosition extends Serializable {
    * @see fivePrime
    */
   def apply(record: AlignmentRecord): ReferencePosition = {
-    new ReferencePosition(record.getContig.getContigName.toString, record.getStart)
+    new ReferencePosition(record.getContig.getContigName, record.getStart)
   }
 
   /**
@@ -83,9 +83,10 @@ object ReferencePosition extends Serializable {
   }
 }
 
-class ReferencePosition(override val referenceName: String,
-                        val pos: Long,
-                        override val orientation: Strand = Strand.Independent)
+class ReferencePosition(
+  override val referenceName: String,
+  val pos: Long,
+  override val orientation: Strand = Strand.Independent)
     extends ReferenceRegion(referenceName, pos, pos + 1, orientation)
 
 class ReferencePositionSerializer extends Serializer[ReferencePosition] {

@@ -108,7 +108,8 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends BDGSparkCom
         println("%20s\t%15s\t% 5d".format(
           "%s:%d".format(region.referenceName, region.start),
           variantNames(region),
-          count))
+          count
+        ))
     }
   }
 

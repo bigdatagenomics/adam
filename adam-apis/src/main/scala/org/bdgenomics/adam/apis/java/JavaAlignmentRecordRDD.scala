@@ -33,11 +33,12 @@ class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord]) extends Seriali
    * @param compressCodec Name of the compression codec to use.
    * @param disableDictionaryEncoding Whether or not to disable bit-packing.
    */
-  def adamSave(filePath: java.lang.String,
-               blockSize: java.lang.Integer,
-               pageSize: java.lang.Integer,
-               compressCodec: CompressionCodecName,
-               disableDictionaryEncoding: java.lang.Boolean) {
+  def adamSave(
+    filePath: java.lang.String,
+    blockSize: java.lang.Integer,
+    pageSize: java.lang.Integer,
+    compressCodec: CompressionCodecName,
+    disableDictionaryEncoding: java.lang.Boolean) {
     jrdd.rdd.adamParquetSave(
       filePath,
       blockSize,
@@ -62,8 +63,9 @@ class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord]) extends Seriali
    * @param filePath Path to save the file at.
    * @param asSam If true, saves as SAM. If false, saves as BAM.
    */
-  def adamSAMSave(filePath: java.lang.String,
-                  asSam: java.lang.Boolean) {
+  def adamSAMSave(
+    filePath: java.lang.String,
+    asSam: java.lang.Boolean) {
     jrdd.rdd.adamSAMSave(filePath, asSam)
   }
 

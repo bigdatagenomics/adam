@@ -46,9 +46,10 @@ object SingleReadBucket extends Logging {
   }
 }
 
-case class SingleReadBucket(primaryMapped: Iterable[AlignmentRecord] = Seq.empty,
-                            secondaryMapped: Iterable[AlignmentRecord] = Seq.empty,
-                            unmapped: Iterable[AlignmentRecord] = Seq.empty) {
+case class SingleReadBucket(
+    primaryMapped: Iterable[AlignmentRecord] = Seq.empty,
+    secondaryMapped: Iterable[AlignmentRecord] = Seq.empty,
+    unmapped: Iterable[AlignmentRecord] = Seq.empty) {
   // Note: not a val in order to save serialization/memory cost
   def allReads = {
     primaryMapped ++ secondaryMapped ++ unmapped

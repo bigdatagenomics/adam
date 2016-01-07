@@ -34,13 +34,13 @@ private[adam] object FastaConverter {
     val (contigName, contigDescription) = parseDescriptionLine(descriptionLine, fileIndex)
 
     private def parseDescriptionLine(descriptionLine: Option[String], id: Long): (Option[String], Option[String]) = {
-      if (descriptionLine.isEmpty) {
+      descriptionLine.fold {
         assert(id == -1L, "Cannot have a headerless line in a file with more than one fragment.")
-        (None, None)
-      } else {
-        val splitIndex = descriptionLine.get.indexOf(' ')
+        (None: Option[String], None: Option[String])
+      } { (dL) =>
+        val splitIndex = dL.indexOf(' ')
         if (splitIndex >= 0) {
-          val split = descriptionLine.get.splitAt(splitIndex)
+          val split = dL.splitAt(splitIndex)
 
           val contigName: String = split._1.stripPrefix(">").trim
           val contigDescription: String = split._2.trim
@@ -48,7 +48,7 @@ private[adam] object FastaConverter {
           (Some(contigName), Some(contigDescription))
 
         } else {
-          (Some(descriptionLine.get.stripPrefix(">").trim), None)
+          (Some(dL.stripPrefix(">").trim), None)
         }
       }
     }
@@ -70,8 +70,9 @@ private[adam] object FastaConverter {
    * @param maxFragmentLength The maximum length of fragments in the contig.
    * @return An RDD of ADAM FASTA data.
    */
-  def apply(rdd: RDD[(Long, String)],
-            maxFragmentLength: Long = 10000L): RDD[NucleotideContigFragment] = {
+  def apply(
+    rdd: RDD[(Long, String)],
+    maxFragmentLength: Long = 10000L): RDD[NucleotideContigFragment] = {
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
       .filter((kv: (Long, String)) => !kv._2.startsWith(";"))
 
@@ -96,10 +97,12 @@ private[adam] object FastaConverter {
         assert(lines.size != 0, "Sequence " + descriptionLine.seqId + " has no sequence data.")
 
         val sequence: Seq[String] = lines.toSeq.sortBy(_._1).map(kv => cleanSequence(kv._2))
-        converter.convert(descriptionLine.contigName,
+        converter.convert(
+          descriptionLine.contigName,
           descriptionLine.seqId,
           sequence,
-          descriptionLine.contigDescription)
+          descriptionLine.contigDescription
+        )
     }
 
   }
@@ -182,13 +185,14 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
    * @param description Optional description of the sequence.
    * @return The converted ADAM FASTA contig.
    */
-  def convert(name: Option[String],
-              id: Int,
-              sequence: Seq[String],
-              description: Option[String]): Seq[NucleotideContigFragment] = {
+  def convert(
+    name: Option[String],
+    id: Int,
+    sequence: Seq[String],
+    description: Option[String]): Seq[NucleotideContigFragment] = {
 
     // get sequence length
-    val sequenceLength = sequence.map(_.length).reduce(_ + _)
+    val sequenceLength = sequence.map(_.length).sum
 
     // map sequences into fragments
     val sequencesAsFragments = mapFragments(sequence)

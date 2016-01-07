@@ -39,9 +39,10 @@ abstract class ConsensusGenerator extends Serializable {
    * @param reads Reads to preprocess.
    * @return Preprocessed reads.
    */
-  def preprocessReadsForRealignment(reads: Iterable[RichAlignmentRecord],
-                                    reference: String,
-                                    region: ReferenceRegion): Iterable[RichAlignmentRecord]
+  def preprocessReadsForRealignment(
+    reads: Iterable[RichAlignmentRecord],
+    reference: String,
+    region: ReferenceRegion): Iterable[RichAlignmentRecord]
 
   /**
    * For all reads in this region, generates the list of consensus sequences for realignment.

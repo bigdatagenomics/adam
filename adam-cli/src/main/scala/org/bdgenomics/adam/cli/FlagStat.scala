@@ -62,7 +62,8 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
       AlignmentRecordField.secondOfPair,
       AlignmentRecordField.properPair,
       AlignmentRecordField.mapq,
-      AlignmentRecordField.failedVendorQualityChecks)
+      AlignmentRecordField.failedVendorQualityChecks
+    )
 
     val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection))
 
@@ -113,7 +114,8 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
       percent(passedVendorQuality.singleton, passedVendorQuality.total),
       percent(failedVendorQuality.singleton, failedVendorQuality.total),
       passedVendorQuality.withMateMappedToDiffChromosome, failedVendorQuality.withMateMappedToDiffChromosome,
-      passedVendorQuality.withMateMappedToDiffChromosomeMapQ5, failedVendorQuality.withMateMappedToDiffChromosomeMapQ5)
+      passedVendorQuality.withMateMappedToDiffChromosomeMapQ5, failedVendorQuality.withMateMappedToDiffChromosomeMapQ5
+    )
 
     Option(args.outputPath) match {
       case Some(outputPath) =>

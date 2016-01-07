@@ -66,30 +66,35 @@ object SnpTable {
   // `knownSnpsFile` is expected to be a sites-only VCF
   def apply(knownSnpsFile: File): SnpTable = {
     // parse into tuples of (contig, position)
-    val lines = scala.io.Source.fromFile(knownSnpsFile).getLines()
-    val tuples = lines.filter(line => !line.startsWith("#")).flatMap(line => {
-      val split = line.split("\t")
-      val contig = split(0)
-      val pos = split(1).toLong - 1
-      val ref = split(3)
-      assert(pos >= 0)
-      assert(!ref.isEmpty)
-      ref.zipWithIndex.map {
-        case (base, idx) =>
-          assert(Seq('A', 'C', 'T', 'G', 'N').contains(base))
-          (contig, pos + idx)
-      }
-    })
-    // construct map from contig to set of positions
-    // this is done in-place to reduce overhead
-    val table = new mutable.HashMap[String, mutable.HashSet[Long]]
-    tuples.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
-    // construct SnpTable from immutable copy of `table`
-    new SnpTable(table.mapValues(_.toSet).toMap)
+    val snpsSource = scala.io.Source.fromFile(knownSnpsFile)
+    try {
+      val lines = snpsSource.getLines()
+      val tuples = lines.filter(line => !line.startsWith("#")).flatMap(line => {
+        val split = line.split("\t")
+        val contig = split(0)
+        val pos = split(1).toLong - 1
+        val ref = split(3)
+        assert(pos >= 0)
+        assert(!ref.isEmpty)
+        ref.zipWithIndex.map {
+          case (base, idx) =>
+            assert(Seq('A', 'C', 'T', 'G', 'N').contains(base))
+            (contig, pos + idx)
+        }
+      })
+      // construct map from contig to set of positions
+      // this is done in-place to reduce overhead
+      val table = new mutable.HashMap[String, mutable.HashSet[Long]]
+      tuples.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
+      // construct SnpTable from immutable copy of `table`
+      new SnpTable(table.mapValues(_.toSet).toMap)
+    } finally {
+      snpsSource.close()
+    }
   }
 
   def apply(variants: RDD[RichVariant]): SnpTable = {
-    val positions = variants.map(variant => (variant.getContig.getContigName.toString, variant.getStart)).collect()
+    val positions = variants.map(variant => (variant.getContig.getContigName, variant.getStart)).collect()
     val table = new mutable.HashMap[String, mutable.HashSet[Long]]
     positions.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
     new SnpTable(table.mapValues(_.toSet).toMap)

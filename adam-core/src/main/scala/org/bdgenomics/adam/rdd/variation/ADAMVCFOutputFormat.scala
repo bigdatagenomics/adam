@@ -37,7 +37,8 @@ object ADAMVCFOutputFormat extends Serializable {
   def setHeader(samples: Seq[String]): VCFHeader = {
     header = Some(new VCFHeader(
       (VariantAnnotationConverter.infoHeaderLines ++ VariantAnnotationConverter.formatHeaderLines).toSet: Set[VCFHeaderLine],
-      samples))
+      samples
+    ))
     header.get
   }
 }

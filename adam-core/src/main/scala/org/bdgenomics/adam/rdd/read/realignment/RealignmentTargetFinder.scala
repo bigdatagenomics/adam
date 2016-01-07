@@ -32,9 +32,10 @@ object RealignmentTargetFinder {
    * @param rdd RDD of reads to use in generating realignment targets.
    * @return Sorted set of realignment targets.
    */
-  def apply(rdd: RDD[RichAlignmentRecord],
-            maxIndelSize: Int = 500,
-            maxTargetSize: Int = 3000): TreeSet[IndelRealignmentTarget] = {
+  def apply(
+    rdd: RDD[RichAlignmentRecord],
+    maxIndelSize: Int = 500,
+    maxTargetSize: Int = 3000): TreeSet[IndelRealignmentTarget] = {
     new RealignmentTargetFinder().findTargets(rdd, maxIndelSize, maxTargetSize).set
   }
 }
@@ -83,8 +84,9 @@ class RealignmentTargetFinder extends Serializable with Logging {
    * @param second A sorted set of realignment targets.
    * @return A merged set of targets.
    */
-  def joinTargets(first: TargetSet,
-                  second: TargetSet): TargetSet = JoinTargets.time {
+  def joinTargets(
+    first: TargetSet,
+    second: TargetSet): TargetSet = JoinTargets.time {
     new TargetSet(joinTargets(first.set, second.set))
   }
 
@@ -94,9 +96,10 @@ class RealignmentTargetFinder extends Serializable with Logging {
    * @param reads An RDD containing reads to generate indel realignment targets from.
    * @return An ordered set of indel realignment targets.
    */
-  def findTargets(reads: RDD[RichAlignmentRecord],
-                  maxIndelSize: Int = 500,
-                  maxTargetSize: Int = 3000): TargetSet = FindTargets.time {
+  def findTargets(
+    reads: RDD[RichAlignmentRecord],
+    maxIndelSize: Int = 500,
+    maxTargetSize: Int = 3000): TargetSet = FindTargets.time {
 
     def createTargetSet(target: IndelRealignmentTarget): TargetSet = {
       val tmp = new TreeSet()(TargetOrdering)

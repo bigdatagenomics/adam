@@ -124,9 +124,10 @@ class BaseQualityRecalibration(
 }
 
 object BaseQualityRecalibration {
-  def apply(rdd: RDD[AlignmentRecord],
-            knownSnps: Broadcast[SnpTable],
-            observationDumpFile: Option[String] = None,
-            validationStringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] =
+  def apply(
+    rdd: RDD[AlignmentRecord],
+    knownSnps: Broadcast[SnpTable],
+    observationDumpFile: Option[String] = None,
+    validationStringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] =
     new BaseQualityRecalibration(cloy(rdd, validationStringency), knownSnps).result
 }
