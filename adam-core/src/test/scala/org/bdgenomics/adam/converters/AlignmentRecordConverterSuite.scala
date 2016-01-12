@@ -29,8 +29,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,
   Contig,
-  Fragment,
-  Sequence
+  Fragment
 }
 import org.scalatest.FunSuite
 import scala.collection.JavaConversions._
@@ -88,7 +87,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     // convert read
     val toSAM = adamRecordConverter.convert(adamRead,
       SAMFileHeaderWritable(adamRecordConverter.createSAMHeader(dict,
-        readGroups)))
+        readGroups)),
+      readGroups)
 
     // validate conversion
     val sequence = "A" * 4
@@ -136,7 +136,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     // convert read
     val toSAM = adamRecordConverter.convert(adamRead,
       SAMFileHeaderWritable(adamRecordConverter.createSAMHeader(dict,
-        readGroups)))
+        readGroups)),
+      readGroups)
 
     // validate conversion
     val sequence = "A" * 4
@@ -198,8 +199,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
 
     val (firstRecord, secondRecord) = getSAMRecordFromReadName("SRR062634.10022079")
 
-    assert(firstRecord.getReadNum === 1)
-    assert(secondRecord.getReadNum === 0)
+    assert(firstRecord.getReadInFragment === 1)
+    assert(secondRecord.getReadInFragment === 0)
 
     val firstRecordFastq = adamRecordConverter.convertToFastq(firstRecord, maybeAddSuffix = true)
       .toString
@@ -229,8 +230,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
 
     val (secondRecord, firstRecord) = getSAMRecordFromReadName("SRR062634.10448889")
 
-    assert(firstRecord.getReadNum === 1)
-    assert(secondRecord.getReadNum === 0)
+    assert(firstRecord.getReadInFragment === 1)
+    assert(secondRecord.getReadInFragment === 0)
 
     val firstRecordFastq = adamRecordConverter.convertToFastq(firstRecord, maybeAddSuffix = true)
       .toString
@@ -260,7 +261,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
       AlignmentRecord.newBuilder()
         .setSequence("ACCCACAGTA")
         .setQual("**********")
-        .setReadNum(0)
+        .setReadInFragment(0)
         .setReadName("testRead")
         .setReadPaired(true)
         .build(),
@@ -268,7 +269,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
         .setSequence("GGGAAACCCTTT")
         .setQual(";;;;;;......")
         .setReadName("testRead")
-        .setReadNum(1)
+        .setReadInFragment(1)
         .setReadPaired(true)
         .build())
 
@@ -280,7 +281,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val reads = adamRecordConverter.convertFragment(fragment)
     assert(reads.size === 2)
 
-    val read1 = reads.find(_.getReadNum == 0)
+    val read1 = reads.find(_.getReadInFragment == 0)
     assert(read1.isDefined)
     assert(read1.get.getSequence === "ACCCACAGTA")
     assert(read1.get.getQual() === "**********")
@@ -288,7 +289,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(!read1.get.getReadMapped)
     assert(read1.get.getReadPaired)
 
-    val read2 = reads.find(_.getReadNum == 1)
+    val read2 = reads.find(_.getReadInFragment == 1)
     assert(read2.isDefined)
     assert(read2.get.getSequence === "GGGAAACCCTTT")
     assert(read2.get.getQual() === ";;;;;;......")
@@ -321,7 +322,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     val read = reads.head
 
     assert(read.getReadName === "testRead")
-    assert(read.getReadNum === 0)
+    assert(read.getReadInFragment === 0)
     assert(read.getReadMapped)
     assert(read.getReadNegativeStrand)
     assert(read.getStart === 10L)

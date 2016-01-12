@@ -199,7 +199,7 @@ class SequenceDictionarySuite extends ADAMFunSuite {
       SequenceRecord("1", 1000L),
       SequenceRecord("3", 1000L),
       SequenceRecord("2", 1000L),
-      SequenceRecord("X", 1000L)))
+      SequenceRecord("X", 1000L))).sorted
     val ssd = sd.toSAMSequenceDictionary
     val seq = ssd.getSequences
     assert(seq.get(0).getSequenceName === "1")

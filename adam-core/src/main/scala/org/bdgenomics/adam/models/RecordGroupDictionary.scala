@@ -17,10 +17,10 @@
  */
 package org.bdgenomics.adam.models
 
-import java.util.Date
 import htsjdk.samtools.{ SAMFileHeader, SAMFileReader, SAMReadGroupRecord }
+import java.util.Date
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.RecordGroupMetadata
 
 object RecordGroupDictionary {
 
@@ -47,6 +47,7 @@ object RecordGroupDictionary {
     fromSAMHeader(samReader.getFileHeader)
   }
 
+  def empty: RecordGroupDictionary = new RecordGroupDictionary(Seq.empty)
 }
 
 /**
@@ -59,7 +60,7 @@ object RecordGroupDictionary {
  * @throws AssertionError Throws an assertion error if there are multiple record groups with the
  * same name.
  */
-class RecordGroupDictionary(val recordGroups: Seq[RecordGroup]) extends Serializable {
+case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
   lazy val recordGroupMap = recordGroups.map(v => (v.recordGroupName, v))
     .sortBy(kv => kv._1)
     .zipWithIndex
@@ -99,35 +100,13 @@ class RecordGroupDictionary(val recordGroups: Seq[RecordGroup]) extends Serializ
   def apply(recordGroupName: String): RecordGroup = {
     recordGroupMap(recordGroupName)._1
   }
+
+  override def toString: String = {
+    "RecordGroupDictionary(%s)".format(recordGroups.mkString(","))
+  }
 }
 
 object RecordGroup {
-  /**
-   * Creates a record group from read data. Returns a None option if the record group information
-   * is not populated in the read.
-   *
-   * @param read Read to populate data from.
-   * @return Returns a filled Option if record group data is attached to the read, else returns None.
-   */
-  def apply(read: AlignmentRecord): Option[RecordGroup] = {
-    for {
-      rgs <- Option(read.getRecordGroupSample)
-      rgn <- Option(read.getRecordGroupName)
-    } yield new RecordGroup(
-      rgs.toString,
-      rgn.toString,
-      Option(read.getRecordGroupSequencingCenter).map(_.toString),
-      Option(read.getRecordGroupDescription).map(_.toString),
-      Option(read.getRecordGroupRunDateEpoch).map(_.toLong),
-      Option(read.getRecordGroupFlowOrder).map(_.toString),
-      Option(read.getRecordGroupKeySequence).map(_.toString),
-      Option(read.getRecordGroupLibrary).map(_.toString),
-      Option(read.getRecordGroupPredictedMedianInsertSize).map(_.toInt),
-      Option(read.getRecordGroupPlatform).map(_.toString),
-      Option(read.getRecordGroupPlatformUnit).map(_.toString)
-    )
-  }
-
   /**
    * Converts a SAMReadGroupRecord into a RecordGroup.
    *
@@ -157,20 +136,55 @@ object RecordGroup {
       Option(samRGR.getPlatformUnit).map(_.toString)
     )
   }
+
+  /**
+   * Converts the Avro RecordGroupMetadata record into a RecordGroup.
+   *
+   * Although the RecordGroup class is serializable, when saving the record to
+   * disk, we want to save it as Avro. This method allows us to go from the
+   * Avro format which we use on disk into the class we use in memory.
+   *
+   * @param rgm RecordGroupMetadata record loaded from disk.
+   * @return Avro record converted into RecordGroup representation.
+   */
+  def fromAvro(rgm: RecordGroupMetadata): RecordGroup = {
+    require(rgm.getName != null, "Record group name is null in %s.".format(rgm))
+    require(rgm.getSample != null, "Record group sample is null in %s.".format(rgm))
+
+    new RecordGroup(rgm.getSample,
+      rgm.getName,
+      Option(rgm.getSequencingCenter),
+      Option(rgm.getDescription),
+      Option({
+        // must explicitly reference as a java.lang.integer to avoid implicit conversion
+        val l: java.lang.Long = rgm.getRunDateEpoch
+        l
+      }).map(_.toLong),
+      Option(rgm.getFlowOrder),
+      Option(rgm.getKeySequence),
+      Option(rgm.getLibrary),
+      Option({
+        // must explicitly reference as a java.lang.integer to avoid implicit conversion
+        val i: java.lang.Integer = rgm.getPredictedMedianInsertSize
+        i
+      }).map(_.toInt),
+      Option(rgm.getPlatform),
+      Option(rgm.getPlatformUnit))
+  }
 }
 
-class RecordGroup(
-    val sample: String,
-    val recordGroupName: String,
-    val sequencingCenter: Option[String] = None,
-    val description: Option[String] = None,
-    val runDateEpoch: Option[Long] = None,
-    val flowOrder: Option[String] = None,
-    val keySequence: Option[String] = None,
-    val library: Option[String] = None,
-    val predictedMedianInsertSize: Option[Int] = None,
-    val platform: Option[String] = None,
-    val platformUnit: Option[String] = None) extends Serializable {
+case class RecordGroup(
+    sample: String,
+    recordGroupName: String,
+    sequencingCenter: Option[String] = None,
+    description: Option[String] = None,
+    runDateEpoch: Option[Long] = None,
+    flowOrder: Option[String] = None,
+    keySequence: Option[String] = None,
+    library: Option[String] = None,
+    predictedMedianInsertSize: Option[Int] = None,
+    platform: Option[String] = None,
+    platformUnit: Option[String] = None) {
 
   /**
    * Compares equality to another object. Only checks equality via the sample and
@@ -191,6 +205,32 @@ class RecordGroup(
    * @return Hash code for this object.
    */
   override def hashCode(): Int = (sample + recordGroupName).hashCode()
+
+  /**
+   * Converts this into an Avro RecordGroupMetadata description for
+   * serialization to disk.
+   *
+   * @return Returns Avro version of RecordGroup.
+   */
+  def toMetadata: RecordGroupMetadata = {
+    // make builder and set required fields
+    val builder = RecordGroupMetadata.newBuilder()
+      .setName(recordGroupName)
+      .setSample(sample)
+
+    // set optional fields
+    sequencingCenter.foreach(v => builder.setSequencingCenter(v))
+    description.foreach(v => builder.setDescription(v))
+    runDateEpoch.foreach(v => builder.setRunDateEpoch(v))
+    flowOrder.foreach(v => builder.setFlowOrder(v))
+    keySequence.foreach(v => builder.setKeySequence(v))
+    library.foreach(v => builder.setLibrary(v))
+    predictedMedianInsertSize.foreach(v => builder.setPredictedMedianInsertSize(v))
+    platform.foreach(v => builder.setPlatform(v))
+    platformUnit.foreach(v => builder.setPlatformUnit(v))
+
+    builder.build()
+  }
 
   /**
    * Converts a record group into a SAM formatted record group.

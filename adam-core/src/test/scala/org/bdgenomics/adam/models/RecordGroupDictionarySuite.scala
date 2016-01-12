@@ -45,43 +45,19 @@ class RecordGroupDictionarySuite extends FunSuite {
     }
   }
 
-  test("create a record group from a read") {
-    val ar = AlignmentRecord.newBuilder()
-      .setRecordGroupSample("mySample")
-      .setRecordGroupName("myName")
-      .build()
-
-    val rg = RecordGroup(ar)
-
-    assert(rg.isDefined)
-    assert(rg.get.sample === "mySample")
-    assert(rg.get.recordGroupName === "myName")
-  }
-
-  test("don't create a record group from a read without record group info") {
-    val ar = AlignmentRecord.newBuilder()
-      .build()
-
-    val rg = RecordGroup(ar)
-
-    assert(rg.isEmpty)
-  }
-
   test("simple equality checks") {
     val rg1a = new RecordGroup("me", "rg1")
-    val rg1b = RecordGroup(AlignmentRecord.newBuilder()
-      .setRecordGroupSample("me")
-      .setRecordGroupName("rg1")
-      .build())
+    val rg1b = new RecordGroup("me", "rg1")
     val rg2 = new RecordGroup("me", "rg2")
     val rg3 = new RecordGroup("you", "rg1") // all hail the king!
 
     assert(rg1a.equals(rg1a))
-    assert(rg1a.sample === rg1b.get.sample)
-    assert(rg1a.recordGroupName === rg1b.get.recordGroupName)
-    assert(!rg1a.equals(rg1b))
-    assert(rg1a.equals(rg1b.get))
+    assert(rg1a.sample === rg1b.sample)
+    assert(rg1a.recordGroupName === rg1b.recordGroupName)
     assert(!rg1a.equals(rg2))
     assert(!rg1a.equals(rg3))
+    assert(!rg1b.equals(rg2))
+    assert(!rg1b.equals(rg3))
+    assert(!rg2.equals(rg3))
   }
 }

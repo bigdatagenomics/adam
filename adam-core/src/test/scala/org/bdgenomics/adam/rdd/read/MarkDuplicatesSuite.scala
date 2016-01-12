@@ -18,14 +18,22 @@
 package org.bdgenomics.adam.rdd.read
 
 import java.util.UUID
+import org.bdgenomics.adam.models.{ RecordGroup, RecordGroupDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 class MarkDuplicatesSuite extends ADAMFunSuite {
 
+  val rgd = new RecordGroupDictionary(Seq(
+    new RecordGroup("sammy sample",
+      "machine foo",
+      library = Some("library bar"))))
+
   def createUnmappedRead() = {
-    AlignmentRecord.newBuilder().setReadMapped(false).build()
+    AlignmentRecord.newBuilder()
+      .setReadMapped(false)
+      .build()
   }
 
   def createMappedRead(referenceName: String, start: Long, end: Long,
@@ -50,7 +58,6 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       .setPrimaryAlignment(isPrimaryAlignment)
       .setReadName(readName)
       .setRecordGroupName("machine foo")
-      .setRecordGroupLibrary("library bar")
       .setDuplicateRead(false)
       .setReadNegativeStrand(isNegativeStrand)
       .build()
@@ -70,14 +77,14 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
 
     val firstOfPair = createMappedRead(firstReferenceName, firstStart, firstEnd,
       readName = readName, avgPhredScore = avgPhredScore)
-    firstOfPair.setReadNum(0)
+    firstOfPair.setReadInFragment(0)
     firstOfPair.setMateMapped(true)
     firstOfPair.setMateContig(secondContig)
     firstOfPair.setMateAlignmentStart(secondStart)
     firstOfPair.setReadPaired(true)
     val secondOfPair = createMappedRead(secondReferenceName, secondStart, secondEnd,
       readName = readName, avgPhredScore = avgPhredScore, isNegativeStrand = true)
-    secondOfPair.setReadNum(1)
+    secondOfPair.setReadInFragment(1)
     secondOfPair.setMateMapped(true)
     secondOfPair.setMateContig(firstContig)
     secondOfPair.setMateAlignmentStart(firstStart)
@@ -86,7 +93,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   }
 
   private def markDuplicates(reads: AlignmentRecord*) = {
-    sc.parallelize(reads).adamMarkDuplicates().collect()
+    sc.parallelize(reads).adamMarkDuplicates(rgd).collect()
   }
 
   sparkTest("single read") {

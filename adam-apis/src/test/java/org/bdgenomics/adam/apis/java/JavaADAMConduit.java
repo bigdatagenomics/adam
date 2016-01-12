@@ -22,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.spark.api.java.JavaRDD;
 import org.bdgenomics.adam.apis.java.JavaADAMContext;
+import org.bdgenomics.adam.models.RecordGroupDictionary;
+import org.bdgenomics.adam.models.SequenceDictionary;
 import org.bdgenomics.formats.avro.AlignmentRecord;
 
 /**
@@ -29,8 +31,10 @@ import org.bdgenomics.formats.avro.AlignmentRecord;
  * disk and reads it back.
  */
 public class JavaADAMConduit {
-    public static JavaAlignmentRecordRDD conduit(JavaRDD<AlignmentRecord> rdd) throws IOException {
-        JavaAlignmentRecordRDD recordRdd = new JavaAlignmentRecordRDD(rdd);
+    public static JavaAlignmentRecordRDD conduit(JavaRDD<AlignmentRecord> rdd,
+                                       SequenceDictionary sd,
+                                       RecordGroupDictionary rgd) throws IOException {
+        JavaAlignmentRecordRDD recordRdd = new JavaAlignmentRecordRDD(rdd, sd, rgd);
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");

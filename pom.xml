@@ -316,7 +316,7 @@
       <dependency>
         <groupId>org.bdgenomics.bdg-formats</groupId>
         <artifactId>bdg-formats</artifactId>
-        <version>0.6.1</version>
+        <version>0.7.0</version>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>

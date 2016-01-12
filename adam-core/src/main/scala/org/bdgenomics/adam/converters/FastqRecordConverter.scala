@@ -23,8 +23,7 @@ import org.apache.spark.Logging
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,
-  Fragment,
-  Sequence
+  Fragment
 }
 
 class FastqRecordConverter extends Serializable with Logging {
@@ -61,7 +60,7 @@ class FastqRecordConverter extends Serializable with Logging {
         .setQual(firstReadQualities)
         .setReadPaired(true)
         .setProperPair(true)
-        .setReadNum(0)
+        .setReadInFragment(0)
         .setReadNegativeStrand(null)
         .setMateNegativeStrand(null)
         .setPrimaryAlignment(null)
@@ -74,7 +73,7 @@ class FastqRecordConverter extends Serializable with Logging {
         .setQual(secondReadQualities)
         .setReadPaired(true)
         .setProperPair(true)
-        .setReadNum(1)
+        .setReadInFragment(1)
         .setReadNegativeStrand(null)
         .setMateNegativeStrand(null)
         .setPrimaryAlignment(null)
@@ -118,12 +117,12 @@ class FastqRecordConverter extends Serializable with Logging {
     // build and return record
     Fragment.newBuilder()
       .setReadName(firstReadName)
-      .setSequences(List(Sequence.newBuilder()
-        .setBases(firstReadSequence)
-        .setQualities(firstReadQualities)
-        .build(), Sequence.newBuilder()
-        .setBases(secondReadSequence)
-        .setQualities(secondReadQualities)
+      .setAlignments(List(AlignmentRecord.newBuilder()
+        .setSequence(firstReadSequence)
+        .setQual(firstReadQualities)
+        .build(), AlignmentRecord.newBuilder()
+        .setSequence(secondReadSequence)
+        .setQual(secondReadQualities)
         .build()))
       .build()
   }
@@ -189,7 +188,7 @@ class FastqRecordConverter extends Serializable with Logging {
       .setQual(readQualities)
       .setReadPaired(setFirstOfPair || setSecondOfPair)
       .setProperPair(null)
-      .setReadNum(
+      .setReadInFragment(
         if (setFirstOfPair) 0
         else if (setSecondOfPair) 1
         else null

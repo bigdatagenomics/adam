@@ -24,7 +24,11 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.models.SnpTable
+import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
+  SequenceDictionary,
+  SnpTable
+}
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
@@ -48,8 +52,6 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
   var outputPath: String = null
-  @Args4jOption(required = false, name = "-limit_projection", usage = "Only project necessary fields. Only works for Parquet files.")
-  var limitProjection: Boolean = false
   @Args4jOption(required = false, name = "-aligned_read_predicate", usage = "Only load aligned reads. Only works for Parquet files.")
   var useAlignedReadPredicate: Boolean = false
   @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
@@ -117,7 +119,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
   val stringency = ValidationStringency.valueOf(args.stringency)
 
-  def apply(rdd: RDD[AlignmentRecord]): RDD[AlignmentRecord] = {
+  def apply(rdd: RDD[AlignmentRecord],
+            rgd: RecordGroupDictionary): RDD[AlignmentRecord] = {
 
     var adamRecords = rdd
     val sc = rdd.context
@@ -132,7 +135,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
     if (args.markDuplicates) {
       log.info("Marking duplicates")
-      adamRecords = adamRecords.adamMarkDuplicates()
+      adamRecords = adamRecords.adamMarkDuplicates(rgd)
     }
 
     if (args.locallyRealign) {
@@ -225,14 +228,14 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
   def run(sc: SparkContext) {
     // throw exception if aligned read predicate or projection flags are used improperly
-    if ((args.useAlignedReadPredicate || args.limitProjection) &&
+    if (args.useAlignedReadPredicate &&
       (args.forceLoadBam || args.forceLoadFastq || args.forceLoadIFastq)) {
       throw new IllegalArgumentException(
-        "-aligned_read_predicate and -limit_projection only apply to Parquet files, but a non-Parquet force load flag was passed."
+        "-aligned_read_predicate only applies to Parquet files, but a non-Parquet force load flag was passed."
       )
     }
 
-    val rdd =
+    val aRdd =
       if (args.forceLoadBam) {
         sc.loadBam(args.inputPath)
       } else if (args.forceLoadFastq) {
@@ -240,57 +243,30 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       } else if (args.forceLoadIFastq) {
         sc.loadInterleavedFastq(args.inputPath)
       } else if (args.forceLoadParquet ||
-        args.limitProjection ||
         args.useAlignedReadPredicate) {
         val pred = if (args.useAlignedReadPredicate) {
           Some((BooleanColumn("readMapped") === true))
         } else {
           None
         }
-        val proj = if (args.limitProjection) {
-          Some(Projection(
-            AlignmentRecordField.contig,
-            AlignmentRecordField.start,
-            AlignmentRecordField.end,
-            AlignmentRecordField.mapq,
-            AlignmentRecordField.readName,
-            AlignmentRecordField.sequence,
-            AlignmentRecordField.cigar,
-            AlignmentRecordField.qual,
-            AlignmentRecordField.recordGroupId,
-            AlignmentRecordField.recordGroupName,
-            AlignmentRecordField.readPaired,
-            AlignmentRecordField.readMapped,
-            AlignmentRecordField.readNegativeStrand,
-            AlignmentRecordField.firstOfPair,
-            AlignmentRecordField.secondOfPair,
-            AlignmentRecordField.primaryAlignment,
-            AlignmentRecordField.duplicateRead,
-            AlignmentRecordField.mismatchingPositions,
-            AlignmentRecordField.secondaryAlignment,
-            AlignmentRecordField.supplementaryAlignment
-          ))
-        } else {
-          None
-        }
-        sc.loadParquetAlignments(
-          args.inputPath,
-          predicate = pred,
-          projection = proj
-        )
+
+        sc.loadParquetAlignments(args.inputPath,
+          predicate = pred)
       } else {
         sc.loadAlignments(
           args.inputPath,
           filePath2Opt = Option(args.pairedFastqFile),
           recordGroupOpt = Option(args.fastqRecordGroup),
-          stringency = stringency
-        )
+          stringency = stringency)
       }
+    val rdd = aRdd.rdd
+    val sd = aRdd.sequences
+    val rgd = aRdd.recordGroups
 
     // Optionally load a second RDD and concatenate it with the first.
     // Paired-FASTQ loading is avoided here because that wouldn't make sense
     // given that it's already happening above.
-    val concatRddOpt =
+    val concatOpt =
       Option(args.concatFilename).map(concatFilename =>
         if (args.forceLoadBam) {
           sc.loadBam(concatFilename)
@@ -305,10 +281,26 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
           )
         })
 
-    this.apply(concatRddOpt match {
-      case Some(concatRdd) => rdd ++ concatRdd
-      case None            => rdd
-    }).adamSave(args, args.sortReads)
+    // if we have a second rdd that we are merging in, process the merger here
+    val (mergedRdd, mergedSd, mergedRgd) = concatOpt.fold((rdd, sd, rgd))(t => {
+      (rdd ++ t.rdd, sd ++ t.sequences, rgd ++ t.recordGroups)
+    })
+
+    // run our transformation
+    val outputRdd = this.apply(mergedRdd, mergedRgd)
+
+    // if we are sorting, we must strip the indices from the sequence dictionary
+    // and sort the sequence dictionary
+    //
+    // we must do this because we do a lexicographic sort, not an index-based sort
+    val sdFinal = if (args.sortReads) {
+      mergedSd.stripIndices
+        .sorted
+    } else {
+      mergedSd
+    }
+
+    outputRdd.adamSave(args, sdFinal, mergedRgd, args.sortReads)
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {

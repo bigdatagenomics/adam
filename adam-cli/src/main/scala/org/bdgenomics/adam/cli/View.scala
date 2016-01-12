@@ -19,6 +19,7 @@ package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.formats.avro.AlignmentRecord
@@ -132,8 +133,8 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
       getFilter(0x8, read => read.getReadPaired && !read.getMateMapped),
       getFilter(0x10, _.getReadNegativeStrand),
       getFilter(0x20, _.getMateNegativeStrand),
-      getFilter(0x40, _.getReadNum == 0),
-      getFilter(0x80, _.getReadNum == 1),
+      getFilter(0x40, _.getReadInFragment == 0),
+      getFilter(0x80, _.getReadInFragment == 1),
       getFilter(0x100, !_.getPrimaryAlignment),
       getFilter(0x200, _.getFailedVendorQualityChecks),
       getFilter(0x400, _.getDuplicateRead),
@@ -161,15 +162,15 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
 
   def run(sc: SparkContext) = {
 
-    val reads: RDD[AlignmentRecord] = applyFilters(sc.loadAlignments(args.inputPath))
+    val reads = applyFilters(sc.loadAlignments(args.inputPath))
 
     if (args.outputPath != null)
-      reads.adamAlignedRecordSave(args)
+      reads.adamAlignedRecordSave(args, SequenceDictionary.empty, RecordGroupDictionary.empty)
     else {
       if (args.printCount) {
         println(reads.count())
       } else {
-        println(reads.adamSAMString)
+        println(reads.adamSAMString(SequenceDictionary.empty, RecordGroupDictionary.empty))
       }
     }
   }

@@ -42,7 +42,11 @@ class ViewSuite extends ADAMFunSuite {
         )
       )
 
-    reads = transform.apply(sc.loadAlignments(inputSamPath)).collect()
+    val aRdd = sc.loadBam(inputSamPath)
+    val rdd = aRdd.rdd
+    val rgd = aRdd.recordGroups
+
+    reads = transform.apply(rdd, rgd).collect()
     readsCount = reads.size.toInt
   }
 
