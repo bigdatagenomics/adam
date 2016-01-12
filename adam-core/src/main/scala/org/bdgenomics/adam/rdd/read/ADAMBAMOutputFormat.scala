@@ -17,11 +17,17 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import org.seqdoop.hadoop_bam.{ SAMRecordWritable, KeyIgnoringBAMOutputFormat }
 import htsjdk.samtools.SAMFileHeader
+import hbparquet.hadoop.util.ContextUtil
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.mapreduce.{ OutputFormat, RecordWriter, TaskAttemptContext }
 import org.apache.spark.rdd.InstrumentedOutputFormat
-import org.apache.hadoop.mapreduce.OutputFormat
 import org.bdgenomics.adam.instrumentation.Timers
+import org.seqdoop.hadoop_bam.{
+  KeyIgnoringBAMOutputFormat,
+  KeyIgnoringBAMRecordWriter,
+  SAMRecordWritable
+}
 
 object ADAMBAMOutputFormat extends Serializable {
 
@@ -76,8 +82,23 @@ class InstrumentedADAMBAMOutputFormat[K] extends InstrumentedOutputFormat[K, org
 class ADAMBAMOutputFormatHeaderLess[K]
     extends KeyIgnoringBAMOutputFormat[K] with Serializable {
 
-  setSAMHeader(ADAMBAMOutputFormat.getHeader)
   setWriteHeader(false)
+
+  override def getRecordWriter(context: TaskAttemptContext): RecordWriter[K, SAMRecordWritable] = {
+    val conf = ContextUtil.getConfiguration(context)
+
+    // where is our header file?
+    val path = new Path(conf.get("org.bdgenomics.adam.rdd.read.bam_header_path"))
+
+    // read the header file
+    readSAMHeaderFrom(path, conf)
+
+    // now that we have the header set, we need to make a record reader
+    return new KeyIgnoringBAMRecordWriter[K](getDefaultWorkFile(context, ""),
+      header,
+      false,
+      context)
+  }
 }
 
 class InstrumentedADAMBAMOutputFormatHeaderLess[K] extends InstrumentedOutputFormat[K, org.seqdoop.hadoop_bam.SAMRecordWritable] {

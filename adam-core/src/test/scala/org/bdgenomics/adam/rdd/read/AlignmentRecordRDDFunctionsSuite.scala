@@ -298,7 +298,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     checkFiles(resourcePath("ordered.sam"), actualSortedPath)
   }
 
-  sparkTest("write single sam file back") {
+  def testBQSR(asSam: Boolean, filename: String) {
     val inputPath = resourcePath("bqsr1.sam")
     val tempFile = Files.createTempDirectory("bqsr1")
     val rRdd = sc.loadAlignments(inputPath)
@@ -306,12 +306,12 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val sd = rRdd.sequences
     val rgd = rRdd.recordGroups
     rdd.cache()
-    rdd.adamSAMSave(tempFile.toAbsolutePath.toString + "/bqsr1.sam",
+    rdd.adamSAMSave("%s/%s".format(tempFile.toAbsolutePath.toString, filename),
       sd,
       rgd,
       asSam = true,
       asSingleFile = true)
-    val rdd2 = sc.loadAlignments(tempFile.toAbsolutePath.toString + "/bqsr1.sam").rdd
+    val rdd2 = sc.loadAlignments("%s/%s".format(tempFile.toAbsolutePath.toString, filename)).rdd
     rdd2.cache()
 
     val (fsp1, fsf1) = rdd.adamFlagStat()
@@ -377,5 +377,13 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
           }
         }
       })
+  }
+
+  sparkTest("write single sam file back") {
+    testBQSR(true, "bqsr1.sam")
+  }
+
+  sparkTest("write single bam file back") {
+    testBQSR(false, "bqsr1.bam")
   }
 }
