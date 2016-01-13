@@ -224,14 +224,10 @@ projected schema that only materializes the read flags instead of the whole read
 
 The `adam-shell` command opens an interpreter that you can run ad-hoc ADAM commands in.
 
-For example, the following code snippet will generate a result similar to [the k-mer-counting example above](./README.md#hello-world-counting-k-mers), but with the k-mers sorted in descending order of their number of occurrences:
+For example, the following code snippet will generate a result similar to [the k-mer-counting example above](./README.md#hello-world-counting-k-mers), but with the k-mers sorted in descending order of their number of occurrences. To use this, save the code snippet as `kmer.scala` and run `adam-shell -i kmer.scala`.
 
+`kmer.scala`
 ```scala
-$ adam-shell
-…
-scala> :paste
-// Entering paste mode (ctrl-D to finish)
-
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.projections.{AlignmentRecordField, Projection}
 
@@ -258,9 +254,11 @@ val kmers =
 
 // Print the top 10 most common 21-mers
 kmers.take(10).foreach(println)
-
-// Exiting paste mode, now interpreting.
-
+```
+`adam-shell -i kmer.scala`
+```
+$ adam-shell -i kmer.scala
+…
 (121771,TTTTTTTTTTTTTTTTTTTTT)
 (44317,ACACACACACACACACACACA)
 (44023,TGTGTGTGTGTGTGTGTGTGT)
