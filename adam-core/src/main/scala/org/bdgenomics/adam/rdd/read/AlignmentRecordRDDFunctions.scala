@@ -17,8 +17,15 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import java.io.{ OutputStream, StringWriter }
-import htsjdk.samtools.{ SAMFileHeader, SAMTextHeaderCodec, SAMTextWriter, ValidationStringency }
+import java.io.{
+  InputStream,
+  OutputStream,
+  StringWriter,
+  Writer
+}
+import htsjdk.samtools._
+import htsjdk.samtools.util.{ BinaryCodec, BlockCompressedOutputStream }
+import java.lang.reflect.InvocationTargetException
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileWriter
 import org.apache.avro.specific.{ SpecificDatumWriter, SpecificRecordBase }
@@ -28,7 +35,7 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
-import org.apache.spark.rdd.{ PartitionPruningRDD, RDD }
+import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
@@ -42,9 +49,9 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.SAMRecordWritable
-import scala.reflect.ClassTag
-
+import scala.annotation.tailrec
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {
@@ -297,7 +304,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     rgd: RecordGroupDictionary,
     asSam: Boolean = true,
     asSingleFile: Boolean = false,
-    isSorted: Boolean = false) = SAMSave.time {
+    isSorted: Boolean = false): Unit = SAMSave.time {
 
     // if the file is sorted, make sure the sequence dictionary is sorted
     val sdFinal = if (isSorted) {
@@ -314,51 +321,51 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     // add keys to our records
     val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
 
-    val bcastHeader = rdd.context.broadcast(header)
-    val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
-      log.info(s"Setting ${if (asSam) "SAM" else "BAM"} header for partition $idx")
-      val header = bcastHeader.value
-      synchronized {
-        // perform map partition call to ensure that the SAM/BAM header is set on all
-        // nodes in the cluster; see:
-        // https://github.com/bigdatagenomics/adam/issues/353,
-        // https://github.com/bigdatagenomics/adam/issues/676
-
-        asSam match {
-          case true =>
-            ADAMSAMOutputFormat.clearHeader()
-            ADAMSAMOutputFormat.addHeader(header)
-            log.info(s"Set SAM header for partition $idx")
-          case false =>
-            ADAMBAMOutputFormat.clearHeader()
-            ADAMBAMOutputFormat.addHeader(header)
-            log.info(s"Set BAM header for partition $idx")
-        }
-      }
-      Iterator[Int]()
-    }).count()
-
-    // force value check, ensure that computation happens
-    if (mp != 0) {
-      log.error("Had more than 0 elements after map partitions call to set VCF header across cluster.")
-    }
-
-    // attach header to output format
-    asSam match {
-      case true =>
-        ADAMSAMOutputFormat.clearHeader()
-        ADAMSAMOutputFormat.addHeader(header)
-        log.info("Set SAM header on driver")
-      case false =>
-        ADAMBAMOutputFormat.clearHeader()
-        ADAMBAMOutputFormat.addHeader(header)
-        log.info("Set BAM header on driver")
-    }
-
     // write file to disk
     val conf = rdd.context.hadoopConfiguration
 
     if (!asSingleFile) {
+      val bcastHeader = rdd.context.broadcast(header)
+      val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
+        log.info(s"Setting ${if (asSam) "SAM" else "BAM"} header for partition $idx")
+        val header = bcastHeader.value
+        synchronized {
+          // perform map partition call to ensure that the SAM/BAM header is set on all
+          // nodes in the cluster; see:
+          // https://github.com/bigdatagenomics/adam/issues/353,
+          // https://github.com/bigdatagenomics/adam/issues/676
+
+          asSam match {
+            case true =>
+              ADAMSAMOutputFormat.clearHeader()
+              ADAMSAMOutputFormat.addHeader(header)
+              log.info(s"Set SAM header for partition $idx")
+            case false =>
+              ADAMBAMOutputFormat.clearHeader()
+              ADAMBAMOutputFormat.addHeader(header)
+              log.info(s"Set BAM header for partition $idx")
+          }
+        }
+        Iterator[Int]()
+      }).count()
+
+      // force value check, ensure that computation happens
+      if (mp != 0) {
+        log.error("Had more than 0 elements after map partitions call to set VCF header across cluster.")
+      }
+
+      // attach header to output format
+      asSam match {
+        case true =>
+          ADAMSAMOutputFormat.clearHeader()
+          ADAMSAMOutputFormat.addHeader(header)
+          log.info("Set SAM header on driver")
+        case false =>
+          ADAMBAMOutputFormat.clearHeader()
+          ADAMBAMOutputFormat.addHeader(header)
+          log.info("Set BAM header on driver")
+      }
+
       asSam match {
         case true =>
           withKey.saveAsNewAPIHadoopFile(
@@ -380,53 +387,210 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
       }
     } else {
       log.info(s"Writing single ${if (asSam) "SAM" else "BAM"} file (not Hadoop-style directory)")
-      val (outputFormat, headerLessOutputFormat) = asSam match {
-        case true =>
-          (
-            classOf[InstrumentedADAMSAMOutputFormat[LongWritable]],
-            classOf[InstrumentedADAMSAMOutputFormatHeaderLess[LongWritable]]
-          )
 
-        case false =>
-          (
-            classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
-            classOf[InstrumentedADAMBAMOutputFormatHeaderLess[LongWritable]]
-          )
+      val fs = FileSystem.get(conf)
+
+      val headPath = new Path(filePath + "_head")
+      val tailPath = new Path(filePath + "_tail")
+      val outputPath = new Path(filePath)
+
+      // get an output stream
+      val os = fs.create(headPath)
+        .asInstanceOf[OutputStream]
+
+      // TIL: sam and bam are written in completely different ways!
+      if (asSam) {
+        val sw: Writer = new StringWriter()
+        val stw = new SAMTextWriter(os)
+        stw.setHeader(header)
+        stw.close()
+      } else {
+        // create htsjdk specific streams for writing the bam header
+        val compressedOut: OutputStream = new BlockCompressedOutputStream(os, null)
+        val binaryCodec = new BinaryCodec(compressedOut);
+
+        // write a bam header - cribbed from Hadoop-BAM
+        binaryCodec.writeBytes("BAM\001".getBytes())
+        val sw: Writer = new StringWriter()
+        new SAMTextHeaderCodec().encode(sw, header)
+        binaryCodec.writeString(sw.toString, true, false)
+
+        // write sequence dictionary
+        val ssd = header.getSequenceDictionary()
+        binaryCodec.writeInt(ssd.size())
+        ssd.getSequences
+          .toList
+          .foreach(r => {
+            binaryCodec.writeString(r.getSequenceName(), true, true)
+            binaryCodec.writeInt(r.getSequenceLength())
+          })
+
+        // flush and close all the streams
+        compressedOut.flush()
+        compressedOut.close()
       }
 
-      val headPath = filePath + "_head"
-      val tailPath = filePath + "_tail"
+      // more flushing and closing
+      os.flush()
+      os.close()
 
-      PartitionPruningRDD.create(withKey, i => { i == 0 }).saveAsNewAPIHadoopFile(
-        headPath,
-        classOf[LongWritable],
-        classOf[SAMRecordWritable],
-        outputFormat,
-        conf
-      )
-      PartitionPruningRDD.create(withKey, i => { i != 0 }).saveAsNewAPIHadoopFile(
-        tailPath,
+      // set path to header file
+      conf.set("org.bdgenomics.adam.rdd.read.bam_header_path", headPath.toString)
+
+      // set up output format
+      val headerLessOutputFormat = if (asSam) {
+        classOf[InstrumentedADAMSAMOutputFormatHeaderLess[LongWritable]]
+      } else {
+        classOf[InstrumentedADAMBAMOutputFormatHeaderLess[LongWritable]]
+      }
+
+      // save rdd
+      withKey.saveAsNewAPIHadoopFile(
+        tailPath.toString,
         classOf[LongWritable],
         classOf[SAMRecordWritable],
         headerLessOutputFormat,
         conf
       )
 
-      val fs = FileSystem.get(conf)
+      // get a list of all of the files in the tail file
+      val tailFiles = fs.globStatus(new Path("%s/part-*".format(tailPath)))
+        .toSeq
+        .map(_.getPath)
+        .sortBy(_.getName)
+        .toArray
 
-      fs.listStatus(headPath)
-        .find(_.getPath.getName.startsWith("part-r"))
-        .map(fileStatus => FileUtil.copy(fs, fileStatus.getPath, fs, tailPath + "/head", false, false, conf))
-      fs.delete(headPath, true)
+      // try to merge this via the fs api, which should guarantee ordering...?
+      // however! this function is not implemented on all platforms, hence the try.
+      try {
 
-      FileUtil.copyMerge(fs, tailPath, fs, filePath, true, conf, null)
-      fs.delete(tailPath, true)
+        // concat files together
+        // we need to do this through reflection because the concat method is
+        // NOT in hadoop 1.x
 
+        // find the concat method
+        val fsMethods = classOf[FileSystem].getDeclaredMethods
+        val filteredMethods = fsMethods.filter(_.getName == "concat")
+
+        // did we find the method? if not, throw an exception
+        if (filteredMethods.size == 0) {
+          throw new IllegalStateException(
+            "Could not find concat method in FileSystem. Methods included:\n" +
+              fsMethods.map(_.getName).mkString("\n") +
+              "\nAre you running Hadoop 1.x?")
+        } else if (filteredMethods.size > 1) {
+          throw new IllegalStateException(
+            "Found multiple concat methods in FileSystem:\n%s".format(
+              filteredMethods.map(_.getName).mkString("\n")))
+        }
+
+        // since we've done our checking, let's get the method now
+        val concatMethod = filteredMethods.head
+
+        // we need to move the head file into the tailFiles directory
+        // this is a requirement of the concat method
+        val newHeadPath = new Path("%s/header".format(tailPath))
+        fs.rename(headPath, newHeadPath)
+
+        // invoke the method on the fs instance
+        // if we are on hadoop 2.x, this makes the call:
+        //
+        // fs.concat(headPath, tailFiles)
+        try {
+          concatMethod.invoke(fs, newHeadPath, tailFiles)
+        } catch {
+          case ite: InvocationTargetException => {
+            // move the head file back - essentially, unroll the prep for concat
+            fs.rename(newHeadPath, headPath)
+
+            // the only reason we have this try/catch is to unwrap the wrapped
+            // exception and rethrow. this gives clearer logging messages
+            throw ite.getTargetException
+          }
+        }
+
+        // move concated file
+        fs.rename(newHeadPath, outputPath)
+
+        // delete tail files
+        fs.delete(tailPath, true)
+      } catch {
+        case e: Throwable => {
+
+          log.warn("Caught exception when merging via Hadoop FileSystem API:\n%s".format(e))
+          log.warn("Retrying as manual copy from the driver which will degrade performance.")
+
+          // doing this correctly is surprisingly hard
+          // specifically, copy merge does not care about ordering, which is
+          // fine if your files are unordered, but if the blocks in the file
+          // _are_ ordered, then hahahahahahahahahaha. GOOD. TIMES.
+          //
+          // fortunately, the blocks in our file are ordered
+          // the performance of this section is hilarious
+          // 
+          // specifically, the performance is hilariously bad
+          //
+          // but! it is correct.
+
+          // open our output file
+          val os = fs.create(outputPath)
+
+          // prepend our header to the list of files to copy
+          val filesToCopy = Seq(headPath) ++ tailFiles.toSeq
+
+          // here is a byte array for copying
+          val ba = new Array[Byte](1024)
+
+          @tailrec def copy(is: InputStream,
+                            os: OutputStream) {
+
+            // make a read
+            val bytesRead = is.read(ba)
+
+            // did our read succeed? if so, write to output stream
+            // and continue
+            if (bytesRead >= 0) {
+              os.write(ba, 0, bytesRead)
+
+              copy(is, os)
+            }
+          }
+
+          // loop over allllll the files and copy them
+          val numFiles = filesToCopy.length
+          var filesCopied = 1
+          filesToCopy.foreach(p => {
+
+            // print a bit of progress logging
+            log.info("Copying file %s, file %d of %d.".format(
+              p.toString,
+              filesCopied,
+              numFiles))
+
+            // open our input file
+            val is = fs.open(p)
+
+            // until we are out of bytes, copy
+            copy(is, os)
+
+            // close our input stream
+            is.close()
+
+            // increment file copy count
+            filesCopied += 1
+          })
+
+          // flush and close the output stream
+          os.flush()
+          os.close()
+
+          // delete temp files
+          fs.delete(headPath, true)
+          fs.delete(tailPath, true)
+        }
+      }
     }
-
   }
-
-  implicit def str2Path(str: String): Path = new Path(str)
 
   def getSequenceRecordsFromElement(elem: AlignmentRecord): Set[SequenceRecord] = {
     SequenceRecord.fromADAMRecord(elem).toSet
