@@ -20,7 +20,9 @@ package org.bdgenomics.adam.models
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.{ SingleReadBucket, AlignmentRecord }
+
+import scala.collection.JavaConversions._
 
 /**
  * This class is similar to SingleReadBucket, except it breaks the reads down further.
@@ -98,22 +100,22 @@ class ReadBucketSerializer extends Serializer[ReadBucket] {
 object ReadBucket {
   implicit def singleReadBucketToReadBucket(bucket: SingleReadBucket): ReadBucket = {
     // check that reads are either first or second read from fragment
-    bucket.primaryMapped.foreach(r => require(
+    bucket.getPrimaryMapped.foreach(r => require(
       r.getReadInFragment >= 0 && r.getReadInFragment <= 1,
       "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadInFragment)
     ))
-    bucket.secondaryMapped.foreach(r => require(
+    bucket.getSecondaryMapped.foreach(r => require(
       r.getReadInFragment >= 0 && r.getReadInFragment <= 1,
       "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadInFragment)
     ))
-    bucket.unmapped.foreach(r => require(
+    bucket.getUnmapped.foreach(r => require(
       r.getReadInFragment >= 0 && r.getReadInFragment <= 1,
       "Read %s is not first or second read from pair (num = %d).".format(r, r.getReadInFragment)
     ))
 
-    val (pairedPrimary, unpairedPrimary) = bucket.primaryMapped.partition(_.getReadPaired)
+    val (pairedPrimary, unpairedPrimary) = bucket.getPrimaryMapped.partition(_.getReadPaired)
     val (pairedFirstPrimary, pairedSecondPrimary) = pairedPrimary.partition(_.getReadInFragment == 0)
-    val (pairedSecondary, unpairedSecondary) = bucket.secondaryMapped.partition(_.getReadPaired)
+    val (pairedSecondary, unpairedSecondary) = bucket.getSecondaryMapped.partition(_.getReadPaired)
     val (pairedFirstSecondary, pairedSecondSecondary) = pairedSecondary.partition(_.getReadInFragment == 0)
 
     new ReadBucket(
@@ -123,7 +125,7 @@ object ReadBucket {
       unpairedSecondary,
       pairedFirstSecondary,
       pairedSecondSecondary,
-      bucket.unmapped
+      bucket.getUnmapped
     )
   }
 }

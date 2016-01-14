@@ -24,14 +24,16 @@ import org.apache.spark.Logging
 import org.bdgenomics.adam.instrumentation.Timers.CreateReferencePositionPair
 import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.formats.avro.{ SingleReadBucket, AlignmentRecord }
+
+import scala.collection.JavaConversions._
 
 object ReferencePositionPair extends Logging {
   def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = CreateReferencePositionPair.time {
-    val firstOfPair = (singleReadBucket.primaryMapped.filter(_.getReadInFragment == 0) ++
-      singleReadBucket.unmapped.filter(_.getReadInFragment == 0)).toSeq
-    val secondOfPair = (singleReadBucket.primaryMapped.filter(_.getReadInFragment == 1) ++
-      singleReadBucket.unmapped.filter(_.getReadInFragment == 1)).toSeq
+    val firstOfPair = (singleReadBucket.getPrimaryMapped.filter(_.getReadInFragment == 0) ++
+      singleReadBucket.getUnmapped.filter(_.getReadInFragment == 0)).toSeq
+    val secondOfPair = (singleReadBucket.getPrimaryMapped.filter(_.getReadInFragment == 1) ++
+      singleReadBucket.getUnmapped.filter(_.getReadInFragment == 1)).toSeq
 
     def getPos(r: AlignmentRecord): ReferencePosition = {
       if (r.getReadMapped) {
@@ -48,8 +50,8 @@ object ReferencePositionPair extends Logging {
       )
     } else {
       new ReferencePositionPair(
-        (singleReadBucket.primaryMapped ++
-          singleReadBucket.unmapped).toSeq.lift(0).map(getPos),
+        (singleReadBucket.getPrimaryMapped ++
+          singleReadBucket.getUnmapped).toSeq.lift(0).map(getPos),
         None
       )
     }

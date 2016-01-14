@@ -21,15 +21,14 @@ import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.formats.avro.{
-  AlignmentRecord,
-  Fragment
-}
+import org.bdgenomics.formats.avro.{ SingleReadBucket, AlignmentRecord, Fragment }
+
 import scala.collection.JavaConversions._
 
-object SingleReadBucket extends Logging {
+object SingleReadBucketRDD extends Logging {
   def apply(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
     rdd.groupBy(p => (p.getRecordGroupName, p.getReadName))
       .map(kv => {
@@ -40,43 +39,8 @@ object SingleReadBucket extends Logging {
         val (primaryMapped, secondaryMapped) = mapped.partition(_.getPrimaryAlignment)
 
         // TODO: consider doing validation here (e.g. read says mate mapped but it doesn't exist)
-        new SingleReadBucket(primaryMapped, secondaryMapped, unmapped)
+        new SingleReadBucket(primaryMapped.toList, secondaryMapped.toList, unmapped.toList)
       })
-  }
-}
-
-case class SingleReadBucket(
-    primaryMapped: Iterable[AlignmentRecord] = Seq.empty,
-    secondaryMapped: Iterable[AlignmentRecord] = Seq.empty,
-    unmapped: Iterable[AlignmentRecord] = Seq.empty) {
-  // Note: not a val in order to save serialization/memory cost
-  def allReads = {
-    primaryMapped ++ secondaryMapped ++ unmapped
-  }
-
-  def toFragment: Fragment = {
-    // take union of all reads, as we will need this for building and
-    // want to pay the cost exactly once
-    val unionReads = allReads
-
-    // start building fragment
-    val builder = Fragment.newBuilder()
-      .setReadName(unionReads.head.getReadName)
-      .setAlignments(seqAsJavaList(allReads.toSeq))
-
-    // is an insert size defined for this fragment?
-    primaryMapped.headOption
-      .foreach(r => {
-        Option(r.getInferredInsertSize).foreach(is => {
-          builder.setFragmentSize(is.toInt)
-        })
-      })
-
-    // set record group name, if known
-    Option(unionReads.head.getRecordGroupName)
-      .foreach(n => builder.setRunId(n))
-
-    builder.build()
   }
 }
 
@@ -98,9 +62,10 @@ class SingleReadBucketSerializer extends Serializer[SingleReadBucket] {
   }
 
   def write(kryo: Kryo, output: Output, groupedReads: SingleReadBucket) = {
-    writeArray(kryo, output, groupedReads.primaryMapped.toSeq)
-    writeArray(kryo, output, groupedReads.secondaryMapped.toSeq)
-    writeArray(kryo, output, groupedReads.unmapped.toSeq)
+
+    writeArray(kryo, output, ADAMContext.javaListToList(groupedReads.getPrimaryMapped))
+    writeArray(kryo, output, ADAMContext.javaListToList(groupedReads.getSecondaryMapped))
+    writeArray(kryo, output, ADAMContext.javaListToList(groupedReads.getUnmapped))
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[SingleReadBucket]): SingleReadBucket = {
