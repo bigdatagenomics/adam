@@ -29,7 +29,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   SnpTable
 }
-import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
+import org.bdgenomics.adam.projections.{ AlignmentRecordField, Filter }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.adam.rdd.read.MDTagging
@@ -52,6 +52,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
   var outputPath: String = null
+  @Args4jOption(required = false, name = "-limit_projection", usage = "Only project necessary fields. Only works for Parquet files.")
+  var limitProjection: Boolean = false
   @Args4jOption(required = false, name = "-aligned_read_predicate", usage = "Only load aligned reads. Only works for Parquet files.")
   var useAlignedReadPredicate: Boolean = false
   @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
@@ -228,7 +230,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
   def run(sc: SparkContext) {
     // throw exception if aligned read predicate or projection flags are used improperly
-    if (args.useAlignedReadPredicate &&
+    if ((args.useAlignedReadPredicate ||
+      args.limitProjection) &&
       (args.forceLoadBam || args.forceLoadFastq || args.forceLoadIFastq)) {
       throw new IllegalArgumentException(
         "-aligned_read_predicate only applies to Parquet files, but a non-Parquet force load flag was passed."
@@ -243,15 +246,24 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       } else if (args.forceLoadIFastq) {
         sc.loadInterleavedFastq(args.inputPath)
       } else if (args.forceLoadParquet ||
-        args.useAlignedReadPredicate) {
+        args.useAlignedReadPredicate ||
+        args.limitProjection) {
         val pred = if (args.useAlignedReadPredicate) {
           Some((BooleanColumn("readMapped") === true))
         } else {
           None
         }
 
+        val proj = if (args.limitProjection) {
+          Some(Filter(AlignmentRecordField.attributes,
+            AlignmentRecordField.origQual))
+        } else {
+          None
+        }
+
         sc.loadParquetAlignments(args.inputPath,
-          predicate = pred)
+          predicate = pred,
+          projection = proj)
       } else {
         sc.loadAlignments(
           args.inputPath,
