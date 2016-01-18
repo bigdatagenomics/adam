@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.formats.avro.SingleReadBucketUtils
+import org.bdgenomics.adam.formats.avro.SingleReadBuckets
 import org.bdgenomics.formats.avro._
 import org.scalatest.FunSuite
 
@@ -41,7 +41,7 @@ class SingleReadBucketSuite extends FunSuite {
       .build())
     val srbb: SingleReadBucket.Builder = SingleReadBucket.newBuilder()
     val srb = srbb.setUnmapped(reads.toList).build()
-    val fragment = SingleReadBucketUtils.toFragment(srb)
+    val fragment = SingleReadBuckets.toFragment(srb)
     assert(fragment.getAlignments.size === 2)
     assert(fragment.getReadName === "myRead")
   }
@@ -82,7 +82,7 @@ class SingleReadBucketSuite extends FunSuite {
       .build())
     val srbb: SingleReadBucket.Builder = SingleReadBucket.newBuilder()
     val srb = srbb.setPrimaryMapped(reads.toList).build()
-    val fragment = SingleReadBucketUtils.toFragment(srb)
+    val fragment = SingleReadBuckets.toFragment(srb)
     assert(fragment.getFragmentSize === 8)
     assert(fragment.getReadName === "myRead")
     assert(fragment.getAlignments.size === 2)
@@ -141,7 +141,7 @@ class SingleReadBucketSuite extends FunSuite {
     val srbb: SingleReadBucket.Builder = SingleReadBucket.newBuilder()
     val srb = srbb.setPrimaryMapped(reads.toList).setSecondaryMapped(chimera.toList).build()
 
-    val fragment = SingleReadBucketUtils.toFragment(srb)
+    val fragment = SingleReadBuckets.toFragment(srb)
     assert(fragment.getFragmentSize === null)
     assert(fragment.getReadName === "myRead")
     assert(fragment.getAlignments.size === 3)

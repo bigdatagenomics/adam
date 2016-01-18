@@ -4,7 +4,7 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment, SingleReadBucket
 
 import scala.collection.JavaConversions._
 
-object SingleReadBucketUtils {
+object SingleReadBuckets {
 
   def allReads(bucket: SingleReadBucket): Iterable[AlignmentRecord] = {
     bucket.getPrimaryMapped ++ bucket.getSecondaryMapped ++ bucket.getUnmapped

@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.formats.avro.SingleReadBucketUtils
+import org.bdgenomics.adam.formats.avro.SingleReadBuckets
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
@@ -69,8 +69,8 @@ private[rdd] object MarkDuplicates extends Serializable {
     // Group by library and left position
     def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket),
                                rgd: RecordGroupDictionary): (Option[ReferencePosition], String) = {
-      if (SingleReadBucketUtils.allReads(p._2).head.getRecordGroupName != null) {
-        (p._1.read1refPos, rgd(SingleReadBucketUtils.allReads(p._2).head.getRecordGroupName).library.get)
+      if (SingleReadBuckets.allReads(p._2).head.getRecordGroupName != null) {
+        (p._1.read1refPos, rgd(SingleReadBuckets.allReads(p._2).head.getRecordGroupName).library.get)
       } else {
         (p._1.read1refPos, null)
       }
@@ -127,7 +127,7 @@ private[rdd] object MarkDuplicates extends Serializable {
             })
         }
 
-        readsAtLeftPos.flatMap(read => { SingleReadBucketUtils.allReads(read._2) })
+        readsAtLeftPos.flatMap(read => { SingleReadBuckets.allReads(read._2) })
 
       })
 

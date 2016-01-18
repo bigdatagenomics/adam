@@ -39,7 +39,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
-import org.bdgenomics.adam.formats.avro.SingleReadBucketUtils
+import org.bdgenomics.adam.formats.avro.SingleReadBuckets
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -992,6 +992,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   }
 
   def toFragments: RDD[Fragment] = {
-    adamSingleReadBuckets.map(SingleReadBucketUtils.toFragment(_))
+    adamSingleReadBuckets.map(SingleReadBuckets.toFragment(_))
   }
 }
