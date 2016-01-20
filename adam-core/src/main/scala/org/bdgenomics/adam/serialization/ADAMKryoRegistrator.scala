@@ -82,7 +82,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Feature], new AvroSerializer[Feature]())
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)
-    kryo.register(classOf[SingleReadBucket], new SingleReadBucketSerializer)
     kryo.register(classOf[IndelRealignmentTarget])
     kryo.register(classOf[TargetSet], new TargetSetSerializer)
     kryo.register(classOf[ZippedTargetSet], new ZippedTargetSetSerializer)

@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.{AlignmentRecord, SingleReadBucket}
+import org.bdgenomics.formats.avro.{ AlignmentRecord, SingleReadBucket }
 
 private[read] object SingleReadBucketRDD extends Logging {
   def apply(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
@@ -37,5 +37,4 @@ private[read] object SingleReadBucketRDD extends Logging {
       })
   }
 }
-
 
