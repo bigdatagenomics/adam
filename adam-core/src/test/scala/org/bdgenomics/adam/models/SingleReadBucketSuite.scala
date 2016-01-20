@@ -17,8 +17,11 @@
  */
 package org.bdgenomics.adam.models
 
+import org.bdgenomics.adam.formats.avro.SingleReadBuckets
 import org.bdgenomics.formats.avro._
 import org.scalatest.FunSuite
+
+import scala.collection.JavaConversions._
 
 class SingleReadBucketSuite extends FunSuite {
 
@@ -36,8 +39,9 @@ class SingleReadBucketSuite extends FunSuite {
       .setReadInFragment(1)
       .setReadPaired(true)
       .build())
-    val srb = SingleReadBucket(unmapped = reads)
-    val fragment = srb.toFragment
+    val srbb: SingleReadBucket.Builder = SingleReadBucket.newBuilder()
+    val srb = srbb.setUnmapped(reads.toList).build()
+    val fragment = SingleReadBuckets.toFragment(srb)
     assert(fragment.getAlignments.size === 2)
     assert(fragment.getReadName === "myRead")
   }
@@ -76,8 +80,9 @@ class SingleReadBucketSuite extends FunSuite {
       .setEnd(30L)
       .setInferredInsertSize(8L)
       .build())
-    val srb = SingleReadBucket(primaryMapped = reads)
-    val fragment = srb.toFragment
+    val srbb: SingleReadBucket.Builder = SingleReadBucket.newBuilder()
+    val srb = srbb.setPrimaryMapped(reads.toList).build()
+    val fragment = SingleReadBuckets.toFragment(srb)
     assert(fragment.getFragmentSize === 8)
     assert(fragment.getReadName === "myRead")
     assert(fragment.getAlignments.size === 2)
@@ -133,8 +138,10 @@ class SingleReadBucketSuite extends FunSuite {
       .setStart(100L)
       .setEnd(106L)
       .build())
-    val srb = SingleReadBucket(primaryMapped = reads, secondaryMapped = chimera)
-    val fragment = srb.toFragment
+    val srbb: SingleReadBucket.Builder = SingleReadBucket.newBuilder()
+    val srb = srbb.setPrimaryMapped(reads.toList).setSecondaryMapped(chimera.toList).build()
+
+    val fragment = SingleReadBuckets.toFragment(srb)
     assert(fragment.getFragmentSize === null)
     assert(fragment.getReadName === "myRead")
     assert(fragment.getAlignments.size === 3)
