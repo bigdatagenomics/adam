@@ -19,6 +19,8 @@ package org.bdgenomics.adam.util
 
 import java.nio.file.Files
 
+import com.google.common.io.Resources
+
 import org.bdgenomics.utils.misc.SparkFunSuite
 
 import scala.io.Source
@@ -49,6 +51,12 @@ trait ADAMFunSuite extends SparkFunSuite {
           s"Line ${idx + 1} differs.\nExpected:\n${expectedLines.mkString("\n")}\n\nActual:\n${actualLines.mkString("\n")}"
         )
     }
+  }
+
+  def copyResource(name: String): String = {
+    val tempFile = Files.createTempFile(name, "." + name.split('.').last)
+    Files.write(tempFile, Resources.toByteArray(getClass().getResource("/" + name)))
+    tempFile.toString
   }
 }
 

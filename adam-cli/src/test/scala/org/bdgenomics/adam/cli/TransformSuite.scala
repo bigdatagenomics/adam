@@ -23,7 +23,7 @@ import org.bdgenomics.adam.util.ADAMFunSuite
 
 class TransformSuite extends ADAMFunSuite {
   sparkTest("unordered sam to unordered sam") {
-    val inputPath = resourcePath("unordered.sam")
+    val inputPath = copyResource("unordered.sam")
     val actualPath = tmpFile("unordered.sam")
     val expectedPath = inputPath
     Transform(Array("-single", inputPath, actualPath)).run(sc)
@@ -31,15 +31,15 @@ class TransformSuite extends ADAMFunSuite {
   }
 
   sparkTest("unordered sam to ordered sam") {
-    val inputPath = resourcePath("unordered.sam")
+    val inputPath = copyResource("unordered.sam")
     val actualPath = tmpFile("ordered.sam")
-    val expectedPath = resourcePath("ordered.sam")
+    val expectedPath = copyResource("ordered.sam")
     Transform(Array("-single", "-sort_reads", inputPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
   sparkTest("unordered sam, to adam, to sam") {
-    val inputPath = resourcePath("unordered.sam")
+    val inputPath = copyResource("unordered.sam")
     val intermediateAdamPath = tmpFile("unordered.adam")
     val actualPath = tmpFile("unordered.sam")
     val expectedPath = inputPath
@@ -49,10 +49,10 @@ class TransformSuite extends ADAMFunSuite {
   }
 
   sparkTest("unordered sam, to adam, to ordered sam") {
-    val inputPath = resourcePath("unordered.sam")
+    val inputPath = copyResource("unordered.sam")
     val intermediateAdamPath = tmpFile("unordered.adam")
     val actualPath = tmpFile("ordered.sam")
-    val expectedPath = resourcePath("ordered.sam")
+    val expectedPath = copyResource("ordered.sam")
     Transform(Array(inputPath, intermediateAdamPath)).run(sc)
     Transform(Array("-single", "-sort_reads", intermediateAdamPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
