@@ -67,7 +67,6 @@ object ADAMMain {
           PrintTags,
           ListDict,
           AlleleCount,
-          BuildInformation,
           View
         )
       )

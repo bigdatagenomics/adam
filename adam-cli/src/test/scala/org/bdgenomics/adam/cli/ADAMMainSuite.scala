@@ -48,16 +48,6 @@ class ADAMMainSuite extends FunSuite {
     assert(out.contains("flatten"))
   }
 
-  test("buildinfo argument via main") {
-    val stream = new ByteArrayOutputStream()
-    Console.withOut(stream) {
-      ADAMMain.main(Array("buildinfo"))
-    }
-    val out = stream.toString()
-    assert(!out.contains("Usage"))
-    assert(out.contains("Build information"))
-  }
-
   test("command groups is empty when called via apply") {
     val stream = new ByteArrayOutputStream()
     Console.withOut(stream) {
@@ -82,7 +72,7 @@ class ADAMMainSuite extends FunSuite {
   test("add new command group to default command groups") {
     val stream = new ByteArrayOutputStream()
     Console.withOut(stream) {
-      val commandGroups = defaultCommandGroups.union(List(CommandGroup("NEW COMMAND GROUP", List(BuildInformation))))
+      val commandGroups = defaultCommandGroups.union(List(CommandGroup("NEW COMMAND GROUP", List(Flatten))))
       new ADAMMain(commandGroups)(Array())
     }
     val out = stream.toString()
@@ -107,7 +97,7 @@ class ADAMMainSuite extends FunSuite {
     Console.withOut(stream) {
       val module = new AbstractModule with ScalaModule {
         def configure() = {
-          bind[List[CommandGroup]].toInstance(List(CommandGroup("SINGLE COMMAND GROUP", List(BuildInformation))))
+          bind[List[CommandGroup]].toInstance(List(CommandGroup("SINGLE COMMAND GROUP", List(Flatten))))
         }
       }
       val injector = Guice.createInjector(module)
@@ -117,7 +107,7 @@ class ADAMMainSuite extends FunSuite {
     val out = stream.toString()
     assert(out.contains("Usage"))
     assert(out.contains("SINGLE"))
-    assert(out.contains("buildinfo"))
+    assert(out.contains("flatten"))
   }
 
   test("custom module with new command group added to default command groups") {
@@ -125,7 +115,7 @@ class ADAMMainSuite extends FunSuite {
     Console.withOut(stream) {
       val module = new AbstractModule with ScalaModule {
         def configure() = {
-          bind[List[CommandGroup]].toInstance(defaultCommandGroups.union(List(CommandGroup("NEW COMMAND GROUP", List(BuildInformation)))))
+          bind[List[CommandGroup]].toInstance(defaultCommandGroups.union(List(CommandGroup("NEW COMMAND GROUP", List(Flatten)))))
         }
       }
       val injector = Guice.createInjector(module)
@@ -135,22 +125,5 @@ class ADAMMainSuite extends FunSuite {
     val out = stream.toString()
     assert(out.contains("Usage"))
     assert(out.contains("NEW"))
-  }
-
-  test("buildinfo from custom module argument via apply") {
-    val stream = new ByteArrayOutputStream()
-    Console.withOut(stream) {
-      val module = new AbstractModule with ScalaModule {
-        def configure() = {
-          bind[List[CommandGroup]].toInstance(List(CommandGroup("SINGLE COMMAND GROUP", List(BuildInformation))))
-        }
-      }
-      val injector = Guice.createInjector(module)
-      val commandGroups = injector.instance[List[CommandGroup]]
-      new ADAMMain(commandGroups).apply(Array("buildinfo"))
-    }
-    val out = stream.toString()
-    assert(!out.contains("Usage"))
-    assert(out.contains("Build information"))
   }
 }
