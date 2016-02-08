@@ -21,10 +21,10 @@
     <avro.version>1.7.7</avro.version>
     <!-- informative only, used in about template substitution -->
     <scala.version>2.10</scala.version>
-    <spark.version>1.4.1</spark.version>
+    <spark.version>1.5.2</spark.version>
     <parquet.version>1.8.1</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
-    <hadoop.version>2.2.0</hadoop.version>
+    <hadoop.version>2.6.0</hadoop.version>
     <scoverage.version>1.1.1</scoverage.version>
     <utils.version>0.2.3</utils.version>
     <htsjdk.version>1.139</htsjdk.version>
