@@ -23,10 +23,11 @@ import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputS
 import org.apache.avro.io.{ BinaryDecoder, DecoderFactory, BinaryEncoder, EncoderFactory }
 import org.apache.avro.specific.{ SpecificDatumWriter, SpecificDatumReader, SpecificRecord }
 import org.apache.spark.serializer.KryoRegistrator
-import org.bdgenomics.adam.util.{ TwoBitFileSerializer, TwoBitFile }
-import org.bdgenomics.formats.avro._
+import org.bdgenomics.adam.converters.FastaConverter
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.realignment._
+import org.bdgenomics.adam.util.{ TwoBitFileSerializer, TwoBitFile }
+import org.bdgenomics.formats.avro._
 import scala.reflect.ClassTag
 
 case class InputStreamWithDecoder(size: Int) {
@@ -67,25 +68,48 @@ class AvroSerializer[T <: SpecificRecord: ClassTag] extends Serializer[T] {
 
 class ADAMKryoRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo) {
+
+    // sorted by class name
     kryo.register(classOf[AlignmentRecord], new AvroSerializer[AlignmentRecord]())
-    kryo.register(classOf[Genotype], new AvroSerializer[Genotype]())
-    kryo.register(classOf[Variant], new AvroSerializer[Variant]())
-    kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation]())
-    kryo.register(classOf[NucleotideContigFragment], new AvroSerializer[NucleotideContigFragment]())
+    kryo.register(classOf[Attribute])
+    kryo.register(classOf[CDS])
     kryo.register(classOf[Contig], new AvroSerializer[Contig]())
-    kryo.register(classOf[RecordGroupMetadata], new AvroSerializer[RecordGroupMetadata]())
-    kryo.register(classOf[StructuralVariant], new AvroSerializer[StructuralVariant]())
-    kryo.register(classOf[VariantCallingAnnotations], new AvroSerializer[VariantCallingAnnotations]())
-    kryo.register(classOf[VariantEffect], new AvroSerializer[VariantEffect]())
+    kryo.register(classOf[Consensus])
     kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation]())
     kryo.register(classOf[Dbxref], new AvroSerializer[Dbxref]())
+    kryo.register(classOf[Exon])
+    kryo.register(classOf[FastaConverter.FastaDescriptionLine])
     kryo.register(classOf[Feature], new AvroSerializer[Feature]())
+    kryo.register(classOf[Gene])
+    kryo.register(classOf[Genotype], new AvroSerializer[Genotype]())
+    kryo.register(classOf[IndelRealignmentTarget])
+    kryo.register(classOf[IndelTable])
+    kryo.register(classOf[MultiContigNonoverlappingRegions])
+    kryo.register(classOf[NonoverlappingRegions])
+    kryo.register(classOf[NucleotideContigFragment], new AvroSerializer[NucleotideContigFragment]())
+    kryo.register(classOf[ProgramRecord])
+    kryo.register(classOf[ReadBucket])
+    kryo.register(classOf[RecordGroup])
+    kryo.register(classOf[RecordGroupDictionary])
+    kryo.register(classOf[RecordGroupMetadata], new AvroSerializer[RecordGroupMetadata]())
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)
+    kryo.register(classOf[ReferenceRegion], new ReferenceRegionSerializer)
+    kryo.register(classOf[SAMFileHeaderWritable])
+    kryo.register(classOf[SequenceDictionary])
+    kryo.register(classOf[SequenceRecord])
     kryo.register(classOf[SingleReadBucket], new SingleReadBucketSerializer)
-    kryo.register(classOf[IndelRealignmentTarget])
+    kryo.register(classOf[SnpTable])
+    kryo.register(classOf[StructuralVariant], new AvroSerializer[StructuralVariant]())
+    kryo.register(classOf[Symbol])
     kryo.register(classOf[TargetSet], new TargetSetSerializer)
-    kryo.register(classOf[ZippedTargetSet], new ZippedTargetSetSerializer)
+    kryo.register(classOf[Transcript])
     kryo.register(classOf[TwoBitFile], new TwoBitFileSerializer)
+    kryo.register(classOf[UTR])
+    kryo.register(classOf[Variant], new AvroSerializer[Variant]())
+    kryo.register(classOf[VariantCallingAnnotations], new AvroSerializer[VariantCallingAnnotations]())
+    kryo.register(classOf[VariantEffect], new AvroSerializer[VariantEffect]())
+    kryo.register(classOf[VCFHeaderWritable])
+    kryo.register(classOf[ZippedTargetSet], new ZippedTargetSetSerializer)
   }
 }
