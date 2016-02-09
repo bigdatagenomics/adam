@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read
 
+import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -28,7 +29,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-private[rdd] object MarkDuplicates extends Serializable {
+private[rdd] object MarkDuplicates extends Serializable with Logging {
 
   private def markReadsInBucket(bucket: SingleReadBucket, primaryAreDups: Boolean, secondaryAreDups: Boolean) {
     bucket.primaryMapped.foreach(read => {
@@ -66,11 +67,26 @@ private[rdd] object MarkDuplicates extends Serializable {
   def apply(rdd: RDD[AlignmentRecord],
             rgd: RecordGroupDictionary): RDD[AlignmentRecord] = {
 
+    // do we have record groups where the library name is not set? if so, print a warning message
+    // to the user, as all record groups without a library name will be treated as coming from
+    // a single library
+    val emptyRgs = rgd.recordGroups
+      .filter(_.library.isEmpty)
+
+    emptyRgs.foreach(rg => {
+      log.warn("Library ID is empty for record group %s from sample %s.".format(rg.recordGroupName,
+        rg.sample))
+    })
+
+    if (emptyRgs.nonEmpty) {
+      log.warn("For duplicate marking, all reads whose library is unknown will be treated as coming from the same library.")
+    }
+
     // Group by library and left position
     def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket),
                                rgd: RecordGroupDictionary): (Option[ReferencePosition], String) = {
       if (p._2.allReads.head.getRecordGroupName != null) {
-        (p._1.read1refPos, rgd(p._2.allReads.head.getRecordGroupName).library.get)
+        (p._1.read1refPos, rgd(p._2.allReads.head.getRecordGroupName).library.getOrElse(null))
       } else {
         (p._1.read1refPos, null)
       }
