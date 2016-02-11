@@ -228,13 +228,42 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     adamRecords
   }
 
+  def forceNonParquet(): Boolean = {
+    (args.forceLoadBam || args.forceLoadFastq || args.forceLoadIFastq)
+  }
+
+  def isNonParquet(inputPath: String): Boolean = {
+    (
+      inputPath.endsWith(".sam") ||
+      inputPath.endsWith(".bam") ||
+      inputPath.endsWith(".ifq") ||
+      inputPath.endsWith(".fq") ||
+      inputPath.endsWith(".fastq") ||
+      inputPath.endsWith(".fa") ||
+      inputPath.endsWith(".fasta")
+    )
+  }
+
   def run(sc: SparkContext) {
-    // throw exception if aligned read predicate or projection flags are used improperly
-    if ((args.useAlignedReadPredicate ||
-      args.limitProjection) &&
-      (args.forceLoadBam || args.forceLoadFastq || args.forceLoadIFastq)) {
+    // throw exception if aligned read predicate or limit projection flags are used improperly
+    if (args.useAlignedReadPredicate && forceNonParquet()) {
       throw new IllegalArgumentException(
         "-aligned_read_predicate only applies to Parquet files, but a non-Parquet force load flag was passed."
+      )
+    }
+    if (args.limitProjection && forceNonParquet()) {
+      throw new IllegalArgumentException(
+        "-limit_projection only applies to Parquet files, but a non-Parquet force load flag was passed."
+      )
+    }
+    if (args.useAlignedReadPredicate && isNonParquet(args.inputPath)) {
+      throw new IllegalArgumentException(
+        "-aligned_read_predicate only applies to Parquet files, but a non-Parquet input path was specified."
+      )
+    }
+    if (args.limitProjection && isNonParquet(args.inputPath)) {
+      throw new IllegalArgumentException(
+        "-limit_projection only applies to Parquet files, but a non-Parquet input path was specified."
       )
     }
 
