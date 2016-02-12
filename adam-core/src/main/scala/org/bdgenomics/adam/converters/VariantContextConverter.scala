@@ -33,6 +33,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.util.PhredUtils
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
+import scala.collection.mutable.HashMap
 
 object VariantContextConverter {
   private val NON_REF_ALLELE = Allele.create("<NON_REF>", false /* !Reference */ )
@@ -323,6 +324,19 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     VariantAnnotationConverter.convert(vc, call.build())
   }
 
+  private def extractADAMInfoFields(g: Genotype): HashMap[String, Object] = {
+    val infoFields = new HashMap[String, Object]();
+    val annotations = g.getVariantCallingAnnotations
+    if (annotations != null) {
+      Option(annotations.getFisherStrandBiasPValue).foreach(infoFields.put("FS", _))
+      Option(annotations.getRmsMapQ).foreach(infoFields.put("MQ", _))
+      Option(annotations.getMapq0Reads).foreach(infoFields.put("MQ0", _))
+      Option(annotations.getMqRankSum).foreach(infoFields.put("MQRankSum", _))
+      Option(annotations.getReadPositionRankSum).foreach(infoFields.put("ReadPosRankSum", _))
+    }
+    infoFields
+  }
+
   /**
    * Convert an ADAMVariantContext into the equivalent GATK VariantContext
    * @param vc
@@ -357,8 +371,9 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
 
         if (g.getVariantCallingAnnotations != null) {
           val callAnnotations = g.getVariantCallingAnnotations()
-          if (callAnnotations.getVariantFilters != null)
+          if (callAnnotations.getVariantFilters != null) {
             gb.filters(callAnnotations.getVariantFilters)
+          }
         }
 
         if (g.getGenotypeLikelihoods != null && !g.getGenotypeLikelihoods.isEmpty)
@@ -366,6 +381,10 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
 
         gb.make
       }))
+      // if only one sample then we putting stuff into vc info fields
+      if (vc.genotypes.size == 1) {
+        vcb.attributes(extractADAMInfoFields(vc.genotypes.toList(0)))
+      }
 
       vcb.make
     } catch {
