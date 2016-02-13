@@ -45,8 +45,7 @@ class FlagStatSuite extends ADAMFunSuite {
       AlignmentRecordField.duplicateRead,
       AlignmentRecordField.readMapped,
       AlignmentRecordField.mateMapped,
-      AlignmentRecordField.firstOfPair,
-      AlignmentRecordField.secondOfPair,
+      AlignmentRecordField.readInFragment,
       AlignmentRecordField.properPair,
       AlignmentRecordField.mapq,
       AlignmentRecordField.failedVendorQualityChecks)

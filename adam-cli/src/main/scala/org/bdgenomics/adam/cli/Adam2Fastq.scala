@@ -62,8 +62,7 @@ class Adam2Fastq(val args: Adam2FastqArgs) extends BDGSparkCommand[Adam2FastqArg
             AlignmentRecordField.readName,
             AlignmentRecordField.sequence,
             AlignmentRecordField.qual,
-            AlignmentRecordField.firstOfPair,
-            AlignmentRecordField.secondOfPair,
+            AlignmentRecordField.readInFragment,
             AlignmentRecordField.origQual
           )
         )

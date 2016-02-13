@@ -208,7 +208,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           AlignmentRecordField.contig,
           AlignmentRecordField.mateContig,
           AlignmentRecordField.readPaired,
-          AlignmentRecordField.firstOfPair,
+          AlignmentRecordField.readInFragment,
           AlignmentRecordField.readMapped,
           AlignmentRecordField.mateMapped
         )
