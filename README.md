@@ -148,7 +148,7 @@ Bundled release binaries can be found on our [releases][] page.
 
 You will need to have [Maven](http://maven.apache.org/) installed in order to build ADAM.
 
-> **Note:** The default configuration is for Hadoop 2.2.0. If building against a different
+> **Note:** The default configuration is for Hadoop 2.6.0. If building against a different
 > version of Hadoop, please edit the build configuration in the `<properties>` section of
 > the `pom.xml` file.
 
@@ -173,8 +173,8 @@ reads and pileups, run flagstat, etc. We use this script to test that ADAM is wo
 ### Installing Spark
 
 You'll need to have a Spark release on your system and the `$SPARK_HOME` environment variable pointing at it; prebuilt binaries can be downloaded from the
-[Spark website](http://spark.apache.org/downloads.html). Currently, our continuous builds use
-[Spark 1.1.0 built against Hadoop 2.3 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.1.0-bin-hadoop2.3.tgz), but any more recent Spark distribution should also work.
+[Spark website](http://spark.apache.org/downloads.html). Currently, our continuous builds default to
+[Spark 1.5.2 built against Hadoop 2.6 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.5.2-bin-hadoop2.6.tgz), but any more recent Spark distribution should also work.
 
 ### Helpful Aliases
 
@@ -293,7 +293,7 @@ $ adam-shell -i kmer.scala
 # Running on a cluster
 
 The `adam-submit` and `adam-shell` commands can also
-be used to submit ADAM jobs to a Spark cluster, or to run ADAM interactively. Cluster mode can be enabled by passing [the same flags you'd pass to Spark](https://spark.apache.org/docs/1.4.1/submitting-applications.html#launching-applications-with-spark-submit), e.g. `--master yarn --deploy-mode client`.
+be used to submit ADAM jobs to a Spark cluster, or to run ADAM interactively. Cluster mode can be enabled by passing [the same flags you'd pass to Spark](https://spark.apache.org/docs/1.5.2/submitting-applications.html#launching-applications-with-spark-submit), e.g. `--master yarn --deploy-mode client`.
 
 ## Running Plugins
 
