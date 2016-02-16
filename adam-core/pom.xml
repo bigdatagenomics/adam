@@ -56,29 +56,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>pl.project13.maven</groupId>
-        <artifactId>git-commit-id-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>revision</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <verbose>true</verbose>
-          <generateGitPropertiesFile>true</generateGitPropertiesFile>
-          <!-- <generateGitPropertiesFilename>adam-cli/src/main/resources/git.properties</generateGitPropertiesFilename> -->
-          <generateGitPropertiesFilename>src/main/resources/git.properties</generateGitPropertiesFilename>
-          <failOnNoGitDirectory>false</failOnNoGitDirectory>
-          <excludeProperties>
-            <!-- Avoid email addresses and names: -->
-            <excludeProperty>git.commit.user.*</excludeProperty>
-            <excludeProperty>git.build.user.*</excludeProperty>
-          </excludeProperties>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
         <executions>
