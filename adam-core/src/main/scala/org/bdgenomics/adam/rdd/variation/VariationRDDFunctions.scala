@@ -18,22 +18,13 @@
 package org.bdgenomics.adam.rdd.variation
 
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.SparkContext._
-import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.VariantContextConverter
-import org.bdgenomics.adam.models.{
-  ReferencePosition,
-  ReferenceRegion,
-  SequenceDictionary,
-  SequenceRecord,
-  VariantContext
-}
+import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion, SequenceDictionary, SequenceRecord, VariantContext }
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
 import org.bdgenomics.adam.rich.RichVariant
-import org.bdgenomics.adam.rich.RichGenotype._
-import org.bdgenomics.formats.avro.{ Genotype, GenotypeType, DatabaseVariantAnnotation }
-import org.bdgenomics.utils.misc.HadoopUtil
+import org.bdgenomics.formats.avro.{ DatabaseVariantAnnotation, Genotype }
 import org.seqdoop.hadoop_bam._
 
 class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceDictionaryRDDAggregator[VariantContext](rdd) with Logging {
@@ -114,36 +105,34 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
     ADAMVCFOutputFormat.setHeader(bcastHeader.value)
     log.info("Set VCF header on driver")
 
-    // convert the variants to htsjdk vc
-    val converter = new VariantContextConverter(dict)
-    val gatkVCs: RDD[VariantContextWritable] = rdd.map(v => {
-      val vcw = new VariantContextWritable
-      vcw.set(converter.convert(v))
-      vcw
-    })
+    val keyByPosition = rdd.keyBy(_.position)
+    val maybeSortedByKey = if (sortOnSave) {
+      keyByPosition.sortByKey()
+    } else {
+      keyByPosition
+    }
 
     // coalesce the rdd if requested
-    val coalescedVCs = coalesceTo.fold(gatkVCs)(p => gatkVCs.repartition(p))
+    val coalescedVCs = coalesceTo.fold(maybeSortedByKey)(p => maybeSortedByKey.repartition(p))
 
-    // sort if requested
-    val withKey = if (sortOnSave) {
-      coalescedVCs.keyBy(v => ReferencePosition(v.get.getChr(), v.get.getStart()))
-        .sortByKey()
-        .map(kv => (new LongWritable(kv._1.pos), kv._2))
-    } else {
-      coalescedVCs.keyBy(v => new LongWritable(v.get.getStart))
-    }
+    // convert the variants to htsjdk VCs
+    val converter = new VariantContextConverter(dict)
+    val writableVCs: RDD[(LongWritable, VariantContextWritable)] = coalescedVCs.map(kv => {
+      val vcw = new VariantContextWritable
+      vcw.set(converter.convert(kv._2))
+      (new LongWritable(kv._1.pos), vcw)
+    })
 
     // save to disk
     val conf = rdd.context.hadoopConfiguration
     conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
-    withKey.saveAsNewAPIHadoopFile(
+    writableVCs.saveAsNewAPIHadoopFile(
       filePath,
       classOf[LongWritable], classOf[VariantContextWritable], classOf[ADAMVCFOutputFormat[LongWritable]],
       conf
     )
 
-    log.info("Write %d records".format(gatkVCs.count()))
+    log.info("Write %d records".format(writableVCs.count()))
     rdd.unpersist()
   }
 }
