@@ -60,7 +60,7 @@ rm -rf "$SORTED_READS"
 "$ADAM" transform -sort_reads "$READS" "$SORTED_READS"
 echo "Converting read file to pileup format"
 rm -rf "$PILEUPS"
-"$ADAM" reads2ref "$READS" "$PILEUPS"
+"$ADAM" reads2reference "$READS" "$PILEUPS"
 echo "Reading reads"
 "$ADAM" print "$READS" 1>/dev/null 2>/dev/null
 "$ADAM" flagstat "$READS"
