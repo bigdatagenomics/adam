@@ -104,26 +104,37 @@ class SAMRecordConverter extends Serializable with Logging {
           builder.setMapq(mapq)
         }
 
-        // set mapping flags
-        // oddly enough, it appears that reads can show up with mapping info (mapq, cigar, position)
-        // even if the read unmapped flag is set...
-        if (samRecord.getReadUnmappedFlag) {
-          builder.setReadMapped(false)
-        } else {
-          builder.setReadMapped(true)
-          if (samRecord.getReadNegativeStrandFlag) {
-            builder.setReadNegativeStrand(true)
-          }
-          if (!samRecord.getNotPrimaryAlignmentFlag) {
-            builder.setPrimaryAlignment(true)
-          } else {
-            // if the read is not a primary alignment, it can be either secondary or supplementary
-            // - secondary: not the best linear alignment
-            // - supplementary: part of a chimeric alignment
-            builder.setSupplementaryAlignment(samRecord.getSupplementaryAlignmentFlag)
-            builder.setSecondaryAlignment(!samRecord.getSupplementaryAlignmentFlag)
-          }
-        }
+      }
+
+      // set mapping flags
+      // oddly enough, it appears that reads can show up with mapping info (mapq, cigar, position)
+      // even if the read unmapped flag is set...
+
+      // While the meaning of the ReadMapped, ReadNegativeStand, PrimaryAlignmentFlag and SupplementaryAlignmentFlag
+      // are unclear when the read is not mapped or reference is not defined, it is nonetheless favorable
+      // to set these flags in the ADAM file in same way as they appear in the input BAM inorder to match exactly
+      // the statistics output by other programs, specifically Samtools Flagstat
+
+      if (samRecord.getReadUnmappedFlag) {
+        builder.setReadMapped(false)
+      } else {
+        builder.setReadMapped(true)
+      }
+
+      if (samRecord.getReadNegativeStrandFlag) {
+        builder.setReadNegativeStrand(true)
+      }
+
+      if (samRecord.getNotPrimaryAlignmentFlag) {
+        builder.setPrimaryAlignment(false)
+      } else {
+        builder.setPrimaryAlignment(true)
+      }
+
+      if (samRecord.getSupplementaryAlignmentFlag) {
+        builder.setSupplementaryAlignment(true)
+      } else {
+        builder.setSupplementaryAlignment(false)
       }
 
       // Position of the mate/next segment
