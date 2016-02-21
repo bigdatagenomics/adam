@@ -19,7 +19,8 @@ package org.bdgenomics.adam.rdd
 
 import java.io.{ File, FileNotFoundException, InputStream }
 import java.util.regex.Pattern
-import htsjdk.samtools.{ IndexedBamInputFormat, SAMFileHeader, ValidationStringency }
+import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
+import htsjdk.samtools.util.Locatable
 import htsjdk.variant.vcf.VCFHeader
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
@@ -62,6 +63,13 @@ import org.seqdoop.hadoop_bam.util.{ BGZFCodec, SAMHeaderReader, VCFHeaderReader
 import scala.collection.JavaConversions._
 import scala.collection.Map
 import scala.reflect.ClassTag
+
+// only used with indexedbamload
+private case class LocatableReferenceRegion(rr: ReferenceRegion) extends Locatable {
+  def getStart(): Int = rr.start.toInt + 1
+  def getEnd(): Int = rr.end.toInt
+  def getContig(): String = rr.referenceName
+}
 
 object ADAMContext {
   // Add ADAM Spark context methods
@@ -373,8 +381,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *        a single Bam file. The bam index file associated needs to have the same name.
    * @param viewRegion The ReferenceRegion we are filtering on
    */
-  def loadIndexedBam(
-    filePath: String, viewRegion: ReferenceRegion): RDD[AlignmentRecord] = {
+  def loadIndexedBam(filePath: String, viewRegion: ReferenceRegion): AlignmentRecordRDD = {
     val path = new Path(filePath)
     val fs = FileSystem.get(path.toUri, sc.hadoopConfiguration)
     assert(!fs.isDirectory(path))
@@ -404,20 +411,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       })
 
     val samDict = SAMHeaderReader.readSAMHeaderFrom(path, sc.hadoopConfiguration).getSequenceDictionary
-    IndexedBamInputFormat.setVars(
-      new Path(filePath),
-      new Path(filePath + ".bai"),
-      viewRegion,
-      samDict
-    )
 
     val job = HadoopUtil.newJob(sc)
+    val conf = ContextUtil.getConfiguration(job)
+    BAMInputFormat.setIntervals(conf, List(LocatableReferenceRegion(viewRegion)))
 
-    val records = sc.newAPIHadoopFile(filePath, classOf[IndexedBamInputFormat], classOf[LongWritable],
-      classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+    val records = sc.newAPIHadoopFile(filePath, classOf[BAMInputFormat], classOf[LongWritable],
+      classOf[SAMRecordWritable], conf)
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
-    records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))
+    AlignedReadRDD(records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups)),
+      seqDict,
+      readGroups)
   }
 
   /**
