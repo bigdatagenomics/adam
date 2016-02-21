@@ -27,7 +27,7 @@
     <hadoop.version>2.2.0</hadoop.version>
     <scoverage.version>1.1.1</scoverage.version>
     <utils.version>0.2.3</utils.version>
-    <htsjdk.version>1.139</htsjdk.version>
+    <htsjdk.version>2.1.0</htsjdk.version>
   </properties>
 
   <modules>
@@ -511,7 +511,7 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>16.0.1</version> <!-- note: version 17.0 breaks hadoop 2.6+ at runtime -->
+        <version>19.0</version> <!-- note: version 17.0 breaks hadoop 2.6+ at runtime -->
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>

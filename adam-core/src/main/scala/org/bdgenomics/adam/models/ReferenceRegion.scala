@@ -251,6 +251,8 @@ case class ReferenceRegion(
     end - start
   }
 
+  override def getContig: String = referenceName
+
   override def hashCode: Int = {
     var result = 37
     result = 41 * result + (if (referenceName != null) referenceName.hashCode else 0)
