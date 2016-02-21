@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd
 
 import java.io.{ File, FileNotFoundException, InputStream }
 import java.util.regex.Pattern
-import htsjdk.samtools.{ IndexedBamInputFormat, SAMFileHeader, ValidationStringency }
+import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
 import org.apache.avro.generic.IndexedRecord
@@ -324,8 +324,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *        a single Bam file. The bam index file associated needs to have the same name.
    * @param viewRegion The ReferenceRegion we are filtering on
    */
-  def loadIndexedBam(
-    filePath: String, viewRegion: ReferenceRegion): RDD[AlignmentRecord] = {
+  def loadIndexedBam(filePath: String, viewRegion: ReferenceRegion): RDD[AlignmentRecord] = {
     val path = new Path(filePath)
     val fs = FileSystem.get(path.toUri, sc.hadoopConfiguration)
     assert(!fs.isDirectory(path))
@@ -355,17 +354,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       })
 
     val samDict = SAMHeaderReader.readSAMHeaderFrom(path, sc.hadoopConfiguration).getSequenceDictionary
-    IndexedBamInputFormat.setVars(
-      new Path(filePath),
-      new Path(filePath + ".bai"),
-      viewRegion,
-      samDict
-    )
 
     val job = HadoopUtil.newJob(sc)
+    val conf = ContextUtil.getConfiguration(job)
+    BAMInputFormat.setIntervals(conf, List(viewRegion))
 
-    val records = sc.newAPIHadoopFile(filePath, classOf[IndexedBamInputFormat], classOf[LongWritable],
-      classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+    val records = sc.newAPIHadoopFile(filePath, classOf[BAMInputFormat], classOf[LongWritable],
+      classOf[SAMRecordWritable], conf)
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
     records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups))

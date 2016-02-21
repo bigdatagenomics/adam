@@ -16,12 +16,13 @@
  * limitations under the License.
  */
 package org.bdgenomics.adam.models
+import htsjdk.samtools.util.Locatable
 
 /**
  * An interval is a region on a coordinate space that has a defined width. This
  * can be used to express a region of a genome, a transcript, a gene, etc.
  */
-trait Interval {
+trait Interval extends Locatable {
 
   /**
    * @return The start of this interval.
@@ -40,5 +41,20 @@ trait Interval {
    * @return The width of this interval.
    */
   def width: Long = end - start
+
+  /**
+   * Need to implement getStart function from Locatable. (1-based start position. closed)
+   */
+  def getStart(): Int = start.toInt + 1;
+
+  /**
+   * Need to implement getStart function from Locatable. (1-based end position. closed)
+   */
+  def getEnd(): Int = end.toInt
+
+  /**
+   * Need to implement getContig function from Locatable.
+   */
+  def getContig(): String
 
 }

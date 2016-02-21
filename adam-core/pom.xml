@@ -181,6 +181,7 @@
     <dependency>
       <groupId>org.seqdoop</groupId>
       <artifactId>hadoop-bam</artifactId>
+      <version>7.4.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.samtools</groupId>
