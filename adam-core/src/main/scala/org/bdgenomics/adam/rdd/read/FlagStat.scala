@@ -103,14 +103,14 @@ object FlagStat {
           1,
           primaryDuplicates, secondaryDuplicates,
           b2i(b(p.getReadMapped)),
-          b2i(b(p.getReadPaired)),
-          b2i(b(p.getReadPaired) && p.getReadInFragment == 0),
-          b2i(b(p.getReadPaired) && p.getReadInFragment == 1),
-          b2i(b(p.getReadPaired) && b(p.getProperPair)),
-          b2i(b(p.getReadPaired) && b(p.getReadMapped) && b(p.getMateMapped)),
-          b2i(b(p.getReadPaired) && b(p.getReadMapped) && b(!p.getMateMapped)),
-          b2i(b(mateMappedToDiffChromosome)),
-          b2i(b(mateMappedToDiffChromosome && i(p.getMapq) >= 5)),
+          b2i(b(p.getReadPaired) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
+          b2i(b(p.getReadPaired) && p.getReadInFragment == 0 && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
+          b2i(b(p.getReadPaired) && p.getReadInFragment == 1 && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
+          b2i(b(p.getReadPaired) && b(p.getProperPair) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
+          b2i(b(p.getReadPaired) && b(p.getReadMapped) && b(p.getMateMapped) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
+          b2i(b(p.getReadPaired) && b(p.getReadMapped) && b(!p.getMateMapped) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
+          b2i(b(mateMappedToDiffChromosome) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
+          b2i(b(mateMappedToDiffChromosome && i(p.getMapq) >= 5) && b(!p.getSupplementaryAlignment) && p.getPrimaryAlignment),
           p.getFailedVendorQualityChecks
         )
     }.aggregate((FlagStatMetrics.emptyFailedQuality, FlagStatMetrics.emptyPassedQuality))(

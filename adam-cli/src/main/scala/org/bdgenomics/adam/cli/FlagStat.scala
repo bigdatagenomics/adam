@@ -61,7 +61,8 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
       AlignmentRecordField.readInFragment,
       AlignmentRecordField.properPair,
       AlignmentRecordField.mapq,
-      AlignmentRecordField.failedVendorQualityChecks
+      AlignmentRecordField.failedVendorQualityChecks,
+      AlignmentRecordField.supplementaryAlignment
     )
 
     val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection))
