@@ -107,35 +107,21 @@ class SAMRecordConverter extends Serializable with Logging {
       }
 
       // set mapping flags
-      // oddly enough, it appears that reads can show up with mapping info (mapq, cigar, position)
+      // oddly enough, it appears that reads can show up with mapping
+      // info (mapq, cigar, position)
       // even if the read unmapped flag is set...
 
-      // While the meaning of the ReadMapped, ReadNegativeStand, PrimaryAlignmentFlag and SupplementaryAlignmentFlag
-      // are unclear when the read is not mapped or reference is not defined, it is nonetheless favorable
-      // to set these flags in the ADAM file in same way as they appear in the input BAM inorder to match exactly
+      // While the meaning of the ReadMapped, ReadNegativeStand,
+      // PrimaryAlignmentFlag and SupplementaryAlignmentFlag
+      // are unclear when the read is not mapped or reference is not defined,
+      // it is nonetheless favorable to set these flags in the ADAM file
+      // in same way as they appear in the input BAM inorder to match exactly
       // the statistics output by other programs, specifically Samtools Flagstat
 
-      if (samRecord.getReadUnmappedFlag) {
-        builder.setReadMapped(false)
-      } else {
-        builder.setReadMapped(true)
-      }
-
-      if (samRecord.getReadNegativeStrandFlag) {
-        builder.setReadNegativeStrand(true)
-      }
-
-      if (samRecord.getNotPrimaryAlignmentFlag) {
-        builder.setPrimaryAlignment(false)
-      } else {
-        builder.setPrimaryAlignment(true)
-      }
-
-      if (samRecord.getSupplementaryAlignmentFlag) {
-        builder.setSupplementaryAlignment(true)
-      } else {
-        builder.setSupplementaryAlignment(false)
-      }
+      builder.setReadMapped(!samRecord.getReadUnmappedFlag)
+      builder.setReadNegativeStrand(samRecord.getReadNegativeStrandFlag)
+      builder.setPrimaryAlignment(!samRecord.getNotPrimaryAlignmentFlag)
+      builder.setSupplementaryAlignment(samRecord.getSupplementaryAlignmentFlag)
 
       // Position of the mate/next segment
       val mateReference: Int = samRecord.getMateReferenceIndex
@@ -152,7 +138,8 @@ class SAMRecordConverter extends Serializable with Logging {
         }
       }
 
-      // The Avro scheme defines all flags as defaulting to 'false'. We only need to set the flags that are true.
+      // The Avro scheme defines all flags as defaulting to 'false'. We only
+      // need to set the flags that are true.
       if (samRecord.getFlags != 0) {
         if (samRecord.getReadPairedFlag) {
           builder.setReadPaired(true)

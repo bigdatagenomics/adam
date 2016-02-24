@@ -78,7 +78,7 @@ private[adam] object DecadentRead extends Logging with Serializable {
 @deprecated("Use RichAlignmentRecord wherever possible in new development.", since = "0.18.0")
 private[adam] class DecadentRead(val record: RichAlignmentRecord) extends Logging {
   // Can't be a primary alignment unless it has been aligned
-  require(!record.getPrimaryAlignment || record.getReadMapped, "Unaligned read can't be a primary alignment")
+  //require(!record.getPrimaryAlignment || record.getReadMapped, "Unaligned read can't be a primary alignment")
 
   // Should have quality scores for all residues
   require(record.getQual == null ||

@@ -249,7 +249,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
       .split('\n')
 
     assert(!secondRecord.getReadMapped)
-    assert(!secondRecord.getReadNegativeStrand)
+    assert(secondRecord.getReadNegativeStrand)
     assert(secondRecordFastq(0) === "@SRR062634.10448889/1")
     assert(secondRecordFastq(1) === secondRecord.getSequence)
     assert(secondRecordFastq(2) === "+")
