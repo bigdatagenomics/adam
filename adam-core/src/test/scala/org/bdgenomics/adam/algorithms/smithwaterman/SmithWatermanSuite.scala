@@ -19,6 +19,7 @@ package org.bdgenomics.adam.algorithms.smithwaterman
 
 import org.scalatest.FunSuite
 import scala.math.abs
+import scala.util.Random
 
 class SmithWatermanSuite extends FunSuite {
 
@@ -235,6 +236,15 @@ class SmithWatermanSuite extends FunSuite {
     assert(sw.cigarX.toString === "9M2I9M")
     assert(sw.cigarY.toString === "9M2D9M")
     assert(sw.xStart === 8)
+  }
+
+  test("smithWaterman - simple alignment") {
+    val sw = new SmithWatermanConstantGapScoring("AAA",
+      "AAT",
+      1.0, 0.0, -0.333, -0.333)
+    assert(sw.cigarX.toString === "3M")
+    assert(sw.cigarY.toString === "3M")
+    assert(sw.xStart === 0)
   }
 
 }

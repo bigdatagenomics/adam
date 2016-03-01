@@ -48,38 +48,23 @@ abstract class SmithWaterman(xSequence: String, ySequence: String) extends Seria
    * @return Tuple of (i, j) coordinates.
    */
   private[smithwaterman] final def maxCoordinates(matrix: Array[Array[Double]]): (Int, Int) = {
-    def maxInCol(col: Array[Double]): (Double, Int) = {
-      def takeMax(a: (Double, Int), b: (Double, Int)): (Double, Int) = {
-        if (a._1 > b._1) {
-          a
-        } else {
-          b
+    var xMax = 0
+    var yMax = 0
+    var max = Double.MinValue
+    var x = 0
+    while (x < matrix.length) {
+      var y = 0
+      while (y < matrix(x).length) {
+        if (matrix(x)(y) >= max) {
+          max = matrix(x)(y)
+          xMax = x
+          yMax = y
         }
+        y += 1
       }
-
-      val c: Array[(Double, Int)] = col.zipWithIndex
-
-      c.reduce(takeMax)
+      x += 1
     }
-
-    def maxCol(cols: Array[(Double, Int)]): (Int, Int) = {
-      def takeMax(a: (Double, Int, Int), b: (Double, Int, Int)): (Double, Int, Int) = {
-        if (a._1 > b._1) {
-          a
-        } else {
-          b
-        }
-      }
-
-      val c: Array[((Double, Int), Int)] = cols.zipWithIndex
-
-      val m: (Double, Int, Int) = c.map(kv => (kv._1._1, kv._1._2, kv._2))
-        .reduce(takeMax)
-
-      (m._2, m._3)
-    }
-
-    maxCol(matrix.map(maxInCol))
+    (yMax, xMax)
   }
 
   /**
