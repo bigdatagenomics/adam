@@ -46,8 +46,10 @@ abstract class SmithWatermanGapScoringFromFn(
     }
 
     // score matrix
-    for (i <- 1 to x) {
-      for (j <- 1 to y) {
+    var i = 1
+    while (i <= x) {
+      var j = 1
+      while (j <= y) {
         val m = scoreMatrix(i - 1)(j - 1) + scoreFn(i, j, xSequence(i - 1), ySequence(j - 1))
         val d = scoreMatrix(i - 1)(j) + scoreFn(i, j, xSequence(i - 1), '_')
         val in = scoreMatrix(i)(j - 1) + scoreFn(i, j, '_', ySequence(j - 1))
@@ -64,7 +66,9 @@ abstract class SmithWatermanGapScoringFromFn(
 
         scoreMatrix(i)(j) = scoreUpdate
         moveMatrix(i)(j) = moveUpdate
+        j += 1
       }
+      i += 1
     }
 
     (scoreMatrix, moveMatrix)
