@@ -40,7 +40,7 @@ class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable w
   def contains(location: ReferencePosition): Boolean = {
     val bucket = table.get(location.referenceName)
     if (bucket.isEmpty) unknownContigWarning(location.referenceName)
-    bucket.map(_.contains(location.pos)).getOrElse(false)
+    bucket.exists(_.contains(location.pos))
   }
 
   private val unknownContigs = new mutable.HashSet[String]

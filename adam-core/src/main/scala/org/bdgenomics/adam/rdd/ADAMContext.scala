@@ -133,6 +133,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   /**
    * This method will create a new RDD.
+   *
    * @param filePath The path to the input data
    * @param predicate An optional pushdown predicate to use when reading the data
    * @param projection An option projection schema to use when reading the data
@@ -253,12 +254,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * AlignmentRecord schema.
    *
    * @param filePath Path to the file on disk.
-   *
    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
    *   sequence dictionary representing the contigs these reads are aligned to
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
-   *
    * @see loadAlignments
    */
   def loadBam(filePath: String,
@@ -322,6 +321,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Functions like loadBam, but uses bam index files to look at fewer blocks,
    * and only returns records within a specified ReferenceRegion. Bam index file required.
+   *
    * @param filePath The path to the input data. Currently this path must correspond to
    *        a single Bam file. The bam index file associated needs to have the same name.
    * @param viewRegion The ReferenceRegion we are filtering on
@@ -386,10 +386,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * As such, we must force the user to pass in the schema.
    *
    * @tparam T The type of the specific record we are loading.
-   *
    * @param filename Path to load file from.
    * @param schema Schema of records we are loading.
-   *
    * @return Returns a Seq containing the avro records.
    */
   private def loadAvro[T <: SpecificRecordBase](filename: String,
@@ -456,17 +454,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param filePath The path of the file to load.
    * @param predicate An optional predicate to push down into the file.
    * @param projection An optional schema designating the fields to project.
-   *
    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
    *   sequence dictionary representing the contigs these reads are aligned to
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
-   *
    * @note The sequence dictionary is read from an avro file stored at
    *   filePath.seqdict and the record group dictionary is read from an
    *   avro file stored at filePath.rgdict. These files are pure avro,
    *   not Parquet.
-   *
    * @see loadAlignments
    */
   def loadParquetAlignments(
@@ -643,23 +638,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     records.map(fastqRecordConverter.convertFragment)
   }
 
-  def loadGTF(filePath: String): RDD[Feature] = {
-    val records = sc.textFile(filePath).flatMap(new GTFParser().parse)
+  def loadGTF(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
+    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new GTFParser().parse)
     if (Metrics.isRecording) records.instrument() else records
   }
 
-  def loadBED(filePath: String): RDD[Feature] = {
-    val records = sc.textFile(filePath).flatMap(new BEDParser().parse)
+  def loadBED(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
+    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new BEDParser().parse)
     if (Metrics.isRecording) records.instrument() else records
   }
 
-  def loadNarrowPeak(filePath: String): RDD[Feature] = {
-    val records = sc.textFile(filePath).flatMap(new NarrowPeakParser().parse)
+  def loadNarrowPeak(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
+    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new NarrowPeakParser().parse)
     if (Metrics.isRecording) records.instrument() else records
   }
 
-  def loadIntervalList(filePath: String): RDD[Feature] = {
-    val parsedLines = sc.textFile(filePath).map(new IntervalListParser().parse)
+  def loadIntervalList(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
+    val parsedLines = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).map(new IntervalListParser().parse)
     val (seqDict, records) = (SequenceDictionary(parsedLines.flatMap(_._1).collect(): _*), parsedLines.flatMap(_._2))
     val seqDictMap = seqDict.records.map(sr => sr.name -> sr).toMap
     val recordsWithContigs = for {
@@ -736,24 +731,30 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  def loadFeatures(
-    filePath: String,
-    projection: Option[Schema] = None): RDD[Feature] = {
+  def loadFeatures(filePath: String,
+                   projection: Option[Schema],
+                   minPartitions: Int): RDD[Feature] = {
+    loadFeatures(filePath, projection, Some(minPartitions))
+  }
+
+  def loadFeatures(filePath: String,
+                   projection: Option[Schema] = None,
+                   minPartitions: Option[Int] = None): RDD[Feature] = {
 
     if (filePath.endsWith(".bed")) {
       log.info(s"Loading $filePath as BED and converting to features. Projection is ignored.")
-      loadBED(filePath)
+      loadBED(filePath, minPartitions)
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
       log.info(s"Loading $filePath as GTF/GFF and converting to features. Projection is ignored.")
-      loadGTF(filePath)
+      loadGTF(filePath, minPartitions)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
       log.info(s"Loading $filePath as NarrowPeak and converting to features. Projection is ignored.")
-      loadNarrowPeak(filePath)
+      loadNarrowPeak(filePath, minPartitions)
     } else if (filePath.endsWith(".interval_list")) {
       log.info(s"Loading $filePath as IntervalList and converting to features. Projection is ignored.")
-      loadIntervalList(filePath)
+      loadIntervalList(filePath, minPartitions)
     } else {
       log.info(s"Loading $filePath as Parquet containing Features.")
       loadParquetFeatures(filePath, None, projection)
@@ -838,12 +839,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *  Ignored if not FASTQ.
    * @param recordGroupOpt Optional record group name to set if loading FASTQ.
    * @param stringency Validation stringency used on FASTQ import/merging.
-   *
    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
    *   sequence dictionary representing the contigs these reads are aligned to
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
-   *
    * @see loadBam
    * @see loadParquetAlignments
    * @see loadInterleavedFastq
@@ -916,7 +915,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   sequence dictionary representing the contigs these reads are aligned to
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
-   *
    * @see loadAlignments
    */
   def loadAlignmentsFromPaths(paths: Seq[Path]): AlignmentRecordRDD = {

@@ -17,13 +17,10 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.Feature
 import org.bdgenomics.utils.cli._
-import org.kohsuke.args4j.Argument
+import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
 
 object Features2ADAM extends BDGCommandCompanion {
   val commandName = "features2adam"
@@ -41,6 +38,9 @@ class Features2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(required = true, metaVar = "ADAM",
     usage = "Location to write ADAM features data", index = 1)
   var outputPath: String = null
+  @Args4jOption(required = false, name = "-num_partitions",
+    usage = "Number of partitions to load an interval file using.")
+  var numPartitions: Int = 10
 }
 
 class Features2ADAM(val args: Features2ADAMArgs)
@@ -48,6 +48,6 @@ class Features2ADAM(val args: Features2ADAMArgs)
   val companion = Features2ADAM
 
   def run(sc: SparkContext) {
-    sc.loadFeatures(args.featuresFile).adamParquetSave(args)
+    sc.loadFeatures(args.featuresFile, None, args.numPartitions).adamParquetSave(args)
   }
 }
