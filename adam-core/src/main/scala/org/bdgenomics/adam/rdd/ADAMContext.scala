@@ -254,12 +254,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * AlignmentRecord schema.
    *
    * @param filePath Path to the file on disk.
-   *
    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
    *   sequence dictionary representing the contigs these reads are aligned to
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
-   *
    * @see loadAlignments
    */
   def loadBam(filePath: String,
@@ -388,10 +386,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * As such, we must force the user to pass in the schema.
    *
    * @tparam T The type of the specific record we are loading.
-   *
    * @param filename Path to load file from.
    * @param schema Schema of records we are loading.
-   *
    * @return Returns a Seq containing the avro records.
    */
   private def loadAvro[T <: SpecificRecordBase](filename: String,
@@ -458,17 +454,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param filePath The path of the file to load.
    * @param predicate An optional predicate to push down into the file.
    * @param projection An optional schema designating the fields to project.
-   *
    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
    *   sequence dictionary representing the contigs these reads are aligned to
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
-   *
    * @note The sequence dictionary is read from an avro file stored at
    *   filePath.seqdict and the record group dictionary is read from an
    *   avro file stored at filePath.rgdict. These files are pure avro,
    *   not Parquet.
-   *
    * @see loadAlignments
    */
   def loadParquetAlignments(
@@ -750,18 +743,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (filePath.endsWith(".bed")) {
       log.info(s"Loading $filePath as BED and converting to features. Projection is ignored.")
-      loadBED(filePath)
+      loadBED(filePath, minPartitions)
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
       log.info(s"Loading $filePath as GTF/GFF and converting to features. Projection is ignored.")
-      loadGTF(filePath)
+      loadGTF(filePath, minPartitions)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
       log.info(s"Loading $filePath as NarrowPeak and converting to features. Projection is ignored.")
-      loadNarrowPeak(filePath)
+      loadNarrowPeak(filePath, minPartitions)
     } else if (filePath.endsWith(".interval_list")) {
       log.info(s"Loading $filePath as IntervalList and converting to features. Projection is ignored.")
-      loadIntervalList(filePath)
+      loadIntervalList(filePath, minPartitions)
     } else {
       log.info(s"Loading $filePath as Parquet containing Features.")
       loadParquetFeatures(filePath, None, projection)
@@ -846,12 +839,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *  Ignored if not FASTQ.
    * @param recordGroupOpt Optional record group name to set if loading FASTQ.
    * @param stringency Validation stringency used on FASTQ import/merging.
-   *
    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
    *   sequence dictionary representing the contigs these reads are aligned to
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
-   *
    * @see loadBam
    * @see loadParquetAlignments
    * @see loadInterleavedFastq
@@ -924,7 +915,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   sequence dictionary representing the contigs these reads are aligned to
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
-   *
    * @see loadAlignments
    */
   def loadAlignmentsFromPaths(paths: Seq[Path]): AlignmentRecordRDD = {
