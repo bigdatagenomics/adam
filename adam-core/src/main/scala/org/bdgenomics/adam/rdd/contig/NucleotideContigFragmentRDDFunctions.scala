@@ -142,14 +142,14 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
     }
 
     try {
-      val pair: (ReferenceRegion, String) = rdd.keyBy(ReferenceRegion(_))
+      val refPairRDD: RDD[(ReferenceRegion, String)] = rdd.keyBy(ReferenceRegion(_))
         .filter(kv => kv._1.isDefined)
         .map(kv => (kv._1.get, kv._2))
         .filter(kv => kv._1.overlaps(region))
         .sortByKey()
         .map(kv => getString(kv))
-        .reduce(reducePairs)
 
+      val pair: (ReferenceRegion, String) = refPairRDD.collect.reduceLeft(reducePairs)
       assert(
         pair._1.compareTo(region) == 0,
         "Merging fragments returned a different region than requested."

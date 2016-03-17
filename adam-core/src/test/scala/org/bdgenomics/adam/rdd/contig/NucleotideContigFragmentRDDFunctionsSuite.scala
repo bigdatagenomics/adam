@@ -25,6 +25,8 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 
+import scala.collection.mutable.ListBuffer
+
 class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
 
   sparkTest("generate sequence dict from fasta") {
@@ -189,6 +191,32 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
 
     assert(rdd.adamGetReferenceString(region0) === "CTGTA")
     assert(rdd.adamGetReferenceString(region1) === "CTCTCA")
+  }
+
+  sparkTest("testing nondeterminism from reduce when recovering referencestring") {
+    val contig1 = Contig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(1000L)
+      .build
+
+    var fragments: ListBuffer[NucleotideContigFragment] = new ListBuffer[NucleotideContigFragment]()
+    for (a <- 0L to 1000L) {
+      val seq = "A"
+      val frag = NucleotideContigFragment.newBuilder()
+        .setContig(contig1)
+        .setFragmentStartPosition(0L + a)
+        .setFragmentSequence(seq)
+        .build()
+      fragments += frag
+    }
+    var passed = true
+    val rdd = sc.parallelize(fragments.toList)
+    try {
+      val result = rdd.adamGetReferenceString(new ReferenceRegion("chr1", 0L, 1000L))
+    } catch {
+      case e: AssertionError => passed = false
+    }
+    assert(passed == true)
   }
 
   sparkTest("save single contig fragment as FASTA text file") {
