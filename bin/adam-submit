@@ -36,11 +36,11 @@ for ARG in "$@"; do
 done
 
 if [[ $DD == True ]]; then
-  SPARK_ARGS="${PRE_DD[@]}"
-  ADAM_ARGS="${POST_DD[@]}"
+  SPARK_ARGS=("${PRE_DD[@]}")
+  ADAM_ARGS=("${POST_DD[@]}")
 else
   SPARK_ARGS=()
-  ADAM_ARGS="${PRE_DD[@]}"
+  ADAM_ARGS=("${PRE_DD[@]}")
 fi
 
 # does the user have ADAM_OPTS set? if yes, then warn
@@ -99,6 +99,6 @@ echo "Using SPARK_SUBMIT=$SPARK_SUBMIT"
   --class $ADAM_MAIN \
   --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
   --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
-  $SPARK_ARGS \
-  $ADAM_CLI_JAR \
-  $ADAM_ARGS
+  "${SPARK_ARGS[@]}" \
+  "$ADAM_CLI_JAR" \
+  "${ADAM_ARGS[@]}"
