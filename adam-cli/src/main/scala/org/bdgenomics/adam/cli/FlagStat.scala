@@ -17,15 +17,15 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.hadoop.fs.{ Path, FileSystem }
-import org.apache.hadoop.mapreduce.Job
+import htsjdk.samtools.ValidationStringency
+import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.projections.{ Projection, AlignmentRecordField }
+import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
-import org.kohsuke.args4j.Argument
+import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
 
 object FlagStat extends BDGCommandCompanion {
   val commandName: String = "flagstat"
@@ -41,6 +41,8 @@ class FlagStatArgs extends Args4jBase with ParquetArgs {
   val inputPath: String = null
   @Argument(required = false, metaVar = "OUTPUT", usage = "Optionally write the stats to this file.", index = 1)
   val outputPath: String = null
+  @Args4jOption(required = false, name = "-stringency", usage = "Set the parsing stringency: SILENT, LENIENT, STRICT.")
+  val stringency: String = "SILENT"
 }
 
 class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagStatArgs] {
@@ -65,7 +67,14 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
       AlignmentRecordField.supplementaryAlignment
     )
 
-    val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection))
+    val stringency = ValidationStringency.valueOf(args.stringency)
+
+    val adamFile: RDD[AlignmentRecord] =
+      sc.loadAlignments(
+        args.inputPath,
+        projection = Some(projection),
+        stringency = stringency
+      )
 
     val (failedVendorQuality, passedVendorQuality) = adamFile.adamFlagStat()
 

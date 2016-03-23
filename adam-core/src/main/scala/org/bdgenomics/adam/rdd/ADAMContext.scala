@@ -261,7 +261,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @see loadAlignments
    */
-  def loadBam(filePath: String): AlignmentRecordRDD = {
+  def loadBam(filePath: String,
+              validationStringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
     val path = new Path(filePath)
     val fs =
       Option(
@@ -289,6 +290,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             // We need to separately read the header, so that we can inject the sequence dictionary
             // data into each individual Read (see the argument to samRecordConverter.convert,
             // below).
+            sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, validationStringency.toString)
             val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
             log.info("Loaded header from " + fp)
             val sd = adamBamDictionaryLoad(samHeader)
@@ -858,7 +860,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam")) {
       log.info("Loading " + filePath + " as SAM/BAM and converting to AlignmentRecords. Projection is ignored.")
-      loadBam(filePath)
+      loadBam(filePath, stringency)
     } else if (filePath.endsWith(".ifq")) {
       log.info("Loading " + filePath + " as interleaved FASTQ and converting to AlignmentRecords. Projection is ignored.")
       loadInterleavedFastq(filePath)
