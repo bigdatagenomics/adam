@@ -23,7 +23,7 @@ import org.bdgenomics.adam.rich.DecadentRead
 class CycleCovariate extends AbstractCovariate[Int] {
   def compute(read: DecadentRead): Seq[Option[Int]] = {
     val (initial, increment) = initialization(read)
-    Range(0, read.residues.length).map(pos => Some(initial + increment * pos))
+    read.residues.indices.map(pos => Some(initial + increment * pos))
   }
 
   // Returns (initialValue, increment)
