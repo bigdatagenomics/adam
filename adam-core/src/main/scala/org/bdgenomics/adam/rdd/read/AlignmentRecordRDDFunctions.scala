@@ -162,9 +162,9 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *
    * The RDD is written as a directory of Parquet files, with
    * Parquet configuration described by the input param args.
-   * The provided sequence dictionary is written at args.outputPath.seqdict
+   * The provided sequence dictionary is written at args.outputPath/_seqdict.avro
    * while the provided record group dictionary is written at
-   * args.outputPath.rgdict. These two files are written as Avro binary.
+   * args.outputPath/_rgdict.avro. These two files are written as Avro binary.
    *
    * @param args Save configuration arguments.
    * @param sd Sequence dictionary describing the contigs these reads are
@@ -178,25 +178,26 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   def saveAsParquet(args: ADAMSaveAnyArgs,
                     sd: SequenceDictionary,
                     rgd: RecordGroupDictionary) = {
-    // convert sequence dictionary and record group dictionaries to avro form
+
+    // save rdd itself as parquet
+    rdd.adamParquetSave(args)
+
+    // then convert sequence dictionary and record group dictionaries to avro form
     val contigs = sd.records
       .map(SequenceRecord.toADAMContig)
       .toSeq
     val rgMetadata = rgd.recordGroups
       .map(_.toMetadata)
 
-    // write the sequence dictionary and record group dictionary to disk
-    saveAvro("%s.seqdict".format(args.outputPath),
+    // and write the sequence dictionary and record group dictionary to disk
+    saveAvro("%s/_seqdict.avro".format(args.outputPath),
       rdd.context,
       Contig.SCHEMA$,
       contigs)
-    saveAvro("%s.rgdict".format(args.outputPath),
+    saveAvro("%s/_rgdict.avro".format(args.outputPath),
       rdd.context,
       RecordGroupMetadata.SCHEMA$,
       rgMetadata)
-
-    // save rdd itself as parquet
-    rdd.adamParquetSave(args)
   }
 
   /**

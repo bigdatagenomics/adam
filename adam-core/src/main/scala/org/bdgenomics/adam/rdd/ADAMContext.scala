@@ -459,8 +459,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
    * @note The sequence dictionary is read from an avro file stored at
-   *   filePath.seqdict and the record group dictionary is read from an
-   *   avro file stored at filePath.rgdict. These files are pure avro,
+   *   filePath/_seqdict.avro and the record group dictionary is read from an
+   *   avro file stored at filePath/_rgdict.avro. These files are pure avro,
    *   not Parquet.
    * @see loadAlignments
    */
@@ -471,9 +471,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     // load from disk
     val rdd = loadParquet[AlignmentRecord](filePath, predicate, projection)
-    val avroSd = loadAvro[Contig]("%s.seqdict".format(filePath),
+    val avroSd = loadAvro[Contig]("%s/_seqdict.avro".format(filePath),
       Contig.SCHEMA$)
-    val avroRgd = loadAvro[RecordGroupMetadata]("%s.rgdict".format(filePath),
+    val avroRgd = loadAvro[RecordGroupMetadata]("%s/_rgdict.avro".format(filePath),
       RecordGroupMetadata.SCHEMA$)
 
     // convert avro to sequence dictionary

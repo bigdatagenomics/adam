@@ -24,50 +24,8 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.{ ParquetLogger, ADAMFunSuite }
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.scalatest.BeforeAndAfter
 
-class FieldEnumerationSuite extends ADAMFunSuite with BeforeAndAfter {
-
-  var readsFilepath: String = null
-  var readsParquetFile: File = null
-
-  sparkBefore("fieldenumerationsuite_before") {
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
-
-    readsFilepath = resourcePath("reads12.sam")
-    val file = new File(readsFilepath)
-
-    readsParquetFile = new File(file.getParentFile, "test_reads12_parquet.adam")
-
-    // Erase old test files, if they exist.
-    if (readsParquetFile.exists())
-      cleanParquet(readsParquetFile)
-
-    // Convert the reads12.sam file into a parquet file
-    val rRdd = sc.loadBam(readsFilepath)
-    val bamReads = rRdd.rdd
-    val sd = rRdd.sequences
-    val rgd = rRdd.recordGroups
-    bamReads.saveAsParquet(TestSaveArgs(readsParquetFile.getAbsolutePath), sd, rgd)
-  }
-
-  after {
-    cleanParquet(readsParquetFile)
-  }
-
-  /**
-   * We can't just file.delete() a parquet "file", since it's often a directory.
-   * @param dir The directory (or, possibly, file) to delete
-   */
-  def cleanParquet(dir: File) {
-    if (dir.isDirectory) {
-      dir.listFiles().foreach(file =>
-        file.delete())
-      dir.delete()
-    } else {
-      dir.delete()
-    }
-  }
+class FieldEnumerationSuite extends ADAMFunSuite {
 
   test("Empty projections are illegal") {
     intercept[AssertionError] {
@@ -76,11 +34,18 @@ class FieldEnumerationSuite extends ADAMFunSuite with BeforeAndAfter {
   }
 
   sparkTest("Simple projection on Read works") {
+    val readsFilepath = resourcePath("reads12.sam")
+    val readsParquetFilepath = tmpFile("reads12.adam")
+
+    // Convert the reads12.sam file into a parquet file
+    val rRdd = sc.loadBam(readsFilepath)
+    val bamReads = rRdd.rdd
+    val sd = rRdd.sequences
+    val rgd = rRdd.recordGroups
+    bamReads.saveAsParquet(TestSaveArgs(readsParquetFilepath), sd, rgd)
 
     val p1 = Projection(AlignmentRecordField.readName)
-
-    val reads1: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFile.getAbsolutePath, projection = Some(p1))
-
+    val reads1: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFilepath, projection = Some(p1))
     assert(reads1.count() === 200)
 
     val first1 = reads1.first()
@@ -88,9 +53,7 @@ class FieldEnumerationSuite extends ADAMFunSuite with BeforeAndAfter {
     assert(first1.getReadMapped === false)
 
     val p2 = Projection(AlignmentRecordField.readName, AlignmentRecordField.readMapped)
-
-    val reads2: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFile.getAbsolutePath, projection = Some(p2))
-
+    val reads2: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFilepath, projection = Some(p2))
     assert(reads2.count() === 200)
 
     val first2 = reads2.first()
