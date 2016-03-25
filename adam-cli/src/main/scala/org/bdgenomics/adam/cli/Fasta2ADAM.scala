@@ -55,7 +55,7 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fas
 
     if (args.verbose) {
       println("FASTA contains:")
-      println(adamFasta.adamGetSequenceDictionary())
+      println(adamFasta.getSequenceDictionary())
     }
 
     log.info("Writing records to disk.")
@@ -65,7 +65,7 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fas
       adamFasta
     }
 
-    finalFasta.adamParquetSave(args)
+    finalFasta.saveAsParquet(args)
   }
 }
 

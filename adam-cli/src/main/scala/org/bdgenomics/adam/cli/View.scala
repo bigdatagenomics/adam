@@ -164,13 +164,13 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
 
     val reads = applyFilters(sc.loadAlignments(args.inputPath))
 
-    if (args.outputPath != null)
-      reads.adamAlignedRecordSave(args, SequenceDictionary.empty, RecordGroupDictionary.empty)
-    else {
+    if (args.outputPath != null) {
+      reads.save(args, SequenceDictionary.empty, RecordGroupDictionary.empty)
+    } else {
       if (args.printCount) {
         println(reads.count())
       } else {
-        println(reads.adamSAMString(SequenceDictionary.empty, RecordGroupDictionary.empty))
+        println(reads.saveAsSamString(SequenceDictionary.empty, RecordGroupDictionary.empty))
       }
     }
   }

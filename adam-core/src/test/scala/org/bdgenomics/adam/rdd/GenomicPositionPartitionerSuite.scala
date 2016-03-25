@@ -97,7 +97,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     val filename = resourcePath("reads12.sam")
     val parts = 1
 
-    val dict = sc.adamDictionaryLoad[AlignmentRecord](filename)
+    val dict = sc.loadDictionary[AlignmentRecord](filename)
     val parter = GenomicPositionPartitioner(parts, dict)
 
     val p = {

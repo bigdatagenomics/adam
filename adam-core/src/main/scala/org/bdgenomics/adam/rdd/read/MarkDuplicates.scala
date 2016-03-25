@@ -97,7 +97,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
       p._1.read2refPos
     }
 
-    rdd.adamSingleReadBuckets()
+    rdd.groupReadsByFragment()
       .keyBy(ReferencePositionPair(_))
       .groupBy(leftPositionAndLibrary(_, rgd))
       .flatMap(kv => PerformDuplicateMarking.time {

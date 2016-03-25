@@ -93,7 +93,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   }
 
   private def markDuplicates(reads: AlignmentRecord*) = {
-    sc.parallelize(reads).adamMarkDuplicates(rgd).collect()
+    sc.parallelize(reads).markDuplicates(rgd).collect()
   }
 
   sparkTest("single read") {

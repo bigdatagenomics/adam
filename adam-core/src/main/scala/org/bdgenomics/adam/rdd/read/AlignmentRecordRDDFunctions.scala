@@ -17,20 +17,14 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import java.io.{
-  InputStream,
-  OutputStream,
-  StringWriter,
-  Writer
-}
+import java.io.{ InputStream, OutputStream, StringWriter, Writer }
+import java.lang.reflect.InvocationTargetException
 import htsjdk.samtools._
 import htsjdk.samtools.util.{ BinaryCodec, BlockCompressedOutputStream }
-import java.lang.reflect.InvocationTargetException
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileWriter
 import org.apache.avro.specific.{ SpecificDatumWriter, SpecificRecordBase }
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{ FileSystem, FileUtil, Path }
+import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.broadcast.Broadcast
@@ -44,7 +38,7 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
-import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
+import org.bdgenomics.adam.rdd.{ ADAMRDDFunctions, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
@@ -53,7 +47,9 @@ import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializable with Logging {
+class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
+    extends ADAMRDDFunctions(rdd) {
+
   /**
    * Calculates the subset of the RDD whose AlignmentRecords overlap the corresponding
    * query ReferenceRegion.  Equality of the reference sequence (to which these are aligned)
@@ -84,20 +80,24 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
 
     if (args.outputPath.endsWith(".sam")) {
       log.info("Saving data in SAM format")
-      rdd.adamSAMSave(args.outputPath,
+      saveAsSam(
+        args.outputPath,
         sd,
         rgd,
         asSingleFile = args.asSingleFile,
-        isSorted = isSorted)
+        isSorted = isSorted
+      )
       true
     } else if (args.outputPath.endsWith(".bam")) {
       log.info("Saving data in BAM format")
-      rdd.adamSAMSave(args.outputPath,
+      saveAsSam(
+        args.outputPath,
         sd,
         rgd,
         asSam = false,
         asSingleFile = args.asSingleFile,
-        isSorted = isSorted)
+        isSorted = isSorted
+      )
       true
     } else
       false
@@ -106,7 +106,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
   private[rdd] def maybeSaveFastq(args: ADAMSaveAnyArgs): Boolean = {
     if (args.outputPath.endsWith(".fq") || args.outputPath.endsWith(".fastq") ||
       args.outputPath.endsWith(".ifq")) {
-      rdd.adamSaveAsFastq(args.outputPath, sort = args.sortFastqOutput)
+      saveAsFastq(args.outputPath, sort = args.sortFastqOutput)
       true
     } else
       false
@@ -168,15 +168,13 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    *   aligned to.
    * @param rgd Record group dictionary describing the record groups these
    *   reads are from.
-   * @see adamSave
-   * @see adamAlignedRecordSave
    */
   def saveAsParquet(args: ADAMSaveAnyArgs,
                     sd: SequenceDictionary,
-                    rgd: RecordGroupDictionary) = {
+                    rgd: RecordGroupDictionary): Unit = {
 
     // save rdd itself as parquet
-    rdd.adamParquetSave(args)
+    saveAsParquet(args)
 
     // then convert sequence dictionary and record group dictionaries to avro form
     val contigs = sd.records
@@ -208,34 +206,9 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    *   aligned to.
    * @param rgd Record group dictionary describing the record groups these
    *   reads are from.
-   * @see adamSave
-   * @see adamSAMSave
-   * @see saveAsParquet
+   * @param isSorted If the output is sorted, this will modify the SAM/BAM header.
    */
-  def adamAlignedRecordSave(args: ADAMSaveAnyArgs,
-                            sd: SequenceDictionary,
-                            rgd: RecordGroupDictionary): Boolean = {
-    maybeSaveBam(args, sd, rgd) || { saveAsParquet(args, sd, rgd); true }
-  }
-
-  /**
-   * Saves AlignmentRecords as a directory of Parquet files or as SAM/BAM.
-   *
-   * This method infers the output format from the file extension. Filenames
-   * ending in .sam/.bam are saved as SAM/BAM, and all other files are saved
-   * as Parquet.
-   *
-   * @param args Save configuration arguments.
-   * @param sd Sequence dictionary describing the contigs these reads are
-   *   aligned to.
-   * @param rgd Record group dictionary describing the record groups these
-   *   reads are from.
-   * @see adamAlignedRecordSave
-   * @see adamSAMSave
-   * @see saveAsParquet
-   * @see adamSaveAsFastq
-   */
-  def adamSave(
+  def save(
     args: ADAMSaveAnyArgs,
     sd: SequenceDictionary,
     rgd: RecordGroupDictionary,
@@ -260,10 +233,10 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    * @return A string on the driver representing this RDD of reads in SAM format.
    * @see adamConvertToSAM
    */
-  def adamSAMString(sd: SequenceDictionary,
-                    rgd: RecordGroupDictionary): String = {
+  def saveAsSamString(sd: SequenceDictionary,
+                      rgd: RecordGroupDictionary): String = {
     // convert the records
-    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM(sd, rgd)
+    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = convertToSam(sd, rgd)
 
     val records = convertRecords.coalesce(1, shuffle = true).collect()
 
@@ -291,7 +264,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    * @param asSingleFile If true, saves output as a single file.
    * @param isSorted If the output is sorted, this will modify the header.
    */
-  def adamSAMSave(
+  def saveAsSam(
     filePath: String,
     sd: SequenceDictionary,
     rgd: RecordGroupDictionary,
@@ -307,9 +280,12 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
     }
 
     // convert the records
-    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) = rdd.adamConvertToSAM(sdFinal,
-      rgd,
-      isSorted)
+    val (convertRecords: RDD[SAMRecordWritable], header: SAMFileHeader) =
+      convertToSam(
+        sdFinal,
+        rgd,
+        isSorted
+      )
 
     // add keys to our records
     val withKey = convertRecords.keyBy(v => new LongWritable(v.get.getAlignmentStart))
@@ -409,7 +385,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
         binaryCodec.writeString(sw.toString, true, false)
 
         // write sequence dictionary
-        val ssd = header.getSequenceDictionary()
+        val ssd = header.getSequenceDictionary
         binaryCodec.writeInt(ssd.size())
         ssd.getSequences
           .toList
@@ -590,9 +566,9 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    *
    * @return Returns a SAM/BAM formatted RDD of reads, as well as the file header.
    */
-  def adamConvertToSAM(sd: SequenceDictionary,
-                       rgd: RecordGroupDictionary,
-                       isSorted: Boolean = false): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
+  def convertToSam(sd: SequenceDictionary,
+                   rgd: RecordGroupDictionary,
+                   isSorted: Boolean = false): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
 
     // create conversion object
     val adamRecordConverter = new AlignmentRecordConverter
@@ -623,9 +599,8 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    *
    * @param kmerLength The value of _k_ to use for cutting _k_-mers.
    * @return Returns an RDD containing k-mer/count pairs.
-   * @see adamCountQmers
    */
-  def adamCountKmers(kmerLength: Int): RDD[(String, Long)] = {
+  def countKmers(kmerLength: Int): RDD[(String, Long)] = {
     rdd.flatMap(r => {
       // cut each read into k-mers, and attach a count of 1L
       r.getSequence
@@ -634,7 +609,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
     }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
   }
 
-  def adamSortReadsByReferencePosition(): RDD[AlignmentRecord] = SortReads.time {
+  def sortReadsByReferencePosition(): RDD[AlignmentRecord] = SortReads.time {
     log.info("Sorting reads by reference position")
 
     // NOTE: In order to keep unmapped reads from swamping a single partition
@@ -659,7 +634,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    * @return A new RDD where reads have the duplicate read flag set. Duplicate
    *   reads are NOT filtered out.
    */
-  def adamMarkDuplicates(rgd: RecordGroupDictionary): RDD[AlignmentRecord] = MarkDuplicatesInDriver.time {
+  def markDuplicates(rgd: RecordGroupDictionary): RDD[AlignmentRecord] = MarkDuplicatesInDriver.time {
     MarkDuplicates(rdd, rgd)
   }
 
@@ -672,7 +647,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    *                            observations to.
    * @return Returns an RDD of recalibrated reads.
    */
-  def adamBQSR(
+  def recalibateBaseQualities(
     knownSnps: Broadcast[SnpTable],
     observationDumpFile: Option[String] = None,
     validationStringency: ValidationStringency = ValidationStringency.LENIENT): RDD[AlignmentRecord] = BQSRInDriver.time {
@@ -692,7 +667,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    * @param maxTargetSize The maximum width of a single target region for realignment.
    * @return Returns an RDD of mapped reads which have been realigned.
    */
-  def adamRealignIndels(
+  def realignIndels(
     consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
     isSorted: Boolean = false,
     maxIndelSize: Int = 500,
@@ -703,7 +678,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
   }
 
   // Returns a tuple of (failedQualityMetrics, passedQualityMetrics)
-  def adamFlagStat(): (FlagStatMetrics, FlagStatMetrics) = {
+  def flagStat(): (FlagStatMetrics, FlagStatMetrics) = {
     FlagStat(rdd)
   }
 
@@ -712,7 +687,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    *
    * @return SingleReadBuckets with primary, secondary and unmapped reads
    */
-  def adamSingleReadBuckets(): RDD[SingleReadBucket] = {
+  def groupReadsByFragment(): RDD[SingleReadBucket] = {
     SingleReadBucket(rdd)
   }
 
@@ -723,7 +698,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    *
    * @return An RDD of attribute name / count pairs.
    */
-  def adamCharacterizeTags(): RDD[(String, Long)] = {
+  def characterizeTags(): RDD[(String, Long)] = {
     rdd.flatMap(RichAlignmentRecord(_).tags.map(attr => (attr.tag, 1L))).reduceByKey(_ + _)
   }
 
@@ -734,8 +709,8 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    * @param tag The name of the optional field whose values are to be counted.
    * @return A Map whose keys are the values of the tag, and whose values are the number of time each tag-value occurs.
    */
-  def adamCharacterizeTagValues(tag: String): Map[Any, Long] = {
-    adamFilterRecordsWithTag(tag).flatMap(RichAlignmentRecord(_).tags.find(_.tag == tag)).map(
+  def characterizeTagValues(tag: String): Map[Any, Long] = {
+    filterRecordsWithTag(tag).flatMap(RichAlignmentRecord(_).tags.find(_.tag == tag)).map(
       attr => Map(attr.value -> 1L)
     ).reduce {
         (map1: Map[Any, Long], map2: Map[Any, Long]) =>
@@ -749,7 +724,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    * @param tagName The name of the attribute to filter on (should be length 2)
    * @return An RDD[Read] containing the subset of records with a tag that matches the given name.
    */
-  def adamFilterRecordsWithTag(tagName: String): RDD[AlignmentRecord] = {
+  def filterRecordsWithTag(tagName: String): RDD[AlignmentRecord] = {
     assert(
       tagName.length == 2,
       "withAttribute takes a tagName argument of length 2; tagName=\"%s\"".format(tagName)
@@ -764,7 +739,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    * @param fileName2 Path at which to save a FASTQ file containing the second mate of each pair.
    * @param validationStringency Iff strict, throw an exception if any read in this RDD is not accompanied by its mate.
    */
-  def adamSaveAsPairedFastq(
+  def saveAsPairedFastq(
     fileName1: String,
     fileName2: String,
     outputOriginalBaseQualities: Boolean = false,
@@ -876,7 +851,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    * @param sort Whether to sort the FASTQ files by read name or not. Defaults
    *             to false. Sorting the output will recover pair order, if desired.
    */
-  def adamSaveAsFastq(
+  def saveAsFastq(
     fileName: String,
     fileName2Opt: Option[String] = None,
     outputOriginalBaseQualities: Boolean = false,
@@ -886,7 +861,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
     log.info("Saving data in FASTQ format.")
     fileName2Opt match {
       case Some(fileName2) =>
-        adamSaveAsPairedFastq(
+        saveAsPairedFastq(
           fileName,
           fileName2,
           outputOriginalBaseQualities = outputOriginalBaseQualities,
@@ -919,7 +894,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
    * @param validationStringency How stringently to validate the reads.
    * @return Returns an RDD with the pair information recomputed.
    */
-  def adamRePairReads(
+  def reassembleReadPairs(
     secondPairRdd: RDD[AlignmentRecord],
     validationStringency: ValidationStringency = ValidationStringency.LENIENT): RDD[AlignmentRecord] = {
     // cache rdds
@@ -978,6 +953,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializabl
   }
 
   def toFragments: RDD[Fragment] = {
-    adamSingleReadBuckets.map(_.toFragment)
+    groupReadsByFragment.map(_.toFragment)
   }
 }

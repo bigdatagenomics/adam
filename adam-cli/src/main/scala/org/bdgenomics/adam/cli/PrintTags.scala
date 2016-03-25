@@ -69,11 +69,11 @@ class PrintTags(protected val args: PrintTagsArgs) extends BDGSparkCommand[Print
       filtered.take(count).map(_.getAttributes).foreach(println)
     }
 
-    val tagCounts = filtered.adamCharacterizeTags().collect()
+    val tagCounts = filtered.characterizeTags().collect()
     for ((tag, count) <- tagCounts) {
       println("%3s\t%d".format(tag, count))
       if (toCount.contains(tag)) {
-        val countMap = filtered.adamCharacterizeTagValues(tag)
+        val countMap = filtered.characterizeTagValues(tag)
         for ((value, valueCount) <- countMap) {
           println("\t%10d\t%s".format(valueCount, value.toString))
         }

@@ -111,7 +111,7 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
    * @param region Reference region over which to get sequence.
    * @return String of bases corresponding to reference sequence.
    */
-  def adamGetReferenceString(region: ReferenceRegion): String = {
+  def getReferenceString(region: ReferenceRegion): String = {
     def getString(fragment: (ReferenceRegion, NucleotideContigFragment)): (ReferenceRegion, String) = {
       val trimStart = max(0, region.start - fragment._1.start).toInt
       val trimEnd = max(0, fragment._1.end - region.end).toInt
@@ -162,7 +162,7 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
     }
   }
 
-  def getSequenceRecordsFromElement(elem: NucleotideContigFragment): Set[SequenceRecord] = {
+  def getSequenceRecords(elem: NucleotideContigFragment): Set[SequenceRecord] = {
     // variant context contains a single locus
     Set(SequenceRecord.fromADAMContigFragment(elem))
   }
@@ -179,7 +179,7 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
   def flankAdjacentFragments(
     flankLength: Int,
     optSd: Option[SequenceDictionary] = None): RDD[NucleotideContigFragment] = {
-    FlankReferenceFragments(rdd, optSd.getOrElse(adamGetSequenceDictionary(performLexSort = false)), flankLength)
+    FlankReferenceFragments(rdd, optSd.getOrElse(getSequenceDictionary(performLexSort = false)), flankLength)
   }
 
   /**

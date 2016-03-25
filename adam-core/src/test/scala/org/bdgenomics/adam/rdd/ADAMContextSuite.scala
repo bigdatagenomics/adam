@@ -64,7 +64,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
     //save it as an Adam file so we can test the Adam loader
     val bamReadsAdamFile = new File(Files.createTempDir(), "bamReads.adam")
-    bamReads.adamParquetSave(bamReadsAdamFile.getAbsolutePath)
+    bamReads.saveAsParquet(bamReadsAdamFile.getAbsolutePath)
     intercept[IllegalArgumentException] {
       val noReturnType = sc.loadParquet(bamReadsAdamFile.getAbsolutePath)
     }
@@ -180,7 +180,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val loc = tempLocation()
     val path = new Path(loc)
 
-    saved.saveAsParquet(TestSaveArgs(loc),
+    saved.save(TestSaveArgs(loc),
       new SequenceDictionary(Vector(SequenceRecord.fromADAMContig(contig))),
       RecordGroupDictionary.empty)
     try {
@@ -198,7 +198,7 @@ class ADAMContextSuite extends ADAMFunSuite {
    Little helper function -- because apparently createTempFile creates an actual file, not
    just a name?  Whereas, this returns the name of something that could be mkdir'ed, in the
    same location as createTempFile() uses, so therefore the returned path from this method
-   should be suitable for adamParquetSave().
+   should be suitable for saveAsParquet().
    */
   def tempLocation(suffix: String = ".adam"): String = {
     val tempFile = File.createTempFile("ADAMContextSuite", "")
@@ -335,12 +335,33 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(variants.count === 681)
 
     val loc = tempLocation()
-    variants.adamParquetSave(loc, 1024, 1024) // force more than one row group (block)
+    variants.saveAsParquet(loc, 1024, 1024) // force more than one row group (block)
 
     val pred: FilterPredicate = (LongColumn("start") === 16097631L)
     // the following only reads one row group
     val adamVariants: RDD[Variant] = sc.loadParquetVariants(loc, predicate = Some(pred))
     assert(adamVariants.count === 1)
+  }
+
+  sparkTest("saveAsParquet with file path") {
+    val inputPath = resourcePath("small.sam")
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(inputPath)
+    val outputPath = tempLocation()
+    reads.saveAsParquet(outputPath)
+  }
+
+  sparkTest("saveAsParquet with file path, block size, page size") {
+    val inputPath = resourcePath("small.sam")
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(inputPath)
+    val outputPath = tempLocation()
+    reads.saveAsParquet(outputPath, 1024, 2048)
+  }
+
+  sparkTest("saveAsParquet with save args") {
+    val inputPath = resourcePath("small.sam")
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(inputPath)
+    val outputPath = tempLocation()
+    reads.saveAsParquet(TestSaveArgs(outputPath))
   }
 }
 

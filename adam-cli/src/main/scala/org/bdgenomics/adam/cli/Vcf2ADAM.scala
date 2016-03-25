@@ -76,11 +76,11 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] wit
     if (args.onlyVariants) {
       adamVariants
         .map(v => v.variant.variant)
-        .adamParquetSave(args)
+        .saveAsParquet(args)
     } else {
       adamVariants
         .flatMap(p => p.genotypes)
-        .adamParquetSave(args)
+        .saveAsParquet(args)
     }
   }
 }

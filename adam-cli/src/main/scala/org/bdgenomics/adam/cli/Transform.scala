@@ -137,7 +137,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
     if (args.markDuplicates) {
       log.info("Marking duplicates")
-      adamRecords = adamRecords.adamMarkDuplicates(rgd)
+      adamRecords = adamRecords.markDuplicates(rgd)
     }
 
     if (args.locallyRealign) {
@@ -153,7 +153,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
           new ConsensusGeneratorFromKnowns(_, sc).asInstanceOf[ConsensusGenerator]
         )
 
-      adamRecords = oldRdd.adamRealignIndels(
+      adamRecords = oldRdd.realignIndels(
         consensusGenerator,
         isSorted = false,
         args.maxIndelSize,
@@ -177,7 +177,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       }
 
       val knownSnps: SnpTable = createKnownSnpsTable(sc)
-      adamRecords = oldRdd.adamBQSR(
+      adamRecords = oldRdd.recalibateBaseQualities(
         sc.broadcast(knownSnps),
         Option(args.observationsPath),
         stringency
@@ -206,7 +206,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       }
 
       log.info("Sorting reads")
-      adamRecords = oldRdd.adamSortReadsByReferencePosition()
+      adamRecords = oldRdd.sortReadsByReferencePosition()
 
       if (args.cache) {
         oldRdd.unpersist()
@@ -341,7 +341,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       mergedSd
     }
 
-    outputRdd.adamSave(args, sdFinal, mergedRgd, args.sortReads)
+    outputRdd.save(args, sdFinal, mergedRgd, args.sortReads)
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {

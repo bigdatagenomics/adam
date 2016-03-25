@@ -39,10 +39,10 @@ public class JavaADAMConduit {
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
         String fileName = tempDir.toString() + "/testRdd.adam";
-        recordRdd.adamSave(fileName);
+        recordRdd.saveAsParquet(fileName);
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(rdd.context());
-        return jac.adamRecordLoad(fileName);
+        return jac.loadAlignments(fileName);
     }
 }
