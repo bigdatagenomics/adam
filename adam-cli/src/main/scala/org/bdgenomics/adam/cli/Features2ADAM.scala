@@ -48,6 +48,6 @@ class Features2ADAM(val args: Features2ADAMArgs)
   val companion = Features2ADAM
 
   def run(sc: SparkContext) {
-    sc.loadFeatures(args.featuresFile, None, args.numPartitions).adamParquetSave(args)
+    sc.loadFeatures(args.featuresFile, None, args.numPartitions).saveAsParquet(args)
   }
 }

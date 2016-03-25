@@ -42,8 +42,8 @@ trait ADAMSaveAnyArgs extends SaveArgs {
 
 class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serializable with Logging {
 
-  def adamParquetSave(args: SaveArgs): Unit = {
-    adamParquetSave(
+  def saveAsParquet(args: SaveArgs): Unit = {
+    saveAsParquet(
       args.outputPath,
       args.blockSize,
       args.pageSize,
@@ -52,7 +52,7 @@ class ADAMRDDFunctions[T <% IndexedRecord: Manifest](rdd: RDD[T]) extends Serial
     )
   }
 
-  def adamParquetSave(
+  def saveAsParquet(
     filePath: String,
     blockSize: Int = 128 * 1024 * 1024,
     pageSize: Int = 1 * 1024 * 1024,
@@ -99,7 +99,7 @@ abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
    * @param elem Element from which to extract sequence records.
    * @return A seq of sequence records.
    */
-  def getSequenceRecordsFromElement(elem: T): Set[SequenceRecord]
+  def getSequenceRecords(elem: T): Set[SequenceRecord]
 
   /**
    * Aggregates together a sequence dictionary from the different individual reference sequences
@@ -107,9 +107,9 @@ abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
    *
    * @return A sequence dictionary describing the reference contigs in this dataset.
    */
-  def adamGetSequenceDictionary(performLexSort: Boolean = false): SequenceDictionary = {
+  def getSequenceDictionary(performLexSort: Boolean = false): SequenceDictionary = {
     def mergeRecords(l: List[SequenceRecord], rec: T): List[SequenceRecord] = {
-      val recs = getSequenceRecordsFromElement(rec)
+      val recs = getSequenceRecords(rec)
 
       recs.foldLeft(l)((li: List[SequenceRecord], r: SequenceRecord) => {
         if (!li.contains(r)) {
@@ -153,7 +153,7 @@ abstract class ADAMSequenceDictionaryRDDAggregator[T](rdd: RDD[T]) extends Seria
 class ADAMSpecificRecordSequenceDictionaryRDDAggregator[T <% IndexedRecord: Manifest](rdd: RDD[T])
     extends ADAMSequenceDictionaryRDDAggregator[T](rdd) {
 
-  def getSequenceRecordsFromElement(elem: T): Set[SequenceRecord] = {
+  def getSequenceRecords(elem: T): Set[SequenceRecord] = {
     Set(SequenceRecord.fromSpecificRecord(elem))
   }
 }

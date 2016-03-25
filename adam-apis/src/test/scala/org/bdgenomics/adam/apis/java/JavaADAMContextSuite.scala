@@ -29,7 +29,7 @@ class JavaADAMContextSuite extends ADAMFunSuite {
   sparkTest("can read a small .SAM file") {
     val path = copyResource("small.sam")
     val ctx = new JavaADAMContext(sc)
-    val reads = ctx.adamRecordLoad(path)
+    val reads = ctx.loadAlignments(path)
     assert(reads.jrdd.count() === 20)
   }
 

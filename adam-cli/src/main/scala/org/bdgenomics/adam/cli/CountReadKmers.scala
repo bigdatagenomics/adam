@@ -70,7 +70,7 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
     }
 
     // count kmers
-    val countedKmers = adamRecords.adamCountKmers(args.kmerLength)
+    val countedKmers = adamRecords.countKmers(args.kmerLength)
 
     // cache counted kmers
     countedKmers.cache()

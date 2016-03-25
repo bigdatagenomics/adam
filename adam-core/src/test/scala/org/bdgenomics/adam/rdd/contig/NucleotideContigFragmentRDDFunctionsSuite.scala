@@ -50,7 +50,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
 
     val rdd = sc.parallelize(List(ctg0, ctg1))
 
-    val dict = rdd.adamGetSequenceDictionary()
+    val dict = rdd.getSequenceDictionary()
 
     assert(dict.containsRefName("chr0"))
     val chr0 = dict("chr0").get
@@ -79,7 +79,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
 
     val rdd = sc.parallelize(List(fragment))
 
-    assert(rdd.adamGetReferenceString(region) === "ACTGTAC")
+    assert(rdd.getReferenceString(region) === "ACTGTAC")
   }
 
   sparkTest("recover trimmed reference string from a single contig fragment") {
@@ -100,7 +100,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
 
     val rdd = sc.parallelize(List(fragment))
 
-    assert(rdd.adamGetReferenceString(region) === "CTGTA")
+    assert(rdd.getReferenceString(region) === "CTGTA")
   }
 
   sparkTest("recover reference string from multiple contig fragments") {
@@ -144,8 +144,8 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
 
     val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
 
-    assert(rdd.adamGetReferenceString(region0) === "ACTGTAC")
-    assert(rdd.adamGetReferenceString(region1) === "GTACTCTCATG")
+    assert(rdd.getReferenceString(region0) === "ACTGTAC")
+    assert(rdd.getReferenceString(region1) === "GTACTCTCATG")
   }
 
   sparkTest("recover trimmed reference string from multiple contig fragments") {
@@ -189,8 +189,8 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
 
     val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
 
-    assert(rdd.adamGetReferenceString(region0) === "CTGTA")
-    assert(rdd.adamGetReferenceString(region1) === "CTCTCA")
+    assert(rdd.getReferenceString(region0) === "CTGTA")
+    assert(rdd.getReferenceString(region1) === "CTCTCA")
   }
 
   sparkTest("testing nondeterminism from reduce when recovering referencestring") {
@@ -212,7 +212,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
     var passed = true
     val rdd = sc.parallelize(fragments.toList)
     try {
-      val result = rdd.adamGetReferenceString(new ReferenceRegion("chr1", 0L, 1000L))
+      val result = rdd.getReferenceString(new ReferenceRegion("chr1", 0L, 1000L))
     } catch {
       case e: AssertionError => passed = false
     }

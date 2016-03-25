@@ -32,7 +32,7 @@ class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Lo
     case Strand.Independent => true
   }
 
-  def asGenes(): RDD[Gene] = {
+  def toGenes(): RDD[Gene] = {
 
     /*
     Creating a set of gene models works in four steps:

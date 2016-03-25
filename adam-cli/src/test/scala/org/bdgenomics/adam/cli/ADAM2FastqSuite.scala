@@ -61,7 +61,7 @@ class Adam2FastqSuite extends ADAMFunSuite {
         .rdd
         .filter(r => r.getReadMapped != null && r.getReadMapped)
 
-    reads.adamSaveAsFastq(outputFastqR1File, Some(outputFastqR2File), sort = true)
+    reads.saveAsFastq(outputFastqR1File, Some(outputFastqR2File), sort = true)
 
     val goldR1Reads =
       scala.io.Source.fromFile(new File(fastq1Path)).getLines().toSeq

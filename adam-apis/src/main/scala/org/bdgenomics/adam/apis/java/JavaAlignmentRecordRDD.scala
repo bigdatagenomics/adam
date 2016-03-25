@@ -46,7 +46,7 @@ class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord],
    * @param compressCodec Name of the compression codec to use.
    * @param disableDictionaryEncoding Whether or not to disable bit-packing.
    */
-  def adamSave(
+  def saveAsParquet(
     filePath: java.lang.String,
     blockSize: java.lang.Integer,
     pageSize: java.lang.Integer,
@@ -67,7 +67,7 @@ class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord],
    *
    * @param filePath Path to save the file at.
    */
-  def adamSave(
+  def saveAsParquet(
     filePath: java.lang.String) {
     jrdd.rdd.saveAsParquet(
       new JavaSaveArgs(filePath),
@@ -79,18 +79,16 @@ class JavaAlignmentRecordRDD(val jrdd: JavaRDD[AlignmentRecord],
    * Saves this RDD to disk as a SAM/BAM file.
    *
    * @param filePath Path to save the file at.
-   * @param sd A dictionary describing the contigs this file is aligned against.
-   * @param rgd A dictionary describing the read groups in this file.
    * @param asSam If true, saves as SAM. If false, saves as BAM.
    * @param asSingleFile If true, saves output as a single file.
    * @param isSorted If the output is sorted, this will modify the header.
    */
-  def adamSAMSave(
+  def saveAsSam(
     filePath: java.lang.String,
     asSam: java.lang.Boolean,
     asSingleFile: java.lang.Boolean,
     isSorted: java.lang.Boolean) {
-    jrdd.rdd.adamSAMSave(filePath,
+    jrdd.rdd.saveAsSam(filePath,
       sd,
       rgd,
       asSam = asSam,

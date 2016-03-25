@@ -60,7 +60,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param filePath Path to load the file from.
    * @return Returns a read RDD.
    */
-  def adamRecordLoad(filePath: java.lang.String): JavaAlignmentRecordRDD = {
+  def loadAlignments(filePath: java.lang.String): JavaAlignmentRecordRDD = {
     val aRdd = ac.loadAlignments(filePath)
     new JavaAlignmentRecordRDD(aRdd.rdd.toJavaRDD(),
       aRdd.sequences,

@@ -40,8 +40,8 @@ class RealignIndelsSuite extends ADAMFunSuite {
 
   def artificial_realigned_reads: RDD[AlignmentRecord] = {
     artificial_reads
-      .adamRealignIndels()
-      .adamSortReadsByReferencePosition()
+      .realignIndels()
+      .sortReadsByReferencePosition()
   }
 
   def gatk_artificial_realigned_reads: RDD[AlignmentRecord] = {

@@ -118,16 +118,16 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 
 class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
 
-  private[rdd] def adamBamDictionaryLoad(filePath: String): SequenceDictionary = {
+  private[rdd] def loadBamDictionary(filePath: String): SequenceDictionary = {
     val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
-    adamBamDictionaryLoad(samHeader)
+    loadBamDictionary(samHeader)
   }
 
-  private[rdd] def adamBamDictionaryLoad(samHeader: SAMFileHeader): SequenceDictionary = {
+  private[rdd] def loadBamDictionary(samHeader: SAMFileHeader): SequenceDictionary = {
     SequenceDictionary(samHeader)
   }
 
-  private[rdd] def adamBamLoadReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
+  private[rdd] def loadBamReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
     RecordGroupDictionary.fromSAMHeader(samHeader)
   }
 
@@ -195,7 +195,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return A sequenceDictionary containing the names and indices of all the sequences to which the records
    *         in the corresponding file are aligned.
    */
-  def adamDictionaryLoad[T](filePath: String)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): SequenceDictionary = {
+  def loadDictionary[T](filePath: String)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): SequenceDictionary = {
 
     // This funkiness is required because (a) ADAMRecords require a different projection from any
     // other flattened schema, and (b) because the SequenceRecord.fromADAMRecord, below, is going
@@ -221,7 +221,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (filePath.endsWith(".bam") || filePath.endsWith(".sam")) {
       if (isADAMRecord)
-        adamBamDictionaryLoad(filePath)
+        loadBamDictionary(filePath)
       else
         throw new IllegalArgumentException("If you're reading a BAM/SAM file, the record type must be Read")
 
@@ -290,8 +290,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, validationStringency.toString)
             val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
             log.info("Loaded header from " + fp)
-            val sd = adamBamDictionaryLoad(samHeader)
-            val rg = adamBamLoadReadGroups(samHeader)
+            val sd = loadBamDictionary(samHeader)
+            val rg = loadBamReadGroups(samHeader)
             Some((sd, rg))
           } catch {
             case e: Throwable => {
@@ -341,8 +341,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
 
           log.info("Loaded header from " + fp)
-          val sd = adamBamDictionaryLoad(samHeader)
-          val rg = adamBamLoadReadGroups(samHeader)
+          val sd = loadBamDictionary(samHeader)
+          val rg = loadBamReadGroups(samHeader)
           Some((sd, rg))
         } catch {
           case _: Throwable => {
@@ -636,12 +636,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     records.map(fastqRecordConverter.convertFragment)
   }
 
-  def loadGTF(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
+  def loadGtf(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new GTFParser().parse)
     if (Metrics.isRecording) records.instrument() else records
   }
 
-  def loadBED(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
+  def loadBed(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new BEDParser().parse)
     if (Metrics.isRecording) records.instrument() else records
   }
@@ -741,11 +741,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (filePath.endsWith(".bed")) {
       log.info(s"Loading $filePath as BED and converting to features. Projection is ignored.")
-      loadBED(filePath, minPartitions)
+      loadBed(filePath, minPartitions)
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
       log.info(s"Loading $filePath as GTF/GFF and converting to features. Projection is ignored.")
-      loadGTF(filePath, minPartitions)
+      loadGtf(filePath, minPartitions)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
       log.info(s"Loading $filePath as NarrowPeak and converting to features. Projection is ignored.")
@@ -763,7 +763,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     filePath: String,
     projection: Option[Schema] = None): RDD[Gene] = {
     import ADAMContext._
-    loadFeatures(filePath, projection).asGenes()
+    loadFeatures(filePath, projection).toGenes()
   }
 
   def loadReferenceFile(filePath: String, fragmentLength: Long): ReferenceFile = {
@@ -771,11 +771,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       //TODO(ryan): S3ByteAccess
       new TwoBitFile(new LocalFileByteAccess(new File(filePath)))
     } else {
-      ReferenceContigMap(loadSequence(filePath, fragmentLength = fragmentLength))
+      ReferenceContigMap(loadSequences(filePath, fragmentLength = fragmentLength))
     }
   }
 
-  def loadSequence(
+  def loadSequences(
     filePath: String,
     projection: Option[Schema] = None,
     fragmentLength: Long = 10000): RDD[NucleotideContigFragment] = {

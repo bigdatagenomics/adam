@@ -50,7 +50,7 @@ class Fragments2Reads(protected val args: Fragments2ReadsArgs) extends BDGSparkC
   def run(sc: SparkContext) {
     sc.loadFragments(args.inputPath)
       .toReads
-      .adamSave(args,
+      .save(args,
         SequenceDictionary.empty,
         RecordGroupDictionary.empty)
   }

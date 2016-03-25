@@ -76,7 +76,7 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
         stringency = stringency
       )
 
-    val (failedVendorQuality, passedVendorQuality) = adamFile.adamFlagStat()
+    val (failedVendorQuality, passedVendorQuality) = adamFile.flagStat()
 
     def percent(fraction: Long, total: Long) = if (total == 0) 0.0 else 100.00 * fraction.toFloat / total
 

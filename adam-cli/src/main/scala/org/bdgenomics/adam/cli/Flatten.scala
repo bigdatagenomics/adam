@@ -69,7 +69,7 @@ class Flatten(val args: FlattenArgs) extends BDGSparkCommand[FlattenArgs] with L
     val flatSchemaBc = sc.broadcast(flatSchema) // broadcast since Avro schema not serializable
 
     records.map(r => Flattener.flattenRecord(flatSchemaBc.value, r._2))
-      .adamParquetSave(
+      .saveAsParquet(
         args.outputPath,
         args.blockSize,
         args.pageSize,

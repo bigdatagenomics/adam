@@ -59,9 +59,9 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends BDGSparkComma
       val keyedAnnotations = existingAnnotations.keyBy(anno => new RichVariant(anno.getVariant))
       val joinedAnnotations = keyedAnnotations.join(annotations.keyBy(anno => new RichVariant(anno.getVariant)))
       val mergedAnnotations = joinedAnnotations.map(kv => VariantAnnotationConverter.mergeAnnotations(kv._2._1, kv._2._2))
-      mergedAnnotations.adamParquetSave(args)
+      mergedAnnotations.saveAsParquet(args)
     } else {
-      annotations.adamParquetSave(args)
+      annotations.saveAsParquet(args)
     }
   }
 }
