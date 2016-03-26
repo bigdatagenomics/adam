@@ -222,7 +222,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
 
   }
 
-  test("converting to fastq with unmapped reads") {
+  test("converting to fastq with unmapped reads when read reverse strand flag was set") {
     //SRR062634.10448889      117     22      16079761        0       *       =       16079761        0       
     // TTTCTTTCTTTTATATATATATACACACACACACACACACACACACATATATGTATATATACACGTATATGTATGTATATATGTATATATACACGTATAT    
     // @DF>C;FDC=EGEGGEFDGEFDD?DFDEEGFGFGGGDGGGGGGGEGGGGFGGGFGGGGGGFGGFGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    
@@ -251,9 +251,9 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(!secondRecord.getReadMapped)
     assert(secondRecord.getReadNegativeStrand)
     assert(secondRecordFastq(0) === "@SRR062634.10448889/1")
-    assert(secondRecordFastq(1) === secondRecord.getSequence)
+    assert(secondRecordFastq(1) === "ATATACGTGTATATATACATATATACATACATATACGTGTATATATACATATATGTGTGTGTGTGTGTGTGTGTGTGTATATATATATAAAAGAAAGAAA")
     assert(secondRecordFastq(2) === "+")
-    assert(secondRecordFastq(3) === secondRecord.getQual)
+    assert(secondRecordFastq(3) === "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGFGGFGGGGGGFGGGFGGGGEGGGGGGGDGGGFGFGEEDFD?DDFEGDFEGGEGE=CDF;C>FD@")
   }
 
   test("converting a fragment with no alignments should yield unaligned reads") {

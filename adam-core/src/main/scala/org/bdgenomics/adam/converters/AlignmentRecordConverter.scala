@@ -75,11 +75,11 @@ class AlignmentRecordConverter extends Serializable {
     "@%s%s\n%s\n+\n%s".format(
       adamRecord.getReadName,
       readNameSuffix,
-      if (adamRecord.getReadMapped && adamRecord.getReadNegativeStrand)
+      if (adamRecord.getReadNegativeStrand)
         Alphabet.dna.reverseComplement(adamRecord.getSequence)
       else
         adamRecord.getSequence,
-      if (adamRecord.getReadMapped && adamRecord.getReadNegativeStrand)
+      if (adamRecord.getReadNegativeStrand)
         qualityScores.reverse
       else
         qualityScores

@@ -196,7 +196,7 @@ class FastqRecordConverter extends Serializable with Logging {
         else if (setSecondOfPair) 1
         else null
       )
-      .setReadNegativeStrand(null)
+      .setReadNegativeStrand(false)
       .setMateNegativeStrand(null)
       .setPrimaryAlignment(null)
       .setSecondaryAlignment(null)
