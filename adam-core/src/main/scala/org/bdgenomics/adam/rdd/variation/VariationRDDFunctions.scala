@@ -51,7 +51,7 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
 
   }
 
-  def getCallsetSamples(): List[String] = {
+  def getCallsetSamples: List[String] = {
     rdd.flatMap(c => c.genotypes.map(_.getSampleId).toSeq.distinct)
       .distinct
       .collect()
@@ -80,7 +80,7 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
     log.info(s"Writing $vcfFormat file to $filePath")
 
     // Initialize global header object required by Hadoop VCF Writer
-    val header = getCallsetSamples()
+    val header = getCallsetSamples
     val bcastHeader = rdd.context.broadcast(header)
     val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
       log.info(s"Setting header for partition $idx")

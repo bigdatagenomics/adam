@@ -46,7 +46,7 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
    *
    * @return Returns an RDD of reads.
    */
-  def toReads(): RDD[AlignmentRecord] = {
+  def toReads: RDD[AlignmentRecord] = {
     FragmentConverter.convertRdd(rdd)
   }
 
@@ -59,18 +59,18 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
   def saveAsFasta(fileName: String, lineWidth: Int = 60) = {
 
     def isFragment(record: NucleotideContigFragment): Boolean = {
-      Option(record.fragmentNumber).isDefined && Option(record.numberOfFragmentsInContig).fold(false)(_ > 1)
+      Option(record.getFragmentNumber).isDefined && Option(record.getNumberOfFragmentsInContig).fold(false)(_ > 1)
     }
 
     def toFasta(record: NucleotideContigFragment): String = {
       val sb = new StringBuilder()
       sb.append(">")
-      sb.append(record.contig.contigName)
-      Option(record.description).foreach(n => sb.append(" ").append(n))
+      sb.append(record.getContig.getContigName)
+      Option(record.getDescription).foreach(n => sb.append(" ").append(n))
       if (isFragment(record)) {
-        sb.append(" fragment %d of %d".format(record.fragmentNumber + 1, record.numberOfFragmentsInContig))
+        sb.append(s" fragment ${record.getFragmentNumber + 1} of ${record.getNumberOfFragmentsInContig}")
       }
-      for (line <- Splitter.fixedLength(lineWidth).split(record.fragmentSequence)) {
+      for (line <- Splitter.fixedLength(lineWidth).split(record.getFragmentSequence)) {
         sb.append("\n")
         sb.append(line)
       }
@@ -90,15 +90,15 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
         .setFragmentNumber(null)
         .setFragmentStartPosition(null)
         .setNumberOfFragmentsInContig(null)
-        .setFragmentSequence(first.fragmentSequence + second.fragmentSequence)
+        .setFragmentSequence(first.getFragmentSequence + second.getFragmentSequence)
         .build
 
       merged
     }
 
     rdd
-      .sortBy(fragment => (fragment.contig.contigName, Option(fragment.fragmentNumber).map(_.toInt).getOrElse(-1)))
-      .map(fragment => (fragment.contig.contigName, fragment))
+      .sortBy(fragment => (fragment.getContig.getContigName, Option(fragment.getFragmentNumber).map(_.toInt).getOrElse(-1)))
+      .map(fragment => (fragment.getContig.getContigName, fragment))
       .reduceByKey(merge)
       .values
   }

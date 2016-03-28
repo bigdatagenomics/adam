@@ -50,7 +50,7 @@ class ADAMVariationRDDFunctionsSuite extends ADAMFunSuite {
       .build()
 
     val vc = VariantContext.buildFromGenotypes(List(genotype0, genotype1))
-    val samples = sc.parallelize(List(vc)).getCallsetSamples()
+    val samples = sc.parallelize(List(vc)).getCallsetSamples
 
     assert(samples.count(_ == "you") === 1)
     assert(samples.count(_ == "me") === 1)
