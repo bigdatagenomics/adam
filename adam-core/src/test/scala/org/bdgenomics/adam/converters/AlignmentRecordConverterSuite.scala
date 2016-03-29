@@ -219,16 +219,16 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(secondRecordFastq(1) === "AATTCAAAACCAGCCTGGCCAATATGGTGAAACCTCATCTCTACTAAAAATACAAAAATTAGCCAGGCATGGTGGTGCGTGCGTGTAGTCCCAGCTACTT")
     assert(secondRecordFastq(2) === "+")
     assert(secondRecordFastq(3) === "?-DDBEEB=EEEDDEDEEEA:D?5?E?CEBE5ED?D:AEDEDEDED-B,BC0AC,BB6@CDBDEC?BCBAA@5,=8CA-?A>?2:&048<BB5BE#####")
-
   }
 
-  test("converting to fastq with unmapped reads when read reverse strand flag was set") {
-    //SRR062634.10448889      117     22      16079761        0       *       =       16079761        0       
-    // TTTCTTTCTTTTATATATATATACACACACACACACACACACACACATATATGTATATATACACGTATATGTATGTATATATGTATATATACACGTATAT    
-    // @DF>C;FDC=EGEGGEFDGEFDD?DFDEEGFGFGGGDGGGGGGGEGGGGFGGGFGGGGGGFGGFGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    
-    // RG:Z:SRR062634
+  test("converting to fastq with unmapped reads where  read reverse complemented flag (Ox10) was NOT set") {
 
-    val (secondRecord, firstRecord) = getSAMRecordFromReadName("SRR062634.10448889")
+    // SRR062634.20911784      133     22      16060584        0       35M65S  =       16060584        0
+    // TGTAGTGGCAGGGGCCCGTTATCCCAAACTACCTGGGGGGGGGGGGGGGGGGGAACACCTAAAACCCGGGGGGGGGGGGGTTGGTGGGGGCTTTATCGCA
+    // GGGGGGGDGG@#########################################################################################
+    // RG:Z:SRR062634  XC:i:35
+
+    val (firstRecord, secondRecord) = getSAMRecordFromReadName("SRR062634.20911784")
 
     assert(firstRecord.getReadInFragment === 1)
     assert(secondRecord.getReadInFragment === 0)
@@ -237,23 +237,34 @@ class AlignmentRecordConverterSuite extends FunSuite {
       .toString
       .split('\n')
 
-    assert(firstRecord.getReadMapped)
-    assert(firstRecord.getReadNegativeStrand)
-    assert(firstRecordFastq(0) === "@SRR062634.10448889/2")
-    assert(firstRecordFastq(1) === "ACCTGTCTCAGCCTCCCAAAGTGCTGCGATTACAGTCATGAGCCACCGCACTTGGCTGGGTTTTCGTTTTCTTTCTTTTATATATATATACACACACACA")
+    assert(firstRecordFastq(0) === "@SRR062634.20911784/2")
+    assert(firstRecordFastq(1) === "TGTAGTGGCAGGGGCCCGTTATCCCAAACTACCTGGGGGGGGGGGGGGGGGGGAACACCTAAAACCCGGGGGGGGGGGGGTTGGTGGGGGCTTTATCGCA")
     assert(firstRecordFastq(2) === "+")
-    assert(firstRecordFastq(3) === "GGGGGGGGGGGGGGGGGGGGGEGGGGGGGGGGGGGGGGGGGGGGGGGFGEGEEDGGFDF?AEEEBDADEEDEEE;DFC@'B:B=B=B=BADCBCBCA=DA")
+    assert(firstRecordFastq(3) === "GGGGGGGDGG@#########################################################################################")
+  }
 
-    val secondRecordFastq = adamRecordConverter.convertToFastq(secondRecord, maybeAddSuffix = true)
+  test("converting to fastq with unmapped reads where reverse complemented flag (0x10) was set") {
+
+    //SRR062634.10448889      117     22      16079761        0       *       =       16079761        0
+    // TTTCTTTCTTTTATATATATATACACACACACACACACACACACACATATATGTATATATACACGTATATGTATGTATATATGTATATATACACGTATAT    
+    // @DF>C;FDC=EGEGGEFDGEFDD?DFDEEGFGFGGGDGGGGGGGEGGGGFGGGFGGGGGGFGGFGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG    
+    // RG:Z:SRR062634
+
+    val (firstRecord, secondRecord) = getSAMRecordFromReadName("SRR062634.10448889")
+
+    assert(firstRecord.getReadInFragment === 0)
+    assert(secondRecord.getReadInFragment === 1)
+
+    val firstRecordFastq = adamRecordConverter.convertToFastq(firstRecord, maybeAddSuffix = true)
       .toString
       .split('\n')
 
-    assert(!secondRecord.getReadMapped)
-    assert(secondRecord.getReadNegativeStrand)
-    assert(secondRecordFastq(0) === "@SRR062634.10448889/1")
-    assert(secondRecordFastq(1) === "ATATACGTGTATATATACATATATACATACATATACGTGTATATATACATATATGTGTGTGTGTGTGTGTGTGTGTGTATATATATATAAAAGAAAGAAA")
-    assert(secondRecordFastq(2) === "+")
-    assert(secondRecordFastq(3) === "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGFGGFGGGGGGFGGGFGGGGEGGGGGGGDGGGFGFGEEDFD?DDFEGDFEGGEGE=CDF;C>FD@")
+    assert(!firstRecord.getReadMapped)
+    assert(firstRecord.getReadNegativeStrand)
+    assert(firstRecordFastq(0) === "@SRR062634.10448889/1")
+    assert(firstRecordFastq(1) === "ATATACGTGTATATATACATATATACATACATATACGTGTATATATACATATATGTGTGTGTGTGTGTGTGTGTGTGTATATATATATAAAAGAAAGAAA")
+    assert(firstRecordFastq(2) === "+")
+    assert(firstRecordFastq(3) === "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGFGGFGGGGGGFGGGFGGGGEGGGGGGGDGGGFGFGEEDFD?DDFEGDFEGGEGE=CDF;C>FD@")
   }
 
   test("converting a fragment with no alignments should yield unaligned reads") {
