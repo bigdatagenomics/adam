@@ -80,9 +80,7 @@ class SAMRecordConverter extends Serializable with Logging {
       // This prevents looking up a -1 in the sequence dictionary
       val readReference: Int = samRecord.getReferenceIndex
       if (readReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
-        dict(samRecord.getReferenceName).foreach { (rec) =>
-          builder.setContig(SequenceRecord.toADAMContig(rec))
-        }
+        builder.setContigName(samRecord.getReferenceName)
 
         // set read alignment flag
         val start: Int = samRecord.getAlignmentStart
@@ -127,9 +125,7 @@ class SAMRecordConverter extends Serializable with Logging {
       val mateReference: Int = samRecord.getMateReferenceIndex
 
       if (mateReference != SAMRecord.NO_ALIGNMENT_REFERENCE_INDEX) {
-        dict(samRecord.getMateReferenceName).foreach { (rec) =>
-          builder.setMateContig(SequenceRecord.toADAMContig(rec))
-        }
+        builder.setMateContigName(samRecord.getMateReferenceName)
 
         val mateStart = samRecord.getMateAlignmentStart
         if (mateStart > 0) {

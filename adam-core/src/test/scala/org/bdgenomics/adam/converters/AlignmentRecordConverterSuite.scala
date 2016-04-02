@@ -66,14 +66,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     // add reference details
     adamRead.setRecordGroupName("record_group")
     adamRead.setRecordGroupSample("sample")
-    adamRead.setContig(Contig.newBuilder()
-      .setContigName("referencetest")
-      .build())
-    adamRead.setMateContig(Contig.newBuilder()
-      .setContigName("matereferencetest")
-      .setContigLength(6L)
-      .setReferenceURL("test://chrom1")
-      .build())
+    adamRead.setContigName("referencetest")
+    adamRead.setMateContigName("matereferencetest")
     adamRead.setMateAlignmentStart(6L)
 
     // make sequence dictionary
@@ -115,14 +109,8 @@ class AlignmentRecordConverterSuite extends FunSuite {
     // add reference details
     adamRead.setRecordGroupName("record_group")
     adamRead.setRecordGroupSample("sample")
-    adamRead.setContig(Contig.newBuilder()
-      .setContigName("referencetest")
-      .build())
-    adamRead.setMateContig(Contig.newBuilder()
-      .setContigName("matereferencetest")
-      .setContigLength(6L)
-      .setReferenceURL("test://chrom1")
-      .build())
+    adamRead.setContigName("referencetest")
+    adamRead.setMateContigName("matereferencetest")
     adamRead.setMateAlignmentStart(6L)
 
     // make sequence dictionary
@@ -312,9 +300,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
   test("converting a fragment with alignments should restore the alignments") {
     val alignments = List(AlignmentRecord.newBuilder()
       .setReadMapped(true)
-      .setContig(Contig.newBuilder()
-        .setContigName("1")
-        .build())
+      .setContigName("1")
       .setStart(10L)
       .setEnd(20L)
       .setReadName("testRead")
@@ -341,7 +327,7 @@ class AlignmentRecordConverterSuite extends FunSuite {
     assert(read.getCigar === "10M")
     assert(read.getSequence === "TACTGTGGGT")
     assert(read.getQual === "?????*****")
-    assert(read.getContig.getContigName === "1")
+    assert(read.getContigName === "1")
   }
 }
 

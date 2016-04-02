@@ -251,7 +251,7 @@ private[rdd] class RealignIndels(
 
       // get reference from reads
       val (reference, refStart, refEnd) = getReferenceFromReads(reads.map(r => new RichAlignmentRecord(r)))
-      val refRegion = ReferenceRegion(reads.head.record.getContig.getContigName, refStart, refEnd)
+      val refRegion = ReferenceRegion(reads.head.record.getContigName, refStart, refEnd)
 
       // preprocess reads and get consensus
       val readsToClean = consensusModel.preprocessReadsForRealignment(

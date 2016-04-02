@@ -82,7 +82,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     val count = 1000
     val pos = sc.parallelize((1 to count).map(i => adamRecord("chr1", "read_%d".format(i), rand.nextInt(100), readMapped = true)), 1)
     val parts = 200
-    val pairs = pos.map(p => (ReferencePosition(p.getContig.getContigName, p.getStart), p))
+    val pairs = pos.map(p => (ReferencePosition(p.getContigName, p.getStart), p))
     val parter = new RangePartitioner(parts, pairs)
     val partitioned = pairs.sortByKey().partitionBy(parter)
 
@@ -109,7 +109,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     assert(rdd.count() === 200)
 
     val keyed =
-      rdd.map(rec => (ReferencePosition(rec.getContig.getContigName, rec.getStart), rec)).sortByKey()
+      rdd.map(rec => (ReferencePosition(rec.getContigName, rec.getStart), rec)).sortByKey()
 
     val keys = keyed.map(_._1).collect()
     assert(!keys.exists(rp => parter.getPartition(rp) < 0 || parter.getPartition(rp) >= parts))
@@ -131,7 +131,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
       .build
 
     AlignmentRecord.newBuilder()
-      .setContig(contig)
+      .setContigName(contig.getContigName)
       .setReadName(readName)
       .setReadMapped(readMapped)
       .setStart(start)

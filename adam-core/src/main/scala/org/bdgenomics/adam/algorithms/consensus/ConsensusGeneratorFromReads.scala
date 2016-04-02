@@ -78,7 +78,7 @@ class ConsensusGeneratorFromReads extends ConsensusGenerator {
         Consensus.generateAlternateConsensus(
           r.getSequence,
           ReferencePosition(
-            r.getContig.getContigName,
+            r.getContigName,
             r.getStart
           ),
           r.samtoolsCigar

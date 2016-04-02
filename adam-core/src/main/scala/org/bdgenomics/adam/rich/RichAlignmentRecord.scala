@@ -132,7 +132,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
       } else {
         Strand.Forward
       }
-      ReferencePosition(record.getContig.getContigName, fivePrimePosition, strand)
+      ReferencePosition(record.getContigName, fivePrimePosition, strand)
     } catch {
       case e: Throwable => {
         println("caught " + e + " when trying to get position for " + record)
@@ -167,7 +167,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
 
   def getReferenceContext(readOffset: Int, referencePosition: Long, cigarElem: CigarElement, elemOffset: Int): ReferenceSequenceContext = {
     val position = if (record.getReadMapped) {
-      Some(ReferencePosition(record.getContig.getContigName, referencePosition))
+      Some(ReferencePosition(record.getContigName, referencePosition))
     } else {
       None
     }

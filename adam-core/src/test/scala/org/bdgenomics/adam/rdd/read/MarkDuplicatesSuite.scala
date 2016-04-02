@@ -49,7 +49,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       .build
 
     AlignmentRecord.newBuilder()
-      .setContig(contig)
+      .setContigName(contig.getContigName)
       .setStart(start)
       .setQual(qual)
       .setCigar(cigar)
@@ -79,14 +79,14 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       readName = readName, avgPhredScore = avgPhredScore)
     firstOfPair.setReadInFragment(0)
     firstOfPair.setMateMapped(true)
-    firstOfPair.setMateContig(secondContig)
+    firstOfPair.setMateContigName(secondContig.getContigName)
     firstOfPair.setMateAlignmentStart(secondStart)
     firstOfPair.setReadPaired(true)
     val secondOfPair = createMappedRead(secondReferenceName, secondStart, secondEnd,
       readName = readName, avgPhredScore = avgPhredScore, isNegativeStrand = true)
     secondOfPair.setReadInFragment(1)
     secondOfPair.setMateMapped(true)
-    secondOfPair.setMateContig(firstContig)
+    secondOfPair.setMateContigName(firstContig.getContigName)
     secondOfPair.setMateAlignmentStart(firstStart)
     secondOfPair.setReadPaired(true)
     Seq(firstOfPair, secondOfPair)

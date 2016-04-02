@@ -32,7 +32,7 @@ import org.apache.avro.specific.{ SpecificDatumWriter, SpecificRecordBase }
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, FileUtil, Path }
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.SparkContext
+import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
@@ -53,9 +53,7 @@ import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
-    extends ADAMSequenceDictionaryRDDAggregator[AlignmentRecord](rdd) {
-
+class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord]) extends Serializable with Logging {
   /**
    * Calculates the subset of the RDD whose AlignmentRecords overlap the corresponding
    * query ReferenceRegion.  Equality of the reference sequence (to which these are aligned)
@@ -72,7 +70,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[AlignmentRecord] = {
     def overlapsQuery(rec: AlignmentRecord): Boolean =
       rec.getReadMapped &&
-        rec.getContig.getContigName == query.referenceName &&
+        rec.getContigName == query.referenceName &&
         rec.getStart < query.end &&
         rec.getEnd > query.start
     rdd.filter(overlapsQuery)
@@ -126,7 +124,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * As such, we must force the user to pass in the schema.
    *
    * @tparam T The type of the specific record we are saving.
-   *
    * @param filename Path to save records to.
    * @param sc SparkContext used for identifying underlying file system.
    * @param schema Schema of records we are saving.
@@ -171,7 +168,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *   aligned to.
    * @param rgd Record group dictionary describing the record groups these
    *   reads are from.
-   *
    * @see adamSave
    * @see adamAlignedRecordSave
    */
@@ -212,7 +208,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *   aligned to.
    * @param rgd Record group dictionary describing the record groups these
    *   reads are from.
-   *
    * @see adamSave
    * @see adamSAMSave
    * @see saveAsParquet
@@ -235,7 +230,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *   aligned to.
    * @param rgd Record group dictionary describing the record groups these
    *   reads are from.
-   *
    * @see adamAlignedRecordSave
    * @see adamSAMSave
    * @see saveAsParquet
@@ -263,9 +257,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *   aligned to.
    * @param rgd Record group dictionary describing the record groups these
    *   reads are from.
-   *
    * @return A string on the driver representing this RDD of reads in SAM format.
-   *
    * @see adamConvertToSAM
    */
   def adamSAMString(sd: SequenceDictionary,
@@ -593,10 +585,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
     }
   }
 
-  def getSequenceRecordsFromElement(elem: AlignmentRecord): Set[SequenceRecord] = {
-    SequenceRecord.fromADAMRecord(elem).toSet
-  }
-
   /**
    * Converts an RDD of ADAM read records into SAM records.
    *
@@ -635,7 +623,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    *
    * @param kmerLength The value of _k_ to use for cutting _k_-mers.
    * @return Returns an RDD containing k-mer/count pairs.
-   *
    * @see adamCountQmers
    */
   def adamCountKmers(kmerLength: Int): RDD[(String, Long)] = {
@@ -696,7 +683,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * Realigns indels using a concensus-based heuristic.
    *
    * @see RealignIndels
-   *
    * @param isSorted If the input data is sorted, setting this parameter to true avoids a second sort.
    * @param maxIndelSize The size of the largest indel to use for realignment.
    * @param maxConsensusNumber The maximum number of consensus sequences to realign against per
@@ -704,7 +690,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * @param lodThreshold Log-odds threhold to use when realigning; realignments are only finalized
    * if the log-odds threshold is exceeded.
    * @param maxTargetSize The maximum width of a single target region for realignment.
-   *
    * @return Returns an RDD of mapped reads which have been realigned.
    */
   def adamRealignIndels(
@@ -724,6 +709,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
   /**
    * Groups all reads by record group and read name
+   *
    * @return SingleReadBuckets with primary, secondary and unmapped reads
    */
   def adamSingleReadBuckets(): RDD[SingleReadBucket] = {
@@ -759,6 +745,7 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
 
   /**
    * Returns the subset of the ADAMRecords which have an attribute with the given name.
+   *
    * @param tagName The name of the attribute to filter on (should be length 2)
    * @return An RDD[Read] containing the subset of records with a tag that matches the given name.
    */
@@ -928,7 +915,6 @@ class AlignmentRecordRDDFunctions(rdd: RDD[AlignmentRecord])
    * were _originally_ paired together.
    *
    * @note The RDD that this is called on should be the RDD with the first read from the pair.
-   *
    * @param secondPairRdd The rdd containing the second read from the pairs.
    * @param validationStringency How stringently to validate the reads.
    * @return Returns an RDD with the pair information recomputed.

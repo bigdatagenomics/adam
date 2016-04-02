@@ -21,18 +21,14 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.models.SequenceRecord
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
+import org.apache.spark.Logging
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
 
-class FragmentRDDFunctions(rdd: RDD[Fragment]) extends ADAMSequenceDictionaryRDDAggregator[Fragment](rdd) {
+class FragmentRDDFunctions(rdd: RDD[Fragment]) extends Serializable with Logging {
 
   def toReads: RDD[AlignmentRecord] = {
     val converter = new AlignmentRecordConverter
     rdd.flatMap(converter.convertFragment)
-  }
-
-  def getSequenceRecordsFromElement(elem: Fragment): Set[SequenceRecord] = {
-    val alignments = asScalaBuffer(elem.getAlignments)
-    alignments.flatMap(SequenceRecord.fromADAMRecord).toSet
   }
 }

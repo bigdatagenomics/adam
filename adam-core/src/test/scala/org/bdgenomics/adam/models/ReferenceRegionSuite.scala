@@ -137,10 +137,7 @@ class ReferenceRegionSuite extends FunSuite {
       .setStart(1L)
       .setCigar("5M")
       .setEnd(6L)
-      .setContig(Contig.newBuilder
-        .setContigName("chr1")
-        .setContigLength(10L)
-        .build)
+      .setContigName("chr1")
       .build()
 
     assert(ReferenceRegion(read).contains(point("chr1", 1L)))
@@ -192,7 +189,7 @@ class ReferenceRegionSuite extends FunSuite {
     val read = AlignmentRecord.newBuilder()
       .setStart(5L)
       .setSequence("ACGT")
-      .setContig(contig)
+      .setContigName(contig.getContigName)
       .setReadMapped(true)
       .setCigar("5M")
       .setEnd(10L)

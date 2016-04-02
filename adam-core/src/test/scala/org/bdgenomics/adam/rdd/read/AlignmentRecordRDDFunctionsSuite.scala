@@ -41,7 +41,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
           .setContigName(random.nextInt(numReadsToCreate / 10).toString)
           .build
         val start = random.nextInt(1000000)
-        builder.setContig(contig).setStart(start).setEnd(start)
+        builder.setContigName(contig.getContigName).setStart(start).setEnd(start)
       }
       builder.setReadName((0 until 20).map(i => (random.nextInt(100) + 64)).mkString)
       builder.build()
@@ -53,7 +53,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     assert(unmapped.forall(p => p._2 > mapped.takeRight(1)(0)._2))
     // Make sure that we appropriately sorted the reads
     val expectedSortedReads = mapped.sortWith(
-      (a, b) => a._1.getContig.getContigName.toString < b._1.getContig.getContigName.toString && a._1.getStart < b._1.getStart)
+      (a, b) => a._1.getContigName.toString < b._1.getContigName.toString && a._1.getStart < b._1.getStart)
     assert(expectedSortedReads === mapped)
   }
 
@@ -350,7 +350,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
         // that some fields should be disregarded if the read is not mapped
         if (p1.getReadMapped && p2.getReadMapped) {
           assert(p1.getDuplicateRead === p2.getDuplicateRead)
-          assert(p1.getContig.getContigName === p2.getContig.getContigName)
+          assert(p1.getContigName === p2.getContigName)
           assert(p1.getStart === p2.getStart)
           assert(p1.getEnd === p2.getEnd)
           assert(p1.getCigar === p2.getCigar)
@@ -371,7 +371,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
           assert(p1.getMateMapped === p2.getMateMapped)
           if (p1.getMateMapped && p2.getMateMapped) {
             assert(p1.getMateNegativeStrand === p2.getMateNegativeStrand)
-            assert(p1.getMateContig.getContigName === p2.getMateContig.getContigName)
+            assert(p1.getMateContigName === p2.getMateContigName)
             assert(p1.getMateAlignmentStart === p2.getMateAlignmentStart)
             assert(p1.getMateAlignmentEnd === p2.getMateAlignmentEnd)
           }

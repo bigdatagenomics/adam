@@ -118,8 +118,7 @@ class AlignmentRecordConverter extends Serializable {
       })
 
     // set the reference name, and alignment position, for mate
-    Option(adamRecord.getMateContig)
-      .map(_.getContigName)
+    Option(adamRecord.getMateContigName)
       .foreach(builder.setMateReferenceName)
     Option(adamRecord.getMateAlignmentStart)
       .foreach(s => builder.setMateAlignmentStart(s.toInt + 1))
@@ -155,8 +154,8 @@ class AlignmentRecordConverter extends Serializable {
         // only set alignment flags if read is aligned
         if (m) {
           // if we are aligned, we must have a reference
-          assert(adamRecord.getContig != null, "Cannot have null contig if aligned.")
-          builder.setReferenceName(adamRecord.getContig.getContigName)
+          require(adamRecord.getContigName != null, "Cannot have null contig if aligned.")
+          builder.setReferenceName(adamRecord.getContigName)
 
           // set the cigar, if provided
           Option(adamRecord.getCigar).foreach(builder.setCigarString)

@@ -93,7 +93,7 @@ object FragmentConverter extends Serializable {
 
       // build record
       AlignmentRecord.newBuilder()
-        .setContig(contig)
+        .setContigName(contig.getContigName)
         .setStart(fragmentRegion.start)
         .setEnd(fragmentRegion.end)
         .setSequence(fragmentString)

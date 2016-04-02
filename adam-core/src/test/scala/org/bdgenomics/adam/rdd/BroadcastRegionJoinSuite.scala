@@ -90,7 +90,7 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
       .build
 
     val built = AlignmentRecord.newBuilder()
-      .setContig(contig)
+      .setContigName(contig.getContigName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
@@ -117,7 +117,7 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
       .build
 
     val builder = AlignmentRecord.newBuilder()
-      .setContig(contig)
+      .setContigName(contig.getContigName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
@@ -154,7 +154,7 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
       .build
 
     val built = AlignmentRecord.newBuilder()
-      .setContig(contig)
+      .setContigName(contig.getContigName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
@@ -194,14 +194,14 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
       .build
 
     val builtRef1 = AlignmentRecord.newBuilder()
-      .setContig(contig1)
+      .setContigName(contig1.getContigName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
       .setEnd(2L)
       .build()
     val builtRef2 = AlignmentRecord.newBuilder()
-      .setContig(contig2)
+      .setContigName(contig2.getContigName)
       .setStart(1)
       .setReadMapped(true)
       .setCigar("1M")
@@ -243,14 +243,14 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
       .build
 
     val builtRef1 = AlignmentRecord.newBuilder()
-      .setContig(contig1)
+      .setContigName(contig1.getContigName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")
       .setEnd(2L)
       .build()
     val builtRef2 = AlignmentRecord.newBuilder()
-      .setContig(contig2)
+      .setContigName(contig2.getContigName)
       .setStart(1L)
       .setReadMapped(true)
       .setCigar("1M")

@@ -82,7 +82,7 @@ object ReferenceRegion {
     if (record.getReadMapped) {
       Some(
         ReferenceRegion(
-          record.getContig.getContigName,
+          record.getContigName,
           record.getStart,
           record.getEnd
         )
@@ -92,7 +92,7 @@ object ReferenceRegion {
   }
 
   def apply(record: AlignmentRecord): ReferenceRegion = {
-    ReferenceRegion(record.getContig.getContigName, record.getStart, record.getEnd)
+    ReferenceRegion(record.getContigName, record.getStart, record.getEnd)
   }
 
   /**

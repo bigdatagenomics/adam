@@ -45,7 +45,7 @@ class MDTaggingSuite extends ADAMFunSuite {
         id -> mdTag,
         AlignmentRecord
         .newBuilder
-        .setContig(contig)
+        .setContigName(contig.getContigName)
         .setStart(start.toLong)
         .setEnd(end.toLong)
         .setSequence(seq)

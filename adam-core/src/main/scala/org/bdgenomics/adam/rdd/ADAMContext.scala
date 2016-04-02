@@ -229,9 +229,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       val projected: RDD[T] = loadParquet[T](filePath, None, projection = Some(projection))
 
       val recs: RDD[SequenceRecord] =
-        if (isADAMRecord) {
-          projected.asInstanceOf[RDD[AlignmentRecord]].distinct().flatMap(rec => SequenceRecord.fromADAMRecord(rec))
-        } else if (isADAMContig) {
+        if (isADAMContig) {
           projected.asInstanceOf[RDD[NucleotideContigFragment]].distinct().map(ctg => SequenceRecord.fromADAMContigFragment(ctg))
         } else {
           projected.distinct().map(SequenceRecord.fromSpecificRecord(_))

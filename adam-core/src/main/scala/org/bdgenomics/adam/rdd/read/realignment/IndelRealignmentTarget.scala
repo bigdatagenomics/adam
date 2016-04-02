@@ -102,7 +102,7 @@ object IndelRealignmentTarget {
     maxIndelSize: Int): Seq[IndelRealignmentTarget] = CreateIndelRealignmentTargets.time {
 
     val region = ReferenceRegion(read.record)
-    val refId = read.record.getContig.getContigName
+    val refId = read.record.getContigName
     var pos = List[ReferenceRegion]()
     var referencePos = read.record.getStart
     val cigar = read.samtoolsCigar

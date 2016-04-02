@@ -165,7 +165,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val a0 = AlignmentRecord.newBuilder()
       .setRecordGroupName("group0")
       .setReadName("read0")
-      .setContig(contig)
+      .setContigName(contig.getContigName)
       .setStart(100)
       .setPrimaryAlignment(true)
       .setReadPaired(false)

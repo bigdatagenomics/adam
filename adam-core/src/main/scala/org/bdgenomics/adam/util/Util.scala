@@ -16,15 +16,20 @@
  * limitations under the License.
  */
 package org.bdgenomics.adam.util
-
 import org.bdgenomics.formats.avro.Contig
 
 object Util {
-  def isSameContig(left: Contig, right: Contig): Boolean = {
-    val leftName = Option(left).map(_.getContigName)
-    val leftMD5 = Option(left).map(_.getContigMD5)
-    val rightName = Option(right).map(_.getContigName)
-    val rightMD5 = Option(right).map(_.getContigMD5)
-    leftName == rightName && (leftMD5.isEmpty || rightMD5.isEmpty || leftMD5 == rightMD5)
+
+  // Note: Prior to factoring out Contig from AlignmentRecord, isSameContig below
+  // did a more comprehensive comparison of contig identity by
+  // comparing the ContigMD5 of left and right.  We may want to revisit this in the future
+  // and once again include this MD5 check for completeness.
+  //
+  // See the code as of commit hash b8e36b2 for this previous version which included
+  // the md5 comparison
+
+  def isSameContig(left: String, right: String): Boolean = {
+    left == right
   }
+
 }

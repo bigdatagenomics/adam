@@ -28,7 +28,7 @@ class ReferencePositionSuite extends FunSuite {
       .build
 
     val read = AlignmentRecord.newBuilder()
-      .setContig(contig)
+      .setContigName(contig.getContigName)
       .setStart(1L)
       .setReadMapped(true)
       .build()

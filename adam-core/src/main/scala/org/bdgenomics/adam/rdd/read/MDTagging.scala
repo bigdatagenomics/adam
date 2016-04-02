@@ -72,8 +72,7 @@ case class MDTagging(
     val referenceFileB = sc.broadcast(referenceFile)
     reads.map(read => {
       (for {
-        contig <- Option(read.getContig)
-        contigName <- Option(contig.getContigName)
+        contig <- Option(read.getContigName)
         if read.getReadMapped
       } yield {
         maybeMDTagRead(read, referenceFileB.value.extract(ReferenceRegion(read)))
@@ -105,5 +104,5 @@ object MDTagging {
 
 case class IncorrectMDTagException(read: AlignmentRecord, mdTag: String) extends Exception {
   override def getMessage: String =
-    s"Read: ${read.getReadName}, pos: ${read.getContig.getContigName}:${read.getStart}, cigar: ${read.getCigar}, existing MD tag: ${read.getMismatchingPositions}, correct MD tag: $mdTag"
+    s"Read: ${read.getReadName}, pos: ${read.getContigName}:${read.getStart}, cigar: ${read.getCigar}, existing MD tag: ${read.getMismatchingPositions}, correct MD tag: $mdTag"
 }

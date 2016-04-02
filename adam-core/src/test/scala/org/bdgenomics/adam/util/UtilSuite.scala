@@ -24,20 +24,23 @@ class UtilSuite extends ADAMFunSuite {
   test("isSameConfig") {
     val a = Contig.newBuilder().setContigName("foo")
     val b = Contig.newBuilder().setContigName("bar")
-    assert(!Util.isSameContig(a.build(), b.build()))
+    assert(!Util.isSameContig(a.build().getContigName, b.build().getContigName))
     b.setContigName("foo")
-    assert(Util.isSameContig(a.build(), b.build()))
+    assert(Util.isSameContig(a.build().getContigName, b.build().getContigName))
 
     // proper null handling
     assert(Util.isSameContig(null, null))
-    assert(!Util.isSameContig(null, b.build()))
-    assert(!Util.isSameContig(a.build(), null))
+    assert(!Util.isSameContig(null, b.build().getContigName))
+    assert(!Util.isSameContig(a.build().getContigName, null))
 
-    a.setContigMD5("md5")
+    // Prior to removing Contig from AlignmentRecord the code below
+    // tested for MD5 concordance.  We may want to revisit how contig MD5 concordance
+    // is checked in future
+    //a.setContigMD5("md5")
     // both md5s need to be set to change equality
-    assert(!Util.isSameContig(a.build(), b.build()))
-    b.setContigMD5("md5")
-    assert(Util.isSameContig(a.build(), b.build()))
+    //assert(!Util.isSameContig(a.build().getContigName, b.build().getContigName))
+    //b.setContigMD5("md5")
+    //assert(Util.isSameContig(a.build().getContigName, b.build().getContigName))
   }
 
 }

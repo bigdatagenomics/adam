@@ -345,27 +345,6 @@ object SequenceRecord {
     fromADAMContig(fragment.getContig)
   }
 
-  /**
-   * Convert an Read into one or more SequenceRecords.
-   * The reason that we can't simply use the "fromSpecificRecord" method, below, is that each Read
-   * can (through the fact that it could be a pair of reads) contain 1 or 2 possible SequenceRecord entries
-   * for the SequenceDictionary itself.  Both have to be extracted, separately.
-   *
-   * @param rec The Read from which to extract the SequenceRecord entries
-   * @return a list of all SequenceRecord entries derivable from this record.
-   */
-  def fromADAMRecord(rec: AlignmentRecord): Set[SequenceRecord] = {
-    assert(rec != null, "Read was null")
-    if (rec.getContig != null || rec.getMateContig != null) {
-      // The contig should be null for unmapped read
-      List(Option(rec.getContig), Option(rec.getMateContig))
-        .flatten
-        .map(fromADAMContig)
-        .toSet
-    } else
-      Set()
-  }
-
   def fromSpecificRecord(rec: IndexedRecord): SequenceRecord = {
     val schema = rec.getSchema
     if (schema.getField("referenceId") != null) {
@@ -381,4 +360,6 @@ object SequenceRecord {
       throw new AssertionError("Missing information to generate SequenceRecord")
     }
   }
+
 }
+
