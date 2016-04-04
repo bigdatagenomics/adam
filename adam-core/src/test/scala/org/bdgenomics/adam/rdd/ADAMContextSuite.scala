@@ -281,6 +281,30 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(gt.getReadDepth === 20)
   }
 
+  sparkTest("can read a gzipped .vcf file") {
+    val path = resourcePath("test.vcf.gz")
+    val vcs = sc.loadVcf(path, None)
+    assert(vcs.count === 6)
+  }
+
+  sparkTest("can read a BGZF gzipped .vcf file") {
+    val path = resourcePath("test.vcf.bgzf.gz")
+    val vcs = sc.loadVcf(path, None)
+    assert(vcs.count === 6)
+  }
+
+  ignore("can read an uncompressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
+    val path = resourcePath("test.uncompressed.bcf")
+    val vcs = sc.loadVcf(path, None)
+    assert(vcs.count === 6)
+  }
+
+  ignore("can read a BGZF compressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
+    val path = resourcePath("test.compressed.bcf")
+    val vcs = sc.loadVcf(path, None)
+    assert(vcs.count === 6)
+  }
+
   (1 to 4) foreach { testNumber =>
     val inputName = "interleaved_fastq_sample%d.ifq".format(testNumber)
     val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile

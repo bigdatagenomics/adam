@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.rdd.read
 
 import htsjdk.samtools.SAMFileHeader
-import hbparquet.hadoop.util.ContextUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.{ OutputFormat, RecordWriter, TaskAttemptContext }
 import org.apache.spark.rdd.InstrumentedOutputFormat
@@ -86,7 +85,7 @@ class ADAMSAMOutputFormatHeaderLess[K]
   setWriteHeader(false)
 
   override def getRecordWriter(context: TaskAttemptContext): RecordWriter[K, SAMRecordWritable] = {
-    val conf = ContextUtil.getConfiguration(context)
+    val conf = context.getConfiguration()
 
     // where is our header file?
     val path = new Path(conf.get("org.bdgenomics.adam.rdd.read.bam_header_path"))

@@ -18,7 +18,6 @@
 
 package org.bdgenomics.adam.io
 
-import hbparquet.hadoop.util.ContextUtil
 import htsjdk.samtools.BAMRecordCodec
 import htsjdk.samtools.ValidationStringency
 import htsjdk.samtools.SAMRecord
@@ -72,7 +71,7 @@ class BAMFilteredRecordReader extends BAMRecordReader {
     }
     isInitialized = true
 
-    val conf: Configuration = ContextUtil.getConfiguration(ctx)
+    val conf: Configuration = ctx.getConfiguration()
 
     val split: FileVirtualSplit = spl.asInstanceOf[FileVirtualSplit]
     val file: Path = split.getPath()

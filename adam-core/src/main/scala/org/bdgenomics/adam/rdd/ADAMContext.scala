@@ -56,7 +56,7 @@ import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.HadoopUtil
 import org.seqdoop.hadoop_bam._
-import org.seqdoop.hadoop_bam.util.SAMHeaderReader
+import org.seqdoop.hadoop_bam.util.{ BGZFCodec, SAMHeaderReader }
 import scala.collection.JavaConversions._
 import scala.collection.Map
 import scala.reflect.ClassTag
@@ -578,6 +578,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadVcf(filePath: String, sd: Option[SequenceDictionary]): RDD[VariantContext] = {
     val job = HadoopUtil.newJob(sc)
     val vcc = new VariantContextConverter(sd)
+    job.getConfiguration().set("io.compression.codecs", classOf[BGZFCodec].getCanonicalName())
     val records = sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
