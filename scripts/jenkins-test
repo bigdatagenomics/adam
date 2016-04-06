@@ -65,7 +65,7 @@ echo "Printing reads and fragments"
 "$ADAM" print "$READS" 1>/dev/null 2>/dev/null
 "$ADAM" print "$FRAGMENTS" 1>/dev/null 2>/dev/null
 echo "Printing read statistics"
-"$ADAM" flagstat "$READS"
+"$ADAM" flagstat -print_metrics "$READS"
 rm -rf "$ADAM_TMP_DIR"
 popd
 
