@@ -206,8 +206,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val projection =
       if (isADAMRecord) {
         Projection(
-          AlignmentRecordField.contig,
-          AlignmentRecordField.mateContig,
+          AlignmentRecordField.contigName,
+          AlignmentRecordField.mateContigName,
           AlignmentRecordField.readPaired,
           AlignmentRecordField.readInFragment,
           AlignmentRecordField.readMapped,
@@ -216,7 +216,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       } else if (isADAMContig) {
         Projection(NucleotideContigFragmentField.contig)
       } else {
-        Projection(AlignmentRecordField.contig)
+        Projection(AlignmentRecordField.contigName)
       }
 
     if (filePath.endsWith(".bam") || filePath.endsWith(".sam")) {

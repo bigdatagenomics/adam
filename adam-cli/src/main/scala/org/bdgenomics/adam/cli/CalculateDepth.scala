@@ -65,7 +65,7 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends BDGSparkCom
 
   def run(sc: SparkContext): Unit = {
 
-    val proj = Projection(contig, start, cigar, readMapped)
+    val proj = Projection(contigName, start, cigar, readMapped)
 
     val adamRDD: RDD[AlignmentRecord] = sc.loadAlignments(args.adamInputPath, projection = Some(proj))
     val mappedRDD = adamRDD.filter(_.getReadMapped)
