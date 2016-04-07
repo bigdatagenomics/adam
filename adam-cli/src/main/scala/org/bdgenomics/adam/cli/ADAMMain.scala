@@ -36,10 +36,7 @@ object ADAMMain {
           CountReadKmers,
           CountContigKmers,
           Transform,
-          Adam2Fastq,
-          /* TODO (nealsid): Reimplement in terms of new schema
-	  ComputeVariants
-	*/
+          ADAM2Fastq,
           PluginExecutor,
           Flatten
         )
@@ -48,8 +45,8 @@ object ADAMMain {
         "CONVERSION OPERATIONS",
         List(
           Vcf2ADAM,
-          VcfAnnotation2ADAM,
           ADAM2Vcf,
+          VcfAnnotation2ADAM,
           Fasta2ADAM,
           ADAM2Fasta,
           Features2ADAM,

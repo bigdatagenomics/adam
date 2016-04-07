@@ -27,7 +27,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4JOption }
 
-class Adam2FastqArgs extends ParquetLoadSaveArgs {
+class ADAM2FastqArgs extends ParquetLoadSaveArgs {
   @Argument(required = false, metaVar = "OUTPUT", usage = "When writing FASTQ data, all second-in-pair reads will go here, if this argument is provided", index = 2)
   var outputPath2: String = null
   @Args4JOption(required = false, name = "-validation", usage = "SAM tools validation level; when STRICT, checks that all reads are paired.")
@@ -42,16 +42,16 @@ class Adam2FastqArgs extends ParquetLoadSaveArgs {
   var outputOriginalBaseQualities = false
 }
 
-object Adam2Fastq extends BDGCommandCompanion {
+object ADAM2Fastq extends BDGCommandCompanion {
   override val commandName = "adam2fastq"
   override val commandDescription = "Convert BAM to FASTQ files"
 
-  override def apply(cmdLine: Array[String]): Adam2Fastq =
-    new Adam2Fastq(Args4j[Adam2FastqArgs](cmdLine))
+  override def apply(cmdLine: Array[String]): ADAM2Fastq =
+    new ADAM2Fastq(Args4j[ADAM2FastqArgs](cmdLine))
 }
 
-class Adam2Fastq(val args: Adam2FastqArgs) extends BDGSparkCommand[Adam2FastqArgs] {
-  override val companion = Adam2Fastq
+class ADAM2Fastq(val args: ADAM2FastqArgs) extends BDGSparkCommand[ADAM2FastqArgs] {
+  override val companion = ADAM2Fastq
 
   override def run(sc: SparkContext): Unit = {
 
@@ -84,5 +84,4 @@ class Adam2Fastq(val args: Adam2FastqArgs) extends BDGSparkCommand[Adam2FastqArg
       persistLevel = Option(args.persistLevel).map(StorageLevel.fromString(_))
     )
   }
-
 }
