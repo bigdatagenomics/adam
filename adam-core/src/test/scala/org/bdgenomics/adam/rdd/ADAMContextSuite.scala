@@ -228,10 +228,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(annot.count == 369)
     val arr = annot.collect
 
-    val first = arr.find(f => f.getContig.getContigName == "chr1" && f.getStart == 14415L && f.getEnd == 14498L).get
-    assert(first.getContig.getContigLength == 249250621L)
-    assert(first.getContig.getReferenceURL == "file:/gs01/projects/ngs/resources/gatk/2.3/ucsc.hg19.parmasked.fasta")
-    assert(first.getContig.getContigMD5 == "1b22b98cdeb4a9304cb5d48026a85128")
+    val first = arr.find(f => f.getContigName == "chr1" && f.getStart == 14415L && f.getEnd == 14499L).get
     assert(
       first
         .getDbxrefs
@@ -245,10 +242,7 @@ class ADAMContextSuite extends ADAMFunSuite {
         )
     )
 
-    val last = arr.find(f => f.getContig.getContigName == "chrY" && f.getStart == 27190031L && f.getEnd == 27190209L).get
-    assert(last.getContig.getContigLength == 59373566L)
-    assert(last.getContig.getReferenceURL == "file:/gs01/projects/ngs/resources/gatk/2.3/ucsc.hg19.parmasked.fasta")
-    assert(last.getContig.getContigMD5 == "3393b0779f142dc59f4cfcc22b61c1ee")
+    val last = arr.find(f => f.getContigName == "chrY" && f.getStart == 27190031L && f.getEnd == 27190210L).get
     assert(
       last
         .getDbxrefs

@@ -727,6 +727,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     records.map(fastqRecordConverter.convertFragment)
   }
 
+  def loadGff3(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
+    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new GFF3Parser().parse)
+    if (Metrics.isRecording) records.instrument() else records
+  }
+
   def loadGtf(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new GTFParser().parse)
     if (Metrics.isRecording) records.instrument() else records
@@ -748,17 +753,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val seqDictMap = seqDict.records.map(sr => sr.name -> sr).toMap
     val recordsWithContigs = for {
       record <- records
-      seqRecord <- seqDictMap.get(record.getContig.getContigName)
+      seqRecord <- seqDictMap.get(record.getContigName)
     } yield Feature.newBuilder(record)
-      .setContig(
-        Contig.newBuilder()
-          .setContigName(seqRecord.name)
-          .setReferenceURL(seqRecord.url.orNull)
-          .setContigMD5(seqRecord.md5.orNull)
-          .setContigLength(seqRecord.length)
-          .build()
-      )
+      .setContigName(seqRecord.name)
       .build()
+
     if (Metrics.isRecording) recordsWithContigs.instrument() else recordsWithContigs
   }
 

@@ -19,6 +19,9 @@ package org.bdgenomics.adam.projections
 
 import org.bdgenomics.formats.avro.VariantCallingAnnotations
 
+/**
+ * Enumeration of VariantCallingAnnotations field names for predicates and projections.
+ */
 object VariantCallingAnnotationsField extends FieldEnumeration(VariantCallingAnnotations.SCHEMA$) {
 
   val readDepth, downsampled, baseQRankSum, clippingRankSum, haplotypeScore, inbreedingCoefficient, alleleCountMLE, alleleFrequencyMLE, rmsMapQ, mapq0Reads, mqRankSum, usedForNegativeTrainingSet, usedForPositiveTrainingSet, variantQualityByDepth, readPositionRankSum, vqslod, culprit, variantCallErrorProbability, variantIsPassing, variantFilters = SchemaValue

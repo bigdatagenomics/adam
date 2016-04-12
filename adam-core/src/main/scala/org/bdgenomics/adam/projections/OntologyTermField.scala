@@ -17,18 +17,12 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.DatabaseVariantAnnotation
+import org.bdgenomics.formats.avro.OntologyTerm
 
 /**
- * Enumeration of DatabaseVariantAnnotation field names for predicates and projections.
+ * Enumeration of OntologyTerm field names for predicates and projections.
  */
-object DatabaseVariantAnnotationField extends FieldEnumeration(DatabaseVariantAnnotation.SCHEMA$) {
+object OntologyTermField extends FieldEnumeration(OntologyTerm.SCHEMA$) {
 
-  val variant, dbsnpId, //domain information
-  hgvs, geneSymbol, ensemblGeneId, ensemblTranscriptIds, //clinical fields
-  omimId, cosmicId, clinvarId, clinicalSignificance, //conservation
-  gerpNr, gerpRs, phylop, ancestralAllele, //population statistics
-  thousandGenomesAlleleCount, thousandGenomesAlleleFrequency, //effect
-  referenceAminoAcid, alternateAminoAcid, //predicted effects
-  siftScore, siftScoreConverted, siftPred, mutationTasterScore, mutationTasterScoreConverted, mutationTasterPred = SchemaValue
+  val db, accession = SchemaValue
 }

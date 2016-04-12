@@ -128,9 +128,9 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
   def fivePrimeReferencePosition: ReferencePosition = {
     try {
       val strand = if (record.getReadNegativeStrand) {
-        Strand.Reverse
+        Strand.REVERSE
       } else {
-        Strand.Forward
+        Strand.FORWARD
       }
       ReferencePosition(record.getContigName, fivePrimePosition, strand)
     } catch {

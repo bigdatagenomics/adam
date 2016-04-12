@@ -19,6 +19,9 @@ package org.bdgenomics.adam.projections
 
 import org.bdgenomics.formats.avro.Genotype
 
+/**
+ * Enumeration of Genotype field names for predicates and projections.
+ */
 object GenotypeField extends FieldEnumeration(Genotype.SCHEMA$) {
 
   val variant, contigName, start, end, variantCallingAnnotations, sampleId, sampleDescription, processingDescription, alleles, referenceReadDepth, alternateReadDepth, readDepth, genotypeQuality, genotypeLikelihoods, splitFromMultiAllelic, isPhased, phaseSetId, phaseQuality = SchemaValue

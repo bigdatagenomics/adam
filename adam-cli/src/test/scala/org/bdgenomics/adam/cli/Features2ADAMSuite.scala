@@ -44,7 +44,7 @@ class Features2ADAMSuite extends ADAMFunSuite {
     val features2Adam = new Features2ADAM(args)
     features2Adam.run(sc)
 
-    val schema = Projection(featureId, contig, start, strand)
+    val schema = Projection(featureId, contigName, start, strand)
     val lister = new ParquetLister[Feature](Some(schema))
     val converted = lister.materialize(outputPath).toSeq
 
@@ -61,7 +61,7 @@ class Features2ADAMSuite extends ADAMFunSuite {
     assert(types.get("gene").get === 1)
     */
 
-    assert(converted.find(_.getContig.getContigName != "chr1").isEmpty)
+    assert(converted.find(_.getContigName != "chr1").isEmpty)
   }
 
   sparkTest("can convert a simple wigfix file") {
@@ -89,21 +89,21 @@ class Features2ADAMSuite extends ADAMFunSuite {
     val features2Adam = new Features2ADAM(adamArgs)
     features2Adam.run(sc)
 
-    val schema = Projection(featureId, contig, start, end, value)
+    val schema = Projection(featureId, contigName, start, end, score)
     val lister = new ParquetLister[Feature](Some(schema))
 
     val converted = lister.materialize(outputPath).toSeq.sortBy(f => f.getStart)
 
     assert(converted.size === 10)
-    assert(converted(0).getContig.getContigName == "chr5")
+    assert(converted(0).getContigName == "chr5")
     assert(converted(0).getStart == 13939)
     assert(converted(0).getEnd == 13940)
-    assert(converted(0).getValue == 0.067)
-    assert(converted(6).getContig.getContigName == "chr5")
+    assert(converted(0).getScore == 0.067)
+    assert(converted(6).getContigName == "chr5")
     assert(converted(6).getStart == 15295)
     assert(converted(9).getStart == 15298)
     assert(converted(9).getEnd == 15299)
-    assert(converted(9).getValue == 0.139)
+    assert(converted(9).getScore == 0.139)
   }
 
 }
