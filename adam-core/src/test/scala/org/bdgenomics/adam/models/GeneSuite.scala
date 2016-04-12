@@ -33,7 +33,9 @@ class GeneSuite extends ADAMFunSuite {
     val path = testFile("features/Homo_sapiens.GRCh37.75.trun100.gtf")
     val features: RDD[Feature] = sc.loadFeatures(path)
 
-    val genes: RDD[Gene] = features.toGenes()
+    val fixedParentIds: RDD[Feature] = features.reassignParentIds
+
+    val genes: RDD[Gene] = fixedParentIds.toGenes()
     assert(genes.count() === 4)
 
     val transcripts = genes.flatMap(_.transcripts)
@@ -47,7 +49,9 @@ class GeneSuite extends ADAMFunSuite {
     val path = testFile("features/gencode.v19.annotation.chr20.250k.gtf")
     val features: RDD[Feature] = sc.loadFeatures(path)
 
-    val genes: RDD[Gene] = features.toGenes()
+    val fixedParentIds: RDD[Feature] = features.reassignParentIds
+
+    val genes: RDD[Gene] = fixedParentIds.toGenes()
     assert(genes.count() === 8)
 
     val transcripts = genes.flatMap(_.transcripts)
@@ -99,7 +103,8 @@ class GeneSuite extends ADAMFunSuite {
     }
 
     val features: RDD[Feature] = sc.loadFeatures(path)
-    val genes: RDD[Gene] = features.toGenes()
+    val fixedParentIds: RDD[Feature] = features.reassignParentIds
+    val genes: RDD[Gene] = fixedParentIds.toGenes()
     val transcripts: Seq[Transcript] = genes.flatMap(g => g.transcripts).take(100)
 
     transcripts.foreach { transcript =>

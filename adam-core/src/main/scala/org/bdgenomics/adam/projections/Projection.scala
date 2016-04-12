@@ -22,7 +22,7 @@ import scala.collection.JavaConversions._
 import org.apache.avro.Schema.Field
 
 /**
- * Avro utility object to create a projection of a Schema
+ * Avro utility object to create a projection of a Schema.
  */
 object Projection {
 

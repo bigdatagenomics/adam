@@ -19,6 +19,9 @@ package org.bdgenomics.adam.projections
 
 import org.bdgenomics.formats.avro.Variant
 
+/**
+ * Enumeration of Variant field names for predicates and projections.
+ */
 object VariantField extends FieldEnumeration(Variant.SCHEMA$) {
 
   val contig, start, end, referenceAllele, variantAllele = SchemaValue

@@ -226,20 +226,20 @@ class ReferenceRegionSuite extends FunSuite {
     ReferencePosition(refName, pos)
 
   test("overlap tests for oriented reference region") {
-    assert(ReferenceRegion("chr1", 10L, 20L, Strand.Forward)
-      .overlaps(ReferenceRegion("chr1", 15L, 25L, Strand.Forward)))
-    assert(ReferenceRegion("chr1", 10L, 20L, Strand.Reverse)
-      .overlaps(ReferenceRegion("chr1", 5L, 15L, Strand.Reverse)))
+    assert(ReferenceRegion("chr1", 10L, 20L, Strand.FORWARD)
+      .overlaps(ReferenceRegion("chr1", 15L, 25L, Strand.FORWARD)))
+    assert(ReferenceRegion("chr1", 10L, 20L, Strand.REVERSE)
+      .overlaps(ReferenceRegion("chr1", 5L, 15L, Strand.REVERSE)))
 
-    assert(!ReferenceRegion("chr1", 10L, 20L, Strand.Forward)
-      .overlaps(ReferenceRegion("chr2", 10L, 20L, Strand.Forward)))
-    assert(!ReferenceRegion("chr1", 20L, 50L, Strand.Reverse)
-      .overlaps(ReferenceRegion("chr1", 51L, 100L, Strand.Reverse)))
+    assert(!ReferenceRegion("chr1", 10L, 20L, Strand.FORWARD)
+      .overlaps(ReferenceRegion("chr2", 10L, 20L, Strand.FORWARD)))
+    assert(!ReferenceRegion("chr1", 20L, 50L, Strand.REVERSE)
+      .overlaps(ReferenceRegion("chr1", 51L, 100L, Strand.REVERSE)))
   }
 
   test("check the width of a reference region") {
     assert(ReferenceRegion("chr1", 100, 201).width === 101)
-    assert(ReferenceRegion("chr2", 200, 401, Strand.Forward).width === 201)
-    assert(ReferenceRegion("chr3", 399, 1000, Strand.Reverse).width === 601)
+    assert(ReferenceRegion("chr2", 200, 401, Strand.FORWARD).width === 201)
+    assert(ReferenceRegion("chr3", 399, 1000, Strand.REVERSE).width === 601)
   }
 }

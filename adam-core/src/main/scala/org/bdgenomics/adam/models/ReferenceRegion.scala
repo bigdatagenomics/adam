@@ -127,7 +127,7 @@ object ReferenceRegion {
   }
 
   def apply(feature: Feature): ReferenceRegion = {
-    new ReferenceRegion(feature.getContig.getContigName, feature.getStart, feature.getEnd)
+    new ReferenceRegion(feature.getContigName, feature.getStart, feature.getEnd)
   }
 }
 
@@ -144,7 +144,7 @@ case class ReferenceRegion(
   referenceName: String,
   start: Long,
   end: Long,
-  orientation: Strand = Strand.Independent)
+  orientation: Strand = Strand.INDEPENDENT)
     extends Comparable[ReferenceRegion]
     with Interval {
 

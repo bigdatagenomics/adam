@@ -20,11 +20,7 @@ package org.bdgenomics.adam.projections
 import org.bdgenomics.formats.avro.NucleotideContigFragment
 
 /**
- * This enumeration exist in order to reduce typo errors in the code. It needs to be kept
- * in sync with any changes to Read.
- *
- * This enumeration is necessary because Parquet needs the field string names
- * for predicates and projections.
+ * Enumeration of NucleotideContigFragment field names for predicates and projections.
  */
 object NucleotideContigFragmentField extends FieldEnumeration(NucleotideContigFragment.SCHEMA$) {
 
