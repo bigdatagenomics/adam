@@ -66,6 +66,7 @@ if [ "$num_jars" -eq "0" ]; then
   echo "You need to build ADAM before running this program." 1>&2
   exit 1
 fi
+
 ASSEMBLY_JARS="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam-cli_[0-9A-Za-z\.-]*\.jar$" | grep -v javadoc || true)"
 if [ "$num_jars" -gt "1" ]; then
   echo "Found multiple ADAM cli assembly jars in $ASSEMBLY_DIR:" 1>&2
