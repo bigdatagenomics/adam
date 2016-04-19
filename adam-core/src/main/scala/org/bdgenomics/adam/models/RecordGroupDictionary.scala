@@ -62,7 +62,7 @@ object RecordGroupDictionary {
  */
 case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
   lazy val recordGroupMap = recordGroups.map(v => (v.recordGroupName, v))
-    .sortBy(kv => kv._1)
+    .sortBy(_._1)
     .zipWithIndex
     .map(kv => {
       val ((name, group), index) = kv
@@ -121,19 +121,18 @@ object RecordGroup {
     new RecordGroup(
       samRGR.getSample,
       samRGR.getReadGroupId,
-      Option(samRGR.getSequencingCenter).map(_.toString),
-      Option(samRGR.getDescription).map(_.toString),
+      Option(samRGR.getSequencingCenter),
+      Option(samRGR.getDescription),
       Option(samRGR.getRunDate).map(_.getTime),
-      Option(samRGR.getFlowOrder).map(_.toString),
-      Option(samRGR.getKeySequence).map(_.toString),
-      Option(samRGR.getLibrary).map(_.toString),
+      Option(samRGR.getFlowOrder),
+      Option(samRGR.getKeySequence),
+      Option(samRGR.getLibrary),
       Option({
         // must explicitly reference as a java.lang.integer to avoid implicit conversion
-        val i: java.lang.Integer = samRGR.getPredictedMedianInsertSize
-        i
+        samRGR.getPredictedMedianInsertSize: java.lang.Integer
       }).map(_.toInt),
-      Option(samRGR.getPlatform).map(_.toString),
-      Option(samRGR.getPlatformUnit).map(_.toString)
+      Option(samRGR.getPlatform),
+      Option(samRGR.getPlatformUnit)
     )
   }
 
