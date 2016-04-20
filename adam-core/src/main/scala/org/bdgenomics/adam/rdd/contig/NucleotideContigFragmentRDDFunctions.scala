@@ -18,27 +18,16 @@
 package org.bdgenomics.adam.rdd.contig
 
 import com.google.common.base.Splitter
-import java.util.logging.Level
-import org.apache.avro.specific.SpecificRecord
-import org.bdgenomics.utils.misc.Logging
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.FragmentConverter
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
-import org.bdgenomics.adam.util.ParquetLogger
+import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.utils.misc.HadoopUtil
-import org.apache.parquet.avro.AvroParquetOutputFormat
-import org.apache.parquet.hadoop.ParquetOutputFormat
-import org.apache.parquet.hadoop.metadata.CompressionCodecName
-import org.apache.parquet.hadoop.util.ContextUtil
 import scala.collection.JavaConversions._
 import scala.math.max
-import scala.Some
 
-class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[NucleotideContigFragment](rdd) {
+class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[NucleotideContigFragment](rdd) with ReferenceFile {
 
   /**
    * Converts an RDD of nucleotide contig fragments into reads. Adjacent contig fragments are
@@ -102,6 +91,16 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
       .reduceByKey(merge)
       .values
   }
+
+  /**
+   * Added for ReferenceFile trait.
+   *
+   * @see ReferenceFile.scala
+   *      
+   * @param region The desired ReferenceRegion to extract.
+   * @return The reference sequence at the desired locus.
+   */
+  def extract(region: ReferenceRegion): String = getReferenceString(region)
 
   /**
    * From a set of contigs, returns the base sequence that corresponds to a region of the reference.
