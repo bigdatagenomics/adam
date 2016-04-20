@@ -176,7 +176,7 @@ class ADAMContextSuite extends ADAMFunSuite {
       .build()
 
     val saved = sc.parallelize(Seq(a0, a1))
-    val loc = tempLocation()
+    val loc = tmpLocation()
     val path = new Path(loc)
 
     // make sequence dictionary and rg dict
@@ -193,18 +193,6 @@ class ADAMContextSuite extends ADAMFunSuite {
         println(e)
         throw e
     }
-  }
-
-  /*
-   Little helper function -- because apparently createTempFile creates an actual file, not
-   just a name?  Whereas, this returns the name of something that could be mkdir'ed, in the
-   same location as createTempFile() uses, so therefore the returned path from this method
-   should be suitable for saveAsParquet().
-   */
-  def tempLocation(suffix: String = ".adam"): String = {
-    val tempFile = File.createTempFile("ADAMContextSuite", "")
-    val tempDir = tempFile.getParentFile
-    new File(tempDir, tempFile.getName + suffix).getAbsolutePath
   }
 
   sparkTest("Can read a .gtf file") {
@@ -374,7 +362,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val variants = sc.loadVariants(path)
     assert(variants.rdd.count === 681)
 
-    val loc = tempLocation()
+    val loc = tmpLocation()
     variants.saveAsParquet(loc, 1024, 1024) // force more than one row group (block)
 
     val pred: FilterPredicate = (LongColumn("start") === 16097631L)
@@ -386,7 +374,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("saveAsParquet with file path") {
     val inputPath = resourcePath("small.sam")
     val reads = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation()
+    val outputPath = tmpLocation()
     reads.saveAsParquet(outputPath)
     val reloadedReads = sc.loadAlignments(outputPath)
     assert(reads.rdd.count === reloadedReads.rdd.count)
@@ -395,7 +383,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("saveAsParquet with file path, block size, page size") {
     val inputPath = resourcePath("small.sam")
     val reads = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation()
+    val outputPath = tmpLocation()
     reads.saveAsParquet(outputPath, 1024, 2048)
     val reloadedReads = sc.loadAlignments(outputPath)
     assert(reads.rdd.count === reloadedReads.rdd.count)
@@ -404,7 +392,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("saveAsParquet with save args") {
     val inputPath = resourcePath("small.sam")
     val reads = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation()
+    val outputPath = tmpLocation()
     reads.saveAsParquet(TestSaveArgs(outputPath))
     val reloadedReads = sc.loadAlignments(outputPath)
     assert(reads.rdd.count === reloadedReads.rdd.count)

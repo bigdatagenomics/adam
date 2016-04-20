@@ -47,6 +47,7 @@ import org.bdgenomics.adam.rdd.{
   JavaSaveArgs,
   Unaligned
 }
+import org.bdgenomics.adam.rdd.features.CoverageRDD
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -82,6 +83,35 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
     FragmentRDD(groupReadsByFragment().map(_.toFragment),
       sequences,
       recordGroups)
+  }
+
+  /**
+   * Converts this set of reads into a corresponding CoverageRDD.
+   *
+   * @param collapse Determines whether to merge adjacent coverage elements with the same score a single coverage.
+   * @return CoverageRDD containing mapped RDD of Coverage.
+   */
+  def toCoverage(collapse: Boolean = true): CoverageRDD = {
+    val covCounts =
+      rdd.rdd
+        .flatMap(r => {
+          val t: List[Long] = List.range(r.getStart, r.getEnd)
+          t.map(n => (ReferenceRegion(r.getContigName, n, n + 1), 1))
+        }).reduceByKey(_ + _)
+        .cache()
+
+    val coverage = (
+      if (collapse) covCounts.sortByKey()
+      else covCounts
+    ).map(r => Coverage(r._1, r._2.toDouble))
+
+    val coverageRdd =
+      if (collapse) CoverageRDD(coverage, sequences)
+        .collapse
+      else CoverageRDD(coverage, sequences)
+
+    covCounts.unpersist()
+    coverageRdd
   }
 
   /**

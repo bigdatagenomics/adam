@@ -108,6 +108,9 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Variant], new AvroSerializer[Variant])
     kryo.register(classOf[Array[Variant]])
 
+    kryo.register(classOf[Coverage])
+    kryo.register(classOf[Array[Coverage]])
+
     kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation])
     kryo.register(classOf[Array[DatabaseVariantAnnotation]])
 

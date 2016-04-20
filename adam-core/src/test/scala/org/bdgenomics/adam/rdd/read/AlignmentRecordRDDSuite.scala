@@ -19,17 +19,20 @@ package org.bdgenomics.adam.rdd.read
 
 import java.io.File
 import java.nio.file.Files
+
 import htsjdk.samtools.ValidationStringency
-import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
+  ReferenceRegion,
   SequenceDictionary,
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
+import org.bdgenomics.adam.rdd.features.CoverageRDD
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
+
 import scala.util.Random
 
 private object SequenceIndexWithReadOrdering extends Ordering[((Int, Long), (AlignmentRecord, Int))] {
@@ -77,6 +80,27 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val expectedSortedReads = mapped.sortWith(
       (a, b) => a._1.getContigName < b._1.getContigName && a._1.getStart < b._1.getStart)
     assert(expectedSortedReads === mapped)
+  }
+
+  sparkTest("computes coverage") {
+    val inputPath = resourcePath("artificial.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+
+    // get pileup at position 30
+    val pointCoverage = reads.filterByOverlappingRegion(ReferenceRegion("artificial", 30, 31)).rdd.count
+    val coverage: CoverageRDD = reads.toCoverage(false)
+    assert(coverage.rdd.filter(r => r.start == 30).first.count == pointCoverage)
+  }
+
+  sparkTest("merges adjacent records with equal coverage values") {
+    val inputPath = resourcePath("artificial.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+
+    // repartition reads to 1 partition to acheive maximal merging of coverage
+    val coverage: CoverageRDD = reads.transform(_.repartition(1)).toCoverage(true)
+
+    assert(coverage.rdd.count == 18)
+    assert(coverage.flatten.rdd.count == 170)
   }
 
   sparkTest("sorting reads by reference index") {
@@ -369,16 +393,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     testBQSR(false, "bqsr1.bam")
   }
 
-  def tempLocation(suffix: String = ".adam"): String = {
-    val tempFile = File.createTempFile("AlignmentRecordRDDFunctionsSuite", "")
-    val tempDir = tempFile.getParentFile
-    new File(tempDir, tempFile.getName + suffix).getAbsolutePath
-  }
-
   sparkTest("saveAsParquet with save args, sequence dictionary, and record group dictionary") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation()
+    val outputPath = tmpLocation()
     reads.saveAsParquet(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
@@ -386,7 +404,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("save as SAM format") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".sam")
+    val outputPath = tmpLocation(".sam")
     reads.save(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
@@ -394,7 +412,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("save as sorted SAM format") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".sam")
+    val outputPath = tmpLocation(".sam")
     reads.save(TestSaveArgs(outputPath), true)
     assert(new File(outputPath).exists())
   }
@@ -402,7 +420,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("save as BAM format") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".bam")
+    val outputPath = tmpLocation(".bam")
     reads.save(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
@@ -410,7 +428,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("save as sorted BAM format") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".bam")
+    val outputPath = tmpLocation(".bam")
     reads.save(TestSaveArgs(outputPath), true)
     assert(new File(outputPath).exists())
   }
@@ -418,7 +436,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("save as FASTQ format") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".fq")
+    val outputPath = tmpLocation(".fq")
     reads.save(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
@@ -426,7 +444,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("save as ADAM parquet format") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".adam")
+    val outputPath = tmpLocation(".adam")
     reads.save(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
@@ -434,7 +452,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsSam SAM format") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".sam")
+    val outputPath = tmpLocation(".sam")
     reads.saveAsSam(outputPath, true)
     assert(new File(outputPath).exists())
   }
@@ -442,7 +460,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsSam SAM format single file") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".sam")
+    val outputPath = tmpLocation(".sam")
     reads.saveAsSam(outputPath, true, true)
     assert(new File(outputPath).exists())
   }
@@ -450,7 +468,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsSam sorted SAM format single file") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".sam")
+    val outputPath = tmpLocation(".sam")
     reads.saveAsSam(outputPath, true, true, true)
     assert(new File(outputPath).exists())
   }
@@ -458,7 +476,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsSam BAM format") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".bam")
+    val outputPath = tmpLocation(".bam")
     reads.saveAsSam(outputPath, false)
     assert(new File(outputPath).exists())
   }
@@ -466,7 +484,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsSam BAM format single file") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".bam")
+    val outputPath = tmpLocation(".bam")
     reads.saveAsSam(outputPath, false, true)
     assert(new File(outputPath).exists())
   }
@@ -474,7 +492,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsSam sorted BAM format single file") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".bam")
+    val outputPath = tmpLocation(".bam")
     reads.saveAsSam(outputPath, false, true, true)
     assert(new File(outputPath).exists())
   }
@@ -482,7 +500,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsFastq") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".fq")
+    val outputPath = tmpLocation(".fq")
     reads.saveAsFastq(outputPath, None)
     assert(new File(outputPath).exists())
   }
@@ -490,7 +508,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsFastq with original base qualities") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".fq")
+    val outputPath = tmpLocation(".fq")
     reads.saveAsFastq(outputPath, None, true)
     assert(new File(outputPath).exists())
   }
@@ -498,7 +516,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsFastq sorted by read name") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".fq")
+    val outputPath = tmpLocation(".fq")
     reads.saveAsFastq(outputPath, None, false, true)
     assert(new File(outputPath).exists())
   }
@@ -506,7 +524,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsFastq sorted by read name with original base qualities") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath = tempLocation(".fq")
+    val outputPath = tmpLocation(".fq")
     reads.saveAsFastq(outputPath, None, true, true)
     assert(new File(outputPath).exists())
   }
@@ -514,8 +532,8 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsFastq paired FASTQ") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath1 = tempLocation("_1.fq")
-    val outputPath2 = tempLocation("_2.fq")
+    val outputPath1 = tmpLocation("_1.fq")
+    val outputPath2 = tmpLocation("_2.fq")
     reads.saveAsFastq(outputPath1, Some(outputPath2))
     assert(new File(outputPath1).exists())
     assert(new File(outputPath2).exists())
@@ -524,8 +542,8 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("saveAsPairedFastq") {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
-    val outputPath1 = tempLocation("_1.fq")
-    val outputPath2 = tempLocation("_2.fq")
+    val outputPath1 = tmpLocation("_1.fq")
+    val outputPath2 = tmpLocation("_2.fq")
     reads.saveAsPairedFastq(outputPath1, outputPath2)
     assert(new File(outputPath1).exists())
     assert(new File(outputPath2).exists())

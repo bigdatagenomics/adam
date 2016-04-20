@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
+import java.io.File
 import java.nio.file.Files
 
 import com.google.common.io.Resources
@@ -37,6 +38,22 @@ trait ADAMFunSuite extends SparkFunSuite {
 
   def resourcePath(path: String) = ClassLoader.getSystemClassLoader.getResource(path).getFile
   def tmpFile(path: String) = Files.createTempDirectory("").toAbsolutePath.toString + "/" + path
+
+  /**
+   * Creates temporary file for saveAsParquet().
+   * This helper function is required because createTempFile creates an actual file, not
+   * just a name.  Whereas, this returns the name of something that could be mkdir'ed, in the
+   * same location as createTempFile() uses, so therefore the returned path from this method
+   * should be suitable for saveAsParquet().
+   *
+   * @param suffix Suffix of file being created
+   * @return Absolute path to temporary file location
+   */
+  def tmpLocation(suffix: String = ".adam"): String = {
+    val tempFile = File.createTempFile("TempSuite", "")
+    val tempDir = tempFile.getParentFile
+    new File(tempDir, tempFile.getName + suffix).getAbsolutePath
+  }
 
   def checkFiles(expectedPath: String, actualPath: String): Unit = {
     val actualFile = Source.fromFile(actualPath)
