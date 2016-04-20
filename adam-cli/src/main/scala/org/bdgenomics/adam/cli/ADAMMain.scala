@@ -51,7 +51,8 @@ object ADAMMain {
           Features2ADAM,
           WigFix2Bed,
           Fragments2Reads,
-          Reads2Fragments
+          Reads2Fragments,
+          Reads2Coverage
         )
       ),
       CommandGroup(

@@ -246,6 +246,16 @@ case class FeatureRDD(rdd: RDD[Feature],
   }
 
   /**
+   * Converts the FeatureRDD to a CoverageRDD.
+   *
+   * @return CoverageRDD containing RDD of Coverage.
+   */
+  def toCoverage: CoverageRDD = {
+    val coverageRdd = rdd.map(f => Coverage(f))
+    CoverageRDD(coverageRdd, sequences)
+  }
+
+  /**
    * @param newRdd The RDD to replace the underlying RDD with.
    * @return Returns a new FeatureRDD with the underlying RDD replaced.
    */

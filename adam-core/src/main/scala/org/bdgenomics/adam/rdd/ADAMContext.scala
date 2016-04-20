@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.rdd
 
-import collection.JavaConverters._
 import java.io.{ File, FileNotFoundException, InputStream }
 import java.util.regex.Pattern
+
 import com.google.common.collect.ImmutableList
-import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
 import htsjdk.samtools.util.{ Interval, Locatable }
+import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
 import htsjdk.variant.vcf.VCFHeader
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
@@ -35,33 +35,35 @@ import org.apache.parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.parquet.hadoop.ParquetInputFormat
 import org.apache.parquet.hadoop.util.ContextUtil
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext
 import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
+import org.bdgenomics.adam.projections.{
+  AlignmentRecordField,
+  FeatureField,
+  NucleotideContigFragmentField,
+  Projection
+}
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.features._
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
-import org.bdgenomics.adam.rdd.read.{
-  AlignedReadRDD,
-  AlignmentRecordRDD,
-  UnalignedReadRDD
-}
+import org.bdgenomics.adam.rdd.read.{ AlignedReadRDD, AlignmentRecordRDD, UnalignedReadRDD }
 import org.bdgenomics.adam.rdd.variation._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.{ TwoBitFile, ReferenceContigMap, ReferenceFile }
+import org.bdgenomics.adam.util.{ ReferenceContigMap, ReferenceFile, TwoBitFile }
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
-import org.bdgenomics.utils.misc.HadoopUtil
-import org.bdgenomics.utils.misc.Logging
+import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
 import org.seqdoop.hadoop_bam._
 import org.seqdoop.hadoop_bam.util._
+
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.Map
 import scala.reflect.ClassTag
 
@@ -757,6 +759,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     FragmentRDD.fromRdd(records.map(fastqRecordConverter.convertFragment))
   }
 
+  /**
+   * Loads Parquet file of Features to a CoverageRDD.
+   * Coverage is stored in the score attribute of Feature.
+   * @param filePath File path to load coverage from
+   * @return CoverageRDD containing an RDD of Coverage
+   */
+  def loadCoverage(filePath: String): CoverageRDD = {
+    val proj = Projection(FeatureField.contigName, FeatureField.start, FeatureField.end, FeatureField.score)
+    loadFeatures(filePath, projection = Some(proj)).toCoverage
+  }
+
   def loadGff3(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new GFF3Parser().parse)
     if (Metrics.isRecording) records.instrument() else records
@@ -999,7 +1012,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     } else if (filePath.endsWith(".fa") ||
       filePath.endsWith(".fasta")) {
       log.info(s"Loading $filePath as FASTA and converting to AlignmentRecords. Projection is ignored.")
-      import ADAMContext._
       UnalignedReadRDD(loadFasta(filePath, fragmentLength = 10000).toReads,
         RecordGroupDictionary.empty)
     } else if (filePath.endsWith("contig.adam")) {
