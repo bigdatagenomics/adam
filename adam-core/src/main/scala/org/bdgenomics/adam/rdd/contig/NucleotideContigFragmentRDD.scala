@@ -27,6 +27,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
+import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
 import scala.collection.JavaConversions._
 import scala.math.max
@@ -53,9 +54,18 @@ object NucleotideContigFragmentRDD extends Serializable {
   }
 }
 
+/**
+ * A wrapper class for RDD[NucleotideContigFragment].
+ * NucleotideContigFragmentRDD extends ReferenceFile. To specifically access a ReferenceFile within an RDD,
+ * refer to:
+ * @see ReferenceContigMap
+ *
+ * @param rdd Underlying RDD
+ * @param sequences Sequence dictionary computed from rdd
+ */
 case class NucleotideContigFragmentRDD(
     rdd: RDD[NucleotideContigFragment],
-    sequences: SequenceDictionary) extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] {
+    sequences: SequenceDictionary) extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] with ReferenceFile {
 
   /**
    * Converts an RDD of nucleotide contig fragments into reads. Adjacent contig fragments are
@@ -169,7 +179,7 @@ case class NucleotideContigFragmentRDD(
    * @param region Reference region over which to get sequence.
    * @return String of bases corresponding to reference sequence.
    */
-  def getReferenceString(region: ReferenceRegion): String = {
+  def extract(region: ReferenceRegion): String = {
     def getString(fragment: (ReferenceRegion, NucleotideContigFragment)): (ReferenceRegion, String) = {
       val trimStart = max(0, region.start - fragment._1.start).toInt
       val trimEnd = max(0, fragment._1.end - region.end).toInt

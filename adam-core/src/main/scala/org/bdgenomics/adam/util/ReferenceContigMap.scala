@@ -20,10 +20,15 @@ package org.bdgenomics.adam.util
 import org.apache.spark.rdd.RDD
 // NOTE(ryan): this is necessary for Spark <= 1.2.1.
 import org.apache.spark.SparkContext._
-import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
 import org.bdgenomics.formats.avro.NucleotideContigFragment
 
 case class ReferenceContigMap(contigMap: Map[String, Seq[NucleotideContigFragment]]) extends ReferenceFile {
+
+  // create sequence dictionary
+  val sequences: SequenceDictionary = new SequenceDictionary(contigMap.map(r =>
+    SequenceRecord(r._1, r._2.map(_.getFragmentEndPosition).max)).toVector)
+
   /**
    * Extract reference sequence from the file.
    *
