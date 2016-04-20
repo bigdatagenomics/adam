@@ -22,7 +22,7 @@ import java.nio.{ ByteOrder, ByteBuffer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.bdgenomics.utils.io.{ ByteArrayByteAccess, ByteAccess }
-import org.bdgenomics.adam.models.{ NonoverlappingRegions, ReferencePosition, ReferenceRegion }
+import org.bdgenomics.adam.models._
 
 object TwoBitFile {
   val MAGIC_NUMBER: Int = 0x1A412743
@@ -67,7 +67,10 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
     indexRecordStart += TwoBitFile.NAME_SIZE_SIZE + tup._1.length + TwoBitFile.OFFSET_SIZE
     tup
   }).toMap
-  val seqRecords = seqRecordStarts.map(tup => tup._1 -> TwoBitRecord(bytes, tup._1, tup._2)).toMap
+  val seqRecords = seqRecordStarts.map(tup => tup._1 -> TwoBitRecord(bytes, tup._1, tup._2))
+
+  // create sequence dictionary
+  val sequences = new SequenceDictionary(seqRecords.toVector.map(r => SequenceRecord(r._1, r._2.dnaSize)))
 
   private def readHeader(): Int = {
     // figure out proper byte order

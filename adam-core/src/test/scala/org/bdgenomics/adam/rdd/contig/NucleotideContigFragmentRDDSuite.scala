@@ -17,13 +17,13 @@
  */
 package org.bdgenomics.adam.rdd.contig
 
-import com.google.common.io.Files
 import java.io.File
-import org.apache.spark.rdd.RDD
+
+import com.google.common.io.Files
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
+
 import scala.collection.mutable.ListBuffer
 
 class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
@@ -76,7 +76,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
-    assert(rdd.getReferenceString(region) === "ACTGTAC")
+    assert(rdd.extract(region) === "ACTGTAC")
   }
 
   sparkTest("recover trimmed reference string from a single contig fragment") {
@@ -97,7 +97,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
-    assert(rdd.getReferenceString(region) === "CTGTA")
+    assert(rdd.extract(region) === "CTGTA")
   }
 
   sparkTest("recover reference string from multiple contig fragments") {
@@ -143,8 +143,8 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       fragment1,
       fragment2)))
 
-    assert(rdd.getReferenceString(region0) === "ACTGTAC")
-    assert(rdd.getReferenceString(region1) === "GTACTCTCATG")
+    assert(rdd.extract(region0) === "ACTGTAC")
+    assert(rdd.extract(region1) === "GTACTCTCATG")
   }
 
   sparkTest("recover trimmed reference string from multiple contig fragments") {
@@ -190,8 +190,8 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       fragment1,
       fragment2)))
 
-    assert(rdd.getReferenceString(region0) === "CTGTA")
-    assert(rdd.getReferenceString(region1) === "CTCTCA")
+    assert(rdd.extract(region0) === "CTGTA")
+    assert(rdd.extract(region1) === "CTCTCA")
   }
 
   sparkTest("testing nondeterminism from reduce when recovering referencestring") {
@@ -213,7 +213,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     var passed = true
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(fragments.toList))
     try {
-      val result = rdd.getReferenceString(new ReferenceRegion("chr1", 0L, 1000L))
+      val result = rdd.extract(new ReferenceRegion("chr1", 0L, 1000L))
     } catch {
       case e: AssertionError => passed = false
     }
