@@ -17,19 +17,18 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
-import org.kohsuke.args4j.spi.BooleanOptionHandler
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
-import org.bdgenomics.adam.projections.Projection
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.projections.AlignmentRecordField._
+import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.BroadcastRegionJoin
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
+import org.kohsuke.args4j.spi.BooleanOptionHandler
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
+
 import scala.io._
 
 /**
@@ -53,11 +52,18 @@ class CalculateDepthArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "ADAM", usage = "The Read file to use to calculate depths", index = 0)
   val adamInputPath: String = null
 
-  @Argument(required = true, metaVar = "VCF", usage = "The VCF containing the sites at which to calculate depths", index = 1)
+  @Argument(required = true, metaVar = "COVERAGE", usage = "Location to save coverage to parquet file", index = 1)
+  var outputPath: String = null
+
+  @Args4jOption(name = "VCF", usage = "The VCF containing the sites at which to calculate depths")
   val vcfInputPath: String = null
 
   @Args4jOption(name = "-cartesian", handler = classOf[BooleanOptionHandler], usage = "Use a cartesian join, then filter")
   val cartesian: Boolean = false
+
+  @Args4jOption(name = "-print", handler = classOf[BooleanOptionHandler], usage = "Print all calculated depths")
+  val print: Boolean = false
+
 }
 
 class CalculateDepth(protected val args: CalculateDepthArgs) extends BDGSparkCommand[CalculateDepthArgs] {
@@ -65,52 +71,64 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends BDGSparkCom
 
   def run(sc: SparkContext): Unit = {
 
-    val proj = Projection(contigName, start, cigar, readMapped)
+    val proj = Projection(contigName, start, end, cigar, readMapped)
 
     val adamRDD: RDD[AlignmentRecord] = sc.loadAlignments(args.adamInputPath, projection = Some(proj))
-    val mappedRDD = adamRDD.filter(_.getReadMapped)
-
-    /*
-     * The following is the code I _want_ to be able to run.  However, in order to do this,
-     * we need to modify the adamVariantContextLoad method to not fail when the VCF is missing
-     * the 'contig' header fields.  This will come with Neal's PR that will move us from using
-     * refId to referenceName as the primary key for aligned positions.  Until that time,
-     * this code remains commented out and I'll be using the loadPositions convenience method, below.
-     * --TWD
-     *
-    val vcf : RDD[ADAMVariantContext] = sc.adamVariantContextLoad(args.vcfInputPath)
-    val variantPositions = vcf.map(_.position).map(ReferenceRegion(_))
-
-    val variantNames = vcf
-      .map(ctx => (ReferenceRegion(ctx.position), ctx.variants.map(_.getId).mkString(",")))
-      .collect().toMap
-    */
-    val vcf: RDD[(ReferenceRegion, String)] = loadPositions(sc, args.vcfInputPath)
-    val variantPositions = vcf.map(_._1)
-    val variantNames = vcf.collect().toMap
-
-    val joinedRDD: RDD[(ReferenceRegion, AlignmentRecord)] =
-      if (args.cartesian) BroadcastRegionJoin.cartesianFilter(variantPositions.keyBy(v => v), mappedRDD.keyBy(ReferenceRegion(_)))
-      else BroadcastRegionJoin.partitionAndJoin(variantPositions.keyBy(v => v), mappedRDD.keyBy(ReferenceRegion(_)))
+    val mappedRDD: RDD[AlignmentRecord] = adamRDD.filter(_.getReadMapped)
 
     val depths: RDD[(ReferenceRegion, Int)] =
-      joinedRDD.map { case (region, record) => (region, 1) }.reduceByKey(_ + _).sortByKey()
+      if (args.vcfInputPath != null) {
+        /*
+         * The following is the code I _want_ to be able to run.  However, in order to do this,
+         * we need to modify the adamVariantContextLoad method to not fail when the VCF is missing
+         * the 'contig' header fields.  This will come with Neal's PR that will move us from using
+         * refId to referenceName as the primary key for aligned positions.  Until that time,
+         * this code remains commented out and I'll be using the loadPositions convenience method, below.
+         * --TWD
+         *
+        val vcf : RDD[ADAMVariantContext] = sc.adamVariantContextLoad(args.vcfInputPath)
+        val variantPositions = vcf.map(_.position).map(ReferenceRegion(_))
 
-    /*
-     * tab-delimited output, containing the following columns:
-     * 0: the location of the variant
-     * 1: the display name of the variant
-     * 2: the depth of overlapping reads at the variant
-     */
-    println("location\tname\tdepth")
-    depths.collect().foreach {
-      case (region, count) =>
-        println("%20s\t%15s\t% 5d".format(
-          "%s:%d".format(region.referenceName, region.start),
-          variantNames(region),
-          count
-        ))
+        val variantNames = vcf
+          .map(ctx => (ReferenceRegion(ctx.position), ctx.variants.map(_.getId).mkString(",")))
+          .collect().toMap
+        */
+        val vcf: RDD[(ReferenceRegion, String)] = loadPositions(sc, args.vcfInputPath)
+        val variantPositions = vcf.map(_._1)
+
+        val joinedRDD =
+          if (args.cartesian) BroadcastRegionJoin.cartesianFilter(variantPositions.keyBy(v => v), mappedRDD.keyBy(ReferenceRegion(_)))
+          else BroadcastRegionJoin.partitionAndJoin(variantPositions.keyBy(v => v), mappedRDD.keyBy(ReferenceRegion(_)))
+        joinedRDD.map { case (region, record) => (region, 1) }.reduceByKey(_ + _).sortByKey()
+      } else {
+        // map all alignment records
+        val x: RDD[(String, List[Long])] = mappedRDD.map(r => (r.getContigName, List.range(r.getStart, r.getEnd)))
+        x.flatMap(r => (r._2.map(i => ReferenceRegion(r._1, i, i + 1)))).map(region => (region, 1)).reduceByKey(_ + _).sortByKey()
+      }
+
+    if (args.print) {
+      /*
+       * tab-delimited output, containing the following columns:
+       * 0: the location of the variant
+       * 1: if vcf file is provided, the display name of the variant
+       * 2: the depth of overlapping reads at the variant
+       */
+      println("location\tname\tdepth")
+      depths.collect().foreach {
+        case (region, count) =>
+          println("%20s\t%15s\t% 5d".format(
+            "%s:%d".format(region.referenceName, region.start),
+            count
+          ))
+      }
     }
+
+    /* Save coverage to output path */
+    val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+    val frequencies = sqlContext.createDataFrame(depths.map(r => Coverage(r._1.referenceName, r._1.start, r._2)))
+    frequencies.write.parquet(args.outputPath)
+
   }
 
   /**
@@ -141,3 +159,5 @@ class CalculateDepth(protected val args: CalculateDepthArgs) extends BDGSparkCom
     }.toSeq)
   }
 }
+
+case class Coverage(referenceName: String, position: Long, count: Int)
