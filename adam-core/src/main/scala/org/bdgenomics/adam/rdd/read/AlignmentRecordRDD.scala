@@ -19,12 +19,30 @@ package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
-import org.bdgenomics.adam.rdd.{ GenomicRDD, Unaligned }
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, Unaligned }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, RecordGroupMetadata }
 
-abstract class AlignmentRecordRDD extends GenomicRDD[AlignmentRecord] {
+abstract class AlignmentRecordRDD extends AvroGenomicRDD[AlignmentRecord] {
 
   val recordGroups: RecordGroupDictionary
+
+  override protected def saveMetadata(filePath: String) {
+
+    // convert sequence dictionary to avro form and save
+    val contigs = sequences.toAvro
+    saveAvro("%s/_seqdict.avro".format(filePath),
+      rdd.context,
+      Contig.SCHEMA$,
+      contigs)
+
+    // convert record group to avro and save
+    val rgMetadata = recordGroups.recordGroups
+      .map(_.toMetadata)
+    saveAvro("%s/_rgdict.avro".format(filePath),
+      rdd.context,
+      RecordGroupMetadata.SCHEMA$,
+      rgMetadata)
+  }
 }
 
 case class AlignedReadRDD(rdd: RDD[AlignmentRecord],

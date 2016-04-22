@@ -64,7 +64,7 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] wit
     if (dictionary.isDefined)
       log.info("Using contig translation")
 
-    val adamGTs: RDD[Genotype] = sc.loadParquetGenotypes(args.adamFile)
+    val adamGTs = sc.loadParquetGenotypes(args.adamFile)
 
     val coalesce = if (args.coalesce > 0) {
       Some(args.coalesce)
@@ -72,7 +72,14 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] wit
       None
     }
 
-    adamGTs.toVariantContext
-      .saveAsVcf(args.outputPath, dict = dictionary, sortOnSave = args.sort, coalesceTo = coalesce)
+    // convert to variant contexts and prep for save
+    val variantContexts = adamGTs.toVariantContextRDD
+    val variantContextsToSave = if (args.coalesce > 0) {
+      variantContexts.transform(_.coalesce(args.coalesce))
+    } else {
+      variantContexts
+    }
+
+    variantContextsToSave.saveAsVcf(args.outputPath, sortOnSave = args.sort)
   }
 }

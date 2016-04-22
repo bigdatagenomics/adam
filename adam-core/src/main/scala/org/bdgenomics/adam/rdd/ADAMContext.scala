@@ -57,7 +57,7 @@ import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.HadoopUtil
 import org.bdgenomics.utils.misc.Logging
 import org.seqdoop.hadoop_bam._
-import org.seqdoop.hadoop_bam.util.{ BGZFCodec, SAMHeaderReader }
+import org.seqdoop.hadoop_bam.util.{ BGZFCodec, SAMHeaderReader, VCFHeaderReader, WrapSeekable }
 import scala.collection.JavaConversions._
 import scala.collection.Map
 import scala.reflect.ClassTag
@@ -67,7 +67,7 @@ object ADAMContext {
   implicit def sparkContextToADAMContext(sc: SparkContext): ADAMContext = new ADAMContext(sc)
 
   // Add generic RDD methods for all types of ADAM RDDs
-  implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => IndexedRecord, ev2: Manifest[T]): ADAMRDDFunctions[T] = new ADAMRDDFunctions(rdd)
+  implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => IndexedRecord, ev2: Manifest[T]): ConcreteADAMRDDFunctions[T] = new ConcreteADAMRDDFunctions(rdd)
 
   // Add methods specific to Read RDDs
   implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
@@ -78,7 +78,6 @@ object ADAMContext {
 
   // implicit conversions for variant related rdds
   implicit def rddToVariantContextRDD(rdd: RDD[VariantContext]) = new VariantContextRDDFunctions(rdd)
-  implicit def rddToADAMGenotypeRDD(rdd: RDD[Genotype]) = new GenotypeRDDFunctions(rdd)
 
   // add gene feature rdd functions
   implicit def convertBaseFeatureRDDToFeatureRDD(rdd: RDD[Feature]) = new FeatureRDDFunctions(rdd)
@@ -130,6 +129,29 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   private[rdd] def loadBamReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
     RecordGroupDictionary.fromSAMHeader(samHeader)
+  }
+
+  private[rdd] def loadVcfMetadata(filePath: String): (SequenceDictionary, Seq[String]) = {
+    val vcfHeader = VCFHeaderReader.readHeaderFrom(WrapSeekable.openPath(sc.hadoopConfiguration,
+      new Path(filePath)))
+    val sd = SequenceDictionary.fromVCFHeader(vcfHeader)
+    val samples = asScalaBuffer(vcfHeader.getGenotypeSamples)
+      .map(s => s: String) // force conversion java -> scala string
+      .toSeq
+    (sd, samples)
+  }
+
+  private[rdd] def loadAvroSequences(filePath: String): SequenceDictionary = {
+    val avroSd = loadAvro[Contig]("%s/_seqdict.avro".format(filePath),
+      Contig.SCHEMA$)
+    SequenceDictionary.fromAvro(avroSd)
+  }
+
+  private[rdd] def loadAvroSampleMetadata(filePath: String, fileName: String): RecordGroupDictionary = {
+    val avroRgd = loadAvro[RecordGroupMetadata]("%s/%s".format(filePath, fileName),
+      RecordGroupMetadata.SCHEMA$)
+    // convert avro to record group dictionary
+    new RecordGroupDictionary(avroRgd.map(RecordGroup.fromAvro))
   }
 
   /**
@@ -470,17 +492,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     // load from disk
     val rdd = loadParquet[AlignmentRecord](filePath, predicate, projection)
-    val avroSd = loadAvro[Contig]("%s/_seqdict.avro".format(filePath),
-      Contig.SCHEMA$)
-    val avroRgd = loadAvro[RecordGroupMetadata]("%s/_rgdict.avro".format(filePath),
-      RecordGroupMetadata.SCHEMA$)
 
     // convert avro to sequence dictionary
-    val sd = new SequenceDictionary(avroSd.map(SequenceRecord.fromADAMContig)
-      .toVector)
+    val sd = loadAvroSequences(filePath)
 
-    // convert avro to record group dictionary
-    val rgd = new RecordGroupDictionary(avroRgd.map(RecordGroup.fromAvro))
+    // convert avro to sequence dictionary
+    val rgd = loadAvroSampleMetadata(filePath, "_rgdict.avro")
 
     AlignedReadRDD(rdd, sd, rgd)
   }
@@ -576,32 +593,67 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     ))
   }
 
-  def loadVcf(filePath: String, sd: Option[SequenceDictionary]): RDD[VariantContext] = {
+  /**
+   * Loads a VCF file into an RDD.
+   *
+   * @param filePath The file to load.
+   * @param sdOpt An optional sequence dictionary, in case the sequence info
+   *              is not included in the VCF.
+   * @return Returns a VariantContextRDD.
+   */
+  def loadVcf(filePath: String,
+              sdOpt: Option[SequenceDictionary] = None): VariantContextRDD = {
+
+    // load vcf data
     val job = HadoopUtil.newJob(sc)
-    val vcc = new VariantContextConverter(sd)
     job.getConfiguration().set("io.compression.codecs", classOf[BGZFCodec].getCanonicalName())
+    val vcc = new VariantContextConverter(sdOpt)
     val records = sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
       ContextUtil.getConfiguration(job)
     )
+
+    // attach instrumentation
     if (Metrics.isRecording) records.instrument() else records
 
-    records.flatMap(p => vcc.convert(p._2.get))
+    // load vcf metadata
+    val (vcfSd, samples) = loadVcfMetadata(filePath)
+
+    // we can only replace the sequences header if the sequence info was missing on the vcf
+    require(sdOpt.isEmpty || vcfSd.isEmpty,
+      "Only one of the provided or VCF sequence dictionary can be specified.")
+    val sd = sdOpt.getOrElse(vcfSd)
+
+    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
+      sd,
+      samples)
   }
 
   def loadParquetGenotypes(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): RDD[Genotype] = {
-    loadParquet[Genotype](filePath, predicate, projection)
+    projection: Option[Schema] = None): GenotypeRDD = {
+    val rdd = loadParquet[Genotype](filePath, predicate, projection)
+
+    // load sequence info
+    val sd = loadAvroSequences(filePath)
+
+    // load avro record group dictionary and convert to samples
+    val rgd = loadAvroSampleMetadata(filePath, "_samples.avro")
+    val samples = rgd.recordGroups.map(_.sample)
+
+    GenotypeRDD(rdd, sd, samples)
   }
 
   def loadParquetVariants(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): RDD[Variant] = {
-    loadParquet[Variant](filePath, predicate, projection)
+    projection: Option[Schema] = None): VariantRDD = {
+    val rdd = loadParquet[Variant](filePath, predicate, projection)
+    val sd = loadAvroSequences(filePath)
+
+    VariantRDD(rdd, sd)
   }
 
   def loadFasta(
@@ -797,10 +849,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadGenotypes(
     filePath: String,
     projection: Option[Schema] = None,
-    sd: Option[SequenceDictionary] = None): RDD[Genotype] = {
+    sd: Option[SequenceDictionary] = None): GenotypeRDD = {
     if (filePath.endsWith(".vcf")) {
       log.info(s"Loading $filePath as VCF, and converting to Genotypes. Projection is ignored.")
-      loadVcf(filePath, sd).flatMap(_.genotypes)
+      loadVcf(filePath, sd).toGenotypeRDD
     } else {
       log.info(s"Loading $filePath as Parquet containing Genotypes. Sequence dictionary for translation is ignored.")
       loadParquetGenotypes(filePath, None, projection)
@@ -810,10 +862,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadVariants(
     filePath: String,
     projection: Option[Schema] = None,
-    sd: Option[SequenceDictionary] = None): RDD[Variant] = {
+    sd: Option[SequenceDictionary] = None): VariantRDD = {
     if (filePath.endsWith(".vcf")) {
       log.info(s"Loading $filePath as VCF, and converting to Variants. Projection is ignored.")
-      loadVcf(filePath, sd).map(_.variant.variant)
+      loadVcf(filePath, sd).toVariantRDD
     } else {
       log.info(s"Loading $filePath as Parquet containing Variants. Sequence dictionary for translation is ignored.")
       loadParquetVariants(filePath, None, projection)

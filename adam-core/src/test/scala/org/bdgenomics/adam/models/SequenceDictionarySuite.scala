@@ -19,6 +19,7 @@ package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.rdd.ADAMContext._
 import htsjdk.samtools.{ SAMFileReader, SAMSequenceRecord, SAMSequenceDictionary }
+import htsjdk.variant.vcf.VCFFileReader
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.scalatest.FunSuite
 import java.io.File
@@ -208,5 +209,20 @@ class SequenceDictionarySuite extends ADAMFunSuite {
     assert(seq.get(3).getSequenceName === "4")
     assert(seq.get(4).getSequenceName === "MT")
     assert(seq.get(5).getSequenceName === "X")
+  }
+
+  test("load sequence dictionary from VCF file") {
+    val path = resourcePath("small.vcf")
+    val fileReader = new VCFFileReader(new File(path), false)
+    val sd = SequenceDictionary.fromVCFHeader(fileReader.getFileHeader)
+
+    assert(sd.records.size === 1)
+    assert(sd.records.head.name === "1")
+  }
+
+  test("empty sequence dictionary must be empty") {
+    val sd = SequenceDictionary.empty
+    assert(sd.records.size === 0)
+    assert(sd.isEmpty)
   }
 }

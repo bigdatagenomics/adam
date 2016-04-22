@@ -17,35 +17,46 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.VariantContext
+import com.google.common.io.Files
+import java.io.File
+import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 
-class ADAMVariationRDDFunctionsSuite extends ADAMFunSuite {
+class VariantContextRDDSuite extends ADAMFunSuite {
 
-  sparkTest("joins SNV database annotation") {
+  val tempDir = Files.createTempDir()
+
+  def variants: VariantContextRDD = {
+    val contig = Contig.newBuilder.setContigName("chr11")
+      .setContigLength(249250621L)
+      .build
     val v0 = Variant.newBuilder
-      .setContig(Contig.newBuilder.setContigName("11").build)
+      .setContig(contig)
       .setStart(17409572)
       .setReferenceAllele("T")
       .setAlternateAllele("C")
       .build
 
-    val vc: RDD[VariantContext] = sc.parallelize(List(
-      VariantContext(v0)))
-
-    val a0 = DatabaseVariantAnnotation.newBuilder
-      .setVariant(v0)
-      .setDbSnpId(5219)
+    val g0 = Genotype.newBuilder().setVariant(v0)
+      .setSampleId("NA12878")
+      .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
       .build
 
-    val vda: RDD[DatabaseVariantAnnotation] = sc.parallelize(List(
-      a0))
+    VariantContextRDD(sc.parallelize(List(
+      VariantContext(v0, Seq(g0))), 1),
+      SequenceDictionary.fromAvro(Seq(contig)), Seq("NA12878"))
+  }
 
-    // TODO: implicit conversion to VariantContextRDD
-    val annotated = vc.joinDatabaseVariantAnnotation(vda)
-    assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
+  sparkTest("can write, then read in .vcf file") {
+    val path = new File(tempDir, "test.vcf")
+    variants.saveAsVcf(TestSaveArgs(path.getAbsolutePath), false)
+    assert(path.exists)
+    val vcRdd = sc.loadVcf("%s/test.vcf/part-r-00000".format(tempDir))
+    assert(vcRdd.count === 1)
+    assert(vcRdd.sequences.records.size === 1)
+    assert(vcRdd.sequences.records(0).name === "chr11")
   }
 }

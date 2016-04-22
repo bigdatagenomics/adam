@@ -46,6 +46,7 @@
 ##INFO=<ID=ReadPosRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias">
 ##INFO=<ID=VQSLOD,Number=1,Type=Float,Description="Log odds ratio of being a true variant versus being false under the trained gaussian mixture model">
 ##INFO=<ID=culprit,Number=1,Type=String,Description="The annotation which was the worst performing in the Gaussian mixture model, likely the reason why the variant was filtered out">
+##contig=<ID=1,length=249250621>
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA12878	NA12891	NA12892
 1	14397	.	CTGT	C	139.12	IndelQD	AC=2;AF=0.333;AN=6;BaseQRankSum=1.800;ClippingRankSum=0.138;DP=69;FS=7.786;MLEAC=2;MLEAF=0.333;MQ=26.84;MQ0=0;MQRankSum=-1.906;QD=1.55;ReadPosRankSum=0.384	GT:AD:DP:FT:GQ:PL	0/1:16,4:20:rd:99:120,0,827	0/1:8,2:10:dp;rd:60:60,0,414	0/0:39,0:39:PASS:99:0,116,2114
 1	14522	.	G	A	195.16	VQSRTrancheSNP99.95to100.00	AC=2;AF=0.333;AN=6;BaseQRankSum=2.044;ClippingRankSum=-2.196;DP=48;FS=13.179;MLEAC=2;MLEAF=0.333;MQ=25.89;MQ0=0;MQRankSum=-0.063;QD=8.87;ReadPosRankSum=0.952;VQSLOD=-3.333e+00;culprit=MQ	GT:AD:DP:FT:GQ:PL	0/1:10,5:15:dp:99:99,0,233	0/1:2,5:7:dp;rd:34:128,0,34	0/0:26,0:26:PASS:78:0,78,783

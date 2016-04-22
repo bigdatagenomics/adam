@@ -21,6 +21,7 @@ import org.apache.avro.generic.IndexedRecord
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import htsjdk.samtools.{ SamReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
+import htsjdk.variant.vcf.VCFHeader
 import scala.collection._
 
 /**
@@ -46,6 +47,16 @@ object SequenceDictionary {
   }
 
   /**
+   * Creates a sequence dictionary from a sequence of Avro Contigs.
+   *
+   * @param contigs Seq of Contig records.
+   * @return Returns a sequence dictionary.
+   */
+  def fromAvro(contigs: Seq[Contig]): SequenceDictionary = {
+    new SequenceDictionary(contigs.map(SequenceRecord.fromADAMContig).toVector)
+  }
+
+  /**
    * Extracts a SAM sequence dictionary from a SAM file header and returns an
    * ADAM sequence dictionary.
    *
@@ -58,6 +69,22 @@ object SequenceDictionary {
     val samDict = header.getSequenceDictionary
 
     fromSAMSequenceDictionary(samDict)
+  }
+
+  /**
+   * Extracts a SAM sequence dictionary from a VCF header and returns an
+   * ADAM sequence dictionary.
+   *
+   * @see fromSAMHeader
+   *
+   * @param header VCF file header.
+   * @return Returns an ADAM style sequence dictionary.
+   */
+  def fromVCFHeader(header: VCFHeader): SequenceDictionary = {
+    val samDict = header.getSequenceDictionary
+
+    // vcf files can have null sequence dictionaries
+    Option(samDict).fold(SequenceDictionary.empty)(ssd => fromSAMSequenceDictionary(ssd))
   }
 
   /**
@@ -156,6 +183,13 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   override def toString: String = {
     records.map(_.toString).fold("SequenceDictionary{")(_ + "\n" + _) + "}"
   }
+
+  private[adam] def toAvro: Seq[Contig] = {
+    records.map(SequenceRecord.toADAMContig)
+      .toSeq
+  }
+
+  def isEmpty: Boolean = records.isEmpty
 }
 
 object SequenceOrderingByName extends Ordering[SequenceRecord] {

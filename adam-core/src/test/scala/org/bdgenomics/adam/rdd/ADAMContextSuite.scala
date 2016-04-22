@@ -61,7 +61,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     //This way we are not dependent on the ADAM format (as we would if we used a pre-made ADAM file)
     //but we are dependent on the unmapped.sam file existing, maybe I should make a new one
     val readsFilepath = resourcePath("unmapped.sam")
-    val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
+    val bamReads = sc.loadAlignments(readsFilepath)
     //save it as an Adam file so we can test the Adam loader
     val bamReadsAdamFile = new File(Files.createTempDir(), "bamReads.adam")
     bamReads.saveAsParquet(bamReadsAdamFile.getAbsolutePath)
@@ -270,7 +270,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("can read a small .vcf file") {
     val path = resourcePath("small.vcf")
 
-    val vcs = sc.loadGenotypes(path).toVariantContext.collect.sortBy(_.position)
+    val vcs = sc.loadGenotypes(path).toVariantContextRDD.collect.sortBy(_.position)
     assert(vcs.size === 5)
 
     val vc = vcs.head
@@ -281,13 +281,13 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(gt.getReadDepth === 20)
   }
 
-  sparkTest("can read a gzipped .vcf file") {
+  ignore("can read a gzipped .vcf file") {
     val path = resourcePath("test.vcf.gz")
     val vcs = sc.loadVcf(path, None)
     assert(vcs.count === 6)
   }
 
-  sparkTest("can read a BGZF gzipped .vcf file") {
+  ignore("can read a BGZF gzipped .vcf file") {
     val path = resourcePath("test.vcf.bgzf.gz")
     val vcs = sc.loadVcf(path, None)
     assert(vcs.count === 6)
@@ -355,7 +355,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("filter on load using the filter2 API") {
     val path = resourcePath("bqsr1.vcf")
 
-    val variants: RDD[Variant] = sc.loadVariants(path)
+    val variants = sc.loadVariants(path)
     assert(variants.count === 681)
 
     val loc = tempLocation()
@@ -363,29 +363,35 @@ class ADAMContextSuite extends ADAMFunSuite {
 
     val pred: FilterPredicate = (LongColumn("start") === 16097631L)
     // the following only reads one row group
-    val adamVariants: RDD[Variant] = sc.loadParquetVariants(loc, predicate = Some(pred))
+    val adamVariants = sc.loadParquetVariants(loc, predicate = Some(pred))
     assert(adamVariants.count === 1)
   }
 
   sparkTest("saveAsParquet with file path") {
     val inputPath = resourcePath("small.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(inputPath)
+    val reads = sc.loadAlignments(inputPath)
     val outputPath = tempLocation()
     reads.saveAsParquet(outputPath)
+    val reloadedReads = sc.loadAlignments(outputPath)
+    assert(reads.count === reloadedReads.count)
   }
 
   sparkTest("saveAsParquet with file path, block size, page size") {
     val inputPath = resourcePath("small.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(inputPath)
+    val reads = sc.loadAlignments(inputPath)
     val outputPath = tempLocation()
     reads.saveAsParquet(outputPath, 1024, 2048)
+    val reloadedReads = sc.loadAlignments(outputPath)
+    assert(reads.count === reloadedReads.count)
   }
 
   sparkTest("saveAsParquet with save args") {
     val inputPath = resourcePath("small.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(inputPath)
+    val reads = sc.loadAlignments(inputPath)
     val outputPath = tempLocation()
     reads.saveAsParquet(TestSaveArgs(outputPath))
+    val reloadedReads = sc.loadAlignments(outputPath)
+    assert(reads.count === reloadedReads.count)
   }
 }
 

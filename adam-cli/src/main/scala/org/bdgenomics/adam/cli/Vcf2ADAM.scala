@@ -65,22 +65,24 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] wit
     if (dictionary.isDefined)
       log.info("Using contig translation")
 
-    var adamVariants: RDD[VariantContext] = sc.loadVcf(args.vcfPath, sd = dictionary)
-    if (args.coalesce > 0) {
-      if (args.coalesce > adamVariants.partitions.size || args.forceShuffle) {
-        adamVariants = adamVariants.coalesce(args.coalesce, shuffle = true)
+    val variantContextRdd = sc.loadVcf(args.vcfPath, sdOpt = dictionary)
+    var variantContextsToSave = if (args.coalesce > 0) {
+      if (args.coalesce > variantContextRdd.partitions.size || args.forceShuffle) {
+        variantContextRdd.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
-        adamVariants = adamVariants.coalesce(args.coalesce, shuffle = false)
+        variantContextRdd.transform(_.coalesce(args.coalesce, shuffle = false))
       }
+    } else {
+      variantContextRdd
     }
 
     if (args.onlyVariants) {
-      adamVariants
-        .map(v => v.variant.variant)
+      variantContextsToSave
+        .toVariantRDD
         .saveAsParquet(args)
     } else {
-      adamVariants
-        .flatMap(p => p.genotypes)
+      variantContextsToSave
+        .toGenotypeRDD
         .saveAsParquet(args)
     }
   }
