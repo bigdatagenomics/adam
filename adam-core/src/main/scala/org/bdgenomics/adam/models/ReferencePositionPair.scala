@@ -49,7 +49,7 @@ object ReferencePositionPair extends Logging {
     } else {
       new ReferencePositionPair(
         (singleReadBucket.primaryMapped ++
-          singleReadBucket.unmapped).toSeq.lift(0).map(getPos),
+          singleReadBucket.unmapped).toSeq.headOption.map(getPos),
         None
       )
     }

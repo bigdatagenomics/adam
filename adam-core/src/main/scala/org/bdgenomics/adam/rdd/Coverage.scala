@@ -18,11 +18,11 @@
 package org.bdgenomics.adam.rdd
 
 import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
+import org.bdgenomics.adam.rdd.PairingRDD._
+
 import scala.math._
-import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
-import PairingRDD._
 
 /**
  * A base is 'covered' by a region set if any region in the set contains the base itself.
@@ -99,24 +99,6 @@ class Coverage(val window: Long) extends Serializable {
       case (Some(r1), None)     => 1
       case (Some(r1), Some(r2)) => r1.compareTo(r2)
     }
-
-  case class OrientedPoint(chrom: String, pos: Long, polarity: Boolean) extends Ordered[OrientedPoint] with Serializable {
-    override def compare(that: OrientedPoint): Int = {
-      if (chrom != that.chrom) {
-        chrom.compare(that.chrom)
-      } else {
-        val c1 = pos.compare(that.pos)
-        if (c1 != 0) {
-          c1
-        } else {
-          // we actually want the *reverse* ordering from the Java Boolean.compareTo
-          // function!
-          // c.f. https://docs.oracle.com/javase/7/docs/api/java/lang/Boolean.html#compareTo(java.lang.Boolean)
-          -polarity.compare(that.polarity)
-        }
-      }
-    }
-  }
 
   /**
    * This is a helper function for findCoverageRegions -- basically, it takes a set
@@ -230,5 +212,22 @@ class Coverage(val window: Long) extends Serializable {
       }.toIterator
     }
   }
+}
 
+case class OrientedPoint(chrom: String, pos: Long, polarity: Boolean) extends Ordered[OrientedPoint] with Serializable {
+  override def compare(that: OrientedPoint): Int = {
+    if (chrom != that.chrom) {
+      chrom.compare(that.chrom)
+    } else {
+      val c1 = pos.compare(that.pos)
+      if (c1 != 0) {
+        c1
+      } else {
+        // we actually want the *reverse* ordering from the Java Boolean.compareTo
+        // function!
+        // c.f. https://docs.oracle.com/javase/7/docs/api/java/lang/Boolean.html#compareTo(java.lang.Boolean)
+        -polarity.compare(that.polarity)
+      }
+    }
+  }
 }

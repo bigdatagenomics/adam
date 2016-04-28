@@ -30,7 +30,7 @@ import scala.collection.mutable
  */
 private[adam] object FastaConverter {
 
-  case class FastaDescriptionLine(val fileIndex: Long = -1L, val seqId: Int = 0, val descriptionLine: Option[String] = None) {
+  case class FastaDescriptionLine(fileIndex: Long = -1L, seqId: Int = 0, descriptionLine: Option[String] = None) {
     val (contigName, contigDescription) = parseDescriptionLine(descriptionLine, fileIndex)
 
     private def parseDescriptionLine(descriptionLine: Option[String], id: Long): (Option[String], Option[String]) = {
@@ -63,7 +63,7 @@ private[adam] object FastaConverter {
    *
    * @throws AssertionError Thrown if there appear to be multiple sequences in a single file
    * that do not have descriptions.
-   * @throws IllegalArgumentError Thrown if a sequence does not have sequence data.
+   * @throws IllegalArgumentException Thrown if a sequence does not have sequence data.
    *
    * @param rdd RDD containing Long,String tuples, where the Long corresponds to the number
    * of the file line, and the String is the line of the file.
@@ -81,11 +81,13 @@ private[adam] object FastaConverter {
 
     val sequenceLines = filtered.filter(kv => !isDescriptionLine(kv._2))
 
-    val keyedSequences = if (indexToContigDescription.value.size == 0) {
-      sequenceLines.keyBy(kv => -1L)
-    } else {
-      sequenceLines.keyBy(row => findContigIndex(row._1, indexToContigDescription.value.keys.toList))
-    }
+    val keyedSequences =
+      if (indexToContigDescription.value.isEmpty) {
+        sequenceLines.keyBy(kv => -1L)
+      } else {
+        sequenceLines.keyBy(row => findContigIndex(row._1, indexToContigDescription.value.keys.toList))
+      }
+
     val groupedContigs = keyedSequences.groupByKey()
 
     val converter = new FastaConverter(maxFragmentLength)
@@ -94,7 +96,7 @@ private[adam] object FastaConverter {
       case (id, lines) =>
 
         val descriptionLine = indexToContigDescription.value.getOrElse(id, FastaDescriptionLine())
-        assert(lines.size != 0, "Sequence " + descriptionLine.seqId + " has no sequence data.")
+        assert(lines.nonEmpty, s"Sequence ${descriptionLine.seqId} has no sequence data.")
 
         val sequence: Seq[String] = lines.toSeq.sortBy(_._1).map(kv => cleanSequence(kv._2))
         converter.convert(
@@ -166,7 +168,7 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
     sequences.foreach(addFragment)
 
     // if we still have a remaining sequence that is not part of a fragment, add it
-    if (sequence.length != 0) {
+    if (sequence.nonEmpty) {
       sequenceSeq += sequence.toString()
     }
 

@@ -17,13 +17,14 @@
  */
 package org.bdgenomics.adam.models
 
-import java.io.{ FileInputStream, File }
+import java.io.{ File, FileInputStream }
 import java.util.zip.GZIPInputStream
-import org.apache.spark.SparkContext._
+
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.Feature
+
 import scala.io.Source
 
 class GeneSuite extends ADAMFunSuite {
@@ -123,7 +124,7 @@ class GeneSuite extends ADAMFunSuite {
         }.toArray
 
         assert(gseqExons.length === myExons.length)
-        (0 until myExons.length).foreach { i =>
+        myExons.indices.foreach { i =>
           assert(myExons(i) === gseqExons(i), "Exons %d don't match".format(i))
         }
 

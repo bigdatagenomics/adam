@@ -32,8 +32,7 @@ private[converters] object FragmentCollector extends Serializable {
   }
 }
 
-private[converters] case class FragmentCollector(fragments: Seq[(ReferenceRegion, String)]) {
-}
+case class FragmentCollector(fragments: Seq[(ReferenceRegion, String)])
 
 object FragmentConverter extends Serializable {
 

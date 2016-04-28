@@ -115,11 +115,11 @@ case class ShuffleRegionJoin(sd: SequenceDictionary, partitionSize: Long) extend
  * @param seqLengths A map containing the length of each contig
  */
 case class GenomeBins(binSize: Long, seqLengths: Map[String, Long]) extends Serializable {
-  private val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
-  private val lengths: Seq[Long] = names.map(seqLengths(_))
-  private val parts: Seq[Int] = lengths.map(v => round(ceil(v.toDouble / binSize)).toInt)
-  private val cumulParts: Seq[Int] = parts.scan(0)(_ + _)
-  private val contig2cumulParts: Map[String, Int] = Map(names.zip(cumulParts): _*)
+  @transient private val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
+  @transient private val lengths: Seq[Long] = names.map(seqLengths(_))
+  @transient private val parts: Seq[Int] = lengths.map(v => round(ceil(v.toDouble / binSize)).toInt)
+  @transient private val cumulParts: Seq[Int] = parts.scan(0)(_ + _)
+  @transient private val contig2cumulParts: Map[String, Int] = Map(names.zip(cumulParts): _*)
 
   /**
    * The total number of bins induced by this partition.

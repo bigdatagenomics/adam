@@ -24,4 +24,4 @@ import htsjdk.samtools.CigarElement
  * Represents information on the reference relative to a particular residue
  */
 
-private[rich] case class ReferenceSequenceContext(pos: Option[ReferencePosition], referenceBase: Option[Char], cigarElement: CigarElement, cigarElementOffset: Int)
+case class ReferenceSequenceContext(pos: Option[ReferencePosition], referenceBase: Option[Char], cigarElement: CigarElement, cigarElementOffset: Int)

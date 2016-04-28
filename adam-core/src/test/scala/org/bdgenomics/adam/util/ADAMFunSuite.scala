@@ -29,9 +29,11 @@ trait ADAMFunSuite extends SparkFunSuite {
 
   override val appName: String = "adam"
   override val properties: Map[String, String] = Map(
-    ("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
-    ("spark.kryo.registrator", "org.bdgenomics.adam.serialization.ADAMKryoRegistrator"),
-    ("spark.kryo.referenceTracking", "true"))
+    "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
+    "spark.kryo.registrator" -> "org.bdgenomics.adam.serialization.ADAMKryoRegistrator",
+    "spark.kryo.referenceTracking" -> "true",
+    "spark.kryo.registrationRequired" -> "true"
+  )
 
   def resourcePath(path: String) = ClassLoader.getSystemClassLoader.getResource(path).getFile
   def tmpFile(path: String) = Files.createTempDirectory("").toAbsolutePath.toString + "/" + path
