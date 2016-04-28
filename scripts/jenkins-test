@@ -1,82 +1,125 @@
 #!/usr/bin/env bash
 
-set -e -x
+set -e -x -v
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$DIR/.."
+# variable declarations
+export JAVA_HOME=/usr/java/jdk1.8.0_60
+export PATH=${JAVA_HOME}/bin/:${PATH}
+export MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=1g"
+DIR=$( cd $( dirname ${BASH_SOURCE[0]} ) && pwd )
+PROJECT_ROOT=${DIR}/..
+VERSION=$(grep "<version>" ${PROJECT_ROOT}/pom.xml  | head -2 | tail -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')
 
-VERSION="$(grep "<version>" "$PROJECT_ROOT/pom.xml"  | head -2 | tail -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')"
+# are we testing for scala 2.11? if so, we need to rewrite our poms to 2.11 first
+if [ ${SCALAVER} == 2.11 ];
+then
+        echo "Rewriting POM.xml files for Scala 2.10."
+        ./scripts/move_to_scala_2.11.sh
+fi
+
+# print versions
 echo "Testing ADAM version ${VERSION} on Spark ${SPARK_VERSION} and Hadoop ${HADOOP_VERSION}"
 
-export MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=1g"
-mvn test -P distribution -Dnetworkconnected -Dhadoop.version="${HADOOP_VERSION}" -Dspark.version="${SPARK_VERSION}"
+# first, build the sources and run the unit tests
+mvn clean package \
+    -Dhadoop.version=${HADOOP_VERSION} \
+    -Dspark.version=${SPARK_VERSION}
+    
+# if those pass, build the distribution package and the integration tests
+mvn test \
+    -P distribution \
+    -Dnetworkconnected \
+    -Dhadoop.version=${HADOOP_VERSION} \
+    -Dspark.version=${SPARK_VERSION}
 
-ADAM_TMP_DIR="$(mktemp -d -t "adamTestXXXXXXX")"
-# Just to be paranoid.. use a directory internal to the ADAM_TMP_DIR
-ADAM_TMP_DIR="$ADAM_TMP_DIR/deleteMePleaseThisIsNoLongerNeeded"
-mkdir "$ADAM_TMP_DIR"
-
-pushd "$PROJECT_ROOT"
-# Copy the jar into our temp space for testing
-cp -r . "$ADAM_TMP_DIR"
-popd
-
-export SPARK_DRIVER_MEMORY=8g
-
-pushd "$ADAM_TMP_DIR"
-
-
-if [[ $HADOOP_VERSION =~ ^1\.0 ]]; then
-    HADOOP=hadoop1
-elif [[ $HADOOP_VERSION =~ ^2\.6 ]]; then
-    HADOOP=hadoop2.6
-elif [[ $HADOOP_VERSION =~ ^2\.3 ]]; then
-    HADOOP=hadoop2.3
-else
-    echo "Unknown Hadoop version."
-    exit 1
-fi
-
-SPARK="spark-${SPARK_VERSION}"
-
-wget -q http://d3kbcqa49mib13.cloudfront.net/${SPARK}-bin-${HADOOP}.tgz
-tar xzvf ${SPARK}-bin-${HADOOP}.tgz
-export SPARK_HOME="${ADAM_TMP_DIR}/${SPARK}-bin-${HADOOP}"
-
-ADAM="./bin/adam-submit"
-
-echo "Fetching BAM file"
-BAM=mouse_chrM.bam
-READS="$BAM".reads.adam
-SORTED_READS="$BAM".reads.sorted.adam
-FRAGMENTS="$BAM".fragments.adam
-rm -rf "$BAM"
-wget -q https://s3.amazonaws.com/bdgenomics-test/"$BAM"
-echo "Converting BAM to ADAM read format"
-rm -rf "$READS"
-"$ADAM" transform "$BAM" "$READS"
-echo "Converting BAM to ADAM read format with sorting"
-rm -rf "$SORTED_READS"
-"$ADAM" transform -sort_reads "$READS" "$SORTED_READS"
-echo "Converting read file to fragments"
-rm -rf "$FRAGMENTS"
-"$ADAM" reads2fragments "$READS" "$FRAGMENTS"
-echo "Printing reads and fragments"
-"$ADAM" print "$READS" 1>/dev/null 2>/dev/null
-"$ADAM" print "$FRAGMENTS" 1>/dev/null 2>/dev/null
-echo "Printing read statistics"
-"$ADAM" flagstat -print_metrics "$READS"
-rm -rf "$ADAM_TMP_DIR"
-popd
-
-pushd "$PROJECT_ROOT"
-./scripts/format-source
-if test -n "$(git status --porcelain)"
+# run integration tests on scala 2.10; prebuilt spark distributions are not available for 2.11
+if [ ${SCALAVER} == 2.10 ];
 then
+
+    # make a temp directory
+    ADAM_TMP_DIR=$(mktemp -d -t adamTestXXXXXXX)
+
+    # Just to be paranoid.. use a directory internal to the ADAM_TMP_DIR
+    ADAM_TMP_DIR=$ADAM_TMP_DIR/deleteMePleaseThisIsNoLongerNeeded
+    mkdir $ADAM_TMP_DIR
+
+    pushd $PROJECT_ROOT
+
+    # Copy the jar into our temp space for testing
+    cp -r . $ADAM_TMP_DIR
+    popd
+
+    pushd $ADAM_TMP_DIR
+
+    # what hadoop version are we on? format string for downloading spark assembly
+    if [[ $HADOOP_VERSION =~ ^2\.6 ]]; then
+        HADOOP=hadoop2.6
+    elif [[ $HADOOP_VERSION =~ ^2\.3 ]]; then
+        HADOOP=hadoop2.3
+    else
+        echo "Unknown Hadoop version."
+        exit 1
+    fi
+
+    # set spark artifact string for downloading assembly
+    SPARK=spark-${SPARK_VERSION}
+    
+    # download prepackaged spark assembly
+    wget -q http://d3kbcqa49mib13.cloudfront.net/${SPARK}-bin-${HADOOP}.tgz
+    tar xzvf ${SPARK}-bin-${HADOOP}.tgz
+    export SPARK_HOME=${ADAM_TMP_DIR}/${SPARK}-bin-${HADOOP}
+    
+    # set the path to the adam submit script
+    ADAM=./bin/adam-submit
+
+    # define filenames
+    BAM=mouse_chrM.bam
+    READS=${BAM}.reads.adam
+    SORTED_READS=${BAM}.reads.sorted.adam
+    FRAGMENTS=${BAM}.fragments.adam
+    
+    # fetch our input dataset
+    echo "Fetching BAM file"
+    rm -rf ${BAM}
+    wget -q https://s3.amazonaws.com/bdgenomics-test/${BAM}
+
+    # once fetched, convert BAM to ADAM
+    echo "Converting BAM to ADAM read format"
+    rm -rf ${READS}
+    ${ADAM} transform ${BAM} ${READS}
+
+    # then, sort the BAM
+    echo "Converting BAM to ADAM read format with sorting"
+    rm -rf ${SORTED_READS}
+    ${ADAM} transform -sort_reads ${READS} ${SORTED_READS}
+
+    # convert the reads to fragments to re-pair the reads
+    echo "Converting read file to fragments"
+    rm -rf ${FRAGMENTS}
+    ${ADAM} reads2fragments ${READS} ${FRAGMENTS}
+
+    # test that printing works
+    echo "Printing reads and fragments"
+    ${ADAM} print ${READS} 1>/dev/null 2>/dev/null
+    ${ADAM} print ${FRAGMENTS} 1>/dev/null 2>/dev/null
+
+    # run flagstat to verify that flagstat runs OK
+    echo "Printing read statistics"
+    ${ADAM} flagstat -print_metrics ${READS}
+    rm -rf ${ADAM_TMP_DIR}
+    popd
+    
+    # test that the source is formatted correctly
+    pushd ${PROJECT_ROOT}
+    ./scripts/format-source
+    if test -n "$(git status --porcelain)"
+    then
         echo "Please run './scripts/format-source'"
         exit 1
+    fi
+    popd
+    
 fi
-popd
 
 echo
 echo "All the tests passed"
