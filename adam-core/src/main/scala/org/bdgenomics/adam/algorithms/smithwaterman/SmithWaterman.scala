@@ -24,7 +24,8 @@ abstract class SmithWaterman(xSequence: String, ySequence: String) extends Seria
 
   lazy val (scoringMatrix, moveMatrix) = buildScoringMatrix()
   lazy val (cigarX, cigarY, xStart, yStart) = trackback(scoringMatrix, moveMatrix)
-
+  lazy val maxScore=maxScores(scoringMatrix)
+  
   /**
    * Builds Smith-Waterman scoring matrix.
    *
@@ -48,38 +49,47 @@ abstract class SmithWaterman(xSequence: String, ySequence: String) extends Seria
    * @return Tuple of (i, j) coordinates.
    */
   private[smithwaterman] final def maxCoordinates(matrix: Array[Array[Double]]): (Int, Int) = {
-    def maxInCol(col: Array[Double]): (Double, Int) = {
-      def takeMax(a: (Double, Int), b: (Double, Int)): (Double, Int) = {
-        if (a._1 > b._1) {
-          a
-        } else {
-          b
+    var xMax = 0
+    var yMax = 0
+    var max = Double.MinValue
+    var x = 0
+    while (x < matrix.length) {
+      var y = 0
+      while (y < matrix(x).length) {
+        if (matrix(x)(y) >= max) {
+          max = matrix(x)(y)
+          xMax = x
+          yMax = y
         }
+        y += 1
       }
-
-      val c: Array[(Double, Int)] = col.zipWithIndex
-
-      c.reduce(takeMax)
+      x += 1
     }
+    (yMax, xMax)
+  }
 
-    def maxCol(cols: Array[(Double, Int)]): (Int, Int) = {
-      def takeMax(a: (Double, Int, Int), b: (Double, Int, Int)): (Double, Int, Int) = {
-        if (a._1 > b._1) {
-          a
-        } else {
-          b
+  /**
+   * Finds max Score of a matrix with highest value.
+   *
+   * @param matrix Matrix to score.
+   * @return maxScore: max score in Matrix.
+   */
+  private[smithwaterman] final def maxScores(matrix: Array[Array[Double]]):Double = {
+
+    var maxScoreReturn = 0
+    var max = Double.MinValue
+    var x = 0
+    while (x < matrix.length) {
+      var y = 0
+      while (y < matrix(x).length) {
+        if (matrix(x)(y) >= max) {
+          max = matrix(x)(y)
         }
+        y += 1
       }
-
-      val c: Array[((Double, Int), Int)] = cols.zipWithIndex
-
-      val m: (Double, Int, Int) = c.map(kv => (kv._1._1, kv._1._2, kv._2))
-        .reduce(takeMax)
-
-      (m._2, m._3)
+      x += 1
     }
-
-    maxCol(matrix.map(maxInCol))
+    max
   }
 
   /**
@@ -130,11 +140,12 @@ abstract class SmithWaterman(xSequence: String, ySequence: String) extends Seria
    *
    * @see buildScoringMatrix
    */
-  @tailrec private[smithwaterman] final def move(matrix: Array[Array[Char]],
-                                                 i: Int,
-                                                 j: Int,
-                                                 cX: String,
-                                                 cY: String): (String, String, Int, Int) = {
+  @tailrec private[smithwaterman] final def move(
+    matrix: Array[Array[Char]],
+    i: Int,
+    j: Int,
+    cX: String,
+    cY: String): (String, String, Int, Int) = {
     if (matrix(i)(j) == 'T') {
       // return if told to terminate
       (cigarFromRNNCigar(cX), cigarFromRNNCigar(cY), i, j)
@@ -160,8 +171,9 @@ abstract class SmithWaterman(xSequence: String, ySequence: String) extends Seria
    * @param moveMatrix Move matrix to track back on.
    * @return Tuple of Cigar for X, Y.
    */
-  private[smithwaterman] def trackback(scoreMatrix: Array[Array[Double]],
-                                       moveMatrix: Array[Array[Char]]): (Cigar, Cigar, Int, Int) = {
+  private[smithwaterman] def trackback(
+    scoreMatrix: Array[Array[Double]],
+    moveMatrix: Array[Array[Char]]): (Cigar, Cigar, Int, Int) = {
     assert(scoreMatrix.length == xSequence.length + 1)
     assert(scoreMatrix.forall(_.length == ySequence.length + 1))
     assert(moveMatrix.length == xSequence.length + 1)
