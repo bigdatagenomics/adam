@@ -12,6 +12,7 @@ ADAM is a genomics analysis platform with specialized file formats built using [
 * [Download official releases][releases].
 * [View our software artifacts on Maven Central](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) ([…including snapshots](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)).
 * [Look at our CHANGES file](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md).
+* [Presentation](https://docs.google.com/presentation/d/1F2jEplq6n36GJNCK_fgrloY3Fi9ujVl1x-sAPUg_DYU/edit#slide=id.g10df2eff66_2_20)
 
 ## Hello World: Counting K-mers
 
