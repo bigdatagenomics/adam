@@ -19,7 +19,7 @@ package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,

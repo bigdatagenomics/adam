@@ -19,7 +19,7 @@ package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.rich.DecadentRead._
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import scala.collection.immutable._
 import scala.collection.mutable

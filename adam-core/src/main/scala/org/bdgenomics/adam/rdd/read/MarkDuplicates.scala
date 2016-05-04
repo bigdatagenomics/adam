@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{

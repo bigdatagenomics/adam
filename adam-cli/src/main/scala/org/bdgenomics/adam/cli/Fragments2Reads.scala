@@ -17,11 +17,12 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.SparkContext
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.utils.cli._
+import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object Fragments2Reads extends BDGCommandCompanion {

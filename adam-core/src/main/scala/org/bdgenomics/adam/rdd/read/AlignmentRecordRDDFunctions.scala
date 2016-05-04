@@ -26,7 +26,7 @@ import org.apache.avro.file.DataFileWriter
 import org.apache.avro.specific.{ SpecificDatumWriter, SpecificRecordBase }
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
@@ -42,6 +42,7 @@ import org.bdgenomics.adam.rdd.{ ADAMRDDFunctions, ADAMSaveAnyArgs, ADAMSequence
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
+import org.bdgenomics.utils.misc.Logging
 import org.seqdoop.hadoop_bam.SAMRecordWritable
 import scala.annotation.tailrec
 import scala.language.implicitConversions

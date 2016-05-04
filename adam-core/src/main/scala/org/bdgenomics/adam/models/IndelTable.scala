@@ -17,11 +17,12 @@
  */
 package org.bdgenomics.adam.models
 
-import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Variant
+import org.bdgenomics.utils.misc.Logging
 
 class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Serializable with Logging {
   log.info("Indel table has %s contigs and %s entries".format(

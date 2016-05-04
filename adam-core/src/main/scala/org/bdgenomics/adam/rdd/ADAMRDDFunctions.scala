@@ -22,7 +22,7 @@ import java.util.logging.Level
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.mapreduce.{ OutputFormat => NewOutputFormat }
-import org.apache.spark.{ SparkContext, Logging }
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.{ InstrumentedOutputFormat, RDD }
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -30,6 +30,7 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.utils.cli.SaveArgs
 import org.bdgenomics.utils.misc.HadoopUtil
+import org.bdgenomics.utils.misc.Logging
 import org.apache.parquet.avro.AvroParquetOutputFormat
 import org.apache.parquet.hadoop.ParquetOutputFormat
 import org.apache.parquet.hadoop.metadata.CompressionCodecName

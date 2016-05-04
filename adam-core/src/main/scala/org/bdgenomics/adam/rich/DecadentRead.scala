@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rich
 
 import htsjdk.samtools.ValidationStringency
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
