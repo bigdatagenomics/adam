@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.variation
 
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion, SequenceDictionary, SequenceRecord, VariantContext }

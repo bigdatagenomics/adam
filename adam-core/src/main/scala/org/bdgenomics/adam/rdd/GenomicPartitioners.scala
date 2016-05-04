@@ -18,7 +18,8 @@
 package org.bdgenomics.adam.rdd
 
 import org.bdgenomics.adam.models.{ ReferenceRegion, ReferencePosition, SequenceDictionary }
-import org.apache.spark.{ Logging, Partitioner }
+import org.bdgenomics.utils.misc.Logging
+import org.apache.spark.Partitioner
 import scala.math._
 
 /**

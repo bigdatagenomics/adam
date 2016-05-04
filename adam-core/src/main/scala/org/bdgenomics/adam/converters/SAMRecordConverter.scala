@@ -23,7 +23,7 @@ import htsjdk.samtools.{
   SAMRecord,
   SAMUtils
 }
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.models.{
   Attribute,
   RecordGroupDictionary,

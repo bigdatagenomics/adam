@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read.realignment
 
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.instrumentation.Timers._

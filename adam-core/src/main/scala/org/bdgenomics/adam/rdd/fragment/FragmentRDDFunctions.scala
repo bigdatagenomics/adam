@@ -21,7 +21,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.models.SequenceRecord
 import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
 

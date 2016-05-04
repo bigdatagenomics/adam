@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.features
 
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.models._

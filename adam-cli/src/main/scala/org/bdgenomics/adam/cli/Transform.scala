@@ -19,7 +19,7 @@ package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.parquet.filter2.dsl.Dsl._
-import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
@@ -36,6 +36,7 @@ import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, MDTagging }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
+import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object Transform extends BDGCommandCompanion {

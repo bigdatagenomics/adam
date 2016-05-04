@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read.realignment
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import htsjdk.samtools.CigarOperator
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
