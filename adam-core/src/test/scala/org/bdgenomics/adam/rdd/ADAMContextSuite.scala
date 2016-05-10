@@ -393,5 +393,25 @@ class ADAMContextSuite extends ADAMFunSuite {
     val reloadedReads = sc.loadAlignments(outputPath)
     assert(reads.count === reloadedReads.count)
   }
+
+  sparkTest("read a gzipped fasta file") {
+    val inputPath = resourcePath("chr20.250k.fa.gz")
+    val contigFragments: RDD[NucleotideContigFragment] = sc.loadFasta(inputPath, 10000L).sortBy(_.getFragmentNumber.toInt)
+    assert(contigFragments.count() === 26)
+    val first: NucleotideContigFragment = contigFragments.first()
+    assert(first.getContig.getContigName === "gi|224384749|gb|CM000682.1|")
+    assert(first.getDescription === "Homo sapiens chromosome 20, GRCh37 primary reference assembly")
+    assert(first.getFragmentNumber === 0)
+    assert(first.getFragmentSequence.length === 10000)
+    assert(first.getFragmentStartPosition === 0L)
+    assert(first.getFragmentEndPosition === 9999L)
+    assert(first.getNumberOfFragmentsInContig === 26)
+
+    // 250k file actually has 251930 bases
+    val last: NucleotideContigFragment = contigFragments.collect().last
+    assert(last.getFragmentNumber === 25)
+    assert(last.getFragmentStartPosition === 250000L)
+    assert(last.getFragmentEndPosition === 251929L)
+  }
 }
 

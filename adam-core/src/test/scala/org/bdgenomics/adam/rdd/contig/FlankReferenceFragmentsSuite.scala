@@ -31,6 +31,7 @@ class FlankReferenceFragmentsSuite extends FunSuite {
         .build())
       .setFragmentSequence("AAAAATTTTT")
       .setFragmentStartPosition(0L)
+      .setFragmentEndPosition(9L)
       .build()), (ReferenceRegion("chr1", 20L, 30L),
       NucleotideContigFragment.newBuilder()
       .setContig(Contig.newBuilder()
@@ -38,6 +39,7 @@ class FlankReferenceFragmentsSuite extends FunSuite {
         .build())
       .setFragmentSequence("CCCCCGGGGG")
       .setFragmentStartPosition(20L)
+      .setFragmentEndPosition(29L)
       .build()))
 
     val fragments = FlankReferenceFragments.flank(testIter, 5).toSeq
@@ -46,8 +48,10 @@ class FlankReferenceFragmentsSuite extends FunSuite {
     fragments.foreach(_.getFragmentSequence.length === 10)
     assert(fragments(0).getFragmentSequence === "AAAAATTTTT")
     assert(fragments(0).getFragmentStartPosition === 0L)
+    assert(fragments(0).getFragmentEndPosition === 9L)
     assert(fragments(1).getFragmentSequence === "CCCCCGGGGG")
     assert(fragments(1).getFragmentStartPosition === 20L)
+    assert(fragments(1).getFragmentEndPosition === 29L)
   }
 
   test("put flanks on adjacent fragments") {
@@ -58,6 +62,7 @@ class FlankReferenceFragmentsSuite extends FunSuite {
         .build())
       .setFragmentSequence("AAAAATTTTT")
       .setFragmentStartPosition(0L)
+      .setFragmentEndPosition(9L)
       .build()), (ReferenceRegion("chr1", 10L, 20L),
       NucleotideContigFragment.newBuilder()
       .setContig(Contig.newBuilder()
@@ -65,6 +70,7 @@ class FlankReferenceFragmentsSuite extends FunSuite {
         .build())
       .setFragmentSequence("NNNNNUUUUU")
       .setFragmentStartPosition(10L)
+      .setFragmentEndPosition(19L)
       .build()), (ReferenceRegion("chr1", 20L, 30L),
       NucleotideContigFragment.newBuilder()
       .setContig(Contig.newBuilder()
@@ -72,6 +78,7 @@ class FlankReferenceFragmentsSuite extends FunSuite {
         .build())
       .setFragmentSequence("CCCCCGGGGG")
       .setFragmentStartPosition(20L)
+      .setFragmentEndPosition(29L)
       .build()))
 
     val fragments = FlankReferenceFragments.flank(testIter, 5).toSeq
@@ -79,9 +86,12 @@ class FlankReferenceFragmentsSuite extends FunSuite {
     assert(fragments.size === 3)
     assert(fragments(0).getFragmentSequence === "AAAAATTTTTNNNNN")
     assert(fragments(0).getFragmentStartPosition === 0L)
+    assert(fragments(0).getFragmentEndPosition === 14L)
     assert(fragments(1).getFragmentSequence === "TTTTTNNNNNUUUUUCCCCC")
     assert(fragments(1).getFragmentStartPosition === 5L)
+    assert(fragments(1).getFragmentEndPosition === 24L)
     assert(fragments(2).getFragmentSequence === "UUUUUCCCCCGGGGG")
     assert(fragments(2).getFragmentStartPosition === 15L)
+    assert(fragments(2).getFragmentEndPosition === 29L)
   }
 }
