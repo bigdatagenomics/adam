@@ -57,8 +57,11 @@ private[contig] object FlankReferenceFragments extends Serializable {
           f._2.setFragmentSequence(lastSequence.takeRight(flankSize) + currSequence)
           f._2.setDescription("f")
 
-          // we must change the start position of the fragment we are appending in front of
+          // we must change the start position of the fragment we are prepending to
           f._2.setFragmentStartPosition(f._2.getFragmentStartPosition - flankSize.toLong)
+          // and the end position of the fragment we are appending to
+          copyLastFragment._2.setFragmentEndPosition(
+            copyLastFragment._2.getFragmentStartPosition + copyLastFragment._2.getFragmentSequence.length - 1L)
         }
 
         // overwrite last fragment

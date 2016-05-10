@@ -281,6 +281,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setFragmentSequence("ACTGTAC")
       .setFragmentNumber(null)
       .setFragmentStartPosition(null)
+      .setFragmentEndPosition(null)
       .setNumberOfFragmentsInContig(null)
       .build
 
@@ -307,6 +308,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setFragmentSequence("ACTGTAC")
       .setFragmentNumber(null)
       .setFragmentStartPosition(null)
+      .setFragmentEndPosition(null)
       .setNumberOfFragmentsInContig(1)
       .build
 
@@ -333,6 +335,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setFragmentSequence("ACTGTAC")
       .setFragmentNumber(0)
       .setFragmentStartPosition(null)
+      .setFragmentEndPosition(null)
       .setNumberOfFragmentsInContig(null)
       .build
 
@@ -444,6 +447,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setFragmentSequence("ACTGTAC")
       .setFragmentNumber(null)
       .setFragmentStartPosition(null)
+      .setFragmentEndPosition(null)
       .setNumberOfFragmentsInContig(null)
       .build
 
@@ -465,6 +469,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setFragmentSequence("ACTGTAC")
       .setFragmentNumber(0)
       .setFragmentStartPosition(0L)
+      .setFragmentEndPosition(6L)
       .setNumberOfFragmentsInContig(1)
       .build
 
@@ -495,6 +500,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setFragmentSequence(sequence0)
       .setFragmentNumber(0)
       .setFragmentStartPosition(0L)
+      .setFragmentEndPosition(sequence0.length - 1L)
       .setNumberOfFragmentsInContig(1)
       .build()
     val fragment1 = NucleotideContigFragment.newBuilder()
@@ -502,6 +508,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setFragmentSequence(sequence1)
       .setFragmentNumber(0)
       .setFragmentStartPosition(0L)
+      .setFragmentEndPosition(sequence1.length - 1L)
       .setNumberOfFragmentsInContig(2)
       .build()
     val fragment2 = NucleotideContigFragment.newBuilder()
@@ -509,6 +516,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setFragmentSequence(sequence2)
       .setFragmentNumber(1)
       .setFragmentStartPosition(5L)
+      .setFragmentEndPosition(sequence2.length - 1L)
       .setNumberOfFragmentsInContig(2)
       .build()
 

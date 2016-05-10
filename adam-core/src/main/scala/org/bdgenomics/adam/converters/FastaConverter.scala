@@ -214,6 +214,7 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
           .setFragmentSequence(bases)
           .setFragmentNumber(index)
           .setFragmentStartPosition(index * fragmentLength)
+          .setFragmentEndPosition(index * fragmentLength + bases.length - 1L)
           .setNumberOfFragmentsInContig(fragmentCount)
           .setFragmentLength(bases.length)
 
