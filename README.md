@@ -248,6 +248,7 @@ For example, the following code snippet will generate a result similar to [the k
 `kmer.scala`
 ```scala
 import org.bdgenomics.adam.rdd.ADAMContext
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.projections.{AlignmentRecordField, Projection}
 
 val ac = new ADAMContext(sc)
