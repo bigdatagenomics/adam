@@ -25,7 +25,7 @@ import htsjdk.variant.variantcontext.{
   VariantContextBuilder
 }
 import java.util.Collections
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext => ADAMVariantContext

@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import Ordering.Option
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.instrumentation.Timers.CreateReferencePositionPair
 import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.rich.RichAlignmentRecord

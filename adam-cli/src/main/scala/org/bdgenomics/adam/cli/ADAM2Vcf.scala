@@ -19,12 +19,13 @@ package org.bdgenomics.adam.cli
 
 import java.io.File
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.SparkContext
 import org.apache.hadoop.mapreduce.Job
 import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.utils.cli._
+import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
 import scala.Option
 

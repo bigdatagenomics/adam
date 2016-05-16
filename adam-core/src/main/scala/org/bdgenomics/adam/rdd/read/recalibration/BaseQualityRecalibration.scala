@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read.recalibration
 import htsjdk.samtools.ValidationStringency
 import java.io._
 import org.apache.spark.SparkContext._
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.SnpTable

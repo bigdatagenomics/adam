@@ -21,7 +21,7 @@ import java.util.logging.Level._
 import javax.inject.Inject
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.utils.cli._
 

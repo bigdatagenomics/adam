@@ -23,7 +23,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.apache.parquet.avro.AvroReadSupport
 import org.apache.parquet.hadoop.ParquetReader
 

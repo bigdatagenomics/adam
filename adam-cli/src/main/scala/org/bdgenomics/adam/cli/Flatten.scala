@@ -20,10 +20,11 @@ package org.bdgenomics.adam.cli
 import org.apache.avro.Schema
 import org.apache.avro.generic.IndexedRecord
 import org.apache.spark.rdd.MetricsContext._
-import org.apache.spark.{ Logging, SparkContext }
+import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.Flattener
 import org.bdgenomics.utils.cli._
+import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.misc.HadoopUtil
 import org.kohsuke.args4j.Argument

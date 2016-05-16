@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.contig
 import com.google.common.base.Splitter
 import java.util.logging.Level
 import org.apache.avro.specific.SpecificRecord
-import org.apache.spark.Logging
+import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.FragmentConverter
