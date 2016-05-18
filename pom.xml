@@ -18,7 +18,7 @@
 
   <properties>
     <java.version>1.8</java.version>
-    <avro.version>1.7.7</avro.version> <!-- note: 1.8.0 is available -->
+    <avro.version>1.8.0</avro.version>
     <!-- informative only, used in about template substitution -->
     <scala.version>2.10</scala.version>
     <spark.version>1.6.1</spark.version>
@@ -28,7 +28,8 @@
     <hadoop-bam.version>7.5.0</hadoop-bam.version>
     <scoverage.version>1.1.1</scoverage.version>
     <slf4j.version>1.7.21</slf4j.version>
-    <utils.version>0.2.6</utils.version>
+    <bdg-formats.version>0.7.1</bdg-formats.version>
+    <bdg-utils.version>0.2.6</bdg-utils.version>
     <htsjdk.version>2.3.0</htsjdk.version>
   </properties>
 
@@ -322,7 +323,7 @@
       <dependency>
         <groupId>org.bdgenomics.bdg-formats</groupId>
         <artifactId>bdg-formats</artifactId>
-        <version>0.7.1</version>
+        <version>${bdg-formats.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>
@@ -366,7 +367,7 @@
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
         <artifactId>utils-misc_2.10</artifactId>
-        <version>${utils.version}</version>
+        <version>${bdg-utils.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
         <exclusions>
@@ -379,7 +380,7 @@
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
         <artifactId>utils-misc_2.10</artifactId>
-        <version>${utils.version}</version>
+        <version>${bdg-utils.version}</version>
          <exclusions>
           <exclusion>
             <groupId>org.apache.spark</groupId>
@@ -390,12 +391,12 @@
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
         <artifactId>utils-cli_2.10</artifactId>
-        <version>${utils.version}</version>
+        <version>${bdg-utils.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
         <artifactId>utils-io_2.10</artifactId>
-        <version>${utils.version}</version>
+        <version>${bdg-utils.version}</version>
         <exclusions>
           <exclusion>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -406,7 +407,7 @@
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
         <artifactId>utils-metrics_2.10</artifactId>
-        <version>${utils.version}</version>
+        <version>${bdg-utils.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
