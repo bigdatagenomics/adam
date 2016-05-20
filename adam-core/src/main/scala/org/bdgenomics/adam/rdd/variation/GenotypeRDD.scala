@@ -35,15 +35,17 @@ case class GenotypeRDD(rdd: RDD[Genotype],
 
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {
     def overlapsQuery(rec: Genotype): Boolean =
-      rec.getVariant.getContig.getContigName == query.referenceName &&
+      rec.getVariant.getContigName == query.referenceName &&
         rec.getVariant.getStart < query.end &&
         rec.getVariant.getEnd > query.start
     rdd.filter(overlapsQuery)
   }
 
   def toVariantContextRDD: VariantContextRDD = {
-    val vcRdd = rdd.keyBy({ g => RichVariant.variantToRichVariant(g.getVariant) })
-      .groupByKey
+    val vcIntRdd: RDD[(RichVariant, Genotype)] = rdd.keyBy(g => {
+      RichVariant.genotypeToRichVariant(g)
+    })
+    val vcRdd = vcIntRdd.groupByKey
       .map { case (v: RichVariant, g) => new VariantContext(ReferencePosition(v), v, g, None) }
 
     VariantContextRDD(vcRdd, sequences, samples)

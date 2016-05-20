@@ -48,8 +48,8 @@ class FlattenSuite extends ADAMFunSuite {
 
     assert(records.size === 15)
     assert(records(0).getSampleId === "NA12878")
-    assert(records(0).getVariant.getStart == 14396L)
-    assert(records(0).getVariant.getEnd == 14400L)
+    assert(records(0).getStart == 14396L)
+    assert(records(0).getEnd == 14400L)
 
     val flattenArgLine = "%s %s".format(outputPath, flatPath).split("\\s+")
     val flattenArgs: FlattenArgs = Args4j.apply[FlattenArgs](flattenArgLine)
@@ -61,8 +61,8 @@ class FlattenSuite extends ADAMFunSuite {
 
     assert(flatRecords.size === 15)
     assert(flatRecords(0).get("sampleId") === "NA12878")
-    assert(flatRecords(0).get("variant__start") === 14396L)
-    assert(flatRecords(0).get("variant__end") === 14400L)
+    assert(flatRecords(0).get("start") === 14396L)
+    assert(flatRecords(0).get("end") === 14400L)
   }
 
 }

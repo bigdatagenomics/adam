@@ -41,7 +41,7 @@ class ReferencePositionSuite extends FunSuite {
 
   test("create reference position from variant") {
     val variant = Variant.newBuilder()
-      .setContig(Contig.newBuilder.setContigName("chr10").build())
+      .setContigName("chr10")
       .setReferenceAllele("A")
       .setAlternateAllele("T")
       .setStart(10L)
@@ -56,12 +56,15 @@ class ReferencePositionSuite extends FunSuite {
   test("create reference position from genotype") {
     val variant = Variant.newBuilder()
       .setStart(100L)
-      .setContig(Contig.newBuilder.setContigName("chr10").build())
+      .setContigName("chr10")
       .setReferenceAllele("A")
       .setAlternateAllele("T")
       .build()
     val genotype = Genotype.newBuilder()
       .setVariant(variant)
+      .setStart(100L)
+      .setEnd(101L)
+      .setContigName("chr10")
       .setSampleId("NA12878")
       .build()
 

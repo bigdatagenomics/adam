@@ -57,7 +57,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     .chr("1")
 
   def adamSNVBuilder(contig: String = "1"): Variant.Builder = Variant.newBuilder()
-    .setContig(Contig.newBuilder().setContigName(contig).build())
+    .setContigName(contig)
     .setStart(0L)
     .setReferenceAllele("A")
     .setAlternateAllele("T")
@@ -72,7 +72,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVC.genotypes.size === 0)
 
     val variant = adamVC.variant
-    assert(variant.getContig.getContigName === "1")
+    assert(variant.getContigName === "1")
 
     assert(variant.getReferenceAllele === "A")
     assert(variant.getStart === 0L)
@@ -86,7 +86,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     val adamVC = adamVCs.head
     val variant = adamVC.variant
-    assert(variant.getContig.getContigName === "NC_000001.10")
+    assert(variant.getContigName === "NC_000001.10")
   }
 
   test("Convert GATK site-only CNV to ADAM") {
@@ -99,7 +99,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVC.genotypes.size === 0)
 
     val variant = adamVC.variant
-    assert(variant.getContig.getContigName === "1")
+    assert(variant.getContigName === "1")
 
     assert(variant.getReferenceAllele === "A")
     assert(variant.getAlternateAllele === "<CN0>")

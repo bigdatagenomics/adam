@@ -70,7 +70,7 @@ object IndelTable {
   def apply(variants: RDD[Variant]): IndelTable = {
     val consensus: Map[String, Iterable[Consensus]] = variants.filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
       .map(v => {
-        val referenceName = v.getContig.getContigName
+        val referenceName = v.getContigName
         val consensus = if (v.getReferenceAllele.length > v.getAlternateAllele.length) {
           // deletion
           val deletionLength = v.getReferenceAllele.length - v.getAlternateAllele.length

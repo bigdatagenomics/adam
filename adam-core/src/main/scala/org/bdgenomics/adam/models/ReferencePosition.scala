@@ -60,7 +60,7 @@ object ReferencePosition extends Serializable {
    * @return The reference position of this variant.
    */
   def apply(variant: Variant): ReferencePosition = {
-    new ReferencePosition(variant.getContig.getContigName, variant.getStart)
+    new ReferencePosition(variant.getContigName, variant.getStart)
   }
 
   /**
@@ -70,8 +70,20 @@ object ReferencePosition extends Serializable {
    * @return The reference position of this genotype.
    */
   def apply(genotype: Genotype): ReferencePosition = {
-    val variant = genotype.getVariant
-    new ReferencePosition(variant.getContig.getContigName, variant.getStart)
+    val contigNameSet = Seq(Option(genotype.getContigName), Option(genotype.getVariant.getContigName))
+      .flatten
+      .toSet
+    val startSet = Seq(Option(genotype.getStart), Option(genotype.getVariant.getStart))
+      .flatten
+      .toSet
+    require(contigNameSet.nonEmpty, "Genotype has no contig name: %s".format(genotype))
+    require(contigNameSet.size == 1, "Genotype has multiple contig names: %s, %s".format(
+      contigNameSet, genotype))
+    require(startSet.nonEmpty, "Genotype has no start: %s".format(genotype))
+    require(startSet.size == 1, "Genotype has multiple starts: %s, %s".format(
+      startSet, genotype))
+
+    new ReferencePosition(contigNameSet.head, startSet.head)
   }
 
   def apply(referenceName: String, pos: Long): ReferencePosition = {

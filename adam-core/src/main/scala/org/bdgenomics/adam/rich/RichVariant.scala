@@ -17,9 +17,18 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.formats.avro.Variant
+import org.bdgenomics.formats.avro.{ Genotype, Variant }
 
 object RichVariant {
+  def genotypeToRichVariant(genotype: Genotype): RichVariant = {
+    val variant = Variant.newBuilder(genotype.variant)
+      .setContigName(genotype.getContigName)
+      .setStart(genotype.getStart)
+      .setEnd(genotype.getEnd)
+      .build()
+    variantToRichVariant(variant)
+  }
+
   implicit def variantToRichVariant(variant: Variant): RichVariant = new RichVariant(variant)
   implicit def richVariantToVariant(variant: RichVariant): Variant = variant.variant
 }

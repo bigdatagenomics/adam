@@ -40,7 +40,7 @@ class ConsensusGeneratorFromKnowns(file: String, @transient sc: SparkContext) ex
     val rdd: RDD[Variant] = sc.loadVariants(file)
 
     Some(rdd.filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
-      .map(v => ReferenceRegion(v.getContig.getContigName, v.getStart, v.getStart + v.getReferenceAllele.length))
+      .map(v => ReferenceRegion(v.getContigName, v.getStart, v.getStart + v.getReferenceAllele.length))
       .map(r => new IndelRealignmentTarget(Some(r), r)))
   }
 

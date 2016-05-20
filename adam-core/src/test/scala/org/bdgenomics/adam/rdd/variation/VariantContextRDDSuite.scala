@@ -34,7 +34,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       .setContigLength(249250621L)
       .build
     val v0 = Variant.newBuilder
-      .setContig(contig)
+      .setContigName("chr11")
       .setStart(17409572)
       .setReferenceAllele("T")
       .setAlternateAllele("C")

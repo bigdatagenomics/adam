@@ -27,7 +27,7 @@ class ADAMVariationRDDFunctionsSuite extends ADAMFunSuite {
 
   sparkTest("joins SNV database annotation") {
     val v0 = Variant.newBuilder
-      .setContig(Contig.newBuilder.setContigName("11").build)
+      .setContigName("11")
       .setStart(17409572)
       .setReferenceAllele("T")
       .setAlternateAllele("C")

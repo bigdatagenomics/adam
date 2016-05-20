@@ -25,7 +25,7 @@ import scala.collection.JavaConversions._
 class RichGenotypeSuite extends FunSuite {
 
   def v0 = Variant.newBuilder
-    .setContig(Contig.newBuilder.setContigName("chr1").build)
+    .setContigName("chr1")
     .setStart(0).setReferenceAllele("A").setAlternateAllele("T")
     .build
 

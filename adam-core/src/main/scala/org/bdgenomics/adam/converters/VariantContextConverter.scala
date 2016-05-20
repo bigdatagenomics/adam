@@ -219,18 +219,14 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     extractVariantDatabaseAnnotation(variant, vc)
   }
 
-  private def createContig(vc: BroadVariantContext): Contig = {
-    val contigName = contigToRefSeq.getOrElse(vc.getChr, vc.getChr)
-
-    Contig.newBuilder()
-      .setContigName(contigName)
-      .build()
+  private def createContig(vc: BroadVariantContext): String = {
+    contigToRefSeq.getOrElse(vc.getChr, vc.getChr)
   }
 
   private def createADAMVariant(vc: BroadVariantContext, alt: Option[String]): Variant = {
     // VCF CHROM, POS, REF and ALT
     val builder = Variant.newBuilder
-      .setContig(createContig(vc))
+      .setContigName(createContig(vc))
       .setStart(vc.getStart - 1 /* ADAM is 0-indexed */ )
       .setEnd(vc.getEnd /* ADAM is 0-indexed, so the 1-indexed inclusive end becomes exclusive */ )
       .setReferenceAllele(vc.getReference.getBaseString)
@@ -256,10 +252,23 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     annotations: VariantCallingAnnotations,
     setPL: (htsjdk.variant.variantcontext.Genotype, Genotype.Builder) => Unit): Seq[Genotype] = {
 
+    // dupe variant, get contig name/start/end and null out
+    val contigName = variant.getContigName
+    val start = variant.getStart
+    val end = variant.getEnd
+    val newVariant = Variant.newBuilder(variant)
+      .setContigName(null)
+      .setStart(null)
+      .setEnd(null)
+      .build()
+
     val genotypes: Seq[Genotype] = vc.getGenotypes.map(
       (g: htsjdk.variant.variantcontext.Genotype) => {
         val genotype: Genotype.Builder = Genotype.newBuilder
-          .setVariant(variant)
+          .setVariant(newVariant)
+          .setContigName(contigName)
+          .setStart(start)
+          .setEnd(end)
           .setVariantCallingAnnotations(annotations)
           .setSampleId(g.getSampleName)
           .setAlleles(g.getAlleles.map(VariantContextConverter.convertAllele(vc, _)))
@@ -346,8 +355,8 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     val variant: Variant = vc.variant
     val vcb = new VariantContextBuilder()
       .chr(refSeqToContig.getOrElse(
-        variant.getContig.getContigName,
-        variant.getContig.getContigName
+        variant.getContigName,
+        variant.getContigName
       ))
       .start(variant.getStart + 1 /* Recall ADAM is 0-indexed */ )
       .stop(variant.getStart + variant.getReferenceAllele.length)
