@@ -172,7 +172,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     assert(dups.size == 10 && dups.forall(p => p.getReadName.startsWith("fragment")))
   }
 
-  test("quality scores") {
+  sparkTest("quality scores") {
     // The ascii value 53 is equal to a phred score of 20
     val qual = 53.toChar.toString * 100
     val record = AlignmentRecord.newBuilder().setQual(qual).build()
