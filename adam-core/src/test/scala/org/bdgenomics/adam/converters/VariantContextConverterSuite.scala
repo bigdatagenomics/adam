@@ -183,6 +183,11 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       .setVariant(variant)
       .setSampleId("NA12878")
       .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
+      .setVariantCallingAnnotations(VariantCallingAnnotations.newBuilder()
+        .setFisherStrandBiasPValue(3.0f)
+        .setRmsMapQ(0.0f)
+        .setMapq0Reads(5)
+        .build)
       .build
 
     val converter = new VariantContextConverter
@@ -192,6 +197,9 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(gatkVC.hasGenotype("NA12878"))
     val gatkGT = gatkVC.getGenotype("NA12878")
     assert(gatkGT.getType === GenotypeType.HET)
+    assert(gatkVC.hasAttribute("FS"))
+    assert(gatkVC.hasAttribute("MQ"))
+    assert(gatkVC.hasAttribute("MQ0"))
   }
 
   test("Convert GATK multi-allelic sites-only SNVs to ADAM") {
