@@ -281,13 +281,13 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(gt.getReadDepth === 20)
   }
 
-  ignore("can read a gzipped .vcf file") {
+  sparkTest("can read a gzipped .vcf file") {
     val path = resourcePath("test.vcf.gz")
     val vcs = sc.loadVcf(path, None)
     assert(vcs.count === 6)
   }
 
-  ignore("can read a BGZF gzipped .vcf file") {
+  sparkTest("can read a BGZF gzipped .vcf file") {
     val path = resourcePath("test.vcf.bgzf.gz")
     val vcs = sc.loadVcf(path, None)
     assert(vcs.count === 6)

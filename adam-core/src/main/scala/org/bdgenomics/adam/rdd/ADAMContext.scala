@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd
 import java.io.{ File, FileNotFoundException, InputStream }
 import java.util.regex.Pattern
 import htsjdk.samtools.{ IndexedBamInputFormat, SAMFileHeader, ValidationStringency }
+import htsjdk.variant.vcf.VCFHeader
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
 import org.apache.avro.generic.IndexedRecord
@@ -132,13 +133,38 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   private[rdd] def loadVcfMetadata(filePath: String): (SequenceDictionary, Seq[String]) = {
-    val vcfHeader = VCFHeaderReader.readHeaderFrom(WrapSeekable.openPath(sc.hadoopConfiguration,
-      new Path(filePath)))
-    val sd = SequenceDictionary.fromVCFHeader(vcfHeader)
-    val samples = asScalaBuffer(vcfHeader.getGenotypeSamples)
-      .map(s => s: String) // force conversion java -> scala string
-      .toSeq
-    (sd, samples)
+    def headerToMetadata(vcfHeader: VCFHeader): (SequenceDictionary, Seq[String]) = {
+      val sd = SequenceDictionary.fromVCFHeader(vcfHeader)
+      val samples = asScalaBuffer(vcfHeader.getGenotypeSamples)
+        .map(s => s: String) // force conversion java -> scala string
+        .toSeq
+      (sd, samples)
+    }
+
+    try {
+      val vcfHeader = VCFHeaderReader.readHeaderFrom(WrapSeekable.openPath(sc.hadoopConfiguration,
+        new Path(filePath)))
+      headerToMetadata(vcfHeader)
+    } catch {
+      case e: Throwable => {
+
+        // due to a bug upstream in Hadoop-BAM, the VCFHeaderReader class errors when reading
+        // headers from .vcf.gz files
+        //
+        // to WAR this, we read a record from the file using the input format, which correctly
+        // determines the VCF input type. calling first should lead to us only reading a single record.
+        log.warn("Caught exception (%s) when trying to load VCF metadata. Retrying via read as RDD.".format(e))
+        val vcfHeader = readVcfRecords(filePath)
+          .map(v => {
+            v._2
+              .get
+              .asInstanceOf[VariantContextWithHeader]
+              .getHeader
+          }).first
+
+        headerToMetadata(vcfHeader)
+      }
+    }
   }
 
   private[rdd] def loadAvroSequences(filePath: String): SequenceDictionary = {
@@ -593,6 +619,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     ))
   }
 
+  private def readVcfRecords(filePath: String): RDD[(LongWritable, VariantContextWritable)] = {
+    // load vcf data
+    val job = HadoopUtil.newJob(sc)
+    job.getConfiguration().set("io.compression.codecs", classOf[BGZFCodec].getCanonicalName())
+    sc.newAPIHadoopFile(
+      filePath,
+      classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
+      ContextUtil.getConfiguration(job)
+    )
+  }
+
   /**
    * Loads a VCF file into an RDD.
    *
@@ -604,15 +641,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadVcf(filePath: String,
               sdOpt: Option[SequenceDictionary] = None): VariantContextRDD = {
 
-    // load vcf data
-    val job = HadoopUtil.newJob(sc)
-    job.getConfiguration().set("io.compression.codecs", classOf[BGZFCodec].getCanonicalName())
     val vcc = new VariantContextConverter(sdOpt)
-    val records = sc.newAPIHadoopFile(
-      filePath,
-      classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
-      ContextUtil.getConfiguration(job)
-    )
+
+    // load records from VCF
+    val records = readVcfRecords(filePath)
 
     // attach instrumentation
     if (Metrics.isRecording) records.instrument() else records

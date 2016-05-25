@@ -18,14 +18,30 @@
 package org.bdgenomics.adam.serialization
 
 import java.util
-
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
-import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator, SAMFileHeader, SAMSequenceDictionary, SAMSequenceRecord }
+import htsjdk.samtools.{
+  Cigar,
+  CigarElement,
+  CigarOperator,
+  SAMFileHeader,
+  SAMSequenceDictionary,
+  SAMSequenceRecord
+}
+import htsjdk.variant.vcf.{
+  VCFContigHeaderLine,
+  VCFFilterHeaderLine,
+  VCFFormatHeaderLine,
+  VCFInfoHeaderLine,
+  VCFHeader,
+  VCFHeaderLine,
+  VCFHeaderLineCount,
+  VCFHeaderLineType
+}
 import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputStream }
 import org.apache.avro.io.{ BinaryDecoder, BinaryEncoder, DecoderFactory, EncoderFactory }
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificDatumWriter, SpecificRecord }
-import org.apache.hadoop.io.Text
+import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.spark.serializer.KryoRegistrator
 import org.bdgenomics.adam.converters.FastaConverter.FastaDescriptionLine
 import org.bdgenomics.adam.converters.FragmentCollector
@@ -38,7 +54,7 @@ import org.bdgenomics.adam.rich.{ DecadentRead, ReferenceSequenceContext, RichAl
 import org.bdgenomics.adam.util.{ MdTag, QualityScore, ReferenceContigMap, TwoBitFile, TwoBitFileSerializer }
 import org.bdgenomics.formats.avro._
 import org.codehaus.jackson.node.{ BooleanNode, NullNode, TextNode }
-
+import org.seqdoop.hadoop_bam.{ VariantContextWithHeader, VariantContextWritable }
 import scala.collection.immutable
 import scala.reflect.ClassTag
 
@@ -144,6 +160,19 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Array[VariantContext]])
     kryo.register(classOf[VariantContext])
 
+    // collected in ADAMContext.loadVcfMetadata
+    // from htsjdk
+    kryo.register(classOf[VCFContigHeaderLine])
+    kryo.register(classOf[VCFFilterHeaderLine])
+    kryo.register(classOf[VCFFormatHeaderLine])
+    kryo.register(classOf[VCFInfoHeaderLine])
+    kryo.register(classOf[Array[VCFHeader]])
+    kryo.register(classOf[VCFHeader])
+    kryo.register(classOf[VCFHeaderLine])
+    kryo.register(classOf[VCFHeaderLineCount])
+    kryo.register(classOf[VCFHeaderLineType])
+    kryo.register(Class.forName("htsjdk.variant.vcf.VCFCompoundHeaderLine$SupportedHeaderLineType"))
+
     // Serialized in GeneSuite / FeatureRDDFunctions.toGene.
     kryo.register(classOf[Exon])
     kryo.register(classOf[Array[Exon]])
@@ -183,6 +212,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[MdTag])
     kryo.register(classOf[FragmentCollector])
     kryo.register(classOf[Text])
+    kryo.register(classOf[LongWritable])
 
     kryo.register(classOf[SAMSequenceDictionary])
     kryo.register(classOf[SAMFileHeader])
@@ -232,8 +262,9 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     kryo.register(classOf[QualityScore])
 
-    kryo.register(classOf[util.LinkedHashMap[_, _]])
     kryo.register(classOf[util.ArrayList[_]])
+    kryo.register(classOf[util.LinkedHashMap[_, _]])
+    kryo.register(classOf[util.LinkedHashSet[_]])
     kryo.register(classOf[util.HashMap[_, _]])
     kryo.register(classOf[util.HashSet[_]])
 
