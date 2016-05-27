@@ -266,6 +266,7 @@ val reads = ac.loadAlignments(
 // Generate, count and sort 21-mers
 val kmers =
   reads
+    .rdd
     .flatMap(_.getSequence.sliding(21).map(k => (k, 1L)))
     .reduceByKey(_ + _)
     .map(_.swap)
