@@ -35,9 +35,9 @@ case class GenotypeRDD(rdd: RDD[Genotype],
 
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {
     def overlapsQuery(rec: Genotype): Boolean =
-      rec.getVariant.getContigName == query.referenceName &&
-        rec.getVariant.getStart < query.end &&
-        rec.getVariant.getEnd > query.start
+      rec.getContigName == query.referenceName &&
+        rec.getStart < query.end &&
+        rec.getEnd > query.start
     rdd.filter(overlapsQuery)
   }
 
