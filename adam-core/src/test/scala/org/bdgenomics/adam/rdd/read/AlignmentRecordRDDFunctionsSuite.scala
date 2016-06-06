@@ -22,13 +22,28 @@ import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
+import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
+  SequenceDictionary,
+  SequenceRecord
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import scala.io.Source
 import scala.util.Random
+
+private object SequenceIndexWithReadOrdering extends Ordering[((Int, Long), (AlignmentRecord, Int))] {
+  def compare(a: ((Int, Long), (AlignmentRecord, Int)),
+              b: ((Int, Long), (AlignmentRecord, Int))): Int = {
+    if (a._1._1 == b._1._1) {
+      a._1._2.compareTo(b._1._2)
+    } else {
+      a._1._1.compareTo(b._1._1)
+    }
+  }
+}
 
 class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
 
@@ -39,11 +54,9 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
       val mapped = random.nextBoolean()
       val builder = AlignmentRecord.newBuilder().setReadMapped(mapped)
       if (mapped) {
-        val contig = Contig.newBuilder
-          .setContigName(random.nextInt(numReadsToCreate / 10).toString)
-          .build
+        val contigName = random.nextInt(numReadsToCreate / 10).toString
         val start = random.nextInt(1000000)
-        builder.setContigName(contig.getContigName).setStart(start).setEnd(start)
+        builder.setContigName(contigName).setStart(start).setEnd(start)
       }
       builder.setReadName((0 until 20).map(i => (random.nextInt(100) + 64)).mkString)
       builder.build()
@@ -56,6 +69,50 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     // Make sure that we appropriately sorted the reads
     val expectedSortedReads = mapped.sortWith(
       (a, b) => a._1.getContigName.toString < b._1.getContigName.toString && a._1.getStart < b._1.getStart)
+    assert(expectedSortedReads === mapped)
+  }
+
+  sparkTest("sorting reads by reference index") {
+    val random = new Random("sortingIndices".hashCode)
+    val numReadsToCreate = 1000
+    val reads = for (i <- 0 until numReadsToCreate) yield {
+      val mapped = random.nextBoolean()
+      val builder = AlignmentRecord.newBuilder().setReadMapped(mapped)
+      if (mapped) {
+        val contigName = random.nextInt(numReadsToCreate / 10).toString
+        val start = random.nextInt(1000000)
+        builder.setContigName(contigName).setStart(start).setEnd(start)
+      }
+      builder.setReadName((0 until 20).map(i => (random.nextInt(100) + 64)).mkString)
+      builder.build()
+    }
+    val contigNames = reads.filter(_.getReadMapped).map(_.getContigName).toSet
+    val sd = new SequenceDictionary(contigNames.toSeq
+      .zipWithIndex
+      .map(kv => {
+        val (name, index) = kv
+        SequenceRecord(name, Int.MaxValue, referenceIndex = Some(index))
+      }).toVector)
+
+    val rdd = sc.parallelize(reads)
+    val sortedReads = rdd.sortReadsByReferencePositionAndIndex(sd).collect().zipWithIndex
+    val (mapped, unmapped) = sortedReads.partition(_._1.getReadMapped)
+
+    // Make sure that all the unmapped reads are placed at the end
+    assert(unmapped.forall(p => p._2 > mapped.takeRight(1)(0)._2))
+
+    def toIndex(r: AlignmentRecord): Int = {
+      sd(r.getContigName).get.referenceIndex.get
+    }
+
+    // Make sure that we appropriately sorted the reads
+    import scala.math.Ordering._
+    val expectedSortedReads = mapped.map(kv => {
+      val (r, idx) = kv
+      val start: Long = r.getStart
+      ((toIndex(r), start), (r, idx))
+    }).sortBy(_._1)
+      .map(_._2)
     assert(expectedSortedReads === mapped)
   }
 
