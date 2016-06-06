@@ -34,7 +34,7 @@ class TransformSuite extends ADAMFunSuite {
     val inputPath = copyResource("unordered.sam")
     val actualPath = tmpFile("ordered.sam")
     val expectedPath = copyResource("ordered.sam")
-    Transform(Array("-single", "-sort_reads", inputPath, actualPath)).run(sc)
+    Transform(Array("-single", "-sort_reads", "-sort_lexicographically", inputPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
@@ -54,7 +54,7 @@ class TransformSuite extends ADAMFunSuite {
     val actualPath = tmpFile("ordered.sam")
     val expectedPath = copyResource("ordered.sam")
     Transform(Array(inputPath, intermediateAdamPath)).run(sc)
-    Transform(Array("-single", "-sort_reads", intermediateAdamPath, actualPath)).run(sc)
+    Transform(Array("-single", "-sort_reads", "-sort_lexicographically", intermediateAdamPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 }

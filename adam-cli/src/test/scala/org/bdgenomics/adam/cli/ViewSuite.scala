@@ -18,8 +18,9 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli.Args4j
 
@@ -46,7 +47,7 @@ class ViewSuite extends ADAMFunSuite {
     val rdd = aRdd.rdd
     val rgd = aRdd.recordGroups
 
-    reads = transform.apply(rdd, rgd).collect()
+    reads = transform.apply(rdd, SequenceDictionary.empty, rgd).collect()
     readsCount = reads.size.toInt
   }
 

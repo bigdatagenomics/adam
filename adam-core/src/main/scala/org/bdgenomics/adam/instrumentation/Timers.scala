@@ -69,6 +69,7 @@ object Timers extends Metrics {
 
   // Sort Reads
   val SortReads = timer("Sort Reads")
+  val SortByIndex = timer("Sort Reads By Index")
 
   // File Saving
   val SAMSave = timer("SAM Save")

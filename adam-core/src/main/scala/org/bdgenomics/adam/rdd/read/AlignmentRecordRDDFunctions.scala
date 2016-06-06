@@ -44,6 +44,7 @@ import org.bdgenomics.utils.misc.Logging
 import org.seqdoop.hadoop_bam.SAMRecordWritable
 import scala.annotation.tailrec
 import scala.language.implicitConversions
+import scala.math.{ abs, min }
 import scala.reflect.ClassTag
 
 private[rdd] class AlignmentRecordRDDFunctions(val rdd: RDD[AlignmentRecord])
@@ -571,13 +572,37 @@ private[rdd] class AlignmentRecordRDDFunctions(val rdd: RDD[AlignmentRecord])
     // we sort the unmapped reads by read name. We prefix with tildes ("~";
     // ASCII 126) to ensure that the read name is lexicographically "after" the
     // contig names.
-    rdd.keyBy(r => {
+    rdd.sortBy(r => {
       if (r.getReadMapped) {
         ReferencePosition(r)
       } else {
         ReferencePosition(s"~~~${r.getReadName}", 0)
       }
-    }).sortByKey().map(_._2)
+    })
+  }
+
+  def sortReadsByReferencePositionAndIndex(sd: SequenceDictionary): RDD[AlignmentRecord] = SortByIndex.time {
+    log.info("Sorting reads by reference index, using %s.".format(sd))
+
+    import scala.math.Ordering.{ Int => ImplicitIntOrdering, _ }
+
+    // NOTE: In order to keep unmapped reads from swamping a single partition
+    // we sort the unmapped reads by read name. To do this, we hash the sequence name
+    // and add the max contig index
+    val maxContigIndex = sd.records.flatMap(_.referenceIndex).max
+    rdd.sortBy(r => {
+      if (r.getReadMapped) {
+        val sr = sd(r.getContigName)
+        require(sr.isDefined, "Read %s has contig name %s not in dictionary %s.".format(
+          r, r.getContigName, sd))
+        require(sr.get.referenceIndex.isDefined,
+          "Contig %s from sequence dictionary lacks an index.".format(sr))
+
+        (sr.get.referenceIndex.get, r.getStart: Long)
+      } else {
+        (min(abs(r.getReadName.hashCode + maxContigIndex), Int.MaxValue), 0L)
+      }
+    })
   }
 
   /**

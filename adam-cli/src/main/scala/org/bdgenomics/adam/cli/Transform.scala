@@ -59,6 +59,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var useAlignedReadPredicate: Boolean = false
   @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
   var sortReads: Boolean = false
+  @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
+  var sortLexicographically: Boolean = false
   @Args4jOption(required = false, name = "-mark_duplicate_reads", usage = "Mark duplicate reads")
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
@@ -123,6 +125,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   val stringency = ValidationStringency.valueOf(args.stringency)
 
   def apply(rdd: RDD[AlignmentRecord],
+            sd: SequenceDictionary,
             rgd: RecordGroupDictionary): RDD[AlignmentRecord] = {
 
     var adamRecords = rdd
@@ -207,7 +210,11 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       }
 
       log.info("Sorting reads")
-      adamRecords = oldRdd.sortReadsByReferencePosition()
+      if (args.sortLexicographically) {
+        adamRecords = oldRdd.sortReadsByReferencePosition()
+      } else {
+        adamRecords = oldRdd.sortReadsByReferencePositionAndIndex(sd)
+      }
 
       if (args.cache) {
         oldRdd.unpersist()
@@ -329,15 +336,19 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     })
 
     // run our transformation
-    val outputRdd = this.apply(mergedRdd, mergedRgd)
+    val outputRdd = this.apply(mergedRdd, mergedSd, mergedRgd)
 
     // if we are sorting, we must strip the indices from the sequence dictionary
     // and sort the sequence dictionary
     //
     // we must do this because we do a lexicographic sort, not an index-based sort
     val sdFinal = if (args.sortReads) {
-      mergedSd.stripIndices
-        .sorted
+      if (args.sortLexicographically) {
+        mergedSd.stripIndices
+          .sorted
+      } else {
+        mergedSd
+      }
     } else {
       mergedSd
     }
