@@ -93,6 +93,7 @@ object ADAMContext {
 
   // add gene feature rdd functions
   implicit def convertBaseFeatureRDDToFeatureRDD(rdd: RDD[Feature]) = new FeatureRDDFunctions(rdd)
+  implicit def convertFeatureRDDToFeatureRDD(rdd: FeatureRDD) = new FeatureRDDFunctions(rdd)
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
@@ -737,28 +738,36 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     records.map(fastqRecordConverter.convertFragment)
   }
 
-  def loadGff3(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
+  def loadGff3(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new GFF3Parser().parse)
     if (Metrics.isRecording) records.instrument() else records
+    FeatureRDD(records)
   }
 
-  def loadGtf(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
-    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new GTFParser().parse)
+  def loadGtf(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
+    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
+      .flatMap(new GTFParser().parse)
     if (Metrics.isRecording) records.instrument() else records
+    FeatureRDD(records)
   }
 
-  def loadBed(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
-    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new BEDParser().parse)
+  def loadBed(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
+    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
+      .flatMap(new BEDParser().parse)
     if (Metrics.isRecording) records.instrument() else records
+    FeatureRDD(records)
   }
 
-  def loadNarrowPeak(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
-    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).flatMap(new NarrowPeakParser().parse)
+  def loadNarrowPeak(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
+    val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
+      .flatMap(new NarrowPeakParser().parse)
     if (Metrics.isRecording) records.instrument() else records
+    FeatureRDD(records)
   }
 
-  def loadIntervalList(filePath: String, minPartitions: Option[Int] = None): RDD[Feature] = {
-    val parsedLines = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism)).map(new IntervalListParser().parse)
+  def loadIntervalList(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
+    val parsedLines = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
+      .map(new IntervalListParser().parse)
     val (seqDict, records) = (SequenceDictionary(parsedLines.flatMap(_._1).collect(): _*), parsedLines.flatMap(_._2))
     val seqDictMap = seqDict.records.map(sr => sr.name -> sr).toMap
     val recordsWithContigs = for {
@@ -769,13 +778,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       .build()
 
     if (Metrics.isRecording) recordsWithContigs.instrument() else recordsWithContigs
+    FeatureRDD(recordsWithContigs, seqDict)
   }
 
   def loadParquetFeatures(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): RDD[Feature] = {
-    loadParquet[Feature](filePath, predicate, projection)
+    projection: Option[Schema] = None): FeatureRDD = {
+    val sd = loadAvroSequences(filePath)
+    val rdd = loadParquet[Feature](filePath, predicate, projection)
+    FeatureRDD(rdd, sd)
   }
 
   def loadParquetContigFragments(
@@ -833,13 +845,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   def loadFeatures(filePath: String,
                    projection: Option[Schema],
-                   minPartitions: Int): RDD[Feature] = {
+                   minPartitions: Int): FeatureRDD = {
     loadFeatures(filePath, projection, Some(minPartitions))
   }
 
   def loadFeatures(filePath: String,
                    projection: Option[Schema] = None,
-                   minPartitions: Option[Int] = None): RDD[Feature] = {
+                   minPartitions: Option[Int] = None): FeatureRDD = {
 
     if (filePath.endsWith(".bed")) {
       log.info(s"Loading $filePath as BED and converting to features. Projection is ignored.")
@@ -863,8 +875,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   def loadGenes(
     filePath: String,
-    projection: Option[Schema] = None): RDD[Gene] = {
-    import ADAMContext._
+    projection: Option[Schema] = None): GeneRDD = {
     loadFeatures(filePath, projection).toGenes()
   }
 

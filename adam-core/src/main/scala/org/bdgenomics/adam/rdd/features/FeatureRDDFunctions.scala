@@ -21,6 +21,7 @@ import com.google.common.collect.ComparisonChain
 import java.util.Comparator
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
+import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
 import org.bdgenomics.formats.avro.{ Feature, Strand }
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
@@ -65,7 +66,11 @@ trait FeatureOrdering[T <: Feature] extends Ordering[T] {
 }
 object FeatureOrdering extends FeatureOrdering[Feature] {}
 
-class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends Serializable with Logging {
+class FeatureRDDFunctions(featureRDD: RDD[Feature]) extends ADAMSequenceDictionaryRDDAggregator[Feature](featureRDD) with Logging {
+
+  def getSequenceRecords(elem: Feature): Set[SequenceRecord] = {
+    Set(SequenceRecord(elem.getContigName, 1L))
+  }
 
   private def strand(str: Strand): Boolean = str match {
     case Strand.FORWARD     => true
