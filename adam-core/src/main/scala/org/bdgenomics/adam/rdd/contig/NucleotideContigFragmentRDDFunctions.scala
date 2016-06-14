@@ -41,16 +41,6 @@ import scala.Some
 class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[NucleotideContigFragment](rdd) {
 
   /**
-   * Converts an RDD of nucleotide contig fragments into reads. Adjacent contig fragments are
-   * combined.
-   *
-   * @return Returns an RDD of reads.
-   */
-  def toReads: RDD[AlignmentRecord] = {
-    FragmentConverter.convertRdd(rdd)
-  }
-
-  /**
    * Save nucleotide contig fragments in FASTA format.
    *
    * @param fileName file name
