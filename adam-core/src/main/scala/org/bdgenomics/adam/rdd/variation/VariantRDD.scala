@@ -23,6 +23,9 @@ import org.bdgenomics.adam.rdd.AvroGenomicRDD
 import org.bdgenomics.formats.avro.Variant
 
 case class VariantRDD(rdd: RDD[Variant],
-                      sequences: SequenceDictionary) extends AvroGenomicRDD[Variant] {
+                      sequences: SequenceDictionary) extends AvroGenomicRDD[Variant, VariantRDD] {
 
+  protected def replaceRdd(newRdd: RDD[Variant]): VariantRDD = {
+    copy(rdd = newRdd)
+  }
 }

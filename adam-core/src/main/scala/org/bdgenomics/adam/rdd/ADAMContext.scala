@@ -120,7 +120,7 @@ object ADAMContext {
 
   implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
 
-  implicit def genomicRDDToRDD[T](gRdd: GenomicRDD[T]): RDD[T] = gRdd.rdd
+  implicit def genomicRDDToRDD[T, U <: GenomicRDD[T, U]](gRdd: GenomicRDD[T, U]): RDD[T] = gRdd.rdd
 }
 
 import org.bdgenomics.adam.rdd.ADAMContext._

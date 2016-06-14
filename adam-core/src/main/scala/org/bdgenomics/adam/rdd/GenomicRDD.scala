@@ -24,20 +24,26 @@ import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.formats.avro.{ Contig, RecordGroupMetadata }
 import org.bdgenomics.utils.cli.SaveArgs
 
-trait GenomicRDD[T] {
+trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
 
   val rdd: RDD[T]
 
   val sequences: SequenceDictionary
+
+  def transform(tFn: RDD[T] => RDD[T]): U = {
+    replaceRdd(tFn(rdd))
+  }
+
+  protected def replaceRdd(newRdd: RDD[T]): U
 }
 
-trait MultisampleGenomicRDD[T] extends GenomicRDD[T] {
+trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends GenomicRDD[T, U] {
 
   val samples: Seq[String]
 }
 
-abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest] extends AvroGenomicRDD[T]
-    with MultisampleGenomicRDD[T] {
+abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: MultisampleAvroGenomicRDD[T, U]] extends AvroGenomicRDD[T, U]
+    with MultisampleGenomicRDD[T, U] {
 
   override protected def saveMetadata(filePath: String) {
 
@@ -62,8 +68,8 @@ abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest] extends A
   }
 }
 
-abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest] extends ADAMRDDFunctions[T]
-    with GenomicRDD[T] {
+abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[T, U]] extends ADAMRDDFunctions[T]
+    with GenomicRDD[T, U] {
 
   /**
    * Called in saveAsParquet after saving RDD to Parquet to save metadata.

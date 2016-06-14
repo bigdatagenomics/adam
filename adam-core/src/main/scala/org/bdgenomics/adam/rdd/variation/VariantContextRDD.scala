@@ -28,12 +28,8 @@ import org.seqdoop.hadoop_bam._
 
 case class VariantContextRDD(rdd: RDD[VariantContext],
                              sequences: SequenceDictionary,
-                             samples: Seq[String]) extends MultisampleGenomicRDD[VariantContext]
+                             samples: Seq[String]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
-
-  def transform(tFn: RDD[VariantContext] => RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(tFn(rdd), sequences, samples)
-  }
 
   def toGenotypeRDD: GenotypeRDD = {
     GenotypeRDD(rdd.flatMap(_.genotypes),
@@ -124,5 +120,9 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
 
     log.info("Write %d records".format(writableVCs.count()))
     rdd.unpersist()
+  }
+
+  protected def replaceRdd(newRdd: RDD[VariantContext]): VariantContextRDD = {
+    copy(rdd = newRdd)
   }
 }

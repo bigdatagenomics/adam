@@ -31,7 +31,7 @@ import org.bdgenomics.formats.avro.{ Contig, Genotype }
 
 case class GenotypeRDD(rdd: RDD[Genotype],
                        sequences: SequenceDictionary,
-                       samples: Seq[String]) extends MultisampleAvroGenomicRDD[Genotype] {
+                       samples: Seq[String]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
 
   def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {
     def overlapsQuery(rec: Genotype): Boolean =
@@ -69,5 +69,9 @@ case class GenotypeRDD(rdd: RDD[Genotype],
     } else {
       false
     }
+  }
+
+  protected def replaceRdd(newRdd: RDD[Genotype]): GenotypeRDD = {
+    copy(rdd = newRdd)
   }
 }

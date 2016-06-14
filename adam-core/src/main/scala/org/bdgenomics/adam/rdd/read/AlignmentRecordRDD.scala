@@ -22,7 +22,7 @@ import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, Unaligned }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, RecordGroupMetadata }
 
-abstract class AlignmentRecordRDD extends AvroGenomicRDD[AlignmentRecord] {
+abstract class AlignmentRecordRDD extends AvroGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
 
   val recordGroups: RecordGroupDictionary
 
@@ -49,6 +49,9 @@ case class AlignedReadRDD(rdd: RDD[AlignmentRecord],
                           sequences: SequenceDictionary,
                           recordGroups: RecordGroupDictionary) extends AlignmentRecordRDD {
 
+  protected def replaceRdd(newRdd: RDD[AlignmentRecord]): AlignedReadRDD = {
+    copy(rdd = newRdd)
+  }
 }
 
 object UnalignedReadRDD {
@@ -67,5 +70,9 @@ object UnalignedReadRDD {
 case class UnalignedReadRDD(rdd: RDD[AlignmentRecord],
                             recordGroups: RecordGroupDictionary) extends AlignmentRecordRDD
     with Unaligned {
+
+  protected def replaceRdd(newRdd: RDD[AlignmentRecord]): UnalignedReadRDD = {
+    copy(rdd = newRdd)
+  }
 }
 
