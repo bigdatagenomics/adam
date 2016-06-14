@@ -31,6 +31,11 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
                              samples: Seq[String]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
 
+  def toDatabaseVariantAnnotationRDD: DatabaseVariantAnnotationRDD = {
+    DatabaseVariantAnnotationRDD(rdd.flatMap(_.databases),
+      sequences)
+  }
+
   def toGenotypeRDD: GenotypeRDD = {
     GenotypeRDD(rdd.flatMap(_.genotypes),
       sequences,

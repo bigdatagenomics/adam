@@ -808,25 +808,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   def loadVcfAnnotations(
     filePath: String,
-    sd: Option[SequenceDictionary] = None): RDD[DatabaseVariantAnnotation] = {
-
-    val job = HadoopUtil.newJob(sc)
-    val vcc = new VariantContextConverter(sd)
-    val records = sc.newAPIHadoopFile(
-      filePath,
-      classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
-      ContextUtil.getConfiguration(job)
-    )
-    if (Metrics.isRecording) records.instrument() else records
-
-    records.map(p => vcc.convertToAnnotation(p._2.get))
+    sd: Option[SequenceDictionary] = None): DatabaseVariantAnnotationRDD = {
+    loadVcf(filePath, sd).toDatabaseVariantAnnotationRDD
   }
 
   def loadParquetVariantAnnotations(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): RDD[DatabaseVariantAnnotation] = {
-    loadParquet[DatabaseVariantAnnotation](filePath, predicate, projection)
+    projection: Option[Schema] = None): DatabaseVariantAnnotationRDD = {
+    val sd = loadAvroSequences(filePath)
+    val rdd = loadParquet[DatabaseVariantAnnotation](filePath, predicate, projection)
+    DatabaseVariantAnnotationRDD(rdd, sd)
   }
 
   def loadVariantAnnotations(
