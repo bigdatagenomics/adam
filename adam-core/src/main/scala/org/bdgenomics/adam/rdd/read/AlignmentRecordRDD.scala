@@ -19,29 +19,17 @@ package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
-import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, Unaligned }
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, Unaligned }
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, RecordGroupMetadata }
 
-abstract class AlignmentRecordRDD extends AvroGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
+abstract class AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
 
-  val recordGroups: RecordGroupDictionary
-
-  override protected def saveMetadata(filePath: String) {
-
-    // convert sequence dictionary to avro form and save
-    val contigs = sequences.toAvro
-    saveAvro("%s/_seqdict.avro".format(filePath),
-      rdd.context,
-      Contig.SCHEMA$,
-      contigs)
-
-    // convert record group to avro and save
-    val rgMetadata = recordGroups.recordGroups
-      .map(_.toMetadata)
-    saveAvro("%s/_rgdict.avro".format(filePath),
-      rdd.context,
-      RecordGroupMetadata.SCHEMA$,
-      rgMetadata)
+  def toFragments: FragmentRDD = {
+    FragmentRDD(rdd.toFragments,
+      sequences,
+      recordGroups)
   }
 }
 
@@ -62,7 +50,7 @@ object UnalignedReadRDD {
    * @param rdd RDD of reads.
    * @return Returns an unaligned read RDD with an empty record group dictionary.
    */
-  def fromRdd(rdd: RDD[AlignmentRecord]): UnalignedReadRDD = {
+  private[rdd] def fromRdd(rdd: RDD[AlignmentRecord]): UnalignedReadRDD = {
     UnalignedReadRDD(rdd, RecordGroupDictionary.empty)
   }
 }

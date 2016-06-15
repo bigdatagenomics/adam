@@ -898,7 +898,7 @@ private[rdd] class AlignmentRecordRDDFunctions(val rdd: RDD[AlignmentRecord])
     finalRdd
   }
 
-  def toFragments: RDD[Fragment] = {
+  private[rdd] def toFragments: RDD[Fragment] = {
     groupReadsByFragment.map(_.toFragment)
   }
 }

@@ -15,20 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.fragment
+package org.bdgenomics.adam.cli
 
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.converters.AlignmentRecordConverter
-import org.bdgenomics.adam.models.SequenceRecord
-import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
-import org.bdgenomics.utils.misc.Logging
-import org.bdgenomics.formats.avro._
-import scala.collection.JavaConversions._
+import java.nio.file.Files
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util.ADAMFunSuite
 
-class FragmentRDDFunctions(rdd: RDD[Fragment]) extends Serializable with Logging {
-
-  def toReads: RDD[AlignmentRecord] = {
-    val converter = new AlignmentRecordConverter
-    rdd.flatMap(converter.convertFragment)
+class Reads2FragmentsSuite extends ADAMFunSuite {
+  sparkTest("unordered sam to ordered sam round trip") {
+    val inputPath = copyResource("unordered.sam")
+    val fragmentsPath = tmpFile("fragments.adam")
+    val readsPath = tmpFile("reads.adam")
+    val actualPath = tmpFile("fragments.sam")
+    val expectedPath = copyResource("ordered.sam")
+    Reads2Fragments(Array(inputPath, fragmentsPath)).run(sc)
+    Fragments2Reads(Array(fragmentsPath, readsPath)).run(sc)
+    Transform(Array("-single", "-sort_reads", "-sort_lexicographically",
+      readsPath, actualPath)).run(sc)
+    checkFiles(expectedPath, actualPath)
   }
 }

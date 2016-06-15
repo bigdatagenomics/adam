@@ -46,7 +46,7 @@ import org.bdgenomics.adam.rdd.contig.{
   NucleotideContigFragmentRDDFunctions
 }
 import org.bdgenomics.adam.rdd.features._
-import org.bdgenomics.adam.rdd.fragment.FragmentRDDFunctions
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.{
   AlignedReadRDD,
   AlignmentRecordRDD,
@@ -83,7 +83,6 @@ object ADAMContext {
 
   // Add methods specific to Read RDDs
   implicit def rddToADAMRecordRDD(rdd: RDD[AlignmentRecord]) = new AlignmentRecordRDDFunctions(rdd)
-  implicit def rddToFragmentRDD(rdd: RDD[Fragment]) = new FragmentRDDFunctions(rdd)
 
   // Add methods specific to the ADAMNucleotideContig RDDs
   implicit def rddToContigFragmentRDD(rdd: RDD[NucleotideContigFragment]) = new NucleotideContigFragmentRDDFunctions(rdd)
@@ -721,7 +720,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   def loadInterleavedFastqAsFragments(
-    filePath: String): RDD[Fragment] = {
+    filePath: String): FragmentRDD = {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -735,7 +734,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
-    records.map(fastqRecordConverter.convertFragment)
+    FragmentRDD.fromRdd(records.map(fastqRecordConverter.convertFragment))
   }
 
   def loadGff3(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
@@ -802,8 +801,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadParquetFragments(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): RDD[Fragment] = {
-    loadParquet[Fragment](filePath, predicate, projection)
+    projection: Option[Schema] = None): FragmentRDD = {
+
+    // convert avro to sequence dictionary
+    val sd = loadAvroSequences(filePath)
+
+    // convert avro to sequence dictionary
+    val rgd = loadAvroSampleMetadata(filePath, "_rgdict.avro")
+
+    // load fragment data from parquet
+    val rdd = loadParquet[Fragment](filePath, predicate, projection)
+
+    FragmentRDD(rdd, sd, rgd)
   }
 
   def loadVcfAnnotations(
@@ -985,14 +994,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  def loadFragments(filePath: String): RDD[Fragment] = LoadFragments.time {
+  def loadFragments(filePath: String): FragmentRDD = LoadFragments.time {
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam")) {
       log.info(s"Loading $filePath as SAM/BAM and converting to Fragments.")
-      loadBam(filePath).rdd.toFragments
+      loadBam(filePath).toFragments
     } else if (filePath.endsWith(".reads.adam")) {
       log.info(s"Loading $filePath as ADAM AlignmentRecords and converting to Fragments.")
-      loadAlignments(filePath).rdd.toFragments
+      loadAlignments(filePath).toFragments
     } else if (filePath.endsWith(".ifq")) {
       log.info("Loading interleaved FASTQ " + filePath + " and converting to Fragments.")
       loadInterleavedFastqAsFragments(filePath)

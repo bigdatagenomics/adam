@@ -39,9 +39,14 @@ class Fragments2ReadsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetAr
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
   var outputPath: String = null
+  @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
+  var asSingleFile: Boolean = false
+  @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
+  var sortReads: Boolean = false
+  @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
+  var sortLexicographically: Boolean = false
 
-  // these are required because of the ADAMSaveAnyArgs trait... fix this trait???
-  var asSingleFile = false
+  // this is required because of the ADAMSaveAnyArgs trait... fix this trait???
   var sortFastqOutput = false
 }
 
@@ -49,10 +54,23 @@ class Fragments2Reads(protected val args: Fragments2ReadsArgs) extends BDGSparkC
   val companion = Fragments2Reads
 
   def run(sc: SparkContext) {
-    sc.loadFragments(args.inputPath)
-      .toReads
-      .save(args,
-        SequenceDictionary.empty,
-        RecordGroupDictionary.empty)
+    val rdd = sc.loadFragments(args.inputPath)
+
+    // save rdd as reads
+    val readRdd = rdd.toReads
+
+    // prep to save
+    val finalRdd = if (args.sortReads) {
+      readRdd.sortReadsByReferencePosition()
+    } else if (args.sortLexicographically) {
+      readRdd.sortReadsByReferencePositionAndIndex(rdd.sequences)
+    } else {
+      readRdd
+    }
+
+    // save the file
+    finalRdd.save(args,
+      rdd.sequences,
+      rdd.recordGroups)
   }
 }
