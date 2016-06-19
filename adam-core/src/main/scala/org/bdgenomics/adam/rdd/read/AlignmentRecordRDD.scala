@@ -18,9 +18,11 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.converters.GA4GHConverter
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, Unaligned }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, RecordGroupMetadata }
+import org.ga4gh.GAReadAlignment
 
 abstract class AlignmentRecordRDD extends AvroGenomicRDD[AlignmentRecord] {
 
@@ -42,6 +44,10 @@ abstract class AlignmentRecordRDD extends AvroGenomicRDD[AlignmentRecord] {
       rdd.context,
       RecordGroupMetadata.SCHEMA$,
       rgMetadata)
+  }
+
+  def toGA4GH(): RDD[GAReadAlignment] = {
+    rdd.map(GA4GHConverter.toGAReadAlignment)
   }
 }
 

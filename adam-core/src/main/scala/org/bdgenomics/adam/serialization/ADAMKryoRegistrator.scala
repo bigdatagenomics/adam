@@ -54,6 +54,7 @@ import org.bdgenomics.adam.rich.{ DecadentRead, ReferenceSequenceContext, RichAl
 import org.bdgenomics.adam.util.{ MdTag, QualityScore, ReferenceContigMap, TwoBitFile, TwoBitFileSerializer }
 import org.bdgenomics.formats.avro._
 import org.codehaus.jackson.node.{ BooleanNode, NullNode, TextNode }
+import org.ga4gh._
 import org.seqdoop.hadoop_bam.{ VariantContextWithHeader, VariantContextWritable }
 import scala.collection.immutable
 import scala.reflect.ClassTag
@@ -127,6 +128,9 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     kryo.register(classOf[Feature], new AvroSerializer[Feature])
     kryo.register(classOf[Array[Feature]])
+
+    // register GA4GH avro
+    kryo.register(classOf[GAReadAlignment], new AvroSerializer[GAReadAlignment])
 
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[Array[ReferencePosition]])
