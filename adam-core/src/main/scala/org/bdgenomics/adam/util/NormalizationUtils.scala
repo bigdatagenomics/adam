@@ -24,7 +24,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichCigar._
 
-object NormalizationUtils {
+private[adam] object NormalizationUtils {
 
   /**
    * Given a cigar, returns the cigar with the position of the cigar shifted left.

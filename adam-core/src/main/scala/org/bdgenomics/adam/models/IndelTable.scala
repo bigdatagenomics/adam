@@ -20,11 +20,12 @@ package org.bdgenomics.adam.models
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.algorithms.consensus.Consensus
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Variant
 import org.bdgenomics.utils.misc.Logging
 
-class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Serializable with Logging {
+private[adam] class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Serializable with Logging {
   log.info("Indel table has %s contigs and %s entries".format(
     table.size,
     table.values.map(_.size).sum
@@ -47,7 +48,7 @@ class IndelTable(private val table: Map[String, Iterable[Consensus]]) extends Se
   }
 }
 
-object IndelTable {
+private[adam] object IndelTable {
 
   /**
    * Creates an indel table from a file containing known indels.

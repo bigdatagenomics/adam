@@ -642,7 +642,7 @@ private[rdd] class AlignmentRecordRDDFunctions(val rdd: RDD[AlignmentRecord])
    * @param maxIndelSize The size of the largest indel to use for realignment.
    * @param maxConsensusNumber The maximum number of consensus sequences to realign against per
    * target region.
-   * @param lodThreshold Log-odds threhold to use when realigning; realignments are only finalized
+   * @param lodThreshold Log-odds threshold to use when realigning; realignments are only finalized
    * if the log-odds threshold is exceeded.
    * @param maxTargetSize The maximum width of a single target region for realignment.
    * @return Returns an RDD of mapped reads which have been realigned.

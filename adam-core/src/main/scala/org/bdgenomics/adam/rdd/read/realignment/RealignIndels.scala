@@ -21,9 +21,9 @@ import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator }
 import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.algorithms.consensus.{ ConsensusGenerator, ConsensusGeneratorFromReads }
+import org.bdgenomics.adam.algorithms.consensus.{ Consensus, ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.models.ReferenceRegion._
-import org.bdgenomics.adam.models.{ Consensus, ReferencePosition, ReferenceRegion }
+import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
@@ -282,7 +282,7 @@ private[rdd] class RealignIndels(
         // loop over all consensuses and evaluate
         consensus.foreach(c => {
           // generate a reference sequence from the consensus
-          val consensusSequence = c.insertIntoReference(reference, refStart, refEnd)
+          val consensusSequence = c.insertIntoReference(reference, refRegion)
 
           // evaluate all reads against the new consensus
           val sweptValues = readsToClean.map(r => {

@@ -19,13 +19,27 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import org.bdgenomics.adam.algorithms.smithwaterman.SmithWatermanConstantGapScoring
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichCigar._
+import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-class ConsensusGeneratorFromSmithWaterman(
+/**
+ * Generates realignment sequences by brute force locally realigning reads.
+ *
+ * Here, reads are first locally aligned with Smith-Waterman to hopefully
+ * produce consolidated INDEL blocks. Then, the model from the read-based
+ * consensus tool is applied.
+ *
+ * @see ConsensusGeneratorFromReads
+ *
+ * @param wMatch Match weight to use for Smith-Waterman.
+ * @param wMismatch Mismatch penalty to use for Smith-Waterman.
+ * @param wInsert Insert penalty to use for Smith-Waterman.
+ * @param wDelete Deletion penalty to use for Smith-Waterman.
+ */
+private[adam] class ConsensusGeneratorFromSmithWaterman(
     wMatch: Double,
     wMismatch: Double,
     wInsert: Double,

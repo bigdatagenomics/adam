@@ -18,11 +18,21 @@
 package org.bdgenomics.adam.algorithms.consensus
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ Consensus, ReferenceRegion }
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 
-abstract class ConsensusGenerator extends Serializable {
+/**
+ * Trait for generating consensus sequences for INDEL realignment.
+ *
+ * INDEL realignment scores read alinments against the reference genome and
+ * a set of "consensus" sequences. These consensus sequences represent alternate
+ * alleles/haplotypes, and can be generated via a variety of methods (e.g., seen
+ * in previous projects --> 1kg INDELs, seen in read alignments, etc). This
+ * trait provides an interface that a consensus generation method should
+ * implement to provide it's consensus sequences to the realigner.
+ */
+private[adam] trait ConsensusGenerator extends Serializable {
 
   /**
    * Generates targets to add to initial set of indel realignment targets, if additional

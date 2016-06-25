@@ -18,7 +18,8 @@
 package org.bdgenomics.adam.rdd.read.realignment
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ Consensus, ReferencePosition }
+import org.bdgenomics.adam.algorithms.consensus.Consensus
+import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.ADAMFunSuite

@@ -18,17 +18,25 @@
 package org.bdgenomics.adam.algorithms.consensus
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ Consensus, ReferenceRegion, ReferencePosition }
+import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
-import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichCigar._
-import org.bdgenomics.adam.util.MdTag
+import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import org.bdgenomics.adam.util.NormalizationUtils._
+import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-class ConsensusGeneratorFromReads extends ConsensusGenerator {
+/**
+ * Consensus generator that examines the read alignments.
+ *
+ * This consensus generation method preprocesses the reads by left normalizing
+ * all INDELs seen in the reads, and then generates consensus sequences from
+ * reads whose local alignments contain INDELs. These consensuses are deduped
+ * before they are returned.
+ */
+private[adam] class ConsensusGeneratorFromReads extends ConsensusGenerator {
 
   /**
    * No targets to add if generating consensus targets from reads.
@@ -68,7 +76,16 @@ class ConsensusGeneratorFromReads extends ConsensusGenerator {
   }
 
   /**
-   * Generates concensus sequences from reads with indels.
+   * Generates consensus sequences from reads with INDELs.
+   *
+   * Loops over provided reads. Filters all reads without an MD tag, and then
+   * generates consensus sequences. If a read contains a single INDEL aligned to
+   * the reference, we emit that INDEL. Else, we do not emit a consensus from
+   * the read. We dedup the consensuses to remove any INDELs observed in
+   * multiple reads and return.
+   *
+   * @param Reads to search for INDELs.
+   * @return Consensuses generated from reads with a singel INDEL
    */
   def findConsensus(reads: Iterable[RichAlignmentRecord]): Iterable[Consensus] = {
     reads.filter(r => r.mdTag.isDefined)
@@ -87,5 +104,4 @@ class ConsensusGeneratorFromReads extends ConsensusGenerator {
       .toSeq
       .distinct
   }
-
 }

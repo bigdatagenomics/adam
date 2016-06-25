@@ -43,6 +43,7 @@ import org.apache.avro.io.{ BinaryDecoder, BinaryEncoder, DecoderFactory, Encode
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificDatumWriter, SpecificRecord }
 import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.spark.serializer.KryoRegistrator
+import org.bdgenomics.adam.algorithms.consensus.Consensus
 import org.bdgenomics.adam.converters.FastaConverter.FastaDescriptionLine
 import org.bdgenomics.adam.converters.FragmentCollector
 import org.bdgenomics.adam.models._

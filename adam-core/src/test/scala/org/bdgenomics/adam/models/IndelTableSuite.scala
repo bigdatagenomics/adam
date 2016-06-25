@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
+import org.bdgenomics.adam.algorithms.consensus.Consensus
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ Contig, Variant }
 

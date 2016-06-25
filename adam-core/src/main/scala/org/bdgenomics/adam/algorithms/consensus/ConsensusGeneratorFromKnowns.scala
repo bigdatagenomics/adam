@@ -26,9 +26,20 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.Variant
 import scala.transient
 
-class ConsensusGeneratorFromKnowns(file: String, @transient sc: SparkContext) extends ConsensusGenerator {
+/**
+ * Generates consensus sequences from a set of variants.
+ *
+ * Generates a set of consensus sequences by loading variants and filtering on
+ * INDEL variants. The INDEL variants are mapped directly into consensuses using
+ * their alt allele string as the consensus string.
+ *
+ * @param file Path to file containing variants.
+ * @param sc Spark context to use.
+ */
+private[adam] class ConsensusGeneratorFromKnowns(file: String,
+                                                 @transient sc: SparkContext) extends ConsensusGenerator {
 
-  val indelTable = sc.broadcast(IndelTable(file, sc))
+  private val indelTable = sc.broadcast(IndelTable(file, sc))
 
   /**
    * Generates targets to add to initial set of indel realignment targets, if additional
@@ -46,7 +57,7 @@ class ConsensusGeneratorFromKnowns(file: String, @transient sc: SparkContext) ex
 
   /**
    * Performs any preprocessing specific to this consensus generation algorithm, e.g.,
-   * indel normalization.
+   * indel normalization. This is a no-op for the knowns model.
    *
    * @param reads Reads to preprocess.
    * @return Preprocessed reads.

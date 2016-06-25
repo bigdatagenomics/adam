@@ -15,8 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.models
+package org.bdgenomics.adam.algorithms.consensus
 
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.scalatest.FunSuite
 
 class ConsensusSuite extends FunSuite {
@@ -26,7 +27,7 @@ class ConsensusSuite extends FunSuite {
 
     val ref = "AAAAAAAAAA"
 
-    val cs = c.insertIntoReference(ref, 5L, 15L)
+    val cs = c.insertIntoReference(ref, ReferenceRegion("0", 5L, 16L))
 
     assert(cs === "AAAAATCGAAAAAA")
   }
@@ -36,7 +37,7 @@ class ConsensusSuite extends FunSuite {
 
     val ref = "AAAAATTTTT"
 
-    val cs = c.insertIntoReference(ref, 5L, 15L)
+    val cs = c.insertIntoReference(ref, ReferenceRegion("0", 5L, 16L))
 
     assert(cs === "AAAAA")
   }
@@ -45,7 +46,7 @@ class ConsensusSuite extends FunSuite {
     val ref = "AAAAAAAAAAAAA"
     val c = new Consensus("", ReferenceRegion("0", 0L, 1L))
 
-    val co = c.insertIntoReference(ref, 0, ref.length)
+    val co = c.insertIntoReference(ref, ReferenceRegion("0", 0, ref.length))
 
     assert(ref === co)
   }
