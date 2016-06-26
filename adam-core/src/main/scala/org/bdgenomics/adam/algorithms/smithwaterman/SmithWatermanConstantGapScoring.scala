@@ -17,28 +17,55 @@
  */
 package org.bdgenomics.adam.algorithms.smithwaterman
 
-object SmithWatermanConstantGapScoring {
+/**
+ * Performs a pairwise alignment of two sequences using constant penalties.
+ *
+ * @see scoreFn
+ *
+ * @param xSequence The first sequence in the pair.
+ * @param ySequence The second sequence in the pair.
+ * @param wMatch The alignment gap penalty for a residue match.
+ * @param wMismatch The alignment gap penalty for a residue mismatch.
+ * @param wInsert The alignment gap penalty for an insertion in the first
+ *   sequence.
+ * @param wDelete The alignment gap penalty for a deletion in the first
+ *   sequence.
+ */
+case class SmithWatermanConstantGapScoring(xSequence: String,
+                                           ySequence: String,
+                                           wMatch: Double,
+                                           wMismatch: Double,
+                                           wInsert: Double,
+                                           wDelete: Double) extends SmithWatermanGapScoringFromFn {
 
-  protected def constantGapFn(wMatch: Double, wDelete: Double, wInsert: Double, wMismatch: Double)(x: Int, y: Int, i: Char, j: Char): Double = {
-    if (i == j) {
+  /**
+   * Scores residues using scoring constants.
+   *
+   * * If a deletion is observed (xResidue is a gap), then the deletion
+   *   penalty is returned.
+   * * If an insertion is observed (yResidue is a gap), then the insertion
+   *   penalty is returned.
+   * * Else, the residues are compared, and either the match or mismatch
+   *   penalty is returned.
+   *
+   * The position indices are ignored, so no affine/open-continue gap model is
+   * incorporated.
+   *
+   * @param xPos Residue position from first sequence.
+   * @param yPos Residue position from second sequence.
+   * @param xResidue Residue from first sequence.
+   * @param yResidue Residue from second sequence.
+   * @return Returns the gap score for this residue pair.
+   */
+  protected def scoreFn(xPos: Int, yPos: Int, xResidue: Char, yResidue: Char): Double = {
+    if (xResidue == yResidue) {
       wMatch
-    } else if (i == '_') {
+    } else if (xResidue == '_') {
       wDelete
-    } else if (j == '_') {
+    } else if (yResidue == '_') {
       wInsert
     } else {
       wMismatch
     }
   }
-
-}
-
-class SmithWatermanConstantGapScoring(
-  xSequence: String,
-  ySequence: String,
-  wMatch: Double,
-  wMismatch: Double,
-  wInsert: Double,
-  wDelete: Double)
-    extends SmithWatermanGapScoringFromFn(xSequence, ySequence, SmithWatermanConstantGapScoring.constantGapFn(wMatch, wInsert, wDelete, wMismatch)) {
 }

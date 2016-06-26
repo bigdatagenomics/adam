@@ -20,13 +20,48 @@ package org.bdgenomics.adam.algorithms.smithwaterman
 import htsjdk.samtools.{ Cigar, TextCigarCodec }
 import scala.annotation.tailrec
 
-abstract class SmithWaterman(xSequence: String, ySequence: String) extends Serializable {
-
-  lazy val (scoringMatrix, moveMatrix) = buildScoringMatrix()
-  lazy val (cigarX, cigarY, xStart, yStart) = trackback(scoringMatrix, moveMatrix)
+/**
+ * Abstract class for implementing a Smith-Waterman pairwise alignment.
+ *
+ * Contains shell code for everything except for building the pairwise alignment
+ * score matrix. This way, a new scoring method (e.g., affine gap, residue
+ * specific scores) can be implemented without needing to implement core
+ * functionality like trackback, etc.
+ */
+trait SmithWaterman extends Serializable {
 
   /**
-   * Builds Smith-Waterman scoring matrix.
+   * First sequence to align.
+   */
+  val xSequence: String
+
+  /**
+   * Second sequence to align.
+   */
+  val ySequence: String
+
+  /**
+   * The alignment score and move matrices. The alignment score matrix is the
+   * traditional matrix that is built during the gap scoring phase of Smith
+   * Waterman. The move matrix is essentially a lookahead matrix for the
+   * trackback phase: if we store the "direction" that the last score came
+   * from, then we don't need to re-evaluate which adjacent matrix entry had the
+   * highest score in the next phase of the trackback process.
+   */
+  private lazy val (scoringMatrix, moveMatrix) = buildScoringMatrix()
+
+  /**
+   * CIGAR strings and alignment start positions from the pairwise alignment
+   * process. The alignment start position may be non-zero if two strings are
+   * the same length, but the highest scoring alignment has bases deleted in
+   * one string/inserted in the other. In this case, some bases at the start/end
+   * of one string are expected to be "trimmed".
+   */
+  lazy val (cigarX, cigarY, xStart, yStart) = trackback(scoringMatrix,
+    moveMatrix)
+
+  /**
+   * Builds Smith-Waterman score matrix.
    *
    * @return 2D array of doubles, along with move direction at each point.
    *
@@ -163,5 +198,4 @@ abstract class SmithWaterman(xSequence: String, ySequence: String) extends Seria
     // get cigars and return
     (TextCigarCodec.decode(cX), TextCigarCodec.decode(cY), xI, yI)
   }
-
 }

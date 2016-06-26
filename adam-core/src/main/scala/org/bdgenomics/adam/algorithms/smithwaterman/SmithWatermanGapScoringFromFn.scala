@@ -17,12 +17,30 @@
  */
 package org.bdgenomics.adam.algorithms.smithwaterman
 
-abstract class SmithWatermanGapScoringFromFn(
-  xSequence: String,
-  ySequence: String,
-  scoreFn: (Int, Int, Char, Char) => Double)
-    extends SmithWaterman(xSequence, ySequence) {
+/**
+ * Implements a Smith-Waterman based method where the score matrix is built
+ * using a function that returns a score given the current position and residue
+ * for both sequences.
+ */
+private[smithwaterman] trait SmithWatermanGapScoringFromFn extends SmithWaterman {
 
+  /**
+   * Returns the alignment penalty for a pair of residues in two sequences.
+   *
+   * @param xPos Residue position from first sequence.
+   * @param yPos Residue position from second sequence.
+   * @param xResidue Residue from first sequence.
+   * @param yResidue Residue from second sequence.
+   * @return Returns the gap score for this residue pair.
+   */
+  protected def scoreFn(xPos: Int, yPos: Int, xResidue: Char, yResidue: Char): Double
+
+  /**
+   * Builds Smith-Waterman score matrix by calling scoring function for
+   * all residue pairs.
+   *
+   * @return 2D array of doubles, along with move direction at each point.
+   */
   def buildScoringMatrix(): (Array[Array[Double]], Array[Array[Char]]) = {
 
     val y = ySequence.length
@@ -73,6 +91,5 @@ abstract class SmithWatermanGapScoringFromFn(
 
     (scoreMatrix, moveMatrix)
   }
-
 }
 
