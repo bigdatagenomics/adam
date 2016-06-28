@@ -58,7 +58,7 @@ import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.HadoopUtil
 import org.bdgenomics.utils.misc.Logging
 import org.seqdoop.hadoop_bam._
-import org.seqdoop.hadoop_bam.util.{ BGZFCodec, SAMHeaderReader, VCFHeaderReader, WrapSeekable }
+import org.seqdoop.hadoop_bam.util._
 import scala.collection.JavaConversions._
 import scala.collection.Map
 import scala.reflect.ClassTag
@@ -136,30 +136,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       (sd, samples)
     }
 
-    try {
-      val vcfHeader = VCFHeaderReader.readHeaderFrom(WrapSeekable.openPath(sc.hadoopConfiguration,
-        new Path(filePath)))
-      headerToMetadata(vcfHeader)
-    } catch {
-      case e: Throwable => {
-
-        // due to a bug upstream in Hadoop-BAM, the VCFHeaderReader class errors when reading
-        // headers from .vcf.gz files
-        //
-        // to WAR this, we read a record from the file using the input format, which correctly
-        // determines the VCF input type. calling first should lead to us only reading a single record.
-        log.warn("Caught exception (%s) when trying to load VCF metadata. Retrying via read as RDD.".format(e))
-        val vcfHeader = readVcfRecords(filePath)
-          .map(v => {
-            v._2
-              .get
-              .asInstanceOf[VariantContextWithHeader]
-              .getHeader
-          }).first
-
-        headerToMetadata(vcfHeader)
-      }
-    }
+    val vcfHeader = VCFHeaderReader.readHeaderFrom(WrapSeekable.openPath(sc.hadoopConfiguration,
+      new Path(filePath)))
+    headerToMetadata(vcfHeader)
   }
 
   private[rdd] def loadAvroSequences(filePath: String): SequenceDictionary = {
@@ -620,7 +599,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   private def readVcfRecords(filePath: String): RDD[(LongWritable, VariantContextWritable)] = {
     // load vcf data
     val job = HadoopUtil.newJob(sc)
-    job.getConfiguration().set("io.compression.codecs", classOf[BGZFCodec].getCanonicalName())
+    job.getConfiguration().setStrings("io.compression.codecs",
+      classOf[BGZFCodec].getCanonicalName(),
+      classOf[BGZFEnhancedGzipCodec].getCanonicalName())
     sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],

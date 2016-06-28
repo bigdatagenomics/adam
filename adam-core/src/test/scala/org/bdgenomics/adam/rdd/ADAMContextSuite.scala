@@ -282,8 +282,14 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vcs.rdd.count === 6)
   }
 
-  sparkTest("can read a BGZF gzipped .vcf file") {
+  sparkTest("can read a BGZF gzipped .vcf file with .gz file extension") {
     val path = resourcePath("test.vcf.bgzf.gz")
+    val vcs = sc.loadVcf(path, None)
+    assert(vcs.rdd.count === 6)
+  }
+
+  sparkTest("can read a BGZF gzipped .vcf file with .bgz file extension") {
+    val path = resourcePath("test.vcf.bgz")
     val vcs = sc.loadVcf(path, None)
     assert(vcs.rdd.count === 6)
   }
