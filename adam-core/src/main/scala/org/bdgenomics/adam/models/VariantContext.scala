@@ -24,8 +24,65 @@ import org.bdgenomics.adam.rich.RichVariant
  * Note: VariantContext inherits its name from the Picard VariantContext, and is not related to the SparkContext object.
  * If you're looking for the latter, see [[org.bdgenomics.adam.rdd.variation.VariationContext]]
  */
-
 object VariantContext {
+
+  /**
+   * Produces a new variant context by merging with an optional annotation.
+   *
+   * If the existing context doesn't have an annotation, pick the new
+   * annotation, if present. If both exist, then merge.
+   *
+   * @param v An existing VariantContext to annotate.
+   * @param optAnn An optional annotation to add.
+   * @return A new VariantContext, where an annotation has been added/merged.
+   */
+  def apply(v: VariantContext,
+            optAnn: Option[DatabaseVariantAnnotation]): VariantContext = {
+
+    // if the join yielded one or fewer annotation, pick what we've got. else, merge.
+    val ann = (v.databases, optAnn) match {
+      case (None, a)          => a
+      case (a, None)          => a
+      case (Some(a), Some(b)) => Some(mergeAnnotations(a, b))
+    }
+
+    // copy all fields except for the annotation from the input context
+    new VariantContext(v.position,
+      v.variant,
+      v.genotypes,
+      ann)
+  }
+
+  /**
+   * Greedily merges two annotation records by filling empty fields.
+   *
+   * Merges two records by taking the union of all fields. If a field is
+   * populated in both records, it's value will be taken from the left
+   * record.
+   *
+   * @param leftRecord First record to merge. If fields are seen in both
+   *   records, the value in this record will win.
+   * @param rightRecord Second record to merge. Used to populate missing fields
+   *   from the left record.
+   * @return Returns the union of these two annotations.
+   */
+  def mergeAnnotations(leftRecord: DatabaseVariantAnnotation,
+                       rightRecord: DatabaseVariantAnnotation): DatabaseVariantAnnotation = {
+    val mergedAnnotation = DatabaseVariantAnnotation.newBuilder(leftRecord)
+      .build()
+    val numFields = DatabaseVariantAnnotation.getClassSchema.getFields.size
+
+    def insertField(fieldIdx: Int) =
+      {
+        val value = rightRecord.get(fieldIdx)
+        if (value != null) {
+          mergedAnnotation.put(fieldIdx, value)
+        }
+      }
+    (0 until numFields).foreach(insertField(_))
+
+    mergedAnnotation
+  }
 
   /**
    * Constructs an VariantContext from locus data. Used in merger process.

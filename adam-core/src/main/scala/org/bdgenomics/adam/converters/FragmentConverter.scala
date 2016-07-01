@@ -23,7 +23,18 @@ import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.formats.avro._
 import scala.annotation.tailrec
 
-private[converters] object FragmentCollector extends Serializable {
+/**
+ * Singleton object for creating FragmentCollector instances.
+ */
+private object FragmentCollector extends Serializable {
+
+  /**
+   * Apply method to create a fragment collector that is keyed by the contig.
+   *
+   * @param fragment Fragment of a reference/assembled sequence to wrap.
+   * @return Returns key value pair where the key is the contig metadata and the
+   *   value is a Fragment Collector object.
+   */
   def apply(fragment: NucleotideContigFragment): (Contig, FragmentCollector) = {
     (
       fragment.getContig,
@@ -32,10 +43,31 @@ private[converters] object FragmentCollector extends Serializable {
   }
 }
 
-case class FragmentCollector(fragments: Seq[(ReferenceRegion, String)])
+/**
+ * A case class used for merging Fragments.
+ *
+ * @param fragments A seq where sequence fragments are keyed with the genomic
+ *   interval they represent.
+ */
+private[adam] case class FragmentCollector(fragments: Seq[(ReferenceRegion, String)])
 
-object FragmentConverter extends Serializable {
+/**
+ * Object used to convert sequence assemblies into unaligned reads.
+ */
+private[adam] object FragmentConverter extends Serializable {
 
+  /**
+   * Merges the sequences collected in two FragmentCollector instances.
+   *
+   * Merges sequences together by joining the sequences embedded in two
+   * FragmentCollectors together, sorting, and then reducing all of the
+   * sequences down. Checks to ensure that all sequences are adjacent
+   * before reducing.
+   *
+   * @param f1 First collector to merge.
+   * @param f2 Second collector to merge.
+   * @return Returns the merger of two FragmentCollectors.
+   */
   private def mergeFragments(
     f1: FragmentCollector,
     f2: FragmentCollector): FragmentCollector = {
@@ -82,6 +114,16 @@ object FragmentConverter extends Serializable {
     FragmentCollector(fragmentList.toSeq)
   }
 
+  /**
+   * Converts a contig assembly into one or more reads.
+   *
+   * Takes in a reduced key value pair containing merged FragmentCollectors.
+   * The strings that are in this FragmentCollector are used to create reads.
+   * The Contig key is used to populate the metadata for the contig.
+   *
+   * @param kv (Contig metadata, FragmentCollector) key value pair.
+   * @return Returns one alignment record per sequence in the collector.
+   */
   private[converters] def convertFragment(kv: (Contig, FragmentCollector)): Seq[AlignmentRecord] = {
     // extract kv pair
     val (contig, fragment) = kv
@@ -100,6 +142,16 @@ object FragmentConverter extends Serializable {
     })
   }
 
+  /**
+   * Converts an RDD of NucleotideContigFragments into AlignmentRecords.
+   *
+   * Produces one alignment record per contiguous sequence contained in the
+   * input RDD. Fragments are merged down to the longest contiguous chunks
+   * possible.
+   *
+   * @param rdd RDD of assembled sequences.
+   * @return Returns an RDD of reads that represent aligned contigs.
+   */
   def convertRdd(rdd: RDD[NucleotideContigFragment]): RDD[AlignmentRecord] = {
     rdd.map(FragmentCollector(_))
       .reduceByKey(mergeFragments)

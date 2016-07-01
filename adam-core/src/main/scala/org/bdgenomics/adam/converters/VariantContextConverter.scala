@@ -21,7 +21,7 @@ import htsjdk.variant.variantcontext.{
   Allele,
   GenotypesContext,
   GenotypeLikelihoods,
-  VariantContext => BroadVariantContext,
+  VariantContext => HtsjdkVariantContext,
   VariantContextBuilder
 }
 import java.util.Collections
@@ -35,29 +35,90 @@ import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 
-object VariantContextConverter {
+/**
+ * Object for converting between htsjdk and ADAM VariantContexts.
+ *
+ * Handles Variant, Genotype, Allele, and various genotype annotation
+ * conversions. Does not handle Variant annotations. Genotype annotations are
+ * annotations in the VCF GT field while Variant annotations are annotations
+ * contained in the VCF INFO field.
+ *
+ * @see VariantAnnotationConverter
+ */
+private[adam] object VariantContextConverter {
+
+  /**
+   * Representation for an unknown non-ref/symbolic allele in VCF.
+   */
   private val NON_REF_ALLELE = Allele.create("<NON_REF>", false /* !Reference */ )
+
+  /**
+   * The index in the Avro genotype record for the splitFromMultiAllelec field.
+   *
+   * This field is true if the VCF site was not biallelic.
+   */
   private lazy val splitFromMultiAllelicField = Genotype.SCHEMA$.getField("splitFromMultiAllelic")
 
-  // One conversion method for each way of representing an Allele
-  private def convertAllele(vc: BroadVariantContext, allele: Allele): GenotypeAllele = {
+  /**
+   * One conversion method for each way of representing an Allele
+   *
+   * An htsjdk Allele can represent a reference or alternate allele call, or a
+   * site where no call could be made. If the allele is an alternate allele, we
+   * check to see if this matches the primary alt allele at the site before
+   * deciding to tag it as a primary alt (Alt) or a secondary alt (OtherAlt).
+   *
+   * @param vc The underlying VariantContext for the site.
+   * @param allele The allele we are converting.
+   * @return The Avro representation for this allele.
+   */
+  private def convertAllele(vc: HtsjdkVariantContext, allele: Allele): GenotypeAllele = {
     if (allele.isNoCall) GenotypeAllele.NoCall
     else if (allele.isReference) GenotypeAllele.Ref
     else if (allele == NON_REF_ALLELE || !vc.hasAlternateAllele(allele)) GenotypeAllele.OtherAlt
     else GenotypeAllele.Alt
   }
 
-  private def convertAllele(allele: String, isRef: Boolean = false): Seq[Allele] = {
-    if (allele == null)
-      Seq()
-    else
-      Seq(Allele.create(allele, isRef))
+  /**
+   * Converts an allele string from an avro Variant into an htsjdk Allele.
+   *
+   * @param allele String representation of the allele. If null, we return an
+   *   empty option (None).
+   * @param isRef True if this allele is the reference allele. Default is false.
+   * @return If the allele is defined, returns a wrapped allele. Else, returns
+   *   a None.
+   */
+  private def convertAlleleOpt(allele: String, isRef: Boolean = false): Option[Allele] = {
+    if (allele == null) {
+      None
+    } else {
+      Some(Allele.create(allele, isRef))
+    }
   }
 
+  /**
+   * Converts the alleles in a variant into a Java collection of htsjdk alleles.
+   *
+   * @param v Avro model of the variant at a site.
+   * @return Returns a Java collection representing the reference allele and any
+   *   alternate allele at the site.
+   */
   private def convertAlleles(v: Variant): java.util.Collection[Allele] = {
-    convertAllele(v.getReferenceAllele, true) ++ convertAllele(v.getAlternateAllele)
+    val asSeq = Seq(convertAlleleOpt(v.getReferenceAllele, true),
+      convertAlleleOpt(v.getAlternateAllele)).flatten
+
+    asSeq
   }
 
+  /**
+   * Emits a list of htsjdk alleles for the alleles present at a genotyped site.
+   *
+   * Given an avro description of a Genotype, returns the variants called at the
+   * site as a Java List of htsjdk alleles. This maps over all of the called
+   * alleles at the site and returns their htsjdk representation.
+   *
+   * @param g The genotype call at a site for a single sample.
+   * @return Returns the called alleles at this site.
+   */
   private def convertAlleles(g: Genotype): java.util.List[Allele] = {
     var alleles = g.getAlleles
     if (alleles == null) return Collections.emptyList[Allele]
@@ -67,39 +128,60 @@ object VariantContextConverter {
       case GenotypeAllele.Alt                           => Allele.create(g.getVariant.getAlternateAllele)
     }
   }
-
 }
 
 /**
- * This class converts VCF data to and from ADAM. This translation occurs at the abstraction level
- * of the GATK VariantContext which represents VCF data, and at the ADAMVariantContext level, which
- * aggregates ADAM variant/genotype/annotation data together.
+ * This class converts VCF data to and from ADAM. This translation occurs at the
+ * abstraction level of the htsjdk VariantContext which represents VCF data, and
+ * at the ADAMVariantContext level, which aggregates ADAM
+ * variant/genotype/annotation data together.
  *
- * If an annotation has a corresponding set of fields in the VCF standard, a conversion to/from the
- * GATK VariantContext should be implemented in this class.
+ * If a genotype annotation has a corresponding set of fields in the VCF standard,
+ * a conversion to/from the htsjdk VariantContext should be implemented in this
+ * class.
+ *
+ * @param dict An optional sequence dictionary to use for populating sequence metadata on conversion.
  */
-class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable with Logging {
+private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends Serializable with Logging {
   import VariantContextConverter._
 
-  def jFloat(f: Float): java.lang.Float = f
+  /**
+   * Converts a Scala float to a Java float.
+   *
+   * @param f Scala floating point value.
+   * @return Java floating point value.
+   */
+  private def jFloat(f: Float): java.lang.Float = f
 
-  // Mappings between the CHROM names typically used and the more specific RefSeq accessions
+  /**
+   * Mappings between the CHROM names typically used and the more specific
+   * RefSeq accessions.
+   *
+   * @see refSeqToContig
+   */
   private lazy val contigToRefSeq: Map[String, String] = dict match {
     case Some(d) => d.records.filter(_.refseq.isDefined).map(r => r.name -> r.refseq.get).toMap
     case _       => Map.empty
   }
 
+  /**
+   * Mappings between the specific RefSeq accessions and commonly used CHROM
+   * names.
+   *
+   * @see contigToRefSeq
+   */
   private lazy val refSeqToContig: Map[String, String] = dict match {
     case Some(d) => d.records.filter(_.refseq.isDefined).map(r => r.refseq.get -> r.name).toMap
     case _       => Map.empty
   }
+
   /**
    * Converts a single GATK variant into ADAMVariantContext(s).
    *
    * @param vc GATK Variant context to convert.
    * @return ADAM variant contexts
    */
-  def convert(vc: BroadVariantContext): Seq[ADAMVariantContext] = {
+  def convert(vc: HtsjdkVariantContext): Seq[ADAMVariantContext] = {
 
     // INFO field variant calling annotations, e.g. MQ
     lazy val calling_annotations: VariantCallingAnnotations = extractVariantCallingAnnotations(vc)
@@ -178,17 +260,15 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
 
       }
     }
-
-    /*
-    val annotation: Option[DatabaseVariantAnnotation] =
-      if (extractExternalAnnotations)
-        Some(extractVariantDatabaseAnnotation(variant, vc))
-      else
-        None
-     */
   }
 
-  def convertToAnnotation(vc: BroadVariantContext): DatabaseVariantAnnotation = {
+  /**
+   * Extracts a variant annotation from a htsjdk VariantContext.
+   *
+   * @param vc htsjdk variant context to extract annotations from.
+   * @return The database annotations in Avro format.
+   */
+  def convertToAnnotation(vc: HtsjdkVariantContext): DatabaseVariantAnnotation = {
     val variant = vc.getAlternateAlleles.toList match {
       case List(NON_REF_ALLELE) => {
         createADAMVariant(vc, None /* No alternate allele */ )
@@ -219,11 +299,28 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     extractVariantDatabaseAnnotation(variant, vc)
   }
 
-  private def createContig(vc: BroadVariantContext): String = {
+  /**
+   * Canonicalizes a contig name.
+   *
+   * Checks for a mapping between a contig and ref seq name. If none is defined,
+   * returns the provided contig name.
+   *
+   * @param vc htsjdk variant context that is mapped to a genomic site.
+   * @return Returns the canonical contig name for this site.
+   */
+  private def createContig(vc: HtsjdkVariantContext): String = {
     contigToRefSeq.getOrElse(vc.getChr, vc.getChr)
   }
 
-  private def createADAMVariant(vc: BroadVariantContext, alt: Option[String]): Variant = {
+  /**
+   * Builds an avro Variant for a site with a defined alt allele.
+   *
+   * @param vc htsjdk variant context to use for building the site.
+   * @param alt The alternate allele to use for the site. If not provided, no
+   *   alternate allele will be defined.
+   * @return Returns an Avro description of the genotyped site.
+   */
+  private def createADAMVariant(vc: HtsjdkVariantContext, alt: Option[String]): Variant = {
     // VCF CHROM, POS, REF and ALT
     val builder = Variant.newBuilder
       .setContigName(createContig(vc))
@@ -237,17 +334,40 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     builder.build
   }
 
-  private def extractVariantDatabaseAnnotation(variant: Variant, vc: BroadVariantContext): DatabaseVariantAnnotation = {
+  /**
+   * Populates a site annotation from an htsjdk variant context.
+   *
+   * @param variant Avro variant representation for the site.
+   * @param vc htsjdk representation of the VCF line.
+   * @return Returns the Avro representation of the annotations at this site
+   *   that indicate membership in an annotation database.
+   */
+  private def extractVariantDatabaseAnnotation(variant: Variant,
+                                               vc: HtsjdkVariantContext): DatabaseVariantAnnotation = {
     val annotation = DatabaseVariantAnnotation.newBuilder()
       .setVariant(variant)
       .build
 
     VariantAnnotationConverter.convert(vc, annotation)
-
   }
 
+  /**
+   * For a given VCF line, pulls out the per-sample genotype calls in Avro.
+   *
+   * @param vc htsjdk variant context representing a VCF line.
+   * @param variant Avro description for the called site.
+   * @param annotations The variant calling annotations for this site.
+   * @param setPL A function that maps across Genotype.Builders and sets the
+   *   phred-based likelihood for a genotype called at a site.
+   * @return Returns a seq containing all of the genotypes called at a single
+   *   variant site.
+   *
+   * @see extractReferenceGenotypes
+   * @see extractNonReferenceGenotypes
+   * @see extractReferenceModelGenotypes
+   */
   private def extractGenotypes(
-    vc: BroadVariantContext,
+    vc: HtsjdkVariantContext,
     variant: Variant,
     annotations: VariantCallingAnnotations,
     setPL: (htsjdk.variant.variantcontext.Genotype, Genotype.Builder) => Unit): Seq[Genotype] = {
@@ -290,7 +410,21 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     genotypes
   }
 
-  private def extractNonReferenceGenotypes(vc: BroadVariantContext, variant: Variant, annotations: VariantCallingAnnotations): Seq[Genotype] = {
+  /**
+   * For a given VCF line with ref + alt calls, pulls out the per-sample
+   * genotype calls in Avro.
+   *
+   * @param vc htsjdk variant context representing a VCF line.
+   * @param variant Avro description for the called site.
+   * @param annotations The variant calling annotations for this site.
+   * @return Returns a seq containing all of the genotypes called at a single
+   *   variant site.
+   *
+   * @see extractGenotypes
+   */
+  private def extractNonReferenceGenotypes(vc: HtsjdkVariantContext,
+                                           variant: Variant,
+                                           annotations: VariantCallingAnnotations): Seq[Genotype] = {
     assert(vc.isBiallelic)
     extractGenotypes(vc, variant, annotations,
       (g: htsjdk.variant.variantcontext.Genotype, b: Genotype.Builder) => {
@@ -298,21 +432,49 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       })
   }
 
-  private def extractReferenceGenotypes(vc: BroadVariantContext, variant: Variant, annotations: VariantCallingAnnotations): Seq[Genotype] = {
+  /**
+   * For a given VCF line with reference calls, pulls out the per-sample
+   * genotype calls in Avro.
+   *
+   * @param vc htsjdk variant context representing a VCF line.
+   * @param variant Avro description for the called site.
+   * @param annotations The variant calling annotations for this site.
+   * @return Returns a seq containing all of the genotypes called at a single
+   *   variant site.
+   *
+   * @see extractGenotypes
+   */
+  private def extractReferenceGenotypes(vc: HtsjdkVariantContext,
+                                        variant: Variant,
+                                        annotations: VariantCallingAnnotations): Seq[Genotype] = {
     assert(vc.isBiallelic)
     extractGenotypes(vc, variant, annotations, (g, b) => {
       if (g.hasPL) b.setNonReferenceLikelihoods(g.getPL.toList.map(p => jFloat(PhredUtils.phredToLogProbability(p))))
     })
   }
 
-  private def extractReferenceModelGenotypes(vc: BroadVariantContext, variant: Variant, annotations: VariantCallingAnnotations): Seq[Genotype] = {
+  /**
+   * For a given VCF line with symbolic alleles (a la gVCF), pulls out the
+   * per-sample genotype calls in Avro.
+   *
+   * @param vc htsjdk variant context representing a VCF line.
+   * @param variant Avro description for the called site.
+   * @param annotations The variant calling annotations for this site.
+   * @return Returns a seq containing all of the genotypes called at a single
+   *   variant site.
+   *
+   * @see extractGenotypes
+   */
+  private def extractReferenceModelGenotypes(vc: HtsjdkVariantContext,
+                                             variant: Variant,
+                                             annotations: VariantCallingAnnotations): Seq[Genotype] = {
     extractGenotypes(vc, variant, annotations, (g, b) => {
       if (g.hasPL) {
         val pls = g.getPL.map(p => jFloat(PhredUtils.phredToLogProbability(p)))
         val splitAt: Int = g.getPloidy match {
           case 1 => 2
           case 2 => 3
-          case _ => assert(false, "Ploidy > 2 not supported for this operation"); 0
+          case _ => require(false, "Ploidy > 2 not supported for this operation"); 0
         }
         b.setGenotypeLikelihoods(pls.slice(0, splitAt).toList)
         b.setNonReferenceLikelihoods(pls.slice(splitAt, pls.length).toList)
@@ -320,7 +482,15 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     })
   }
 
-  private def extractVariantCallingAnnotations(vc: BroadVariantContext): VariantCallingAnnotations = {
+  /**
+   * Extracts annotations from a site.
+   *
+   * @param vc htsjdk variant context representing this site to extract
+   *   annotations from.
+   * @return Returns a variant calling annotation with the filters applied to
+   *   this site.
+   */
+  private def extractVariantCallingAnnotations(vc: HtsjdkVariantContext): VariantCallingAnnotations = {
     val call: VariantCallingAnnotations.Builder = VariantCallingAnnotations.newBuilder
 
     // VCF QUAL, FILTER and INFO fields
@@ -333,6 +503,12 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
     VariantAnnotationConverter.convert(vc, call.build())
   }
 
+  /**
+   * Extracts VCF info fields from Avro formatted genotype.
+   *
+   * @param g Genotype record with possible info fields.
+   * @return Mapping between VCF info fields and values from genotype record.
+   */
   private def extractADAMInfoFields(g: Genotype): HashMap[String, Object] = {
     val infoFields = new HashMap[String, Object]();
     val annotations = g.getVariantCallingAnnotations
@@ -351,7 +527,7 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
    * @param vc
    * @return GATK VariantContext
    */
-  def convert(vc: ADAMVariantContext): BroadVariantContext = {
+  def convert(vc: ADAMVariantContext): HtsjdkVariantContext = {
     val variant: Variant = vc.variant
     val vcb = new VariantContextBuilder()
       .chr(refSeqToContig.getOrElse(
@@ -406,5 +582,4 @@ class VariantContextConverter(dict: Option[SequenceDictionary] = None) extends S
       }
     }
   }
-
 }
