@@ -19,15 +19,45 @@ package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
-import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,
   Fragment
 }
+import org.bdgenomics.utils.misc.Logging
 
-class FastqRecordConverter extends Serializable with Logging {
+/**
+ * Utility class for converting FASTQ formatted data.
+ *
+ * FASTQ format is:
+ *
+ * {{{
+ * @readName
+ * sequence
+ * +<optional readname>
+ * ASCII quality scores
+ * }}}
+ */
+private[adam] class FastqRecordConverter extends Serializable with Logging {
 
+  /**
+   * Converts a read pair in FASTQ format into two AlignmentRecords.
+   *
+   * Used for processing a single fragment of paired end sequencing data stored
+   * in interleaved FASTQ. While interleaved FASTQ is not an "official" format,
+   * it is relatively common in the wild. As the name implies, the reads from
+   * a single sequencing fragment are interleaved in a single file, and are not
+   * split across two files.
+   *
+   * @param element Key-value pair of (void, and the FASTQ text). The text
+   *   should correspond to exactly two records.
+   * @return Returns a length = 2 iterable of AlignmentRecords.
+   *
+   * @throws IllegalArgumentException Throws if records are misformatted. Each
+   *   record must be 4 lines, and sequence and quality must be the same length.
+   *
+   * @see convertFragment
+   */
   def convertPair(element: (Void, Text)): Iterable[AlignmentRecord] = {
     val lines = element._2.toString.split('\n')
     require(lines.length == 8, "Record has wrong format:\n" + element._2.toString)
@@ -83,6 +113,18 @@ class FastqRecordConverter extends Serializable with Logging {
     )
   }
 
+  /**
+   * Converts a read pair in FASTQ format into a Fragment.
+   *
+   * @param element Key-value pair of (void, and the FASTQ text). The text
+   *   should correspond to exactly two records.
+   * @return Returns a single Fragment containing two reads..
+   *
+   * @throws IllegalArgumentException Throws if records are misformatted. Each
+   *   record must be 4 lines, and sequence and quality must be the same length.
+   *
+   * @see convertPair
+   */
   def convertFragment(element: (Void, Text)): Fragment = {
     val lines = element._2.toString.split('\n')
     require(lines.length == 8, "Record has wrong format:\n" + element._2.toString)
@@ -127,6 +169,24 @@ class FastqRecordConverter extends Serializable with Logging {
       .build()
   }
 
+  /**
+   * Converts a single FASTQ read into ADAM format.
+   *
+   * Used for processing a single fragment of paired end sequencing data stored
+   * in interleaved FASTQ. While interleaved FASTQ is not an "official" format,
+   * it is relatively common in the wild. As the name implies, the reads from
+   * a single sequencing fragment are interleaved in a single file, and are not
+   * split across two files.
+   *
+   * @param element Key-value pair of (void, and the FASTQ text). The text
+   *   should correspond to exactly two records.
+   * @return Returns a length = 2 iterable of AlignmentRecords.
+   *
+   * @throws IllegalArgumentException Throws if records are misformatted. Each
+   *   record must be 4 lines, and sequence and quality must be the same length.
+   *
+   * @see convertFragment
+   */
   def convertRead(
     element: (Void, Text),
     recordGroupOpt: Option[String] = None,

@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.variation
 
 import htsjdk.variant.vcf.{ VCFHeaderLine, VCFHeader }
-import org.bdgenomics.adam.converters.VariantAnnotationConverter
+import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models.SequenceDictionary
 import org.seqdoop.hadoop_bam.{ VCFFormat, KeyIgnoringVCFOutputFormat }
 import scala.collection.JavaConversions._
@@ -39,7 +39,7 @@ object ADAMVCFOutputFormat extends Serializable {
                 sequences: SequenceDictionary): VCFHeader = {
     header = Some({
       val hdr = new VCFHeader(
-        (VariantAnnotationConverter.infoHeaderLines ++ VariantAnnotationConverter.formatHeaderLines).toSet: Set[VCFHeaderLine],
+        (SupportedHeaderLines.infoHeaderLines ++ SupportedHeaderLines.formatHeaderLines).toSet: Set[VCFHeaderLine],
         samples
       )
       hdr.setSequenceDictionary(sequences.toSAMSequenceDictionary)

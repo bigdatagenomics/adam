@@ -45,7 +45,6 @@ class VariantContextRDDFunctions(rdd: RDD[VariantContext]) extends ADAMSequenceD
     rdd.keyBy(_.variant)
       .leftOuterJoin(ann.keyBy(_.getVariant))
       .values
-      .map { case (v: VariantContext, a) => VariantContext(v.variant, v.genotypes, a) }
-
+      .map(kv => VariantContext(kv._1, kv._2))
   }
 }

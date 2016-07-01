@@ -24,7 +24,10 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment }
 import scala.collection.JavaConversions._
 
-class AlignmentRecordConverter extends Serializable {
+/**
+ * This class contains methods to convert AlignmentRecords to other formats.
+ */
+private[adam] class AlignmentRecordConverter extends Serializable {
 
   /**
    * Converts a single record to FASTQ. FASTQ format is:
@@ -36,7 +39,16 @@ class AlignmentRecordConverter extends Serializable {
    * ASCII quality scores
    * }}}
    *
+   * If the base qualities are unknown (qual is null or equals "*"), the quality
+   * scores will be a repeated string of 'B's that is equal to the read length.
+   *
    * @param adamRecord Read to convert to FASTQ.
+   * @param maybeAddSuffix If true, check if a "/%d" suffix is attached to the
+   *   read. If there is no suffix, a slash and the number of the read in the
+   *   sequenced fragment is appended to the readname. Default is false.
+   * @param outputOriginalBaseQualities If true and the original base quality
+   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
+   *   output the qual field. Defaults to false.
    * @return Returns this read in string form.
    */
   def convertToFastq(
@@ -90,8 +102,10 @@ class AlignmentRecordConverter extends Serializable {
    * Converts a single ADAM record into a SAM record.
    *
    * @param adamRecord ADAM formatted alignment record to convert.
-   * @param header SAM file header to use.
-   * @return Returns the record converted to SAMtools format. Can be used for output to SAM/BAM.
+   * @param header SAM file header to attach to the record.
+   * @param rgd Dictionary describing the read groups that are in the RDD that
+   *   this read is from.
+   * @return Returns the record converted to htsjdk format. Can be used for output to SAM/BAM.
    */
   def convert(adamRecord: AlignmentRecord,
               header: SAMFileHeaderWritable,
@@ -202,7 +216,8 @@ class AlignmentRecordConverter extends Serializable {
    * @param rgd Dictionary containing record groups.
    * @return Converted SAM formatted record.
    */
-  def createSAMHeader(sd: SequenceDictionary, rgd: RecordGroupDictionary): SAMFileHeader = {
+  def createSAMHeader(sd: SequenceDictionary,
+                      rgd: RecordGroupDictionary): SAMFileHeader = {
     val samSequenceDictionary = sd.toSAMSequenceDictionary
     val samHeader = new SAMFileHeader
     samHeader.setSequenceDictionary(samSequenceDictionary)
@@ -224,13 +239,29 @@ class AlignmentRecordConverter extends Serializable {
   }
 }
 
-object AlignmentRecordConverter {
+/**
+ * Singleton object to assist with converting AlignmentRecords.
+ *
+ * Singleton object exists due to cross reference from
+ * org.bdgenomics.adam.rdd.read.AlignmentRecordRDDFunctions.
+ */
+private[adam] object AlignmentRecordConverter extends Serializable {
 
+  /**
+   * Checks to see if a read name has a index suffix.
+   *
+   * Read names frequently end in a "/%d" suffix, where the digit at the end
+   * signifies the number of this read in the sequenced fragment. E.g., for an
+   * Illumina paired-end protocol, the first read in the pair will have a "/1"
+   * suffix, while the second read in the pair will have a "/2" suffix.
+   *
+   * @param adamRecord Record to check.
+   * @return True if the read ends in a read number suffix.
+   */
   def readNameHasPairedSuffix(adamRecord: AlignmentRecord): Boolean = {
     adamRecord.getReadName.length() > 2 &&
       adamRecord.getReadName.charAt(adamRecord.getReadName.length() - 2) == '/' &&
       (adamRecord.getReadName.charAt(adamRecord.getReadName.length() - 1) == '1' ||
         adamRecord.getReadName.charAt(adamRecord.getReadName.length() - 1) == '2')
   }
-
 }
