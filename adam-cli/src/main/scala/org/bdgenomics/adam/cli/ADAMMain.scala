@@ -37,7 +37,6 @@ object ADAMMain {
           CountContigKmers,
           Transform,
           ADAM2Fastq,
-          PluginExecutor,
           Flatten
         )
       ),
