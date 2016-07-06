@@ -92,6 +92,26 @@ object ReferenceRegion {
       None
   }
 
+  /**
+   * Builds a reference region for a called genotype.
+   *
+   * @param genotype Called genotype to extract region from.
+   * @return The site where this genotype lives.
+   */
+  def apply(genotype: Genotype): ReferenceRegion = {
+    ReferenceRegion(genotype.getVariant)
+  }
+
+  /**
+   * Builds a reference region for a variant site.
+   *
+   * @param variant Variant to extract region from.
+   * @return The site where this variant covers.
+   */
+  def apply(variant: Variant): ReferenceRegion = {
+    ReferenceRegion(variant.getContigName, variant.getStart, variant.getEnd)
+  }
+
   def apply(record: AlignmentRecord): ReferenceRegion = {
     ReferenceRegion(record.getContigName, record.getStart, record.getEnd)
   }

@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.scalatest._
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Strand }
+import org.bdgenomics.formats.avro._
 
 class ReferenceRegionSuite extends FunSuite {
 
@@ -241,5 +241,23 @@ class ReferenceRegionSuite extends FunSuite {
     assert(ReferenceRegion("chr1", 100, 201).width === 101)
     assert(ReferenceRegion("chr2", 200, 401, Strand.FORWARD).width === 201)
     assert(ReferenceRegion("chr3", 399, 1000, Strand.REVERSE).width === 601)
+  }
+
+  test("make a reference region for a variant or genotype") {
+    val v = Variant.newBuilder()
+      .setContigName("chr")
+      .setStart(1L)
+      .setEnd(3L)
+      .build()
+    val g = Genotype.newBuilder()
+      .setVariant(v)
+      .build()
+    val rrV = ReferenceRegion(v)
+    val rrG = ReferenceRegion(g)
+
+    assert(rrV.referenceName === "chr")
+    assert(rrV.start === 1L)
+    assert(rrV.end === 3L)
+    assert(rrV === rrG)
   }
 }
