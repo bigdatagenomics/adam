@@ -10,6 +10,24 @@ DIR=$( cd $( dirname ${BASH_SOURCE[0]} ) && pwd )
 PROJECT_ROOT=${DIR}/..
 VERSION=$(grep "<version>" ${PROJECT_ROOT}/pom.xml  | head -2 | tail -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')
 
+# is the hadoop version set?
+if ! [[ ${HADOOP_VERSION} ]];
+then
+    echo "HADOOP_VERSION environment variable is not set."
+    echo "Please set this variable before running."
+    
+    exit 1
+fi
+
+# is the spark version set?
+if ! [[ ${SPARK_VERSION} ]];
+then
+    echo "SPARK_VERSION environment variable is not set."
+    echo "Please set this variable before running."
+    
+    exit 1
+fi
+
 # are we testing for scala 2.11? if so, we need to rewrite our poms to 2.11 first
 if [ ${SCALAVER} == 2.11 ];
 then
