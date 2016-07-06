@@ -45,9 +45,9 @@
       <outputDirectory>javadocs</outputDirectory>
     </fileSet>
     <fileSet>
-      <directory>../adam-cli/target</directory>
+      <directory>../adam-assembly/target</directory>
       <includes>
-        <include>adam-cli_*.jar</include>
+        <include>adam_*.jar</include>
       </includes>
       <outputDirectory>repo</outputDirectory>
       <directoryMode>0755</directoryMode>
