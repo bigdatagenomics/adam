@@ -42,6 +42,11 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
+# create spark packages zip file
+cp adam-cli/target/adam-cli_2.10-${release}.jar adam-${release}.jar
+cp adam-cli/pom.xml adam-${release}.pom
+zip -r adam-${release}.zip adam-${release}.jar adam-${release}.pom
+
 # do scala 2.11 release
 git checkout -b maint_2.11-${release} ${branch}
 ./scripts/move_to_scala_2.11.sh
