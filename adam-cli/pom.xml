@@ -166,10 +166,6 @@
       <artifactId>utils-metrics_2.10</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.scoverage</groupId>
-      <artifactId>scalac-scoverage-plugin_2.10</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.bdgenomics.bdg-formats</groupId>
       <artifactId>bdg-formats</artifactId>
     </dependency>
@@ -216,26 +212,6 @@
     </dependency>
   </dependencies>
   <profiles>
-    <profile>
-      <id>coverage</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.scoverage</groupId>
-            <artifactId>maven-scoverage-plugin</artifactId>
-            <version>${scoverage.version}</version>
-            <executions>
-              <execution>
-                <id>test</id>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>default</id>
       <activation>
