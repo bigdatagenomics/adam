@@ -495,9 +495,9 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
 
     // VCF QUAL, FILTER and INFO fields
     if (vc.filtersWereApplied && vc.isFiltered) {
-      call.setVariantIsPassing(false).setVariantFilters(new java.util.ArrayList(vc.getFilters))
+      call.setFiltersFailed(new java.util.ArrayList(vc.getFilters))
     } else if (vc.filtersWereApplied) {
-      call.setVariantIsPassing(true)
+      call.setFiltersPassed(new java.util.ArrayList(vc.getFilters))
     }
 
     VariantAnnotationConverter.convert(vc, call.build())
@@ -552,10 +552,10 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
         if (g.getReferenceReadDepth != null && g.getAlternateReadDepth != null)
           gb.AD(Array(g.getReferenceReadDepth, g.getAlternateReadDepth))
 
-        if (g.getGenotypeAnnotation != null) {
-          val genotypeAnnotation = g.getGenotypeAnnotation()
-          if (genotypeAnnotation.getVariantFilters != null) {
-            gb.filters(genotypeAnnotation.getVariantFilters)
+        if (g.getVariantCallingAnnotations != null) {
+          val callAnnotations = g.getVariantCallingAnnotations()
+          if (callAnnotations.getFiltersFailed != null) {
+            gb.filters(callAnnotations.getFiltersFailed)
           }
         }
 
