@@ -27,6 +27,7 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.MultisampleGenomicRDD
+import org.bdgenomics.formats.avro.Sample
 import org.bdgenomics.utils.cli.SaveArgs
 import org.seqdoop.hadoop_bam._
 
@@ -39,7 +40,7 @@ import org.seqdoop.hadoop_bam._
  */
 case class VariantContextRDD(rdd: RDD[VariantContext],
                              sequences: SequenceDictionary,
-                             samples: Seq[String]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
+                             samples: Seq[Sample]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
 
   /**
@@ -108,8 +109,11 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     rdd.cache()
     log.info(s"Writing $vcfFormat file to $filePath")
 
+    // map samples to sample ids
+    val sampleIds = samples.map(_.getSampleId)
+
     // Initialize global header object required by Hadoop VCF Writer
-    val bcastHeader = rdd.context.broadcast(samples)
+    val bcastHeader = rdd.context.broadcast(sampleIds)
     val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
       log.info(s"Setting header for partition $idx")
       synchronized {

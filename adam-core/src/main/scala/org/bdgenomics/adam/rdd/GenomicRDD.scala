@@ -22,12 +22,11 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
-  RecordGroup,
   RecordGroupDictionary,
   ReferenceRegion,
   SequenceDictionary
 }
-import org.bdgenomics.formats.avro.{ Contig, RecordGroupMetadata }
+import org.bdgenomics.formats.avro.{ Contig, RecordGroupMetadata, Sample }
 import org.bdgenomics.utils.cli.SaveArgs
 import scala.reflect.ClassTag
 
@@ -123,13 +122,12 @@ private case class GenericGenomicRDD[T](rdd: RDD[T],
 
 trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends GenomicRDD[T, U] {
 
-  val samples: Seq[String]
+  val samples: Seq[Sample]
 }
 
 abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroReadGroupGenomicRDD[T, U]] extends AvroGenomicRDD[T, U] {
 
   val recordGroups: RecordGroupDictionary
-  val recordGroupPrefix = "_rgdict"
 
   override protected def saveMetadata(filePath: String) {
 
@@ -143,20 +141,31 @@ abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroRe
     // convert record group to avro and save
     val rgMetadata = recordGroups.recordGroups
       .map(_.toMetadata)
-    saveAvro("%s/%s.avro".format(filePath, recordGroupPrefix),
+    saveAvro("%s/_rgdict.avro".format(filePath),
       rdd.context,
       RecordGroupMetadata.SCHEMA$,
       rgMetadata)
   }
 }
 
-abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: MultisampleAvroGenomicRDD[T, U]] extends AvroReadGroupGenomicRDD[T, U]
+abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: MultisampleAvroGenomicRDD[T, U]] extends AvroGenomicRDD[T, U]
     with MultisampleGenomicRDD[T, U] {
 
-  override val recordGroupPrefix = "_samples"
-  val recordGroups = RecordGroupDictionary(samples.map(s => {
-    RecordGroup(s, s)
-  }))
+  override protected def saveMetadata(filePath: String) {
+
+    // get file to write to
+    saveAvro("%s/_samples.avro".format(filePath),
+      rdd.context,
+      Sample.SCHEMA$,
+      samples)
+
+    // convert sequence dictionary to avro form and save
+    val contigs = sequences.toAvro
+    saveAvro("%s/_seqdict.avro".format(filePath),
+      rdd.context,
+      Contig.SCHEMA$,
+      contigs)
+  }
 }
 
 abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[T, U]] extends ADAMRDDFunctions[T]
