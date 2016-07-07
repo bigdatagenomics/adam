@@ -51,7 +51,9 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     VariantContextRDD(sc.parallelize(List(
       VariantContext(v0, Seq(g0))), 1),
-      SequenceDictionary.fromAvro(Seq(contig)), Seq("NA12878"))
+      SequenceDictionary.fromAvro(Seq(contig)), Seq(Sample.newBuilder()
+        .setSampleId("NA12878")
+        .build))
   }
 
   sparkTest("can write, then read in .vcf file") {

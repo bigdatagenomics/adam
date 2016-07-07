@@ -27,7 +27,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.{ JavaSaveArgs, MultisampleAvroGenomicRDD }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.utils.cli.SaveArgs
-import org.bdgenomics.formats.avro.{ Contig, Genotype }
+import org.bdgenomics.formats.avro.{ Contig, Genotype, Sample }
 
 /**
  * An RDD containing genotypes called in a set of samples against a given
@@ -39,7 +39,7 @@ import org.bdgenomics.formats.avro.{ Contig, Genotype }
  */
 case class GenotypeRDD(rdd: RDD[Genotype],
                        sequences: SequenceDictionary,
-                       samples: Seq[String]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
+                       samples: Seq[Sample]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
 
   /**
    * Java-friendly method for saving.
