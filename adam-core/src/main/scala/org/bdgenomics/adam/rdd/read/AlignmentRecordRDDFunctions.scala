@@ -21,10 +21,8 @@ import java.io.{ InputStream, OutputStream, StringWriter, Writer }
 import java.lang.reflect.InvocationTargetException
 import htsjdk.samtools._
 import htsjdk.samtools.util.{ BinaryCodec, BlockCompressedOutputStream }
-import org.apache.avro.Schema
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
@@ -36,16 +34,14 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
-import org.bdgenomics.adam.rdd.{ ADAMRDDFunctions, ADAMSaveAnyArgs, ADAMSequenceDictionaryRDDAggregator }
+import org.bdgenomics.adam.rdd.{ ADAMRDDFunctions, ADAMSaveAnyArgs }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.utils.misc.Logging
 import org.seqdoop.hadoop_bam.SAMRecordWritable
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.math.{ abs, min }
-import scala.reflect.ClassTag
 
 private[rdd] class AlignmentRecordRDDFunctions(val rdd: RDD[AlignmentRecord])
     extends ADAMRDDFunctions[AlignmentRecord] {
@@ -200,7 +196,7 @@ private[rdd] class AlignmentRecordRDDFunctions(val rdd: RDD[AlignmentRecord])
     samHeaderCodec.setValidationStringency(ValidationStringency.SILENT)
 
     val samStringWriter = new StringWriter()
-    samHeaderCodec.encode(samStringWriter, header);
+    samHeaderCodec.encode(samStringWriter, header)
 
     val samWriter: SAMTextWriter = new SAMTextWriter(samStringWriter)
     //samWriter.writeHeader(stringHeaderWriter.toString)
@@ -389,52 +385,22 @@ private[rdd] class AlignmentRecordRDDFunctions(val rdd: RDD[AlignmentRecord])
       // however! this function is not implemented on all platforms, hence the try.
       try {
 
-        // concat files together
-        // we need to do this through reflection because the concat method is
-        // NOT in hadoop 1.x
-
-        // find the concat method
-        val fsMethods = classOf[FileSystem].getDeclaredMethods
-        val filteredMethods = fsMethods.filter(_.getName == "concat")
-
-        // did we find the method? if not, throw an exception
-        if (filteredMethods.size == 0) {
-          throw new IllegalStateException(
-            "Could not find concat method in FileSystem. Methods included:\n" +
-              fsMethods.map(_.getName).mkString("\n") +
-              "\nAre you running Hadoop 1.x?")
-        } else if (filteredMethods.size > 1) {
-          throw new IllegalStateException(
-            "Found multiple concat methods in FileSystem:\n%s".format(
-              filteredMethods.map(_.getName).mkString("\n")))
-        }
-
-        // since we've done our checking, let's get the method now
-        val concatMethod = filteredMethods.head
-
         // we need to move the head file into the tailFiles directory
         // this is a requirement of the concat method
         val newHeadPath = new Path("%s/header".format(tailPath))
         fs.rename(headPath, newHeadPath)
 
-        // invoke the method on the fs instance
-        // if we are on hadoop 2.x, this makes the call:
-        //
-        // fs.concat(headPath, tailFiles)
         try {
-          concatMethod.invoke(fs, newHeadPath, tailFiles)
+          fs.concat(newHeadPath, tailFiles)
         } catch {
-          case ite: InvocationTargetException => {
+          case t: Throwable => {
             // move the head file back - essentially, unroll the prep for concat
             fs.rename(newHeadPath, headPath)
-
-            // the only reason we have this try/catch is to unwrap the wrapped
-            // exception and rethrow. this gives clearer logging messages
-            throw ite.getTargetException
+            throw t
           }
         }
 
-        // move concated file
+        // move concatenated file
         fs.rename(newHeadPath, outputPath)
 
         // delete tail files

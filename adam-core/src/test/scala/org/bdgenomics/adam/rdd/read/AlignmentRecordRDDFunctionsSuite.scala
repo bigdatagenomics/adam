@@ -20,7 +20,6 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
@@ -31,7 +30,6 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
-import scala.io.Source
 import scala.util.Random
 
 private object SequenceIndexWithReadOrdering extends Ordering[((Int, Long), (AlignmentRecord, Int))] {
@@ -68,7 +66,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     assert(unmapped.forall(p => p._2 > mapped.takeRight(1)(0)._2))
     // Make sure that we appropriately sorted the reads
     val expectedSortedReads = mapped.sortWith(
-      (a, b) => a._1.getContigName.toString < b._1.getContigName.toString && a._1.getStart < b._1.getStart)
+      (a, b) => a._1.getContigName < b._1.getContigName && a._1.getStart < b._1.getStart)
     assert(expectedSortedReads === mapped)
   }
 
@@ -447,7 +445,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
   }
 
   def tempLocation(suffix: String = ".adam"): String = {
-    val tempFile = File.createTempFile("AlignmentRecordRDDFuncationsSuite", "")
+    val tempFile = File.createTempFile("AlignmentRecordRDDFunctionsSuite", "")
     val tempDir = tempFile.getParentFile
     new File(tempDir, tempFile.getName + suffix).getAbsolutePath
   }
