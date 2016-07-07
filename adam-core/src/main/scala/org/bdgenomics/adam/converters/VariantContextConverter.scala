@@ -65,17 +65,17 @@ private[adam] object VariantContextConverter {
    * An htsjdk Allele can represent a reference or alternate allele call, or a
    * site where no call could be made. If the allele is an alternate allele, we
    * check to see if this matches the primary alt allele at the site before
-   * deciding to tag it as a primary alt (Alt) or a secondary alt (OtherAlt).
+   * deciding to tag it as a primary alt (ALT) or a secondary alt (OTHER_ALT).
    *
    * @param vc The underlying VariantContext for the site.
    * @param allele The allele we are converting.
    * @return The Avro representation for this allele.
    */
   private def convertAllele(vc: HtsjdkVariantContext, allele: Allele): GenotypeAllele = {
-    if (allele.isNoCall) GenotypeAllele.NoCall
-    else if (allele.isReference) GenotypeAllele.Ref
-    else if (allele == NON_REF_ALLELE || !vc.hasAlternateAllele(allele)) GenotypeAllele.OtherAlt
-    else GenotypeAllele.Alt
+    if (allele.isNoCall) GenotypeAllele.NO_CALL
+    else if (allele.isReference) GenotypeAllele.REF
+    else if (allele == NON_REF_ALLELE || !vc.hasAlternateAllele(allele)) GenotypeAllele.OTHER_ALT
+    else GenotypeAllele.ALT
   }
 
   /**
@@ -123,9 +123,9 @@ private[adam] object VariantContextConverter {
     var alleles = g.getAlleles
     if (alleles == null) return Collections.emptyList[Allele]
     else g.getAlleles.map {
-      case GenotypeAllele.NoCall                        => Allele.NO_CALL
-      case GenotypeAllele.Ref | GenotypeAllele.OtherAlt => Allele.create(g.getVariant.getReferenceAllele, true)
-      case GenotypeAllele.Alt                           => Allele.create(g.getVariant.getAlternateAllele)
+      case GenotypeAllele.NO_CALL                        => Allele.NO_CALL
+      case GenotypeAllele.REF | GenotypeAllele.OTHER_ALT => Allele.create(g.getVariant.getReferenceAllele, true)
+      case GenotypeAllele.ALT                            => Allele.create(g.getVariant.getAlternateAllele)
     }
   }
 }
@@ -184,12 +184,12 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
   def convert(vc: HtsjdkVariantContext): Seq[ADAMVariantContext] = {
 
     // INFO field variant calling annotations, e.g. MQ
-    lazy val calling_annotations: VariantCallingAnnotations = extractVariantCallingAnnotations(vc)
+    lazy val genotypeAnnotation: GenotypeAnnotation = extractGenotypeAnnotation(vc)
 
     vc.getAlternateAlleles.toList match {
       case List(NON_REF_ALLELE) => {
         val variant = createADAMVariant(vc, None /* No alternate allele */ )
-        val genotypes = extractReferenceGenotypes(vc, variant, calling_annotations)
+        val genotypes = extractReferenceGenotypes(vc, variant, genotypeAnnotation)
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case List(allele) => {
@@ -198,7 +198,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
           "Assertion failed when converting: " + vc.toString
         )
         val variant = createADAMVariant(vc, Some(allele.getDisplayString))
-        val genotypes = extractReferenceModelGenotypes(vc, variant, calling_annotations)
+        val genotypes = extractReferenceModelGenotypes(vc, variant, genotypeAnnotation)
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case List(allele, NON_REF_ALLELE) => {
@@ -207,7 +207,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
           "Assertion failed when converting: " + vc.toString
         )
         val variant = createADAMVariant(vc, Some(allele.getDisplayString))
-        val genotypes = extractReferenceModelGenotypes(vc, variant, calling_annotations)
+        val genotypes = extractReferenceModelGenotypes(vc, variant, genotypeAnnotation)
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case alleles :+ NON_REF_ALLELE => {
@@ -268,7 +268,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    * @param vc htsjdk variant context to extract annotations from.
    * @return The database annotations in Avro format.
    */
-  def convertToAnnotation(vc: HtsjdkVariantContext): DatabaseVariantAnnotation = {
+  def convertToAnnotation(vc: HtsjdkVariantContext): VariantAnnotation = {
     val variant = vc.getAlternateAlleles.toList match {
       case List(NON_REF_ALLELE) => {
         createADAMVariant(vc, None /* No alternate allele */ )
@@ -296,7 +296,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
       }
     }
 
-    extractVariantDatabaseAnnotation(variant, vc)
+    extractVariantAnnotation(variant, vc)
   }
 
   /**
@@ -342,9 +342,9 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    * @return Returns the Avro representation of the annotations at this site
    *   that indicate membership in an annotation database.
    */
-  private def extractVariantDatabaseAnnotation(variant: Variant,
-                                               vc: HtsjdkVariantContext): DatabaseVariantAnnotation = {
-    val annotation = DatabaseVariantAnnotation.newBuilder()
+  private def extractVariantAnnotation(variant: Variant,
+                                       vc: HtsjdkVariantContext): VariantAnnotation = {
+    val annotation = VariantAnnotation.newBuilder()
       .setVariant(variant)
       .build
 
@@ -356,7 +356,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    *
    * @param vc htsjdk variant context representing a VCF line.
    * @param variant Avro description for the called site.
-   * @param annotations The variant calling annotations for this site.
+   * @param annotation The variant calling annotations for this site.
    * @param setPL A function that maps across Genotype.Builders and sets the
    *   phred-based likelihood for a genotype called at a site.
    * @return Returns a seq containing all of the genotypes called at a single
@@ -369,7 +369,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
   private def extractGenotypes(
     vc: HtsjdkVariantContext,
     variant: Variant,
-    annotations: VariantCallingAnnotations,
+    annotation: GenotypeAnnotation,
     setPL: (htsjdk.variant.variantcontext.Genotype, Genotype.Builder) => Unit): Seq[Genotype] = {
 
     // dupe variant, get contig name/start/end and null out
@@ -389,10 +389,10 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
           .setContigName(contigName)
           .setStart(start)
           .setEnd(end)
-          .setVariantCallingAnnotations(annotations)
+          .setGenotypeAnnotation(annotation)
           .setSampleId(g.getSampleName)
           .setAlleles(g.getAlleles.map(VariantContextConverter.convertAllele(vc, _)))
-          .setIsPhased(g.isPhased)
+          .setPhased(g.isPhased)
 
         if (g.hasGQ) genotype.setGenotypeQuality(g.getGQ)
         if (g.hasDP) genotype.setReadDepth(g.getDP)
@@ -416,7 +416,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    *
    * @param vc htsjdk variant context representing a VCF line.
    * @param variant Avro description for the called site.
-   * @param annotations The variant calling annotations for this site.
+   * @param annotation The variant calling annotations for this site.
    * @return Returns a seq containing all of the genotypes called at a single
    *   variant site.
    *
@@ -424,9 +424,9 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    */
   private def extractNonReferenceGenotypes(vc: HtsjdkVariantContext,
                                            variant: Variant,
-                                           annotations: VariantCallingAnnotations): Seq[Genotype] = {
+                                           annotation: GenotypeAnnotation): Seq[Genotype] = {
     assert(vc.isBiallelic)
-    extractGenotypes(vc, variant, annotations,
+    extractGenotypes(vc, variant, annotation,
       (g: htsjdk.variant.variantcontext.Genotype, b: Genotype.Builder) => {
         if (g.hasPL) b.setGenotypeLikelihoods(g.getPL.toList.map(p => jFloat(PhredUtils.phredToLogProbability(p))))
       })
@@ -438,7 +438,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    *
    * @param vc htsjdk variant context representing a VCF line.
    * @param variant Avro description for the called site.
-   * @param annotations The variant calling annotations for this site.
+   * @param annotation The variant calling annotations for this site.
    * @return Returns a seq containing all of the genotypes called at a single
    *   variant site.
    *
@@ -446,9 +446,9 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    */
   private def extractReferenceGenotypes(vc: HtsjdkVariantContext,
                                         variant: Variant,
-                                        annotations: VariantCallingAnnotations): Seq[Genotype] = {
+                                        annotation: GenotypeAnnotation): Seq[Genotype] = {
     assert(vc.isBiallelic)
-    extractGenotypes(vc, variant, annotations, (g, b) => {
+    extractGenotypes(vc, variant, annotation, (g, b) => {
       if (g.hasPL) b.setNonReferenceLikelihoods(g.getPL.toList.map(p => jFloat(PhredUtils.phredToLogProbability(p))))
     })
   }
@@ -459,7 +459,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    *
    * @param vc htsjdk variant context representing a VCF line.
    * @param variant Avro description for the called site.
-   * @param annotations The variant calling annotations for this site.
+   * @param annotation The variant calling annotations for this site.
    * @return Returns a seq containing all of the genotypes called at a single
    *   variant site.
    *
@@ -467,8 +467,8 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    */
   private def extractReferenceModelGenotypes(vc: HtsjdkVariantContext,
                                              variant: Variant,
-                                             annotations: VariantCallingAnnotations): Seq[Genotype] = {
-    extractGenotypes(vc, variant, annotations, (g, b) => {
+                                             annotation: GenotypeAnnotation): Seq[Genotype] = {
+    extractGenotypes(vc, variant, annotation, (g, b) => {
       if (g.hasPL) {
         val pls = g.getPL.map(p => jFloat(PhredUtils.phredToLogProbability(p)))
         val splitAt: Int = g.getPloidy match {
@@ -490,8 +490,8 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    * @return Returns a variant calling annotation with the filters applied to
    *   this site.
    */
-  private def extractVariantCallingAnnotations(vc: HtsjdkVariantContext): VariantCallingAnnotations = {
-    val call: VariantCallingAnnotations.Builder = VariantCallingAnnotations.newBuilder
+  private def extractGenotypeAnnotation(vc: HtsjdkVariantContext): GenotypeAnnotation = {
+    val call: GenotypeAnnotation.Builder = GenotypeAnnotation.newBuilder
 
     // VCF QUAL, FILTER and INFO fields
     if (vc.filtersWereApplied && vc.isFiltered) {
@@ -511,13 +511,13 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    */
   private def extractADAMInfoFields(g: Genotype): HashMap[String, Object] = {
     val infoFields = new HashMap[String, Object]();
-    val annotations = g.getVariantCallingAnnotations
-    if (annotations != null) {
-      Option(annotations.getFisherStrandBiasPValue).foreach(infoFields.put("FS", _))
-      Option(annotations.getRmsMapQ).foreach(infoFields.put("MQ", _))
-      Option(annotations.getMapq0Reads).foreach(infoFields.put("MQ0", _))
-      Option(annotations.getMqRankSum).foreach(infoFields.put("MQRankSum", _))
-      Option(annotations.getReadPositionRankSum).foreach(infoFields.put("ReadPosRankSum", _))
+    val annotation = g.getGenotypeAnnotation
+    if (annotation != null) {
+      Option(annotation.getFisherStrandBiasPValue).foreach(infoFields.put("FS", _))
+      Option(annotation.getRmsMappingQuality).foreach(infoFields.put("MQ", _))
+      Option(annotation.getMappingQualityZeroReads).foreach(infoFields.put("MQ0", _))
+      Option(annotation.getMappingQualityRankSum).foreach(infoFields.put("MQRankSum", _))
+      Option(annotation.getReadPositionRankSum).foreach(infoFields.put("ReadPosRankSum", _))
     }
     infoFields
   }
@@ -538,8 +538,6 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
       .stop(variant.getStart + variant.getReferenceAllele.length)
       .alleles(VariantContextConverter.convertAlleles(variant))
 
-    vc.databases.flatMap(d => Option(d.getDbSnpId)).foreach(d => vcb.id("rs" + d))
-
     // TODO: Extract provenance INFO fields
     try {
       vcb.genotypes(vc.genotypes.map(g => {
@@ -547,17 +545,17 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
           g.getSampleId, VariantContextConverter.convertAlleles(g)
         )
 
-        Option(g.getIsPhased).foreach(gb.phased(_))
+        Option(g.getPhased).foreach(gb.phased(_))
         Option(g.getGenotypeQuality).foreach(gb.GQ(_))
         Option(g.getReadDepth).foreach(gb.DP(_))
 
         if (g.getReferenceReadDepth != null && g.getAlternateReadDepth != null)
           gb.AD(Array(g.getReferenceReadDepth, g.getAlternateReadDepth))
 
-        if (g.getVariantCallingAnnotations != null) {
-          val callAnnotations = g.getVariantCallingAnnotations()
-          if (callAnnotations.getVariantFilters != null) {
-            gb.filters(callAnnotations.getVariantFilters)
+        if (g.getGenotypeAnnotation != null) {
+          val genotypeAnnotation = g.getGenotypeAnnotation()
+          if (genotypeAnnotation.getVariantFilters != null) {
+            gb.filters(genotypeAnnotation.getVariantFilters)
           }
         }
 

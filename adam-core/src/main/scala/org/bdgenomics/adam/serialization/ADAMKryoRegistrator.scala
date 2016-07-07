@@ -48,7 +48,14 @@ import org.bdgenomics.adam.converters.FastaConverter.FastaDescriptionLine
 import org.bdgenomics.adam.converters.FragmentCollector
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.realignment._
-import org.bdgenomics.adam.rdd.read.recalibration.{ CovariateKey, CovariateSpace, CycleCovariate, DinucCovariate, Observation, ObservationAccumulator }
+import org.bdgenomics.adam.rdd.read.recalibration.{
+  CovariateKey,
+  CovariateSpace,
+  CycleCovariate,
+  DinucCovariate,
+  Observation,
+  ObservationAccumulator
+}
 import org.bdgenomics.adam.rdd.read.{ DuplicateMetrics, FlagStatMetrics }
 import org.bdgenomics.adam.rdd.{ GenomeBins, OrientedPoint }
 import org.bdgenomics.adam.rich.{ DecadentRead, ReferenceSequenceContext, RichAlignmentRecord, RichVariant }
@@ -108,8 +115,11 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Variant], new AvroSerializer[Variant])
     kryo.register(classOf[Array[Variant]])
 
-    kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation])
-    kryo.register(classOf[Array[DatabaseVariantAnnotation]])
+    kryo.register(classOf[VariantAnnotation], new AvroSerializer[VariantAnnotation])
+    kryo.register(classOf[Array[VariantAnnotation]])
+
+    kryo.register(classOf[TranscriptEffect], new AvroSerializer[TranscriptEffect])
+    kryo.register(classOf[Array[TranscriptEffect]])
 
     kryo.register(classOf[NucleotideContigFragment], new AvroSerializer[NucleotideContigFragment])
     kryo.register(classOf[Array[NucleotideContigFragment]])
@@ -117,12 +127,10 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Contig], new AvroSerializer[Contig])
     kryo.register(classOf[RecordGroupMetadata], new AvroSerializer[RecordGroupMetadata])
     kryo.register(classOf[StructuralVariant], new AvroSerializer[StructuralVariant])
-    kryo.register(classOf[VariantCallingAnnotations], new AvroSerializer[VariantCallingAnnotations])
-    kryo.register(classOf[TranscriptEffect], new AvroSerializer[TranscriptEffect])
-    kryo.register(classOf[VariantAnnotation], new AvroSerializer[VariantAnnotation])
+    kryo.register(classOf[GenotypeAnnotation], new AvroSerializer[GenotypeAnnotation])
 
-    kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation])
     kryo.register(classOf[Dbxref], new AvroSerializer[Dbxref])
+    kryo.register(classOf[OntologyTerm], new AvroSerializer[OntologyTerm])
 
     kryo.register(classOf[Strand])
 

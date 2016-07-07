@@ -109,7 +109,6 @@ object VariantAnnotations extends Serializable with Logging {
     val messages = parseMessages(fields(15))
 
     val te = TranscriptEffect.newBuilder()
-    setIfNotEmpty(alternateAllele, te.setAlternateAllele(_))
     if (!effects.isEmpty) te.setEffects(effects.asJava)
     setIfNotEmpty(geneName, te.setGeneName(_))
     setIfNotEmpty(geneId, te.setGeneId(_))
@@ -149,6 +148,7 @@ object VariantAnnotations extends Serializable with Logging {
 
     val attr = vc.getAttributeAsString("ANN", null)
     if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {
+      // todo:  need to only assign transcript effects where ALT allele matches
       va.setTranscriptEffects(parseAnn(attr, stringency).asJava)
     }
 
