@@ -24,7 +24,7 @@ import org.bdgenomics.adam.models.{
   ReferenceRegion,
   SequenceDictionary
 }
-import org.bdgenomics.adam.rdd.AvroReadGroupGenomicRDD
+import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.adam.rdd.read.{
   AlignedReadRDD,
   AlignmentRecordRDD,
@@ -34,7 +34,10 @@ import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 
-object FragmentRDD {
+/**
+ * Helper singleton object for building FragmentRDDs.
+ */
+private[rdd] object FragmentRDD {
 
   /**
    * Creates a FragmentRDD where no record groups or sequence info are attached.
@@ -42,20 +45,39 @@ object FragmentRDD {
    * @param rdd RDD of fragments.
    * @return Returns a FragmentRDD with an empty record group dictionary and sequence dictionary.
    */
-  private[rdd] def fromRdd(rdd: RDD[Fragment]): FragmentRDD = {
+  def fromRdd(rdd: RDD[Fragment]): FragmentRDD = {
     FragmentRDD(rdd, SequenceDictionary.empty, RecordGroupDictionary.empty)
   }
 }
 
+/**
+ * A genomic RDD that supports RDDs of Fragments.
+ *
+ * @param rdd The underlying RDD of Fragment data.
+ * @param sequences The genomic sequences this data was aligned to, if any.
+ * @param recordGroups The record groups these Fragments came from.
+ */
 case class FragmentRDD(rdd: RDD[Fragment],
                        sequences: SequenceDictionary,
                        recordGroups: RecordGroupDictionary) extends AvroReadGroupGenomicRDD[Fragment, FragmentRDD] {
 
+  /**
+   * Replaces the underlying RDD with a new RDD.
+   *
+   * @param newRdd The RDD to replace our underlying RDD with.
+   * @return Returns a new FragmentRDD where the underlying RDD has been
+   *   swapped out.
+   */
   protected def replaceRdd(newRdd: RDD[Fragment]): FragmentRDD = {
     copy(rdd = newRdd)
   }
 
-  def toReads: AlignmentRecordRDD = {
+  /**
+   * Essentially, splits up the reads in a Fragment.
+   *
+   * @return Returns this RDD converted back to reads.
+   */
+  def toReads(): AlignmentRecordRDD = {
     val converter = new AlignmentRecordConverter
 
     // convert the fragments to reads
@@ -69,6 +91,24 @@ case class FragmentRDD(rdd: RDD[Fragment],
     }
   }
 
+  /**
+   * Saves Fragments to Parquet.
+   *
+   * @param filePath Path to save fragments at.
+   */
+  def save(filePath: java.lang.String) {
+    saveAsParquet(new JavaSaveArgs(filePath))
+  }
+
+  /**
+   * Returns the regions that this fragment covers.
+   *
+   * Since a fragment may be chimeric or multi-mapped, we do not try to compute
+   * the hull of the underlying element.
+   *
+   * @param elem The Fragment to get the region from.
+   * @return Returns all regions covered by this fragment.
+   */
   protected def getReferenceRegions(elem: Fragment): Seq[ReferenceRegion] = {
     elem.getAlignments
       .flatMap(r => ReferenceRegion.opt(r))

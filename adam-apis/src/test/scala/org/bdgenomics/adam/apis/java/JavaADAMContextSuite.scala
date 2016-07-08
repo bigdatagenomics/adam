@@ -31,9 +31,9 @@ class JavaADAMContextSuite extends ADAMFunSuite {
     val aRdd = sc.loadAlignments(path)
     assert(aRdd.jrdd.count() === 20)
 
-    val newReads = JavaADAMReadConduit.conduit(aRdd, sc)
+    val newRdd = JavaADAMReadConduit.conduit(aRdd, sc)
 
-    assert(newReads.jrdd.count() === 20)
+    assert(newRdd.jrdd.count() === 20)
   }
 
   sparkTest("can read and write a small FASTA file") {
@@ -41,8 +41,18 @@ class JavaADAMContextSuite extends ADAMFunSuite {
     val aRdd = sc.loadSequences(path)
     assert(aRdd.jrdd.count() === 26)
 
-    val newReads = JavaADAMContigConduit.conduit(aRdd, sc)
+    val newRdd = JavaADAMContigConduit.conduit(aRdd, sc)
 
-    assert(newReads.jrdd.count() === 26)
+    assert(newRdd.jrdd.count() === 26)
+  }
+
+  sparkTest("can read and write a small .SAM file as fragments") {
+    val path = copyResource("small.sam")
+    val aRdd = sc.loadFragments(path)
+    assert(aRdd.jrdd.count() === 20)
+
+    val newRdd = JavaADAMFragmentConduit.conduit(aRdd, sc)
+
+    assert(newRdd.jrdd.count() === 20)
   }
 }

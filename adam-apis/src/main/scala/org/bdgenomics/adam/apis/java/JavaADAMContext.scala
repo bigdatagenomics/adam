@@ -22,8 +22,9 @@ import org.apache.spark.api.java.JavaSparkContext
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
 
@@ -76,5 +77,15 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    */
   def loadSequences(filePath: java.lang.String): NucleotideContigFragmentRDD = {
     ac.loadSequences(filePath)
+  }
+
+  /**
+   * Loads in read pairs as fragments.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a FragmentRDD.
+   */
+  def loadFragments(filePath: java.lang.String): FragmentRDD = {
+    ac.loadFragments(filePath)
   }
 }
