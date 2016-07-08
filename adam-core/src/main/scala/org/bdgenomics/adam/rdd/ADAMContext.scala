@@ -41,10 +41,7 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, NucleotideContigFragmentField, Projection }
-import org.bdgenomics.adam.rdd.contig.{
-  NucleotideContigFragmentRDD,
-  NucleotideContigFragmentRDDFunctions
-}
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.features._
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.{
@@ -79,9 +76,6 @@ object ADAMContext {
 
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => IndexedRecord, ev2: Manifest[T]): ConcreteADAMRDDFunctions[T] = new ConcreteADAMRDDFunctions(rdd)
-
-  // Add methods specific to the ADAMNucleotideContig RDDs
-  implicit def rddToContigFragmentRDD(rdd: RDD[NucleotideContigFragment]) = new NucleotideContigFragmentRDDFunctions(rdd)
 
   // implicit conversions for variant related rdds
   implicit def rddToVariantContextRDD(rdd: RDD[VariantContext]) = new VariantContextRDDFunctions(rdd)
@@ -709,10 +703,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val fragmentRdd = FastaConverter(remapData, fragmentLength)
       .cache()
 
-    // get sequence dictionary
-    val sd = fragmentRdd.getSequenceDictionary()
-
-    NucleotideContigFragmentRDD(fragmentRdd, sd)
+    NucleotideContigFragmentRDD(fragmentRdd)
   }
 
   def loadInterleavedFastqAsFragments(
@@ -890,7 +881,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     projection: Option[Schema] = None,
     fragmentLength: Long = 10000): NucleotideContigFragmentRDD = {
     if (filePath.endsWith(".fa") ||
-      filePath.endsWith(".fasta")) {
+      filePath.endsWith(".fasta") ||
+      filePath.endsWith(".fa.gz") ||
+      filePath.endsWith(".fasta.gz")) {
       log.info(s"Loading $filePath as FASTA and converting to NucleotideContigFragment. Projection is ignored.")
       loadFasta(
         filePath,

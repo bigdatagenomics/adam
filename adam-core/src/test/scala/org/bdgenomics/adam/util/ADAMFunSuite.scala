@@ -56,7 +56,7 @@ trait ADAMFunSuite extends SparkFunSuite {
   }
 
   def copyResource(name: String): String = {
-    val tempFile = Files.createTempFile(name, "." + name.split('.').last)
+    val tempFile = Files.createTempFile(name, "." + name.split('.').tail.mkString("."))
     Files.write(tempFile, Resources.toByteArray(getClass().getResource("/" + name)))
     tempFile.toString
   }

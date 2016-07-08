@@ -48,19 +48,18 @@ class ADAM2Fasta(val args: ADAM2FastaArgs) extends BDGSparkCommand[ADAM2FastaArg
   override val companion = ADAM2Fasta
 
   override def run(sc: SparkContext): Unit = {
-    val proj = Projection(contig, description, fragmentNumber, numberOfFragmentsInContig, fragmentSequence)
 
     log.info("Loading ADAM nucleotide contig fragments from disk.")
-    val contigFragments: RDD[NucleotideContigFragment] = sc.loadParquet(args.inputPath, projection = Some(proj))
+    val contigFragments = sc.loadSequences(args.inputPath)
 
     log.info("Merging fragments and writing FASTA to disk.")
-    val contigs = contigFragments
-      .mergeFragments()
+    val contigs = contigFragments.mergeFragments()
+
     val cc = if (args.coalesce > 0) {
       if (args.coalesce > contigs.partitions.size || args.forceShuffle) {
-        contigs.coalesce(args.coalesce, shuffle = true)
+        contigs.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
-        contigs.coalesce(args.coalesce, shuffle = false)
+        contigs.transform(_.coalesce(args.coalesce, shuffle = false))
       }
     } else {
       contigs

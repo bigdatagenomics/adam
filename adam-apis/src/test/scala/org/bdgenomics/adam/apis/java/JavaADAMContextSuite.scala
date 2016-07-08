@@ -26,19 +26,23 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 
 class JavaADAMContextSuite extends ADAMFunSuite {
 
-  sparkTest("can read a small .SAM file") {
-    val path = copyResource("small.sam")
-    val ctx = new JavaADAMContext(sc)
-    val reads = ctx.loadAlignments(path)
-    assert(reads.jrdd.count() === 20)
-  }
-
-  sparkTest("can read a small .SAM file inside of java") {
+  sparkTest("can read and write a small .SAM file") {
     val path = copyResource("small.sam")
     val aRdd = sc.loadAlignments(path)
+    assert(aRdd.jrdd.count() === 20)
 
-    val newReads = JavaADAMConduit.conduit(aRdd.rdd, aRdd.sequences, aRdd.recordGroups)
+    val newReads = JavaADAMReadConduit.conduit(aRdd, sc)
 
     assert(newReads.jrdd.count() === 20)
+  }
+
+  sparkTest("can read and write a small FASTA file") {
+    val path = copyResource("chr20.250k.fa.gz")
+    val aRdd = sc.loadSequences(path)
+    assert(aRdd.jrdd.count() === 26)
+
+    val newReads = JavaADAMContigConduit.conduit(aRdd, sc)
+
+    assert(newReads.jrdd.count() === 26)
   }
 }

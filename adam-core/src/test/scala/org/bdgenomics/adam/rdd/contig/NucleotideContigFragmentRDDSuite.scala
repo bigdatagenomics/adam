@@ -24,10 +24,9 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
-
 import scala.collection.mutable.ListBuffer
 
-class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
+class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
   sparkTest("generate sequence dict from fasta") {
     val contig0 = Contig.newBuilder
@@ -48,16 +47,14 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setContig(contig1)
       .build()
 
-    val rdd = sc.parallelize(List(ctg0, ctg1))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(ctg0, ctg1)))
 
-    val dict = rdd.getSequenceDictionary()
-
-    assert(dict.containsRefName("chr0"))
-    val chr0 = dict("chr0").get
+    assert(rdd.sequences.containsRefName("chr0"))
+    val chr0 = rdd.sequences("chr0").get
     assert(chr0.length === 1000L)
     assert(chr0.url == Some("http://bigdatagenomics.github.io/chr0.fa"))
-    assert(dict.containsRefName("chr1"))
-    val chr1 = dict("chr1").get
+    assert(rdd.sequences.containsRefName("chr1"))
+    val chr1 = rdd.sequences("chr1").get
     assert(chr1.length === 900L)
   }
 
@@ -77,7 +74,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .build()
     val region = ReferenceRegion(fragment).get
 
-    val rdd = sc.parallelize(List(fragment))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
     assert(rdd.getReferenceString(region) === "ACTGTAC")
   }
@@ -98,7 +95,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .build()
     val region = new ReferenceRegion("chr1", 1L, 6L)
 
-    val rdd = sc.parallelize(List(fragment))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
     assert(rdd.getReferenceString(region) === "CTGTA")
   }
@@ -142,7 +139,9 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
     val region0 = ReferenceRegion(fragment0).get
     val region1 = ReferenceRegion(fragment1).get.merge(ReferenceRegion(fragment2).get)
 
-    val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0,
+      fragment1,
+      fragment2)))
 
     assert(rdd.getReferenceString(region0) === "ACTGTAC")
     assert(rdd.getReferenceString(region1) === "GTACTCTCATG")
@@ -187,7 +186,9 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
     val region0 = new ReferenceRegion("chr1", 1L, 6L)
     val region1 = new ReferenceRegion("chr2", 3L, 9L)
 
-    val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0,
+      fragment1,
+      fragment2)))
 
     assert(rdd.getReferenceString(region0) === "CTGTA")
     assert(rdd.getReferenceString(region1) === "CTCTCA")
@@ -210,7 +211,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       fragments += frag
     }
     var passed = true
-    val rdd = sc.parallelize(fragments.toList)
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(fragments.toList))
     try {
       val result = rdd.getReferenceString(new ReferenceRegion("chr1", 0L, 1000L))
     } catch {
@@ -232,11 +233,11 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(1)
       .build
 
-    val rdd = sc.parallelize(List(fragment))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.coalesce(1).saveAsFasta(outputFastaFile)
+    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 2)
@@ -258,11 +259,11 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(1)
       .build
 
-    val rdd = sc.parallelize(List(fragment))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.coalesce(1).saveAsFasta(outputFastaFile)
+    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 2)
@@ -285,11 +286,11 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(null)
       .build
 
-    val rdd = sc.parallelize(List(fragment))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.coalesce(1).saveAsFasta(outputFastaFile)
+    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 2)
@@ -312,11 +313,11 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(1)
       .build
 
-    val rdd = sc.parallelize(List(fragment))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.coalesce(1).saveAsFasta(outputFastaFile)
+    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 2)
@@ -339,11 +340,11 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(null)
       .build
 
-    val rdd = sc.parallelize(List(fragment))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.coalesce(1).saveAsFasta(outputFastaFile)
+    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 2)
@@ -376,11 +377,11 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(3)
       .build
 
-    val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0, fragment1, fragment2)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.coalesce(1).saveAsFasta(outputFastaFile)
+    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 6)
@@ -420,11 +421,13 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(3)
       .build
 
-    val rdd = sc.parallelize(List(fragment0, fragment1, fragment2))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0,
+      fragment1,
+      fragment2)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.coalesce(1).saveAsFasta(outputFastaFile)
+    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
     val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
 
     assert(fastaLines.length === 6)
@@ -451,7 +454,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(null)
       .build
 
-    val rdd = sc.parallelize(List(fragment))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
     val merged = rdd.mergeFragments()
 
     assert(merged.count == 1L)
@@ -473,7 +476,7 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(1)
       .build
 
-    val rdd = sc.parallelize(List(fragment))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
     val merged = rdd.mergeFragments()
 
     assert(merged.count == 1L)
@@ -520,7 +523,9 @@ class NucleotideContigFragmentRDDFunctionsSuite extends ADAMFunSuite {
       .setNumberOfFragmentsInContig(2)
       .build()
 
-    val rdd = sc.parallelize(List(fragment2, fragment1, fragment0))
+    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment2,
+      fragment1,
+      fragment0)))
     val merged = rdd.mergeFragments()
 
     assert(merged.count == 2L)

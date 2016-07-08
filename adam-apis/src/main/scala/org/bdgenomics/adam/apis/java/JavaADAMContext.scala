@@ -23,6 +23,7 @@ import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
 
@@ -63,5 +64,17 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    */
   def loadAlignments(filePath: java.lang.String): AlignmentRecordRDD = {
     ac.loadAlignments(filePath)
+  }
+
+  /**
+   * Loads in sequence fragments.
+   *
+   * Can load from FASTA or from Parquet encoded NucleotideContigFragments.
+   *
+   * @param filePath Path to load the file from.
+   * @return Returns a NucleotideContigFragment RDD.
+   */
+  def loadSequences(filePath: java.lang.String): NucleotideContigFragmentRDD = {
+    ac.loadSequences(filePath)
   }
 }

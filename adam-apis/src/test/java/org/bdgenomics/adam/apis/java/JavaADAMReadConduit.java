@@ -24,27 +24,26 @@ import org.apache.spark.api.java.JavaRDD;
 import org.bdgenomics.adam.apis.java.JavaADAMContext;
 import org.bdgenomics.adam.models.RecordGroupDictionary;
 import org.bdgenomics.adam.models.SequenceDictionary;
+import org.bdgenomics.adam.rdd.ADAMContext;
 import org.bdgenomics.adam.rdd.read.AlignedReadRDD;
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD;
 import org.bdgenomics.formats.avro.AlignmentRecord;
 
 /**
- * A simple test class for the JavaADAMRDD/Context. Writes an RDD to
+ * A simple test class for the JavaADAMRDD/Context. Writes an RDD of reads to
  * disk and reads it back.
  */
-public class JavaADAMConduit {
-    public static AlignmentRecordRDD conduit(JavaRDD<AlignmentRecord> rdd,
-                                       SequenceDictionary sd,
-                                       RecordGroupDictionary rgd) throws IOException {
-        AlignmentRecordRDD recordRdd = new AlignedReadRDD(rdd.rdd(), sd, rgd);
+public class JavaADAMReadConduit {
+    public static AlignmentRecordRDD conduit(AlignmentRecordRDD recordRdd,
+                                             ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
-        String fileName = tempDir.toString() + "/testRdd.adam";
+        String fileName = tempDir.toString() + "/testRdd.read.adam";
         recordRdd.save(fileName, false);
 
         // create a new adam context and load the file
-        JavaADAMContext jac = new JavaADAMContext(rdd.context());
+        JavaADAMContext jac = new JavaADAMContext(ac);
         return jac.loadAlignments(fileName);
     }
 }
