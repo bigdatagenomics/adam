@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.variation
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.SequenceDictionary
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.rdd.AvroGenomicRDD
 import org.bdgenomics.formats.avro.Variant
 
@@ -27,5 +27,9 @@ case class VariantRDD(rdd: RDD[Variant],
 
   protected def replaceRdd(newRdd: RDD[Variant]): VariantRDD = {
     copy(rdd = newRdd)
+  }
+
+  protected def getReferenceRegions(elem: Variant): Seq[ReferenceRegion] = {
+    Seq(ReferenceRegion(elem))
   }
 }

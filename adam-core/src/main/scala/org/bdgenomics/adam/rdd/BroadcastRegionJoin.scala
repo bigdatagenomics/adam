@@ -30,7 +30,7 @@ import scala.reflect.ClassTag
  * Different implementations will have different performance characteristics -- and new implementations
  * will likely be added in the future, see the notes to each individual method for more details.
  */
-object BroadcastRegionJoin extends RegionJoin {
+private[rdd] object BroadcastRegionJoin extends RegionJoin {
 
   /**
    * Performs a region join between two RDDs (broadcast join).

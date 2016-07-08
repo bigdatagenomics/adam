@@ -18,18 +18,26 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
+import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
+  ReferenceRegion,
+  SequenceDictionary
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, Unaligned }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, RecordGroupMetadata }
 
-abstract class AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
+trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
 
   def toFragments: FragmentRDD = {
     FragmentRDD(rdd.toFragments,
       sequences,
       recordGroups)
+  }
+
+  protected def getReferenceRegions(elem: AlignmentRecord): Seq[ReferenceRegion] = {
+    ReferenceRegion.opt(elem).toSeq
   }
 }
 

@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.features
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ Gene, SequenceDictionary }
+import org.bdgenomics.adam.models.{ Gene, ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.AvroGenomicRDD
 import org.bdgenomics.formats.avro.Feature
@@ -45,5 +45,9 @@ case class FeatureRDD(rdd: RDD[Feature],
 
   protected def replaceRdd(newRdd: RDD[Feature]): FeatureRDD = {
     copy(rdd = newRdd)
+  }
+
+  protected def getReferenceRegions(elem: Feature): Seq[ReferenceRegion] = {
+    Seq(ReferenceRegion(elem))
   }
 }

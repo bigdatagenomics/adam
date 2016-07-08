@@ -33,14 +33,6 @@ case class GenotypeRDD(rdd: RDD[Genotype],
                        sequences: SequenceDictionary,
                        samples: Seq[String]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
 
-  def filterByOverlappingRegion(query: ReferenceRegion): RDD[Genotype] = {
-    def overlapsQuery(rec: Genotype): Boolean =
-      rec.getContigName == query.referenceName &&
-        rec.getStart < query.end &&
-        rec.getEnd > query.start
-    rdd.filter(overlapsQuery)
-  }
-
   def toVariantContextRDD: VariantContextRDD = {
     val vcIntRdd: RDD[(RichVariant, Genotype)] = rdd.keyBy(g => {
       RichVariant.genotypeToRichVariant(g)
@@ -73,5 +65,9 @@ case class GenotypeRDD(rdd: RDD[Genotype],
 
   protected def replaceRdd(newRdd: RDD[Genotype]): GenotypeRDD = {
     copy(rdd = newRdd)
+  }
+
+  protected def getReferenceRegions(elem: Genotype): Seq[ReferenceRegion] = {
+    Seq(ReferenceRegion(elem))
   }
 }

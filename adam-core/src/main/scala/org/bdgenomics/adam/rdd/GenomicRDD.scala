@@ -20,9 +20,15 @@ package org.bdgenomics.adam.rdd
 import org.apache.avro.generic.IndexedRecord
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ RecordGroup, RecordGroupDictionary, SequenceDictionary }
+import org.bdgenomics.adam.models.{
+  RecordGroup,
+  RecordGroupDictionary,
+  ReferenceRegion,
+  SequenceDictionary
+}
 import org.bdgenomics.formats.avro.{ Contig, RecordGroupMetadata }
 import org.bdgenomics.utils.cli.SaveArgs
+import scala.reflect.ClassTag
 
 trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
 
@@ -35,6 +41,70 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   }
 
   protected def replaceRdd(newRdd: RDD[T]): U
+
+  protected def getReferenceRegions(elem: T): Seq[ReferenceRegion]
+
+  protected def flattenRddByRegions(): RDD[(ReferenceRegion, T)] = {
+    rdd.flatMap(elem => {
+      getReferenceRegions(elem).map(r => (r, elem))
+    })
+  }
+
+  def filterByOverlappingRegion(query: ReferenceRegion): U = {
+    replaceRdd(rdd.filter(elem => {
+
+      // where can this item sit?
+      val regions = getReferenceRegions(elem)
+
+      // do any of these overlap with our query region?
+      regions.exists(_.overlaps(query))
+    }))
+  }
+
+  def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](genomicRdd: GenomicRDD[X, Y])(
+    implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
+
+    // key the RDDs and join
+    GenericGenomicRDD[(T, X)](BroadcastRegionJoin.partitionAndJoin(flattenRddByRegions(),
+      genomicRdd.flattenRddByRegions()),
+      sequences ++ genomicRdd.sequences,
+      kv => { getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2) })
+      .asInstanceOf[GenomicRDD[(T, X), Z]]
+  }
+
+  def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](genomicRdd: GenomicRDD[X, Y],
+                                                                              optPartitions: Option[Int] = None)(
+                                                                                implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
+
+    // did the user provide a set partition count?
+    // if no, take the max partition count from our rdds
+    val partitions = optPartitions.getOrElse(Seq(rdd.partitions.length,
+      genomicRdd.rdd.partitions.length).max)
+
+    // what sequences do we wind up with at the end?
+    val endSequences = sequences ++ genomicRdd.sequences
+
+    // key the RDDs and join
+    GenericGenomicRDD[(T, X)](
+      ShuffleRegionJoin(endSequences, partitions).partitionAndJoin(flattenRddByRegions(),
+        genomicRdd.flattenRddByRegions()),
+      endSequences,
+      kv => { getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2) })
+      .asInstanceOf[GenomicRDD[(T, X), Z]]
+  }
+}
+
+private case class GenericGenomicRDD[T](rdd: RDD[T],
+                                        sequences: SequenceDictionary,
+                                        regionFn: T => Seq[ReferenceRegion]) extends GenomicRDD[T, GenericGenomicRDD[T]] {
+
+  protected def replaceRdd(newRdd: RDD[T]): GenericGenomicRDD[T] = {
+    copy(rdd = newRdd)
+  }
+
+  protected def getReferenceRegions(elem: T): Seq[ReferenceRegion] = {
+    regionFn(elem)
+  }
 }
 
 trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends GenomicRDD[T, U] {

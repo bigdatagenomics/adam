@@ -26,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 import scala.math._
 import scala.reflect.ClassTag
 
-case class ShuffleRegionJoin(sd: SequenceDictionary, partitionSize: Long) extends RegionJoin {
+private[rdd] case class ShuffleRegionJoin(sd: SequenceDictionary, partitionSize: Long) extends RegionJoin {
 
   /**
    * Performs a region join between two RDDs (shuffle join).

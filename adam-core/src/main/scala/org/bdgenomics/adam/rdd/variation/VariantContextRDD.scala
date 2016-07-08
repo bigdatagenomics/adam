@@ -21,7 +21,11 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.VariantContextConverter
-import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
+import org.bdgenomics.adam.models.{
+  ReferenceRegion,
+  SequenceDictionary,
+  VariantContext
+}
 import org.bdgenomics.adam.rdd.MultisampleGenomicRDD
 import org.bdgenomics.utils.cli.SaveArgs
 import org.seqdoop.hadoop_bam._
@@ -129,5 +133,9 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
 
   protected def replaceRdd(newRdd: RDD[VariantContext]): VariantContextRDD = {
     copy(rdd = newRdd)
+  }
+
+  protected def getReferenceRegions(elem: VariantContext): Seq[ReferenceRegion] = {
+    Seq(ReferenceRegion(elem.position))
   }
 }

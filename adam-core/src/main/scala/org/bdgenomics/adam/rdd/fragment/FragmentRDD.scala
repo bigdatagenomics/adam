@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.fragment
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
+import org.bdgenomics.adam.models.{ RecordGroupDictionary, ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.rdd.AvroReadGroupGenomicRDD
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.misc.Logging
@@ -49,5 +49,11 @@ case class FragmentRDD(rdd: RDD[Fragment],
   def toReads: RDD[AlignmentRecord] = {
     val converter = new AlignmentRecordConverter
     rdd.flatMap(converter.convertFragment)
+  }
+
+  protected def getReferenceRegions(elem: Fragment): Seq[ReferenceRegion] = {
+    elem.getAlignments
+      .flatMap(r => ReferenceRegion.opt(r))
+      .toSeq
   }
 }

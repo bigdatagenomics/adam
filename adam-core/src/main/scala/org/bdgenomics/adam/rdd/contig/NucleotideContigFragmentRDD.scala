@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.contig
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.FragmentConverter
-import org.bdgenomics.adam.models.SequenceDictionary
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.rdd.AvroGenomicRDD
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
 
@@ -38,5 +38,9 @@ case class NucleotideContigFragmentRDD(rdd: RDD[NucleotideContigFragment],
 
   protected def replaceRdd(newRdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
     copy(rdd = newRdd)
+  }
+
+  protected def getReferenceRegions(elem: NucleotideContigFragment): Seq[ReferenceRegion] = {
+    ReferenceRegion(elem).toSeq
   }
 }
