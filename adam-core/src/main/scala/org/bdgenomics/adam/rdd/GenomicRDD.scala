@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd
 
 import org.apache.avro.generic.IndexedRecord
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
   RecordGroup,
@@ -30,11 +31,24 @@ import org.bdgenomics.formats.avro.{ Contig, RecordGroupMetadata }
 import org.bdgenomics.utils.cli.SaveArgs
 import scala.reflect.ClassTag
 
+private[rdd] class JavaSaveArgs(var outputPath: String,
+                                var blockSize: Int = 128 * 1024 * 1024,
+                                var pageSize: Int = 1 * 1024 * 1024,
+                                var compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                                var disableDictionaryEncoding: Boolean = false,
+                                var asSingleFile: Boolean = false) extends ADAMSaveAnyArgs {
+  var sortFastqOutput = false
+}
+
 trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
 
   val rdd: RDD[T]
 
   val sequences: SequenceDictionary
+
+  lazy val jrdd: JavaRDD[T] = {
+    rdd.toJavaRDD()
+  }
 
   def transform(tFn: RDD[T] => RDD[T]): U = {
     replaceRdd(tFn(rdd))
@@ -186,6 +200,16 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[
     )
   }
 
+  /**
+   * Saves this RDD to disk as a Parquet file.
+   *
+   * @param filePath Path to save the file at.
+   * @param blockSize Size per block.
+   * @param pageSize Size per page.
+   * @param compressCodec Name of the compression codec to use.
+   * @param disableDictionaryEncoding Whether or not to disable bit-packing.
+   *   Default is false.
+   */
   def saveAsParquet(
     filePath: String,
     blockSize: Int = 128 * 1024 * 1024,
@@ -198,6 +222,38 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[
       compressCodec,
       disableDictionaryEncoding)
     saveMetadata(filePath)
+  }
+
+  /**
+   * Saves this RDD to disk as a Parquet file.
+   *
+   * @param filePath Path to save the file at.
+   * @param blockSize Size per block.
+   * @param pageSize Size per page.
+   * @param compressCodec Name of the compression codec to use.
+   * @param disableDictionaryEncoding Whether or not to disable bit-packing.
+   */
+  def saveAsParquet(
+    filePath: java.lang.String,
+    blockSize: java.lang.Integer,
+    pageSize: java.lang.Integer,
+    compressCodec: CompressionCodecName,
+    disableDictionaryEncoding: java.lang.Boolean) {
+    saveAsParquet(
+      new JavaSaveArgs(filePath,
+        blockSize = blockSize,
+        pageSize = pageSize,
+        compressionCodec = compressCodec,
+        disableDictionaryEncoding = disableDictionaryEncoding))
+  }
+
+  /**
+   * Saves this RDD to disk as a Parquet file.
+   *
+   * @param filePath Path to save the file at.
+   */
+  def saveAsParquet(filePath: java.lang.String) {
+    saveAsParquet(new JavaSaveArgs(filePath))
   }
 }
 

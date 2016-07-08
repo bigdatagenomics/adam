@@ -21,34 +21,32 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.Consensus
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 class RealignIndelsSuite extends ADAMFunSuite {
 
-  def mason_reads: RDD[AlignmentRecord] = {
+  def mason_reads: AlignmentRecordRDD = {
     val path = resourcePath("small_realignment_targets.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
-    reads
+    sc.loadAlignments(path)
   }
 
-  def artificial_reads: RDD[AlignmentRecord] = {
+  def artificial_reads: AlignmentRecordRDD = {
     val path = resourcePath("artificial.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
-    reads
+    sc.loadAlignments(path)
   }
 
-  def artificial_realigned_reads: RDD[AlignmentRecord] = {
+  def artificial_realigned_reads: AlignmentRecordRDD = {
     artificial_reads
       .realignIndels()
       .sortReadsByReferencePosition()
   }
 
-  def gatk_artificial_realigned_reads: RDD[AlignmentRecord] = {
+  def gatk_artificial_realigned_reads: AlignmentRecordRDD = {
     val path = resourcePath("artificial.realigned.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
-    reads
+    sc.loadAlignments(path)
   }
 
   sparkTest("checking mapping to targets for artificial reads") {

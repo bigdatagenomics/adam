@@ -63,14 +63,12 @@ class Fragments2Reads(protected val args: Fragments2ReadsArgs) extends BDGSparkC
     val finalRdd = if (args.sortReads) {
       readRdd.sortReadsByReferencePosition()
     } else if (args.sortLexicographically) {
-      readRdd.sortReadsByReferencePositionAndIndex(rdd.sequences)
+      readRdd.sortReadsByReferencePositionAndIndex()
     } else {
       readRdd
     }
 
     // save the file
-    finalRdd.save(args,
-      rdd.sequences,
-      rdd.recordGroups)
+    finalRdd.save(args)
   }
 }

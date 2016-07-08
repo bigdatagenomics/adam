@@ -19,8 +19,17 @@ package org.bdgenomics.adam.rdd.fragment
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, ReferenceRegion, SequenceDictionary }
+import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
+  ReferenceRegion,
+  SequenceDictionary
+}
 import org.bdgenomics.adam.rdd.AvroReadGroupGenomicRDD
+import org.bdgenomics.adam.rdd.read.{
+  AlignedReadRDD,
+  AlignmentRecordRDD,
+  UnalignedReadRDD
+}
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
@@ -46,9 +55,18 @@ case class FragmentRDD(rdd: RDD[Fragment],
     copy(rdd = newRdd)
   }
 
-  def toReads: RDD[AlignmentRecord] = {
+  def toReads: AlignmentRecordRDD = {
     val converter = new AlignmentRecordConverter
-    rdd.flatMap(converter.convertFragment)
+
+    // convert the fragments to reads
+    val newRdd = rdd.flatMap(converter.convertFragment)
+
+    // are we aligned?
+    if (sequences.isEmpty) {
+      UnalignedReadRDD(newRdd, recordGroups)
+    } else {
+      AlignedReadRDD(newRdd, sequences, recordGroups)
+    }
   }
 
   protected def getReferenceRegions(elem: Fragment): Seq[ReferenceRegion] = {

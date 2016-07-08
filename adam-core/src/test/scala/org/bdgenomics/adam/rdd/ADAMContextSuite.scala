@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.AlignedReadRDD
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
@@ -177,9 +178,11 @@ class ADAMContextSuite extends ADAMFunSuite {
     val loc = tempLocation()
     val path = new Path(loc)
 
-    saved.save(TestSaveArgs(loc),
-      new SequenceDictionary(Vector(SequenceRecord.fromADAMContig(contig))),
-      RecordGroupDictionary.empty)
+    // make sequence dictionary and rg dict
+    val sd = SequenceDictionary.fromAvro(Seq(contig))
+    val rgd = RecordGroupDictionary(Seq(RecordGroup("sample", "group0")))
+
+    AlignedReadRDD(saved, sd, rgd).save(TestSaveArgs(loc))
     try {
       val loaded = sc.loadAlignmentsFromPaths(Seq(path))
 

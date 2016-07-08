@@ -39,10 +39,7 @@ class FieldEnumerationSuite extends ADAMFunSuite {
 
     // Convert the reads12.sam file into a parquet file
     val rRdd = sc.loadBam(readsFilepath)
-    val bamReads = rRdd.rdd
-    val sd = rRdd.sequences
-    val rgd = rRdd.recordGroups
-    bamReads.saveAsParquet(TestSaveArgs(readsParquetFilepath), sd, rgd)
+    rRdd.saveAsParquet(TestSaveArgs(readsParquetFilepath))
 
     val p1 = Projection(AlignmentRecordField.readName)
     val reads1: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFilepath, projection = Some(p1))

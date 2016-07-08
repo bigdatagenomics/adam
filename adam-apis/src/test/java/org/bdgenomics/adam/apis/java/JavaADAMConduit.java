@@ -24,6 +24,8 @@ import org.apache.spark.api.java.JavaRDD;
 import org.bdgenomics.adam.apis.java.JavaADAMContext;
 import org.bdgenomics.adam.models.RecordGroupDictionary;
 import org.bdgenomics.adam.models.SequenceDictionary;
+import org.bdgenomics.adam.rdd.read.AlignedReadRDD;
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD;
 import org.bdgenomics.formats.avro.AlignmentRecord;
 
 /**
@@ -31,15 +33,15 @@ import org.bdgenomics.formats.avro.AlignmentRecord;
  * disk and reads it back.
  */
 public class JavaADAMConduit {
-    public static JavaAlignmentRecordRDD conduit(JavaRDD<AlignmentRecord> rdd,
+    public static AlignmentRecordRDD conduit(JavaRDD<AlignmentRecord> rdd,
                                        SequenceDictionary sd,
                                        RecordGroupDictionary rgd) throws IOException {
-        JavaAlignmentRecordRDD recordRdd = new JavaAlignmentRecordRDD(rdd, sd, rgd);
+        AlignmentRecordRDD recordRdd = new AlignedReadRDD(rdd.rdd(), sd, rgd);
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
         String fileName = tempDir.toString() + "/testRdd.adam";
-        recordRdd.saveAsParquet(fileName);
+        recordRdd.save(fileName, false);
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(rdd.context());
