@@ -19,16 +19,39 @@ package org.bdgenomics.adam.rdd.variation
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
-import org.bdgenomics.adam.rdd.AvroGenomicRDD
+import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.formats.avro.Variant
 
+/**
+ * An RDD containing variants called against a given reference genome.
+ *
+ * @param rdd Variants.
+ * @param sequences A dictionary describing the reference genome.
+ */
 case class VariantRDD(rdd: RDD[Variant],
                       sequences: SequenceDictionary) extends AvroGenomicRDD[Variant, VariantRDD] {
 
+  /**
+   * Java-friendly method for saving to Parquet.
+   *
+   * @param filePath Path to save to.
+   */
+  def save(filePath: java.lang.String) {
+    saveAsParquet(new JavaSaveArgs(filePath))
+  }
+
+  /**
+   * @param newRdd An RDD to replace the underlying RDD with.
+   * @return Returns a new VariantRDD with the underlying RDD replaced.
+   */
   protected def replaceRdd(newRdd: RDD[Variant]): VariantRDD = {
     copy(rdd = newRdd)
   }
 
+  /**
+   * @param elem The variant to get a reference region for.
+   * @return Returns the singular region this variant covers.
+   */
   protected def getReferenceRegions(elem: Variant): Seq[ReferenceRegion] = {
     Seq(ReferenceRegion(elem))
   }

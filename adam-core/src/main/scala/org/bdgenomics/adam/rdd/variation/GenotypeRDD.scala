@@ -24,15 +24,36 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext
 }
-import org.bdgenomics.adam.rdd.MultisampleAvroGenomicRDD
+import org.bdgenomics.adam.rdd.{ JavaSaveArgs, MultisampleAvroGenomicRDD }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.utils.cli.SaveArgs
 import org.bdgenomics.formats.avro.{ Contig, Genotype }
 
+/**
+ * An RDD containing genotypes called in a set of samples against a given
+ * reference genome.
+ *
+ * @param rdd Called genotypes.
+ * @param sequences A dictionary describing the reference genome.
+ * @param samples The samples called.
+ */
 case class GenotypeRDD(rdd: RDD[Genotype],
                        sequences: SequenceDictionary,
                        samples: Seq[String]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
 
+  /**
+   * Java-friendly method for saving.
+   *
+   * @param filePath Path to save file to. If ends in ".vcf", saves as VCF, else
+   *   saves as Parquet.
+   */
+  def save(filePath: java.lang.String) {
+    save(new JavaSaveArgs(filePath))
+  }
+
+  /**
+   * @return Returns this GenotypeRDD squared off as a VariantContextRDD.
+   */
   def toVariantContextRDD: VariantContextRDD = {
     val vcIntRdd: RDD[(RichVariant, Genotype)] = rdd.keyBy(g => {
       RichVariant.genotypeToRichVariant(g)
@@ -43,17 +64,34 @@ case class GenotypeRDD(rdd: RDD[Genotype],
     VariantContextRDD(vcRdd, sequences, samples)
   }
 
+  /**
+   * Automatically detects the extension and saves to either VCF or Parquet.
+   *
+   * @param args Arguments configuring how to save the output.
+   */
   def save(args: SaveArgs): Boolean = {
     maybeSaveVcf(args) || {
       saveAsParquet(args); true
     }
   }
 
+  /**
+   * Explicitly saves to VCF.
+   *
+   * @param args Arguments configuring how/where to save the output.
+   * @param sortOnSave Whether to sort when saving or not.
+   */
   def saveAsVcf(args: SaveArgs,
                 sortOnSave: Boolean = false) {
     toVariantContextRDD.saveAsVcf(args, sortOnSave)
   }
 
+  /**
+   * If the file has a ".vcf" extension, saves to VCF.
+   *
+   * @param args Arguments defining how/where to save.
+   * @return True if file is successfully saved as VCF.
+   */
   private def maybeSaveVcf(args: SaveArgs): Boolean = {
     if (args.outputPath.endsWith(".vcf")) {
       saveAsVcf(args)
@@ -63,10 +101,18 @@ case class GenotypeRDD(rdd: RDD[Genotype],
     }
   }
 
+  /**
+   * @param newRdd An RDD to replace the underlying RDD with.
+   * @return Returns a new GenotypeRDD with the underlying RDD replaced.
+   */
   protected def replaceRdd(newRdd: RDD[Genotype]): GenotypeRDD = {
     copy(rdd = newRdd)
   }
 
+  /**
+   * @param elem The genotype to get a reference region for.
+   * @return Returns the singular region this genotype covers.
+   */
   protected def getReferenceRegions(elem: Genotype): Seq[ReferenceRegion] = {
     Seq(ReferenceRegion(elem))
   }

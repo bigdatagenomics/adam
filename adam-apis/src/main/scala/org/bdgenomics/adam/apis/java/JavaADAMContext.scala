@@ -26,6 +26,11 @@ import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.features.FeatureRDD
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.variation.{
+  DatabaseVariantAnnotationRDD,
+  GenotypeRDD,
+  VariantRDD
+}
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
 
@@ -98,5 +103,35 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    */
   def loadFeatures(filePath: java.lang.String): FeatureRDD = {
     ac.loadFeatures(filePath)
+  }
+
+  /**
+   * Loads in variant annotations.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a DatabaseVariantAnnotationRDD.
+   */
+  def loadVariantAnnotations(filePath: java.lang.String): DatabaseVariantAnnotationRDD = {
+    ac.loadVariantAnnotations(filePath)
+  }
+
+  /**
+   * Loads in genotypes.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a GenotypeRDD.
+   */
+  def loadGenotypes(filePath: java.lang.String): GenotypeRDD = {
+    ac.loadGenotypes(filePath)
+  }
+
+  /**
+   * Loads in variants.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a VariantRDD.
+   */
+  def loadVariants(filePath: java.lang.String): VariantRDD = {
+    ac.loadVariants(filePath)
   }
 }

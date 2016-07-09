@@ -77,9 +77,6 @@ object ADAMContext {
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => IndexedRecord, ev2: Manifest[T]): ConcreteADAMRDDFunctions[T] = new ConcreteADAMRDDFunctions(rdd)
 
-  // implicit conversions for variant related rdds
-  implicit def rddToVariantContextRDD(rdd: RDD[VariantContext]) = new VariantContextRDDFunctions(rdd)
-
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
 
@@ -816,7 +813,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadVariantAnnotations(
     filePath: String,
     projection: Option[Schema] = None,
-    sd: Option[SequenceDictionary] = None): RDD[DatabaseVariantAnnotation] = {
+    sd: Option[SequenceDictionary] = None): DatabaseVariantAnnotationRDD = {
     if (filePath.endsWith(".vcf")) {
       log.info(s"Loading $filePath as VCF, and converting to variant annotations. Projection is ignored.")
       loadVcfAnnotations(filePath, sd)

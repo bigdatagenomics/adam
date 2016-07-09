@@ -19,7 +19,11 @@ package org.bdgenomics.adam.rdd.variation
 
 import com.google.common.io.Files
 import java.io.File
-import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
+import org.bdgenomics.adam.models.{
+  SequenceDictionary,
+  SequenceRecord,
+  VariantContext
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -58,5 +62,30 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vcRdd.count === 1)
     assert(vcRdd.sequences.records.size === 1)
     assert(vcRdd.sequences.records(0).name === "chr11")
+  }
+
+  sparkTest("joins SNV database annotation") {
+    val v0 = Variant.newBuilder
+      .setContigName("11")
+      .setStart(17409572)
+      .setReferenceAllele("T")
+      .setAlternateAllele("C")
+      .build
+
+    val sd = SequenceDictionary(SequenceRecord("11", 20000000))
+
+    val vc = VariantContextRDD(sc.parallelize(List(
+      VariantContext(v0))), sd, Seq.empty)
+
+    val a0 = DatabaseVariantAnnotation.newBuilder
+      .setVariant(v0)
+      .setDbSnpId(5219)
+      .build
+
+    val vda = DatabaseVariantAnnotationRDD(sc.parallelize(List(
+      a0)), sd)
+
+    val annotated = vc.joinDatabaseVariantAnnotation(vda).rdd
+    assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
   }
 }
