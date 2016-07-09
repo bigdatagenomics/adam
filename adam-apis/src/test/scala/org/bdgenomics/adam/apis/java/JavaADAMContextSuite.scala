@@ -55,4 +55,14 @@ class JavaADAMContextSuite extends ADAMFunSuite {
 
     assert(newRdd.jrdd.count() === 20)
   }
+
+  sparkTest("can read and write a small .bed file as features") {
+    val path = copyResource("gencode.v7.annotation.trunc10.bed")
+    val aRdd = sc.loadFeatures(path)
+    assert(aRdd.jrdd.count() === 10)
+
+    val newRdd = JavaADAMFeatureConduit.conduit(aRdd, sc)
+
+    assert(newRdd.jrdd.count() === 10)
+  }
 }

@@ -80,10 +80,6 @@ object ADAMContext {
   // implicit conversions for variant related rdds
   implicit def rddToVariantContextRDD(rdd: RDD[VariantContext]) = new VariantContextRDDFunctions(rdd)
 
-  // add gene feature rdd functions
-  implicit def convertBaseFeatureRDDToFeatureRDD(rdd: RDD[Feature]) = new FeatureRDDFunctions(rdd)
-  implicit def convertFeatureRDDToFeatureRDD(rdd: FeatureRDD) = new FeatureRDDFunctions(rdd)
-
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
 

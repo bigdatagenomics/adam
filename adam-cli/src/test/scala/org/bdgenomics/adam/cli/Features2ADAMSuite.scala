@@ -27,10 +27,10 @@ import org.bdgenomics.formats.avro.Feature
 
 class Features2ADAMSuite extends ADAMFunSuite {
 
-  ignore("can convert a simple BED file") {
+  sparkTest("can convert a simple BED file") {
 
     val loader = Thread.currentThread().getContextClassLoader
-    val inputPath = loader.getResource("features/gencode.v7.annotation.trunc10.bed").getPath
+    val inputPath = loader.getResource("gencode.v7.annotation.trunc10.bed").getPath
     val outputFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".adam")
     val outputPath = outputFile.getAbsolutePath
 
@@ -55,7 +55,7 @@ class Features2ADAMSuite extends ADAMFunSuite {
 
   sparkTest("can convert a simple wigfix file") {
     val loader = Thread.currentThread().getContextClassLoader
-    val inputPath = loader.getResource("features/chr5.phyloP46way.trunc.wigFix").getPath
+    val inputPath = loader.getResource("chr5.phyloP46way.trunc.wigFix").getPath
     val bedFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".bed")
     val bedPath = bedFile.getAbsolutePath
     val outputFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".adam")

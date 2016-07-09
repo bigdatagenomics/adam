@@ -23,6 +23,7 @@ import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
+import org.bdgenomics.adam.rdd.features.FeatureRDD
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.formats.avro._
@@ -87,5 +88,15 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    */
   def loadFragments(filePath: java.lang.String): FragmentRDD = {
     ac.loadFragments(filePath)
+  }
+
+  /**
+   * Loads in features.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a FeatureRDD.
+   */
+  def loadFeatures(filePath: java.lang.String): FeatureRDD = {
+    ac.loadFeatures(filePath)
   }
 }

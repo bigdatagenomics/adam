@@ -207,26 +207,26 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("Can read a .gtf file") {
-    val path = testFile("features/Homo_sapiens.GRCh37.75.trun20.gtf")
+    val path = testFile("Homo_sapiens.GRCh37.75.trun20.gtf")
     val features: RDD[Feature] = sc.loadFeatures(path)
     assert(features.count === 15)
   }
 
   sparkTest("Can read a .bed file") {
     // note: this .bed doesn't actually conform to the UCSC BED spec...sigh...
-    val path = testFile("features/gencode.v7.annotation.trunc10.bed")
+    val path = testFile("gencode.v7.annotation.trunc10.bed")
     val features: RDD[Feature] = sc.loadFeatures(path)
     assert(features.count === 10)
   }
 
   sparkTest("Can read a .narrowPeak file") {
-    val path = testFile("features/wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val path = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val annot: RDD[Feature] = sc.loadFeatures(path)
     assert(annot.count === 10)
   }
 
   sparkTest("Can read a .interval_list file") {
-    val path = testFile("features/SeqCap_EZ_Exome_v3.hg19.interval_list")
+    val path = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val annot: RDD[Feature] = sc.loadFeatures(path)
     assert(annot.count == 369)
     val arr = annot.collect
