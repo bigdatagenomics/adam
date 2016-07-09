@@ -309,7 +309,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val f7 = fb.setContigName("2").build()
 
     val features = FeatureRDD(sc.parallelize(Seq(f7, f6, f5, f4, f3, f2, f1)))
-    val sorted = features.sortByReference().collect()
+    val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
     assert(f2 == sorted(1))
@@ -331,7 +331,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val f7 = fb.clearScore().build() // nulls last
 
     val features = FeatureRDD(sc.parallelize(Seq(f7, f6, f5, f4, f3, f2, f1)))
-    val sorted = features.sortByReference().collect()
+    val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
     assert(f2 == sorted(1))
@@ -349,7 +349,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val f3 = fb.clearGeneId().build() // nulls last
 
     val features = FeatureRDD(sc.parallelize(Seq(f3, f2, f1)))
-    val sorted = features.sortByReference().collect()
+    val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
     assert(f2 == sorted(1))
@@ -365,7 +365,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val f5 = fb.setGeneId("gene2").clearTranscriptId().build() // nulls last
 
     val features = FeatureRDD(sc.parallelize(Seq(f5, f4, f3, f2, f1)))
-    val sorted = features.sortByReference().collect()
+    val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
     assert(f2 == sorted(1))
@@ -387,7 +387,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val f9 = fb.setGeneId("gene2").setTranscriptId("transcript1").clearAttributes().build() // nulls last
 
     val features = FeatureRDD(sc.parallelize(Seq(f9, f8, f7, f6, f5, f4, f3, f2, f1)))
-    val sorted = features.sortByReference().collect()
+    val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
     assert(f2 == sorted(1))
@@ -409,7 +409,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val f5 = fb.clearAttributes().build() // nulls last
 
     val features = FeatureRDD(sc.parallelize(Seq(f5, f4, f3, f2, f1)))
-    val sorted = features.sortByReference().collect()
+    val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
     assert(f2 == sorted(1))

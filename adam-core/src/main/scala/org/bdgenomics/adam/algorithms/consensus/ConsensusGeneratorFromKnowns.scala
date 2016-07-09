@@ -48,7 +48,7 @@ private[adam] class ConsensusGeneratorFromKnowns(file: String,
    * @return Returns an option which wraps an RDD of indel realignment targets.
    */
   def targetsToAdd(): Option[RDD[IndelRealignmentTarget]] = {
-    val rdd: RDD[Variant] = sc.loadVariants(file)
+    val rdd: RDD[Variant] = sc.loadVariants(file).rdd
 
     Some(rdd.filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
       .map(v => ReferenceRegion(v.getContigName, v.getStart, v.getStart + v.getReferenceAllele.length))

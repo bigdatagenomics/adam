@@ -80,7 +80,7 @@ class Features2ADAMSuite extends ADAMFunSuite {
 
     val schema = Projection(featureId, contigName, start, end, score)
     val rdd = sc.loadFeatures(outputPath, projection = Some(schema))
-    val converted = rdd.collect.toSeq.sortBy(f => f.getStart)
+    val converted = rdd.rdd.collect.toSeq.sortBy(f => f.getStart)
 
     assert(converted.size === 10)
     assert(converted(0).getContigName == "chr5")

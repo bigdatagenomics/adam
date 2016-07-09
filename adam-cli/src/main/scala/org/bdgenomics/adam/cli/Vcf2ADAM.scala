@@ -67,7 +67,7 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] wit
 
     val variantContextRdd = sc.loadVcf(args.vcfPath, sdOpt = dictionary)
     var variantContextsToSave = if (args.coalesce > 0) {
-      if (args.coalesce > variantContextRdd.partitions.size || args.forceShuffle) {
+      if (args.coalesce > variantContextRdd.rdd.partitions.size || args.forceShuffle) {
         variantContextRdd.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
         variantContextRdd.transform(_.coalesce(args.coalesce, shuffle = false))

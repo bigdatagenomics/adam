@@ -104,7 +104,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
       import org.bdgenomics.adam.projections.AlignmentRecordField._
       Projection(contigName, start, readName, readMapped)
     }
-    val rdd: RDD[AlignmentRecord] = sc.loadAlignments(filename, projection = Some(p))
+    val rdd: RDD[AlignmentRecord] = sc.loadAlignments(filename, projection = Some(p)).rdd
 
     assert(rdd.count() === 200)
 

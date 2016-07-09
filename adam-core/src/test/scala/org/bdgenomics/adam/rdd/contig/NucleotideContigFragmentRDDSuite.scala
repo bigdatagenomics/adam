@@ -457,8 +457,8 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
     val merged = rdd.mergeFragments()
 
-    assert(merged.count == 1L)
-    assert(merged.first.getFragmentSequence() === "ACTGTAC")
+    assert(merged.rdd.count == 1L)
+    assert(merged.rdd.first.getFragmentSequence() === "ACTGTAC")
   }
 
   sparkTest("merge single contig fragment number zero") {
@@ -479,8 +479,8 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
     val merged = rdd.mergeFragments()
 
-    assert(merged.count == 1L)
-    assert(merged.first.getFragmentSequence() === "ACTGTAC")
+    assert(merged.rdd.count == 1L)
+    assert(merged.rdd.first.getFragmentSequence() === "ACTGTAC")
   }
 
   sparkTest("merge multiple contig fragments") {
@@ -528,9 +528,9 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       fragment0)))
     val merged = rdd.mergeFragments()
 
-    assert(merged.count == 2L)
+    assert(merged.rdd.count == 2L)
 
-    val collect = merged.collect
+    val collect = merged.rdd.collect
     assert(collect(0).getFragmentSequence() === "ACTGTAC")
     assert(collect(1).getFragmentSequence() === "GTACTCTCATG")
   }

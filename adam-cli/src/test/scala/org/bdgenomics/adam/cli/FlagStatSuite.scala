@@ -50,7 +50,7 @@ class FlagStatSuite extends ADAMFunSuite {
       AlignmentRecordField.mapq,
       AlignmentRecordField.failedVendorQualityChecks)
 
-    val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection))
+    val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection)).rdd
 
     val (failedVendorQuality, passedVendorQuality) = apply(adamFile)
 

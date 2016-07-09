@@ -56,7 +56,7 @@ class ADAM2Fasta(val args: ADAM2FastaArgs) extends BDGSparkCommand[ADAM2FastaArg
     val contigs = contigFragments.mergeFragments()
 
     val cc = if (args.coalesce > 0) {
-      if (args.coalesce > contigs.partitions.size || args.forceShuffle) {
+      if (args.coalesce > contigs.rdd.partitions.size || args.forceShuffle) {
         contigs.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
         contigs.transform(_.coalesce(args.coalesce, shuffle = false))

@@ -59,7 +59,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     variants.saveAsVcf(TestSaveArgs(path.getAbsolutePath), false)
     assert(path.exists)
     val vcRdd = sc.loadVcf("%s/test.vcf/part-r-00000".format(tempDir))
-    assert(vcRdd.count === 1)
+    assert(vcRdd.rdd.count === 1)
     assert(vcRdd.sequences.records.size === 1)
     assert(vcRdd.sequences.records(0).name === "chr11")
   }

@@ -127,7 +127,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   def apply(rdd: AlignmentRecordRDD): AlignmentRecordRDD = {
 
     var adamRecords = rdd
-    val sc = rdd.context
+    val sc = rdd.rdd.context
     val sl = StorageLevel.fromString(args.storageLevel)
 
     val stringencyOpt = Option(args.stringency).map(ValidationStringency.valueOf(_))
@@ -192,7 +192,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
     if (args.coalesce != -1) {
       log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
-      if (args.coalesce > adamRecords.partitions.size || args.forceShuffle) {
+      if (args.coalesce > adamRecords.rdd.partitions.size || args.forceShuffle) {
         adamRecords = adamRecords.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
         adamRecords = adamRecords.transform(_.coalesce(args.coalesce, shuffle = false))
@@ -359,6 +359,6 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {
-    Option(args.knownSnpsFile).fold(SnpTable())(f => SnpTable(sc.loadVariants(f).map(new RichVariant(_))))
+    Option(args.knownSnpsFile).fold(SnpTable())(f => SnpTable(sc.loadVariants(f).rdd.map(new RichVariant(_))))
   }
 }

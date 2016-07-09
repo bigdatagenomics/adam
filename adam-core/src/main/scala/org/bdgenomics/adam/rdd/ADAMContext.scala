@@ -105,8 +105,6 @@ object ADAMContext {
   implicit def iterableToJavaCollection[A](i: Iterable[A]): java.util.Collection[A] = asJavaCollection(i)
 
   implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
-
-  implicit def genomicRDDToRDD[T, U <: GenomicRDD[T, U]](gRdd: GenomicRDD[T, U]): RDD[T] = gRdd.rdd
 }
 
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -558,8 +556,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     stringency match {
       case ValidationStringency.STRICT | ValidationStringency.LENIENT =>
-        val count1 = reads1.cache.count
-        val count2 = reads2.cache.count
+        val count1 = reads1.rdd.cache.count
+        val count2 = reads2.rdd.cache.count
 
         if (count1 != count2) {
           val msg = s"Fastq 1 ($filePath1) has $count1 reads, fastq 2 ($filePath2) has $count2 reads"
@@ -573,7 +571,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       case ValidationStringency.SILENT =>
     }
 
-    UnalignedReadRDD.fromRdd(reads1 ++ reads2)
+    UnalignedReadRDD.fromRdd(reads1.rdd ++ reads2.rdd)
   }
 
   def loadUnpairedFastq(
@@ -865,7 +863,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       //TODO(ryan): S3ByteAccess
       new TwoBitFile(new LocalFileByteAccess(new File(filePath)))
     } else {
-      ReferenceContigMap(loadSequences(filePath, fragmentLength = fragmentLength))
+      ReferenceContigMap(loadSequences(filePath, fragmentLength = fragmentLength).rdd)
     }
   }
 

@@ -46,7 +46,7 @@ class PrintGenes(protected val args: PrintGenesArgs)
   val companion = PrintGenes
 
   def run(sc: SparkContext): Unit = {
-    val genes: RDD[Gene] = sc.loadGenes(args.gtfInput)
+    val genes: RDD[Gene] = sc.loadGenes(args.gtfInput).rdd
 
     genes.map(printGene).collect().foreach(println)
   }

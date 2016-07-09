@@ -67,6 +67,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val sortedReads = AlignedReadRDD(rdd, sd, RecordGroupDictionary.empty)
       .sortReadsByReferencePosition()
+      .rdd
       .collect()
       .zipWithIndex
     val (mapped, unmapped) = sortedReads.partition(_._1.getReadMapped)
@@ -103,6 +104,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val rdd = sc.parallelize(reads)
     val sortedReads = AlignedReadRDD(rdd, sd, RecordGroupDictionary.empty)
       .sortReadsByReferencePositionAndIndex()
+      .rdd
       .collect()
       .zipWithIndex
     val (mapped, unmapped) = sortedReads.partition(_._1.getReadMapped)
@@ -136,10 +138,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val rdd12B = sc.loadBam(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
 
-    assert(rdd12B.count() === rdd12A.count())
+    assert(rdd12B.rdd.count() === rdd12A.rdd.count())
 
-    val reads12A = rdd12A.collect()
-    val reads12B = rdd12B.collect()
+    val reads12A = rdd12A.rdd.collect()
+    val reads12B = rdd12B.rdd.collect()
 
     reads12A.indices.foreach {
       case i: Int =>
@@ -154,7 +156,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
     val sam = sc.loadAlignments(filePath)
 
-    sam.collect().foreach(r => assert(r.getReadMapped))
+    sam.rdd.collect().foreach(r => assert(r.getReadMapped))
   }
 
   sparkTest("convert malformed FASTQ (no quality scores) => SAM => well-formed FASTQ => SAM") {
@@ -176,9 +178,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     //read FASTQ (well-formed)
     val rddC = sc.loadFastq(tempBase + "/noqualB.fastq", None, None, ValidationStringency.STRICT)
 
-    val noqualA = rddA.collect()
-    val noqualB = rddB.collect()
-    val noqualC = rddC.collect()
+    val noqualA = rddA.rdd.collect()
+    val noqualB = rddB.rdd.collect()
+    val noqualC = rddC.rdd.collect()
     noqualA.indices.foreach {
       case i: Int =>
         val (readA, readB, readC) = (noqualA(i), noqualB(i), noqualC(i))
@@ -198,10 +200,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val rdd12B = sc.loadAlignments(tempFile.toAbsolutePath.toString + "/reads12.fq")
 
-    assert(rdd12B.count() === rdd12A.count())
+    assert(rdd12B.rdd.count() === rdd12A.rdd.count())
 
-    val reads12A = rdd12A.collect()
-    val reads12B = rdd12B.collect()
+    val reads12A = rdd12A.rdd.collect()
+    val reads12B = rdd12B.rdd.collect()
 
     reads12A.indices.foreach {
       case i: Int =>
@@ -218,7 +220,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val rddA = sc.loadAlignments(path1).reassembleReadPairs(sc.loadAlignments(path2).rdd,
       validationStringency = ValidationStringency.STRICT)
 
-    assert(rddA.count() == 6)
+    assert(rddA.rdd.count() == 6)
 
     val tempFile = Files.createTempDirectory("reads")
     val tempPath1 = tempFile.toAbsolutePath.toString + "/reads1.fq"
@@ -229,10 +231,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val rddB = sc.loadAlignments(tempPath1).reassembleReadPairs(sc.loadAlignments(tempPath2).rdd,
       validationStringency = ValidationStringency.STRICT)
 
-    assert(rddB.count() === rddA.count())
+    assert(rddB.rdd.count() === rddA.rdd.count())
 
-    val readsA = rddA.collect()
-    val readsB = rddB.collect()
+    val readsA = rddA.rdd.collect()
+    val readsB = rddB.rdd.collect()
 
     readsA.indices.foreach {
       case i: Int =>

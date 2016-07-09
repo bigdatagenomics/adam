@@ -32,7 +32,7 @@ class BaseQualityRecalibrationSuite extends ADAMFunSuite {
     val snpsFilepath = resourcePath("bqsr1.snps")
     val obsFilepath = resourcePath("bqsr1-ref.observed")
 
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath).rdd
     val snps = sc.broadcast(SnpTable(new File(snpsFilepath)))
 
     val bqsr = new BaseQualityRecalibration(cloy(reads), snps)
@@ -51,8 +51,8 @@ class BaseQualityRecalibrationSuite extends ADAMFunSuite {
     val snpsFilepath = resourcePath("bqsr1.vcf")
     val obsFilepath = resourcePath("bqsr1-ref.observed")
 
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
-    val variants: RDD[RichVariant] = sc.loadVariants(snpsFilepath).map(new RichVariant(_))
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath).rdd
+    val variants: RDD[RichVariant] = sc.loadVariants(snpsFilepath).rdd.map(new RichVariant(_))
     val snps = sc.broadcast(SnpTable(variants))
 
     val bqsr = new BaseQualityRecalibration(cloy(reads), snps)

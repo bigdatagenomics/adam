@@ -169,7 +169,7 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
       reads.save(args)
     } else {
       if (args.printCount) {
-        println(reads.count())
+        println(reads.rdd.count())
       } else {
         println(reads.saveAsSamString())
       }

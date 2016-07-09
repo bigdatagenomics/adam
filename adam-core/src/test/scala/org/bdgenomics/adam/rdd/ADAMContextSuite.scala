@@ -50,8 +50,8 @@ class ADAMContextSuite extends ADAMFunSuite {
     val readsFilepath = resourcePath("unmapped.sam")
 
     // Convert the reads12.sam file into a parquet file
-    val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath)
-    assert(bamReads.count === 200)
+    val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath).rdd
+    assert(bamReads.rdd.count === 200)
   }
 
   sparkTest("sc.loadParquet should not load a file without a type specified") {
@@ -73,19 +73,20 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can read a small .SAM file") {
     val path = resourcePath("small.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path).rdd
     assert(reads.count() === 20)
   }
 
   sparkTest("can read a small .SAM with all attribute tag types") {
     val path = resourcePath("tags.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path).rdd
     assert(reads.count() === 7)
   }
 
   sparkTest("can filter a .SAM file based on quality") {
     val path = resourcePath("small.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
+      .rdd
       .filter(a => (a.getReadMapped && a.getMapq > 30))
     assert(reads.count() === 18)
   }
@@ -186,7 +187,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     try {
       val loaded = sc.loadAlignmentsFromPaths(Seq(path))
 
-      assert(loaded.count() === saved.count())
+      assert(loaded.rdd.count() === saved.rdd.count())
     } catch {
       case (e: Exception) =>
         println(e)
@@ -208,26 +209,26 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("Can read a .gtf file") {
     val path = testFile("Homo_sapiens.GRCh37.75.trun20.gtf")
-    val features: RDD[Feature] = sc.loadFeatures(path)
+    val features: RDD[Feature] = sc.loadFeatures(path).rdd
     assert(features.count === 15)
   }
 
   sparkTest("Can read a .bed file") {
     // note: this .bed doesn't actually conform to the UCSC BED spec...sigh...
     val path = testFile("gencode.v7.annotation.trunc10.bed")
-    val features: RDD[Feature] = sc.loadFeatures(path)
+    val features: RDD[Feature] = sc.loadFeatures(path).rdd
     assert(features.count === 10)
   }
 
   sparkTest("Can read a .narrowPeak file") {
     val path = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
-    val annot: RDD[Feature] = sc.loadFeatures(path)
+    val annot: RDD[Feature] = sc.loadFeatures(path).rdd
     assert(annot.count === 10)
   }
 
   sparkTest("Can read a .interval_list file") {
     val path = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
-    val annot: RDD[Feature] = sc.loadFeatures(path)
+    val annot: RDD[Feature] = sc.loadFeatures(path).rdd
     assert(annot.count == 369)
     val arr = annot.collect
 
@@ -264,7 +265,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("can read a small .vcf file") {
     val path = resourcePath("small.vcf")
 
-    val vcs = sc.loadGenotypes(path).toVariantContextRDD.collect.sortBy(_.position)
+    val vcs = sc.loadGenotypes(path).toVariantContextRDD.rdd.collect.sortBy(_.position)
     assert(vcs.size === 5)
 
     val vc = vcs.head
@@ -278,25 +279,25 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("can read a gzipped .vcf file") {
     val path = resourcePath("test.vcf.gz")
     val vcs = sc.loadVcf(path, None)
-    assert(vcs.count === 6)
+    assert(vcs.rdd.count === 6)
   }
 
   sparkTest("can read a BGZF gzipped .vcf file") {
     val path = resourcePath("test.vcf.bgzf.gz")
     val vcs = sc.loadVcf(path, None)
-    assert(vcs.count === 6)
+    assert(vcs.rdd.count === 6)
   }
 
   ignore("can read an uncompressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
     val path = resourcePath("test.uncompressed.bcf")
     val vcs = sc.loadVcf(path, None)
-    assert(vcs.count === 6)
+    assert(vcs.rdd.count === 6)
   }
 
   ignore("can read a BGZF compressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
     val path = resourcePath("test.compressed.bcf")
     val vcs = sc.loadVcf(path, None)
-    assert(vcs.count === 6)
+    assert(vcs.rdd.count === 6)
   }
 
   (1 to 4) foreach { testNumber =>
@@ -307,19 +308,19 @@ class ADAMContextSuite extends ADAMFunSuite {
 
       val reads = sc.loadAlignments(path)
       if (testNumber == 1) {
-        assert(reads.count === 6)
-        assert(reads.filter(_.getReadPaired).count === 6)
-        assert(reads.filter(_.getReadInFragment == 0).count === 3)
-        assert(reads.filter(_.getReadInFragment == 1).count === 3)
+        assert(reads.rdd.count === 6)
+        assert(reads.rdd.filter(_.getReadPaired).count === 6)
+        assert(reads.rdd.filter(_.getReadInFragment == 0).count === 3)
+        assert(reads.rdd.filter(_.getReadInFragment == 1).count === 3)
       } else {
-        assert(reads.count === 4)
-        assert(reads.filter(_.getReadPaired).count === 4)
-        assert(reads.filter(_.getReadInFragment == 0).count === 2)
-        assert(reads.filter(_.getReadInFragment == 1).count === 2)
+        assert(reads.rdd.count === 4)
+        assert(reads.rdd.filter(_.getReadPaired).count === 4)
+        assert(reads.rdd.filter(_.getReadInFragment == 0).count === 2)
+        assert(reads.rdd.filter(_.getReadInFragment == 1).count === 2)
       }
 
-      assert(reads.collect.forall(_.getSequence.toString.length === 250))
-      assert(reads.collect.forall(_.getQual.toString.length === 250))
+      assert(reads.rdd.collect.forall(_.getSequence.toString.length === 250))
+      assert(reads.rdd.collect.forall(_.getQual.toString.length === 250))
     }
   }
 
@@ -331,18 +332,18 @@ class ADAMContextSuite extends ADAMFunSuite {
 
       val reads = sc.loadAlignments(path)
       if (testNumber == 1) {
-        assert(reads.count === 6)
-        assert(reads.filter(_.getReadPaired).count === 0)
+        assert(reads.rdd.count === 6)
+        assert(reads.rdd.filter(_.getReadPaired).count === 0)
       } else if (testNumber == 4) {
-        assert(reads.count === 4)
-        assert(reads.filter(_.getReadPaired).count === 0)
+        assert(reads.rdd.count === 4)
+        assert(reads.rdd.filter(_.getReadPaired).count === 0)
       } else {
-        assert(reads.count === 5)
-        assert(reads.filter(_.getReadPaired).count === 0)
+        assert(reads.rdd.count === 5)
+        assert(reads.rdd.filter(_.getReadPaired).count === 0)
       }
 
-      assert(reads.collect.forall(_.getSequence.toString.length === 250))
-      assert(reads.collect.forall(_.getQual.toString.length === 250))
+      assert(reads.rdd.collect.forall(_.getSequence.toString.length === 250))
+      assert(reads.rdd.collect.forall(_.getQual.toString.length === 250))
     }
   }
 
@@ -350,7 +351,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = resourcePath("bqsr1.vcf")
 
     val variants = sc.loadVariants(path)
-    assert(variants.count === 681)
+    assert(variants.rdd.count === 681)
 
     val loc = tempLocation()
     variants.saveAsParquet(loc, 1024, 1024) // force more than one row group (block)
@@ -358,7 +359,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val pred: FilterPredicate = (LongColumn("start") === 16097631L)
     // the following only reads one row group
     val adamVariants = sc.loadParquetVariants(loc, predicate = Some(pred))
-    assert(adamVariants.count === 1)
+    assert(adamVariants.rdd.count === 1)
   }
 
   sparkTest("saveAsParquet with file path") {
@@ -367,7 +368,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val outputPath = tempLocation()
     reads.saveAsParquet(outputPath)
     val reloadedReads = sc.loadAlignments(outputPath)
-    assert(reads.count === reloadedReads.count)
+    assert(reads.rdd.count === reloadedReads.rdd.count)
   }
 
   sparkTest("saveAsParquet with file path, block size, page size") {
@@ -376,7 +377,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val outputPath = tempLocation()
     reads.saveAsParquet(outputPath, 1024, 2048)
     val reloadedReads = sc.loadAlignments(outputPath)
-    assert(reads.count === reloadedReads.count)
+    assert(reads.rdd.count === reloadedReads.rdd.count)
   }
 
   sparkTest("saveAsParquet with save args") {
@@ -385,13 +386,15 @@ class ADAMContextSuite extends ADAMFunSuite {
     val outputPath = tempLocation()
     reads.saveAsParquet(TestSaveArgs(outputPath))
     val reloadedReads = sc.loadAlignments(outputPath)
-    assert(reads.count === reloadedReads.count)
+    assert(reads.rdd.count === reloadedReads.rdd.count)
   }
 
   sparkTest("read a gzipped fasta file") {
     val inputPath = resourcePath("chr20.250k.fa.gz")
-    val contigFragments: RDD[NucleotideContigFragment] = sc.loadFasta(inputPath, 10000L).sortBy(_.getFragmentNumber.toInt)
-    assert(contigFragments.count() === 26)
+    val contigFragments: RDD[NucleotideContigFragment] = sc.loadFasta(inputPath, 10000L)
+      .rdd
+      .sortBy(_.getFragmentNumber.toInt)
+    assert(contigFragments.rdd.count() === 26)
     val first: NucleotideContigFragment = contigFragments.first()
     assert(first.getContig.getContigName === "gi|224384749|gb|CM000682.1|")
     assert(first.getDescription === "Homo sapiens chromosome 20, GRCh37 primary reference assembly")
@@ -402,7 +405,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(first.getNumberOfFragmentsInContig === 26)
 
     // 250k file actually has 251930 bases
-    val last: NucleotideContigFragment = contigFragments.collect().last
+    val last: NucleotideContigFragment = contigFragments.rdd.collect().last
     assert(last.getFragmentNumber === 25)
     assert(last.getFragmentStartPosition === 250000L)
     assert(last.getFragmentEndPosition === 251929L)
@@ -412,7 +415,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val refRegion = ReferenceRegion("chr2", 100, 101)
     val path = resourcePath("sorted.bam")
     val reads = sc.loadIndexedBam(path, refRegion)
-    assert(reads.count == 1)
+    assert(reads.rdd.count == 1)
   }
 }
 
