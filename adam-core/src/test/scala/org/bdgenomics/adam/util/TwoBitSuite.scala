@@ -49,4 +49,13 @@ class TwoBitSuite extends ADAMFunSuite {
     val twoBitFile = new TwoBitFile(byteAccess)
     assert(twoBitFile.extract(ReferenceRegion("1", 9990, 10010), true) == "NNNNNNNNNNTAACCCTAAC")
   }
+
+  test("correctly calculates sequence dictionary") {
+    val file = new File(resourcePath("hg19.chrM.2bit"))
+    val byteAccess = new LocalFileByteAccess(file)
+    val twoBitFile = new TwoBitFile(byteAccess)
+    val dict = twoBitFile.getSequenceDictionary(true)
+    assert(dict.records.length == 1)
+    assert(dict.records.head.length == 16571)
+  }
 }

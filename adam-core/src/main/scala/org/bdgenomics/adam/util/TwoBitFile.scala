@@ -22,7 +22,7 @@ import java.nio.{ ByteOrder, ByteBuffer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.bdgenomics.utils.io.{ ByteArrayByteAccess, ByteAccess }
-import org.bdgenomics.adam.models.{ NonoverlappingRegions, ReferencePosition, ReferenceRegion }
+import org.bdgenomics.adam.models._
 
 object TwoBitFile {
   val MAGIC_NUMBER: Int = 0x1A412743
@@ -90,6 +90,16 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
     val name = new String(bytes.array, indexRecordStart + TwoBitFile.NAME_SIZE_SIZE, nameSize, "UTF-8")
     val contigOffset = bytes.getInt(indexRecordStart + TwoBitFile.NAME_SIZE_SIZE + nameSize)
     name -> contigOffset
+  }
+
+  def getSequenceDictionary(performLexSort: Boolean = false): SequenceDictionary = {
+    val sd = new SequenceDictionary(seqRecords.toVector.map(r => SequenceRecord(r._1, r._2.dnaSize)))
+
+    if (performLexSort) {
+      implicit val ordering = SequenceOrderingByName
+      SequenceDictionary(sd.records.map(_.copy(referenceIndex = None)).sorted: _*)
+    } else
+      sd
   }
 
   /**
