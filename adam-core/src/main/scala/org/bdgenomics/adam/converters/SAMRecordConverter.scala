@@ -35,8 +35,24 @@ import org.bdgenomics.adam.util.AttributeUtils
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConverters._
 
-class SAMRecordConverter extends Serializable with Logging {
+/**
+ * Helper class for converting SAMRecords into AlignmentRecords.
+ */
+private[adam] class SAMRecordConverter extends Serializable with Logging {
 
+  /**
+   * Returns true if a tag should not be kept in the attributes field.
+   *
+   * The SAM/BAM format supports attributes, which is a key/value pair map. In
+   * ADAM, we have promoted some of these fields to "primary" fields, so that we
+   * can more efficiently access them. These include the MD tag, which describes
+   * substitutions against the reference; the OQ tag, which describes the
+   * original read base qualities; and the OP and OC tags, which describe the
+   * original read alignment position and CIGAR.
+   *
+   * @param attrTag Tag name to check.
+   * @return Returns true if the tag should be skipped.
+   */
   private[converters] def skipTag(attrTag: String): Boolean = attrTag match {
     case "OQ" => true
     case "OP" => true
@@ -45,6 +61,16 @@ class SAMRecordConverter extends Serializable with Logging {
     case _    => false
   }
 
+  /**
+   * Converts a SAM record into an Avro AlignmentRecord.
+   *
+   * @param samRecord Record to convert.
+   * @param dict The sequence dictionary describing the reference genome this
+   *   read was aligned to.
+   * @param readGroups The read group dictionary describing the read group this
+   *   read is from.
+   * @return Returns the original record converted into Avro.
+   */
   def convert(
     samRecord: SAMRecord,
     dict: SequenceDictionary,
@@ -205,5 +231,4 @@ class SAMRecordConverter extends Serializable with Logging {
       }
     }
   }
-
 }
