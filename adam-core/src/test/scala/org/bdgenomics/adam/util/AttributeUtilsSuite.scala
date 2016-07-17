@@ -43,11 +43,13 @@ class AttributeUtilsSuite extends FunSuite {
   test("parseTags works with NumericSequence tagType") {
     val tags = parseAttributes("jM:B:c,-1\tjI:B:i,-1,1")
 
+    assert(tags.length === 2)
     assert(tags(0).tag === "jM")
     assert(tags(0).tagType === TagType.NumericByteSequence)
     assert(tags(0).value.asInstanceOf[Array[Number]].sameElements(Array(-1)))
+    assert(tags(1).tag === "jI")
+    assert(tags(1).tagType === TagType.NumericIntSequence)
     assert(tags(1).value.asInstanceOf[Array[Number]].sameElements(Array(-1, 1)))
-
   }
 
   test("empty string is parsed as zero tagStrings") {
@@ -66,6 +68,26 @@ class AttributeUtilsSuite extends FunSuite {
 
     assert(tags.size === 1)
     assert(tags.head.value === string)
+  }
+
+  test("oq string tag with many ':' in it is correctly parsed") {
+    val tags = parseAttributes("OQ:Z:C55/15D:::::::.7GFFAFDA442.40F=AGHHE")
+
+    assert(tags.size === 1)
+    assert(tags.head.value === "C55/15D:::::::.7GFFAFDA442.40F=AGHHE")
+  }
+
+  test("oq string tag with a ',' in it is correctly parsed") {
+    val tags = parseAttributes("OQ:Z:C,55/15D:::::::.7GFFAFDA442.40F=AGHHE")
+
+    assert(tags.size === 1)
+    assert(tags.head.value === "C,55/15D:::::::.7GFFAFDA442.40F=AGHHE")
+  }
+
+  test("if a tag is an array but doesn't define it's format, throw") {
+    intercept[IllegalArgumentException] {
+      val tags = parseAttributes("jI:B:1,2,3")
+    }
   }
 }
 
