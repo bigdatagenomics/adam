@@ -46,6 +46,12 @@ class SAMRecordConverterSuite extends FunSuite {
     // RecordGroupDictionary to be used as a parameter during conversion
     val testRecordGroupDict = new RecordGroupDictionary(Seq())
 
+    // set the oq, md, oc, and op attributes
+    testSAMRecord.setOriginalBaseQualities("*****".getBytes.map(v => (v - 33).toByte))
+    testSAMRecord.setAttribute("MD", "100")
+    testSAMRecord.setAttribute("OC", "100M")
+    testSAMRecord.setAttribute("OP", 1)
+
     // Convert samRecord to alignmentRecord
     val testAlignmentRecord = testRecordConverter.convert(testSAMRecord, testSequenceDict, testRecordGroupDict)
 
@@ -64,6 +70,11 @@ class SAMRecordConverterSuite extends FunSuite {
     assert(!testAlignmentRecord.getReadPaired)
     assert(testAlignmentRecord.getReadInFragment != 1)
     assert(testAlignmentRecord.getSupplementaryAlignment === testSAMRecord.getSupplementaryAlignmentFlag)
+    assert(testAlignmentRecord.getOrigQual === "*****")
+    assert(testAlignmentRecord.getMismatchingPositions === "100")
+    assert(testAlignmentRecord.getOldCigar === "100M")
+    assert(testAlignmentRecord.getOldPosition === 0L)
+    assert(testAlignmentRecord.getAttributes === "XS:i:0\tAS:i:75\tNM:i:0")
   }
 
   test("testing the fields in an alignmentRecord obtained from an unmapped samRecord conversion") {
@@ -138,4 +149,12 @@ class SAMRecordConverterSuite extends FunSuite {
     assert(newAlignmentRecord.getQual === null)
   }
 
+  test("don't keep denormalized fields") {
+    val rc = new SAMRecordConverter
+
+    assert(rc.skipTag("MD"))
+    assert(rc.skipTag("OQ"))
+    assert(rc.skipTag("OP"))
+    assert(rc.skipTag("OC"))
+  }
 }

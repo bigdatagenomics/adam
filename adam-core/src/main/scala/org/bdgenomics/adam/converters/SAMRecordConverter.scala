@@ -36,6 +36,15 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConverters._
 
 class SAMRecordConverter extends Serializable with Logging {
+
+  private[converters] def skipTag(attrTag: String): Boolean = attrTag match {
+    case "OQ" => true
+    case "OP" => true
+    case "OC" => true
+    case "MD" => true
+    case _    => false
+  }
+
   def convert(
     samRecord: SAMRecord,
     dict: SequenceDictionary,
@@ -173,7 +182,7 @@ class SAMRecordConverter extends Serializable with Logging {
           attr =>
             if (attr.tag == "MD") {
               builder.setMismatchingPositions(attr.value.toString)
-            } else {
+            } else if (!skipTag(attr.tag)) {
               tags ::= AttributeUtils.convertSAMTagAndValue(attr)
             }
         }

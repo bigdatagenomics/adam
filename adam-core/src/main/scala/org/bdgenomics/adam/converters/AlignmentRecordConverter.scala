@@ -196,6 +196,13 @@ private[adam] class AlignmentRecordConverter extends Serializable {
       .foreach(v => builder.setReadFailsVendorQualityCheckFlag(v.booleanValue))
     Option(adamRecord.getMismatchingPositions)
       .foreach(builder.setAttribute("MD", _))
+    Option(adamRecord.getOrigQual)
+      .map(s => s.getBytes.map(v => (v - 33).toByte)) // not ascii, but short int
+      .foreach(builder.setOriginalBaseQualities(_))
+    Option(adamRecord.getOldCigar)
+      .foreach(builder.setAttribute("OC", _))
+    Option(adamRecord.getOldPosition)
+      .foreach(i => builder.setAttribute("OP", i + 1))
 
     // add all other tags
     if (adamRecord.getAttributes != null) {
