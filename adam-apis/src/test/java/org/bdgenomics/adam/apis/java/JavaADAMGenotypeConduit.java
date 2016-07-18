@@ -31,7 +31,7 @@ import org.bdgenomics.adam.rdd.variation.GenotypeRDD;
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of annotations to
  * disk and reads it back.
  */
-public class JavaADAMGenotypeConduit {
+class JavaADAMGenotypeConduit {
     public static GenotypeRDD conduit(GenotypeRDD recordRdd,
                                       ADAMContext ac) throws IOException {
 

@@ -32,7 +32,7 @@ import org.bdgenomics.formats.avro.NucleotideContigFragment;
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of nucleotide
  * contig fragments to disk and reads it back.
  */
-public class JavaADAMContigConduit {
+class JavaADAMContigConduit {
     public static NucleotideContigFragmentRDD conduit(NucleotideContigFragmentRDD recordRdd,
                                                       ADAMContext ac) throws IOException {
 

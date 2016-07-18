@@ -33,7 +33,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord;
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of reads to
  * disk and reads it back.
  */
-public class JavaADAMReadConduit {
+class JavaADAMReadConduit {
     public static AlignmentRecordRDD conduit(AlignmentRecordRDD recordRdd,
                                              ADAMContext ac) throws IOException {
 
