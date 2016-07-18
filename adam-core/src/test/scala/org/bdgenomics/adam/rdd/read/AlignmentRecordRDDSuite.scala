@@ -43,7 +43,7 @@ private object SequenceIndexWithReadOrdering extends Ordering[((Int, Long), (Ali
   }
 }
 
-class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
+class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
   sparkTest("sorting reads") {
     val random = new Random("sorting".hashCode)
@@ -60,7 +60,16 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
       builder.build()
     }
     val rdd = sc.parallelize(reads)
-    val sortedReads = rdd.sortReadsByReferencePosition().collect().zipWithIndex
+
+    // make seq dict 
+    val contigNames = rdd.flatMap(r => Option(r.getContigName)).distinct.collect
+    val sd = new SequenceDictionary(contigNames.map(v => SequenceRecord(v, 1000000L)).toVector)
+
+    val sortedReads = AlignedReadRDD(rdd, sd, RecordGroupDictionary.empty)
+      .sortReadsByReferencePosition()
+      .rdd
+      .collect()
+      .zipWithIndex
     val (mapped, unmapped) = sortedReads.partition(_._1.getReadMapped)
     // Make sure that all the unmapped reads are placed at the end
     assert(unmapped.forall(p => p._2 > mapped.takeRight(1)(0)._2))
@@ -93,7 +102,11 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
       }).toVector)
 
     val rdd = sc.parallelize(reads)
-    val sortedReads = rdd.sortReadsByReferencePositionAndIndex(sd).collect().zipWithIndex
+    val sortedReads = AlignedReadRDD(rdd, sd, RecordGroupDictionary.empty)
+      .sortReadsByReferencePositionAndIndex()
+      .rdd
+      .collect()
+      .zipWithIndex
     val (mapped, unmapped) = sortedReads.partition(_._1.getReadMapped)
 
     // Make sure that all the unmapped reads are placed at the end
@@ -114,89 +127,21 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     assert(expectedSortedReads === mapped)
   }
 
-  sparkTest("characterizeTags counts integer tag values correctly") {
-    val tagCounts: Map[String, Long] = Map("XT" -> 10L, "XU" -> 9L, "XV" -> 8L)
-    val readItr: Iterable[AlignmentRecord] =
-      for ((tagName, tagCount) <- tagCounts; i <- 0 until tagCount.toInt)
-        yield AlignmentRecord.newBuilder().setAttributes("%s:i:%d".format(tagName, i)).build()
-
-    val reads = sc.parallelize(readItr.toSeq)
-    val mapCounts: Map[String, Long] = Map(reads.characterizeTags().collect(): _*)
-
-    assert(mapCounts === tagCounts)
-  }
-
-  sparkTest("withTag returns only those records which have the appropriate tag") {
-    val r1 = AlignmentRecord.newBuilder().setAttributes("XX:i:3").build()
-    val r2 = AlignmentRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
-    val r3 = AlignmentRecord.newBuilder().setAttributes("YY:i:20").build()
-
-    val rdd = sc.parallelize(Seq(r1, r2, r3))
-    assert(rdd.count() === 3)
-
-    val rddXX = rdd.filterRecordsWithTag("XX")
-    assert(rddXX.count() === 2)
-
-    val collected = rddXX.collect()
-    assert(collected.contains(r1))
-    assert(collected.contains(r2))
-  }
-
-  sparkTest("withTag, when given a tag name that doesn't exist in the input, returns an empty RDD") {
-    val r1 = AlignmentRecord.newBuilder().setAttributes("XX:i:3").build()
-    val r2 = AlignmentRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
-    val r3 = AlignmentRecord.newBuilder().setAttributes("YY:i:20").build()
-
-    val rdd = sc.parallelize(Seq(r1, r2, r3))
-    assert(rdd.count() === 3)
-
-    val rddXX = rdd.filterRecordsWithTag("ZZ")
-    assert(rddXX.count() === 0)
-  }
-
-  sparkTest("characterizeTagValues counts distinct values of a tag") {
-    val r1 = AlignmentRecord.newBuilder().setAttributes("XX:i:3").build()
-    val r2 = AlignmentRecord.newBuilder().setAttributes("XX:i:4\tYY:i:10").build()
-    val r3 = AlignmentRecord.newBuilder().setAttributes("YY:i:20").build()
-    val r4 = AlignmentRecord.newBuilder().setAttributes("XX:i:4").build()
-
-    val rdd = sc.parallelize(Seq(r1, r2, r3, r4))
-    val tagValues = rdd.characterizeTagValues("XX")
-
-    assert(tagValues.keys.size === 2)
-    assert(tagValues(4) === 2)
-    assert(tagValues(3) === 1)
-  }
-
-  sparkTest("characterizeTags counts tags in a SAM file correctly") {
-    val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
-    val sam: RDD[AlignmentRecord] = sc.loadAlignments(filePath)
-
-    val mapCounts: Map[String, Long] = Map(sam.characterizeTags().collect(): _*)
-    assert(mapCounts("NM") === 200)
-    assert(mapCounts("AS") === 200)
-    assert(mapCounts("XS") === 200)
-  }
-
   sparkTest("round trip from ADAM to SAM and back to ADAM produces equivalent Read values") {
     val reads12Path = Thread.currentThread().getContextClassLoader.getResource("reads12.sam").getFile
     val ardd = sc.loadBam(reads12Path)
     val rdd12A = ardd.rdd
-    val sd = ardd.sequences
-    val rgd = ardd.recordGroups
 
     val tempFile = Files.createTempDirectory("reads12")
-    rdd12A.saveAsSam(tempFile.toAbsolutePath.toString + "/reads12.sam",
-      sd,
-      rgd,
+    ardd.saveAsSam(tempFile.toAbsolutePath.toString + "/reads12.sam",
       asSam = true)
 
-    val rdd12B: RDD[AlignmentRecord] = sc.loadBam(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
+    val rdd12B = sc.loadBam(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
 
-    assert(rdd12B.count() === rdd12A.count())
+    assert(rdd12B.rdd.count() === rdd12A.rdd.count())
 
-    val reads12A = rdd12A.collect()
-    val reads12B = rdd12B.collect()
+    val reads12A = rdd12A.rdd.collect()
+    val reads12B = rdd12B.rdd.collect()
 
     reads12A.indices.foreach {
       case i: Int =>
@@ -209,9 +154,9 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
 
   sparkTest("SAM conversion sets read mapped flag properly") {
     val filePath = getClass.getClassLoader.getResource("reads12.sam").getFile
-    val sam: RDD[AlignmentRecord] = sc.loadAlignments(filePath)
+    val sam = sc.loadAlignments(filePath)
 
-    sam.collect().foreach(r => assert(r.getReadMapped))
+    sam.rdd.collect().foreach(r => assert(r.getReadMapped))
   }
 
   sparkTest("convert malformed FASTQ (no quality scores) => SAM => well-formed FASTQ => SAM") {
@@ -219,25 +164,23 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val tempBase = Files.createTempDirectory("noqual").toAbsolutePath.toString
 
     //read FASTQ (malformed)
-    val rddA: RDD[AlignmentRecord] = sc.loadFastq(noqualPath, None, None, ValidationStringency.LENIENT)
+    val rddA = sc.loadFastq(noqualPath, None, None, ValidationStringency.LENIENT)
 
     //write SAM (fixed and now well-formed)
-    rddA.saveAsSam(tempBase + "/noqualA.sam",
-      SequenceDictionary.empty,
-      RecordGroupDictionary.empty)
+    rddA.saveAsSam(tempBase + "/noqualA.sam")
 
     //read SAM
-    val rddB: RDD[AlignmentRecord] = sc.loadAlignments(tempBase + "/noqualA.sam")
+    val rddB = sc.loadAlignments(tempBase + "/noqualA.sam")
 
     //write FASTQ (well-formed)
     rddB.saveAsFastq(tempBase + "/noqualB.fastq")
 
     //read FASTQ (well-formed)
-    val rddC: RDD[AlignmentRecord] = sc.loadFastq(tempBase + "/noqualB.fastq", None, None, ValidationStringency.STRICT)
+    val rddC = sc.loadFastq(tempBase + "/noqualB.fastq", None, None, ValidationStringency.STRICT)
 
-    val noqualA = rddA.collect()
-    val noqualB = rddB.collect()
-    val noqualC = rddC.collect()
+    val noqualA = rddA.rdd.collect()
+    val noqualB = rddB.rdd.collect()
+    val noqualC = rddC.rdd.collect()
     noqualA.indices.foreach {
       case i: Int =>
         val (readA, readB, readC) = (noqualA(i), noqualB(i), noqualC(i))
@@ -250,17 +193,17 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
 
   sparkTest("round trip from ADAM to FASTQ and back to ADAM produces equivalent Read values") {
     val reads12Path = Thread.currentThread().getContextClassLoader.getResource("fastq_sample1.fq").getFile
-    val rdd12A: RDD[AlignmentRecord] = sc.loadAlignments(reads12Path)
+    val rdd12A = sc.loadAlignments(reads12Path)
 
     val tempFile = Files.createTempDirectory("reads12")
     rdd12A.saveAsFastq(tempFile.toAbsolutePath.toString + "/reads12.fq")
 
-    val rdd12B: RDD[AlignmentRecord] = sc.loadAlignments(tempFile.toAbsolutePath.toString + "/reads12.fq")
+    val rdd12B = sc.loadAlignments(tempFile.toAbsolutePath.toString + "/reads12.fq")
 
-    assert(rdd12B.count() === rdd12A.count())
+    assert(rdd12B.rdd.count() === rdd12A.rdd.count())
 
-    val reads12A = rdd12A.collect()
-    val reads12B = rdd12B.collect()
+    val reads12A = rdd12A.rdd.collect()
+    val reads12B = rdd12B.rdd.collect()
 
     reads12A.indices.foreach {
       case i: Int =>
@@ -274,10 +217,10 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
   sparkTest("round trip from ADAM to paired-FASTQ and back to ADAM produces equivalent Read values") {
     val path1 = resourcePath("proper_pairs_1.fq")
     val path2 = resourcePath("proper_pairs_2.fq")
-    val rddA = sc.loadAlignments(path1).rdd.reassembleReadPairs(sc.loadAlignments(path2).rdd,
+    val rddA = sc.loadAlignments(path1).reassembleReadPairs(sc.loadAlignments(path2).rdd,
       validationStringency = ValidationStringency.STRICT)
 
-    assert(rddA.count() == 6)
+    assert(rddA.rdd.count() == 6)
 
     val tempFile = Files.createTempDirectory("reads")
     val tempPath1 = tempFile.toAbsolutePath.toString + "/reads1.fq"
@@ -285,13 +228,13 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
 
     rddA.saveAsPairedFastq(tempPath1, tempPath2, validationStringency = ValidationStringency.STRICT)
 
-    val rddB: RDD[AlignmentRecord] = sc.loadAlignments(tempPath1).rdd.reassembleReadPairs(sc.loadAlignments(tempPath2).rdd,
+    val rddB = sc.loadAlignments(tempPath1).reassembleReadPairs(sc.loadAlignments(tempPath2).rdd,
       validationStringency = ValidationStringency.STRICT)
 
-    assert(rddB.count() === rddA.count())
+    assert(rddB.rdd.count() === rddA.rdd.count())
 
-    val readsA = rddA.collect()
-    val readsB = rddB.collect()
+    val readsA = rddA.rdd.collect()
+    val readsB = rddB.rdd.collect()
 
     readsA.indices.foreach {
       case i: Int =>
@@ -306,14 +249,10 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val unsortedPath = resourcePath("unsorted.sam")
     val ardd = sc.loadBam(unsortedPath)
     val reads = ardd.rdd
-    val sd = ardd.sequences
-    val rgd = ardd.recordGroups
 
     val actualSortedPath = tmpFile("sorted.sam")
-    reads.sortReadsByReferencePosition()
+    ardd.sortReadsByReferencePosition()
       .saveAsSam(actualSortedPath,
-        sd.stripIndices,
-        rgd,
         isSorted = true,
         asSingleFile = true)
 
@@ -324,13 +263,9 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val unsortedPath = resourcePath("unordered.sam")
     val ardd = sc.loadBam(unsortedPath)
     val reads = ardd.rdd
-    val sd = ardd.sequences
-    val rgd = ardd.recordGroups
 
     val actualUnorderedPath = tmpFile("unordered.sam")
-    reads.saveAsSam(actualUnorderedPath,
-      sd,
-      rgd,
+    ardd.saveAsSam(actualUnorderedPath,
       isSorted = false,
       asSingleFile = true)
 
@@ -340,15 +275,10 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
   sparkTest("writing ordered sam from unordered sam") {
     val unsortedPath = resourcePath("unordered.sam")
     val ardd = sc.loadBam(unsortedPath)
-    val usReads = ardd.rdd
-    val sd = ardd.sequences
-    val rgd = ardd.recordGroups
-    val reads = usReads.sortReadsByReferencePosition
+    val reads = ardd.sortReadsByReferencePosition
 
     val actualSortedPath = tmpFile("ordered.sam")
     reads.saveAsSam(actualSortedPath,
-      sd.stripIndices,
-      rgd,
       isSorted = true,
       asSingleFile = true)
 
@@ -359,30 +289,25 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("bqsr1.sam")
     val tempFile = Files.createTempDirectory("bqsr1")
     val rRdd = sc.loadAlignments(inputPath)
-    val rdd = rRdd.rdd
-    val sd = rRdd.sequences
-    val rgd = rRdd.recordGroups
-    rdd.cache()
-    rdd.saveAsSam("%s/%s".format(tempFile.toAbsolutePath.toString, filename),
-      sd,
-      rgd,
+    rRdd.rdd.cache()
+    rRdd.saveAsSam("%s/%s".format(tempFile.toAbsolutePath.toString, filename),
       asSam = true,
       asSingleFile = true)
-    val rdd2 = sc.loadAlignments("%s/%s".format(tempFile.toAbsolutePath.toString, filename)).rdd
-    rdd2.cache()
+    val rdd2 = sc.loadAlignments("%s/%s".format(tempFile.toAbsolutePath.toString, filename))
+    rdd2.rdd.cache()
 
-    val (fsp1, fsf1) = rdd.flagStat()
+    val (fsp1, fsf1) = rRdd.flagStat()
     val (fsp2, fsf2) = rdd2.flagStat()
 
-    assert(rdd.count === rdd2.count)
+    assert(rRdd.rdd.count === rdd2.rdd.count)
     assert(fsp1 === fsp2)
     assert(fsf1 === fsf2)
 
-    val jrdd = rdd.map(r => ((r.getReadName, r.getReadInFragment, r.getReadMapped), r))
-      .join(rdd2.map(r => ((r.getReadName, r.getReadInFragment, r.getReadMapped), r)))
+    val jrdd = rRdd.rdd.map(r => ((r.getReadName, r.getReadInFragment, r.getReadMapped), r))
+      .join(rdd2.rdd.map(r => ((r.getReadName, r.getReadInFragment, r.getReadMapped), r)))
       .cache()
 
-    assert(rdd.count === jrdd.count)
+    assert(rRdd.rdd.count === jrdd.count)
 
     jrdd.map(kv => kv._2)
       .collect
@@ -454,7 +379,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation()
-    reads.rdd.saveAsParquet(TestSaveArgs(outputPath), reads.sequences, reads.recordGroups)
+    reads.saveAsParquet(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
 
@@ -462,7 +387,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".sam")
-    reads.rdd.save(TestSaveArgs(outputPath), reads.sequences, reads.recordGroups)
+    reads.save(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
 
@@ -470,7 +395,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".sam")
-    reads.rdd.save(TestSaveArgs(outputPath), reads.sequences, reads.recordGroups, true)
+    reads.save(TestSaveArgs(outputPath), true)
     assert(new File(outputPath).exists())
   }
 
@@ -478,7 +403,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".bam")
-    reads.rdd.save(TestSaveArgs(outputPath), reads.sequences, reads.recordGroups)
+    reads.save(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
 
@@ -486,7 +411,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".bam")
-    reads.rdd.save(TestSaveArgs(outputPath), reads.sequences, reads.recordGroups, true)
+    reads.save(TestSaveArgs(outputPath), true)
     assert(new File(outputPath).exists())
   }
 
@@ -494,7 +419,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".fq")
-    reads.rdd.save(TestSaveArgs(outputPath), reads.sequences, reads.recordGroups)
+    reads.save(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
 
@@ -502,7 +427,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".adam")
-    reads.rdd.save(TestSaveArgs(outputPath), reads.sequences, reads.recordGroups)
+    reads.save(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
   }
 
@@ -510,7 +435,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".sam")
-    reads.rdd.saveAsSam(outputPath, reads.sequences, reads.recordGroups, true)
+    reads.saveAsSam(outputPath, true)
     assert(new File(outputPath).exists())
   }
 
@@ -518,7 +443,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".sam")
-    reads.rdd.saveAsSam(outputPath, reads.sequences, reads.recordGroups, true, true)
+    reads.saveAsSam(outputPath, true, true)
     assert(new File(outputPath).exists())
   }
 
@@ -526,7 +451,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".sam")
-    reads.rdd.saveAsSam(outputPath, reads.sequences, reads.recordGroups, true, true, true)
+    reads.saveAsSam(outputPath, true, true, true)
     assert(new File(outputPath).exists())
   }
 
@@ -534,7 +459,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".bam")
-    reads.rdd.saveAsSam(outputPath, reads.sequences, reads.recordGroups, false)
+    reads.saveAsSam(outputPath, false)
     assert(new File(outputPath).exists())
   }
 
@@ -542,7 +467,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".bam")
-    reads.rdd.saveAsSam(outputPath, reads.sequences, reads.recordGroups, false, true)
+    reads.saveAsSam(outputPath, false, true)
     assert(new File(outputPath).exists())
   }
 
@@ -550,7 +475,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".bam")
-    reads.rdd.saveAsSam(outputPath, reads.sequences, reads.recordGroups, false, true, true)
+    reads.saveAsSam(outputPath, false, true, true)
     assert(new File(outputPath).exists())
   }
 
@@ -558,7 +483,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".fq")
-    reads.rdd.saveAsFastq(outputPath, None)
+    reads.saveAsFastq(outputPath, None)
     assert(new File(outputPath).exists())
   }
 
@@ -566,7 +491,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".fq")
-    reads.rdd.saveAsFastq(outputPath, None, true)
+    reads.saveAsFastq(outputPath, None, true)
     assert(new File(outputPath).exists())
   }
 
@@ -574,7 +499,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".fq")
-    reads.rdd.saveAsFastq(outputPath, None, false, true)
+    reads.saveAsFastq(outputPath, None, false, true)
     assert(new File(outputPath).exists())
   }
 
@@ -582,7 +507,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tempLocation(".fq")
-    reads.rdd.saveAsFastq(outputPath, None, true, true)
+    reads.saveAsFastq(outputPath, None, true, true)
     assert(new File(outputPath).exists())
   }
 
@@ -591,7 +516,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath1 = tempLocation("_1.fq")
     val outputPath2 = tempLocation("_2.fq")
-    reads.rdd.saveAsFastq(outputPath1, Some(outputPath2))
+    reads.saveAsFastq(outputPath1, Some(outputPath2))
     assert(new File(outputPath1).exists())
     assert(new File(outputPath2).exists())
   }
@@ -601,7 +526,7 @@ class AlignmentRecordRDDFunctionsSuite extends ADAMFunSuite {
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath1 = tempLocation("_1.fq")
     val outputPath2 = tempLocation("_2.fq")
-    reads.rdd.saveAsPairedFastq(outputPath1, outputPath2)
+    reads.saveAsPairedFastq(outputPath1, outputPath2)
     assert(new File(outputPath1).exists())
     assert(new File(outputPath2).exists())
   }

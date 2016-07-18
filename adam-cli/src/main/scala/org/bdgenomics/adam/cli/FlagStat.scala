@@ -69,12 +69,11 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
 
     val stringency = ValidationStringency.valueOf(args.stringency)
 
-    val adamFile: RDD[AlignmentRecord] =
-      sc.loadAlignments(
-        args.inputPath,
-        projection = Some(projection),
-        stringency = stringency
-      )
+    val adamFile = sc.loadAlignments(
+      args.inputPath,
+      projection = Some(projection),
+      stringency = stringency
+    )
 
     val (failedVendorQuality, passedVendorQuality) = adamFile.flagStat()
 

@@ -32,7 +32,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Filter }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, MDTagging }
+import org.bdgenomics.adam.rdd.read.{ AlignedReadRDD, AlignmentRecordRDD, MDTagging }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
@@ -124,29 +124,27 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
   val stringency = ValidationStringency.valueOf(args.stringency)
 
-  def apply(rdd: RDD[AlignmentRecord],
-            sd: SequenceDictionary,
-            rgd: RecordGroupDictionary): RDD[AlignmentRecord] = {
+  def apply(rdd: AlignmentRecordRDD): AlignmentRecordRDD = {
 
     var adamRecords = rdd
-    val sc = rdd.context
+    val sc = rdd.rdd.context
     val sl = StorageLevel.fromString(args.storageLevel)
 
     val stringencyOpt = Option(args.stringency).map(ValidationStringency.valueOf(_))
 
     if (args.repartition != -1) {
       log.info("Repartitioning reads to to '%d' partitions".format(args.repartition))
-      adamRecords = adamRecords.repartition(args.repartition)
+      adamRecords = adamRecords.transform(_.repartition(args.repartition))
     }
 
     if (args.markDuplicates) {
       log.info("Marking duplicates")
-      adamRecords = adamRecords.markDuplicates(rgd)
+      adamRecords = adamRecords.markDuplicates()
     }
 
     if (args.locallyRealign) {
       val oldRdd = if (args.cache) {
-        adamRecords.persist(sl)
+        adamRecords.transform(_.persist(sl))
       } else {
         adamRecords
       }
@@ -167,7 +165,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       )
 
       if (args.cache) {
-        oldRdd.unpersist()
+        oldRdd.rdd.unpersist()
       }
     }
 
@@ -175,7 +173,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       log.info("Recalibrating base qualities")
 
       val oldRdd = if (args.cache) {
-        adamRecords.persist(sl)
+        adamRecords.transform(_.persist(sl))
       } else {
         adamRecords
       }
@@ -188,23 +186,23 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       )
 
       if (args.cache) {
-        oldRdd.unpersist()
+        oldRdd.rdd.unpersist()
       }
     }
 
     if (args.coalesce != -1) {
       log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
-      if (args.coalesce > adamRecords.partitions.size || args.forceShuffle) {
-        adamRecords = adamRecords.coalesce(args.coalesce, shuffle = true)
+      if (args.coalesce > adamRecords.rdd.partitions.size || args.forceShuffle) {
+        adamRecords = adamRecords.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
-        adamRecords = adamRecords.coalesce(args.coalesce, shuffle = false)
+        adamRecords = adamRecords.transform(_.coalesce(args.coalesce, shuffle = false))
       }
     }
 
     // NOTE: For now, sorting needs to be the last transform
     if (args.sortReads) {
       val oldRdd = if (args.cache) {
-        adamRecords.persist(sl)
+        adamRecords.transform(_.persist(sl))
       } else {
         adamRecords
       }
@@ -213,24 +211,25 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       if (args.sortLexicographically) {
         adamRecords = oldRdd.sortReadsByReferencePosition()
       } else {
-        adamRecords = oldRdd.sortReadsByReferencePositionAndIndex(sd)
+        adamRecords = oldRdd.sortReadsByReferencePositionAndIndex()
       }
 
       if (args.cache) {
-        oldRdd.unpersist()
+        oldRdd.rdd.unpersist()
       }
     }
 
     if (args.mdTagsReferenceFile != null) {
       log.info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
-      adamRecords =
+      adamRecords = adamRecords.transform(rdd => {
         MDTagging(
-          adamRecords,
+          rdd,
           args.mdTagsReferenceFile,
           fragmentLength = args.mdTagsFragmentSize,
           overwriteExistingTags = args.mdTagsOverwrite,
           validationStringency = stringencyOpt.getOrElse(ValidationStringency.STRICT)
         )
+      })
     }
 
     adamRecords
@@ -335,8 +334,11 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       (rdd ++ t.rdd, sd ++ t.sequences, rgd ++ t.recordGroups)
     })
 
+    // make a new aligned read rdd, that merges the two RDDs together
+    val newRdd = AlignedReadRDD(mergedRdd, mergedSd, mergedRgd)
+
     // run our transformation
-    val outputRdd = this.apply(mergedRdd, mergedSd, mergedRgd)
+    val outputRdd = this.apply(newRdd)
 
     // if we are sorting, we must strip the indices from the sequence dictionary
     // and sort the sequence dictionary
@@ -353,10 +355,10 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       mergedSd
     }
 
-    outputRdd.save(args, sdFinal, mergedRgd, args.sortReads)
+    outputRdd.save(args)
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {
-    Option(args.knownSnpsFile).fold(SnpTable())(f => SnpTable(sc.loadVariants(f).map(new RichVariant(_))))
+    Option(args.knownSnpsFile).fold(SnpTable())(f => SnpTable(sc.loadVariants(f).rdd.map(new RichVariant(_))))
   }
 }

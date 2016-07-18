@@ -20,8 +20,17 @@ package org.bdgenomics.adam.apis.java
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaSparkContext
 import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
-import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.ADAMContext
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
+import org.bdgenomics.adam.rdd.features.FeatureRDD
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.variation.{
+  DatabaseVariantAnnotationRDD,
+  GenotypeRDD,
+  VariantRDD
+}
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
 
@@ -60,10 +69,69 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param filePath Path to load the file from.
    * @return Returns a read RDD.
    */
-  def loadAlignments(filePath: java.lang.String): JavaAlignmentRecordRDD = {
-    val aRdd = ac.loadAlignments(filePath)
-    new JavaAlignmentRecordRDD(aRdd.rdd.toJavaRDD(),
-      aRdd.sequences,
-      aRdd.recordGroups)
+  def loadAlignments(filePath: java.lang.String): AlignmentRecordRDD = {
+    ac.loadAlignments(filePath)
+  }
+
+  /**
+   * Loads in sequence fragments.
+   *
+   * Can load from FASTA or from Parquet encoded NucleotideContigFragments.
+   *
+   * @param filePath Path to load the file from.
+   * @return Returns a NucleotideContigFragment RDD.
+   */
+  def loadSequences(filePath: java.lang.String): NucleotideContigFragmentRDD = {
+    ac.loadSequences(filePath)
+  }
+
+  /**
+   * Loads in read pairs as fragments.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a FragmentRDD.
+   */
+  def loadFragments(filePath: java.lang.String): FragmentRDD = {
+    ac.loadFragments(filePath)
+  }
+
+  /**
+   * Loads in features.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a FeatureRDD.
+   */
+  def loadFeatures(filePath: java.lang.String): FeatureRDD = {
+    ac.loadFeatures(filePath)
+  }
+
+  /**
+   * Loads in variant annotations.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a DatabaseVariantAnnotationRDD.
+   */
+  def loadVariantAnnotations(filePath: java.lang.String): DatabaseVariantAnnotationRDD = {
+    ac.loadVariantAnnotations(filePath)
+  }
+
+  /**
+   * Loads in genotypes.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a GenotypeRDD.
+   */
+  def loadGenotypes(filePath: java.lang.String): GenotypeRDD = {
+    ac.loadGenotypes(filePath)
+  }
+
+  /**
+   * Loads in variants.
+   *
+   * @param filePath The path to load the file from.
+   * @return Returns a VariantRDD.
+   */
+  def loadVariants(filePath: java.lang.String): VariantRDD = {
+    ac.loadVariants(filePath)
   }
 }

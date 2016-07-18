@@ -48,6 +48,8 @@ class Reads2Fragments(protected val args: Reads2FragmentsArgs) extends BDGSparkC
   val companion = Reads2Fragments
 
   def run(sc: SparkContext) {
-    sc.loadAlignments(args.inputPath).rdd.toFragments.saveAsParquet(args)
+    sc.loadAlignments(args.inputPath)
+      .toFragments
+      .saveAsParquet(args)
   }
 }

@@ -60,14 +60,14 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     // read from disk
-    var adamRecords: RDD[AlignmentRecord] = sc.loadAlignments(
+    var adamRecords = sc.loadAlignments(
       args.inputPath,
       projection = Some(Projection(AlignmentRecordField.sequence))
     )
 
     if (args.repartition != -1) {
       log.info("Repartitioning reads to '%d' partitions".format(args.repartition))
-      adamRecords = adamRecords.repartition(args.repartition)
+      adamRecords = adamRecords.transform(_.repartition(args.repartition))
     }
 
     // count kmers

@@ -39,13 +39,10 @@ class FieldEnumerationSuite extends ADAMFunSuite {
 
     // Convert the reads12.sam file into a parquet file
     val rRdd = sc.loadBam(readsFilepath)
-    val bamReads = rRdd.rdd
-    val sd = rRdd.sequences
-    val rgd = rRdd.recordGroups
-    bamReads.saveAsParquet(TestSaveArgs(readsParquetFilepath), sd, rgd)
+    rRdd.saveAsParquet(TestSaveArgs(readsParquetFilepath))
 
     val p1 = Projection(AlignmentRecordField.readName)
-    val reads1: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFilepath, projection = Some(p1))
+    val reads1: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFilepath, projection = Some(p1)).rdd
     assert(reads1.count() === 200)
 
     val first1 = reads1.first()
@@ -53,7 +50,7 @@ class FieldEnumerationSuite extends ADAMFunSuite {
     assert(first1.getReadMapped === false)
 
     val p2 = Projection(AlignmentRecordField.readName, AlignmentRecordField.readMapped)
-    val reads2: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFilepath, projection = Some(p2))
+    val reads2: RDD[AlignmentRecord] = sc.loadAlignments(readsParquetFilepath, projection = Some(p2)).rdd
     assert(reads2.count() === 200)
 
     val first2 = reads2.first()

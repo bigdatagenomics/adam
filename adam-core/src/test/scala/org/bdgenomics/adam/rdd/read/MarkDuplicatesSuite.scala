@@ -18,7 +18,11 @@
 package org.bdgenomics.adam.rdd.read
 
 import java.util.UUID
-import org.bdgenomics.adam.models.{ RecordGroup, RecordGroupDictionary }
+import org.bdgenomics.adam.models.{
+  RecordGroup,
+  RecordGroupDictionary,
+  SequenceDictionary
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
@@ -92,8 +96,11 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
     Seq(firstOfPair, secondOfPair)
   }
 
-  private def markDuplicates(reads: AlignmentRecord*) = {
-    sc.parallelize(reads).markDuplicates(rgd).collect()
+  private def markDuplicates(reads: AlignmentRecord*): Array[AlignmentRecord] = {
+    AlignedReadRDD(sc.parallelize(reads), SequenceDictionary.empty, rgd)
+      .markDuplicates()
+      .rdd
+      .collect()
   }
 
   sparkTest("single read") {

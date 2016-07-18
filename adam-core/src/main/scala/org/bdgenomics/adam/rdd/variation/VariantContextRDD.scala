@@ -21,26 +21,61 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.VariantContextConverter
-import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
+import org.bdgenomics.adam.models.{
+  ReferenceRegion,
+  SequenceDictionary,
+  VariantContext
+}
 import org.bdgenomics.adam.rdd.MultisampleGenomicRDD
 import org.bdgenomics.utils.cli.SaveArgs
 import org.seqdoop.hadoop_bam._
 
+/**
+ * An RDD containing VariantContexts attached to a reference and samples.
+ *
+ * @param rdd The underlying RDD of VariantContexts.
+ * @param sequences The genome sequence these variants were called against.
+ * @param samples The genotyped samples in this RDD of VariantContexts.
+ */
 case class VariantContextRDD(rdd: RDD[VariantContext],
                              sequences: SequenceDictionary,
-                             samples: Seq[String]) extends MultisampleGenomicRDD[VariantContext]
+                             samples: Seq[String]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
 
-  def transform(tFn: RDD[VariantContext] => RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(tFn(rdd), sequences, samples)
+  /**
+   * Left outer join database variant annotations.
+   *
+   * @param ann Annotation RDD to join against.
+   * @return Returns a VariantContextRDD where annotations have been filled in.
+   */
+  def joinDatabaseVariantAnnotation(ann: DatabaseVariantAnnotationRDD): VariantContextRDD = {
+    replaceRdd(rdd.keyBy(_.variant)
+      .leftOuterJoin(ann.rdd.keyBy(_.getVariant))
+      .values
+      .map(kv => VariantContext(kv._1, kv._2)))
   }
 
+  /**
+   * @return Returns a DatabaseVariantAnnotationRDD containing the variant
+   *   annotations attached to this VariantContextRDD.
+   */
+  def toDatabaseVariantAnnotationRDD: DatabaseVariantAnnotationRDD = {
+    DatabaseVariantAnnotationRDD(rdd.flatMap(_.databases),
+      sequences)
+  }
+
+  /**
+   * @return Returns a GenotypeRDD containing the Genotypes in this RDD.
+   */
   def toGenotypeRDD: GenotypeRDD = {
     GenotypeRDD(rdd.flatMap(_.genotypes),
       sequences,
       samples)
   }
 
+  /**
+   * @return Returns the Variants in this RDD.
+   */
   def toVariantRDD: VariantRDD = {
     VariantRDD(rdd.map(_.variant.variant),
       sequences)
@@ -124,5 +159,22 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
 
     log.info("Write %d records".format(writableVCs.count()))
     rdd.unpersist()
+  }
+
+  /**
+   * @param newRdd The RDD of VariantContexts to replace the underlying RDD.
+   * @return Returns a new VariantContextRDD where the underlying RDD has
+   *   been replaced.
+   */
+  protected def replaceRdd(newRdd: RDD[VariantContext]): VariantContextRDD = {
+    copy(rdd = newRdd)
+  }
+
+  /**
+   * @param elem The variant context to get a reference region for.
+   * @return Returns a seq containing the position key from the variant context.
+   */
+  protected def getReferenceRegions(elem: VariantContext): Seq[ReferenceRegion] = {
+    Seq(ReferenceRegion(elem.position))
   }
 }

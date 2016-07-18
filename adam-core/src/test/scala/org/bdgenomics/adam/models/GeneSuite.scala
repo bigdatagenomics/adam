@@ -30,12 +30,12 @@ import scala.io.Source
 class GeneSuite extends ADAMFunSuite {
 
   sparkTest("can load a set of gene models from an Ensembl GTF file") {
-    val path = testFile("features/Homo_sapiens.GRCh37.75.trun100.gtf")
-    val features: RDD[Feature] = sc.loadFeatures(path)
+    val path = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
+    val features = sc.loadFeatures(path)
 
-    val fixedParentIds: RDD[Feature] = features.reassignParentIds
+    val fixedParentIds = features.reassignParentIds
 
-    val genes: RDD[Gene] = fixedParentIds.toGenes()
+    val genes = fixedParentIds.toGenes().rdd
     assert(genes.count() === 4)
 
     val transcripts = genes.flatMap(_.transcripts)
@@ -46,12 +46,12 @@ class GeneSuite extends ADAMFunSuite {
   }
 
   sparkTest("can load a set of gene models from a Gencode GTF file") {
-    val path = testFile("features/gencode.v19.annotation.chr20.250k.gtf")
-    val features: RDD[Feature] = sc.loadFeatures(path)
+    val path = testFile("gencode.v19.annotation.chr20.250k.gtf")
+    val features = sc.loadFeatures(path)
 
-    val fixedParentIds: RDD[Feature] = features.reassignParentIds
+    val fixedParentIds = features.reassignParentIds
 
-    val genes: RDD[Gene] = fixedParentIds.toGenes()
+    val genes = fixedParentIds.toGenes().rdd
     assert(genes.count() === 8)
 
     val transcripts = genes.flatMap(_.transcripts)
@@ -87,11 +87,8 @@ class GeneSuite extends ADAMFunSuite {
   }
 
   sparkTest("chr20 gencode transcript sequences match the published sequences") {
-    //val path = testFile("features/gencode.v19.annotation.chr20.gtf")
-    val path = testFile("features/gencode.v19.annotation.chr20.250k.gtf")
-    //val chr20path = testFile("chr20.fa.gz")
+    val path = testFile("gencode.v19.annotation.chr20.250k.gtf")
     val chr20path = testFile("chr20.250k.fa.gz")
-    //val gencodeTranscriptsFa = testFile("gencode.v19.pc_transcripts.fa.gz")
     val gencodeTranscriptsFa = testFile("gencode.v19.pc_transcripts.250k.fa.gz")
 
     val chr20sequence =
@@ -102,10 +99,10 @@ class GeneSuite extends ADAMFunSuite {
         (key.split("\\|").head, seq)
     }
 
-    val features: RDD[Feature] = sc.loadFeatures(path)
-    val fixedParentIds: RDD[Feature] = features.reassignParentIds
-    val genes: RDD[Gene] = fixedParentIds.toGenes()
-    val transcripts: Seq[Transcript] = genes.flatMap(g => g.transcripts).take(100)
+    val features = sc.loadFeatures(path)
+    val fixedParentIds = features.reassignParentIds
+    val genes = fixedParentIds.toGenes()
+    val transcripts: Seq[Transcript] = genes.rdd.flatMap(g => g.transcripts).take(100)
 
     transcripts.foreach { transcript =>
       val mySequence = transcript.extractSplicedmRNASequence(chr20sequence.get)

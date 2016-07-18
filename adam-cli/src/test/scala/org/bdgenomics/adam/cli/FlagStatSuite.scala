@@ -30,7 +30,7 @@ class FlagStatSuite extends ADAMFunSuite {
 
   sparkTest("Standard FlagStat test") {
 
-    val inputpath = resourcePath("features/NA12878.sam")
+    val inputpath = resourcePath("NA12878.sam")
     val argLine = "%s".format(inputpath).split("\\s+")
 
     val args: FlagStatArgs = Args4j.apply[FlagStatArgs](argLine)
@@ -50,7 +50,7 @@ class FlagStatSuite extends ADAMFunSuite {
       AlignmentRecordField.mapq,
       AlignmentRecordField.failedVendorQualityChecks)
 
-    val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection))
+    val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection)).rdd
 
     val (failedVendorQuality, passedVendorQuality) = apply(adamFile)
 

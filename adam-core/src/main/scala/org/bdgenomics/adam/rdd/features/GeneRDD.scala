@@ -15,20 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.fragment
+package org.bdgenomics.adam.rdd.features
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.converters.AlignmentRecordConverter
-import org.bdgenomics.adam.models.SequenceRecord
-import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
-import org.bdgenomics.utils.misc.Logging
-import org.bdgenomics.formats.avro._
-import scala.collection.JavaConversions._
+import org.bdgenomics.adam.models.{ Gene, ReferenceRegion, SequenceDictionary }
+import org.bdgenomics.adam.rdd.GenomicRDD
 
-class FragmentRDDFunctions(rdd: RDD[Fragment]) extends Serializable with Logging {
+case class GeneRDD(rdd: RDD[Gene],
+                   sequences: SequenceDictionary) extends GenomicRDD[Gene, GeneRDD] {
 
-  def toReads: RDD[AlignmentRecord] = {
-    val converter = new AlignmentRecordConverter
-    rdd.flatMap(converter.convertFragment)
+  protected def replaceRdd(newRdd: RDD[Gene]): GeneRDD = {
+    copy(rdd = newRdd)
+  }
+
+  protected def getReferenceRegions(elem: Gene): Seq[ReferenceRegion] = {
+    elem.regions
   }
 }

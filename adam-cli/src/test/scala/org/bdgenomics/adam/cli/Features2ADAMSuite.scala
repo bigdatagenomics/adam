@@ -20,16 +20,17 @@ package org.bdgenomics.adam.cli
 import java.io._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.FeatureField._
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.utils.cli.Args4j
 import org.bdgenomics.formats.avro.Feature
 
 class Features2ADAMSuite extends ADAMFunSuite {
 
-  ignore("can convert a simple BED file") {
+  sparkTest("can convert a simple BED file") {
 
     val loader = Thread.currentThread().getContextClassLoader
-    val inputPath = loader.getResource("features/gencode.v7.annotation.trunc10.bed").getPath
+    val inputPath = loader.getResource("gencode.v7.annotation.trunc10.bed").getPath
     val outputFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".adam")
     val outputPath = outputFile.getAbsolutePath
 
@@ -49,24 +50,12 @@ class Features2ADAMSuite extends ADAMFunSuite {
     val converted = lister.materialize(outputPath).toSeq
 
     assert(converted.size === 10)
-
-    /*
-    val types = converted.groupBy(_.getFeatureType).map {
-      case (key: String, value: Seq[ADAMFeature]) => (key, value.length)
-    }
-
-    assert(types.contains("exon"))
-    assert(types.get("exon").get === 7)
-    assert(types.get("transcript").get === 2)
-    assert(types.get("gene").get === 1)
-    */
-
     assert(converted.find(_.getContigName != "chr1").isEmpty)
   }
 
   sparkTest("can convert a simple wigfix file") {
     val loader = Thread.currentThread().getContextClassLoader
-    val inputPath = loader.getResource("features/chr5.phyloP46way.trunc.wigFix").getPath
+    val inputPath = loader.getResource("chr5.phyloP46way.trunc.wigFix").getPath
     val bedFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".bed")
     val bedPath = bedFile.getAbsolutePath
     val outputFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".adam")
@@ -90,9 +79,8 @@ class Features2ADAMSuite extends ADAMFunSuite {
     features2Adam.run(sc)
 
     val schema = Projection(featureId, contigName, start, end, score)
-    val lister = new ParquetLister[Feature](Some(schema))
-
-    val converted = lister.materialize(outputPath).toSeq.sortBy(f => f.getStart)
+    val rdd = sc.loadFeatures(outputPath, projection = Some(schema))
+    val converted = rdd.rdd.collect.toSeq.sortBy(f => f.getStart)
 
     assert(converted.size === 10)
     assert(converted(0).getContigName == "chr5")
@@ -105,5 +93,4 @@ class Features2ADAMSuite extends ADAMFunSuite {
     assert(converted(9).getEnd == 15299)
     assert(converted(9).getScore == 0.139)
   }
-
 }

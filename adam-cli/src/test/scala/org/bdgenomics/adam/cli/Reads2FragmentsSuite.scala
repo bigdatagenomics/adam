@@ -15,37 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.variation
+package org.bdgenomics.adam.cli
 
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.VariantContext
+import java.nio.file.Files
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro._
 
-class ADAMVariationRDDFunctionsSuite extends ADAMFunSuite {
-
-  sparkTest("joins SNV database annotation") {
-    val v0 = Variant.newBuilder
-      .setContigName("11")
-      .setStart(17409572)
-      .setReferenceAllele("T")
-      .setAlternateAllele("C")
-      .build
-
-    val vc: RDD[VariantContext] = sc.parallelize(List(
-      VariantContext(v0)))
-
-    val a0 = DatabaseVariantAnnotation.newBuilder
-      .setVariant(v0)
-      .setDbSnpId(5219)
-      .build
-
-    val vda: RDD[DatabaseVariantAnnotation] = sc.parallelize(List(
-      a0))
-
-    // TODO: implicit conversion to VariantContextRDD
-    val annotated = vc.joinDatabaseVariantAnnotation(vda)
-    assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
+class Reads2FragmentsSuite extends ADAMFunSuite {
+  sparkTest("unordered sam to ordered sam round trip") {
+    val inputPath = copyResource("unordered.sam")
+    val fragmentsPath = tmpFile("fragments.adam")
+    val readsPath = tmpFile("reads.adam")
+    val actualPath = tmpFile("fragments.sam")
+    val expectedPath = copyResource("ordered.sam")
+    Reads2Fragments(Array(inputPath, fragmentsPath)).run(sc)
+    Fragments2Reads(Array(fragmentsPath, readsPath)).run(sc)
+    Transform(Array("-single", "-sort_reads", "-sort_lexicographically",
+      readsPath, actualPath)).run(sc)
+    checkFiles(expectedPath, actualPath)
   }
 }

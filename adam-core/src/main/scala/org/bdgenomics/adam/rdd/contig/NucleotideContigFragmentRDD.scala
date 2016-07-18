@@ -18,27 +18,44 @@
 package org.bdgenomics.adam.rdd.contig
 
 import com.google.common.base.Splitter
-import java.util.logging.Level
-import org.apache.avro.specific.SpecificRecord
-import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.FragmentConverter
-import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.ADAMSequenceDictionaryRDDAggregator
-import org.bdgenomics.adam.util.ParquetLogger
-import org.bdgenomics.formats.avro._
-import org.bdgenomics.utils.misc.HadoopUtil
-import org.apache.parquet.avro.AvroParquetOutputFormat
-import org.apache.parquet.hadoop.ParquetOutputFormat
-import org.apache.parquet.hadoop.metadata.CompressionCodecName
-import org.apache.parquet.hadoop.util.ContextUtil
+import org.bdgenomics.adam.models.{
+  ReferenceRegion,
+  SequenceRecord,
+  SequenceDictionary
+}
+import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
 import scala.collection.JavaConversions._
 import scala.math.max
-import scala.Some
 
-class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) extends ADAMSequenceDictionaryRDDAggregator[NucleotideContigFragment](rdd) {
+object NucleotideContigFragmentRDD extends Serializable {
+
+  /**
+   * Helper function for building a NucleotideContigFragmentRDD when no
+   * sequence dictionary is available.
+   *
+   * @param rdd Underlying RDD. We recompute the sequence dictionary from
+   *   this RDD.
+   * @return Returns a new NucleotideContigFragmentRDD.
+   */
+  private[rdd] def apply(rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
+
+    // get sequence dictionary
+    val sd = new SequenceDictionary(rdd.map(SequenceRecord.fromADAMContigFragment)
+      .distinct
+      .collect
+      .toVector)
+
+    NucleotideContigFragmentRDD(rdd, sd)
+  }
+}
+
+case class NucleotideContigFragmentRDD(
+    rdd: RDD[NucleotideContigFragment],
+    sequences: SequenceDictionary) extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] {
 
   /**
    * Converts an RDD of nucleotide contig fragments into reads. Adjacent contig fragments are
@@ -51,12 +68,49 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
   }
 
   /**
+   * Replaces the underlying RDD with a new RDD.
+   *
+   * @param newRdd The RDD to use for the new NucleotideContigFragmentRDD.
+   * @return Returns a new NucleotideContigFragmentRDD where the underlying RDD
+   *   has been replaced.
+   */
+  protected def replaceRdd(newRdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
+    copy(rdd = newRdd)
+  }
+
+  /**
+   * @param elem Fragment to extract a region from.
+   * @return If a fragment is aligned to a reference location, returns a single
+   *   reference region. If the fragment start position and name is not defined,
+   *   returns no regions.
+   */
+  protected def getReferenceRegions(elem: NucleotideContigFragment): Seq[ReferenceRegion] = {
+    ReferenceRegion(elem).toSeq
+  }
+
+  /**
+   * Save nucleotide contig fragments as Parquet or FASTA.
+   *
+   * If filename ends in .fa or .fasta, saves as Fasta. If not, saves fragments
+   * to Parquet. Defaults to 60 character line length, if saving to FASTA.
+   *
+   * @param fileName file name
+   */
+  def save(fileName: java.lang.String) {
+    if (fileName.endsWith(".fa") || fileName.endsWith(".fasta")) {
+      saveAsFasta(fileName)
+    } else {
+      saveAsParquet(new JavaSaveArgs(fileName))
+    }
+  }
+
+  /**
    * Save nucleotide contig fragments in FASTA format.
    *
    * @param fileName file name
    * @param lineWidth hard wrap FASTA formatted sequence at line width, default 60
    */
-  def saveAsFasta(fileName: String, lineWidth: Int = 60) = {
+  def saveAsFasta(fileName: String, lineWidth: Int = 60) {
 
     def isFragment(record: NucleotideContigFragment): Boolean = {
       Option(record.getFragmentNumber).isDefined && Option(record.getNumberOfFragmentsInContig).fold(false)(_ > 1)
@@ -82,8 +136,11 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
 
   /**
    * Merge fragments by contig name.
+   *
+   * @return Returns a NucleotideContigFragmentRDD containing a single fragment
+   *   per contig.
    */
-  def mergeFragments(): RDD[NucleotideContigFragment] = {
+  def mergeFragments(): NucleotideContigFragmentRDD = {
 
     def merge(first: NucleotideContigFragment, second: NucleotideContigFragment): NucleotideContigFragment = {
       val merged = NucleotideContigFragment.newBuilder(first)
@@ -96,11 +153,12 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
       merged
     }
 
-    rdd
-      .sortBy(fragment => (fragment.getContig.getContigName, Option(fragment.getFragmentNumber).map(_.toInt).getOrElse(-1)))
+    replaceRdd(rdd.sortBy(fragment => (fragment.getContig.getContigName,
+      Option(fragment.getFragmentNumber).map(_.toInt)
+      .getOrElse(-1)))
       .map(fragment => (fragment.getContig.getContigName, fragment))
       .reduceByKey(merge)
-      .values
+      .values)
   }
 
   /**
@@ -162,38 +220,28 @@ class NucleotideContigFragmentRDDFunctions(rdd: RDD[NucleotideContigFragment]) e
     }
   }
 
-  def getSequenceRecords(elem: NucleotideContigFragment): Set[SequenceRecord] = {
-    // variant context contains a single locus
-    Set(SequenceRecord.fromADAMContigFragment(elem))
-  }
-
   /**
    * For all adjacent records in the RDD, we extend the records so that the adjacent
    * records now overlap by _n_ bases, where _n_ is the flank length.
    *
    * @param flankLength The length to extend adjacent records by.
-   * @param optSd An optional sequence dictionary. If none is provided, we recompute the
-   *              sequence dictionary on the fly. Default is None.
    * @return Returns the RDD, with all adjacent fragments extended with flanking sequence.
    */
   def flankAdjacentFragments(
-    flankLength: Int,
-    optSd: Option[SequenceDictionary] = None): RDD[NucleotideContigFragment] = {
-    FlankReferenceFragments(rdd, optSd.getOrElse(getSequenceDictionary(performLexSort = false)), flankLength)
+    flankLength: Int): NucleotideContigFragmentRDD = {
+    replaceRdd(FlankReferenceFragments(rdd,
+      sequences,
+      flankLength))
   }
 
   /**
    * Counts the k-mers contained in a FASTA contig.
    *
    * @param kmerLength The length of k-mers to count.
-   * @param optSd An optional sequence dictionary. If none is provided, we recompute the
-   *              sequence dictionary on the fly. Default is None.
    * @return Returns an RDD containing k-mer/count pairs.
    */
-  def countKmers(
-    kmerLength: Int,
-    optSd: Option[SequenceDictionary] = None): RDD[(String, Long)] = {
-    flankAdjacentFragments(kmerLength, optSd).flatMap(r => {
+  def countKmers(kmerLength: Int): RDD[(String, Long)] = {
+    flankAdjacentFragments(kmerLength).rdd.flatMap(r => {
       // cut each read into k-mers, and attach a count of 1L
       r.getFragmentSequence
         .sliding(kmerLength)

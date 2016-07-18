@@ -22,6 +22,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.variation.GenotypeRDD
 import org.bdgenomics.formats.avro.{ Genotype, GenotypeAllele }
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
@@ -53,8 +54,8 @@ object AlleleCountHelper extends Serializable {
       case _ => None
     }
 
-  def countAlleles(adamVariants: RDD[Genotype], args: AlleleCountArgs) {
-    val usefulData = adamVariants.map(p => (
+  def countAlleles(adamVariants: GenotypeRDD, args: AlleleCountArgs) {
+    val usefulData = adamVariants.rdd.map(p => (
       p.getVariant.getContigName,
       p.getVariant.getStart,
       p.getVariant.getReferenceAllele,
@@ -74,7 +75,7 @@ class AlleleCount(val args: AlleleCountArgs) extends BDGSparkCommand[AlleleCount
 
   def run(sc: SparkContext) {
 
-    val adamVariants: RDD[Genotype] = sc.loadGenotypes(args.adamFile)
+    val adamVariants = sc.loadGenotypes(args.adamFile)
     AlleleCountHelper.countAlleles(adamVariants, args)
   }
 }

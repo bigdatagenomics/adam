@@ -21,40 +21,38 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.Consensus
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 class RealignIndelsSuite extends ADAMFunSuite {
 
-  def mason_reads: RDD[AlignmentRecord] = {
-    val path = resourcePath("small_realignment_targets.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
-    reads
-  }
-
-  def artificial_reads: RDD[AlignmentRecord] = {
+  def artificialReadsRdd: AlignmentRecordRDD = {
     val path = resourcePath("artificial.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
-    reads
+    sc.loadAlignments(path)
   }
 
-  def artificial_realigned_reads: RDD[AlignmentRecord] = {
-    artificial_reads
+  def artificialReads: RDD[AlignmentRecord] = {
+    artificialReadsRdd.rdd
+  }
+
+  def artificialRealignedReads: RDD[AlignmentRecord] = {
+    artificialReadsRdd
       .realignIndels()
       .sortReadsByReferencePosition()
+      .rdd
   }
 
-  def gatk_artificial_realigned_reads: RDD[AlignmentRecord] = {
+  def gatkArtificialRealignedReads: RDD[AlignmentRecord] = {
     val path = resourcePath("artificial.realigned.sam")
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
-    reads
+    sc.loadAlignments(path).rdd
   }
 
   sparkTest("checking mapping to targets for artificial reads") {
-    val targets = RealignmentTargetFinder(artificial_reads.map(RichAlignmentRecord(_)))
+    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignmentRecord(_)))
     assert(targets.size === 1)
-    val rr = artificial_reads.map(RichAlignmentRecord(_))
+    val rr = artificialReads.map(RichAlignmentRecord(_))
     val readsMappedToTarget = RealignIndels.mapTargets(rr, targets).map(kv => {
       val (t, r) = kv
 
@@ -83,7 +81,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
     var consensus = List[Consensus]()
 
     // similar to realignTargetGroup() in RealignIndels
-    artificial_reads.collect().toList.foreach(r => {
+    artificialReads.collect().toList.foreach(r => {
       if (r.mdTag.get.hasMismatches) {
         consensus = Consensus.generateAlternateConsensus(r.getSequence, ReferencePosition("0", r.getStart), r.samtoolsCigar) match {
           case Some(o) => o :: consensus
@@ -112,8 +110,8 @@ class RealignIndelsSuite extends ADAMFunSuite {
       assert(readReference._1 === refStr.substring(startIndex, stopIndex))
     }
 
-    val targets = RealignmentTargetFinder(artificial_reads.map(RichAlignmentRecord(_)))
-    val rr = artificial_reads.map(RichAlignmentRecord(_))
+    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignmentRecord(_)))
+    val rr = artificialReads.map(RichAlignmentRecord(_))
     val readsMappedToTarget: Array[(IndelRealignmentTarget, Iterable[AlignmentRecord])] = RealignIndels.mapTargets(rr, targets)
       .filter(_._1.isDefined)
       .map(kv => {
@@ -135,14 +133,14 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   sparkTest("checking realigned reads for artificial input") {
-    val artificial_realigned_reads_collected = artificial_realigned_reads.collect()
-    val gatk_artificial_realigned_reads_collected = gatk_artificial_realigned_reads.collect()
+    val artificialRealignedReads_collected = artificialRealignedReads.collect()
+    val gatkArtificialRealignedReads_collected = gatkArtificialRealignedReads.collect()
 
-    assert(artificial_realigned_reads_collected.size === gatk_artificial_realigned_reads_collected.size)
+    assert(artificialRealignedReads_collected.size === gatkArtificialRealignedReads_collected.size)
 
-    val artificial_read4 = artificial_realigned_reads_collected.filter(_.getReadName == "read4")
-    val gatk_read4 = gatk_artificial_realigned_reads_collected.filter(_.getReadName == "read4")
-    val result = artificial_read4.zip(gatk_read4)
+    val artificialRead4 = artificialRealignedReads_collected.filter(_.getReadName == "read4")
+    val gatkRead4 = gatkArtificialRealignedReads_collected.filter(_.getReadName == "read4")
+    val result = artificialRead4.zip(gatkRead4)
 
     assert(result.forall(
       pair => pair._1.getReadName == pair._2.getReadName))
@@ -173,7 +171,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
 
   sparkTest("test mismatch quality scoring after unpacking read") {
     val ri = new RealignIndels()
-    val read = artificial_reads.first()
+    val read = artificialReads.first()
 
     assert(ri.sumMismatchQuality(read) === 800)
   }
@@ -256,13 +254,13 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   sparkTest("test OP and OC tags") {
-    artificial_realigned_reads.collect().foreach(realn => {
+    artificialRealignedReads.collect().foreach(realn => {
       val readName = realn.getReadName()
       val op = realn.getOldPosition()
       val oc = realn.getOldCigar()
 
       Option(op).filter(_ >= 0).foreach(oPos => {
-        val s = artificial_reads.collect().filter(x => (x.getReadName() == readName))
+        val s = artificialReads.collect().filter(x => (x.getReadName() == readName))
         assert(s.filter(x => (x.getStart() == oPos)).length > 0)
         assert(s.filter(x => (x.getCigar() == oc)).length > 0)
       })

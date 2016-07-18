@@ -162,15 +162,16 @@ class View(val args: ViewArgs) extends BDGSparkCommand[ViewArgs] {
 
   def run(sc: SparkContext) = {
 
-    val reads = applyFilters(sc.loadAlignments(args.inputPath))
+    val reads = sc.loadAlignments(args.inputPath)
+      .transform(applyFilters(_))
 
     if (args.outputPath != null) {
-      reads.save(args, SequenceDictionary.empty, RecordGroupDictionary.empty)
+      reads.save(args)
     } else {
       if (args.printCount) {
-        println(reads.count())
+        println(reads.rdd.count())
       } else {
-        println(reads.saveAsSamString(SequenceDictionary.empty, RecordGroupDictionary.empty))
+        println(reads.saveAsSamString())
       }
     }
   }

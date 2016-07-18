@@ -26,19 +26,73 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 
 class JavaADAMContextSuite extends ADAMFunSuite {
 
-  sparkTest("can read a small .SAM file") {
-    val path = copyResource("small.sam")
-    val ctx = new JavaADAMContext(sc)
-    val reads = ctx.loadAlignments(path)
-    assert(reads.jrdd.count() === 20)
-  }
-
-  sparkTest("can read a small .SAM file inside of java") {
+  sparkTest("can read and write a small .SAM file") {
     val path = copyResource("small.sam")
     val aRdd = sc.loadAlignments(path)
+    assert(aRdd.jrdd.count() === 20)
 
-    val newReads = JavaADAMConduit.conduit(aRdd.rdd, aRdd.sequences, aRdd.recordGroups)
+    val newRdd = JavaADAMReadConduit.conduit(aRdd, sc)
 
-    assert(newReads.jrdd.count() === 20)
+    assert(newRdd.jrdd.count() === 20)
+  }
+
+  sparkTest("can read and write a small FASTA file") {
+    val path = copyResource("chr20.250k.fa.gz")
+    val aRdd = sc.loadSequences(path)
+    assert(aRdd.jrdd.count() === 26)
+
+    val newRdd = JavaADAMContigConduit.conduit(aRdd, sc)
+
+    assert(newRdd.jrdd.count() === 26)
+  }
+
+  sparkTest("can read and write a small .SAM file as fragments") {
+    val path = copyResource("small.sam")
+    val aRdd = sc.loadFragments(path)
+    assert(aRdd.jrdd.count() === 20)
+
+    val newRdd = JavaADAMFragmentConduit.conduit(aRdd, sc)
+
+    assert(newRdd.jrdd.count() === 20)
+  }
+
+  sparkTest("can read and write a small .bed file as features") {
+    val path = copyResource("gencode.v7.annotation.trunc10.bed")
+    val aRdd = sc.loadFeatures(path)
+    assert(aRdd.jrdd.count() === 10)
+
+    val newRdd = JavaADAMFeatureConduit.conduit(aRdd, sc)
+
+    assert(newRdd.jrdd.count() === 10)
+  }
+
+  sparkTest("can read and write a small .vcf as genotypes") {
+    val path = copyResource("small.vcf")
+    val aRdd = sc.loadGenotypes(path)
+    assert(aRdd.jrdd.count() === 15)
+
+    val newRdd = JavaADAMGenotypeConduit.conduit(aRdd, sc)
+
+    assert(newRdd.jrdd.count() === 15)
+  }
+
+  sparkTest("can read and write a small .vcf as variants") {
+    val path = copyResource("small.vcf")
+    val aRdd = sc.loadVariants(path)
+    assert(aRdd.jrdd.count() === 5)
+
+    val newRdd = JavaADAMVariantConduit.conduit(aRdd, sc)
+
+    assert(newRdd.jrdd.count() === 5)
+  }
+
+  ignore("can read and write a small .vcf as annotations") {
+    val path = copyResource("small.vcf")
+    val aRdd = sc.loadVariantAnnotations(path)
+    assert(aRdd.jrdd.count() === 5)
+
+    val newRdd = JavaADAMAnnotationConduit.conduit(aRdd, sc)
+
+    assert(newRdd.jrdd.count() === 5)
   }
 }

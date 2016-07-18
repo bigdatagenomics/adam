@@ -57,7 +57,7 @@ class CountContigKmers(protected val args: CountContigKmersArgs) extends BDGSpar
     ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     // read from disk
-    var fragments: RDD[NucleotideContigFragment] = sc.loadSequences(args.inputPath)
+    var fragments = sc.loadSequences(args.inputPath)
 
     // count kmers
     val countedKmers = fragments.countKmers(args.kmerLength)

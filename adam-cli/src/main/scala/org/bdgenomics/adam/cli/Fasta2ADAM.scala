@@ -27,7 +27,7 @@ object Fasta2ADAM extends BDGCommandCompanion {
   val commandName: String = "fasta2adam"
   val commandDescription: String = "Converts a text FASTA sequence file into an ADAMNucleotideContig Parquet file which represents assembled sequences."
 
-  def apply(cmdLine: Array[String]): BDGCommand = {
+  def apply(cmdLine: Array[String]) = {
     new Fasta2ADAM(Args4j[Fasta2ADAMArgs](cmdLine))
   }
 }
@@ -55,13 +55,12 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fas
     val adamFasta = sc.loadFasta(args.fastaFile, fragmentLength = args.fragmentLength)
 
     if (args.verbose) {
-      println("FASTA contains:")
-      println(adamFasta.getSequenceDictionary())
+      log.info("FASTA contains: %s", adamFasta.sequences.toString)
     }
 
     log.info("Writing records to disk.")
     val finalFasta = if (args.partitions > 0) {
-      adamFasta.repartition(args.partitions)
+      adamFasta.transform(_.repartition(args.partitions))
     } else {
       adamFasta
     }

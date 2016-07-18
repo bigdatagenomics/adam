@@ -64,13 +64,12 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
     })
   }
 
-  def apply(rdd: RDD[AlignmentRecord],
-            rgd: RecordGroupDictionary): RDD[AlignmentRecord] = {
+  def apply(rdd: AlignmentRecordRDD): RDD[AlignmentRecord] = {
 
     // do we have record groups where the library name is not set? if so, print a warning message
     // to the user, as all record groups without a library name will be treated as coming from
     // a single library
-    val emptyRgs = rgd.recordGroups
+    val emptyRgs = rdd.recordGroups.recordGroups
       .filter(_.library.isEmpty)
 
     emptyRgs.foreach(rg => {
@@ -99,7 +98,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
 
     rdd.groupReadsByFragment()
       .keyBy(ReferencePositionPair(_))
-      .groupBy(leftPositionAndLibrary(_, rgd))
+      .groupBy(leftPositionAndLibrary(_, rdd.recordGroups))
       .flatMap(kv => PerformDuplicateMarking.time {
 
         val leftPos: Option[ReferencePosition] = kv._1._1

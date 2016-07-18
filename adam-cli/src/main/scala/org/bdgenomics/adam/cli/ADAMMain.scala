@@ -60,7 +60,6 @@ object ADAMMain {
           PrintADAM,
           PrintGenes,
           FlagStat,
-          PrintTags,
           ListDict,
           AlleleCount,
           View

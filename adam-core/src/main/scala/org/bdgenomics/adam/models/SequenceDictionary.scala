@@ -354,7 +354,7 @@ object SequenceRecord {
   def fromADAMContig(contig: Contig): SequenceRecord = {
     SequenceRecord(
       contig.getContigName,
-      contig.getContigLength,
+      Option(contig.getContigLength).map(l => l: Long).getOrElse(Long.MaxValue),
       md5 = contig.getContigMD5,
       url = contig.getReferenceURL,
       assembly = contig.getAssembly,
