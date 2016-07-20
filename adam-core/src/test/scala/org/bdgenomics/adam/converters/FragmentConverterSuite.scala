@@ -24,11 +24,13 @@ import org.bdgenomics.formats.avro._
 class FragmentConverterSuite extends ADAMFunSuite {
 
   test("build a fragment collector and convert to a read") {
-    val (builtContig, builtFragment) = FragmentCollector(NucleotideContigFragment.newBuilder()
+    val fcOpt = FragmentCollector(NucleotideContigFragment.newBuilder()
       .setContig(Contig.newBuilder().setContigName("ctg").build())
       .setFragmentSequence("ACACACAC")
       .setFragmentStartPosition(0L)
       .build())
+    assert(fcOpt.isDefined)
+    val (builtContig, builtFragment) = fcOpt.get
 
     assert(builtContig.getContigName === "ctg")
     assert(builtFragment.fragments.length === 1)
@@ -44,6 +46,11 @@ class FragmentConverterSuite extends ADAMFunSuite {
     assert(convertedRead.getContigName === "ctg")
     assert(convertedRead.getStart === 0L)
     assert(convertedRead.getEnd === 8L)
+  }
+
+  test("if a fragment isn't associated with a contig, don't get a fragment collector") {
+    val fcOpt = FragmentCollector(NucleotideContigFragment.newBuilder().build())
+    assert(fcOpt.isEmpty)
   }
 
   sparkTest("convert an rdd of discontinuous fragments, all from the same contig") {

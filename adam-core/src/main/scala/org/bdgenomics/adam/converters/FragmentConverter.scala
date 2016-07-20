@@ -35,11 +35,11 @@ private object FragmentCollector extends Serializable {
    * @return Returns key value pair where the key is the contig metadata and the
    *   value is a Fragment Collector object.
    */
-  def apply(fragment: NucleotideContigFragment): (Contig, FragmentCollector) = {
-    (
-      fragment.getContig,
-      FragmentCollector(Seq((ReferenceRegion(fragment).get, fragment.getFragmentSequence)))
-    )
+  def apply(fragment: NucleotideContigFragment): Option[(Contig, FragmentCollector)] = {
+    ReferenceRegion(fragment).map(rr => {
+      (fragment.getContig,
+        FragmentCollector(Seq((rr, fragment.getFragmentSequence))))
+    })
   }
 }
 
@@ -153,7 +153,7 @@ private[adam] object FragmentConverter extends Serializable {
    * @return Returns an RDD of reads that represent aligned contigs.
    */
   def convertRdd(rdd: RDD[NucleotideContigFragment]): RDD[AlignmentRecord] = {
-    rdd.map(FragmentCollector(_))
+    rdd.flatMap(FragmentCollector(_))
       .reduceByKey(mergeFragments)
       .flatMap(convertFragment)
   }
