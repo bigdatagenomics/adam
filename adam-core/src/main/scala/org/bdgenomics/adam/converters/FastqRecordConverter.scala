@@ -163,6 +163,18 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
   }
 
   /**
+   * @param readName The read name to possibly trim.
+   * @return If the read name ends in /1 or /2, this suffix is trimmed.
+   */
+  def maybeTrimSuffix(readName: String): String = {
+    if (readName.endsWith("/1") || readName.endsWith("/2")) {
+      readName.dropRight(2)
+    } else {
+      readName
+    }
+  }
+
+  /**
    * Converts a read pair in FASTQ format into two AlignmentRecords.
    *
    * Used for processing a single fragment of paired end sequencing data stored

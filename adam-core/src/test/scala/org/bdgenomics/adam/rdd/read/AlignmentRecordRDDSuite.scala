@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rdd.read
 
 import java.io.File
 import java.nio.file.Files
-
 import htsjdk.samtools.ValidationStringency
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
@@ -30,6 +29,10 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.rdd.features.CoverageRDD
+import org.bdgenomics.adam.rdd.variation.{
+  VariantContextRDD,
+  VCFOutFormatter
+}
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.{ CRAMInputFormat, SAMFormat }
@@ -619,5 +622,69 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     reads.saveAsPairedFastq(outputPath1, outputPath2)
     assert(new File(outputPath1).exists())
     assert(new File(outputPath2).exists())
+  }
+
+  sparkTest("don't lose any reads when piping as SAM") {
+    val reads12Path = testFile("reads12.sam")
+    val ardd = sc.loadBam(reads12Path)
+    val records = ardd.rdd.count
+
+    implicit val tFormatter = SAMInFormatter
+    implicit val uFormatter = new AnySAMOutFormatter
+
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe("tee /dev/null")
+    val newRecords = pipedRdd.rdd.count
+    assert(records === newRecords)
+  }
+
+  sparkTest("don't lose any reads when piping as BAM") {
+    val reads12Path = testFile("reads12.sam")
+    val ardd = sc.loadBam(reads12Path)
+    val records = ardd.rdd.count
+
+    implicit val tFormatter = BAMInFormatter
+    implicit val uFormatter = new AnySAMOutFormatter
+
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe("tee /dev/null")
+    val newRecords = pipedRdd.rdd.count
+    assert(records === newRecords)
+  }
+
+  sparkTest("can properly set environment variables inside of a pipe") {
+    val reads12Path = testFile("reads12.sam")
+    val smallPath = testFile("small.sam")
+    val scriptPath = testFile("env_test_command.sh")
+    val ardd = sc.loadBam(reads12Path)
+    val reads12Records = ardd.rdd.count
+    val smallRecords = sc.loadBam(smallPath).rdd.count
+    val writePath = tmpLocation("reads12.sam")
+
+    implicit val tFormatter = SAMInFormatter
+    implicit val uFormatter = new AnySAMOutFormatter
+
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe("/bin/bash %s".format(scriptPath),
+      environment = Map(("INPUT_PATH" -> smallPath),
+        ("OUTPUT_PATH" -> writePath)))
+    val newRecords = pipedRdd.rdd.count
+    assert(smallRecords === newRecords)
+  }
+
+  sparkTest("read vcf from alignment record pipe") {
+    val readsPath = testFile("small.1.sam")
+    val vcfPath = testFile("small.vcf")
+    val scriptPath = testFile("test_command.sh")
+    val tempPath = tmpLocation(".sam")
+    val ardd = sc.loadBam(readsPath)
+
+    implicit val tFormatter = SAMInFormatter
+    implicit val uFormatter = new VCFOutFormatter
+
+    val pipedRdd: VariantContextRDD = ardd.pipe("/bin/bash $0 %s $1".format(tempPath),
+      files = Seq(scriptPath, vcfPath))
+    val newRecords = pipedRdd.rdd.count
+    assert(newRecords === 5)
+
+    val tempBam = sc.loadBam(tempPath)
+    assert(tempBam.rdd.count === ardd.rdd.count)
   }
 }

@@ -19,7 +19,7 @@ package org.bdgenomics.adam.models
 
 import htsjdk.samtools.{ SAMFileHeader, SAMFileReader, SAMReadGroupRecord }
 import java.util.Date
-import org.bdgenomics.formats.avro.RecordGroupMetadata
+import org.bdgenomics.formats.avro.{ RecordGroupMetadata, Sample }
 import scala.collection.JavaConversions._
 
 object RecordGroupDictionary {
@@ -75,6 +75,19 @@ case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
 
   def ++(that: RecordGroupDictionary): RecordGroupDictionary = {
     new RecordGroupDictionary(recordGroups ++ that.recordGroups)
+  }
+
+  /**
+   * @return Converts this record group dictionary to a set of samples.
+   */
+  def toSamples: Seq[Sample] = {
+    recordGroups.map(_.sample)
+      .distinct
+      .map(s => {
+        Sample.newBuilder()
+          .setSampleId(s)
+          .build()
+      })
   }
 
   /**

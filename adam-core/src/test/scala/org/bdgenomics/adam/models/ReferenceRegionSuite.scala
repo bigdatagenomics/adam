@@ -269,4 +269,20 @@ class ReferenceRegionSuite extends FunSuite {
     assert(rrV.end === 3L)
     assert(rrV === rrG)
   }
+
+  test("uniformly pad a reference region") {
+    val rr = ReferenceRegion("1", 2L, 3L)
+    val padded = rr.pad(2)
+    assert(padded.referenceName == "1")
+    assert(padded.start === 0L)
+    assert(padded.end === 5L)
+  }
+
+  test("unevenly pad a reference region") {
+    val rr = ReferenceRegion("1", 2L, 4L)
+    val padded = rr.pad(2, 1)
+    assert(padded.referenceName == "1")
+    assert(padded.start === 0L)
+    assert(padded.end === 5L)
+  }
 }
