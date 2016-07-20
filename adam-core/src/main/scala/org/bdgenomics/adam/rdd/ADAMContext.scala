@@ -59,7 +59,6 @@ import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
 import org.seqdoop.hadoop_bam._
 import org.seqdoop.hadoop_bam.util._
-
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.Map
@@ -89,6 +88,30 @@ private case class LocatableReferenceRegion(rr: ReferenceRegion) extends Locatab
 }
 
 object ADAMContext {
+
+  // conversion functions for pipes
+  implicit def sameTypeConversionFn[T, U <: GenomicRDD[T, U]](gRdd: U,
+                                                              rdd: RDD[T]): U = {
+    // hijack the transform function to discard the old RDD
+    gRdd.transform(oldRdd => rdd)
+  }
+
+  implicit def readsToVCConversionFn(arRdd: AlignmentRecordRDD,
+                                     rdd: RDD[VariantContext]): VariantContextRDD = {
+    VariantContextRDD(rdd,
+      arRdd.sequences,
+      arRdd.recordGroups.toSamples)
+  }
+
+  implicit def fragmentsToReadsConversionFn(fRdd: FragmentRDD,
+                                            rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
+    if (fRdd.sequences.isEmpty) {
+      UnalignedReadRDD(rdd, fRdd.recordGroups)
+    } else {
+      AlignedReadRDD(rdd, fRdd.sequences, fRdd.recordGroups)
+    }
+  }
+
   // Add ADAM Spark context methods
   implicit def sparkContextToADAMContext(sc: SparkContext): ADAMContext = new ADAMContext(sc)
 

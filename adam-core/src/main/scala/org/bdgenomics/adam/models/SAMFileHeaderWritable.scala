@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord }
 import scala.collection.JavaConversions._
 
-object SAMFileHeaderWritable {
+private[adam] object SAMFileHeaderWritable {
   def apply(header: SAMFileHeader): SAMFileHeaderWritable = {
     new SAMFileHeaderWritable(header)
   }

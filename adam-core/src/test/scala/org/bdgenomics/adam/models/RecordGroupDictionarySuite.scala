@@ -60,4 +60,21 @@ class RecordGroupDictionarySuite extends FunSuite {
     assert(!rg1b.equals(rg3))
     assert(!rg2.equals(rg3))
   }
+
+  test("get samples from record group dictionary") {
+    val rgd = RecordGroupDictionary(Seq(RecordGroup("sample1", "rg1"),
+      RecordGroup("sample1", "rg2"),
+      RecordGroup("sample1", "rg3"),
+      RecordGroup("sample1", "rg4"),
+      RecordGroup("sample1", "rg5"),
+      RecordGroup("sample2", "rgSample2"),
+      RecordGroup("sample3", "rg1Sample3"),
+      RecordGroup("sample3", "rg2Sample3")))
+    val samples = rgd.toSamples
+
+    assert(samples.size === 3)
+    assert(samples.count(_.getSampleId == "sample1") === 1)
+    assert(samples.count(_.getSampleId == "sample2") === 1)
+    assert(samples.count(_.getSampleId == "sample3") === 1)
+  }
 }

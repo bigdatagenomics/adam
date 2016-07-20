@@ -244,8 +244,7 @@ case class RightOuterShuffleRegionJoinAndGroupByLeft[T, U](sd: SequenceDictionar
  *
  * @param partitions should correspond to the number of bins in the corresponding GenomeBins
  */
-private case class ManualRegionPartitioner(partitions: Int) extends Partitioner {
-
+private[rdd] case class ManualRegionPartitioner(partitions: Int) extends Partitioner {
   override def numPartitions: Int = partitions
 
   override def getPartition(key: Any): Int = key match {

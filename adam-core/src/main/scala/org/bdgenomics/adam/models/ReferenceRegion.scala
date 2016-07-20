@@ -267,6 +267,29 @@ case class ReferenceRegion(
     else
       None
 
+  /**
+   * @param by The number of bases to extend the region by from both the start
+   *   and the end.
+   * @return Returns a new reference region where the start and end have been
+   *   moved.
+   */
+  def pad(by: Long): ReferenceRegion = {
+    pad(by, by)
+  }
+
+  /**
+   * @param byStart The number of bases to move the start position forward by.
+   * @param byEnd The number of bases to move the end position back by.
+   * @return Returns a new reference region where the start and/or end have been
+   *   moved.
+   */
+  def pad(byStart: Long, byEnd: Long): ReferenceRegion = {
+    new ReferenceRegion(referenceName,
+      start - byStart,
+      end + byEnd,
+      orientation)
+  }
+
   def contains(other: ReferencePosition): Boolean = {
     orientation == other.orientation &&
       referenceName == other.referenceName &&

@@ -101,4 +101,21 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val annotated = vc.joinDatabaseVariantAnnotation(vda).rdd
     assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
   }
+
+  sparkTest("don't lose any variants when piping as VCF") {
+    val smallVcf = Thread.currentThread()
+      .getContextClassLoader
+      .getResource("small.vcf").getFile
+    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+    val records = rdd.rdd.count
+
+    implicit val tFormatter = VCFInFormatter
+    implicit val uFormatter = new VCFOutFormatter
+
+    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
+      .transform(_.cache())
+    val newRecords = pipedRdd.rdd.count
+    assert(records === newRecords)
+    assert(pipedRdd.rdd.flatMap(_.genotypes).count === 15)
+  }
 }
