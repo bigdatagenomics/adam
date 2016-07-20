@@ -28,16 +28,21 @@ import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4JOption }
 
 class ADAM2FastqArgs extends ParquetLoadSaveArgs {
-  @Argument(required = false, metaVar = "OUTPUT", usage = "When writing FASTQ data, all second-in-pair reads will go here, if this argument is provided", index = 2)
+  @Argument(required = false, metaVar = "SECOND_OUTPUT", usage = "When writing FASTQ data, all second-in-pair reads will go here, if this argument is provided", index = 2)
   var outputPath2: String = null
+
   @Args4JOption(required = false, name = "-validation", usage = "SAM tools validation level; when STRICT, checks that all reads are paired.")
   var validationStringency = ValidationStringency.LENIENT
+
   @Args4JOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
   var repartition: Int = -1
+
   @Args4JOption(required = false, name = "-persist_level", usage = "Persist() intermediate RDDs")
   var persistLevel: String = null
+
   @Args4JOption(required = false, name = "-no_projection", usage = "Disable projection on records. No great reason to do this, but useful for testing / comparison.")
   var disableProjection: Boolean = false
+
   @Args4JOption(required = false, name = "-output_oq", usage = "Output the original sequencing quality scores")
   var outputOriginalBaseQualities = false
 }
