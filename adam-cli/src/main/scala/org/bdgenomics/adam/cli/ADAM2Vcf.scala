@@ -17,11 +17,17 @@
  */
 package org.bdgenomics.adam.cli
 
+import java.io.File
+import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
+import org.apache.hadoop.mapreduce.Job
+import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
+import scala.Option
 
 object ADAM2Vcf extends BDGCommandCompanion {
 
@@ -34,6 +40,8 @@ object ADAM2Vcf extends BDGCommandCompanion {
 }
 
 class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
+  @Args4jOption(required = false, name = "-dict", usage = "Reference dictionary")
+  var dictionaryFile: File = _
 
   @Argument(required = true, metaVar = "ADAM", usage = "The ADAM variant files to convert", index = 0)
   var adamFile: String = _
@@ -46,11 +54,6 @@ class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
 
   @Args4jOption(required = false, name = "-sort_on_save", usage = "Sort the VCF output by contig index.")
   var sort: Boolean = false
-
-  @Args4jOption(required = false,
-    name = "-sort_lexicographically_on_save",
-    usage = "Sort the VCF output by lexicographic order. Conflicts with -sort_on_save.")
-  var sortLexicographically: Boolean = false
 
   @Args4jOption(required = false, name = "-single", usage = "Save as a single VCF file.")
   var single: Boolean = false
