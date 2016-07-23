@@ -32,6 +32,7 @@ object ADAMMain {
       CommandGroup(
         "ADAM ACTIONS",
         List(
+          CalculateDepth,
           CountReadKmers,
           CountContigKmers,
           Transform,
@@ -57,6 +58,8 @@ object ADAMMain {
         List(
           PrintADAM,
           FlagStat,
+          ListDict,
+          AlleleCount,
           View
         )
       )
