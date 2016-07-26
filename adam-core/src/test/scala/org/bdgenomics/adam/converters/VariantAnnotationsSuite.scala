@@ -61,7 +61,6 @@ class VariantAnnotationsSuite extends ADAMFunSuite {
   test("parse transcript effect") {
     val te = VariantAnnotations.parseTranscriptEffect(VALID, ValidationStringency.STRICT).head
 
-    assert(te.getAlternateAllele == "T")
     assert(te.getEffects.contains("upstream_gene_variant"))
     assert(te.getGeneName == "TAS1R3")
     assert(te.getGeneId == "ENSG00000169962")
@@ -107,7 +106,6 @@ class VariantAnnotationsSuite extends ADAMFunSuite {
     assert(ann.length == 1)
 
     val te = ann.head
-    assert(te.getAlternateAllele == "T")
     assert(te.getEffects.contains("upstream_gene_variant"))
     assert(te.getGeneName == "TAS1R3")
     assert(te.getGeneId == "ENSG00000169962")
@@ -184,7 +182,6 @@ class VariantAnnotationsSuite extends ADAMFunSuite {
     assert(ann.getTranscriptEffects().size == 1)
 
     val te = ann.getTranscriptEffects().get(0)
-    assert(te.getAlternateAllele == "T")
     assert(te.getEffects.contains("upstream_gene_variant"))
     assert(te.getGeneName == "TAS1R3")
     assert(te.getGeneId == "ENSG00000169962")

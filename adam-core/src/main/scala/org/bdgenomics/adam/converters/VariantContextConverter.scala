@@ -552,10 +552,10 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
         if (g.getReferenceReadDepth != null && g.getAlternateReadDepth != null)
           gb.AD(Array(g.getReferenceReadDepth, g.getAlternateReadDepth))
 
-        if (g.getVariantCallingAnnotations != null) {
-          val callAnnotations = g.getVariantCallingAnnotations()
-          if (callAnnotations.getFiltersFailed != null) {
-            gb.filters(callAnnotations.getFiltersFailed)
+        if (g.getGenotypeAnnotation != null) {
+          val genotypeAnnotation = g.getGenotypeAnnotation()
+          if (genotypeAnnotation.getFiltersFailed != null) {
+            gb.filters(genotypeAnnotation.getFiltersFailed)
           }
         }
 
