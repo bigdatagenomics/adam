@@ -135,20 +135,22 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     { // No filters
       val adamVCs = converter.convert(vcb.make)
       val adamGT = adamVCs.flatMap(_.genotypes).head
-      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing === null)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersPassed.isEmpty)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersFailed.isEmpty)
     }
     { // PASSing
       vcb.unfiltered.passFilters
       val adamVCs = converter.convert(vcb.make)
       val adamGT = adamVCs.flatMap(_.genotypes).head
-      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersPassed.isEmpty)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersFailed.isEmpty)
     }
     { // not PASSing
       vcb.unfiltered.filter("LowMQ")
       val adamVCs = converter.convert(vcb.make)
       val adamGT = adamVCs.flatMap(_.genotypes).head
-      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing === false)
-      assert(adamGT.getVariantCallingAnnotations.getVariantFilters.sameElements(List("LowMQ")))
+      assert(adamGT.getVariantCallingAnnotations.getFiltersPassed.isEmpty)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersFailed.sameElements(List("LowMQ")))
     }
   }
 
