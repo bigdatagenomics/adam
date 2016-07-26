@@ -21,11 +21,7 @@ import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecord
 import htsjdk.variant.variantcontext.VariantContext
 import htsjdk.variant.vcf._
-import org.bdgenomics.formats.avro.{
-  DatabaseVariantAnnotation,
-  Genotype,
-  VariantCallingAnnotations
-}
+import org.bdgenomics.formats.avro.{ Genotype, GenotypeAnnotation, VariantAnnotation }
 
 /**
  * Singleton object for building AttrKey instances.
@@ -124,49 +120,64 @@ private[converters] object VariantAnnotationConverter extends Serializable {
   }
 
   /**
-   * Keys corresponding to the COSMIC mutation database.
+   * Reserved VCF INFO header line keys, from VCF v4.3 specification.
    */
-  val COSMIC_KEYS: List[AttrKey] = List(
-    AttrKey("geneSymbol", attrAsString _, new VCFInfoHeaderLine("GENE,", 1, VCFHeaderLineType.String, "Gene name")),
-    AttrKey("strand", attrAsString _, new VCFInfoHeaderLine("STRAND,", 1, VCFHeaderLineType.String, "Gene strand")),
-    AttrKey("cds", attrAsString _, new VCFInfoHeaderLine("CDS,", 1, VCFHeaderLineType.String, "CDS annotation")),
-    AttrKey("cnt", attrAsString _, new VCFInfoHeaderLine("CNT,", 1, VCFHeaderLineType.Integer, "How many samples have this mutation"))
-  )
+  val RESERVED_INFO_KEYS: Seq[AttrKey] = Seq(
+    // TribbleException: Couldn't find a standard VCF header line for field AA
+    //AttrKey("ancestralAllele", attrAsString _, VCFStandardHeaderLines.getInfoLine(VCFConstants.ANCESTRAL_ALLELE_KEY)),
+    AttrKey("ancestralAllele", attrAsString _, new VCFInfoHeaderLine(VCFConstants.ANCESTRAL_ALLELE_KEY, 1, VCFHeaderLineType.String, "Ancestral allele")),
 
-  /**
-   * Keys corresponding to dbNSFP, which contains functional annotations for
-   * non-synomymous SNPs.
-   */
-  val DBNSFP_KEYS: List[AttrKey] = List(
-    AttrKey("phylop", attrAsFloat _, new VCFInfoHeaderLine("PHYLOP", 1, VCFHeaderLineType.Float, "PhyloP score. The larger the score, the more conserved the site.")),
-    AttrKey("siftPred", attrAsString _, new VCFInfoHeaderLine("SIFT_PRED", 1, VCFHeaderLineType.Character, "SIFT Prediction: D (damaging), T (tolerated)")),
-    AttrKey("siftScore", attrAsFloat _, new VCFInfoHeaderLine("SIFT_SCORE", 1, VCFHeaderLineType.Float, "SIFT Score")),
-    AttrKey("ancestralAllele", attrAsString _, new VCFInfoHeaderLine("AA", 1, VCFHeaderLineType.String, "Ancestral allele"))
-  )
+    AttrKey("alleleCount", attrAsInt _, VCFStandardHeaderLines.getInfoLine(VCFConstants.ALLELE_COUNT_KEY)),
 
-  /**
-   * Keys corresponding to Clinvar, which represents variants seen in clinical
-   * medicine.
-   */
-  val CLINVAR_KEYS: List[AttrKey] = List(
-    AttrKey("dbSnpId", attrAsInt _, new VCFInfoHeaderLine("dbSNP ID", 1, VCFHeaderLineType.Integer, "dbSNP ID")),
-    AttrKey("geneSymbol", attrAsString _, new VCFInfoHeaderLine("GENEINFO", 1, VCFHeaderLineType.String, "Pairs each of gene symbol:gene id.  The gene symbol and id are delimited by a colon (:) and each pair is delimited by a vertical bar"))
-  )
+    // TribbleException: Couldn't find a standard VCF header line for field AD
+    //AttrKey("readDepth", attrAsInt _, VCFStandardHeaderLines.getInfoLine("AD")), // VCF 4.3 spec, not in htsjdk
+    //AttrKey("forwardReadDepth", attrAsInt _, VCFStandardHeaderLines.getInfoLine("ADF")), // VCF 4.3 spec, not in htsjdk
+    //AttrKey("reverseReadDepth", attrAsInt _, VCFStandardHeaderLines.getInfoLine("ADR")), // VCF 4.3 spec, not in htsjdk
+    AttrKey("readDepth", attrAsInt _, new VCFInfoHeaderLine("AD", 1, VCFHeaderLineType.Integer, "Total read depth for each allele")),
+    AttrKey("forwardReadDepth", attrAsInt _, new VCFInfoHeaderLine("ADF", 1, VCFHeaderLineType.Integer, "Read depth for each allele on the forward strand")),
+    AttrKey("reverseReadDepth", attrAsInt _, new VCFInfoHeaderLine("ADR", 1, VCFHeaderLineType.Integer, "Read depth for each allele on the reverse strand")),
 
-  /**
-   * Keys corresponding to the online encyclopedia of Mendelian inheritance in
-   * man, a database tracking hereditary disease and variants.
-   */
-  val OMIM_KEYS: List[AttrKey] = List(
-    AttrKey("omimId", attrAsString _, new VCFInfoHeaderLine("VAR", 1, VCFHeaderLineType.String, "MIM entry with variant mapped to rsID"))
+    AttrKey("alleleFrequency", attrAsString _, VCFStandardHeaderLines.getInfoLine(VCFConstants.ALLELE_FREQUENCY_KEY)),
+
+    // TribbleException: Couldn't find a standard VCF header line for field BQ
+    //AttrKey("rmsBaseQuality", attrAsFloat _, VCFStandardHeaderLines.getInfoLine(VCFConstants.RMS_BASE_QUALITY_KEY)),
+    AttrKey("rmsBaseQuality", attrAsFloat _, new VCFInfoHeaderLine(VCFConstants.RMS_BASE_QUALITY_KEY, 1, VCFHeaderLineType.Float, "RMS base quality at this position")),
+
+    // TribbleException: Couldn't find a standard VCF header line for field CIGAR
+    //AttrKey("cigar", attrAsString _, VCFStandardHeaderLines.getInfoLine(VCFConstants.CIGAR_KEY)),
+    AttrKey("cigar", attrAsString _, new VCFInfoHeaderLine(VCFConstants.CIGAR_KEY, 1, VCFHeaderLineType.String, "CIGAR string describing how to align an alternate allele to the reference allele")),
+
+    AttrKey("dbSnp", attrAsBoolean _, VCFStandardHeaderLines.getInfoLine(VCFConstants.DBSNP_KEY)),
+    AttrKey("combinedDepth", attrAsInt _, VCFStandardHeaderLines.getInfoLine(VCFConstants.DEPTH_KEY)),
+
+    // TribbleException: Couldn't find a standard VCF header line for field H2
+    //AttrKey("hapMap2", attrAsBoolean _, VCFStandardHeaderLines.getInfoLine(VCFConstants.HAPMAP2_KEY)),
+    AttrKey("hapMap2", attrAsBoolean _, new VCFInfoHeaderLine(VCFConstants.HAPMAP2_KEY, 1, VCFHeaderLineType.Flag, "Membership in HapMap2")),
+    // TribbleException: Couldn't find a standard VCF header line for field H3
+    //AttrKey("hapMap3", attrAsBoolean _, VCFStandardHeaderLines.getInfoLine(VCFConstants.HAPMAP3_KEY)),
+    AttrKey("hapMap3", attrAsBoolean _, new VCFInfoHeaderLine(VCFConstants.HAPMAP3_KEY, 1, VCFHeaderLineType.Flag, "Membership in HapMap3")),
+
+    AttrKey("rmsMappingQuality", attrAsFloat _, VCFStandardHeaderLines.getInfoLine(VCFConstants.RMS_MAPPING_QUALITY_KEY)),
+    AttrKey("mappingQualityZeroReads", attrAsInt _, VCFStandardHeaderLines.getInfoLine(VCFConstants.MAPPING_QUALITY_ZERO_KEY)),
+
+    // TribbleException: Couldn't find a standard VCF header line for field NS
+    //AttrKey("samplesWithData", attrAsInt _, VCFStandardHeaderLines.getInfoLine(VCFConstants.SAMPLE_NUMBER_KEY)),
+    AttrKey("samplesWithData", attrAsInt _, new VCFInfoHeaderLine(VCFConstants.SAMPLE_NUMBER_KEY, 1, VCFHeaderLineType.Integer, "Number of samples with data")),
+
+    AttrKey("strandBias", attrAsFloat _, VCFStandardHeaderLines.getInfoLine(VCFConstants.STRAND_BIAS_KEY)),
+    // TribbleException: Couldn't find a standard VCF header line for field VALIDATED
+    //AttrKey("validated", attrAsBoolean _, VCFStandardHeaderLines.getInfoLine(VCFConstants.VALIDATED_KEY)),
+    AttrKey("validated", attrAsBoolean _, new VCFInfoHeaderLine(VCFConstants.VALIDATED_KEY, 1, VCFHeaderLineType.Flag, "Validated by follow-up experiment")),
+
+    // TribbleException: Couldn't find a standard VCF header line for field 1000G
+    //AttrKey("thousandGenomes", attrAsBoolean _, VCFStandardHeaderLines.getInfoLine(VCFConstants.THOUSAND_GENOMES_KEY))
+    AttrKey("thousandGenomes", attrAsBoolean _, new VCFInfoHeaderLine(VCFConstants.THOUSAND_GENOMES_KEY, 1, VCFHeaderLineType.Flag, "Membership in 1000 Genomes"))
   )
 
   /**
    * Miscellaneous other info keys.
    */
   val INFO_KEYS: Seq[AttrKey] = Seq(
-    AttrKey("rmsMapQ", attrAsFloat _, VCFStandardHeaderLines.getInfoLine(VCFConstants.RMS_MAPPING_QUALITY_KEY)),
-    AttrKey("mapq0Reads", attrAsInt _, VCFStandardHeaderLines.getInfoLine(VCFConstants.MAPPING_QUALITY_ZERO_KEY)),
     AttrKey("mqRankSum", attrAsFloat _, new VCFInfoHeaderLine("MQRankSum", 1, VCFHeaderLineType.Float, "Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities")),
     AttrKey("readPositionRankSum", attrAsFloat _, new VCFInfoHeaderLine("ReadPosRankSum", 1, VCFHeaderLineType.Float, "Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias")),
     AttrKey("vqslod", attrAsFloat _, new VCFInfoHeaderLine("VQSLOD", 1, VCFHeaderLineType.Float, "Log odds ratio of being a true variant versus being false under the trained gaussian mixture model")),
@@ -191,31 +202,22 @@ private[converters] object VariantAnnotationConverter extends Serializable {
   )
 
   /**
-   * Mapping betweem VCF info field names and fields IDs in the
-   * VariantCallingAnnotations schema.
-   */
-  lazy val VCF2VariantCallingAnnotations: Map[String, (Int, Object => Object)] =
-    createFieldMap(INFO_KEYS, VariantCallingAnnotations.getClassSchema)
-
-  /**
    * Mapping between VCF format field names and field IDs in the Genotype schema.
    */
-  lazy val VCF2GenotypeAnnotations: Map[String, (Int, Object => Object)] =
+  lazy val VCF2Genotype: Map[String, (Int, Object => Object)] =
     createFieldMap(FORMAT_KEYS, Genotype.getClassSchema)
 
   /**
-   * All external database keys, concatenated.
+   * Mapping between VCF format field names and field IDs in the GenotypeAnnotation schema.
    */
-  private lazy val EXTERNAL_DATABASE_KEYS: Seq[AttrKey] = (OMIM_KEYS :::
-    CLINVAR_KEYS :::
-    DBNSFP_KEYS) // ::: COSMIC_KEYS
+  lazy val VCF2GenotypeAnnotation: Map[String, (Int, Object => Object)] =
+    createFieldMap(FORMAT_KEYS, GenotypeAnnotation.getClassSchema)
 
   /**
-   * Mapping between VCF info field names and DatabaseVariantAnnotation schema
-   * field IDs for all database specific fields.
+   * Mapping betweem VCF info field names and fields IDs in the VariantAnnotation schema.
    */
-  lazy val VCF2DatabaseAnnotations: Map[String, (Int, Object => Object)] = createFieldMap(EXTERNAL_DATABASE_KEYS,
-    DatabaseVariantAnnotation.getClassSchema)
+  lazy val VCF2VariantAnnotation: Map[String, (Int, Object => Object)] =
+    createFieldMap((RESERVED_INFO_KEYS ++ INFO_KEYS), VariantAnnotation.getClassSchema)
 
   /**
    * Creates a mapping between a Seq of attribute keys, and the field ID for
@@ -265,28 +267,25 @@ private[converters] object VariantAnnotationConverter extends Serializable {
   }
 
   /**
-   * Remaps fields from an htsjdk variant context into a site annotation.
+   * Remaps fields from an htsjdk variant context into a genotype annotation.
+   *
+   * @param vc htsjdk variant context for a site.
+   * @param annotation genotype annotation for a sample at a site.
+   * @return Returns the genotype annotation with values filled in.
+   */
+  def convert(vc: VariantContext, annotation: GenotypeAnnotation): GenotypeAnnotation = {
+    fillRecord(VCF2GenotypeAnnotation, vc, annotation)
+  }
+
+  /**
+   * Remaps fields from an htsjdk variant context into a variant annotation.
    *
    * @param vc htsjdk variant context for a site.
    * @param annotation Pre-populated site annotation in Avro.
    * @return Annotation with additional info fields filled in.
    */
-  def convert(vc: VariantContext,
-              annotation: DatabaseVariantAnnotation): DatabaseVariantAnnotation = {
-    fillRecord(VCF2DatabaseAnnotations, vc, annotation)
-  }
-
-  /**
-   * Remaps fields from an htsjdk variant context into variant calling
-   * annotations.
-   *
-   * @param vc htsjdk variant context for a site.
-   * @param call Call specific annotations for a sample at a site.
-   * @return Returns the genotype annotations with values filled in.
-   */
-  def convert(vc: VariantContext,
-              call: VariantCallingAnnotations): VariantCallingAnnotations = {
-    fillRecord(VCF2VariantCallingAnnotations, vc, call)
+  def convert(vc: VariantContext, annotation: VariantAnnotation): VariantAnnotation = {
+    fillRecord(VCF2VariantAnnotation, vc, annotation)
   }
 
   /**
@@ -300,7 +299,7 @@ private[converters] object VariantAnnotationConverter extends Serializable {
    */
   def convert(g: htsjdk.variant.variantcontext.Genotype,
               genotype: Genotype): Genotype = {
-    for ((v, a) <- VariantAnnotationConverter.VCF2GenotypeAnnotations) {
+    for ((v, a) <- VariantAnnotationConverter.VCF2GenotypeAnnotation) {
       // Add extended attributes if present
       val attr = g.getExtendedAttribute(v)
       if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {

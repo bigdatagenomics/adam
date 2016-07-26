@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ Genotype, DatabaseVariantAnnotation, Variant }
+import org.bdgenomics.formats.avro.{ Genotype, VariantAnnotation, Variant }
 import org.bdgenomics.adam.rich.RichVariant
 
 /**
@@ -37,7 +37,7 @@ object VariantContext {
    * @return A new VariantContext, where an annotation has been added/merged.
    */
   def apply(v: VariantContext,
-            optAnn: Option[DatabaseVariantAnnotation]): VariantContext = {
+            optAnn: Option[VariantAnnotation]): VariantContext = {
 
     // if the join yielded one or fewer annotation, pick what we've got. else, merge.
     val ann = (v.databases, optAnn) match {
@@ -66,11 +66,11 @@ object VariantContext {
    *   from the left record.
    * @return Returns the union of these two annotations.
    */
-  def mergeAnnotations(leftRecord: DatabaseVariantAnnotation,
-                       rightRecord: DatabaseVariantAnnotation): DatabaseVariantAnnotation = {
-    val mergedAnnotation = DatabaseVariantAnnotation.newBuilder(leftRecord)
+  def mergeAnnotations(leftRecord: VariantAnnotation,
+                       rightRecord: VariantAnnotation): VariantAnnotation = {
+    val mergedAnnotation = VariantAnnotation.newBuilder(leftRecord)
       .build()
-    val numFields = DatabaseVariantAnnotation.getClassSchema.getFields.size
+    val numFields = VariantAnnotation.getClassSchema.getFields.size
 
     def insertField(fieldIdx: Int) =
       {
@@ -91,7 +91,7 @@ object VariantContext {
    *           optional domain annotation at site))
    * @return VariantContext corresponding to the data above.
    */
-  def apply(kv: (ReferencePosition, Variant, Iterable[Genotype], Option[DatabaseVariantAnnotation])): VariantContext = {
+  def apply(kv: (ReferencePosition, Variant, Iterable[Genotype], Option[VariantAnnotation])): VariantContext = {
     new VariantContext(kv._1, kv._2, kv._3, kv._4)
   }
 
@@ -111,10 +111,10 @@ object VariantContext {
    *
    * @param v Variant which is used to construct the ReferencePosition
    * @param genotypes Seq[Genotype]
-   * @param annotation Option[DatabaseVariantAnnotation]
+   * @param annotation Option[VariantAnnotation]
    * @return VariantContext corresponding to the Variant
    */
-  def apply(v: Variant, genotypes: Iterable[Genotype], annotation: Option[DatabaseVariantAnnotation] = None): VariantContext = {
+  def apply(v: Variant, genotypes: Iterable[Genotype], annotation: Option[VariantAnnotation] = None): VariantContext = {
     apply((ReferencePosition(v), v, genotypes, annotation))
   }
 
@@ -143,6 +143,6 @@ class VariantContext(
     val position: ReferencePosition,
     val variant: RichVariant,
     val genotypes: Iterable[Genotype],
-    val databases: Option[DatabaseVariantAnnotation] = None) {
+    val databases: Option[VariantAnnotation] = None) {
 }
 

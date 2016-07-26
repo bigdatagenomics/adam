@@ -112,7 +112,7 @@ object ReferenceRegion {
     ReferenceRegion(variant.getContigName, variant.getStart, variant.getEnd)
   }
 
-  def apply(annotation: DatabaseVariantAnnotation): ReferenceRegion = {
+  def apply(annotation: VariantAnnotation): ReferenceRegion = {
     ReferenceRegion(annotation.getVariant)
   }
 

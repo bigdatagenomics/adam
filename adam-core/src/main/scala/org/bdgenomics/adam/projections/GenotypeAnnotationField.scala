@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.VariantCallingAnnotations
+import org.bdgenomics.formats.avro.GenotypeAnnotation
 
 /**
- * Enumeration of VariantCallingAnnotations field names for predicates and projections.
+ * Enumeration of GenotypeAnnotation field names for predicates and projections.
  */
-object VariantCallingAnnotationsField extends FieldEnumeration(VariantCallingAnnotations.SCHEMA$) {
+object GenotypeAnnotationField extends FieldEnumeration(GenotypeAnnotation.SCHEMA$) {
 
-  val readDepth, downsampled, baseQRankSum, clippingRankSum, haplotypeScore, inbreedingCoefficient, alleleCountMLE, alleleFrequencyMLE, rmsMapQ, mapq0Reads, mqRankSum, usedForNegativeTrainingSet, usedForPositiveTrainingSet, variantQualityByDepth, readPositionRankSum, vqslod, culprit, variantCallErrorProbability, variantIsPassing, variantFilters = SchemaValue
+  val variantIsPassing, variantFilters, downsampled, baseQualityRankSum, fisherStrandBiasPValue, rmsMappingQuality, mappingQualityZeroReads, mappingQualityRankSum, readPositionRankSum, genotypePriors, genotypePosteriors, vqslod, culprit, attributes = SchemaValue
 }

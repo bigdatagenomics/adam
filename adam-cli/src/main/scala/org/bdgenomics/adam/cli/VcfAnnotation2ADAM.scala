@@ -22,7 +22,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.DatabaseVariantAnnotationRDD
+import org.bdgenomics.adam.rdd.variation.VariantAnnotationRDD
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.cli._
@@ -53,6 +53,7 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends BDGSparkComma
 
   def run(sc: SparkContext) {
     log.info("Reading VCF file from %s".format(args.vcfFile))
+
     val annotations = sc.loadVcfAnnotations(args.vcfFile)
 
     if (args.currentAnnotations != null) {
@@ -60,7 +61,7 @@ class VcfAnnotation2ADAM(val args: VcfAnnotation2ADAMArgs) extends BDGSparkComma
       val keyedAnnotations = existingAnnotations.rdd.keyBy(anno => new RichVariant(anno.getVariant))
       val joinedAnnotations = keyedAnnotations.join(annotations.rdd.keyBy(anno => new RichVariant(anno.getVariant)))
       val mergedAnnotations = joinedAnnotations.map(kv => VariantContext.mergeAnnotations(kv._2._1, kv._2._2))
-      DatabaseVariantAnnotationRDD(mergedAnnotations, existingAnnotations.sequences).saveAsParquet(args)
+      VariantAnnotationRDD(mergedAnnotations, existingAnnotations.sequences).saveAsParquet(args)
     } else {
       annotations.saveAsParquet(args)
     }

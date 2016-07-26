@@ -784,28 +784,28 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   def loadVcfAnnotations(
     filePath: String,
-    sd: Option[SequenceDictionary] = None): DatabaseVariantAnnotationRDD = {
-    loadVcf(filePath, sd).toDatabaseVariantAnnotationRDD
+    sd: Option[SequenceDictionary] = None): VariantAnnotationRDD = {
+    loadVcf(filePath, sd).toVariantAnnotationRDD
   }
 
   def loadParquetVariantAnnotations(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): DatabaseVariantAnnotationRDD = {
+    projection: Option[Schema] = None): VariantAnnotationRDD = {
     val sd = loadAvroSequences(filePath)
-    val rdd = loadParquet[DatabaseVariantAnnotation](filePath, predicate, projection)
-    DatabaseVariantAnnotationRDD(rdd, sd)
+    val rdd = loadParquet[VariantAnnotation](filePath, predicate, projection)
+    VariantAnnotationRDD(rdd, sd)
   }
 
   def loadVariantAnnotations(
     filePath: String,
     projection: Option[Schema] = None,
-    sd: Option[SequenceDictionary] = None): DatabaseVariantAnnotationRDD = {
+    sd: Option[SequenceDictionary] = None): VariantAnnotationRDD = {
     if (filePath.endsWith(".vcf")) {
       log.info(s"Loading $filePath as VCF, and converting to variant annotations. Projection is ignored.")
       loadVcfAnnotations(filePath, sd)
     } else {
-      log.info(s"Loading $filePath as Parquet containing DatabaseVariantAnnotations.")
+      log.info(s"Loading $filePath as Parquet containing VariantAnnotations.")
       sd.foreach(sd => log.warn("Sequence dictionary for translation ignored if loading ADAM from Parquet."))
       loadParquetVariantAnnotations(filePath, None, projection)
     }

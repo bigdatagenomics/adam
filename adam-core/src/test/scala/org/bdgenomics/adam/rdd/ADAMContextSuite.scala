@@ -272,7 +272,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vc.genotypes.size === 3)
 
     val gt = vc.genotypes.head
-    assert(gt.getVariantCallingAnnotations != null)
+    assert(gt.getGenotypeAnnotation != null)
     assert(gt.getReadDepth === 20)
   }
 

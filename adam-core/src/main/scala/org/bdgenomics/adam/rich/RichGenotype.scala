@@ -40,13 +40,13 @@ class RichGenotype(val genotype: Genotype) {
       distinctListOfAlleles match {
 
         // If all alleles are the reference allele, the genotype is Homozygous Reference (HOM_REF)
-        case List(GenotypeAllele.Ref)      => GenotypeType.HOM_REF
+        case List(GenotypeAllele.REF)       => GenotypeType.HOM_REF
 
         // If all alleles are the primary alternative allele, the genotype is Homozygous Alternative (HOM_ALT)
-        case List(GenotypeAllele.Alt)      => GenotypeType.HOM_ALT
+        case List(GenotypeAllele.ALT)       => GenotypeType.HOM_ALT
 
         // If all alleles are not called, the genotype is not called  (NO_CALL)
-        case List(GenotypeAllele.NoCall)   => GenotypeType.NO_CALL
+        case List(GenotypeAllele.NO_CALL)   => GenotypeType.NO_CALL
 
         // If all alleles are OtherAlt.
         // If genotype.getAlleles returns a single OtherAlt, the genotype is Homozygous Alternative (HOM_ALT)
@@ -55,11 +55,11 @@ class RichGenotype(val genotype: Genotype) {
         // B) The OtherAlt allales are different OtherAlt alleles: Heterozygous
         // For now return NO_CALL as the genotypes, as was done in the previous getType function
         // See also issue https://github.com/bigdatagenomics/adam/issues/897
-        case List(GenotypeAllele.OtherAlt) => GenotypeType.NO_CALL
+        case List(GenotypeAllele.OTHER_ALT) => GenotypeType.NO_CALL
 
         // only the four above alleles are possible
         // https://github.com/bigdatagenomics/bdg-formats/blob/master/src/main/resources/avro/bdg.avdl#L464
-        case _                             => throw new IllegalStateException("Found single distinct allele other than the four possible alleles: Ref, Alt, NoCall and OtherAlt")
+        case _                              => throw new IllegalStateException("Found single distinct allele other than the four possible alleles: Ref, Alt, NoCall and OtherAlt")
       }
     } // In the case that there are multiple distinct alleles
     // This should be applicable to any genome ploidy.
@@ -69,7 +69,7 @@ class RichGenotype(val genotype: Genotype) {
       // IN HTS-JDK this would be GenotypeType.MIXED , this type is not available in BDG / ADAM
       // https://github.com/bigdatagenomics/bdg-formats/blob/master/src/main/resources/avro/bdg.avdl#L483
       // https://github.com/samtools/htsjdk/blob/master/src/java/htsjdk/variant/variantcontext/Genotype.java#L218
-      if (distinctListOfAlleles contains GenotypeAllele.NoCall) {
+      if (distinctListOfAlleles contains GenotypeAllele.NO_CALL) {
         GenotypeType.NO_CALL
       } // Otherwise the distinct alleles are a combination of 2 or 3 alleles from the list  (GenotypeAllele.Ref, GenotypeAllele.Alt, GenotypeAllele.OtherAlt)
       // Therefore the genotype is Heterozygous HET
