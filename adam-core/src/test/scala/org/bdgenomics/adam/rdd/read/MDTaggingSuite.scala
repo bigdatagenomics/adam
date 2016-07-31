@@ -18,9 +18,8 @@
 package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.util.{ ReferenceContigMap, ADAMFunSuite }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
-import org.bdgenomics.utils.misc.SparkFunSuite
+import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceContigMap }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, NucleotideContigFragment }
 
 class MDTaggingSuite extends ADAMFunSuite {
   val chr1 =
@@ -34,7 +33,13 @@ class MDTaggingSuite extends ADAMFunSuite {
     sc.parallelize(
       for {
         (contig, start, seq) <- frags
-      } yield NucleotideContigFragment.newBuilder().setContig(contig).setFragmentStartPosition(start.toLong).setFragmentSequence(seq).build()
+      } yield (
+        NucleotideContigFragment.newBuilder()
+        .setContig(contig)
+        .setFragmentStartPosition(start.toLong)
+        .setFragmentEndPosition(start.toLong + seq.length)
+        .setFragmentSequence(seq).build()
+      )
     )
 
   def makeReads(reads: ((Contig, Int, Int, String, String), String)*): (Map[Int, String], RDD[AlignmentRecord]) = {

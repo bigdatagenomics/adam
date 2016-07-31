@@ -19,8 +19,9 @@ package org.bdgenomics.adam.rdd
 
 import java.io.{ File, FileNotFoundException, InputStream }
 import java.util.regex.Pattern
+import com.google.common.collect.ImmutableList
 import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
-import htsjdk.samtools.util.Locatable
+import htsjdk.samtools.util.{ Locatable, Interval }
 import htsjdk.variant.vcf.VCFHeader
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
@@ -596,16 +597,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     ))
   }
 
-  private def readVcfRecords(filePath: String): RDD[(LongWritable, VariantContextWritable)] = {
+  private def readVcfRecords(filePath: String, viewRegion: Option[ReferenceRegion]): RDD[(LongWritable, VariantContextWritable)] = {
     // load vcf data
     val job = HadoopUtil.newJob(sc)
     job.getConfiguration().setStrings("io.compression.codecs",
       classOf[BGZFCodec].getCanonicalName(),
       classOf[BGZFEnhancedGzipCodec].getCanonicalName())
+
+    val conf = ContextUtil.getConfiguration(job)
+    if (viewRegion.isDefined) {
+      val interval: Interval = new Interval(viewRegion.get.referenceName, viewRegion.get.start.toInt, viewRegion.get.end.toInt)
+      VCFInputFormat.setIntervals(conf, ImmutableList.of(interval))
+    }
+
     sc.newAPIHadoopFile(
       filePath,
       classOf[VCFInputFormat], classOf[LongWritable], classOf[VariantContextWritable],
-      ContextUtil.getConfiguration(job)
+      conf
     )
   }
 
@@ -623,7 +631,41 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val vcc = new VariantContextConverter(sdOpt)
 
     // load records from VCF
-    val records = readVcfRecords(filePath)
+    val records = readVcfRecords(filePath, None)
+
+    // attach instrumentation
+    if (Metrics.isRecording) records.instrument() else records
+
+    // load vcf metadata
+    val (vcfSd, samples) = loadVcfMetadata(filePath)
+
+    // we can only replace the sequences header if the sequence info was missing on the vcf
+    require(sdOpt.isEmpty || vcfSd.isEmpty,
+      "Only one of the provided or VCF sequence dictionary can be specified.")
+    val sd = sdOpt.getOrElse(vcfSd)
+
+    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
+      sd,
+      samples)
+  }
+
+  /**
+   * Loads a VCF file indexed by a tabix (tbi) file into an RDD.
+   *
+   * @param filePath The file to load.
+   * @param viewRegion The ReferenceRegion we are filtering on.
+   * @param sdOpt An optional sequence dictionary, in case the sequence info
+   *              is not included in the VCF.
+   * @return Returns a VariantContextRDD.
+   */
+  def loadIndexedVcf(filePath: String,
+                     viewRegion: ReferenceRegion,
+                     sdOpt: Option[SequenceDictionary] = None): VariantContextRDD = {
+
+    val vcc = new VariantContextConverter(sdOpt)
+
+    // load records from VCF
+    val records = readVcfRecords(filePath, Some(viewRegion))
 
     // attach instrumentation
     if (Metrics.isRecording) records.instrument() else records
