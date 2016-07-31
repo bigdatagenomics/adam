@@ -278,32 +278,47 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can read a gzipped .vcf file") {
     val path = resourcePath("test.vcf.gz")
-    val vcs = sc.loadVcf(path, None)
+    val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
   sparkTest("can read a BGZF gzipped .vcf file with .gz file extension") {
     val path = resourcePath("test.vcf.bgzf.gz")
-    val vcs = sc.loadVcf(path, None)
+    val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
   sparkTest("can read a BGZF gzipped .vcf file with .bgz file extension") {
     val path = resourcePath("test.vcf.bgz")
-    val vcs = sc.loadVcf(path, None)
+    val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
   ignore("can read an uncompressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
     val path = resourcePath("test.uncompressed.bcf")
-    val vcs = sc.loadVcf(path, None)
+    val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
   ignore("can read a BGZF compressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
     val path = resourcePath("test.compressed.bcf")
-    val vcs = sc.loadVcf(path, None)
+    val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
+  }
+
+  sparkTest("loadIndexedVcf with 1 ReferenceRegion") {
+    val path = resourcePath("bqsr1.vcf")
+    val refRegion = ReferenceRegion("22", 16097644, 16098647)
+    val vcs = sc.loadIndexedVcf(path, refRegion)
+    assert(vcs.rdd.count == 17)
+  }
+
+  sparkTest("loadIndexedVcf with multiple ReferenceRegions") {
+    val path = resourcePath("bqsr1.vcf")
+    val refRegion1 = ReferenceRegion("22", 16050678, 16050822)
+    val refRegion2 = ReferenceRegion("22", 16097644, 16098647)
+    val vcs = sc.loadIndexedVcf(path, Iterable(refRegion1, refRegion2))
+    assert(vcs.rdd.count == 23)
   }
 
   (1 to 4) foreach { testNumber =>
@@ -417,11 +432,19 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(last.getFragmentEndPosition === 251929L)
   }
 
-  sparkTest("loadIndexedBam") {
+  sparkTest("loadIndexedBam with 1 ReferenceRegion") {
     val refRegion = ReferenceRegion("chr2", 100, 101)
     val path = resourcePath("sorted.bam")
     val reads = sc.loadIndexedBam(path, refRegion)
     assert(reads.rdd.count == 1)
+  }
+
+  sparkTest("loadIndexedBam with multiple ReferenceRegions") {
+    val refRegion1 = ReferenceRegion("chr2", 100, 101)
+    val refRegion2 = ReferenceRegion("3", 10, 17)
+    val path = resourcePath("sorted.bam")
+    val reads = sc.loadIndexedBam(path, Iterable(refRegion1, refRegion2))
+    assert(reads.rdd.count == 2)
   }
 }
 

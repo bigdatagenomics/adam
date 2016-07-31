@@ -61,11 +61,7 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] wit
 
   def run(sc: SparkContext) {
 
-    var dictionary: Option[SequenceDictionary] = loadSequenceDictionary(args.dictionaryFile)
-    if (dictionary.isDefined)
-      log.info("Using contig translation")
-
-    val variantContextRdd = sc.loadVcf(args.vcfPath, sdOpt = dictionary)
+    val variantContextRdd = sc.loadVcf(args.vcfPath)
     var variantContextsToSave = if (args.coalesce > 0) {
       if (args.coalesce > variantContextRdd.rdd.partitions.size || args.forceShuffle) {
         variantContextRdd.transform(_.coalesce(args.coalesce, shuffle = true))
