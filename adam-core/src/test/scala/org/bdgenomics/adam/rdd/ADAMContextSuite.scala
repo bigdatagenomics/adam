@@ -423,5 +423,12 @@ class ADAMContextSuite extends ADAMFunSuite {
     val reads = sc.loadIndexedBam(path, refRegion)
     assert(reads.rdd.count == 1)
   }
+
+  sparkTest("loadIndexedVcf") {
+    val path = resourcePath("bqsr1.vcf")
+    val refRegion = ReferenceRegion("22", 0, 16050822)
+    val reads2 = sc.loadIndexedVcf(path, refRegion)
+    assert(reads2.rdd.count == 8)
+  }
 }
 
