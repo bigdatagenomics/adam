@@ -24,7 +24,7 @@ import scala.Predef._
 import org.apache.spark.SparkContext
 import scala.reflect.ClassTag
 
-trait RegionJoin {
+trait RegionJoin[T, U, RT, RU] {
   /**
    * Performs a region join between two RDDs.
    *
@@ -37,8 +37,8 @@ trait RegionJoin {
    * @return An RDD of pairs (x, y), where x is from baseRDD, y is from joinedRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
-  def partitionAndJoin[T, U](
+  def partitionAndJoin(
     baseRDD: RDD[(ReferenceRegion, T)],
     joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                          uManifest: ClassTag[U]): RDD[(T, U)]
+                                          uManifest: ClassTag[U]): RDD[(RT, RU)]
 }

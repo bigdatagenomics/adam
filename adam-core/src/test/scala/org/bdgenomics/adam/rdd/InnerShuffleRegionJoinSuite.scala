@@ -22,7 +22,7 @@ import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, Sequenc
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
-class ShuffleRegionJoinSuite extends ADAMFunSuite {
+class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
   val partitionSize = 3
   var seqDict: SequenceDictionary = _
 
@@ -55,20 +55,20 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_))
 
     assert(
-      ShuffleRegionJoin(seqDict, partitionSize)
-        .partitionAndJoin[AlignmentRecord, AlignmentRecord](
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
+        .partitionAndJoin(
           baseRdd,
           recordsRdd
         )
         .aggregate(true)(
-          ShuffleRegionJoinSuite.merge,
-          ShuffleRegionJoinSuite.and
+          InnerShuffleRegionJoinSuite.merge,
+          InnerShuffleRegionJoinSuite.and
         )
     )
 
     assert(
-      ShuffleRegionJoin(seqDict, partitionSize)
-        .partitionAndJoin[AlignmentRecord, AlignmentRecord](
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
+        .partitionAndJoin(
           baseRdd,
           recordsRdd
         )
@@ -114,89 +114,29 @@ class ShuffleRegionJoinSuite extends ADAMFunSuite {
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_))
 
     assert(
-      ShuffleRegionJoin(seqDict, partitionSize)
-        .partitionAndJoin[AlignmentRecord, AlignmentRecord](
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
+        .partitionAndJoin(
           baseRdd,
           recordsRdd
         )
         .aggregate(true)(
-          ShuffleRegionJoinSuite.merge,
-          ShuffleRegionJoinSuite.and
+          InnerShuffleRegionJoinSuite.merge,
+          InnerShuffleRegionJoinSuite.and
         )
     )
 
     assert(
-      ShuffleRegionJoin(seqDict, partitionSize)
-        .partitionAndJoin[AlignmentRecord, AlignmentRecord](
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
+        .partitionAndJoin(
           baseRdd,
           recordsRdd
         )
-        .count() === 3
-    )
-  }
-
-  sparkTest("RegionJoin2 contains the same results as cartesianRegionJoin") {
-    val contig1 = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom1")
-      .build
-
-    val contig2 = Contig.newBuilder
-      .setContigName("chr2")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom2")
-      .build
-
-    val builtRef1 = AlignmentRecord.newBuilder()
-      .setContigName(contig1.getContigName)
-      .setStart(1L)
-      .setReadMapped(true)
-      .setCigar("1M")
-      .setEnd(2L)
-      .build()
-    val builtRef2 = AlignmentRecord.newBuilder()
-      .setContigName(contig2.getContigName)
-      .setStart(1L)
-      .setReadMapped(true)
-      .setCigar("1M")
-      .setEnd(2L)
-      .build()
-
-    val record1 = builtRef1
-    val record2 = AlignmentRecord.newBuilder(builtRef1).setStart(3L).setEnd(4L).build()
-    val record3 = builtRef2
-    val baseRecord1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setEnd(5L).build()
-    val baseRecord2 = AlignmentRecord.newBuilder(builtRef2).setCigar("4M").setEnd(5L).build()
-
-    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_))
-    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_))
-
-    assert(
-      BroadcastRegionJoin.cartesianFilter(
-        baseRdd,
-        recordsRdd
-      )
-        .leftOuterJoin(
-          ShuffleRegionJoin(seqDict, partitionSize)
-            .partitionAndJoin(
-              baseRdd,
-              recordsRdd
-            )
-        )
-        .filter({
-          case ((_: AlignmentRecord, (cartesian: AlignmentRecord, region: Option[AlignmentRecord]))) =>
-            region match {
-              case None         => false
-              case Some(record) => cartesian == record
-            }
-        })
         .count() === 3
     )
   }
 }
 
-object ShuffleRegionJoinSuite {
+object InnerShuffleRegionJoinSuite {
   def getReferenceRegion(record: AlignmentRecord): ReferenceRegion =
     ReferenceRegion(record)
 

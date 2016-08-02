@@ -22,7 +22,7 @@ import org.bdgenomics.adam.models.{ NonoverlappingRegions, ReferenceRegion }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
-class BroadcastRegionJoinSuite extends ADAMFunSuite {
+class InnerBroadcastRegionJoinSuite extends ADAMFunSuite {
 
   test("alternating returns an alternating seq of items") {
     import NonoverlappingRegions._
@@ -129,21 +129,21 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val rdd1 = sc.parallelize(Seq(record1)).keyBy(ReferenceRegion(_))
     val rdd2 = sc.parallelize(Seq(record2)).keyBy(ReferenceRegion(_))
 
-    assert(BroadcastRegionJoinSuite.getReferenceRegion(record1) ===
-      BroadcastRegionJoinSuite.getReferenceRegion(record2))
+    assert(InnerBroadcastRegionJoinSuite.getReferenceRegion(record1) ===
+      InnerBroadcastRegionJoinSuite.getReferenceRegion(record2))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(InnerBroadcastRegionJoin[AlignmentRecord, AlignmentRecord]().partitionAndJoin(
       rdd1,
       rdd2).aggregate(true)(
-        BroadcastRegionJoinSuite.merge,
-        BroadcastRegionJoinSuite.and))
+        InnerBroadcastRegionJoinSuite.merge,
+        InnerBroadcastRegionJoinSuite.and))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(InnerBroadcastRegionJoin[AlignmentRecord, AlignmentRecord]().partitionAndJoin(
       rdd1,
       rdd2)
       .aggregate(0)(
-        BroadcastRegionJoinSuite.count,
-        BroadcastRegionJoinSuite.sum) === 1)
+        InnerBroadcastRegionJoinSuite.count,
+        InnerBroadcastRegionJoinSuite.sum) === 1)
   }
 
   sparkTest("Overlapping reference regions") {
@@ -168,14 +168,14 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion(_))
     val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(InnerBroadcastRegionJoin[AlignmentRecord, AlignmentRecord]().partitionAndJoin(
       baseRdd,
       recordsRdd)
       .aggregate(true)(
-        BroadcastRegionJoinSuite.merge,
-        BroadcastRegionJoinSuite.and))
+        InnerBroadcastRegionJoinSuite.merge,
+        InnerBroadcastRegionJoinSuite.and))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(InnerBroadcastRegionJoin[AlignmentRecord, AlignmentRecord]().partitionAndJoin(
       baseRdd,
       recordsRdd).count() === 2)
   }
@@ -217,74 +217,20 @@ class BroadcastRegionJoinSuite extends ADAMFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_))
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(InnerBroadcastRegionJoin[AlignmentRecord, AlignmentRecord]().partitionAndJoin(
       baseRdd,
       recordsRdd)
       .aggregate(true)(
-        BroadcastRegionJoinSuite.merge,
-        BroadcastRegionJoinSuite.and))
+        InnerBroadcastRegionJoinSuite.merge,
+        InnerBroadcastRegionJoinSuite.and))
 
-    assert(BroadcastRegionJoin.partitionAndJoin[AlignmentRecord, AlignmentRecord](
+    assert(InnerBroadcastRegionJoin[AlignmentRecord, AlignmentRecord]().partitionAndJoin(
       baseRdd,
       recordsRdd).count() === 3)
   }
-
-  sparkTest("regionJoin contains the same results as cartesianRegionJoin") {
-    val contig1 = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom1")
-      .build
-
-    val contig2 = Contig.newBuilder
-      .setContigName("chr2")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom2")
-      .build
-
-    val builtRef1 = AlignmentRecord.newBuilder()
-      .setContigName(contig1.getContigName)
-      .setStart(1L)
-      .setReadMapped(true)
-      .setCigar("1M")
-      .setEnd(2L)
-      .build()
-    val builtRef2 = AlignmentRecord.newBuilder()
-      .setContigName(contig2.getContigName)
-      .setStart(1L)
-      .setReadMapped(true)
-      .setCigar("1M")
-      .setEnd(2L)
-      .build()
-
-    val record1 = builtRef1
-    val record2 = AlignmentRecord.newBuilder(builtRef1).setStart(3L).setEnd(4L).build()
-    val record3 = builtRef2
-    val baseRecord1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setEnd(5L).build()
-    val baseRecord2 = AlignmentRecord.newBuilder(builtRef2).setCigar("4M").setEnd(5L).build()
-
-    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion(_))
-    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_))
-
-    assert(BroadcastRegionJoin.cartesianFilter(
-      baseRdd,
-      recordsRdd)
-      .leftOuterJoin(
-        BroadcastRegionJoin.partitionAndJoin(
-          baseRdd,
-          recordsRdd))
-      .filter({
-        case ((_: AlignmentRecord, (cartesian: AlignmentRecord, region: Option[AlignmentRecord]))) =>
-          region match {
-            case None         => false
-            case Some(record) => cartesian == record
-          }
-      })
-      .count() === 3)
-  }
 }
 
-object BroadcastRegionJoinSuite {
+object InnerBroadcastRegionJoinSuite {
   def getReferenceRegion(record: AlignmentRecord): ReferenceRegion =
     ReferenceRegion(record)
 
