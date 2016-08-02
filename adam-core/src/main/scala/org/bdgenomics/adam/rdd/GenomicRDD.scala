@@ -79,7 +79,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
 
     // key the RDDs and join
-    GenericGenomicRDD[(T, X)](BroadcastRegionJoin.partitionAndJoin(flattenRddByRegions(),
+    GenericGenomicRDD[(T, X)](InnerBroadcastRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
       kv => { getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2) })
@@ -100,8 +100,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
 
     // key the RDDs and join
     GenericGenomicRDD[(T, X)](
-      ShuffleRegionJoin(endSequences, partitions).partitionAndJoin(flattenRddByRegions(),
-        genomicRdd.flattenRddByRegions()),
+      InnerShuffleRegionJoin[T, X](endSequences,
+        partitions,
+        rdd.context).partitionAndJoin(flattenRddByRegions(),
+          genomicRdd.flattenRddByRegions()),
       endSequences,
       kv => { getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2) })
       .asInstanceOf[GenomicRDD[(T, X), Z]]

@@ -17,8 +17,8 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.apache.spark.Partitioner
 import org.apache.spark.SparkContext._
+import org.apache.spark.{ Partitioner, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
@@ -26,7 +26,15 @@ import scala.collection.mutable.ListBuffer
 import scala.math._
 import scala.reflect.ClassTag
 
-private[rdd] case class ShuffleRegionJoin(sd: SequenceDictionary, partitionSize: Long) extends RegionJoin {
+private[rdd] sealed trait ShuffleRegionJoin[T, U, RT, RU] extends RegionJoin[T, U, RT, RU] {
+
+  val sd: SequenceDictionary
+  val partitionSize: Long
+  @transient val sc: SparkContext
+
+  // Create the set of bins across the genome for parallel processing
+  protected val seqLengths = Map(sd.records.toSeq.map(rec => (rec.name, rec.length)): _*)
+  protected val bins = sc.broadcast(GenomeBins(partitionSize, seqLengths))
 
   /**
    * Performs a region join between two RDDs (shuffle join).
@@ -47,15 +55,10 @@ private[rdd] case class ShuffleRegionJoin(sd: SequenceDictionary, partitionSize:
    * @return An RDD of pairs (x, y), where x is from leftRDD, y is from rightRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
-  def partitionAndJoin[T, U](
+  def partitionAndJoin(
     leftRDD: RDD[(ReferenceRegion, T)],
     rightRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                         uManifest: ClassTag[U]): RDD[(T, U)] = {
-    val sc = leftRDD.context
-
-    // Create the set of bins across the genome for parallel processing
-    val seqLengths = Map(sd.records.toSeq.map(rec => (rec.name, rec.length)): _*)
-    val bins = sc.broadcast(GenomeBins(partitionSize, seqLengths))
+                                         uManifest: ClassTag[U]): RDD[(RT, RU)] = {
 
     // Key each RDD element to its corresponding bin
     // Elements may be replicated if they overlap multiple bins
@@ -84,25 +87,34 @@ private[rdd] case class ShuffleRegionJoin(sd: SequenceDictionary, partitionSize:
     val sortedRight: RDD[((ReferenceRegion, Int), U)] =
       keyedRight.repartitionAndSortWithinPartitions(ManualRegionPartitioner(bins.value.numBins))
 
-    // this function carries out the sort-merge join inside each Spark partition.
-    // It assumes the iterators are sorted.
-    def sweep(leftIter: Iterator[((ReferenceRegion, Int), T)], rightIter: Iterator[((ReferenceRegion, Int), U)]) = {
-      if (leftIter.isEmpty || rightIter.isEmpty) {
-        Seq.empty[(T, U)].toIterator
-      } else {
-        val bufferedLeft = leftIter.buffered
-        val currentBin = bufferedLeft.head._1._2
-        val region = bins.value.invert(currentBin)
-        // return an Iterator[(T, U)]
-        SortedIntervalPartitionJoin(region, bufferedLeft, rightIter)
-      }
-    }
-
     // Execute the sort-merge join on each partition
     // Note that we do NOT preserve the partitioning, as the ManualRegionPartitioner
     // has no meaning for the return type of RDD[(T, U)].  In fact, how
     // do you order a pair of ReferenceRegions?
     sortedLeft.zipPartitions(sortedRight, preservesPartitioning = false)(sweep)
+  }
+
+  // this function carries out the sort-merge join inside each Spark partition.
+  // It assumes the iterators are sorted.
+  protected def sweep(leftIter: Iterator[((ReferenceRegion, Int), T)],
+                      rightIter: Iterator[((ReferenceRegion, Int), U)]): Iterator[(RT, RU)]
+}
+
+private[rdd] case class InnerShuffleRegionJoin[T, U](sd: SequenceDictionary,
+                                                     partitionSize: Long,
+                                                     @transient val sc: SparkContext) extends ShuffleRegionJoin[T, U, T, U] {
+
+  def sweep(leftIter: Iterator[((ReferenceRegion, Int), T)],
+            rightIter: Iterator[((ReferenceRegion, Int), U)]): Iterator[(T, U)] = {
+    if (leftIter.isEmpty || rightIter.isEmpty) {
+      Seq.empty[(T, U)].toIterator
+    } else {
+      val bufferedLeft = leftIter.buffered
+      val currentBin = bufferedLeft.head._1._2
+      val region = bins.value.invert(currentBin)
+      // return an Iterator[(T, U)]
+      SortedIntervalPartitionJoin(region, bufferedLeft, rightIter)
+    }
   }
 }
 

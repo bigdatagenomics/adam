@@ -30,7 +30,7 @@ import scala.reflect.ClassTag
  * Different implementations will have different performance characteristics -- and new implementations
  * will likely be added in the future, see the notes to each individual method for more details.
  */
-private[rdd] object BroadcastRegionJoin extends RegionJoin {
+private[rdd] sealed trait BroadcastRegionJoin[T, U, RU] extends RegionJoin[T, U, T, RU] {
 
   /**
    * Performs a region join between two RDDs (broadcast join).
@@ -60,10 +60,10 @@ private[rdd] object BroadcastRegionJoin extends RegionJoin {
    * @return An RDD of pairs (x, y), where x is from baseRDD, y is from joinedRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
-  def partitionAndJoin[T, U](
+  def partitionAndJoin(
     baseRDD: RDD[(ReferenceRegion, T)],
     joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                          uManifest: ClassTag[U]): RDD[(T, U)] = {
+                                          uManifest: ClassTag[U]): RDD[(T, RU)] = {
 
     val sc = baseRDD.context
 
@@ -122,31 +122,24 @@ private[rdd] object BroadcastRegionJoin extends RegionJoin {
       smallerKeyed.join(largerKeyed)
 
     // ... so we need to filter the final pairs to make sure they're overlapping.
-    val filtered: RDD[(ReferenceRegion, ((ReferenceRegion, T), (ReferenceRegion, U)))] = joined.filter(kv => {
-      val (rr: ReferenceRegion, (t: (ReferenceRegion, T), u: (ReferenceRegion, U))) = kv
-      t._1.overlaps(u._1)
+    joined.flatMap(kv => {
+      val (_, (t: (ReferenceRegion, T), u: (ReferenceRegion, U))) = kv
+      jFn(t, u)
     })
-
-    // finally, erase the partition key and return the result.
-    filtered.map(rrtu => (rrtu._2._1._2, rrtu._2._2._2))
   }
 
-  /**
-   * This method does a join between different types which can have a corresponding ReferenceMapping.
-   *
-   * This method does a cartesian product between the two, then removes mismatched regions.
-   *
-   * This is SLOW SLOW SLOW, and shouldn't be used for anything other than correctness-testing on
-   * realistic sized sets.
-   *
-   */
-  def cartesianFilter[T, U](
-    baseRDD: RDD[(ReferenceRegion, T)],
-    joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                          uManifest: ClassTag[U]): RDD[(T, U)] = {
-    baseRDD.cartesian(joinedRDD).filter({
-      case (t: (ReferenceRegion, T), u: (ReferenceRegion, U)) =>
-        t._1.overlaps(u._1)
-    }).map(p => (p._1._2, p._2._2))
+  protected def jFn(t: (ReferenceRegion, T),
+                    u: (ReferenceRegion, U)): TraversableOnce[(T, RU)]
+}
+
+private[rdd] case class InnerBroadcastRegionJoin[T, U]() extends BroadcastRegionJoin[T, U, U] {
+
+  protected def jFn(t: (ReferenceRegion, T),
+                    u: (ReferenceRegion, U)): TraversableOnce[(T, U)] = {
+    if (t._1.overlaps(u._1)) {
+      Some((t._2, u._2))
+    } else {
+      None
+    }
   }
 }
