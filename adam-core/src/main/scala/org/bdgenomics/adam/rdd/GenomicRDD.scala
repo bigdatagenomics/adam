@@ -86,6 +86,20 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       .asInstanceOf[GenomicRDD[(T, X), Z]]
   }
 
+  def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
+    implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
+
+    // key the RDDs and join
+    GenericGenomicRDD[(Option[T], X)](RightOuterBroadcastRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
+      genomicRdd.flattenRddByRegions()),
+      sequences ++ genomicRdd.sequences,
+      kv => {
+        Seq(kv._1.map(v => getReferenceRegions(v))).flatten.flatten ++
+          genomicRdd.getReferenceRegions(kv._2)
+      })
+      .asInstanceOf[GenomicRDD[(Option[T], X), Z]]
+  }
+
   def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](genomicRdd: GenomicRDD[X, Y],
                                                                               optPartitions: Option[Int] = None)(
                                                                                 implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
@@ -107,6 +121,136 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       endSequences,
       kv => { getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2) })
       .asInstanceOf[GenomicRDD[(T, X), Z]]
+  }
+
+  def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](genomicRdd: GenomicRDD[X, Y],
+                                                                                                optPartitions: Option[Int] = None)(
+                                                                                                  implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
+
+    // did the user provide a set partition count?
+    // if no, take the max partition count from our rdds
+    val partitions = optPartitions.getOrElse(Seq(rdd.partitions.length,
+      genomicRdd.rdd.partitions.length).max)
+
+    // what sequences do we wind up with at the end?
+    val endSequences = sequences ++ genomicRdd.sequences
+
+    // key the RDDs and join
+    GenericGenomicRDD[(Option[T], X)](
+      RightOuterShuffleRegionJoin[T, X](endSequences,
+        partitions,
+        rdd.context).partitionAndJoin(flattenRddByRegions(),
+          genomicRdd.flattenRddByRegions()),
+      endSequences,
+      kv => {
+        Seq(kv._1.map(v => getReferenceRegions(v))).flatten.flatten ++
+          genomicRdd.getReferenceRegions(kv._2)
+      })
+      .asInstanceOf[GenomicRDD[(Option[T], X), Z]]
+  }
+
+  def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Option[X]), Z]](genomicRdd: GenomicRDD[X, Y],
+                                                                                               optPartitions: Option[Int] = None)(
+                                                                                                 implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Option[X]), Z] = {
+
+    // did the user provide a set partition count?
+    // if no, take the max partition count from our rdds
+    val partitions = optPartitions.getOrElse(Seq(rdd.partitions.length,
+      genomicRdd.rdd.partitions.length).max)
+
+    // what sequences do we wind up with at the end?
+    val endSequences = sequences ++ genomicRdd.sequences
+
+    // key the RDDs and join
+    GenericGenomicRDD[(T, Option[X])](
+      LeftOuterShuffleRegionJoin[T, X](endSequences,
+        partitions,
+        rdd.context).partitionAndJoin(flattenRddByRegions(),
+          genomicRdd.flattenRddByRegions()),
+      endSequences,
+      kv => {
+        Seq(kv._2.map(v => genomicRdd.getReferenceRegions(v))).flatten.flatten ++
+          getReferenceRegions(kv._1)
+      })
+      .asInstanceOf[GenomicRDD[(T, Option[X]), Z]]
+  }
+
+  def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Option[X]), Z]](genomicRdd: GenomicRDD[X, Y],
+                                                                                                       optPartitions: Option[Int] = None)(
+                                                                                                         implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Option[X]), Z] = {
+
+    // did the user provide a set partition count?
+    // if no, take the max partition count from our rdds
+    val partitions = optPartitions.getOrElse(Seq(rdd.partitions.length,
+      genomicRdd.rdd.partitions.length).max)
+
+    // what sequences do we wind up with at the end?
+    val endSequences = sequences ++ genomicRdd.sequences
+
+    // key the RDDs and join
+    GenericGenomicRDD[(Option[T], Option[X])](
+      FullOuterShuffleRegionJoin[T, X](endSequences,
+        partitions,
+        rdd.context).partitionAndJoin(flattenRddByRegions(),
+          genomicRdd.flattenRddByRegions()),
+      endSequences,
+      kv => {
+        Seq(kv._2.map(v => genomicRdd.getReferenceRegions(v)),
+          kv._1.map(v => getReferenceRegions(v))).flatten.flatten
+      })
+      .asInstanceOf[GenomicRDD[(Option[T], Option[X]), Z]]
+  }
+
+  def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Iterable[X]), Z]](genomicRdd: GenomicRDD[X, Y],
+                                                                                                      optPartitions: Option[Int] = None)(
+                                                                                                        implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Iterable[X]), Z] = {
+
+    // did the user provide a set partition count?
+    // if no, take the max partition count from our rdds
+    val partitions = optPartitions.getOrElse(Seq(rdd.partitions.length,
+      genomicRdd.rdd.partitions.length).max)
+
+    // what sequences do we wind up with at the end?
+    val endSequences = sequences ++ genomicRdd.sequences
+
+    // key the RDDs and join
+    GenericGenomicRDD[(T, Iterable[X])](
+      InnerShuffleRegionJoinAndGroupByLeft[T, X](endSequences,
+        partitions,
+        rdd.context).partitionAndJoin(flattenRddByRegions(),
+          genomicRdd.flattenRddByRegions()),
+      endSequences,
+      kv => {
+        (kv._2.flatMap(v => genomicRdd.getReferenceRegions(v)) ++
+          getReferenceRegions(kv._1)).toSeq
+      })
+      .asInstanceOf[GenomicRDD[(T, Iterable[X]), Z]]
+  }
+
+  def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Iterable[X]), Z]](genomicRdd: GenomicRDD[X, Y],
+                                                                                                                        optPartitions: Option[Int] = None)(
+                                                                                                                          implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Iterable[X]), Z] = {
+
+    // did the user provide a set partition count?
+    // if no, take the max partition count from our rdds
+    val partitions = optPartitions.getOrElse(Seq(rdd.partitions.length,
+      genomicRdd.rdd.partitions.length).max)
+
+    // what sequences do we wind up with at the end?
+    val endSequences = sequences ++ genomicRdd.sequences
+
+    // key the RDDs and join
+    GenericGenomicRDD[(Option[T], Iterable[X])](
+      RightOuterShuffleRegionJoinAndGroupByLeft[T, X](endSequences,
+        partitions,
+        rdd.context).partitionAndJoin(flattenRddByRegions(),
+          genomicRdd.flattenRddByRegions()),
+      endSequences,
+      kv => {
+        (kv._2.flatMap(v => genomicRdd.getReferenceRegions(v)) ++
+          kv._1.toSeq.flatMap(v => getReferenceRegions(v))).toSeq
+      })
+      .asInstanceOf[GenomicRDD[(Option[T], Iterable[X]), Z]]
   }
 }
 
