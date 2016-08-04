@@ -17,10 +17,14 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.models.{ MultiContigNonoverlappingRegions, ReferenceRegion }
-import org.apache.spark.rdd.RDD
-import scala.Predef._
 import org.apache.spark.SparkContext._
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{
+  MultiContigNonoverlappingRegions,
+  ReferenceRegion
+}
+import scala.Predef._
 import scala.reflect.ClassTag
 
 /**
@@ -30,7 +34,7 @@ import scala.reflect.ClassTag
  * Different implementations will have different performance characteristics -- and new implementations
  * will likely be added in the future, see the notes to each individual method for more details.
  */
-private[rdd] sealed trait BroadcastRegionJoin[T, U, RU] extends RegionJoin[T, U, T, RU] {
+private[rdd] sealed trait BroadcastRegionJoin[T, U, RT] extends RegionJoin[T, U, RT, U] {
 
   /**
    * Performs a region join between two RDDs (broadcast join).
@@ -63,7 +67,7 @@ private[rdd] sealed trait BroadcastRegionJoin[T, U, RU] extends RegionJoin[T, U,
   def partitionAndJoin(
     baseRDD: RDD[(ReferenceRegion, T)],
     joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                          uManifest: ClassTag[U]): RDD[(T, RU)] = {
+                                          uManifest: ClassTag[U]): RDD[(RT, U)] = {
 
     val sc = baseRDD.context
 
@@ -114,32 +118,67 @@ private[rdd] sealed trait BroadcastRegionJoin[T, U, RU] extends RegionJoin[T, U,
 
     // each element of the right-side RDD may have 0, 1, or more than 1 corresponding partition.
     val largerKeyed: RDD[(ReferenceRegion, (ReferenceRegion, U))] =
-      joinedRDD.filter(regions.value.filter(_))
-        .flatMap(t => regions.value.regionsFor(t).map((r: ReferenceRegion) => (r, t)))
+      joinedRDD.flatMap(t => regionsFor(t, regions).map((r: ReferenceRegion) => (r, t)))
 
+    joinAndFilterFn(smallerKeyed, largerKeyed)
+  }
+
+  protected def regionsFor(u: (ReferenceRegion, U),
+                           regions: Broadcast[MultiContigNonoverlappingRegions]): Iterable[ReferenceRegion]
+
+  protected def joinAndFilterFn(tRdd: RDD[(ReferenceRegion, (ReferenceRegion, T))],
+                                uRdd: RDD[(ReferenceRegion, (ReferenceRegion, U))]): RDD[(RT, U)]
+}
+
+private[rdd] case class InnerBroadcastRegionJoin[T, U]() extends BroadcastRegionJoin[T, U, T] {
+
+  protected def joinAndFilterFn(tRdd: RDD[(ReferenceRegion, (ReferenceRegion, T))],
+                                uRdd: RDD[(ReferenceRegion, (ReferenceRegion, U))]): RDD[(T, U)] = {
     // this is (essentially) performing a cartesian product within each partition...
     val joined: RDD[(ReferenceRegion, ((ReferenceRegion, T), (ReferenceRegion, U)))] =
-      smallerKeyed.join(largerKeyed)
+      tRdd.join(uRdd)
 
     // ... so we need to filter the final pairs to make sure they're overlapping.
     joined.flatMap(kv => {
       val (_, (t: (ReferenceRegion, T), u: (ReferenceRegion, U))) = kv
-      jFn(t, u)
+
+      if (t._1.overlaps(u._1)) {
+        Some((t._2, u._2))
+      } else {
+        None
+      }
     })
   }
 
-  protected def jFn(t: (ReferenceRegion, T),
-                    u: (ReferenceRegion, U)): TraversableOnce[(T, RU)]
+  protected def regionsFor(u: (ReferenceRegion, U),
+                           regions: Broadcast[MultiContigNonoverlappingRegions]): Iterable[ReferenceRegion] = {
+    regions.value.regionsFor(u)
+  }
 }
 
-private[rdd] case class InnerBroadcastRegionJoin[T, U]() extends BroadcastRegionJoin[T, U, U] {
+private[rdd] case class RightOuterBroadcastRegionJoin[T, U]() extends BroadcastRegionJoin[T, U, Option[T]] {
 
-  protected def jFn(t: (ReferenceRegion, T),
-                    u: (ReferenceRegion, U)): TraversableOnce[(T, U)] = {
-    if (t._1.overlaps(u._1)) {
-      Some((t._2, u._2))
+  protected def joinAndFilterFn(tRdd: RDD[(ReferenceRegion, (ReferenceRegion, T))],
+                                uRdd: RDD[(ReferenceRegion, (ReferenceRegion, U))]): RDD[(Option[T], U)] = {
+    // this is (essentially) performing a cartesian product within each partition...
+    val joined: RDD[(ReferenceRegion, (Option[(ReferenceRegion, T)], (ReferenceRegion, U)))] =
+      tRdd.rightOuterJoin(uRdd)
+
+    // ... so we need to filter the final pairs to make sure they're overlapping.
+    joined.map(kv => {
+      val (_, (optT: Option[(ReferenceRegion, T)], u: (ReferenceRegion, U))) = kv
+
+      (optT.filter(t => t._1.overlaps(u._1)).map(_._2), u._2)
+    })
+  }
+
+  protected def regionsFor(u: (ReferenceRegion, U),
+                           regions: Broadcast[MultiContigNonoverlappingRegions]): Iterable[ReferenceRegion] = {
+    val reg = regions.value.regionsFor(u)
+    if (reg.isEmpty) {
+      Iterable(u._1)
     } else {
-      None
+      reg
     }
   }
 }
