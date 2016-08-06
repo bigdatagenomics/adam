@@ -40,7 +40,7 @@ import org.seqdoop.hadoop_bam._
  */
 case class VariantContextRDD(rdd: RDD[VariantContext],
                              sequences: SequenceDictionary,
-                             samples: Seq[Sample]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
+                             @transient samples: Seq[Sample]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
 
   /**

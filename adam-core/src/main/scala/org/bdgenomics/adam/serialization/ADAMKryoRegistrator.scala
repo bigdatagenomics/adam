@@ -129,6 +129,8 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Feature], new AvroSerializer[Feature])
     kryo.register(classOf[Array[Feature]])
 
+    kryo.register(classOf[Sample], new AvroSerializer[Sample])
+
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[Array[ReferencePosition]])
 

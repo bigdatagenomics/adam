@@ -39,7 +39,7 @@ import org.bdgenomics.formats.avro.{ Contig, Genotype, Sample }
  */
 case class GenotypeRDD(rdd: RDD[Genotype],
                        sequences: SequenceDictionary,
-                       samples: Seq[Sample]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
+                       @transient samples: Seq[Sample]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
 
   /**
    * Java-friendly method for saving.
