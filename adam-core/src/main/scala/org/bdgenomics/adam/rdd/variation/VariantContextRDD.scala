@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd.variation
 
 import org.apache.hadoop.io.LongWritable
+import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.VariantContextConverter
@@ -26,7 +27,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext
 }
-import org.bdgenomics.adam.rdd.MultisampleGenomicRDD
+import org.bdgenomics.adam.rdd.{ FileMerger, MultisampleGenomicRDD }
 import org.bdgenomics.formats.avro.Sample
 import org.bdgenomics.utils.cli.SaveArgs
 import org.seqdoop.hadoop_bam._
@@ -102,7 +103,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * @param sortOnSave Whether to sort before saving. Default is false (no sort).
    */
   def saveAsVcf(filePath: String,
-                sortOnSave: Boolean = false) {
+                sortOnSave: Boolean = false,
+                asSingleFile: Boolean = false) {
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
@@ -155,11 +157,28 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     // save to disk
     val conf = rdd.context.hadoopConfiguration
     conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
-    writableVCs.saveAsNewAPIHadoopFile(
-      filePath,
-      classOf[LongWritable], classOf[VariantContextWritable], classOf[ADAMVCFOutputFormat[LongWritable]],
-      conf
-    )
+
+    if (asSingleFile) {
+
+      // write shards to disk
+      val tailPath = "%s_tail".format(filePath)
+      writableVCs.saveAsNewAPIHadoopFile(
+        tailPath,
+        classOf[LongWritable], classOf[VariantContextWritable], classOf[ADAMVCFOutputFormat[LongWritable]],
+        conf
+      )
+
+      // merge shards
+      FileMerger.mergeFiles(FileSystem.get(conf),
+        new Path(filePath),
+        new Path(tailPath))
+    } else {
+      writableVCs.saveAsNewAPIHadoopFile(
+        filePath,
+        classOf[LongWritable], classOf[VariantContextWritable], classOf[ADAMVCFOutputFormat[LongWritable]],
+        conf
+      )
+    }
 
     log.info("Write %d records".format(writableVCs.count()))
     rdd.unpersist()

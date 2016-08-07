@@ -54,6 +54,9 @@ class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
 
   @Args4jOption(required = false, name = "-sort_on_save", usage = "Sort the VCF output.")
   var sort: Boolean = false
+
+  @Args4jOption(required = false, name = "-single", usage = "Save as a single VCF file.")
+  var single: Boolean = false
 }
 
 class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] with DictionaryCommand with Logging {
@@ -80,6 +83,8 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] wit
       variantContexts
     }
 
-    variantContextsToSave.saveAsVcf(args.outputPath, sortOnSave = args.sort)
+    variantContextsToSave.saveAsVcf(args.outputPath,
+      sortOnSave = args.sort,
+      asSingleFile = args.single)
   }
 }

@@ -44,6 +44,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   AvroReadGroupGenomicRDD,
   ADAMSaveAnyArgs,
+  FileMerger,
   JavaSaveArgs,
   Unaligned
 }
@@ -442,122 +443,11 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
         conf
       )
 
-      // get a list of all of the files in the tail file
-      val tailFiles = fs.globStatus(new Path("%s/part-*".format(tailPath)))
-        .toSeq
-        .map(_.getPath)
-        .sortBy(_.getName)
-        .toArray
-
-      // try to merge this via the fs api, which should guarantee ordering...?
-      // however! this function is not implemented on all platforms, hence the try.
-      try {
-
-        // we need to move the head file into the tailFiles directory
-        // this is a requirement of the concat method
-        val newHeadPath = new Path("%s/header".format(tailPath))
-        fs.rename(headPath, newHeadPath)
-
-        try {
-          fs.concat(newHeadPath, tailFiles)
-        } catch {
-          case t: Throwable => {
-            // move the head file back - essentially, unroll the prep for concat
-            fs.rename(newHeadPath, headPath)
-            throw t
-          }
-        }
-
-        // move concatenated file
-        fs.rename(newHeadPath, outputPath)
-
-        // delete tail files
-        fs.delete(tailPath, true)
-      } catch {
-        case e: Throwable => {
-
-          log.warn("Caught exception when merging via Hadoop FileSystem API:\n%s".format(e))
-          log.warn("Retrying as manual copy from the driver which will degrade performance.")
-
-          // doing this correctly is surprisingly hard
-          // specifically, copy merge does not care about ordering, which is
-          // fine if your files are unordered, but if the blocks in the file
-          // _are_ ordered, then hahahahahahahahahaha. GOOD. TIMES.
-          //
-          // fortunately, the blocks in our file are ordered
-          // the performance of this section is hilarious
-          // 
-          // specifically, the performance is hilariously bad
-          //
-          // but! it is correct.
-
-          // open our output file
-          val os = fs.create(outputPath)
-
-          // prepare output
-          val format = if (asSam) {
-            SAMFormat.SAM
-          } else {
-            SAMFormat.BAM
-          }
-          new SAMOutputPreparer().prepareForRecords(os, format, header);
-
-          // here is a byte array for copying
-          val ba = new Array[Byte](1024)
-
-          @tailrec def copy(is: InputStream,
-                            los: OutputStream) {
-
-            // make a read
-            val bytesRead = is.read(ba)
-
-            // did our read succeed? if so, write to output stream
-            // and continue
-            if (bytesRead >= 0) {
-              los.write(ba, 0, bytesRead)
-
-              copy(is, los)
-            }
-          }
-
-          // loop over allllll the files and copy them
-          val numFiles = tailFiles.length
-          var filesCopied = 1
-          tailFiles.toSeq.foreach(p => {
-
-            // print a bit of progress logging
-            log.info("Copying file %s, file %d of %d.".format(
-              p.toString,
-              filesCopied,
-              numFiles))
-
-            // open our input file
-            val is = fs.open(p)
-
-            // until we are out of bytes, copy
-            copy(is, os)
-
-            // close our input stream
-            is.close()
-
-            // increment file copy count
-            filesCopied += 1
-          })
-
-          // finish the file off
-          if (!asSam) {
-            os.write(BlockCompressedStreamConstants.EMPTY_GZIP_BLOCK);
-          }
-
-          // flush and close the output stream
-          os.flush()
-          os.close()
-
-          // delete temp files
-          fs.delete(headPath, true)
-          fs.delete(tailPath, true)
-        }
-      }
+      FileMerger.mergeFiles(fs,
+        outputPath,
+        tailPath,
+        optHeaderPath = Some(headPath),
+        writeEmptyGzipBlock = !asSam)
     }
   }
 
