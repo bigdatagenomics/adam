@@ -52,8 +52,8 @@ case class CoverageRDD(rdd: RDD[Coverage],
    *
    * @param filePath The location to write the output.
    */
-  def save(filePath: java.lang.String) = {
-    this.toFeatureRDD.save(filePath)
+  def save(filePath: java.lang.String, asSingleFile: java.lang.Boolean) = {
+    this.toFeatureRDD.save(filePath, asSingleFile = asSingleFile)
   }
 
   /**

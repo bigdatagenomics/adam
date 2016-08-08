@@ -318,112 +318,77 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
     // write file to disk
     val conf = rdd.context.hadoopConfiguration
 
+    // get file system
+    val headPath = new Path(filePath + "_head")
+    val tailPath = new Path(filePath + "_tail")
+    val outputPath = new Path(filePath)
+    val fs = headPath.getFileSystem(rdd.context.hadoopConfiguration)
+
+    // TIL: sam and bam are written in completely different ways!
+    if (asSam) {
+      SAMHeaderWriter.writeHeader(fs, headPath, header)
+    } else {
+
+      // get an output stream
+      val os = fs.create(headPath)
+        .asInstanceOf[OutputStream]
+
+      // create htsjdk specific streams for writing the bam header
+      val compressedOut: OutputStream = new BlockCompressedOutputStream(os, null)
+      val binaryCodec = new BinaryCodec(compressedOut);
+
+      // write a bam header - cribbed from Hadoop-BAM
+      binaryCodec.writeBytes("BAM\001".getBytes())
+      val sw: Writer = new StringWriter()
+      new SAMTextHeaderCodec().encode(sw, header)
+      binaryCodec.writeString(sw.toString, true, false)
+
+      // write sequence dictionary
+      val ssd = header.getSequenceDictionary
+      binaryCodec.writeInt(ssd.size())
+      ssd.getSequences
+        .toList
+        .foreach(r => {
+          binaryCodec.writeString(r.getSequenceName(), true, true)
+          binaryCodec.writeInt(r.getSequenceLength())
+        })
+
+      // flush and close all the streams
+      compressedOut.flush()
+      compressedOut.close()
+      os.flush()
+      os.close()
+    }
+
+    // set path to header file
+    conf.set("org.bdgenomics.adam.rdd.read.bam_header_path", headPath.toString)
+
     if (!asSingleFile) {
-      val bcastHeader = rdd.context.broadcast(header)
-      val mp = rdd.mapPartitionsWithIndex((idx, iter) => {
-        log.info(s"Setting ${if (asSam) "SAM" else "BAM"} header for partition $idx")
-        val header = bcastHeader.value
-        synchronized {
-          // perform map partition call to ensure that the SAM/BAM header is set on all
-          // nodes in the cluster; see:
-          // https://github.com/bigdatagenomics/adam/issues/353,
-          // https://github.com/bigdatagenomics/adam/issues/676
-
-          asSam match {
-            case true =>
-              ADAMSAMOutputFormat.clearHeader()
-              ADAMSAMOutputFormat.addHeader(header)
-              log.info(s"Set SAM header for partition $idx")
-            case false =>
-              ADAMBAMOutputFormat.clearHeader()
-              ADAMBAMOutputFormat.addHeader(header)
-              log.info(s"Set BAM header for partition $idx")
-          }
-        }
-        Iterator[Int]()
-      }).count()
-
-      // force value check, ensure that computation happens
-      if (mp != 0) {
-        log.error("Had more than 0 elements after map partitions call to set VCF header across cluster.")
+      if (asSam) {
+        withKey.saveAsNewAPIHadoopFile(
+          filePath,
+          classOf[LongWritable],
+          classOf[SAMRecordWritable],
+          classOf[InstrumentedADAMSAMOutputFormat[LongWritable]],
+          conf
+        )
+      } else {
+        withKey.saveAsNewAPIHadoopFile(
+          filePath,
+          classOf[LongWritable],
+          classOf[SAMRecordWritable],
+          classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
+          conf
+        )
       }
 
-      // attach header to output format
-      asSam match {
-        case true =>
-          ADAMSAMOutputFormat.clearHeader()
-          ADAMSAMOutputFormat.addHeader(header)
-          log.info("Set SAM header on driver")
-        case false =>
-          ADAMBAMOutputFormat.clearHeader()
-          ADAMBAMOutputFormat.addHeader(header)
-          log.info("Set BAM header on driver")
-      }
-
-      asSam match {
-        case true =>
-          withKey.saveAsNewAPIHadoopFile(
-            filePath,
-            classOf[LongWritable],
-            classOf[SAMRecordWritable],
-            classOf[InstrumentedADAMSAMOutputFormat[LongWritable]],
-            conf
-          )
-        case false =>
-          withKey.saveAsNewAPIHadoopFile(
-            filePath,
-            classOf[LongWritable],
-            classOf[SAMRecordWritable],
-            classOf[InstrumentedADAMBAMOutputFormat[LongWritable]],
-            conf
-          )
-      }
+      // clean up the header after writing
+      fs.delete(headPath, true)
     } else {
       log.info(s"Writing single ${if (asSam) "SAM" else "BAM"} file (not Hadoop-style directory)")
 
-      val headPath = new Path(filePath + "_head")
       val tailPath = new Path(filePath + "_tail")
       val outputPath = new Path(filePath)
-      val fs = headPath.getFileSystem(rdd.context.hadoopConfiguration)
-
-      // TIL: sam and bam are written in completely different ways!
-      if (asSam) {
-        SAMHeaderWriter.writeHeader(fs, headPath, header)
-      } else {
-
-        // get an output stream
-        val os = fs.create(headPath)
-          .asInstanceOf[OutputStream]
-
-        // create htsjdk specific streams for writing the bam header
-        val compressedOut: OutputStream = new BlockCompressedOutputStream(os, null)
-        val binaryCodec = new BinaryCodec(compressedOut);
-
-        // write a bam header - cribbed from Hadoop-BAM
-        binaryCodec.writeBytes("BAM\001".getBytes())
-        val sw: Writer = new StringWriter()
-        new SAMTextHeaderCodec().encode(sw, header)
-        binaryCodec.writeString(sw.toString, true, false)
-
-        // write sequence dictionary
-        val ssd = header.getSequenceDictionary
-        binaryCodec.writeInt(ssd.size())
-        ssd.getSequences
-          .toList
-          .foreach(r => {
-            binaryCodec.writeString(r.getSequenceName(), true, true)
-            binaryCodec.writeInt(r.getSequenceLength())
-          })
-
-        // flush and close all the streams
-        compressedOut.flush()
-        compressedOut.close()
-        os.flush()
-        os.close()
-      }
-
-      // set path to header file
-      conf.set("org.bdgenomics.adam.rdd.read.bam_header_path", headPath.toString)
 
       // set up output format
       val headerLessOutputFormat = if (asSam) {

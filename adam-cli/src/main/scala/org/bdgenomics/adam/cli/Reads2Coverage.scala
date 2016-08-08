@@ -55,6 +55,8 @@ class Reads2CoverageArgs extends Args4jBase with ParquetArgs {
   var onlyNegativeStrands: Boolean = false
   @Args4jOption(required = false, name = "-only_positive_strands", usage = "Compute coverage for positive strands")
   var onlyPositiveStrands: Boolean = false
+  @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
+  var asSingleFile: Boolean = false
 }
 
 class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCommand[Reads2CoverageArgs] {
@@ -80,7 +82,7 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
     }
 
     finalReads.toCoverage(args.collapse)
-      .save(args.outputPath)
+      .save(args.outputPath, asSingleFile = args.asSingleFile)
   }
 }
 

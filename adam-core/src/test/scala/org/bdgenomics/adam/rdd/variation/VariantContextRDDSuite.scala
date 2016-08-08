@@ -67,6 +67,16 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vcRdd.sequences.records(0).name === "chr11")
   }
 
+  sparkTest("can write as a single file, then read in .vcf file") {
+    val path = new File(tempDir, "test_single.vcf")
+    variants.saveAsVcf(path.getAbsolutePath, sortOnSave = false, asSingleFile = true)
+    assert(path.exists)
+    val vcRdd = sc.loadVcf("%s/test_single.vcf".format(tempDir))
+    assert(vcRdd.rdd.count === 1)
+    assert(vcRdd.sequences.records.size === 1)
+    assert(vcRdd.sequences.records(0).name === "chr11")
+  }
+
   sparkTest("joins SNV database annotation") {
     val v0 = Variant.newBuilder
       .setContigName("11")

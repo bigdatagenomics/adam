@@ -48,7 +48,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
 
     val outputFile = tmpLocation(".bed")
-    coverageRDD.save(outputFile)
+    coverageRDD.save(outputFile, false)
 
     val coverage = sc.loadCoverage(outputFile)
     assert(coverage.rdd.count == 3)

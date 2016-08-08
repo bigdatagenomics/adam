@@ -18,43 +18,61 @@
 package org.bdgenomics.adam.rdd.variation
 
 import htsjdk.variant.vcf.{ VCFHeaderLine, VCFHeader }
+import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.mapreduce.{ RecordWriter, TaskAttemptContext }
 import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models.SequenceDictionary
-import org.seqdoop.hadoop_bam.{ VCFFormat, KeyIgnoringVCFOutputFormat }
-import scala.collection.JavaConversions._
-
-object ADAMVCFOutputFormat extends Serializable {
-  private var header: Option[VCFHeader] = None
-
-  def getHeader: VCFHeader = header match {
-    case Some(h) => h
-    case None    => setHeader(Seq(), SequenceDictionary.empty)
-  }
-
-  def clearHeader(): Unit = {
-    header = None
-  }
-
-  def setHeader(samples: Seq[String],
-                sequences: SequenceDictionary): VCFHeader = {
-    header = Some({
-      val hdr = new VCFHeader(
-        (SupportedHeaderLines.infoHeaderLines ++ SupportedHeaderLines.formatHeaderLines).toSet: Set[VCFHeaderLine],
-        samples
-      )
-      hdr.setSequenceDictionary(sequences.toSAMSequenceDictionary)
-      hdr
-    })
-    header.get
-  }
+import org.seqdoop.hadoop_bam.{
+  KeyIgnoringVCFOutputFormat,
+  KeyIgnoringVCFRecordWriter,
+  VariantContextWritable,
+  VCFFormat
 }
 
 /**
- * Wrapper for Hadoop-BAM to work around requirement for no-args constructor. Depends on
- * ADAMVCFOutputFormat object to maintain global state (such as samples)
+ * Wrapper for Hadoop-BAM to work around requirement for no-args constructor.
  *
  * @tparam K
  */
 class ADAMVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF) with Serializable {
-  setHeader(ADAMVCFOutputFormat.getHeader)
+
+  override def getRecordWriter(context: TaskAttemptContext): RecordWriter[K, VariantContextWritable] = {
+    val conf = context.getConfiguration()
+
+    // where is our header file?
+    val path = new Path(conf.get("org.bdgenomics.adam.rdd.variation.vcf_header_path"))
+
+    // read the header file
+    readHeaderFrom(path, FileSystem.get(conf))
+
+    // return record writer
+    return new KeyIgnoringVCFRecordWriter[K](getDefaultWorkFile(context, ""),
+      header,
+      true,
+      context);
+  }
+}
+
+/**
+ * Wrapper for Hadoop-BAM to work around requirement for no-args constructor.
+ *
+ * @tparam K
+ */
+class ADAMHeaderlessVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF) with Serializable {
+
+  override def getRecordWriter(context: TaskAttemptContext): RecordWriter[K, VariantContextWritable] = {
+    val conf = context.getConfiguration()
+
+    // where is our header file?
+    val path = new Path(conf.get("org.bdgenomics.adam.rdd.variation.vcf_header_path"))
+
+    // read the header file
+    readHeaderFrom(path, FileSystem.get(conf))
+
+    // return record writer
+    return new KeyIgnoringVCFRecordWriter[K](getDefaultWorkFile(context, ""),
+      header,
+      false,
+      context);
+  }
 }
