@@ -99,10 +99,10 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val inputPath = resourcePath("Homo_sapiens.GRCh37.75.trun100.gtf")
     val expected = sc.loadGtf(inputPath)
     val outputPath = tempLocation(".gtf")
-    expected.saveAsGtf(outputPath)
+    expected.saveAsGtf(outputPath, asSingleFile = true)
 
     // grab all partitions, may not necessarily be in order; sort by reference
-    val actual = sc.loadGtf(outputPath + "/part-*")
+    val actual = sc.loadGtf(outputPath)
     val pairs = expected.transform(_.coalesce(1)).sortByReference().rdd.zip(actual.transform(_.coalesce(1)).sortByReference().rdd).collect
 
     // separate foreach since assert is not serializable
@@ -141,10 +141,10 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val inputPath = resourcePath("dvl1.200.gff3")
     val expected = sc.loadGff3(inputPath)
     val outputPath = tempLocation(".gff3")
-    expected.saveAsGff3(outputPath)
+    expected.saveAsGff3(outputPath, asSingleFile = true)
 
     // grab all partitions, may not necessarily be in order; sort by reference
-    val actual = sc.loadGff3(outputPath + "/part-*")
+    val actual = sc.loadGff3(outputPath)
     val pairs = expected.transform(_.coalesce(1)).sortByReference().rdd.zip(actual.transform(_.coalesce(1)).sortByReference().rdd).collect
 
     // separate foreach since assert is not serializable
@@ -190,10 +190,10 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val inputPath = resourcePath("dvl1.200.bed")
     val expected = sc.loadBed(inputPath)
     val outputPath = tempLocation(".bed")
-    expected.saveAsBed(outputPath)
+    expected.saveAsBed(outputPath, asSingleFile = true)
 
     // grab all partitions, may not necessarily be in order; sort by reference
-    val actual = sc.loadBed(outputPath + "/part-*")
+    val actual = sc.loadBed(outputPath)
     val pairs = expected.transform(_.coalesce(1)).sortByReference().rdd.zip(actual.transform(_.coalesce(1)).sortByReference().rdd).collect
 
     // separate since assert is not serializable
@@ -239,7 +239,6 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val inputPath = resourcePath("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val expected = sc.loadIntervalList(inputPath)
     val outputPath = tempLocation(".interval_list")
-    println("rewriting " + inputPath + " to " + outputPath)
     expected.saveAsIntervalList(outputPath, asSingleFile = true)
 
     // grab all partitions, may not necessarily be in order; sort by reference
@@ -289,10 +288,10 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val inputPath = resourcePath("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val expected = sc.loadNarrowPeak(inputPath)
     val outputPath = tempLocation(".narrowPeak")
-    expected.saveAsNarrowPeak(outputPath)
+    expected.saveAsNarrowPeak(outputPath, asSingleFile = true)
 
     // grab all partitions, may not necessarily be in order; sort by reference
-    val actual = sc.loadNarrowPeak(outputPath + "/part-*")
+    val actual = sc.loadNarrowPeak(outputPath)
     val pairs = expected.transform(_.coalesce(1)).sortByReference().rdd.zip(actual.transform(_.coalesce(1)).sortByReference().rdd).collect
 
     // separate foreach since assert is not serializable

@@ -29,6 +29,7 @@ import org.bdgenomics.adam.rdd.{
   SAMHeaderWriter
 }
 import org.bdgenomics.formats.avro.{ Feature, Strand }
+import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 
 private trait FeatureOrdering[T <: Feature] extends Ordering[T] {
@@ -104,7 +105,7 @@ object FeatureRDD {
 }
 
 case class FeatureRDD(rdd: RDD[Feature],
-                      sequences: SequenceDictionary) extends AvroGenomicRDD[Feature, FeatureRDD] {
+                      sequences: SequenceDictionary) extends AvroGenomicRDD[Feature, FeatureRDD] with Logging {
 
   /**
    * Java friendly save function. Automatically detects the output format.
@@ -116,19 +117,25 @@ case class FeatureRDD(rdd: RDD[Feature],
    * save as Parquet. These files are written as sharded text files.
    *
    * @param filePath The location to write the output.
+   * @param asSingleFile If false, writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
    */
-  def save(filePath: java.lang.String) {
+  def save(filePath: java.lang.String, asSingleFile: java.lang.Boolean) {
     if (filePath.endsWith(".bed")) {
-      saveAsBed(filePath)
+      saveAsBed(filePath, asSingleFile = asSingleFile)
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
-      saveAsGtf(filePath)
+      saveAsGtf(filePath, asSingleFile = asSingleFile)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
-      saveAsNarrowPeak(filePath)
+      saveAsNarrowPeak(filePath, asSingleFile = asSingleFile)
     } else if (filePath.endsWith(".interval_list")) {
-      saveAsIntervalList(filePath)
+      saveAsIntervalList(filePath, asSingleFile = asSingleFile)
     } else {
+      if (asSingleFile) {
+        log.warn("asSingleFile = true ignored when saving as Parquet.")
+      }
       saveAsParquet(new JavaSaveArgs(filePath))
     }
   }
@@ -279,11 +286,42 @@ case class FeatureRDD(rdd: RDD[Feature],
   }
 
   /**
+   * Writes an RDD to disk as text and optionally merges.
+   *
+   * @param rdd RDD to save.
+   * @param outputPath Output path to save text files to.
+   * @param asSingleFile If true, combines all partition shards.
+   */
+  private def writeTextRdd[T](rdd: RDD[T],
+                              outputPath: String,
+                              asSingleFile: Boolean) {
+    if (asSingleFile) {
+
+      // write rdd to disk
+      val tailPath = "%s_tail".format(outputPath)
+      rdd.saveAsTextFile(tailPath)
+
+      // get the filesystem impl
+      val fs = FileSystem.get(rdd.context.hadoopConfiguration)
+
+      // and then merge
+      FileMerger.mergeFiles(fs,
+        new Path(outputPath),
+        new Path(tailPath))
+    } else {
+      rdd.saveAsTextFile(outputPath)
+    }
+  }
+
+  /**
    * Save this FeatureRDD in GTF format.
    *
    * @param fileName The path to save GTF formatted text file(s) to.
+   * @param asSingleFile By default (false), writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
    */
-  def saveAsGtf(fileName: String) = {
+  def saveAsGtf(fileName: String, asSingleFile: Boolean = false) = {
     def escape(entry: (Any, Any)): String = {
       entry._1 + " \"" + entry._2 + "\""
     }
@@ -300,15 +338,18 @@ case class FeatureRDD(rdd: RDD[Feature],
       val attributes = Features.gatherAttributes(feature).map(escape).mkString("; ")
       List(seqname, source, featureType, start, end, score, strand, frame, attributes).mkString("\t")
     }
-    rdd.map(toGtf).saveAsTextFile(fileName)
+    writeTextRdd(rdd.map(toGtf), fileName, asSingleFile)
   }
 
   /**
    * Save this FeatureRDD in GFF3 format.
    *
    * @param fileName The path to save GFF3 formatted text file(s) to.
+   * @param asSingleFile By default (false), writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
    */
-  def saveAsGff3(fileName: String) = {
+  def saveAsGff3(fileName: String, asSingleFile: Boolean = false) = {
     def escape(entry: (Any, Any)): String = {
       entry._1 + "=" + entry._2
     }
@@ -325,15 +366,18 @@ case class FeatureRDD(rdd: RDD[Feature],
       val attributes = Features.gatherAttributes(feature).map(escape).mkString(";")
       List(seqid, source, featureType, start, end, score, strand, phase, attributes).mkString("\t")
     }
-    rdd.map(toGff3).saveAsTextFile(fileName)
+    writeTextRdd(rdd.map(toGff3), fileName, asSingleFile)
   }
 
   /**
    * Save this FeatureRDD in BED format.
    *
    * @param fileName The path to save BED formatted text file(s) to.
+   * @param asSingleFile By default (false), writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
    */
-  def saveAsBed(fileName: String) = {
+  def saveAsBed(fileName: String, asSingleFile: Boolean = false) = {
     def toBed(feature: Feature): String = {
       val chrom = feature.getContigName
       val start = feature.getStart
@@ -356,13 +400,16 @@ case class FeatureRDD(rdd: RDD[Feature],
         List(chrom, start, end, name, score, strand, thickStart, thickEnd, itemRgb, blockCount, blockSizes, blockStarts).mkString("\t")
       }
     }
-    rdd.map(toBed).saveAsTextFile(fileName)
+    writeTextRdd(rdd.map(toBed), fileName, asSingleFile)
   }
 
   /**
    * Save this FeatureRDD in interval list format.
    *
    * @param fileName The path to save interval list formatted text file(s) to.
+   * @param asSingleFile By default (false), writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
    */
   def saveAsIntervalList(fileName: String, asSingleFile: Boolean = false) = {
     def toInterval(feature: Feature): String = {
@@ -402,8 +449,11 @@ case class FeatureRDD(rdd: RDD[Feature],
    * Save this FeatureRDD in NarrowPeak format.
    *
    * @param fileName The path to save NarrowPeak formatted text file(s) to.
+   * @param asSingleFile By default (false), writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
    */
-  def saveAsNarrowPeak(fileName: String) {
+  def saveAsNarrowPeak(fileName: String, asSingleFile: Boolean = false) {
     def toNarrowPeak(feature: Feature): String = {
       val chrom = feature.getContigName
       val start = feature.getStart
@@ -417,7 +467,7 @@ case class FeatureRDD(rdd: RDD[Feature],
       val peak = feature.getAttributes.getOrElse("peak", "-1")
       List(chrom, start, end, name, score, strand, signalValue, pValue, qValue, peak).mkString("\t")
     }
-    rdd.map(toNarrowPeak).saveAsTextFile(fileName)
+    writeTextRdd(rdd.map(toNarrowPeak), fileName, asSingleFile)
   }
 
   /**

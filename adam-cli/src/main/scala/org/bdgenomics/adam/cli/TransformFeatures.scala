@@ -22,32 +22,39 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
 
-object Features2ADAM extends BDGCommandCompanion {
-  val commandName = "features2adam"
-  val commandDescription = "Convert a file with sequence features into corresponding ADAM format"
+object TransformFeatures extends BDGCommandCompanion {
+  val commandName = "transformFeatures"
+  val commandDescription = "Convert a file with sequence features into corresponding ADAM format and vice versa"
 
   def apply(cmdLine: Array[String]) = {
-    new Features2ADAM(Args4j[Features2ADAMArgs](cmdLine))
+    new TransformFeatures(Args4j[TransformFeaturesArgs](cmdLine))
   }
 }
 
-class Features2ADAMArgs extends Args4jBase with ParquetSaveArgs {
-  @Argument(required = true, metaVar = "FEATURES",
+class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
+  @Argument(required = true, metaVar = "INPUT",
     usage = "The features file to convert (e.g., .bed, .gff)", index = 0)
   var featuresFile: String = _
-  @Argument(required = true, metaVar = "ADAM",
+
+  @Argument(required = true, metaVar = "OUTPUT",
     usage = "Location to write ADAM features data", index = 1)
   var outputPath: String = null
+
   @Args4jOption(required = false, name = "-num_partitions",
     usage = "Number of partitions to load an interval file using.")
   var numPartitions: Int = _
+
+  @Args4jOption(required = false, name = "-single",
+    usage = "Save as a single file, for the text formats.")
+  var single: Boolean = false
 }
 
-class Features2ADAM(val args: Features2ADAMArgs)
-    extends BDGSparkCommand[Features2ADAMArgs] {
-  val companion = Features2ADAM
+class TransformFeatures(val args: TransformFeaturesArgs)
+    extends BDGSparkCommand[TransformFeaturesArgs] {
+  val companion = TransformFeatures
 
   def run(sc: SparkContext) {
-    sc.loadFeatures(args.featuresFile, None, Option(args.numPartitions)).saveAsParquet(args)
+    sc.loadFeatures(args.featuresFile, None, Option(args.numPartitions))
+      .save(args.outputPath, args.single)
   }
 }

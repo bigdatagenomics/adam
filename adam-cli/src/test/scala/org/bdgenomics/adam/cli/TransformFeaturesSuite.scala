@@ -25,13 +25,13 @@ import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.utils.cli.Args4j
 import org.bdgenomics.formats.avro.Feature
 
-class Features2ADAMSuite extends ADAMFunSuite {
+class TransformFeaturesSuite extends ADAMFunSuite {
 
   sparkTest("can convert a simple BED file") {
 
     val loader = Thread.currentThread().getContextClassLoader
     val inputPath = loader.getResource("gencode.v7.annotation.trunc10.bed").getPath
-    val outputFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".adam")
+    val outputFile = File.createTempFile("adam-cli.TransformFeaturesSuite", ".adam")
     val outputPath = outputFile.getAbsolutePath
 
     val argLine = "%s %s".format(inputPath, outputPath).split("\\s+")
@@ -40,9 +40,9 @@ class Features2ADAMSuite extends ADAMFunSuite {
     // but the "createTempFile" method actually creates the file (on some systems?)
     assert(outputFile.delete(), "Couldn't delete (empty) temp file")
 
-    val args: Features2ADAMArgs = Args4j.apply[Features2ADAMArgs](argLine)
+    val args: TransformFeaturesArgs = Args4j.apply[TransformFeaturesArgs](argLine)
 
-    val features2Adam = new Features2ADAM(args)
+    val features2Adam = new TransformFeatures(args)
     features2Adam.run(sc)
 
     val schema = Projection(featureId, contigName, start, strand)
@@ -56,9 +56,9 @@ class Features2ADAMSuite extends ADAMFunSuite {
   sparkTest("can convert a simple wigfix file") {
     val loader = Thread.currentThread().getContextClassLoader
     val inputPath = loader.getResource("chr5.phyloP46way.trunc.wigFix").getPath
-    val bedFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".bed")
+    val bedFile = File.createTempFile("adam-cli.TransformFeaturesSuite", ".bed")
     val bedPath = bedFile.getAbsolutePath
-    val outputFile = File.createTempFile("adam-cli.Features2ADAMSuite", ".adam")
+    val outputFile = File.createTempFile("adam-cli.TransformFeaturesSuite", ".adam")
     val outputPath = outputFile.getAbsolutePath
 
     // We have to do this, since the features2adam won't work if the file already exists,
@@ -74,8 +74,8 @@ class Features2ADAMSuite extends ADAMFunSuite {
 
     // convert to ADAM Features
     val adamArgLine = "%s %s".format(bedPath, outputPath).split("\\s+")
-    val adamArgs: Features2ADAMArgs = Args4j.apply[Features2ADAMArgs](adamArgLine)
-    val features2Adam = new Features2ADAM(adamArgs)
+    val adamArgs: TransformFeaturesArgs = Args4j.apply[TransformFeaturesArgs](adamArgLine)
+    val features2Adam = new TransformFeatures(adamArgs)
     features2Adam.run(sc)
 
     val schema = Projection(featureId, contigName, start, end, score)

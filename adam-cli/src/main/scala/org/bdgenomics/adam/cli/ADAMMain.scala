@@ -48,7 +48,7 @@ object ADAMMain {
           VcfAnnotation2ADAM,
           Fasta2ADAM,
           ADAM2Fasta,
-          Features2ADAM,
+          TransformFeatures,
           WigFix2Bed,
           Fragments2Reads,
           Reads2Fragments,

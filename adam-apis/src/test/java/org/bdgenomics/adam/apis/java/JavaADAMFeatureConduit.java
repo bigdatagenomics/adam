@@ -39,7 +39,7 @@ class JavaADAMFeatureConduit {
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
         String fileName = tempDir.toString() + "/testRdd.feature.adam";
-        recordRdd.save(fileName);
+        recordRdd.save(fileName, false);
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(ac);
