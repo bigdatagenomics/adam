@@ -235,14 +235,15 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     features.saveAsNarrowPeak(outputPath)
   }
 
-  ignore("round trip IntervalList format") { // writing IntervalList headers is not yet supported
+  ignore("round trip IntervalList format") {
     val inputPath = resourcePath("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val expected = sc.loadIntervalList(inputPath)
     val outputPath = tempLocation(".interval_list")
-    expected.saveAsIntervalList(outputPath)
+    println("rewriting " + inputPath + " to " + outputPath)
+    expected.saveAsIntervalList(outputPath, asSingleFile = true)
 
     // grab all partitions, may not necessarily be in order; sort by reference
-    val actual = sc.loadIntervalList(outputPath + "/part-*")
+    val actual = sc.loadIntervalList(outputPath)
     val pairs = expected.transform(_.coalesce(1)).sortByReference().rdd.zip(actual.transform(_.coalesce(1)).sortByReference().rdd).collect
 
     // separate foreach since assert is not serializable

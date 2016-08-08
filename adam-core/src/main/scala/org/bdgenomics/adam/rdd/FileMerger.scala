@@ -23,8 +23,23 @@ import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 
+/**
+ * Helper object to merge sharded files together.
+ */
 private[rdd] object FileMerger extends Logging {
 
+  /**
+   * Merges together sharded files, while preserving partition ordering.
+   *
+   * @param fs The file system implementation to use.
+   * @param outputPath The location to write the merged file at.
+   * @param tailPath The location where the sharded files have been written.
+   * @param optHeaderPath Optionally, the location where a header file has
+   *   been written.
+   * @param writeEmptyGzipBlock If true, we write an empty GZIP block at the
+   *   end of the merged file.
+   * @param bufferSize The size in bytes of the buffer used for copying.
+   */
   def mergeFiles(fs: FileSystem,
                  outputPath: Path,
                  tailPath: Path,

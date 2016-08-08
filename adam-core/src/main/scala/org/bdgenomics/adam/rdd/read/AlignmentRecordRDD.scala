@@ -46,6 +46,7 @@ import org.bdgenomics.adam.rdd.{
   ADAMSaveAnyArgs,
   FileMerger,
   JavaSaveArgs,
+  SAMHeaderWriter,
   Unaligned
 }
 import org.bdgenomics.adam.rdd.features.CoverageRDD
@@ -385,17 +386,15 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
       val outputPath = new Path(filePath)
       val fs = headPath.getFileSystem(rdd.context.hadoopConfiguration)
 
-      // get an output stream
-      val os = fs.create(headPath)
-        .asInstanceOf[OutputStream]
-
       // TIL: sam and bam are written in completely different ways!
       if (asSam) {
-        val sw: Writer = new StringWriter()
-        val stw = new SAMTextWriter(os)
-        stw.setHeader(header)
-        stw.close()
+        SAMHeaderWriter.writeHeader(fs, headPath, header)
       } else {
+
+        // get an output stream
+        val os = fs.create(headPath)
+          .asInstanceOf[OutputStream]
+
         // create htsjdk specific streams for writing the bam header
         val compressedOut: OutputStream = new BlockCompressedOutputStream(os, null)
         val binaryCodec = new BinaryCodec(compressedOut);
@@ -419,10 +418,9 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
         // flush and close all the streams
         compressedOut.flush()
         compressedOut.close()
+        os.flush()
+        os.close()
       }
-
-      os.flush()
-      os.close()
 
       // set path to header file
       conf.set("org.bdgenomics.adam.rdd.read.bam_header_path", headPath.toString)

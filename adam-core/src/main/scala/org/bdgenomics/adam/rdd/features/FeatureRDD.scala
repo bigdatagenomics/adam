@@ -19,9 +19,15 @@ package org.bdgenomics.adam.rdd.features
 
 import com.google.common.collect.ComparisonChain
 import java.util.Comparator
+import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
+import org.bdgenomics.adam.rdd.{
+  AvroGenomicRDD,
+  FileMerger,
+  JavaSaveArgs,
+  SAMHeaderWriter
+}
 import org.bdgenomics.formats.avro.{ Feature, Strand }
 import scala.collection.JavaConversions._
 
@@ -358,7 +364,7 @@ case class FeatureRDD(rdd: RDD[Feature],
    *
    * @param fileName The path to save interval list formatted text file(s) to.
    */
-  def saveAsIntervalList(fileName: String) = {
+  def saveAsIntervalList(fileName: String, asSingleFile: Boolean = false) = {
     def toInterval(feature: Feature): String = {
       val sequenceName = feature.getContigName
       val start = feature.getStart + 1 // IntervalList ranges are 1-based
@@ -368,7 +374,28 @@ case class FeatureRDD(rdd: RDD[Feature],
       List(sequenceName, start, end, strand, intervalName).mkString("\t")
     }
     // todo:  SAM style header
-    rdd.map(toInterval).saveAsTextFile(fileName)
+    val intervalEntities = rdd.map(toInterval)
+
+    if (asSingleFile) {
+
+      // get fs
+      val fs = FileSystem.get(rdd.context.hadoopConfiguration)
+
+      // write sam file header
+      val headPath = new Path("%s_head".format(fileName))
+      SAMHeaderWriter.writeHeader(fs,
+        headPath,
+        sequences)
+
+      // write tail entries
+      val tailPath = new Path("%s_tail".format(fileName))
+      intervalEntities.saveAsTextFile(tailPath.toString)
+
+      // merge
+      FileMerger.mergeFiles(fs, new Path(fileName), tailPath, Some(headPath))
+    } else {
+      intervalEntities.saveAsTextFile(fileName)
+    }
   }
 
   /**
