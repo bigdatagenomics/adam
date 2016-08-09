@@ -34,7 +34,7 @@ private[features] object Features {
    *   is unspecified or incorrectly specified
    */
   def toStrand(s: String): Option[Strand] = {
-    s match {
+    s.trim match {
       case "+" => Some(Strand.FORWARD)
       case "-" => Some(Strand.REVERSE)
       case "." => Some(Strand.INDEPENDENT)
@@ -47,15 +47,23 @@ private[features] object Features {
    * Convert the specified strand to its string value.
    *
    * @param strand strand to convert
+   * @param emptyUnknown If true, returns an empty string if we fall through the
+   *   match. Else, returns the unknown string.
    * @return the specified strand converted to its string value
    */
-  def asString(strand: Strand): String = {
+  def asString(strand: Strand, emptyUnknown: Boolean = false): String = {
     strand match {
       case Strand.FORWARD     => "+"
       case Strand.REVERSE     => "-"
       case Strand.INDEPENDENT => "."
       case Strand.UNKNOWN     => "?"
-      case _                  => ""
+      case _ => {
+        if (emptyUnknown) {
+          ""
+        } else {
+          "?"
+        }
+      }
     }
   }
 

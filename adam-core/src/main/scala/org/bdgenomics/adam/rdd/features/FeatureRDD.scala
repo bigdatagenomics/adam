@@ -102,6 +102,113 @@ object FeatureRDD {
 
     FeatureRDD(rdd, sd)
   }
+
+  /**
+   * @param feature Feature to convert to GTF format.
+   * @return Returns this feature as a GTF line.
+   */
+  private[features] def toGtf(feature: Feature): String = {
+    def escape(entry: (Any, Any)): String = {
+      entry._1 + " \"" + entry._2 + "\""
+    }
+
+    val seqname = feature.getContigName
+    val source = Option(feature.getSource).getOrElse(".")
+    val featureType = Option(feature.getFeatureType).getOrElse(".")
+    val start = feature.getStart + 1 // GTF/GFF ranges are 1-based
+    val end = feature.getEnd // GTF/GFF ranges are closed
+    val score = Option(feature.getScore).getOrElse(".")
+    val strand = Features.asString(feature.getStrand)
+    val frame = Option(feature.getFrame).getOrElse(".")
+    val attributes = Features.gatherAttributes(feature).map(escape).mkString("; ")
+    List(seqname, source, featureType, start, end, score, strand, frame, attributes).mkString("\t")
+  }
+
+  /**
+   * @param feature Feature to write in IntervalList format.
+   * @return Feature as a one line interval list string.
+   */
+  private[rdd] def toInterval(feature: Feature): String = {
+    val sequenceName = feature.getContigName
+    val start = feature.getStart + 1 // IntervalList ranges are 1-based
+    val end = feature.getEnd // IntervalList ranges are closed
+    val strand = Features.asString(feature.getStrand, emptyUnknown = false)
+    val attributes = Features.gatherAttributes(feature)
+      .map(p => {
+        if (p._2.contains(":")) {
+          p._2.replace(":", "|")
+        } else {
+          "%s|%s".format(p._1, p._2.trim)
+        }
+      }).mkString(";")
+    List(sequenceName, start, end, strand, attributes).mkString("\t")
+  }
+
+  /**
+   * @param feature Feature to write in the narrow peak format.
+   * @return Returns this feature as a single narrow peak line.
+   */
+  private[rdd] def toNarrowPeak(feature: Feature): String = {
+    val chrom = feature.getContigName
+    val start = feature.getStart
+    val end = feature.getEnd
+    val name = Features.nameOf(feature)
+    val score = Option(feature.getScore).map(_.toInt).getOrElse(".")
+    val strand = Features.asString(feature.getStrand)
+    val signalValue = feature.getAttributes.getOrElse("signalValue", "0")
+    val pValue = feature.getAttributes.getOrElse("pValue", "-1")
+    val qValue = feature.getAttributes.getOrElse("qValue", "-1")
+    val peak = feature.getAttributes.getOrElse("peak", "-1")
+    List(chrom, start, end, name, score, strand, signalValue, pValue, qValue, peak).mkString("\t")
+  }
+
+  /**
+   * @param feature Feature to write in BED format.
+   * @return Returns the feature as a single line BED string.
+   */
+  private[rdd] def toBed(feature: Feature): String = {
+    val chrom = feature.getContigName
+    val start = feature.getStart
+    val end = feature.getEnd
+    val name = Features.nameOf(feature)
+    val score = Option(feature.getScore).getOrElse(".")
+    val strand = Features.asString(feature.getStrand)
+
+    if (!feature.getAttributes.containsKey("thickStart")) {
+      // write BED6 format
+      List(chrom, start, end, name, score, strand).mkString("\t")
+    } else {
+      // write BED12 format
+      val thickStart = feature.getAttributes.getOrElse("thickStart", ".")
+      val thickEnd = feature.getAttributes.getOrElse("thickEnd", ".")
+      val itemRgb = feature.getAttributes.getOrElse("itemRgb", ".")
+      val blockCount = feature.getAttributes.getOrElse("blockCount", ".")
+      val blockSizes = feature.getAttributes.getOrElse("blockSizes", ".")
+      val blockStarts = feature.getAttributes.getOrElse("blockStarts", ".")
+      List(chrom, start, end, name, score, strand, thickStart, thickEnd, itemRgb, blockCount, blockSizes, blockStarts).mkString("\t")
+    }
+  }
+
+  /**
+   * @param feature Feature to write in GFF3 format.
+   * @return Returns this feature as a single line GFF3 string.
+   */
+  private[rdd] def toGff3(feature: Feature): String = {
+    def escape(entry: (Any, Any)): String = {
+      entry._1 + "=" + entry._2
+    }
+
+    val seqid = feature.getContigName
+    val source = Option(feature.getSource).getOrElse(".")
+    val featureType = Option(feature.getFeatureType).getOrElse(".")
+    val start = feature.getStart + 1 // GFF3 coordinate system is 1-based
+    val end = feature.getEnd // GFF3 ranges are closed
+    val score = Option(feature.getScore).getOrElse(".")
+    val strand = Features.asString(feature.getStrand)
+    val phase = Option(feature.getPhase).getOrElse(".")
+    val attributes = Features.gatherAttributes(feature).map(escape).mkString(";")
+    List(seqid, source, featureType, start, end, score, strand, phase, attributes).mkString("\t")
+  }
 }
 
 case class FeatureRDD(rdd: RDD[Feature],
@@ -322,23 +429,7 @@ case class FeatureRDD(rdd: RDD[Feature],
    *   file by merging the shards.
    */
   def saveAsGtf(fileName: String, asSingleFile: Boolean = false) = {
-    def escape(entry: (Any, Any)): String = {
-      entry._1 + " \"" + entry._2 + "\""
-    }
-
-    def toGtf(feature: Feature): String = {
-      val seqname = feature.getContigName
-      val source = Option(feature.getSource).getOrElse(".")
-      val featureType = Option(feature.getFeatureType).getOrElse(".")
-      val start = feature.getStart + 1 // GTF/GFF ranges are 1-based
-      val end = feature.getEnd // GTF/GFF ranges are closed
-      val score = Option(feature.getScore).getOrElse(".")
-      val strand = Features.asString(feature.getStrand)
-      val frame = Option(feature.getFrame).getOrElse(".")
-      val attributes = Features.gatherAttributes(feature).map(escape).mkString("; ")
-      List(seqname, source, featureType, start, end, score, strand, frame, attributes).mkString("\t")
-    }
-    writeTextRdd(rdd.map(toGtf), fileName, asSingleFile)
+    writeTextRdd(rdd.map(FeatureRDD.toGtf), fileName, asSingleFile)
   }
 
   /**
@@ -350,23 +441,7 @@ case class FeatureRDD(rdd: RDD[Feature],
    *   file by merging the shards.
    */
   def saveAsGff3(fileName: String, asSingleFile: Boolean = false) = {
-    def escape(entry: (Any, Any)): String = {
-      entry._1 + "=" + entry._2
-    }
-
-    def toGff3(feature: Feature): String = {
-      val seqid = feature.getContigName
-      val source = Option(feature.getSource).getOrElse(".")
-      val featureType = Option(feature.getFeatureType).getOrElse(".")
-      val start = feature.getStart + 1 // GFF3 coordinate system is 1-based
-      val end = feature.getEnd // GFF3 ranges are closed
-      val score = Option(feature.getScore).getOrElse(".")
-      val strand = Features.asString(feature.getStrand)
-      val phase = Option(feature.getPhase).getOrElse(".")
-      val attributes = Features.gatherAttributes(feature).map(escape).mkString(";")
-      List(seqid, source, featureType, start, end, score, strand, phase, attributes).mkString("\t")
-    }
-    writeTextRdd(rdd.map(toGff3), fileName, asSingleFile)
+    writeTextRdd(rdd.map(FeatureRDD.toGff3), fileName, asSingleFile)
   }
 
   /**
@@ -378,29 +453,7 @@ case class FeatureRDD(rdd: RDD[Feature],
    *   file by merging the shards.
    */
   def saveAsBed(fileName: String, asSingleFile: Boolean = false) = {
-    def toBed(feature: Feature): String = {
-      val chrom = feature.getContigName
-      val start = feature.getStart
-      val end = feature.getEnd
-      val name = Features.nameOf(feature)
-      val score = Option(feature.getScore).getOrElse(".")
-      val strand = Features.asString(feature.getStrand)
-
-      if (!feature.getAttributes.containsKey("thickStart")) {
-        // write BED6 format
-        List(chrom, start, end, name, score, strand).mkString("\t")
-      } else {
-        // write BED12 format
-        val thickStart = feature.getAttributes.getOrElse("thickStart", ".")
-        val thickEnd = feature.getAttributes.getOrElse("thickEnd", ".")
-        val itemRgb = feature.getAttributes.getOrElse("itemRgb", ".")
-        val blockCount = feature.getAttributes.getOrElse("blockCount", ".")
-        val blockSizes = feature.getAttributes.getOrElse("blockSizes", ".")
-        val blockStarts = feature.getAttributes.getOrElse("blockStarts", ".")
-        List(chrom, start, end, name, score, strand, thickStart, thickEnd, itemRgb, blockCount, blockSizes, blockStarts).mkString("\t")
-      }
-    }
-    writeTextRdd(rdd.map(toBed), fileName, asSingleFile)
+    writeTextRdd(rdd.map(FeatureRDD.toBed), fileName, asSingleFile)
   }
 
   /**
@@ -412,16 +465,8 @@ case class FeatureRDD(rdd: RDD[Feature],
    *   file by merging the shards.
    */
   def saveAsIntervalList(fileName: String, asSingleFile: Boolean = false) = {
-    def toInterval(feature: Feature): String = {
-      val sequenceName = feature.getContigName
-      val start = feature.getStart + 1 // IntervalList ranges are 1-based
-      val end = feature.getEnd // IntervalList ranges are closed
-      val strand = Features.asString(feature.getStrand)
-      val intervalName = Features.nameOf(feature)
-      List(sequenceName, start, end, strand, intervalName).mkString("\t")
-    }
     // todo:  SAM style header
-    val intervalEntities = rdd.map(toInterval)
+    val intervalEntities = rdd.map(FeatureRDD.toInterval)
 
     if (asSingleFile) {
 
@@ -454,20 +499,7 @@ case class FeatureRDD(rdd: RDD[Feature],
    *   file by merging the shards.
    */
   def saveAsNarrowPeak(fileName: String, asSingleFile: Boolean = false) {
-    def toNarrowPeak(feature: Feature): String = {
-      val chrom = feature.getContigName
-      val start = feature.getStart
-      val end = feature.getEnd
-      val name = Features.nameOf(feature)
-      val score = Option(feature.getScore).getOrElse(".")
-      val strand = Features.asString(feature.getStrand)
-      val signalValue = feature.getAttributes.getOrElse("signalValue", "0")
-      val pValue = feature.getAttributes.getOrElse("pValue", "-1")
-      val qValue = feature.getAttributes.getOrElse("qValue", "-1")
-      val peak = feature.getAttributes.getOrElse("peak", "-1")
-      List(chrom, start, end, name, score, strand, signalValue, pValue, qValue, peak).mkString("\t")
-    }
-    writeTextRdd(rdd.map(toNarrowPeak), fileName, asSingleFile)
+    writeTextRdd(rdd.map(FeatureRDD.toNarrowPeak), fileName, asSingleFile)
   }
 
   /**

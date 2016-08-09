@@ -1033,22 +1033,22 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    * @param filePath The path to the file to load.
    * @param minPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism.
+   * @param stringency Optional stringency to pass. LENIENT stringency will warn
+   *   when a malformed line is encountered, SILENT will ignore the malformed
+   *   line, STRICT will throw an exception.
    * @return Returns a FeatureRDD.
    */
-  def loadIntervalList(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
+  def loadIntervalList(filePath: String,
+                       minPartitions: Option[Int] = None,
+                       stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
     val parsedLines = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
-      .map(new IntervalListParser().parse)
-    val (seqDict, records) = (SequenceDictionary(parsedLines.flatMap(_._1).collect(): _*), parsedLines.flatMap(_._2))
+      .map(new IntervalListParser().parse(_, stringency))
+    val (seqDict, records) = (SequenceDictionary(parsedLines.flatMap(_._1).collect(): _*),
+      parsedLines.flatMap(_._2))
     val seqDictMap = seqDict.records.map(sr => sr.name -> sr).toMap
-    val recordsWithContigs = for {
-      record <- records
-      seqRecord <- seqDictMap.get(record.getContigName)
-    } yield Feature.newBuilder(record)
-      .setContigName(seqRecord.name)
-      .build()
 
-    if (Metrics.isRecording) recordsWithContigs.instrument() else recordsWithContigs
-    FeatureRDD(recordsWithContigs, seqDict)
+    if (Metrics.isRecording) records.instrument() else records
+    FeatureRDD(records, seqDict)
   }
 
   /**

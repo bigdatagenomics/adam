@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.features
 
+import htsjdk.samtools.ValidationStringency
 import java.io.File
 import org.bdgenomics.adam.models.SequenceRecord
 import org.bdgenomics.formats.avro.{ Dbxref, Feature, Strand }
@@ -73,12 +74,17 @@ class GTFParser extends FeatureParser {
 
     val fields = line.split("\t")
     // skip empty or invalid lines
-    if (fields.length < 9) {
-      if (log.isDebugEnabled) log.debug("Empty or invalid GTF/GFF2 line: {}", line)
+    if (fields.length < 8 || fields.length > 9) {
+      log.warn("Empty or invalid GTF/GFF2 line: {}", line)
       return Seq()
     }
-    val (seqname, source, featureType, start, end, score, strand, frame, attributes) =
-      (fields(0), fields(1), fields(2), fields(3), fields(4), fields(5), fields(6), fields(7), fields(8))
+    val (seqname, source, featureType, start, end, score, strand, frame) =
+      (fields(0), fields(1), fields(2), fields(3), fields(4), fields(5), fields(6), fields(7))
+    val attributes = if (fields.length == 9) {
+      fields(8)
+    } else {
+      ""
+    }
 
     val f = Feature.newBuilder()
       .setSource(source)
@@ -133,12 +139,17 @@ class GFF3Parser extends FeatureParser {
 
     val fields = line.split("\t")
     // skip empty or invalid lines
-    if (fields.length < 9) {
-      if (log.isDebugEnabled) log.debug("Empty or invalid GFF3 line: {}", line)
+    if (fields.length < 8 || fields.length > 9) {
+      log.warn("Empty or invalid GFF3 line: {}", line)
       return Seq()
     }
-    val (seqid, source, featureType, start, end, score, strand, phase, attributes) =
-      (fields(0), fields(1), fields(2), fields(3), fields(4), fields(5), fields(6), fields(7), fields(8))
+    val (seqid, source, featureType, start, end, score, strand, phase) =
+      (fields(0), fields(1), fields(2), fields(3), fields(4), fields(5), fields(6), fields(7))
+    val attributes = if (fields.length == 9) {
+      fields(8)
+    } else {
+      ""
+    }
 
     val f = Feature.newBuilder()
       .setSource(source)
@@ -169,8 +180,9 @@ class GFF3Parser extends FeatureParser {
  * In lieu of a specification, see:
  * https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/samtools/util/IntervalList.html
  */
-class IntervalListParser extends Serializable {
-  def parse(line: String): (Option[SequenceRecord], Option[Feature]) = {
+class IntervalListParser extends Serializable with Logging {
+  def parse(line: String,
+            stringency: ValidationStringency): (Option[SequenceRecord], Option[Feature]) = {
     val fields = line.split("[ \t]+")
     if (fields.length < 2) {
       (None, None)
@@ -178,9 +190,18 @@ class IntervalListParser extends Serializable {
       if (fields(0).startsWith("@")) {
         if (fields(0).startsWith("@SQ")) {
           val (name, length, url, md5) = {
-            val attrs = fields.drop(1).map(field => field.split(":", 2) match {
-              case Array(key, value) => key -> value
-              case x                 => throw new Exception(s"Expected fields of the form 'key:value' in field $field but got: $x. Line:\n$line")
+            val attrs = fields.drop(1).flatMap(field => field.split(":", 2) match {
+              case Array(key, value) => Some((key -> value))
+              case x => {
+                if (stringency == ValidationStringency.STRICT) {
+                  throw new Exception(s"Expected fields of the form 'key:value' in field $field but got: $x. Line:\n$line")
+                } else {
+                  if (stringency == ValidationStringency.LENIENT) {
+                    log.warn(s"Expected fields of the form 'key:value' in field $field but got: $x. Line:\n$line")
+                  }
+                  None
+                }
+              }
             }).toMap
 
             // Require that all @SQ lines have name, length, url, md5.
@@ -200,17 +221,26 @@ class IntervalListParser extends Serializable {
           (if (fields.length < 5 || fields(4) == "." || fields(4) == "-") {
             (Nil, Map())
           } else {
-            val a = fields(4).split(Array(';', ',')).map(field => field.split('|') match {
+            val a = fields(4).split(Array(';', ',')).flatMap(field => field.split('|') match {
               case Array(key, value) =>
                 key match {
                   case "gn" | "ens" | "vega" | "ccds" =>
-                    (
+                    Some((
                       Some(Dbxref.newBuilder().setDb(key).setAccession(value).build()),
                       None
-                    )
-                  case _ => (None, Some(key -> value))
+                    ))
+                  case _ => Some((None, Some(key -> value)))
                 }
-              case x => throw new Exception(s"Expected fields of the form 'key|value;' but got: $field. Line:\n$line")
+              case x => {
+                if (stringency == ValidationStringency.STRICT) {
+                  throw new Exception(s"Expected fields of the form 'key|value;' but got: $field. Line:\n$line")
+                } else {
+                  if (stringency == ValidationStringency.LENIENT) {
+                    log.warn(s"Expected fields of the form 'key|value;' but got: $field. Line:\n$line")
+                  }
+                  None
+                }
+              }
             })
 
             (a.flatMap(_._1).toList, a.flatMap(_._2).toMap)
@@ -308,7 +338,7 @@ class NarrowPeakParser extends FeatureParser {
 
     // skip empty or invalid lines
     if (fields.length < 3) {
-      if (log.isDebugEnabled) log.debug("Empty or invalid NarrowPeak line: {}", line)
+      log.warn("Empty or invalid NarrowPeak line: {}", line)
       return Seq()
     }
     val fb = Feature.newBuilder()
@@ -321,7 +351,7 @@ class NarrowPeakParser extends FeatureParser {
 
     if (hasColumn(3)) fb.setName(fields(3))
     if (hasColumn(4)) fb.setScore(fields(4).toDouble)
-    if (hasColumn(5)) Features.toStrand(fields(5)).foreach(fb.setStrand(_))
+    if (fields.length > 5) Features.toStrand(fields(5)).foreach(fb.setStrand(_))
 
     val attributes = new ArrayBuffer[(String, String)]()
     if (hasColumn(6)) attributes += ("signalValue" -> fields(6))
