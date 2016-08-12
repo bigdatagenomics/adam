@@ -451,7 +451,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
 
-    AlignedReadRDD(records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups)),
+    AlignedReadRDD(records.map(p => samRecordConverter.convert(p._2.get)),
       seqDict,
       readGroups)
   }
@@ -508,7 +508,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
     }))
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
-    AlignedReadRDD(records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups)),
+    AlignedReadRDD(records.map(p => samRecordConverter.convert(p._2.get)),
       seqDict,
       readGroups)
   }
