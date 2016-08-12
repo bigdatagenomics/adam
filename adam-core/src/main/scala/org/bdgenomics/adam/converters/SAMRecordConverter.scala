@@ -24,13 +24,7 @@ import htsjdk.samtools.{
   SAMUtils
 }
 import org.bdgenomics.utils.misc.Logging
-import org.bdgenomics.adam.models.{
-  Attribute,
-  RecordGroupDictionary,
-  SequenceDictionary,
-  SequenceRecord,
-  TagType
-}
+import org.bdgenomics.adam.models.{ Attribute, TagType }
 import org.bdgenomics.adam.util.AttributeUtils
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConverters._
@@ -65,16 +59,9 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
    * Converts a SAM record into an Avro AlignmentRecord.
    *
    * @param samRecord Record to convert.
-   * @param dict The sequence dictionary describing the reference genome this
-   *   read was aligned to.
-   * @param readGroups The read group dictionary describing the read group this
-   *   read is from.
    * @return Returns the original record converted into Avro.
    */
-  def convert(
-    samRecord: SAMRecord,
-    dict: SequenceDictionary,
-    readGroups: RecordGroupDictionary): AlignmentRecord = {
+  def convert(samRecord: SAMRecord): AlignmentRecord = {
     try {
       val cigar: String = samRecord.getCigarString
       val startTrim = if (cigar == "*") {
