@@ -122,9 +122,18 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("create region from unmapped read fails") {
-    intercept[NullPointerException] {
+    intercept[IllegalArgumentException] {
       val read = AlignmentRecord.newBuilder()
         .setReadMapped(false)
+        .build()
+      ReferenceRegion(read)
+    }
+  }
+
+  test("create region from read with null alignment positions fails") {
+    intercept[IllegalArgumentException] {
+      val read = AlignmentRecord.newBuilder()
+        .setReadMapped(true)
         .build()
       ReferenceRegion(read)
     }

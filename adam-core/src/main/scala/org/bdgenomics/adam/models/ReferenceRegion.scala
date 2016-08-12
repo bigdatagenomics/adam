@@ -81,15 +81,10 @@ object ReferenceRegion {
    */
   def opt(record: AlignmentRecord): Option[ReferenceRegion] = {
     if (record.getReadMapped) {
-      Some(
-        ReferenceRegion(
-          record.getContigName,
-          record.getStart,
-          record.getEnd
-        )
-      )
-    } else
+      Some(apply(record))
+    } else {
       None
+    }
   }
 
   /**
@@ -117,6 +112,12 @@ object ReferenceRegion {
   }
 
   def apply(record: AlignmentRecord): ReferenceRegion = {
+    require(record.getReadMapped,
+      "Cannot build reference region for unmapped read %s.".format(record))
+    require(record.getContigName != null &&
+      record.getStart != null &&
+      record.getEnd != null,
+      "Read %s contains required fields that are null.".format(record))
     ReferenceRegion(record.getContigName, record.getStart, record.getEnd)
   }
 
