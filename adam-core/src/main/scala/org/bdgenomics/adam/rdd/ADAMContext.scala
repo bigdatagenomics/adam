@@ -296,7 +296,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val path = new Path(filePath)
     val fs =
       Option(
-        FileSystem.get(path.toUri, sc.hadoopConfiguration)
+        path.getFileSystem(sc.hadoopConfiguration)
       ).getOrElse(
           throw new FileNotFoundException(
             s"Couldn't find filesystem for ${path.toUri} with Hadoop configuration ${sc.hadoopConfiguration}"
@@ -371,7 +371,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadIndexedBam(filePath: String, viewRegions: Iterable[ReferenceRegion])(implicit s: DummyImplicit): AlignmentRecordRDD = {
     val path = new Path(filePath)
-    val fs = FileSystem.get(path.toUri, sc.hadoopConfiguration)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
     assert(!fs.isDirectory(path))
     val bamfile: Array[FileStatus] = fs.globStatus(path)
     require(bamfile.size == 1)
@@ -435,10 +435,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
                                                   implicit tTag: ClassTag[T]): Seq[T] = {
 
     // get our current file system
-    val fs = FileSystem.get(sc.hadoopConfiguration)
+    val path = new Path(filename)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
 
     // get an input stream
-    val is = fs.open(new Path(filename))
+    val is = fs.open(path)
       .asInstanceOf[InputStream]
 
     // set up avro for reading
@@ -1081,7 +1082,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (regex == null) {
       Seq(path)
     } else {
-      val statuses = FileSystem.get(sc.hadoopConfiguration).listStatus(path)
+      val statuses = path.getFileSystem(sc.hadoopConfiguration).listStatus(path)
       val r = Pattern.compile(regex)
       val (matches, recurse) = statuses.filter(HadoopUtil.isDirectory).map(s => s.getPath).partition(p => r.matcher(p.getName).matches())
       matches.toSeq ++ recurse.flatMap(p => findFiles(p, regex))

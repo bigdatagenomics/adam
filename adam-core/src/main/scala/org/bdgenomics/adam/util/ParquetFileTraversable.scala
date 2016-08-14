@@ -26,7 +26,7 @@ import org.bdgenomics.utils.misc.HadoopUtil
 class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) extends Traversable[T] {
   def this(sc: SparkContext, file: String) = this(sc, new Path(file))
 
-  private val fs = FileSystem.get(sc.hadoopConfiguration)
+  private val fs = file.getFileSystem(sc.hadoopConfiguration)
 
   val paths: List[Path] = {
     if (!fs.exists(file)) {

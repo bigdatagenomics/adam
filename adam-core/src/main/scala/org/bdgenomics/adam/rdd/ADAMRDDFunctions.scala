@@ -73,10 +73,11 @@ private[rdd] abstract class ADAMRDDFunctions[T <% IndexedRecord: Manifest] exten
                                                   avro: Seq[U])(implicit tUag: ClassTag[U]) {
 
     // get our current file system
-    val fs = FileSystem.get(sc.hadoopConfiguration)
+    val path = new Path(filename)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
 
     // get an output stream
-    val os = fs.create(new Path(filename))
+    val os = fs.create(path)
       .asInstanceOf[OutputStream]
 
     // set up avro for writing
