@@ -97,14 +97,14 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     val filename = resourcePath("reads12.sam")
     val parts = 1
 
-    val dict = sc.loadDictionary[AlignmentRecord](filename)
-    val parter = GenomicPositionPartitioner(parts, dict)
-
     val p = {
       import org.bdgenomics.adam.projections.AlignmentRecordField._
       Projection(contigName, start, readName, readMapped)
     }
-    val rdd: RDD[AlignmentRecord] = sc.loadAlignments(filename, projection = Some(p)).rdd
+    val gRdd = sc.loadAlignments(filename, projection = Some(p))
+    val rdd = gRdd.rdd
+
+    val parter = GenomicPositionPartitioner(parts, gRdd.sequences)
 
     assert(rdd.count() === 200)
 

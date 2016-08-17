@@ -102,99 +102,6 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(phredToSuccessProbability(50) > 0.99998 && phredToSuccessProbability(50) < 0.999999)
   }
 
-  sparkTest("findFiles correctly finds a nested set of directories") {
-
-    /**
-     * Create the following directory structure, in the temp file location:
-     *
-     * .
-     * |__ parent-dir/
-     *     |__ subDir1/
-     *     |   |__ match1/
-     *     |   |__ match2/
-     *     |__ subDir2/
-     *     |   |__ match3/
-     *     |   |__ nomatch4/
-     *     |__ match5/
-     *     |__ nomatch6/
-     */
-
-    val tempDir = File.createTempFile("ADAMContextSuite", "").getParentFile
-
-    def createDir(dir: File, name: String): File = {
-      val dirFile = new File(dir, name)
-      dirFile.mkdir()
-      dirFile
-    }
-
-    val parentName: String = "parent-" + UUID.randomUUID().toString
-    val parentDir: File = createDir(tempDir, parentName)
-    val subDir1: File = createDir(parentDir, "subDir1")
-    val subDir2: File = createDir(parentDir, "subDir2")
-    val match1: File = createDir(subDir1, "match1")
-    val match2: File = createDir(subDir1, "match2")
-    val match3: File = createDir(subDir2, "match3")
-    val nomatch4: File = createDir(subDir2, "nomatch4")
-    val match5: File = createDir(parentDir, "match5")
-    val nomatch6: File = createDir(parentDir, "nomatch6")
-
-    /**
-     * Now, run findFiles() on the parentDir, and make sure we find match{1, 2, 3, 5} and _do not_
-     * find nomatch{4, 6}
-     */
-
-    val paths = sc.findFiles(new Path(parentDir.getAbsolutePath), "^match.*")
-
-    assert(paths.size === 4)
-
-    val pathNames = paths.map(_.getName)
-    assert(pathNames.contains("match1"))
-    assert(pathNames.contains("match2"))
-    assert(pathNames.contains("match3"))
-    assert(pathNames.contains("match5"))
-  }
-
-  sparkTest("loadADAMFromPaths can load simple RDDs that have just been saved") {
-    val contig = Contig.newBuilder
-      .setContigName("abc")
-      .setContigLength(1000000)
-      .setReferenceURL("http://abc")
-      .build
-
-    val a0 = AlignmentRecord.newBuilder()
-      .setRecordGroupName("group0")
-      .setReadName("read0")
-      .setContigName(contig.getContigName)
-      .setStart(100)
-      .setPrimaryAlignment(true)
-      .setReadPaired(false)
-      .setReadMapped(true)
-      .build()
-    val a1 = AlignmentRecord.newBuilder(a0)
-      .setReadName("read1")
-      .setStart(200)
-      .build()
-
-    val saved = sc.parallelize(Seq(a0, a1))
-    val loc = tmpLocation()
-    val path = new Path(loc)
-
-    // make sequence dictionary and rg dict
-    val sd = SequenceDictionary.fromAvro(Seq(contig))
-    val rgd = RecordGroupDictionary(Seq(RecordGroup("sample", "group0")))
-
-    AlignedReadRDD(saved, sd, rgd).save(TestSaveArgs(loc))
-    try {
-      val loaded = sc.loadAlignmentsFromPaths(Seq(path))
-
-      assert(loaded.rdd.count() === saved.rdd.count())
-    } catch {
-      case (e: Exception) =>
-        println(e)
-        throw e
-    }
-  }
-
   sparkTest("Can read a .gtf file") {
     val path = testFile("Homo_sapiens.GRCh37.75.trun20.gtf")
     val features: RDD[Feature] = sc.loadFeatures(path).rdd
@@ -422,7 +329,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("loadIndexedBam with 1 ReferenceRegion") {
     val refRegion = ReferenceRegion("chr2", 100, 101)
-    val path = resourcePath("sorted.bam")
+    val path = resourcePath("indexed_bams/sorted.bam")
     val reads = sc.loadIndexedBam(path, refRegion)
     assert(reads.rdd.count == 1)
   }
@@ -430,9 +337,61 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("loadIndexedBam with multiple ReferenceRegions") {
     val refRegion1 = ReferenceRegion("chr2", 100, 101)
     val refRegion2 = ReferenceRegion("3", 10, 17)
-    val path = resourcePath("sorted.bam")
+    val path = resourcePath("indexed_bams/sorted.bam")
     val reads = sc.loadIndexedBam(path, Iterable(refRegion1, refRegion2))
     assert(reads.rdd.count == 2)
+  }
+
+  sparkTest("loadIndexedBam with multiple ReferenceRegions and indexed bams") {
+    val refRegion1 = ReferenceRegion("chr2", 100, 101)
+    val refRegion2 = ReferenceRegion("3", 10, 17)
+    val path = resourcePath("indexed_bams/sorted.bam").replace(".bam", "*.bam")
+    val reads = sc.loadIndexedBam(path, Iterable(refRegion1, refRegion2))
+    assert(reads.rdd.count == 4)
+  }
+
+  sparkTest("loadIndexedBam with multiple ReferenceRegions and a directory of indexed bams") {
+    val refRegion1 = ReferenceRegion("chr2", 100, 101)
+    val refRegion2 = ReferenceRegion("3", 10, 17)
+    val path = new File(resourcePath("indexed_bams/sorted.bam")).getParent()
+    val reads = sc.loadIndexedBam(path, Iterable(refRegion1, refRegion2))
+    assert(reads.rdd.count == 4)
+  }
+
+  sparkTest("loadBam with a glob") {
+    val path = resourcePath("indexed_bams/sorted.bam").replace(".bam", "*.bam")
+    val reads = sc.loadBam(path)
+    assert(reads.rdd.count == 10)
+  }
+
+  sparkTest("loadBam with a directory") {
+    val path = new File(resourcePath("indexed_bams/sorted.bam")).getParent()
+    val reads = sc.loadBam(path)
+    assert(reads.rdd.count == 10)
+  }
+
+  sparkTest("load vcf with a glob") {
+    val path = resourcePath("bqsr1.vcf").replace("bqsr1", "*")
+
+    val variants = sc.loadVcf(path).toVariantRDD
+    assert(variants.rdd.count === 691)
+  }
+
+  sparkTest("load vcf from a directory") {
+    val path = new File(resourcePath("vcf_dir/1.vcf")).getParent()
+
+    val variants = sc.loadVcf(path).toVariantRDD
+    assert(variants.rdd.count === 681)
+  }
+
+  sparkTest("load parquet with globs") {
+    val inputPath = resourcePath("small.sam")
+    val reads = sc.loadAlignments(inputPath)
+    val outputPath = tempLocation()
+    reads.saveAsParquet(outputPath)
+    reads.saveAsParquet(outputPath.replace(".adam", ".2.adam"))
+    val reloadedReads = sc.loadParquetAlignments(outputPath.replace(".adam", "*.adam") + "/*")
+    assert((2 * reads.rdd.count) === reloadedReads.rdd.count)
   }
 }
 
