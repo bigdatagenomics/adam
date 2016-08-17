@@ -28,7 +28,7 @@ import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
 import org.apache.avro.generic.IndexedRecord
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificRecord, SpecificRecordBase }
-import org.apache.hadoop.fs.{ FileStatus, FileSystem, Path }
+import org.apache.hadoop.fs.{ FileSystem, Path, PathFilter }
 import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 import org.apache.parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
@@ -111,24 +111,66 @@ object ADAMContext {
   implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
 }
 
+/**
+ * A filter to run on globs/directories that finds all files with a given name.
+ *
+ * @param name The name to search for.
+ */
+private class FileFilter(private val name: String) extends PathFilter {
+
+  /**
+   * @param path Path to evaluate.
+   * @return Returns true if the filename of the path matches the name passed
+   *   to the constructor.
+   */
+  def accept(path: Path): Boolean = {
+    path.getName == name
+  }
+}
+
 import org.bdgenomics.adam.rdd.ADAMContext._
 
 class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
 
-  private[rdd] def loadBamDictionary(filePath: String): SequenceDictionary = {
-    val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(filePath), sc.hadoopConfiguration)
-    loadBamDictionary(samHeader)
-  }
-
+  /**
+   * @param samHeader The header to extract a sequence dictionary from.
+   * @return Returns the dictionary converted to an ADAM model.
+   */
   private[rdd] def loadBamDictionary(samHeader: SAMFileHeader): SequenceDictionary = {
     SequenceDictionary(samHeader)
   }
 
+  /**
+   * @param samHeader The header to extract a read group dictionary from.
+   * @return Returns the dictionary converted to an ADAM model.
+   */
   private[rdd] def loadBamReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
     RecordGroupDictionary.fromSAMHeader(samHeader)
   }
 
+  /**
+   * @param filePath The (possibly globbed) filepath to load a VCF from.
+   * @return Returns a tuple of metadata from the VCF header, including the
+   *   sequence dictionary and a list of the samples contained in the VCF.
+   */
   private[rdd] def loadVcfMetadata(filePath: String): (SequenceDictionary, Seq[Sample]) = {
+    // get the paths to all vcfs
+    val files = getFsAndFiles(new Path(filePath))
+
+    // load yonder the metadata
+    files.map(p => loadSingleVcfMetadata(p.toString)).reduce((p1, p2) => {
+      (p1._1 ++ p2._1, p1._2 ++ p2._2)
+    })
+  }
+
+  /**
+   * @param filePath The (possibly globbed) filepath to load a VCF from.
+   * @return Returns a tuple of metadata from the VCF header, including the
+   *   sequence dictionary and a list of the samples contained in the VCF.
+   *
+   * @see loadVcfMetadata
+   */
+  private def loadSingleVcfMetadata(filePath: String): (SequenceDictionary, Seq[Sample]) = {
     def headerToMetadata(vcfHeader: VCFHeader): (SequenceDictionary, Seq[Sample]) = {
       val sd = SequenceDictionary.fromVCFHeader(vcfHeader)
       val samples = asScalaBuffer(vcfHeader.getGenotypeSamples)
@@ -145,19 +187,60 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     headerToMetadata(vcfHeader)
   }
 
+  /**
+   * @param filePath The (possibly globbed) filepath to load Avro sequence
+   *   dictionary info from.
+   * @return Returns the SequenceDictionary representing said reference build.
+   */
   private[rdd] def loadAvroSequences(filePath: String): SequenceDictionary = {
-    val avroSd = loadAvro[Contig]("%s/_seqdict.avro".format(filePath),
-      Contig.SCHEMA$)
+    getFsAndFilesWithFilter(filePath, new FileFilter("_seqdict.avro"))
+      .map(p => loadAvroSequencesFile(p.toString))
+      .reduce(_ ++ _)
+  }
+
+  /**
+   * @param filePath The filepath to load a single Avro file of sequence
+   *   dictionary info from.
+   * @return Returns the SequenceDictionary representing said reference build.
+   *
+   * @see loadAvroSequences
+   */
+  private def loadAvroSequencesFile(filePath: String): SequenceDictionary = {
+    val avroSd = loadAvro[Contig](filePath, Contig.SCHEMA$)
     SequenceDictionary.fromAvro(avroSd)
   }
 
+  /**
+   * @param filePath The (possibly globbed) filepath to load Avro sample
+   *   metadata descriptions from.
+   * @return Returns a Seq of Sample descriptions.
+   */
   private[rdd] def loadAvroSampleMetadata(filePath: String): Seq[Sample] = {
-    loadAvro[Sample]("%s/_samples.avro".format(filePath),
-      Sample.SCHEMA$)
+    getFsAndFilesWithFilter(filePath, new FileFilter("_samples.avro"))
+      .map(p => loadAvro[Sample](p.toString, Sample.SCHEMA$))
+      .reduce(_ ++ _)
   }
 
+  /**
+   * @param filePath The (possibly globbed) filepath to load Avro read group
+   *   metadata descriptions from.
+   * @return Returns a RecordGroupDictionary.
+   */
   private[rdd] def loadAvroReadGroupMetadata(filePath: String): RecordGroupDictionary = {
-    val avroRgd = loadAvro[RecordGroupMetadata]("%s/_rgdict.avro".format(filePath),
+    getFsAndFilesWithFilter(filePath, new FileFilter("_rgdict.avro"))
+      .map(p => loadAvroReadGroupMetadataFile(p.toString))
+      .reduce(_ ++ _)
+  }
+
+  /**
+   * @param filePath The filepath to load a single Avro file containing read
+   *   group metadata.
+   * @return Returns a RecordGroupDictionary.
+   *
+   * @see loadAvroReadGroupMetadata
+   */
+  private def loadAvroReadGroupMetadataFile(filePath: String): RecordGroupDictionary = {
+    val avroRgd = loadAvro[RecordGroupMetadata](filePath,
       RecordGroupMetadata.SCHEMA$)
 
     // convert avro to record group dictionary
@@ -217,64 +300,90 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * This method should create a new SequenceDictionary from any parquet file which contains
-   * records that have the requisite reference{Name,Id,Length,Url} fields.
+   * Elaborates out a directory/glob/plain path.
    *
-   * (If the path is a BAM or SAM file, and the implicit type is an Read, then it just defaults
-   * to reading the SequenceDictionary out of the BAM header in the normal way.)
+   * @param path Path to elaborate.
+   * @param fs The underlying file system that this path is on.
+   * @return Returns an array of Paths to load.
    *
-   * @param filePath The path to the input data
-   * @tparam T The type of records to return
-   * @return A sequenceDictionary containing the names and indices of all the sequences to which the records
-   *         in the corresponding file are aligned.
+   * @see getFsAndFiles
+   *
+   * @throws FileNotFoundException if the path does not match any files.
    */
-  def loadDictionary[T](filePath: String)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): SequenceDictionary = {
+  private def getFiles(path: Path, fs: FileSystem): Array[Path] = {
 
-    // This funkiness is required because (a) ADAMRecords require a different projection from any
-    // other flattened schema, and (b) because the SequenceRecord.fromADAMRecord, below, is going
-    // to be called through a flatMap rather than through a map tranformation on the underlying record RDD.
-    val isADAMRecord = classOf[AlignmentRecord].isAssignableFrom(manifest[T].runtimeClass)
-    val isADAMContig = classOf[NucleotideContigFragment].isAssignableFrom(manifest[T].runtimeClass)
+    // elaborate out the path; this returns FileStatuses
+    val paths = if (fs.isDirectory(path)) fs.listStatus(path) else fs.globStatus(path)
 
-    val projection =
-      if (isADAMRecord) {
-        Projection(
-          AlignmentRecordField.contigName,
-          AlignmentRecordField.mateContigName,
-          AlignmentRecordField.readPaired,
-          AlignmentRecordField.readInFragment,
-          AlignmentRecordField.readMapped,
-          AlignmentRecordField.mateMapped
-        )
-      } else if (isADAMContig) {
-        Projection(NucleotideContigFragmentField.contig)
-      } else {
-        Projection(AlignmentRecordField.contigName)
-      }
-
-    if (filePath.endsWith(".bam") || filePath.endsWith(".sam")) {
-      if (isADAMRecord)
-        loadBamDictionary(filePath)
-      else
-        throw new IllegalArgumentException("If you're reading a BAM/SAM file, the record type must be Read")
-
-    } else {
-      val projected: RDD[T] = loadParquet[T](filePath, None, projection = Some(projection))
-
-      val recs: RDD[SequenceRecord] =
-        if (isADAMContig) {
-          projected.asInstanceOf[RDD[NucleotideContigFragment]].distinct().map(ctg => SequenceRecord.fromADAMContigFragment(ctg))
-        } else {
-          projected.distinct().map(SequenceRecord.fromSpecificRecord(_))
-        }
-
-      val dict = recs.aggregate(SequenceDictionary())(
-        (dict: SequenceDictionary, rec: SequenceRecord) => dict + rec,
-        (dict1: SequenceDictionary, dict2: SequenceDictionary) => dict1 ++ dict2
+    // the path must match at least one file
+    if (paths.isEmpty) {
+      throw new FileNotFoundException(
+        s"Couldn't find any files matching ${path.toUri}"
       )
-
-      dict
     }
+
+    // map the paths returned to their paths
+    paths.map(_.getPath)
+  }
+
+  /**
+   * Elaborates out a directory/glob/plain path.
+   *
+   * @param path Path to elaborate.
+   * @return Returns an array of Paths to load.
+   *
+   * @see getFiles
+   *
+   * @throws FileNotFoundException if the path does not match any files.
+   */
+  private def getFsAndFiles(path: Path): Array[Path] = {
+
+    // get the underlying fs for the file
+    val fs = Option(path.getFileSystem(sc.hadoopConfiguration)).getOrElse(
+      throw new FileNotFoundException(
+        s"Couldn't find filesystem for ${path.toUri} with Hadoop configuration ${sc.hadoopConfiguration}"
+      ))
+
+    getFiles(path, fs)
+  }
+
+  /**
+   * Elaborates out a directory/glob/plain path.
+   *
+   * @param filename Path to elaborate.
+   * @param filter Filter to discard paths.
+   * @return Returns an array of Paths to load.
+   *
+   * @see getFiles
+   *
+   * @throws FileNotFoundException if the path does not match any files.
+   */
+  private def getFsAndFilesWithFilter(filename: String, filter: PathFilter): Array[Path] = {
+
+    val path = new Path(filename)
+
+    // get the underlying fs for the file
+    val fs = Option(path.getFileSystem(sc.hadoopConfiguration)).getOrElse(
+      throw new FileNotFoundException(
+        s"Couldn't find filesystem for ${path.toUri} with Hadoop configuration ${sc.hadoopConfiguration}"
+      ))
+
+    // elaborate out the path; this returns FileStatuses
+    val paths = if (fs.isDirectory(path)) {
+      fs.listStatus(path, filter)
+    } else {
+      fs.globStatus(path, filter)
+    }
+
+    // the path must match at least one file
+    if (paths.isEmpty) {
+      throw new FileNotFoundException(
+        s"Couldn't find any files matching ${path.toUri}"
+      )
+    }
+
+    // map the paths returned to their paths
+    paths.map(_.getPath)
   }
 
   /**
@@ -294,27 +403,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadBam(filePath: String,
               validationStringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
     val path = new Path(filePath)
-    val fs =
-      Option(
-        path.getFileSystem(sc.hadoopConfiguration)
-      ).getOrElse(
-          throw new FileNotFoundException(
-            s"Couldn't find filesystem for ${path.toUri} with Hadoop configuration ${sc.hadoopConfiguration}"
-          )
-        )
 
-    val bamFiles =
-      Option(
-        if (fs.isDirectory(path)) fs.listStatus(path) else fs.globStatus(path)
-      ).getOrElse(
-          throw new FileNotFoundException(
-            s"Couldn't find any files matching ${path.toUri}"
-          )
-        )
+    val bamFiles = getFsAndFiles(path)
+    val filteredFiles = bamFiles.filter(p => {
+      val pPath = p.getName()
+      pPath.endsWith(".bam") || pPath.endsWith(".sam") || pPath.startsWith("part-")
+    })
+
+    require(filteredFiles.nonEmpty,
+      "Did not find any files at %s.".format(path))
 
     val (seqDict, readGroups) =
-      bamFiles
-        .map(fs => fs.getPath)
+      filteredFiles
         .flatMap(fp => {
           try {
             // We need to separately read the header, so that we can inject the sequence dictionary
@@ -339,8 +439,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         })
 
     val job = HadoopUtil.newJob(sc)
-    val records = sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],
-      classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+
+    // this logic is counterintuitive but important.
+    // hadoop-bam does not filter out .bai files, etc. as such, if we have a
+    // directory of bam files where all the bams also have bais or md5s etc
+    // in the same directory, hadoop-bam will barf. if the directory just
+    // contains bams, hadoop-bam is a-ok! i believe that it is better (perf) to
+    // just load from a single newAPIHadoopFile call instead of a union across
+    // files, so we do that whenever possible
+    val records = if (filteredFiles.size != bamFiles.size) {
+      sc.union(filteredFiles.map(p => {
+        sc.newAPIHadoopFile(p.toString, classOf[AnySAMInputFormat], classOf[LongWritable],
+          classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+      }))
+    } else {
+      sc.newAPIHadoopFile(filePath, classOf[AnySAMInputFormat], classOf[LongWritable],
+        classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+    }
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
 
@@ -371,41 +486,34 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadIndexedBam(filePath: String, viewRegions: Iterable[ReferenceRegion])(implicit s: DummyImplicit): AlignmentRecordRDD = {
     val path = new Path(filePath)
-    val fs = path.getFileSystem(sc.hadoopConfiguration)
-    assert(!fs.isDirectory(path))
-    val bamfile: Array[FileStatus] = fs.globStatus(path)
-    require(bamfile.size == 1)
-    val (seqDict, readGroups) = bamfile
-      .map(fs => fs.getPath)
-      .flatMap(fp => {
-        try {
-          // We need to separately read the header, so that we can inject the sequence dictionary
-          // data into each individual Read (see the argument to samRecordConverter.convert,
-          // below).
-          val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
+    val bamFiles = getFsAndFiles(path).filter(p => p.toString.endsWith(".bam"))
 
-          log.info("Loaded header from " + fp)
-          val sd = loadBamDictionary(samHeader)
-          val rg = loadBamReadGroups(samHeader)
-          Some((sd, rg))
-        } catch {
-          case _: Throwable => {
-            log.error("Loading failed for " + fp)
-            None
-          }
-        }
+    require(bamFiles.nonEmpty,
+      "Did not find any files at %s.".format(path))
+    val (seqDict, readGroups) = bamFiles
+      .map(fp => {
+        // We need to separately read the header, so that we can inject the sequence dictionary
+        // data into each individual Read (see the argument to samRecordConverter.convert,
+        // below).
+        val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
+
+        log.info("Loaded header from " + fp)
+        val sd = loadBamDictionary(samHeader)
+        val rg = loadBamReadGroups(samHeader)
+
+        (sd, rg)
       }).reduce((kv1, kv2) => {
         (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
       })
-
-    val samDict = SAMHeaderReader.readSAMHeaderFrom(path, sc.hadoopConfiguration).getSequenceDictionary
 
     val job = HadoopUtil.newJob(sc)
     val conf = ContextUtil.getConfiguration(job)
     BAMInputFormat.setIntervals(conf, viewRegions.toList.map(r => LocatableReferenceRegion(r)))
 
-    val records = sc.newAPIHadoopFile(filePath, classOf[BAMInputFormat], classOf[LongWritable],
-      classOf[SAMRecordWritable], conf)
+    val records = sc.union(bamFiles.map(p => {
+      sc.newAPIHadoopFile(p.toString, classOf[BAMInputFormat], classOf[LongWritable],
+        classOf[SAMRecordWritable], conf)
+    }))
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
     AlignedReadRDD(records.map(p => samRecordConverter.convert(p._2.get, seqDict, readGroups)),
@@ -1037,55 +1145,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       loadInterleavedFastqAsFragments(filePath)
     } else {
       loadParquetFragments(filePath)
-    }
-  }
-
-  /**
-   * Takes a sequence of Path objects and loads alignments using that path.
-   *
-   * This infers the type of each path, and thus can be used to load a mixture
-   * of different files from disk. I.e., if you want to load 2 BAM files and
-   * 3 Parquet files, this is the method you are looking for!
-   *
-   * The RDDs obtained from loading each file are simply unioned together,
-   * while the record group dictionaries are naively merged. The sequence
-   * dictionaries are merged in a way that dedupes the sequence records in
-   * each dictionary.
-   *
-   * @param paths The locations of the files to load.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
-   *   sequence dictionary representing the contigs these reads are aligned to
-   *   if the reads are aligned, and the record group dictionary for the reads
-   *   if one is available.
-   * @see loadAlignments
-   */
-  def loadAlignmentsFromPaths(paths: Seq[Path]): AlignmentRecordRDD = {
-
-    val alignmentData = paths.map(p => loadAlignments(p.toString))
-
-    val rdd = sc.union(alignmentData.map(_.rdd))
-    val sd = alignmentData.map(_.sequences).reduce(_ ++ _)
-    val rgd = alignmentData.map(_.recordGroups).reduce(_ ++ _)
-
-    AlignedReadRDD(rdd, sd, rgd)
-  }
-
-  /**
-   * Searches a path recursively, returning the names of all directories in the tree whose
-   * name matches the given regex.
-   *
-   * @param path The path to begin the search at
-   * @param regex A regular expression
-   * @return A sequence of Path objects corresponding to the identified directories.
-   */
-  def findFiles(path: Path, regex: String): Seq[Path] = {
-    if (regex == null) {
-      Seq(path)
-    } else {
-      val statuses = path.getFileSystem(sc.hadoopConfiguration).listStatus(path)
-      val r = Pattern.compile(regex)
-      val (matches, recurse) = statuses.filter(HadoopUtil.isDirectory).map(s => s.getPath).partition(p => r.matcher(p.getName).matches())
-      matches.toSeq ++ recurse.flatMap(p => findFiles(p, regex))
     }
   }
 }
