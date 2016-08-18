@@ -40,7 +40,7 @@ class Features2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   var outputPath: String = null
   @Args4jOption(required = false, name = "-num_partitions",
     usage = "Number of partitions to load an interval file using.")
-  var numPartitions: Int = 10
+  var numPartitions: Int = _
 }
 
 class Features2ADAM(val args: Features2ADAMArgs)
@@ -48,6 +48,6 @@ class Features2ADAM(val args: Features2ADAMArgs)
   val companion = Features2ADAM
 
   def run(sc: SparkContext) {
-    sc.loadFeatures(args.featuresFile, None, args.numPartitions).saveAsParquet(args)
+    sc.loadFeatures(args.featuresFile, None, Option(args.numPartitions)).saveAsParquet(args)
   }
 }

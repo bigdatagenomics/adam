@@ -59,7 +59,6 @@ object ADAMMain {
         "PRINT",
         List(
           PrintADAM,
-          PrintGenes,
           FlagStat,
           ListDict,
           AlleleCount,

@@ -203,15 +203,15 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("loadIndexedVcf with 1 ReferenceRegion") {
     val path = resourcePath("bqsr1.vcf")
-    val refRegion = ReferenceRegion("22", 16097644, 16098647)
+    val refRegion = ReferenceRegion("22", 16097643, 16098647)
     val vcs = sc.loadIndexedVcf(path, refRegion)
     assert(vcs.rdd.count == 17)
   }
 
   sparkTest("loadIndexedVcf with multiple ReferenceRegions") {
     val path = resourcePath("bqsr1.vcf")
-    val refRegion1 = ReferenceRegion("22", 16050678, 16050822)
-    val refRegion2 = ReferenceRegion("22", 16097644, 16098647)
+    val refRegion1 = ReferenceRegion("22", 16050677, 16050822)
+    val refRegion2 = ReferenceRegion("22", 16097643, 16098647)
     val vcs = sc.loadIndexedVcf(path, Iterable(refRegion1, refRegion2))
     assert(vcs.rdd.count == 23)
   }

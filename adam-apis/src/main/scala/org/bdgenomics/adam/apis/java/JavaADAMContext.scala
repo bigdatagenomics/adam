@@ -40,28 +40,12 @@ object JavaADAMContext {
   implicit def toADAMContext(jac: JavaADAMContext): ADAMContext = jac.ac
 }
 
-class JavaADAMContext(val ac: ADAMContext) extends Serializable {
+class JavaADAMContext private (val ac: ADAMContext) extends Serializable {
 
   /**
    * @return Returns the Java Spark Context associated with this Java ADAM Context.
    */
   def getSparkContext: JavaSparkContext = new JavaSparkContext(ac.sc)
-
-  /**
-   * Builds this Java ADAM Context using an existing Java Spark Context.
-   *
-   * @param jsc Java Spark Context to use to build this ADAM Context.
-   * @return A new Java ADAM Context.
-   */
-  def this(jsc: JavaSparkContext) = this(new ADAMContext(jsc))
-
-  /**
-   * Builds this Java ADAM Context using an existing Spark Context.
-   *
-   * @param sc Spark Context to use to build this ADAM Context.
-   * @return A new Java ADAM Context.
-   */
-  def this(sc: SparkContext) = this(new ADAMContext(sc))
 
   /**
    * Loads in an ADAM read file. This method can load SAM, BAM, and ADAM files.
