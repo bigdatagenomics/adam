@@ -92,12 +92,12 @@ class RealignIndelsSuite extends ADAMFunSuite {
     consensus = consensus.distinct
     assert(consensus.length > 0)
     // Note: it seems that consensus ranges are non-inclusive
-    assert(consensus.get(0).index.start === 34)
-    assert(consensus.get(0).index.end === 45)
-    assert(consensus.get(0).consensus === "")
-    assert(consensus.get(1).index.start === 54)
-    assert(consensus.get(1).index.end === 65)
-    assert(consensus.get(1).consensus === "")
+    assert(consensus(0).index.start === 34)
+    assert(consensus(0).index.end === 45)
+    assert(consensus(0).consensus === "")
+    assert(consensus(1).index.start === 54)
+    assert(consensus(1).index.end === 65)
+    assert(consensus(1).consensus === "")
     // TODO: add check with insertions, how about SNPs
   }
 

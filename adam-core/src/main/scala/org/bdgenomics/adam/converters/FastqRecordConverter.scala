@@ -19,12 +19,12 @@ package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,
   Fragment
 }
 import org.bdgenomics.utils.misc.Logging
+import scala.collection.JavaConversions._
 
 /**
  * Utility class for converting FASTQ formatted data.

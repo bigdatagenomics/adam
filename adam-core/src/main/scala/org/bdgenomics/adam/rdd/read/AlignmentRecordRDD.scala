@@ -50,14 +50,15 @@ import org.bdgenomics.adam.rdd.{
 import org.bdgenomics.adam.rdd.features.CoverageRDD
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.MapTools
-import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.misc.Logging
 import org.seqdoop.hadoop_bam.{ SAMFormat, SAMRecordWritable }
 import org.seqdoop.hadoop_bam.util.SAMOutputPreparer
 import scala.annotation.tailrec
+import scala.collection.JavaConversions._
 import scala.language.implicitConversions
 import scala.math.{ abs, min }
 

@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.rich
 
-import java.util.regex.Pattern
 import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator, TextCigarCodec }
+import java.util.regex.Pattern
 import org.bdgenomics.adam.models.{ Attribute, ReferencePosition, ReferenceRegion }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Strand }
+import scala.collection.JavaConversions._
 import scala.collection.immutable.NumericRange
 import scala.math.max
 

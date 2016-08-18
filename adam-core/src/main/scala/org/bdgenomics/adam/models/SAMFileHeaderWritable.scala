@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord }
-import org.bdgenomics.adam.rdd.ADAMContext._
+import scala.collection.JavaConversions._
 
 object SAMFileHeaderWritable {
   def apply(header: SAMFileHeader): SAMFileHeaderWritable = {
@@ -34,11 +34,11 @@ class SAMFileHeaderWritable(@transient hdr: SAMFileHeader) extends Serializable 
   }
   protected val sd = SequenceDictionary(hdr.getSequenceDictionary)
   protected val pgl = {
-    val pgs: List[SAMProgramRecord] = hdr.getProgramRecords
+    val pgs = hdr.getProgramRecords
     pgs.map(ProgramRecord(_))
   }
   protected val comments = {
-    val cmts: List[java.lang.String] = hdr.getComments
+    val cmts = hdr.getComments
     cmts.flatMap(Option(_)) // don't trust samtools to return non-nulls
   }
   protected val rgs = RecordGroupDictionary.fromSAMHeader(hdr)

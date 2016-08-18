@@ -97,28 +97,6 @@ object ADAMContext {
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
-
-  // implicit java to scala type conversions
-  implicit def listToJavaList[A](list: List[A]): java.util.List[A] = seqAsJavaList(list)
-
-  implicit def javaListToList[A](list: java.util.List[A]): List[A] = asScalaBuffer(list).toList
-
-  implicit def javaSetToSet[A](set: java.util.Set[A]): Set[A] = {
-    // toSet is necessary to make set immutable
-    asScalaSet(set).toSet
-  }
-
-  implicit def intListToJavaIntegerList(list: List[Int]): java.util.List[java.lang.Integer] = {
-    seqAsJavaList(list.map(i => i: java.lang.Integer))
-  }
-
-  implicit def mapToJavaMap[A, B](map: Map[A, B]): java.util.Map[A, B] = mapAsJavaMap(map)
-
-  implicit def javaMapToMap[A, B](map: java.util.Map[A, B]): Map[A, B] = mapAsScalaMap(map).toMap
-
-  implicit def iterableToJavaCollection[A](i: Iterable[A]): java.util.Collection[A] = asJavaCollection(i)
-
-  implicit def setToJavaSet[A](set: Set[A]): java.util.Set[A] = setAsJavaSet(set)
 }
 
 /**

@@ -28,6 +28,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
+import scala.collection.JavaConversions._
 
 class VariantContextRDDSuite extends ADAMFunSuite {
 

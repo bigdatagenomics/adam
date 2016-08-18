@@ -260,6 +260,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[scala.collection.immutable.Range])
 
     // scala.collection.mutable
+    kryo.register(classOf[scala.collection.mutable.ArrayBuffer[_]])
     kryo.register(classOf[scala.collection.mutable.WrappedArray.ofInt])
     kryo.register(classOf[scala.collection.mutable.WrappedArray.ofLong])
     kryo.register(classOf[scala.collection.mutable.WrappedArray.ofByte])

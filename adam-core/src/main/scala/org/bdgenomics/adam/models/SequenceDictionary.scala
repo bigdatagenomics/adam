@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.models
 
-import org.apache.avro.generic.IndexedRecord
-import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import htsjdk.samtools.{ SamReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
 import htsjdk.variant.vcf.VCFHeader
+import org.apache.avro.generic.IndexedRecord
+import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
 import scala.collection._
+import scala.collection.JavaConversions._
 
 /**
  * SequenceDictionary contains the (bijective) map between Ints (the referenceId) and Strings (the referenceName)
@@ -97,7 +97,7 @@ object SequenceDictionary {
    * @return Returns an ADAM style sequence dictionary.
    */
   def fromSAMSequenceDictionary(samDict: SAMSequenceDictionary): SequenceDictionary = {
-    val samDictRecords: List[SAMSequenceRecord] = samDict.getSequences
+    val samDictRecords = samDict.getSequences
     new SequenceDictionary(samDictRecords.map(SequenceRecord.fromSAMSequenceRecord).toVector)
   }
 
