@@ -50,7 +50,7 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.realignment._
 import org.bdgenomics.adam.rdd.read.recalibration.{ CovariateKey, CovariateSpace, CycleCovariate, DinucCovariate, Observation, ObservationAccumulator }
 import org.bdgenomics.adam.rdd.read.{ DuplicateMetrics, FlagStatMetrics }
-import org.bdgenomics.adam.rdd.{ GenomeBins, OrientedPoint }
+import org.bdgenomics.adam.rdd.GenomeBins
 import org.bdgenomics.adam.rich.{ DecadentRead, ReferenceSequenceContext, RichAlignmentRecord, RichVariant }
 import org.bdgenomics.adam.util.{ MdTag, QualityScore, ReferenceContigMap, TwoBitFile, TwoBitFileSerializer }
 import org.bdgenomics.formats.avro._
@@ -275,9 +275,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[util.LinkedHashSet[_]])
     kryo.register(classOf[util.HashMap[_, _]])
     kryo.register(classOf[util.HashSet[_]])
-
-    kryo.register(classOf[Array[OrientedPoint]])
-    kryo.register(classOf[OrientedPoint])
 
     kryo.register(scala.math.Numeric.LongIsIntegral.getClass)
     kryo.register(Map.empty.getClass)
