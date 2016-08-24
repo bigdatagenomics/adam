@@ -24,5 +24,5 @@ import org.bdgenomics.formats.avro.Feature
  */
 object FeatureField extends FieldEnumeration(Feature.SCHEMA$) {
 
-  val featureId, name, source, featureType, contigName, start, end, strand, phase, frame, score, geneId, transcriptId, exonId, aliases, parentIds, target, gap, derivesFrom, notes, dbxrefs, ontologyTerms, isCircular, attributes = SchemaValue
+  val featureId, name, source, featureType, contigName, start, end, strand, phase, frame, score, geneId, transcriptId, exonId, aliases, parentIds, target, gap, derivesFrom, notes, dbxrefs, ontologyTerms, circular, attributes = SchemaValue
 }

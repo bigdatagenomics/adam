@@ -27,7 +27,7 @@
     <hadoop.version>2.6.0</hadoop.version>
     <hadoop-bam.version>7.6.0</hadoop-bam.version>
     <slf4j.version>1.7.21</slf4j.version>
-    <bdg-formats.version>0.10.0-SNAPSHOT</bdg-formats.version>
+    <bdg-formats.version>0.9.1-SNAPSHOT</bdg-formats.version>
     <bdg-utils.version>0.2.7</bdg-utils.version>
     <htsjdk.version>2.5.0</htsjdk.version>
   </properties>

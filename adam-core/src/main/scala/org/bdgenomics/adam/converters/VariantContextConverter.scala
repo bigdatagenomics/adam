@@ -72,10 +72,10 @@ private[adam] object VariantContextConverter {
    * @return The Avro representation for this allele.
    */
   private def convertAllele(vc: HtsjdkVariantContext, allele: Allele): GenotypeAllele = {
-    if (allele.isNoCall) GenotypeAllele.NoCall
-    else if (allele.isReference) GenotypeAllele.Ref
-    else if (allele == NON_REF_ALLELE || !vc.hasAlternateAllele(allele)) GenotypeAllele.OtherAlt
-    else GenotypeAllele.Alt
+    if (allele.isNoCall) GenotypeAllele.NO_CALL
+    else if (allele.isReference) GenotypeAllele.REF
+    else if (allele == NON_REF_ALLELE || !vc.hasAlternateAllele(allele)) GenotypeAllele.OTHER_ALT
+    else GenotypeAllele.ALT
   }
 
   /**
@@ -123,9 +123,9 @@ private[adam] object VariantContextConverter {
     var alleles = g.getAlleles
     if (alleles == null) return Collections.emptyList[Allele]
     else g.getAlleles.map {
-      case GenotypeAllele.NoCall                        => Allele.NO_CALL
-      case GenotypeAllele.Ref | GenotypeAllele.OtherAlt => Allele.create(g.getVariant.getReferenceAllele, true)
-      case GenotypeAllele.Alt                           => Allele.create(g.getVariant.getAlternateAllele)
+      case GenotypeAllele.NO_CALL                        => Allele.NO_CALL
+      case GenotypeAllele.REF | GenotypeAllele.OTHER_ALT => Allele.create(g.getVariant.getReferenceAllele, true)
+      case GenotypeAllele.ALT                            => Allele.create(g.getVariant.getAlternateAllele)
     }
   }
 }
@@ -392,7 +392,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
           .setVariantCallingAnnotations(annotations)
           .setSampleId(g.getSampleName)
           .setAlleles(g.getAlleles.map(VariantContextConverter.convertAllele(vc, _)))
-          .setIsPhased(g.isPhased)
+          .setPhased(g.isPhased)
 
         if (g.hasGQ) genotype.setGenotypeQuality(g.getGQ)
         if (g.hasDP) genotype.setReadDepth(g.getDP)
@@ -547,7 +547,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
           g.getSampleId, VariantContextConverter.convertAlleles(g)
         )
 
-        Option(g.getIsPhased).foreach(gb.phased(_))
+        Option(g.getPhased).foreach(gb.phased(_))
         Option(g.getGenotypeQuality).foreach(gb.GQ(_))
         Option(g.getReadDepth).foreach(gb.DP(_))
 
