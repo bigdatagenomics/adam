@@ -24,8 +24,7 @@ import htsjdk.variant.variantcontext.writer.{
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.io.OutputStream
 import org.apache.hadoop.io.LongWritable
-import org.apache.hadoop.fs.{ FileSystem, Path }
-import org.apache.spark.Logging
+import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.{
   SupportedHeaderLines,
@@ -38,6 +37,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.{ FileMerger, MultisampleGenomicRDD }
 import org.bdgenomics.formats.avro.Sample
+import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.cli.SaveArgs
 import org.seqdoop.hadoop_bam._
 import scala.collection.JavaConversions._

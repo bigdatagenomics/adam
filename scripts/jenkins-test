@@ -38,6 +38,13 @@ then
     exit 1
 fi
 
+# are we testing for spark 2.0.0? if so, we need to rewrite our poms first
+if [ ${SPARK_VERSION} == 2.0.0 ];
+then
+        echo "Rewriting POM.xml files for Scala 2.10."
+        ./scripts/move_to_spark_2.sh
+fi
+
 # are we testing for scala 2.11? if so, we need to rewrite our poms to 2.11 first
 if [ ${SCALAVER} == 2.11 ];
 then
