@@ -121,7 +121,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val adamGTs = adamVCs.flatMap(_.genotypes)
     assert(adamGTs.length === 1)
     val adamGT = adamGTs.head
-    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.Ref, GenotypeAllele.Alt)))
+    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.REF, GenotypeAllele.ALT)))
     assert(adamGT.getPhaseSetId === 1)
     assert(adamGT.getPhaseQuality === 50)
   }
@@ -182,7 +182,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val genotype = Genotype.newBuilder
       .setVariant(variant)
       .setSampleId("NA12878")
-      .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
+      .setAlleles(List(GenotypeAllele.REF, GenotypeAllele.ALT))
       .setVariantCallingAnnotations(VariantCallingAnnotations.newBuilder()
         .setFisherStrandBiasPValue(3.0f)
         .setRmsMapQ(0.0f)
@@ -233,19 +233,19 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       val adamGT = adamVC.genotypes.head
       assert(adamGT.getSplitFromMultiAllelic)
       assert(adamGT.getReferenceReadDepth === 4)
-      assert(adamGT.getIsPhased)
+      assert(adamGT.getPhased)
     }
 
     val adamGT1 = adamVCs(0).genotypes.head
     val adamGT2 = adamVCs(1).genotypes.head
-    assert(adamGT1.getAlleles.sameElements(List(GenotypeAllele.Alt, GenotypeAllele.OtherAlt)))
+    assert(adamGT1.getAlleles.sameElements(List(GenotypeAllele.ALT, GenotypeAllele.OTHER_ALT)))
     assert(adamGT1.getAlternateReadDepth === 2)
     assert(adamGT1.getGenotypeLikelihoods
       .map(f => f: scala.Float)
       .map(PhredUtils.logProbabilityToPhred)
       .sameElements(List(59, 0, 256)))
 
-    assert(adamGT2.getAlleles.sameElements(List(GenotypeAllele.OtherAlt, GenotypeAllele.Alt)))
+    assert(adamGT2.getAlleles.sameElements(List(GenotypeAllele.OTHER_ALT, GenotypeAllele.ALT)))
     assert(adamGT2.getAlternateReadDepth === 3)
     assert(adamGT2.getGenotypeLikelihoods
       .map(f => f: scala.Float)
@@ -269,7 +269,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamGTs.length === 1)
     val adamGT = adamGTs.head
     assert(adamGT.getVariant.getAlternateAllele === null)
-    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.Ref, GenotypeAllele.Ref)))
+    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.REF, GenotypeAllele.REF)))
     assert(adamGT.getMinReadDepth === 38)
     assert(adamGT.getGenotypeLikelihoods.isEmpty)
     assert(adamGT.getNonReferenceLikelihoods

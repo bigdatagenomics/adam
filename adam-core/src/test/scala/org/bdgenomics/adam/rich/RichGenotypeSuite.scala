@@ -32,7 +32,7 @@ class RichGenotypeSuite extends FunSuite {
   test("different ploidy") {
     val gb = Genotype.newBuilder.setVariant(v0).setSampleId("NA12878")
     for (ploidy <- 0 until 3) {
-      val g = gb.setAlleles(List.fill(ploidy)(GenotypeAllele.Ref)).build
+      val g = gb.setAlleles(List.fill(ploidy)(GenotypeAllele.REF)).build
       assert(g.ploidy === ploidy)
     }
   }
@@ -40,23 +40,22 @@ class RichGenotypeSuite extends FunSuite {
   test("all types for diploid genotype") {
     val gb = Genotype.newBuilder.setVariant(v0).setSampleId("NA12878")
 
-    val hom_ref = gb.setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Ref)).build
+    val hom_ref = gb.setAlleles(List(GenotypeAllele.REF, GenotypeAllele.REF)).build
     assert(hom_ref.getType === GenotypeType.HOM_REF)
 
-    val het1 = gb.setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt)).build
+    val het1 = gb.setAlleles(List(GenotypeAllele.REF, GenotypeAllele.ALT)).build
     assert(het1.getType === GenotypeType.HET)
-    val het2 = gb.setAlleles(List(GenotypeAllele.Alt, GenotypeAllele.Ref)).build
+    val het2 = gb.setAlleles(List(GenotypeAllele.ALT, GenotypeAllele.REF)).build
     assert(het2.getType === GenotypeType.HET)
 
-    val hom_alt = gb.setAlleles(List(GenotypeAllele.Alt, GenotypeAllele.Alt)).build
+    val hom_alt = gb.setAlleles(List(GenotypeAllele.ALT, GenotypeAllele.ALT)).build
     assert(hom_alt.getType === GenotypeType.HOM_ALT)
 
     for (a <- GenotypeAllele.values) {
-      val no_call1 = gb.setAlleles(List(GenotypeAllele.NoCall, a)).build
+      val no_call1 = gb.setAlleles(List(GenotypeAllele.NO_CALL, a)).build
       assert(no_call1.getType === GenotypeType.NO_CALL)
-      val no_call2 = gb.setAlleles(List(a, GenotypeAllele.NoCall)).build
+      val no_call2 = gb.setAlleles(List(a, GenotypeAllele.NO_CALL)).build
       assert(no_call2.getType === GenotypeType.NO_CALL)
     }
   }
-
 }
