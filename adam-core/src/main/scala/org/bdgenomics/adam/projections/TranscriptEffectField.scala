@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.formats.avro.TranscriptEffect
 
 /**
- * Enumeration of Feature field names for predicates and projections.
+ * Enumeration of TranscriptEffect field names for predicates and projections.
  */
-object FeatureField extends FieldEnumeration(Feature.SCHEMA$) {
+object TranscriptEffectField extends FieldEnumeration(TranscriptEffect.SCHEMA$) {
 
-  val featureId, name, source, featureType, contigName, start, end, strand, phase, frame, score, geneId, transcriptId, exonId, aliases, parentIds, target, gap, derivesFrom, notes, dbxrefs, ontologyTerms, circular, attributes = SchemaValue
+  val alternateAllele, effects, geneName, geneId, featureType, featureId, biotype, rank, total, genomicHgvs, transcriptHgvs, proteinHgvs, cdnaPosition, cdnaLength, cdsPosition, cdsLength, proteinPosition, proteinLength, distance, messages = SchemaValue
 }

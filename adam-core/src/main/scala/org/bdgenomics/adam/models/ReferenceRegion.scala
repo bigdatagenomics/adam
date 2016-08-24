@@ -145,10 +145,22 @@ object ReferenceRegion {
     ReferenceRegion(variant.getContigName, variant.getStart, variant.getEnd)
   }
 
-  def apply(annotation: DatabaseVariantAnnotation): ReferenceRegion = {
+  /**
+   * Builds a reference region from a variant annotation.
+   *
+   * @param annotation VariantAnnotation to extract region from.
+   * @return The site where the variant for the specified variant annotation covers.
+   */
+  def apply(annotation: VariantAnnotation): ReferenceRegion = {
     ReferenceRegion(annotation.getVariant)
   }
 
+  /**
+   * Builds a reference region from an alignment record.
+   *
+   * @param record AlignmentRecord to extract region from.
+   * @return The site where the alignment record aligns.
+   */
   def apply(record: AlignmentRecord): ReferenceRegion = {
     require(record.getReadMapped,
       "Cannot build reference region for unmapped read %s.".format(record))

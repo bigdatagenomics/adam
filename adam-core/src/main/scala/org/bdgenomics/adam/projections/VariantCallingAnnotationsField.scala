@@ -24,5 +24,5 @@ import org.bdgenomics.formats.avro.VariantCallingAnnotations
  */
 object VariantCallingAnnotationsField extends FieldEnumeration(VariantCallingAnnotations.SCHEMA$) {
 
-  val readDepth, downsampled, baseQRankSum, clippingRankSum, haplotypeScore, inbreedingCoefficient, alleleCountMLE, alleleFrequencyMLE, rmsMapQ, mapq0Reads, mqRankSum, usedForNegativeTrainingSet, usedForPositiveTrainingSet, variantQualityByDepth, readPositionRankSum, vqslod, culprit, variantCallErrorProbability, variantIsPassing, variantFilters = SchemaValue
+  val variantFilters, downsampled, baseQRankSum, fisherStrandBiasPValue, rmsMapQ, mapq0Reads, mqRankSum, readPositionRankSum, genotypePriors, vqslod, culprit, attributes = SchemaValue
 }

@@ -44,7 +44,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
         a.getTarget === b.getTarget &&
         a.getGap === b.getGap &&
         a.getDerivesFrom === b.getDerivesFrom &&
-        a.getIsCircular === b.getIsCircular &&
+        a.getCircular === b.getCircular &&
         a.getAliases === b.getAliases &&
         a.getNotes === b.getNotes &&
         a.getParentIds === b.getParentIds &&

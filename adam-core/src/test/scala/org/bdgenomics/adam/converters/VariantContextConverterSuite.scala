@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
+import com.google.common.collect.ImmutableList
 import htsjdk.samtools.SAMFileReader
 import htsjdk.variant.utils.SAMSequenceDictionaryExtractor
 import htsjdk.variant.variantcontext.{
@@ -41,25 +42,25 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     SequenceDictionary(SAMSequenceDictionaryExtractor.extractDictionary(new File(path)))
   }
 
-  def gatkSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
+  def htsjdkSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(Allele.create("A", true), Allele.create("T")))
     .start(1L)
     .stop(1L)
     .chr("1")
 
-  def gatkMultiAllelicSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
+  def htsjdkMultiAllelicSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(Allele.create("A", true), Allele.create("T"), Allele.create("G")))
     .start(1L)
     .stop(1L)
     .chr("1")
 
-  def gatkRefSNV: VariantContextBuilder = new VariantContextBuilder()
+  def htsjdkRefSNV: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(Allele.create("A", true), Allele.create("<NON_REF>", false)))
     .start(1L)
     .stop(1L)
     .chr("1")
 
-  def gatkCNVBuilder: VariantContextBuilder = new VariantContextBuilder()
+  def htsjdkCNVBuilder: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(Allele.create("A", true), Allele.create("<CN0>", false)))
     .start(10L)
     .stop(20L)
@@ -71,10 +72,10 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     .setReferenceAllele("A")
     .setAlternateAllele("T")
 
-  test("Convert GATK site-only SNV to ADAM") {
+  test("Convert htsjdk site-only SNV to ADAM") {
     val converter = new VariantContextConverter
 
-    val adamVCs = converter.convert(gatkSNVBuilder.make)
+    val adamVCs = converter.convert(htsjdkSNVBuilder.make)
     assert(adamVCs.length === 1)
     val adamVC = adamVCs.head
 
@@ -87,10 +88,10 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(variant.getStart === 0L)
   }
 
-  test("Convert GATK site-only SNV to ADAM with contig conversion") {
+  test("Convert htsjdk site-only SNV to ADAM with contig conversion") {
     val converter = new VariantContextConverter(Some(dictionary))
 
-    val adamVCs = converter.convert(gatkSNVBuilder.make)
+    val adamVCs = converter.convert(htsjdkSNVBuilder.make)
     assert(adamVCs.length === 1)
 
     val adamVC = adamVCs.head
@@ -98,10 +99,10 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(variant.getContigName === "NC_000001.10")
   }
 
-  test("Convert GATK site-only CNV to ADAM") {
+  test("Convert htsjdk site-only CNV to ADAM") {
     val converter = new VariantContextConverter
 
-    val adamVCs = converter.convert(gatkCNVBuilder.make)
+    val adamVCs = converter.convert(htsjdkCNVBuilder.make)
     assert(adamVCs.length === 1)
     val adamVC = adamVCs.head
 
@@ -116,8 +117,8 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(variant.getEnd === 20L)
   }
 
-  test("Convert GATK SNV w/ genotypes w/ phase information to ADAM") {
-    val vcb = gatkSNVBuilder
+  test("Convert htsjdk SNV w/ genotypes w/ phase information to ADAM") {
+    val vcb = htsjdkSNVBuilder
 
     val genotypeAttributes = Map[String, Object]("PQ" -> new Integer(50), "PS" -> new Integer(1))
     val vc = vcb.genotypes(GenotypeBuilder.create("NA12878", vcb.getAlleles(), genotypeAttributes)).make()
@@ -130,69 +131,110 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val adamGTs = adamVCs.flatMap(_.genotypes)
     assert(adamGTs.length === 1)
     val adamGT = adamGTs.head
-    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.Ref, GenotypeAllele.Alt)))
+    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.REF, GenotypeAllele.ALT)))
     assert(adamGT.getPhaseSetId === 1)
     assert(adamGT.getPhaseQuality === 50)
   }
 
-  test("Convert GATK SNV with different filters to ADAM") {
-    val vcb = gatkSNVBuilder
+  test("Convert htsjdk SNV with different variant filters to ADAM") {
+    val vcb = htsjdkSNVBuilder
     vcb.genotypes(GenotypeBuilder.create("NA12878", vcb.getAlleles))
 
     val converter = new VariantContextConverter
 
     { // No filters
       val adamVCs = converter.convert(vcb.make)
-      val adamGT = adamVCs.flatMap(_.genotypes).head
-      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing === null)
+      val adamVariant = adamVCs.map(_.variant).head
+      assert(adamVariant.getFiltersApplied === false)
+      assert(adamVariant.getFiltersPassed === null)
+      assert(adamVariant.getFiltersFailed.isEmpty)
     }
     { // PASSing
       vcb.unfiltered.passFilters
       val adamVCs = converter.convert(vcb.make)
-      val adamGT = adamVCs.flatMap(_.genotypes).head
-      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing)
+      val adamVariant = adamVCs.map(_.variant).head
+      assert(adamVariant.getFiltersApplied === true)
+      assert(adamVariant.getFiltersPassed === true)
+      assert(adamVariant.getFiltersFailed.isEmpty)
     }
     { // not PASSing
       vcb.unfiltered.filter("LowMQ")
       val adamVCs = converter.convert(vcb.make)
-      val adamGT = adamVCs.flatMap(_.genotypes).head
-      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing === false)
-      assert(adamGT.getVariantCallingAnnotations.getVariantFilters.sameElements(List("LowMQ")))
+      val adamVariant = adamVCs.map(_.variant).head
+      assert(adamVariant.getFiltersApplied === true)
+      assert(adamVariant.getFiltersPassed === false)
+      assert(adamVariant.getFiltersFailed.sameElements(List("LowMQ")))
     }
   }
 
-  test("Convert ADAM site-only SNV to GATK") {
+  test("Convert htsjdk SNV with different genotype filters to ADAM") {
+    val vcb = htsjdkSNVBuilder
+    val gb = new GenotypeBuilder("NA12878", vcb.getAlleles)
+
+    val converter = new VariantContextConverter
+
+    { // No filters
+      gb.unfiltered
+      vcb.genotypes(gb.make)
+      val adamVCs = converter.convert(vcb.make)
+      val adamGT = adamVCs.flatMap(_.genotypes).head
+      // htsjdk does not distinguish between filters not applied and filters passed in Genotype
+      assert(adamGT.getVariantCallingAnnotations.getFiltersApplied === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersPassed === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersFailed.isEmpty)
+    }
+    { // PASSing
+      gb.filter("PASS")
+      vcb.genotypes(gb.make)
+      val adamVCs = converter.convert(vcb.make)
+      val adamGT = adamVCs.flatMap(_.genotypes).head
+      assert(adamGT.getVariantCallingAnnotations.getFiltersApplied === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersPassed === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersFailed.isEmpty)
+    }
+    { // not PASSing
+      gb.filter("LowMQ")
+      vcb.genotypes(gb.make)
+      val adamVCs = converter.convert(vcb.make)
+      val adamGT = adamVCs.flatMap(_.genotypes).head
+      assert(adamGT.getVariantCallingAnnotations.getFiltersApplied === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersPassed === false)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersFailed.sameElements(List("LowMQ")))
+    }
+  }
+
+  test("Convert ADAM site-only SNV to htsjdk") {
     val vc = ADAMVariantContext(adamSNVBuilder().build)
 
     val converter = new VariantContextConverter
 
-    val gatkVC = converter.convert(vc)
-    assert(gatkVC.getContig === "1")
-    assert(gatkVC.getStart === 1)
-    assert(gatkVC.getEnd === 1)
-    assert(gatkVC.getReference === Allele.create("A", true))
-    assert(gatkVC.getAlternateAlleles.sameElements(List(Allele.create("T"))))
-    assert(!gatkVC.hasLog10PError)
-    assert(!gatkVC.hasID)
-    assert(!gatkVC.filtersWereApplied)
+    val htsjdkVC = converter.convert(vc)
+    assert(htsjdkVC.getContig === "1")
+    assert(htsjdkVC.getStart === 1)
+    assert(htsjdkVC.getEnd === 1)
+    assert(htsjdkVC.getReference === Allele.create("A", true))
+    assert(htsjdkVC.getAlternateAlleles.sameElements(List(Allele.create("T"))))
+    assert(!htsjdkVC.hasLog10PError)
+    assert(!htsjdkVC.hasID)
+    assert(!htsjdkVC.filtersWereApplied)
   }
 
-  test("Convert ADAM site-only SNV to GATK with contig conversion") {
+  test("Convert ADAM site-only SNV to htsjdk with contig conversion") {
     val vc = ADAMVariantContext(adamSNVBuilder("NC_000001.10").build)
 
     val converter = new VariantContextConverter(dict = Some(dictionary))
 
-    val gatkVC = converter.convert(vc)
-    assert(gatkVC.getContig === "1")
+    val htsjdkVC = converter.convert(vc)
+    assert(htsjdkVC.getContig === "1")
   }
 
-  test("Convert ADAM SNV w/ genotypes to GATK") {
+  test("Convert ADAM SNV w/ genotypes to htsjdk") {
     val variant = adamSNVBuilder().build
     val genotype = Genotype.newBuilder
       .setVariant(variant)
       .setSampleId("NA12878")
-      .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
       .setStrandBiasComponents(List(0, 2, 4, 6).map(i => i: java.lang.Integer))
+      .setAlleles(List(GenotypeAllele.REF, GenotypeAllele.ALT))
       .setVariantCallingAnnotations(VariantCallingAnnotations.newBuilder()
         .setFisherStrandBiasPValue(3.0f)
         .setRmsMapQ(0.0f)
@@ -202,16 +244,16 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     val converter = new VariantContextConverter
 
-    val gatkVC = converter.convert(ADAMVariantContext(variant, Seq(genotype)))
-    assert(gatkVC.getNSamples === 1)
-    assert(gatkVC.hasGenotype("NA12878"))
-    val gatkGT = gatkVC.getGenotype("NA12878")
-    assert(gatkGT.getType === GenotypeType.HET)
-    assert(gatkVC.hasAttribute("FS"))
-    assert(gatkVC.hasAttribute("MQ"))
-    assert(gatkVC.hasAttribute("MQ0"))
-    assert(gatkGT.hasAnyAttribute("SB"))
-    val sbComponents = gatkGT.getAnyAttribute("SB")
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant, Seq(genotype)))
+    assert(htsjdkVC.getNSamples === 1)
+    assert(htsjdkVC.hasGenotype("NA12878"))
+    val htsjdkGT = htsjdkVC.getGenotype("NA12878")
+    assert(htsjdkGT.getType === GenotypeType.HET)
+    assert(htsjdkVC.hasAttribute("FS"))
+    assert(htsjdkVC.hasAttribute("MQ"))
+    assert(htsjdkVC.hasAttribute("MQ0"))
+    assert(htsjdkGT.hasAnyAttribute("SB"))
+    val sbComponents = htsjdkGT.getAnyAttribute("SB")
       .asInstanceOf[java.util.List[java.lang.Integer]]
     assert(sbComponents.get(0) === 0)
     assert(sbComponents.get(1) === 2)
@@ -219,8 +261,8 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(sbComponents.get(3) === 6)
   }
 
-  test("Convert GATK multi-allelic sites-only SNVs to ADAM") {
-    val vc = gatkMultiAllelicSNVBuilder.make
+  test("Convert htsjdk multi-allelic sites-only SNVs to ADAM") {
+    val vc = htsjdkMultiAllelicSNVBuilder.make
     val converter = new VariantContextConverter
 
     val adamVCs = converter.convert(vc)
@@ -233,11 +275,11 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     }
   }
 
-  test("Convert GATK multi-allelic SNVs to ADAM") {
+  test("Convert htsjdk multi-allelic SNVs to ADAM") {
     val gb = new GenotypeBuilder("NA12878", List(Allele.create("T"), Allele.create("G")))
     gb.AD(Array(4, 2, 3)).PL(Array(59, 0, 181, 1, 66, 102))
 
-    val vcb = gatkMultiAllelicSNVBuilder
+    val vcb = htsjdkMultiAllelicSNVBuilder
     vcb.genotypes(gb.make)
 
     val converter = new VariantContextConverter
@@ -254,14 +296,14 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     val adamGT1 = adamVCs(0).genotypes.head
     val adamGT2 = adamVCs(1).genotypes.head
-    assert(adamGT1.getAlleles.sameElements(List(GenotypeAllele.Alt, GenotypeAllele.OtherAlt)))
+    assert(adamGT1.getAlleles.sameElements(List(GenotypeAllele.ALT, GenotypeAllele.OTHER_ALT)))
     assert(adamGT1.getAlternateReadDepth === 2)
     assert(adamGT1.getGenotypeLikelihoods
       .map(f => f: scala.Float)
       .map(PhredUtils.logProbabilityToPhred)
       .sameElements(List(59, 0, 256)))
 
-    assert(adamGT2.getAlleles.sameElements(List(GenotypeAllele.OtherAlt, GenotypeAllele.Alt)))
+    assert(adamGT2.getAlleles.sameElements(List(GenotypeAllele.OTHER_ALT, GenotypeAllele.ALT)))
     assert(adamGT2.getAlternateReadDepth === 3)
     assert(adamGT2.getGenotypeLikelihoods
       .map(f => f: scala.Float)
@@ -273,7 +315,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val gb = new GenotypeBuilder("NA12878", List(Allele.create("A", true), Allele.create("A", true)))
     gb.PL(Array(0, 1, 2)).DP(44).attribute("MIN_DP", 38)
 
-    val vcb = gatkRefSNV
+    val vcb = htsjdkRefSNV
     vcb.genotypes(gb.make)
 
     val converter = new VariantContextConverter
@@ -285,12 +327,90 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamGTs.length === 1)
     val adamGT = adamGTs.head
     assert(adamGT.getVariant.getAlternateAllele === null)
-    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.Ref, GenotypeAllele.Ref)))
+    assert(adamGT.getAlleles.sameElements(List(GenotypeAllele.REF, GenotypeAllele.REF)))
     assert(adamGT.getMinReadDepth === 38)
     assert(adamGT.getGenotypeLikelihoods.isEmpty)
     assert(adamGT.getNonReferenceLikelihoods
       .map(f => f: scala.Float)
       .map(PhredUtils.logProbabilityToPhred)
       .sameElements(List(0, 1, 2)))
+  }
+
+  test("Convert htsjdk variant context with no IDs to ADAM") {
+    val vcb = htsjdkSNVBuilder
+    vcb.noID()
+
+    val converter = new VariantContextConverter
+
+    val adamVCs = converter.convert(vcb.make)
+    assert(adamVCs.length == 1)
+
+    val variant = adamVCs.head.variant
+    assert(variant.getNames.isEmpty)
+  }
+
+  test("Convert htsjdk variant context with one ID to ADAM") {
+    val vcb = htsjdkSNVBuilder
+    vcb.id("rs3131972")
+
+    val converter = new VariantContextConverter
+
+    val adamVCs = converter.convert(vcb.make)
+    assert(adamVCs.length == 1)
+
+    val variant = adamVCs.head.variant
+    assert(variant.getNames.length === 1)
+    assert(variant.getNames.get(0) === "rs3131972")
+  }
+
+  test("Convert htsjdk variant context with multiple IDs to ADAM") {
+    val vcb = htsjdkSNVBuilder
+    vcb.id("rs3131972;rs201888535")
+
+    val converter = new VariantContextConverter
+
+    val adamVCs = converter.convert(vcb.make)
+    assert(adamVCs.length == 1)
+
+    val variant = adamVCs.head.variant
+    assert(variant.getNames.length === 2)
+    assert(variant.getNames.get(0) === "rs3131972")
+    assert(variant.getNames.get(1) === "rs201888535")
+  }
+
+  test("Convert ADAM variant context with no names to htsjdk") {
+    val variant = adamSNVBuilder()
+      .build
+
+    assert(variant.getNames.isEmpty)
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(!htsjdkVC.hasID)
+  }
+
+  test("Convert ADAM variant context with one name to htsjdk") {
+    val variant = adamSNVBuilder()
+      .setNames(ImmutableList.of("rs3131972"))
+      .build
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(htsjdkVC.hasID)
+    assert(htsjdkVC.getID === "rs3131972")
+  }
+
+  test("Convert ADAM variant context with multiple names to htsjdk") {
+    val variant = adamSNVBuilder()
+      .setNames(ImmutableList.of("rs3131972", "rs201888535"))
+      .build
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(htsjdkVC.hasID)
+    assert(htsjdkVC.getID === "rs3131972;rs201888535")
   }
 }

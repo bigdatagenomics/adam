@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.formats.avro.Contig
 
 /**
- * Enumeration of Feature field names for predicates and projections.
+ * Enumeration of Contig field names for predicates and projections.
  */
-object FeatureField extends FieldEnumeration(Feature.SCHEMA$) {
+object ContigField extends FieldEnumeration(Contig.SCHEMA$) {
 
-  val featureId, name, source, featureType, contigName, start, end, strand, phase, frame, score, geneId, transcriptId, exonId, aliases, parentIds, target, gap, derivesFrom, notes, dbxrefs, ontologyTerms, circular, attributes = SchemaValue
+  val contigName, contigLength, contigMD5, referenceURL, assembly, species, referenceIndex = SchemaValue
 }

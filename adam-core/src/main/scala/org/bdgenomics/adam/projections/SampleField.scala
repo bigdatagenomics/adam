@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.formats.avro.Sample
 
 /**
- * Enumeration of Feature field names for predicates and projections.
+ * Enumeration of Sample field names for predicates and projections.
  */
-object FeatureField extends FieldEnumeration(Feature.SCHEMA$) {
+object SampleField extends FieldEnumeration(Sample.SCHEMA$) {
 
-  val featureId, name, source, featureType, contigName, start, end, strand, phase, frame, score, geneId, transcriptId, exonId, aliases, parentIds, target, gap, derivesFrom, notes, dbxrefs, ontologyTerms, circular, attributes = SchemaValue
+  val sampleId, name, attributes = SchemaValue
 }

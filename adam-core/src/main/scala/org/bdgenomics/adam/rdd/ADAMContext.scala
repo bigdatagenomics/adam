@@ -267,7 +267,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    * @tparam T The type of records to return
    * @return An RDD with records of the specified type
    */
-  private[rdd] def loadParquet[T](
+  def loadParquet[T](
     filePath: String,
     predicate: Option[FilterPredicate] = None,
     projection: Option[Schema] = None)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): RDD[T] = {
@@ -1172,37 +1172,33 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   /**
    * Loads variant annotations stored in VCF format.
    *
-   * @see loadVcf
-   * @see loadVariantAnnotations
-   *
    * @param filePath The path to the VCF file(s) to load annotations from.
-   * @return Returns DatabaseVariantAnnotationRDD.
+   * @return Returns VariantAnnotationRDD.
    */
-  def loadVcfAnnotations(filePath: String): DatabaseVariantAnnotationRDD = {
-    loadVcf(filePath).toDatabaseVariantAnnotationRDD
+  def loadVcfAnnotations(
+    filePath: String): VariantAnnotationRDD = {
+    loadVcf(filePath).toVariantAnnotationRDD
   }
 
   /**
-   * Loads DatabaseVariantAnnotations stored in Parquet, with metadata.
-   *
-   * @see loadVariantAnnotations
+   * Loads VariantAnnotations stored in Parquet, with metadata.
    *
    * @param filePath The path to load files from.
    * @param predicate An optional predicate to push down into the file.
    * @param projection An optional projection to use for reading.
-   * @return Returns DatabaseVariantAnnotationRDD.
+   * @return Returns VariantAnnotationRDD.
    */
   def loadParquetVariantAnnotations(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): DatabaseVariantAnnotationRDD = {
+    projection: Option[Schema] = None): VariantAnnotationRDD = {
     val sd = loadAvroSequences(filePath)
-    val rdd = loadParquet[DatabaseVariantAnnotation](filePath, predicate, projection)
-    DatabaseVariantAnnotationRDD(rdd, sd)
+    val rdd = loadParquet[VariantAnnotation](filePath, predicate, projection)
+    VariantAnnotationRDD(rdd, sd)
   }
 
   /**
-   * Loads DatabaseVariantAnnotations into an RDD, and automatically detects
+   * Loads VariantAnnotations into an RDD, and automatically detects
    * the underlying storage format.
    *
    * Can load variant annotations from either Parquet or VCF.
@@ -1212,16 +1208,16 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    *
    * @param filePath The path to load files from.
    * @param projection An optional projection to use for reading.
-   * @return Returns DatabaseVariantAnnotationRDD.
+   * @return Returns VariantAnnotationRDD.
    */
   def loadVariantAnnotations(
     filePath: String,
-    projection: Option[Schema] = None): DatabaseVariantAnnotationRDD = {
+    projection: Option[Schema] = None): VariantAnnotationRDD = {
     if (filePath.endsWith(".vcf")) {
       log.info(s"Loading $filePath as VCF, and converting to variant annotations. Projection is ignored.")
       loadVcfAnnotations(filePath)
     } else {
-      log.info(s"Loading $filePath as Parquet containing DatabaseVariantAnnotations.")
+      log.info(s"Loading $filePath as Parquet containing VariantAnnotations.")
       loadParquetVariantAnnotations(filePath, None, projection)
     }
   }
@@ -1339,7 +1335,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   /**
    * Auto-detects the file type and loads a GenotypeRDD.
    *
-   * If the file has a .vcf/.vcf.gz extension, loads as VCF. Else, falls back to
+   * If the file has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, loads as VCF. Else, falls back to
    * Parquet.
    *
    * @param filePath The path to load.
@@ -1364,7 +1360,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   /**
    * Auto-detects the file type and loads a VariantRDD.
    *
-   * If the file has a .vcf/.vcf.gz extension, loads as VCF. Else, falls back to
+   * If the file has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, loads as VCF. Else, falls back to
    * Parquet.
    *
    * @param filePath The path to load.

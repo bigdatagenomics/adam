@@ -24,5 +24,5 @@ import org.bdgenomics.formats.avro.Variant
  */
 object VariantField extends FieldEnumeration(Variant.SCHEMA$) {
 
-  val contig, start, end, referenceAllele, variantAllele = SchemaValue
+  val contigName, start, end, names, referenceAllele, alternateAllele, filtersApplied, filtersPassed, filtersFailed, somatic = SchemaValue
 }

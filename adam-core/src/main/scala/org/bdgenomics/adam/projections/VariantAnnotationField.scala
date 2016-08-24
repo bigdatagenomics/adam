@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.Feature
+import org.bdgenomics.formats.avro.VariantAnnotation
 
 /**
- * Enumeration of Feature field names for predicates and projections.
+ * Enumeration of VariantAnnotation field names for predicates and projections.
  */
-object FeatureField extends FieldEnumeration(Feature.SCHEMA$) {
+object VariantAnnotationField extends FieldEnumeration(VariantAnnotation.SCHEMA$) {
 
-  val featureId, name, source, featureType, contigName, start, end, strand, phase, frame, score, geneId, transcriptId, exonId, aliases, parentIds, target, gap, derivesFrom, notes, dbxrefs, ontologyTerms, circular, attributes = SchemaValue
+  val variant, ancestralAllele, alleleCount, readDepth, forwardReadDepth, reverseReadDepth, alleleFrequency, cigar, dbSnp, hapMap2, hapMap3, validated, thousandGenomes, transcriptEffects, attributes = SchemaValue
 }

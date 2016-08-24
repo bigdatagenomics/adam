@@ -61,7 +61,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * @param ann Annotation RDD to join against.
    * @return Returns a VariantContextRDD where annotations have been filled in.
    */
-  def joinDatabaseVariantAnnotation(ann: DatabaseVariantAnnotationRDD): VariantContextRDD = {
+  def joinVariantAnnotations(ann: VariantAnnotationRDD): VariantContextRDD = {
     replaceRdd(rdd.keyBy(_.variant)
       .leftOuterJoin(ann.rdd.keyBy(_.getVariant))
       .values
@@ -69,12 +69,11 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   }
 
   /**
-   * @return Returns a DatabaseVariantAnnotationRDD containing the variant
+   * @return Returns a VariantAnnotationRDD containing the variant
    *   annotations attached to this VariantContextRDD.
    */
-  def toDatabaseVariantAnnotationRDD: DatabaseVariantAnnotationRDD = {
-    DatabaseVariantAnnotationRDD(rdd.flatMap(_.databases),
-      sequences)
+  def toVariantAnnotationRDD: VariantAnnotationRDD = {
+    VariantAnnotationRDD(rdd.flatMap(_.annotations), sequences)
   }
 
   /**
