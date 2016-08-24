@@ -15,7 +15,7 @@ find . -name "*.bak" -exec rm {} \;
 # variable declarations
 export JAVA_HOME=/usr/java/jdk1.8.0_60
 export PATH=${JAVA_HOME}/bin/:${PATH}
-export MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=1g"
+export MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=1g -Dfile.encoding=utf-8"
 DIR=$( cd $( dirname ${BASH_SOURCE[0]} ) && pwd )
 PROJECT_ROOT=${DIR}/..
 VERSION=$(grep "<version>" ${PROJECT_ROOT}/pom.xml  | head -2 | tail -1 | sed 's/ *<version>//g' | sed 's/<\/version>//g')
@@ -48,16 +48,20 @@ fi
 # print versions
 echo "Testing ADAM version ${VERSION} on Spark ${SPARK_VERSION} and Hadoop ${HADOOP_VERSION}"
 
-# first, build the sources and run the unit tests
-mvn clean package \
+# first, build the sources, run the unit tests, and generate a coverage report
+mvn clean \
     -Dhadoop.version=${HADOOP_VERSION} \
-    -Dspark.version=${SPARK_VERSION} \
-    -DargLine=${ADAM_MVN_TMP_DIR}
+    -Dspark.version=${SPARK_VERSION} 
     
 # if those pass, build the distribution package and the integration tests
 mvn test \
+    -P coverage scoverage:report
+
+# if those pass, build the distribution package
+mvn \
     -P distribution \
-    -Dnetworkconnected \
+    package \
+    -DskipTests \
     -Dhadoop.version=${HADOOP_VERSION} \
     -Dspark.version=${SPARK_VERSION} \
     -DargLine=${ADAM_MVN_TMP_DIR}
