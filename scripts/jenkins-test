@@ -2,6 +2,16 @@
 
 set -e -x -v
 
+# make a tempdir for writing maven cruft to
+ADAM_MVN_TMP_DIR=$(mktemp -d -t adamTestMvnXXXXXXX)
+
+# add this tempdir to the poms...
+find . -name pom.xml \
+    -exec sed -i .bak \
+    -e "s:sun.io.serialization.extendedDebugInfo=true:sun.io.serialization.extendedDebugInfo=true -Djava.io.tmpdir=${ADAM_MVN_TMP_DIR}:g" \
+    {} \;
+find . -name "*.bak" -exec rm {} \;
+
 # variable declarations
 export JAVA_HOME=/usr/java/jdk1.8.0_60
 export PATH=${JAVA_HOME}/bin/:${PATH}
@@ -41,14 +51,20 @@ echo "Testing ADAM version ${VERSION} on Spark ${SPARK_VERSION} and Hadoop ${HAD
 # first, build the sources and run the unit tests
 mvn clean package \
     -Dhadoop.version=${HADOOP_VERSION} \
-    -Dspark.version=${SPARK_VERSION}
+    -Dspark.version=${SPARK_VERSION} \
+    -DargLine=${ADAM_MVN_TMP_DIR}
     
 # if those pass, build the distribution package and the integration tests
 mvn test \
     -P distribution \
     -Dnetworkconnected \
     -Dhadoop.version=${HADOOP_VERSION} \
-    -Dspark.version=${SPARK_VERSION}
+    -Dspark.version=${SPARK_VERSION} \
+    -DargLine=${ADAM_MVN_TMP_DIR}
+
+# we are done with maven, so clean up the maven temp dir
+find ${ADAM_MVN_TMP_DIR}
+rm -rf ${ADAM_MVN_TMP_DIR}
 
 # run integration tests on scala 2.10; prebuilt spark distributions are not available for 2.11
 if [ ${SCALAVER} == 2.10 ];
@@ -128,7 +144,9 @@ then
     popd
     
     # test that the source is formatted correctly
+    # we had modified the poms to add a temp dir, so check those out first
     pushd ${PROJECT_ROOT}
+    find . -name pom.xml -exec git checkout {} \;
     ./scripts/format-source
     if test -n "$(git status --porcelain)"
     then
