@@ -204,8 +204,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.formats.avro.Sample],
       new AvroSerializer[org.bdgenomics.formats.avro.Sample])
     kryo.register(classOf[org.bdgenomics.formats.avro.Strand])
-    kryo.register(classOf[org.bdgenomics.formats.avro.StructuralVariant],
-      new AvroSerializer[org.bdgenomics.formats.avro.StructuralVariant])
     kryo.register(classOf[org.bdgenomics.formats.avro.TranscriptEffect],
       new AvroSerializer[org.bdgenomics.formats.avro.TranscriptEffect])
     kryo.register(classOf[org.bdgenomics.formats.avro.Variant],

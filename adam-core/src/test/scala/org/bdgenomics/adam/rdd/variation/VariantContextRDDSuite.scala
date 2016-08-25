@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variation
 
+import com.google.common.collect.ImmutableList
 import com.google.common.io.Files
 import java.io.File
 import org.bdgenomics.adam.models.{
@@ -43,6 +44,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       .setStart(17409572)
       .setReferenceAllele("T")
       .setAlternateAllele("C")
+      .setNames(ImmutableList.of("rs3131972", "rs201888535"))
       .build
 
     val g0 = Genotype.newBuilder().setVariant(v0)
@@ -61,8 +63,19 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val path = new File(tempDir, "test.vcf")
     variants.saveAsVcf(TestSaveArgs(path.getAbsolutePath), false)
     assert(path.exists)
+
     val vcRdd = sc.loadVcf("%s/test.vcf/part-r-00000".format(tempDir))
     assert(vcRdd.rdd.count === 1)
+
+    val variant = vcRdd.rdd.first.variant
+    assert(variant.getContigName === "chr11")
+    assert(variant.getStart === 17409572)
+    assert(variant.getReferenceAllele === "T")
+    assert(variant.getAlternateAllele === "C")
+    assert(variant.getNames.length === 2)
+    assert(variant.getNames.get(0) === "rs3131972")
+    assert(variant.getNames.get(1) === "rs201888535")
+
     assert(vcRdd.sequences.records.size === 1)
     assert(vcRdd.sequences.records(0).name === "chr11")
   }
