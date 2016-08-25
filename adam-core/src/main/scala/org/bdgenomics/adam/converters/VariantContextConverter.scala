@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
+import com.google.common.collect.ImmutableList
 import htsjdk.variant.variantcontext.{
   Allele,
   GenotypesContext,
@@ -24,6 +25,7 @@ import htsjdk.variant.variantcontext.{
   VariantContext => HtsjdkVariantContext,
   VariantContextBuilder
 }
+import htsjdk.variant.vcf.VCFConstants
 import java.util.Collections
 import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.models.{
@@ -313,6 +315,36 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
   }
 
   /**
+   * Split the htsjdk variant context ID field into an array of names.
+   *
+   * @param vc htsjdk variant context
+   * @return Returns an Option wrapping an array of names split from the htsjdk
+   *    variant context ID field
+   */
+  private def splitIds(vc: HtsjdkVariantContext): Option[java.util.List[String]] = {
+    if (vc.hasID()) {
+      Some(ImmutableList.copyOf(vc.getID().split(VCFConstants.ID_FIELD_SEPARATOR)))
+    } else {
+      None
+    }
+  }
+
+  /**
+   * Join the array of variant names into a string for the htsjdk variant context ID field.
+   *
+   * @param variant variant
+   * @return Returns an Option wrapping a string for the htsjdk variant context ID field joined
+   *    from the array of variant names
+   */
+  private def joinNames(variant: Variant): Option[String] = {
+    if (variant.getNames != null && variant.getNames.length > 0) {
+      Some(variant.getNames.mkString(VCFConstants.ID_FIELD_SEPARATOR))
+    } else {
+      None
+    }
+  }
+
+  /**
    * Builds an avro Variant for a site with a defined alt allele.
    *
    * @param vc htsjdk variant context to use for building the site.
@@ -321,15 +353,14 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    * @return Returns an Avro description of the genotyped site.
    */
   private def createADAMVariant(vc: HtsjdkVariantContext, alt: Option[String]): Variant = {
-    // VCF CHROM, POS, REF and ALT
+    // VCF CHROM, POS, ID, REF and ALT
     val builder = Variant.newBuilder
       .setContigName(createContig(vc))
       .setStart(vc.getStart - 1 /* ADAM is 0-indexed */ )
       .setEnd(vc.getEnd /* ADAM is 0-indexed, so the 1-indexed inclusive end becomes exclusive */ )
       .setReferenceAllele(vc.getReference.getBaseString)
     alt.foreach(builder.setAlternateAllele(_))
-    if (vc.hasID())
-      builder.setNames(vc.getID().split(VCFConstants.ID_FIELD_SEPARATOR))
+    splitIds(vc).foreach(builder.setNames(_))
     builder.build
   }
 
@@ -537,7 +568,10 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
       .stop(variant.getStart + variant.getReferenceAllele.length)
       .alleles(VariantContextConverter.convertAlleles(variant))
 
-    vc.databases.flatMap(d => Option(d.getDbSnpId)).foreach(d => vcb.id("rs" + d))
+    joinNames(variant) match {
+      case None    => vcb.noID()
+      case Some(s) => vcb.id(s)
+    }
 
     // TODO: Extract provenance INFO fields
     try {
