@@ -57,6 +57,7 @@ import org.bdgenomics.formats.avro._
 import org.codehaus.jackson.node.{ BooleanNode, NullNode, TextNode }
 import org.seqdoop.hadoop_bam.{ VariantContextWithHeader, VariantContextWritable }
 import scala.collection.immutable
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 case class InputStreamWithDecoder(size: Int) {
@@ -104,6 +105,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     kryo.register(classOf[Genotype], new AvroSerializer[Genotype])
     kryo.register(classOf[Array[Genotype]])
+    kryo.register(classOf[ArrayBuffer[Genotype]])
 
     kryo.register(classOf[Variant], new AvroSerializer[Variant])
     kryo.register(classOf[Array[Variant]])
@@ -116,7 +118,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     kryo.register(classOf[Contig], new AvroSerializer[Contig])
     kryo.register(classOf[RecordGroupMetadata], new AvroSerializer[RecordGroupMetadata])
-    kryo.register(classOf[StructuralVariant], new AvroSerializer[StructuralVariant])
     kryo.register(classOf[VariantCallingAnnotations], new AvroSerializer[VariantCallingAnnotations])
     kryo.register(classOf[TranscriptEffect], new AvroSerializer[TranscriptEffect])
     kryo.register(classOf[VariantAnnotation], new AvroSerializer[VariantAnnotation])
