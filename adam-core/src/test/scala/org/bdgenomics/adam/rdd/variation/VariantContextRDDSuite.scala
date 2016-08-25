@@ -46,7 +46,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     val g0 = Genotype.newBuilder().setVariant(v0)
       .setSampleId("NA12878")
-      .setAlleles(List(GenotypeAllele.Ref, GenotypeAllele.Alt))
+      .setAlleles(List(GenotypeAllele.REF, GenotypeAllele.ALT))
       .build
 
     VariantContextRDD(sc.parallelize(List(
