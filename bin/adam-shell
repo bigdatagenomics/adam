@@ -17,6 +17,8 @@
 # limitations under the License.
 #
 
+set -x
+
 # Figure out where ADAM is installed
 SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
@@ -51,11 +53,6 @@ fi
 
 ADAM_CLI_JAR="${ASSEMBLY_DIR}/${ASSEMBLY_JARS}"
 
-# append ADAM_JARS to the --jars option, if any
-NEW_OPTIONS=$("$SCRIPT_DIR"/bin/append_to_option.py , --jars "$ADAM_CLI_JAR" "$@")
-
-echo "$NEW_OPTIONS"
-
 if [ -z "$SPARK_HOME" ]; then
   SPARK_SHELL=$(which spark-shell || echo)
 else
@@ -69,6 +66,7 @@ echo "Using SPARK_SHELL=$SPARK_SHELL"
 
 # submit the job to Spark
 "$SPARK_SHELL" \
-  --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
-  --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
-  $NEW_OPTIONS
+    --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+    --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
+    --jars ${ADAM_CLI_JAR} \
+    "$@"
