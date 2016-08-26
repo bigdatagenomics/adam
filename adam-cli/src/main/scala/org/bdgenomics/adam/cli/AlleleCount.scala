@@ -49,8 +49,8 @@ class AlleleCountArgs extends Args4jBase with ParquetArgs {
 object AlleleCountHelper extends Serializable {
   def chooseAllele(x: (String, java.lang.Long, String, String, GenotypeAllele)) =
     x match {
-      case (chr, position, refAllele, varAllele, GenotypeAllele.Ref) => Some(chr, position, refAllele)
-      case (chr, position, refAllele, varAllele, GenotypeAllele.Alt) => Some(chr, position, varAllele)
+      case (chr, position, refAllele, varAllele, GenotypeAllele.REF) => Some(chr, position, refAllele)
+      case (chr, position, refAllele, varAllele, GenotypeAllele.ALT) => Some(chr, position, varAllele)
       case _ => None
     }
 
