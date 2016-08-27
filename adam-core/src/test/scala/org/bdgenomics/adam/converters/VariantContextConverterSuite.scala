@@ -28,7 +28,7 @@ import scala.collection.JavaConversions._
 
 class VariantContextConverterSuite extends ADAMFunSuite {
   val dictionary = {
-    val path = resourcePath("dict_with_accession.dict")
+    val path = testFile("dict_with_accession.dict")
     SequenceDictionary(SAMFileReader.getSequenceDictionary(new File(path)))
   }
 

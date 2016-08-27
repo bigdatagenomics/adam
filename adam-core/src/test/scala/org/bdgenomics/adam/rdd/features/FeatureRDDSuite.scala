@@ -61,7 +61,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("round trip GTF format") {
-    val inputPath = resourcePath("Homo_sapiens.GRCh37.75.trun100.gtf")
+    val inputPath = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
     val features = sc.loadGtf(inputPath)
 
     val firstGtfRecord = FeatureRDD.toGtf(features.rdd.first)
@@ -96,7 +96,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save GTF as GFF3 format") {
-    val inputPath = resourcePath("Homo_sapiens.GRCh37.75.trun100.gtf")
+    val inputPath = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
     val features = sc.loadGtf(inputPath)
     val outputPath = tempLocation(".gff3")
     features.saveAsGff3(outputPath)
@@ -105,7 +105,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save GTF as BED format") {
-    val inputPath = resourcePath("Homo_sapiens.GRCh37.75.trun100.gtf")
+    val inputPath = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
     val features = sc.loadGtf(inputPath)
     val outputPath = tempLocation(".bed")
     features.saveAsBed(outputPath)
@@ -114,7 +114,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save GTF as IntervalList format") {
-    val inputPath = resourcePath("Homo_sapiens.GRCh37.75.trun100.gtf")
+    val inputPath = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
     val features = sc.loadGtf(inputPath)
     val outputPath = tempLocation(".interval_list")
     features.saveAsIntervalList(outputPath)
@@ -123,7 +123,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save GTF as NarrowPeak format") {
-    val inputPath = resourcePath("Homo_sapiens.GRCh37.75.trun100.gtf")
+    val inputPath = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
     val features = sc.loadGtf(inputPath)
     val outputPath = tempLocation(".narrowPeak")
     features.saveAsNarrowPeak(outputPath)
@@ -132,7 +132,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save GFF3 as GTF format") {
-    val inputPath = resourcePath("dvl1.200.gff3")
+    val inputPath = testFile("dvl1.200.gff3")
     val features = sc.loadGff3(inputPath)
     val outputPath = tempLocation(".gtf")
     features.saveAsGtf(outputPath)
@@ -141,7 +141,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save GFF3 as BED format") {
-    val inputPath = resourcePath("dvl1.200.gff3")
+    val inputPath = testFile("dvl1.200.gff3")
     val features = sc.loadGff3(inputPath)
     val outputPath = tempLocation(".bed")
     features.saveAsBed(outputPath)
@@ -150,7 +150,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save GFF3 as IntervalList format") {
-    val inputPath = resourcePath("dvl1.200.gff3")
+    val inputPath = testFile("dvl1.200.gff3")
     val features = sc.loadGff3(inputPath)
     val outputPath = tempLocation(".interval_list")
     features.saveAsIntervalList(outputPath)
@@ -159,7 +159,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save GFF3 as NarrowPeak format") {
-    val inputPath = resourcePath("dvl1.200.gff3")
+    val inputPath = testFile("dvl1.200.gff3")
     val features = sc.loadGff3(inputPath)
     val outputPath = tempLocation(".narrowPeak")
     features.saveAsNarrowPeak(outputPath)
@@ -168,7 +168,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("round trip GFF3 format") {
-    val inputPath = resourcePath("dvl1.200.gff3")
+    val inputPath = testFile("dvl1.200.gff3")
     val expected = sc.loadGff3(inputPath)
     val outputPath = tempLocation(".gff3")
     expected.saveAsGff3(outputPath, asSingleFile = true)
@@ -198,7 +198,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save BED as GTF format") {
-    val inputPath = resourcePath("dvl1.200.bed")
+    val inputPath = testFile("dvl1.200.bed")
     val features = sc.loadBed(inputPath)
     val outputPath = tempLocation(".gtf")
     features.saveAsGtf(outputPath)
@@ -207,7 +207,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save BED as GFF3 format") {
-    val inputPath = resourcePath("dvl1.200.bed")
+    val inputPath = testFile("dvl1.200.bed")
     val features = sc.loadBed(inputPath)
     val outputPath = tempLocation(".gff3")
     features.saveAsGff3(outputPath)
@@ -216,7 +216,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save BED as IntervalList format") {
-    val inputPath = resourcePath("dvl1.200.bed")
+    val inputPath = testFile("dvl1.200.bed")
     val features = sc.loadBed(inputPath)
     val outputPath = tempLocation(".interval_list")
     features.saveAsIntervalList(outputPath)
@@ -225,7 +225,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save BED as NarrowPeak format") {
-    val inputPath = resourcePath("dvl1.200.bed")
+    val inputPath = testFile("dvl1.200.bed")
     val features = sc.loadBed(inputPath)
     val outputPath = tempLocation(".narrowPeak")
     features.saveAsNarrowPeak(outputPath)
@@ -234,7 +234,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("round trip BED format") {
-    val inputPath = resourcePath("dvl1.200.bed")
+    val inputPath = testFile("dvl1.200.bed")
     val expected = sc.loadBed(inputPath)
     val outputPath = tempLocation(".bed")
     expected.saveAsBed(outputPath, asSingleFile = true)
@@ -257,7 +257,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save IntervalList as GTF format") {
-    val inputPath = resourcePath("SeqCap_EZ_Exome_v3.hg19.interval_list")
+    val inputPath = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val features = sc.loadIntervalList(inputPath)
     val outputPath = tempLocation(".gtf")
     features.saveAsGtf(outputPath)
@@ -266,7 +266,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save IntervalList as GFF3 format") {
-    val inputPath = resourcePath("SeqCap_EZ_Exome_v3.hg19.interval_list")
+    val inputPath = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val features = sc.loadIntervalList(inputPath)
     val outputPath = tempLocation(".gff3")
     features.saveAsGff3(outputPath)
@@ -275,7 +275,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save IntervalList as BED format") {
-    val inputPath = resourcePath("SeqCap_EZ_Exome_v3.hg19.interval_list")
+    val inputPath = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val features = sc.loadIntervalList(inputPath)
     val outputPath = tempLocation(".bed")
     features.saveAsBed(outputPath)
@@ -284,14 +284,14 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save IntervalList as IntervalList format") {
-    val inputPath = resourcePath("SeqCap_EZ_Exome_v3.hg19.interval_list")
+    val inputPath = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val features = sc.loadIntervalList(inputPath)
     val outputPath = tempLocation(".interval_list")
     features.saveAsIntervalList(outputPath)
   }
 
   sparkTest("save IntervalList as NarrowPeak format") {
-    val inputPath = resourcePath("SeqCap_EZ_Exome_v3.hg19.interval_list")
+    val inputPath = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val features = sc.loadIntervalList(inputPath)
     val outputPath = tempLocation(".narrowPeak")
     features.saveAsNarrowPeak(outputPath)
@@ -300,7 +300,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("round trip IntervalList format") {
-    val inputPath = resourcePath("SeqCap_EZ_Exome_v3.hg19.interval_list")
+    val inputPath = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
     val expected = sc.loadIntervalList(inputPath)
 
     // test single record
@@ -338,7 +338,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save NarrowPeak as GTF format") {
-    val inputPath = resourcePath("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val features = sc.loadNarrowPeak(inputPath)
     val outputPath = tempLocation(".gtf")
     features.saveAsGtf(outputPath)
@@ -347,7 +347,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save NarrowPeak as GFF3 format") {
-    val inputPath = resourcePath("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val features = sc.loadNarrowPeak(inputPath)
     val outputPath = tempLocation(".gff3")
     features.saveAsGff3(outputPath)
@@ -356,7 +356,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save NarrowPeak as BED format") {
-    val inputPath = resourcePath("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val features = sc.loadNarrowPeak(inputPath)
     val outputPath = tempLocation(".bed")
     features.saveAsBed(outputPath)
@@ -365,7 +365,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save NarrowPeak as IntervalList format") {
-    val inputPath = resourcePath("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val features = sc.loadNarrowPeak(inputPath)
     val outputPath = tempLocation(".interval_list")
     features.saveAsIntervalList(outputPath)
@@ -374,14 +374,14 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("save NarrowPeak as NarrowPeak format") {
-    val inputPath = resourcePath("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val features = sc.loadNarrowPeak(inputPath)
     val outputPath = tempLocation(".narrowPeak")
     features.saveAsNarrowPeak(outputPath)
   }
 
   sparkTest("round trip NarrowPeak format") {
-    val inputPath = resourcePath("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
     val expected = sc.loadNarrowPeak(inputPath)
     val outputPath = tempLocation(".narrowPeak")
     expected.saveAsNarrowPeak(outputPath, asSingleFile = true)

@@ -40,7 +40,7 @@ class SequenceDictionarySuite extends ADAMFunSuite {
   }
 
   test("Convert from SAM sequence dictionary file (with extra fields)") {
-    val path = resourcePath("dict_with_accession.dict")
+    val path = testFile("dict_with_accession.dict")
     val ssd = SAMFileReader.getSequenceDictionary(new File(path))
 
     val chr1 = ssd.getSequence("1") // Validate that extra fields are parsed
@@ -54,7 +54,7 @@ class SequenceDictionarySuite extends ADAMFunSuite {
   }
 
   test("merge into existing dictionary") {
-    val path = resourcePath("dict_with_accession.dict")
+    val path = testFile("dict_with_accession.dict")
     val ssd = SAMFileReader.getSequenceDictionary(new File(path))
 
     val asd = SequenceDictionary(ssd)
@@ -67,7 +67,7 @@ class SequenceDictionarySuite extends ADAMFunSuite {
   }
 
   test("Convert from SAM sequence dictionary and back") {
-    val path = resourcePath("dict_with_accession.dict")
+    val path = testFile("dict_with_accession.dict")
     val ssd = SAMFileReader.getSequenceDictionary(new File(path))
     val asd = SequenceDictionary(ssd)
     ssd.assertSameDictionary(SequenceDictionary.toSAMSequenceDictionary(asd))
@@ -211,7 +211,7 @@ class SequenceDictionarySuite extends ADAMFunSuite {
   }
 
   test("load sequence dictionary from VCF file") {
-    val path = resourcePath("small.vcf")
+    val path = testFile("small.vcf")
     val fileReader = new VCFFileReader(new File(path), false)
     val sd = SequenceDictionary.fromVCFHeader(fileReader.getFileHeader)
 

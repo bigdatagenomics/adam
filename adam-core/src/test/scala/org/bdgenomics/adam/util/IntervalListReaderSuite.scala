@@ -24,7 +24,7 @@ import org.bdgenomics.adam.models.ReferenceRegion
 class IntervalListReaderSuite extends ADAMFunSuite {
 
   test("Can read the simple GATK-supplied example interval list file") {
-    val file = new File(resourcePath("example_intervals.list"))
+    val file = new File(testFile("example_intervals.list"))
 
     val reader = new IntervalListReader(file)
 

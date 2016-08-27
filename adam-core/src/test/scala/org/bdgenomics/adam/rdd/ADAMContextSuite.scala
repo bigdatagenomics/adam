@@ -49,7 +49,7 @@ case class TestSaveArgs(var outputPath: String) extends ADAMSaveAnyArgs {
 class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("sc.loadParquet should not fail on unmapped reads") {
-    val readsFilepath = resourcePath("unmapped.sam")
+    val readsFilepath = testFile("unmapped.sam")
 
     // Convert the reads12.sam file into a parquet file
     val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath).rdd
@@ -60,7 +60,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     //load an existing file from the resources and save it as an ADAM file.
     //This way we are not dependent on the ADAM format (as we would if we used a pre-made ADAM file)
     //but we are dependent on the unmapped.sam file existing, maybe I should make a new one
-    val readsFilepath = resourcePath("unmapped.sam")
+    val readsFilepath = testFile("unmapped.sam")
     val bamReads = sc.loadAlignments(readsFilepath)
     //save it as an Adam file so we can test the Adam loader
     val bamReadsAdamFile = new File(Files.createTempDir(), "bamReads.adam")
@@ -74,13 +74,13 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("can read a small .SAM file") {
-    val path = resourcePath("small.sam")
+    val path = testFile("small.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path).rdd
     assert(reads.count() === 20)
   }
 
   sparkTest("can read a small .CRAM file") {
-    val path = resourcePath("artificial.cram")
+    val path = testFile("artificial.cram")
     val referencePath = resourceUrl("artificial.fa").toString
     sc.hadoopConfiguration.set(CRAMInputFormat.REFERENCE_SOURCE_PATH_PROPERTY,
       referencePath)
@@ -89,13 +89,13 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("can read a small .SAM with all attribute tag types") {
-    val path = resourcePath("tags.sam")
+    val path = testFile("tags.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path).rdd
     assert(reads.count() === 7)
   }
 
   sparkTest("can filter a .SAM file based on quality") {
-    val path = resourcePath("small.sam")
+    val path = testFile("small.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path)
       .rdd
       .filter(a => (a.getReadMapped && a.getMapq > 30))
@@ -146,7 +146,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("can read a small .vcf file") {
-    val path = resourcePath("small.vcf")
+    val path = testFile("small.vcf")
 
     val vcs = sc.loadGenotypes(path).toVariantContextRDD.rdd.collect.sortBy(_.position)
     assert(vcs.size === 5)
@@ -160,44 +160,44 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("can read a gzipped .vcf file") {
-    val path = resourcePath("test.vcf.gz")
+    val path = testFile("test.vcf.gz")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
   sparkTest("can read a BGZF gzipped .vcf file with .gz file extension") {
-    val path = resourcePath("test.vcf.bgzf.gz")
+    val path = testFile("test.vcf.bgzf.gz")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
   sparkTest("can read a BGZF gzipped .vcf file with .bgz file extension") {
-    val path = resourcePath("test.vcf.bgz")
+    val path = testFile("test.vcf.bgz")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
   ignore("can read an uncompressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
-    val path = resourcePath("test.uncompressed.bcf")
+    val path = testFile("test.uncompressed.bcf")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
   ignore("can read a BGZF compressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
-    val path = resourcePath("test.compressed.bcf")
+    val path = testFile("test.compressed.bcf")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
   sparkTest("loadIndexedVcf with 1 ReferenceRegion") {
-    val path = resourcePath("bqsr1.vcf")
+    val path = testFile("bqsr1.vcf")
     val refRegion = ReferenceRegion("22", 16097643, 16098647)
     val vcs = sc.loadIndexedVcf(path, refRegion)
     assert(vcs.rdd.count == 17)
   }
 
   sparkTest("loadIndexedVcf with multiple ReferenceRegions") {
-    val path = resourcePath("bqsr1.vcf")
+    val path = testFile("bqsr1.vcf")
     val refRegion1 = ReferenceRegion("22", 16050677, 16050822)
     val refRegion2 = ReferenceRegion("22", 16097643, 16098647)
     val vcs = sc.loadIndexedVcf(path, Iterable(refRegion1, refRegion2))
@@ -206,7 +206,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   (1 to 4) foreach { testNumber =>
     val inputName = "interleaved_fastq_sample%d.ifq".format(testNumber)
-    val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
+    val path = testFile(inputName)
 
     sparkTest("import records from interleaved FASTQ: %d".format(testNumber)) {
 
@@ -230,7 +230,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   (1 to 4) foreach { testNumber =>
     val inputName = "fastq_sample%d.fq".format(testNumber)
-    val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
+    val path = testFile(inputName)
 
     sparkTest("import records from single ended FASTQ: %d".format(testNumber)) {
 
@@ -252,7 +252,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("filter on load using the filter2 API") {
-    val path = resourcePath("bqsr1.vcf")
+    val path = testFile("bqsr1.vcf")
 
     val variants = sc.loadVariants(path)
     assert(variants.rdd.count === 681)
@@ -267,7 +267,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("saveAsParquet with file path") {
-    val inputPath = resourcePath("small.sam")
+    val inputPath = testFile("small.sam")
     val reads = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation()
     reads.saveAsParquet(outputPath)
@@ -276,7 +276,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("saveAsParquet with file path, block size, page size") {
-    val inputPath = resourcePath("small.sam")
+    val inputPath = testFile("small.sam")
     val reads = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation()
     reads.saveAsParquet(outputPath, 1024, 2048)
@@ -285,7 +285,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("saveAsParquet with save args") {
-    val inputPath = resourcePath("small.sam")
+    val inputPath = testFile("small.sam")
     val reads = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation()
     reads.saveAsParquet(TestSaveArgs(outputPath))
@@ -294,7 +294,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("read a gzipped fasta file") {
-    val inputPath = resourcePath("chr20.250k.fa.gz")
+    val inputPath = testFile("chr20.250k.fa.gz")
     val contigFragments: RDD[NucleotideContigFragment] = sc.loadFasta(inputPath, 10000L)
       .rdd
       .sortBy(_.getFragmentNumber.toInt)
@@ -317,7 +317,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("loadIndexedBam with 1 ReferenceRegion") {
     val refRegion = ReferenceRegion("chr2", 100, 101)
-    val path = resourcePath("indexed_bams/sorted.bam")
+    val path = testFile("indexed_bams/sorted.bam")
     val reads = sc.loadIndexedBam(path, refRegion)
     assert(reads.rdd.count == 1)
   }
@@ -325,7 +325,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("loadIndexedBam with multiple ReferenceRegions") {
     val refRegion1 = ReferenceRegion("chr2", 100, 101)
     val refRegion2 = ReferenceRegion("3", 10, 17)
-    val path = resourcePath("indexed_bams/sorted.bam")
+    val path = testFile("indexed_bams/sorted.bam")
     val reads = sc.loadIndexedBam(path, Iterable(refRegion1, refRegion2))
     assert(reads.rdd.count == 2)
   }
@@ -333,7 +333,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("loadIndexedBam with multiple ReferenceRegions and indexed bams") {
     val refRegion1 = ReferenceRegion("chr2", 100, 101)
     val refRegion2 = ReferenceRegion("3", 10, 17)
-    val path = resourcePath("indexed_bams/sorted.bam").replace(".bam", "*.bam")
+    val path = testFile("indexed_bams/sorted.bam").replace(".bam", "*.bam")
     val reads = sc.loadIndexedBam(path, Iterable(refRegion1, refRegion2))
     assert(reads.rdd.count == 4)
   }
@@ -341,39 +341,39 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("loadIndexedBam with multiple ReferenceRegions and a directory of indexed bams") {
     val refRegion1 = ReferenceRegion("chr2", 100, 101)
     val refRegion2 = ReferenceRegion("3", 10, 17)
-    val path = new File(resourcePath("indexed_bams/sorted.bam")).getParent()
+    val path = new File(testFile("indexed_bams/sorted.bam")).getParent()
     val reads = sc.loadIndexedBam(path, Iterable(refRegion1, refRegion2))
     assert(reads.rdd.count == 4)
   }
 
   sparkTest("loadBam with a glob") {
-    val path = resourcePath("indexed_bams/sorted.bam").replace(".bam", "*.bam")
+    val path = testFile("indexed_bams/sorted.bam").replace(".bam", "*.bam")
     val reads = sc.loadBam(path)
     assert(reads.rdd.count == 10)
   }
 
   sparkTest("loadBam with a directory") {
-    val path = new File(resourcePath("indexed_bams/sorted.bam")).getParent()
+    val path = new File(testFile("indexed_bams/sorted.bam")).getParent()
     val reads = sc.loadBam(path)
     assert(reads.rdd.count == 10)
   }
 
   sparkTest("load vcf with a glob") {
-    val path = resourcePath("bqsr1.vcf").replace("bqsr1", "*")
+    val path = testFile("bqsr1.vcf").replace("bqsr1", "*")
 
     val variants = sc.loadVcf(path).toVariantRDD
     assert(variants.rdd.count === 691)
   }
 
   sparkTest("load vcf from a directory") {
-    val path = new File(resourcePath("vcf_dir/1.vcf")).getParent()
+    val path = new File(testFile("vcf_dir/1.vcf")).getParent()
 
     val variants = sc.loadVcf(path).toVariantRDD
     assert(variants.rdd.count === 681)
   }
 
   sparkTest("load parquet with globs") {
-    val inputPath = resourcePath("small.sam")
+    val inputPath = testFile("small.sam")
     val reads = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation()
     reads.saveAsParquet(outputPath)
@@ -387,7 +387,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("bad glob should fail") {
-    val inputPath = resourcePath("small.sam")
+    val inputPath = testFile("small.sam")
     intercept[FileNotFoundException] {
       sc.getFsAndFiles(new Path(inputPath.replace(".sam", "*.sad")))
     }

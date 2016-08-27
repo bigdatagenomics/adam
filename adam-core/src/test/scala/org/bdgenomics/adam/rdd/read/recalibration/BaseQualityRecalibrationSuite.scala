@@ -28,9 +28,9 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 
 class BaseQualityRecalibrationSuite extends ADAMFunSuite {
   sparkTest("BQSR Test Input #1") {
-    val readsFilepath = resourcePath("bqsr1.sam")
-    val snpsFilepath = resourcePath("bqsr1.snps")
-    val obsFilepath = resourcePath("bqsr1-ref.observed")
+    val readsFilepath = testFile("bqsr1.sam")
+    val snpsFilepath = testFile("bqsr1.snps")
+    val obsFilepath = testFile("bqsr1-ref.observed")
 
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath).rdd
     val snps = sc.broadcast(SnpTable(new File(snpsFilepath)))
@@ -47,9 +47,9 @@ class BaseQualityRecalibrationSuite extends ADAMFunSuite {
   }
 
   sparkTest("BQSR Test Input #1 w/ VCF Sites") {
-    val readsFilepath = resourcePath("bqsr1.sam")
-    val snpsFilepath = resourcePath("bqsr1.vcf")
-    val obsFilepath = resourcePath("bqsr1-ref.observed")
+    val readsFilepath = testFile("bqsr1.sam")
+    val snpsFilepath = testFile("bqsr1.vcf")
+    val obsFilepath = testFile("bqsr1-ref.observed")
 
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath).rdd
     val variants: RDD[RichVariant] = sc.loadVariants(snpsFilepath).rdd.map(new RichVariant(_))
