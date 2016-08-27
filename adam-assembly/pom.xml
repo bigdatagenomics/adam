@@ -10,13 +10,13 @@
 
   <artifactId>adam-assembly_2.10</artifactId>
   <packaging>jar</packaging>
-  <name>ADAM_2.10: Assembly</name>
+  <name>ADAM_${scala.version.prefix}: Assembly</name>
   <properties>
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
   </properties>
   <build>
-    <finalName>adam_2.10-${project.version}</finalName>
+    <finalName>adam_${scala.version.prefix}-${project.version}</finalName>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -114,7 +114,7 @@
   <dependencies>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-cli_2.10</artifactId>
+      <artifactId>adam-cli_${scala.version.prefix}</artifactId>
     </dependency>
   </dependencies>
 </project>

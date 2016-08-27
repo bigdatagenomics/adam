@@ -12,15 +12,15 @@
   <artifactId>adam-parent_2.10</artifactId>
   <version>0.19.1-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>ADAM_2.10</name>
+  <name>ADAM_${scala.version.prefix}</name>
   <description>A fast, scalable genome analysis system</description>
   <url>http://bdgenomics.org/</url>
 
   <properties>
     <java.version>1.8</java.version>
     <avro.version>1.8.0</avro.version>
-    <!-- informative only, used in about template substitution -->
-    <scala.version>2.10</scala.version>
+    <scala.version>2.10.6</scala.version>
+    <scala.version.prefix>2.10</scala.version.prefix>
     <spark.version>1.6.1</spark.version>
     <parquet.version>1.8.1</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
@@ -69,8 +69,8 @@
   </issueManagement>
 
   <build>
-    <outputDirectory>target/scala-2.10.4/classes</outputDirectory>
-    <testOutputDirectory>target/scala-2.10.4/test-classes</testOutputDirectory>
+    <outputDirectory>target/${scala.version}/classes</outputDirectory>
+    <testOutputDirectory>target/${scala.version}/test-classes</testOutputDirectory>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -165,7 +165,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>2.7</version>
+          <version>3.0.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -268,7 +268,7 @@
           </execution>
         </executions>
         <configuration>
-          <scalaVersion>2.10.4</scalaVersion>
+          <scalaVersion>${scala.version}</scalaVersion>
           <useZincServer>true</useZincServer>
           <args>
             <arg>-unchecked</arg>
@@ -334,40 +334,40 @@
       <dependency>
         <groupId>org.scala-lang</groupId>
         <artifactId>scala-library</artifactId>
-        <version>2.10.4</version>
+        <version>${scala.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-core_2.10</artifactId>
+        <artifactId>adam-core_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-core_2.10</artifactId>
+        <artifactId>adam-core_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-cli_2.10</artifactId>
+        <artifactId>adam-cli_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-apis_2.10</artifactId>
+        <artifactId>adam-apis_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-apis_2.10</artifactId>
+        <artifactId>adam-apis_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-misc_2.10</artifactId>
+        <artifactId>utils-misc_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
@@ -380,7 +380,7 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-misc_2.10</artifactId>
+        <artifactId>utils-misc_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
          <exclusions>
           <exclusion>
@@ -391,17 +391,17 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-cli_2.10</artifactId>
+        <artifactId>utils-cli_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-intervalrdd_2.10</artifactId>
+        <artifactId>utils-intervalrdd_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-io_2.10</artifactId>
+        <artifactId>utils-io_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
         <exclusions>
           <exclusion>
@@ -412,7 +412,7 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-metrics_2.10</artifactId>
+        <artifactId>utils-metrics_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
       </dependency>
       <dependency>
@@ -449,7 +449,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.spark</groupId>
-        <artifactId>spark-core_2.10</artifactId>
+        <artifactId>spark-core_${scala.version.prefix}</artifactId>
         <version>${spark.version}</version>
         <scope>provided</scope>
         <exclusions>
@@ -475,6 +475,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.parquet</groupId>
+        <!-- This library has no Scala 2.11 version, but using the 2.10 version seems to work. -->
         <artifactId>parquet-scala_2.10</artifactId>
         <version>${parquet.version}</version>
         <exclusions>
@@ -507,7 +508,7 @@
       </dependency>
       <dependency>
         <groupId>org.scalatest</groupId>
-        <artifactId>scalatest_2.10</artifactId>
+        <artifactId>scalatest_${scala.version.prefix}</artifactId>
         <version>2.2.6</version>
         <scope>test</scope>
       </dependency>
@@ -560,7 +561,7 @@
       </dependency>
       <dependency>
         <groupId>net.codingwell</groupId>
-        <artifactId>scala-guice_2.10</artifactId>
+        <artifactId>scala-guice_${scala.version.prefix}</artifactId>
         <version>4.0.1</version>
       </dependency>
     </dependencies>
@@ -651,7 +652,7 @@
             <artifactId>scoverage-maven-plugin</artifactId>
             <version>${scoverage.plugin.version}</version>
             <configuration>
-              <scalaVersion>2.10.4</scalaVersion>
+              <scalaVersion>${scala.version}</scalaVersion>
               <aggregate>true</aggregate>
             </configuration>
           </plugin>

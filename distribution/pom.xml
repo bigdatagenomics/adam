@@ -10,7 +10,7 @@
 
   <artifactId>adam-distribution_2.10</artifactId>
   <packaging>pom</packaging>
-  <name>ADAM_2.10: Distribution</name>
+  <name>ADAM_${scala.version.prefix}: Distribution</name>
   <build>
     <plugins>
       <plugin>
