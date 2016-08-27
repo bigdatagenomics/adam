@@ -30,7 +30,7 @@ class FlagStatSuite extends ADAMFunSuite {
 
   sparkTest("Standard FlagStat test") {
 
-    val inputpath = resourcePath("NA12878.sam")
+    val inputpath = testFile("NA12878.sam")
     val argLine = "%s".format(inputpath).split("\\s+")
 
     val args: FlagStatArgs = Args4j.apply[FlagStatArgs](argLine)

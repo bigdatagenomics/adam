@@ -34,7 +34,7 @@ class FieldEnumerationSuite extends ADAMFunSuite {
   }
 
   sparkTest("Simple projection on Read works") {
-    val readsFilepath = resourcePath("reads12.sam")
+    val readsFilepath = testFile("reads12.sam")
     val readsParquetFilepath = tmpFile("reads12.adam")
 
     // Convert the reads12.sam file into a parquet file

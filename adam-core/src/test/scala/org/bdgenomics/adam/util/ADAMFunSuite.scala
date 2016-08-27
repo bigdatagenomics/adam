@@ -19,9 +19,11 @@ package org.bdgenomics.adam.util
 
 import com.google.common.io.Resources
 import java.io.File
-import java.net.URI
+import java.net.{ URI, URL }
 import java.nio.file.{ Files, Path }
+
 import org.bdgenomics.utils.misc.SparkFunSuite
+
 import scala.io.Source
 
 trait ADAMFunSuite extends SparkFunSuite {
@@ -34,9 +36,9 @@ trait ADAMFunSuite extends SparkFunSuite {
     "spark.kryo.registrationRequired" -> "true"
   )
 
-  def resourceUrl(path: String) = ClassLoader.getSystemClassLoader.getResource(path)
-  def resourcePath(path: String) = resourceUrl(path).getFile
-  def tmpFile(path: String) = Files.createTempDirectory("").toAbsolutePath.toString + "/" + path
+  def resourceUrl(path: String): URL = ClassLoader.getSystemClassLoader.getResource(path)
+
+  def tmpFile(path: String): String = Files.createTempDirectory("").toAbsolutePath.toString + "/" + path
 
   /**
    * Creates temporary file for saveAsParquet().

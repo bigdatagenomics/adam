@@ -206,7 +206,7 @@ class FastaConverterSuite extends ADAMFunSuite {
     assert(convertedFragmentSequence2 === fastaFragmentSequence2)
   }
 
-  val chr1File = resourcePath("human_g1k_v37_chr1_59kb.fasta")
+  val chr1File = testFile("human_g1k_v37_chr1_59kb.fasta")
 
   sparkTest("convert reference fasta file") {
     //Loading "human_g1k_v37_chr1_59kb.fasta"

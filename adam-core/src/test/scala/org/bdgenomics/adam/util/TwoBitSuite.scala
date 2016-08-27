@@ -24,7 +24,7 @@ import org.bdgenomics.utils.io.LocalFileByteAccess
 
 class TwoBitSuite extends ADAMFunSuite {
   test("correctly read sequence from .2bit file") {
-    val file = new File(resourcePath("hg19.chrM.2bit"))
+    val file = new File(testFile("hg19.chrM.2bit"))
     val byteAccess = new LocalFileByteAccess(file)
     val twoBitFile = new TwoBitFile(byteAccess)
     assert(twoBitFile.numSeq == 1)
@@ -35,7 +35,7 @@ class TwoBitSuite extends ADAMFunSuite {
   }
 
   test("correctly return masked sequences from .2bit file") {
-    val file = new File(resourcePath("hg19.chrM.2bit"))
+    val file = new File(testFile("hg19.chrM.2bit"))
     val byteAccess = new LocalFileByteAccess(file)
     val twoBitFile = new TwoBitFile(byteAccess)
     assert(twoBitFile.extract(ReferenceRegion("hg19_chrM", 0, 10), true) == "GATCACAGGT")
@@ -43,14 +43,14 @@ class TwoBitSuite extends ADAMFunSuite {
   }
 
   test("correctly return Ns from .2bit file") {
-    val file = new File(resourcePath("human_g1k_v37_chr1_59kb.2bit"))
+    val file = new File(testFile("human_g1k_v37_chr1_59kb.2bit"))
     val byteAccess = new LocalFileByteAccess(file)
     val twoBitFile = new TwoBitFile(byteAccess)
     assert(twoBitFile.extract(ReferenceRegion("1", 9990, 10010), true) == "NNNNNNNNNNTAACCCTAAC")
   }
 
   test("correctly calculates sequence dictionary") {
-    val file = new File(resourcePath("hg19.chrM.2bit"))
+    val file = new File(testFile("hg19.chrM.2bit"))
     val byteAccess = new LocalFileByteAccess(file)
     val twoBitFile = new TwoBitFile(byteAccess)
     val dict = twoBitFile.sequences

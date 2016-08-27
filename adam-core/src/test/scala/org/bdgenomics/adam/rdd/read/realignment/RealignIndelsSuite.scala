@@ -29,7 +29,7 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 class RealignIndelsSuite extends ADAMFunSuite {
 
   def artificialReadsRdd: AlignmentRecordRDD = {
-    val path = resourcePath("artificial.sam")
+    val path = testFile("artificial.sam")
     sc.loadAlignments(path)
   }
 
@@ -45,7 +45,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
   }
 
   def gatkArtificialRealignedReads: RDD[AlignmentRecord] = {
-    val path = resourcePath("artificial.realigned.sam")
+    val path = testFile("artificial.realigned.sam")
     sc.loadAlignments(path).rdd
   }
 

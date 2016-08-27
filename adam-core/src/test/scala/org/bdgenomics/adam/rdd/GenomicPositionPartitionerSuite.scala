@@ -107,7 +107,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
   }
 
   sparkTest("test that simple partitioning works okay on a reasonable set of ADAMRecords") {
-    val filename = resourcePath("reads12.sam")
+    val filename = testFile("reads12.sam")
     val parts = 1
 
     val p = {
@@ -139,7 +139,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
   }
 
   sparkTest("test indexed ReferencePosition partitioning works on a set of indexed ADAMRecords") {
-    val filename = resourcePath("reads12.sam")
+    val filename = testFile("reads12.sam")
     val parts = 10
 
     val gRdd = sc.loadAlignments(filename)
