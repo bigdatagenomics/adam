@@ -53,7 +53,7 @@
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest-maven-plugin</artifactId>
         <configuration>
-          <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+          <reportsDirectory>${project.build.directory}/scalatest-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>ADAMTestSuite.txt</filereports>
           <!--
