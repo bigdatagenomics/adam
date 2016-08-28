@@ -136,9 +136,36 @@ object IndelRealignmentTarget {
   }
 }
 
+class IndelRealignmentTargetSerializer extends Serializer[IndelRealignmentTarget] {
+
+  def write(kryo: Kryo, output: Output, obj: IndelRealignmentTarget) = {
+    output.writeString(obj.readRange.referenceName)
+    output.writeLong(obj.readRange.start)
+    output.writeLong(obj.readRange.end)
+    output.writeBoolean(obj.variation.isDefined)
+    obj.variation.foreach(r => {
+      output.writeLong(r.start)
+      output.writeLong(r.end)
+    })
+  }
+
+  def read(kryo: Kryo, input: Input, klazz: Class[IndelRealignmentTarget]): IndelRealignmentTarget = {
+    val refName = input.readString()
+    val readRange = ReferenceRegion(refName, input.readLong(), input.readLong())
+    val variation = if (input.readBoolean()) {
+      Some(ReferenceRegion(refName, input.readLong(), input.readLong()))
+    } else {
+      None
+    }
+    new IndelRealignmentTarget(variation, readRange)
+  }
+}
+
 class IndelRealignmentTarget(
     val variation: Option[ReferenceRegion],
     val readRange: ReferenceRegion) extends Logging {
+
+  assert(variation.map(r => r.referenceName).forall(_ == readRange.referenceName))
 
   override def toString(): String = {
     variation + " over " + readRange
@@ -183,13 +210,25 @@ class TargetSetSerializer extends Serializer[TargetSet] {
 
 class ZippedTargetSetSerializer extends Serializer[ZippedTargetSet] {
 
+  val irts = new IndelRealignmentTargetSerializer()
+
   def write(kryo: Kryo, output: Output, obj: ZippedTargetSet) = {
-    kryo.writeClassAndObject(output, obj.set.toList)
+    output.writeInt(obj.set.size)
+    obj.set.foreach(innerObj => {
+      irts.write(kryo, output, innerObj._1)
+      output.writeInt(innerObj._2)
+    })
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[ZippedTargetSet]): ZippedTargetSet = {
-    new ZippedTargetSet(new TreeSet()(ZippedTargetOrdering)
-      .union(kryo.readClassAndObject(input).asInstanceOf[List[(IndelRealignmentTarget, Int)]].toSet))
+    val size = input.readInt()
+    val array = new Array[(IndelRealignmentTarget, Int)](size)
+    (0 until size).foreach(i => {
+      val target = irts.read(kryo, input, classOf[IndelRealignmentTarget])
+      val idx = input.readInt()
+      array(i) = (target, idx)
+    })
+    new ZippedTargetSet(TreeSet(array: _*)(ZippedTargetOrdering))
   }
 }
 

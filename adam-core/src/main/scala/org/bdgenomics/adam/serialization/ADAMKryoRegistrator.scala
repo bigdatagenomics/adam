@@ -143,7 +143,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)
     kryo.register(classOf[SingleReadBucket], new SingleReadBucketSerializer)
 
-    kryo.register(classOf[IndelRealignmentTarget])
+    kryo.register(classOf[IndelRealignmentTarget], new IndelRealignmentTargetSerializer)
     kryo.register(classOf[TargetSet], new TargetSetSerializer)
     kryo.register(classOf[ZippedTargetSet], new ZippedTargetSetSerializer)
 
@@ -288,6 +288,9 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     //   https://mail-archives.apache.org/mod_mbox/spark-user/201504.mbox/%3CCAC95X6JgXQ3neXF6otj6a+F_MwJ9jbj9P-Ssw3Oqkf518_eT1w@mail.gmail.com%3E
     kryo.register(Class.forName("scala.reflect.ClassTag$$anon$1"))
     kryo.register(classOf[java.lang.Class[_]])
+
+    // needed for manifests
+    kryo.register(Class.forName("scala.reflect.ManifestFactory$ClassTypeManifest"))
 
     // Added to Spark in 1.6.0; needed here for Spark < 1.6.0.
     kryo.register(classOf[Array[Tuple1[Any]]])
