@@ -378,11 +378,10 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
     } else {
       log.info(s"Writing single ${if (asSam) "SAM" else "BAM"} file (not Hadoop-style directory)")
 
-      val fs = FileSystem.get(conf)
-
       val headPath = new Path(filePath + "_head")
       val tailPath = new Path(filePath + "_tail")
       val outputPath = new Path(filePath)
+      val fs = headPath.getFileSystem(rdd.context.hadoopConfiguration)
 
       // get an output stream
       val os = fs.create(headPath)
