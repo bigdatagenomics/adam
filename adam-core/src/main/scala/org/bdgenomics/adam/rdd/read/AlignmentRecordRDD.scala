@@ -355,7 +355,6 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
 
       // flush and close all the streams
       compressedOut.flush()
-      compressedOut.close()
       os.flush()
       os.close()
     }
