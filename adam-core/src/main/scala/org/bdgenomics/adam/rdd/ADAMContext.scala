@@ -1111,7 +1111,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   }
 
   /**
-   * Loads variant annotations from a VCF.
+   * Loads variant annotations stored in VCF format.
    *
    * @see loadVcf
    * @see loadVariantAnnotations
@@ -1123,6 +1123,16 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
     loadVcf(filePath).toDatabaseVariantAnnotationRDD
   }
 
+  /**
+   * Loads DatabaseVariantAnnotations stored in Parquet, with metadata.
+   *
+   * @see loadVariantAnnotations
+   *
+   * @param filePath The path to load files from.
+   * @param predicate An optional predicate to push down into the file.
+   * @param projection An optional projection to use for reading.
+   * @return Returns DatabaseVariantAnnotationRDD.
+   */
   def loadParquetVariantAnnotations(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
@@ -1133,12 +1143,17 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   }
 
   /**
-   * Loads NucleotideContigFragments stored in Parquet, with metadata.
+   * Loads DatabaseVariantAnnotations into an RDD, and automatically detects
+   * the underlying storage format.
+   *
+   * Can load variant annotations from either Parquet or VCF.
+   *
+   * @see loadVcfAnnotations
+   * @see loadParquetVariantAnnotations
    *
    * @param filePath The path to load files from.
-   * @param predicate An optional predicate to push down into the file.
    * @param projection An optional projection to use for reading.
-   * @return Returns a NucleotideContigFragmentRDD.
+   * @return Returns DatabaseVariantAnnotationRDD.
    */
   def loadVariantAnnotations(
     filePath: String,
@@ -1221,7 +1236,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   }
 
   /**
-   * Auto-detects the file type and loads contigs as an RDD.
+   * Auto-detects the file type and loads contigs as a NucleotideContigFragmentRDD.
    *
    * Loads files ending in .fa/.fasta/.fa.gz/.fasta.gz as FASTA, else, falls
    * back to Parquet.
@@ -1254,6 +1269,13 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
     }
   }
 
+  private def isVcfExt(filePath: String): Boolean = {
+    filePath.endsWith(".vcf") ||
+      filePath.endsWith(".vcf.gz") ||
+      filePath.endsWith(".vcf.bgzf") ||
+      filePath.endsWith(".vcf.bgz")
+  }
+
   /**
    * Auto-detects the file type and loads a GenotypeRDD.
    *
@@ -1270,8 +1292,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   def loadGenotypes(
     filePath: String,
     projection: Option[Schema] = None): GenotypeRDD = {
-    if (filePath.endsWith(".vcf") ||
-      filePath.endsWith(".vcf.gz")) {
+    if (isVcfExt(filePath)) {
       log.info(s"Loading $filePath as VCF, and converting to Genotypes. Projection is ignored.")
       loadVcf(filePath).toGenotypeRDD
     } else {
@@ -1296,8 +1317,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   def loadVariants(
     filePath: String,
     projection: Option[Schema] = None): VariantRDD = {
-    if (filePath.endsWith(".vcf") ||
-      filePath.endsWith(".vcf.gz")) {
+    if (isVcfExt(filePath)) {
       log.info(s"Loading $filePath as VCF, and converting to Variants. Projection is ignored.")
       loadVcf(filePath).toVariantRDD
     } else {
@@ -1368,7 +1388,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   }
 
   /**
-   * Loads alignments from a given path, and infers the input type.
+   * Auto-detects the file type and loads a FragmentRDD.
    *
    * This method can load:
    *
