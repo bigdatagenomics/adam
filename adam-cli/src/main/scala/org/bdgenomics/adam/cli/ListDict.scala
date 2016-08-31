@@ -43,12 +43,8 @@ class ListDict(protected val args: ListDictArgs) extends BDGSparkCommand[ListDic
   val companion: BDGCommandCompanion = ListDict
 
   def run(sc: SparkContext): Unit = {
-    val dict = sc.loadDictionary[AlignmentRecord](args.inputPath)
+    val gRdd = sc.loadAlignments(args.inputPath)
 
-    dict.records.foreach {
-      rec: SequenceRecord =>
-        println("%s\t%d".format(rec.name, rec.length))
-    }
+    println(gRdd.sequences)
   }
-
 }
