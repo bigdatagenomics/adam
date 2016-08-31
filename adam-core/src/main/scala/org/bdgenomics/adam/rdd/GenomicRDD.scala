@@ -75,6 +75,19 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     }))
   }
 
+  /**
+   * Performs a broadcast inner join between this RDD and another RDD.
+   *
+   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
+   * and broadcast to all the nodes in the cluster. The key equality function
+   * used for this join is the reference region overlap function. Since this
+   * is an inner join, all values who do not overlap a value from the other
+   * RDD are dropped.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space.
+   */
   def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](genomicRdd: GenomicRDD[X, Y])(
     implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
 
@@ -86,6 +99,22 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       .asInstanceOf[GenomicRDD[(T, X), Z]]
   }
 
+  /**
+   * Performs a broadcast right outer join between this RDD and another RDD.
+   *
+   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
+   * and broadcast to all the nodes in the cluster. The key equality function
+   * used for this join is the reference region overlap function. Since this
+   * is a right outer join, all values in the left RDD that do not overlap a
+   * value from the right RDD are dropped. If a value from the right RDD does
+   * not overlap any values in the left RDD, it will be paired with a `None`
+   * in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and all keys from the
+   *   right RDD that did not overlap a key in the left RDD.
+   */
   def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
     implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
 
@@ -100,6 +129,19 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       .asInstanceOf[GenomicRDD[(Option[T], X), Z]]
   }
 
+  /**
+   * Performs a sort-merge inner join between this RDD and another RDD.
+   *
+   * In a sort-merge join, both RDDs are co-partitioned and sorted. The
+   * partitions are then zipped, and we do a merge join on each partition.
+   * The key equality function used for this join is the reference region
+   * overlap function. Since this is an inner join, all values who do not
+   * overlap a value from the other RDD are dropped.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space.
+   */
   def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](genomicRdd: GenomicRDD[X, Y],
                                                                               optPartitions: Option[Int] = None)(
                                                                                 implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
@@ -123,6 +165,22 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       .asInstanceOf[GenomicRDD[(T, X), Z]]
   }
 
+  /**
+   * Performs a sort-merge right outer join between this RDD and another RDD.
+   *
+   * In a sort-merge join, both RDDs are co-partitioned and sorted. The
+   * partitions are then zipped, and we do a merge join on each partition.
+   * The key equality function used for this join is the reference region
+   * overlap function. Since this is a right outer join, all values in the
+   * left RDD that do not overlap a value from the right RDD are dropped.
+   * If a value from the right RDD does not overlap any values in the left
+   * RDD, it will be paired with a `None` in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and all keys from the
+   *   right RDD that did not overlap a key in the left RDD.
+   */
   def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](genomicRdd: GenomicRDD[X, Y],
                                                                                                 optPartitions: Option[Int] = None)(
                                                                                                   implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
@@ -149,6 +207,22 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       .asInstanceOf[GenomicRDD[(Option[T], X), Z]]
   }
 
+  /**
+   * Performs a sort-merge left outer join between this RDD and another RDD.
+   *
+   * In a sort-merge join, both RDDs are co-partitioned and sorted. The
+   * partitions are then zipped, and we do a merge join on each partition.
+   * The key equality function used for this join is the reference region
+   * overlap function. Since this is a left outer join, all values in the
+   * right RDD that do not overlap a value from the left RDD are dropped.
+   * If a value from the left RDD does not overlap any values in the right
+   * RDD, it will be paired with a `None` in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and all keys from the
+   *   left RDD that did not overlap a key in the right RDD.
+   */
   def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Option[X]), Z]](genomicRdd: GenomicRDD[X, Y],
                                                                                                optPartitions: Option[Int] = None)(
                                                                                                  implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Option[X]), Z] = {
@@ -175,6 +249,21 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       .asInstanceOf[GenomicRDD[(T, Option[X]), Z]]
   }
 
+  /**
+   * Performs a sort-merge full outer join between this RDD and another RDD.
+   *
+   * In a sort-merge join, both RDDs are co-partitioned and sorted. The
+   * partitions are then zipped, and we do a merge join on each partition.
+   * The key equality function used for this join is the reference region
+   * overlap function. Since this is a full outer join, if a value from either
+   * RDD does not overlap any values in the other RDD, it will be paired with
+   * a `None` in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and values that did not
+   *   overlap will be paired with a `None`.
+   */
   def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Option[X]), Z]](genomicRdd: GenomicRDD[X, Y],
                                                                                                        optPartitions: Option[Int] = None)(
                                                                                                          implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Option[X]), Z] = {
@@ -201,6 +290,22 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       .asInstanceOf[GenomicRDD[(Option[T], Option[X]), Z]]
   }
 
+  /**
+   * Performs a sort-merge inner join between this RDD and another RDD,
+   * followed by a groupBy on the left value.
+   *
+   * In a sort-merge join, both RDDs are co-partitioned and sorted. The
+   * partitions are then zipped, and we do a merge join on each partition.
+   * The key equality function used for this join is the reference region
+   * overlap function. Since this is an inner join, all values who do not
+   * overlap a value from the other RDD are dropped. In the same operation,
+   * we group all values by the left item in the RDD.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, grouped together by
+   *   the value they overlapped in the left RDD..
+   */
   def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Iterable[X]), Z]](genomicRdd: GenomicRDD[X, Y],
                                                                                                       optPartitions: Option[Int] = None)(
                                                                                                         implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Iterable[X]), Z] = {
@@ -227,6 +332,24 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       .asInstanceOf[GenomicRDD[(T, Iterable[X]), Z]]
   }
 
+  /**
+   * Performs a sort-merge right outer join between this RDD and another RDD,
+   * followed by a groupBy on the left value, if not null.
+   *
+   * In a sort-merge join, both RDDs are co-partitioned and sorted. The
+   * partitions are then zipped, and we do a merge join on each partition.
+   * The key equality function used for this join is the reference region
+   * overlap function. In the same operation, we group all values by the left
+   * item in the RDD. Since this is a right outer join, all values from the
+   * right RDD who did not overlap a value from the left RDD are placed into
+   * a length-1 Iterable with a `None` key.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, grouped together by
+   *   the value they overlapped in the left RDD, and all values from the
+   *   right RDD that did not overlap an item in the left RDD.
+   */
   def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Iterable[X]), Z]](genomicRdd: GenomicRDD[X, Y],
                                                                                                                         optPartitions: Option[Int] = None)(
                                                                                                                           implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Iterable[X]), Z] = {
