@@ -22,8 +22,8 @@ import org.apache.avro.specific.SpecificRecord
 import htsjdk.variant.variantcontext.VariantContext
 import htsjdk.variant.vcf._
 import org.bdgenomics.formats.avro.{
-  DatabaseVariantAnnotation,
   Genotype,
+  VariantAnnotation,
   VariantCallingAnnotations
 }
 
@@ -194,13 +194,13 @@ private[converters] object VariantAnnotationConverter extends Serializable {
    * Mapping betweem VCF info field names and fields IDs in the
    * VariantCallingAnnotations schema.
    */
-  lazy val VCF2VariantCallingAnnotations: Map[String, (Int, Object => Object)] =
+  lazy val vcfToVariantCallingAnnotations: Map[String, (Int, Object => Object)] =
     createFieldMap(INFO_KEYS, VariantCallingAnnotations.getClassSchema)
 
   /**
    * Mapping between VCF format field names and field IDs in the Genotype schema.
    */
-  lazy val VCF2GenotypeAnnotations: Map[String, (Int, Object => Object)] =
+  lazy val vcfToGenotypeAnnotations: Map[String, (Int, Object => Object)] =
     createFieldMap(FORMAT_KEYS, Genotype.getClassSchema)
 
   /**
@@ -211,11 +211,10 @@ private[converters] object VariantAnnotationConverter extends Serializable {
     DBNSFP_KEYS) // ::: COSMIC_KEYS
 
   /**
-   * Mapping between VCF info field names and DatabaseVariantAnnotation schema
-   * field IDs for all database specific fields.
+   * Mapping between VCF info field names and VariantAnnotation schema field IDs.
    */
-  lazy val VCF2DatabaseAnnotations: Map[String, (Int, Object => Object)] = createFieldMap(EXTERNAL_DATABASE_KEYS,
-    DatabaseVariantAnnotation.getClassSchema)
+  lazy val vcfToVariantAnnotations: Map[String, (Int, Object => Object)] = createFieldMap(EXTERNAL_DATABASE_KEYS,
+    VariantAnnotation.getClassSchema)
 
   /**
    * Creates a mapping between a Seq of attribute keys, and the field ID for
@@ -265,15 +264,15 @@ private[converters] object VariantAnnotationConverter extends Serializable {
   }
 
   /**
-   * Remaps fields from an htsjdk variant context into a site annotation.
+   * Remaps fields from an htsjdk variant context into a varant annotation.
    *
    * @param vc htsjdk variant context for a site.
-   * @param annotation Pre-populated site annotation in Avro.
-   * @return Annotation with additional info fields filled in.
+   * @param annotation Pre-populated variant annotation in Avro.
+   * @return Variant annotation with additional info fields filled in.
    */
   def convert(vc: VariantContext,
-              annotation: DatabaseVariantAnnotation): DatabaseVariantAnnotation = {
-    fillRecord(VCF2DatabaseAnnotations, vc, annotation)
+              annotation: VariantAnnotation): VariantAnnotation = {
+    fillRecord(vcfToVariantAnnotations, vc, annotation)
   }
 
   /**
@@ -286,7 +285,7 @@ private[converters] object VariantAnnotationConverter extends Serializable {
    */
   def convert(vc: VariantContext,
               call: VariantCallingAnnotations): VariantCallingAnnotations = {
-    fillRecord(VCF2VariantCallingAnnotations, vc, call)
+    fillRecord(vcfToVariantCallingAnnotations, vc, call)
   }
 
   /**
@@ -300,7 +299,7 @@ private[converters] object VariantAnnotationConverter extends Serializable {
    */
   def convert(g: htsjdk.variant.variantcontext.Genotype,
               genotype: Genotype): Genotype = {
-    for ((v, a) <- VariantAnnotationConverter.VCF2GenotypeAnnotations) {
+    for ((v, a) <- VariantAnnotationConverter.vcfToGenotypeAnnotations) {
       // Add extended attributes if present
       val attr = g.getExtendedAttribute(v)
       if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {

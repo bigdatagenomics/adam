@@ -31,7 +31,14 @@ import org.bdgenomics.formats.avro.{
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConverters._
 
-object VariantAnnotations extends Serializable with Logging {
+/**
+ * Convert between htsjdk VCF INFO reserved key "ANN" values and TranscriptEffects.
+ */
+private[adam] object TranscriptEffectConverter extends Serializable with Logging {
+
+  /**
+   * Look up variant annotation messages by name and message code.
+   */
   private val MESSAGES: Map[String, VariantAnnotationMessage] = Map(
     // name -> enum
     ERROR_CHROMOSOME_NOT_FOUND.name() -> ERROR_CHROMOSOME_NOT_FOUND,
@@ -57,15 +64,33 @@ object VariantAnnotations extends Serializable with Logging {
     "I3" -> INFO_NON_REFERENCE_ANNOTATION
   )
 
+  /**
+   * Split effects by <code>&amp;</code> character.
+   *
+   * @param s effects to split
+   * @return effects split by <code>&amp;</code> character
+   */
   private def parseEffects(s: String): List[String] = {
     s.split("&").toList
   }
 
+  /**
+   * Split variant effect messages by <code>&amp;</code> character.
+   *
+   * @param s variant effect messages to split
+   * @return variant effect messages split by <code>&amp;</code> character
+   */
   private def parseMessages(s: String): List[VariantAnnotationMessage] = {
     // todo: haven't seen a delimiter here, assuming it is also '&'
     s.split("&").map(MESSAGES.get(_)).toList.flatten
   }
 
+  /**
+   * Split a single or fractional value into optional numerator and denominator values.
+   *
+   * @param s single or fractional value to split
+   * @return single or fractional value split into optional numerator and denominator values
+   */
   private def parseFraction(s: String): (Option[Integer], Option[Integer]) = {
     if ("".equals(s)) {
       return (None, None)
@@ -78,10 +103,23 @@ object VariantAnnotations extends Serializable with Logging {
     }
   }
 
+  /**
+   * Set a value via a function if the value is not empty.
+   *
+   * @param s value to set
+   * @param setFn function to call if the value is not empty
+   */
   def setIfNotEmpty(s: String, setFn: String => Unit) {
     Option(s).filter(_.nonEmpty).foreach(setFn)
   }
 
+  /**
+   * Parse zero or one transcript effects from the specified string value.
+   *
+   * @param s value to parse
+   * @param stringency validation stringency
+   * @return zero or one transcript effects parsed from the specified string value
+   */
   private[converters] def parseTranscriptEffect(
     s: String,
     stringency: ValidationStringency): Seq[TranscriptEffect] = {
@@ -110,6 +148,7 @@ object VariantAnnotations extends Serializable with Logging {
 
     val te = TranscriptEffect.newBuilder()
     setIfNotEmpty(alternateAllele, te.setAlternateAllele(_))
+    // note: annotationImpact is not mapped
     if (!effects.isEmpty) te.setEffects(effects.asJava)
     setIfNotEmpty(geneName, te.setGeneName(_))
     setIfNotEmpty(geneId, te.setGeneId(_))
@@ -132,6 +171,13 @@ object VariantAnnotations extends Serializable with Logging {
     Seq(te.build())
   }
 
+  /**
+   * Parse the VCF INFO reserved key "ANN" value into zero or more TranscriptEffects.
+   *
+   * @param s string to parse
+   * @param stringency validation stringency
+   * @return the VCF INFO reserved key "ANN" value parsed into zero or more TranscriptEffects
+   */
   private[converters] def parseAnn(
     s: String,
     stringency: ValidationStringency): List[TranscriptEffect] = {
@@ -139,19 +185,67 @@ object VariantAnnotations extends Serializable with Logging {
     s.split(",").map(parseTranscriptEffect(_, stringency)).flatten.toList
   }
 
-  def createVariantAnnotation(
+  /**
+   * Convert the htsjdk VCF INFO reserved key "ANN" value into zero or more TranscriptEffects,
+   * matching on alternate allele.
+   *
+   * @param variant variant
+   * @param vc htsjdk variant context
+   * @param stringency validation stringency, defaults to strict
+   * @return the htsjdk VCF INFO reserved key "ANN" value converted into zero or more
+   *    TranscriptEffects, matching on alternate allele, and wrapped in an option
+   */
+  def convertToTranscriptEffect(
     variant: Variant,
     vc: VariantContext,
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantAnnotation = {
-
-    val va = VariantAnnotation.newBuilder()
-      .setVariant(variant)
+    stringency: ValidationStringency = ValidationStringency.STRICT): Option[List[TranscriptEffect]] = {
 
     val attr = vc.getAttributeAsString("ANN", null)
     if (attr != null && attr != VCFConstants.MISSING_VALUE_v4) {
-      va.setTranscriptEffects(parseAnn(attr, stringency).asJava)
+      Some(parseAnn(attr, stringency).filter(_.getAlternateAllele == variant.getAlternateAllele).asJava)
+    }
+    None
+  }
+
+  /**
+   * Convert the specified transcript effects into a string suitable for a VCF INFO reserved
+   * key "ANN" value.
+   *
+   * @param effects zero or more transcript effects
+   * @return the specified transcript effects converted into a string suitable for a VCF INFO
+   *    reserved key "ANN" value
+   */
+  def convertToVcfInfoAnnValue(effects: Seq[TranscriptEffect]): String = {
+    def toFraction(numerator: Int, denominator: Int): String = {
+      if (numerator == null && denominator == null) {
+        return ""
+      } else if (denominator == null) {
+        return numerator.toString
+      }
+      return numerator + "/" + denominator
     }
 
-    va.build()
+    def toAnn(te: TranscriptEffect): String = {
+      List
+      (
+        te.getAlternateAllele, // 0
+        "", // annotationImpact
+        Seq(te.getEffects).mkString("&"), // 2
+        te.getGeneName,
+        te.getGeneId,
+        te.getFeatureType,
+        te.getFeatureId,
+        te.getBiotype,
+        toFraction(te.getRank, te.getTotal), // 8
+        te.getTranscriptHgvs, // 9
+        te.getProteinHgvs, // 10
+        toFraction(te.getCdnaPosition, te.getCdnaLength), // 11
+        toFraction(te.getCdsPosition, te.getCdsLength), // 12
+        toFraction(te.getProteinPosition, te.getProteinPosition), // 13
+        te.getDistance,
+        Seq(te.getMessages).mkString("&")
+      ).mkString("|")
+    }
+    effects.map(toAnn).mkString(",")
   }
 }
