@@ -268,9 +268,9 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    * Extracts a variant annotation from a htsjdk VariantContext.
    *
    * @param vc htsjdk variant context to extract annotations from.
-   * @return The database annotations in Avro format.
+   * @return The variant annotations in Avro format.
    */
-  def convertToAnnotation(vc: HtsjdkVariantContext): DatabaseVariantAnnotation = {
+  def convertToVariantAnnotation(vc: HtsjdkVariantContext): VariantAnnotation = {
     val variant = vc.getAlternateAlleles.toList match {
       case List(NON_REF_ALLELE) => {
         createADAMVariant(vc, None /* No alternate allele */ )
@@ -298,7 +298,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
       }
     }
 
-    extractVariantDatabaseAnnotation(variant, vc)
+    extractVariantAnnotation(variant, vc)
   }
 
   /**
@@ -365,16 +365,15 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
   }
 
   /**
-   * Populates a site annotation from an htsjdk variant context.
+   * Populates a variant annotation from an htsjdk variant context.
    *
    * @param variant Avro variant representation for the site.
    * @param vc htsjdk representation of the VCF line.
-   * @return Returns the Avro representation of the annotations at this site
-   *   that indicate membership in an annotation database.
+   * @return Returns the Avro representation of the variant annotations at this site.
    */
-  private def extractVariantDatabaseAnnotation(variant: Variant,
-                                               vc: HtsjdkVariantContext): DatabaseVariantAnnotation = {
-    val annotation = DatabaseVariantAnnotation.newBuilder()
+  private def extractVariantAnnotation(variant: Variant,
+                                       vc: HtsjdkVariantContext): VariantAnnotation = {
+    val annotation = VariantAnnotation.newBuilder()
       .setVariant(variant)
       .build
 

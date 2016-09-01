@@ -17,18 +17,12 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.DatabaseVariantAnnotation
+import org.bdgenomics.formats.avro.Fragment
 
 /**
- * Enumeration of DatabaseVariantAnnotation field names for predicates and projections.
+ * Enumeration of Fragment field names for predicates and projections.
  */
-object DatabaseVariantAnnotationField extends FieldEnumeration(DatabaseVariantAnnotation.SCHEMA$) {
+object FragmentField extends FieldEnumeration(Fragment.SCHEMA$) {
 
-  val variant, dbsnpId, //domain information
-  hgvs, geneSymbol, ensemblGeneId, ensemblTranscriptIds, //clinical fields
-  omimId, cosmicId, clinvarId, clinicalSignificance, //conservation
-  gerpNr, gerpRs, phylop, ancestralAllele, //population statistics
-  thousandGenomesAlleleCount, thousandGenomesAlleleFrequency, //effect
-  referenceAminoAcid, alternateAminoAcid, //predicted effects
-  siftScore, siftScoreConverted, siftPred, mutationTasterScore, mutationTasterScoreConverted, mutationTasterPred = SchemaValue
+  val readName, instrument, runId, fragmentSize, alignments = SchemaValue
 }

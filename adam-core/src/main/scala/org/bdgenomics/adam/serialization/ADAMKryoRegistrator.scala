@@ -113,20 +113,27 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Coverage])
     kryo.register(classOf[Array[Coverage]])
 
-    kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation])
-    kryo.register(classOf[Array[DatabaseVariantAnnotation]])
+    kryo.register(classOf[VariantAnnotation], new AvroSerializer[VariantAnnotation])
+    kryo.register(classOf[Array[VariantAnnotation]])
 
     kryo.register(classOf[NucleotideContigFragment], new AvroSerializer[NucleotideContigFragment])
     kryo.register(classOf[Array[NucleotideContigFragment]])
 
     kryo.register(classOf[Contig], new AvroSerializer[Contig])
+    kryo.register(classOf[Array[Contig]])
     kryo.register(classOf[RecordGroupMetadata], new AvroSerializer[RecordGroupMetadata])
+    kryo.register(classOf[Array[RecordGroupMetadata]])
     kryo.register(classOf[VariantCallingAnnotations], new AvroSerializer[VariantCallingAnnotations])
+    kryo.register(classOf[Array[VariantCallingAnnotations]])
     kryo.register(classOf[TranscriptEffect], new AvroSerializer[TranscriptEffect])
-    kryo.register(classOf[VariantAnnotation], new AvroSerializer[VariantAnnotation])
+    kryo.register(classOf[Array[TranscriptEffect]])
 
-    kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation])
+    kryo.register(classOf[Fragment], new AvroSerializer[Fragment])
+    kryo.register(classOf[Array[Fragment]])
     kryo.register(classOf[Dbxref], new AvroSerializer[Dbxref])
+    kryo.register(classOf[Array[Dbxref]])
+    kryo.register(classOf[OntologyTerm], new AvroSerializer[OntologyTerm])
+    kryo.register(classOf[Array[OntologyTerm]])
 
     kryo.register(classOf[Strand])
 
@@ -134,6 +141,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Array[Feature]])
 
     kryo.register(classOf[Sample], new AvroSerializer[Sample])
+    kryo.register(classOf[Array[Sample]])
 
     kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
     kryo.register(classOf[Array[ReferencePosition]])
