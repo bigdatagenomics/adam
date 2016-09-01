@@ -79,5 +79,5 @@ object Timers extends Metrics {
   val WriteADAMRecord = timer("Write ADAM Record")
   val WriteBAMRecord = timer("Write BAM Record")
   val WriteSAMRecord = timer("Write SAM Record")
-
+  val WriteCRAMRecord = timer("Write CRAM Record")
 }

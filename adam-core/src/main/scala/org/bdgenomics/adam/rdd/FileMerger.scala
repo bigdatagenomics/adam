@@ -18,6 +18,8 @@
 package org.bdgenomics.adam.rdd
 
 import htsjdk.samtools.util.BlockCompressedStreamConstants
+import htsjdk.samtools.cram.build.CramIO
+import htsjdk.samtools.cram.common.CramVersions
 import java.io.{ InputStream, OutputStream }
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.bdgenomics.utils.misc.Logging
@@ -38,6 +40,7 @@ private[rdd] object FileMerger extends Logging {
    *   been written.
    * @param writeEmptyGzipBlock If true, we write an empty GZIP block at the
    *   end of the merged file.
+   * @param writeCramEOF If true, we write CRAM's EOF signifier.
    * @param bufferSize The size in bytes of the buffer used for copying.
    */
   def mergeFiles(fs: FileSystem,
@@ -45,7 +48,13 @@ private[rdd] object FileMerger extends Logging {
                  tailPath: Path,
                  optHeaderPath: Option[Path] = None,
                  writeEmptyGzipBlock: Boolean = false,
+                 writeCramEOF: Boolean = false,
                  bufferSize: Int = 1024) {
+
+    require(bufferSize > 0,
+      "Cannot have buffer size < 1. %d was provided.".format(bufferSize))
+    require(!(writeEmptyGzipBlock && writeCramEOF),
+      "writeEmptyGzipBlock and writeCramEOF are mutually exclusive.")
 
     // get a list of all of the files in the tail file
     val tailFiles = fs.globStatus(new Path("%s/part-*".format(tailPath)))
@@ -128,6 +137,8 @@ private[rdd] object FileMerger extends Logging {
     // finish the file off
     if (writeEmptyGzipBlock) {
       os.write(BlockCompressedStreamConstants.EMPTY_GZIP_BLOCK);
+    } else if (writeCramEOF) {
+      CramIO.issueEOF(CramVersions.DEFAULT_CRAM_VERSION, os)
     }
 
     // flush and close the output stream

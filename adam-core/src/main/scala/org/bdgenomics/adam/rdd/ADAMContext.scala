@@ -395,7 +395,8 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
     val bamFiles = getFsAndFiles(path)
     val filteredFiles = bamFiles.filter(p => {
       val pPath = p.getName()
-      pPath.endsWith(".bam") || pPath.endsWith(".sam") || pPath.startsWith("part-")
+      pPath.endsWith(".bam") || pPath.endsWith(".cram") ||
+        pPath.endsWith(".sam") || pPath.startsWith("part-")
     })
 
     require(filteredFiles.nonEmpty,
@@ -1337,7 +1338,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    * This method can load:
    *
    * * AlignmentRecords via Parquet (default)
-   * * SAM/BAM (.sam, .bam)
+   * * SAM/BAM/CRAM (.sam, .bam, .cram)
    * * FASTQ (interleaved, single end, paired end) (.ifq, .fq/.fastq)
    * * FASTA (.fa, .fasta)
    * * NucleotideContigFragments via Parquet (.contig.adam)
@@ -1368,8 +1369,9 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadAlignmentRecords.time {
 
     if (filePath.endsWith(".sam") ||
-      filePath.endsWith(".bam")) {
-      log.info(s"Loading $filePath as SAM/BAM and converting to AlignmentRecords. Projection is ignored.")
+      filePath.endsWith(".bam") ||
+      filePath.endsWith(".cram")) {
+      log.info(s"Loading $filePath as SAM/BAM/CRAM and converting to AlignmentRecords. Projection is ignored.")
       loadBam(filePath, stringency)
     } else if (filePath.endsWith(".ifq")) {
       log.info(s"Loading $filePath as interleaved FASTQ and converting to AlignmentRecords. Projection is ignored.")
@@ -1398,7 +1400,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    * This method can load:
    *
    * * Fragments via Parquet (default)
-   * * SAM/BAM (.sam, .bam)
+   * * SAM/BAM/CRAM (.sam, .bam, .cram)
    * * FASTQ (interleaved only --> .ifq)
    * * Autodetects AlignmentRecord as Parquet with .reads.adam extension.
    *
@@ -1407,7 +1409,8 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    */
   def loadFragments(filePath: String): FragmentRDD = LoadFragments.time {
     if (filePath.endsWith(".sam") ||
-      filePath.endsWith(".bam")) {
+      filePath.endsWith(".bam") ||
+      filePath.endsWith(".cram")) {
       log.info(s"Loading $filePath as SAM/BAM and converting to Fragments.")
       loadBam(filePath).toFragments
     } else if (filePath.endsWith(".reads.adam")) {

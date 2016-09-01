@@ -32,7 +32,7 @@ import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.rdd.features.CoverageRDD
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
-
+import org.seqdoop.hadoop_bam.{ CRAMInputFormat, SAMFormat }
 import scala.util.Random
 
 private object SequenceIndexWithReadOrdering extends Ordering[((Int, Long), (AlignmentRecord, Int))] {
@@ -158,7 +158,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val tempFile = Files.createTempDirectory("reads12")
     ardd.saveAsSam(tempFile.toAbsolutePath.toString + "/reads12.sam",
-      asSam = true)
+      asType = Some(SAMFormat.SAM))
 
     val rdd12B = sc.loadBam(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
 
@@ -170,6 +170,68 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     reads12A.indices.foreach {
       case i: Int =>
         val (readA, readB) = (reads12A(i), reads12B(i))
+        assert(readA.getSequence === readB.getSequence)
+        assert(readA.getQual === readB.getQual)
+        assert(readA.getCigar === readB.getCigar)
+    }
+  }
+
+  sparkTest("round trip with single CRAM file produces equivalent Read values") {
+    val readsPath = resourcePath("artificial.cram")
+    val referencePath = resourceUrl("artificial.fa").toString
+    sc.hadoopConfiguration.set(CRAMInputFormat.REFERENCE_SOURCE_PATH_PROPERTY,
+      referencePath)
+
+    val ardd = sc.loadBam(readsPath)
+    val rddA = ardd.rdd
+
+    val tempFile = tmpFile("artificial.cram")
+    ardd.saveAsSam(tempFile,
+      asType = Some(SAMFormat.CRAM),
+      asSingleFile = true,
+      isSorted = true)
+
+    val rddB = sc.loadBam(tempFile)
+
+    assert(rddB.rdd.count() === rddA.rdd.count())
+
+    val readsA = rddA.rdd.collect()
+    val readsB = rddB.rdd.collect()
+
+    readsA.indices.foreach {
+      case i: Int =>
+        val (readA, readB) = (readsA(i), readsB(i))
+        assert(readA.getSequence === readB.getSequence)
+        assert(readA.getQual === readB.getQual)
+        assert(readA.getCigar === readB.getCigar)
+    }
+  }
+
+  sparkTest("round trip with sharded CRAM file produces equivalent Read values") {
+    val readsPath = resourcePath("artificial.cram")
+    val referencePath = resourceUrl("artificial.fa").toString
+    sc.hadoopConfiguration.set(CRAMInputFormat.REFERENCE_SOURCE_PATH_PROPERTY,
+      referencePath)
+
+    val ardd = sc.loadBam(readsPath)
+    val rddA = ardd.rdd
+
+    val tempFile = tmpFile("artificial.cram")
+    ardd.saveAsSam(tempFile,
+      asType = Some(SAMFormat.CRAM),
+      asSingleFile = false,
+      isSorted = true)
+
+    val rddB = sc.loadBam(tempFile + "/part-r-00000")
+
+    assert(rddB.rdd.count() === rddA.rdd.count())
+
+    val readsA = rddA.rdd.collect()
+    val readsB = rddB.rdd.collect()
+
+    readsA.indices.foreach {
+      case i: Int =>
+        val (readA, readB) = (readsA(i), readsB(i))
         assert(readA.getSequence === readB.getSequence)
         assert(readA.getQual === readB.getQual)
         assert(readA.getCigar === readB.getCigar)
@@ -315,7 +377,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val rRdd = sc.loadAlignments(inputPath)
     rRdd.rdd.cache()
     rRdd.saveAsSam("%s/%s".format(tempFile.toAbsolutePath.toString, filename),
-      asSam = asSam,
+      asType = if (asSam) Some(SAMFormat.SAM) else Some(SAMFormat.BAM),
       asSingleFile = true)
     val rdd2 = sc.loadAlignments("%s/%s".format(tempFile.toAbsolutePath.toString, filename))
     rdd2.rdd.cache()
@@ -453,7 +515,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".sam")
-    reads.saveAsSam(outputPath, true)
+    reads.saveAsSam(outputPath, asType = Some(SAMFormat.SAM))
     assert(new File(outputPath).exists())
   }
 
@@ -461,7 +523,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".sam")
-    reads.saveAsSam(outputPath, true, true)
+    reads.saveAsSam(outputPath,
+      asType = Some(SAMFormat.SAM),
+      asSingleFile = true)
     assert(new File(outputPath).exists())
   }
 
@@ -469,7 +533,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".sam")
-    reads.saveAsSam(outputPath, true, true, true)
+    reads.saveAsSam(outputPath,
+      asType = Some(SAMFormat.SAM),
+      asSingleFile = true,
+      isSorted = true)
     assert(new File(outputPath).exists())
   }
 
@@ -477,7 +544,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".bam")
-    reads.saveAsSam(outputPath, false)
+    reads.saveAsSam(outputPath, asType = Some(SAMFormat.BAM))
     assert(new File(outputPath).exists())
   }
 
@@ -485,7 +552,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".bam")
-    reads.saveAsSam(outputPath, false, true)
+    reads.saveAsSam(outputPath,
+      asType = Some(SAMFormat.BAM),
+      asSingleFile = true)
     assert(new File(outputPath).exists())
   }
 
@@ -493,7 +562,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = resourcePath("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".bam")
-    reads.saveAsSam(outputPath, false, true, true)
+    reads.saveAsSam(outputPath,
+      asType = Some(SAMFormat.BAM),
+      asSingleFile = true,
+      isSorted = true)
     assert(new File(outputPath).exists())
   }
 

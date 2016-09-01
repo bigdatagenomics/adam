@@ -36,7 +36,8 @@ trait ADAMFunSuite extends SparkFunSuite {
     "spark.kryo.registrationRequired" -> "true"
   )
 
-  def resourcePath(path: String) = ClassLoader.getSystemClassLoader.getResource(path).getFile
+  def resourceUrl(path: String) = ClassLoader.getSystemClassLoader.getResource(path)
+  def resourcePath(path: String) = resourceUrl(path).getFile
   def tmpFile(path: String) = Files.createTempDirectory("").toAbsolutePath.toString + "/" + path
 
   /**

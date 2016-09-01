@@ -32,7 +32,7 @@ import org.bdgenomics.adam.rdd.read.AlignedReadRDD
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
-import org.seqdoop.hadoop_bam.BAMInputFormat
+import org.seqdoop.hadoop_bam.{ BAMInputFormat, CRAMInputFormat }
 import scala.collection.JavaConversions._
 
 case class TestSaveArgs(var outputPath: String) extends ADAMSaveAnyArgs {
@@ -76,6 +76,15 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = resourcePath("small.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path).rdd
     assert(reads.count() === 20)
+  }
+
+  sparkTest("can read a small .CRAM file") {
+    val path = resourcePath("artificial.cram")
+    val referencePath = resourceUrl("artificial.fa").toString
+    sc.hadoopConfiguration.set(CRAMInputFormat.REFERENCE_SOURCE_PATH_PROPERTY,
+      referencePath)
+    val reads: RDD[AlignmentRecord] = sc.loadAlignments(path).rdd
+    assert(reads.count() === 10)
   }
 
   sparkTest("can read a small .SAM with all attribute tag types") {
