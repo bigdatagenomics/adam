@@ -17,46 +17,12 @@
  */
 package org.bdgenomics.adam.serialization
 
-import java.util
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
-import htsjdk.samtools.{
-  Cigar,
-  CigarElement,
-  CigarOperator,
-  SAMFileHeader,
-  SAMSequenceDictionary,
-  SAMSequenceRecord
-}
-import htsjdk.variant.vcf.{
-  VCFContigHeaderLine,
-  VCFFilterHeaderLine,
-  VCFFormatHeaderLine,
-  VCFInfoHeaderLine,
-  VCFHeader,
-  VCFHeaderLine,
-  VCFHeaderLineCount,
-  VCFHeaderLineType
-}
 import it.unimi.dsi.fastutil.io.{ FastByteArrayInputStream, FastByteArrayOutputStream }
 import org.apache.avro.io.{ BinaryDecoder, BinaryEncoder, DecoderFactory, EncoderFactory }
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificDatumWriter, SpecificRecord }
-import org.apache.hadoop.io.{ LongWritable, Text }
 import org.apache.spark.serializer.KryoRegistrator
-import org.bdgenomics.adam.algorithms.consensus.Consensus
-import org.bdgenomics.adam.converters.FastaConverter.FastaDescriptionLine
-import org.bdgenomics.adam.converters.FragmentCollector
-import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.rdd.read.realignment._
-import org.bdgenomics.adam.rdd.read.recalibration.{ CovariateKey, CovariateSpace, CycleCovariate, DinucCovariate, Observation, ObservationAccumulator }
-import org.bdgenomics.adam.rdd.read.{ DuplicateMetrics, FlagStatMetrics }
-import org.bdgenomics.adam.rdd.GenomeBins
-import org.bdgenomics.adam.rich.{ DecadentRead, ReferenceSequenceContext, RichAlignmentRecord, RichVariant }
-import org.bdgenomics.adam.util.{ MdTag, QualityScore, ReferenceContigMap, TwoBitFile, TwoBitFileSerializer }
-import org.bdgenomics.formats.avro._
-import org.codehaus.jackson.node.{ BooleanNode, NullNode, TextNode }
-import org.seqdoop.hadoop_bam.{ VariantContextWithHeader, VariantContextWritable }
-import scala.collection.immutable
 import scala.reflect.ClassTag
 
 case class InputStreamWithDecoder(size: Int) {
@@ -98,157 +64,39 @@ class AvroSerializer[T <: SpecificRecord: ClassTag] extends Serializer[T] {
 class ADAMKryoRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo) {
 
-    // Register Avro classes
-    kryo.register(classOf[AlignmentRecord], new AvroSerializer[AlignmentRecord])
-    kryo.register(classOf[Array[AlignmentRecord]])
+    // Register Avro classes using fully qualified class names
+    // Sort alphabetically and add blank lines between packages
 
-    kryo.register(classOf[Genotype], new AvroSerializer[Genotype])
-    kryo.register(classOf[Array[Genotype]])
+    // htsjdk.samtools
+    kryo.register(classOf[htsjdk.samtools.CigarElement])
+    kryo.register(classOf[htsjdk.samtools.CigarOperator])
+    kryo.register(classOf[htsjdk.samtools.Cigar])
+    kryo.register(classOf[htsjdk.samtools.SAMSequenceDictionary])
+    kryo.register(classOf[htsjdk.samtools.SAMFileHeader])
+    kryo.register(classOf[htsjdk.samtools.SAMSequenceRecord])
 
-    kryo.register(classOf[Variant], new AvroSerializer[Variant])
-    kryo.register(classOf[Array[Variant]])
-
-    kryo.register(classOf[Coverage])
-    kryo.register(classOf[Array[Coverage]])
-
-    kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation])
-    kryo.register(classOf[Array[DatabaseVariantAnnotation]])
-
-    kryo.register(classOf[NucleotideContigFragment], new AvroSerializer[NucleotideContigFragment])
-    kryo.register(classOf[Array[NucleotideContigFragment]])
-
-    kryo.register(classOf[Contig], new AvroSerializer[Contig])
-    kryo.register(classOf[RecordGroupMetadata], new AvroSerializer[RecordGroupMetadata])
-    kryo.register(classOf[StructuralVariant], new AvroSerializer[StructuralVariant])
-    kryo.register(classOf[VariantCallingAnnotations], new AvroSerializer[VariantCallingAnnotations])
-    kryo.register(classOf[TranscriptEffect], new AvroSerializer[TranscriptEffect])
-    kryo.register(classOf[VariantAnnotation], new AvroSerializer[VariantAnnotation])
-
-    kryo.register(classOf[DatabaseVariantAnnotation], new AvroSerializer[DatabaseVariantAnnotation])
-    kryo.register(classOf[Dbxref], new AvroSerializer[Dbxref])
-
-    kryo.register(classOf[Strand])
-
-    kryo.register(classOf[Feature], new AvroSerializer[Feature])
-    kryo.register(classOf[Array[Feature]])
-
-    kryo.register(classOf[Sample], new AvroSerializer[Sample])
-
-    kryo.register(classOf[ReferencePosition], new ReferencePositionSerializer)
-    kryo.register(classOf[Array[ReferencePosition]])
-
-    kryo.register(classOf[ReferenceRegion])
-    kryo.register(classOf[Array[ReferenceRegion]])
-
-    kryo.register(classOf[ReferencePositionPair], new ReferencePositionPairSerializer)
-    kryo.register(classOf[SingleReadBucket], new SingleReadBucketSerializer)
-
-    kryo.register(classOf[IndelRealignmentTarget], new IndelRealignmentTargetSerializer)
-    kryo.register(classOf[TargetSet], new TargetSetSerializer)
-    kryo.register(classOf[ZippedTargetSet], new ZippedTargetSetSerializer)
-
-    // Serialized in RealignmentTargetFinder.
-    kryo.register(classOf[immutable.::[_]])
-
-    kryo.register(classOf[TwoBitFile], new TwoBitFileSerializer)
-    kryo.register(classOf[ReferenceContigMap])
-
-    // Broadcasted in ShuffleRegionJoin.
-    kryo.register(classOf[GenomeBins])
-
-    // Collected in ADAMContext.loadIntervalList.
-    kryo.register(classOf[SequenceRecord])
-    kryo.register(classOf[Array[SequenceRecord]])
-
-    // Reduced in ADAMSequenceDictionaryRDDAggregator.getSequenceDictionary.
-    kryo.register(classOf[SequenceDictionary])
-
-    // Collected in ADAMContextSuite / GenotypeRDDFunctions.toVariantContext.
-    kryo.register(classOf[RichVariant])
-    kryo.register(classOf[Array[VariantContext]])
-    kryo.register(classOf[VariantContext])
-
-    // collected in ADAMContext.loadVcfMetadata
-    // from htsjdk
-    kryo.register(classOf[VCFContigHeaderLine])
-    kryo.register(classOf[VCFFilterHeaderLine])
-    kryo.register(classOf[VCFFormatHeaderLine])
-    kryo.register(classOf[VCFInfoHeaderLine])
-    kryo.register(classOf[Array[VCFHeader]])
-    kryo.register(classOf[VCFHeader])
-    kryo.register(classOf[VCFHeaderLine])
-    kryo.register(classOf[VCFHeaderLineCount])
-    kryo.register(classOf[VCFHeaderLineType])
+    // htsjdk.variant.vcf
+    kryo.register(classOf[htsjdk.variant.vcf.VCFContigHeaderLine])
+    kryo.register(classOf[htsjdk.variant.vcf.VCFFilterHeaderLine])
+    kryo.register(classOf[htsjdk.variant.vcf.VCFFormatHeaderLine])
+    kryo.register(classOf[htsjdk.variant.vcf.VCFInfoHeaderLine])
+    kryo.register(classOf[htsjdk.variant.vcf.VCFHeader])
+    kryo.register(classOf[htsjdk.variant.vcf.VCFHeaderLine])
+    kryo.register(classOf[htsjdk.variant.vcf.VCFHeaderLineCount])
+    kryo.register(classOf[htsjdk.variant.vcf.VCFHeaderLineType])
     kryo.register(Class.forName("htsjdk.variant.vcf.VCFCompoundHeaderLine$SupportedHeaderLineType"))
 
-    // Serialized in GeneSuite / FeatureRDDFunctions.toGene.
-    kryo.register(classOf[Exon])
-    kryo.register(classOf[Array[Exon]])
-    kryo.register(classOf[UTR])
-    kryo.register(classOf[CDS])
-    kryo.register(classOf[Array[Transcript]])
-    kryo.register(classOf[Transcript])
+    // java.lang
+    kryo.register(classOf[java.lang.Class[_]])
 
-    // Broadcast in AlignmentRecordRDDFunctions.convertToSam
-    kryo.register(classOf[SAMFileHeaderWritable])
+    // java.util
+    kryo.register(classOf[java.util.ArrayList[_]])
+    kryo.register(classOf[java.util.LinkedHashMap[_, _]])
+    kryo.register(classOf[java.util.LinkedHashSet[_]])
+    kryo.register(classOf[java.util.HashMap[_, _]])
+    kryo.register(classOf[java.util.HashSet[_]])
 
-    kryo.register(classOf[RichAlignmentRecord])
-    kryo.register(classOf[Array[RichAlignmentRecord]])
-    kryo.register(classOf[ReferenceSequenceContext])
-
-    kryo.register(classOf[DecadentRead])
-
-    kryo.register(classOf[FastaDescriptionLine])
-
-    // Serialized when manipulating FASTA lines.
-    kryo.register(classOf[Array[String]])
-
-    // Used in PairingRDD.sliding.
-    kryo.register(classOf[Array[Int]])
-    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofInt])
-    kryo.register(classOf[Array[Seq[_]]])
-    kryo.register(classOf[Range])
-    kryo.register(classOf[Array[Object]])
-
-    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofLong])
-    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofByte])
-    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofChar])
-    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofRef[_]])
-
-    kryo.register(classOf[SnpTable])
-    kryo.register(classOf[MultiContigNonoverlappingRegions])
-    kryo.register(classOf[MdTag])
-    kryo.register(classOf[FragmentCollector])
-    kryo.register(classOf[Text])
-    kryo.register(classOf[LongWritable])
-
-    kryo.register(classOf[SAMSequenceDictionary])
-    kryo.register(classOf[SAMFileHeader])
-    kryo.register(classOf[SAMSequenceRecord])
-    kryo.register(Class.forName("scala.collection.convert.Wrappers$"))
-
-    kryo.register(classOf[CigarElement])
-    kryo.register(classOf[CigarOperator])
-    kryo.register(classOf[Cigar])
-
-    kryo.register(classOf[Consensus])
-    kryo.register(classOf[NonoverlappingRegions])
-
-    kryo.register(classOf[RecordGroupDictionary])
-    kryo.register(classOf[RecordGroup])
-
-    kryo.register(classOf[FlagStatMetrics])
-    kryo.register(classOf[DuplicateMetrics])
-
-    kryo.register(Class.forName("scala.Tuple2$mcCC$sp"))
-
-    kryo.register(classOf[CovariateSpace])
-    kryo.register(classOf[CycleCovariate])
-    kryo.register(classOf[DinucCovariate])
-    kryo.register(classOf[CovariateKey])
-    kryo.register(classOf[ObservationAccumulator])
-    kryo.register(classOf[Observation])
-
+    // org.apache.avro
     kryo.register(Class.forName("org.apache.avro.Schema$RecordSchema"))
     kryo.register(Class.forName("org.apache.avro.Schema$Field"))
     kryo.register(Class.forName("org.apache.avro.Schema$Field$Order"))
@@ -264,20 +112,162 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(Class.forName("org.apache.avro.Schema$Name"))
     kryo.register(Class.forName("org.apache.avro.Schema$LongSchema"))
 
-    kryo.register(classOf[NullNode])
-    kryo.register(classOf[BooleanNode])
-    kryo.register(classOf[TextNode])
+    // org.apache.hadoop.io
+    kryo.register(classOf[org.apache.hadoop.io.Text])
+    kryo.register(classOf[org.apache.hadoop.io.LongWritable])
 
-    kryo.register(classOf[QualityScore])
+    // org.bdgenomics.adam.algorithms.consensus
+    kryo.register(classOf[org.bdgenomics.adam.algorithms.consensus.Consensus])
 
-    kryo.register(classOf[util.ArrayList[_]])
-    kryo.register(classOf[util.LinkedHashMap[_, _]])
-    kryo.register(classOf[util.LinkedHashSet[_]])
-    kryo.register(classOf[util.HashMap[_, _]])
-    kryo.register(classOf[util.HashSet[_]])
+    // org.bdgenomics.adam.converters
+    kryo.register(classOf[org.bdgenomics.adam.converters.FastaConverter.FastaDescriptionLine])
+    kryo.register(classOf[org.bdgenomics.adam.converters.FragmentCollector])
 
+    // org.bdgenomics.adam.models
+    kryo.register(classOf[org.bdgenomics.adam.models.CDS])
+    kryo.register(classOf[org.bdgenomics.adam.models.Coverage])
+    kryo.register(classOf[org.bdgenomics.adam.models.Exon])
+    kryo.register(classOf[org.bdgenomics.adam.models.MultiContigNonoverlappingRegions])
+    kryo.register(classOf[org.bdgenomics.adam.models.NonoverlappingRegions])
+    kryo.register(classOf[org.bdgenomics.adam.models.RecordGroup])
+    kryo.register(classOf[org.bdgenomics.adam.models.RecordGroupDictionary])
+    kryo.register(classOf[org.bdgenomics.adam.models.ReferencePosition],
+      new org.bdgenomics.adam.models.ReferencePositionSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.models.ReferenceRegion])
+    kryo.register(classOf[org.bdgenomics.adam.models.ReferencePositionPair],
+      new org.bdgenomics.adam.models.ReferencePositionPairSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.models.SAMFileHeaderWritable])
+    kryo.register(classOf[org.bdgenomics.adam.models.SequenceDictionary])
+    kryo.register(classOf[org.bdgenomics.adam.models.SequenceRecord])
+    kryo.register(classOf[org.bdgenomics.adam.models.SingleReadBucket],
+      new org.bdgenomics.adam.models.SingleReadBucketSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.models.SnpTable])
+    kryo.register(classOf[org.bdgenomics.adam.models.Transcript])
+    kryo.register(classOf[org.bdgenomics.adam.models.UTR])
+    kryo.register(classOf[org.bdgenomics.adam.models.VariantContext])
+
+    // org.bdgenomics.adam.rdd
+    kryo.register(classOf[org.bdgenomics.adam.rdd.GenomeBins])
+
+    // org.bdgenomics.adam.rdd.read
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.FlagStatMetrics])
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.DuplicateMetrics])
+
+    // org.bdgenomics.adam.rdd.read.realignment
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget],
+      new org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTargetSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.TargetSet],
+      new org.bdgenomics.adam.rdd.read.realignment.TargetSetSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.ZippedTargetSet],
+      new org.bdgenomics.adam.rdd.read.realignment.ZippedTargetSetSerializer)
+
+    // org.bdgenomics.adam.rdd.read.recalibration.
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CovariateSpace])
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CycleCovariate])
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.DinucCovariate])
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CovariateKey])
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.ObservationAccumulator])
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.Observation])
+
+    // org.bdgenomics.adam.rich
+    kryo.register(classOf[org.bdgenomics.adam.rich.DecadentRead])
+    kryo.register(classOf[org.bdgenomics.adam.rich.ReferenceSequenceContext])
+    kryo.register(classOf[org.bdgenomics.adam.rich.RichAlignmentRecord])
+    kryo.register(classOf[org.bdgenomics.adam.rich.RichVariant])
+
+    // org.bdgenomics.adam.util
+    kryo.register(classOf[org.bdgenomics.adam.util.MdTag])
+    kryo.register(classOf[org.bdgenomics.adam.util.QualityScore])
+    kryo.register(classOf[org.bdgenomics.adam.util.ReferenceContigMap])
+    kryo.register(classOf[org.bdgenomics.adam.util.TwoBitFile],
+      new org.bdgenomics.adam.util.TwoBitFileSerializer)
+
+    // org.bdgenomics.formats.avro
+    kryo.register(classOf[org.bdgenomics.formats.avro.AlignmentRecord],
+      new AvroSerializer[org.bdgenomics.formats.avro.AlignmentRecord])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Contig],
+      new AvroSerializer[org.bdgenomics.formats.avro.Contig])
+    kryo.register(classOf[org.bdgenomics.formats.avro.DatabaseVariantAnnotation],
+      new AvroSerializer[org.bdgenomics.formats.avro.DatabaseVariantAnnotation])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Dbxref],
+      new AvroSerializer[org.bdgenomics.formats.avro.Dbxref])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Feature],
+      new AvroSerializer[org.bdgenomics.formats.avro.Feature])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Fragment],
+      new AvroSerializer[org.bdgenomics.formats.avro.Fragment])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Genotype],
+      new AvroSerializer[org.bdgenomics.formats.avro.Genotype])
+    kryo.register(classOf[org.bdgenomics.formats.avro.GenotypeAllele])
+    kryo.register(classOf[org.bdgenomics.formats.avro.GenotypeType])
+    kryo.register(classOf[org.bdgenomics.formats.avro.NucleotideContigFragment],
+      new AvroSerializer[org.bdgenomics.formats.avro.NucleotideContigFragment])
+    kryo.register(classOf[org.bdgenomics.formats.avro.OntologyTerm],
+      new AvroSerializer[org.bdgenomics.formats.avro.OntologyTerm])
+    kryo.register(classOf[org.bdgenomics.formats.avro.RecordGroupMetadata],
+      new AvroSerializer[org.bdgenomics.formats.avro.RecordGroupMetadata])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Sample],
+      new AvroSerializer[org.bdgenomics.formats.avro.Sample])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Strand])
+    kryo.register(classOf[org.bdgenomics.formats.avro.StructuralVariant],
+      new AvroSerializer[org.bdgenomics.formats.avro.StructuralVariant])
+    kryo.register(classOf[org.bdgenomics.formats.avro.TranscriptEffect],
+      new AvroSerializer[org.bdgenomics.formats.avro.TranscriptEffect])
+    kryo.register(classOf[org.bdgenomics.formats.avro.Variant],
+      new AvroSerializer[org.bdgenomics.formats.avro.Variant])
+    kryo.register(classOf[org.bdgenomics.formats.avro.VariantAnnotation],
+      new AvroSerializer[org.bdgenomics.formats.avro.VariantAnnotation])
+    kryo.register(classOf[org.bdgenomics.formats.avro.VariantAnnotationMessage])
+    kryo.register(classOf[org.bdgenomics.formats.avro.VariantCallingAnnotations],
+      new AvroSerializer[org.bdgenomics.formats.avro.VariantCallingAnnotations])
+
+    // org.codehaus.jackson.node
+    kryo.register(classOf[org.codehaus.jackson.node.NullNode])
+    kryo.register(classOf[org.codehaus.jackson.node.BooleanNode])
+    kryo.register(classOf[org.codehaus.jackson.node.TextNode])
+
+    // scala
+    kryo.register(classOf[scala.Array[htsjdk.variant.vcf.VCFHeader]])
+    kryo.register(classOf[scala.Array[java.lang.Object]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.AlignmentRecord]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.DatabaseVariantAnnotation]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Dbxref]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Feature]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Genotype]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.GenotypeAllele]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.OntologyTerm]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.NucleotideContigFragment]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.TranscriptEffect]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Variant]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.VariantAnnotationMessage]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.Coverage]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.Exon]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.ReferencePosition]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.ReferenceRegion]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.SequenceRecord]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.Transcript]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.VariantContext]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.rich.RichAlignmentRecord]])
+    kryo.register(classOf[scala.Array[scala.collection.Seq[_]]])
+    kryo.register(classOf[scala.Array[Int]])
+    kryo.register(classOf[scala.Array[String]])
+    kryo.register(Class.forName("scala.Tuple2$mcCC$sp"))
+
+    // scala.collection.convert
+    kryo.register(Class.forName("scala.collection.convert.Wrappers$"))
+
+    // scala.collection.immutable
+    kryo.register(classOf[scala.collection.immutable.::[_]])
+    kryo.register(classOf[scala.collection.immutable.Range])
+
+    // scala.collection.mutable
+    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofInt])
+    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofLong])
+    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofByte])
+    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofChar])
+    kryo.register(classOf[scala.collection.mutable.WrappedArray.ofRef[_]])
+
+    // scala.math
     kryo.register(scala.math.Numeric.LongIsIntegral.getClass)
-    kryo.register(Map.empty.getClass)
 
     // This seems to be necessary when serializing a RangePartitioner, which writes out a ClassTag:
     //
@@ -287,7 +277,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     //
     //   https://mail-archives.apache.org/mod_mbox/spark-user/201504.mbox/%3CCAC95X6JgXQ3neXF6otj6a+F_MwJ9jbj9P-Ssw3Oqkf518_eT1w@mail.gmail.com%3E
     kryo.register(Class.forName("scala.reflect.ClassTag$$anon$1"))
-    kryo.register(classOf[java.lang.Class[_]])
 
     // needed for manifests
     kryo.register(Class.forName("scala.reflect.ManifestFactory$ClassTypeManifest"))
@@ -316,7 +305,8 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Array[Tuple21[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
     kryo.register(classOf[Array[Tuple22[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]]])
 
-    kryo.register(None.getClass)
+    kryo.register(Map.empty.getClass)
     kryo.register(Nil.getClass)
+    kryo.register(None.getClass)
   }
 }
