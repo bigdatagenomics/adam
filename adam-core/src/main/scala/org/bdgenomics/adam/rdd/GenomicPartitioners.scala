@@ -67,6 +67,13 @@ case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Lon
     // This allows partitions that cross chromosome boundaries.
     // The computation is slightly more complicated if you want to avoid this.
     def getPart(referenceName: String, pos: Long): Int = {
+      require(
+        seqLengths.contains(referenceName),
+        "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(
+          referenceName,
+          seqLengths.keys.mkString("\n")
+        )
+      )
       val totalOffset = cumulativeLengths(referenceName) + pos
       val totalFraction: Double = totalOffset.toDouble / totalLength
       // Need to use 'parts' here, rather than 'numPartitions' -- see the note
@@ -80,13 +87,9 @@ case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Lon
 
       // everything else gets assigned normally.
       case refpos: ReferencePosition => {
-        require(
-          seqLengths.contains(refpos.referenceName),
-          "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(
-            refpos,
-            seqLengths.keys.mkString("\n")
-          )
-        )
+        getPart(refpos.referenceName, refpos.pos)
+      }
+      case (refpos: ReferencePosition, k: Any) => {
         getPart(refpos.referenceName, refpos.pos)
       }
 
@@ -124,6 +127,13 @@ case class GenomicRegionPartitioner(partitionSize: Long, seqLengths: Map[String,
   private val cumulParts: Map[String, Int] = Map(names.zip(parts.scan(0)(_ + _)): _*)
 
   private def computePartition(refReg: ReferenceRegion): Int = {
+    require(
+      seqLengths.contains(refReg.referenceName),
+      "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(
+        refReg.referenceName,
+        seqLengths.keys.mkString("\n")
+      )
+    )
     val pos = if (start) refReg.start else (refReg.end - 1)
     (cumulParts(refReg.referenceName) + pos / partitionSize).toInt
   }
@@ -133,13 +143,9 @@ case class GenomicRegionPartitioner(partitionSize: Long, seqLengths: Map[String,
   override def getPartition(key: Any): Int = {
     key match {
       case region: ReferenceRegion => {
-        require(
-          seqLengths.contains(region.referenceName),
-          "Received key (%s) that did not map to a known contig. Contigs are:\n%s".format(
-            region,
-            seqLengths.keys.mkString("\n")
-          )
-        )
+        computePartition(region)
+      }
+      case (region: ReferenceRegion, k: Any) => {
         computePartition(region)
       }
       case _ => throw new IllegalArgumentException("Only ReferenceMappable values can be partitioned by GenomicRegionPartitioner")

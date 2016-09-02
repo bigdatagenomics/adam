@@ -93,6 +93,19 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
     assert(partitioned.partitions.length > 1)
   }
 
+  sparkTest("test that we can range partition ADAMRecords indexed by sample") {
+    val rand = new Random(1000L)
+    val count = 1000
+    val pos = sc.parallelize((1 to count).map(i => adamRecord("chr1", "read_%d".format(i), rand.nextInt(100), readMapped = true)), 1)
+    val parts = 200
+    val pairs = pos.map(p => ((ReferencePosition(p.getContigName, p.getStart), "sample"), p))
+    val parter = new RangePartitioner(parts, pairs)
+    val partitioned = pairs.sortByKey().partitionBy(parter)
+
+    assert(partitioned.count() === count)
+    assert(partitioned.partitions.length > 1)
+  }
+
   sparkTest("test that simple partitioning works okay on a reasonable set of ADAMRecords") {
     val filename = resourcePath("reads12.sam")
     val parts = 1
@@ -110,6 +123,39 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
 
     val keyed =
       rdd.map(rec => (ReferencePosition(rec.getContigName, rec.getStart), rec)).sortByKey()
+
+    val keys = keyed.map(_._1).collect()
+    assert(!keys.exists(rp => parter.getPartition(rp) < 0 || parter.getPartition(rp) >= parts))
+
+    val partitioned = keyed.partitionBy(parter)
+    assert(partitioned.count() === 200)
+
+    val partSizes = partitioned.mapPartitions {
+      itr =>
+        List(itr.size).iterator
+    }
+
+    assert(partSizes.count() === parts + 1)
+  }
+
+  sparkTest("test indexed ReferencePosition partitioning works on a set of indexed ADAMRecords") {
+    val filename = resourcePath("reads12.sam")
+    val parts = 10
+
+    val gRdd = sc.loadAlignments(filename)
+    val rdd = gRdd.rdd
+
+    val parter = GenomicPositionPartitioner(parts, gRdd.sequences)
+
+    val p = {
+      import org.bdgenomics.adam.projections.AlignmentRecordField._
+      Projection(contigName, start, readName, readMapped)
+    }
+
+    assert(rdd.count() === 200)
+
+    val keyed =
+      rdd.keyBy(rec => (ReferencePosition(rec.getContigName, rec.getStart), "sample")).sortByKey()
 
     val keys = keyed.map(_._1).collect()
     assert(!keys.exists(rp => parter.getPartition(rp) < 0 || parter.getPartition(rp) >= parts))
