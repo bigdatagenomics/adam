@@ -25,20 +25,20 @@ import org.bdgenomics.adam.apis.java.JavaADAMContext;
 import org.bdgenomics.adam.models.RecordGroupDictionary;
 import org.bdgenomics.adam.models.SequenceDictionary;
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.variation.DatabaseVariantAnnotationRDD;
+import org.bdgenomics.adam.rdd.variation.VariantAnnotationRDD;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of annotations to
  * disk and reads it back.
  */
 class JavaADAMAnnotationConduit {
-    public static DatabaseVariantAnnotationRDD conduit(DatabaseVariantAnnotationRDD recordRdd,
-                                                       ADAMContext ac) throws IOException {
+    public static VariantAnnotationRDD conduit(VariantAnnotationRDD annotationRdd,
+                                               ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
         String fileName = tempDir.toString() + "/testRdd.annotation.adam";
-        recordRdd.save(fileName);
+        annotationRdd.save(fileName);
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(ac);

@@ -850,27 +850,27 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   def loadVcfAnnotations(
-    filePath: String): DatabaseVariantAnnotationRDD = {
-    loadVcf(filePath).toDatabaseVariantAnnotationRDD
+    filePath: String): VariantAnnotationRDD = {
+    loadVcf(filePath).toVariantAnnotationRDD
   }
 
   def loadParquetVariantAnnotations(
     filePath: String,
     predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): DatabaseVariantAnnotationRDD = {
+    projection: Option[Schema] = None): VariantAnnotationRDD = {
     val sd = loadAvroSequences(filePath)
-    val rdd = loadParquet[DatabaseVariantAnnotation](filePath, predicate, projection)
-    DatabaseVariantAnnotationRDD(rdd, sd)
+    val rdd = loadParquet[VariantAnnotation](filePath, predicate, projection)
+    VariantAnnotationRDD(rdd, sd)
   }
 
   def loadVariantAnnotations(
     filePath: String,
-    projection: Option[Schema] = None): DatabaseVariantAnnotationRDD = {
+    projection: Option[Schema] = None): VariantAnnotationRDD = {
     if (filePath.endsWith(".vcf")) {
       log.info(s"Loading $filePath as VCF, and converting to variant annotations. Projection is ignored.")
       loadVcfAnnotations(filePath)
     } else {
-      log.info(s"Loading $filePath as Parquet containing DatabaseVariantAnnotations.")
+      log.info(s"Loading $filePath as Parquet containing VariantAnnotations.")
       loadParquetVariantAnnotations(filePath, None, projection)
     }
   }
