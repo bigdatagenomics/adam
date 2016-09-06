@@ -33,11 +33,11 @@ object TransformFeatures extends BDGCommandCompanion {
 
 class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(required = true, metaVar = "INPUT",
-    usage = "The features file to convert (e.g., .bed, .gff)", index = 0)
+    usage = "The features file to convert (e.g., .bed, .gff). If extension is not detected, Parquet is assumed.", index = 0)
   var featuresFile: String = _
 
   @Argument(required = true, metaVar = "OUTPUT",
-    usage = "Location to write ADAM features data", index = 1)
+    usage = "Location to write ADAM features data. If extension is not detected, Parquet is assumed.", index = 1)
   var outputPath: String = null
 
   @Args4jOption(required = false, name = "-num_partitions",

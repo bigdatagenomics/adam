@@ -1018,11 +1018,16 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    * @param filePath The path to the file to load.
    * @param minPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism.
+   * @param stringency Optional stringency to pass. LENIENT stringency will warn
+   *   when a malformed line is encountered, SILENT will ignore the malformed
+   *   line, STRICT will throw an exception.
    * @return Returns a FeatureRDD.
    */
-  def loadNarrowPeak(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
+  def loadNarrowPeak(filePath: String,
+                     minPartitions: Option[Int] = None,
+                     stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
-      .flatMap(new NarrowPeakParser().parse)
+      .flatMap(new NarrowPeakParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
     FeatureRDD(records)
   }

@@ -24,14 +24,13 @@ import org.bdgenomics.formats.avro.{ Dbxref, Feature, Strand }
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-
 import scala.io.Source
 
-trait FeatureParser extends Serializable with Logging {
+private[rdd] sealed trait FeatureParser extends Serializable with Logging {
   def parse(line: String): Seq[Feature]
 }
 
-class FeatureFile(parser: FeatureParser) extends Serializable {
+private[rdd] class FeatureFile(parser: FeatureParser) extends Serializable {
   def parse(file: File): Iterator[Feature] = {
     val src = Source.fromFile(file)
     try {
@@ -44,7 +43,7 @@ class FeatureFile(parser: FeatureParser) extends Serializable {
   }
 }
 
-object GTFParser {
+private[rdd] object GTFParser {
   private val PATTERN = "\\s*([^\\s]+)\\s\"([^\"]+)\"".r
 
   /**
@@ -66,7 +65,7 @@ object GTFParser {
  * Specification:
  * http://www.ensembl.org/info/website/upload/gff.html
  */
-class GTFParser extends FeatureParser {
+private[rdd] class GTFParser extends FeatureParser {
 
   override def parse(line: String): Seq[Feature] = {
     // skip header and comment lines
@@ -109,7 +108,7 @@ class GTFParser extends FeatureParser {
   }
 }
 
-object GFF3Parser {
+private[rdd] object GFF3Parser {
 
   /**
    * Split the GFF3 attributes column by <code>;</code> and <code>=</code>s.
@@ -131,7 +130,7 @@ object GFF3Parser {
  * Specification:
  * http://www.sequenceontology.org/gff3.shtml
  */
-class GFF3Parser extends FeatureParser {
+private[rdd] class GFF3Parser extends FeatureParser {
 
   override def parse(line: String): Seq[Feature] = {
     // skip header and comment lines
@@ -180,7 +179,7 @@ class GFF3Parser extends FeatureParser {
  * In lieu of a specification, see:
  * https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/samtools/util/IntervalList.html
  */
-class IntervalListParser extends Serializable with Logging {
+private[rdd] class IntervalListParser extends Serializable with Logging {
   def parse(line: String,
             stringency: ValidationStringency): (Option[SequenceRecord], Option[Feature]) = {
     val fields = line.split("[ \t]+")
@@ -274,7 +273,7 @@ class IntervalListParser extends Serializable with Logging {
  * Specification:
  * http://www.genome.ucsc.edu/FAQ/FAQformat.html#format1
  */
-class BEDParser extends FeatureParser {
+private[rdd] class BEDParser extends FeatureParser {
 
   def isHeader(line: String): Boolean = {
     line.startsWith("#") || line.startsWith("browser") || line.startsWith("track")
@@ -328,9 +327,10 @@ class BEDParser extends FeatureParser {
  * Specification:
  * http://www.genome.ucsc.edu/FAQ/FAQformat.html#format12
  */
-class NarrowPeakParser extends FeatureParser {
+private[rdd] class NarrowPeakParser extends Serializable with Logging {
 
-  override def parse(line: String): Seq[Feature] = {
+  def parse(line: String,
+            stringency: ValidationStringency): Seq[Feature] = {
     val fields = line.split("\t")
     def hasColumn(n: Int): Boolean = {
       fields.length > n && fields(n) != "."
@@ -338,7 +338,11 @@ class NarrowPeakParser extends FeatureParser {
 
     // skip empty or invalid lines
     if (fields.length < 3) {
-      log.warn("Empty or invalid NarrowPeak line: {}", line)
+      if (stringency == ValidationStringency.STRICT) {
+        throw new IllegalArgumentException("Empty or invalid NarrowPeak line: %s".format(line))
+      } else if (stringency == ValidationStringency.LENIENT) {
+        log.warn("Empty or invalid NarrowPeak line: {}", line)
+      }
       return Seq()
     }
     val fb = Feature.newBuilder()

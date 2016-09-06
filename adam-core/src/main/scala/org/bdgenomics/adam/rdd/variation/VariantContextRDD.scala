@@ -139,11 +139,6 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
       (new LongWritable(kv._1.pos), vcw)
     })
 
-    // configure things for saving to disk
-    val conf = rdd.context.hadoopConfiguration
-    val fs = FileSystem.get(conf)
-    conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
-
     // make header
     val headerLines: Set[VCFHeaderLine] = (SupportedHeaderLines.infoHeaderLines ++
       SupportedHeaderLines.formatHeaderLines).toSet
@@ -154,6 +149,11 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
 
     // write header
     val headPath = new Path("%s_head".format(filePath))
+
+    // configure things for saving to disk
+    val conf = rdd.context.hadoopConfiguration
+    val fs = headPath.getFileSystem(conf)
+    conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
 
     // get an output stream
     val os = fs.create(headPath)
@@ -206,7 +206,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
       )
 
       // remove header file
-      //fs.delete(headPath, true)
+      fs.delete(headPath, true)
     }
   }
 
