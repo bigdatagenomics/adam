@@ -957,15 +957,26 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   }
 
   /**
+   * Loads file of Features to a CoverageRDD.
+   * Coverage is stored in the score attribute of Feature.
+   *
+   * @param filePath File path to load coverage from.
+   * @return CoverageRDD containing an RDD of Coverage
+   */
+  def loadCoverage(filePath: String): CoverageRDD = loadFeatures(filePath).toCoverage
+
+  /**
    * Loads Parquet file of Features to a CoverageRDD.
    * Coverage is stored in the score attribute of Feature.
    *
-   * @param filePath File path to load coverage from
+   * @param filePath File path to load coverage from.
+   * @param predicate An optional predicate to push down into the file.
    * @return CoverageRDD containing an RDD of Coverage
    */
-  def loadCoverage(filePath: String): CoverageRDD = {
+  def loadParquetCoverage(filePath: String,
+                          predicate: Option[FilterPredicate] = None): CoverageRDD = {
     val proj = Projection(FeatureField.contigName, FeatureField.start, FeatureField.end, FeatureField.score)
-    loadFeatures(filePath, projection = Some(proj)).toCoverage
+    loadParquetFeatures(filePath, predicate = predicate, projection = Some(proj)).toCoverage
   }
 
   /**
