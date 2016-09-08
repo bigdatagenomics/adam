@@ -17,7 +17,13 @@
  */
 package org.bdgenomics.adam.rdd.features
 
-import org.bdgenomics.adam.models.{ Coverage, SequenceDictionary, SequenceRecord }
+import org.apache.parquet.filter2.dsl.Dsl._
+import org.bdgenomics.adam.models.{
+  ReferenceRegion,
+  Coverage,
+  SequenceDictionary,
+  SequenceRecord
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.Feature
@@ -52,6 +58,23 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
     val coverage = sc.loadCoverage(outputFile)
     assert(coverage.rdd.count == 3)
+  }
+
+  sparkTest("correctly filters coverage with predicate") {
+    val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).build()
+    val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
+    val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
+
+    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
+    val coverageRDD: CoverageRDD = featureRDD.toCoverage
+
+    val outputFile = tmpLocation(".adam")
+    coverageRDD.save(outputFile, false)
+
+    val region = ReferenceRegion("chr1", 1, 9)
+    val predicate = ((LongColumn("end") >= region.start) && (LongColumn("start") <= region.end) && (BinaryColumn("contigName") === region.referenceName))
+    val coverage = sc.loadParquetCoverage(outputFile, Some(predicate))
+    assert(coverage.rdd.count == 1)
   }
 
   sparkTest("correctly flatmaps coverage without aggregated bins") {
