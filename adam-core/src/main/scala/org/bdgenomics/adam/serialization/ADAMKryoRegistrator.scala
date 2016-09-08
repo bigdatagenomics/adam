@@ -124,9 +124,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.adam.converters.FragmentCollector])
 
     // org.bdgenomics.adam.models
-    kryo.register(classOf[org.bdgenomics.adam.models.CDS])
     kryo.register(classOf[org.bdgenomics.adam.models.Coverage])
-    kryo.register(classOf[org.bdgenomics.adam.models.Exon])
     kryo.register(classOf[org.bdgenomics.adam.models.MultiContigNonoverlappingRegions])
     kryo.register(classOf[org.bdgenomics.adam.models.NonoverlappingRegions])
     kryo.register(classOf[org.bdgenomics.adam.models.RecordGroup])
@@ -142,8 +140,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.adam.models.SingleReadBucket],
       new org.bdgenomics.adam.models.SingleReadBucketSerializer)
     kryo.register(classOf[org.bdgenomics.adam.models.SnpTable])
-    kryo.register(classOf[org.bdgenomics.adam.models.Transcript])
-    kryo.register(classOf[org.bdgenomics.adam.models.UTR])
     kryo.register(classOf[org.bdgenomics.adam.models.VariantContext])
 
     // org.bdgenomics.adam.rdd
@@ -240,11 +236,9 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Variant]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.VariantAnnotationMessage]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.Coverage]])
-    kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.Exon]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.ReferencePosition]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.ReferenceRegion]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.SequenceRecord]])
-    kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.Transcript]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.VariantContext]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.rich.RichAlignmentRecord]])
     kryo.register(classOf[scala.Array[scala.collection.Seq[_]]])
