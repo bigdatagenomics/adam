@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-set -x
+set -e
 
 # Figure out where ADAM is installed
 SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
