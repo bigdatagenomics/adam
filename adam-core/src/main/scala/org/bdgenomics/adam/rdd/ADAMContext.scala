@@ -988,11 +988,16 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    * @param filePath The path to the file to load.
    * @param minPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism.
+   * @param stringency Optional stringency to pass. LENIENT stringency will warn
+   *   when a malformed line is encountered, SILENT will ignore the malformed
+   *   line, STRICT will throw an exception.
    * @return Returns a FeatureRDD.
    */
-  def loadGff3(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
+  def loadGff3(filePath: String,
+               minPartitions: Option[Int] = None,
+               stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
-      .flatMap(new GFF3Parser().parse)
+      .flatMap(new GFF3Parser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
     FeatureRDD(records)
   }
@@ -1003,11 +1008,16 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    * @param filePath The path to the file to load.
    * @param minPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism.
+   * @param stringency Optional stringency to pass. LENIENT stringency will warn
+   *   when a malformed line is encountered, SILENT will ignore the malformed
+   *   line, STRICT will throw an exception.
    * @return Returns a FeatureRDD.
    */
-  def loadGtf(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
+  def loadGtf(filePath: String,
+              minPartitions: Option[Int] = None,
+              stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
-      .flatMap(new GTFParser().parse)
+      .flatMap(new GTFParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
     FeatureRDD(records)
   }
@@ -1018,11 +1028,16 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    * @param filePath The path to the file to load.
    * @param minPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism.
+   * @param stringency Optional stringency to pass. LENIENT stringency will warn
+   *   when a malformed line is encountered, SILENT will ignore the malformed
+   *   line, STRICT will throw an exception.
    * @return Returns a FeatureRDD.
    */
-  def loadBed(filePath: String, minPartitions: Option[Int] = None): FeatureRDD = {
+  def loadBed(filePath: String,
+              minPartitions: Option[Int] = None,
+              stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
-      .flatMap(new BEDParser().parse)
+      .flatMap(new BEDParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
     FeatureRDD(records)
   }
@@ -1048,7 +1063,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   }
 
   /**
-   * Loads features stored in GATK IntervalList format.
+   * Loads features stored in IntervalList format.
    *
    * @param filePath The path to the file to load.
    * @param minPartitions An optional minimum number of partitions to load. If
@@ -1061,8 +1076,9 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
   def loadIntervalList(filePath: String,
                        minPartitions: Option[Int] = None,
                        stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
+
     val parsedLines = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
-      .map(new IntervalListParser().parse(_, stringency))
+      .map(new IntervalListParser().parseWithHeader(_, stringency))
     val (seqDict, records) = (SequenceDictionary(parsedLines.flatMap(_._1).collect(): _*),
       parsedLines.flatMap(_._2))
     val seqDictMap = seqDict.records.map(sr => sr.name -> sr).toMap

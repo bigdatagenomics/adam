@@ -133,15 +133,8 @@ object FeatureRDD {
     val start = feature.getStart + 1 // IntervalList ranges are 1-based
     val end = feature.getEnd // IntervalList ranges are closed
     val strand = Features.asString(feature.getStrand, emptyUnknown = false)
-    val attributes = Features.gatherAttributes(feature)
-      .map(p => {
-        if (p._2.contains(":")) {
-          p._2.replace(":", "|")
-        } else {
-          "%s|%s".format(p._1, p._2.trim)
-        }
-      }).mkString(";")
-    List(sequenceName, start, end, strand, attributes).mkString("\t")
+    val name = Features.nameOf(feature)
+    List(sequenceName, start, end, strand, name).mkString("\t")
   }
 
   /**

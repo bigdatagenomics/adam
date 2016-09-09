@@ -303,14 +303,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     assert(interval(1) === "14416")
     assert(interval(2) === "14499")
     assert(interval(3) === "+")
-    val attrs = interval(4).split(";")
-    assert(attrs.size === 6)
-    assert(attrs(0) === "gn|DDX11L1")
-    assert(attrs(1) === "gn|RP11-34P13.2")
-    assert(attrs(2) === "ens|ENSG00000223972")
-    assert(attrs(3) === "ens|ENSG00000227232")
-    assert(attrs(4) === "vega|OTTHUMG00000000958")
-    assert(attrs(5) === "vega|OTTHUMG00000000961")
+    assert(interval(4) === "gn|DDX11L1;gn|RP11-34P13.2;ens|ENSG00000223972;ens|ENSG00000227232;vega|OTTHUMG00000000958;vega|OTTHUMG00000000961")
 
     // test a record with a refseq attribute
     val refseqFeature = expected.rdd.filter(f => {
@@ -324,11 +317,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     assert(rsInterval(1) === "142111442")
     assert(rsInterval(2) === "142111617")
     assert(rsInterval(3) === "+")
-    val rsAttrs = rsInterval(4).split(";")
-    assert(rsAttrs.size === 3)
-    assert(rsAttrs(0) === "gn|TRBV5-7")
-    assert(rsAttrs(1) === "ens|ENSG00000211731")
-    assert(rsAttrs(2) === "refseq|NG_001333")
+    assert(rsInterval(4) === "gn|TRBV5-7;ens|ENSG00000211731;refseq|NG_001333")
 
     val outputPath = tempLocation(".interval_list")
     expected.saveAsIntervalList(outputPath, asSingleFile = true)
