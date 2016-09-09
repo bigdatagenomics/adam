@@ -27,7 +27,7 @@ import scala.collection.JavaConversions._
 /**
  * This class contains methods to convert AlignmentRecords to other formats.
  */
-private[adam] class AlignmentRecordConverter extends Serializable {
+class AlignmentRecordConverter extends Serializable {
 
   /**
    * Converts a single record to FASTQ. FASTQ format is:
