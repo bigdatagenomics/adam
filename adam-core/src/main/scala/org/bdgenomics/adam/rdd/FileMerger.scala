@@ -28,7 +28,7 @@ import scala.annotation.tailrec
 /**
  * Helper object to merge sharded files together.
  */
-private[rdd] object FileMerger extends Logging {
+private[adam] object FileMerger extends Logging {
 
   /**
    * Merges together sharded files, while preserving partition ordering.
@@ -49,7 +49,7 @@ private[rdd] object FileMerger extends Logging {
                  optHeaderPath: Option[Path] = None,
                  writeEmptyGzipBlock: Boolean = false,
                  writeCramEOF: Boolean = false,
-                 bufferSize: Int = 1024) {
+                 bufferSize: Int = 4 * 1024 * 1024) {
 
     require(bufferSize > 0,
       "Cannot have buffer size < 1. %d was provided.".format(bufferSize))

@@ -101,6 +101,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var forceLoadParquet: Boolean = false
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false
+  @Args4jOption(required = false, name = "-defer_merging", usage = "Defers merging single file output")
+  var deferMerging: Boolean = false
   @Args4jOption(required = false, name = "-paired_fastq", usage = "When converting two (paired) FASTQ files to ADAM, pass the path to the second file here.")
   var pairedFastqFile: String = null
   @Args4jOption(required = false, name = "-record_group", usage = "Set converted FASTQs' record-group names to this value; if empty-string is passed, use the basename of the input file, minus the extension.")

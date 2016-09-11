@@ -37,7 +37,8 @@ object ADAMMain {
           CountContigKmers,
           Transform,
           ADAM2Fastq,
-          Flatten
+          Flatten,
+          MergeShards
         )
       ),
       CommandGroup(

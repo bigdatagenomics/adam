@@ -42,6 +42,7 @@ class Reads2FragmentsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetAr
   // these are required because of the ADAMSaveAnyArgs trait... fix this trait???
   var asSingleFile = false
   var sortFastqOutput = false
+  var deferMerging = false
 }
 
 class Reads2Fragments(protected val args: Reads2FragmentsArgs) extends BDGSparkCommand[Reads2FragmentsArgs] with Logging {

@@ -85,6 +85,8 @@ class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveAnyArgs {
 
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false
+  @Args4jOption(required = false, name = "-defer_merging", usage = "Defers merging single file output")
+  var deferMerging: Boolean = false
 }
 
 object View extends BDGCommandCompanion {

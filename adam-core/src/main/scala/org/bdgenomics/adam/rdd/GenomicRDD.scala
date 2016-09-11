@@ -37,6 +37,7 @@ private[rdd] class JavaSaveArgs(var outputPath: String,
                                 var disableDictionaryEncoding: Boolean = false,
                                 var asSingleFile: Boolean = false) extends ADAMSaveAnyArgs {
   var sortFastqOutput = false
+  var deferMerging = false
 }
 
 trait GenomicRDD[T, U <: GenomicRDD[T, U]] {

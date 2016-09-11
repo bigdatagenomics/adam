@@ -44,6 +44,7 @@ import scala.reflect.ClassTag
 trait ADAMSaveAnyArgs extends SaveArgs {
   var sortFastqOutput: Boolean
   var asSingleFile: Boolean
+  var deferMerging: Boolean
 }
 
 private[rdd] abstract class ADAMRDDFunctions[T <% IndexedRecord: Manifest] extends Serializable with Logging {

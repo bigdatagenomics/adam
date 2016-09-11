@@ -153,7 +153,17 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
       saveAsSam(
         args.outputPath,
         isSorted = isSorted,
-        asSingleFile = args.asSingleFile
+        asSingleFile = args.asSingleFile deferMerging = args.deferMerging
+      )
+      true
+    } else if (args.outputPath.endsWith(".bam")) {
+      log.info("Saving data in BAM format")
+      saveAsSam(
+        args.outputPath,
+        asSam = false,
+        asSingleFile = args.asSingleFile,
+        isSorted = isSorted,
+        deferMerging = args.deferMerging
       )
       true
     } else {
@@ -297,12 +307,15 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
    *   value is None, which means the file type is inferred from the extension.
    * @param asSingleFile If true, saves output as a single file.
    * @param isSorted If the output is sorted, this will modify the header.
+   * @param deferMerging If true and asSingleFile is true, we will save the
+   *   output shards as a headerless file, but we will not merge the shards.
    */
   def saveAsSam(
     filePath: String,
     asType: Option[SAMFormat] = None,
     asSingleFile: Boolean = false,
-    isSorted: Boolean = false): Unit = SAMSave.time {
+    isSorted: Boolean = false,
+    deferMerging: Boolean = false): Unit = SAMSave.time {
 
     val fileType = asType.getOrElse(SAMFormat.inferFromFilePath(filePath))
 
@@ -438,12 +451,14 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
         conf
       )
 
-      FileMerger.mergeFiles(fs,
-        outputPath,
-        tailPath,
-        optHeaderPath = Some(headPath),
-        writeEmptyGzipBlock = (fileType == SAMFormat.BAM),
-        writeCramEOF = (fileType == SAMFormat.CRAM))
+      if (!deferMerging) {
+        FileMerger.mergeFiles(fs,
+          outputPath,
+          tailPath,
+          optHeaderPath = Some(headPath),
+          writeEmptyGzipBlock = (fileType == SAMFormat.BAM),
+          writeCramEOF = (fileType == SAMFormat.CRAM))
+      }
     }
   }
 

@@ -43,6 +43,8 @@ class Fragments2ReadsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetAr
   var asSingleFile: Boolean = false
   @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
   var sortReads: Boolean = false
+  @Args4jOption(required = false, name = "-defer_merging", usage = "Defers merging single file output")
+  var deferMerging: Boolean = false
   @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
   var sortLexicographically: Boolean = false
 

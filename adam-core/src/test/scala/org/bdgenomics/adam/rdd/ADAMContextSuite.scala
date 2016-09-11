@@ -38,6 +38,7 @@ import scala.collection.JavaConversions._
 case class TestSaveArgs(var outputPath: String) extends ADAMSaveAnyArgs {
   var sortFastqOutput = false
   var asSingleFile = false
+  var deferMerging = false
   var blockSize = 128 * 1024 * 1024
   var pageSize = 1 * 1024 * 1024
   var compressionCodec = CompressionCodecName.GZIP
