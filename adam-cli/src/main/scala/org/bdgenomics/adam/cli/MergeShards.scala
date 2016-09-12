@@ -67,10 +67,11 @@ class MergeShards(val args: MergeShardsArgs) extends BDGSparkCommand[MergeShards
     val optHeadPath = Option(args.headerPath).map(p => new Path(p))
     val tailPath = new Path(args.inputPath)
     val outputPath = new Path(args.outputPath)
-    val fs = tailPath.getFileSystem(conf)
+    val fsIn = tailPath.getFileSystem(conf)
+    val fsOut = outputPath.getFileSystem(conf)
 
     // merge the files
-    FileMerger.mergeFiles(fs,
+    FileMerger.mergeFilesAcrossFilesystems(fsIn, fsOut,
       outputPath, tailPath, optHeadPath,
       writeEmptyGzipBlock = args.gzipAtEof,
       bufferSize = args.bufferSize)
