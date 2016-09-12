@@ -315,7 +315,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val rRdd = sc.loadAlignments(inputPath)
     rRdd.rdd.cache()
     rRdd.saveAsSam("%s/%s".format(tempFile.toAbsolutePath.toString, filename),
-      asSam = true,
+      asSam = asSam,
       asSingleFile = true)
     val rdd2 = sc.loadAlignments("%s/%s".format(tempFile.toAbsolutePath.toString, filename))
     rdd2.rdd.cache()
