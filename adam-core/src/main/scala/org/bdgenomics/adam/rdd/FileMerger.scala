@@ -21,6 +21,7 @@ import htsjdk.samtools.util.BlockCompressedStreamConstants
 import htsjdk.samtools.cram.build.CramIO
 import htsjdk.samtools.cram.common.CramVersions
 import java.io.{ InputStream, OutputStream }
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
@@ -28,7 +29,12 @@ import scala.annotation.tailrec
 /**
  * Helper object to merge sharded files together.
  */
-private[adam] object FileMerger extends Logging {
+object FileMerger extends Logging {
+
+  /**
+   * The config entry for the buffer size in bytes.
+   */
+  val BUFFER_SIZE_CONF = "org.bdgenomics.adam.rdd.FileMerger.bufferSize"
 
   /**
    * Merges together sharded files, while preserving partition ordering.
@@ -41,22 +47,26 @@ private[adam] object FileMerger extends Logging {
    * @param writeEmptyGzipBlock If true, we write an empty GZIP block at the
    *   end of the merged file.
    * @param writeCramEOF If true, we write CRAM's EOF signifier.
-   * @param bufferSize The size in bytes of the buffer used for copying.
-   *
+   * @param optBufferSize The size in bytes of the buffer used for copying. If
+   *   not set, we check the config for this value. If that is not set, we
+   *   default to 4MB.
+   * 
    * @see mergeFilesAcrossFilesystems
    */
-  def mergeFiles(fs: FileSystem,
-                 outputPath: Path,
-                 tailPath: Path,
-                 optHeaderPath: Option[Path] = None,
-                 writeEmptyGzipBlock: Boolean = false,
-                 writeCramEOF: Boolean = false,
-                 bufferSize: Int = 4 * 1024 * 1024) {
-    mergeFilesAcrossFilesystems(fs, fs,
+  private[adam] def mergeFiles(conf: Configuration,
+                               fs: FileSystem,
+                               outputPath: Path,
+                               tailPath: Path,
+                               optHeaderPath: Option[Path] = None,
+                               writeEmptyGzipBlock: Boolean = false,
+                               writeCramEOF: Boolean = false,
+                               optBufferSize: Option[Int] = None) {
+    mergeFilesAcrossFilesystems(conf,
+      fs, fs,
       outputPath, tailPath, optHeaderPath = optHeaderPath,
       writeEmptyGzipBlock = writeEmptyGzipBlock,
       writeCramEOF = writeCramEOF,
-      bufferSize = bufferSize)
+      optBufferSize = optBufferSize)
   }
 
   /**
@@ -73,16 +83,24 @@ private[adam] object FileMerger extends Logging {
    * @param writeEmptyGzipBlock If true, we write an empty GZIP block at the
    *   end of the merged file.
    * @param writeCramEOF If true, we write CRAM's EOF signifier.
-   * @param bufferSize The size in bytes of the buffer used for copying.
+   * @param optBufferSize The size in bytes of the buffer used for copying. If
+   *   not set, we check the config for this value. If that is not set, we
+   *   default to 4MB.
    */
-  def mergeFilesAcrossFilesystems(fsIn: FileSystem,
-                                  fsOut: FileSystem,
-                                  outputPath: Path,
-                                  tailPath: Path,
-                                  optHeaderPath: Option[Path] = None,
-                                  writeEmptyGzipBlock: Boolean = false,
-                                  writeCramEOF: Boolean = false,
-                                  bufferSize: Int = 4 * 1024 * 1024) {
+  private[adam] def mergeFilesAcrossFilesystems(conf: Configuration,
+                                                fsIn: FileSystem,
+                                                fsOut: FileSystem,
+                                                outputPath: Path,
+                                                tailPath: Path,
+                                                optHeaderPath: Option[Path] = None,
+                                                writeEmptyGzipBlock: Boolean = false,
+                                                writeCramEOF: Boolean = false,
+                                                optBufferSize: Option[Int] = None) {
+
+    // check for buffer size in option, if not in option, check hadoop conf,
+    // if not in hadoop conf, fall back on 4MB
+    val bufferSize = optBufferSize.getOrElse(conf.getInt(BUFFER_SIZE_CONF,
+      4 * 1024 * 1024))
 
     require(bufferSize > 0,
       "Cannot have buffer size < 1. %d was provided.".format(bufferSize))

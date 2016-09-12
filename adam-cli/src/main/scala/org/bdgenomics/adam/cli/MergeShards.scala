@@ -34,8 +34,10 @@ class MergeShardsArgs extends Args4jBase {
   var outputPath: String = null
   @Args4jOption(required = false, name = "-headerPath", usage = "Optional path to a header")
   var headerPath: String = null
-  @Args4jOption(required = false, name = "-bufferSize", usage = "Buffer size for merging single file output. Default is 4MB.")
-  var bufferSize: Int = 4 * 1024 * 1024
+  @Args4jOption(required = false,
+    name = "-bufferSize",
+    usage = "Buffer size for merging single file output. If provided, overrides configured buffer size.")
+  var bufferSize: Int = _
   @Args4jOption(required = false, name = "-writeEmptyGZIPAtEof", usage = "If provided, writes an empty GZIP block at EOF")
   var gzipAtEof: Boolean = false
 }
@@ -71,9 +73,10 @@ class MergeShards(val args: MergeShardsArgs) extends BDGSparkCommand[MergeShards
     val fsOut = outputPath.getFileSystem(conf)
 
     // merge the files
-    FileMerger.mergeFilesAcrossFilesystems(fsIn, fsOut,
+    FileMerger.mergeFilesAcrossFilesystems(conf,
+      fsIn, fsOut,
       outputPath, tailPath, optHeadPath,
       writeEmptyGzipBlock = args.gzipAtEof,
-      bufferSize = args.bufferSize)
+      optBufferSize = Option(args.bufferSize).filter(_ > 0))
   }
 }

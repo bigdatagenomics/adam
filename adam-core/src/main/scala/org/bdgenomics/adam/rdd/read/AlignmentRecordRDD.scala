@@ -452,7 +452,8 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
       )
 
       if (!deferMerging) {
-        FileMerger.mergeFiles(fs,
+        FileMerger.mergeFiles(rdd.context.hadoopConfiguration,
+          fs,
           outputPath,
           tailPath,
           optHeaderPath = Some(headPath),
