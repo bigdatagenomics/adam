@@ -60,7 +60,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     new File(tempDir, tempFile.getName + suffix).getAbsolutePath
   }
 
-  sparkTest("save GTF as GTF format") {
+  sparkTest("round trip GTF format") {
     val inputPath = resourcePath("Homo_sapiens.GRCh37.75.trun100.gtf")
     val features = sc.loadGtf(inputPath)
 
@@ -131,6 +131,15 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     assert(features.rdd.count === reloadedFeatures.rdd.count)
   }
 
+  sparkTest("save GFF3 as GTF format") {
+    val inputPath = resourcePath("dvl1.200.gff3")
+    val features = sc.loadGff3(inputPath)
+    val outputPath = tempLocation(".gtf")
+    features.saveAsGtf(outputPath)
+    val reloadedFeatures = sc.loadGtf(outputPath)
+    assert(features.rdd.count === reloadedFeatures.rdd.count)
+  }
+
   sparkTest("save GFF3 as BED format") {
     val inputPath = resourcePath("dvl1.200.gff3")
     val features = sc.loadGff3(inputPath)
@@ -183,9 +192,9 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
 
     val actual = sc.loadGff3(outputPath)
     val pairs = expected.rdd.collect.zip(actual.rdd.collect)
-
-    // separate foreach since assert is not serializable
-    pairs.foreach({ pair: (Feature, Feature) => assert(pair._1 === pair._2) })
+    pairs.foreach(p => {
+      assert(p._1 === p._2)
+    })
   }
 
   sparkTest("save BED as GTF format") {
@@ -240,12 +249,11 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     assert(bedCols(4) === "13.53")
     assert(bedCols(5) === "+")
 
-    // grab all partitions, may not necessarily be in order; sort by reference
     val actual = sc.loadBed(outputPath)
     val pairs = expected.rdd.collect.zip(actual.rdd.collect)
-
-    // separate since assert is not serializable
-    pairs.foreach({ pair: (Feature, Feature) => assert(pair._1 === pair._2) })
+    pairs.foreach(p => {
+      assert(p._1 === p._2)
+    })
   }
 
   sparkTest("save IntervalList as GTF format") {
@@ -322,12 +330,11 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val outputPath = tempLocation(".interval_list")
     expected.saveAsIntervalList(outputPath, asSingleFile = true)
 
-    // grab all partitions, may not necessarily be in order; sort by reference
     val actual = sc.loadIntervalList(outputPath)
-    val pairs = expected.rdd.zip(actual.rdd).collect
-
-    // separate foreach since assert is not serializable
-    pairs.foreach({ pair: (Feature, Feature) => assert(pair._1 === pair._2) })
+    val pairs = expected.rdd.collect.zip(actual.rdd.collect)
+    pairs.foreach(p => {
+      assert(p._1 === p._2)
+    })
   }
 
   sparkTest("save NarrowPeak as GTF format") {
@@ -395,10 +402,8 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
 
     val actual = sc.loadNarrowPeak(outputPath)
     val pairs = expected.rdd.zip(actual.rdd).collect
-
-    // separate foreach since assert is not serializable
-    pairs.foreach(pair => {
-      assert(pair._1 === pair._2)
+    pairs.foreach(p => {
+      assert(p._1 === p._2)
     })
   }
 

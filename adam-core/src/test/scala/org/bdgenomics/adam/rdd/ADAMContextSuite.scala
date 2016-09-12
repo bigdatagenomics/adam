@@ -139,33 +139,10 @@ class ADAMContextSuite extends ADAMFunSuite {
     val arr = annot.collect
 
     val first = arr.find(f => f.getContigName == "chr1" && f.getStart == 14415L && f.getEnd == 14499L).get
-    assert(
-      first
-        .getDbxrefs
-        .map(dbxref => dbxref.getDb -> dbxref.getAccession)
-        .groupBy(_._1)
-        .mapValues(_.map(_._2).toSet) ==
-        Map(
-          "gn" -> Set("DDX11L1", "RP11-34P13.2"),
-          "ens" -> Set("ENSG00000223972", "ENSG00000227232"),
-          "vega" -> Set("OTTHUMG00000000958", "OTTHUMG00000000961")
-        )
-    )
+    assert(first.getName === "gn|DDX11L1;gn|RP11-34P13.2;ens|ENSG00000223972;ens|ENSG00000227232;vega|OTTHUMG00000000958;vega|OTTHUMG00000000961")
 
     val last = arr.find(f => f.getContigName == "chrY" && f.getStart == 27190031L && f.getEnd == 27190210L).get
-    assert(
-      last
-        .getDbxrefs
-        .map(dbxref => dbxref.getDb -> dbxref.getAccession)
-        .groupBy(_._1)
-        .mapValues(_.map(_._2).toSet) ==
-        Map(
-          "gn" -> Set("BPY2C"),
-          "ccds" -> Set("CCDS44030"),
-          "ens" -> Set("ENSG00000185894"),
-          "vega" -> Set("OTTHUMG00000045199")
-        )
-    )
+    assert(last.getName === "gn|BPY2C;ccds|CCDS44030;ens|ENSG00000185894;vega|OTTHUMG00000045199")
   }
 
   sparkTest("can read a small .vcf file") {
