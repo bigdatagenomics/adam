@@ -210,11 +210,10 @@ case class FeatureRDD(rdd: RDD[Feature],
   /**
    * Java friendly save function. Automatically detects the output format.
    *
-   * If the filename ends in ".bed", we write a BED file. If the file name ends
-   * in ".gtf" or ".gff", we write the file as GTF/GFF2. If the file name ends
-   * in ".narrow[pP]eak", we save in the NarrowPeak format. If the file name
-   * ends in ".interval_list", we save in the interval list format. Else, we
-   * save as Parquet. These files are written as sharded text files.
+   * Writes files ending in .bed as BED6/12, .gff3 as GFF3, .gtf/.gff as
+   * GTF/GFF2, .narrow[pP]eak as NarrowPeak, and .interval_list as
+   * IntervalList. If none of these match, we fall back to Parquet.
+   * These files are written as sharded text files.
    *
    * @param filePath The location to write the output.
    * @param asSingleFile If false, writes file to disk as shards with
@@ -227,6 +226,8 @@ case class FeatureRDD(rdd: RDD[Feature],
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
       saveAsGtf(filePath, asSingleFile = asSingleFile)
+    } else if (filePath.endsWith(".gff3")) {
+      saveAsGff3(filePath, asSingleFile = asSingleFile)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
       saveAsNarrowPeak(filePath, asSingleFile = asSingleFile)
@@ -341,7 +342,6 @@ case class FeatureRDD(rdd: RDD[Feature],
    *   file by merging the shards.
    */
   def saveAsIntervalList(fileName: String, asSingleFile: Boolean = false) = {
-    // todo:  SAM style header
     val intervalEntities = rdd.map(FeatureRDD.toInterval)
 
     if (asSingleFile) {

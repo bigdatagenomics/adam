@@ -33,7 +33,7 @@ object TransformFeatures extends BDGCommandCompanion {
 
 class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(required = true, metaVar = "INPUT",
-    usage = "The features file to convert (e.g., .bed, .gff). If extension is not detected, Parquet is assumed.", index = 0)
+    usage = "The features file to convert (e.g., .bed, .gff/.gtf, .gff3, .interval_list, .narrowPeak). If extension is not detected, Parquet is assumed.", index = 0)
   var featuresFile: String = _
 
   @Argument(required = true, metaVar = "OUTPUT",

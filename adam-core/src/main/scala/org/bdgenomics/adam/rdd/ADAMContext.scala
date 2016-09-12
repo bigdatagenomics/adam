@@ -1219,6 +1219,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    *
    * @see loadBed
    * @see loadGtf
+   * @see loadGff3
    * @see loadNarrowPeak
    * @see loadIntervalList
    * @see loadParquetFeatures
