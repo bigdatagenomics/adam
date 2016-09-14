@@ -32,14 +32,20 @@ class MergeShardsArgs extends Args4jBase {
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "The location to write the merged file", index = 1)
   var outputPath: String = null
-  @Args4jOption(required = false, name = "-headerPath", usage = "Optional path to a header")
+  @Args4jOption(required = false, name = "-header_path", usage = "Optional path to a header")
   var headerPath: String = null
   @Args4jOption(required = false,
-    name = "-bufferSize",
-    usage = "Buffer size for merging single file output. If provided, overrides configured buffer size.")
+    name = "-buffer_size",
+    usage = "Buffer size for merging single file output. If provided, overrides configured buffer size (default of 4MB).")
   var bufferSize: Int = _
-  @Args4jOption(required = false, name = "-writeEmptyGZIPAtEof", usage = "If provided, writes an empty GZIP block at EOF")
+  @Args4jOption(required = false,
+    name = "-write_empty_GZIP_at_eof",
+    usage = "If provided, writes an empty GZIP block at EOF")
   var gzipAtEof: Boolean = false
+  @Args4jOption(required = false,
+    name = "-write_cram_eof",
+    usage = "If provided, writes the CRAM EOF signifier")
+  var cramEof: Boolean = false
 }
 
 object MergeShards extends BDGCommandCompanion {
@@ -77,6 +83,7 @@ class MergeShards(val args: MergeShardsArgs) extends BDGSparkCommand[MergeShards
       fsIn, fsOut,
       outputPath, tailPath, optHeadPath,
       writeEmptyGzipBlock = args.gzipAtEof,
+      writeCramEOF = args.cramEof,
       optBufferSize = Option(args.bufferSize).filter(_ > 0))
   }
 }

@@ -17,13 +17,11 @@
  */
 package org.bdgenomics.adam.util
 
-import java.io.File
-import java.nio.file.Files
-
 import com.google.common.io.Resources
-
+import java.io.File
+import java.net.URI
+import java.nio.file.{ Files, Path }
 import org.bdgenomics.utils.misc.SparkFunSuite
-
 import scala.io.Source
 
 trait ADAMFunSuite extends SparkFunSuite {
@@ -73,10 +71,17 @@ trait ADAMFunSuite extends SparkFunSuite {
     }
   }
 
-  def copyResource(name: String): String = {
+  def copyResourcePath(name: String): Path = {
     val tempFile = Files.createTempFile(name, "." + name.split('.').tail.mkString("."))
     Files.write(tempFile, Resources.toByteArray(getClass().getResource("/" + name)))
-    tempFile.toString
+  }
+
+  def copyResource(name: String): String = {
+    copyResourcePath(name).toString
+  }
+
+  def copyResourceUri(name: String): URI = {
+    copyResourcePath(name).toUri
   }
 }
 

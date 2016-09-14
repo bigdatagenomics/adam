@@ -483,7 +483,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       mergedSd
     }
 
-    outputRdd.save(args)
+    outputRdd.save(args,
+      isSorted = (args.sortReads || args.sortLexicographically))
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {

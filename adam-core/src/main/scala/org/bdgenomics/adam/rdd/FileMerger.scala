@@ -50,7 +50,7 @@ object FileMerger extends Logging {
    * @param optBufferSize The size in bytes of the buffer used for copying. If
    *   not set, we check the config for this value. If that is not set, we
    *   default to 4MB.
-   * 
+   *
    * @see mergeFilesAcrossFilesystems
    */
   private[adam] def mergeFiles(conf: Configuration,

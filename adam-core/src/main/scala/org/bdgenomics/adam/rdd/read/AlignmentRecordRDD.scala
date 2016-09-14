@@ -153,16 +153,7 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
       saveAsSam(
         args.outputPath,
         isSorted = isSorted,
-        asSingleFile = args.asSingleFile deferMerging = args.deferMerging
-      )
-      true
-    } else if (args.outputPath.endsWith(".bam")) {
-      log.info("Saving data in BAM format")
-      saveAsSam(
-        args.outputPath,
-        asSam = false,
         asSingleFile = args.asSingleFile,
-        isSorted = isSorted,
         deferMerging = args.deferMerging
       )
       true
