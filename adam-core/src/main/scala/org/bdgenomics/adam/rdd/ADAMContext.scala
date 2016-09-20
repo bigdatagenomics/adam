@@ -306,7 +306,10 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
     // the path must match at least one file
     if (paths.isEmpty) {
       throw new FileNotFoundException(
-        s"Couldn't find any files matching ${path.toUri}"
+        s"Couldn't find any files matching ${path.toUri}. If you are trying to" +
+          " glob a directory of Parquet files, you need to glob inside the" +
+          " directory as well (e.g., \"glob.me.*.adam/*\", instead of" +
+          " \"glob.me.*.adam\"."
       )
     }
 
