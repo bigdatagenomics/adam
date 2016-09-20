@@ -56,25 +56,24 @@ ADAM ACTIONS
   count_contig_kmers : Counts the k-mers/q-mers from a read dataset.
            transform : Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations
           adam2fastq : Convert BAM to FASTQ files
-              plugin : Executes an ADAMPlugin
              flatten : Convert a ADAM format file to a version with a flattened schema, suitable for querying with tools like Impala
+         mergeShards : Merges the shards of a file
 
 CONVERSION OPERATIONS
             vcf2adam : Convert a VCF file to the corresponding ADAM format
-           anno2adam : Convert a annotation file (in VCF format) to the corresponding ADAM format
             adam2vcf : Convert an ADAM variant to the VCF ADAM format
+           anno2adam : Convert a annotation file (in VCF format) to the corresponding ADAM format
           fasta2adam : Converts a text FASTA sequence file into an ADAMNucleotideContig Parquet file which represents assembled sequences.
           adam2fasta : Convert ADAM nucleotide contig fragments to FASTA files
-       features2adam : Convert a file with sequence features into corresponding ADAM format
+   transformFeatures : Convert a file with sequence features into corresponding ADAM format and vice versa
           wigfix2bed : Locally convert a wigFix file to BED format
      fragments2reads : Convert alignment records into fragment records.
      reads2fragments : Convert alignment records into fragment records.
+      reads2coverage : Calculate the coverage from a given ADAM file
 
 PRINT
                print : Print an ADAM formatted file
-         print_genes : Load a GTF file containing gene annotations and print the corresponding gene models
             flagstat : Print statistics on reads in an ADAM file (similar to samtools flagstat)
-          print_tags : Prints the values and counts of all tags in a set of records
             listdict : Print the contents of an ADAM sequence dictionary
          allelecount : Calculate Allele frequencies
                 view : View certain reads from an alignment-record file.
@@ -83,8 +82,7 @@ PRINT
 You can learn more about a command, by calling it without arguments or with `--help`, e.g.
 
 ```
-$ adam-submit transform
-Argument "INPUT" is required
+$ adam-submit transform --help
  INPUT                                                           : The ADAM, BAM or SAM file to apply the transforms to
  OUTPUT                                                          : Location to write the transformed data in ADAM/Parquet format
  -add_md_tags VAL                                                : Add MD Tags to reads based on the FASTA (or equivalent) file passed to this option.
@@ -92,6 +90,7 @@ Argument "INPUT" is required
  -cache                                                          : Cache data to avoid recomputing between stages.
  -coalesce N                                                     : Set the number of partitions written to the ADAM output directory
  -concat VAL                                                     : Concatenate this file with <INPUT> and write the result to <OUTPUT>
+ -defer_merging                                                  : Defers merging single file output
  -dump_observations VAL                                          : Local path to dump BQSR observations to. Outputs CSV format.
  -force_load_bam                                                 : Forces Transform to load from BAM/SAM.
  -force_load_fastq                                               : Forces Transform to load from unpaired FASTQ.
@@ -128,6 +127,7 @@ Argument "INPUT" is required
  -single                                                         : Saves OUTPUT as single file
  -sort_fastq_output                                              : Sets whether to sort the FASTQ output, if saving as FASTQ. False by default.
                                                                    Ignored if not saving as FASTQ.
+ -sort_lexicographically                                         : Sort the reads lexicographically by contig name, instead of by index.
  -sort_reads                                                     : Sort the reads by referenceId and read position
  -storage_level VAL                                              : Set the storage level to use for caching.
  -stringency VAL                                                 : Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults
@@ -174,7 +174,7 @@ reads and pileups, run flagstat, etc. We use this script to test that ADAM is wo
 
 You'll need to have a Spark release on your system and the `$SPARK_HOME` environment variable pointing at it; prebuilt binaries can be downloaded from the
 [Spark website](http://spark.apache.org/downloads.html). Currently, our continuous builds default to
-[Spark 1.5.2 built against Hadoop 2.6 (CDH5)](http://d3kbcqa49mib13.cloudfront.net/spark-1.5.2-bin-hadoop2.6.tgz), but any more recent Spark distribution should also work.
+[Spark 1.6.1 built against Hadoop 2.6](http://d3kbcqa49mib13.cloudfront.net/spark-1.6.1-bin-hadoop2.6.tgz), but any more recent Spark distribution should also work.
 
 ### Helpful Aliases
 
@@ -247,13 +247,11 @@ For example, the following code snippet will generate a result similar to [the k
 
 `kmer.scala`
 ```scala
-import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.projections.{AlignmentRecordField, Projection}
+import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 
-val ac = new ADAMContext(sc)
 // Load alignments from disk
-val reads = ac.loadAlignments(
+val reads = sc.loadAlignments(
   "/data/NA21144.chrom11.ILLUMINA.adam",
   projection = Some(
     Projection(
@@ -267,6 +265,7 @@ val reads = ac.loadAlignments(
 // Generate, count and sort 21-mers
 val kmers =
   reads
+    .rdd
     .flatMap(_.getSequence.sliding(21).map(k => (k, 1L)))
     .reduceByKey(_ + _)
     .map(_.swap)
@@ -295,13 +294,6 @@ $ adam-shell -i kmer.scala
 
 The `adam-submit` and `adam-shell` commands can also
 be used to submit ADAM jobs to a Spark cluster, or to run ADAM interactively. Cluster mode can be enabled by passing [the same flags you'd pass to Spark](https://spark.apache.org/docs/1.5.2/submitting-applications.html#launching-applications-with-spark-submit), e.g. `--master yarn --deploy-mode client`.
-
-## Running Plugins
-
-ADAM allows users to create plugins via the [ADAMPlugin](https://github.com/bigdatagenomics/adam/blob/master/adam-core/src/main/scala/org/bdgenomics/adam/plugins/ADAMPlugin.scala)
-trait. These plugins are then imported using the Java classpath at runtime. To add to the classpath when
-using appassembler, use the `$CLASSPATH_PREFIX` environment variable. For an example of how to use
-the plugin interface, please see the [adam-plugins repo](https://github.com/heuermh/adam-plugins).
 
 # Under the Hood
 ADAM relies on several open-source technologies to make genomic analyses fast and massively parallelizable…
