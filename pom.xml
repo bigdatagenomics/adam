@@ -652,6 +652,7 @@
             <version>${scoverage.plugin.version}</version>
             <configuration>
               <scalaVersion>2.10.4</scalaVersion>
+              <aggregate>true</aggregate>
             </configuration>
           </plugin>
         </plugins>
