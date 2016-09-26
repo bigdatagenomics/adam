@@ -259,6 +259,8 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
     val header = adamRecordConverter.createSAMHeader(sequences, recordGroups)
     if (isSorted) {
       header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
+    } else {
+      header.setSortOrder(SAMFileHeader.SortOrder.unsorted)
     }
 
     // broadcast for efficiency
