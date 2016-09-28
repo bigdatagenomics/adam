@@ -60,7 +60,11 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
    */
   def convertPair(element: (Void, Text)): Iterable[AlignmentRecord] = {
     val lines = element._2.toString.split('\n')
-    require(lines.length == 8, "Record has wrong format:\n" + element._2.toString)
+    require(lines.length == 8,
+      "Record must have 8 lines ("
+        + lines.length.toString
+        + " found): "
+        + element._2.toString)
 
     // get fields for first read in pair
     val firstReadName = lines(0).drop(1)
