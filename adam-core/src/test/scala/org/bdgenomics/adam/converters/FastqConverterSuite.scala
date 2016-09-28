@@ -51,12 +51,46 @@ class FastqConverterSuite extends FunSuite {
     val input = (null, new Text("@read\nATCGA\n+\nabcde\n@read\nTCGAT\n+\n12345"))
     val fragment = converter.convertFragment(input)
     assert(fragment.getReadName == "read")
+
+    // more detailed testing
+    val align1 = fragment.getAlignments.get(0)
+    assert(align1.getReadName === "read")
+    assert(align1.getSequence === "ATCGA")
+    assert(align1.getQual === "abcde")
+    assert(align1.getReadPaired === true)
+    assert(align1.getProperPair === true)
+    assert(align1.getReadInFragment === 0)
+
+    val align2 = fragment.getAlignments.get(1)
+    assert(align2.getReadName === "read")
+    assert(align2.getSequence === "TCGAT")
+    assert(align2.getQual === "12345")
+    assert(align2.getReadPaired === true)
+    assert(align2.getProperPair === true)
+    assert(align2.getReadInFragment === 1)
   }
 
   test("testing FastqRecordConverter.convertFragment with another valid input having /1, /2 suffixes") {
     val input = (null, new Text("@read/1\nATCGA\n+\nabcde\n@read/2\nTCGAT\n+\n12345"))
     val fragment = converter.convertFragment(input)
     assert(fragment.getReadName == "read")
+
+    // more detailed testing
+    val align1 = fragment.getAlignments.get(0)
+    assert(align1.getReadName === "read")
+    assert(align1.getSequence === "ATCGA")
+    assert(align1.getQual === "abcde")
+    assert(align1.getReadPaired === true)
+    assert(align1.getProperPair === true)
+    assert(align1.getReadInFragment === 0)
+
+    val align2 = fragment.getAlignments.get(1)
+    assert(align2.getReadName === "read")
+    assert(align2.getSequence === "TCGAT")
+    assert(align2.getQual === "12345")
+    assert(align2.getReadPaired === true)
+    assert(align2.getProperPair === true)
+    assert(align2.getReadInFragment === 1)
   }
 
   test("testing FastqRecordConverter.convertFragment with invalid input: different read names") {
