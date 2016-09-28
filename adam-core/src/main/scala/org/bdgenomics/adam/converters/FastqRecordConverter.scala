@@ -113,20 +113,26 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
   private def makeAlignmentRecord(readName: String,
                                   sequence: String,
                                   qual: String,
-                                  readInFragment: Int): AlignmentRecord = {
-    AlignmentRecord.newBuilder
+                                  readInFragment: Int,
+                                  readPaired: Boolean = true,
+                                  recordGroupOpt: Option[String] = None): AlignmentRecord = {
+    val builder = AlignmentRecord.newBuilder
       .setReadName(readName)
       .setSequence(sequence)
       .setQual(qual)
-      .setReadPaired(true)
-      .setProperPair(true)
+      .setReadPaired(readPaired)
+      .setProperPair(null)
       .setReadInFragment(readInFragment)
       .setReadNegativeStrand(null)
       .setMateNegativeStrand(null)
       .setPrimaryAlignment(null)
       .setSecondaryAlignment(null)
       .setSupplementaryAlignment(null)
-      .build
+
+    if (recordGroupOpt != None)
+      recordGroupOpt.foreach(builder.setRecordGroupName)
+
+    builder.build
   }
 
   /**
@@ -227,80 +233,22 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
   def convertRead(
     element: (Void, Text),
     recordGroupOpt: Option[String] = None,
-    setFirstOfPair: Boolean = false,
+    setFirstOfPair: Boolean = true,
     setSecondOfPair: Boolean = false,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecord = {
-    val lines = element._2.toString.split('\n')
-    require(lines.length == 4, "Record has wrong format:\n" + element._2.toString)
 
-    def trimTrailingReadNumber(readName: String): String = {
-      if (readName.endsWith("/1")) {
-        if (setSecondOfPair) {
-          throw new Exception(
-            s"Found read name $readName ending in '/1' despite second-of-pair flag being set"
-          )
-        }
-        readName.dropRight(2)
-      } else if (readName.endsWith("/2")) {
-        if (setFirstOfPair) {
-          throw new Exception(
-            s"Found read name $readName ending in '/2' despite first-of-pair flag being set"
-          )
-        }
-        readName.dropRight(2)
-      } else {
-        readName
-      }
-    }
+    val (readName, readSequence, readQualities) =
+      this.parseReadInFastq(element._2.toString, setFirstOfPair, setSecondOfPair, stringency)
 
-    // get fields for first read in pair
-    val readName = trimTrailingReadNumber(lines(0).drop(1))
-    val readSequence = lines(1)
+    // default to 0
+    val readInFragment =
+      if (setSecondOfPair) 1
+      else 0
 
-    lazy val suffix = s"\n=== printing received Fastq record for debugging ===\n${lines.mkString("\n")}\n=== End of debug output for Fastq record ==="
-    if (stringency == ValidationStringency.STRICT && lines(3) == "*" && readSequence.length > 1)
-      throw new IllegalArgumentException(s"Fastq quality must be defined. $suffix")
-    else if (stringency == ValidationStringency.STRICT && lines(3).length != readSequence.length)
-      throw new IllegalArgumentException(s"Fastq sequence and quality strings must have the same length.\n Fastq quality string of length ${lines(3).length}, expected ${readSequence.length} from the sequence length. $suffix")
+    val readPaired = setFirstOfPair || setSecondOfPair
 
-    val readQualities =
-      if (lines(3) == "*")
-        "B" * readSequence.length
-      else if (lines(3).length < lines(1).length)
-        lines(3) + ("B" * (lines(1).length - lines(3).length))
-      else if (lines(3).length > lines(1).length)
-        throw new NotImplementedError("Not implemented")
-      else
-        lines(3)
-
-    require(
-      readSequence.length == readQualities.length,
-      List(
-        s"Read $readName has different sequence and qual length:",
-        s"sequence=$readSequence",
-        s"qual=$readQualities"
-      ).mkString("\n\t")
-    )
-
-    val builder = AlignmentRecord.newBuilder()
-      .setReadName(readName)
-      .setSequence(readSequence)
-      .setQual(readQualities)
-      .setReadPaired(setFirstOfPair || setSecondOfPair)
-      .setProperPair(null)
-      .setReadInFragment(
-        if (setFirstOfPair) 0
-        else if (setSecondOfPair) 1
-        else null
-      )
-      .setReadNegativeStrand(false)
-      .setMateNegativeStrand(null)
-      .setPrimaryAlignment(null)
-      .setSecondaryAlignment(null)
-      .setSupplementaryAlignment(null)
-
-    recordGroupOpt.foreach(builder.setRecordGroupName)
-
-    builder.build()
+    this.makeAlignmentRecord(
+      readName, readSequence, readQualities,
+      readInFragment, readPaired, recordGroupOpt)
   }
 }
