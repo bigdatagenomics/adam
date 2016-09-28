@@ -21,7 +21,6 @@ import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
 import org.scalatest.FunSuite
 
-
 class FastqRecordConverterSuite extends FunSuite {
   val converter = new FastqRecordConverter
 
@@ -38,9 +37,10 @@ class FastqRecordConverterSuite extends FunSuite {
 
   test("testing FastqRecordConverter.convertPair with 7-line invalid input") {
     val input = (null, new Text("@read/1\nATCGA\n+\nabcde\n@read/2\nTCGAT\n+"))
-    intercept[IllegalArgumentException] {
+    val thrown = intercept[IllegalArgumentException] {
       converter.convertPair(input)
     }
+    assert(thrown.getMessage.contains("Record must have 8 lines (7 found)"))
   }
 
   test("testing FastqRecordConverter.convertPair with invalid input: first read length and qual don't match") {
@@ -135,20 +135,22 @@ class FastqRecordConverterSuite extends FunSuite {
   }
 
   test("testing FastqRecordConverter.convertRead with valid input: setFirstOfPair and setSecondOfPair both true") {
-    intercept[IllegalArgumentException] {
+    val thrown = intercept[IllegalArgumentException] {
       converter.convertRead(
         (null, new Text("@nameX\nATCGA\n+\nabcde")),
         setFirstOfPair = true,
         setSecondOfPair = true
       )
     }
+    assert(thrown.getMessage === "requirement failed: setFirstOfPair and setSecondOfPair cannot be true at the same time")
   }
 
   test("testing FastqRecordConverter.convertRead with valid input, no qual, strict") {
     val input = (null, new Text("@nameX\nATCGA\n+\n*"))
-    intercept[IllegalArgumentException] {
+    val thrown = intercept[IllegalArgumentException] {
       converter.convertRead(input)
     }
+    assert(thrown.getMessage.contains("Fastq quality must be defined"))
   }
 
   test("testing FastqRecordConverter.convertRead with valid input, no qual, not strict") {
