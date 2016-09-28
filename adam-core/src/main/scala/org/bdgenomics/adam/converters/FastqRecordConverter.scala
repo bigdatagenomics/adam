@@ -108,9 +108,9 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
     // a helper function
     def makeAlignmentRecord(readName: String,
-               sequence: String,
-               qual: String,
-               readInFragment: Int): AlignmentRecord = {
+                            sequence: String,
+                            qual: String,
+                            readInFragment: Int): AlignmentRecord = {
       AlignmentRecord.newBuilder()
         .setReadName(readName)
         .setSequence(sequence)
