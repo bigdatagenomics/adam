@@ -46,4 +46,24 @@ class FastqConverterSuite extends FunSuite {
       converter.convertPair(input)
     }
   }
+
+  test("testing FastqRecordConverter.convertFragment with valid input") {
+    val input = (null, new Text("@read\nATCGA\n+\nabcde\n@read\nTCGAT\n+\n12345"))
+    val fragment = converter.convertFragment(input)
+    assert(fragment.getReadName == "read")
+  }
+
+  test("testing FastqRecordConverter.convertFragment with another valid input having /1, /2 suffixes") {
+    val input = (null, new Text("@read/1\nATCGA\n+\nabcde\n@read/2\nTCGAT\n+\n12345"))
+    val fragment = converter.convertFragment(input)
+    assert(fragment.getReadName == "read")
+  }
+
+  test("testing FastqRecordConverter.convertFragment with invalid input: different read names") {
+    val input = (null, new Text("@nameX\nATCGA\n+\nabcde\n@nameY/2\nTCGAT\n+\n12345"))
+    intercept[IllegalArgumentException] {
+      converter.convertFragment (input)
+    }
+  }
+
 }
