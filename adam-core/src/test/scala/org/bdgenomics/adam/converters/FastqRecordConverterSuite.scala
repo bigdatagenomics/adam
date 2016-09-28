@@ -114,6 +114,7 @@ class FastqConverterSuite extends FunSuite {
     assert(alignment.getReadName === "nameX")
     assert(alignment.getSequence === "ATCGA")
     assert(alignment.getQual === "abcde")
+    assert(alignment.getReadPaired === false)
   }
 
   test("testing FastqRecordConverter.convertRead with valid input, no qual, strict") {
