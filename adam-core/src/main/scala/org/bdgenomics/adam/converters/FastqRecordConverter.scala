@@ -228,7 +228,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
   def convertRead(
     element: (Void, Text),
     recordGroupOpt: Option[String] = None,
-    setFirstOfPair: Boolean = true,
+    setFirstOfPair: Boolean = false,
     setSecondOfPair: Boolean = false,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecord = {
 
