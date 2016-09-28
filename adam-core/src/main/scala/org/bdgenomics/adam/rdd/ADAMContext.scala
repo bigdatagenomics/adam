@@ -304,7 +304,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
     val paths = if (fs.isDirectory(path)) fs.listStatus(path) else fs.globStatus(path)
 
     // the path must match at least one file
-    if (paths.isEmpty) {
+    if (paths == null || paths.isEmpty) {
       throw new FileNotFoundException(
         s"Couldn't find any files matching ${path.toUri}. If you are trying to" +
           " glob a directory of Parquet files, you need to glob inside the" +
@@ -327,7 +327,7 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
    *
    * @throws FileNotFoundException if the path does not match any files.
    */
-  private def getFsAndFiles(path: Path): Array[Path] = {
+  private[rdd] def getFsAndFiles(path: Path): Array[Path] = {
 
     // get the underlying fs for the file
     val fs = Option(path.getFileSystem(sc.hadoopConfiguration)).getOrElse(
