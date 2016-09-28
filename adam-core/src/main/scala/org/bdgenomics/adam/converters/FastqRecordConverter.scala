@@ -78,6 +78,25 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       )
   }
 
+  private def makeAlignmentRecord(readName: String,
+                                  sequence: String,
+                                  qual: String,
+                                  readInFragment: Int): AlignmentRecord = {
+    AlignmentRecord.newBuilder
+      .setReadName(readName)
+      .setSequence(sequence)
+      .setQual(qual)
+      .setReadPaired(true)
+      .setProperPair(true)
+      .setReadInFragment(readInFragment)
+      .setReadNegativeStrand(null)
+      .setMateNegativeStrand(null)
+      .setPrimaryAlignment(null)
+      .setSecondaryAlignment(null)
+      .setSupplementaryAlignment(null)
+      .build
+  }
+
   /**
    * Converts a read pair in FASTQ format into two AlignmentRecords.
    *
@@ -106,30 +125,10 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       secondReadQualities
       ) = this.parseReadPairInFastq(element._2.toString)
 
-    // a helper function
-    def makeAlignmentRecord(readName: String,
-                            sequence: String,
-                            qual: String,
-                            readInFragment: Int): AlignmentRecord = {
-      AlignmentRecord.newBuilder()
-        .setReadName(readName)
-        .setSequence(sequence)
-        .setQual(qual)
-        .setReadPaired(true)
-        .setProperPair(true)
-        .setReadInFragment(readInFragment)
-        .setReadNegativeStrand(null)
-        .setMateNegativeStrand(null)
-        .setPrimaryAlignment(null)
-        .setSecondaryAlignment(null)
-        .setSupplementaryAlignment(null)
-        .build()
-    }
-
     // build and return iterators
     Iterable(
-      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
-      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
+      this.makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
+      this.makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
     )
   }
 
@@ -163,17 +162,9 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       )
     )
 
-    // a helper function
-    def makeAlignmentRecord(sequence: String, qual: String): AlignmentRecord = {
-      AlignmentRecord.newBuilder
-        .setSequence(sequence)
-        .setQual(qual)
-        .build
-    }
-
     val alignments = List(
-      makeAlignmentRecord(firstReadSequence, firstReadQualities),
-      makeAlignmentRecord(secondReadSequence, secondReadQualities)
+      this.makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
+      this.makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
     )
 
     // build and return record
