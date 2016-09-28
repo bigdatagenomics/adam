@@ -242,6 +242,11 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
     val readPaired = setFirstOfPair || setSecondOfPair
 
+    require(
+      (setFirstOfPair && setSecondOfPair) == false,
+      "setFirstOfPair and setSecondOfPair cannot be true at the same time"
+    )
+
     this.makeAlignmentRecord(
       readName, readSequence, readQualities,
       readInFragment, readPaired, recordGroupOpt)
