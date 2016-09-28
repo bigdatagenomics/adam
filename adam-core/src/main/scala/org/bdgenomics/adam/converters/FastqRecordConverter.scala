@@ -40,6 +40,44 @@ import scala.collection.JavaConversions._
  */
 private[adam] class FastqRecordConverter extends Serializable with Logging {
 
+  private def parseReadPairInFastq (input: String): Tuple6[String, String, String, String, String, String] = {
+    val lines = input.toString.split('\n')
+
+    require(lines.length == 8,
+      "Record must have 8 lines ("
+        + lines.length.toString
+        + " found): "
+        + input)
+    val suffix = """(\/1$)|(\/2$)""".r
+
+    val firstReadName = suffix.replaceAllIn(lines(0).drop(1), "")
+    val firstReadSequence = lines(1)
+    val firstReadQualities = lines(3)
+
+    require(
+      firstReadSequence.length == firstReadQualities.length,
+      "Read " + firstReadName + " has different sequence and qual length."
+    )
+
+    val secondReadName = suffix.replaceAllIn(lines(4).drop(1), "")
+    val secondReadSequence = lines(5)
+    val secondReadQualities = lines(7)
+
+    require(
+      secondReadSequence.length == secondReadQualities.length,
+      "Read " + secondReadName + " has different sequence and qual length."
+    )
+
+    return (
+      firstReadName,
+      firstReadSequence,
+      firstReadQualities,
+      secondReadName,
+      secondReadSequence,
+      secondReadQualities
+      )
+  }
+
   /**
    * Converts a read pair in FASTQ format into two AlignmentRecords.
    *
@@ -59,30 +97,14 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
    * @see convertFragment
    */
   def convertPair(element: (Void, Text)): Iterable[AlignmentRecord] = {
-    val lines = element._2.toString.split('\n')
-    require(lines.length == 8,
-      "Record must have 8 lines ("
-        + lines.length.toString
-        + " found): "
-        + element._2.toString)
-
-    // get fields for first read in pair
-    val firstReadName = lines(0).drop(1)
-    val firstReadSequence = lines(1)
-    val firstReadQualities = lines(3)
-    require(
-      firstReadSequence.length == firstReadQualities.length,
-      "Read " + firstReadName + " has different sequence and qual length."
-    )
-
-    // get fields for second read in pair
-    val secondReadName = lines(4).drop(1)
-    val secondReadSequence = lines(5)
-    val secondReadQualities = lines(7)
-    require(
-      secondReadSequence.length == secondReadQualities.length,
-      "Read " + secondReadName + " has different sequence and qual length."
-    )
+    val (
+      firstReadName,
+      firstReadSequence,
+      firstReadQualities,
+      secondReadName,
+      secondReadSequence,
+      secondReadQualities
+      ) = this.parseReadPairInFastq(element._2.toString)
 
     // a helper function
     def makeAlignmentRecord(readName: String,
