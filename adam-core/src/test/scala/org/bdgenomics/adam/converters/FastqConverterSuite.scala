@@ -25,4 +25,25 @@ class FastqConverterSuite extends FunSuite {
     assert(alignRecIterator.map(a => a.getSecondaryAlignment) === List(null, null))
     assert(alignRecIterator.map(a => a.getSupplementaryAlignment) === List(null, null))
   }
+
+  test("testing FastqRecordConverter.convertPair with 7-line invalid input") {
+    val input = (null, new Text("@read/1\nATCGA\n+\nabcde\n@read/2\nTCGAT\n+"))
+    intercept[IllegalArgumentException]{
+      val alignRecIterator = converter.convertPair(input)
+    }
+  }
+
+  test("testing FastqRecordConverter.convertPair with invalid input: first read length and qual don't match") {
+    val input = (null, new Text("@read/1\nATCGA\n+\nabcd\n@read/2\nTCGAT\n+\n12345"))
+    intercept[IllegalArgumentException]{
+      val alignRecIterator = converter.convertPair(input)
+    }
+  }
+
+  test("testing FastqRecordConverter.convertPair with invalid input: second read length and qual don't match") {
+    val input = (null, new Text("@read/1\nATCGA\n+\nabcde\n@read/2\nTCGAT\n+\n1234"))
+    intercept[IllegalArgumentException]{
+      val alignRecIterator = converter.convertPair(input)
+    }
+  }
 }
