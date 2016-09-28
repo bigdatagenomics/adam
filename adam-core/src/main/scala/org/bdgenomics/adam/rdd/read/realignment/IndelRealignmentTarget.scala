@@ -198,13 +198,22 @@ class IndelRealignmentTarget(
 
 class TargetSetSerializer extends Serializer[TargetSet] {
 
+  val irts = new IndelRealignmentTargetSerializer()
+
   def write(kryo: Kryo, output: Output, obj: TargetSet) = {
-    kryo.writeClassAndObject(output, obj.set.toList)
+    output.writeInt(obj.set.size)
+    obj.set.foreach(innerObj => {
+      irts.write(kryo, output, innerObj)
+    })
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[TargetSet]): TargetSet = {
-    new TargetSet(new TreeSet()(TargetOrdering)
-      .union(kryo.readClassAndObject(input).asInstanceOf[List[IndelRealignmentTarget]].toSet))
+    val size = input.readInt()
+    val array = new Array[IndelRealignmentTarget](size)
+    (0 until size).foreach(i => {
+      array(i) = irts.read(kryo, input, classOf[IndelRealignmentTarget])
+    })
+    new TargetSet(TreeSet(array: _*)(TargetOrdering))
   }
 }
 
