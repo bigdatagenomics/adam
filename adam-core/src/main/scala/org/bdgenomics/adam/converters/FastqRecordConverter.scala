@@ -44,27 +44,43 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     * Parse 4 lines at a time
     * @see parseReadPairInFastq
     * **/
-  private def parseReadInFastq (input: String,
-                                setFirstOfPair: Boolean = false,
-                                setSecondOfPair: Boolean = false): (String, String, String) = {
-    val lines = input.split ('\n')
+  private def parseReadInFastq(input: String,
+                               setFirstOfPair: Boolean = false,
+                               setSecondOfPair: Boolean = false,
+                               stringency: ValidationStringency = ValidationStringency.STRICT): (String, String, String) = {
+    val lines = input.split('\n')
     require (lines.length == 4,
       s"Input must have 4 lines (${lines.length.toString} found):\n${input}")
 
-    val readName = lines (0).drop(1)
+    val readName = lines(0).drop(1)
     if (readName.endsWith ("/1") && setSecondOfPair)
-      throw new Exception (
+      throw new Exception(
         s"Found read name $readName ending in '/1' despite second-of-pair flag being set"
       )
     else if (readName.endsWith ("/2") && setFirstOfPair)
-      throw new Exception (
+      throw new Exception(
         s"Found read name $readName ending in '/2' despite first-of-pair flag being set"
       )
     val suffix = """(\/1$)|(\/2$)""".r
     val readNameNoSuffix = suffix.replaceAllIn(readName, "")
 
-    val readSequence = lines (1)
-    val readQualities = lines (3)
+    val readSequence = lines(1)
+    val readQualitiesRaw = lines(3)
+
+    val readQualities =
+      if (stringency == ValidationStringency.STRICT) readQualitiesRaw
+      else {
+        if (readQualitiesRaw == "*") "B" * readSequence.length
+        else if (readQualitiesRaw.length < readSequence.length) readQualitiesRaw + ("B" * (readSequence.length - readQualitiesRaw.length))
+        else if (readQualitiesRaw.length > readSequence.length) throw new NotImplementedError("Not implemented")
+        else readQualitiesRaw
+      }
+
+    if (stringency == ValidationStringency.STRICT) {
+      if (readQualitiesRaw == "*" && readSequence.length > 1)
+        throw new IllegalArgumentException(s"Fastq quality must be defined for\n $input")
+    }
+
     require (
       readSequence.length == readQualities.length,
       s"The first read: ${readName}, has different sequence and qual length."
