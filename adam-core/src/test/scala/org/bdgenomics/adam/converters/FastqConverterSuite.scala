@@ -1,3 +1,20 @@
+/**
+ * Licensed to Big Data Genomics (BDG) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The BDG licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.ValidationStringency
@@ -5,8 +22,8 @@ import org.apache.hadoop.io.Text
 import org.scalatest.FunSuite
 
 /**
-  * Created by zyxue on 2016-09-27.
-  */
+ * Created by zyxue on 2016-09-27.
+ */
 class FastqConverterSuite extends FunSuite {
   val converter = new FastqRecordConverter
 
@@ -29,21 +46,21 @@ class FastqConverterSuite extends FunSuite {
 
   test("testing FastqRecordConverter.convertPair with 7-line invalid input") {
     val input = (null, new Text("@read/1\nATCGA\n+\nabcde\n@read/2\nTCGAT\n+"))
-    intercept[IllegalArgumentException]{
+    intercept[IllegalArgumentException] {
       converter.convertPair(input)
     }
   }
 
   test("testing FastqRecordConverter.convertPair with invalid input: first read length and qual don't match") {
     val input = (null, new Text("@read/1\nATCGA\n+\nabcd\n@read/2\nTCGAT\n+\n12345"))
-    intercept[IllegalArgumentException]{
+    intercept[IllegalArgumentException] {
       converter.convertPair(input)
     }
   }
 
   test("testing FastqRecordConverter.convertPair with invalid input: second read length and qual don't match") {
     val input = (null, new Text("@read/1\nATCGA\n+\nabcde\n@read/2\nTCGAT\n+\n1234"))
-    intercept[IllegalArgumentException]{
+    intercept[IllegalArgumentException] {
       converter.convertPair(input)
     }
   }
@@ -67,7 +84,7 @@ class FastqConverterSuite extends FunSuite {
     assert(align2.getSequence === "TCGAT")
     assert(align2.getQual === "12345")
     assert(align2.getReadPaired === true)
-    assert(align2.getProperPair === true)
+    assert(align2.getProperPair === null)
     assert(align2.getReadInFragment === 1)
   }
 
@@ -97,7 +114,7 @@ class FastqConverterSuite extends FunSuite {
   test("testing FastqRecordConverter.convertFragment with invalid input: different read names") {
     val input = (null, new Text("@nameX\nATCGA\n+\nabcde\n@nameY/2\nTCGAT\n+\n12345"))
     intercept[IllegalArgumentException] {
-      converter.convertFragment (input)
+      converter.convertFragment(input)
     }
   }
 

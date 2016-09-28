@@ -41,23 +41,24 @@ import scala.collection.JavaConversions._
 private[adam] class FastqRecordConverter extends Serializable with Logging {
 
   /**
-    * Parse 4 lines at a time
-    * @see parseReadPairInFastq
-    * **/
+   * Parse 4 lines at a time
+   * @see parseReadPairInFastq
+   * *
+   */
   private def parseReadInFastq(input: String,
                                setFirstOfPair: Boolean = false,
                                setSecondOfPair: Boolean = false,
                                stringency: ValidationStringency = ValidationStringency.STRICT): (String, String, String) = {
     val lines = input.split('\n')
-    require (lines.length == 4,
+    require(lines.length == 4,
       s"Input must have 4 lines (${lines.length.toString} found):\n${input}")
 
     val readName = lines(0).drop(1)
-    if (readName.endsWith ("/1") && setSecondOfPair)
+    if (readName.endsWith("/1") && setSecondOfPair)
       throw new Exception(
         s"Found read name $readName ending in '/1' despite second-of-pair flag being set"
       )
-    else if (readName.endsWith ("/2") && setFirstOfPair)
+    else if (readName.endsWith("/2") && setFirstOfPair)
       throw new Exception(
         s"Found read name $readName ending in '/2' despite first-of-pair flag being set"
       )
@@ -81,7 +82,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
         throw new IllegalArgumentException(s"Fastq quality must be defined for\n $input")
     }
 
-    require (
+    require(
       readSequence.length == readQualities.length,
       s"The first read: ${readName}, has different sequence and qual length."
     )
@@ -89,7 +90,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     (readNameNoSuffix, readSequence, readQualities)
   }
 
-  private def parseReadPairInFastq (input: String): (String, String, String, String, String, String) = {
+  private def parseReadPairInFastq(input: String): (String, String, String, String, String, String) = {
     val lines = input.toString.split('\n')
     require(lines.length == 8,
       s"Record must have 8 lines (${lines.length.toString} found):\n${input}")
@@ -107,7 +108,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       secondReadName,
       secondReadSequence,
       secondReadQualities
-      )
+    )
   }
 
   private def makeAlignmentRecord(readName: String,
