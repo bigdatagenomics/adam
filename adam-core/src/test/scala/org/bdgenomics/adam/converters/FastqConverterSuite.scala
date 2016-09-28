@@ -1,5 +1,6 @@
 package org.bdgenomics.adam.converters
 
+import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
 import org.scalatest.FunSuite
 
@@ -100,4 +101,25 @@ class FastqConverterSuite extends FunSuite {
     }
   }
 
+  test("testing FastqRecordConverter.convertRead with valid input") {
+    val input = (null, new Text("@nameX\nATCGA\n+\nabcde"))
+    val alignment = converter.convertRead(input)
+    assert(alignment.getReadName === "nameX")
+    assert(alignment.getSequence === "ATCGA")
+    assert(alignment.getQual === "abcde")
+  }
+
+  test("testing FastqRecordConverter.convertRead with valid input, no qual, strict") {
+    val input = (null, new Text("@nameX\nATCGA\n+\n*"))
+    intercept[IllegalArgumentException] {
+      converter.convertRead(input)
+    }
+  }
+
+  test("testing FastqRecordConverter.convertRead with valid input, no qual, not strict") {
+    val input = (null, new Text("@nameX\nATCGA\n+\n*"))
+    val alignment = converter.convertRead(input, stringency = ValidationStringency.LENIENT)
+    assert(alignment.getReadName === "nameX")
+    assert(alignment.getQual === "BBBBB")
+  }
 }
