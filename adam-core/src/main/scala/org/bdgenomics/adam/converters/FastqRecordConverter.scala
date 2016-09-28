@@ -146,28 +146,15 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
    * @see convertPair
    */
   def convertFragment(element: (Void, Text)): Fragment = {
-    val lines = element._2.toString.split('\n')
-    require(lines.length == 8, "Record has wrong format:\n" + element._2.toString)
+    val (
+      firstReadName,
+      firstReadSequence,
+      firstReadQualities,
+      secondReadName,
+      secondReadSequence,
+      secondReadQualities
+      ) = this.parseReadPairInFastq(element._2.toString)
 
-    // get fields for first read in pair
-    val firstReadName = lines(0).drop(1)
-    val firstReadSequence = lines(1)
-    val firstReadQualities = lines(3)
-
-    require(
-      firstReadSequence.length == firstReadQualities.length,
-      "Read " + firstReadName + " has different sequence and qual length."
-    )
-
-    // get fields for second read in pair
-    val secondReadName = lines(4).drop(1)
-    val secondReadSequence = lines(5)
-    val secondReadQualities = lines(7)
-
-    require(
-      secondReadSequence.length == secondReadQualities.length,
-      "Read " + secondReadName + " has different sequence and qual length."
-    )
     require(
       firstReadName == secondReadName,
       "Reads %s and %s in Fragment have different names.".format(
@@ -176,17 +163,24 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       )
     )
 
+    // a helper function
+    def makeAlignmentRecord(sequence: String, qual: String): AlignmentRecord = {
+      AlignmentRecord.newBuilder
+        .setSequence(sequence)
+        .setQual(qual)
+        .build
+    }
+
+    val alignments = List(
+      makeAlignmentRecord(firstReadSequence, firstReadQualities),
+      makeAlignmentRecord(secondReadSequence, secondReadQualities)
+    )
+
     // build and return record
-    Fragment.newBuilder()
+    Fragment.newBuilder
       .setReadName(firstReadName)
-      .setAlignments(List(AlignmentRecord.newBuilder()
-        .setSequence(firstReadSequence)
-        .setQual(firstReadQualities)
-        .build(), AlignmentRecord.newBuilder()
-        .setSequence(secondReadSequence)
-        .setQual(secondReadQualities)
-        .build()))
-      .build()
+      .setAlignments(alignments)
+      .build
   }
 
   /**
