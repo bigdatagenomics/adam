@@ -40,32 +40,51 @@ import scala.collection.JavaConversions._
  */
 private[adam] class FastqRecordConverter extends Serializable with Logging {
 
-  private def parseReadPairInFastq (input: String): Tuple6[String, String, String, String, String, String] = {
+  /**
+    * Parse 4 lines at a time
+    * @see parseReadPairInFastq
+    * **/
+  private def parseReadInFastq (input: String,
+                                setFirstOfPair: Boolean = false,
+                                setSecondOfPair: Boolean = false): (String, String, String) = {
+    val lines = input.split ('\n')
+    require (lines.length == 4,
+      s"Input must have 4 lines (${lines.length.toString} found):\n${input}")
+
+    val readName = lines (0).drop(1)
+    if (readName.endsWith ("/1") && setSecondOfPair)
+      throw new Exception (
+        s"Found read name $readName ending in '/1' despite second-of-pair flag being set"
+      )
+    else if (readName.endsWith ("/2") && setFirstOfPair)
+      throw new Exception (
+        s"Found read name $readName ending in '/2' despite first-of-pair flag being set"
+      )
+    val suffix = """(\/1$)|(\/2$)""".r
+    val readNameNoSuffix = suffix.replaceAllIn(readName, "")
+
+    val readSequence = lines (1)
+    val readQualities = lines (3)
+    require (
+      readSequence.length == readQualities.length,
+      s"The first read: ${readName}, has different sequence and qual length."
+    )
+
+    (readNameNoSuffix, readSequence, readQualities)
+  }
+
+  private def parseReadPairInFastq (input: String): (String, String, String, String, String, String) = {
     val lines = input.toString.split('\n')
     require(lines.length == 8,
       s"Record must have 8 lines (${lines.length.toString} found):\n${input}")
 
-    val suffix = """(\/1$)|(\/2$)""".r
+    val (firstReadName, firstReadSequence, firstReadQualities) =
+      this.parseReadInFastq(lines.take(4).mkString("\n"), setFirstOfPair = true, setSecondOfPair = false)
 
-    val firstReadName = suffix.replaceAllIn(lines(0).drop(1), "")
-    val firstReadSequence = lines(1)
-    val firstReadQualities = lines(3)
+    val (secondReadName, secondReadSequence, secondReadQualities) =
+      this.parseReadInFastq(lines.drop(4).mkString("\n"), setFirstOfPair = false, setSecondOfPair = true)
 
-    require(
-      firstReadSequence.length == firstReadQualities.length,
-      s"The first read: ${firstReadName}, has different sequence and qual length."
-    )
-
-    val secondReadName = suffix.replaceAllIn(lines(4).drop(1), "")
-    val secondReadSequence = lines(5)
-    val secondReadQualities = lines(7)
-
-    require(
-      secondReadSequence.length == secondReadQualities.length,
-      s"The second read: ${secondReadName}, has different sequence and qual length."
-    )
-
-    return (
+    (
       firstReadName,
       firstReadSequence,
       firstReadQualities,
