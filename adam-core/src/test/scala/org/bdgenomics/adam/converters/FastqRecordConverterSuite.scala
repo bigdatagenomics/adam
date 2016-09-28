@@ -22,7 +22,7 @@ import org.apache.hadoop.io.Text
 import org.scalatest.FunSuite
 
 
-class FastqConverterSuite extends FunSuite {
+class FastqRecordConverterSuite extends FunSuite {
   val converter = new FastqRecordConverter
 
   test("testing FastqRecordConverter.convertPair with valid input") {
