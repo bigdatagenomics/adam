@@ -21,9 +21,7 @@ import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
 import org.scalatest.FunSuite
 
-/**
- * Created by zyxue on 2016-09-27.
- */
+
 class FastqConverterSuite extends FunSuite {
   val converter = new FastqRecordConverter
 
