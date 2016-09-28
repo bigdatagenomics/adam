@@ -115,6 +115,35 @@ class FastqConverterSuite extends FunSuite {
     assert(alignment.getSequence === "ATCGA")
     assert(alignment.getQual === "abcde")
     assert(alignment.getReadPaired === false)
+    assert(alignment.getReadInFragment === 0)
+  }
+
+  test("testing FastqRecordConverter.convertRead with valid input: setFirstOfPair set to true") {
+    val alignment = converter.convertRead(
+      (null, new Text("@nameX\nATCGA\n+\nabcde")),
+      setFirstOfPair = true
+    )
+    assert(alignment.getReadPaired === true)
+    assert(alignment.getReadInFragment === 0)
+  }
+
+  test("testing FastqRecordConverter.convertRead with valid input: setSecondOfPair set to true") {
+    val alignment = converter.convertRead(
+      (null, new Text("@nameX\nATCGA\n+\nabcde")),
+      setSecondOfPair = true
+    )
+    assert(alignment.getReadPaired === true)
+    assert(alignment.getReadInFragment === 1)
+  }
+
+  test("testing FastqRecordConverter.convertRead with valid input: setFirstOfPair and setSecondOfPair both true") {
+    intercept[IllegalArgumentException] {
+      converter.convertRead(
+        (null, new Text("@nameX\nATCGA\n+\nabcde")),
+        setFirstOfPair = true,
+        setSecondOfPair = true
+      )
+    }
   }
 
   test("testing FastqRecordConverter.convertRead with valid input, no qual, strict") {
