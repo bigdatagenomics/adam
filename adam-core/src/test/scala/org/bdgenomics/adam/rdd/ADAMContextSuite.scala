@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
-import java.io.File
+import java.io.{ File, FileNotFoundException }
 import java.util.UUID
 import htsjdk.samtools.DiskBasedBAMFileIndex
 import com.google.common.io.Files
@@ -378,8 +378,26 @@ class ADAMContextSuite extends ADAMFunSuite {
     val outputPath = tmpLocation()
     reads.saveAsParquet(outputPath)
     reads.saveAsParquet(outputPath.replace(".adam", ".2.adam"))
+
+    val paths = new Path(outputPath.replace(".adam", "*.adam") + "/*")
+    assert(sc.getFsAndFiles(paths).size > 2)
+
     val reloadedReads = sc.loadParquetAlignments(outputPath.replace(".adam", "*.adam") + "/*")
     assert((2 * reads.rdd.count) === reloadedReads.rdd.count)
+  }
+
+  sparkTest("bad glob should fail") {
+    val inputPath = resourcePath("small.sam")
+    intercept[FileNotFoundException] {
+      sc.getFsAndFiles(new Path(inputPath.replace(".sam", "*.sad")))
+    }
+  }
+
+  sparkTest("empty directory should fail") {
+    val outputPath = tmpLocation()
+    intercept[FileNotFoundException] {
+      sc.getFsAndFiles(new Path(outputPath))
+    }
   }
 }
 
