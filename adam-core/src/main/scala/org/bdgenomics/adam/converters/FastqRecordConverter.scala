@@ -66,7 +66,6 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     val firstReadName = lines(0).drop(1)
     val firstReadSequence = lines(1)
     val firstReadQualities = lines(3)
-
     require(
       firstReadSequence.length == firstReadQualities.length,
       "Read " + firstReadName + " has different sequence and qual length."
@@ -76,40 +75,35 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     val secondReadName = lines(4).drop(1)
     val secondReadSequence = lines(5)
     val secondReadQualities = lines(7)
-
     require(
       secondReadSequence.length == secondReadQualities.length,
       "Read " + secondReadName + " has different sequence and qual length."
     )
 
-    // build and return iterators
-    Iterable(
+    // a helper function
+    def makeAlignmentRecord(readName: String,
+               sequence: String,
+               qual: String,
+               readInFragment: Int): AlignmentRecord = {
       AlignmentRecord.newBuilder()
-        .setReadName(firstReadName)
-        .setSequence(firstReadSequence)
-        .setQual(firstReadQualities)
+        .setReadName(readName)
+        .setSequence(sequence)
+        .setQual(qual)
         .setReadPaired(true)
         .setProperPair(true)
-        .setReadInFragment(0)
-        .setReadNegativeStrand(null)
-        .setMateNegativeStrand(null)
-        .setPrimaryAlignment(null)
-        .setSecondaryAlignment(null)
-        .setSupplementaryAlignment(null)
-        .build(),
-      AlignmentRecord.newBuilder()
-        .setReadName(secondReadName)
-        .setSequence(secondReadSequence)
-        .setQual(secondReadQualities)
-        .setReadPaired(true)
-        .setProperPair(true)
-        .setReadInFragment(1)
+        .setReadInFragment(readInFragment)
         .setReadNegativeStrand(null)
         .setMateNegativeStrand(null)
         .setPrimaryAlignment(null)
         .setSecondaryAlignment(null)
         .setSupplementaryAlignment(null)
         .build()
+    }
+
+    // build and return iterators
+    Iterable(
+      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
+      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
     )
   }
 
