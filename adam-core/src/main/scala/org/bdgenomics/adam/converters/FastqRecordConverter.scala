@@ -42,12 +42,9 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
   private def parseReadPairInFastq (input: String): Tuple6[String, String, String, String, String, String] = {
     val lines = input.toString.split('\n')
-
     require(lines.length == 8,
-      "Record must have 8 lines ("
-        + lines.length.toString
-        + " found): "
-        + input)
+      s"Record must have 8 lines (${lines.length.toString} found):\n${input}")
+
     val suffix = """(\/1$)|(\/2$)""".r
 
     val firstReadName = suffix.replaceAllIn(lines(0).drop(1), "")
@@ -56,7 +53,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
     require(
       firstReadSequence.length == firstReadQualities.length,
-      "Read " + firstReadName + " has different sequence and qual length."
+      s"The first read: ${firstReadName}, has different sequence and qual length."
     )
 
     val secondReadName = suffix.replaceAllIn(lines(4).drop(1), "")
@@ -65,7 +62,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
     require(
       secondReadSequence.length == secondReadQualities.length,
-      "Read " + secondReadName + " has different sequence and qual length."
+      s"The second read: ${secondReadName}, has different sequence and qual length."
     )
 
     return (
