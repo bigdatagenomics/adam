@@ -122,13 +122,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       .setSequence(sequence)
       .setQual(qual)
       .setReadPaired(readPaired)
-      .setProperPair(null)
       .setReadInFragment(readInFragment)
-      .setReadNegativeStrand(null)
-      .setMateNegativeStrand(null)
-      .setPrimaryAlignment(null)
-      .setSecondaryAlignment(null)
-      .setSupplementaryAlignment(null)
 
     if (recordGroupOpt != None)
       recordGroupOpt.foreach(builder.setRecordGroupName)
