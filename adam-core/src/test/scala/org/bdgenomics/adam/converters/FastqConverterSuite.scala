@@ -18,7 +18,7 @@ class FastqConverterSuite extends FunSuite {
     assert(alignRecIterator.map(a => a.getSequence) === List("ATCGA", "TCGAT"))
     assert(alignRecIterator.map(a => a.getQual) === List("abcde", "12345"))
     assert(alignRecIterator.map(a => a.getReadPaired) === List(true, true))
-    assert(alignRecIterator.map(a => a.getProperPair) === List(true, true))
+    assert(alignRecIterator.map(a => a.getProperPair) === List(null, null))
     assert(alignRecIterator.map(a => a.getReadInFragment) === List(0, 1))
     assert(alignRecIterator.map(a => a.getReadNegativeStrand) === List(null, null))
     assert(alignRecIterator.map(a => a.getMateNegativeStrand) === List(null, null))
@@ -59,7 +59,7 @@ class FastqConverterSuite extends FunSuite {
     assert(align1.getSequence === "ATCGA")
     assert(align1.getQual === "abcde")
     assert(align1.getReadPaired === true)
-    assert(align1.getProperPair === true)
+    assert(align1.getProperPair === null)
     assert(align1.getReadInFragment === 0)
 
     val align2 = fragment.getAlignments.get(1)
@@ -82,7 +82,7 @@ class FastqConverterSuite extends FunSuite {
     assert(align1.getSequence === "ATCGA")
     assert(align1.getQual === "abcde")
     assert(align1.getReadPaired === true)
-    assert(align1.getProperPair === true)
+    assert(align1.getProperPair === null)
     assert(align1.getReadInFragment === 0)
 
     val align2 = fragment.getAlignments.get(1)
@@ -90,7 +90,7 @@ class FastqConverterSuite extends FunSuite {
     assert(align2.getSequence === "TCGAT")
     assert(align2.getQual === "12345")
     assert(align2.getReadPaired === true)
-    assert(align2.getProperPair === true)
+    assert(align2.getProperPair === null)
     assert(align2.getReadInFragment === 1)
   }
 
