@@ -23,6 +23,12 @@ import org.scalatest.{FunSuite, PrivateMethodTester}
 
 class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
   val converter = new FastqRecordConverter
+  val lenient = ValidationStringency.LENIENT
+
+  test("test parseReadInFastq, read quality shorter than read length, padded with B") {
+    assert(converter.parseReadInFastq("@description\nAAA\n+\nZ", stringency = lenient) ===
+      ("description", "AAA", "ZBB"))
+  }
 
   test("test parseReadInFastq, read quality longer than read length ") {
     val thrown = intercept[IllegalArgumentException] {

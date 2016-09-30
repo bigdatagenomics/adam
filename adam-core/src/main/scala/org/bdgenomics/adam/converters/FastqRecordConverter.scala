@@ -72,7 +72,9 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       if (stringency == ValidationStringency.STRICT) readQualitiesRaw
       else {
         if (readQualitiesRaw == "*") "B" * readSequence.length
-        else if (readQualitiesRaw.length < readSequence.length) readQualitiesRaw + ("B" * (readSequence.length - readQualitiesRaw.length))
+        else if (readQualitiesRaw.length < readSequence.length) {
+          readQualitiesRaw + ("B" * (readSequence.length - readQualitiesRaw.length))
+        }
         else if (readQualitiesRaw.length > readSequence.length) {
           throw new IllegalArgumentException("Quality length must not be longer than read length")
         }
