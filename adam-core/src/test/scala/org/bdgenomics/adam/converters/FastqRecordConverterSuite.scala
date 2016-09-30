@@ -32,7 +32,7 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
 
   test("test parseReadInFastq, read quality longer than read length ") {
     val thrown = intercept[IllegalArgumentException] {
-      converter.parseReadInFastq("@description\nA\n+\nZZ", stringency = ValidationStringency.LENIENT)
+      converter.parseReadInFastq("@description\nA\n+\nZZ", stringency = lenient)
     }
     assert(thrown.getMessage === "Quality length must not be longer than read length")
   }
@@ -169,7 +169,7 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
 
   test("testing FastqRecordConverter.convertRead with valid input, no qual, not strict") {
     val input = (null, new Text("@nameX\nATCGA\n+\n*"))
-    val alignment = converter.convertRead(input, stringency = ValidationStringency.LENIENT)
+    val alignment = converter.convertRead(input, stringency = lenient)
     assert(alignment.getReadName === "nameX")
     assert(alignment.getQual === "BBBBB")
   }
