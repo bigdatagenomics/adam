@@ -25,6 +25,19 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
   val converter = new FastqRecordConverter
   val lenient = ValidationStringency.LENIENT
 
+  test("test read name suffix and index of pair must match") {
+    for ((readName, isFirstOfPair, matched) <- List(
+      // if isFirstOfPair is false, then it's isSecondOfPair
+      ("@desc/1", true, true),
+      ("@desc/2", true, false),
+      ("@desc/1", false, false),
+      ("@desc/2", false, true),
+      // it can be considered to be either first or second of pair
+      ("@desc", true, true),
+      ("@desc", false, true)
+    ))
+    assert(converter.readNameSuffixAndIndexOfPairMustMatch(readName, isFirstOfPair) === matched)
+  }
 
   test("test parseReadInFastq, read suffix removal") {
     // simple cases

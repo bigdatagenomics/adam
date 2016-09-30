@@ -45,6 +45,18 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
    * @see parseReadPairInFastq
    * *
    */
+  private[converters] def readNameSuffixAndIndexOfPairMustMatch(readName: String,
+                                                                isFirstOfPair: Boolean): Boolean = {
+    val firstReadSuffix = """[/ +_]1$""".r
+    val secondReadSuffix = """[/ +_]2$""".r
+
+    val isSecondOfPair = !isFirstOfPair
+
+    if (firstReadSuffix.findAllIn(readName).nonEmpty) isFirstOfPair == true
+    else if (secondReadSuffix.findAllIn(readName).nonEmpty) isSecondOfPair == true
+    else true  // in this case, readName doesn't really tell whether it's first or second of pair, assumed to match
+    }
+
   private[converters] def parseReadInFastq(input: String,
                                setFirstOfPair: Boolean = false,
                                setSecondOfPair: Boolean = false,
