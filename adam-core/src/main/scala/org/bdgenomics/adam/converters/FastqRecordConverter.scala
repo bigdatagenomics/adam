@@ -45,7 +45,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
    * @see parseReadPairInFastq
    * *
    */
-  private def parseReadInFastq(input: String,
+  private[converters] def parseReadInFastq(input: String,
                                setFirstOfPair: Boolean = false,
                                setSecondOfPair: Boolean = false,
                                stringency: ValidationStringency = ValidationStringency.STRICT): (String, String, String) = {
@@ -90,7 +90,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     (readNameNoSuffix, readSequence, readQualities)
   }
 
-  private def parseReadPairInFastq(input: String): (String, String, String, String, String, String) = {
+  private[converters] def parseReadPairInFastq(input: String): (String, String, String, String, String, String) = {
     val lines = input.toString.split('\n')
     require(lines.length == 8,
       s"Record must have 8 lines (${lines.length.toString} found):\n${input}")
@@ -111,7 +111,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     )
   }
 
-  private def makeAlignmentRecord(readName: String,
+  private[converters] def makeAlignmentRecord(readName: String,
                                   sequence: String,
                                   qual: String,
                                   readInFragment: Int,
