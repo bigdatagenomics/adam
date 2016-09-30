@@ -25,6 +25,25 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
   val converter = new FastqRecordConverter
   val lenient = ValidationStringency.LENIENT
 
+
+  test("test parseReadInFastq, read suffix removal") {
+    // simple cases
+    for (desc <- List (
+      "@desc/1", "@desc/2",
+      "@desc 1", "@desc 2",
+      "@desc+1", "@desc+2",
+      "@desc_1", "@desc_2"
+    )) assert (converter.parseReadInFastq (s"${desc}\nATCG\n+\n1234")._1 === "desc")
+
+    // a bit more complicated cases
+    for (desc <- List (
+      "@more desc/1", "@more desc/2",
+      "@more desc 1", "@more desc 2",
+      "@more desc+1", "@more desc+2",
+      "@more desc_1", "@more desc_2"
+    )) assert (converter.parseReadInFastq (s"${desc}\nATCG\n+\n1234")._1 === "more desc")
+  }
+  
   test("test parseReadInFastq, read quality shorter than read length, padded with B") {
     assert(converter.parseReadInFastq("@description\nAAA\n+\nZ", stringency = lenient) ===
       ("description", "AAA", "ZBB"))

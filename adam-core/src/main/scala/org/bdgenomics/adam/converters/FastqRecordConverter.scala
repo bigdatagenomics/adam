@@ -62,7 +62,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       throw new Exception(
         s"Found read name $readName ending in '/2' despite first-of-pair flag being set"
       )
-    val suffix = """(\/1$)|(\/2$)""".r
+    val suffix = """([/ +_]1$)|([/ +_]2$)""".r
     val readNameNoSuffix = suffix.replaceAllIn(readName, "")
 
     val readSequence = lines(1)
