@@ -19,10 +19,18 @@ package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
-import org.scalatest.FunSuite
+import org.scalatest.{FunSuite, PrivateMethodTester}
 
-class FastqRecordConverterSuite extends FunSuite {
+class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
   val converter = new FastqRecordConverter
+
+  test("test parseReadInFastq, read quality longer than read length ") {
+    val thrown = intercept[IllegalArgumentException] {
+      converter.parseReadInFastq("@description\nA\n+\nZZ", stringency = ValidationStringency.LENIENT)
+    }
+    assert(thrown.getMessage === "Quality length must not be longer than read length")
+  }
+
 
   test("testing FastqRecordConverter.convertPair with valid input") {
     val input = (null, new Text("@read/1\nATCGA\n+\nabcde\n@read/2\nTCGAT\n+\n12345"))
