@@ -46,34 +46,40 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
    * *
    */
   private[converters] def readNameSuffixAndIndexOfPairMustMatch(readName: String,
-                                                                isFirstOfPair: Boolean): Boolean = {
+                                                                isFirstOfPair: Boolean): Unit = {
     val firstReadSuffix = """[/ +_]1$""".r
     val secondReadSuffix = """[/ +_]2$""".r
 
     val isSecondOfPair = !isFirstOfPair
 
-    if (firstReadSuffix.findAllIn(readName).nonEmpty) isFirstOfPair == true
-    else if (secondReadSuffix.findAllIn(readName).nonEmpty) isSecondOfPair == true
-    else true  // in this case, readName doesn't really tell whether it's first or second of pair, assumed to match
+    val match1 = firstReadSuffix.findAllIn(readName)
+    val match2 = secondReadSuffix.findAllIn(readName)
+
+    if (match1.nonEmpty && isSecondOfPair)
+      throw new IllegalArgumentException(
+        s"Found read name $readName ending in ${match1.next} despite first-of-pair flag being set")
+    else if (match2.nonEmpty && isFirstOfPair)
+      throw new IllegalArgumentException(
+        s"Found read name $readName ending in ${match2.next} despite second-of-pair flag being set")
+    // else, readName doesn't really tell whether it's first or second of pair, assumed to match
     }
 
   private[converters] def parseReadInFastq(input: String,
-                               setFirstOfPair: Boolean = false,
-                               setSecondOfPair: Boolean = false,
-                               stringency: ValidationStringency = ValidationStringency.STRICT): (String, String, String) = {
+                                           setFirstOfPair: Boolean = false,
+                                           setSecondOfPair: Boolean = false,
+                                           stringency: ValidationStringency = ValidationStringency.STRICT): (String, String, String) = {
+    // since it's a private method, simple require call is ok without detailed error message
+    require((setFirstOfPair && setSecondOfPair) == false)
+
     val lines = input.split('\n')
     require(lines.length == 4,
       s"Input must have 4 lines (${lines.length.toString} found):\n${input}")
 
     val readName = lines(0).drop(1)
-    if (readName.endsWith("/1") && setSecondOfPair)
-      throw new Exception(
-        s"Found read name $readName ending in '/1' despite second-of-pair flag being set"
-      )
-    else if (readName.endsWith("/2") && setFirstOfPair)
-      throw new Exception(
-        s"Found read name $readName ending in '/2' despite first-of-pair flag being set"
-      )
+
+    if (setFirstOfPair || setSecondOfPair)
+      readNameSuffixAndIndexOfPairMustMatch(readName, setFirstOfPair)
+
     val suffix = """([/ +_]1$)|([/ +_]2$)""".r
     val readNameNoSuffix = suffix.replaceAllIn(readName, "")
 
@@ -247,6 +253,8 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     setFirstOfPair: Boolean = false,
     setSecondOfPair: Boolean = false,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecord = {
+    if (setFirstOfPair && setSecondOfPair)
+      throw new IllegalArgumentException("setFirstOfPair and setSecondOfPair cannot be true at the same time")
 
     val (readName, readSequence, readQualities) =
       this.parseReadInFastq(element._2.toString, setFirstOfPair, setSecondOfPair, stringency)
@@ -257,11 +265,6 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       else 0
 
     val readPaired = setFirstOfPair || setSecondOfPair
-
-    require(
-      (setFirstOfPair && setSecondOfPair) == false,
-      "setFirstOfPair and setSecondOfPair cannot be true at the same time"
-    )
 
     this.makeAlignmentRecord(
       readName, readSequence, readQualities,

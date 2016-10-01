@@ -26,17 +26,23 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
   val lenient = ValidationStringency.LENIENT
 
   test("test read name suffix and index of pair must match") {
-    for ((readName, isFirstOfPair, matched) <- List(
+    for ((readName, isFirstOfPair) <- List(
       // if isFirstOfPair is false, then it's isSecondOfPair
-      ("@desc/1", true, true),
-      ("@desc/2", true, false),
-      ("@desc/1", false, false),
-      ("@desc/2", false, true),
+      ("@desc/1", false),
+      ("@desc/2", true)
+    )) intercept[IllegalArgumentException]{
+      converter.readNameSuffixAndIndexOfPairMustMatch(readName, isFirstOfPair)
+    }
+
+    for ((readName, isFirstOfPair) <- List(
+      ("@desc/1", true),
+      ("@desc/2", false),
       // it can be considered to be either first or second of pair
-      ("@desc", true, true),
-      ("@desc", false, true)
+      ("@desc", true),
+      ("@desc", false)
     ))
-    assert(converter.readNameSuffixAndIndexOfPairMustMatch(readName, isFirstOfPair) === matched)
+    // not exception raised
+    assert(converter.readNameSuffixAndIndexOfPairMustMatch(readName, isFirstOfPair) === ())
   }
 
   test("test parseReadInFastq, read suffix removal") {
@@ -192,7 +198,7 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
         setSecondOfPair = true
       )
     }
-    assert(thrown.getMessage === "requirement failed: setFirstOfPair and setSecondOfPair cannot be true at the same time")
+    assert(thrown.getMessage === "setFirstOfPair and setSecondOfPair cannot be true at the same time")
   }
 
   test("testing FastqRecordConverter.convertRead with valid input, no qual, strict") {
