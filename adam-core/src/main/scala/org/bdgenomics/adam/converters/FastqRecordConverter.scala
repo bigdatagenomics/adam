@@ -69,7 +69,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
                                            setSecondOfPair: Boolean = false,
                                            stringency: ValidationStringency = ValidationStringency.STRICT): (String, String, String) = {
     // since it's a private method, simple require call is ok without detailed error message
-    require((setFirstOfPair && setSecondOfPair) == false)
+    require(!(setFirstOfPair && setSecondOfPair))
 
     val lines = input.split('\n')
     require(lines.length == 4,
