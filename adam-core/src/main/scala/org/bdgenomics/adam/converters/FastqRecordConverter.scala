@@ -76,9 +76,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       s"Input must have 4 lines (${lines.length.toString} found):\n${input}")
 
     val readName = lines(0).drop(1)
-
-    if (setFirstOfPair || setSecondOfPair)
-      readNameSuffixAndIndexOfPairMustMatch(readName, setFirstOfPair)
+    if (setFirstOfPair || setSecondOfPair) readNameSuffixAndIndexOfPairMustMatch(readName, setFirstOfPair)
 
     val suffix = """([/ +_]1$)|([/ +_]2$)""".r
     val readNameNoSuffix = suffix.replaceAllIn(readName, "")
@@ -118,10 +116,10 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       s"Record must have 8 lines (${lines.length.toString} found):\n${input}")
 
     val (firstReadName, firstReadSequence, firstReadQualities) =
-      this.parseReadInFastq(lines.take(4).mkString("\n"), setFirstOfPair = true, setSecondOfPair = false)
+      parseReadInFastq(lines.take(4).mkString("\n"), setFirstOfPair = true, setSecondOfPair = false)
 
     val (secondReadName, secondReadSequence, secondReadQualities) =
-      this.parseReadInFastq(lines.drop(4).mkString("\n"), setFirstOfPair = false, setSecondOfPair = true)
+      parseReadInFastq(lines.drop(4).mkString("\n"), setFirstOfPair = false, setSecondOfPair = true)
 
     (
       firstReadName,
@@ -178,12 +176,12 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       secondReadName,
       secondReadSequence,
       secondReadQualities
-      ) = this.parseReadPairInFastq(element._2.toString)
+      ) = parseReadPairInFastq(element._2.toString)
 
     // build and return iterators
     Iterable(
-      this.makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
-      this.makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
+      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
+      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
     )
   }
 
@@ -207,7 +205,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       secondReadName,
       secondReadSequence,
       secondReadQualities
-      ) = this.parseReadPairInFastq(element._2.toString)
+      ) = parseReadPairInFastq(element._2.toString)
 
     require(
       firstReadName == secondReadName,
@@ -218,8 +216,8 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
     )
 
     val alignments = List(
-      this.makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
-      this.makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
+      makeAlignmentRecord(firstReadName, firstReadSequence, firstReadQualities, 0),
+      makeAlignmentRecord(secondReadName, secondReadSequence, secondReadQualities, 1)
     )
 
     // build and return record
@@ -257,7 +255,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       throw new IllegalArgumentException("setFirstOfPair and setSecondOfPair cannot be true at the same time")
 
     val (readName, readSequence, readQualities) =
-      this.parseReadInFastq(element._2.toString, setFirstOfPair, setSecondOfPair, stringency)
+      parseReadInFastq(element._2.toString, setFirstOfPair, setSecondOfPair, stringency)
 
     // default to 0
     val readInFragment =
@@ -266,7 +264,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
 
     val readPaired = setFirstOfPair || setSecondOfPair
 
-    this.makeAlignmentRecord(
+    makeAlignmentRecord(
       readName, readSequence, readQualities,
       readInFragment, readPaired, recordGroupOpt)
   }
