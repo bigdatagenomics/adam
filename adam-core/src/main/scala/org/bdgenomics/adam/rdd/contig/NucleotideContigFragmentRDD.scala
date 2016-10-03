@@ -45,8 +45,14 @@ object NucleotideContigFragmentRDD extends Serializable {
   private[rdd] def apply(rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
 
     // get sequence dictionary
-    val sd = new SequenceDictionary(rdd.map(SequenceRecord.fromADAMContigFragment)
-      .distinct
+    val sd = new SequenceDictionary(rdd.flatMap(ncf => {
+      if (ncf.getContig != null &&
+        ncf.getContig.getContigName != null) {
+        Some(SequenceRecord.fromADAMContigFragment(ncf))
+      } else {
+        None
+      }
+    }).distinct
       .collect
       .toVector)
 

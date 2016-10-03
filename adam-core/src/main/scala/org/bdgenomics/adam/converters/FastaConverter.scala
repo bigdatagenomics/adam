@@ -69,15 +69,20 @@ private[adam] object FastaConverter {
         require(id == -1L, "Cannot have a headerless line in a file with more than one fragment.")
         (None: Option[String], None: Option[String])
       } { (dL) =>
-        val splitIndex = dL.indexOf(' ')
+        // fasta description line splits on whitespace
+        val splitIndex = dL.indexWhere(c => c.isWhitespace)
         if (splitIndex >= 0) {
           val split = dL.splitAt(splitIndex)
 
-          val contigName: String = split._1.stripPrefix(">").trim
-          val contigDescription: String = split._2.trim
+          // is this description metadata or not? if it is metadata, it will contain "|"
+          if (split._1.contains('|')) {
+            (None, Some(dL.stripPrefix(">").trim))
+          } else {
+            val contigName: String = split._1.stripPrefix(">").trim
+            val contigDescription: String = split._2.trim
 
-          (Some(contigName), Some(contigDescription))
-
+            (Some(contigName), Some(contigDescription))
+          }
         } else {
           (Some(dL.stripPrefix(">").trim), None)
         }

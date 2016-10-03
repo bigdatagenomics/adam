@@ -38,7 +38,6 @@ class FastaConverterSuite extends ADAMFunSuite {
     assert(0 === FastaConverter.findContigIndex(252366300L, headerIndices))
     assert(892647244L === FastaConverter.findContigIndex(892647249L, headerIndices))
     assert(252366306L === FastaConverter.findContigIndex(498605720L, headerIndices))
-
   }
 
   test("convert a single record without naming information") {
