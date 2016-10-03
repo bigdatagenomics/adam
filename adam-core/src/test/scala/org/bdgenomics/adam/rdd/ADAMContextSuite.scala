@@ -293,6 +293,16 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reads.rdd.count === reloadedReads.rdd.count)
   }
 
+  sparkTest("read a HLA fasta from GRCh38") {
+    val inputPath = resourcePath("HLA_DQB1_05_01_01_02.fa")
+    val gRdd = sc.loadFasta(inputPath, 10000L)
+    assert(gRdd.sequences.records.size === 1)
+    assert(gRdd.sequences.records.head.name === "HLA-DQB1*05:01:01:02")
+    val fragments = gRdd.rdd.collect
+    assert(fragments.size === 1)
+    assert(fragments.head.getContig.getContigName === "HLA-DQB1*05:01:01:02")
+  }
+
   sparkTest("read a gzipped fasta file") {
     val inputPath = resourcePath("chr20.250k.fa.gz")
     val contigFragments: RDD[NucleotideContigFragment] = sc.loadFasta(inputPath, 10000L)
@@ -300,8 +310,8 @@ class ADAMContextSuite extends ADAMFunSuite {
       .sortBy(_.getFragmentNumber.toInt)
     assert(contigFragments.rdd.count() === 26)
     val first: NucleotideContigFragment = contigFragments.first()
-    assert(first.getContig.getContigName === "gi|224384749|gb|CM000682.1|")
-    assert(first.getDescription === "Homo sapiens chromosome 20, GRCh37 primary reference assembly")
+    assert(first.getContig.getContigName === null)
+    assert(first.getDescription === "gi|224384749|gb|CM000682.1| Homo sapiens chromosome 20, GRCh37 primary reference assembly")
     assert(first.getFragmentNumber === 0)
     assert(first.getFragmentSequence.length === 10000)
     assert(first.getFragmentStartPosition === 0L)
