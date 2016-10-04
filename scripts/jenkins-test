@@ -7,7 +7,7 @@ ADAM_MVN_TMP_DIR=$(mktemp -d -t adamTestMvnXXXXXXX)
 
 # add this tempdir to the poms...
 find . -name pom.xml \
-    -exec sed -i .bak \
+    -exec sed -i.bak \
     -e "s:sun.io.serialization.extendedDebugInfo=true:sun.io.serialization.extendedDebugInfo=true -Djava.io.tmpdir=${ADAM_MVN_TMP_DIR}:g" \
     {} \;
 find . -name "*.bak" -exec rm {} \;
