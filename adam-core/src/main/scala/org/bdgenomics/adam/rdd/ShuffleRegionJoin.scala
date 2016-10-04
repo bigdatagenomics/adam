@@ -29,7 +29,7 @@ sealed trait ShuffleRegionJoin[T, U, RT, RU] extends RegionJoin[T, U, RT, RU] {
 
   val sd: SequenceDictionary
   val partitionSize: Long
-  @transient val sc: SparkContext
+  val sc: SparkContext
 
   // Create the set of bins across the genome for parallel processing
   protected val seqLengths = Map(sd.records.toSeq.map(rec => (rec.name, rec.length)): _*)
