@@ -26,7 +26,7 @@ object SAMFileHeaderWritable {
   }
 }
 
-class SAMFileHeaderWritable(@transient hdr: SAMFileHeader) extends Serializable {
+class SAMFileHeaderWritable(hdr: SAMFileHeader) extends Serializable {
   // extract fields that are needed in order to recreate the SAMFileHeader
   protected val text = {
     val txt: String = hdr.getTextHeader

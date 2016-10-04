@@ -37,7 +37,7 @@ import scala.transient
  * @param sc Spark context to use.
  */
 private[adam] class ConsensusGeneratorFromKnowns(file: String,
-                                                 @transient sc: SparkContext) extends ConsensusGenerator {
+                                                 sc: SparkContext) extends ConsensusGenerator {
 
   private val indelTable = sc.broadcast(IndelTable(file, sc))
 
