@@ -13,7 +13,6 @@ find . -name pom.xml \
 find . -name "*.bak" -exec rm {} \;
 
 # variable declarations
-export JAVA_HOME=/usr/java/jdk1.8.0_60
 export PATH=${JAVA_HOME}/bin/:${PATH}
 export MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=1g -Dfile.encoding=utf-8"
 DIR=$( cd $( dirname ${BASH_SOURCE[0]} ) && pwd )
