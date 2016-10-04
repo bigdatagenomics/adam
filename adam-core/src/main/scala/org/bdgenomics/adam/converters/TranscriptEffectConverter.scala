@@ -226,8 +226,7 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
     }
 
     def toAnn(te: TranscriptEffect): String = {
-      List
-      (
+      Seq(
         te.getAlternateAllele, // 0
         "", // annotationImpact
         Seq(te.getEffects).mkString("&"), // 2
@@ -246,6 +245,7 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
         Seq(te.getMessages).mkString("&")
       ).mkString("|")
     }
+
     effects.map(toAnn).mkString(",")
   }
 }
