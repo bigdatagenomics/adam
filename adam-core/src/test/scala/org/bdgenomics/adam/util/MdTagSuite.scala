@@ -70,6 +70,15 @@ class MdTagSuite extends FunSuite {
     assert(!tag0.equals(tag2))
   }
 
+  test("md tag, pure insertion") {
+    // example
+    // Cigar = 101I
+    // MD:Z:0
+    val tag = MdTag("0", 1L)
+    assert(tag.start() === 1L)
+    assert(tag.toString === "0")
+  }
+
   test("md tag equality and hashcode") {
     val md1 = MdTag("0A0", 0L, TextCigarCodec.decode("1M"))
     val md1Dup = MdTag("0A0", 0L, TextCigarCodec.decode("1M"))
