@@ -62,7 +62,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       throw new IllegalArgumentException(
         s"Found read name $readName ending in ${match2.next} despite second-of-pair flag being set")
     // else, readName doesn't really tell whether it's first or second of pair, assumed to match
-    }
+  }
 
   private[converters] def parseReadInFastq(input: String,
                                            setFirstOfPair: Boolean = false,
@@ -90,11 +90,9 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
         if (readQualitiesRaw == "*") "B" * readSequence.length
         else if (readQualitiesRaw.length < readSequence.length) {
           readQualitiesRaw + ("B" * (readSequence.length - readQualitiesRaw.length))
-        }
-        else if (readQualitiesRaw.length > readSequence.length) {
+        } else if (readQualitiesRaw.length > readSequence.length) {
           throw new IllegalArgumentException("Quality length must not be longer than read length")
-        }
-        else readQualitiesRaw
+        } else readQualitiesRaw
       }
 
     if (stringency == ValidationStringency.STRICT) {
@@ -132,11 +130,11 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
   }
 
   private[converters] def makeAlignmentRecord(readName: String,
-                                  sequence: String,
-                                  qual: String,
-                                  readInFragment: Int,
-                                  readPaired: Boolean = true,
-                                  recordGroupOpt: Option[String] = None): AlignmentRecord = {
+                                              sequence: String,
+                                              qual: String,
+                                              readInFragment: Int,
+                                              readPaired: Boolean = true,
+                                              recordGroupOpt: Option[String] = None): AlignmentRecord = {
     val builder = AlignmentRecord.newBuilder
       .setReadName(readName)
       .setSequence(sequence)

@@ -19,50 +19,57 @@ package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.io.Text
-import org.scalatest.{FunSuite, PrivateMethodTester}
+import org.scalatest.{ FunSuite, PrivateMethodTester }
 
 class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
   val converter = new FastqRecordConverter
   val lenient = ValidationStringency.LENIENT
 
   test("test read name suffix and index of pair must match") {
-    for ((readName, isFirstOfPair) <- List(
-      // if isFirstOfPair is false, then it's isSecondOfPair
-      ("@desc/1", false),
-      ("@desc/2", true)
-    )) intercept[IllegalArgumentException]{
+    for (
+      (readName, isFirstOfPair) <- List(
+        // if isFirstOfPair is false, then it's isSecondOfPair
+        ("@desc/1", false),
+        ("@desc/2", true)
+      )
+    ) intercept[IllegalArgumentException] {
       converter.readNameSuffixAndIndexOfPairMustMatch(readName, isFirstOfPair)
     }
 
-    for ((readName, isFirstOfPair) <- List(
-      ("@desc/1", true),
-      ("@desc/2", false),
-      // it can be considered to be either first or second of pair
-      ("@desc", true),
-      ("@desc", false)
-    ))
-    // not exception raised
+    for (
+      (readName, isFirstOfPair) <- List(
+        ("@desc/1", true),
+        ("@desc/2", false),
+        // it can be considered to be either first or second of pair
+        ("@desc", true),
+        ("@desc", false)
+      )
+    ) // not exception raised
     assert(converter.readNameSuffixAndIndexOfPairMustMatch(readName, isFirstOfPair) === ())
   }
 
   test("test parseReadInFastq, read suffix removal") {
     // simple cases
-    for (desc <- List (
-      "@desc/1", "@desc/2",
-      "@desc 1", "@desc 2",
-      "@desc+1", "@desc+2",
-      "@desc_1", "@desc_2"
-    )) assert (converter.parseReadInFastq (s"${desc}\nATCG\n+\n1234")._1 === "desc")
+    for (
+      desc <- List(
+        "@desc/1", "@desc/2",
+        "@desc 1", "@desc 2",
+        "@desc+1", "@desc+2",
+        "@desc_1", "@desc_2"
+      )
+    ) assert(converter.parseReadInFastq(s"${desc}\nATCG\n+\n1234")._1 === "desc")
 
     // a bit more complicated cases
-    for (desc <- List (
-      "@more desc/1", "@more desc/2",
-      "@more desc 1", "@more desc 2",
-      "@more desc+1", "@more desc+2",
-      "@more desc_1", "@more desc_2"
-    )) assert (converter.parseReadInFastq (s"${desc}\nATCG\n+\n1234")._1 === "more desc")
+    for (
+      desc <- List(
+        "@more desc/1", "@more desc/2",
+        "@more desc 1", "@more desc 2",
+        "@more desc+1", "@more desc+2",
+        "@more desc_1", "@more desc_2"
+      )
+    ) assert(converter.parseReadInFastq(s"${desc}\nATCG\n+\n1234")._1 === "more desc")
   }
-  
+
   test("test parseReadInFastq, read quality shorter than read length, padded with B") {
     assert(converter.parseReadInFastq("@description\nAAA\n+\nZ", stringency = lenient) ===
       ("description", "AAA", "ZBB"))
