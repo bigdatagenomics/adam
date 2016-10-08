@@ -294,7 +294,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("read a HLA fasta from GRCh38") {
-    val inputPath = resourcePath("HLA_DQB1_05_01_01_02.fa")
+    val inputPath = testFile("HLA_DQB1_05_01_01_02.fa")
     val gRdd = sc.loadFasta(inputPath, 10000L)
     assert(gRdd.sequences.records.size === 1)
     assert(gRdd.sequences.records.head.name === "HLA-DQB1*05:01:01:02")
