@@ -69,30 +69,30 @@ class JavaADAMContextSuite extends ADAMFunSuite {
   sparkTest("can read and write a small .vcf as genotypes") {
     val path = copyResource("small.vcf")
     val aRdd = sc.loadGenotypes(path)
-    assert(aRdd.jrdd.count() === 15)
+    assert(aRdd.jrdd.count() === 18)
 
     val newRdd = JavaADAMGenotypeConduit.conduit(aRdd, sc)
 
-    assert(newRdd.jrdd.count() === 15)
+    assert(newRdd.jrdd.count() === 18)
   }
 
   sparkTest("can read and write a small .vcf as variants") {
     val path = copyResource("small.vcf")
     val aRdd = sc.loadVariants(path)
-    assert(aRdd.jrdd.count() === 5)
+    assert(aRdd.jrdd.count() === 6)
 
     val newRdd = JavaADAMVariantConduit.conduit(aRdd, sc)
 
-    assert(newRdd.jrdd.count() === 5)
+    assert(newRdd.jrdd.count() === 6)
   }
 
   ignore("can read and write a small .vcf as annotations") {
     val path = copyResource("small.vcf")
     val aRdd = sc.loadVariantAnnotations(path)
-    assert(aRdd.jrdd.count() === 5)
+    assert(aRdd.jrdd.count() === 6)
 
     val newRdd = JavaADAMAnnotationConduit.conduit(aRdd, sc)
 
-    assert(newRdd.jrdd.count() === 5)
+    assert(newRdd.jrdd.count() === 6)
   }
 }
