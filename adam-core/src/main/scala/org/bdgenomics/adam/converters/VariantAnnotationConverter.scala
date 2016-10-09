@@ -17,15 +17,16 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.apache.avro.Schema
-import org.apache.avro.specific.SpecificRecord
 import htsjdk.variant.variantcontext.VariantContext
 import htsjdk.variant.vcf._
+import org.apache.avro.Schema
+import org.apache.avro.specific.SpecificRecord
 import org.bdgenomics.formats.avro.{
   DatabaseVariantAnnotation,
   Genotype,
   VariantCallingAnnotations
 }
+import scala.collection.JavaConversions._
 
 /**
  * Singleton object for building AttrKey instances.
@@ -124,6 +125,17 @@ private[converters] object VariantAnnotationConverter extends Serializable {
   }
 
   /**
+   * Converts a java String of comma delimited integers to a
+   * java.util.List of Integer
+   *
+   * @param attr Attribute to convert.
+   * @return Attribute as a java.util.List[Integer]
+   */
+  private def attrAsIntList(attr: Object): Object = attr match {
+    case a: java.lang.String => seqAsJavaList(a.split(",").map(java.lang.Integer.valueOf _))
+  }
+
+  /**
    * Keys corresponding to the COSMIC mutation database.
    */
   val COSMIC_KEYS: List[AttrKey] = List(
@@ -187,7 +199,7 @@ private[converters] object VariantAnnotationConverter extends Serializable {
     AttrKey("phaseQuality", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_QUALITY_KEY, 1, VCFHeaderLineType.Float, "Read-backed phasing quality")),
     AttrKey("phaseSetId", attrAsInt _, new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY, 1, VCFHeaderLineType.Integer, "Phase set")),
     AttrKey("minReadDepth", attrAsInt _, new VCFFormatHeaderLine("MIN_DP", 1, VCFHeaderLineType.Integer, "Minimum DP observed within the GVCF block")),
-    AttrKey("strandBiasComponents", attrAsInt _, new VCFFormatHeaderLine("SB", 4, VCFHeaderLineType.Integer, "Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias."))
+    AttrKey("strandBiasComponents", attrAsIntList _, new VCFFormatHeaderLine("SB", 4, VCFHeaderLineType.Integer, "Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias."))
   )
 
   /**
