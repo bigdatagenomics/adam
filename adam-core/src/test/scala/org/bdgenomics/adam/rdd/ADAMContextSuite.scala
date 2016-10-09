@@ -149,7 +149,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("small.vcf")
 
     val vcs = sc.loadGenotypes(path).toVariantContextRDD.rdd.collect.sortBy(_.position)
-    assert(vcs.size === 5)
+    assert(vcs.size === 6)
 
     val vc = vcs.head
     assert(vc.genotypes.size === 3)
@@ -372,7 +372,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("bqsr1.vcf").replace("bqsr1", "*")
 
     val variants = sc.loadVcf(path).toVariantRDD
-    assert(variants.rdd.count === 691)
+    assert(variants.rdd.count === 692)
   }
 
   sparkTest("load vcf from a directory") {
