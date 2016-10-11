@@ -382,6 +382,15 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(variants.rdd.count === 681)
   }
 
+  sparkTest("load gvcf which contains a multi-allelic row from a directory") {
+    val path = new File(testFile("gvcf_dir/gvcf_multiallelic.g.vcf")).getParent()
+
+    val variants = sc.loadVcf(path).toVariantRDD
+    // Not sure that the count should be 7 below, however the current failure to read the mult-allelic site happens
+    // before this assertion is even reached
+    assert(variants.rdd.count === 7)
+  }
+
   sparkTest("load parquet with globs") {
     val inputPath = testFile("small.sam")
     val reads = sc.loadAlignments(inputPath)
