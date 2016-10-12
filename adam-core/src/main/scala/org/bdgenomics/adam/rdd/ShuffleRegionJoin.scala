@@ -32,6 +32,8 @@ sealed trait ShuffleRegionJoin[T, U, RT, RU] extends RegionJoin[T, U, RT, RU] {
   val sc: SparkContext
 
   // Create the set of bins across the genome for parallel processing
+  //   partitionSize (in nucleotides) may range from 10000 to 10000000+ 
+  //   depending on cluster and dataset size
   protected val seqLengths = Map(sd.records.toSeq.map(rec => (rec.name, rec.length)): _*)
   protected val bins = sc.broadcast(GenomeBins(partitionSize, seqLengths))
 
