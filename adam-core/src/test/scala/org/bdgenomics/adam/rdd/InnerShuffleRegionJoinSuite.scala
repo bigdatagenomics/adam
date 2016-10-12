@@ -134,6 +134,55 @@ class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
         .count() === 3
     )
   }
+
+  sparkTest("Test join that was failing 10/11/2016") {
+    val contig1 = Contig.newBuilder
+      .setContigName("chr1")
+      .setContigLength(50000000L)
+      .setReferenceURL("test://chrom1")
+      .build
+
+    val builtRef1 = AlignmentRecord.newBuilder()
+      .setContigName(contig1.getContigName)
+      .setStart(1L)
+      .setReadMapped(true)
+      .setCigar("1M")
+      .setEnd(2L)
+      .build()
+
+    val record1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setStart(16157602L).setEnd(16157603L).build()
+    val record2 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setStart(16157614L).setEnd(16157615L).build()
+
+    val baseRecord1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setStart(16157602L).setEnd(16157603L).build()
+    val baseRecord2 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setStart(16157603L).setEnd(16157621L).build()
+    val baseRecord3 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setStart(16157621L).setEnd(16157622L).build()
+
+    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2, baseRecord3)).keyBy(ReferenceRegion(_))
+    val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion(_))
+
+    assert(
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
+        .partitionAndJoin(
+          baseRdd,
+          recordsRdd
+        )
+        .aggregate(true)(
+          InnerShuffleRegionJoinSuite.merge,
+          InnerShuffleRegionJoinSuite.and
+        )
+    )
+
+    assert(
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
+        .partitionAndJoin(
+          baseRdd,
+          recordsRdd
+        )
+        .count() === 3
+    )
+
+  }
+
 }
 
 object InnerShuffleRegionJoinSuite {
