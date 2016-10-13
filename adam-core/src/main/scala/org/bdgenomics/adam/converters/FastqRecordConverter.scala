@@ -40,20 +40,23 @@ import scala.collection.JavaConversions._
  */
 private[adam] class FastqRecordConverter extends Serializable with Logging {
 
+  private val firstReadSuffix = """[/ +_]1$"""
+  private val secondReadSuffix = """[/ +_]2$"""
+  private val firstReadRegex = firstReadSuffix.r
+  private val secondReadRegex = secondReadSuffix.r
+  private val suffixRegex = "%s|%s".format(firstReadSuffix, secondReadSuffix).r
+
   /**
-   * Parse 4 lines at a time
-   * @see parseReadPairInFastq
-   * *
+   * @param readName The name of the read.
+   * @param isFirstOfPair True if this read is the first read in a paired sequencing fragment.
+   * @throws IllegalArgumentException if the read name suffix and flags match.
    */
   private[converters] def readNameSuffixAndIndexOfPairMustMatch(readName: String,
-                                                                isFirstOfPair: Boolean): Unit = {
-    val firstReadSuffix = """[/ +_]1$""".r
-    val secondReadSuffix = """[/ +_]2$""".r
-
+                                                                isFirstOfPair: Boolean) {
     val isSecondOfPair = !isFirstOfPair
 
-    val match1 = firstReadSuffix.findAllIn(readName)
-    val match2 = secondReadSuffix.findAllIn(readName)
+    val match1 = firstReadRegex.findAllIn(readName)
+    val match2 = secondReadRegex.findAllIn(readName)
 
     if (match1.nonEmpty && isSecondOfPair)
       throw new IllegalArgumentException(
@@ -76,10 +79,22 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       s"Input must have 4 lines (${lines.length.toString} found):\n${input}")
 
     val readName = lines(0).drop(1)
-    if (setFirstOfPair || setSecondOfPair) readNameSuffixAndIndexOfPairMustMatch(readName, setFirstOfPair)
+    if (setFirstOfPair || setSecondOfPair) {
+      try {
+        readNameSuffixAndIndexOfPairMustMatch(readName, setFirstOfPair)
+      } catch {
+        case e: IllegalArgumentException => {
+          // if we are lenient we log, strict we rethrow, silent we ignore 
+          if (stringency == ValidationStringency.STRICT) {
+            throw e
+          } else if (stringency == ValidationStringency.LENIENT) {
+            log.warn("Read had improper pair suffix: %s".format(e.getMessage))
+          }
+        }
+      }
+    }
 
-    val suffix = """([/ +_]1$)|([/ +_]2$)""".r
-    val readNameNoSuffix = suffix.replaceAllIn(readName, "")
+    val readNameNoSuffix = suffixRegex.replaceAllIn(readName, "")
 
     val readSequence = lines(1)
     val readQualitiesRaw = lines(3)
@@ -142,8 +157,7 @@ private[adam] class FastqRecordConverter extends Serializable with Logging {
       .setReadPaired(readPaired)
       .setReadInFragment(readInFragment)
 
-    if (recordGroupOpt != None)
-      recordGroupOpt.foreach(builder.setRecordGroupName)
+    recordGroupOpt.foreach(builder.setRecordGroupName)
 
     builder.build
   }
