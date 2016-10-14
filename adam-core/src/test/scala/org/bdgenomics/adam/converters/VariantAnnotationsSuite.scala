@@ -204,4 +204,22 @@ class VariantAnnotationsSuite extends ADAMFunSuite {
     assert(te.getDistance == 453)
     assert(te.getMessages.isEmpty)
   }
+
+  test("create java.util.List[Int] from SB tag String value") {
+    val sb_tagData = "2,3,4,5"
+    val sb_converter = VariantAnnotationConverter.FORMAT_KEYS
+      .filter(x => x.adamKey == "strandBiasComponents").head.attrConverter
+
+    val sb_parsed = sb_converter(sb_tagData).asInstanceOf[java.util.List[Int]]
+    val sb_component1 = sb_parsed.get(0)
+    val sb_component2 = sb_parsed.get(1)
+    val sb_component3 = sb_parsed.get(2)
+    val sb_component4 = sb_parsed.get(3)
+
+    assert(sb_component1 == 2 &&
+      sb_component2 == 3 &&
+      sb_component3 == 4 &&
+      sb_component4 == 5)
+
+  }
 }

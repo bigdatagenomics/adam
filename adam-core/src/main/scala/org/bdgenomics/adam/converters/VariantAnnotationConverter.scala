@@ -17,18 +17,16 @@
  */
 package org.bdgenomics.adam.converters
 
-import scala.collection.JavaConversions._
-import scala.collection.mutable.ListBuffer
-
-import org.apache.avro.Schema
-import org.apache.avro.specific.SpecificRecord
 import htsjdk.variant.variantcontext.VariantContext
 import htsjdk.variant.vcf._
+import org.apache.avro.Schema
+import org.apache.avro.specific.SpecificRecord
 import org.bdgenomics.formats.avro.{
   DatabaseVariantAnnotation,
   Genotype,
   VariantCallingAnnotations
 }
+import scala.collection.JavaConversions._
 
 /**
  * Singleton object for building AttrKey instances.
