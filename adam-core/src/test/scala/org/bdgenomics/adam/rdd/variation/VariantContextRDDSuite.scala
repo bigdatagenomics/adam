@@ -116,6 +116,6 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       .transform(_.cache())
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
-    assert(pipedRdd.rdd.flatMap(_.genotypes).count === 15)
+    assert(pipedRdd.rdd.flatMap(_.genotypes).count === 18)
   }
 }

@@ -682,7 +682,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val pipedRdd: VariantContextRDD = ardd.pipe("/bin/bash $0 %s $1".format(tempPath),
       files = Seq(scriptPath, vcfPath))
     val newRecords = pipedRdd.rdd.count
-    assert(newRecords === 5)
+    assert(newRecords === 6)
 
     val tempBam = sc.loadBam(tempPath)
     assert(tempBam.rdd.count === ardd.rdd.count)
