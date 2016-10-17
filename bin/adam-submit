@@ -60,14 +60,14 @@ else
   ASSEMBLY_DIR="$SCRIPT_DIR/adam-assembly/target"
 fi
 
-num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam_[0-9A-Za-z\.-]*\.jar$" | grep -v javadoc | wc -l)"
+num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam_[0-9A-Za-z\.-]*\.jar$" | grep -v javadoc | grep -v sources | wc -l)"
 if [ "$num_jars" -eq "0" ]; then
   echo "Failed to find ADAM cli assembly in $ASSEMBLY_DIR." 1>&2
   echo "You need to build ADAM before running this program." 1>&2
   exit 1
 fi
 
-ASSEMBLY_JARS="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam_[0-9A-Za-z\.-]*\.jar$" | grep -v javadoc || true)"
+ASSEMBLY_JARS="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam_[0-9A-Za-z\.-]*\.jar$" | grep -v javadoc | grep -v sources || true)"
 if [ "$num_jars" -gt "1" ]; then
   echo "Found multiple ADAM cli assembly jars in $ASSEMBLY_DIR:" 1>&2
   echo "$ASSEMBLY_JARS" 1>&2
