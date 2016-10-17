@@ -67,29 +67,9 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
-# do spark 2, scala 2.11 release
-git checkout -b maint_spark2_2.11-${release} ${branch}
-./scripts/move_to_spark2.sh
-git commit -a -m "Modifying pom.xml files for Spark 2, Scala 2.11 release."
-mvn --batch-mode \
-  -P distribution \
-  -Dresume=false \
-  -Dtag=adam-parent-spark2_2.11-${release} \
-  -DreleaseVersion=${release} \
-  -DdevelopmentVersion=${devel} \
-  -DbranchName=adam-spark2_2.11-${release} \
-  release:clean \
-  release:prepare \
-  release:perform
-
-if [ $? != 0 ]; then
-  echo "Releasing Spark 2, Scala 2.11 version failed."
-  exit 1
-fi
-
 # do spark 2, scala 2.10 release
 git checkout -b maint_spark2_2.10-${release} ${branch}
-./scripts/move_to_scala_2.10.sh
+./scripts/move_to_spark_2.sh
 git commit -a -m "Modifying pom.xml files for Spark 2, Scala 2.10 release."
 mvn --batch-mode \
   -P distribution \
@@ -104,6 +84,27 @@ mvn --batch-mode \
 
 if [ $? != 0 ]; then
   echo "Releasing Spark 2, Scala 2.10 version failed."
+  exit 1
+fi
+
+# do spark 2, scala 2.11 release
+git checkout -b maint_spark2_2.11-${release} ${branch}
+./scripts/move_to_spark_2.sh
+./scripts/move_to_scala_2.11.sh
+git commit -a -m "Modifying pom.xml files for Spark 2, Scala 2.11 release."
+mvn --batch-mode \
+  -P distribution \
+  -Dresume=false \
+  -Dtag=adam-parent-spark2_2.11-${release} \
+  -DreleaseVersion=${release} \
+  -DdevelopmentVersion=${devel} \
+  -DbranchName=adam-spark2_2.11-${release} \
+  release:clean \
+  release:prepare \
+  release:perform
+
+if [ $? != 0 ]; then
+  echo "Releasing Spark 2, Scala 2.11 version failed."
   exit 1
 fi
 
