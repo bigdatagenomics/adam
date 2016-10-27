@@ -64,7 +64,7 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
 
   def run(sc: SparkContext): Unit = {
 
-    val proj = Projection(contigName, start, end, cigar)
+    val proj = Projection(readMapped, contigName, start, end, cigar)
 
     // If saving strand specific coverage, require that only one direction is specified
     require(!(args.onlyNegativeStrands && args.onlyPositiveStrands),

@@ -85,6 +85,17 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(expectedSortedReads === mapped)
   }
 
+  sparkTest("coverage does not fail on unmapped reads") {
+    val inputPath = testFile("unmapped.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+      .transform(rdd => {
+        rdd.filter(!_.getReadMapped)
+      })
+
+    val coverage = reads.toCoverage()
+    assert(coverage.rdd.count === 0)
+  }
+
   sparkTest("computes coverage") {
     val inputPath = testFile("artificial.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)

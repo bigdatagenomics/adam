@@ -98,7 +98,17 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
   def toCoverage(collapse: Boolean = true): CoverageRDD = {
     val covCounts =
       rdd.rdd
-        .flatMap(r => {
+        .filter(r => {
+          val readMapped = r.getReadMapped
+
+          // validate alignment fields
+          if (readMapped) {
+            require(r.getStart != null && r.getEnd != null && r.getContigName != null,
+              "Read was mapped but was missing alignment start/end/contig (%s).".format(r))
+          }
+
+          readMapped
+        }).flatMap(r => {
           val t: List[Long] = List.range(r.getStart, r.getEnd)
           t.map(n => (ReferenceRegion(r.getContigName, n, n + 1), 1))
         }).reduceByKey(_ + _)
