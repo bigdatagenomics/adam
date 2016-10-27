@@ -50,7 +50,7 @@ class Reads2CoverageArgs extends Args4jBase with ParquetArgs {
   var outputPath: String = null
   @Args4jOption(required = false, name = "-collapse", usage = "Collapses neighboring coverage records " +
     "of equal counts into the same record")
-  var collapse: Boolean = true
+  var collapse: Boolean = false
   @Args4jOption(required = false, name = "-only_negative_strands", usage = "Compute coverage for negative strands")
   var onlyNegativeStrands: Boolean = false
   @Args4jOption(required = false, name = "-only_positive_strands", usage = "Compute coverage for positive strands")
