@@ -59,23 +59,37 @@ class ReferenceRegionSuite extends FunSuite {
 
     // contained
     assert(region("chr0", 10, 100).overlaps(region("chr0", 20, 50)))
+    assert(region("chr0", 10, 100).covers(region("chr0", 20, 50)))
+
+    // different strands
+    assert(!ReferenceRegion("chr0", 10, 100, orientation = Strand.FORWARD)
+      .overlaps(ReferenceRegion("chr0", 20, 50, orientation = Strand.REVERSE)))
+    assert(ReferenceRegion("chr0", 10, 100, orientation = Strand.FORWARD)
+      .covers(ReferenceRegion("chr0", 20, 50, orientation = Strand.REVERSE)))
 
     // right side
     assert(region("chr0", 10, 100).overlaps(region("chr0", 50, 250)))
+    assert(region("chr0", 10, 100).covers(region("chr0", 50, 250)))
 
     // left side
     assert(region("chr0", 10, 100).overlaps(region("chr0", 5, 15)))
+    assert(region("chr0", 10, 100).covers(region("chr0", 5, 15)))
 
     // left edge
     assert(region("chr0", 10, 100).overlaps(region("chr0", 5, 11)))
+    assert(region("chr0", 10, 100).covers(region("chr0", 5, 11)))
     assert(!region("chr0", 10, 100).overlaps(region("chr0", 5, 10)))
+    assert(!region("chr0", 10, 100).covers(region("chr0", 5, 10)))
 
     // right edge
     assert(region("chr0", 10, 100).overlaps(region("chr0", 99, 200)))
+    assert(region("chr0", 10, 100).covers(region("chr0", 99, 200)))
     assert(!region("chr0", 10, 100).overlaps(region("chr0", 100, 200)))
+    assert(!region("chr0", 10, 100).covers(region("chr0", 100, 200)))
 
     // different sequences
     assert(!region("chr0", 10, 100).overlaps(region("chr1", 50, 200)))
+    assert(!region("chr0", 10, 100).covers(region("chr1", 50, 200)))
   }
 
   test("distance(: ReferenceRegion)") {

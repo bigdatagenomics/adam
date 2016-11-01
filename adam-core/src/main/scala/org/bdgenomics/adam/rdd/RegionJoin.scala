@@ -32,7 +32,7 @@ import scala.reflect.ClassTag
  * @tparam RU The type of data yielded by the right RDD at the output of the
  *   join.
  */
-trait RegionJoin[T, U, RT, RU] {
+trait RegionJoin[T, U, RT, RU] extends Serializable {
 
   /**
    * Performs a region join between two RDDs.
