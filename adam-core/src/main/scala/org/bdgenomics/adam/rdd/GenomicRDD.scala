@@ -401,7 +401,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
 
     // key the RDDs and join
-    GenericGenomicRDD[(T, X)](InnerBroadcastRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
+    GenericGenomicRDD[(T, X)](InnerTreeRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
       kv => { getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2) })
@@ -429,7 +429,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Option[T], X)](RightOuterBroadcastRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
+    GenericGenomicRDD[(Option[T], X)](RightOuterTreeRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
       kv => {
@@ -476,6 +476,60 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   }
 
   /**
+   * Performs a broadcast inner join between this RDD and another RDD.
+   *
+   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
+   * and broadcast to all the nodes in the cluster. The key equality function
+   * used for this join is the reference region overlap function. Since this
+   * is an inner join, all values who do not overlap a value from the other
+   * RDD are dropped.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space.
+   */
+  def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
+    implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[T], X), Z] = {
+
+    // key the RDDs and join
+    GenericGenomicRDD[(Iterable[T], X)](InnerTreeRegionJoinAndGroupByRight[T, X]().partitionAndJoin(flattenRddByRegions(),
+      genomicRdd.flattenRddByRegions()),
+      sequences ++ genomicRdd.sequences,
+      kv => { (kv._1.flatMap(getReferenceRegions) ++ genomicRdd.getReferenceRegions(kv._2)).toSeq })
+      .asInstanceOf[GenomicRDD[(Iterable[T], X), Z]]
+  }
+
+  /**
+   * Performs a broadcast right outer join between this RDD and another RDD.
+   *
+   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
+   * and broadcast to all the nodes in the cluster. The key equality function
+   * used for this join is the reference region overlap function. Since this
+   * is a right outer join, all values in the left RDD that do not overlap a
+   * value from the right RDD are dropped. If a value from the right RDD does
+   * not overlap any values in the left RDD, it will be paired with a `None`
+   * in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and all keys from the
+   *   right RDD that did not overlap a key in the left RDD.
+   */
+  def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
+    implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[T], X), Z] = {
+
+    // key the RDDs and join
+    GenericGenomicRDD[(Iterable[T], X)](RightOuterTreeRegionJoinAndGroupByRight[T, X]().partitionAndJoin(flattenRddByRegions(),
+      genomicRdd.flattenRddByRegions()),
+      sequences ++ genomicRdd.sequences,
+      kv => {
+        Seq(kv._1.map(v => getReferenceRegions(v))).flatten.flatten ++
+          genomicRdd.getReferenceRegions(kv._2)
+      })
+      .asInstanceOf[GenomicRDD[(Iterable[T], X), Z]]
+  }
+
+  /**
    * Performs a sort-merge inner join between this RDD and another RDD.
    *
    * In a sort-merge join, both RDDs are co-partitioned and sorted. The
@@ -493,7 +547,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
 
-    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
+    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
+      genomicRdd)
 
     // key the RDDs and join
     GenericGenomicRDD[(T, X)](
@@ -527,7 +582,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
 
-    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
+    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
+      genomicRdd)
 
     // key the RDDs and join
     GenericGenomicRDD[(Option[T], X)](
@@ -564,7 +620,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Option[X]), Z] = {
 
-    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
+    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
+      genomicRdd)
 
     // key the RDDs and join
     GenericGenomicRDD[(T, Option[X])](
@@ -600,7 +657,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Option[X]), Z] = {
 
-    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
+    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
+      genomicRdd)
 
     // key the RDDs and join
     GenericGenomicRDD[(Option[T], Option[X])](
@@ -637,7 +695,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Iterable[X]), Z] = {
 
-    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
+    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
+      genomicRdd)
 
     // key the RDDs and join
     GenericGenomicRDD[(T, Iterable[X])](
@@ -676,7 +735,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Iterable[X]), Z] = {
 
-    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
+    val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
+      genomicRdd)
 
     // key the RDDs and join
     GenericGenomicRDD[(Option[T], Iterable[X])](
