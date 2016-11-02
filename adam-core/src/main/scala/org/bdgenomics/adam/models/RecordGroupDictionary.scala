@@ -17,9 +17,11 @@
  */
 package org.bdgenomics.adam.models
 
-import htsjdk.samtools.{ SAMFileHeader, SAMFileReader, SAMReadGroupRecord }
 import java.util.Date
+
+import htsjdk.samtools.{ SAMFileHeader, SAMReadGroupRecord, SamReader }
 import org.bdgenomics.formats.avro.{ RecordGroupMetadata, Sample }
+
 import scala.collection.JavaConversions._
 
 object RecordGroupDictionary {
@@ -42,7 +44,7 @@ object RecordGroupDictionary {
    * @param samReader SAM file header with attached read groups.
    * @return Returns a new record group dictionary with the read groups attached to the file header.
    */
-  def fromSAMReader(samReader: SAMFileReader): RecordGroupDictionary = {
+  def fromSAMReader(samReader: SamReader): RecordGroupDictionary = {
     fromSAMHeader(samReader.getFileHeader)
   }
 
