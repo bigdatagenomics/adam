@@ -17,11 +17,9 @@
  */
 package org.bdgenomics.adam.models
 
+import htsjdk.samtools.{ SAMFileHeader, SamReader, SAMReadGroupRecord }
 import java.util.Date
-
-import htsjdk.samtools.{ SAMFileHeader, SAMReadGroupRecord, SamReader }
 import org.bdgenomics.formats.avro.{ RecordGroupMetadata, Sample }
-
 import scala.collection.JavaConversions._
 
 object RecordGroupDictionary {

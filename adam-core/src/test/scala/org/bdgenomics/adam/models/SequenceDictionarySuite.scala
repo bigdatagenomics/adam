@@ -17,13 +17,15 @@
  */
 package org.bdgenomics.adam.models
 
-import htsjdk.samtools.{ SAMFileReader, SAMSequenceDictionary, SAMSequenceRecord }
-import htsjdk.variant.vcf.VCFFileReader
 import java.io.File
-
+import htsjdk.samtools.{
+  SAMFileReader,
+  SAMSequenceDictionary,
+  SAMSequenceRecord
+}
 import htsjdk.variant.utils.SAMSequenceDictionaryExtractor
+import htsjdk.variant.vcf.VCFFileReader
 import org.bdgenomics.adam.util.ADAMFunSuite
-
 import scala.collection.JavaConversions._
 
 class SequenceDictionarySuite extends ADAMFunSuite {
