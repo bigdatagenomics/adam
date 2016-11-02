@@ -17,9 +17,8 @@
  */
 package org.bdgenomics.adam.cli
 
-import java.io.{ File, FileOutputStream }
-
 import htsjdk.variant.utils.SAMSequenceDictionaryExtractor
+import java.io.{ File, FileOutputStream }
 import org.apache.commons.io.IOUtils
 import org.bdgenomics.adam.models.SequenceDictionary
 
@@ -34,7 +33,8 @@ trait DictionaryCommand {
     Some(file)
   }
 
-  private def getDictionary(file: File) = Some(SequenceDictionary(SAMSequenceDictionaryExtractor.extractDictionary(file)))
+  private def getDictionary(file: File) = Some(SequenceDictionary(
+    SAMSequenceDictionaryExtractor.extractDictionary(file)))
 
   def loadSequenceDictionary(file: File): Option[SequenceDictionary] = {
     if (file != null) {
