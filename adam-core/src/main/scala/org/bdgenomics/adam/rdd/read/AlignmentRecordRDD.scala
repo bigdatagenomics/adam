@@ -57,7 +57,6 @@ import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.MapTools
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.misc.Logging
 import org.seqdoop.hadoop_bam._

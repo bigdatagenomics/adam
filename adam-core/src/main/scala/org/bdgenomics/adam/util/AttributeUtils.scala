@@ -28,8 +28,8 @@ import org.bdgenomics.adam.models.{ TagType, Attribute }
  */
 object AttributeUtils {
 
-  val attrRegex = RegExp("([^:]{2,4}):([AifZHB]):(.*)")
-  val arrayRegex = RegExp("([cCiIsSf]{1},)(.*)")
+  val attrRegex = """([^:]{2,4}):([AifZHB]):(.*)""".r
+  val arrayRegex = """([cCiIsSf]{1},)(.*)""".r
 
   def convertSAMTagAndValue(attr: SAMTagAndValue): Attribute = {
     if (attr.value.isInstanceOf[TagValueAndUnsignedArrayFlag]) {
@@ -71,7 +71,7 @@ object AttributeUtils {
    *         expression ([A-Z]{2}:[AifZHB]:[^\t^]+)
    */
   def parseAttribute(encoded: String): Attribute = {
-    attrRegex.matches(encoded) match {
+    attrRegex.findFirstMatchIn(encoded) match {
       case Some(m) => createAttribute((m.group(1), m.group(2), m.group(3)))
       case None =>
         throw new IllegalArgumentException(
@@ -85,7 +85,7 @@ object AttributeUtils {
     val tagTypeString = attrTuple._2
 
     val (fullTagString, valueStr) = if (tagTypeString == "B") {
-      arrayRegex.matches(attrTuple._3) match {
+      arrayRegex.findFirstMatchIn(attrTuple._3) match {
         case Some(m) => {
           ("%s:%s".format(tagTypeString, m.group(1)), m.group(2))
         }

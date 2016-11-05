@@ -20,10 +20,8 @@ package org.bdgenomics.adam.util
 import org.apache.avro.Schema
 import org.apache.avro.Schema.Type._
 import org.apache.avro.generic.{ GenericData, IndexedRecord }
-
-import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import org.codehaus.jackson.node.NullNode
-
+import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
@@ -49,7 +47,7 @@ object Flattener {
         case RECORD =>
           flatten(f.schema, prefix + f.name + SEPARATOR, accumulator, makeOptional)
         case UNION =>
-          val nested: List[Schema] = f.schema.getTypes.filter(_.getType != Schema.Type.NULL)
+          val nested = f.schema.getTypes.filter(_.getType != Schema.Type.NULL)
           if (nested.size == 1) {
             val s: Schema = nested.head
             s.getType match {
@@ -115,7 +113,7 @@ object Flattener {
           off = flatten(f.schema, record.get(f.pos).asInstanceOf[IndexedRecord],
             flatRecord, off)
         case UNION =>
-          val nested: List[Schema] = f.schema.getTypes.filter(_.getType != Schema.Type.NULL)
+          val nested = f.schema.getTypes.filter(_.getType != Schema.Type.NULL)
           if (nested.size == 1) {
             val s: Schema = nested.head
             s.getType match {

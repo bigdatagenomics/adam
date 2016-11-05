@@ -26,11 +26,11 @@ import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.annotation.tailrec
+import scala.collection.JavaConversions._
 import scala.collection.immutable.{ NumericRange, TreeSet }
 import scala.collection.mutable
 import scala.util.Random

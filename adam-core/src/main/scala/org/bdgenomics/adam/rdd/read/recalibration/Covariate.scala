@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rdd.read.recalibration
 
 import org.bdgenomics.adam.rich.DecadentRead
 import org.bdgenomics.adam.util.QualityScore
-import org.bdgenomics.adam.util.Util
 
 /**
  * A Covariate represents a predictor, also known as a "feature" or
