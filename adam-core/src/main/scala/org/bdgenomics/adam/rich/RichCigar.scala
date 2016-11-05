@@ -18,8 +18,8 @@
 package org.bdgenomics.adam.rich
 
 import htsjdk.samtools.{ Cigar, CigarOperator, CigarElement }
-import org.bdgenomics.adam.util.ImplicitJavaConversions._
 import scala.annotation.tailrec
+import scala.collection.JavaConversions._
 
 object RichCigar {
 
@@ -106,7 +106,7 @@ class RichCigar(cigar: Cigar) {
     }
 
     // create cigar from new list
-    new Cigar(moveCigarLeft(List[CigarElement](), index, elements))
+    new Cigar(moveCigarLeft(List[CigarElement](), index, elements.toList))
   }
 
   def getLength(): Int = {

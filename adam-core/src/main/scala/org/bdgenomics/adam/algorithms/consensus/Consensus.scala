@@ -19,7 +19,7 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import htsjdk.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion }
-import org.bdgenomics.adam.util.ImplicitJavaConversions._
+import scala.collection.JavaConversions._
 
 /**
  * Singleton object for generating consensus sequences from alignments.
