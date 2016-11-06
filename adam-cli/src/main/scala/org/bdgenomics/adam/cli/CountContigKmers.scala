@@ -22,7 +22,6 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.formats.avro.NucleotideContigFragment
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
@@ -52,9 +51,6 @@ class CountContigKmers(protected val args: CountContigKmersArgs) extends BDGSpar
   val companion = CountContigKmers
 
   def run(sc: SparkContext) {
-
-    // Quiet Parquet...
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     // read from disk
     var fragments = sc.loadSequences(args.inputPath)

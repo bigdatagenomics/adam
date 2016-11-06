@@ -23,7 +23,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
@@ -55,9 +54,6 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
   val companion = CountReadKmers
 
   def run(sc: SparkContext) {
-
-    // Quiet Parquet...
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
 
     // read from disk
     var adamRecords = sc.loadAlignments(

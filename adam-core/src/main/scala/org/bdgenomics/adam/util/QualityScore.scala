@@ -17,14 +17,30 @@
  */
 package org.bdgenomics.adam.util
 
-class QualityScore(val phred: Int) extends Ordered[QualityScore] with Serializable {
+/**
+ * Model describing a single Quality score.
+ *
+ * @param phred The phred score.
+ */
+case class QualityScore(phred: Int) extends Ordered[QualityScore] with Serializable {
+
   // Valid range of phred + 33 is described by the regex "[!-~]".
   require(phred + 33 >= '!'.toInt && phred + 33 <= '~'.toInt, "Phred %s out of range".format(phred))
 
-  def successProbability = PhredUtils.phredToSuccessProbability(phred)
+  /**
+   * @return This quality score as a success probability.
+   */
+  def successProbability: Double = PhredUtils.phredToSuccessProbability(phred)
 
-  def errorProbability = PhredUtils.phredToErrorProbability(phred)
+  /**
+   * @return This quality score as an error probability.
+   */
+  def errorProbability: Double = PhredUtils.phredToErrorProbability(phred)
 
+  /**
+   * @return Returns this quality score as a visible ASCII character. Assumes
+   *   the Illumina encoding (Phred 0 == 33 == '!').
+   */
   def toChar: Char = (phred + 33).toChar
 
   override def compare(that: QualityScore) = this.phred compare that.phred
@@ -39,14 +55,34 @@ class QualityScore(val phred: Int) extends Ordered[QualityScore] with Serializab
   override def hashCode: Int = phred
 }
 
+/**
+ * Companion object for building quality score objects.
+ */
 object QualityScore {
-  val zero = new QualityScore(0)
 
-  def apply(phred: Int) = new QualityScore(phred)
+  /**
+   * The lowest quality score.
+   */
+  val zero = QualityScore(0)
 
-  def toString(quals: Seq[QualityScore]): String =
+  /**
+   * @param quals A seq of quality scores to encode.
+   * @return Returns this seq of quality scores as a visible ASCII string.
+   *   Assumes the Illumina encoding (Phred 0 == 33 == '!').
+   */
+  def toString(quals: Seq[QualityScore]): String = {
     String.valueOf(quals.map(_.toChar).toArray)
+  }
 
-  def fromErrorProbability(p: Double) =
-    new QualityScore(PhredUtils.errorProbabilityToPhred(p))
+  /**
+   * Builds a quality score given an error probability.
+   *
+   * @param p The error probability to translate into a phred scaled quality
+   *   score.
+   * @return Returns a QualityScore equivalent to this error probability, but
+   *   rounded to the nearest int.
+   */
+  def fromErrorProbability(p: Double) = {
+    QualityScore(PhredUtils.errorProbabilityToPhred(p))
+  }
 }

@@ -21,9 +21,12 @@ import htsjdk.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.formats.avro.AlignmentRecord
-import scala.collection.JavaConversions._
 import scala.annotation.tailrec
+import scala.collection.JavaConversions._
 
+/**
+ * Utility for left normalizing INDELs in alignments.
+ */
 private[adam] object NormalizationUtils {
 
   /**
@@ -112,7 +115,7 @@ private[adam] object NormalizationUtils {
    * @param preceeding Bases of sequence to left of variant.
    * @return The number of bases to shift an indel for it to be left normalized.
    */
-  def numberOfPositionsToShiftIndel(variant: String, preceeding: String): Int = {
+  private[util] def numberOfPositionsToShiftIndel(variant: String, preceeding: String): Int = {
 
     // tail recursive function to determine shift
     @tailrec def numberOfPositionsToShiftIndelAccumulate(variant: String, preceeding: String, accumulator: Int): Int = {
@@ -139,7 +142,7 @@ private[adam] object NormalizationUtils {
    * @param shifts Number of bases to shift element.
    * @return Cigar that has been shifted as far left as possible.
    */
-  @tailrec def shiftIndel(cigar: Cigar, position: Int, shifts: Int): Cigar = {
+  @tailrec private[util] def shiftIndel(cigar: Cigar, position: Int, shifts: Int): Cigar = {
     // generate new cigar with indel shifted by one
     val newCigar = new Cigar(cigar.getCigarElements).moveLeft(position)
 

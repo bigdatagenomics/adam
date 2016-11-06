@@ -18,13 +18,13 @@
 
 package org.bdgenomics.adam.util
 
-import java.nio.{ ByteOrder, ByteBuffer }
-import com.esotericsoftware.kryo.io.{ Output, Input }
+import java.nio.{ ByteBuffer, ByteOrder }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
-import org.bdgenomics.utils.io.{ ByteArrayByteAccess, ByteAccess }
+import com.esotericsoftware.kryo.io.{ Input, Output }
+import org.bdgenomics.utils.io.{ ByteAccess, ByteArrayByteAccess }
 import org.bdgenomics.adam.models._
 
-object TwoBitFile {
+private object TwoBitFile {
   val MAGIC_NUMBER: Int = 0x1A412743
   val BASES_PER_BYTE: Int = 4
   val BYTE_SIZE: Int = 8
@@ -57,9 +57,10 @@ object TwoBitFile {
  * @param byteAccess ByteAccess pointing to a .2bit file.
  */
 class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
+
   // load file into memory
-  val bytes = ByteBuffer.wrap(byteAccess.readFully(0, byteAccess.length().toInt))
-  val numSeq = readHeader()
+  private[util] val bytes = ByteBuffer.wrap(byteAccess.readFully(0, byteAccess.length().toInt))
+  private[util] val numSeq = readHeader()
   // hold current byte position of start of current index record
   var indexRecordStart = TwoBitFile.FILE_INDEX_OFFSET
   private val seqRecordStarts = (0 until numSeq).map(i => {
@@ -67,9 +68,11 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
     indexRecordStart += TwoBitFile.NAME_SIZE_SIZE + tup._1.length + TwoBitFile.OFFSET_SIZE
     tup
   }).toMap
-  val seqRecords = seqRecordStarts.map(tup => tup._1 -> TwoBitRecord(bytes, tup._1, tup._2))
+  private[util] val seqRecords = seqRecordStarts.map(tup => tup._1 -> TwoBitRecord(bytes, tup._1, tup._2))
 
-  // create sequence dictionary
+  /**
+   * The sequence dictionary corresponding to the contigs in this two bit file.
+   */
   val sequences = new SequenceDictionary(seqRecords.toVector.map(r => SequenceRecord(r._1, r._2.dnaSize)))
 
   private def readHeader(): Int = {
@@ -188,7 +191,7 @@ class TwoBitFileSerializer extends Serializer[TwoBitFile] {
   }
 }
 
-private[util] object TwoBitRecord {
+private object TwoBitRecord {
   def apply(twoBitBytes: ByteBuffer, name: String, seqRecordStart: Int): TwoBitRecord = {
     val dnaSize = twoBitBytes.getInt(seqRecordStart)
     val nBlockCount = twoBitBytes.getInt(seqRecordStart + TwoBitFile.DNA_SIZE_SIZE)
@@ -212,4 +215,8 @@ private[util] object TwoBitRecord {
   }
 }
 
-private[util] case class TwoBitRecord(dnaSize: Int, nBlocks: Option[NonoverlappingRegions], maskBlocks: Option[NonoverlappingRegions], dnaOffset: Int)
+private case class TwoBitRecord(dnaSize: Int,
+                                nBlocks: Option[NonoverlappingRegions],
+                                maskBlocks: Option[NonoverlappingRegions],
+                                dnaOffset: Int) {
+}

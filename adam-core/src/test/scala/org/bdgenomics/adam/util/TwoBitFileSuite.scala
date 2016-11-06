@@ -18,11 +18,10 @@
 package org.bdgenomics.adam.util
 
 import java.io.File
-
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.utils.io.LocalFileByteAccess
 
-class TwoBitSuite extends ADAMFunSuite {
+class TwoBitFileSuite extends ADAMFunSuite {
   test("correctly read sequence from .2bit file") {
     val file = new File(testFile("hg19.chrM.2bit"))
     val byteAccess = new LocalFileByteAccess(file)

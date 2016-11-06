@@ -19,11 +19,16 @@ package org.bdgenomics.adam.util
 
 import java.util.logging.{ Level, Logger }
 
+/**
+ * Helper object for setting the logging level for Parquet.
+ */
 object ParquetLogger {
 
+  /**
+   * Sets the logger level for Parquet.
+   */
   val hadoopLoggerLevel = (level: Level) => {
     val parquetHadoopLogger = Logger.getLogger("org.apache.parquet.hadoop")
     parquetHadoopLogger.setLevel(level)
   }
-
 }

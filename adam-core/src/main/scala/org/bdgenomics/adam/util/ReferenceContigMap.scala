@@ -17,15 +17,26 @@
  */
 package org.bdgenomics.adam.util
 
-import org.apache.spark.rdd.RDD
-// NOTE(ryan): this is necessary for Spark <= 1.2.1.
 import org.apache.spark.SparkContext._
-import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{
+  ReferenceRegion,
+  SequenceDictionary,
+  SequenceRecord
+}
 import org.bdgenomics.formats.avro.NucleotideContigFragment
 
+/**
+ * A broadcastable ReferenceFile backed by a map containing contig name ->
+ * Seq[NucleotideContigFragment] pairs.
+ *
+ * @param contigMap a map containing a Seq of contig fragments per contig.
+ */
 case class ReferenceContigMap(contigMap: Map[String, Seq[NucleotideContigFragment]]) extends ReferenceFile {
 
-  // create sequence dictionary
+  /**
+   * The sequence dictionary corresponding to the contigs in this collection of fragments.
+   */
   val sequences: SequenceDictionary = new SequenceDictionary(contigMap.map(r =>
     SequenceRecord(r._1, r._2.map(_.getFragmentEndPosition).max)).toVector)
 
@@ -68,8 +79,21 @@ case class ReferenceContigMap(contigMap: Map[String, Seq[NucleotideContigFragmen
   }
 }
 
+/**
+ * Companion object for creating a ReferenceContigMap from an RDD of contig
+ * fragments.
+ */
 object ReferenceContigMap {
-  def apply(fragments: RDD[NucleotideContigFragment]): ReferenceContigMap =
+
+  /**
+   * Builds a ReferenceContigMap from an RDD of fragments.
+   *
+   * @param fragments RDD of nucleotide contig fragments describing a genome
+   *   reference.
+   * @return Returns a serializable wrapper around these fragments that enables
+   *   random access into the reference genome.
+   */
+  def apply(fragments: RDD[NucleotideContigFragment]): ReferenceContigMap = {
     ReferenceContigMap(
       fragments
         .groupBy(_.getContig.getContigName)
@@ -77,4 +101,5 @@ object ReferenceContigMap {
         .collectAsMap
         .toMap
     )
+  }
 }

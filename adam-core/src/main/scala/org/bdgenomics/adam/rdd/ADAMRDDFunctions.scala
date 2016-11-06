@@ -114,7 +114,6 @@ private[rdd] abstract class ADAMRDDFunctions[T <% IndexedRecord: Manifest] exten
     log.info("Saving data in ADAM format")
 
     val job = HadoopUtil.newJob(rdd.context)
-    ParquetLogger.hadoopLoggerLevel(Level.SEVERE)
     ParquetOutputFormat.setCompression(job, compressCodec)
     ParquetOutputFormat.setEnableDictionary(job, !disableDictionaryEncoding)
     ParquetOutputFormat.setBlockSize(job, blockSize)

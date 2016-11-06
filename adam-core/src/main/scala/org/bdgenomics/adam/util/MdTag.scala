@@ -26,13 +26,28 @@ import scala.collection.immutable
 import scala.collection.immutable.NumericRange
 import scala.util.matching.Regex
 
+/**
+ * Enumeration describing sequence events in an MD tag:
+ *
+ * * Match is a sequence match (i.e., every base in the aligned sequence matches
+ *   the reference sequence)
+ * * Mismatch is a sequence mismatch (there are bases that do not match the
+ *   reference sequence)
+ * * Delete indicates that bases that were present in the reference sequence
+ *   were deleted in the read sequence
+ */
 object MdTagEvent extends Enumeration {
   val Match, Mismatch, Delete = Value
 }
 
+/**
+ * Companion object to MdTag case class. Provides methods for building an
+ * MdTag model from a read.
+ */
 object MdTag {
 
   private val digitPattern = new Regex("\\d+")
+
   // for description, see base enum in adam schema
   private val basesPattern = new Regex("[AaGgCcTtNnUuKkMmRrSsWwBbVvHhDdXxYy]+")
 
@@ -60,6 +75,7 @@ object MdTag {
     var referencePos = referenceStart
     var cigarOperatorIndex = 0
     var usedMatchingBases = 0
+
     if (mdTagInput == null || mdTagInput == "0") {
       new MdTag(referenceStart, List(), Map(), Map())
     } else {
@@ -165,33 +181,6 @@ object MdTag {
       }
       new MdTag(referenceStart, matches, mismatches, deletions)
     }
-  }
-  /**
-   * From an updated read alignment, writes a new MD tag.
-   *
-   * @param read Record for current alignment.
-   * @param newCigar Realigned cigar string.
-   * @return Returns an MD tag for the new read alignment.
-   *
-   * @see moveAlignment
-   */
-  def apply(read: RichAlignmentRecord, newCigar: Cigar): MdTag = {
-    moveAlignment(read, newCigar)
-  }
-
-  /**
-   * From an updated read alignment, writes a new MD tag.
-   *
-   * @param read Read to write a new alignment for.
-   * @param newReference Reference sequence to write alignment against.
-   * @param newCigar The Cigar for the new read alignment.
-   * @param newAlignmentStart The position of the new read alignment.
-   * @return Returns an MD tag for the new read alignment.
-   *
-   * @see moveAlignment
-   */
-  def apply(read: RichAlignmentRecord, newCigar: Cigar, newReference: String, newAlignmentStart: Long): MdTag = {
-    moveAlignment(read, newCigar, newReference, newAlignmentStart)
   }
 
   /**
@@ -373,7 +362,7 @@ object MdTag {
  * @param mismatches A map of all the locations where a base mismatched.
  * @param deletions A map of all locations where a base was deleted.
  */
-class MdTag(
+case class MdTag(
     val start: Long,
     val matches: immutable.List[NumericRange[Long]],
     val mismatches: immutable.Map[Long, Char],

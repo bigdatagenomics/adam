@@ -25,10 +25,39 @@ import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-object Flattener {
+/**
+ * Utility singleton for flattening down nested Avro records.
+ *
+ * When we refer to a schema as flat, we mean that there are no nested records.
+ * We do not mean that the schema does not contain maps or arrays.
+ */
+object Flattener extends Serializable {
 
+  /**
+   * This separator is used to generate the flattened name of a nested
+   * field. E.g., if a record is nested like so:
+   *
+   * - record Genotype
+   * -- variant: Variant
+   * --- start: Long
+   * --- end: Long
+   * -- genotypeState: Int
+   *
+   * With the SEPARATOR "__", the flat record will be:
+   *
+   * - record Genotype
+   * -- variant__start: Long
+   * -- variant__end: Long
+   * -- genotypeState: Int
+   */
   val SEPARATOR: String = "__";
 
+  /**
+   * Given a possibly nested schema, creates a flat schema.
+   *
+   * @param schema The schema to flatten.
+   * @return Returns a flattened representation of the schema.
+   */
   def flattenSchema(schema: Schema): Schema = {
     val flatSchema: Schema = Schema.createRecord(schema.getName + "_flat", schema.getDoc,
       schema.getNamespace, schema.isError)
@@ -92,6 +121,16 @@ object Flattener {
     schema // TODO: what about unions that don't contain null?
   }
 
+  /**
+   * Takes a given nested record and flattens it to correspond to a flattened
+   * schema.
+   *
+   * @param flatSchema The flat schema for the new record.
+   * @param record The nested record to flatten.
+   * @return Returns a new Avro IndexedRecord where every field from the initial
+   *   record has been copied, but where the schema corresponds to the new flat
+   *   schema.
+   */
   def flattenRecord(flatSchema: Schema, record: IndexedRecord): IndexedRecord = {
     val flatRecord: GenericData.Record = new GenericData.Record(flatSchema)
     flatten(record.getSchema, record, flatRecord, 0)
