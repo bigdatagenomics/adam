@@ -33,7 +33,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.util.PhredUtils
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.{ Buffer, HashMap }
 
 /**
  * Object for converting between htsjdk and ADAM VariantContexts.
@@ -193,7 +193,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case List(allele) => {
-        assert(
+        require(
           allele.isNonReference,
           "Assertion failed when converting: " + vc.toString
         )
@@ -202,7 +202,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
       case List(allele, NON_REF_ALLELE) => {
-        assert(
+        require(
           allele.isNonReference,
           "Assertion failed when converting: " + vc.toString
         )
@@ -210,23 +210,30 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
         val genotypes = extractReferenceModelGenotypes(vc, variant, calling_annotations)
         return Seq(ADAMVariantContext(variant, genotypes, None))
       }
-      case alleles :+ NON_REF_ALLELE => {
-        throw new IllegalArgumentException("Multi-allelic site with non-ref symbolic allele" +
-          vc.toString)
-      }
       case _ => {
-        // Default case is multi-allelic without reference model
         val vcb = new VariantContextBuilder(vc)
-        return vc.getAlternateAlleles.flatMap(allele => {
+
+        // is the last allele the non-ref allele?
+        val alleles = vc.getAlternateAlleles.toSeq
+        val referenceModelIndex = if (alleles.nonEmpty && alleles.last == NON_REF_ALLELE) {
+          alleles.length - 1
+        } else {
+          -1
+        }
+        val altAlleles = if (referenceModelIndex > 0) {
+          alleles.dropRight(1)
+        } else {
+          alleles
+        }
+
+        return altAlleles.flatMap(allele => {
           val idx = vc.getAlleleIndex(allele)
-          assert(idx >= 1, "Unexpected index for alternate allele: " + vc.toString)
+          require(idx >= 1, "Unexpected index for alternate allele: " + vc.toString)
           vcb.alleles(List(vc.getReference, allele, NON_REF_ALLELE))
 
           def punchOutGenotype(g: htsjdk.variant.variantcontext.Genotype, idx: Int): htsjdk.variant.variantcontext.Genotype = {
 
             val gb = new htsjdk.variant.variantcontext.GenotypeBuilder(g)
-            // TODO: Multi-allelic genotypes are locally phased, add phase set
-            gb.phased(true)
 
             if (g.hasAD) {
               val ad = g.getAD
@@ -238,9 +245,30 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
             if (g.hasPL) {
               val oldPLs = g.getPL
               val maxIdx = oldPLs.length
-              val newPLs = GenotypeLikelihoods.getPLIndecesOfAlleles(0, idx).filter(_ < maxIdx).map(oldPLs(_))
-              // Normalize new likelihoods in log-space
-              gb.PL(newPLs.map(_ - newPLs.min))
+
+              def extractPls(idx0: Int, idx1: Int): Array[Int] = {
+                GenotypeLikelihoods.getPLIndecesOfAlleles(0, idx).map(idx => {
+                  require(idx < maxIdx, "Got out-of-range index (%d) for allele %s in %s.".format(
+                    idx, allele, vc))
+                  oldPLs(idx)
+                })
+              }
+
+              val newPLs = extractPls(0, idx)
+              val referencePLs = if (referenceModelIndex > 0) {
+                try {
+                  extractPls(idx, referenceModelIndex)
+                } catch {
+                  case iae: IllegalArgumentException => {
+                    log.warn("Caught exception (%s) when trying to build reference model for allele %s at %s. Ignoring...".format(
+                      iae.getMessage, allele, g))
+                    Array.empty
+                  }
+                }
+              } else {
+                Array.empty
+              }
+              gb.PL(newPLs ++ referencePLs)
             }
             gb.make
           }
@@ -274,14 +302,14 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
         createADAMVariant(vc, None /* No alternate allele */ )
       }
       case List(allele) => {
-        assert(
+        require(
           allele.isNonReference,
           "Assertion failed when converting: " + vc.toString
         )
         createADAMVariant(vc, Some(allele.getDisplayString))
       }
       case List(allele, NON_REF_ALLELE) => {
-        assert(
+        require(
           allele.isNonReference,
           "Assertion failed when converting: " + vc.toString
         )
@@ -471,11 +499,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
     extractGenotypes(vc, variant, annotations, (g, b) => {
       if (g.hasPL) {
         val pls = g.getPL.map(p => jFloat(PhredUtils.phredToLogProbability(p)))
-        val splitAt: Int = g.getPloidy match {
-          case 1 => 2
-          case 2 => 3
-          case _ => require(false, "Ploidy > 2 not supported for this operation"); 0
-        }
+        val splitAt: Int = g.getPloidy + 1
         b.setGenotypeLikelihoods(pls.slice(0, splitAt).toList)
         b.setNonReferenceLikelihoods(pls.slice(splitAt, pls.length).toList)
       }

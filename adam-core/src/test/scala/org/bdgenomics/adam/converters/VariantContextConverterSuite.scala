@@ -242,7 +242,6 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       val adamGT = adamVC.genotypes.head
       assert(adamGT.getSplitFromMultiAllelic)
       assert(adamGT.getReferenceReadDepth === 4)
-      assert(adamGT.getIsPhased)
     }
 
     val adamGT1 = adamVCs(0).genotypes.head
@@ -259,7 +258,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamGT2.getGenotypeLikelihoods
       .map(f => f: scala.Float)
       .map(PhredUtils.logProbabilityToPhred)
-      .sameElements(List(58, 0, 101)))
+      .sameElements(List(59, 1, 102)))
   }
 
   test("Convert gVCF reference records to ADAM") {
