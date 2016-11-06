@@ -388,7 +388,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val variants = sc.loadVcf(path).toVariantRDD
     // Not sure that the count should be 7 below, however the current failure to read the mult-allelic site happens
     // before this assertion is even reached
-    assert(variants.rdd.count === 7)
+    assert(variants.rdd.count === 6)
   }
 
   sparkTest("load parquet with globs") {
