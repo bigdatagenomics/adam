@@ -125,8 +125,10 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     // org.bdgenomics.adam.models
     kryo.register(classOf[org.bdgenomics.adam.models.Coverage])
+    kryo.register(classOf[org.bdgenomics.adam.models.MdTag])
     kryo.register(classOf[org.bdgenomics.adam.models.MultiContigNonoverlappingRegions])
     kryo.register(classOf[org.bdgenomics.adam.models.NonoverlappingRegions])
+    kryo.register(classOf[org.bdgenomics.adam.models.QualityScore])
     kryo.register(classOf[org.bdgenomics.adam.models.RecordGroup])
     kryo.register(classOf[org.bdgenomics.adam.models.RecordGroupDictionary])
     kryo.register(classOf[org.bdgenomics.adam.models.ReferencePosition],
@@ -172,8 +174,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.adam.rich.RichVariant])
 
     // org.bdgenomics.adam.util
-    kryo.register(classOf[org.bdgenomics.adam.util.MdTag])
-    kryo.register(classOf[org.bdgenomics.adam.util.QualityScore])
     kryo.register(classOf[org.bdgenomics.adam.util.ReferenceContigMap])
     kryo.register(classOf[org.bdgenomics.adam.util.TwoBitFile],
       new org.bdgenomics.adam.util.TwoBitFileSerializer)

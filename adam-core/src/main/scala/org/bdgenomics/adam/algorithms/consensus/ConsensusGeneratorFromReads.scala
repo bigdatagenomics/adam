@@ -18,13 +18,11 @@
 package org.bdgenomics.adam.algorithms.consensus
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion }
+import org.bdgenomics.adam.models.{ MdTag, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.NormalizationUtils._
-import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 /**
@@ -59,7 +57,7 @@ private[adam] class ConsensusGeneratorFromReads extends ConsensusGenerator {
       // if there are two alignment blocks (sequence matches) then there is a single indel in the read
       if (r.samtoolsCigar.numAlignmentBlocks == 2) {
         // left align this indel and update the mdtag
-        val cigar = leftAlignIndel(r)
+        val cigar = NormalizationUtils.leftAlignIndel(r)
         val mdTag = MdTag.moveAlignment(r, cigar)
 
         val newRead: RichAlignmentRecord = AlignmentRecord.newBuilder(r)

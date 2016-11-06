@@ -19,13 +19,13 @@ package org.bdgenomics.adam.rdd.read
 
 import org.bdgenomics.adam.rdd.ADAMContext._
 import htsjdk.samtools.{ TextCigarCodec, ValidationStringency }
-import org.bdgenomics.utils.misc.Logging
 // NOTE(ryan): this is necessary for Spark <= 1.2.1.
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.util.{ ReferenceFile, MdTag }
+import org.bdgenomics.adam.models.{ MdTag, ReferenceRegion }
+import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.misc.Logging
 
 case class MDTagging(
     reads: RDD[AlignmentRecord],

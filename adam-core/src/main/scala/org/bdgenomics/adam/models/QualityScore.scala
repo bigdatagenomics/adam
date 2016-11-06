@@ -15,14 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.models
+
+import org.bdgenomics.adam.util.PhredUtils
 
 /**
  * Model describing a single Quality score.
  *
  * @param phred The phred score.
  */
-case class QualityScore(phred: Int) extends Ordered[QualityScore] with Serializable {
+private[adam] case class QualityScore(phred: Int) extends Ordered[QualityScore] with Serializable {
 
   // Valid range of phred + 33 is described by the regex "[!-~]".
   require(phred + 33 >= '!'.toInt && phred + 33 <= '~'.toInt, "Phred %s out of range".format(phred))
@@ -58,7 +60,7 @@ case class QualityScore(phred: Int) extends Ordered[QualityScore] with Serializa
 /**
  * Companion object for building quality score objects.
  */
-object QualityScore {
+private[adam] object QualityScore {
 
   /**
    * The lowest quality score.
