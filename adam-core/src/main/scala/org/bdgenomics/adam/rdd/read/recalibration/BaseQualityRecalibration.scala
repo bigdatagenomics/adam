@@ -23,10 +23,9 @@ import org.apache.spark.SparkContext._
 import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.SnpTable
+import org.bdgenomics.adam.models.{ QualityScore, SnpTable }
 import org.bdgenomics.adam.rich.DecadentRead
 import org.bdgenomics.adam.rich.DecadentRead._
-import org.bdgenomics.adam.util.QualityScore
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 /**

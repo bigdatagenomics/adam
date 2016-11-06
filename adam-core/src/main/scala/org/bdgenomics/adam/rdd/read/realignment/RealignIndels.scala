@@ -23,10 +23,9 @@ import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{ Consensus, ConsensusGenerator, ConsensusGeneratorFromReads }
 import org.bdgenomics.adam.models.ReferenceRegion._
-import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion }
+import org.bdgenomics.adam.models.{ MdTag, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.annotation.tailrec

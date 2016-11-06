@@ -20,10 +20,14 @@ package org.bdgenomics.adam.rich
 import htsjdk.samtools.ValidationStringency
 import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.ReferencePosition
+import org.bdgenomics.adam.models.{
+  MdTag,
+  ReferencePosition,
+  ReferenceRegion,
+  QualityScore
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.adam.util.{ MdTag, QualityScore }
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 @deprecated("Use RichAlignmentRecord wherever possible in new development.", since = "0.18.0")

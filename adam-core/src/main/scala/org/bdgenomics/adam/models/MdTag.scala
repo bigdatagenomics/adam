@@ -15,10 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.models
 
 import htsjdk.samtools.{ Cigar, CigarOperator }
-import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import scala.collection.JavaConversions._

@@ -18,11 +18,10 @@
 package org.bdgenomics.adam.algorithms.consensus
 
 import org.bdgenomics.adam.algorithms.smithwaterman.SmithWatermanConstantGapScoring
-import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.models.{ MdTag, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.MdTag
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 /**

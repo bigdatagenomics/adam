@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.util
+package org.bdgenomics.adam.algorithms.consensus
 
 import htsjdk.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -27,7 +27,7 @@ import scala.collection.JavaConversions._
 /**
  * Utility for left normalizing INDELs in alignments.
  */
-private[adam] object NormalizationUtils {
+private[consensus] object NormalizationUtils {
 
   /**
    * Given a cigar, returns the cigar with the position of the cigar shifted left.
@@ -115,7 +115,7 @@ private[adam] object NormalizationUtils {
    * @param preceeding Bases of sequence to left of variant.
    * @return The number of bases to shift an indel for it to be left normalized.
    */
-  private[util] def numberOfPositionsToShiftIndel(variant: String, preceeding: String): Int = {
+  private[consensus] def numberOfPositionsToShiftIndel(variant: String, preceeding: String): Int = {
 
     // tail recursive function to determine shift
     @tailrec def numberOfPositionsToShiftIndelAccumulate(variant: String, preceeding: String, accumulator: Int): Int = {
@@ -142,7 +142,7 @@ private[adam] object NormalizationUtils {
    * @param shifts Number of bases to shift element.
    * @return Cigar that has been shifted as far left as possible.
    */
-  @tailrec private[util] def shiftIndel(cigar: Cigar, position: Int, shifts: Int): Cigar = {
+  @tailrec private[consensus] def shiftIndel(cigar: Cigar, position: Int, shifts: Int): Cigar = {
     // generate new cigar with indel shifted by one
     val newCigar = new Cigar(cigar.getCigarElements).moveLeft(position)
 
