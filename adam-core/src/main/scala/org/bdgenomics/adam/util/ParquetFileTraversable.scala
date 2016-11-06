@@ -17,18 +17,29 @@
  */
 package org.bdgenomics.adam.util
 
+import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.parquet.avro.AvroParquetReader
-import org.apache.avro.generic.IndexedRecord
 import org.apache.spark.SparkContext
 import org.bdgenomics.utils.misc.HadoopUtil
 
+/**
+ * Implements a traversable collection that is backed by a Parquet file.
+ *
+ * @param sc A SparkContext to use to get underlying Hadoop FileSystem config.
+ * @param file The path to the Parquet file to load.
+ */
 class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) extends Traversable[T] {
+
+  /**
+   * @param sc A SparkContext to use to get underlying Hadoop FileSystem config.
+   * @param file The path to the Parquet file to load.
+   */
   def this(sc: SparkContext, file: String) = this(sc, new Path(file))
 
   private val fs = file.getFileSystem(sc.hadoopConfiguration)
 
-  val paths: List[Path] = {
+  private val paths: List[Path] = {
     if (!fs.exists(file)) {
       throw new IllegalArgumentException("The path %s does not exist".format(file))
     }
@@ -50,18 +61,25 @@ class ParquetFileTraversable[T <: IndexedRecord](sc: SparkContext, file: Path) e
     paths
   }
 
+  /**
+   * Runs a for loop over each record in the file, and applies a function.
+   *
+   * @param f The function to apply to each record.
+   */
   override def foreach[U](f: (T) => U) {
-    for (path <- paths) {
-      val parquetReader = new AvroParquetReader[T](path)
-      var record = null.asInstanceOf[T]
-      do {
-        record = parquetReader.read()
-        if (record != null.asInstanceOf[T]) {
-          f(record)
-        }
-      } while (record != null.asInstanceOf[T])
-      parquetReader.close()
-    }
-  }
+    var record: T = null.asInstanceOf[T]
 
+    paths.foreach(path => {
+      val parquetReader = new AvroParquetReader[T](path)
+      try {
+        record = parquetReader.read()
+        while (record != null) {
+          f(record)
+          record = parquetReader.read()
+        }
+      } finally {
+        parquetReader.close()
+      }
+    })
+  }
 }

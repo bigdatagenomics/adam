@@ -19,24 +19,45 @@ package org.bdgenomics.adam.util
 
 import scala.math.{ exp, pow, log, log10 }
 
-object PhredUtils {
+/**
+ * Helper singleton for converting Phred scores to/from probabilities.
+ *
+ * As a reminder, given an error probability \epsilon, the Phred score q is:
+ *
+ * q = -10 log_{10} \epsilon
+ */
+object PhredUtils extends Serializable {
 
-  lazy val phredToErrorProbabilityCache: Array[Double] = {
+  private lazy val phredToErrorProbabilityCache: Array[Double] = {
     (0 until 256).map { p => pow(10.0, -p / 10.0) }.toArray
   }
 
-  lazy val phredToSuccessProbabilityCache: Array[Double] = {
+  private lazy val phredToSuccessProbabilityCache: Array[Double] = {
     phredToErrorProbabilityCache.map { p => 1.0 - p }
   }
 
+  /**
+   * @param phred The phred score to convert.
+   * @return The input phred score as a log success probability.
+   */
   def phredToLogProbability(phred: Int): Float = log(phredToSuccessProbability(phred)).toFloat
 
+  /**
+   * @param phred The phred score to convert.
+   * @return The input phred score as a success probability. If the phred score
+   *   is above 255, we clip to 255.
+   */
   def phredToSuccessProbability(phred: Int): Double = if (phred < 255) {
     phredToSuccessProbabilityCache(phred)
   } else {
     phredToSuccessProbabilityCache(255)
   }
 
+  /**
+   * @param phred The phred score to convert.
+   * @return The input phred score as an error probability. If the phred score
+   *   is above 255, we clip to 255.
+   */
   def phredToErrorProbability(phred: Int): Double = if (phred < 255) {
     phredToErrorProbabilityCache(phred)
   } else {
@@ -45,18 +66,27 @@ object PhredUtils {
 
   private def probabilityToPhred(p: Double): Int = math.round(-10.0 * log10(p)).toInt
 
+  /**
+   * @param p A success probability to convert to phred.
+   * @return One minus the input probability as a phred score, rounded to the
+   *   nearest int.
+   */
   def successProbabilityToPhred(p: Double): Int = probabilityToPhred(1.0 - p)
 
+  /**
+   * @param p An error probability to convert to phred.
+   * @return The input probability as a phred score, rounded to the nearest int.
+   */
   def errorProbabilityToPhred(p: Double): Int = probabilityToPhred(p)
 
+  /**
+   * @param p A log-scaled success probability to conver to phred.
+   * @return Returns this probability as a Phred score. If the log value is 0.0,
+   *   we clip the phred score to 256.
+   */
   def logProbabilityToPhred(p: Float): Int = if (p == 0.0) {
     256
   } else {
     successProbabilityToPhred(exp(p))
   }
-
-  def main(args: Array[String]) = {
-    phredToErrorProbabilityCache.zipWithIndex.foreach(p => println("%3d = %f".format(p._2, p._1)))
-  }
-
 }
