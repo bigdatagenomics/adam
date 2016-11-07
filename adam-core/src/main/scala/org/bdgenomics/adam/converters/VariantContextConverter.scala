@@ -575,6 +575,15 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
         Option(g.getGenotypeQuality).foreach(gb.GQ(_))
         Option(g.getReadDepth).foreach(gb.DP(_))
 
+        // strand bias components should have length 4 or length 0
+        val strandBiasComponents = g.getStrandBiasComponents
+        if (strandBiasComponents.length == 4) {
+          gb.attribute("SB", strandBiasComponents)
+        } else if (!strandBiasComponents.isEmpty) {
+          log.warn("Ignoring bad strand bias components (%s) at %s.".format(
+            strandBiasComponents.mkString(","), variant))
+        }
+
         if (g.getReferenceReadDepth != null && g.getAlternateReadDepth != null)
           gb.AD(Array(g.getReferenceReadDepth, g.getAlternateReadDepth))
 
