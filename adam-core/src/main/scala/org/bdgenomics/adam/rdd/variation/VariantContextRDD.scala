@@ -31,6 +31,7 @@ import org.bdgenomics.adam.converters.{
   VariantContextConverter
 }
 import org.bdgenomics.adam.models.{
+  ReferencePosition,
   ReferenceRegion,
   SequenceDictionary,
   VariantContext
@@ -110,10 +111,12 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * and saves to disk as VCF.
    *
    * @param filePath The filepath to save to.
-   * @param sortOnSave Whether to sort before saving. Default is false (no sort).
+   * @param asSingleFile If true, saves the output as a single file by merging
+   *   the sharded output after completing the write to HDFS. If false, the
+   *   output of this call will be written as shards, where each shard has a
+   *   valid VCF header. Default is false.
    */
   def saveAsVcf(filePath: String,
-                sortOnSave: Boolean = false,
                 asSingleFile: Boolean = false) {
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
@@ -123,20 +126,12 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     // map samples to sample ids
     val sampleIds = samples.map(_.getSampleId)
 
-    // sort if needed
-    val keyByPosition = rdd.keyBy(_.position)
-    val maybeSortedByKey = if (sortOnSave) {
-      keyByPosition.sortByKey()
-    } else {
-      keyByPosition
-    }
-
     // convert the variants to htsjdk VCs
     val converter = new VariantContextConverter(Some(sequences))
-    val writableVCs: RDD[(LongWritable, VariantContextWritable)] = maybeSortedByKey.map(kv => {
+    val writableVCs: RDD[(LongWritable, VariantContextWritable)] = rdd.map(vc => {
       val vcw = new VariantContextWritable
-      vcw.set(converter.convert(kv._2))
-      (new LongWritable(kv._1.pos), vcw)
+      vcw.set(converter.convert(vc))
+      (new LongWritable(vc.position.pos), vcw)
     })
 
     // make header
@@ -167,6 +162,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
       .build()
 
     // write the header
+
     vcw.writeHeader(header)
 
     // close the writer and the underlying stream

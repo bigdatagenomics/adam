@@ -52,8 +52,13 @@ class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
   var coalesce: Int = -1
 
-  @Args4jOption(required = false, name = "-sort_on_save", usage = "Sort the VCF output.")
+  @Args4jOption(required = false, name = "-sort_on_save", usage = "Sort the VCF output by contig index.")
   var sort: Boolean = false
+
+  @Args4jOption(required = false,
+    name = "-sort_lexicographically_on_save",
+    usage = "Sort the VCF output by lexicographic order. Conflicts with -sort_on_save.")
+  var sortLexicographically: Boolean = false
 
   @Args4jOption(required = false, name = "-single", usage = "Save as a single VCF file.")
   var single: Boolean = false
@@ -63,6 +68,9 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] wit
   val companion = ADAM2Vcf
 
   def run(sc: SparkContext) {
+    require(!(args.sort && args.sortLexicographically),
+      "Cannot set both -sort_on_save and -sort_lexicographically_on_save.")
+
     var dictionary: Option[SequenceDictionary] = loadSequenceDictionary(args.dictionaryFile)
     if (dictionary.isDefined)
       log.info("Using contig translation")
@@ -77,14 +85,22 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] wit
 
     // convert to variant contexts and prep for save
     val variantContexts = adamGTs.toVariantContextRDD
-    val variantContextsToSave = if (args.coalesce > 0) {
+    val maybeCoalescedVcs = if (args.coalesce > 0) {
       variantContexts.transform(_.coalesce(args.coalesce))
     } else {
       variantContexts
     }
 
-    variantContextsToSave.saveAsVcf(args.outputPath,
-      sortOnSave = args.sort,
+    // sort if requested
+    val maybeSortedVcs = if (args.sort) {
+      maybeCoalescedVcs.sort()
+    } else if (args.sortLexicographically) {
+      maybeCoalescedVcs.sortLexicographically()
+    } else {
+      maybeCoalescedVcs
+    }
+
+    maybeSortedVcs.saveAsVcf(args.outputPath,
       asSingleFile = args.single)
   }
 }

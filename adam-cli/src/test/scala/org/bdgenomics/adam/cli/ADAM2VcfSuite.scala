@@ -1,0 +1,51 @@
+/**
+ * Licensed to Big Data Genomics (BDG) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The BDG licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.bdgenomics.adam.cli
+
+import org.bdgenomics.adam.util.ADAMFunSuite
+
+class ADAM2VcfSuite extends ADAMFunSuite {
+
+  sparkTest("save a file sorted by contig index") {
+    val inputPath = copyResource("random.vcf")
+    val intermediatePath = tmpFile("variants.adam")
+    val outputPath = tmpFile("sorted.vcf")
+
+    Vcf2ADAM(Array(inputPath, intermediatePath)).run(sc)
+    ADAM2Vcf(Array(intermediatePath,
+      outputPath,
+      "-sort_on_save",
+      "-single")).run(sc)
+
+    checkFiles(outputPath, copyResource("sorted.vcf"))
+  }
+
+  sparkTest("save a lexicographically sorted file") {
+    val inputPath = copyResource("random.vcf")
+    val intermediatePath = tmpFile("variants.lex.adam")
+    val outputPath = tmpFile("sorted.lex.vcf")
+
+    Vcf2ADAM(Array(inputPath, intermediatePath)).run(sc)
+    ADAM2Vcf(Array(intermediatePath,
+      outputPath,
+      "-sort_lexicographically_on_save",
+      "-single")).run(sc)
+
+    checkFiles(outputPath, copyResource("sorted.lex.vcf"))
+  }
+}
