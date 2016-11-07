@@ -1,0 +1,28 @@
+##fileformat=VCFv4.2
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
+##FORMAT=<ID=FT,Number=1,Type=String,Description="Genotype-level filter">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=MIN_DP,Number=1,Type=Integer,Description="Minimum DP observed within the GVCF block">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=PQ,Number=1,Type=Float,Description="Read-backed phasing quality">
+##FORMAT=<ID=PS,Number=1,Type=Integer,Description="Phase set">
+##FORMAT=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">
+##INFO=<ID=FS,Number=1,Type=Float,Description="Phred-scaled p-value using Fisher's exact test to detect strand bias">
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##INFO=<ID=MQ0,Number=1,Type=Integer,Description="Total Mapping Quality Zero Reads">
+##INFO=<ID=MQRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities">
+##INFO=<ID=ReadPosRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias">
+##INFO=<ID=VQSLOD,Number=1,Type=Float,Description="Log odds ratio of being a true variant versus being false under the trained gaussian mixture model">
+##INFO=<ID=culprit,Number=1,Type=String,Description="The annotation which was the worst performing in the Gaussian mixture model, likely the reason why the variant was filtered out">
+##contig=<ID=1,length=249250621>
+##contig=<ID=2,length=249250621>
+##contig=<ID=13,length=249250621>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA12878	NA12891	NA12892
+1	14397	.	CTGT	C	.	.	.	GT:AD:DP:FT:GQ:PL	0/1:16,4:20:IndelQD:99:120,0,256	0/1:8,2:10:IndelQD:60:60,0,256	0/0:39,0:39:IndelQD:99:0,116,256
+1	14522	.	G	A	.	.	.	GT:AD:DP:FT:GQ:PL	0/1:10,5:15:VQSRTrancheSNP99.95to100.00:99:99,0,256	0/1:2,5:7:VQSRTrancheSNP99.95to100.00:34:128,0,34	0/0:26,0:26:VQSRTrancheSNP99.95to100.00:78:0,78,256
+1	63735	.	CCTA	C	.	.	.	GT:AD:DP:GQ:PL	0/0:27,0:27:79:0,79,256	0/0:40,0:40:99:0,117,256	0/1:23,74:97:99:256,0,256
+13	752721	.	A	G	.	.	.	GT:AD:DP:GQ:PL	1/1:0,27:27:81:256,81,0	1/1:0,19:19:57:256,57,0	1/1:0,22:22:66:256,66,0
+13	752791	.	A	G	.	.	.	GT:AD:DP:GQ:PL:SB	1/1:0,27:27:81:256,81,0:0,1,2,3	1/1:0,19:19:57:256,57,0:4,5,6,7	1/1:0,22:22:66:256,66,0:2,3,4,5
+2	19190	.	GC	G	.	.	.	GT:AD:DP:GQ:PL	0/1:8,14:22:99:256,0,256	0/1:18,13:31:99:256,0,256	0/1:5,15:20:99:256,0,107

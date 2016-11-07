@@ -96,6 +96,61 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   }
 
   /**
+   * Sorts our genome aligned data by reference positions, with contigs ordered
+   * by index.
+   *
+   * @return Returns a new RDD containing sorted data.
+   *
+   * @note Does not support data that is unaligned or where objects align to
+   *   multiple positions.
+   * @see sortLexicographically
+   */
+  def sort(): U = {
+    replaceRdd(rdd.sortBy(elem => {
+      val coveredRegions = getReferenceRegions(elem)
+
+      require(coveredRegions.nonEmpty, "Cannot sort RDD containing an unmapped element %s.".format(
+        elem))
+      require(coveredRegions.size == 1,
+        "Cannot sort RDD containing a multimapped element. %s covers %s.".format(
+          elem, coveredRegions.mkString(",")))
+
+      val contigName = coveredRegions.head.referenceName
+      val sr = sequences(contigName)
+      require(sr.isDefined, "Element %s has contig name %s not in dictionary %s.".format(
+        elem, contigName, sequences))
+      require(sr.get.referenceIndex.isDefined,
+        "Contig %s from sequence dictionary lacks an index.".format(sr))
+
+      (sr.get.referenceIndex.get, coveredRegions.head.start)
+    }))
+  }
+
+  /**
+   * Sorts our genome aligned data by reference positions, with contigs ordered
+   * lexicographically.
+   *
+   * @return Returns a new RDD containing sorted data.
+   *
+   * @note Does not support data that is unaligned or where objects align to
+   *   multiple positions.
+   * @see sort
+   */
+  def sortLexicographically(): U = {
+    replaceRdd(rdd.sortBy(elem => {
+      val coveredRegions = getReferenceRegions(elem)
+
+      require(coveredRegions.nonEmpty, "Cannot sort RDD containing an unmapped element %s.".format(
+        elem))
+      require(coveredRegions.size == 1,
+        "Cannot sort RDD containing a multimapped element. %s covers %s.".format(
+          elem, coveredRegions.mkString(",")))
+
+      coveredRegions.head
+    }))
+  }
+
+  /**
    * Pipes genomic data to a subprocess that runs in parallel using Spark.
    *
    * Files are substituted in to the command with a $x syntax. E.g., to invoke
