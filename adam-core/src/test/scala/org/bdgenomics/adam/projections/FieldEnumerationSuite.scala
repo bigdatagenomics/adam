@@ -28,7 +28,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 class FieldEnumerationSuite extends ADAMFunSuite {
 
   test("Empty projections are illegal") {
-    intercept[AssertionError] {
+    intercept[IllegalArgumentException] {
       Projection()
     }
   }
