@@ -36,6 +36,9 @@ class VariantFieldSuite extends ADAMFunSuite {
       .setNames(ImmutableList.of("rs3948572"))
       .setReferenceAllele("A")
       .setAlternateAllele("T")
+      .setFiltersApplied(true)
+      .setFiltersPassed(false)
+      .setFiltersFailed(ImmutableList.of("filter"))
       .setSomatic(false)
       .build()))
     rdd.saveAsParquet(TestSaveArgs(path))
@@ -47,6 +50,9 @@ class VariantFieldSuite extends ADAMFunSuite {
       names,
       referenceAllele,
       alternateAllele,
+      filtersApplied,
+      filtersPassed,
+      filtersFailed,
       somatic
     )
 
@@ -58,6 +64,9 @@ class VariantFieldSuite extends ADAMFunSuite {
     assert(variants.first.getNames.get(0) === "rs3948572")
     assert(variants.first.getReferenceAllele === "A")
     assert(variants.first.getAlternateAllele === "T")
+    assert(variants.first.getFiltersApplied === true)
+    assert(variants.first.getFiltersPassed === false)
+    assert(variants.first.getFiltersFailed.get(0) === "filter")
     assert(variants.first.getSomatic === false)
   }
 }
