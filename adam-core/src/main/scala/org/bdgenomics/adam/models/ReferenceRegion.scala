@@ -73,6 +73,44 @@ object ReferenceRegion {
   implicit def orderingForOptionalPositions = OptionalRegionOrdering
 
   /**
+   * Creates a reference region that starts at the beginning of a contig.
+   *
+   * @param referenceName The name of the reference contig that this region is
+   *   on.
+   * @param end The end position for this region.
+   * @return Returns a reference region that goes from the start of a contig to
+   *   a user provided end point.
+   */
+  def fromStart(referenceName: String,
+                end: Long): ReferenceRegion = {
+    ReferenceRegion(referenceName, 0L, end)
+  }
+
+  /**
+   * Creates a reference region that has an open end point.
+   *
+   * @param referenceName The name of the reference contig that this region is
+   *   on.
+   * @param start The start position for this region.
+   * @return Returns a reference region that goes from a user provided starting
+   *   point to the end of a contig.
+   */
+  def toEnd(referenceName: String,
+            start: Long): ReferenceRegion = {
+    ReferenceRegion(referenceName, start, Long.MaxValue)
+  }
+
+  /**
+   * Creates a reference region that covers the entirety of a contig.
+   *
+   * @param referenceName The name of the reference contig to cover.
+   * @return Returns a reference region that covers the entirety of a contig.
+   */
+  def all(referenceName: String): ReferenceRegion = {
+    ReferenceRegion(referenceName, 0L, Long.MaxValue)
+  }
+
+  /**
    * Generates a reference region from read data. Returns None if the read is not mapped;
    * else, returns the inclusive region from the start to the end of the read alignment.
    *

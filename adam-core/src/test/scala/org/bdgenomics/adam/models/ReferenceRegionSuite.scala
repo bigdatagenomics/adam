@@ -285,4 +285,27 @@ class ReferenceRegionSuite extends FunSuite {
     assert(padded.start === 0L)
     assert(padded.end === 5L)
   }
+
+  test("can build an open ended reference region") {
+    val openEnded = ReferenceRegion.toEnd("myCtg", 45L)
+
+    assert(!openEnded.overlaps(ReferenceRegion("myCtg", 44L, 45L)))
+    assert(openEnded.overlaps(ReferenceRegion("myCtg", 44L, 46L)))
+    assert(openEnded.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
+  }
+
+  test("can build a reference region with an open start position") {
+    val openStart = ReferenceRegion.fromStart("myCtg", 45L)
+
+    assert(openStart.overlaps(ReferenceRegion("myCtg", 0L, 1L)))
+    assert(openStart.overlaps(ReferenceRegion("myCtg", 44L, 46L)))
+    assert(!openStart.overlaps(ReferenceRegion("myCtg", 45L, 46L)))
+  }
+
+  test("can build a reference region that covers the entirety of a contig") {
+    val all = ReferenceRegion.all("myCtg")
+
+    assert(all.overlaps(ReferenceRegion("myCtg", 0L, 1L)))
+    assert(all.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
+  }
 }
