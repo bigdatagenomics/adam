@@ -50,12 +50,23 @@ trait FieldValue {
   def schema: Schema
 }
 
+/**
+ * Abstract class that all record-specific enumerations extend.
+ *
+ * @param recordSchema The schema that this enumeration represents.
+ */
 abstract class FieldEnumeration(val recordSchema: Schema) extends Enumeration {
 
+  /**
+   * An enumerated field that is part of this schema.
+   */
   class SchemaVal extends Val with FieldValue {
+
+    /**
+     * The schema for the record that this field is in.
+     */
     def schema = recordSchema
   }
 
   protected final def SchemaValue = new SchemaVal()
-
 }
