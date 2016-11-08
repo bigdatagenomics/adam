@@ -628,30 +628,35 @@
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-hadoop2-compat</artifactId>
         <version>1.2.0-cdh5.8.0</version>
+	<scope>provided</scope>
       </dependency>
 
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-server</artifactId>
         <version>1.2.0-cdh5.8.0</version>
+	<scope>provided</scope>
       </dependency>
 
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-it</artifactId>
         <version>1.2.0-cdh5.8.0</version>
+	<scope>provided</scope>
       </dependency>
 
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-client</artifactId>
         <version>1.2.0-cdh5.8.0</version>
+	<scope>provided</scope>
       </dependency>
 
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-spark</artifactId>
         <version>1.2.0-cdh5.8.0</version>
+	<scope>provided</scope>
       </dependency>
 
 
