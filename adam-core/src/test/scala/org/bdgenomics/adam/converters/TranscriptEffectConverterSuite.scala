@@ -19,8 +19,8 @@ package org.bdgenomics.adam.converters
 
 import com.google.common.collect.ImmutableList
 import htsjdk.samtools.ValidationStringency
-import htsjdk.variant.vcf.VCFConstants
 import htsjdk.variant.variantcontext.VariantContext
+import htsjdk.variant.vcf.VCFConstants
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{
   TranscriptEffect,

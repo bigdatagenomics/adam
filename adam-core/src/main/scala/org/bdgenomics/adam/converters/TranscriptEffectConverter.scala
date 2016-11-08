@@ -147,8 +147,8 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
 
     val te = TranscriptEffect.newBuilder()
     setIfNotEmpty(alternateAllele, te.setAlternateAllele(_))
-    // note: annotationImpact is not mapped
-    if (!effects.isEmpty) te.setEffects(effects.asJava)
+    if (effects.nonEmpty) te.setEffects(effects.asJava)
+    // note: annotationImpact is output by SnpEff but is not part of the VCF ANN specification
     setIfNotEmpty(geneName, te.setGeneName(_))
     setIfNotEmpty(geneId, te.setGeneId(_))
     setIfNotEmpty(featureType, te.setFeatureType(_))
@@ -241,16 +241,21 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
       val numOpt = Option(numerator)
       val denomOpt = Option(denominator)
 
-      val sb = StringBuilder.newBuilder
-      numOpt.foreach(n =>
-        {
-          sb.append(n)
-          denomOpt.foreach(d => {
-            sb.append("/")
-            sb.append(d)
-          })
-        })
-      sb.toString
+      (numOpt, denomOpt) match {
+        case (None, None) => {
+          ""
+        }
+        case (Some(n), None) => {
+          "%d".format(n)
+        }
+        case (None, Some(d)) => {
+          log.warn("Incorrect fractional value ?/%d, missing numerator".format(d))
+          ""
+        }
+        case (Some(n), Some(d)) => {
+          "%d/%d".format(n, d)
+        }
+      }
     }
 
     def toAnn(te: TranscriptEffect): String = {
