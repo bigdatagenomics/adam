@@ -396,8 +396,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
    */
-  def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](genomicRdd: GenomicRDD[X, Y])(
-    implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
+  def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](
+    genomicRdd: GenomicRDD[X, Y])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
 
     // key the RDDs and join
     GenericGenomicRDD[(T, X)](InnerBroadcastRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
@@ -423,8 +424,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
    */
-  def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
-    implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
+  def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](
+    genomicRdd: GenomicRDD[X, Y])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
 
     // key the RDDs and join
     GenericGenomicRDD[(Option[T], X)](RightOuterBroadcastRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
@@ -475,9 +477,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
    */
-  def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](genomicRdd: GenomicRDD[X, Y],
-                                                                              optPartitions: Option[Int] = None)(
-                                                                                implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
+  def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](
+    genomicRdd: GenomicRDD[X, Y],
+    optPartitions: Option[Int] = None)(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
 
@@ -508,9 +511,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
    */
-  def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](genomicRdd: GenomicRDD[X, Y],
-                                                                                                optPartitions: Option[Int] = None)(
-                                                                                                  implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
+  def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](
+    genomicRdd: GenomicRDD[X, Y],
+    optPartitions: Option[Int] = None)(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
 
@@ -544,9 +548,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   left RDD that did not overlap a key in the right RDD.
    */
-  def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Option[X]), Z]](genomicRdd: GenomicRDD[X, Y],
-                                                                                               optPartitions: Option[Int] = None)(
-                                                                                                 implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Option[X]), Z] = {
+  def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Option[X]), Z]](
+    genomicRdd: GenomicRDD[X, Y],
+    optPartitions: Option[Int] = None)(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Option[X]), Z] = {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
 
@@ -579,9 +584,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    *   overlapped in the genomic coordinate space, and values that did not
    *   overlap will be paired with a `None`.
    */
-  def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Option[X]), Z]](genomicRdd: GenomicRDD[X, Y],
-                                                                                                       optPartitions: Option[Int] = None)(
-                                                                                                         implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Option[X]), Z] = {
+  def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Option[X]), Z]](
+    genomicRdd: GenomicRDD[X, Y],
+    optPartitions: Option[Int] = None)(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Option[X]), Z] = {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
 
@@ -615,9 +621,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    *   overlapped in the genomic coordinate space, grouped together by
    *   the value they overlapped in the left RDD..
    */
-  def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Iterable[X]), Z]](genomicRdd: GenomicRDD[X, Y],
-                                                                                                      optPartitions: Option[Int] = None)(
-                                                                                                        implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Iterable[X]), Z] = {
+  def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Iterable[X]), Z]](
+    genomicRdd: GenomicRDD[X, Y],
+    optPartitions: Option[Int] = None)(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Iterable[X]), Z] = {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
 
@@ -653,9 +660,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    *   the value they overlapped in the left RDD, and all values from the
    *   right RDD that did not overlap an item in the left RDD.
    */
-  def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Iterable[X]), Z]](genomicRdd: GenomicRDD[X, Y],
-                                                                                                                        optPartitions: Option[Int] = None)(
-                                                                                                                          implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Iterable[X]), Z] = {
+  def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Iterable[X]), Z]](
+    genomicRdd: GenomicRDD[X, Y],
+    optPartitions: Option[Int] = None)(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Iterable[X]), Z] = {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions, genomicRdd)
 
