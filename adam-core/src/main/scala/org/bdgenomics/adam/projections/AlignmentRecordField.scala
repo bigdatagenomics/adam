@@ -24,5 +24,5 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  */
 object AlignmentRecordField extends FieldEnumeration(AlignmentRecord.SCHEMA$) {
 
-  val contigName, start, end, mapq, readName, sequence, mateAlignmentStart, cigar, qual, recordGroupId, recordGroupName, readPaired, properPair, readMapped, mateMapped, readNegativeStrand, mateNegativeStrand, readInFragment, primaryAlignment, failedVendorQualityChecks, duplicateRead, mismatchingPositions, attributes, recordGroupSequencingCenter, recordGroupDescription, recordGroupRunDateEpoch, recordGroupFlowOrder, recordGroupKeySequence, recordGroupLibrary, recordGroupPredictedMedianInsertSize, recordGroupPlatform, recordGroupPlatformUnit, recordGroupSample, mateContigName, origQual, supplementaryAlignment, secondaryAlignment = SchemaValue
+  val readInFragment, contigName, start, oldPosition, end, mapq, readName, sequence, qual, cigar, oldCigar, basesTrimmedFromStart, basesTrimmedFromEnd, readPaired, properPair, readMapped, mateMapped, failedVendorQualityChecks, duplicateRead, readNegativeStrand, mateNegativeStrand, primaryAlignment, secondaryAlignment, supplementaryAlignment, mismatchingPositions, origQual, attributes, recordGroupName, recordGroupSample, mateAlignmentStart, mateAlignmentEnd, mateContigName, inferredInsertSize = SchemaValue
 }
