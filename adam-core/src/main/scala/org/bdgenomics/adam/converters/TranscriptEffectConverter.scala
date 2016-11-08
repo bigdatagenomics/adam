@@ -203,7 +203,8 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
       if (attr == VCFConstants.MISSING_VALUE_v4) {
         None
       } else {
-        val filtered = parseAnn(attr, stringency).filter(_.getAlternateAllele == variant.getAlternateAllele)
+        val filtered = parseAnn(attr, stringency)
+          .filter(_.getAlternateAllele == variant.getAlternateAllele)
         if (filtered.isEmpty) {
           None
         } else {
@@ -213,7 +214,18 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
     }
 
     val attrOpt = Option(vc.getAttributeAsString("ANN", null))
-    attrOpt.flatMap(attr => parseAndFilter(attr))
+    try {
+      attrOpt.flatMap(attr => parseAndFilter(attr))
+    } catch {
+      case t: Throwable => {
+        if (stringency == ValidationStringency.STRICT) {
+          throw t
+        } else if (stringency == ValidationStringency.LENIENT) {
+          log.warn("Could not convert VCF INFO reserved key ANN value to TranscriptEffect, caught %s.".format(t))
+        }
+        None
+      }
+    }
   }
 
   /**

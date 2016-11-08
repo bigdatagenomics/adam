@@ -33,6 +33,8 @@ import scala.collection.JavaConverters._
 class TranscriptEffectConverterSuite extends ADAMFunSuite {
   final val EMPTY = ""
   final val INVALID = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4|1/42|453"
+  final val INVALID_NUMBER = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4|1/42|not a number|"
+  final val INVALID_FRACTION = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|not a number/2|c.-485C>T|||4|1/42|453|"
   final val VALID = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4|1/42|453|"
 
   var variant: Variant = null
@@ -173,6 +175,36 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
     when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID)
 
     intercept[IllegalArgumentException] {
+      TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.STRICT)
+    }
+  }
+
+  test("convert to transcript effect from VCF ANN attribute with invalid number in variant context lenient validation stringency") {
+    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID_NUMBER)
+
+    val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.LENIENT)
+    assert(!transcriptEffects.isDefined)
+  }
+
+  test("convert to transcript effect from VCF ANN attribute with invalid fraction in variant context lenient validation stringency") {
+    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID_FRACTION)
+
+    val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.LENIENT)
+    assert(!transcriptEffects.isDefined)
+  }
+
+  test("convert to transcript effect from VCF ANN attribute with invalid number in variant context strict validation stringency") {
+    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID_NUMBER)
+
+    intercept[NumberFormatException] {
+      TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.STRICT)
+    }
+  }
+
+  test("convert to transcript effect from VCF ANN attribute with invalid fraction in variant context strict validation stringency") {
+    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID_FRACTION)
+
+    intercept[NumberFormatException] {
       TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.STRICT)
     }
   }
