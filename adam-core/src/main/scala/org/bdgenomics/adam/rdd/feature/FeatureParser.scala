@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.features
+package org.bdgenomics.adam.rdd.feature
 
 import htsjdk.samtools.ValidationStringency
 import java.io.File

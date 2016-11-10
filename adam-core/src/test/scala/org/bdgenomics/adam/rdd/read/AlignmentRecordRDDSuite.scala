@@ -28,7 +28,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
-import org.bdgenomics.adam.rdd.features.CoverageRDD
+import org.bdgenomics.adam.rdd.feature.CoverageRDD
 import org.bdgenomics.adam.rdd.variation.{
   VariantContextRDD,
   VCFOutFormatter

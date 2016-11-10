@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.features
+package org.bdgenomics.adam.rdd.feature
 
 import org.apache.parquet.filter2.dsl.Dsl._
 import org.bdgenomics.adam.models.{
