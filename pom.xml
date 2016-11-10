@@ -21,10 +21,10 @@
     <avro.version>1.8.0</avro.version>
     <scala.version>2.10.6</scala.version>
     <scala.version.prefix>2.10</scala.version.prefix>
-    <spark.version>1.6.3</spark.version>
+    <spark.version>1.6.1</spark.version>
     <parquet.version>1.8.1</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
-    <hadoop.version>2.7.3</hadoop.version>
+    <hadoop.version>2.6.0</hadoop.version>
     <hadoop-bam.version>7.7.0</hadoop-bam.version>
     <slf4j.version>1.7.21</slf4j.version>
     <bdg-formats.version>0.9.0</bdg-formats.version>
