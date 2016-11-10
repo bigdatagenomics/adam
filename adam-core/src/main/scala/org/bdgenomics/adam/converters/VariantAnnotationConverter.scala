@@ -276,7 +276,7 @@ private[converters] object VariantAnnotationConverter extends Serializable {
   }
 
   /**
-   * Remaps fields from an htsjdk variant context into a varant annotation.
+   * Remaps fields from an htsjdk variant context into a variant annotation.
    *
    * @param vc htsjdk variant context for a site.
    * @param annotation Pre-populated variant annotation in Avro.
