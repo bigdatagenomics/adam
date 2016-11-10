@@ -187,7 +187,7 @@ case class ReferenceRegion(
   end: Long,
   orientation: Strand = Strand.INDEPENDENT)
     extends Comparable[ReferenceRegion]
-    with Interval {
+    with Interval[ReferenceRegion] {
 
   assert(start >= 0 && end >= start, "Failed when trying to create region %s %d %d on %s strand.".format(referenceName, start, end, orientation))
 
