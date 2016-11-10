@@ -25,7 +25,7 @@ import org.bdgenomics.adam.apis.java.JavaADAMContext;
 import org.bdgenomics.adam.models.RecordGroupDictionary;
 import org.bdgenomics.adam.models.SequenceDictionary;
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.features.FeatureRDD;
+import org.bdgenomics.adam.rdd.feature.FeatureRDD;
 import org.bdgenomics.formats.avro.AlignmentRecord;
 
 /**

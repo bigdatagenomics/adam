@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.features
+package org.bdgenomics.adam.rdd.feature
 
 import org.bdgenomics.formats.avro.{ Dbxref, Feature, OntologyTerm, Strand }
 import scala.collection.JavaConversions._
@@ -24,7 +24,7 @@ import scala.collection.mutable.{ ArrayBuffer, HashMap, MutableList }
 /**
  * Utility methods on features and related classes.
  */
-private[features] object Features {
+private[feature] object Features {
 
   /**
    * Parse a strand from the specified string.

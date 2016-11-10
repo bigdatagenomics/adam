@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.features
+package org.bdgenomics.adam.rdd.feature
 
 import com.google.common.collect.ComparisonChain
 import java.util.Comparator
@@ -107,7 +107,7 @@ object FeatureRDD {
    * @param feature Feature to convert to GTF format.
    * @return Returns this feature as a GTF line.
    */
-  private[features] def toGtf(feature: Feature): String = {
+  private[feature] def toGtf(feature: Feature): String = {
     def escape(entry: (Any, Any)): String = {
       entry._1 + " \"" + entry._2 + "\""
     }
