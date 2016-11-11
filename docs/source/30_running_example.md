@@ -4,7 +4,7 @@ Once you have data converted to ADAM, you can gather statistics from the ADAM fi
 This command will output stats identically to the samtools `flagstat` command, e.g.
 
 ```bash
-$ adam-submit flagstat NA12878_chr20.adam
+$ ./bin/adam-submit flagstat NA12878_chr20.adam
 ```
 Outputs:
 ```
@@ -32,10 +32,3 @@ schema that only materializes the read flags instead of the whole read).
 
 We provide the `adam-submit` and `adam-shell` commands under the `bin` directory. These can
 be used to submit ADAM jobs to a spark cluster, or to run ADAM interactively.
-
-## Running Plugins
-
-ADAM allows users to create plugins via the [ADAMPlugin](https://github.com/bigdatagenomics/adam/blob/master/adam-core/src/main/scala/org/bdgenomics/adam/plugins/ADAMPlugin.scala)
-trait. These plugins are then imported using the Java classpath at runtime. To add to the classpath when
-using appassembler, use the `$CLASSPATH_PREFIX` environment variable. For an example of how to use
-the plugin interface, please see the [adam-plugins repo](https://github.com/heuermh/adam-plugins).

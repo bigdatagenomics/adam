@@ -9,11 +9,11 @@
 * See our snapshots at [https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)
 * Look at our CHANGES file at [https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md)
 
-ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.incubator.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.  
+ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.  
 
 ## Apache Spark
 
-[Apache Spark](http://spark.incubator.apache.org/) allows developers to write algorithms in succinct code that can run fast locally, on an in-house cluster or on Amazon, Google or Microsoft clouds. 
+[Apache Spark](http://spark.apache.org/) allows developers to write algorithms in succinct code that can run fast locally, on an in-house cluster or on Amazon, Google or Microsoft clouds. 
 
 For example, the following code snippet will print the top 10 21-mers in `NA2114` from 1000 Genomes.
 
@@ -61,7 +61,7 @@ $ adam-submit count_kmers \
 
 ## Apache Parquet
 
-[Apache Parquet](http://parquet.incubator.apache.org) is a columnar storage format available to any project in the Hadoop ecosystem, regardless of the choice of data processing framework, data model or programming language.
+[Apache Parquet](http://parquet.apache.org) is a columnar storage format available to any project in the Hadoop ecosystem, regardless of the choice of data processing framework, data model or programming language.
 
 - Parquet compresses legacy genomic formats using standard columnar techniques (e.g. RLE, dictionary encoding). ADAM files are typically ~20% smaller than compressed BAM files.
 - Parquet integrates with:
@@ -195,13 +195,7 @@ The ADAM transform command allows you to mark duplicates, run base quality score
 
 There are also a number of projects built on ADAM, e.g.
 
-- [RNAdam](https://github.com/bigdatagenomics/RNAdam) provides an RNA pipeline on top of ADAM with isoform quantification and fusion transcription detection
 - [Avocado](https://github.com/bigdatagenomics/avocado) is a variant caller built on top of ADAM for germline and somatic calling
-- [PacMin](https://github.com/bigdatagenomics/PacMin) is an assembler for PacBio reads
-- A `Mutect` port is nearly feature complete
-- Read error correction
-- a graphing and genome visualization library
-- [BDG-Services](https://github.com/bigdatagenomics/bdg-services) is a library for accessing a running Spark cluster through web-services or a [Thrift](https://thrift.apache.org/)- interface
-- [Short read assembly](http://www.github.com/fnothaft/xASSEMBLEx)
-- Variant filtration (train model via `MLlib`)
+- [Mango](https://github.com/bigdatagenomics/mango) a library for visualizing large scale genomics data with interactive latencies
+
 
