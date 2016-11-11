@@ -17,7 +17,9 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import htsjdk.variant.vcf.VCFHeaderLine
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.formats.avro.Variant
@@ -27,9 +29,12 @@ import org.bdgenomics.formats.avro.Variant
  *
  * @param rdd Variants.
  * @param sequences A dictionary describing the reference genome.
+ * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
+ *   needed to represent this RDD of Variants.
  */
 case class VariantRDD(rdd: RDD[Variant],
-                      sequences: SequenceDictionary) extends AvroGenomicRDD[Variant, VariantRDD] {
+                      sequences: SequenceDictionary,
+                      @transient headerLines: Seq[VCFHeaderLine] = SupportedHeaderLines.allHeaderLines) extends AvroGenomicRDD[Variant, VariantRDD] {
 
   /**
    * Java-friendly method for saving to Parquet.
