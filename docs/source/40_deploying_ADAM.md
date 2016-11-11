@@ -1,4 +1,6 @@
-# Running ADAM on EC2
+# Deploying ADAM
+
+## Running ADAM on EC2
 
 First, export some variables for running EC2:
 
@@ -51,61 +53,6 @@ master node, e.g.
 `scp -i /path/to/key.pem adam-x.y.jar root@ec2-107-21-175-59.compute-1.amazonaws.com:`
 (don't forget the *colon* at the end).
 
-## Converting BAM to ADAM
+## Running ADAM on CDH 5 and other YARN based Distros
 
-Here's an example of how you can go about converting BAM to ADAM while
-simultaneously loading it onto HDFS.
-
-### Copy to master node
-
-Here's an example script. N.B. this must be *run from the master node*.
-
-```bash
-#!/bin/sh
-adam_jar="/root/adam-0.6.1-SNAPSHOT.jar"
-public_hostname=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
-
-# This is the ephemeral HDFS root. The persistent HDFS root as on port 9010.
-hdfs_root="hdfs://$public_hostname:9000"
-
-time java -Xmx32g -jar $adam_jar bam2adam \
-/mnt/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam \
-$hdfs_root/user/root/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.adam
-```
-
-### Running an ADAM Transformation
-
-Once you have the files on HDFS, you can run ADAM transformations using the
-following script. This script also must be *run from the master node*.
-
-```bash
-#!/bin/sh
-adam_jar="/root/adam-0.6.1-SNAPSHOT.jar"
-public_hostname=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
-# Ephemeral HDFS root
-hdfs_root="hdfs://$public_hostname:9000"
-
-# Adjust the amount of memory used on each worker node bases on the instance type.
-export SPARK_MEM=60g
-export SPARK_CLASSPATH=$adam_jar
-
-# Copy the adam jar to the worker nodes
-./spark-ec2/copy-dir $adam_jar
-
-# E.g. sort an ADAM file by reference
-time java -Xmx4g -jar $adam_jar \
-transform \
--sort_reads \
--spark_master spark://$public_hostname:7077 \
--spark_home /root/spark \
--spark_jar $adam_jar \
-$hdfs_root/user/root/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.adam \
-$hdfs_root/user/root/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.sorted.adam
-```
-
-Of course, you'll want to customize these scripts to support your own genomic
-workflow.
-
-## TODO
-
-* Look at `--ebs-vol-size`. Initial tests show that it doesn't work correctly.
+## Running ADAM on Toil
