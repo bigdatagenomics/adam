@@ -50,10 +50,13 @@ import scala.collection.JavaConversions._
  * @param rdd The underlying RDD of VariantContexts.
  * @param sequences The genome sequence these variants were called against.
  * @param samples The genotyped samples in this RDD of VariantContexts.
+ * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
+ *   needed to represent this RDD of VariantContexts.
  */
 case class VariantContextRDD(rdd: RDD[VariantContext],
                              sequences: SequenceDictionary,
-                             @transient samples: Seq[Sample]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
+                             @transient samples: Seq[Sample],
+                             @transient headerLines: Seq[VCFHeaderLine] = SupportedHeaderLines.allHeaderLines) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
 
   /**
@@ -74,7 +77,9 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    *   annotations attached to this VariantContextRDD.
    */
   def toVariantAnnotationRDD: VariantAnnotationRDD = {
-    VariantAnnotationRDD(rdd.flatMap(_.annotations), sequences)
+    VariantAnnotationRDD(rdd.flatMap(_.annotations),
+      sequences,
+      headerLines)
   }
 
   /**
@@ -83,7 +88,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   def toGenotypeRDD: GenotypeRDD = {
     GenotypeRDD(rdd.flatMap(_.genotypes),
       sequences,
-      samples)
+      samples,
+      headerLines)
   }
 
   /**
@@ -91,7 +97,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    */
   def toVariantRDD: VariantRDD = {
     VariantRDD(rdd.map(_.variant.variant),
-      sequences)
+      sequences,
+      headerLines)
   }
 
   /**
@@ -135,10 +142,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     })
 
     // make header
-    val headerLines: Set[VCFHeaderLine] = (SupportedHeaderLines.infoHeaderLines ++
-      SupportedHeaderLines.formatHeaderLines).toSet
     val header = new VCFHeader(
-      headerLines,
+      headerLines.toSet,
       samples.map(_.getSampleId))
     header.setSequenceDictionary(sequences.toSAMSequenceDictionary)
 

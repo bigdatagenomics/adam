@@ -67,4 +67,9 @@ private[adam] object SupportedHeaderLines {
    * All format lines in VCF format.
    */
   lazy val formatHeaderLines = VariantAnnotationConverter.FORMAT_KEYS.map(_.hdrLine)
+
+  /**
+   * All supported header lines in VCF format.
+   */
+  lazy val allHeaderLines = infoHeaderLines ++ formatHeaderLines
 }

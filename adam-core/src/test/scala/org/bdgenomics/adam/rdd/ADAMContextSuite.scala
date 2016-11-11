@@ -26,6 +26,7 @@ import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignedReadRDD
@@ -148,7 +149,11 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("can read a small .vcf file") {
     val path = testFile("small.vcf")
 
-    val vcs = sc.loadGenotypes(path).toVariantContextRDD.rdd.collect.sortBy(_.position)
+    val gts = sc.loadGenotypes(path)
+    assert(gts.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
+    val vcRdd = gts.toVariantContextRDD
+    assert(vcRdd.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
+    val vcs = vcRdd.rdd.collect.sortBy(_.position)
     assert(vcs.size === 6)
 
     val vc = vcs.head
@@ -163,30 +168,35 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("test.vcf.gz")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
+    assert(vcs.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
   }
 
   sparkTest("can read a BGZF gzipped .vcf file with .gz file extension") {
     val path = testFile("test.vcf.bgzf.gz")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
+    assert(vcs.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
   }
 
   sparkTest("can read a BGZF gzipped .vcf file with .bgz file extension") {
     val path = testFile("test.vcf.bgz")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
+    assert(vcs.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
   }
 
   ignore("can read an uncompressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
     val path = testFile("test.uncompressed.bcf")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
+    assert(vcs.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
   }
 
   ignore("can read a BGZF compressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
     val path = testFile("test.compressed.bcf")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
+    assert(vcs.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
   }
 
   sparkTest("loadIndexedVcf with 1 ReferenceRegion") {
@@ -194,6 +204,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val refRegion = ReferenceRegion("22", 16097643, 16098647)
     val vcs = sc.loadIndexedVcf(path, refRegion)
     assert(vcs.rdd.count == 17)
+    assert(vcs.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
   }
 
   sparkTest("loadIndexedVcf with multiple ReferenceRegions") {
@@ -202,6 +213,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val refRegion2 = ReferenceRegion("22", 16097643, 16098647)
     val vcs = sc.loadIndexedVcf(path, Iterable(refRegion1, refRegion2))
     assert(vcs.rdd.count == 23)
+    assert(vcs.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
   }
 
   (1 to 4) foreach { testNumber =>
@@ -255,6 +267,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("bqsr1.vcf")
 
     val variants = sc.loadVariants(path)
+    assert(variants.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
     assert(variants.rdd.count === 681)
 
     val loc = tmpLocation()
@@ -264,6 +277,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     // the following only reads one row group
     val adamVariants = sc.loadParquetVariants(loc, predicate = Some(pred))
     assert(adamVariants.rdd.count === 1)
+    assert(adamVariants.headerLines.toSet === SupportedHeaderLines.allHeaderLines.toSet)
   }
 
   sparkTest("saveAsParquet with file path") {

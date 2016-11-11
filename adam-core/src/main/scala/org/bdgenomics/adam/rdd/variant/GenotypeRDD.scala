@@ -17,7 +17,9 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import htsjdk.variant.vcf.VCFHeaderLine
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models.{
   ReferencePosition,
   ReferenceRegion,
@@ -36,10 +38,13 @@ import org.bdgenomics.formats.avro.{ Contig, Genotype, Sample }
  * @param rdd Called genotypes.
  * @param sequences A dictionary describing the reference genome.
  * @param samples The samples called.
+ * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
+ *   needed to represent this RDD of Genotypes.
  */
 case class GenotypeRDD(rdd: RDD[Genotype],
                        sequences: SequenceDictionary,
-                       @transient samples: Seq[Sample]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
+                       @transient samples: Seq[Sample],
+                       @transient headerLines: Seq[VCFHeaderLine] = SupportedHeaderLines.allHeaderLines) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
 
   /**
    * Java-friendly method for saving.
@@ -65,7 +70,7 @@ case class GenotypeRDD(rdd: RDD[Genotype],
         }
       }
 
-    VariantContextRDD(vcRdd, sequences, samples)
+    VariantContextRDD(vcRdd, sequences, samples, headerLines)
   }
 
   /**
