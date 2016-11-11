@@ -40,7 +40,7 @@ object VariantContext {
             optAnn: Option[VariantAnnotation]): VariantContext = {
 
     // if the join yielded one or fewer annotation, pick what we've got. else, merge.
-    val ann = (v.databases, optAnn) match {
+    val ann = (v.annotations, optAnn) match {
       case (None, a)          => a
       case (a, None)          => a
       case (Some(a), Some(b)) => Some(mergeAnnotations(a, b))
@@ -143,5 +143,5 @@ class VariantContext(
     val position: ReferencePosition,
     val variant: RichVariant,
     val genotypes: Iterable[Genotype],
-    val databases: Option[VariantAnnotation] = None) {
+    val annotations: Option[VariantAnnotation] = None) {
 }

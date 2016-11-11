@@ -72,7 +72,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    *   annotations attached to this VariantContextRDD.
    */
   def toVariantAnnotationRDD: VariantAnnotationRDD = {
-    VariantAnnotationRDD(rdd.flatMap(_.databases), sequences)
+    VariantAnnotationRDD(rdd.flatMap(_.annotations), sequences)
   }
 
   /**

@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
+import com.google.common.base.Splitter
 import com.google.common.collect.ImmutableList
 import htsjdk.variant.variantcontext.{
   Allele,
@@ -353,7 +354,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    * @return Returns an Avro description of the genotyped site.
    */
   private def createADAMVariant(vc: HtsjdkVariantContext, alt: Option[String]): Variant = {
-    // VCF CHROM, POS, ID, REF and ALT
+    // VCF CHROM, POS, ID, REF, FORMAT, and ALT
     val builder = Variant.newBuilder
       .setContigName(createContig(vc))
       .setStart(vc.getStart - 1 /* ADAM is 0-indexed */ )
@@ -361,6 +362,13 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
       .setReferenceAllele(vc.getReference.getBaseString)
     alt.foreach(builder.setAlternateAllele(_))
     splitIds(vc).foreach(builder.setNames(_))
+    builder.setFiltersApplied(vc.filtersWereApplied)
+    if (vc.filtersWereApplied) {
+      builder.setFiltersPassed(!vc.isFiltered)
+    }
+    if (vc.isFiltered) {
+      builder.setFiltersFailed(new java.util.ArrayList(vc.getFilters));
+    }
     builder.build
   }
 
@@ -418,10 +426,21 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
           .setContigName(contigName)
           .setStart(start)
           .setEnd(end)
-          .setVariantCallingAnnotations(annotations)
           .setSampleId(g.getSampleName)
           .setAlleles(g.getAlleles.map(VariantContextConverter.convertAllele(vc, _)))
           .setPhased(g.isPhased)
+
+        // copy variant calling annotations to update filter attributes
+        // (because the htsjdk Genotype is not available when build is called upstream)
+        val copy = VariantCallingAnnotations.newBuilder(annotations)
+        // htsjdk does not provide a field filtersWereApplied for genotype as it does in VariantContext
+        // we might be able to calculate it by querying the FT FORMAT field value directly
+        copy.setFiltersApplied(true)
+        copy.setFiltersPassed(!g.isFiltered)
+        if (g.isFiltered) {
+          copy.setFiltersFailed(Splitter.on(";").splitToList(g.getFilters))
+        }
+        genotype.setVariantCallingAnnotations(copy.build())
 
         if (g.hasGQ) genotype.setGenotypeQuality(g.getGQ)
         if (g.hasDP) genotype.setReadDepth(g.getDP)
@@ -522,13 +541,6 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
   private def extractVariantCallingAnnotations(vc: HtsjdkVariantContext): VariantCallingAnnotations = {
     val call: VariantCallingAnnotations.Builder = VariantCallingAnnotations.newBuilder
 
-    // VCF QUAL, FILTER and INFO fields
-    if (vc.filtersWereApplied && vc.isFiltered) {
-      call.setVariantIsPassing(false).setVariantFilters(new java.util.ArrayList(vc.getFilters))
-    } else if (vc.filtersWereApplied) {
-      call.setVariantIsPassing(true)
-    }
-
     VariantAnnotationConverter.convert(vc, call.build())
   }
 
@@ -588,8 +600,8 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
 
         if (g.getVariantCallingAnnotations != null) {
           val callAnnotations = g.getVariantCallingAnnotations()
-          if (callAnnotations.getVariantFilters != null) {
-            gb.filters(callAnnotations.getVariantFilters)
+          if (callAnnotations.getFiltersPassed() != null && !callAnnotations.getFiltersPassed()) {
+            gb.filters(callAnnotations.getFiltersFailed())
           }
         }
 

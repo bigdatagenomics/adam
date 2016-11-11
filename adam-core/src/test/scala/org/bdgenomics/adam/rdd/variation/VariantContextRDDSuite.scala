@@ -112,7 +112,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       a0)), sd)
 
     val annotated = vc.joinVariantAnnotations(vda).rdd
-    assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
+    assert(annotated.map(_.annotations.isDefined).reduce { (a, b) => a && b })
   }
 
   sparkTest("don't lose any variants when piping as VCF") {
