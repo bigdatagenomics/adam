@@ -22,6 +22,7 @@ fi
 
 # Generate a PDF of the docs
 pandoc -N --template=template.tex \
+--filter pandoc-citeproc \
 --highlight-style "$highlight_style" \
 --variable mainfont="Georgia" \
 --variable sansfont="Arial" \
@@ -33,10 +34,14 @@ pandoc -N --template=template.tex \
 --variable date="$date" \
 --variable author="$author" \
 --toc \
+--bibliography=source/bibliography.bib \
 source/*.md -s -S -o $pdf_output
 
 # Generate HTML of the docs
 pandoc source/*.md -H style.css -s -S --toc \
+--mathjax \
+--filter pandoc-citeproc \
+--bibliography=source/bibliography.bib \
 --highlight-style "$highlight_style" \
 --variable title="$title" \
 --variable date="$date" \
