@@ -94,7 +94,8 @@ object SnpTable {
   }
 
   def apply(variants: RDD[RichVariant]): SnpTable = {
-    val positions = variants.map(variant => (variant.getContigName, variant.getStart)).collect()
+    val positions = variants.map(variant => (variant.variant.getContigName,
+      variant.variant.getStart)).collect()
     val table = new mutable.HashMap[String, mutable.HashSet[Long]]
     positions.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
     new SnpTable(table.mapValues(_.toSet).toMap)

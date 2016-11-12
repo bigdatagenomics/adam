@@ -20,15 +20,21 @@ package org.bdgenomics.adam.rich
 import org.bdgenomics.formats.avro.{ GenotypeType, GenotypeAllele, Genotype }
 import scala.collection.JavaConversions._
 
-object RichGenotype {
-  implicit def genotypeToRichGenotype(g: Genotype) = new RichGenotype(g)
-  implicit def richGenotypeToGenotype(g: RichGenotype) = g.genotype
-}
+/**
+ * Enriched genotype model.
+ *
+ * @param genotype The genotype to enrich.
+ */
+case class RichGenotype(genotype: Genotype) {
 
-class RichGenotype(val genotype: Genotype) {
+  /**
+   * @return The copy number genotyped.
+   */
+  def copyNumber: Int = genotype.getAlleles.size
 
-  def ploidy: Int = genotype.getAlleles.size
-
+  /**
+   * @return Returns the type of the call (heterozygous or homozygous alt/ref).
+   */
   def getType: GenotypeType = {
 
     // Get the list with the distinct alleles
@@ -108,5 +114,4 @@ class RichGenotype(val genotype: Genotype) {
    * True if the genotype does not contain any alleles that are not called. e.g. './.' or  '0/.'  in VCF
    */
   def isCalled: Boolean = { getType != GenotypeType.NO_CALL }
-
 }

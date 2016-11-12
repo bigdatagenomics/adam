@@ -37,72 +37,46 @@ import scala.collection.immutable.NumericRange
 import scala.math.max
 
 object RichAlignmentRecord {
-  val ILLUMINA_READNAME_REGEX = "[a-zA-Z0-9]+:[0-9]:([0-9]+):([0-9]+):([0-9]+).*".r
 
-  val cigarPattern = Pattern.compile("([0-9]+)([MIDNSHPX=])")
-
-  /**
-   * Parses a CIGAR string, and returns the aligned length with respect to the
-   * reference genome (i.e. skipping clipping, padding, and insertion operators)
-   *
-   * @param cigar The CIGAR string whose reference length is to be measured
-   * @return A non-negative integer, the sum of the MDNX= operators in the CIGAR string.
-   */
-  def referenceLengthFromCigar(cigar: String): Int = {
-    val m = cigarPattern.matcher(cigar)
-    var i = 0
-    var len: Int = 0
-    while (i < cigar.length) {
-      if (m.find(i)) {
-        val op = m.group(2)
-        if ("MDNX=".indexOf(op) != -1) {
-          len += m.group(1).toInt
-        }
-      } else {
-        return len
-      }
-      i = m.end()
-    }
-    len
-  }
-
-  def apply(record: AlignmentRecord) = {
-    new RichAlignmentRecord(record)
-  }
-
+  @deprecated("Use explicit coversion wherever possible in new development.",
+    since = "0.21.0")
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
+
+  @deprecated("Use explicit coversion wherever possible in new development.",
+    since = "0.21.0")
   implicit def richRecordToRecord(record: RichAlignmentRecord): AlignmentRecord = record.record
 }
 
-class IlluminaOptics(val tile: Long, val x: Long, val y: Long) {}
+/**
+ * An enriched version of an Avro AlignmentRecord.
+ *
+ * @param record The underlying read.
+ */
+case class RichAlignmentRecord(record: AlignmentRecord) {
 
-class RichAlignmentRecord(val record: AlignmentRecord) {
-
-  lazy val referenceLength: Int = RichAlignmentRecord.referenceLengthFromCigar(record.getCigar)
-
-  // Returns the quality scores as a list of bytes
+  /**
+   * The quality scores as a list of integers. Assumes Illumina (33) encoding.
+   */
   lazy val qualityScores: Array[Int] = {
     record.getQual.toCharArray.map(q => q - 33)
   }
 
-  // Parse the tags ("key:type:value" triples)
+  /**
+   * On access, parses the attribute tags ("key:type:value" triples) into usable
+   * records.
+   */
   lazy val tags: Seq[Attribute] = AttributeUtils.parseAttributes(record.getAttributes)
 
-  // Parses the readname to Illumina optics information
-  lazy val illuminaOptics: Option[IlluminaOptics] = {
-    try {
-      val RichAlignmentRecord.ILLUMINA_READNAME_REGEX(tile, x, y) = record.getReadName
-      Some(new IlluminaOptics(tile.toInt, x.toInt, y.toInt))
-    } catch {
-      case e: MatchError => None
-    }
-  }
-
+  /**
+   * Parses the text CIGAR representation of the alignment.
+   */
   lazy val samtoolsCigar: Cigar = {
     TextCigarCodec.decode(record.getCigar)
   }
 
-  // Returns the MdTag if the read is mapped, None otherwise
+  /**
+   * The MdTag if the read is mapped, None otherwise
+   */
   lazy val mdTag: Option[MdTag] = {
     if (record.getReadMapped && record.getMismatchingPositions != null) {
       Some(MdTag(record.getMismatchingPositions, record.getStart, TextCigarCodec.decode(record.getCigar)))
@@ -116,47 +90,63 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
       el.getOperator == CigarOperator.HARD_CLIP
   }
 
-  // Returns the position of the unclipped end if the read is mapped, None otherwise
+  /**
+   * The position of the unclipped end if the read is mapped, None otherwise.
+   *
+   * @note The unclipped position assumes that any clipped bases would've been
+   *   aligned as an alignment match.
+   */
   lazy val unclippedEnd: Long = {
     max(0L, samtoolsCigar.getCigarElements.reverse.takeWhile(isClipped).foldLeft(record.getEnd)({
       (pos, cigarEl) => pos + cigarEl.getLength
     }))
   }
 
-  // Returns the position of the unclipped start if the read is mapped, None otherwise.
+  /**
+   * The position of the unclipped start if the read is mapped, None otherwise.
+   *
+   * @note The unclipped position assumes that any clipped bases would've been
+   *   aligned as an alignment match.
+   */
   lazy val unclippedStart: Long = {
     max(0L, samtoolsCigar.getCigarElements.takeWhile(isClipped).foldLeft(record.getStart)({
       (pos, cigarEl) => pos - cigarEl.getLength
     }))
   }
 
-  // Return the 5 prime position.
+  /**
+   * @return The position of the five prime end of the read.
+   */
   def fivePrimePosition: Long = {
     if (record.getReadNegativeStrand) unclippedEnd else unclippedStart
   }
 
+  /**
+   * @return The position of the five prime end of the read, wrapped as a
+   *   reference position.
+   */
   def fivePrimeReferencePosition: ReferencePosition = {
-    try {
-      val strand = if (record.getReadNegativeStrand) {
-        Strand.REVERSE
-      } else {
-        Strand.FORWARD
-      }
-      ReferencePosition(record.getContigName, fivePrimePosition, strand)
-    } catch {
-      case e: Throwable => {
-        println("caught " + e + " when trying to get position for " + record)
-        throw e
-      }
+    val strand = if (record.getReadNegativeStrand) {
+      Strand.REVERSE
+    } else {
+      Strand.FORWARD
     }
+    ReferencePosition(record.getContigName, fivePrimePosition, strand)
   }
 
-  // Does this read overlap with the given reference position?
+  /**
+   * @param pos The reference position to check for overlap.
+   * @return Returns true if this read overlaps the given reference position.
+   */
   def overlapsReferencePosition(pos: ReferencePosition): Boolean = {
     ReferenceRegion.opt(record).exists(_.overlaps(pos))
   }
 
-  // Does this read mismatch the reference at the given reference position?
+  /**
+   * @param pos The reference position to check for a mismatch.
+   * @return Returns true if this read overlaps the given reference position, and
+   *   the base aligned at this position is a mismatch against the reference genome..
+   */
   def isMismatchAtReferencePosition(pos: ReferencePosition): Option[Boolean] = {
     if (mdTag.isEmpty || !overlapsReferencePosition(pos)) {
       None
@@ -165,24 +155,36 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
     }
   }
 
-  // Does this read mismatch the reference at the given offset within the read?
+  /**
+   * @param offset The index into the read sequence.
+   * @return If the read is not aligned, returns a None. Else, returns a wrapped
+   *   boolean stating whether this read is a sequence mismatch against the
+   *   reference at the given offset within the read?
+   */
   def isMismatchAtReadOffset(offset: Int): Option[Boolean] = {
     // careful about offsets that are within an insertion!
     if (referencePositions.isEmpty) {
       None
     } else {
-      readOffsetToReferencePosition(offset).flatMap(pos => isMismatchAtReferencePosition(pos))
+      readOffsetToReferencePosition(offset)
+        .flatMap(pos => isMismatchAtReferencePosition(pos))
     }
   }
 
-  def getReferenceContext(readOffset: Int, referencePosition: Long, cigarElem: CigarElement, elemOffset: Int): ReferenceSequenceContext = {
+  private def getReferenceContext(
+    readOffset: Int,
+    referencePosition: Long,
+    cigarElem: CigarElement,
+    elemOffset: Int): ReferenceSequenceContext = {
     val position = if (record.getReadMapped) {
       Some(ReferencePosition(record.getContigName, referencePosition))
     } else {
       None
     }
 
-    def getReferenceBase(cigarElement: CigarElement, refPos: Long, readPos: Int): Option[Char] = {
+    def getReferenceBase(cigarElement: CigarElement,
+                         refPos: Long,
+                         readPos: Int): Option[Char] = {
       mdTag.flatMap(tag => {
         cigarElement.getOperator match {
           case CigarOperator.M =>
@@ -203,9 +205,11 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
     ReferenceSequenceContext(position, referenceBase, cigarElem, elemOffset)
   }
 
-  lazy val referencePositions: Seq[Option[ReferencePosition]] = referenceContexts.map(ref => ref.flatMap(_.pos))
+  private[rich] lazy val referencePositions: Seq[Option[ReferencePosition]] = {
+    referenceContexts.map(ref => ref.flatMap(_.pos))
+  }
 
-  lazy val referenceContexts: Seq[Option[ReferenceSequenceContext]] = {
+  private[rich] lazy val referenceContexts: Seq[Option[ReferenceSequenceContext]] = {
     if (record.getReadMapped) {
       val resultTuple = samtoolsCigar.getCigarElements.foldLeft((unclippedStart, List[Option[ReferenceSequenceContext]]()))((runningPos, elem) => {
         // runningPos is a tuple, the first element holds the starting position of the next CigarOperator
@@ -234,7 +238,7 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
     }
   }
 
-  def readOffsetToReferencePosition(offset: Int): Option[ReferencePosition] = {
+  private[rich] def readOffsetToReferencePosition(offset: Int): Option[ReferencePosition] = {
     if (record.getReadMapped) {
       referencePositions(offset)
     } else {
@@ -242,12 +246,14 @@ class RichAlignmentRecord(val record: AlignmentRecord) {
     }
   }
 
-  def readOffsetToReferenceSequenceContext(offset: Int): Option[ReferenceSequenceContext] = {
+  @deprecated("don't use ReferenceSequenceContext in new development",
+    since = "0.21.0")
+  private[rich] def readOffsetToReferenceSequenceContext(
+    offset: Int): Option[ReferenceSequenceContext] = {
     if (record.getReadMapped) {
       referenceContexts(offset)
     } else {
       None
     }
   }
-
 }

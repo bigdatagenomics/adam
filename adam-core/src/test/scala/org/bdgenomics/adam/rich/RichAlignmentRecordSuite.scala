@@ -25,16 +25,6 @@ import org.scalatest.exceptions.TestFailedException
 
 class RichAlignmentRecordSuite extends FunSuite {
 
-  test("referenceLengthFromCigar") {
-    assert(referenceLengthFromCigar("3M") === 3)
-    assert(referenceLengthFromCigar("30M") === 30)
-    assert(referenceLengthFromCigar("10Y") === 0) // should abort when it hits an illegal operator
-    assert(referenceLengthFromCigar("10M1Y") === 10) // same
-    assert(referenceLengthFromCigar("10M1I10M") === 20)
-    assert(referenceLengthFromCigar("10M1D10M") === 21)
-    assert(referenceLengthFromCigar("1S10M1S") === 10)
-  }
-
   test("Unclipped Start") {
     val recordWithoutClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("10M").setStart(42L).setEnd(52L).build()
     val recordWithClipping = AlignmentRecord.newBuilder().setReadMapped(true).setCigar("2S8M").setStart(42L).setEnd(50L).build()
@@ -52,19 +42,6 @@ class RichAlignmentRecordSuite extends FunSuite {
     assert(recordWithoutClipping.unclippedEnd == 20L)
     assert(recordWithClipping.unclippedEnd == 20L)
     assert(recordWithHardClipping.unclippedEnd == 20L)
-  }
-
-  test("Illumina Optics") {
-    val nonIlluminaRecord = AlignmentRecord.newBuilder().setReadName("THISISNOTILLUMINA").build()
-    assert(nonIlluminaRecord.illuminaOptics == None)
-    val illuminaRecord = AlignmentRecord.newBuilder().setReadName("613F0AAXX100423:4:86:16767:3088").build()
-    illuminaRecord.illuminaOptics match {
-      case Some(optics) =>
-        assert(optics.tile == 86)
-        assert(optics.x == 16767)
-        assert(optics.y == 3088)
-      case None => throw new TestFailedException("Failed to parse valid Illumina read name", 4)
-    }
   }
 
   test("Cigar Clipping Sequence") {

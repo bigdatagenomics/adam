@@ -19,7 +19,7 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import htsjdk.samtools.{ Cigar, CigarOperator }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.rich.RichCigar._
+import org.bdgenomics.adam.rich.RichCigar
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
@@ -101,7 +101,7 @@ private[consensus] object NormalizationUtils {
       // identify the number of bases to shift by
       val shiftLength = numberOfPositionsToShiftIndel(variant, preceeding)
 
-      shiftIndel(cigar, indelPos, shiftLength)
+      shiftIndel(RichCigar(cigar), indelPos, shiftLength)
     } else {
       cigar
     }
@@ -142,13 +142,13 @@ private[consensus] object NormalizationUtils {
    * @param shifts Number of bases to shift element.
    * @return Cigar that has been shifted as far left as possible.
    */
-  @tailrec private[consensus] def shiftIndel(cigar: Cigar, position: Int, shifts: Int): Cigar = {
+  @tailrec private[consensus] def shiftIndel(cigar: RichCigar, position: Int, shifts: Int): Cigar = {
     // generate new cigar with indel shifted by one
-    val newCigar = new Cigar(cigar.getCigarElements).moveLeft(position)
+    val newCigar = cigar.moveLeft(position)
 
     // if there are no more shifts to do, or if shifting breaks the cigar, return old cigar
     if (shifts == 0 || !newCigar.isWellFormed(cigar.getLength())) {
-      cigar
+      cigar.cigar
     } else {
       shiftIndel(newCigar, position, shifts - 1)
     }

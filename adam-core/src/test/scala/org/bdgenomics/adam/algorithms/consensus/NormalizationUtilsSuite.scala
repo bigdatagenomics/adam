@@ -19,7 +19,7 @@ package org.bdgenomics.adam.algorithms.consensus
 
 import htsjdk.samtools.TextCigarCodec
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.rich.{ RichAlignmentRecord, RichCigar }
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite
 
@@ -67,13 +67,13 @@ class NormalizationUtilsSuite extends FunSuite {
   }
 
   test("shift an indel left by 0 in a cigar") {
-    val cigar = TextCigarCodec.decode("10M10D10M")
+    val cigar = RichCigar(TextCigarCodec.decode("10M10D10M"))
 
-    assert(cigar === NormalizationUtils.shiftIndel(cigar, 1, 0))
+    assert(cigar.cigar === NormalizationUtils.shiftIndel(cigar, 1, 0))
   }
 
   test("shift an indel left by 1 in a cigar") {
-    val cigar = TextCigarCodec.decode("10M10D10M")
+    val cigar = RichCigar(TextCigarCodec.decode("10M10D10M"))
 
     val newCigar = NormalizationUtils.shiftIndel(cigar, 1, 1)
 

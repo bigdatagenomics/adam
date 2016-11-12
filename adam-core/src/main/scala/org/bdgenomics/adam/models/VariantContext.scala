@@ -92,7 +92,7 @@ object VariantContext {
    * @return VariantContext corresponding to the data above.
    */
   def apply(kv: (ReferencePosition, Variant, Iterable[Genotype], Option[VariantAnnotation])): VariantContext = {
-    new VariantContext(kv._1, kv._2, kv._3, kv._4)
+    new VariantContext(kv._1, RichVariant(kv._2), kv._3, kv._4)
   }
 
   /**
@@ -102,7 +102,7 @@ object VariantContext {
    * @return VariantContext corresponding to the Variant
    */
   def apply(v: Variant): VariantContext = {
-    apply((ReferencePosition(v), v, Seq(), None))
+    new VariantContext(ReferencePosition(v), RichVariant(v), Seq(), None)
   }
 
   /**
@@ -135,7 +135,7 @@ object VariantContext {
 
     val variant = genotypes.head.getVariant
 
-    new VariantContext(position, variant, genotypes, None)
+    new VariantContext(position, RichVariant(variant), genotypes, None)
   }
 }
 

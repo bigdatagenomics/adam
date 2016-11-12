@@ -19,32 +19,57 @@ package org.bdgenomics.adam.rich
 
 import org.bdgenomics.formats.avro.{ Genotype, Variant }
 
+/**
+ * Helper object for creating enriched variants.
+ */
 object RichVariant {
+
+  /**
+   * Builds a rich variant from a genotype.
+   *
+   * @param genotype Genotype to extract variant from.
+   * @return Returns a rich variant representing the variant that was genotyped.
+   */
   def genotypeToRichVariant(genotype: Genotype): RichVariant = {
     val variant = Variant.newBuilder(genotype.variant)
       .setContigName(genotype.getContigName)
       .setStart(genotype.getStart)
       .setEnd(genotype.getEnd)
       .build()
-    variantToRichVariant(variant)
+    RichVariant(variant)
   }
-
-  implicit def variantToRichVariant(variant: Variant): RichVariant = new RichVariant(variant)
-  implicit def richVariantToVariant(variant: RichVariant): Variant = variant.variant
 }
 
-class RichVariant(val variant: Variant) {
-  def isSingleNucleotideVariant() = {
+/**
+ * Enriched model for a variant with helper functions.
+ *
+ * @param variant The variant to enrich.
+ */
+case class RichVariant(variant: Variant) {
+
+  /**
+   * @return True if this variant is a SNP.
+   */
+  def isSingleNucleotideVariant = {
     variant.getReferenceAllele.length == 1 && variant.getAlternateAllele.length == 1
   }
 
-  def isMultipleNucleotideVariant() = {
+  /**
+   * @return True if this variant is a MNP.
+   */
+  def isMultipleNucleotideVariant = {
     !isSingleNucleotideVariant && variant.getReferenceAllele.length == variant.getAlternateAllele.length
   }
 
-  def isInsertion() = variant.getReferenceAllele.length < variant.getAlternateAllele.length
+  /**
+   * @return True if this variant is an insertion.
+   */
+  def isInsertion = variant.getReferenceAllele.length < variant.getAlternateAllele.length
 
-  def isDeletion() = variant.getReferenceAllele.length > variant.getAlternateAllele.length
+  /**
+   * @return True if this variant is a deletion.
+   */
+  def isDeletion = variant.getReferenceAllele.length > variant.getAlternateAllele.length
 
   override def hashCode = variant.hashCode
 
