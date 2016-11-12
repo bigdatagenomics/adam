@@ -37,6 +37,7 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.{ FileMerger, MultisampleGenomicRDD }
+import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.Sample
 import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.cli.SaveArgs
@@ -63,7 +64,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    */
   def joinVariantAnnotations(ann: VariantAnnotationRDD): VariantContextRDD = {
     replaceRdd(rdd.keyBy(_.variant)
-      .leftOuterJoin(ann.rdd.keyBy(_.getVariant))
+      .leftOuterJoin(ann.rdd.keyBy(dba => RichVariant(dba.getVariant)))
       .values
       .map(kv => VariantContext(kv._1, kv._2)))
   }

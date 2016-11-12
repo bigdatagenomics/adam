@@ -592,7 +592,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    * @return GATK VariantContext
    */
   def convert(vc: ADAMVariantContext): HtsjdkVariantContext = {
-    val variant: Variant = vc.variant
+    val variant: Variant = vc.variant.variant
     val vcb = new VariantContextBuilder()
       .chr(refSeqToContig.getOrElse(
         variant.getContigName,

@@ -68,13 +68,13 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vcRdd.rdd.count === 1)
 
     val variant = vcRdd.rdd.first.variant
-    assert(variant.getContigName === "chr11")
-    assert(variant.getStart === 17409572)
-    assert(variant.getReferenceAllele === "T")
-    assert(variant.getAlternateAllele === "C")
-    assert(variant.getNames.length === 2)
-    assert(variant.getNames.get(0) === "rs3131972")
-    assert(variant.getNames.get(1) === "rs201888535")
+    assert(variant.variant.getContigName === "chr11")
+    assert(variant.variant.getStart === 17409572)
+    assert(variant.variant.getReferenceAllele === "T")
+    assert(variant.variant.getAlternateAllele === "C")
+    assert(variant.variant.getNames.length === 2)
+    assert(variant.variant.getNames.get(0) === "rs3131972")
+    assert(variant.variant.getNames.get(1) === "rs201888535")
 
     assert(vcRdd.sequences.records.size === 1)
     assert(vcRdd.sequences.records(0).name === "chr11")

@@ -17,11 +17,24 @@
  */
 package org.bdgenomics.adam.rich
 
-import org.bdgenomics.adam.models.ReferencePosition
 import htsjdk.samtools.CigarElement
+import org.bdgenomics.adam.models.ReferencePosition
 
 /**
  * Represents information on the reference relative to a particular residue
+ *
+ * @param pos The position this residue is aligned at.
+ * @param referenceBase The base that is in the reference at this position
+ * @param cigarElement The CIGAR element covering this residue in the
+ *   read-to-reference alignment.
+ * @param cigarElementOffset The position of this base within the CIGAR
+ *   element.
  */
-
-case class ReferenceSequenceContext(pos: Option[ReferencePosition], referenceBase: Option[Char], cigarElement: CigarElement, cigarElementOffset: Int)
+@deprecated("don't use ReferenceSequenceContext in new development",
+  since = "0.21.0")
+private[adam] case class ReferenceSequenceContext(
+    pos: Option[ReferencePosition],
+    referenceBase: Option[Char],
+    cigarElement: CigarElement,
+    cigarElementOffset: Int) {
+}

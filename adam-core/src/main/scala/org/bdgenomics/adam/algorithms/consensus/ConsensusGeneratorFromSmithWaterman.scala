@@ -20,7 +20,6 @@ package org.bdgenomics.adam.algorithms.consensus
 import org.bdgenomics.adam.algorithms.smithwaterman.SmithWatermanConstantGapScoring
 import org.bdgenomics.adam.models.{ MdTag, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
 
@@ -68,7 +67,7 @@ private[adam] class ConsensusGeneratorFromSmithWaterman(
       println("for " + r.record.getReadName + " sw to " + sw.xStart + " with " + sw.cigarX)
 
       // if we realign with fewer than three alignment blocks, then take the new alignment
-      if (sw.cigarX.numAlignmentBlocks <= 2) {
+      if (numAlignmentBlocks(sw.cigarX) <= 2) {
         val mdTag = MdTag(
           r.record.getSequence,
           reference.drop(sw.xStart),

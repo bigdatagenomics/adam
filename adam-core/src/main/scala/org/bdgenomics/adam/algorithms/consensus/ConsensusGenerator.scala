@@ -17,10 +17,12 @@
  */
 package org.bdgenomics.adam.algorithms.consensus
 
+import htsjdk.samtools.{ Cigar, CigarOperator }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rich.RichAlignmentRecord
+import scala.collection.JavaConversions._
 
 /**
  * Trait for generating consensus sequences for INDEL realignment.
@@ -33,6 +35,19 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
  * implement to provide it's consensus sequences to the realigner.
  */
 private[adam] trait ConsensusGenerator extends Serializable {
+
+  /**
+   * @param cigar The CIGAR to process.
+   * @return The number of alignment blocks that are alignment matches.
+   */
+  protected def numAlignmentBlocks(cigar: Cigar): Int = {
+    cigar.getCigarElements.map(element => {
+      element.getOperator match {
+        case CigarOperator.M => 1
+        case _               => 0
+      }
+    }).sum
+  }
 
   /**
    * Generates targets to add to initial set of indel realignment targets, if additional

@@ -81,7 +81,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     assert(adamVC.genotypes.size === 0)
 
-    val variant = adamVC.variant
+    val variant = adamVC.variant.variant
     assert(variant.getContigName === "1")
 
     assert(variant.getReferenceAllele === "A")
@@ -95,7 +95,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVCs.length === 1)
 
     val adamVC = adamVCs.head
-    val variant = adamVC.variant
+    val variant = adamVC.variant.variant
     assert(variant.getContigName === "NC_000001.10")
   }
 
@@ -108,7 +108,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     assert(adamVC.genotypes.size === 0)
 
-    val variant = adamVC.variant
+    val variant = adamVC.variant.variant
     assert(variant.getContigName === "1")
 
     assert(variant.getReferenceAllele === "A")
@@ -145,25 +145,25 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     { // No filters
       val adamVCs = converter.convert(vcb.make)
       val adamVariant = adamVCs.map(_.variant).head
-      assert(adamVariant.getFiltersApplied === false)
-      assert(adamVariant.getFiltersPassed === null)
-      assert(adamVariant.getFiltersFailed.isEmpty)
+      assert(adamVariant.variant.getFiltersApplied === false)
+      assert(adamVariant.variant.getFiltersPassed === null)
+      assert(adamVariant.variant.getFiltersFailed.isEmpty)
     }
     { // PASSing
       vcb.unfiltered.passFilters
       val adamVCs = converter.convert(vcb.make)
       val adamVariant = adamVCs.map(_.variant).head
-      assert(adamVariant.getFiltersApplied === true)
-      assert(adamVariant.getFiltersPassed === true)
-      assert(adamVariant.getFiltersFailed.isEmpty)
+      assert(adamVariant.variant.getFiltersApplied === true)
+      assert(adamVariant.variant.getFiltersPassed === true)
+      assert(adamVariant.variant.getFiltersFailed.isEmpty)
     }
     { // not PASSing
       vcb.unfiltered.filter("LowMQ")
       val adamVCs = converter.convert(vcb.make)
       val adamVariant = adamVCs.map(_.variant).head
-      assert(adamVariant.getFiltersApplied === true)
-      assert(adamVariant.getFiltersPassed === false)
-      assert(adamVariant.getFiltersFailed.sameElements(List("LowMQ")))
+      assert(adamVariant.variant.getFiltersApplied === true)
+      assert(adamVariant.variant.getFiltersPassed === false)
+      assert(adamVariant.variant.getFiltersFailed.sameElements(List("LowMQ")))
     }
   }
 
@@ -269,9 +269,9 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVCs.length === 2)
 
     for ((allele, idx) <- vc.getAlternateAlleles.zipWithIndex) {
-      val adamVC = adamVCs(idx);
-      assert(adamVC.variant.getReferenceAllele === vc.getReference.getBaseString)
-      assert(adamVC.variant.getAlternateAllele === allele.getBaseString)
+      val adamVC = adamVCs(idx)
+      assert(adamVC.variant.variant.getReferenceAllele === vc.getReference.getBaseString)
+      assert(adamVC.variant.variant.getAlternateAllele === allele.getBaseString)
     }
   }
 
@@ -346,7 +346,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVCs.length == 1)
 
     val variant = adamVCs.head.variant
-    assert(variant.getNames.isEmpty)
+    assert(variant.variant.getNames.isEmpty)
   }
 
   test("Convert htsjdk variant context with one ID to ADAM") {
@@ -359,8 +359,8 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVCs.length == 1)
 
     val variant = adamVCs.head.variant
-    assert(variant.getNames.length === 1)
-    assert(variant.getNames.get(0) === "rs3131972")
+    assert(variant.variant.getNames.length === 1)
+    assert(variant.variant.getNames.get(0) === "rs3131972")
   }
 
   test("Convert htsjdk variant context with multiple IDs to ADAM") {
@@ -373,9 +373,9 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamVCs.length == 1)
 
     val variant = adamVCs.head.variant
-    assert(variant.getNames.length === 2)
-    assert(variant.getNames.get(0) === "rs3131972")
-    assert(variant.getNames.get(1) === "rs201888535")
+    assert(variant.variant.getNames.length === 2)
+    assert(variant.variant.getNames.get(0) === "rs3131972")
+    assert(variant.variant.getNames.get(1) === "rs201888535")
   }
 
   test("Convert ADAM variant context with no names to htsjdk") {

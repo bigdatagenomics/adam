@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rich
 
 import htsjdk.samtools.Cigar
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.adam.rich.RichCigar._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite
 
@@ -32,11 +31,11 @@ class RichCigarSuite extends FunSuite {
       .setCigar("10M10D10M")
       .build()
 
-    val newCigar = new Cigar(read.samtoolsCigar.getCigarElements).moveLeft(1)
-    val newCigar2 = new Cigar(newCigar.getCigarElements).moveLeft(1)
+    val newCigar = RichCigar(new Cigar(read.samtoolsCigar.getCigarElements)).moveLeft(1)
+    val newCigar2 = newCigar.moveLeft(1)
 
-    assert(newCigar2.getReadLength == read.samtoolsCigar.getReadLength)
-    assert(newCigar2.toString === "8M10D12M")
+    assert(newCigar2.cigar.getReadLength == read.samtoolsCigar.getReadLength)
+    assert(newCigar2.cigar.toString === "8M10D12M")
   }
 
   test("moving 2 bp from a insertion to a match operator") {
@@ -47,11 +46,11 @@ class RichCigarSuite extends FunSuite {
       .setCigar("10M10I10M")
       .build()
 
-    val newCigar = new Cigar(read.samtoolsCigar.getCigarElements).moveLeft(1)
-    val newCigar2 = new Cigar(newCigar.getCigarElements).moveLeft(1)
+    val newCigar = RichCigar(new Cigar(read.samtoolsCigar.getCigarElements)).moveLeft(1)
+    val newCigar2 = newCigar.moveLeft(1)
 
-    assert(newCigar2.getReadLength == read.samtoolsCigar.getReadLength)
-    assert(newCigar2.toString === "8M10I12M")
+    assert(newCigar2.cigar.getReadLength == read.samtoolsCigar.getReadLength)
+    assert(newCigar2.cigar.toString === "8M10I12M")
   }
 
   test("moving 1 base in a two element cigar") {
@@ -62,10 +61,10 @@ class RichCigarSuite extends FunSuite {
       .setCigar("10M1D")
       .build()
 
-    val newCigar = new Cigar(read.samtoolsCigar.getCigarElements).moveLeft(1)
+    val newCigar = RichCigar(new Cigar(read.samtoolsCigar.getCigarElements)).moveLeft(1)
 
-    assert(newCigar.getReadLength == read.samtoolsCigar.getReadLength)
-    assert(newCigar.toString === "9M1D1M")
+    assert(newCigar.cigar.getReadLength == read.samtoolsCigar.getReadLength)
+    assert(newCigar.cigar.toString === "9M1D1M")
   }
 
   test("move to start of read") {
@@ -76,10 +75,9 @@ class RichCigarSuite extends FunSuite {
       .setCigar("1M1D1M")
       .build()
 
-    val newCigar = new Cigar(read.samtoolsCigar.getCigarElements).moveLeft(1)
+    val newCigar = RichCigar(new Cigar(read.samtoolsCigar.getCigarElements)).moveLeft(1)
 
-    assert(newCigar.getReadLength == read.samtoolsCigar.getReadLength)
-    assert(newCigar.toString === "1D2M")
+    assert(newCigar.cigar.getReadLength == read.samtoolsCigar.getReadLength)
+    assert(newCigar.cigar.toString === "1D2M")
   }
-
 }
