@@ -64,7 +64,6 @@ private[adam] class ConsensusGeneratorFromSmithWaterman(
         wInsert,
         wDelete
       )
-      println("for " + r.record.getReadName + " sw to " + sw.xStart + " with " + sw.cigarX)
 
       // if we realign with fewer than three alignment blocks, then take the new alignment
       if (numAlignmentBlocks(sw.cigarX) <= 2) {
