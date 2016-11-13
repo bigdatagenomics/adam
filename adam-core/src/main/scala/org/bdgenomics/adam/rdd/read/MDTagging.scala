@@ -27,10 +27,9 @@ import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.misc.Logging
 
-case class MDTagging(
+private[read] case class MDTagging(
     reads: RDD[AlignmentRecord],
     @transient referenceFile: ReferenceFile,
-    partitionSize: Long = 1000000,
     overwriteExistingTags: Boolean = false,
     validationStringency: ValidationStringency = ValidationStringency.STRICT) extends Logging {
   @transient val sc = reads.sparkContext
@@ -84,24 +83,13 @@ case class MDTagging(
   }
 }
 
-object MDTagging {
-  def apply(
-    reads: RDD[AlignmentRecord],
-    referenceFile: String,
-    fragmentLength: Long,
-    overwriteExistingTags: Boolean,
-    validationStringency: ValidationStringency): RDD[AlignmentRecord] = {
-    val sc = reads.sparkContext
-    new MDTagging(
-      reads,
-      sc.loadReferenceFile(referenceFile, fragmentLength = fragmentLength),
-      partitionSize = fragmentLength,
-      overwriteExistingTags,
-      validationStringency
-    ).taggedReads
-  }
-}
-
+/**
+ * A class describing an exception where a read's MD tag was recomputed and did
+ * not match the MD tag originally attached to the read.
+ *
+ * @param read The read whose MD tag was recomputed, with original MD tag.
+ * @param mdTag The recomputed MD tag.
+ */
 case class IncorrectMDTagException(read: AlignmentRecord, mdTag: String) extends Exception {
   override def getMessage: String =
     s"Read: ${read.getReadName}, pos: ${read.getContigName}:${read.getStart}, cigar: ${read.getCigar}, existing MD tag: ${read.getMismatchingPositions}, correct MD tag: $mdTag"

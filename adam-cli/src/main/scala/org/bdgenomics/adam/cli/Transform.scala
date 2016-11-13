@@ -316,19 +316,17 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
    *   these tags are recomputed or not. If MD tagging isn't requested, we
    *   return the input RDD.
    */
-  def maybeMdTag(rdd: AlignmentRecordRDD,
+  def maybeMdTag(sc: SparkContext,
+                 rdd: AlignmentRecordRDD,
                  stringencyOpt: Option[ValidationStringency]): AlignmentRecordRDD = {
     if (args.mdTagsReferenceFile != null) {
       log.info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
-      rdd.transform(r => {
-        MDTagging(
-          r,
-          args.mdTagsReferenceFile,
-          fragmentLength = args.mdTagsFragmentSize,
-          overwriteExistingTags = args.mdTagsOverwrite,
-          validationStringency = stringencyOpt.getOrElse(ValidationStringency.STRICT)
-        )
-      })
+      val referenceFile = sc.loadReferenceFile(args.mdTagsReferenceFile,
+        fragmentLength = args.mdTagsFragmentSize)
+      rdd.computeMismatchingPositions(
+        referenceFile,
+        overwriteExistingTags = args.mdTagsOverwrite,
+        validationStringency = stringencyOpt.getOrElse(ValidationStringency.STRICT))
     } else {
       rdd
     }
@@ -360,7 +358,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     val maybeSortedRdd = maybeSort(finalPreprocessedRdd, sl)
 
     // recompute md tags, if requested, and return
-    maybeMdTag(maybeSortedRdd, stringencyOpt)
+    maybeMdTag(sc, maybeSortedRdd, stringencyOpt)
   }
 
   def forceNonParquet(): Boolean = {

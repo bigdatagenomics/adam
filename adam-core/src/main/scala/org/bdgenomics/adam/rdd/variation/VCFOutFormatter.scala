@@ -29,10 +29,13 @@ import org.bdgenomics.adam.rdd.OutFormatter
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 
+/**
+ * OutFormatter that reads streaming VCF.
+ */
 case class VCFOutFormatter() extends OutFormatter[VariantContext] {
 
   /**
-   * Reads alignment records from an input stream. Autodetects SAM/BAM format.
+   * Reads VariantContexts from an input stream. Autodetects VCF format.
    *
    * @param is An InputStream connected to a process we are piping from.
    * @return Returns an iterator of AlignmentRecords read from the stream.

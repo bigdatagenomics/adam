@@ -28,6 +28,9 @@ import org.bdgenomics.adam.models.{
   SAMFileHeaderWritable
 }
 
+/**
+ * InFormatter companion for building an InFormatter that streams SAM.
+ */
 object SAMInFormatter extends AnySAMInFormatterCompanion[SAMInFormatter] {
 
   protected def makeFormatter(header: SAMFileHeaderWritable,
@@ -37,9 +40,10 @@ object SAMInFormatter extends AnySAMInFormatterCompanion[SAMInFormatter] {
   }
 }
 
-case class SAMInFormatter(header: SAMFileHeaderWritable,
-                          recordGroups: RecordGroupDictionary,
-                          converter: AlignmentRecordConverter) extends AnySAMInFormatter[SAMInFormatter] {
+private[read] case class SAMInFormatter private (
+    header: SAMFileHeaderWritable,
+    recordGroups: RecordGroupDictionary,
+    converter: AlignmentRecordConverter) extends AnySAMInFormatter[SAMInFormatter] {
 
   protected val companion = SAMInFormatter
 

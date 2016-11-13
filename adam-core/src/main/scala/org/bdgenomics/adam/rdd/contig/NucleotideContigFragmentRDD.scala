@@ -32,7 +32,7 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
 import scala.collection.JavaConversions._
 import scala.math.max
 
-object NucleotideContigFragmentRDD extends Serializable {
+private[rdd] object NucleotideContigFragmentRDD extends Serializable {
 
   /**
    * Helper function for building a NucleotideContigFragmentRDD when no
@@ -42,7 +42,7 @@ object NucleotideContigFragmentRDD extends Serializable {
    *   this RDD.
    * @return Returns a new NucleotideContigFragmentRDD.
    */
-  private[rdd] def apply(rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
+  def apply(rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
 
     // get sequence dictionary
     val sd = new SequenceDictionary(rdd.flatMap(ncf => {

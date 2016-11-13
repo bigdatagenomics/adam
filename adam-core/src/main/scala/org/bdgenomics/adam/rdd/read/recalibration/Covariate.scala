@@ -27,7 +27,7 @@ import org.bdgenomics.adam.rich.DecadentRead
  * @note Concrete implementations of Covariate should inherit from
  * AbstractCovariate, not Covariate.
  */
-trait Covariate {
+private[recalibration] trait Covariate {
   type Value
 
   /**
@@ -54,7 +54,7 @@ trait Covariate {
   def csvFieldName: String
 }
 
-abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
+private[recalibration] abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
   override type Value = ValueT
 }
 
@@ -64,7 +64,7 @@ abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
  * The values for mandatory covariates are stored in member fields and optional
  * covariate values are in `extras`.
  */
-class CovariateKey(
+private[adam] class CovariateKey(
     val readGroup: String,
     val quality: QualityScore,
     val extras: Seq[Option[Covariate#Value]]) extends Serializable {
@@ -95,7 +95,7 @@ class CovariateKey(
  * Represents the abstract space of all possible CovariateKeys for the given set
  * of Covariates.
  */
-class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
+private[adam] class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
   // Computes the covariate values for all residues in this read
   def apply(read: DecadentRead): Seq[CovariateKey] = {
     // Ask each 'extra' covariate to compute its values for this read
@@ -133,7 +133,7 @@ class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
 
 }
 
-object CovariateSpace {
+private[recalibration] object CovariateSpace {
   def apply(extras: Covariate*): CovariateSpace =
     new CovariateSpace(extras.toIndexedSeq)
 }

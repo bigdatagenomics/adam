@@ -25,7 +25,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.adam.instrumentation.Timers._
 import scala.math.{ exp, log }
 
-class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)
+private[recalibration] class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)
     extends Serializable {
 
   def apply(r: (Option[DecadentRead], Option[AlignmentRecord])): AlignmentRecord = RecalibrateRead.time {
@@ -53,13 +53,13 @@ class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: Qual
   }
 }
 
-object Recalibrator {
+private[recalibration] object Recalibrator {
   def apply(observed: ObservationTable, minAcceptableQuality: QualityScore): Recalibrator = {
     new Recalibrator(RecalibrationTable(observed), minAcceptableQuality)
   }
 }
 
-class RecalibrationTable(
+private[recalibration] class RecalibrationTable(
   // covariates for this recalibration
   val covariates: CovariateSpace,
   // marginal and quality scores by read group,
@@ -169,6 +169,8 @@ object RecalibrationTable {
 
 }
 
-class QualityTable(val table: Map[QualityScore, (Aggregate, ExtrasTables)]) extends Serializable
+private[recalibration] class QualityTable(
+  val table: Map[QualityScore, (Aggregate, ExtrasTables)]) extends Serializable
 
-class ExtrasTables(val extrasTables: IndexedSeq[Map[Option[Covariate#Value], Aggregate]]) extends Serializable
+private[recalibration] class ExtrasTables(
+  val extrasTables: IndexedSeq[Map[Option[Covariate#Value], Aggregate]]) extends Serializable

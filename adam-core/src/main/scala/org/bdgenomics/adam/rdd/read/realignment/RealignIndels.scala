@@ -34,7 +34,7 @@ import scala.collection.immutable.{ NumericRange, TreeSet }
 import scala.collection.mutable
 import scala.util.Random
 
-private[rdd] object RealignIndels extends Serializable with Logging {
+private[read] object RealignIndels extends Serializable with Logging {
 
   /**
    * Realigns an RDD of reads.
@@ -222,7 +222,7 @@ private[rdd] object RealignIndels extends Serializable with Logging {
 
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels._
 
-private[rdd] class RealignIndels(
+private[read] class RealignIndels(
     val consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
     val dataIsSorted: Boolean = false,
     val maxIndelSize: Int = 500,
@@ -497,5 +497,4 @@ private[rdd] class RealignIndels(
       readsMappedToTarget.flatMap(realignTargetGroup).map(r => r.record)
     }
   }
-
 }

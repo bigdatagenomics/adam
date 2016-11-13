@@ -87,6 +87,10 @@ private case class LocatableReferenceRegion(rr: ReferenceRegion) extends Locatab
   def getContig(): String = rr.referenceName
 }
 
+/**
+ * This singleton provides an implicit conversion from a SparkContext to the
+ * ADAMContext, as well as implicit functions for the Pipe API.
+ */
 object ADAMContext {
 
   // conversion functions for pipes
@@ -141,6 +145,11 @@ private class FileFilter(private val name: String) extends PathFilter {
 
 import org.bdgenomics.adam.rdd.ADAMContext._
 
+/**
+ * The ADAMContext provides functions on top of a SparkContext for loading genomic data.
+ *
+ * @param sc The SparkContext to wrap.
+ */
 class ADAMContext private (@transient val sc: SparkContext) extends Serializable with Logging {
 
   /**

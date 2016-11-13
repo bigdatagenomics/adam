@@ -25,11 +25,21 @@ import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
+/**
+ * A trait describing join implementations that are based on a sort-merge join.
+ *
+ * @tparam T The type of the left RDD.
+ * @tparam U The type of the right RDD.
+ * @tparam RT The type of data yielded by the left RDD at the output of the
+ *   join. This may not match T if the join is an outer join, etc.
+ * @tparam RU The type of data yielded by the right RDD at the output of the
+ *   join.
+ */
 sealed trait ShuffleRegionJoin[T, U, RT, RU] extends RegionJoin[T, U, RT, RU] {
 
-  val sd: SequenceDictionary
-  val partitionSize: Long
-  val sc: SparkContext
+  protected val sd: SequenceDictionary
+  protected val partitionSize: Long
+  protected val sc: SparkContext
 
   // Create the set of bins across the genome for parallel processing
   //   partitionSize (in nucleotides) may range from 10000 to 10000000+ 

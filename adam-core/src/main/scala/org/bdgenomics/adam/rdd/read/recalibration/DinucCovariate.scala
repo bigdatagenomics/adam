@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read.recalibration
 import org.bdgenomics.adam.rich.DecadentRead
 
 // TODO: should inherit from something like AbstractCovariate[(DNABase, DNABase)]
-class DinucCovariate extends AbstractCovariate[(Char, Char)] {
+private[adam] class DinucCovariate extends AbstractCovariate[(Char, Char)] {
   def compute(read: DecadentRead): Seq[Option[(Char, Char)]] = {
     val sequence = read.residues.map(_.base)
     if (read.isNegativeRead) {

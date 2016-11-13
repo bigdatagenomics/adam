@@ -27,11 +27,23 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import org.bdgenomics.formats.avro.AlignmentRecord
 
+/**
+ * Companion object that builds an InFormatter that writes data where the metadata
+ * is contained in a SAMFileHeaderWritable.
+ *
+ * @tparam T The type of the underlying InFormatter.
+ */
 trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordRDD, T] {
   protected def makeFormatter(header: SAMFileHeaderWritable,
                               recordGroups: RecordGroupDictionary,
                               converter: AlignmentRecordConverter): T
 
+  /**
+   * Makes an AnySAMInFormatter from a GenomicRDD of AlignmentRecords.
+   *
+   * @param gRdd AlignmentRecordRDD with reference build and record group info.
+   * @return Returns an InFormatter that extends AnySAMInFormatter.
+   */
   def apply(gRdd: AlignmentRecordRDD): T = {
 
     // make a converter
@@ -46,10 +58,26 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
   }
 }
 
+/**
+ * A trait that writes reads using an Htsjdk SAMFileWriter.
+ *
+ * @tparam T The recursive type of the class that implements this trait.
+ */
 trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[AlignmentRecord, AlignmentRecordRDD, T] {
 
+  /**
+   * A serializable form of the SAM File Header.
+   */
   val header: SAMFileHeaderWritable
+
+  /**
+   * A dictionary describing the read groups these reads are from.
+   */
   val recordGroups: RecordGroupDictionary
+
+  /**
+   * A converter from AlignmentRecord to SAMRecord.
+   */
   val converter: AlignmentRecordConverter
 
   protected def makeWriter(os: OutputStream): SAMFileWriter

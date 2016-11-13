@@ -25,6 +25,10 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 
+/**
+ * An OutFormatter that automatically infers whether the piped input is SAM or
+ * BAM. Autodetecting streamed CRAM is not currently supported.
+ */
 class AnySAMOutFormatter extends OutFormatter[AlignmentRecord] {
 
   /**
