@@ -34,7 +34,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  * a second pass over the reads to apply the recalibration and assign adjusted
  * quality scores.
  */
-class BaseQualityRecalibration(
+private class BaseQualityRecalibration(
   val input: RDD[(Option[DecadentRead], Option[AlignmentRecord])],
   val knownSnps: Broadcast[SnpTable],
   val dumpObservationTableFile: Option[String] = None)
@@ -122,7 +122,7 @@ class BaseQualityRecalibration(
   }
 }
 
-object BaseQualityRecalibration {
+private[read] object BaseQualityRecalibration {
   def apply(
     rdd: RDD[AlignmentRecord],
     knownSnps: Broadcast[SnpTable],

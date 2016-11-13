@@ -24,17 +24,39 @@ import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import org.bdgenomics.formats.avro.Fragment
 import org.bdgenomics.utils.misc.Logging
 
+/**
+ * InFormatter companion that creates an InFormatter that writes interleaved
+ * FASTQ.
+ */
 object InterleavedFASTQInFormatter extends InFormatterCompanion[Fragment, FragmentRDD, InterleavedFASTQInFormatter] {
 
+  /**
+   * Hadoop configuration path to check for a boolean value indicating whether
+   * the current or original read qualities should be written. True indicates
+   * to write the original qualities. The default is false.
+   */
   val WRITE_ORIGINAL_QUAL = "org.bdgenomics.adam.rdd.fragment.InterleavedFASTQInFormatter.writeOriginalQual"
+
+  /**
+   * Hadoop configuration path to check for a boolean value indicating whether
+   * to write the "/1" "/2" suffixes to the read name that indicate whether a
+   * read is first or second in a pair. Default is false (no suffixes).
+   */
   val WRITE_SUFFIXES = "org.bdgenomics.adam.rdd.fragment.InterleavedFASTQInFormatter.writeSuffixes"
 
+  /**
+   * Builds an InterleavedFASTQInFormatter to write Interleaved FASTQ.
+   *
+   * @param gRdd GenomicRDD of Fragments. Used to get HadoopConfiguration.
+   * @return Returns a new Interleaved FASTQ InFormatter.
+   */
   def apply(gRdd: FragmentRDD): InterleavedFASTQInFormatter = {
     new InterleavedFASTQInFormatter(gRdd.rdd.context.hadoopConfiguration)
   }
 }
 
-class InterleavedFASTQInFormatter(conf: Configuration) extends InFormatter[Fragment, FragmentRDD, InterleavedFASTQInFormatter] with Logging {
+private[fragment] class InterleavedFASTQInFormatter private (
+    conf: Configuration) extends InFormatter[Fragment, FragmentRDD, InterleavedFASTQInFormatter] with Logging {
 
   protected val companion = InterleavedFASTQInFormatter
   private val converter = new AlignmentRecordConverter

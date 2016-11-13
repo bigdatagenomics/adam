@@ -26,7 +26,7 @@ import scala.collection.mutable
  *
  * This is used in ObservationTable, which maps from CovariateKey to Observation.
  */
-class Observation(val total: Long, val mismatches: Long) extends Serializable {
+private[adam] class Observation(val total: Long, val mismatches: Long) extends Serializable {
   require(mismatches >= 0 && mismatches <= total)
 
   def this(that: Observation) = this(that.total, that.mismatches)
@@ -76,13 +76,13 @@ class Observation(val total: Long, val mismatches: Long) extends Serializable {
 
 }
 
-object Observation {
+private[recalibration] object Observation {
   val empty = new Observation(0, 0)
 
   def apply(isMismatch: Boolean) = new Observation(1, if (isMismatch) 1 else 0)
 }
 
-class Aggregate private (
+private[adam] class Aggregate private (
     total: Long, // number of total observations
     mismatches: Long, // number of mismatches observed
     val expectedMismatches: Double // expected number of mismatches based on reported quality scores
@@ -100,7 +100,7 @@ class Aggregate private (
     )
 }
 
-object Aggregate {
+private[recalibration] object Aggregate {
   val empty: Aggregate = new Aggregate(0, 0, 0)
 
   def apply(key: CovariateKey, value: Observation) =
@@ -110,7 +110,7 @@ object Aggregate {
 /**
  * Table containing the empirical frequency of mismatches for each set of covariate values.
  */
-class ObservationTable(
+private[adam] class ObservationTable(
     val space: CovariateSpace,
     val entries: Map[CovariateKey, Observation]) extends Serializable {
 
@@ -128,7 +128,7 @@ class ObservationTable(
   def csvHeader: Seq[String] = space.csvHeader ++ Seq("TotalCount", "MismatchCount", "EmpiricalQ", "IsSkipped")
 }
 
-class ObservationAccumulator(val space: CovariateSpace) extends Serializable {
+private[adam] class ObservationAccumulator(val space: CovariateSpace) extends Serializable {
   private val entries = mutable.HashMap[CovariateKey, Observation]()
 
   def +=(that: (CovariateKey, Observation)): ObservationAccumulator = ObservationAccumulatorSeq.time {
@@ -150,6 +150,6 @@ class ObservationAccumulator(val space: CovariateSpace) extends Serializable {
   def result: ObservationTable = new ObservationTable(space, entries.toMap)
 }
 
-object ObservationAccumulator {
+private[recalibration] object ObservationAccumulator {
   def apply(space: CovariateSpace) = new ObservationAccumulator(space)
 }

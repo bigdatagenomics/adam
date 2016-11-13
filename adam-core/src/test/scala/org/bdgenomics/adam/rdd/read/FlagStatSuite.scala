@@ -15,26 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.cli
+package org.bdgenomics.adam.rdd.read
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.FlagStat._
-import org.bdgenomics.adam.rdd.read.{ DuplicateMetrics, FlagStatMetrics }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
-import org.bdgenomics.utils.cli.Args4j
 
 class FlagStatSuite extends ADAMFunSuite {
 
   sparkTest("Standard FlagStat test") {
 
-    val inputpath = testFile("NA12878.sam")
-    val argLine = "%s".format(inputpath).split("\\s+")
-
-    val args: FlagStatArgs = Args4j.apply[FlagStatArgs](argLine)
-
+    val inputPath = testFile("NA12878.sam")
     val projection = Projection(
       AlignmentRecordField.readMapped,
       AlignmentRecordField.mateMapped,
@@ -50,9 +43,9 @@ class FlagStatSuite extends ADAMFunSuite {
       AlignmentRecordField.mapq,
       AlignmentRecordField.failedVendorQualityChecks)
 
-    val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(args.inputPath, projection = Some(projection)).rdd
+    val adamFile: RDD[AlignmentRecord] = sc.loadAlignments(inputPath, projection = Some(projection)).rdd
 
-    val (failedVendorQuality, passedVendorQuality) = apply(adamFile)
+    val (failedVendorQuality, passedVendorQuality) = FlagStat(adamFile)
 
     def percent(fraction: Long, total: Long) = if (total == 0) 0.0 else 100.00 * fraction.toFloat / total
 

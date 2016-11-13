@@ -25,13 +25,13 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.GenomicRDD
-
 import scala.annotation.tailrec
 
 /**
- * An RDD containing Coverage.
+ * An RDD containing Coverage data.
  *
- * @param rdd Coverage
+ * @param rdd An RDD containing data describing how many reads cover a genomic
+ *   locus/region.
  * @param sequences A dictionary describing the reference genome.
  */
 case class CoverageRDD(rdd: RDD[Coverage],

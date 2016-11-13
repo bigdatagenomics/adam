@@ -80,9 +80,7 @@ class MDTaggingSuite extends ADAMFunSuite {
       )
     }
 
-    for (i <- List(1, 10)) {
-      check(MDTagging(reads, ReferenceContigMap(makeFrags(fs: _*)), partitionSize = i))
-    }
+    check(MDTagging(reads, ReferenceContigMap(makeFrags(fs: _*))))
   }
 
   sparkTest("test adding MDTags over boundary") {

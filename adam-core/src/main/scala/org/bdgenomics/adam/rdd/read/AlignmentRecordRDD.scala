@@ -57,6 +57,7 @@ import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.misc.Logging
 import org.seqdoop.hadoop_bam._
@@ -597,6 +598,30 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
     lodThreshold: Double = 5.0,
     maxTargetSize: Int = 3000): AlignmentRecordRDD = RealignIndelsInDriver.time {
     replaceRdd(RealignIndels(rdd, consensusModel, isSorted, maxIndelSize, maxConsensusNumber, lodThreshold))
+  }
+
+  /**
+   * Computes the mismatching positions field (SAM "MD" tag).
+   *
+   * @param referenceFile A reference file that can be broadcast to all nodes.
+   * @param overwriteExistingTags If true, overwrites the MD tags on reads where
+   *   it is already populated. If false, we only tag reads that are currently
+   *   missing an MD tag. Default is false.
+   * @param validationStringency If we are recalculating existing tags and we
+   *   find that the MD tag that was previously on the read doesn't match our
+   *   new tag, LENIENT will log a warning message, STRICT will throw an
+   *   exception, and SILENT will ignore. Default is LENIENT.
+   * @return Returns a new AlignmentRecordRDD where all reads have the
+   *   mismatchingPositions field populated.
+   */
+  def computeMismatchingPositions(
+    referenceFile: ReferenceFile,
+    overwriteExistingTags: Boolean = false,
+    validationStringency: ValidationStringency = ValidationStringency.LENIENT): AlignmentRecordRDD = {
+    replaceRdd(MDTagging(rdd,
+      referenceFile,
+      overwriteExistingTags = overwriteExistingTags,
+      validationStringency = validationStringency).taggedReads)
   }
 
   /**

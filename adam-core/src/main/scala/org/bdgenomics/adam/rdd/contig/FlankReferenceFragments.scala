@@ -23,8 +23,24 @@ import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ReferencePartitioner
 import org.bdgenomics.formats.avro.NucleotideContigFragment
 
+/**
+ * Object that extends all of the fragments in an RDD of contig fragments
+ * with the sequence flanking said fragment.
+ */
 private[contig] object FlankReferenceFragments extends Serializable {
 
+  /**
+   * Adds flanks to sequence fragments in an RDD.
+   *
+   * Assumes that after sorting, all fragments are contiguous.
+   *
+   * @param rdd The RDD to flank.
+   * @param sd The sequence dictionary describing all contigs in this sequence
+   *   dictionary.
+   * @param flankSize The size of flanking sequence to add to each fragment.
+   * @return Returns a new RDD where each fragment has been extended with
+   *   flanking sequence.
+   */
   def apply(
     rdd: RDD[NucleotideContigFragment],
     sd: SequenceDictionary,

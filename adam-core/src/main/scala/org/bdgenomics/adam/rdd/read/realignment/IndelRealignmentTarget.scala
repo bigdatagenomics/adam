@@ -28,7 +28,7 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import scala.collection.JavaConversions._
 import scala.collection.immutable.TreeSet
 
-object ZippedTargetOrdering extends Ordering[(IndelRealignmentTarget, Int)] {
+private[realignment] object ZippedTargetOrdering extends Ordering[(IndelRealignmentTarget, Int)] {
 
   /**
    * Order two indel realignment targets by earlier starting position.
@@ -42,7 +42,7 @@ object ZippedTargetOrdering extends Ordering[(IndelRealignmentTarget, Int)] {
   }
 }
 
-object TargetOrdering extends Ordering[IndelRealignmentTarget] {
+private[realignment] object TargetOrdering extends Ordering[IndelRealignmentTarget] {
 
   /**
    * Order two indel realignment targets by earlier starting position.
@@ -88,7 +88,7 @@ object TargetOrdering extends Ordering[IndelRealignmentTarget] {
   }
 }
 
-object IndelRealignmentTarget {
+private[realignment] object IndelRealignmentTarget {
 
   /**
    * Generates 1+ indel realignment targets from a single read.
@@ -136,7 +136,7 @@ object IndelRealignmentTarget {
   }
 }
 
-class IndelRealignmentTargetSerializer extends Serializer[IndelRealignmentTarget] {
+private[adam] class IndelRealignmentTargetSerializer extends Serializer[IndelRealignmentTarget] {
 
   def write(kryo: Kryo, output: Output, obj: IndelRealignmentTarget) = {
     output.writeString(obj.readRange.referenceName)
@@ -161,7 +161,7 @@ class IndelRealignmentTargetSerializer extends Serializer[IndelRealignmentTarget
   }
 }
 
-class IndelRealignmentTarget(
+private[adam] class IndelRealignmentTarget(
     val variation: Option[ReferenceRegion],
     val readRange: ReferenceRegion) extends Logging {
 
@@ -196,7 +196,7 @@ class IndelRealignmentTarget(
   }
 }
 
-class TargetSetSerializer extends Serializer[TargetSet] {
+private[adam] class TargetSetSerializer extends Serializer[TargetSet] {
 
   val irts = new IndelRealignmentTargetSerializer()
 
@@ -217,7 +217,7 @@ class TargetSetSerializer extends Serializer[TargetSet] {
   }
 }
 
-class ZippedTargetSetSerializer extends Serializer[ZippedTargetSet] {
+private[adam] class ZippedTargetSetSerializer extends Serializer[ZippedTargetSet] {
 
   val irts = new IndelRealignmentTargetSerializer()
 
@@ -241,15 +241,15 @@ class ZippedTargetSetSerializer extends Serializer[ZippedTargetSet] {
   }
 }
 
-object TargetSet {
+private[realignment] object TargetSet {
   def apply(): TargetSet = {
     new TargetSet(TreeSet[IndelRealignmentTarget]()(TargetOrdering))
   }
 }
 
 // These two case classes are needed to get around some serialization issues
-case class TargetSet(set: TreeSet[IndelRealignmentTarget]) extends Serializable {
+private[adam] case class TargetSet(set: TreeSet[IndelRealignmentTarget]) extends Serializable {
 }
 
-case class ZippedTargetSet(set: TreeSet[(IndelRealignmentTarget, Int)]) extends Serializable {
+private[adam] case class ZippedTargetSet(set: TreeSet[(IndelRealignmentTarget, Int)]) extends Serializable {
 }

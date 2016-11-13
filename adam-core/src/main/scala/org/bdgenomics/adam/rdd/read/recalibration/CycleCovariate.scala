@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read.recalibration
 import org.bdgenomics.adam.rich.DecadentRead
 
 // This is based on the CycleCovariate in GATK 1.6.
-class CycleCovariate extends AbstractCovariate[Int] {
+private[adam] class CycleCovariate extends AbstractCovariate[Int] {
   def compute(read: DecadentRead): Seq[Option[Int]] = {
     val (initial, increment) = initialization(read)
     read.residues.indices.map(pos => Some(initial + increment * pos))

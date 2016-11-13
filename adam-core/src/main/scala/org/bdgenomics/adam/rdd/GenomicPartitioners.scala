@@ -41,15 +41,15 @@ case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Lon
   log.info("Have genomic position partitioner with " + numParts + " partitions, and sequences:")
   seqLengths.foreach(kv => log.info("Contig " + kv._1 + " with length " + kv._2))
 
-  val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
-  val lengths: Seq[Long] = names.map(seqLengths(_))
+  private val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
+  private val lengths: Seq[Long] = names.map(seqLengths(_))
   private val cumuls: Seq[Long] = lengths.scan(0L)(_ + _)
 
   // total # of bases in the sequence dictionary
-  val totalLength: Long = lengths.sum
+  private val totalLength: Long = lengths.sum
 
   // referenceName -> cumulative length before this sequence (using seqDict.records as the implicit ordering)
-  val cumulativeLengths: Map[String, Long] = Map(
+  private[rdd] val cumulativeLengths: Map[String, Long] = Map(
     names.zip(cumuls): _*
   )
 
@@ -57,11 +57,28 @@ case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Lon
    * 'parts' is the total number of partitions for non-UNMAPPED ReferencePositions --
    * the total number of partitions (see numPartitions, below) is parts+1, with the
    * extra partition being included for handling ReferencePosition.UNMAPPED
+   *
+   * @see numPartitions
    */
   private val parts = min(numParts, totalLength).toInt
 
+  /**
+   * This is the total number of partitions for both mapped and unmapped
+   * positions. All unmapped positions go into the last partition.
+   *
+   * @see parts
+   */
   override def numPartitions: Int = parts + 1
 
+  /**
+   * Computes the partition for a key.
+   *
+   * @param key A key to compute the partition for.
+   * @return The partition that this key belongs to.
+   *
+   * @throws IllegalArgumentException if the key is not a ReferencePosition, or
+   *   (ReferencePosition, _) tuple.
+   */
   override def getPartition(key: Any): Int = {
 
     // This allows partitions that cross chromosome boundaries.
@@ -101,9 +118,11 @@ case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Lon
   override def toString(): String = {
     return "%d parts, %d partitions, %s" format (parts, numPartitions, cumulativeLengths.toString)
   }
-
 }
 
+/**
+ * Helper for creating genomic position partitioners.
+ */
 object GenomicPositionPartitioner {
 
   /**
@@ -120,7 +139,17 @@ object GenomicPositionPartitioner {
     seqDict.records.toSeq.map(rec => (rec.name, rec.length)).toMap
 }
 
-case class GenomicRegionPartitioner(partitionSize: Long, seqLengths: Map[String, Long], start: Boolean = true) extends Partitioner with Logging {
+/**
+ * A partitioner for ReferenceRegion-keyed data.
+ *
+ * @param partitionSize The number of bases per partition.
+ * @param seqLengths A map between contig names and contig lengths.
+ * @param start If true, use the start position (instead of the end position) to
+ *   decide which partition a key belongs to.
+ */
+case class GenomicRegionPartitioner(partitionSize: Long,
+                                    seqLengths: Map[String, Long],
+                                    start: Boolean = true) extends Partitioner with Logging {
   private val names: Seq[String] = seqLengths.keys.toSeq.sortWith(_ < _)
   private val lengths: Seq[Long] = names.map(seqLengths(_))
   private val parts: Seq[Int] = lengths.map(v => round(ceil(v.toDouble / partitionSize)).toInt)
@@ -138,8 +167,19 @@ case class GenomicRegionPartitioner(partitionSize: Long, seqLengths: Map[String,
     (cumulParts(refReg.referenceName) + pos / partitionSize).toInt
   }
 
+  /**
+   * @return The number of partitions described by this partitioner. Roughly the
+   *   size of the genome divided by the partition length.
+   */
   override def numPartitions: Int = parts.sum
 
+  /**
+   * @param key The key to get the partition index for.
+   * @return The partition that a key should map to.
+   *
+   * @throws IllegalArgumentException Throws an exception if the data is not a
+   *   ReferenceRegion or a tuple of (ReferenceRegion, _).
+   */
   override def getPartition(key: Any): Int = {
     key match {
       case region: ReferenceRegion => {
@@ -153,6 +193,9 @@ case class GenomicRegionPartitioner(partitionSize: Long, seqLengths: Map[String,
   }
 }
 
+/**
+ * Helper object for creating GenomicRegionPartitioners.
+ */
 object GenomicRegionPartitioner {
 
   /**

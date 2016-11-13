@@ -34,15 +34,26 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
 import scala.collection.JavaConversions._
 
+/**
+ * InFormatter companion that builds a VCFInFormatter to write VCF to a pipe.
+ */
 object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContextRDD, VCFInFormatter] {
 
+  /**
+   * Apply method for building the VCFInFormatter from a VariantContextRDD.
+   *
+   * @param gRdd VariantContextRDD to build VCF header from.
+   * @return A constructed VCFInFormatter with all needed metadata to write a
+   *   VCF header.
+   */
   def apply(gRdd: VariantContextRDD): VCFInFormatter = {
     VCFInFormatter(gRdd.sequences, gRdd.samples.map(_.getSampleId))
   }
 }
 
-case class VCFInFormatter(sequences: SequenceDictionary,
-                          samples: Seq[String]) extends InFormatter[VariantContext, VariantContextRDD, VCFInFormatter] {
+private[variation] case class VCFInFormatter private (
+    sequences: SequenceDictionary,
+    samples: Seq[String]) extends InFormatter[VariantContext, VariantContextRDD, VCFInFormatter] {
 
   protected val companion = VCFInFormatter
 
@@ -57,7 +68,7 @@ case class VCFInFormatter(sequences: SequenceDictionary,
    */
   def write(os: OutputStream, iter: Iterator[VariantContext]) {
 
-    // create a sam file writer connected to the output stream
+    // create a vcf writer connected to the output stream
     val writer = new VariantContextWriterBuilder()
       .setOutputStream(os)
       .clearIndexCreator()

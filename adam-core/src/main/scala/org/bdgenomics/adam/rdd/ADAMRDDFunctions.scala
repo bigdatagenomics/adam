@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.rdd
 
 import java.util.logging.Level
-
 import java.io.OutputStream
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileWriter
@@ -41,9 +40,32 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.parquet.hadoop.util.ContextUtil
 import scala.reflect.ClassTag
 
+/**
+ * Argument configuration for saving any output format.
+ */
 trait ADAMSaveAnyArgs extends SaveArgs {
+
+  /**
+   * If true and saving as FASTQ, we will sort by read name.
+   */
   var sortFastqOutput: Boolean
+
+  /**
+   * If true and saving as a legacy format, we will write shards so that they
+   * can be merged into a single file.
+   *
+   * @see deferMerging
+   */
   var asSingleFile: Boolean
+
+  /**
+   * If true and asSingleFile is true, we will not merge the shards once we
+   * write them, and will leave them for the user to merge later. If false and
+   * asSingleFile is true, then we will merge the shards on write. If
+   * asSingleFile is false, this is ignored.
+   *
+   * @see asSingleFile
+   */
   var deferMerging: Boolean
 }
 
@@ -104,6 +126,17 @@ private[rdd] abstract class ADAMRDDFunctions[T <% IndexedRecord: Manifest] exten
     )
   }
 
+  /**
+   * Saves an RDD of Avro data to Parquet.
+   *
+   * @param filePath The path to save the file to.
+   * @param blockSize The size in bytes of blocks to write.
+   * @param pageSize The size in bytes of pages to write.
+   * @param compressCodec The compression codec to apply to pages.
+   * @param disableDictionaryEncoding If false, dictionary encoding is used. If
+   *   true, delta encoding is used.
+   * @param schema The schema to set.
+   */
   protected def saveRddAsParquet(
     filePath: String,
     blockSize: Int = 128 * 1024 * 1024,
@@ -138,10 +171,26 @@ private[rdd] abstract class ADAMRDDFunctions[T <% IndexedRecord: Manifest] exten
   since = "0.20.0")
 private[rdd] class ConcreteADAMRDDFunctions[T <% IndexedRecord: Manifest](val rdd: RDD[T]) extends ADAMRDDFunctions[T] {
 
+  /**
+   * Saves an RDD of Avro data to Parquet.
+   *
+   * @param args The output format configuration to use when saving the data.
+   */
   def saveAsParquet(args: SaveArgs): Unit = {
     saveRddAsParquet(args)
   }
 
+  /**
+   * Saves an RDD of Avro data to Parquet.
+   *
+   * @param filePath The path to save the file to.
+   * @param blockSize The size in bytes of blocks to write.
+   * @param pageSize The size in bytes of pages to write.
+   * @param compressCodec The compression codec to apply to pages.
+   * @param disableDictionaryEncoding If false, dictionary encoding is used. If
+   *   true, delta encoding is used.
+   * @param schema The schema to set.
+   */
   def saveAsParquet(
     filePath: String,
     blockSize: Int = 128 * 1024 * 1024,

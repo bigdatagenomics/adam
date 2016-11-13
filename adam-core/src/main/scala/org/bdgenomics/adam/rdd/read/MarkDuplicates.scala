@@ -154,5 +154,4 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
       scoreBucket(x._2) - scoreBucket(y._2)
     }
   }
-
 }

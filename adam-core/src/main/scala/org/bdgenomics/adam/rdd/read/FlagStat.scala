@@ -20,12 +20,12 @@ package org.bdgenomics.adam.rdd.read
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-object FlagStatMetrics {
+private[read] object FlagStatMetrics {
   val emptyFailedQuality = new FlagStatMetrics(0, DuplicateMetrics.empty, DuplicateMetrics.empty, 0, 0, 0, 0, 0, 0, 0, 0, 0, true)
   val emptyPassedQuality = new FlagStatMetrics(0, DuplicateMetrics.empty, DuplicateMetrics.empty, 0, 0, 0, 0, 0, 0, 0, 0, 0, false)
 }
 
-object DuplicateMetrics {
+private[read] object DuplicateMetrics {
   val empty = new DuplicateMetrics(0, 0, 0, 0)
 
   def apply(record: AlignmentRecord): (DuplicateMetrics, DuplicateMetrics) = {
@@ -50,7 +50,7 @@ object DuplicateMetrics {
   }
 }
 
-case class DuplicateMetrics(total: Long, bothMapped: Long, onlyReadMapped: Long, crossChromosome: Long) {
+private[adam] case class DuplicateMetrics(total: Long, bothMapped: Long, onlyReadMapped: Long, crossChromosome: Long) {
   def +(that: DuplicateMetrics): DuplicateMetrics = {
     new DuplicateMetrics(
       total + that.total,
@@ -61,11 +61,11 @@ case class DuplicateMetrics(total: Long, bothMapped: Long, onlyReadMapped: Long,
   }
 }
 
-case class FlagStatMetrics(total: Long, duplicatesPrimary: DuplicateMetrics, duplicatesSecondary: DuplicateMetrics,
-                           mapped: Long, pairedInSequencing: Long,
-                           read1: Long, read2: Long, properlyPaired: Long, withSelfAndMateMapped: Long,
-                           singleton: Long, withMateMappedToDiffChromosome: Long,
-                           withMateMappedToDiffChromosomeMapQ5: Long, failedQuality: Boolean) {
+private[adam] case class FlagStatMetrics(total: Long, duplicatesPrimary: DuplicateMetrics, duplicatesSecondary: DuplicateMetrics,
+                                         mapped: Long, pairedInSequencing: Long,
+                                         read1: Long, read2: Long, properlyPaired: Long, withSelfAndMateMapped: Long,
+                                         singleton: Long, withMateMappedToDiffChromosome: Long,
+                                         withMateMappedToDiffChromosomeMapQ5: Long, failedQuality: Boolean) {
   def +(that: FlagStatMetrics): FlagStatMetrics = {
     assert(failedQuality == that.failedQuality, "Can't reduce passedVendorQuality with different failedQuality values")
     new FlagStatMetrics(
@@ -86,7 +86,7 @@ case class FlagStatMetrics(total: Long, duplicatesPrimary: DuplicateMetrics, dup
   }
 }
 
-object FlagStat {
+private[read] object FlagStat {
 
   def b2i(boolean: Boolean) = if (boolean) 1 else 0
   def b(boolean: java.lang.Boolean) = Option(boolean).exists(x => x)

@@ -72,7 +72,7 @@ private trait FeatureOrdering[T <: Feature] extends Ordering[T] {
 }
 private object FeatureOrdering extends FeatureOrdering[Feature] {}
 
-object FeatureRDD {
+private[rdd] object FeatureRDD {
 
   /**
    * @param elem The feature to extract a sequence record from.
@@ -89,7 +89,7 @@ object FeatureRDD {
    * @param rdd The underlying Feature RDD to build from.
    * @return Returns a new FeatureRDD.
    */
-  private[rdd] def apply(rdd: RDD[Feature]): FeatureRDD = {
+  def apply(rdd: RDD[Feature]): FeatureRDD = {
 
     // cache the rdd, since we're making multiple passes
     rdd.cache()
@@ -128,7 +128,7 @@ object FeatureRDD {
    * @param feature Feature to write in IntervalList format.
    * @return Feature as a one line interval list string.
    */
-  private[rdd] def toInterval(feature: Feature): String = {
+  def toInterval(feature: Feature): String = {
     val sequenceName = feature.getContigName
     val start = feature.getStart + 1 // IntervalList ranges are 1-based
     val end = feature.getEnd // IntervalList ranges are closed
@@ -141,7 +141,7 @@ object FeatureRDD {
    * @param feature Feature to write in the narrow peak format.
    * @return Returns this feature as a single narrow peak line.
    */
-  private[rdd] def toNarrowPeak(feature: Feature): String = {
+  def toNarrowPeak(feature: Feature): String = {
     val chrom = feature.getContigName
     val start = feature.getStart
     val end = feature.getEnd
@@ -159,7 +159,7 @@ object FeatureRDD {
    * @param feature Feature to write in BED format.
    * @return Returns the feature as a single line BED string.
    */
-  private[rdd] def toBed(feature: Feature): String = {
+  def toBed(feature: Feature): String = {
     val chrom = feature.getContigName
     val start = feature.getStart
     val end = feature.getEnd
@@ -186,7 +186,7 @@ object FeatureRDD {
    * @param feature Feature to write in GFF3 format.
    * @return Returns this feature as a single line GFF3 string.
    */
-  private[rdd] def toGff3(feature: Feature): String = {
+  def toGff3(feature: Feature): String = {
     def escape(entry: (Any, Any)): String = {
       entry._1 + "=" + entry._2
     }
@@ -204,6 +204,12 @@ object FeatureRDD {
   }
 }
 
+/**
+ * A GenomicRDD that wraps Feature data.
+ *
+ * @param rdd An RDD of genomic Features.
+ * @param sequences The reference genome this data is aligned to.
+ */
 case class FeatureRDD(rdd: RDD[Feature],
                       sequences: SequenceDictionary) extends AvroGenomicRDD[Feature, FeatureRDD] with Logging {
 

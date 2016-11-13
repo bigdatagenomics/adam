@@ -81,16 +81,39 @@ private[rdd] object GenomicRDD {
   }
 }
 
+/**
+ * A trait that wraps an RDD of genomic data with helpful metadata.
+ *
+ * @tparam T The type of the data in the wrapped RDD.
+ * @tparam U The type of this GenomicRDD.
+ */
 trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
 
+  /**
+   * The RDD of genomic data that we are wrapping.
+   */
   val rdd: RDD[T]
 
+  /**
+   * The sequence dictionary describing the reference assembly this data is
+   * aligned to.
+   */
   val sequences: SequenceDictionary
 
+  /**
+   * The underlying RDD of genomic data, as a JavaRDD.
+   */
   lazy val jrdd: JavaRDD[T] = {
     rdd.toJavaRDD()
   }
 
+  /**
+   * Applies a function that transforms the underlying RDD into a new RDD.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
   def transform(tFn: RDD[T] => RDD[T]): U = {
     replaceRdd(tFn(rdd))
   }
@@ -321,6 +344,14 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     })
   }
 
+  /**
+   * Runs a filter that selects data in the underlying RDD that overlaps a
+   * single genomic region.
+   *
+   * @param query The region to query for.
+   * @return Returns a new GenomicRDD containing only data that overlaps the
+   *   query region.
+   */
   def filterByOverlappingRegion(query: ReferenceRegion): U = {
     replaceRdd(rdd.filter(elem => {
 
@@ -647,13 +678,28 @@ private case class GenericGenomicRDD[T](rdd: RDD[T],
   }
 }
 
+/**
+ * A trait describing a GenomicRDD with data from multiple samples.
+ */
 trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends GenomicRDD[T, U] {
 
+  /**
+   * The samples who have data contained in this GenomicRDD.
+   */
   val samples: Seq[Sample]
 }
 
+/**
+ * An abstract class describing a GenomicRDD where:
+ *
+ * * The data are Avro IndexedRecords.
+ * * The data are associated to read groups (i.e., they are reads or fragments).
+ */
 abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroReadGroupGenomicRDD[T, U]] extends AvroGenomicRDD[T, U] {
 
+  /**
+   * A dictionary describing the read groups attached to this GenomicRDD.
+   */
   val recordGroups: RecordGroupDictionary
 
   override protected def saveMetadata(filePath: String) {
@@ -675,6 +721,10 @@ abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroRe
   }
 }
 
+/**
+ * An abstract class that extends the MultisampleGenomicRDD trait, where the data
+ * are Avro IndexedRecords.
+ */
 abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: MultisampleAvroGenomicRDD[T, U]] extends AvroGenomicRDD[T, U]
     with MultisampleGenomicRDD[T, U] {
 
@@ -695,6 +745,11 @@ abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Mult
   }
 }
 
+/**
+ * An abstract class that extends GenomicRDD and where the underlying data is
+ * Avro IndexedRecords. This abstract class provides methods for saving to
+ * Parquet, and provides hooks for writing the metadata.
+ */
 abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[T, U]] extends ADAMRDDFunctions[T]
     with GenomicRDD[T, U] {
 
@@ -793,6 +848,9 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[
   }
 }
 
+/**
+ * A trait for genomic data that is not aligned to a reference (e.g., raw reads).
+ */
 trait Unaligned {
 
   val sequences = SequenceDictionary.empty

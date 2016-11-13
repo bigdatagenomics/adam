@@ -32,7 +32,7 @@ import org.seqdoop.hadoop_bam.{
 /**
  * Wrapper for Hadoop-BAM to work around requirement for no-args constructor.
  *
- * @tparam K
+ * @tparam K The key type. Keys are not written.
  */
 class ADAMVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF) with Serializable {
 
@@ -56,7 +56,7 @@ class ADAMVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF
 /**
  * Wrapper for Hadoop-BAM to work around requirement for no-args constructor.
  *
- * @tparam K
+ * @tparam K The key type. Keys are not written.
  */
 class ADAMHeaderlessVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF) with Serializable {
 
