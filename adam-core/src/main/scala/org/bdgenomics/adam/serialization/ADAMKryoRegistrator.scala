@@ -134,13 +134,9 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.adam.models.ReferencePosition],
       new org.bdgenomics.adam.models.ReferencePositionSerializer)
     kryo.register(classOf[org.bdgenomics.adam.models.ReferenceRegion])
-    kryo.register(classOf[org.bdgenomics.adam.models.ReferencePositionPair],
-      new org.bdgenomics.adam.models.ReferencePositionPairSerializer)
     kryo.register(classOf[org.bdgenomics.adam.models.SAMFileHeaderWritable])
     kryo.register(classOf[org.bdgenomics.adam.models.SequenceDictionary])
     kryo.register(classOf[org.bdgenomics.adam.models.SequenceRecord])
-    kryo.register(classOf[org.bdgenomics.adam.models.SingleReadBucket],
-      new org.bdgenomics.adam.models.SingleReadBucketSerializer)
     kryo.register(classOf[org.bdgenomics.adam.models.SnpTable])
     kryo.register(classOf[org.bdgenomics.adam.models.VariantContext])
 
@@ -150,6 +146,10 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     // org.bdgenomics.adam.rdd.read
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.FlagStatMetrics])
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.DuplicateMetrics])
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.SingleReadBucket],
+      new org.bdgenomics.adam.rdd.read.SingleReadBucketSerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.ReferencePositionPair],
+      new org.bdgenomics.adam.rdd.read.ReferencePositionPairSerializer)
 
     // org.bdgenomics.adam.rdd.read.realignment
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget],

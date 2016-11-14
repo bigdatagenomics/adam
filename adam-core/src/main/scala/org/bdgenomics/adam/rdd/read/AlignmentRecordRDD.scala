@@ -638,7 +638,7 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
    *
    * @return SingleReadBuckets with primary, secondary and unmapped reads
    */
-  def groupReadsByFragment(): RDD[SingleReadBucket] = {
+  private[read] def groupReadsByFragment(): RDD[SingleReadBucket] = {
     SingleReadBucket(rdd)
   }
 

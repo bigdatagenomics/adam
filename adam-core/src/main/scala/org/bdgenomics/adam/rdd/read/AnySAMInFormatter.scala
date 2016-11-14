@@ -54,7 +54,7 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
     header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
 
     // construct the in formatter
-    makeFormatter(new SAMFileHeaderWritable(header), gRdd.recordGroups, arc)
+    makeFormatter(SAMFileHeaderWritable(header), gRdd.recordGroups, arc)
   }
 }
 

@@ -39,7 +39,7 @@ class SequenceDictionarySuite extends ADAMFunSuite {
     assert(asASR.length === 1000L)
     assert(asASR.url === Some("http://bigdatagenomics.github.io/1"))
 
-    val asPSR: SAMSequenceRecord = SequenceRecord.toSAMSequenceRecord(asASR)
+    val asPSR: SAMSequenceRecord = asASR.toSAMSequenceRecord
 
     assert(sr.isSameSequence(asPSR))
   }
@@ -75,7 +75,7 @@ class SequenceDictionarySuite extends ADAMFunSuite {
     val path = testFile("dict_with_accession.dict")
     val ssd = SAMSequenceDictionaryExtractor.extractDictionary(new File(path))
     val asd = SequenceDictionary(ssd)
-    ssd.assertSameDictionary(SequenceDictionary.toSAMSequenceDictionary(asd))
+    ssd.assertSameDictionary(asd.toSAMSequenceDictionary)
   }
 
   test("Can retrieve sequence by name") {

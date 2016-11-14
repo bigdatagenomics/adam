@@ -23,10 +23,17 @@ import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
 import scala.collection.immutable._
 import scala.collection.mutable
-import java.io.File
 
+/**
+ * A table containing all of the SNPs in a known variation dataset.
+ *
+ * @param table A map between a contig name and a set containing all coordinates
+ *   where a point variant is known to exist.
+ */
 class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable with Logging {
-  log.info("SNP table has %s contigs and %s entries".format(table.size, table.values.map(_.size).sum))
+  log.info("SNP table has %s contigs and %s entries".format(
+    table.size,
+    table.values.map(_.size).sum))
 
   /**
    * Is there a known SNP at the reference location of this Residue?
@@ -58,41 +65,26 @@ class SnpTable(private val table: Map[String, Set[Long]]) extends Serializable w
   }
 }
 
+/**
+ * Companion object with helper functions for building SNP tables.
+ */
 object SnpTable {
+
+  /**
+   * Creates an empty SNP Table.
+   *
+   * @return An empty SNP table.
+   */
   def apply(): SnpTable = {
     new SnpTable(Map[String, Set[Long]]())
   }
 
-  // `knownSnpsFile` is expected to be a sites-only VCF
-  def apply(knownSnpsFile: File): SnpTable = {
-    // parse into tuples of (contig, position)
-    val snpsSource = scala.io.Source.fromFile(knownSnpsFile)
-    try {
-      val lines = snpsSource.getLines()
-      val tuples = lines.filter(line => !line.startsWith("#")).flatMap(line => {
-        val split = line.split("\t")
-        val contig = split(0)
-        val pos = split(1).toLong - 1
-        val ref = split(3)
-        assert(pos >= 0)
-        assert(!ref.isEmpty)
-        ref.zipWithIndex.map {
-          case (base, idx) =>
-            assert(Seq('A', 'C', 'T', 'G', 'N').contains(base))
-            (contig, pos + idx)
-        }
-      })
-      // construct map from contig to set of positions
-      // this is done in-place to reduce overhead
-      val table = new mutable.HashMap[String, mutable.HashSet[Long]]
-      tuples.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
-      // construct SnpTable from immutable copy of `table`
-      new SnpTable(table.mapValues(_.toSet).toMap)
-    } finally {
-      snpsSource.close()
-    }
-  }
-
+  /**
+   * Creates a SNP Table from an RDD of RichVariants.
+   *
+   * @param variants The variants to populate the table from.
+   * @return Returns a new SNPTable containing the input variants.
+   */
   def apply(variants: RDD[RichVariant]): SnpTable = {
     val positions = variants.map(variant => (variant.getContigName, variant.getStart)).collect()
     val table = new mutable.HashMap[String, mutable.HashSet[Long]]

@@ -32,7 +32,7 @@ package org.bdgenomics.adam.models
  *
  * @param regions The input-set of regions.
  */
-class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializable {
+private[adam] class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializable {
 
   assert(regions != null, "regions parameter cannot be null")
 
@@ -43,14 +43,20 @@ class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializ
   assert(regions.size > 0, "regions list must be non-empty")
   assert(regions.head != null, "regions must have at least one non-null entry")
 
+  /**
+   * The name of the reference contig this covers.
+   */
   val referenceName: String = regions.head.referenceName
 
   // invariant: all the values in the 'regions' list have the same referenceId
   assert(regions.forall(_.referenceName == referenceName))
 
-  // We represent the distinct unions, the 'nonoverlapping-set' of regions, as a set of endpoints,
-  // so that we can do reasonably-fast binary searching on them to determine the slice of nonoverlapping-set
-  // regions that are overlapped by a new, query region (see findOverlappingRegions, below).
+  /**
+   * We represent the distinct unions, the 'nonoverlapping-set' of regions, as a
+   * set of endpoints, so that we can do reasonably-fast binary searching on
+   * them to determine the slice of nonoverlapping-set regions that are
+   * overlapped by a new, query region (see findOverlappingRegions, below).
+   */
   val endpoints: Array[Long] =
     mergeRegions(regions.toSeq.sortBy(r => r.start)).flatMap(r => Seq(r.start, r.end)).distinct.sorted.toArray
 
@@ -71,13 +77,13 @@ class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializ
     }
   }
 
-  def mergeRegions(regs: Seq[(ReferenceRegion)]): List[ReferenceRegion] =
+  private def mergeRegions(regs: Seq[(ReferenceRegion)]): List[ReferenceRegion] =
     regs.aggregate(List[ReferenceRegion]())(
       (lst: List[ReferenceRegion], p: (ReferenceRegion)) => updateListWithRegion(lst, p),
       (a, b) => a ++ b
     )
 
-  def binaryPointSearch(pos: Long, lessThan: Boolean): Int = {
+  private def binaryPointSearch(pos: Long, lessThan: Boolean): Int = {
     var i = 0
     var j = endpoints.size - 1
 
@@ -94,6 +100,12 @@ class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializ
     if (lessThan) i else j
   }
 
+  /**
+   * Finds all regions that a query region overlaps.
+   *
+   * @param query The region to check for overlaps.
+   * @return All the regions that overlap the query region.
+   */
   def findOverlappingRegions(query: ReferenceRegion): Seq[ReferenceRegion] = {
 
     assert(query != null, "query region was null")
@@ -153,9 +165,8 @@ class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializ
    * completely outside the hull of all the input-set regions.
    *
    * @param regionable The input value
-   * @tparam U
-   * @return a boolean -- the input value should only participate in the regionJoin if the return value
-   *         here is 'true'.
+   * @tparam U The type of the value in the key-value tuple.
+   * @return True if we have a region that overlaps the region key in a tuple.
    */
   def hasRegionsFor[U](regionable: (ReferenceRegion, U)): Boolean = {
     !(regionable._1.end <= endpoints.head || regionable._1.start >= endpoints.last)
@@ -165,11 +176,20 @@ class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) extends Serializ
     "%s:%d-%d (%s)".format(referenceName, endpoints.head, endpoints.last, endpoints.mkString(","))
 }
 
-object NonoverlappingRegions {
+private[adam] object NonoverlappingRegions {
+
+  /**
+   * Builds a non-overlapping contig map from a seq of region tagged data.
+   *
+   * @param values A seq of data which is keyed by the region it overlaps.
+   * @return Returns a nonoverlapping region map.
+   *
+   * @tparam T The type of the value in the input seq.
+   */
   def apply[T](values: Seq[(ReferenceRegion, T)]) =
     new NonoverlappingRegions(values.map(_._1))
 
-  def alternating[T](seq: Seq[T], includeFirst: Boolean): Seq[T] = {
+  private[models] def alternating[T](seq: Seq[T], includeFirst: Boolean): Seq[T] = {
     val inds = if (includeFirst) { 0 until seq.size } else { 1 until seq.size + 1 }
     seq.zip(inds).filter(p => p._2 % 2 == 0).map(_._1)
   }
@@ -186,23 +206,56 @@ object NonoverlappingRegions {
  *                be valid reference names with respect to the sequence
  *                dictionary.
  */
-class MultiContigNonoverlappingRegions(regions: Seq[(String, Iterable[ReferenceRegion])]) extends Serializable {
+private[adam] class MultiContigNonoverlappingRegions(
+    regions: Seq[(String, Iterable[ReferenceRegion])]) extends Serializable {
   assert(
     regions != null,
     "Regions was set to null"
   )
 
-  val regionMap: Map[String, NonoverlappingRegions] =
+  private val regionMap: Map[String, NonoverlappingRegions] =
     Map(regions.map(r => (r._1, new NonoverlappingRegions(r._2))): _*)
 
+  /**
+   * Given a "regionable" value (corresponds to a ReferencRegion through an implicit ReferenceMapping),
+   * return the set of nonoverlapping-regions to be used as partitions for the input value in a
+   * region-join.  Basically, return the set of any non-empty nonoverlapping-regions that overlap the
+   * region corresponding to this input.
+   *
+   * @param regionable The input, which corresponds to a region
+   * @tparam U The type of the input
+   * @return An Iterable[ReferenceRegion], where each element of the Iterable is a nonoverlapping-region
+   *         defined by 1 or more input-set regions.
+   */
   def regionsFor[U](regionable: (ReferenceRegion, U)): Iterable[ReferenceRegion] =
     regionMap.get(regionable._1.referenceName).fold(Iterable[ReferenceRegion]())(_.regionsFor(regionable))
 
+  /**
+   * A quick filter, to find out if we even need to examine a particular input value for keying by
+   * nonoverlapping-regions.  Basically, reject the input value if its corresponding region is
+   * completely outside the hull of all the input-set regions.
+   *
+   * @param regionable The input value
+   * @tparam U
+   * @return a boolean -- the input value should only participate in the regionJoin if the return value
+   *         here is 'true'.
+   */
   def filter[U](value: (ReferenceRegion, U)): Boolean =
     regionMap.get(value._1.referenceName).fold(false)(_.hasRegionsFor(value))
 }
 
-object MultiContigNonoverlappingRegions {
+private[adam] object MultiContigNonoverlappingRegions {
+
+  /**
+   * Builds a non-overlapping region map from a seq of region tagged data.
+   *
+   * Can cover multiple contigs.
+   *
+   * @param values A seq of data which is keyed by the region it overlaps.
+   * @return Returns a nonoverlapping region map.
+   *
+   * @tparam T The type of the value in the input seq.
+   */
   def apply[T](values: Seq[(ReferenceRegion, T)]): MultiContigNonoverlappingRegions = {
     new MultiContigNonoverlappingRegions(
       values.map(kv => (kv._1.referenceName, kv._1))

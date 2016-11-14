@@ -21,8 +21,7 @@ import org.bdgenomics.formats.avro.{ Genotype, Variant, VariantAnnotation }
 import org.bdgenomics.adam.rich.RichVariant
 
 /**
- * Note: VariantContext inherits its name from the Picard VariantContext, and is not related to the SparkContext object.
- * If you're looking for the latter, see [[org.bdgenomics.adam.rdd.ADAMContext]].
+ * Singleton object for building VariantContexts.
  */
 object VariantContext {
 
@@ -66,8 +65,9 @@ object VariantContext {
    *   from the left record.
    * @return Returns the union of these two annotations.
    */
-  def mergeAnnotations(leftRecord: VariantAnnotation,
-                       rightRecord: VariantAnnotation): VariantAnnotation = {
+  private[adam] def mergeAnnotations(
+    leftRecord: VariantAnnotation,
+    rightRecord: VariantAnnotation): VariantAnnotation = {
     val mergedAnnotation = VariantAnnotation.newBuilder(leftRecord)
       .build()
     val numFields = VariantAnnotation.getClassSchema.getFields.size
@@ -139,9 +139,22 @@ object VariantContext {
   }
 }
 
+/**
+ * A representation of all variation data at a single variant.
+ *
+ * This class represents an equivalent to a single allele from a VCF line, and
+ * is the ADAM equivalent to htsjdk.variant.variantcontext.VariantContext.
+ *
+ * @param position The locus that the variant is at.
+ * @param variant The variant allele that is contained in this VariantContext.
+ * @param genotypes An iterable collection of Genotypes where this allele was
+ *   called. Equivalent to the per-sample FORMAT fields in a VCF.
+ * @param databases An optional record annotating this variant. Equivalent to
+ *   the per-allele split of the INFO field in a VCF.
+ */
 class VariantContext(
     val position: ReferencePosition,
     val variant: RichVariant,
     val genotypes: Iterable[Genotype],
-    val annotations: Option[VariantAnnotation] = None) {
+    val annotations: Option[VariantAnnotation] = None) extends Serializable {
 }
