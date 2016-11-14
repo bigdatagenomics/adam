@@ -17,11 +17,14 @@
  */
 package org.bdgenomics.adam.models
 
-import htsjdk.samtools.{ SAMFileHeader, SamReader, SAMReadGroupRecord }
+import htsjdk.samtools.{ SAMFileHeader, SAMReadGroupRecord }
 import java.util.Date
 import org.bdgenomics.formats.avro.{ RecordGroupMetadata, Sample }
 import scala.collection.JavaConversions._
 
+/**
+ * Singleton object for creating dictionaries of record groups.
+ */
 object RecordGroupDictionary {
 
   /**
@@ -36,31 +39,30 @@ object RecordGroupDictionary {
   }
 
   /**
-   * Builds a record group dictionary from a SAM file reader by collecting the header, and the
-   * read groups attached to the header.
-   *
-   * @param samReader SAM file header with attached read groups.
-   * @return Returns a new record group dictionary with the read groups attached to the file header.
+   * @return Returns a record group dictionary that contains no record groups.
    */
-  def fromSAMReader(samReader: SamReader): RecordGroupDictionary = {
-    fromSAMHeader(samReader.getFileHeader)
-  }
-
   def empty: RecordGroupDictionary = new RecordGroupDictionary(Seq.empty)
 }
 
 /**
- * Builds a dictionary containing record groups. Record groups must have a unique name across all
- * samples in the dictionary. This dictionary provides numerical IDs for each group; these IDs
- * are only consistent when referencing a single dictionary.
+ * Builds a dictionary containing record groups.
+ *
+ * Record groups must have a unique name across all samples in the dictionary.
+ * This dictionary provides numerical IDs for each group; these IDs are only
+ * consistent when referencing a single dictionary.
  *
  * @param recordGroups A seq of record groups to popualate the dictionary.
  *
- * @throws AssertionError Throws an assertion error if there are multiple record groups with the
- * same name.
+ * @throws IllegalArgumentError Throws an assertion error if there are multiple record
+ *   groups with the same name.
  */
 case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
-  lazy val recordGroupMap = recordGroups.map(v => (v.recordGroupName, v))
+
+  /**
+   * A representation of this record group dictionary that can be indexed into
+   * by record group name.
+   */
+  val recordGroupMap = recordGroups.map(v => (v.recordGroupName, v))
     .sortBy(_._1)
     .zipWithIndex
     .map(kv => {
@@ -68,11 +70,17 @@ case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
       (name, (group, index))
     }).toMap
 
-  assert(
+  require(
     recordGroupMap.size == recordGroups.length,
     "Read group dictionary contains multiple samples with identical read group names."
   )
 
+  /**
+   * Merges together two record group dictionaries.
+   *
+   * @param that The record group dictionary to merge with.
+   * @return The merged record group dictionary.
+   */
   def ++(that: RecordGroupDictionary): RecordGroupDictionary = {
     new RecordGroupDictionary(recordGroups ++ that.recordGroups)
   }
@@ -118,7 +126,11 @@ case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
   }
 }
 
+/**
+ * Singleton object for creating RecordGroups.
+ */
 object RecordGroup {
+
   /**
    * Converts a SAMReadGroupRecord into a RecordGroup.
    *
@@ -126,9 +138,9 @@ object RecordGroup {
    * @return Returns an equivalent ADAM format record group.
    */
   def apply(samRGR: SAMReadGroupRecord): RecordGroup = {
-    assert(
+    require(
       samRGR.getSample != null,
-      "Sample ID is not set for read group " + samRGR.getReadGroupId
+      "Sample ID is not set for read group %s".format(samRGR.getReadGroupId)
     )
     new RecordGroup(
       samRGR.getSample,
@@ -184,6 +196,29 @@ object RecordGroup {
   }
 }
 
+/**
+ * A record group represents a set of reads that were
+ * sequenced/processed/prepped/analyzed together.
+ *
+ * @param sample The sample these reads are from.
+ * @param recordGroupName The name of this record group.
+ * @param sequencingCenter The optional name of the place where these reads
+ *   were sequenced.
+ * @param description An optional description for this record group.
+ * @param runDateEpoch An optional Unix epoch timestamp for when these reads
+ *   were run through the sequencer.
+ * @param flowOrder An optional string of nucleotides that were used for each
+ *   flow of each read.
+ * @param keySequence An optional string of nucleotides that are the key for
+ *   this read.
+ * @param library An optional library name.
+ * @param predictedMedianInsertSize An optional prediction of the read insert
+ *   size for this library prep.
+ * @param platform An optional description for the platform this group was
+ *   sequenced on.
+ * @param platformUnit An optional ID for the sequencer this group was sequenced
+ *   on.
+ */
 case class RecordGroup(
     sample: String,
     recordGroupName: String,

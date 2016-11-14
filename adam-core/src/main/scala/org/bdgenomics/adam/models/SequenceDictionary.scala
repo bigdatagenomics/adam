@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import htsjdk.samtools.{ SamReader, SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
+import htsjdk.samtools.{ SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
 import htsjdk.variant.vcf.VCFHeader
 import org.apache.avro.generic.IndexedRecord
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
@@ -25,25 +25,41 @@ import scala.collection._
 import scala.collection.JavaConversions._
 
 /**
- * SequenceDictionary contains the (bijective) map between Ints (the referenceId) and Strings (the referenceName)
- * from the header of a BAM file, or the combined result of multiple such SequenceDictionaries.
+ * Singleton object for creating SequenceDictionaries.
  */
-
 object SequenceDictionary {
+
   /**
    * @return Creates a new, empty SequenceDictionary.
    */
   def empty: SequenceDictionary = new SequenceDictionary()
 
+  /**
+   * Builds a sequence dictionary for a variable length collection of records.
+   *
+   * @param records Records to include in the dictionary.
+   * @return A sequence dictionary containing these records.
+   */
   def apply(records: SequenceRecord*): SequenceDictionary = new SequenceDictionary(records.toVector)
+
+  /**
+   * Builds a sequence dictionary from an htsjdk SAMSequenceDictionary.
+   *
+   * @param dict Htsjdk sequence dictionary to build from.
+   * @return A SequenceDictionary with populated sequence records.
+   */
   def apply(dict: SAMSequenceDictionary): SequenceDictionary = {
     new SequenceDictionary(dict.getSequences.map(SequenceRecord.fromSAMSequenceRecord).toVector)
   }
-  def apply(header: SAMFileHeader): SequenceDictionary = SequenceDictionary(header.getSequenceDictionary)
-  def apply(reader: SamReader): SequenceDictionary = SequenceDictionary(reader.getFileHeader)
 
-  def toSAMSequenceDictionary(dictionary: SequenceDictionary): SAMSequenceDictionary = {
-    new SAMSequenceDictionary(dictionary.records.map(SequenceRecord.toSAMSequenceRecord).toList)
+  /**
+   * Makes a SequenceDictionary from a SAMFileHeader.
+   *
+   * @param header htsjdk SAMFileHeader to extract sequences from.
+   * @return A SequenceDictionary with populated sequence records.
+   */
+  def apply(header: SAMFileHeader): SequenceDictionary = {
+    SequenceDictionary(header.getSequenceDictionary)
   }
 
   /**
@@ -54,21 +70,6 @@ object SequenceDictionary {
    */
   def fromAvro(contigs: Seq[Contig]): SequenceDictionary = {
     new SequenceDictionary(contigs.map(SequenceRecord.fromADAMContig).toVector)
-  }
-
-  /**
-   * Extracts a SAM sequence dictionary from a SAM file header and returns an
-   * ADAM sequence dictionary.
-   *
-   * @see fromSAMSequenceDictionary
-   *
-   * @param header SAM file header.
-   * @return Returns an ADAM style sequence dictionary.
-   */
-  def fromSAMHeader(header: SAMFileHeader): SequenceDictionary = {
-    val samDict = header.getSequenceDictionary
-
-    fromSAMSequenceDictionary(samDict)
   }
 
   /**
@@ -100,11 +101,16 @@ object SequenceDictionary {
     val samDictRecords = samDict.getSequences
     new SequenceDictionary(samDictRecords.map(SequenceRecord.fromSAMSequenceRecord).toVector)
   }
-
-  def fromSAMReader(samReader: SamReader): SequenceDictionary =
-    fromSAMHeader(samReader.getFileHeader)
 }
 
+/**
+ * A SequenceDictionary contains metadata about the reference build genomic data
+ * is aligned against.
+ *
+ * @see SequenceRecord
+ *
+ * @param records The individual reference contigs.
+ */
 class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializable {
   def this() = this(Vector.empty[SequenceRecord])
 
@@ -113,6 +119,10 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
 
   private val hasSequenceOrdering = records.forall(_.referenceIndex.isDefined)
 
+  /**
+   * @param that Sequence dictionary to compare against.
+   * @return True if each record in this dictionary exists in the other dictionary.
+   */
   def isCompatibleWith(that: SequenceDictionary): Boolean = {
     for (record <- that.records) {
       val myRecord = byName.get(record.name)
@@ -122,10 +132,37 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
     true
   }
 
+  /**
+   * @param name The name of the contig to extract.
+   * @return If available, the sequence record for this contig.
+   */
   def apply(name: String): Option[SequenceRecord] = byName.get(name)
+
+  /**
+   * Checks to see if we have a contig with a given name.
+   *
+   * @param name The name of the contig to extract.
+   * @return True if we have a sequence record for this contig.
+   */
   def containsRefName(name: String): Boolean = byName.containsKey(name)
 
+  /**
+   * Adds a sequence record to this dictionary.
+   *
+   * @param record The sequence record to add.
+   * @return A new sequence dictionary with the new record added.
+   */
   def +(record: SequenceRecord): SequenceDictionary = this ++ SequenceDictionary(record)
+
+  /**
+   * Merges two sequence dictionaries.
+   *
+   * Filters any sequence records that exist in both dictionaries.
+   *
+   * @param that The sequence dictionary to add.
+   * @return A new sequence dictionary that contains a record per contig in each
+   *   input dictionary.
+   */
   def ++(that: SequenceDictionary): SequenceDictionary = {
     new SequenceDictionary(records ++ that.records.filter(r => !byName.contains(r.name)))
   }
@@ -185,14 +222,17 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   }
 
   private[adam] def toAvro: Seq[Contig] = {
-    records.map(SequenceRecord.toADAMContig)
+    records.map(_.toADAMContig)
       .toSeq
   }
 
+  /**
+   * @return True if this dictionary contains no sequence records.
+   */
   def isEmpty: Boolean = records.isEmpty
 }
 
-object SequenceOrderingByName extends Ordering[SequenceRecord] {
+private object SequenceOrderingByName extends Ordering[SequenceRecord] {
   def compare(
     a: SequenceRecord,
     b: SequenceRecord): Int = {
@@ -200,7 +240,7 @@ object SequenceOrderingByName extends Ordering[SequenceRecord] {
   }
 }
 
-object SequenceOrderingByRefIdx extends Ordering[SequenceRecord] {
+private object SequenceOrderingByRefIdx extends Ordering[SequenceRecord] {
   def compare(
     a: SequenceRecord,
     b: SequenceRecord): Int = {
@@ -216,8 +256,19 @@ object SequenceOrderingByRefIdx extends Ordering[SequenceRecord] {
 }
 
 /**
- * Utility class within the SequenceDictionary; represents unique reference name-to-id correspondence
+ * Metadata about a single reference contig.
  *
+ * @param name The name of the contig.
+ * @param length The length of the contig.
+ * @param url If available, the URL the contig is accessible from.
+ * @param md5 If available, the MD5 checksum for the contig.
+ * @param refseq If available, the REFSEQ ID for the contig.
+ * @param genbank If available, the Genbank ID for the contig.
+ * @param assembly If available, the assembly name for the assembly this contig
+ *   is from.
+ * @param species If available, the species this contig was assembled from.
+ * @param referenceIndex If available, the number of this contig in a set of
+ *   contigs.
  */
 case class SequenceRecord(
     name: String,
@@ -295,12 +346,47 @@ case class SequenceRecord(
     case (Some(c1), Some(c2)) => c1 == c2
     case _                    => true
   }
+
+  /**
+   * @return Builds an Avro contig representation from this record.
+   */
+  def toADAMContig: Contig = {
+    val builder = Contig.newBuilder()
+      .setContigName(name)
+      .setContigLength(length)
+    md5.foreach(builder.setContigMD5)
+    url.foreach(builder.setReferenceURL)
+    assembly.foreach(builder.setAssembly)
+    species.foreach(builder.setSpecies)
+    referenceIndex.foreach(builder.setReferenceIndex(_))
+    builder.build
+  }
 }
 
+/**
+ * Companion object for creating Sequence Records.
+ */
 object SequenceRecord {
-  val REFSEQ_TAG = "REFSEQ"
-  val GENBANK_TAG = "GENBANK"
+  private val REFSEQ_TAG = "REFSEQ"
+  private val GENBANK_TAG = "GENBANK"
 
+  /**
+   * Java friendly apply method that wraps null strings.
+   *
+   * @param name The name of the contig.
+   * @param length The length of the contig.
+   * @param url If available, the URL the contig is accessible from.
+   * @param md5 If available, the MD5 checksum for the contig.
+   * @param refseq If available, the REFSEQ ID for the contig.
+   * @param genbank If available, the Genbank ID for the contig.
+   * @param assembly If available, the assembly name for the assembly this contig
+   *   is from.
+   * @param species If available, the species this contig was assembled from.
+   * @param referenceIndex If available, the number of this contig in a set of
+   *   contigs.
+   * @return Returns a new SequenceRecord where all strings except for name are
+   *   wrapped in Options to check for null values.
+   */
   def apply(
     name: String,
     length: Long,
@@ -342,15 +428,14 @@ object SequenceRecord {
       species = record.getAttribute(SAMSequenceRecord.SPECIES_TAG),
       referenceIndex = if (record.getSequenceIndex == -1) None else Some(record.getSequenceIndex)
     )
-
-  }
-  def toSAMSequenceRecord(record: SequenceRecord): SAMSequenceRecord = {
-    val sam = new SAMSequenceRecord(record.name, record.length.toInt)
-    record.md5.foreach(v => sam.setAttribute(SAMSequenceRecord.MD5_TAG, v))
-    record.url.foreach(v => sam.setAttribute(SAMSequenceRecord.URI_TAG, v))
-    sam
   }
 
+  /**
+   * Builds a sequence record from an Avro Contig.
+   *
+   * @param contig Contig record to build from.
+   * @return This Contig record as a SequenceRecord.
+   */
   def fromADAMContig(contig: Contig): SequenceRecord = {
     SequenceRecord(
       contig.getContigName,
@@ -363,37 +448,14 @@ object SequenceRecord {
     )
   }
 
-  def toADAMContig(record: SequenceRecord): Contig = {
-    val builder = Contig.newBuilder()
-      .setContigName(record.name)
-      .setContigLength(record.length)
-    record.md5.foreach(builder.setContigMD5)
-    record.url.foreach(builder.setReferenceURL)
-    record.assembly.foreach(builder.setAssembly)
-    record.species.foreach(builder.setSpecies)
-    record.referenceIndex.foreach(builder.setReferenceIndex(_))
-    builder.build
-  }
-
+  /**
+   * Extracts the contig metadata from a nucleotide fragment.
+   *
+   * @param fragment The assembly fragment to extract a SequenceRecord from.
+   * @return The sequence record metadata from a single assembly fragment.
+   */
   def fromADAMContigFragment(fragment: NucleotideContigFragment): SequenceRecord = {
     fromADAMContig(fragment.getContig)
   }
-
-  def fromSpecificRecord(rec: IndexedRecord): SequenceRecord = {
-    val schema = rec.getSchema
-    if (schema.getField("referenceId") != null) {
-      SequenceRecord(
-        rec.get(schema.getField("referenceName").pos()).toString,
-        rec.get(schema.getField("referenceLength").pos()).asInstanceOf[Long],
-        url = rec.get(schema.getField("referenceUrl").pos()).toString
-      )
-    } else if (schema.getField("contig") != null) {
-      val pos = schema.getField("contig").pos()
-      fromADAMContig(rec.get(pos).asInstanceOf[Contig])
-    } else {
-      throw new AssertionError("Missing information to generate SequenceRecord")
-    }
-  }
-
 }
 

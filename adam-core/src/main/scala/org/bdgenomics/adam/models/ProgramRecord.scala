@@ -20,8 +20,14 @@ package org.bdgenomics.adam.models
 import htsjdk.samtools.SAMProgramRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 
-object ProgramRecord {
+private[models] object ProgramRecord {
 
+  /**
+   * Builds a program record model from a SAM program record.
+   *
+   * @param pr The SAM program record to build from.
+   * @return Returns a serializable program record model.
+   */
   def apply(pr: SAMProgramRecord): ProgramRecord = {
     // ID is a required field
     val id: String = pr.getId
@@ -36,13 +42,26 @@ object ProgramRecord {
   }
 }
 
-case class ProgramRecord(
+/**
+ * A serializable equivalent to the htsjdk SAMProgramRecord.
+ *
+ * @param id The ID of the program record line.
+ * @param commandLine An optional command line that was run.
+ * @param name An optional name for the command/tool that was run.
+ * @param version An optional version for the command/tool that was run.
+ * @param previousID An optional ID for the ID of the previous stage that was
+ *   run.
+ */
+private[models] case class ProgramRecord(
     id: String,
     commandLine: Option[String],
     name: Option[String],
     version: Option[String],
     previousID: Option[String]) {
 
+  /**
+   * @return Exports back to the htsjdk SAMProgramRecord.
+   */
   def toSAMProgramRecord(): SAMProgramRecord = {
     val pr = new SAMProgramRecord(id)
 

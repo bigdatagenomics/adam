@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.models
+package org.bdgenomics.adam.rdd.read
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Output, Input }
@@ -29,7 +29,18 @@ import org.bdgenomics.formats.avro.{
 }
 import scala.collection.JavaConversions._
 
-object SingleReadBucket extends Logging {
+/**
+ * Companion object for building SingleReadBuckets.
+ */
+private[read] object SingleReadBucket extends Logging {
+
+  /**
+   * Builds an RDD of SingleReadBuckets from an RDD of AlignmentRecords.
+   *
+   * @param rdd The RDD of AlignmentRecords to build the RDD of single read
+   *   buckets from.
+   * @return Returns an RDD of SingleReadBuckets.
+   */
   def apply(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
     rdd.groupBy(p => (p.getRecordGroupName, p.getReadName))
       .map(kv => {
@@ -39,21 +50,40 @@ object SingleReadBucket extends Logging {
         val (mapped, unmapped) = reads.partition(_.getReadMapped)
         val (primaryMapped, secondaryMapped) = mapped.partition(_.getPrimaryAlignment)
 
-        // TODO: consider doing validation here (e.g. read says mate mapped but it doesn't exist)
+        // TODO: consider doing validation here
+        // (e.g. read says mate mapped but it doesn't exist)
         new SingleReadBucket(primaryMapped, secondaryMapped, unmapped)
       })
   }
 }
 
-case class SingleReadBucket(
-    primaryMapped: Iterable[AlignmentRecord] = Seq.empty,
-    secondaryMapped: Iterable[AlignmentRecord] = Seq.empty,
-    unmapped: Iterable[AlignmentRecord] = Seq.empty) {
-  // Note: not a val in order to save serialization/memory cost
+/**
+ * A representation of all of the read alignments that came from a single sequenced
+ * fragment.
+ *
+ * @param primaryMapped All read alignments that are primary alignments.
+ * @param secondaryMapped All read alignments that are non-primary (i.e.,
+ *   secondary or supplementary alignments).
+ * @param unmapped All reads from the fragment that are unmapped.
+ */
+private[adam] case class SingleReadBucket(
+    primaryMapped: Iterable[AlignmentRecord] = Iterable.empty,
+    secondaryMapped: Iterable[AlignmentRecord] = Iterable.empty,
+    unmapped: Iterable[AlignmentRecord] = Iterable.empty) {
+
+  /**
+   * @return The union of the primary, secondary, and unmapped buckets.
+   */
   def allReads = {
     primaryMapped ++ secondaryMapped ++ unmapped
   }
 
+  /**
+   * Converts to an Avro Fragment record.
+   *
+   * @return Converts this bucket to a Fragment type, which does not have the
+   *   various alignment buckets, but is otherwise equivalent.
+   */
   def toFragment: Fragment = {
     // take union of all reads, as we will need this for building and
     // want to pay the cost exactly once

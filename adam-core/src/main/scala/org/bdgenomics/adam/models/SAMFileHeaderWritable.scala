@@ -21,29 +21,47 @@ import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord }
 import scala.collection.JavaConversions._
 
 private[adam] object SAMFileHeaderWritable {
+
+  /**
+   * Creates a serializable representation of a SAM file header.
+   *
+   * @param header SAMFileHeader to create serializable representation of.
+   * @return A serializable representation of the header that can be transformed
+   *   back into the htsjdk representation on the executor.
+   */
   def apply(header: SAMFileHeader): SAMFileHeaderWritable = {
     new SAMFileHeaderWritable(header)
   }
 }
 
-class SAMFileHeaderWritable(hdr: SAMFileHeader) extends Serializable {
+/**
+ * Wrapper for the SAM file header to get around serialization issues.
+ *
+ * The SAM file header is not serialized and is instead recreated on demaind.
+ *
+ * @param hdr A SAM file header to extract metadata from.
+ */
+private[adam] class SAMFileHeaderWritable private (hdr: SAMFileHeader) extends Serializable {
+
   // extract fields that are needed in order to recreate the SAMFileHeader
-  protected val text = {
+  private val text = {
     val txt: String = hdr.getTextHeader
     Option(txt)
   }
-  protected val sd = SequenceDictionary(hdr.getSequenceDictionary)
-  protected val pgl = {
+  private val sd = SequenceDictionary(hdr.getSequenceDictionary)
+  private val pgl = {
     val pgs = hdr.getProgramRecords
     pgs.map(ProgramRecord(_))
   }
-  protected val comments = {
+  private val comments = {
     val cmts = hdr.getComments
     cmts.flatMap(Option(_)) // don't trust samtools to return non-nulls
   }
-  protected val rgs = RecordGroupDictionary.fromSAMHeader(hdr)
+  private val rgs = RecordGroupDictionary.fromSAMHeader(hdr)
 
-  // recreate header when requested to get around header not being serializable
+  /**
+   * Recreate header when requested to get around header not being serializable.
+   */
   @transient lazy val header = {
     val h = new SAMFileHeader()
 

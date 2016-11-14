@@ -21,9 +21,9 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.formats.avro.Feature
 
 /**
- * Converts from avro Feature to Coverage.
+ * Singleton object for converting from Avro Feature to Coverage.
  */
-object Coverage {
+private[adam] object Coverage {
 
   /**
    * Creates Coverage from ReferenceRegion and coverage count in that ReferenceRegion.
@@ -32,7 +32,7 @@ object Coverage {
    * @param count Coverage count for each base pair in region
    * @return Coverage spanning the specified ReferenceRegion
    */
-  private[adam] def apply(region: ReferenceRegion, count: Double): Coverage = {
+  def apply(region: ReferenceRegion, count: Double): Coverage = {
     Coverage(region.referenceName, region.start, region.end, count)
   }
 
@@ -42,8 +42,11 @@ object Coverage {
    * @param feature Feature to create coverage from
    * @return Coverage spanning the specified feature
    */
-  private[adam] def apply(feature: Feature): Coverage = {
-    Coverage(feature.getContigName, feature.getStart, feature.getEnd, feature.getScore)
+  def apply(feature: Feature): Coverage = {
+    Coverage(feature.getContigName,
+      feature.getStart,
+      feature.getEnd,
+      feature.getScore)
   }
 
   /**
@@ -52,20 +55,23 @@ object Coverage {
    * @param rdd RDD of Features to extract Coverage from
    * @return RDD of Coverage spanning all features in rdd
    */
-  private[adam] def apply(rdd: RDD[Feature]): RDD[Coverage] = {
+  def apply(rdd: RDD[Feature]): RDD[Coverage] = {
     rdd.map(f => Coverage(f))
   }
 }
 
 /**
  * Coverage record for CoverageRDD.
- * Contains Region indexed by contig name, start and end, as well as count of coverage at
- * each base pair in that region.
  *
- * @param contigName Specifies chromosomal location of coverage
- * @param start Specifies start position of coverage
- * @param end  Specifies end position of coverage
- * @param count Specifies count of coverage at location
+ * Contains Region indexed by contig name, start and end, as well as the average
+ * coverage at each base pair in that region.
+ *
+ * @param contigName The chromosome that this coverage was observed on.
+ * @param start The start coordinate of the region where this coverage value was
+ *   observed.
+ * @param end The end coordinate of the region where this coverage value was
+ *   observed.
+ * @param count The average coverage across this region.
  */
 case class Coverage(contigName: String, start: Long, end: Long, count: Double) {
 
@@ -75,12 +81,12 @@ case class Coverage(contigName: String, start: Long, end: Long, count: Double) {
    * @return Feature built from Coverage
    */
   def toFeature: Feature = {
-    val fb = Feature.newBuilder()
-    fb.setContigName(contigName)
-    fb.setStart(start)
-    fb.setEnd(end)
-    fb.setScore(count)
-    fb.build()
+    Feature.newBuilder()
+      .setContigName(contigName)
+      .setStart(start)
+      .setEnd(end)
+      .setScore(count)
+      .build()
   }
 }
 

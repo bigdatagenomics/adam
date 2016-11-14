@@ -19,5 +19,10 @@ package org.bdgenomics.adam.models
 
 import htsjdk.variant.vcf.VCFHeader
 
-case class VCFHeaderWritable(header: VCFHeader) {
+/**
+ * Serializable wrapper for the VCF header.
+ *
+ * @param header A VCF header to serialize.
+ */
+private[adam] case class VCFHeaderWritable(header: VCFHeader) {
 }

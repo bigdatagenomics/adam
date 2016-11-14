@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.models
+package org.bdgenomics.adam.rdd.read
 
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import com.esotericsoftware.kryo.io.{ Input, Output }
@@ -23,10 +23,25 @@ import Ordering.Option
 import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.adam.instrumentation.Timers.CreateReferencePositionPair
 import org.bdgenomics.adam.models.ReferenceRegion._
+import org.bdgenomics.adam.models.{
+  ReferencePosition,
+  ReferencePositionSerializer
+}
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-object ReferencePositionPair extends Logging {
+/**
+ * A singleton object for creating reference position pairs.
+ */
+private[read] object ReferencePositionPair extends Logging {
+
+  /**
+   * Extracts the reference positions from a bucket of reads from a single fragment.
+   *
+   * @param singleReadBucket A bucket of reads from a single DNA fragment.
+   * @return Returns the start position pair for the primary aligned first and
+   *   second of pair reads.
+   */
   def apply(singleReadBucket: SingleReadBucket): ReferencePositionPair = CreateReferencePositionPair.time {
     val firstOfPair = (singleReadBucket.primaryMapped.filter(_.getReadInFragment == 0) ++
       singleReadBucket.unmapped.filter(_.getReadInFragment == 0)).toSeq
@@ -56,14 +71,21 @@ object ReferencePositionPair extends Logging {
   }
 }
 
-case class ReferencePositionPair(
-  read1refPos: Option[ReferencePosition],
-  read2refPos: Option[ReferencePosition])
+/**
+ * The start positions for a fragment sequenced with a paired protocol.
+ *
+ * @param read1refPos The start position of the first-of-pair read, if aligned.
+ * @param read2refPos The start position of the second-of-pair read, if aligned.
+ */
+private[adam] case class ReferencePositionPair(
+    read1refPos: Option[ReferencePosition],
+    read2refPos: Option[ReferencePosition]) {
+}
 
 class ReferencePositionPairSerializer extends Serializer[ReferencePositionPair] {
   val rps = new ReferencePositionSerializer()
 
-  def writeOptionalReferencePos(kryo: Kryo, output: Output, optRefPos: Option[ReferencePosition]) = {
+  private def writeOptionalReferencePos(kryo: Kryo, output: Output, optRefPos: Option[ReferencePosition]) = {
     optRefPos match {
       case None =>
         output.writeBoolean(false)
@@ -73,7 +95,7 @@ class ReferencePositionPairSerializer extends Serializer[ReferencePositionPair] 
     }
   }
 
-  def readOptionalReferencePos(kryo: Kryo, input: Input): Option[ReferencePosition] = {
+  private def readOptionalReferencePos(kryo: Kryo, input: Input): Option[ReferencePosition] = {
     val exists = input.readBoolean()
     if (exists) {
       Some(rps.read(kryo, input, classOf[ReferencePosition]))

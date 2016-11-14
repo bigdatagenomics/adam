@@ -18,96 +18,11 @@
 package org.bdgenomics.adam.rdd
 
 import org.apache.spark.SparkContext._
-import org.bdgenomics.adam.models.{ NonoverlappingRegions, ReferenceRegion }
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 class InnerBroadcastRegionJoinSuite extends ADAMFunSuite {
-
-  test("alternating returns an alternating seq of items") {
-    import NonoverlappingRegions._
-
-    assert(alternating(Seq(), includeFirst = true) === Seq())
-    assert(alternating(Seq(1), includeFirst = true) === Seq(1))
-    assert(alternating(Seq(1, 2), includeFirst = true) === Seq(1))
-    assert(alternating(Seq(1, 2, 3), includeFirst = true) === Seq(1, 3))
-    assert(alternating(Seq(1, 2, 3, 4), includeFirst = true) === Seq(1, 3))
-    assert(alternating(Seq(1, 2, 3, 4, 5), includeFirst = true) === Seq(1, 3, 5))
-
-    assert(alternating(Seq(), includeFirst = false) === Seq())
-    assert(alternating(Seq(1), includeFirst = false) === Seq())
-    assert(alternating(Seq(1, 2), includeFirst = false) === Seq(2))
-    assert(alternating(Seq(1, 2, 3), includeFirst = false) === Seq(2))
-    assert(alternating(Seq(1, 2, 3, 4), includeFirst = false) === Seq(2, 4))
-    assert(alternating(Seq(1, 2, 3, 4, 5), includeFirst = false) === Seq(2, 4))
-    assert(alternating(Seq(1, 2, 3, 4, 5, 6), includeFirst = false) === Seq(2, 4, 6))
-  }
-
-  test("Single region returns itself") {
-    val region = new ReferenceRegion("chr1", 1, 2)
-    val regions = new NonoverlappingRegions(Seq(region))
-    val result = regions.findOverlappingRegions(region)
-    assert(result.size === 1)
-    assert(result.head === region)
-  }
-
-  test("Two adjacent regions will be merged") {
-    val regions = new NonoverlappingRegions(Seq(
-      ReferenceRegion("chr1", 10, 20),
-      ReferenceRegion("chr1", 20, 30)))
-
-    assert(regions.endpoints === Array(10L, 30L))
-  }
-
-  test("Nonoverlapping regions will all be returned") {
-    val region1 = new ReferenceRegion("chr1", 1, 2)
-    val region2 = new ReferenceRegion("chr1", 3, 5)
-    val testRegion3 = new ReferenceRegion("chr1", 1, 4)
-    val testRegion1 = new ReferenceRegion("chr1", 4, 5)
-    val regions = new NonoverlappingRegions(Seq(region1, region2))
-
-    // this should be 2, not 3, because binaryRegionSearch is (now) no longer returning
-    // ReferenceRegions in which no original RR's were placed (i.e. the 'gaps').
-    assert(regions.findOverlappingRegions(testRegion3).size === 2)
-
-    assert(regions.findOverlappingRegions(testRegion1).size === 1)
-  }
-
-  test("Many overlapping regions will all be merged") {
-    val region1 = new ReferenceRegion("chr1", 1, 3)
-    val region2 = new ReferenceRegion("chr1", 2, 4)
-    val region3 = new ReferenceRegion("chr1", 3, 5)
-    val testRegion = new ReferenceRegion("chr1", 1, 4)
-    val regions = new NonoverlappingRegions(Seq(region1, region2, region3))
-    assert(regions.findOverlappingRegions(testRegion).size === 1)
-  }
-
-  test("ADAMRecords return proper references") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(5L)
-      .setReferenceURL("test://chrom1")
-      .build
-
-    val built = AlignmentRecord.newBuilder()
-      .setContigName(contig.getContigName)
-      .setStart(1L)
-      .setReadMapped(true)
-      .setCigar("1M")
-      .setEnd(2L)
-      .build()
-
-    val record1 = built
-    val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
-    val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
-
-    val baseMapping = new NonoverlappingRegions(Seq(ReferenceRegion(baseRecord)))
-    val regions1 = baseMapping.findOverlappingRegions(ReferenceRegion(record1))
-    val regions2 = baseMapping.findOverlappingRegions(ReferenceRegion(record2))
-    assert(regions1.size === 1)
-    assert(regions2.size === 1)
-    assert(regions1.head === regions2.head)
-  }
 
   sparkTest("Ensure same reference regions get passed together") {
     val contig = Contig.newBuilder

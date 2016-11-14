@@ -27,24 +27,6 @@ import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 class BaseQualityRecalibrationSuite extends ADAMFunSuite {
-  sparkTest("BQSR Test Input #1") {
-    val readsFilepath = testFile("bqsr1.sam")
-    val snpsFilepath = testFile("bqsr1.snps")
-    val obsFilepath = testFile("bqsr1-ref.observed")
-
-    val reads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath).rdd
-    val snps = sc.broadcast(SnpTable(new File(snpsFilepath)))
-
-    val bqsr = new BaseQualityRecalibration(cloy(reads), snps)
-
-    // Sanity checks
-    assert(bqsr.result.count == reads.count)
-
-    // Compare the ObservationTables
-    val referenceObs: Seq[String] = scala.io.Source.fromFile(new File(obsFilepath)).getLines().filter(_.length > 0).toSeq.sortWith((kv1, kv2) => kv1.compare(kv2) < 0)
-    val testObs: Seq[String] = bqsr.observed.toCSV.split('\n').filter(_.length > 0).toSeq.sortWith((kv1, kv2) => kv1.compare(kv2) < 0)
-    referenceObs.zip(testObs).foreach(p => assert(p._1 === p._2))
-  }
 
   sparkTest("BQSR Test Input #1 w/ VCF Sites") {
     val readsFilepath = testFile("bqsr1.sam")

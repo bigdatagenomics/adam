@@ -21,7 +21,6 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.intervaltree.Interval
-
 import scala.math.{ max, min }
 
 trait ReferenceOrdering[T <: ReferenceRegion] extends Ordering[T] {
@@ -61,12 +60,29 @@ trait OptionalReferenceOrdering[T <: ReferenceRegion] extends Ordering[Option[T]
   }
 }
 
+/**
+ * A sort order that orders all given regions lexicographically by contig and
+ * numerically within a single contig, and puts all non-provided regions at
+ * the end. Regions are compared by start position first. If start positions
+ * are equal, then we compare by end position.
+ */
 object RegionOrdering extends ReferenceOrdering[ReferenceRegion] {
 }
+
+/**
+ * A sort order that orders all given regions lexicographically by contig and
+ * numerically within a single contig, and puts all non-provided regions at
+ * the end. An extension of PositionOrdering to Optional data.
+ *
+ * @see PositionOrdering
+ */
 object OptionalRegionOrdering extends OptionalReferenceOrdering[ReferenceRegion] {
   val baseOrdering = RegionOrdering
 }
 
+/**
+ * A companion object for creating and ordering ReferenceRegions.
+ */
 object ReferenceRegion {
 
   implicit def orderingForPositions = RegionOrdering
@@ -156,10 +172,13 @@ object ReferenceRegion {
   }
 
   /**
-   * Builds a reference region from an alignment record.
+   * Builds a reference region for an aligned read.
    *
-   * @param record AlignmentRecord to extract region from.
-   * @return The site where the alignment record aligns.
+   * @throws IllegalArgumentException If this read is not aligned or alignment
+   *   data is null.
+   *
+   * @param record The read to extract the reference region from.
+   * @return Returns the reference region covered by this read's alignment.
    */
   def apply(record: AlignmentRecord): ReferenceRegion = {
     require(record.getReadMapped,
@@ -239,8 +258,14 @@ case class ReferenceRegion(
     extends Comparable[ReferenceRegion]
     with Interval {
 
-  assert(start >= 0 && end >= start, "Failed when trying to create region %s %d %d on %s strand.".format(referenceName, start, end, orientation))
+  assert(start >= 0 && end >= start,
+    "Failed when trying to create region %s %d %d on %s strand.".format(
+      referenceName, start, end, orientation))
 
+  /**
+   * @return Returns a copy of this reference region that is on the independent
+   *   strand.
+   */
   def disorient: ReferenceRegion = new ReferenceRegion(referenceName, start, end)
 
   /**
@@ -287,7 +312,9 @@ case class ReferenceRegion(
   }
 
   /**
-   * Returns whether two regions are adjacent. Adjacent regions do not overlap, but have no separation between start/end.
+   * Returns whether two regions are adjacent.
+   *
+   * Adjacent regions do not overlap, but have no separation between start/end.
    *
    * @param region Region to compare against.
    * @return True if regions are adjacent.
@@ -296,28 +323,35 @@ case class ReferenceRegion(
     distance(region).exists(_ == 1)
 
   /**
-   * Returns the distance between this reference region and another region in the reference space.
+   * Returns the distance between this reference region and another region in
+   * the reference space.
    *
-   * @note Distance here is defined as the minimum distance between any point within this region, and
-   * any point within the other region we are measuring against. If the two sets overlap, the distance
-   * will be 0. If the sets abut, the distance will be 1. Else, the distance will be greater.
+   * @note Distance here is defined as the minimum distance between any point
+   * within this region, and any point within the other region we are measuring
+   * against. If the two sets overlap, the distance will be 0. If the sets abut,
+   * the distance will be 1. Else, the distance will be greater.
    *
    * @param other Region to compare against.
-   * @return Returns an option containing the distance between two points. If the point is not in
-   * our reference space, we return an empty option (None).
+   * @return Returns an option containing the distance between two points. If
+   *   the point is not in our reference space, we return an empty option.
    */
-  def distance(other: ReferenceRegion): Option[Long] =
-    if (referenceName == other.referenceName && orientation == other.orientation)
-      if (overlaps(other))
+  def distance(other: ReferenceRegion): Option[Long] = {
+    if (referenceName == other.referenceName && orientation == other.orientation) {
+      if (overlaps(other)) {
         Some(0)
-      else if (other.start >= end)
+      } else if (other.start >= end) {
         Some(other.start - end + 1)
-      else
+      } else {
         Some(start - other.end + 1)
-    else
+      }
+    } else {
       None
+    }
+  }
 
   /**
+   * Extends the current reference region at both the start and end.
+   *
    * @param by The number of bases to extend the region by from both the start
    *   and the end.
    * @return Returns a new reference region where the start and end have been
@@ -328,6 +362,9 @@ case class ReferenceRegion(
   }
 
   /**
+   * Extends the current reference region at both the start and end, but by
+   * different numbers of bases.
+   *
    * @param byStart The number of bases to move the start position forward by.
    * @param byEnd The number of bases to move the end position back by.
    * @return Returns a new reference region where the start and/or end have been
@@ -340,28 +377,55 @@ case class ReferenceRegion(
       orientation)
   }
 
+  /**
+   * Checks if a position is wholly within our region.
+   *
+   * @param other The reference position to compare against.
+   * @return True if the position is within our region.
+   */
   def contains(other: ReferencePosition): Boolean = {
     orientation == other.orientation &&
       referenceName == other.referenceName &&
       start <= other.pos && end > other.pos
   }
 
+  /**
+   * Checks if another region is wholly within our region.
+   *
+   * @param other The region to compare against.
+   * @return True if the region is wholly contained within our region.
+   */
   def contains(other: ReferenceRegion): Boolean = {
     orientation == other.orientation &&
       referenceName == other.referenceName &&
       start <= other.start && end >= other.end
   }
 
+  /**
+   * Checks if our region overlaps (wholly or partially) another region.
+   *
+   * @param other The region to compare against.
+   * @return True if any section of the two regions overlap.
+   */
   def overlaps(other: ReferenceRegion): Boolean = {
     orientation == other.orientation &&
       referenceName == other.referenceName &&
       end > other.start && start < other.end
   }
 
+  /**
+   * Compares between two regions using the RegionOrdering.
+   *
+   * @param that The region to compare against.
+   * @return An ordering depending on which region comes first.
+   */
   def compareTo(that: ReferenceRegion): Int = {
     RegionOrdering.compare(this, that)
   }
 
+  /**
+   * @return The length of this region in bases.
+   */
   def length(): Long = {
     end - start
   }

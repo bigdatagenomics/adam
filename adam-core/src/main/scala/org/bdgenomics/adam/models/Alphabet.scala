@@ -20,10 +20,7 @@ package org.bdgenomics.adam.models
 import scala.util.Try
 
 /**
- * Created by bryan on 4/17/15.
- *
  * An alphabet of symbols and related operations
- *
  */
 trait Alphabet {
 
@@ -45,11 +42,16 @@ trait Alphabet {
       symbols.flatMap(symbol => Seq(symbol.label.toLower -> symbol, symbol.label.toUpper -> symbol)).toMap
 
   /**
+   * Reverses the string and compliments each residue.
+   *
+   * Fails if a residue has no complement.
    *
    * @param s Each char in this string represents a symbol on the alphabet.
    *          If the char is not in the alphabet then a NoSuchElementException is thrown
    * @return the reversed complement of the given string.
    * @throws IllegalArgumentException if the string contains a symbol which is not in the alphabet
+   *
+   * @see reverseComplement
    */
   def reverseComplementExact(s: String): String = {
     reverseComplement(
@@ -59,18 +61,26 @@ trait Alphabet {
   }
 
   /**
+   * Reverses the string and compliments each residue.
+   *
+   * If a residue has no known complement, that residue is replaced with a
+   * placeholder "not-found" value.
    *
    * @param s Each char in this string represents a symbol on the alphabet.
    * @param notFound If the char is not in the alphabet then this function is called.
    *                 default behavior is to return a new Symbol representing the unknown character,
    *                 so that the unknown char is treated as the complement
    * @return the reversed complement of the given string.
+   *
+   * @see reverseComplementExact
    */
   def reverseComplement(s: String, notFound: (Char => Symbol) = ((c: Char) => Symbol(c, c))) = {
     s.map(x => Try(apply(x)).getOrElse(notFound(x)).complement).reverse
   }
 
-  /** number of symbols in the alphabet */
+  /**
+   * The number of symbols in the alphabet.
+   */
   def size = symbols.size
 
   /**
@@ -78,11 +88,11 @@ trait Alphabet {
    * @return the given symbol
    */
   def apply(c: Char): Symbol = symbolMap(c)
-
 }
 
 /**
- * A symbol in an alphabet
+ * A symbol in an alphabet.
+ *
  * @param label a character which represents the symbol
  * @param complement acharacter which represents the complement of the symbol
  */
@@ -103,6 +113,9 @@ class DNAAlphabet extends Alphabet {
   )
 }
 
+/**
+ * Singleton object with references to all supported alphabets.
+ */
 object Alphabet {
   val dna = new DNAAlphabet
 }

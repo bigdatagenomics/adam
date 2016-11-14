@@ -40,7 +40,7 @@ class RecordGroupDictionarySuite extends FunSuite {
 
   test("sample name must be set") {
     val samRGR = new SAMReadGroupRecord("myId")
-    intercept[AssertionError] {
+    intercept[IllegalArgumentException] {
       RecordGroup(samRGR)
     }
   }
