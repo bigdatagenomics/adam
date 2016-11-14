@@ -1,3 +1,0 @@
-# We blanket-ignore .bam files in the top-level of the repo, but want to undo that here.
-!*.bam
-!*.bam.bai
