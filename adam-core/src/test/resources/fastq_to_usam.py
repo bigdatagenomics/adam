@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 
 # read lines from stdin
@@ -7,10 +8,10 @@ lines = sys.stdin.readlines()
 
 # must have multiple of 8
 assert len(lines) % 8 == 0, "Expected multiple of 8 lines (got %d -> %s)" % (len(lines), lines)
-fastq_records = len(lines) / 4
+fastq_records = len(lines) // 4
 
 # print sam header
-print "@HD\tVN:1.5\tSO:unsorted"
+print("@HD\tVN:1.5\tSO:unsorted")
 
 # loop and print sam lines
 for i in range(fastq_records):
@@ -58,7 +59,7 @@ for i in range(fastq_records):
     # 9. tlen (0 = unknown)
     # 10. sequence
     # 11. qualities
-    print "%s\t%d\t*\t0\t0\t*\t*\t0\t0\t%s\t%s" % (readName,
+    print("%s\t%d\t*\t0\t0\t*\t*\t0\t0\t%s\t%s" % (readName,
                                                      flags,
                                                      sequence,
-                                                     qualities)
+                                                     qualities))
