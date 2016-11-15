@@ -17,9 +17,8 @@
  */
 package org.bdgenomics.adam.cli
 
-import java.io.File
-
 import com.google.common.io.Files
+import java.io.File
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.utils.cli._
 
