@@ -136,7 +136,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamGT.getPhaseQuality === 50)
   }
 
-  test("Convert htsjdk SNV with different filters to ADAM") {
+  test("Convert htsjdk SNV with different variant filters to ADAM") {
     val vcb = htsjdkSNVBuilder
     vcb.genotypes(GenotypeBuilder.create("NA12878", vcb.getAlleles))
 
@@ -144,21 +144,62 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     { // No filters
       val adamVCs = converter.convert(vcb.make)
-      val adamGT = adamVCs.flatMap(_.genotypes).head
-      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing === null)
+      val adamVariant = adamVCs.map(_.variant).head
+      assert(adamVariant.getFiltersApplied === false)
+      assert(adamVariant.getFiltersPassed === null)
+      assert(adamVariant.getFiltersFailed.isEmpty)
     }
     { // PASSing
       vcb.unfiltered.passFilters
       val adamVCs = converter.convert(vcb.make)
-      val adamGT = adamVCs.flatMap(_.genotypes).head
-      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing)
+      val adamVariant = adamVCs.map(_.variant).head
+      assert(adamVariant.getFiltersApplied === true)
+      assert(adamVariant.getFiltersPassed === true)
+      assert(adamVariant.getFiltersFailed.isEmpty)
     }
     { // not PASSing
       vcb.unfiltered.filter("LowMQ")
       val adamVCs = converter.convert(vcb.make)
+      val adamVariant = adamVCs.map(_.variant).head
+      assert(adamVariant.getFiltersApplied === true)
+      assert(adamVariant.getFiltersPassed === false)
+      assert(adamVariant.getFiltersFailed.sameElements(List("LowMQ")))
+    }
+  }
+
+  test("Convert htsjdk SNV with different genotype filters to ADAM") {
+    val vcb = htsjdkSNVBuilder
+    val gb = new GenotypeBuilder("NA12878", vcb.getAlleles)
+
+    val converter = new VariantContextConverter
+
+    { // No filters
+      gb.unfiltered
+      vcb.genotypes(gb.make)
+      val adamVCs = converter.convert(vcb.make)
       val adamGT = adamVCs.flatMap(_.genotypes).head
-      assert(adamGT.getVariantCallingAnnotations.getVariantIsPassing === false)
-      assert(adamGT.getVariantCallingAnnotations.getVariantFilters.sameElements(List("LowMQ")))
+      // htsjdk does not distinguish between filters not applied and filters passed in Genotype
+      assert(adamGT.getVariantCallingAnnotations.getFiltersApplied === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersPassed === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersFailed.isEmpty)
+    }
+    { // PASSing
+      gb.filter("PASS")
+      vcb.genotypes(gb.make)
+      val adamVCs = converter.convert(vcb.make)
+      val adamGT = adamVCs.flatMap(_.genotypes).head
+      assert(adamGT.getVariantCallingAnnotations.getFiltersApplied === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersPassed === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersFailed.isEmpty)
+    }
+    { // not PASSing
+      gb.filter("LowMQ")
+      vcb.genotypes(gb.make)
+      val adamVCs = converter.convert(vcb.make)
+      val adamGT = adamVCs.flatMap(_.genotypes).head
+      assert(adamGT.getVariantCallingAnnotations.getFiltersApplied === true)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersPassed === false)
+      assert(adamGT.getVariantCallingAnnotations.getFiltersFailed.sameElements(List("LowMQ")))
     }
   }
 

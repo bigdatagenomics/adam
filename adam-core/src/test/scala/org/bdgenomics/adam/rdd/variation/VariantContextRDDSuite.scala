@@ -90,7 +90,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vcRdd.sequences.records(0).name === "chr11")
   }
 
-  sparkTest("joins SNV database annotation") {
+  sparkTest("joins SNV variant annotation") {
     val v0 = Variant.newBuilder
       .setContigName("11")
       .setStart(17409572)
@@ -103,16 +103,16 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val vc = VariantContextRDD(sc.parallelize(List(
       VariantContext(v0))), sd, Seq.empty)
 
-    val a0 = DatabaseVariantAnnotation.newBuilder
+    val a0 = VariantAnnotation.newBuilder
       .setVariant(v0)
-      .setDbSnpId(5219)
+      .setDbSnp(true)
       .build
 
-    val vda = DatabaseVariantAnnotationRDD(sc.parallelize(List(
+    val vda = VariantAnnotationRDD(sc.parallelize(List(
       a0)), sd)
 
-    val annotated = vc.joinDatabaseVariantAnnotation(vda).rdd
-    assert(annotated.map(_.databases.isDefined).reduce { (a, b) => a && b })
+    val annotated = vc.joinVariantAnnotations(vda).rdd
+    assert(annotated.map(_.annotations.isDefined).reduce { (a, b) => a && b })
   }
 
   sparkTest("don't lose any variants when piping as VCF") {

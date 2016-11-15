@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.variation
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
-import org.bdgenomics.formats.avro.DatabaseVariantAnnotation
+import org.bdgenomics.formats.avro.VariantAnnotation
 
 /**
  * An RDD containing variant annotations against a given reference genome.
@@ -28,8 +28,8 @@ import org.bdgenomics.formats.avro.DatabaseVariantAnnotation
  * @param rdd Variant annotations.
  * @param sequences A dictionary describing the reference genome.
  */
-case class DatabaseVariantAnnotationRDD(rdd: RDD[DatabaseVariantAnnotation],
-                                        sequences: SequenceDictionary) extends AvroGenomicRDD[DatabaseVariantAnnotation, DatabaseVariantAnnotationRDD] {
+case class VariantAnnotationRDD(rdd: RDD[VariantAnnotation],
+                                sequences: SequenceDictionary) extends AvroGenomicRDD[VariantAnnotation, VariantAnnotationRDD] {
 
   /**
    * Java-friendly method for saving to Parquet.
@@ -42,17 +42,18 @@ case class DatabaseVariantAnnotationRDD(rdd: RDD[DatabaseVariantAnnotation],
 
   /**
    * @param newRdd An RDD for replacing the underlying RDD.
-   * @return A new DatabaseVariantAnnotationRDD with the underlying RDD replaced.
+   * @return A new VariantAnnotationRDD with the underlying RDD replaced.
    */
-  protected def replaceRdd(newRdd: RDD[DatabaseVariantAnnotation]): DatabaseVariantAnnotationRDD = {
+  protected def replaceRdd(newRdd: RDD[VariantAnnotation]): VariantAnnotationRDD = {
     copy(rdd = newRdd)
   }
 
   /**
-   * @param elem Database variant annotation to get a region for.
-   * @return Returns the singular region covered by the variant.
+   * @param elem Variant annotation to extract a region from.
+   * @return Returns the singular region covered by the variant for the
+   *    specified variant annotation.
    */
-  protected def getReferenceRegions(elem: DatabaseVariantAnnotation): Seq[ReferenceRegion] = {
-    Seq(ReferenceRegion(elem))
+  protected def getReferenceRegions(annotation: VariantAnnotation): Seq[ReferenceRegion] = {
+    Seq(ReferenceRegion(annotation))
   }
 }

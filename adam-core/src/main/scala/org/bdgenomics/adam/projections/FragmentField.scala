@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.VariantCallingAnnotations
+import org.bdgenomics.formats.avro.Fragment
 
 /**
- * Enumeration of VariantCallingAnnotations field names for predicates and projections.
+ * Enumeration of Fragment field names for predicates and projections.
  */
-object VariantCallingAnnotationsField extends FieldEnumeration(VariantCallingAnnotations.SCHEMA$) {
+object FragmentField extends FieldEnumeration(Fragment.SCHEMA$) {
 
-  val variantFilters, downsampled, baseQRankSum, fisherStrandBiasPValue, rmsMapQ, mapq0Reads, mqRankSum, readPositionRankSum, genotypePriors, vqslod, culprit, attributes = SchemaValue
+  val readName, instrument, runId, fragmentSize, alignments = SchemaValue
 }
