@@ -434,7 +434,6 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
         // (because the htsjdk Genotype is not available when build is called upstream)
         val copy = VariantCallingAnnotations.newBuilder(annotations)
         // htsjdk does not provide a field filtersWereApplied for genotype as it does in VariantContext
-        // we might be able to calculate it by querying the FT FORMAT field value directly
         copy.setFiltersApplied(true)
         copy.setFiltersPassed(!g.isFiltered)
         if (g.isFiltered) {

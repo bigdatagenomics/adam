@@ -108,7 +108,7 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
    * @param s value to set
    * @param setFn function to call if the value is not empty
    */
-  def setIfNotEmpty(s: String, setFn: String => Unit) {
+  private def setIfNotEmpty(s: String, setFn: String => Unit) {
     Option(s).filter(_.nonEmpty).foreach(setFn)
   }
 

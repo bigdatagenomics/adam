@@ -274,4 +274,41 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
 
     assert(VALID === TranscriptEffectConverter.convertToVcfInfoAnnValue(Seq(te)))
   }
+
+  test("convert transcript effect with null fields to VCF ANN attribute value") {
+    val te = TranscriptEffect.newBuilder()
+      .setAlternateAllele("T")
+      .setEffects(ImmutableList.of("upstream_gene_variant"))
+      .setGeneName("TAS1R3")
+      .setGeneId("ENSG00000169962")
+      .setFeatureType("transcript")
+      .setFeatureId("ENST00000339381.5")
+      .setBiotype("protein_coding")
+      .setTranscriptHgvs("c.-485C>T")
+      .setRank(1)
+      .setTotal(2)
+      .setCdnaPosition(null)
+      .setCdnaLength(null)
+      .setCdsPosition(4)
+      .setCdsLength(null)
+      .setProteinPosition(1)
+      .setProteinLength(42)
+      .setDistance(453)
+      .build()
+
+    assert(VALID === TranscriptEffectConverter.convertToVcfInfoAnnValue(Seq(te)))
+  }
+
+  test("convert transcript effect with incorrect fractional value to VCF ANN attribute value") {
+    val te = TranscriptEffect.newBuilder()
+      .setAlternateAllele("T")
+      .setEffects(ImmutableList.of("upstream_gene_variant"))
+      .setRank(null)
+      .setTotal(2)
+      .build()
+
+    // should log warning "Incorrect fractional value ?/2, missing numerator" and set to empty string
+    // when ValidationStringency is made available for --> VCF, test STRICT throws exception
+    assert(!TranscriptEffectConverter.convertToVcfInfoAnnValue(Seq(te)).contains("2"))
+  }
 }
