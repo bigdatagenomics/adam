@@ -19,16 +19,13 @@ package org.bdgenomics.adam.cli
 
 import com.google.common.io.Files
 import java.io.File
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
 
 class ADAM2FastaSuite extends ADAMFunSuite {
 
   sparkTest("round trip FASTA to nucleotide contig fragments in ADAM format to FASTA") {
-    val fastaFile = ClassLoader.getSystemClassLoader.getResource("contigs.fa").getFile
+    val fastaFile = testFile("contigs.fa")
 
     val outputDir = Files.createTempDir()
     val outputContigFragmentsFile = outputDir.getAbsolutePath + "/contigs.adam"
