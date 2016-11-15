@@ -37,8 +37,6 @@ object Vcf2ADAM extends BDGCommandCompanion {
 }
 
 class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
-  @Args4jOption(required = false, name = "-dict", usage = "Reference dictionary")
-  var dictionaryFile: File = _
 
   @Argument(required = true, metaVar = "VCF", usage = "The VCF file to convert", index = 0)
   var vcfPath: String = _
@@ -56,7 +54,7 @@ class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   var onlyVariants: Boolean = false
 }
 
-class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] with DictionaryCommand with Logging {
+class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] with Logging {
   val companion = Vcf2ADAM
 
   def run(sc: SparkContext) {

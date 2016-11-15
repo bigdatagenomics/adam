@@ -194,7 +194,7 @@ Algorithm \ref{alg:join-targets}.
 
 The set returned by this function is used as an index for mapping reads directly to realignment targets.
 
-#### Candidate Generation and Realignment
+#### Candidate Generation and Realignment {#consensus-model}
 
 Once we have generated the target set, we map across all the reads and check to see if the read overlaps
 a realignment target. We then group together all reads that map to a given realignment target; reads that

@@ -52,45 +52,4 @@ class TransformFeaturesSuite extends ADAMFunSuite {
     assert(converted.size === 10)
     assert(converted.find(_.getContigName != "chr1").isEmpty)
   }
-
-  sparkTest("can convert a simple wigfix file") {
-    val loader = Thread.currentThread().getContextClassLoader
-    val inputPath = loader.getResource("chr5.phyloP46way.trunc.wigFix").getPath
-    val bedFile = File.createTempFile("adam-cli.TransformFeaturesSuite", ".bed")
-    val bedPath = bedFile.getAbsolutePath
-    val outputFile = File.createTempFile("adam-cli.TransformFeaturesSuite", ".adam")
-    val outputPath = outputFile.getAbsolutePath
-
-    // We have to do this, since the features2adam won't work if the file already exists,
-    // but the "createTempFile" method actually creates the file (on some systems?)
-    assert(bedFile.delete(), "Couldn't delete (empty) temp file")
-    assert(outputFile.delete(), "Couldn't delete (empty) temp file")
-
-    // convert to BED
-    val bedArgLine = "-wig %s -bed %s".format(inputPath, bedPath).split("\\s+")
-    val bedArgs: Wig2BedArgs = Args4j.apply[Wig2BedArgs](bedArgLine)
-    val wigFix2Bed = new WigFix2Bed(bedArgs)
-    wigFix2Bed.run()
-
-    // convert to ADAM Features
-    val adamArgLine = "%s %s".format(bedPath, outputPath).split("\\s+")
-    val adamArgs: TransformFeaturesArgs = Args4j.apply[TransformFeaturesArgs](adamArgLine)
-    val features2Adam = new TransformFeatures(adamArgs)
-    features2Adam.run(sc)
-
-    val schema = Projection(featureId, contigName, start, end, score)
-    val rdd = sc.loadFeatures(outputPath, projection = Some(schema))
-    val converted = rdd.rdd.collect.toSeq.sortBy(f => f.getStart)
-
-    assert(converted.size === 10)
-    assert(converted(0).getContigName == "chr5")
-    assert(converted(0).getStart == 13939)
-    assert(converted(0).getEnd == 13940)
-    assert(converted(0).getScore == 0.067)
-    assert(converted(6).getContigName == "chr5")
-    assert(converted(6).getStart == 15295)
-    assert(converted(9).getStart == 15298)
-    assert(converted(9).getEnd == 15299)
-    assert(converted(9).getScore == 0.139)
-  }
 }
