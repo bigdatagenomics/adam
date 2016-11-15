@@ -25,12 +25,12 @@ class SingleFastqInputFormatSuite extends ADAMFunSuite {
   (1 to 4) foreach { testNumber =>
     val inputName = "fastq_sample%d.fq".format(testNumber)
     val expectedOutputName = "single_" + inputName + ".output"
-    val expectedOutputPath = ClassLoader.getSystemClassLoader.getResource(expectedOutputName).getFile
+    val expectedOutputPath = testFile(expectedOutputName)
     val expectedOutputData = scala.io.Source.fromFile(expectedOutputPath).mkString
 
     sparkTest("FASTQ hadoop reader: %s->%s".format(inputName, expectedOutputName)) {
       def ifq_reader: RDD[(Void, Text)] = {
-        val path = ClassLoader.getSystemClassLoader.getResource(inputName).getFile
+        val path = testFile(inputName)
         sc.newAPIHadoopFile(path,
           classOf[SingleFastqInputFormat],
           classOf[Void],
