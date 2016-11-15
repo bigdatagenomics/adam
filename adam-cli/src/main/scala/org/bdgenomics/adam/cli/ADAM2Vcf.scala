@@ -40,8 +40,6 @@ object ADAM2Vcf extends BDGCommandCompanion {
 }
 
 class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
-  @Args4jOption(required = false, name = "-dict", usage = "Reference dictionary")
-  var dictionaryFile: File = _
 
   @Argument(required = true, metaVar = "ADAM", usage = "The ADAM variant files to convert", index = 0)
   var adamFile: String = _
@@ -64,16 +62,12 @@ class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
   var single: Boolean = false
 }
 
-class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] with DictionaryCommand with Logging {
+class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] with Logging {
   val companion = ADAM2Vcf
 
   def run(sc: SparkContext) {
     require(!(args.sort && args.sortLexicographically),
       "Cannot set both -sort_on_save and -sort_lexicographically_on_save.")
-
-    var dictionary: Option[SequenceDictionary] = loadSequenceDictionary(args.dictionaryFile)
-    if (dictionary.isDefined)
-      log.info("Using contig translation")
 
     val adamGTs = sc.loadParquetGenotypes(args.adamFile)
 

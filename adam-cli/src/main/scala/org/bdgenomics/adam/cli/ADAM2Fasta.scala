@@ -27,7 +27,11 @@ import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4JOption }
 
-class ADAM2FastaArgs extends ParquetLoadSaveArgs {
+class ADAM2FastaArgs extends Args4jBase {
+  @Argument(required = true, metaVar = "ADAM", usage = "The Parquet file to convert", index = 0)
+  var inputPath: String = null
+  @Argument(required = true, metaVar = "FASTA", usage = "Location to write the FASTA to", index = 1)
+  var outputPath: String = null
   @Args4JOption(required = false, name = "-coalesce", usage = "Choose the number of partitions to coalesce down to.")
   var coalesce: Int = -1
   @Args4JOption(required = false, name = "-force_shuffle_coalesce", usage = "Force shuffle while partitioning, default false.")

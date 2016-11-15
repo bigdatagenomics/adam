@@ -1,7 +1,8 @@
 ## flagstat
 
-Once you have data converted to ADAM, you can gather statistics from the ADAM file using `flagstat`.
-This command will output stats identically to the samtools `flagstat` command, e.g.
+Once you have data converted to ADAM, you can gather statistics from the ADAM
+file using [`flagstat`](#flagstat). This command will output stats identically
+to the samtools `flagstat` command, e.g.
 
 ```bash
 $ ./bin/adam-submit flagstat NA12878_chr20.adam

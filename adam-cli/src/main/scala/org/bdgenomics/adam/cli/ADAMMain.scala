@@ -32,13 +32,13 @@ object ADAMMain {
       CommandGroup(
         "ADAM ACTIONS",
         List(
-          CalculateDepth,
           CountReadKmers,
           CountContigKmers,
           Transform,
-          ADAM2Fastq,
+          TransformFeatures,
           Flatten,
-          MergeShards
+          MergeShards,
+          Reads2Coverage
         )
       ),
       CommandGroup(
@@ -49,11 +49,9 @@ object ADAMMain {
           VcfAnnotation2ADAM,
           Fasta2ADAM,
           ADAM2Fasta,
-          TransformFeatures,
-          WigFix2Bed,
+          ADAM2Fastq,
           Fragments2Reads,
-          Reads2Fragments,
-          Reads2Coverage
+          Reads2Fragments
         )
       ),
       CommandGroup(
@@ -61,8 +59,6 @@ object ADAMMain {
         List(
           PrintADAM,
           FlagStat,
-          ListDict,
-          AlleleCount,
           View
         )
       )

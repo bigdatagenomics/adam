@@ -41,7 +41,7 @@ class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
   var outputPath: String = null
 
   @Args4jOption(required = false, name = "-num_partitions",
-    usage = "Number of partitions to load an interval file using.")
+    usage = "Number of partitions to load a text file using.")
   var numPartitions: Int = _
 
   @Args4jOption(required = false, name = "-single",

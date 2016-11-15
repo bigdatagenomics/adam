@@ -28,7 +28,7 @@ import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object CountContigKmers extends BDGCommandCompanion {
-  val commandName = "count_contig_kmers"
+  val commandName = "countContigKmers"
   val commandDescription = "Counts the k-mers/q-mers from a read dataset."
 
   def apply(cmdLine: Array[String]) = {

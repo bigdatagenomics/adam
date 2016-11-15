@@ -27,7 +27,11 @@ import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4JOption }
 
-class ADAM2FastqArgs extends ParquetLoadSaveArgs {
+class ADAM2FastqArgs extends Args4jBase {
+  @Argument(required = true, metaVar = "INPUT", usage = "The read file to convert", index = 0)
+  var inputPath: String = null
+  @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the FASTQ to", index = 1)
+  var outputPath: String = null
   @Argument(required = false, metaVar = "SECOND_OUTPUT", usage = "When writing FASTQ data, all second-in-pair reads will go here, if this argument is provided", index = 2)
   var outputPath2: String = null
 

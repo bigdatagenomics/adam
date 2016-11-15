@@ -35,9 +35,9 @@ object Fragments2Reads extends BDGCommandCompanion {
 }
 
 class Fragments2ReadsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
-  @Argument(required = true, metaVar = "INPUT", usage = "The Fragment file to apply the transforms to", index = 0)
+  @Argument(required = true, metaVar = "FRAGMENTS", usage = "The Fragment file to apply the transforms to", index = 0)
   var inputPath: String = null
-  @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
+  @Argument(required = true, metaVar = "READS", usage = "Location to write the transformed data as reads", index = 1)
   var outputPath: String = null
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false

@@ -46,7 +46,7 @@ object Reads2Coverage extends BDGCommandCompanion {
 class Reads2CoverageArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The reads file to use to calculate depths", index = 0)
   var inputPath: String = null
-  @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the coverage data in ADAM/Parquet format", index = 1)
+  @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the coverage data to", index = 1)
   var outputPath: String = null
   @Args4jOption(required = false, name = "-collapse", usage = "Collapses neighboring coverage records " +
     "of equal counts into the same record")

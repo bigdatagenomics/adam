@@ -89,11 +89,11 @@ include:
 
 * [adam-kmers](https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_kmers):
   this workflow was demonstrated in [@vivian16] and sets up a Spark cluster
-  which then runs ADAM's `count_kmers` CLI.
+  which then runs ADAM's [`countKmers` CLI](#countKmers).
 * [adam-pipeline](https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_pipeline):
-  this workflow runs several stages in the ADAM `transform` CLI. This pipeline
-  is the ADAM equivalent to the GATK's "Best Practice" read preprocessing
-  pipeline. We then stitch together this pipeline with
+  this workflow runs several stages in the ADAM [`transform` CLI](#transform).
+  This pipeline is the ADAM equivalent to the GATK's "Best Practice" read
+  preprocessing pipeline. We then stitch together this pipeline with
   [BWA-MEM](https://github.com/lh3/bwa) and the GATK in the [adam-gatk-pipeline](
   https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_gatk_pipeline).
 
@@ -291,7 +291,7 @@ does the following work:
     _log.info('Counting %d-mers in %s, and saving to %s.',
               kmer_length, hdfs_input_file, hdfs_output_file)
     call_adam(master_ip,
-              ['count_kmers',
+              ['countKmers',
                hdfs_input_file, hdfs_output_file,
                str(kmer_length)],
               memory=memory, override_parameters=spark_conf)
