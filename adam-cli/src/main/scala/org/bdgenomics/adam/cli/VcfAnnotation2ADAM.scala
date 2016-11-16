@@ -22,7 +22,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.VariantAnnotationRDD
+import org.bdgenomics.adam.rdd.variant.VariantAnnotationRDD
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.cli._

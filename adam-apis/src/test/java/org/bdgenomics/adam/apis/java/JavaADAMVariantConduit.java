@@ -25,7 +25,7 @@ import org.bdgenomics.adam.apis.java.JavaADAMContext;
 import org.bdgenomics.adam.models.RecordGroupDictionary;
 import org.bdgenomics.adam.models.SequenceDictionary;
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.variation.VariantRDD;
+import org.bdgenomics.adam.rdd.variant.VariantRDD;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of annotations to

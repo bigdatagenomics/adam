@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.variation
+package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.variant.vcf.{ VCFHeaderLine, VCFHeader }
 import org.apache.hadoop.fs.{ FileSystem, Path }
@@ -40,7 +40,7 @@ class ADAMVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF
     val conf = context.getConfiguration()
 
     // where is our header file?
-    val path = new Path(conf.get("org.bdgenomics.adam.rdd.variation.vcf_header_path"))
+    val path = new Path(conf.get("org.bdgenomics.adam.rdd.variant.vcf_header_path"))
 
     // read the header file
     readHeaderFrom(path, FileSystem.get(conf))
@@ -64,7 +64,7 @@ class ADAMHeaderlessVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCF
     val conf = context.getConfiguration()
 
     // where is our header file?
-    val path = new Path(conf.get("org.bdgenomics.adam.rdd.variation.vcf_header_path"))
+    val path = new Path(conf.get("org.bdgenomics.adam.rdd.variant.vcf_header_path"))
 
     // read the header file
     readHeaderFrom(path, FileSystem.get(conf))
