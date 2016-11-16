@@ -397,6 +397,9 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
     if (vc.isFiltered) {
       builder.setFiltersFailed(new java.util.ArrayList(vc.getFilters));
     }
+    if (vc.getAttributeAsBoolean("SOMATIC", false)) {
+      builder.setSomatic(true)
+    }
     builder.build
   }
 
@@ -605,6 +608,21 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
     joinNames(variant) match {
       case None    => vcb.noID()
       case Some(s) => vcb.id(s)
+    }
+
+    val filtersApplied = Option(variant.getFiltersApplied).getOrElse(false)
+    val filtersPassed = Option(variant.getFiltersPassed).getOrElse(false)
+
+    (filtersApplied, filtersPassed) match {
+      case (false, false) => vcb.unfiltered
+      case (false, true)  => vcb.passFilters // log warning?
+      case (true, false)  => vcb.filters(new java.util.HashSet(variant.getFiltersFailed()))
+      case (true, true)   => vcb.passFilters
+    }
+
+    val somatic: java.lang.Boolean = Option(variant.getSomatic).getOrElse(false)
+    if (somatic) {
+      vcb.attribute("SOMATIC", true)
     }
 
     // TODO: Extract provenance INFO fields
