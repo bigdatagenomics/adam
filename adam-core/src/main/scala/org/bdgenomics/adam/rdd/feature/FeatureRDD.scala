@@ -72,7 +72,7 @@ private trait FeatureOrdering[T <: Feature] extends Ordering[T] {
 }
 private object FeatureOrdering extends FeatureOrdering[Feature] {}
 
-private[rdd] object FeatureRDD {
+object FeatureRDD {
 
   /**
    * @param elem The feature to extract a sequence record from.
@@ -128,7 +128,7 @@ private[rdd] object FeatureRDD {
    * @param feature Feature to write in IntervalList format.
    * @return Feature as a one line interval list string.
    */
-  def toInterval(feature: Feature): String = {
+  private[rdd] def toInterval(feature: Feature): String = {
     val sequenceName = feature.getContigName
     val start = feature.getStart + 1 // IntervalList ranges are 1-based
     val end = feature.getEnd // IntervalList ranges are closed
@@ -141,7 +141,7 @@ private[rdd] object FeatureRDD {
    * @param feature Feature to write in the narrow peak format.
    * @return Returns this feature as a single narrow peak line.
    */
-  def toNarrowPeak(feature: Feature): String = {
+  private[rdd] def toNarrowPeak(feature: Feature): String = {
     val chrom = feature.getContigName
     val start = feature.getStart
     val end = feature.getEnd
@@ -159,7 +159,7 @@ private[rdd] object FeatureRDD {
    * @param feature Feature to write in BED format.
    * @return Returns the feature as a single line BED string.
    */
-  def toBed(feature: Feature): String = {
+  private[rdd] def toBed(feature: Feature): String = {
     val chrom = feature.getContigName
     val start = feature.getStart
     val end = feature.getEnd
@@ -186,7 +186,7 @@ private[rdd] object FeatureRDD {
    * @param feature Feature to write in GFF3 format.
    * @return Returns this feature as a single line GFF3 string.
    */
-  def toGff3(feature: Feature): String = {
+  private[rdd] def toGff3(feature: Feature): String = {
     def escape(entry: (Any, Any)): String = {
       entry._1 + "=" + entry._2
     }
