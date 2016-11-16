@@ -53,7 +53,8 @@ object ADAMMain {
           WigFix2Bed,
           Fragments2Reads,
           Reads2Fragments,
-          Reads2Coverage
+          Reads2Coverage,
+          Vcf2HBase
         )
       ),
       CommandGroup(
