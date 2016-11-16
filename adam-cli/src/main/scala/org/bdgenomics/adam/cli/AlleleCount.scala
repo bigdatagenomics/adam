@@ -22,7 +22,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variation.GenotypeRDD
+import org.bdgenomics.adam.rdd.variant.GenotypeRDD
 import org.bdgenomics.formats.avro.{ Genotype, GenotypeAllele }
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging

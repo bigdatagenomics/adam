@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.variation
+package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.variant.variantcontext.writer.{
   Options,
@@ -51,7 +51,7 @@ object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContex
   }
 }
 
-private[variation] case class VCFInFormatter private (
+private[variant] case class VCFInFormatter private (
     sequences: SequenceDictionary,
     samples: Seq[String]) extends InFormatter[VariantContext, VariantContextRDD, VCFInFormatter] {
 

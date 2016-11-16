@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.variation
+package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.variant.variantcontext.writer.{
   Options,
@@ -170,7 +170,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     os.close()
 
     // set path to header file
-    conf.set("org.bdgenomics.adam.rdd.variation.vcf_header_path", headPath.toString)
+    conf.set("org.bdgenomics.adam.rdd.variant.vcf_header_path", headPath.toString)
 
     if (asSingleFile) {
 

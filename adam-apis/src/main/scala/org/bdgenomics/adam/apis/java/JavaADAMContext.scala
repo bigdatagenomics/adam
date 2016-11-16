@@ -26,7 +26,7 @@ import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.FeatureRDD
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
-import org.bdgenomics.adam.rdd.variation.{
+import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
   VariantRDD,
   VariantAnnotationRDD
