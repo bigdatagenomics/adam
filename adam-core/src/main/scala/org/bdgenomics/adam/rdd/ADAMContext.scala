@@ -57,6 +57,8 @@ import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
+import org.hammerlab.genomics.loci.parsing.{ LociRange, LociRanges, ParsedLoci }
+import org.hammerlab.genomics.loci.set.LociSet
 import org.seqdoop.hadoop_bam._
 import org.seqdoop.hadoop_bam.util._
 import scala.collection.JavaConversions._
@@ -490,25 +492,13 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
 
   /**
    * Functions like loadBam, but uses bam index files to look at fewer blocks,
-   * and only returns records within a specified ReferenceRegion. Bam index file required.
-   *
-   * @param filePath The path to the input data. Currently this path must correspond to
-   *        a single Bam file. The bam index file associated needs to have the same name.
-   * @param viewRegion The ReferenceRegion we are filtering on
-   */
-  def loadIndexedBam(filePath: String, viewRegion: ReferenceRegion): AlignmentRecordRDD = {
-    loadIndexedBam(filePath, Iterable(viewRegion))
-  }
-
-  /**
-   * Functions like loadBam, but uses bam index files to look at fewer blocks,
    * and only returns records within the specified ReferenceRegions. Bam index file required.
    *
    * @param filePath The path to the input data. Currently this path must correspond to
    *        a single Bam file. The bam index file associated needs to have the same name.
-   * @param viewRegions Iterable of ReferenceRegions we are filtering on
+   * @param parsedLoci Iterable of ReferenceRegions we are filtering on
    */
-  def loadIndexedBam(filePath: String, viewRegions: Iterable[ReferenceRegion])(implicit s: DummyImplicit): AlignmentRecordRDD = {
+  def loadIndexedBam(filePath: String, parsedLoci: ParsedLoci)(implicit s: DummyImplicit): AlignmentRecordRDD = {
     val path = new Path(filePath)
     val bamFiles = getFsAndFiles(path).filter(p => p.toString.endsWith(".bam"))
 
@@ -530,9 +520,12 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
         (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
       })
 
+    val contigLengths = seqDict.contigLengths
+    val loci = LociSet(parsedLoci, contigLengths)
+
     val job = HadoopUtil.newJob(sc)
     val conf = ContextUtil.getConfiguration(job)
-    BAMInputFormat.setIntervals(conf, viewRegions.toList.map(r => LocatableReferenceRegion(r)))
+    BAMInputFormat.setIntervals(conf, loci.toHtsJDKIntervals)
 
     val records = sc.union(bamFiles.map(p => {
       sc.newAPIHadoopFile(p.toString, classOf[BAMInputFormat], classOf[LongWritable],
@@ -543,6 +536,29 @@ class ADAMContext private (@transient val sc: SparkContext) extends Serializable
     AlignedReadRDD(records.map(p => samRecordConverter.convert(p._2.get)),
       seqDict,
       readGroups)
+  }
+
+  def loadIndexedBam(filePath: String, viewRegions: Iterable[ReferenceRegion])(implicit s: DummyImplicit): AlignmentRecordRDD =
+    loadIndexedBam(
+      filePath,
+      LociRanges(
+        viewRegions.map(
+          region =>
+            LociRange(region.referenceName, region.start, region.end)
+        )
+      )
+    )
+
+  /**
+   * Functions like loadBam, but uses bam index files to look at fewer blocks,
+   * and only returns records within a specified ReferenceRegion. Bam index file required.
+   *
+   * @param filePath The path to the input data. Currently this path must correspond to
+   *        a single Bam file. The bam index file associated needs to have the same name.
+   * @param viewRegion The ReferenceRegion we are filtering on
+   */
+  def loadIndexedBam(filePath: String, viewRegion: ReferenceRegion): AlignmentRecordRDD = {
+    loadIndexedBam(filePath, Iterable(viewRegion))
   }
 
   /**
