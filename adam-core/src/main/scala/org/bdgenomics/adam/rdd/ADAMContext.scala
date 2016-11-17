@@ -18,9 +18,9 @@
 package org.bdgenomics.adam.rdd
 
 import java.io.{ File, FileNotFoundException, InputStream }
-import java.util.regex.Pattern
+
+import htsjdk.samtools.util.Locatable
 import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
-import htsjdk.samtools.util.{ Interval, Locatable }
 import htsjdk.variant.vcf.VCFHeader
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
@@ -40,12 +40,7 @@ import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.projections.{
-  AlignmentRecordField,
-  FeatureField,
-  NucleotideContigFragmentField,
-  Projection
-}
+import org.bdgenomics.adam.projections.{ FeatureField, Projection }
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature._
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
@@ -59,9 +54,8 @@ import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
 import org.seqdoop.hadoop_bam._
 import org.seqdoop.hadoop_bam.util._
+
 import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
-import scala.collection.Map
 import scala.reflect.ClassTag
 
 /**
