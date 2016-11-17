@@ -17,10 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
-import htsjdk.variant.variantcontext.writer.{
-  Options,
-  VariantContextWriterBuilder
-}
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.io.OutputStream
 import org.apache.hadoop.io.LongWritable
@@ -36,7 +32,11 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext
 }
-import org.bdgenomics.adam.rdd.{ FileMerger, MultisampleGenomicRDD }
+import org.bdgenomics.adam.rdd.{
+  FileMerger,
+  MultisampleGenomicRDD,
+  VCFHeaderUtils
+}
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro.Sample
 import org.bdgenomics.utils.misc.Logging
@@ -153,30 +153,15 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     // configure things for saving to disk
     val conf = rdd.context.hadoopConfiguration
     val fs = headPath.getFileSystem(conf)
-    conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
 
-    // get an output stream
-    val os = fs.create(headPath)
-      .asInstanceOf[OutputStream]
+    // write vcf header
+    VCFHeaderUtils.write(header,
+      headPath,
+      fs)
 
-    // build a vcw
-    val vcw = new VariantContextWriterBuilder()
-      .setOutputVCFStream(os)
-      .clearIndexCreator()
-      .unsetOption(Options.INDEX_ON_THE_FLY)
-      .build()
-
-    // write the header
-
-    vcw.writeHeader(header)
-
-    // close the writer and the underlying stream
-    vcw.close()
-    os.flush()
-    os.close()
-
-    // set path to header file
+    // set path to header file and the vcf format
     conf.set("org.bdgenomics.adam.rdd.variant.vcf_header_path", headPath.toString)
+    conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
 
     if (asSingleFile) {
 

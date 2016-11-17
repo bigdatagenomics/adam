@@ -17,12 +17,18 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
-import htsjdk.variant.vcf.VCFHeaderLine
+import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
+import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
-import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
-import org.bdgenomics.formats.avro.Variant
+import org.bdgenomics.adam.rdd.{
+  AvroGenomicRDD,
+  JavaSaveArgs,
+  VCFHeaderUtils
+}
+import org.bdgenomics.formats.avro.{ Contig, Variant }
+import scala.collection.JavaConversions._
 
 /**
  * An RDD containing variants called against a given reference genome.
@@ -35,6 +41,21 @@ import org.bdgenomics.formats.avro.Variant
 case class VariantRDD(rdd: RDD[Variant],
                       sequences: SequenceDictionary,
                       @transient headerLines: Seq[VCFHeaderLine] = SupportedHeaderLines.allHeaderLines) extends AvroGenomicRDD[Variant, VariantRDD] {
+
+  override protected def saveMetadata(filePath: String) {
+
+    // write vcf headers to file
+    VCFHeaderUtils.write(new VCFHeader(headerLines.toSet),
+      new Path("%s/_header".format(filePath)),
+      rdd.context.hadoopConfiguration)
+
+    // convert sequence dictionary to avro form and save
+    val contigs = sequences.toAvro
+    saveAvro("%s/_seqdict.avro".format(filePath),
+      rdd.context,
+      Contig.SCHEMA$,
+      contigs)
+  }
 
   /**
    * Java-friendly method for saving to Parquet.
