@@ -1,57 +1,134 @@
 # Deploying ADAM
 
-## Running ADAM on EC2
+## Running ADAM on AWS EC2 using CGCloud
 
-First, export some variables for running EC2:
+CGCloud provides an automated means to create a cluster on EC2 for use with ADAM.
 
-```bash
-export AWS_ACCESS_KEY_ID='?????'
-export AWS_SECRET_ACCESS_KEY='?????'
-export MY_KEYPAIR="?????"      # your keypair in us-east
-export MY_KEYFILE="?????.pem"
-export MY_CLUSTER_NAME="adam_cluster"
-export MY_CLUSTER_SIZE=10
+[CGCloud](https://github.com/BD2KGenomics/cgcloud) lets you automate the creation, 
+management and provisioning of VMs and clusters of VMs in Amazon EC2.  
+The [CGCloud plugin for Spark]
+(https://github.com/BD2KGenomics/cgcloud/blob/master/spark/README.rst) 
+lets you setup a fully configured Apache Spark cluster in EC2.
 
-# M2 and CR1 are memory optimized
-export MY_INSTANCE_TYPE="m2.4xlarge"
+Prior to following these instructions, you need to already have setup your AWS 
+account and know your
+AWS access keys.  See https://aws.amazon.com/ for details.
+
+#### Configure CGCloud
+
+Begin by reading the CGcloud [readme](https://github.com/BD2KGenomics/cgcloud).
+
+Next, configure [CGCloud core]
+(https://github.com/BD2KGenomics/cgcloud/blob/master/core/README.rst) 
+and then install the 
+[CGcloud spark plugin]
+(https://github.com/BD2KGenomics/cgcloud/blob/master/spark/README.rst).
+
+One modification to CGCloud install instructions: replace the two pip calls  
+`pip install cgcloud-core` and `pip install cgcloud-spark` with the single command:
+```
+pip install cgcloud-spark==1.6.0
+```
+which will install the correct version of both cgcloud-core and cgcloud-spark.
+
+
+
+Note, the steps to register your ssh key and create the template boxes below
+ need only be done once.
+```
+cgcloud register-key ~/.ssh/id_rsa.pub
+cgcloud create generic-ubuntu-trusty-box
+cgcloud create -IT spark-box
 ```
 
-If you want to use spot pricing, add `--spot-price` as an option to
-`spark_ec2_launch` (below) and `export MY_SPOT_PRICE=1.399`.
+#### Launch a cluster
 
-Export the path to your `spark-ec2` script,
-
-```bash
-export SPARK_EC2_SCRIPT="/path/to/spark-0.8.1/ec2/spark-ec2"   # CHANGE ME
+Spin up a Spark cluster named `cluster1` with one leader and two workers nodes 
+of instance type `m3.large` with the command:
+```
+cgcloud create-cluster spark -c cluster1 -s 2 -t m3.large
+```
+Once running, you can ssh to `spark-master` with the command:
+```
+cgcloud ssh -c cluster1 spark-master
 ```
 
-Set up some aliases for commands to the spark ec2 script,
-
-```bash
-alias spark_ec2_launch="$SPARK_EC2_SCRIPT -k $MY_KEYPAIR \
--i $MY_KEYFILE -s $MY_CLUSTER_SIZE --zone us-east-1c \
---instance-type=$MY_INSTANCE_TYPE launch $MY_CLUSTER_NAME"
-alias spark_ec2_stop="$SPARK_EC2_SCRIPT stop $MY_CLUSTER_NAME"
-alias spark_ec2_start="$SPARK_EC2_SCRIPT -i $MY_KEYFILE start $MY_CLUSTER_NAME"
-alias spark_ec2_destroy="$SPARK_EC2_SCRIPT destroy $MY_CLUSTER_NAME"
-alias spark_ec2_login="$SPARK_EC2_SCRIPT -k $MY_KEYPAIR -i $MY_KEYFILE login $MY_CLUSTER_NAME"
+Spark is already installed on the `spark-master` machine and slaves, test it 
+by starting a spark-shell.
+```
+spark-shell
+exit()
 ```
 
-Now you can run:
-* `spark_ec2_launch` to launch your cluster,
-* `spark_ec2_stop` to stop the cluster (your data is not deleted),
-* `spark_ec2_start` to restart your cluster,
-* `spark_ec2_destroy` to stop the cluster and cleanup all data,
-* `spark_ec2_login` to log into the master node of your cluster.
+#### Install ADAM
 
-Launching a cluster takes about 10 minutes. When the spark ec2 script finishes,
-it will give you the location of your spark master web UI and ganglia UI. You
-may want to open both URLs in tabs and 'pin' them to return to later.
+To use the ADAM application on top of Spark, we need to download and install 
+ADAM on `spark-master`.
+From the command line on `spark-master` download a release
+[here](https://github.com/bigdatagenomics/adam/releases). As of this writing, 
+CGCloud supports Spark 1.6.2, not Spark 2.x, so download
+the Spark 1.x Scala2.10 release:
+```
+wget https://repo1.maven.org/maven2/org/bdgenomics/adam/adam-distribution_2.10/0.20.0/adam-distribution_2.10-0.20.0-bin.tar.gz
 
-Once you have the cluster running, you will need to scp `adam-x.y.jar` to the
-master node, e.g.
-`scp -i /path/to/key.pem adam-x.y.jar root@ec2-107-21-175-59.compute-1.amazonaws.com:`
-(don't forget the *colon* at the end).
+tar -xvfz adam-distribution_2.10-0.20.0-bin.tar.gz
+```
+
+You can now run `./bin/adam-submit` and `./bin/adam-shell` using your EC2 
+cluster.
+
+#### Input and Output data on HDFS and S3
+
+Spark requires a file system, such a HDFS or a network file mount, that all 
+machines can access.
+The CGCloud EC2 Spark cluster you just created is already running HDFS.
+
+The typical flow of data to and from your ADAM application on EC2 will be:
+- Upload data to AWS S3
+- Transfer from S3 to the HDFS on your cluster
+- Compute with ADAM, write output to HDFS
+- Copy data you wish to persist for later use to S3
+
+For small test files you may wish to skip S3 by  uploading directly to 
+spark-master using `scp` and then copy to HDFS using 
+`hadoop fs -put sample1.bam /datadir/` 
+
+From ADAM shell, or as parameter to ADAM submit, you would refer HDFS URLs
+such as:
+```
+adam-submit transform hdfs://spark-master/work_dir/sample1.bam \
+                      hdfs://spark-master/work_dir/sample1.adam
+```
+
+#### Bulk Transfer between HDFS and S3
+To transfer large amounts of data back and forth from S3 to HDFS, we suggest using 
+[Conductor](https://github.com/BD2KGenomics/conductor).
+It is also possible to directly use AWS S3 as a distributed file system, 
+but with some loss of performance.
+
+#### Terminate Cluster
+Shutdown the cluster using:
+```
+cgcloud terminate-cluster -c cluster1 spark
+```
+
+#### CGCoud options and Spot Instances
+View help docs for all options of the the `cgcloud create-cluster` command:
+```
+cgcloud create-cluster -h
+```
+
+In particular, note the `--spot-bid` and related spot options to utilize AWS 
+spot instances inorder to save on costs. Also, it's a good idea to double check 
+in AWS console that your instances have terminated to avoid unintended costs.
+
+
+#### Access Spark GUI
+In order to view the Spark server or application GUI pages on port 4040 and 
+8080 on `spark-master` go to Security Groups in AWS console
+and open inbound TCP for those ports from your local IP address.  Find the 
+IP address of `spark-master` which is part of  the Linux command prompt, then 
+on your local machine point your web-browser to http://ip_of_spark_master:4040/
 
 ## Running ADAM on CDH 5 and other YARN based Distros
 
