@@ -17,8 +17,10 @@
  */
 package org.bdgenomics.adam.rdd
 
+import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.util.concurrent.Executors
 import org.apache.avro.generic.IndexedRecord
+import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
@@ -728,7 +730,17 @@ abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroRe
 abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: MultisampleAvroGenomicRDD[T, U]] extends AvroGenomicRDD[T, U]
     with MultisampleGenomicRDD[T, U] {
 
+  /**
+   * The header lines attached to the file.
+   */
+  val headerLines: Seq[VCFHeaderLine]
+
   override protected def saveMetadata(filePath: String) {
+
+    // write vcf headers to file
+    VCFHeaderUtils.write(new VCFHeader(headerLines.toSet),
+      new Path("%s/_header".format(filePath)),
+      rdd.context.hadoopConfiguration)
 
     // get file to write to
     saveAvro("%s/_samples.avro".format(filePath),

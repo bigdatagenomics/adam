@@ -140,6 +140,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     variants.sort()
       .saveAsVcf(outputPath,
         asSingleFile = true)
+    println(outputPath)
 
     checkFiles(outputPath, testFile("sorted.vcf"))
   }
@@ -153,6 +154,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       .saveAsVcf(outputPath,
         asSingleFile = true)
 
+    println(outputPath)
     checkFiles(outputPath, testFile("sorted.lex.vcf"))
   }
 }
