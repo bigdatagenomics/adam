@@ -9,13 +9,20 @@
 ##FORMAT=<ID=PQ,Number=1,Type=Float,Description="Read-backed phasing quality">
 ##FORMAT=<ID=PS,Number=1,Type=Integer,Description="Phase set">
 ##FORMAT=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">
-##INFO=<ID=FS,Number=1,Type=Float,Description="Phred-scaled p-value using Fisher's exact test to detect strand bias">
-##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
-##INFO=<ID=MQ0,Number=1,Type=Integer,Description="Total Mapping Quality Zero Reads">
-##INFO=<ID=MQRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities">
-##INFO=<ID=ReadPosRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias">
-##INFO=<ID=VQSLOD,Number=1,Type=Float,Description="Log odds ratio of being a true variant versus being false under the trained gaussian mixture model">
-##INFO=<ID=culprit,Number=1,Type=String,Description="The annotation which was the worst performing in the Gaussian mixture model, likely the reason why the variant was filtered out">
+##INFO=<ID=1000G,Number=0,Type=Flag,Description="Membership in 1000 Genomes">
+##INFO=<ID=AA,Number=1,Type=String,Description="Ancestral allele">
+##INFO=<ID=AC,Number=A,Type=String,Description="Allele count">
+##INFO=<ID=AD,Number=R,Type=Integer,Description="Total read depths for each allele">
+##INFO=<ID=ADF,Number=R,Type=Integer,Description="Read depths for each allele on the forward strand">
+##INFO=<ID=ADR,Number=R,Type=Integer,Description="Read depths for each allele on the reverse strand">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele frequency for each allele">
+##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO' ">
+##INFO=<ID=CIGAR,Number=A,Type=String,Description="Cigar string describing how to align alternate alleles to the reference allele">
+##INFO=<ID=DB,Number=0,Type=Flag,Description="Membership in dbSNP">
+##INFO=<ID=H2,Number=0,Type=Flag,Description="Membership in HapMap2">
+##INFO=<ID=H3,Number=0,Type=Flag,Description="Membership in HapMap3">
+##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description="Somatic event">
+##INFO=<ID=VALIDATED,Number=0,Type=Flag,Description="Validated by follow-up experiment">
 ##contig=<ID=1,length=249250621>
 ##contig=<ID=2,length=249250621>
 ##contig=<ID=13,length=249250621>
