@@ -122,9 +122,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("don't lose any variants when piping as VCF") {
-    val smallVcf = Thread.currentThread()
-      .getContextClassLoader
-      .getResource("small.vcf").getFile
+    val smallVcf = testFile("small.vcf")
     val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
     val records = rdd.rdd.count
 

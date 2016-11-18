@@ -23,10 +23,7 @@ import htsjdk.variant.variantcontext.writer.{
 }
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.io.OutputStream
-import org.bdgenomics.adam.converters.{
-  SupportedHeaderLines,
-  VariantContextConverter
-}
+import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext
@@ -47,13 +44,14 @@ object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContex
    *   VCF header.
    */
   def apply(gRdd: VariantContextRDD): VCFInFormatter = {
-    VCFInFormatter(gRdd.sequences, gRdd.samples.map(_.getSampleId))
+    VCFInFormatter(gRdd.sequences, gRdd.samples.map(_.getSampleId), gRdd.headerLines)
   }
 }
 
 private[variant] case class VCFInFormatter private (
     sequences: SequenceDictionary,
-    samples: Seq[String]) extends InFormatter[VariantContext, VariantContextRDD, VCFInFormatter] {
+    samples: Seq[String],
+    headerLines: Seq[VCFHeaderLine]) extends InFormatter[VariantContext, VariantContextRDD, VCFInFormatter] {
 
   protected val companion = VCFInFormatter
 
@@ -75,9 +73,7 @@ private[variant] case class VCFInFormatter private (
       .unsetOption(Options.INDEX_ON_THE_FLY)
       .build()
 
-    val headerLines: Set[VCFHeaderLine] = (SupportedHeaderLines.infoHeaderLines ++
-      SupportedHeaderLines.formatHeaderLines).toSet
-    val header = new VCFHeader(headerLines, samples)
+    val header = new VCFHeader(headerLines.toSet, samples)
     header.setSequenceDictionary(sequences.toSAMSequenceDictionary)
     writer.writeHeader(header)
 

@@ -92,10 +92,6 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   test("Convert somatic htsjdk site-only SNV to ADAM") {
     val converter = new VariantContextConverter
 
-    // not sure why this doesn't work
-    //htsjdkSNVBuilder.attribute("SOMATIC", true)
-    //val adamVCs = converter.convert(htsjdkSNVBuilder.make)
-
     val vcb: VariantContextBuilder = new VariantContextBuilder()
       .alleles(List(Allele.create("A", true), Allele.create("T")))
       .start(1L)

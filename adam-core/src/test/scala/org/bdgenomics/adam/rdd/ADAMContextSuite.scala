@@ -154,10 +154,6 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vcs.size === 6)
 
     val vc = vcs.head
-
-    /*
-1	14397	.	CTGT	C	139.12	IndelQD	AC=2;AF=0.333;AN=6;BaseQRankSum=1.800;ClippingRankSum=0.138;DP=69;FS=7.786;MLEAC=2;MLEAF=0.333;MQ=26.84;MQ0=0;MQRankSum=-1.906;QD=1.55;ReadPosRankSum=0.384	GT:AD:DP:FT:GQ:PL	0/1:16,4:20:rd:99:120,0,827	0/1:8,2:10:dp;rd:60:60,0,414	0/0:39,0:39:PASS:99:0,116,2114
-     */
     val variant = vc.variant.variant
     assert(variant.getContigName === "1")
     assert(variant.getStart === 14396L)
