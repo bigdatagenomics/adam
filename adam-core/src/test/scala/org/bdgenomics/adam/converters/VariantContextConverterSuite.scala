@@ -86,6 +86,23 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     assert(variant.getReferenceAllele === "A")
     assert(variant.getStart === 0L)
+    assert(variant.getSomatic === false)
+  }
+
+  test("Convert somatic htsjdk site-only SNV to ADAM") {
+    val converter = new VariantContextConverter
+
+    val vcb: VariantContextBuilder = new VariantContextBuilder()
+      .alleles(List(Allele.create("A", true), Allele.create("T")))
+      .start(1L)
+      .stop(1L)
+      .chr("1")
+      .attribute("SOMATIC", true)
+
+    val adamVCs = converter.convert(vcb.make)
+    val adamVC = adamVCs.head
+    val variant = adamVC.variant.variant
+    assert(variant.getSomatic === true)
   }
 
   test("Convert htsjdk site-only SNV to ADAM with contig conversion") {
@@ -412,5 +429,95 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val htsjdkVC = converter.convert(ADAMVariantContext(variant))
     assert(htsjdkVC.hasID)
     assert(htsjdkVC.getID === "rs3131972;rs201888535")
+  }
+
+  test("Convert ADAM variant context with null filters applied to htsjdk") {
+    val variant = adamSNVBuilder()
+      .setFiltersApplied(null)
+      .build
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(!htsjdkVC.filtersWereApplied)
+    assert(!htsjdkVC.isFiltered)
+    assert(htsjdkVC.getFilters.isEmpty)
+  }
+
+  test("Convert ADAM variant context with no filters applied to htsjdk") {
+    val variant = adamSNVBuilder()
+      .setFiltersApplied(false)
+      .build
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(!htsjdkVC.filtersWereApplied)
+    assert(!htsjdkVC.isFiltered)
+    assert(htsjdkVC.getFilters.isEmpty)
+  }
+
+  test("Convert ADAM variant context with passing filters to htsjdk") {
+    val variant = adamSNVBuilder()
+      .setFiltersApplied(true)
+      .setFiltersPassed(true)
+      .build
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(htsjdkVC.filtersWereApplied)
+    assert(!htsjdkVC.isFiltered)
+    assert(htsjdkVC.getFilters.isEmpty)
+  }
+
+  test("Convert ADAM variant context with failing filters to htsjdk") {
+    val variant = adamSNVBuilder()
+      .setFiltersApplied(true)
+      .setFiltersPassed(false)
+      .setFiltersFailed(ImmutableList.of("FILTER1", "FILTER2"))
+      .build
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(htsjdkVC.filtersWereApplied)
+    assert(htsjdkVC.isFiltered)
+    assert(htsjdkVC.getFilters.contains("FILTER1"))
+    assert(htsjdkVC.getFilters.contains("FILTER2"))
+  }
+
+  test("Convert ADAM variant context with null somatic flag to htsjdk") {
+    val variant = adamSNVBuilder()
+      .setSomatic(null)
+      .build
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(!htsjdkVC.hasAttribute("SOMATIC"))
+  }
+
+  test("Convert ADAM variant context with non-somatic variant to htsjdk") {
+    val variant = adamSNVBuilder()
+      .setSomatic(false)
+      .build
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(!htsjdkVC.hasAttribute("SOMATIC"))
+  }
+
+  test("Convert ADAM variant context with somatic variant to htsjdk") {
+    val variant = adamSNVBuilder()
+      .setSomatic(true)
+      .build
+
+    val converter = new VariantContextConverter
+
+    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
+    assert(htsjdkVC.hasAttribute("SOMATIC"))
+    assert(htsjdkVC.getAttributeAsBoolean("SOMATIC", false) === true)
   }
 }

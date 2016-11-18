@@ -45,6 +45,8 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       .setReferenceAllele("T")
       .setAlternateAllele("C")
       .setNames(ImmutableList.of("rs3131972", "rs201888535"))
+      .setFiltersApplied(true)
+      .setFiltersPassed(true)
       .build
 
     val g0 = Genotype.newBuilder().setVariant(v0)
@@ -67,14 +69,18 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val vcRdd = sc.loadVcf("%s/test.vcf/part-r-00000".format(tempDir))
     assert(vcRdd.rdd.count === 1)
 
-    val variant = vcRdd.rdd.first.variant
-    assert(variant.variant.getContigName === "chr11")
-    assert(variant.variant.getStart === 17409572)
-    assert(variant.variant.getReferenceAllele === "T")
-    assert(variant.variant.getAlternateAllele === "C")
-    assert(variant.variant.getNames.length === 2)
-    assert(variant.variant.getNames.get(0) === "rs3131972")
-    assert(variant.variant.getNames.get(1) === "rs201888535")
+    val variant = vcRdd.rdd.first.variant.variant
+    assert(variant.getContigName === "chr11")
+    assert(variant.getStart === 17409572)
+    assert(variant.getReferenceAllele === "T")
+    assert(variant.getAlternateAllele === "C")
+    assert(variant.getNames.length === 2)
+    assert(variant.getNames.get(0) === "rs3131972")
+    assert(variant.getNames.get(1) === "rs201888535")
+    assert(variant.getFiltersApplied === true)
+    assert(variant.getFiltersPassed === true)
+    assert(variant.getFiltersFailed.isEmpty)
+    assert(variant.getSomatic === false)
 
     assert(vcRdd.sequences.records.size === 1)
     assert(vcRdd.sequences.records(0).name === "chr11")
@@ -116,9 +122,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("don't lose any variants when piping as VCF") {
-    val smallVcf = Thread.currentThread()
-      .getContextClassLoader
-      .getResource("small.vcf").getFile
+    val smallVcf = testFile("small.vcf")
     val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
     val records = rdd.rdd.count
 

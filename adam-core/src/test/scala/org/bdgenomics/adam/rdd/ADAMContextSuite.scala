@@ -154,6 +154,18 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vcs.size === 6)
 
     val vc = vcs.head
+    val variant = vc.variant.variant
+    assert(variant.getContigName === "1")
+    assert(variant.getStart === 14396L)
+    assert(variant.getEnd === 14400L)
+    assert(variant.getReferenceAllele === "CTGT")
+    assert(variant.getAlternateAllele === "C")
+    assert(variant.getNames.isEmpty)
+    assert(variant.getFiltersApplied === true)
+    assert(variant.getFiltersPassed === false)
+    assert(variant.getFiltersFailed.contains("IndelQD"))
+    assert(variant.getSomatic === false)
+
     assert(vc.genotypes.size === 3)
 
     val gt = vc.genotypes.head
