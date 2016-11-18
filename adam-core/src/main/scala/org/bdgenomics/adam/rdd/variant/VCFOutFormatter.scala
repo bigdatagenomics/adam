@@ -17,7 +17,10 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
-import htsjdk.variant.vcf.VCFCodec
+import htsjdk.variant.vcf.{
+  VCFCodec,
+  VCFHeaderLine
+}
 import htsjdk.tribble.readers.{
   AsciiLineReader,
   AsciiLineReaderIterator
@@ -32,7 +35,7 @@ import scala.collection.mutable.ListBuffer
 /**
  * OutFormatter that reads streaming VCF.
  */
-case class VCFOutFormatter() extends OutFormatter[VariantContext] {
+case class VCFOutFormatter(headerLines: Seq[VCFHeaderLine]) extends OutFormatter[VariantContext] {
 
   /**
    * Reads VariantContexts from an input stream. Autodetects VCF format.
@@ -43,7 +46,7 @@ case class VCFOutFormatter() extends OutFormatter[VariantContext] {
   def read(is: InputStream): Iterator[VariantContext] = {
 
     // make converter and empty dicts
-    val converter = new VariantContextConverter
+    val converter = new VariantContextConverter(headerLines)
 
     // make line reader iterator
     val lri = new AsciiLineReaderIterator(new AsciiLineReader(is))
