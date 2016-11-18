@@ -90,6 +90,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val path = new File(tempDir, "test_single.vcf")
     variants.saveAsVcf(path.getAbsolutePath, asSingleFile = true)
     assert(path.exists)
+    println("%s/test_single.vcf".format(tempDir))
     val vcRdd = sc.loadVcf("%s/test_single.vcf".format(tempDir))
     assert(vcRdd.rdd.count === 1)
     assert(vcRdd.sequences.records.size === 1)
@@ -127,7 +128,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val records = rdd.rdd.count
 
     implicit val tFormatter = VCFInFormatter
-    implicit val uFormatter = new VCFOutFormatter
+    implicit val uFormatter = new VCFOutFormatter(rdd.headerLines)
 
     val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
       .transform(_.cache())

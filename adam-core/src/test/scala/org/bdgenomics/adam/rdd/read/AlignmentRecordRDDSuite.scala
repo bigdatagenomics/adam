@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
+import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
   ReferenceRegion,
@@ -698,7 +699,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val ardd = sc.loadBam(readsPath)
 
     implicit val tFormatter = SAMInFormatter
-    implicit val uFormatter = new VCFOutFormatter
+    implicit val uFormatter = new VCFOutFormatter(SupportedHeaderLines.allHeaderLines)
 
     val pipedRdd: VariantContextRDD = ardd.pipe("/bin/bash $0 %s $1".format(tempPath),
       files = Seq(scriptPath, vcfPath))

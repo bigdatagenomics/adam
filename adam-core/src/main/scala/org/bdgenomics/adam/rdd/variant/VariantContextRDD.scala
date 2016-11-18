@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.io.OutputStream
 import org.apache.hadoop.io.LongWritable
@@ -124,7 +125,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    *   valid VCF header. Default is false.
    */
   def saveAsVcf(filePath: String,
-                asSingleFile: Boolean = false) {
+                asSingleFile: Boolean = false,
+                stringency: ValidationStringency = ValidationStringency.LENIENT) {
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
@@ -134,11 +136,15 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     val sampleIds = samples.map(_.getSampleId)
 
     // convert the variants to htsjdk VCs
-    val converter = new VariantContextConverter(Some(sequences))
-    val writableVCs: RDD[(LongWritable, VariantContextWritable)] = rdd.map(vc => {
-      val vcw = new VariantContextWritable
-      vcw.set(converter.convert(vc))
-      (new LongWritable(vc.position.pos), vcw)
+    val converter = new VariantContextConverter(headerLines)
+
+    val writableVCs: RDD[(LongWritable, VariantContextWritable)] = rdd.flatMap(vc => {
+      converter.convert(vc, stringency = stringency)
+        .map(htsjdkVc => {
+          val vcw = new VariantContextWritable
+          vcw.set(htsjdkVc)
+          (new LongWritable(vc.position.pos), vcw)
+        })
     })
 
     // make header

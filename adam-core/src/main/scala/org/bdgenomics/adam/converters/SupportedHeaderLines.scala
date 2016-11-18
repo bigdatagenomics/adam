@@ -132,6 +132,11 @@ private[adam] object SupportedHeaderLines {
     1,
     VCFHeaderLineType.Integer,
     "Phase set ID")
+
+  // note: this is not spec compliant!
+  // however, this is due to a bug in htsjdk --> https://github.com/samtools/htsjdk/issues/751
+  // the standard header lines get populated no matter what the header lines are on the
+  // file. not clear how to disable this...
   lazy val phaseQuality = new VCFFormatHeaderLine(VCFConstants.PHASE_QUALITY_KEY,
     1,
     VCFHeaderLineType.Float,
