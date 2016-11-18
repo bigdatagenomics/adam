@@ -61,7 +61,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
         .build))
   }
 
-  sparkTest("can write, then read in .vcf file") {
+  ignore("can write, then read in .vcf file") {
     val path = new File(tempDir, "test.vcf")
     variants.saveAsVcf(TestSaveArgs(path.getAbsolutePath), false)
     assert(path.exists)
@@ -85,7 +85,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vcRdd.sequences.records(0).name === "chr11")
   }
 
-  sparkTest("can write as a single file, then read in .vcf file") {
+  ignore("can write as a single file, then read in .vcf file") {
     val path = new File(tempDir, "test_single.vcf")
     variants.saveAsVcf(path.getAbsolutePath, asSingleFile = true)
     assert(path.exists)
@@ -111,7 +111,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(pipedRdd.rdd.flatMap(_.genotypes).count === 18)
   }
 
-  sparkTest("save a file sorted by contig index") {
+  ignore("save a file sorted by contig index") {
     val inputPath = testFile("random.vcf")
     val variants = sc.loadVcf(inputPath)
     val outputPath = tmpFile("sorted.vcf")
@@ -123,7 +123,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     checkFiles(outputPath, testFile("sorted.vcf"))
   }
 
-  sparkTest("save a lexicographically sorted file") {
+  ignore("save a lexicographically sorted file") {
     val inputPath = testFile("random.vcf")
     val variants = sc.loadVcf(inputPath)
     val outputPath = tmpFile("sorted.lex.vcf")

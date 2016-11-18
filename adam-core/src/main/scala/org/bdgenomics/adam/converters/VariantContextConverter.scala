@@ -31,6 +31,7 @@ import htsjdk.variant.variantcontext.{
 }
 import htsjdk.variant.vcf.{
   VCFConstants,
+  VCFInfoHeaderLine,
   VCFFormatHeaderLine,
   VCFHeaderLine,
   VCFHeaderLineCount,
@@ -171,37 +172,42 @@ private[adam] class VariantContextConverter(
    * @param vc GATK Variant context to convert.
    * @return ADAM variant contexts
    */
-  def convert(vc: HtsjdkVariantContext): Seq[ADAMVariantContext] = {
+  def convert(vc: HtsjdkVariantContext,
+              variantAnnotationConvFn: (HtsjdkVariantContext, Option[String], Int) => VariantAnnotation,
+              genotypeConvFn: (HtsjdkGenotype, Variant, Allele, Int, Option[Int], Boolean) => Genotype): Seq[ADAMVariantContext] = {
 
     vc.getAlternateAlleles.toList match {
       case List(NON_REF_ALLELE) => {
-        val variant = createADAMVariant(vc, None /* No alternate allele */ )
+        val variantAnnotation = variantAnnotationConvFn(vc, None, 0)
+        val variant = variantAnnotation.variant
         val genotypes = vc.getGenotypes.map(g => {
-          htsjdkConvFn(g, variant, NON_REF_ALLELE, 0, Some(1), false)
+          genotypeConvFn(g, variant, NON_REF_ALLELE, 0, Some(1), false)
         })
-        return Seq(ADAMVariantContext(variant, genotypes, None))
+        return Seq(ADAMVariantContext(variant, genotypes, Some(variantAnnotation)))
       }
       case List(allele) => {
         require(
           allele.isNonReference,
           "Assertion failed when converting: " + vc.toString
         )
-        val variant = createADAMVariant(vc, Some(allele.getDisplayString))
+        val variantAnnotation = variantAnnotationConvFn(vc, Some(allele.getDisplayString), 0)
+        val variant = variantAnnotation.variant
         val genotypes = vc.getGenotypes.map(g => {
-          htsjdkConvFn(g, variant, allele, 1, None, false)
+          genotypeConvFn(g, variant, allele, 1, None, false)
         })
-        return Seq(ADAMVariantContext(variant, genotypes, None))
+        return Seq(ADAMVariantContext(variant, genotypes, Some(variantAnnotation)))
       }
       case List(allele, NON_REF_ALLELE) => {
         require(
           allele.isNonReference,
           "Assertion failed when converting: " + vc.toString
         )
-        val variant = createADAMVariant(vc, Some(allele.getDisplayString))
+        val variantAnnotation = variantAnnotationConvFn(vc, Some(allele.getDisplayString), 0)
+        val variant = variantAnnotation.variant
         val genotypes = vc.getGenotypes.map(g => {
-          htsjdkConvFn(g, variant, allele, 1, Some(2), false)
+          genotypeConvFn(g, variant, allele, 1, Some(2), false)
         })
-        return Seq(ADAMVariantContext(variant, genotypes, None))
+        return Seq(ADAMVariantContext(variant, genotypes, Some(variantAnnotation)))
       }
       case _ => {
         val vcb = new VariantContextBuilder(vc)
@@ -222,52 +228,17 @@ private[adam] class VariantContextConverter(
         return altAlleles.flatMap(allele => {
           val idx = vc.getAlleleIndex(allele)
           require(idx >= 1, "Unexpected index for alternate allele: " + vc.toString)
-          val variant = createADAMVariant(vc, Some(allele.getDisplayString))
+
+          val variantAnnotation = variantAnnotationConvFn(vc, Some(allele.getDisplayString), idx)
+          val variant = variantAnnotation.variant
 
           val genotypes = vc.getGenotypes.map(g => {
-            htsjdkConvFn(g, variant, allele, idx, referenceModelIndex, true)
+            genotypeConvFn(g, variant, allele, idx, referenceModelIndex, true)
           })
-          Seq(ADAMVariantContext(variant, genotypes, None))
+          Seq(ADAMVariantContext(variant, genotypes, Some(variantAnnotation)))
         })
       }
     }
-  }
-
-  /**
-   * Extracts a variant annotation from a htsjdk VariantContext.
-   *
-   * @param vc htsjdk variant context to extract annotations from.
-   * @return The variant annotations in Avro format.
-   */
-  def convertToVariantAnnotation(vc: HtsjdkVariantContext): VariantAnnotation = {
-    val variant = vc.getAlternateAlleles.toList match {
-      case List(NON_REF_ALLELE) => {
-        createADAMVariant(vc, None /* No alternate allele */ )
-      }
-      case List(allele) => {
-        require(
-          allele.isNonReference,
-          "Assertion failed when converting: " + vc.toString
-        )
-        createADAMVariant(vc, Some(allele.getDisplayString))
-      }
-      case List(allele, NON_REF_ALLELE) => {
-        require(
-          allele.isNonReference,
-          "Assertion failed when converting: " + vc.toString
-        )
-        createADAMVariant(vc, Some(allele.getDisplayString))
-      }
-      case alleles :+ NON_REF_ALLELE => {
-        throw new IllegalArgumentException("Multi-allelic site with non-ref symbolic allele " +
-          vc.toString)
-      }
-      case _ => {
-        throw new IllegalArgumentException("Multi-allelic site " + vc.toString)
-      }
-    }
-
-    extractVariantAnnotation(variant, vc)
   }
 
   /**
@@ -300,44 +271,365 @@ private[adam] class VariantContextConverter(
     }
   }
 
-  /**
-   * Builds an avro Variant for a site with a defined alt allele.
-   *
-   * @param vc htsjdk variant context to use for building the site.
-   * @param alt The alternate allele to use for the site. If not provided, no
-   *   alternate allele will be defined.
-   * @return Returns an Avro description of the genotyped site.
-   */
-  private def createADAMVariant(vc: HtsjdkVariantContext, alt: Option[String]): Variant = {
-    // VCF CHROM, POS, ID, REF, FORMAT, and ALT
-    val builder = Variant.newBuilder
-      .setContigName(vc.getChr)
-      .setStart(vc.getStart - 1 /* ADAM is 0-indexed */ )
-      .setEnd(vc.getEnd /* ADAM is 0-indexed, so the 1-indexed inclusive end becomes exclusive */ )
-      .setReferenceAllele(vc.getReference.getBaseString)
-    alt.foreach(builder.setAlternateAllele(_))
-    splitIds(vc).foreach(builder.setNames(_))
-    builder.setFiltersApplied(vc.filtersWereApplied)
-    if (vc.filtersWereApplied) {
-      builder.setFiltersPassed(!vc.isFiltered)
-    }
-    if (vc.isFiltered) {
-      builder.setFiltersFailed(new java.util.ArrayList(vc.getFilters))
-    }
-    builder.build
+  // variant conversion functions
+
+  private[converters] def formatNames(
+    vc: HtsjdkVariantContext,
+    vb: Variant.Builder): Variant.Builder = {
+
+    splitIds(vc).fold(vb)(vb.setNames(_))
   }
 
-  /**
-   * Populates a variant annotation from an htsjdk variant context.
-   *
-   * @param variant Avro variant representation for the site.
-   * @param vc htsjdk representation of the VCF line.
-   * @return Returns the Avro representation of the variant annotations at this site.
-   */
-  private def extractVariantAnnotation(variant: Variant,
-                                       vc: HtsjdkVariantContext): VariantAnnotation = {
-    ???
+  private[converters] def formatFilters(
+    vc: HtsjdkVariantContext,
+    vb: Variant.Builder): Variant.Builder = {
+
+    vb.setFiltersApplied(vc.filtersWereApplied)
+    if (vc.filtersWereApplied) {
+      vb.setFiltersPassed(!vc.isFiltered)
+    }
+    if (vc.isFiltered) {
+      vb.setFiltersFailed(new java.util.ArrayList(vc.getFilters));
+    }
+    vb
   }
+
+  private[converters] def formatSomatic(
+    vc: HtsjdkVariantContext,
+    vb: Variant.Builder): Variant.Builder = {
+
+    Option(vc.getAttribute("SOMATIC").asInstanceOf[java.lang.Boolean])
+      .fold(vb)(vb.setSomatic(_))
+  }
+
+  private val variantConversionFns: Iterable[(HtsjdkVariantContext, Variant.Builder) => Variant.Builder] = Iterable(
+    formatNames(_, _),
+    formatFilters(_, _),
+    formatSomatic(_, _)
+  )
+
+  private[converters] def extractNames(
+    v: Variant,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    joinNames(v).fold(vcb.noID())(vcb.id(_))
+  }
+
+  private[converters] def extractFilters(
+    v: Variant,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(v.getFiltersApplied)
+      .filter(ft => ft)
+      .map(applied => {
+        Option(v.getFiltersPassed).map(passed => {
+          if (passed) {
+            vcb.passFilters
+          } else {
+            val failedFilters = v.getFiltersFailed
+            require(failedFilters.nonEmpty,
+              "Variant marked as filtered, but no failed filters listed in %s.".format(v))
+            vcb.filters(failedFilters.mkString(";"))
+          }
+        }).getOrElse({
+          throw new IllegalArgumentException("Filters were applied but filters passed is null in %s.".format(v))
+        })
+      }).getOrElse(vcb.unfiltered)
+  }
+
+  private[converters] def extractSomatic(
+    v: Variant,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    val somatic: java.lang.Boolean = Option(v.getSomatic).getOrElse(false)
+    if (somatic) {
+      vcb.attribute("SOMATIC", true)
+    }
+    vcb
+  }
+
+  private val variantExtractorFns: Iterable[(Variant, VariantContextBuilder) => VariantContextBuilder] = Iterable(
+    extractNames(_, _),
+    extractFilters(_, _),
+    extractSomatic(_, _)
+  )
+
+  // variant annotation conversion functions
+
+  private[converters] def formatAncestralAllele(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    Option(vc.getAttributeAsString("AA", null))
+      .fold(vab)(vab.setAncestralAllele(_))
+  }
+
+  private[converters] def formatDbSnp(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    Option(vc.getAttribute("DB").asInstanceOf[java.lang.Boolean])
+      .fold(vab)(vab.setDbSnp(_))
+  }
+
+  private[converters] def formatHapMap2(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    Option(vc.getAttribute("H2").asInstanceOf[java.lang.Boolean])
+      .fold(vab)(vab.setHapMap2(_))
+  }
+
+  private[converters] def formatHapMap3(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    Option(vc.getAttribute("H3").asInstanceOf[java.lang.Boolean])
+      .fold(vab)(vab.setHapMap3(_))
+  }
+
+  private[converters] def formatValidated(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    Option(vc.getAttribute("VALIDATED").asInstanceOf[java.lang.Boolean])
+      .fold(vab)(vab.setValidated(_))
+  }
+
+  private[converters] def formatThousandGenomes(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    Option(vc.getAttribute("1000G").asInstanceOf[java.lang.Boolean])
+      .fold(vab)(vab.setThousandGenomes(_))
+  }
+
+  private[converters] def formatAlleleCount(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    val ac = vc.getAttributeAsList("AC")
+    if (ac.size > index) {
+      vab.setAlleleCount(toInt(ac.get(index)))
+    }
+    vab
+  }
+
+  private[converters] def formatAlleleFrequency(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    val af = vc.getAttributeAsList("AF")
+    if (af.size > index) {
+      vab.setAlleleFrequency(toFloat(af.get(index)))
+    }
+    vab
+  }
+
+  private[converters] def formatCigar(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    val cigar = vc.getAttributeAsList("CIGAR")
+    if (cigar.size > index) {
+      vab.setCigar(asString(cigar.get(index)))
+    }
+    vab
+  }
+
+  private[converters] def formatReadDepth(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    val ad = vc.getAttributeAsList("AD")
+    if (ad.size > (index + 1)) {
+      vab.setReadDepth(toInt(ad.get(index + 1)))
+    }
+    vab
+  }
+
+  private[converters] def formatForwardReadDepth(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    val adf = vc.getAttributeAsList("ADF")
+    if (adf.size > (index + 1)) {
+      vab.setForwardReadDepth(toInt(adf.get(index + 1)))
+    }
+    vab
+  }
+
+  private[converters] def formatReverseReadDepth(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    val adr = vc.getAttributeAsList("ADR")
+    if (adr.size > (index + 1)) {
+      vab.setReverseReadDepth(toInt(adr.get(index + 1)))
+    }
+    vab
+  }
+
+  private[converters] def formatTranscriptEffects(
+    vc: HtsjdkVariantContext,
+    vab: VariantAnnotation.Builder,
+    v: Variant,
+    index: Int): VariantAnnotation.Builder = {
+
+    TranscriptEffectConverter.convertToTranscriptEffects(v, vc)
+      .fold(vab)(vab.setTranscriptEffects(_))
+  }
+
+  private val variantAnnotationConversionFns: Iterable[(HtsjdkVariantContext, VariantAnnotation.Builder, Variant, Int) => VariantAnnotation.Builder] = Iterable(
+    formatAncestralAllele(_, _, _, _),
+    formatDbSnp(_, _, _, _),
+    formatHapMap2(_, _, _, _),
+    formatHapMap3(_, _, _, _),
+    formatThousandGenomes(_, _, _, _),
+    formatCigar(_, _, _, _),
+    formatAlleleCount(_, _, _, _),
+    formatAlleleFrequency(_, _, _, _),
+    formatReadDepth(_, _, _, _),
+    formatForwardReadDepth(_, _, _, _),
+    formatReverseReadDepth(_, _, _, _),
+    formatTranscriptEffects(_, _, _, _)
+  )
+
+  private[converters] def extractAncestralAllele(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getAncestralAllele).fold(vcb)(vcb.attribute("AA", _))
+  }
+
+  private[converters] def extractDbSnp(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getDbSnp).fold(vcb)(vcb.attribute("DB", _))
+  }
+
+  private[converters] def extractHapMap2(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getHapMap2).fold(vcb)(vcb.attribute("H2", _))
+  }
+
+  private[converters] def extractHapMap3(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getHapMap3).fold(vcb)(vcb.attribute("H3", _))
+  }
+
+  private[converters] def extractThousandGenomes(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getThousandGenomes).fold(vcb)(vcb.attribute("1000G", _))
+  }
+
+  private[converters] def extractCigar(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getCigar).fold(vcb)(vcb.attribute("CIGAR", _))
+  }
+
+  private[converters] def extractAlleleCount(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getAlleleCount).fold(vcb)(vcb.attribute("AC", _))
+  }
+
+  private[converters] def extractAlleleFrequency(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getAlleleCount).fold(vcb)(vcb.attribute("AF", _))
+  }
+
+  private[converters] def extractReadDepth(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getReadDepth)
+      .fold(vcb)(rd => vcb.attribute("AD", prependDefaultReferenceValue(rd)))
+  }
+
+  private[converters] def extractForwardReadDepth(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getForwardReadDepth)
+      .fold(vcb)(frd => vcb.attribute("ADF", prependDefaultReferenceValue(frd)))
+  }
+
+  private[converters] def extractReverseReadDepth(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    Option(va.getReverseReadDepth)
+      .fold(vcb)(rrd => vcb.attribute("ADR", prependDefaultReferenceValue(rrd)))
+  }
+
+  private[converters] def extractTranscriptEffects(
+    va: VariantAnnotation,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    if (!va.getTranscriptEffects.isEmpty) {
+      vcb.attribute("ANN", TranscriptEffectConverter.convertToVcfInfoAnnValue(va.getTranscriptEffects))
+    }
+    vcb
+  }
+
+  // reference value is missing for Number=R VCF INFO attributes
+  private[converters] def prependDefaultReferenceValue(v: Int): String = {
+    "-1," + v
+  }
+
+  private val variantAnnotationExtractorFns: Iterable[(VariantAnnotation, VariantContextBuilder) => VariantContextBuilder] = Iterable(
+    extractAncestralAllele(_, _),
+    extractDbSnp(_, _),
+    extractHapMap2(_, _),
+    extractHapMap3(_, _),
+    extractThousandGenomes(_, _),
+    extractCigar(_, _),
+    extractAlleleCount(_, _),
+    extractAlleleFrequency(_, _),
+    extractReadDepth(_, _),
+    extractForwardReadDepth(_, _),
+    extractReverseReadDepth(_, _),
+    extractTranscriptEffects(_, _)
+  )
+
+  // genotype conversion functions
 
   private[converters] def formatAllelicDepth(g: HtsjdkGenotype,
                                              gb: Genotype.Builder,
@@ -579,6 +871,8 @@ private[adam] class VariantContextConverter(
     extractPhaseInfo(_, _)
   )
 
+  // genotype annotation conversion functions
+
   private[converters] def formatFilters(g: HtsjdkGenotype,
                                         vcab: VariantCallingAnnotations.Builder,
                                         idx: Int,
@@ -695,6 +989,12 @@ private[adam] class VariantContextConverter(
     extractMapQ0(_, _)
   )
 
+  private def toBoolean(obj: java.lang.Object): Boolean = {
+    tryAndCatchStringCast(obj, o => {
+      o.asInstanceOf[java.lang.Boolean]
+    }, o => o.toBoolean)
+  }
+
   private def toInt(obj: java.lang.Object): Int = {
     tryAndCatchStringCast(obj, o => {
       o.asInstanceOf[java.lang.Integer]
@@ -807,7 +1107,122 @@ private[adam] class VariantContextConverter(
       .map(attr => (id, attr))
   }
 
-  private def lineToExtractor(
+  private def arrayFieldExtractor(vc: HtsjdkVariantContext,
+                                  id: String,
+                                  toFn: (java.lang.Object => Array[String]),
+                                  indices: List[Int]): Option[(String, List[String])] = {
+    Option(vc.getAttribute(id))
+      .map(toFn)
+      .filter(_.nonEmpty)
+      .map(filterArray(_, indices))
+      .map(v => (id, v))
+  }
+
+  private def fromArrayExtractor(vc: HtsjdkVariantContext,
+                                 id: String,
+                                 toFn: (java.lang.Object => Array[String]),
+                                 idx: Int): Option[(String, String)] = {
+    Option(vc.getAttribute(id))
+      .map(toFn)
+      .filter(_.nonEmpty)
+      .map(array => (id, array(idx)))
+  }
+
+  private def variantContextFieldExtractor(vc: HtsjdkVariantContext,
+                                           id: String,
+                                           toFn: (java.lang.Object => Any)): Option[(String, Any)] = {
+    Option(vc.getAttribute(id))
+      .map(toFn)
+      .map(attr => (id, attr))
+  }
+
+  private def lineToVariantContextExtractor(
+    headerLine: VCFInfoHeaderLine): ((HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]) = {
+    val id = headerLine.getID
+
+    if (headerLine.isFixedCount && headerLine.getCount == 0 && headerLine.getType == VCFHeaderLineType.Flag) {
+      (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+        {
+          variantContextFieldExtractor(vc, id, toBoolean).map(kv => (kv._1, kv._2.toString))
+        }
+    } else if (headerLine.isFixedCount && headerLine.getCount == 1) {
+      headerLine.getType match {
+        // Flag header line types should be Number=0, but we'll allow Number=1
+        case VCFHeaderLineType.Flag => {
+          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+            {
+              variantContextFieldExtractor(vc, id, toBoolean).map(kv => (kv._1, kv._2.toString))
+            }
+        }
+        case VCFHeaderLineType.Character => {
+          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+            {
+              variantContextFieldExtractor(vc, id, toChar).map(kv => (kv._1, kv._2.toString))
+            }
+        }
+        case VCFHeaderLineType.Float => {
+          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+            {
+              variantContextFieldExtractor(vc, id, toFloat).map(kv => (kv._1, kv._2.toString))
+            }
+        }
+        case VCFHeaderLineType.Integer => {
+          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+            {
+              variantContextFieldExtractor(vc, id, toInt).map(kv => (kv._1, kv._2.toString))
+            }
+        }
+        case VCFHeaderLineType.String => {
+          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+            {
+              variantContextFieldExtractor(vc, id, asString).map(kv => (kv._1, kv._2.toString))
+            }
+        }
+      }
+    } else {
+      val toFn: (java.lang.Object => Array[String]) = headerLine.getType match {
+        case VCFHeaderLineType.Flag => {
+          throw new IllegalArgumentException("Multivalued flags are not supported for INFO lines: %s".format(
+            headerLine))
+        }
+        case VCFHeaderLineType.Character => {
+          toCharArray(_).map(c => c.toString)
+        }
+        case VCFHeaderLineType.Float => {
+          toFloatArray(_).map(f => f.toString)
+        }
+        case VCFHeaderLineType.Integer => {
+          toIntArray(_).map(i => i.toString)
+        }
+        case VCFHeaderLineType.String => {
+          toStringArray(_)
+        }
+      }
+
+      (headerLine.isFixedCount, headerLine.getCountType) match {
+        case (false, VCFHeaderLineCount.A) => {
+          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+            {
+              fromArrayExtractor(vc, id, toFn, idx)
+                .map(kv => (kv._1, kv._2.toString))
+            }
+        }
+        case (false, VCFHeaderLineCount.G) => {
+          throw new IllegalArgumentException("Number=G INFO lines are not supported in split-allelic model: %s".format(
+            headerLine))
+        }
+        case _ => {
+          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+            {
+              arrayFieldExtractor(vc, id, toFn, List.empty)
+                .map(kv => (kv._1, kv._2.mkString(",")))
+            }
+        }
+      }
+    }
+  }
+
+  private def lineToGenotypeExtractor(
     headerLine: VCFFormatHeaderLine): ((HtsjdkGenotype, Int, Array[Int]) => Option[(String, String)]) = {
     val id = headerLine.getID
 
@@ -888,7 +1303,83 @@ private[adam] class VariantContextConverter(
     }
   }
 
-  private[converters] def makeHtsjdkGenotypeConverter(
+  def makeHtsjdkVariantContextConverter(
+    headerLines: Seq[VCFHeaderLine]): (HtsjdkVariantContext, Option[String], Int) => VariantAnnotation = {
+
+    val attributeFns: Iterable[(HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]] = headerLines
+      .flatMap(hl => hl match {
+        case il: VCFInfoHeaderLine => {
+          // get the id of this line
+          val key = il.getID
+
+          // filter out the lines that we already support
+          if (SupportedHeaderLines.infoHeaderLines
+            .find(_.getID == key)
+            .isEmpty) {
+
+            Some(lineToVariantContextExtractor(il))
+          } else {
+            None
+          }
+        }
+        case _ => None
+      })
+
+    def convert(vc: HtsjdkVariantContext,
+                alt: Option[String],
+                alleleIdx: Int): VariantAnnotation = {
+
+      // create the builder
+      val variantBuilder = Variant.newBuilder
+        .setContigName(vc.getChr)
+        .setStart(vc.getStart - 1)
+        .setEnd(vc.getEnd)
+        .setReferenceAllele(vc.getReference.getBaseString)
+
+      alt.foreach(variantBuilder.setAlternateAllele(_))
+
+      // bind the conversion functions and fold
+      val boundFns: Iterable[Variant.Builder => Variant.Builder] = variantConversionFns
+        .map(fn => {
+          fn(vc, _: Variant.Builder)
+        })
+      val converted = boundFns.foldLeft(variantBuilder)((vb: Variant.Builder, fn) => fn(vb))
+
+      val variant = variantBuilder.build
+      val variantAnnotationBuilder = VariantAnnotation.newBuilder
+        .setVariant(variant)
+
+      val boundAnnotationFns: Iterable[VariantAnnotation.Builder => VariantAnnotation.Builder] = variantAnnotationConversionFns
+        .map(fn => {
+          fn(vc, _: VariantAnnotation.Builder, variant, alleleIdx)
+        })
+      val convertedAnnotation = boundAnnotationFns.foldLeft(variantAnnotationBuilder)(
+        (vab: VariantAnnotation.Builder, fn) => fn(vab))
+
+      // todo: I don't believe these are useful for INFO fields
+      val indices = Array.empty[Int]
+
+      // pull out the attribute map and process
+      val attrMap = attributeFns.flatMap(fn => fn(vc, alleleIdx, indices))
+        .toMap
+
+      // if the map has kv pairs, attach it
+      val convertedAnnotationWithAttrs = if (attrMap.isEmpty) {
+        convertedAnnotation
+      } else {
+        convertedAnnotation.setAttributes(attrMap)
+      }
+
+      convertedAnnotationWithAttrs.build
+    }
+
+    convert(_, _, _)
+  }
+
+  /**
+   *
+   */
+  def makeHtsjdkGenotypeConverter(
     headerLines: Seq[VCFHeaderLine]): (HtsjdkGenotype, Variant, Allele, Int, Option[Int], Boolean) => Genotype = {
 
     val attributeFns: Iterable[(HtsjdkGenotype, Int, Array[Int]) => Option[(String, String)]] = headerLines
@@ -903,7 +1394,7 @@ private[adam] class VariantContextConverter(
             .find(_.getID == key)
             .isEmpty) {
 
-            Some(lineToExtractor(fl))
+            Some(lineToGenotypeExtractor(fl))
           } else {
             None
           }
@@ -997,7 +1488,135 @@ private[adam] class VariantContextConverter(
     convert(_, _, _, _, _, _)
   }
 
-  private def extractorFromLine(
+  private def extractorFromInfoLine(
+    headerLine: VCFInfoHeaderLine): (Map[String, String]) => Option[(String, java.lang.Object)] = {
+
+    val id = headerLine.getID
+
+    def toCharAndKey(s: String): (String, java.lang.Object) = {
+
+      require(s.length == 1,
+        "Expected character field: %s.".format(id))
+      val javaChar: java.lang.Character = s(0)
+
+      (id, javaChar.asInstanceOf[java.lang.Object])
+    }
+
+    def toFloatAndKey(s: String): (String, java.lang.Object) = {
+      val javaFloat: java.lang.Float = s.toFloat
+
+      (id, javaFloat.asInstanceOf[java.lang.Object])
+    }
+
+    def toBooleanAndKey(s: String): (String, java.lang.Object) = {
+      val javaBoolean: java.lang.Boolean = s.toBoolean
+
+      (id, javaBoolean.asInstanceOf[java.lang.Object])
+    }
+
+    def toIntAndKey(s: String): (String, java.lang.Object) = {
+      val javaInteger: java.lang.Integer = s.toInt
+
+      (id, javaInteger.asInstanceOf[java.lang.Object])
+    }
+
+    if (headerLine.isFixedCount && headerLine.getCount == 0 && headerLine.getType == VCFHeaderLineType.Flag) {
+      (m: Map[String, String]) =>
+        {
+          m.get(id).map(toBooleanAndKey)
+        }
+    } else if (headerLine.isFixedCount && headerLine.getCount == 1) {
+      headerLine.getType match {
+        // Flag header line types should be Number=0, but we'll allow Number=1
+        case VCFHeaderLineType.Flag => {
+          (m: Map[String, String]) =>
+            {
+              m.get(id).map(toBooleanAndKey)
+            }
+        }
+        case VCFHeaderLineType.Character => {
+          (m: Map[String, String]) =>
+            {
+              m.get(id).map(toCharAndKey)
+            }
+        }
+        case VCFHeaderLineType.Float => {
+          (m: Map[String, String]) =>
+            {
+              m.get(id).map(toFloatAndKey)
+            }
+        }
+        case VCFHeaderLineType.Integer => {
+          (m: Map[String, String]) =>
+            {
+              m.get(id).map(toIntAndKey)
+            }
+        }
+        case VCFHeaderLineType.String => {
+          (m: Map[String, String]) =>
+            {
+              // don't need to force to the java type, as String in scala is
+              // an alias for java.lang.String
+              m.get(id).map(v => (id, v.asInstanceOf[java.lang.Object]))
+            }
+        }
+      }
+    } else {
+
+      headerLine.getType match {
+        case VCFHeaderLineType.Flag => {
+          throw new IllegalArgumentException("Multivalue flags are not supported for INFO lines: %s".format(
+            headerLine))
+        }
+        case VCFHeaderLineType.Character => {
+          (m: Map[String, String]) =>
+            {
+              m.get(id).map(v => {
+                (id, v.split(",")
+                  .map(c => {
+                    require(c.length == 1,
+                      "Expected character field: %s in %s.".format(id,
+                        m))
+                    c(0): java.lang.Character
+                  }).asInstanceOf[java.lang.Object])
+              })
+            }
+        }
+        case VCFHeaderLineType.Float => {
+          (m: Map[String, String]) =>
+            {
+              m.get(id).map(v => {
+                (id, v.split(",")
+                  .map(f => {
+                    f.toFloat: java.lang.Float
+                  }).asInstanceOf[java.lang.Object])
+              })
+            }
+        }
+        case VCFHeaderLineType.Integer => {
+          (m: Map[String, String]) =>
+            {
+              m.get(id).map(v => {
+                (id, v.split(",")
+                  .map(i => {
+                    i.toInt: java.lang.Integer
+                  }).asInstanceOf[java.lang.Object])
+              })
+            }
+        }
+        case VCFHeaderLineType.String => {
+          (m: Map[String, String]) =>
+            {
+              // don't need to force to the java type, as String in scala is
+              // an alias for java.lang.String
+              m.get(id).map(v => (id, v.split(",").asInstanceOf[java.lang.Object]))
+            }
+        }
+      }
+    }
+  }
+
+  private def extractorFromFormatLine(
     headerLine: VCFFormatHeaderLine): (Map[String, String]) => Option[(String, java.lang.Object)] = {
 
     val id = headerLine.getID
@@ -1111,7 +1730,68 @@ private[adam] class VariantContextConverter(
     }
   }
 
-  private[converters] def makeBdgGenotypeConverter(
+  def makeBdgVariantContextConverter(
+    headerLines: Seq[VCFHeaderLine]): (ADAMVariantContext) => HtsjdkVariantContext = {
+
+    val attributeFns: Iterable[(Map[String, String]) => Option[(String, java.lang.Object)]] = headerLines
+      .flatMap(hl => hl match {
+        case il: VCFInfoHeaderLine => {
+
+          // get the id of this line
+          val key = il.getID
+
+          // filter out the lines that we already support
+          if (SupportedHeaderLines.infoHeaderLines
+            .find(_.getID == key)
+            .isEmpty) {
+
+            None
+          } else {
+            Some(extractorFromInfoLine(il))
+          }
+        }
+        case _ => None
+      })
+
+    def convert(vc: ADAMVariantContext): HtsjdkVariantContext = {
+      val v = vc.variant.variant
+      val builder = new VariantContextBuilder()
+        .chr(v.getContigName)
+        .start(v.getStart + 1)
+        .stop(v.getStart + v.getReferenceAllele.length)
+        .alleles(VariantContextConverter.convertAlleles(v))
+
+      // bind the conversion functions and fold
+      val convertedWithVariants = variantExtractorFns.foldLeft(builder)(
+        (vcb: VariantContextBuilder, fn) => fn(v, vcb))
+
+      // extract from annotations, if present
+      val convertedWithAttrs = vc.annotations
+        .fold(convertedWithVariants)(va => {
+          val convertedWithAnnotations = variantAnnotationExtractorFns
+            .foldLeft(convertedWithVariants)((vcb: VariantContextBuilder, fn) => fn(va, vcb))
+
+          // get the attribute map
+          val attributes: Map[String, String] = va.getAttributes.toMap
+
+          // apply the attribute converters and return
+          attributeFns.foldLeft(convertedWithAnnotations)((vcb: VariantContextBuilder, fn) => {
+            val optAttrPair = fn(attributes)
+            optAttrPair.fold(vcb)(pair => vcb.attribute(pair._1, pair._2))
+          })
+        })
+
+      // build and return
+      convertedWithAttrs.make()
+    }
+
+    convert(_)
+  }
+
+  /**
+   *
+   */
+  def makeBdgGenotypeConverter(
     headerLines: Seq[VCFHeaderLine]): (Genotype) => HtsjdkGenotype = {
 
     val attributeFns: Iterable[(Map[String, String]) => Option[(String, java.lang.Object)]] = headerLines
@@ -1128,7 +1808,7 @@ private[adam] class VariantContextConverter(
 
             None
           } else {
-            Some(extractorFromLine(fl))
+            Some(extractorFromFormatLine(fl))
           }
         }
         case _ => None
@@ -1171,68 +1851,22 @@ private[adam] class VariantContextConverter(
   }
 
   /**
-   * Extracts annotations from a site.
-   *
-   * @param vc htsjdk variant context representing this site to extract
-   *   annotations from.
-   * @return Returns a variant calling annotation with the filters applied to
-   *   this site.
-   */
-  private def extractVariantCallingAnnotations(vc: HtsjdkVariantContext): VariantCallingAnnotations = {
-    ???
-  }
-
-  /**
-   * Extracts VCF info fields from Avro formatted genotype.
-   *
-   * @param g Genotype record with possible info fields.
-   * @return Mapping between VCF info fields and values from genotype record.
-   */
-  private def extractADAMInfoFields(g: Genotype): HashMap[String, Object] = {
-    val infoFields = new HashMap[String, Object]();
-    val annotations = g.getVariantCallingAnnotations
-    if (annotations != null) {
-      Option(annotations.getFisherStrandBiasPValue).foreach(infoFields.put("FS", _))
-      Option(annotations.getRmsMapQ).foreach(infoFields.put("MQ", _))
-      Option(annotations.getMapq0Reads).foreach(infoFields.put("MQ0", _))
-      Option(annotations.getMqRankSum).foreach(infoFields.put("MQRankSum", _))
-      Option(annotations.getReadPositionRankSum).foreach(infoFields.put("ReadPosRankSum", _))
-    }
-    infoFields
-  }
-
-  /**
    * Convert an ADAMVariantContext into the equivalent GATK VariantContext
    * @param vc
    * @return GATK VariantContext
    */
   def convert(
     vc: ADAMVariantContext,
+    variantConvFn: (ADAMVariantContext) => HtsjdkVariantContext,
+    genotypeConvFn: (Genotype) => HtsjdkGenotype,
     stringency: ValidationStringency = ValidationStringency.LENIENT): Option[HtsjdkVariantContext] = {
-    val variant: Variant = vc.variant.variant
-    val vcb = new VariantContextBuilder()
-      .chr(variant.getContigName)
-      .start(variant.getStart + 1 /* Recall ADAM is 0-indexed */ )
-      .stop(variant.getStart + variant.getReferenceAllele.length)
-      .alleles(VariantContextConverter.convertAlleles(variant))
 
-    joinNames(variant) match {
-      case None    => vcb.noID()
-      case Some(s) => vcb.id(s)
-    }
+    // todo:  should variantConvFn return builder?
+    val vcb = new VariantContextBuilder(variantConvFn(vc))
 
-    val filtersApplied = Option(variant.getFiltersApplied).getOrElse(false)
-    val filtersPassed = Option(variant.getFiltersPassed).getOrElse(false)
-
-    (filtersApplied, filtersPassed) match {
-      case (false, false) => vcb.unfiltered
-      case (false, true)  => vcb.passFilters // log warning?
-      case (true, false)  => vcb.filters(new java.util.HashSet(variant.getFiltersFailed()))
-      case (true, true)   => vcb.passFilters
-    }
-
+    // attach genotypes
     try {
-      Some(vcb.genotypes(vc.genotypes.map(g => bdgConvFn(g)))
+      Some(vcb.genotypes(vc.genotypes.map(g => genotypeConvFn(g)))
         .make)
     } catch {
       case t: Throwable => {
