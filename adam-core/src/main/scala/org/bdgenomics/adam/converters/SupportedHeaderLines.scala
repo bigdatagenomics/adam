@@ -18,9 +18,12 @@
 package org.bdgenomics.adam.converters
 
 import htsjdk.variant.vcf.{
+  VCFConstants,
+  VCFFormatHeaderLine,
   VCFHeaderLineCount,
   VCFHeaderLineType,
-  VCFInfoHeaderLine
+  VCFInfoHeaderLine,
+  VCFStandardHeaderLines
 }
 
 /**
@@ -88,7 +91,7 @@ private[adam] object SupportedHeaderLines {
   /**
    * All info keys in VCF format.
    */
-  lazy val infoHeaderLines = List(
+  lazy val infoHeaderLines = Seq(
     ancestralAllele,
     alleleCount,
     readDepth,
@@ -105,10 +108,67 @@ private[adam] object SupportedHeaderLines {
     transcriptEffects
   )
 
+  lazy val genotype = VCFStandardHeaderLines.getFormatLine(
+    VCFConstants.GENOTYPE_KEY)
+  lazy val genotypeQuality = VCFStandardHeaderLines.getFormatLine(
+    VCFConstants.GENOTYPE_QUALITY_KEY)
+  lazy val allelicDepth = new VCFFormatHeaderLine("AD",
+    VCFHeaderLineCount.R,
+    VCFHeaderLineType.Integer,
+    "Allelic depths for the ref and alt alleles in the order listed")
+  lazy val formatReadDepth = VCFStandardHeaderLines.getFormatLine(
+    VCFConstants.DEPTH_KEY)
+  lazy val minReadDepth = new VCFFormatHeaderLine("MIN_DP",
+    1,
+    VCFHeaderLineType.Integer,
+    "Minimum DP observed within the gVCF block")
+  lazy val phredLikelihoods = VCFStandardHeaderLines.getFormatLine(
+    VCFConstants.GENOTYPE_PL_KEY)
+  lazy val strandBiasComponents = new VCFFormatHeaderLine("SB",
+    4,
+    VCFHeaderLineType.Integer,
+    "Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.")
+  lazy val phaseSetId = new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY,
+    1,
+    VCFHeaderLineType.Integer,
+    "Phase set ID")
+  lazy val phaseQuality = new VCFFormatHeaderLine(VCFConstants.PHASE_QUALITY_KEY,
+    1,
+    VCFHeaderLineType.Float,
+    "Read-backed phasing quality")
+  lazy val genotypeFilter = VCFStandardHeaderLines.getFormatLine(
+    VCFConstants.GENOTYPE_FILTER_KEY)
+  lazy val fisherStrand = new VCFFormatHeaderLine("FS",
+    1,
+    VCFHeaderLineType.Float,
+    "Phred-scaled p-value using Fisher's exact test to detect strand bias")
+  lazy val rmsMapq = new VCFFormatHeaderLine("MQ",
+    1,
+    VCFHeaderLineType.Float,
+    "Root mean square (RMS) mapping quality")
+  lazy val mapq0 = new VCFFormatHeaderLine("MQ0",
+    1,
+    VCFHeaderLineType.Float,
+    "Total number of reads with mapping quality=0")
+
   /**
    * All format lines in VCF format.
    */
-  lazy val formatHeaderLines = VariantAnnotationConverter.FORMAT_KEYS.map(_.hdrLine)
+  lazy val formatHeaderLines = Seq(
+    genotype,
+    genotypeQuality,
+    allelicDepth,
+    formatReadDepth,
+    minReadDepth,
+    phredLikelihoods,
+    strandBiasComponents,
+    phaseSetId,
+    phaseQuality,
+    genotypeFilter,
+    fisherStrand,
+    rmsMapq,
+    mapq0
+  )
 
   /**
    * All supported header lines in VCF format.
