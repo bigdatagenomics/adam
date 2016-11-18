@@ -274,6 +274,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[scala.Array[scala.collection.Seq[_]]])
     kryo.register(classOf[scala.Array[Int]])
     kryo.register(classOf[scala.Array[String]])
+    kryo.register(classOf[scala.Array[Option[_]]])
     kryo.register(Class.forName("scala.Tuple2$mcCC$sp"))
 
     // scala.collection

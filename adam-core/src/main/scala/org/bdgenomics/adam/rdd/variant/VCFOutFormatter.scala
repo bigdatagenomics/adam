@@ -46,7 +46,9 @@ case class VCFOutFormatter(headerLines: Seq[VCFHeaderLine]) extends OutFormatter
   def read(is: InputStream): Iterator[VariantContext] = {
 
     // make converter and empty dicts
-    val converter = new VariantContextConverter(headerLines)
+    val converter = new VariantContextConverter
+    val variantContextConvFn = converter.makeHtsjdkVariantContextConverter(headerLines)
+    val genotypeConvFn = converter.makeHtsjdkGenotypeConverter(headerLines)
 
     // make line reader iterator
     val lri = new AsciiLineReaderIterator(new AsciiLineReader(is))
@@ -63,7 +65,7 @@ case class VCFOutFormatter(headerLines: Seq[VCFHeaderLine]) extends OutFormatter
         iter.close()
         records.toIterator
       } else {
-        val nextRecords = records ++ converter.convert(codec.decode(iter.next))
+        val nextRecords = records ++ converter.convert(codec.decode(iter.next), variantContextConvFn, genotypeConvFn)
         convertIterator(iter, nextRecords)
       }
     }

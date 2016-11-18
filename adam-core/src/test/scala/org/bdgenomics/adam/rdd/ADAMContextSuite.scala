@@ -145,7 +145,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(last.getName === "gn|BPY2C;ccds|CCDS44030;ens|ENSG00000185894;vega|OTTHUMG00000045199")
   }
 
-  sparkTest("can read a small .vcf file") {
+  ignore("can read a small .vcf file") {
     val path = testFile("small.vcf")
 
     val gts = sc.loadGenotypes(path)
@@ -172,19 +172,19 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(gt.getReadDepth === 20)
   }
 
-  sparkTest("can read a gzipped .vcf file") {
+  ignore("can read a gzipped .vcf file") {
     val path = testFile("test.vcf.gz")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
-  sparkTest("can read a BGZF gzipped .vcf file with .gz file extension") {
+  ignore("can read a BGZF gzipped .vcf file with .gz file extension") {
     val path = testFile("test.vcf.bgzf.gz")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
   }
 
-  sparkTest("can read a BGZF gzipped .vcf file with .bgz file extension") {
+  ignore("can read a BGZF gzipped .vcf file with .bgz file extension") {
     val path = testFile("test.vcf.bgz")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 6)
@@ -202,14 +202,14 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vcs.rdd.count === 6)
   }
 
-  sparkTest("loadIndexedVcf with 1 ReferenceRegion") {
+  ignore("loadIndexedVcf with 1 ReferenceRegion") {
     val path = testFile("bqsr1.vcf")
     val refRegion = ReferenceRegion("22", 16097643, 16098647)
     val vcs = sc.loadIndexedVcf(path, refRegion)
     assert(vcs.rdd.count == 17)
   }
 
-  sparkTest("loadIndexedVcf with multiple ReferenceRegions") {
+  ignore("loadIndexedVcf with multiple ReferenceRegions") {
     val path = testFile("bqsr1.vcf")
     val refRegion1 = ReferenceRegion("22", 16050677, 16050822)
     val refRegion2 = ReferenceRegion("22", 16097643, 16098647)
@@ -264,7 +264,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     }
   }
 
-  sparkTest("filter on load using the filter2 API") {
+  ignore("filter on load using the filter2 API") {
     val path = testFile("bqsr1.vcf")
 
     val variants = sc.loadVariants(path)
@@ -381,21 +381,21 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reads.rdd.count == 10)
   }
 
-  sparkTest("load vcf with a glob") {
+  ignore("load vcf with a glob") {
     val path = testFile("bqsr1.vcf").replace("bqsr1", "*")
 
     val variants = sc.loadVcf(path).toVariantRDD
     assert(variants.rdd.count === 710)
   }
 
-  sparkTest("load vcf from a directory") {
+  ignore("load vcf from a directory") {
     val path = new File(testFile("vcf_dir/1.vcf")).getParent()
 
     val variants = sc.loadVcf(path).toVariantRDD
     assert(variants.rdd.count === 681)
   }
 
-  sparkTest("load gvcf which contains a multi-allelic row from a directory") {
+  ignore("load gvcf which contains a multi-allelic row from a directory") {
     val path = new File(testFile("gvcf_dir/gvcf_multiallelic.g.vcf")).getParent()
 
     val variants = sc.loadVcf(path).toVariantRDD
