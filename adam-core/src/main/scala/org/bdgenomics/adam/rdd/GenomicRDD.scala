@@ -366,6 +366,24 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   }
 
   /**
+   * Runs a filter that selects data in the underlying RDD that overlaps several genomic regions.
+   *
+   * @param querys The regions to query for.
+   * @return Returns a new GenomicRDD containing only data that overlaps the
+   *   querys region.
+   */
+  def filterByOverlappingRegions(querys: List[ReferenceRegion]): U = {
+    replaceRdd(rdd.filter(elem => {
+
+	  val regions = getReferenceRegions(elem)
+
+	  querys.map(query => {
+	    regions.exists(_.overlaps(query))
+	  }).reduce((a, b) => a || b)
+    }))
+  }
+
+  /**
    * Performs a broadcast inner join between this RDD and another RDD.
    *
    * In a broadcast join, the left RDD (this RDD) is collected to the driver,
