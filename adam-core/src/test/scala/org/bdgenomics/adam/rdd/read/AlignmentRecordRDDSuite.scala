@@ -107,13 +107,13 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("test filterByOverlappingRegions") {
-    val inputPath = resourcePath("artificial.sam")
+    val inputPath = testFile("artificial.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
 
     // get pileup at position 30
     val pointCoverage = reads.filterByOverlappingRegions(Array(ReferenceRegion("artificial", 30, 31)).toList).rdd.count
     val coverage: CoverageRDD = reads.toCoverage(false)
-	assert(coverage.rdd.filter(r => r.start == 30).first.count == pointCoverage)
+    assert(coverage.rdd.filter(r => r.start == 30).first.count == pointCoverage)
   }
 
   sparkTest("merges adjacent records with equal coverage values") {

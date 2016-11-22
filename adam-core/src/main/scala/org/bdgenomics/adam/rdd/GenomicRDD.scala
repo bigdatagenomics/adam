@@ -375,11 +375,11 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   def filterByOverlappingRegions(querys: List[ReferenceRegion]): U = {
     replaceRdd(rdd.filter(elem => {
 
-	  val regions = getReferenceRegions(elem)
+      val regions = getReferenceRegions(elem)
 
-	  querys.map(query => {
-	    regions.exists(_.overlaps(query))
-	  }).reduce((a, b) => a || b)
+      querys.map(query => {
+        regions.exists(_.overlaps(query))
+      }).fold(false)((a, b) => a || b)
     }))
   }
 
