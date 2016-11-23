@@ -359,6 +359,11 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.hammerlab</groupId>
+        <artifactId>genomic-loci_${scala.version.prefix}</artifactId>
+        <version>1.3.0</version>
+      </dependency>
+      <dependency>
         <groupId>org.bdgenomics.adam</groupId>
         <artifactId>adam-apis_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>

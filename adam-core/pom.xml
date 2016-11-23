@@ -121,6 +121,10 @@
       <artifactId>bdg-formats</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.hammerlab</groupId>
+      <artifactId>genomic-loci_${scala.version.prefix}</artifactId>
+    </dependency>
+    <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
     </dependency>
