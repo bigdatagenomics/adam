@@ -101,7 +101,7 @@ private[realignment] object IndelRealignmentTarget {
     read: RichAlignmentRecord,
     maxIndelSize: Int): Seq[IndelRealignmentTarget] = CreateIndelRealignmentTargets.time {
 
-    val region = ReferenceRegion(read.record)
+    val region = ReferenceRegion.unstranded(read.record)
     val refId = read.record.getContigName
     var pos = List[ReferenceRegion]()
     var referencePos = read.record.getStart

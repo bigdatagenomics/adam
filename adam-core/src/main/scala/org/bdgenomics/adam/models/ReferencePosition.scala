@@ -116,10 +116,10 @@ object ReferencePosition extends Serializable {
    *
    * @param referenceName The name of the reference contig this locus exists on.
    * @param pos The position of this locus.
-   * @param orientation The strand that this locus is on.
+   * @param strand The strand that this locus is on.
    */
-  def apply(referenceName: String, pos: Long, orientation: Strand): ReferencePosition = {
-    new ReferencePosition(referenceName, pos, orientation)
+  def apply(referenceName: String, pos: Long, strand: Strand): ReferencePosition = {
+    new ReferencePosition(referenceName, pos, strand)
   }
 }
 
@@ -128,13 +128,13 @@ object ReferencePosition extends Serializable {
  *
  * @param referenceName The name of the reference contig this locus exists on.
  * @param pos The position of this locus.
- * @param orientation The strand that this locus is on.
+ * @param strand The strand that this locus is on.
  */
 class ReferencePosition(
   override val referenceName: String,
   val pos: Long,
-  override val orientation: Strand = Strand.INDEPENDENT)
-    extends ReferenceRegion(referenceName, pos, pos + 1, orientation)
+  override val strand: Strand = Strand.INDEPENDENT)
+    extends ReferenceRegion(referenceName, pos, pos + 1, strand)
 
 class ReferencePositionSerializer extends Serializer[ReferencePosition] {
   private val enumValues = Strand.values()
@@ -142,13 +142,13 @@ class ReferencePositionSerializer extends Serializer[ReferencePosition] {
   def write(kryo: Kryo, output: Output, obj: ReferencePosition) = {
     output.writeString(obj.referenceName)
     output.writeLong(obj.pos)
-    output.writeInt(obj.orientation.ordinal)
+    output.writeInt(obj.strand.ordinal)
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[ReferencePosition]): ReferencePosition = {
     val refName = input.readString()
     val pos = input.readLong()
-    val orientation = input.readInt()
-    new ReferencePosition(refName, pos, enumValues(orientation))
+    val strand = input.readInt()
+    new ReferencePosition(refName, pos, enumValues(strand))
   }
 }

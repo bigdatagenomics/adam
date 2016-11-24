@@ -110,9 +110,9 @@ class NonoverlappingRegionsSuite extends FunSuite {
     val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
     val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
 
-    val baseMapping = new NonoverlappingRegions(Seq(ReferenceRegion(baseRecord)))
-    val regions1 = baseMapping.findOverlappingRegions(ReferenceRegion(record1))
-    val regions2 = baseMapping.findOverlappingRegions(ReferenceRegion(record2))
+    val baseMapping = new NonoverlappingRegions(Seq(ReferenceRegion.unstranded(baseRecord)))
+    val regions1 = baseMapping.findOverlappingRegions(ReferenceRegion.unstranded(record1))
+    val regions2 = baseMapping.findOverlappingRegions(ReferenceRegion.unstranded(record2))
     assert(regions1.size === 1)
     assert(regions2.size === 1)
     assert(regions1.head === regions2.head)

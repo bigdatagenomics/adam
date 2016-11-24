@@ -69,10 +69,10 @@ class ReferenceRegionSuite extends FunSuite {
     assert(region("chr0", 10, 100).covers(region("chr0", 20, 50)))
 
     // different strands
-    assert(!ReferenceRegion("chr0", 10, 100, orientation = Strand.FORWARD)
-      .overlaps(ReferenceRegion("chr0", 20, 50, orientation = Strand.REVERSE)))
-    assert(ReferenceRegion("chr0", 10, 100, orientation = Strand.FORWARD)
-      .covers(ReferenceRegion("chr0", 20, 50, orientation = Strand.REVERSE)))
+    assert(!ReferenceRegion("chr0", 10, 100, strand = Strand.FORWARD)
+      .overlaps(ReferenceRegion("chr0", 20, 50, strand = Strand.REVERSE)))
+    assert(ReferenceRegion("chr0", 10, 100, strand = Strand.FORWARD)
+      .covers(ReferenceRegion("chr0", 20, 50, strand = Strand.REVERSE)))
 
     // right side
     assert(region("chr0", 10, 100).overlaps(region("chr0", 50, 250)))
@@ -147,7 +147,7 @@ class ReferenceRegionSuite extends FunSuite {
       val read = AlignmentRecord.newBuilder()
         .setReadMapped(false)
         .build()
-      ReferenceRegion(read)
+      ReferenceRegion.unstranded(read)
     }
   }
 
@@ -156,8 +156,69 @@ class ReferenceRegionSuite extends FunSuite {
       val read = AlignmentRecord.newBuilder()
         .setReadMapped(true)
         .build()
-      ReferenceRegion(read)
+      ReferenceRegion.unstranded(read)
     }
+  }
+
+  test("create stranded region from unmapped read fails") {
+    intercept[IllegalArgumentException] {
+      val read = AlignmentRecord.newBuilder()
+        .setReadMapped(false)
+        .build()
+      ReferenceRegion.stranded(read)
+    }
+  }
+
+  test("create stranded region from read with null alignment positions fails") {
+    intercept[IllegalArgumentException] {
+      val read = AlignmentRecord.newBuilder()
+        .setReadMapped(true)
+        .build()
+      ReferenceRegion.stranded(read)
+    }
+  }
+
+  test("create stranded region from read with null alignment strand fails") {
+    intercept[IllegalArgumentException] {
+      val read = AlignmentRecord.newBuilder()
+        .setReadMapped(true)
+        .setStart(10L)
+        .setEnd(15L)
+        .setContigName("ctg")
+        .setReadNegativeStrand(null)
+        .build()
+      ReferenceRegion.stranded(read)
+    }
+  }
+
+  test("create stranded region from read on forward strand") {
+    val read = AlignmentRecord.newBuilder()
+      .setReadMapped(true)
+      .setStart(10L)
+      .setEnd(15L)
+      .setContigName("ctg")
+      .setReadNegativeStrand(false)
+      .build()
+    val rr = ReferenceRegion.stranded(read)
+    assert(rr.referenceName === "ctg")
+    assert(rr.start === 10L)
+    assert(rr.end === 15L)
+    assert(rr.strand === Strand.FORWARD)
+  }
+
+  test("create stranded region from read on reverse strand") {
+    val read = AlignmentRecord.newBuilder()
+      .setReadMapped(true)
+      .setStart(10L)
+      .setEnd(15L)
+      .setContigName("ctg")
+      .setReadNegativeStrand(true)
+      .build()
+    val rr = ReferenceRegion.stranded(read)
+    assert(rr.referenceName === "ctg")
+    assert(rr.start === 10L)
+    assert(rr.end === 15L)
+    assert(rr.strand === Strand.REVERSE)
   }
 
   test("create region from mapped read contains read start and end") {
@@ -170,9 +231,9 @@ class ReferenceRegionSuite extends FunSuite {
       .setContigName("chr1")
       .build()
 
-    assert(ReferenceRegion(read).contains(point("chr1", 1L)))
-    assert(ReferenceRegion(read).contains(point("chr1", 5L)))
-    assert(!ReferenceRegion(read).contains(point("chr1", 6L)))
+    assert(ReferenceRegion.unstranded(read).contains(point("chr1", 1L)))
+    assert(ReferenceRegion.unstranded(read).contains(point("chr1", 5L)))
+    assert(!ReferenceRegion.unstranded(read).contains(point("chr1", 6L)))
   }
 
   test("validate that adjacent regions can be merged") {
@@ -226,7 +287,7 @@ class ReferenceRegionSuite extends FunSuite {
       .setMismatchingPositions("5")
       .build()
 
-    val r = ReferenceRegion(read)
+    val r = ReferenceRegion.unstranded(read)
 
     assert(r.referenceName === "chrM")
     assert(r.start === 5L)
@@ -318,6 +379,22 @@ class ReferenceRegionSuite extends FunSuite {
     assert(openEnded.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
   }
 
+  test("can build an open ended reference region with strand") {
+    val openEnded = ReferenceRegion.toEnd("myCtg", 45L, strand = Strand.FORWARD)
+
+    assert(!openEnded.overlaps(ReferenceRegion("myCtg", 44L, 45L)))
+    assert(!openEnded.overlaps(ReferenceRegion("myCtg", 44L, 46L)))
+    assert(!openEnded.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
+
+    assert(!openEnded.covers(ReferenceRegion("myCtg", 44L, 45L)))
+    assert(openEnded.covers(ReferenceRegion("myCtg", 44L, 46L)))
+    assert(openEnded.covers(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
+
+    assert(!openEnded.overlaps(ReferenceRegion("myCtg", 44L, 45L, strand = Strand.FORWARD)))
+    assert(openEnded.overlaps(ReferenceRegion("myCtg", 44L, 46L, strand = Strand.FORWARD)))
+    assert(openEnded.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue, strand = Strand.FORWARD)))
+  }
+
   test("can build a reference region with an open start position") {
     val openStart = ReferenceRegion.fromStart("myCtg", 45L)
 
@@ -326,11 +403,40 @@ class ReferenceRegionSuite extends FunSuite {
     assert(!openStart.overlaps(ReferenceRegion("myCtg", 45L, 46L)))
   }
 
+  test("can build a reference region with an open start position with strand") {
+    val openStart = ReferenceRegion.fromStart("myCtg", 45L, strand = Strand.REVERSE)
+
+    assert(!openStart.overlaps(ReferenceRegion("myCtg", 0L, 1L)))
+    assert(!openStart.overlaps(ReferenceRegion("myCtg", 44L, 46L)))
+    assert(!openStart.overlaps(ReferenceRegion("myCtg", 45L, 46L)))
+
+    assert(openStart.covers(ReferenceRegion("myCtg", 0L, 1L)))
+    assert(openStart.covers(ReferenceRegion("myCtg", 44L, 46L)))
+    assert(!openStart.covers(ReferenceRegion("myCtg", 45L, 46L)))
+
+    assert(openStart.overlaps(ReferenceRegion("myCtg", 0L, 1L, strand = Strand.REVERSE)))
+    assert(openStart.overlaps(ReferenceRegion("myCtg", 44L, 46L, strand = Strand.REVERSE)))
+    assert(!openStart.overlaps(ReferenceRegion("myCtg", 45L, 46L, strand = Strand.REVERSE)))
+  }
+
   test("can build a reference region that covers the entirety of a contig") {
     val all = ReferenceRegion.all("myCtg")
 
     assert(all.overlaps(ReferenceRegion("myCtg", 0L, 1L)))
     assert(all.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
+  }
+
+  test("can build a reference region that covers the entirety of a contig with strand") {
+    val all = ReferenceRegion.all("myCtg", strand = Strand.FORWARD)
+
+    assert(!all.overlaps(ReferenceRegion("myCtg", 0L, 1L)))
+    assert(!all.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
+
+    assert(all.covers(ReferenceRegion("myCtg", 0L, 1L)))
+    assert(all.covers(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
+
+    assert(all.overlaps(ReferenceRegion("myCtg", 0L, 1L, strand = Strand.FORWARD)))
+    assert(all.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue, strand = Strand.FORWARD)))
   }
 
   test("convert a genotype and then get the reference region") {
@@ -351,5 +457,60 @@ class ReferenceRegionSuite extends FunSuite {
     assert(rr.referenceName === "1")
     assert(rr.start === 0L)
     assert(rr.end === 1L)
+  }
+
+  test("create region from feature with null alignment positions fails") {
+    intercept[IllegalArgumentException] {
+      val feature = Feature.newBuilder()
+        .build()
+      ReferenceRegion.unstranded(feature)
+    }
+  }
+
+  test("create stranded region from feature with null alignment positions fails") {
+    intercept[IllegalArgumentException] {
+      val feature = Feature.newBuilder()
+        .build()
+      ReferenceRegion.stranded(feature)
+    }
+  }
+
+  test("create stranded region from feature with null alignment strand fails") {
+    intercept[IllegalArgumentException] {
+      val feature = Feature.newBuilder()
+        .setStart(10L)
+        .setEnd(15L)
+        .setContigName("ctg")
+        .build()
+      ReferenceRegion.stranded(feature)
+    }
+  }
+
+  test("create stranded region from feature on forward strand") {
+    val feature = Feature.newBuilder()
+      .setStart(10L)
+      .setEnd(15L)
+      .setContigName("ctg")
+      .setStrand(Strand.FORWARD)
+      .build()
+    val rr = ReferenceRegion.stranded(feature)
+    assert(rr.referenceName === "ctg")
+    assert(rr.start === 10L)
+    assert(rr.end === 15L)
+    assert(rr.strand === Strand.FORWARD)
+  }
+
+  test("create stranded region from feature on reverse strand") {
+    val feature = Feature.newBuilder()
+      .setStart(10L)
+      .setEnd(15L)
+      .setContigName("ctg")
+      .setStrand(Strand.REVERSE)
+      .build()
+    val rr = ReferenceRegion.stranded(feature)
+    assert(rr.referenceName === "ctg")
+    assert(rr.start === 10L)
+    assert(rr.end === 15L)
+    assert(rr.strand === Strand.REVERSE)
   }
 }

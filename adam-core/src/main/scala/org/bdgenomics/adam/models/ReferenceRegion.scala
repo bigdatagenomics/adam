@@ -41,7 +41,7 @@ trait ReferenceOrdering[T <: ReferenceRegion] extends Ordering[T] {
     b: T): Int = {
     val rc = regionCompare(a, b)
     if (rc == 0) {
-      a.orientation.ordinal compare b.orientation.ordinal
+      a.strand.ordinal compare b.strand.ordinal
     } else {
       rc
     }
@@ -94,12 +94,14 @@ object ReferenceRegion {
    * @param referenceName The name of the reference contig that this region is
    *   on.
    * @param end The end position for this region.
+   * @param strand The strand of the genome that this region exists on.
    * @return Returns a reference region that goes from the start of a contig to
    *   a user provided end point.
    */
   def fromStart(referenceName: String,
-                end: Long): ReferenceRegion = {
-    ReferenceRegion(referenceName, 0L, end)
+                end: Long,
+                strand: Strand = Strand.INDEPENDENT): ReferenceRegion = {
+    ReferenceRegion(referenceName, 0L, end, strand = strand)
   }
 
   /**
@@ -108,22 +110,26 @@ object ReferenceRegion {
    * @param referenceName The name of the reference contig that this region is
    *   on.
    * @param start The start position for this region.
+   * @param strand The strand of the genome that this region exists on.
    * @return Returns a reference region that goes from a user provided starting
    *   point to the end of a contig.
    */
   def toEnd(referenceName: String,
-            start: Long): ReferenceRegion = {
-    ReferenceRegion(referenceName, start, Long.MaxValue)
+            start: Long,
+            strand: Strand = Strand.INDEPENDENT): ReferenceRegion = {
+    ReferenceRegion(referenceName, start, Long.MaxValue, strand = strand)
   }
 
   /**
    * Creates a reference region that covers the entirety of a contig.
    *
    * @param referenceName The name of the reference contig to cover.
+   * @param strand The strand of the genome that this region exists on.
    * @return Returns a reference region that covers the entirety of a contig.
    */
-  def all(referenceName: String): ReferenceRegion = {
-    ReferenceRegion(referenceName, 0L, Long.MaxValue)
+  def all(referenceName: String,
+          strand: Strand = Strand.INDEPENDENT): ReferenceRegion = {
+    ReferenceRegion(referenceName, 0L, Long.MaxValue, strand = strand)
   }
 
   /**
@@ -135,7 +141,7 @@ object ReferenceRegion {
    */
   def opt(record: AlignmentRecord): Option[ReferenceRegion] = {
     if (record.getReadMapped) {
-      Some(apply(record))
+      Some(unstranded(record))
     } else {
       None
     }
@@ -173,23 +179,56 @@ object ReferenceRegion {
     ReferenceRegion(annotation.getVariant)
   }
 
-  /**
-   * Builds a reference region for an aligned read.
-   *
-   * @throws IllegalArgumentException If this read is not aligned or alignment
-   *   data is null.
-   *
-   * @param record The read to extract the reference region from.
-   * @return Returns the reference region covered by this read's alignment.
-   */
-  def apply(record: AlignmentRecord): ReferenceRegion = {
+  private def checkRead(record: AlignmentRecord) {
     require(record.getReadMapped,
       "Cannot build reference region for unmapped read %s.".format(record))
     require(record.getContigName != null &&
       record.getStart != null &&
       record.getEnd != null,
       "Read %s contains required fields that are null.".format(record))
+  }
+
+  /**
+   * Builds a reference region with independent strand for an aligned read.
+   *
+   * @throws IllegalArgumentException If this read is not aligned or alignment
+   *   data is null.
+   *
+   * @param record The read to extract the reference region from.
+   * @return Returns the reference region covered by this read's alignment.
+   *
+   * @see stranded
+   */
+  def unstranded(record: AlignmentRecord): ReferenceRegion = {
+    checkRead(record)
     ReferenceRegion(record.getContigName, record.getStart, record.getEnd)
+  }
+
+  /**
+   * Builds a reference region for an aligned read with strand set.
+   *
+   * @throws IllegalArgumentException If this read is not aligned, alignment
+   *   data is null, or strand is not set.
+   *
+   * @param record The read to extract the reference region from.
+   * @return Returns the reference region covered by this read's alignment.
+   *
+   * @see unstranded
+   */
+  def stranded(record: AlignmentRecord): ReferenceRegion = {
+    checkRead(record)
+
+    val strand = Option(record.getReadNegativeStrand)
+      .map(b => b: Boolean) match {
+        case None => throw new IllegalArgumentException(
+          "Alignment strand not set for %s".format(record))
+        case Some(true)  => Strand.REVERSE
+        case Some(false) => Strand.FORWARD
+      }
+    new ReferenceRegion(record.getContigName,
+      record.getStart,
+      record.getEnd,
+      strand = strand)
   }
 
   /**
@@ -197,8 +236,12 @@ object ReferenceRegion {
    * @param pos The position to convert
    * @return A 1-wide region at the same location as pos
    */
-  def apply(pos: ReferencePosition): ReferenceRegion =
-    ReferenceRegion(pos.referenceName, pos.pos, pos.pos + 1)
+  def apply(pos: ReferencePosition): ReferenceRegion = {
+    ReferenceRegion(pos.referenceName,
+      pos.pos,
+      pos.pos + 1,
+      strand = pos.strand)
+  }
 
   /**
    * Generates a reference region from assembly data. Returns None if the assembly does not
@@ -222,14 +265,45 @@ object ReferenceRegion {
     }
   }
 
+  private def checkFeature(record: Feature) {
+    require(record.getContigName != null &&
+      record.getStart != null &&
+      record.getEnd != null,
+      "Feature %s contains required fields that are null.".format(record))
+  }
+
   /**
-   * Builds a reference region for a feature.
+   * Builds a reference region for a feature without strand information.
    *
-   * @param feature Feature to extract ReferenceRegion from
+   * @param feature Feature to extract ReferenceRegion from.
    * @return Extracted ReferenceRegion
+   *
+   * @see stranded
    */
-  def apply(feature: Feature): ReferenceRegion = {
+  def unstranded(feature: Feature): ReferenceRegion = {
+    checkFeature(feature)
     new ReferenceRegion(feature.getContigName, feature.getStart, feature.getEnd)
+  }
+
+  /**
+   * Builds a reference region for a feature with strand set.
+   *
+   * @param feature Feature to extract ReferenceRegion from.
+   * @return Extracted ReferenceRegion
+   *
+   * @throws IllegalArgumentException Throws an exception if the strand is null
+   *   in the provided feature.
+   *
+   * @see unstranded
+   */
+  def stranded(feature: Feature): ReferenceRegion = {
+    checkFeature(feature)
+    require(feature.getStrand != null,
+      "Strand is not defined in feature %s.".format(feature))
+    new ReferenceRegion(feature.getContigName,
+      feature.getStart,
+      feature.getEnd,
+      strand = feature.getStrand)
   }
 
   /**
@@ -251,18 +325,19 @@ object ReferenceRegion {
  * @param end The 0-based residue-coordinate for the first residue <i>after</i> the start
  *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
  *            half-open interval.
+ * @param strand The strand of the genome that this region exists on.
  */
 case class ReferenceRegion(
   referenceName: String,
   start: Long,
   end: Long,
-  orientation: Strand = Strand.INDEPENDENT)
+  strand: Strand = Strand.INDEPENDENT)
     extends Comparable[ReferenceRegion]
     with Interval[ReferenceRegion] {
 
   assert(start >= 0 && end >= start,
     "Failed when trying to create region %s %d %d on %s strand.".format(
-      referenceName, start, end, orientation))
+      referenceName, start, end, strand))
 
   /**
    * @return Returns a copy of this reference region that is on the independent
@@ -308,7 +383,7 @@ case class ReferenceRegion(
    * @see merge
    */
   def hull(region: ReferenceRegion): ReferenceRegion = {
-    assert(orientation == region.orientation, "Cannot compute convex hull of differently oriented regions.")
+    assert(strand == region.strand, "Cannot compute convex hull of differently oriented regions.")
     assert(referenceName == region.referenceName, "Cannot compute convex hull of regions on different references.")
     ReferenceRegion(referenceName, min(start, region.start), max(end, region.end))
   }
@@ -338,7 +413,7 @@ case class ReferenceRegion(
    *   the point is not in our reference space, we return an empty option.
    */
   def distance(other: ReferenceRegion): Option[Long] = {
-    if (referenceName == other.referenceName && orientation == other.orientation) {
+    if (referenceName == other.referenceName && strand == other.strand) {
       if (overlaps(other)) {
         Some(0)
       } else if (other.start >= end) {
@@ -376,7 +451,7 @@ case class ReferenceRegion(
     new ReferenceRegion(referenceName,
       start - byStart,
       end + byEnd,
-      orientation)
+      strand)
   }
 
   /**
@@ -386,7 +461,7 @@ case class ReferenceRegion(
    * @return True if the position is within our region.
    */
   def contains(other: ReferencePosition): Boolean = {
-    orientation == other.orientation &&
+    strand == other.strand &&
       referenceName == other.referenceName &&
       start <= other.pos && end > other.pos
   }
@@ -398,7 +473,7 @@ case class ReferenceRegion(
    * @return True if the region is wholly contained within our region.
    */
   def contains(other: ReferenceRegion): Boolean = {
-    orientation == other.orientation &&
+    strand == other.strand &&
       referenceName == other.referenceName &&
       start <= other.start && end >= other.end
   }
@@ -422,7 +497,7 @@ case class ReferenceRegion(
    * @return True if any section of the two regions overlap.
    */
   def overlaps(other: ReferenceRegion): Boolean = {
-    orientation == other.orientation &&
+    strand == other.strand &&
       referenceName == other.referenceName &&
       end > other.start && start < other.end
   }
@@ -449,7 +524,7 @@ case class ReferenceRegion(
     result = 41 * result + (if (referenceName != null) referenceName.hashCode else 0)
     result = 41 * result + start.hashCode
     result = 41 * result + end.hashCode
-    result = 41 * result + (if (orientation != null) orientation.ordinal() else 0)
+    result = 41 * result + (if (strand != null) strand.ordinal() else 0)
     result
   }
 }
@@ -461,14 +536,14 @@ class ReferenceRegionSerializer extends Serializer[ReferenceRegion] {
     output.writeString(obj.referenceName)
     output.writeLong(obj.start)
     output.writeLong(obj.end)
-    output.writeInt(obj.orientation.ordinal())
+    output.writeInt(obj.strand.ordinal())
   }
 
   def read(kryo: Kryo, input: Input, klazz: Class[ReferenceRegion]): ReferenceRegion = {
     val referenceName = input.readString()
     val start = input.readLong()
     val end = input.readLong()
-    val orientation = input.readInt()
-    new ReferenceRegion(referenceName, start, end, enumValues(orientation))
+    val strand = input.readInt()
+    new ReferenceRegion(referenceName, start, end, enumValues(strand))
   }
 }

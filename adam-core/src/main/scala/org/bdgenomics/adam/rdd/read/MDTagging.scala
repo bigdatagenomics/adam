@@ -71,7 +71,8 @@ private[read] case class MDTagging(
         contig <- Option(read.getContigName)
         if read.getReadMapped
       } yield {
-        maybeMDTagRead(read, referenceFileB.value.extract(ReferenceRegion(read)))
+        maybeMDTagRead(read, referenceFileB.value
+          .extract(ReferenceRegion.unstranded(read)))
       }).getOrElse({
         numUnmappedReads += 1
         read
