@@ -17,8 +17,16 @@
  */
 package org.bdgenomics.adam.models
 
-import org.scalatest._
+import htsjdk.variant.variantcontext.{
+  Allele,
+  GenotypeBuilder,
+  GenotypeType,
+  VariantContextBuilder
+}
+import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.formats.avro._
+import org.scalatest.FunSuite
+import scala.collection.JavaConversions._
 
 class ReferenceRegionSuite extends FunSuite {
 
@@ -321,5 +329,26 @@ class ReferenceRegionSuite extends FunSuite {
 
     assert(all.overlaps(ReferenceRegion("myCtg", 0L, 1L)))
     assert(all.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
+  }
+
+  test("converting a genotype and then getting the reference region fails") {
+    val converter = new VariantContextConverter
+    val vcb = new VariantContextBuilder()
+      .alleles(List(Allele.create("A", true), Allele.create("T")))
+      .start(1L)
+      .stop(1L)
+      .chr("1")
+    val vc = vcb.genotypes(GenotypeBuilder.create("NA12878",
+      vcb.getAlleles(),
+      Map.empty[String, java.lang.Object])).make()
+    val gts = converter.convert(vc).flatMap(_.genotypes)
+    assert(gts.size === 1)
+    val gt = gts.head
+
+    // throws NPE
+    val rr = ReferenceRegion(gt)
+    assert(rr.referenceName === "1")
+    assert(rr.start === 0L)
+    assert(rr.end === 1L)
   }
 }
