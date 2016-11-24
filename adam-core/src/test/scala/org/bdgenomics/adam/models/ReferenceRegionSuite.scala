@@ -20,7 +20,6 @@ package org.bdgenomics.adam.models
 import htsjdk.variant.variantcontext.{
   Allele,
   GenotypeBuilder,
-  GenotypeType,
   VariantContextBuilder
 }
 import org.bdgenomics.adam.converters.VariantContextConverter
@@ -282,6 +281,9 @@ class ReferenceRegionSuite extends FunSuite {
       .build()
     val g = Genotype.newBuilder()
       .setVariant(v)
+      .setContigName("chr")
+      .setStart(1L)
+      .setEnd(3L)
       .build()
     val rrV = ReferenceRegion(v)
     val rrG = ReferenceRegion(g)
@@ -331,7 +333,7 @@ class ReferenceRegionSuite extends FunSuite {
     assert(all.overlaps(ReferenceRegion("myCtg", Long.MaxValue - 1L, Long.MaxValue)))
   }
 
-  test("converting a genotype and then getting the reference region fails") {
+  test("convert a genotype and then get the reference region") {
     val converter = new VariantContextConverter
     val vcb = new VariantContextBuilder()
       .alleles(List(Allele.create("A", true), Allele.create("T")))
@@ -345,7 +347,6 @@ class ReferenceRegionSuite extends FunSuite {
     assert(gts.size === 1)
     val gt = gts.head
 
-    // throws NPE
     val rr = ReferenceRegion(gt)
     assert(rr.referenceName === "1")
     assert(rr.start === 0L)
