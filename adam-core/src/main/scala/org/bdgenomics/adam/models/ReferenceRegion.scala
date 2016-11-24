@@ -148,7 +148,9 @@ object ReferenceRegion {
    * @return The site where this genotype lives.
    */
   def apply(genotype: Genotype): ReferenceRegion = {
-    ReferenceRegion(genotype.getVariant)
+    ReferenceRegion(genotype.getContigName,
+      genotype.getStart,
+      genotype.getEnd)
   }
 
   /**
