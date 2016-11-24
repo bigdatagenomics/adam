@@ -53,8 +53,8 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
       .setEnd(11L)
       .build()
 
-    val rdd1 = sc.parallelize(Seq(record1, record3)).keyBy(ReferenceRegion(_))
-    val rdd2 = sc.parallelize(Seq(record2, record4)).keyBy(ReferenceRegion(_))
+    val rdd1 = sc.parallelize(Seq(record1, record3)).keyBy(ReferenceRegion.unstranded(_))
+    val rdd2 = sc.parallelize(Seq(record2, record4)).keyBy(ReferenceRegion.unstranded(_))
 
     val jrdd = runJoin(rdd1, rdd2).cache()
 
@@ -86,8 +86,8 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
     val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
     val record3 = AlignmentRecord.newBuilder(built).setStart(6L).setEnd(7L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion(_))
-    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion(_))
+    val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion.unstranded(_))
+    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion.unstranded(_))
 
     val jrdd = runJoin(baseRdd, recordsRdd).cache
 
