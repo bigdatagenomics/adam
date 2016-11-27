@@ -160,6 +160,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.bdgenomics.bdghbase</groupId>
+      <artifactId>bdghbase-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
     </dependency>
