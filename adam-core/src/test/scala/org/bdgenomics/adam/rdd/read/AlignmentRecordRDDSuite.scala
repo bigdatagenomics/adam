@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
+import org.apache.spark.SparkException
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
   ReferenceRegion,
@@ -707,5 +708,18 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val tempBam = sc.loadBam(tempPath)
     assert(tempBam.rdd.count === ardd.rdd.count)
+  }
+
+  sparkTest("don't hang on pipe exception") {
+    val readsPath = testFile("small.1.sam")
+    val ardd = sc.loadBam(readsPath)
+
+    implicit val tFormatter = SAMInFormatter
+    implicit val uFormatter = new VCFOutFormatter
+
+    intercept[SparkException] {
+      val pipedRdd: VariantContextRDD = ardd.pipe("tee /dev/null")
+      val newRecords = pipedRdd.rdd.count
+    }
   }
 }
