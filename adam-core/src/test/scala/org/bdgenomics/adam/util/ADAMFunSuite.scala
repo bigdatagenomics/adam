@@ -17,9 +17,14 @@
  */
 package org.bdgenomics.adam.util
 
+import htsjdk.samtools.util.Log
+import java.util.logging.Level
 import org.bdgenomics.utils.misc.SparkFunSuite
 
-trait ADAMFunSuite extends SparkFunSuite {
+abstract class ADAMFunSuite extends SparkFunSuite {
+
+  // added to resolve #1280
+  Log.setGlobalLogLevel(Log.LogLevel.ERROR)
 
   override val appName: String = "adam"
   override val properties: Map[String, String] = Map(
