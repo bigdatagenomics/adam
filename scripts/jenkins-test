@@ -60,11 +60,12 @@ mvn clean \
     -Dspark.version=${SPARK_VERSION} 
     
 # if those pass, build the distribution package and the integration tests
-mvn test \
+mvn -U \
+    test \
     -P coverage scoverage:report
 
 # if those pass, build the distribution package
-mvn \
+mvn -U \
     -P distribution \
     package \
     -DskipTests \
