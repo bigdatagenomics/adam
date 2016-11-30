@@ -452,13 +452,24 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     optPartitions: Option[Int],
     genomicRdd: GenomicRDD[X, Y]): (Long, SequenceDictionary) = {
 
+    require(!(sequences.isEmpty && genomicRdd.sequences.isEmpty),
+      "Both RDDs at input to join have an empty sequence dictionary!")
+
     // what sequences do we wind up with at the end?
     val finalSequences = sequences ++ genomicRdd.sequences
 
     // did the user provide a set partition count?
     // if no, take the max partition count from our rdds
-    val partitions = optPartitions.getOrElse(Seq(rdd.partitions.length,
+    val estPartitions = optPartitions.getOrElse(Seq(rdd.partitions.length,
       genomicRdd.rdd.partitions.length).max)
+
+    // if the user provides too high of a partition count, the estimated number
+    // of partitions can go to 0
+    val partitions = if (estPartitions >= 1) {
+      estPartitions
+    } else {
+      1
+    }
 
     (finalSequences.records.map(_.length).sum / partitions,
       finalSequences)
