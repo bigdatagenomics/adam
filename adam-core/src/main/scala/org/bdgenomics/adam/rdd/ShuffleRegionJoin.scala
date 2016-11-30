@@ -240,7 +240,7 @@ case class RightOuterShuffleRegionJoinAndGroupByLeft[T, U](sd: SequenceDictionar
 
   protected def emptyFn(left: Iterator[((ReferenceRegion, Int), T)],
                         right: Iterator[((ReferenceRegion, Int), U)]): Iterator[(Option[T], Iterable[U])] = {
-    right.map(v => (None, Iterable(v._2)))
+    left.map(v => (Some(v._2), Iterable.empty)) ++ right.map(v => (None, Iterable(v._2)))
   }
 }
 
@@ -278,8 +278,9 @@ private trait SortedIntervalPartitionJoin[T, U, RT, RU] extends Iterator[(RT, RU
   protected def pruneCache(to: Long)
 
   private def getHits(): Unit = {
+    assert(!hits.hasNext)
     // if there is nothing more in left, then I'm done
-    while (left.hasNext && hits.isEmpty) {
+    while (left.hasNext) {
       // there is more in left...
       val nl = left.next
       val ((nextLeftRegion, _), nextLeft) = nl
@@ -298,7 +299,11 @@ private trait SortedIntervalPartitionJoin[T, U, RT, RU] extends Iterator[(RT, RU
       // be improved by making cache a fancier data structure than just a list
       // we filter for things that overlap, where at least one side of the join has a start position
       // in this partition
-      hits = processHits(nextLeft, nextLeftRegion)
+      //
+      // also, see note "important: fun times with iterators" in this file, which explains
+      // that these must apparently be two lines
+      val newHits = processHits(nextLeft, nextLeftRegion)
+      hits = hits ++ newHits
 
       assert(prevLeftRegion == null ||
         (prevLeftRegion.referenceName == nextLeftRegion.referenceName &&
@@ -317,6 +322,11 @@ private trait SortedIntervalPartitionJoin[T, U, RT, RU] extends Iterator[(RT, RU
     // if the list of current hits is empty, try to refill it by moving forward
     if (hits.isEmpty) {
       getHits()
+    }
+    // if that fails, try advancing and pruning the cache
+    if (hits.isEmpty) {
+      advanceCache(binRegion.end)
+      pruneCache(binRegion.end)
     }
     // if hits is still empty, I must really be at the end
     hits.hasNext
@@ -377,7 +387,11 @@ private case class SortedIntervalPartitionJoinAndGroupByLeft[T, U](
 
   protected def postProcessHits(iter: Iterator[(T, U)],
                                 currentLeft: T): Iterator[(T, Iterable[U])] = {
-    Iterator((currentLeft, iter.map(_._2).toIterable))
+    if (iter.hasNext) {
+      Iterator((currentLeft, iter.map(_._2).toIterable))
+    } else {
+      Iterator.empty
+    }
   }
 }
 
@@ -425,8 +439,40 @@ private trait SortedIntervalPartitionJoinWithVictims[T, U, RT, RU] extends Sorte
   }
 
   protected def pruneCache(to: Long) {
+
     cache = cache.dropWhile(_._1.end <= to)
-    hits = hits ++ (victimCache.takeWhile(_._1.end <= to).map(u => postProcessPruned(u._2)))
+    cache = cache ++ victimCache.takeWhile(_._1.end > to)
+    victimCache = victimCache.dropWhile(_._1.end > to)
+
+    // important: fun times with iterators
+    // 
+    // for reasons known only to God, if you combine these two lines down to a
+    // single line, it causes the hits iterator to be invalidated and become
+    // empty.
+    //
+    // MORE: it seems like there's some funniness with the underlying scala imp'l
+    // of append on two iterators. if the second line is written as:
+    //
+    // hits = hits ++ pped
+    //
+    // the line works as expected on scala 2.10. on scala 2.11, it occasionally
+    // fails. oddly enough, if you write the line above and then do a duplicate
+    // on the hits iterator (which you then reassign to hits), it works. i.e.,
+    //
+    // hits = hits ++ pped
+    // val (d, _) = hits.duplicate
+    // hits = d
+    //
+    // works on both scala 2.10 and 2.11 across all unit tests
+    //
+    // rewriting it as (pped ++ hits).toIterator seems to work all the time.
+    // that appends the hits iterator to a ListBuffer, and then returns an iterator
+    // over the list buffer. essentially, i think there's a bug in the Iterator.++
+    // method in scala that occasionally causes it to return an empty iterator, but
+    // i'm not sure why that is
+    val pped = (victimCache.takeWhile(_._1.end <= to).map(u => postProcessPruned(u._2)))
+    hits = (pped ++ hits).toIterator
+
     victimCache = victimCache.dropWhile(_._1.end <= to)
   }
 

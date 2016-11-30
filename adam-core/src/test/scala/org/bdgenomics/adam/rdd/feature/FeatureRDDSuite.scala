@@ -538,5 +538,199 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
 
     assert(coverage.rdd.count == 19)
   }
+
+  sparkTest("use broadcast join to pull down features mapped to targets") {
+    val featuresPath = testFile("small.1.narrowPeak")
+    val targetsPath = testFile("small.1.bed")
+
+    val features = sc.loadFeatures(featuresPath)
+    val targets = sc.loadFeatures(targetsPath)
+
+    val jRdd = features.broadcastRegionJoin(targets)
+
+    assert(jRdd.rdd.count === 5L)
+  }
+
+  sparkTest("use right outer broadcast join to pull down features mapped to targets") {
+    val featuresPath = testFile("small.1.narrowPeak")
+    val targetsPath = testFile("small.1.bed")
+
+    val features = sc.loadFeatures(featuresPath)
+    val targets = sc.loadFeatures(targetsPath)
+
+    val jRdd = features.rightOuterBroadcastRegionJoin(targets)
+
+    val c = jRdd.rdd.collect
+    assert(c.count(_._1.isEmpty) === 1)
+    assert(c.count(_._1.isDefined) === 5)
+  }
+
+  def sd = {
+    sc.loadBam(testFile("small.1.sam"))
+      .sequences
+  }
+
+  sparkTest("use shuffle join to pull down features mapped to targets") {
+    val featuresPath = testFile("small.1.narrowPeak")
+    val targetsPath = testFile("small.1.bed")
+
+    val features = sc.loadFeatures(featuresPath)
+      .transform(_.repartition(1))
+      .copy(sequences = sd)
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = features.shuffleRegionJoin(targets)
+    val jRdd0 = features.shuffleRegionJoin(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    assert(jRdd.rdd.count === 5L)
+    assert(jRdd0.rdd.count === 5L)
+  }
+
+  sparkTest("use right outer shuffle join to pull down features mapped to targets") {
+    val featuresPath = testFile("small.1.narrowPeak")
+    val targetsPath = testFile("small.1.bed")
+
+    val features = sc.loadFeatures(featuresPath)
+      .transform(_.repartition(1))
+      .copy(sequences = sd)
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = features.rightOuterShuffleRegionJoin(targets)
+    val jRdd0 = features.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd.rdd.collect
+    val c0 = jRdd0.rdd.collect
+    assert(c.count(_._1.isEmpty) === 1)
+    assert(c0.count(_._1.isEmpty) === 1)
+    assert(c.count(_._1.isDefined) === 5)
+    assert(c0.count(_._1.isDefined) === 5)
+  }
+
+  sparkTest("use left outer shuffle join to pull down features mapped to targets") {
+    val featuresPath = testFile("small.1.narrowPeak")
+    val targetsPath = testFile("small.1.bed")
+
+    val features = sc.loadFeatures(featuresPath)
+      .transform(_.repartition(1))
+      .copy(sequences = sd)
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = features.leftOuterShuffleRegionJoin(targets)
+    val jRdd0 = features.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd.rdd.collect
+    val c0 = jRdd0.rdd.collect
+    assert(c.count(_._2.isEmpty) === 15)
+    assert(c0.count(_._2.isEmpty) === 15)
+    assert(c.count(_._2.isDefined) === 5)
+    assert(c0.count(_._2.isDefined) === 5)
+  }
+
+  sparkTest("use full outer shuffle join to pull down features mapped to targets") {
+    val featuresPath = testFile("small.1.narrowPeak")
+    val targetsPath = testFile("small.1.bed")
+
+    val features = sc.loadFeatures(featuresPath)
+      .transform(_.repartition(1))
+      .copy(sequences = sd)
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = features.fullOuterShuffleRegionJoin(targets)
+    val jRdd0 = features.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd.rdd.collect
+    val c0 = jRdd0.rdd.collect
+    assert(c.count(t => t._1.isEmpty && t._2.isEmpty) === 0)
+    assert(c0.count(t => t._1.isEmpty && t._2.isEmpty) === 0)
+    assert(c.count(t => t._1.isDefined && t._2.isEmpty) === 15)
+    assert(c0.count(t => t._1.isDefined && t._2.isEmpty) === 15)
+    assert(c.count(t => t._1.isEmpty && t._2.isDefined) === 1)
+    assert(c0.count(t => t._1.isEmpty && t._2.isDefined) === 1)
+    assert(c.count(t => t._1.isDefined && t._2.isDefined) === 5)
+    assert(c0.count(t => t._1.isDefined && t._2.isDefined) === 5)
+  }
+
+  sparkTest("use shuffle join with group by to pull down features mapped to targets") {
+    val featuresPath = testFile("small.1.narrowPeak")
+    val targetsPath = testFile("small.1.bed")
+
+    val features = sc.loadFeatures(featuresPath)
+      .transform(_.repartition(1))
+      .copy(sequences = sd)
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = features.shuffleRegionJoinAndGroupByLeft(targets)
+    val jRdd0 = features.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd.rdd.collect
+    val c0 = jRdd0.rdd.collect
+    assert(c.size === 5)
+    assert(c0.size === 5)
+    assert(c.forall(_._2.size == 1))
+    assert(c0.forall(_._2.size == 1))
+  }
+
+  sparkTest("use right outer shuffle join with group by to pull down features mapped to targets") {
+    val featuresPath = testFile("small.1.narrowPeak")
+    val targetsPath = testFile("small.1.bed")
+
+    val features = sc.loadFeatures(featuresPath)
+      .transform(_.repartition(1))
+      .copy(sequences = sd)
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = features.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
+    val jRdd0 = features.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd0.rdd.collect // FIXME
+    val c0 = jRdd0.rdd.collect
+
+    assert(c.count(_._1.isDefined) === 20)
+    assert(c0.count(_._1.isDefined) === 20)
+    assert(c.filter(_._1.isDefined).count(_._2.size == 1) === 5)
+    assert(c0.filter(_._1.isDefined).count(_._2.size == 1) === 5)
+    assert(c.filter(_._1.isDefined).count(_._2.isEmpty) === 15)
+    assert(c0.filter(_._1.isDefined).count(_._2.isEmpty) === 15)
+    assert(c.count(_._1.isEmpty) === 1)
+    assert(c0.count(_._1.isEmpty) === 1)
+    assert(c.filter(_._1.isEmpty).forall(_._2.size == 1))
+    assert(c0.filter(_._1.isEmpty).forall(_._2.size == 1))
+  }
 }
 

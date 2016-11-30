@@ -43,4 +43,186 @@ class FragmentRDDSuite extends ADAMFunSuite {
     val newRecords = pipedRdd.rdd.count
     assert(2 * records === newRecords)
   }
+
+  sparkTest("use broadcast join to pull down fragments mapped to targets") {
+    val fragmentsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val fragments = sc.loadFragments(fragmentsPath)
+    val targets = sc.loadFeatures(targetsPath)
+
+    val jRdd = fragments.broadcastRegionJoin(targets)
+
+    assert(jRdd.rdd.count === 5)
+  }
+
+  sparkTest("use right outer broadcast join to pull down fragments mapped to targets") {
+    val fragmentsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val fragments = sc.loadFragments(fragmentsPath)
+    val targets = sc.loadFeatures(targetsPath)
+
+    val jRdd = fragments.rightOuterBroadcastRegionJoin(targets)
+
+    val c = jRdd.rdd.collect
+    assert(c.count(_._1.isEmpty) === 1)
+    assert(c.count(_._1.isDefined) === 5)
+  }
+
+  sparkTest("use shuffle join to pull down fragments mapped to targets") {
+    val fragmentsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val fragments = sc.loadFragments(fragmentsPath)
+      .transform(_.repartition(1))
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = fragments.shuffleRegionJoin(targets)
+    val jRdd0 = fragments.shuffleRegionJoin(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    assert(jRdd.rdd.count === 5)
+    assert(jRdd0.rdd.count === 5)
+  }
+
+  sparkTest("use right outer shuffle join to pull down fragments mapped to targets") {
+    val fragmentsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val fragments = sc.loadFragments(fragmentsPath)
+      .transform(_.repartition(1))
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = fragments.rightOuterShuffleRegionJoin(targets)
+    val jRdd0 = fragments.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd.rdd.collect
+    val c0 = jRdd0.rdd.collect
+    assert(c.count(_._1.isEmpty) === 1)
+    assert(c0.count(_._1.isEmpty) === 1)
+    assert(c.count(_._1.isDefined) === 5)
+    assert(c0.count(_._1.isDefined) === 5)
+  }
+
+  sparkTest("use left outer shuffle join to pull down fragments mapped to targets") {
+    val fragmentsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val fragments = sc.loadFragments(fragmentsPath)
+      .transform(_.repartition(1))
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = fragments.leftOuterShuffleRegionJoin(targets)
+    val jRdd0 = fragments.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd.rdd.collect
+    val c0 = jRdd0.rdd.collect
+    assert(c.count(_._2.isEmpty) === 15)
+    assert(c0.count(_._2.isEmpty) === 15)
+    assert(c.count(_._2.isDefined) === 5)
+    assert(c0.count(_._2.isDefined) === 5)
+  }
+
+  sparkTest("use full outer shuffle join to pull down fragments mapped to targets") {
+    val fragmentsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val fragments = sc.loadFragments(fragmentsPath)
+      .transform(_.repartition(1))
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = fragments.fullOuterShuffleRegionJoin(targets)
+    val jRdd0 = fragments.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd.rdd.collect
+    val c0 = jRdd0.rdd.collect
+    assert(c.count(t => t._1.isEmpty && t._2.isEmpty) === 0)
+    assert(c0.count(t => t._1.isEmpty && t._2.isEmpty) === 0)
+    assert(c.count(t => t._1.isDefined && t._2.isEmpty) === 15)
+    assert(c0.count(t => t._1.isDefined && t._2.isEmpty) === 15)
+    assert(c.count(t => t._1.isEmpty && t._2.isDefined) === 1)
+    assert(c0.count(t => t._1.isEmpty && t._2.isDefined) === 1)
+    assert(c.count(t => t._1.isDefined && t._2.isDefined) === 5)
+    assert(c0.count(t => t._1.isDefined && t._2.isDefined) === 5)
+  }
+
+  sparkTest("use shuffle join with group by to pull down fragments mapped to targets") {
+    val fragmentsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val fragments = sc.loadFragments(fragmentsPath)
+      .transform(_.repartition(1))
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = fragments.shuffleRegionJoinAndGroupByLeft(targets)
+    val jRdd0 = fragments.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd.rdd.collect
+    val c0 = jRdd0.rdd.collect
+    assert(c.size === 5)
+    assert(c0.size === 5)
+    assert(c.forall(_._2.size == 1))
+    assert(c0.forall(_._2.size == 1))
+  }
+
+  sparkTest("use right outer shuffle join with group by to pull down fragments mapped to targets") {
+    val fragmentsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val fragments = sc.loadFragments(fragmentsPath)
+      .transform(_.repartition(1))
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = fragments.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
+    val jRdd0 = fragments.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+
+    // we can't guarantee that we get exactly the number of partitions requested,
+    // we get close though
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 5)
+
+    val c = jRdd.rdd.collect
+    val c0 = jRdd0.rdd.collect
+    assert(c.count(_._1.isDefined) === 20)
+    assert(c0.count(_._1.isDefined) === 20)
+    assert(c.filter(_._1.isDefined).count(_._2.size == 1) === 5)
+    assert(c0.filter(_._1.isDefined).count(_._2.size == 1) === 5)
+    assert(c.filter(_._1.isDefined).count(_._2.isEmpty) === 15)
+    assert(c0.filter(_._1.isDefined).count(_._2.isEmpty) === 15)
+    assert(c.count(_._1.isEmpty) === 1)
+    assert(c0.count(_._1.isEmpty) === 1)
+    assert(c.filter(_._1.isEmpty).forall(_._2.size == 1))
+    assert(c0.filter(_._1.isEmpty).forall(_._2.size == 1))
+  }
 }

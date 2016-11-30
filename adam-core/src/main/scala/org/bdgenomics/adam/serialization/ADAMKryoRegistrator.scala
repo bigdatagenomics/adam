@@ -142,6 +142,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     // org.bdgenomics.adam.rdd
     kryo.register(classOf[org.bdgenomics.adam.rdd.GenomeBins])
+    kryo.register(Class.forName("org.bdgenomics.adam.rdd.SortedIntervalPartitionJoinAndGroupByLeft$$anonfun$postProcessHits$1"))
 
     // org.bdgenomics.adam.rdd.read
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.FlagStatMetrics])
@@ -256,15 +257,23 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[scala.Array[String]])
     kryo.register(Class.forName("scala.Tuple2$mcCC$sp"))
 
+    // scala.collection
+    kryo.register(Class.forName("scala.collection.Iterator$$anon$11"))
+    kryo.register(Class.forName("scala.collection.Iterator$$anonfun$toStream$1"))
+
     // scala.collection.convert
     kryo.register(Class.forName("scala.collection.convert.Wrappers$"))
 
     // scala.collection.immutable
     kryo.register(classOf[scala.collection.immutable.::[_]])
     kryo.register(classOf[scala.collection.immutable.Range])
+    kryo.register(Class.forName("scala.collection.immutable.Stream$Cons"))
+    kryo.register(Class.forName("scala.collection.immutable.Stream$Empty$"))
 
     // scala.collection.mutable
     kryo.register(classOf[scala.collection.mutable.ArrayBuffer[_]])
+    kryo.register(classOf[scala.collection.mutable.ListBuffer[_]])
+    kryo.register(Class.forName("scala.collection.mutable.ListBuffer$$anon$1"))
     kryo.register(classOf[scala.collection.mutable.WrappedArray.ofInt])
     kryo.register(classOf[scala.collection.mutable.WrappedArray.ofLong])
     kryo.register(classOf[scala.collection.mutable.WrappedArray.ofByte])
