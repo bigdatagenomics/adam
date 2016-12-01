@@ -23,7 +23,7 @@ import org.bdgenomics.adam.projections.VariantAnnotationField._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{TranscriptEffect, VariantAnnotation}
+import org.bdgenomics.formats.avro.{ TranscriptEffect, VariantAnnotation }
 
 class VariantAnnotationFieldSuite extends ADAMFunSuite {
 

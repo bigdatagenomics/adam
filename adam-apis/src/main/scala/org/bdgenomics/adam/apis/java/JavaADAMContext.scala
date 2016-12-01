@@ -28,7 +28,7 @@ import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
-VariantRDD
+  VariantRDD
 }
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._

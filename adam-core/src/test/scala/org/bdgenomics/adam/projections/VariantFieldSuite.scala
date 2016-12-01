@@ -23,7 +23,7 @@ import org.bdgenomics.adam.projections.VariantField._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.Variant
+import org.bdgenomics.formats.avro.{ Variant, VariantAnnotation }
 
 class VariantFieldSuite extends ADAMFunSuite {
 
@@ -39,6 +39,9 @@ class VariantFieldSuite extends ADAMFunSuite {
       .setFiltersApplied(true)
       .setFiltersPassed(false)
       .setFiltersFailed(ImmutableList.of("filter"))
+      .setAnnotation(VariantAnnotation.newBuilder()
+        .setSomatic(true)
+        .build())
       .build()))
     rdd.saveAsParquet(TestSaveArgs(path))
 
@@ -51,7 +54,8 @@ class VariantFieldSuite extends ADAMFunSuite {
       alternateAllele,
       filtersApplied,
       filtersPassed,
-      filtersFailed
+      filtersFailed,
+      annotation
     )
 
     val variants: RDD[Variant] = sc.loadParquet(path, projection = Some(projection))
@@ -65,5 +69,6 @@ class VariantFieldSuite extends ADAMFunSuite {
     assert(variants.first.getFiltersApplied === true)
     assert(variants.first.getFiltersPassed === false)
     assert(variants.first.getFiltersFailed.get(0) === "filter")
+    assert(variants.first.getAnnotation.getSomatic === true)
   }
 }
