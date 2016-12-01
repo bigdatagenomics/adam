@@ -86,7 +86,6 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     assert(variant.getReferenceAllele === "A")
     assert(variant.getStart === 0L)
-    assert(variant.getSomatic === false)
   }
 
   test("Convert somatic htsjdk site-only SNV to ADAM") {
@@ -102,7 +101,6 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val adamVCs = converter.convert(vcb.make)
     val adamVC = adamVCs.head
     val variant = adamVC.variant.variant
-    assert(variant.getSomatic === true)
   }
 
   test("Convert htsjdk site-only SNV to ADAM with contig conversion") {
@@ -485,39 +483,5 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(htsjdkVC.isFiltered)
     assert(htsjdkVC.getFilters.contains("FILTER1"))
     assert(htsjdkVC.getFilters.contains("FILTER2"))
-  }
-
-  test("Convert ADAM variant context with null somatic flag to htsjdk") {
-    val variant = adamSNVBuilder()
-      .setSomatic(null)
-      .build
-
-    val converter = new VariantContextConverter
-
-    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
-    assert(!htsjdkVC.hasAttribute("SOMATIC"))
-  }
-
-  test("Convert ADAM variant context with non-somatic variant to htsjdk") {
-    val variant = adamSNVBuilder()
-      .setSomatic(false)
-      .build
-
-    val converter = new VariantContextConverter
-
-    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
-    assert(!htsjdkVC.hasAttribute("SOMATIC"))
-  }
-
-  test("Convert ADAM variant context with somatic variant to htsjdk") {
-    val variant = adamSNVBuilder()
-      .setSomatic(true)
-      .build
-
-    val converter = new VariantContextConverter
-
-    val htsjdkVC = converter.convert(ADAMVariantContext(variant))
-    assert(htsjdkVC.hasAttribute("SOMATIC"))
-    assert(htsjdkVC.getAttributeAsBoolean("SOMATIC", false) === true)
   }
 }

@@ -395,10 +395,7 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
       builder.setFiltersPassed(!vc.isFiltered)
     }
     if (vc.isFiltered) {
-      builder.setFiltersFailed(new java.util.ArrayList(vc.getFilters));
-    }
-    if (vc.getAttributeAsBoolean("SOMATIC", false)) {
-      builder.setSomatic(true)
+      builder.setFiltersFailed(new java.util.ArrayList(vc.getFilters))
     }
     builder.build
   }
@@ -412,11 +409,11 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    */
   private def extractVariantAnnotation(variant: Variant,
                                        vc: HtsjdkVariantContext): VariantAnnotation = {
-    val annotation = VariantAnnotation.newBuilder()
-      .setVariant(variant)
-      .build
-
-    VariantAnnotationConverter.convert(vc, annotation)
+    val builder = VariantAnnotation.newBuilder()
+    if (vc.getAttributeAsBoolean("SOMATIC", false)) {
+      builder.setSomatic(true)
+    }
+    VariantAnnotationConverter.convert(vc, builder.build)
   }
 
   /**
@@ -618,11 +615,6 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
       case (false, true)  => vcb.passFilters // log warning?
       case (true, false)  => vcb.filters(new java.util.HashSet(variant.getFiltersFailed()))
       case (true, true)   => vcb.passFilters
-    }
-
-    val somatic: java.lang.Boolean = Option(variant.getSomatic).getOrElse(false)
-    if (somatic) {
-      vcb.attribute("SOMATIC", true)
     }
 
     // TODO: Extract provenance INFO fields
