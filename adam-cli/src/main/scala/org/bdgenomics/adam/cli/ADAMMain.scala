@@ -46,7 +46,6 @@ object ADAMMain {
         List(
           Vcf2ADAM,
           ADAM2Vcf,
-          VcfAnnotation2ADAM,
           Fasta2ADAM,
           ADAM2Fasta,
           ADAM2Fastq,

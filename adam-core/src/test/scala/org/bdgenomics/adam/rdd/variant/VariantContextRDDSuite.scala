@@ -41,7 +41,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       .build
     val v0 = Variant.newBuilder
       .setContigName("chr11")
-      .setStart(17409572)
+      .setStart(17409572L)
       .setReferenceAllele("T")
       .setAlternateAllele("C")
       .setNames(ImmutableList.of("rs3131972", "rs201888535"))
@@ -80,7 +80,6 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(variant.getFiltersApplied === true)
     assert(variant.getFiltersPassed === true)
     assert(variant.getFiltersFailed.isEmpty)
-    assert(variant.getSomatic === false)
 
     assert(vcRdd.sequences.records.size === 1)
     assert(vcRdd.sequences.records(0).name === "chr11")
@@ -95,31 +94,6 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vcRdd.rdd.count === 1)
     assert(vcRdd.sequences.records.size === 1)
     assert(vcRdd.sequences.records(0).name === "chr11")
-  }
-
-  sparkTest("joins SNV variant annotation") {
-    val v0 = Variant.newBuilder
-      .setContigName("11")
-      .setStart(17409572)
-      .setReferenceAllele("T")
-      .setAlternateAllele("C")
-      .build
-
-    val sd = SequenceDictionary(SequenceRecord("11", 20000000))
-
-    val vc = VariantContextRDD(sc.parallelize(List(
-      VariantContext(v0))), sd, Seq.empty)
-
-    val a0 = VariantAnnotation.newBuilder
-      .setVariant(v0)
-      .setDbSnp(true)
-      .build
-
-    val vda = VariantAnnotationRDD(sc.parallelize(List(
-      a0)), sd)
-
-    val annotated = vc.joinVariantAnnotations(vda).rdd
-    assert(annotated.map(_.annotations.isDefined).reduce { (a, b) => a && b })
   }
 
   sparkTest("don't lose any variants when piping as VCF") {

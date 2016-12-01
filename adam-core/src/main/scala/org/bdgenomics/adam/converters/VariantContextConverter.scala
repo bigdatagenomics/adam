@@ -322,10 +322,7 @@ private[adam] class VariantContextConverter(
       builder.setFiltersPassed(!vc.isFiltered)
     }
     if (vc.isFiltered) {
-      builder.setFiltersFailed(new java.util.ArrayList(vc.getFilters));
-    }
-    if (vc.getAttributeAsBoolean("SOMATIC", false)) {
-      builder.setSomatic(true)
+      builder.setFiltersFailed(new java.util.ArrayList(vc.getFilters))
     }
     builder.build
   }
@@ -1234,12 +1231,6 @@ private[adam] class VariantContextConverter(
       case (true, true)   => vcb.passFilters
     }
 
-    val somatic: java.lang.Boolean = Option(variant.getSomatic).getOrElse(false)
-    if (somatic) {
-      vcb.attribute("SOMATIC", true)
-    }
-
-    // attach genotypes
     try {
       Some(vcb.genotypes(vc.genotypes.map(g => bdgConvFn(g)))
         .make)

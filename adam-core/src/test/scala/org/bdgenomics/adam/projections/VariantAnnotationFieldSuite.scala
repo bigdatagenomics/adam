@@ -23,17 +23,13 @@ import org.bdgenomics.adam.projections.VariantAnnotationField._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ TranscriptEffect, Variant, VariantAnnotation }
+import org.bdgenomics.formats.avro.{ TranscriptEffect, VariantAnnotation }
 
 class VariantAnnotationFieldSuite extends ADAMFunSuite {
 
   sparkTest("Use projection when reading parquet variant annotations") {
     val path = tmpFile("variantAnnotations.parquet")
     val rdd = sc.parallelize(Seq(VariantAnnotation.newBuilder()
-      .setVariant(Variant.newBuilder()
-        .setContigName("6")
-        .setStart(29941260L)
-        .build())
       .setAncestralAllele("T")
       .setAlleleCount(42)
       .setReadDepth(10)
@@ -46,6 +42,7 @@ class VariantAnnotationFieldSuite extends ADAMFunSuite {
       .setHapMap3(true)
       .setValidated(true)
       .setThousandGenomes(true)
+      .setSomatic(false)
       .setTranscriptEffects(ImmutableList.of(TranscriptEffect.newBuilder()
         .setEffects(ImmutableList.of("SO:0002012"))
         .setFeatureType("transcript")
@@ -55,7 +52,6 @@ class VariantAnnotationFieldSuite extends ADAMFunSuite {
     rdd.saveAsParquet(TestSaveArgs(path))
 
     val projection = Projection(
-      variant,
       ancestralAllele,
       alleleCount,
       readDepth,
@@ -68,13 +64,13 @@ class VariantAnnotationFieldSuite extends ADAMFunSuite {
       hapMap3,
       validated,
       thousandGenomes,
+      somatic,
       transcriptEffects,
       attributes
     )
 
     val variantAnnotations: RDD[VariantAnnotation] = sc.loadParquet(path, projection = Some(projection))
     assert(variantAnnotations.count() === 1)
-    assert(variantAnnotations.first.getVariant.getContigName === "6")
     assert(variantAnnotations.first.getAncestralAllele === "T")
     assert(variantAnnotations.first.getAlleleCount === 42)
     assert(variantAnnotations.first.getReadDepth === 10)
@@ -87,6 +83,7 @@ class VariantAnnotationFieldSuite extends ADAMFunSuite {
     assert(variantAnnotations.first.getHapMap3 === true)
     assert(variantAnnotations.first.getValidated === true)
     assert(variantAnnotations.first.getThousandGenomes === true)
+    assert(variantAnnotations.first.getSomatic === false)
     assert(variantAnnotations.first.getTranscriptEffects.get(0).getFeatureId === "ENST00000396634.5")
   }
 }

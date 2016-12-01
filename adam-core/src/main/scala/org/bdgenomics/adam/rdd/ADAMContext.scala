@@ -1268,64 +1268,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads variant annotations stored in VCF format.
-   *
-   * @param filePath The path to the VCF file(s) to load annotations from.
-   * @return Returns VariantAnnotationRDD.
-   */
-  def loadVcfAnnotations(
-    filePath: String): VariantAnnotationRDD = {
-    loadVcf(filePath).toVariantAnnotationRDD
-  }
-
-  /**
-   * Loads VariantAnnotations stored in Parquet, with metadata.
-   *
-   * @param filePath The path to load files from.
-   * @param predicate An optional predicate to push down into the file.
-   * @param projection An optional projection to use for reading.
-   * @return Returns VariantAnnotationRDD.
-   */
-  def loadParquetVariantAnnotations(
-    filePath: String,
-    predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): VariantAnnotationRDD = {
-
-    // load header lines
-    val headers = loadHeaderLines(filePath)
-
-    val sd = loadAvroSequences(filePath)
-    val rdd = loadParquet[VariantAnnotation](filePath, predicate, projection)
-
-    VariantAnnotationRDD(rdd, sd, headers)
-  }
-
-  /**
-   * Loads VariantAnnotations into an RDD, and automatically detects
-   * the underlying storage format.
-   *
-   * Can load variant annotations from either Parquet or VCF.
-   *
-   * @see loadVcfAnnotations
-   * @see loadParquetVariantAnnotations
-   *
-   * @param filePath The path to load files from.
-   * @param projection An optional projection to use for reading.
-   * @return Returns VariantAnnotationRDD.
-   */
-  def loadVariantAnnotations(
-    filePath: String,
-    projection: Option[Schema] = None): VariantAnnotationRDD = {
-    if (filePath.endsWith(".vcf")) {
-      log.info(s"Loading $filePath as VCF, and converting to variant annotations. Projection is ignored.")
-      loadVcfAnnotations(filePath)
-    } else {
-      log.info(s"Loading $filePath as Parquet containing VariantAnnotations.")
-      loadParquetVariantAnnotations(filePath, None, projection)
-    }
-  }
-
-  /**
    * Loads Features from a file, autodetecting the file type.
    *
    * Loads files ending in .bed as BED6/12, .gff3 as GFF3, .gtf/.gff as
