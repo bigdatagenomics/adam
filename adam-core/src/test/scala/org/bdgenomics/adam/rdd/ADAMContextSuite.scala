@@ -164,7 +164,6 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(variant.getFiltersApplied === true)
     assert(variant.getFiltersPassed === false)
     assert(variant.getFiltersFailed.contains("IndelQD"))
-    assert(variant.getSomatic === false)
 
     assert(vc.genotypes.size === 3)
 

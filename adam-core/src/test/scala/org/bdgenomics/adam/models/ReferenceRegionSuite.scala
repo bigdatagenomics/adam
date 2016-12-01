@@ -22,7 +22,10 @@ import htsjdk.variant.variantcontext.{
   GenotypeBuilder,
   VariantContextBuilder
 }
-import org.bdgenomics.adam.converters.VariantContextConverter
+import org.bdgenomics.adam.converters.{
+  SupportedHeaderLines,
+  VariantContextConverter
+}
 import org.bdgenomics.formats.avro._
 import org.scalatest.FunSuite
 import scala.collection.JavaConversions._
@@ -440,7 +443,7 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("convert a genotype and then get the reference region") {
-    val converter = new VariantContextConverter
+    val converter = new VariantContextConverter(SupportedHeaderLines.allHeaderLines)
     val vcb = new VariantContextBuilder()
       .alleles(List(Allele.create("A", true), Allele.create("T")))
       .start(1L)

@@ -39,7 +39,6 @@ class VariantFieldSuite extends ADAMFunSuite {
       .setFiltersApplied(true)
       .setFiltersPassed(false)
       .setFiltersFailed(ImmutableList.of("filter"))
-      .setSomatic(false)
       .build()))
     rdd.saveAsParquet(TestSaveArgs(path))
 
@@ -52,8 +51,7 @@ class VariantFieldSuite extends ADAMFunSuite {
       alternateAllele,
       filtersApplied,
       filtersPassed,
-      filtersFailed,
-      somatic
+      filtersFailed
     )
 
     val variants: RDD[Variant] = sc.loadParquet(path, projection = Some(projection))
@@ -67,6 +65,5 @@ class VariantFieldSuite extends ADAMFunSuite {
     assert(variants.first.getFiltersApplied === true)
     assert(variants.first.getFiltersPassed === false)
     assert(variants.first.getFiltersFailed.get(0) === "filter")
-    assert(variants.first.getSomatic === false)
   }
 }

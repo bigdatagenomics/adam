@@ -41,11 +41,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     SequenceDictionary(SAMSequenceDictionaryExtractor.extractDictionary(new File(path)))
   }
 
-  val converter = new VariantContextConverter
-  val adamToHtsjdkConvFn = converter.makeBdgGenotypeConverter(
-    SupportedHeaderLines.allHeaderLines)
-  val htsjdkToAdamConvFn = converter.makeHtsjdkGenotypeConverter(
-    SupportedHeaderLines.allHeaderLines)
+  val converter = new VariantContextConverter(SupportedHeaderLines.allHeaderLines)
 
   def htsjdkSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
     .alleles(List(Allele.create("A", true), Allele.create("T")))
@@ -78,7 +74,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     .setAlternateAllele("T")
 
   test("Convert htsjdk site-only SNV to ADAM") {
-    val adamVCs = converter.convert(htsjdkSNVBuilder.make, htsjdkToAdamConvFn)
+    val adamVCs = converter.convert(htsjdkSNVBuilder.make)
     assert(adamVCs.length === 1)
     val adamVC = adamVCs.head
 
@@ -89,27 +85,10 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     assert(variant.getReferenceAllele === "A")
     assert(variant.getStart === 0L)
-    assert(variant.getSomatic === false)
-  }
-
-  test("Convert somatic htsjdk site-only SNV to ADAM") {
-    val converter = new VariantContextConverter
-
-    val vcb: VariantContextBuilder = new VariantContextBuilder()
-      .alleles(List(Allele.create("A", true), Allele.create("T")))
-      .start(1L)
-      .stop(1L)
-      .chr("1")
-      .attribute("SOMATIC", true)
-
-    val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
-    val adamVC = adamVCs.head
-    val variant = adamVC.variant.variant
-    assert(variant.getSomatic === true)
   }
 
   test("Convert htsjdk site-only CNV to ADAM") {
-    val adamVCs = converter.convert(htsjdkCNVBuilder.make, htsjdkToAdamConvFn)
+    val adamVCs = converter.convert(htsjdkCNVBuilder.make)
     assert(adamVCs.length === 1)
     val adamVC = adamVCs.head
 
@@ -134,7 +113,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       .make)
       .make()
 
-    val adamVCs = converter.convert(vc, htsjdkToAdamConvFn)
+    val adamVCs = converter.convert(vc)
     assert(adamVCs.length === 1)
 
     val adamGTs = adamVCs.flatMap(_.genotypes)
@@ -150,7 +129,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     vcb.genotypes(GenotypeBuilder.create("NA12878", vcb.getAlleles))
 
     { // No filters
-      val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+      val adamVCs = converter.convert(vcb.make)
       val adamVariant = adamVCs.map(_.variant).head
       assert(adamVariant.variant.getFiltersApplied === false)
       assert(adamVariant.variant.getFiltersPassed === null)
@@ -158,7 +137,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     }
     { // PASSing
       vcb.unfiltered.passFilters
-      val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+      val adamVCs = converter.convert(vcb.make)
       val adamVariant = adamVCs.map(_.variant).head
       assert(adamVariant.variant.getFiltersApplied === true)
       assert(adamVariant.variant.getFiltersPassed === true)
@@ -166,7 +145,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     }
     { // not PASSing
       vcb.unfiltered.filter("LowMQ")
-      val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+      val adamVCs = converter.convert(vcb.make)
       val adamVariant = adamVCs.map(_.variant).head
       assert(adamVariant.variant.getFiltersApplied === true)
       assert(adamVariant.variant.getFiltersPassed === false)
@@ -181,7 +160,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     { // No filters
       gb.unfiltered
       vcb.genotypes(gb.make)
-      val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+      val adamVCs = converter.convert(vcb.make)
       val adamGT = adamVCs.flatMap(_.genotypes).head
       // htsjdk does not distinguish between filters not applied and filters passed in Genotype
       assert(adamGT.getVariantCallingAnnotations.getFiltersApplied === true)
@@ -191,7 +170,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     { // PASSing
       gb.filter("PASS")
       vcb.genotypes(gb.make)
-      val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+      val adamVCs = converter.convert(vcb.make)
       val adamGT = adamVCs.flatMap(_.genotypes).head
       assert(adamGT.getVariantCallingAnnotations.getFiltersApplied === true)
       assert(adamGT.getVariantCallingAnnotations.getFiltersPassed === true)
@@ -200,7 +179,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     { // not PASSing
       gb.filter("LowMQ")
       vcb.genotypes(gb.make)
-      val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+      val adamVCs = converter.convert(vcb.make)
       val adamGT = adamVCs.flatMap(_.genotypes).head
       assert(adamGT.getVariantCallingAnnotations.getFiltersApplied === true)
       assert(adamGT.getVariantCallingAnnotations.getFiltersPassed === false)
@@ -211,8 +190,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   test("Convert ADAM site-only SNV to htsjdk") {
     val vc = ADAMVariantContext(adamSNVBuilder().build)
 
-    val optHtsjdkVC = converter.convert(vc,
-      adamToHtsjdkConvFn)
+    val optHtsjdkVC = converter.convert(vc)
 
     assert(optHtsjdkVC.isDefined)
     val htsjdkVC = optHtsjdkVC.get
@@ -240,8 +218,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
         .build)
       .build
 
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant, Seq(genotype)),
-      adamToHtsjdkConvFn)
+    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant, Seq(genotype)))
 
     assert(optHtsjdkVC.isDefined)
     val htsjdkVC = optHtsjdkVC.get
@@ -263,7 +240,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   test("Convert htsjdk multi-allelic sites-only SNVs to ADAM") {
     val vc = htsjdkMultiAllelicSNVBuilder.make
-    val adamVCs = converter.convert(vc, htsjdkToAdamConvFn)
+    val adamVCs = converter.convert(vc)
     assert(adamVCs.length === 2)
 
     for ((allele, idx) <- vc.getAlternateAlleles.zipWithIndex) {
@@ -280,7 +257,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val vcb = htsjdkMultiAllelicSNVBuilder
     vcb.genotypes(gb.make)
 
-    val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+    val adamVCs = converter.convert(vcb.make)
     assert(adamVCs.length === 2)
 
     for (adamVC <- adamVCs) {
@@ -314,7 +291,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val vcb = htsjdkRefSNV
     vcb.genotypes(gb.make)
 
-    val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+    val adamVCs = converter.convert(vcb.make)
     assert(adamVCs.length == 1)
 
     val adamGTs = adamVCs.flatMap(_.genotypes)
@@ -334,7 +311,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val vcb = htsjdkSNVBuilder
     vcb.noID()
 
-    val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+    val adamVCs = converter.convert(vcb.make)
     assert(adamVCs.length == 1)
 
     val variant = adamVCs.head.variant
@@ -345,7 +322,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val vcb = htsjdkSNVBuilder
     vcb.id("rs3131972")
 
-    val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+    val adamVCs = converter.convert(vcb.make)
     assert(adamVCs.length == 1)
 
     val variant = adamVCs.head.variant
@@ -357,7 +334,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val vcb = htsjdkSNVBuilder
     vcb.id("rs3131972;rs201888535")
 
-    val adamVCs = converter.convert(vcb.make, htsjdkToAdamConvFn)
+    val adamVCs = converter.convert(vcb.make)
     assert(adamVCs.length == 1)
 
     val variant = adamVCs.head.variant
@@ -372,8 +349,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     assert(variant.getNames.isEmpty)
 
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
+    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant))
     assert(optHtsjdkVC.isDefined)
     val htsjdkVC = optHtsjdkVC.get
     assert(!htsjdkVC.hasID)
@@ -384,8 +360,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       .setNames(ImmutableList.of("rs3131972"))
       .build
 
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
+    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant))
     assert(optHtsjdkVC.isDefined)
     val htsjdkVC = optHtsjdkVC.get
     assert(htsjdkVC.hasID)
@@ -397,8 +372,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       .setNames(ImmutableList.of("rs3131972", "rs201888535"))
       .build
 
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
+    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant))
     assert(optHtsjdkVC.isDefined)
     val htsjdkVC = optHtsjdkVC.get
     assert(htsjdkVC.hasID)
@@ -410,10 +384,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       .setFiltersApplied(null)
       .build
 
-    val converter = new VariantContextConverter
-
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
+    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant))
     assert(optHtsjdkVC.isDefined)
     val htsjdkVC = optHtsjdkVC.get
     assert(!htsjdkVC.filtersWereApplied)
@@ -426,10 +397,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       .setFiltersApplied(false)
       .build
 
-    val converter = new VariantContextConverter
-
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
+    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant))
     assert(optHtsjdkVC.isDefined)
     val htsjdkVC = optHtsjdkVC.get
     assert(!htsjdkVC.filtersWereApplied)
@@ -443,10 +411,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       .setFiltersPassed(true)
       .build
 
-    val converter = new VariantContextConverter
-
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
+    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant))
     assert(optHtsjdkVC.isDefined)
     val htsjdkVC = optHtsjdkVC.get
     assert(htsjdkVC.filtersWereApplied)
@@ -461,59 +426,13 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       .setFiltersFailed(ImmutableList.of("FILTER1", "FILTER2"))
       .build
 
-    val converter = new VariantContextConverter
-
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
+    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant))
     assert(optHtsjdkVC.isDefined)
     val htsjdkVC = optHtsjdkVC.get
     assert(htsjdkVC.filtersWereApplied)
     assert(htsjdkVC.isFiltered)
     assert(htsjdkVC.getFilters.contains("FILTER1"))
     assert(htsjdkVC.getFilters.contains("FILTER2"))
-  }
-
-  test("Convert ADAM variant context with null somatic flag to htsjdk") {
-    val variant = adamSNVBuilder()
-      .setSomatic(null)
-      .build
-
-    val converter = new VariantContextConverter
-
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
-    assert(optHtsjdkVC.isDefined)
-    val htsjdkVC = optHtsjdkVC.get
-    assert(!htsjdkVC.hasAttribute("SOMATIC"))
-  }
-
-  test("Convert ADAM variant context with non-somatic variant to htsjdk") {
-    val variant = adamSNVBuilder()
-      .setSomatic(false)
-      .build
-
-    val converter = new VariantContextConverter
-
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
-    assert(optHtsjdkVC.isDefined)
-    val htsjdkVC = optHtsjdkVC.get
-    assert(!htsjdkVC.hasAttribute("SOMATIC"))
-  }
-
-  test("Convert ADAM variant context with somatic variant to htsjdk") {
-    val variant = adamSNVBuilder()
-      .setSomatic(true)
-      .build
-
-    val converter = new VariantContextConverter
-
-    val optHtsjdkVC = converter.convert(ADAMVariantContext(variant),
-      adamToHtsjdkConvFn)
-    assert(optHtsjdkVC.isDefined)
-    val htsjdkVC = optHtsjdkVC.get
-    assert(htsjdkVC.hasAttribute("SOMATIC"))
-    assert(htsjdkVC.getAttributeAsBoolean("SOMATIC", false) === true)
   }
 
   def makeGenotype(genotypeAttributes: Map[String, java.lang.Object],

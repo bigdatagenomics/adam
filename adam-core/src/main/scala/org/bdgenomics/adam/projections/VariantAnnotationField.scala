@@ -24,5 +24,5 @@ import org.bdgenomics.formats.avro.VariantAnnotation
  */
 object VariantAnnotationField extends FieldEnumeration(VariantAnnotation.SCHEMA$) {
 
-  val variant, ancestralAllele, alleleCount, readDepth, forwardReadDepth, reverseReadDepth, alleleFrequency, cigar, dbSnp, hapMap2, hapMap3, validated, thousandGenomes, transcriptEffects, attributes = SchemaValue
+  val ancestralAllele, alleleCount, readDepth, forwardReadDepth, reverseReadDepth, alleleFrequency, cigar, dbSnp, hapMap2, hapMap3, validated, thousandGenomes, somatic, transcriptEffects, attributes = SchemaValue
 }

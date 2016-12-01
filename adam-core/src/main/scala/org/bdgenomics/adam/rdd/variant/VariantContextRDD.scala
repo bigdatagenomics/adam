@@ -61,29 +61,6 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     with Logging {
 
   /**
-   * Left outer join database variant annotations.
-   *
-   * @param ann Annotation RDD to join against.
-   * @return Returns a VariantContextRDD where annotations have been filled in.
-   */
-  def joinVariantAnnotations(ann: VariantAnnotationRDD): VariantContextRDD = {
-    replaceRdd(rdd.keyBy(_.variant)
-      .leftOuterJoin(ann.rdd.keyBy(dba => RichVariant(dba.getVariant)))
-      .values
-      .map(kv => VariantContext(kv._1, kv._2)))
-  }
-
-  /**
-   * @return Returns a VariantAnnotationRDD containing the variant
-   *   annotations attached to this VariantContextRDD.
-   */
-  def toVariantAnnotationRDD: VariantAnnotationRDD = {
-    VariantAnnotationRDD(rdd.flatMap(_.annotations),
-      sequences,
-      headerLines)
-  }
-
-  /**
    * @return Returns a GenotypeRDD containing the Genotypes in this RDD.
    */
   def toGenotypeRDD: GenotypeRDD = {
