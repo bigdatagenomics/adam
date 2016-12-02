@@ -28,7 +28,6 @@ import org.bdgenomics.formats.avro.{
 }
 import org.mockito.Mockito
 import org.mockito.Mockito.when
-import scala.collection.JavaConverters._
 
 class TranscriptEffectConverterSuite extends ADAMFunSuite {
   final val EMPTY = ""

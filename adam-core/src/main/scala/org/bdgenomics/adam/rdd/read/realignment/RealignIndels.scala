@@ -22,7 +22,6 @@ import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{ Consensus, ConsensusGenerator, ConsensusGeneratorFromReads }
-import org.bdgenomics.adam.models.ReferenceRegion._
 import org.bdgenomics.adam.models.{ MdTag, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._

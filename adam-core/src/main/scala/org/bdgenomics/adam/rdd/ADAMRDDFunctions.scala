@@ -17,20 +17,17 @@
  */
 package org.bdgenomics.adam.rdd
 
-import java.util.logging.Level
 import java.io.OutputStream
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.IndexedRecord
 import org.apache.avro.specific.{ SpecificDatumWriter, SpecificRecordBase }
-import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.{ OutputFormat => NewOutputFormat }
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.{ InstrumentedOutputFormat, RDD }
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.util.ParquetLogger
 import org.bdgenomics.utils.cli.SaveArgs
 import org.bdgenomics.utils.misc.HadoopUtil
 import org.bdgenomics.utils.misc.Logging

@@ -19,8 +19,7 @@ package org.bdgenomics.adam.models
 
 import htsjdk.samtools.{ SAMFileHeader, SAMSequenceRecord, SAMSequenceDictionary }
 import htsjdk.variant.vcf.VCFHeader
-import org.apache.avro.generic.IndexedRecord
-import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment, Contig }
+import org.bdgenomics.formats.avro.{ NucleotideContigFragment, Contig }
 import scala.collection._
 import scala.collection.JavaConversions._
 

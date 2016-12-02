@@ -162,15 +162,15 @@ private[feature] object Features {
     )
 
     // set list fields if non-empty
-    if (!aliases.isEmpty) f.setAliases(aliases)
-    if (!notes.isEmpty) f.setNotes(notes)
-    if (!parentIds.isEmpty) f.setParentIds(parentIds)
-    if (!dbxrefs.isEmpty) f.setDbxrefs(dbxrefs)
-    if (!ontologyTerms.isEmpty) f.setOntologyTerms(ontologyTerms)
+    if (aliases.nonEmpty) f.setAliases(aliases)
+    if (notes.nonEmpty) f.setNotes(notes)
+    if (parentIds.nonEmpty) f.setParentIds(parentIds)
+    if (dbxrefs.nonEmpty) f.setDbxrefs(dbxrefs)
+    if (ontologyTerms.nonEmpty) f.setOntologyTerms(ontologyTerms)
 
     // set remaining attributes if non-empty;
     // any duplicate keys are lost at this point, last one in wins
-    if (!remaining.isEmpty) f.setAttributes(remaining)
+    if (remaining.nonEmpty) f.setAttributes(remaining)
 
     f
   }

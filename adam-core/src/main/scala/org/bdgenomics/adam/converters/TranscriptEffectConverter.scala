@@ -24,7 +24,6 @@ import org.bdgenomics.formats.avro.VariantAnnotationMessage._
 import org.bdgenomics.formats.avro.{
   TranscriptEffect,
   Variant,
-  VariantAnnotation,
   VariantAnnotationMessage
 }
 import org.bdgenomics.utils.misc.Logging
@@ -165,7 +164,7 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
     proteinPosition.foreach(te.setProteinPosition(_))
     proteinLength.foreach(te.setProteinLength(_))
     setIfNotEmpty(distance, (s: String) => te.setDistance(Integer.parseInt(s)))
-    if (!messages.isEmpty) te.setMessages(messages.asJava)
+    if (messages.nonEmpty) te.setMessages(messages.asJava)
 
     Seq(te.build())
   }

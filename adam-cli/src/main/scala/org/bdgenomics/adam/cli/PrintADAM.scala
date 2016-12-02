@@ -20,7 +20,6 @@ package org.bdgenomics.adam.cli
 import java.util
 import org.apache.avro.generic.{ GenericDatumWriter, IndexedRecord }
 import org.apache.avro.io.EncoderFactory
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.util.ParquetFileTraversable
 import org.bdgenomics.utils.cli._
@@ -66,7 +65,7 @@ class PrintADAM(protected val args: PrintADAMArgs) extends BDGSparkCommand[Print
       case Some(s) => new java.io.PrintStream(s)
       case None    => scala.Console.out
     }
-    try { op(p) } finally { if (filename != None) p.close() }
+    try { op(p) } finally { if (filename.isDefined) p.close() }
   }
 
   /**

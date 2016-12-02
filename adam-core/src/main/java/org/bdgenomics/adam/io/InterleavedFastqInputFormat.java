@@ -41,7 +41,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  * This reader is based on the FastqInputFormat that's part of Hadoop-BAM,
  * found at https://github.com/HadoopGenomics/Hadoop-BAM/blob/master/src/main/java/org/seqdoop/hadoop_bam/FastqInputFormat.java
  */
-public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
+public final class InterleavedFastqInputFormat extends FileInputFormat<Void, Text> {
 
     /**
      * A record reader for the interleaved FASTQ format.
@@ -70,7 +70,7 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
          * @return Returns true if the buffer contains the first line of a properly
          *   formatted pair of FASTQ records.
          */
-        protected boolean checkBuffer(int bufferLength, Text buffer) {
+        protected boolean checkBuffer(final int bufferLength, final Text buffer) {
             return (bufferLength >= 2 &&
                     buffer.getBytes()[0] == '@' &&
                     buffer.getBytes()[bufferLength - 2] == '/' &&
@@ -87,28 +87,22 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
          *   middle of a read, or if we have a read that is incorrectly
          *   formatted (missing readname delimiters).
          */
-        protected boolean next(Text value) throws IOException {
+        protected boolean next(final Text value) throws IOException {
             if (pos >= end)
                 return false; // past end of slice
             try {
                 Text readName1 = new Text();
                 Text readName2 = new Text();
-
                 value.clear();
 
                 // first read of the pair
-                boolean gotData = lowLevelFastqRead(readName1, value);
-
-                if (!gotData)
+                if (!lowLevelFastqRead(readName1, value)) {
                     return false;
+                }
 
                 // second read of the pair
-                gotData = lowLevelFastqRead(readName2, value);
+                return lowLevelFastqRead(readName2, value);
 
-                if (!gotData)
-                    return false;
-
-                return true;
             } catch (EOFException e) {
                 throw new RuntimeException("unexpected end of file in fastq record at " + makePositionMessage());
             }
@@ -123,12 +117,11 @@ public class InterleavedFastqInputFormat extends FileInputFormat<Void,Text> {
      * @return Returns the interleaved FASTQ record reader.
      */
     public RecordReader<Void, Text> createRecordReader(
-            InputSplit genericSplit,
-            TaskAttemptContext context) throws IOException, InterruptedException {
+            final InputSplit genericSplit,
+            final TaskAttemptContext context) throws IOException, InterruptedException {
         context.setStatus(genericSplit.toString());
 
         // cast as per example in TextInputFormat
-        return new InterleavedFastqRecordReader(context.getConfiguration(), 
-                                                (FileSplit)genericSplit); 
+        return new InterleavedFastqRecordReader(context.getConfiguration(), (FileSplit) genericSplit);
     }
 }

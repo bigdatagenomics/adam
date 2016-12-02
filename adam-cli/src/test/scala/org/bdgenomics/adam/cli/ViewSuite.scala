@@ -17,8 +17,6 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
@@ -46,7 +44,7 @@ class ViewSuite extends ADAMFunSuite {
     val alignmentRecords = sc.loadBam(inputSamPath)
 
     reads = transform.apply(alignmentRecords).rdd.collect()
-    readsCount = reads.size.toInt
+    readsCount = reads.length
   }
 
   def runView(matchAllBits: Int = -1,
@@ -69,10 +67,10 @@ class ViewSuite extends ADAMFunSuite {
 
     val args: Array[String] =
       (
-        matchAllBitsOpt.toList.flatMap("-f %d".format(_).split(" ")).toList ++
-        mismatchAllBitsOpt.toList.flatMap("-F %d".format(_).split(" ")).toList ++
-        matchSomeBitsOpt.toList.flatMap("-g %d".format(_).split(" ")).toList ++
-        mismatchSomeBitsOpt.toList.flatMap("-G %d".format(_).split(" ")).toList :+
+        matchAllBitsOpt.toList.flatMap("-f %d".format(_).split(" ")) ++
+        mismatchAllBitsOpt.toList.flatMap("-F %d".format(_).split(" ")) ++
+        matchSomeBitsOpt.toList.flatMap("-g %d".format(_).split(" ")) ++
+        mismatchSomeBitsOpt.toList.flatMap("-G %d".format(_).split(" ")) :+
         "unused_input_path"
       ).toArray
 

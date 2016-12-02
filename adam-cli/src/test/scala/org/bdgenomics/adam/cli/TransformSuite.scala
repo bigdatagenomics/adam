@@ -17,8 +17,6 @@
  */
 package org.bdgenomics.adam.cli
 
-import java.nio.file.Files
-
 import org.bdgenomics.adam.util.ADAMFunSuite
 
 class TransformSuite extends ADAMFunSuite {

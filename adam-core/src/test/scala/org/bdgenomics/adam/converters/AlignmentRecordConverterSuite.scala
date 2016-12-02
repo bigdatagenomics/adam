@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.converters
 
-import htsjdk.samtools.{ SamReaderFactory, SAMRecord }
+import htsjdk.samtools.SamReaderFactory
 import java.io.File
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
@@ -28,7 +28,6 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,
-  Contig,
   Fragment
 }
 import org.scalatest.FunSuite

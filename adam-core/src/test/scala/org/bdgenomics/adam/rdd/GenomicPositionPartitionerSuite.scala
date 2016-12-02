@@ -17,9 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.apache.spark.SparkContext._
 import org.apache.spark.RangePartitioner
-import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ ReferencePosition, SequenceRecord, SequenceDictionary }
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._

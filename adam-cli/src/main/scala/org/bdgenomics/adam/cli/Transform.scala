@@ -20,21 +20,15 @@ package org.bdgenomics.adam.cli
 import htsjdk.samtools.ValidationStringency
 import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.models.{
-  RecordGroupDictionary,
-  SequenceDictionary,
-  SnpTable
-}
+import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Filter }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.adam.rdd.read.{ AlignedReadRDD, AlignmentRecordRDD, MDTagging }
+import org.bdgenomics.adam.rdd.read.{ AlignedReadRDD, AlignmentRecordRDD }
 import org.bdgenomics.adam.rich.RichVariant
-import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -157,7 +151,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   }
 
   /**
-   * @param rdd The RDD of reads that was output by [[maybeDedup]].
+   * @param rdd The RDD of reads that was output by [[maybeDedupe]].
    * @param sl The requested storage level for caching, if requested.
    *   Realignment is a two pass algorithm (generate targets, then realign), so
    *   we allow users to request caching with the -cache flag.
@@ -259,7 +253,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   private def maybeCoalesce(rdd: AlignmentRecordRDD): AlignmentRecordRDD = {
     if (args.coalesce != -1) {
       log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
-      if (args.coalesce > rdd.rdd.partitions.size || args.forceShuffle) {
+      if (args.coalesce > rdd.rdd.partitions.length || args.forceShuffle) {
         rdd.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
         rdd.transform(_.coalesce(args.coalesce, shuffle = false))
@@ -362,19 +356,17 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   }
 
   def forceNonParquet(): Boolean = {
-    (args.forceLoadBam || args.forceLoadFastq || args.forceLoadIFastq)
+    args.forceLoadBam || args.forceLoadFastq || args.forceLoadIFastq
   }
 
   def isNonParquet(inputPath: String): Boolean = {
-    (
-      inputPath.endsWith(".sam") ||
+    inputPath.endsWith(".sam") ||
       inputPath.endsWith(".bam") ||
       inputPath.endsWith(".ifq") ||
       inputPath.endsWith(".fq") ||
       inputPath.endsWith(".fastq") ||
       inputPath.endsWith(".fa") ||
       inputPath.endsWith(".fasta")
-    )
   }
 
   def run(sc: SparkContext) {
@@ -411,7 +403,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         args.useAlignedReadPredicate ||
         args.limitProjection) {
         val pred = if (args.useAlignedReadPredicate) {
-          Some((BooleanColumn("readMapped") === true))
+          Some(BooleanColumn("readMapped") === true)
         } else {
           None
         }
@@ -482,7 +474,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     }
 
     outputRdd.save(args,
-      isSorted = (args.sortReads || args.sortLexicographically))
+      isSorted = args.sortReads || args.sortLexicographically)
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {

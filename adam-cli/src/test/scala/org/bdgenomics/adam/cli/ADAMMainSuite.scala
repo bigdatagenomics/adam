@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import java.io.ByteArrayOutputStream
-import com.google.inject.{ AbstractModule, Guice, Injector }
+import com.google.inject.{ AbstractModule, Guice }
 import net.codingwell.scalaguice.ScalaModule
 import net.codingwell.scalaguice.InjectorExtensions._
 import org.bdgenomics.adam.cli.ADAMMain.defaultCommandGroups
@@ -26,8 +26,8 @@ import org.scalatest.FunSuite
 
 class ADAMMainSuite extends FunSuite {
 
-  test("default command groups is not empty") {
-    assert(!defaultCommandGroups.isEmpty)
+  test("default command groups is non empty") {
+    assert(defaultCommandGroups.nonEmpty)
   }
 
   test("module provides default command groups") {

@@ -23,10 +23,8 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
   MdTag,
   ReferencePosition,
-  ReferenceRegion,
   QualityScore
 }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.formats.avro.AlignmentRecord
 

@@ -18,19 +18,12 @@
 package org.bdgenomics.adam.rdd.read
 
 import htsjdk.samtools._
-import htsjdk.samtools.util.{
-  BinaryCodec,
-  BlockCompressedOutputStream,
-  BlockCompressedStreamConstants
-}
-import htsjdk.samtools._
 import htsjdk.samtools.cram.ref.ReferenceSource
 import htsjdk.samtools.util.{ BinaryCodec, BlockCompressedOutputStream }
-import java.io.{ InputStream, OutputStream, StringWriter, Writer }
+import java.io.{ OutputStream, StringWriter, Writer }
 import java.net.URI
 import java.nio.file.Paths
-import org.apache.avro.Schema
-import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
@@ -56,10 +49,8 @@ import org.bdgenomics.adam.rdd.feature.CoverageRDD
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
-import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.utils.misc.Logging
 import org.seqdoop.hadoop_bam._
 import scala.collection.JavaConversions._
 import scala.language.implicitConversions

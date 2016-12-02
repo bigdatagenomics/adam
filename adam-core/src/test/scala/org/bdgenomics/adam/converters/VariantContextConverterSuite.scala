@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.converters
 
 import com.google.common.collect.ImmutableList
-import htsjdk.samtools.SAMFileReader
 import htsjdk.variant.utils.SAMSequenceDictionaryExtractor
 import htsjdk.variant.variantcontext.{
   Allele,
@@ -33,7 +32,6 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.util.{ ADAMFunSuite, PhredUtils }
 import org.bdgenomics.formats.avro._
-import org.scalatest.FunSuite
 import scala.collection.JavaConversions._
 
 class VariantContextConverterSuite extends ADAMFunSuite {

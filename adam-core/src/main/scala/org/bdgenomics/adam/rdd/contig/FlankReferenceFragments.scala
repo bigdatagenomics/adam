@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.contig
 
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ReferencePartitioner

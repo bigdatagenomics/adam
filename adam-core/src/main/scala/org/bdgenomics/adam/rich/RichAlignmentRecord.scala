@@ -23,7 +23,6 @@ import htsjdk.samtools.{
   CigarOperator,
   TextCigarCodec
 }
-import java.util.regex.Pattern
 import org.bdgenomics.adam.models.{
   Attribute,
   MdTag,
@@ -38,11 +37,11 @@ import scala.math.max
 
 object RichAlignmentRecord {
 
-  @deprecated("Use explicit coversion wherever possible in new development.",
+  @deprecated("Use explicit conversion wherever possible in new development.",
     since = "0.21.0")
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
 
-  @deprecated("Use explicit coversion wherever possible in new development.",
+  @deprecated("Use explicit conversion wherever possible in new development.",
     since = "0.21.0")
   implicit def richRecordToRecord(record: RichAlignmentRecord): AlignmentRecord = record.record
 }

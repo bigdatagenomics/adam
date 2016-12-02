@@ -19,7 +19,6 @@ package org.bdgenomics.adam.models
 
 import java.io.File
 import htsjdk.samtools.{
-  SAMFileReader,
   SAMSequenceDictionary,
   SAMSequenceRecord
 }

@@ -23,7 +23,6 @@ import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
   SequenceDictionary
 }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 

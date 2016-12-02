@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.utils.cli._

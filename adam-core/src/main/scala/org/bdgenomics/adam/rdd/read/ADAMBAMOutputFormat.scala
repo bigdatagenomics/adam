@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import htsjdk.samtools.SAMFileHeader
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.{ OutputFormat, RecordWriter, TaskAttemptContext }
 import org.apache.spark.rdd.InstrumentedOutputFormat

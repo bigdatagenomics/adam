@@ -20,8 +20,6 @@ package org.bdgenomics.adam.converters
 import htsjdk.samtools._
 import java.io.File
 import org.scalatest.FunSuite
-import org.bdgenomics.adam.models.Attribute
-import org.bdgenomics.adam.rdd.ADAMContext._
 import scala.collection.JavaConversions._
 
 class SAMRecordConverterSuite extends FunSuite {

@@ -18,13 +18,11 @@
 package org.bdgenomics.adam.rdd.feature
 
 import htsjdk.samtools.ValidationStringency
-import java.io.File
 import org.bdgenomics.adam.models.SequenceRecord
-import org.bdgenomics.formats.avro.{ Dbxref, Feature, Strand }
+import org.bdgenomics.formats.avro.Feature
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
 
 private[rdd] sealed trait FeatureParser extends Serializable with Logging {
 
