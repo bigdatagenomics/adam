@@ -20,11 +20,16 @@ package org.bdgenomics.adam.apis.java
 import org.apache.spark.rdd.RDD
 import org.apache.spark.api.java.JavaRDD._
 import org.apache.spark.api.java.JavaRDD
+import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 class JavaADAMContextSuite extends ADAMFunSuite {
+
+  sparkTest("ctr is accessible") {
+    new JavaADAMContext(new ADAMContext(sc))
+  }
 
   sparkTest("can read and write a small .SAM file") {
     val path = copyResource("small.sam")

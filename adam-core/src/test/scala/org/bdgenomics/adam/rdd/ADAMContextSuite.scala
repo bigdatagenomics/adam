@@ -48,6 +48,10 @@ case class TestSaveArgs(var outputPath: String) extends ADAMSaveAnyArgs {
 
 class ADAMContextSuite extends ADAMFunSuite {
 
+  sparkTest("ctr is accessible") {
+    new ADAMContext(sc)
+  }
+
   sparkTest("sc.loadParquet should not fail on unmapped reads") {
     val readsFilepath = testFile("unmapped.sam")
 

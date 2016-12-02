@@ -40,7 +40,7 @@ object JavaADAMContext {
   implicit def toADAMContext(jac: JavaADAMContext): ADAMContext = jac.ac
 }
 
-class JavaADAMContext private (val ac: ADAMContext) extends Serializable {
+class JavaADAMContext(val ac: ADAMContext) extends Serializable {
 
   /**
    * @return Returns the Java Spark Context associated with this Java ADAM Context.
