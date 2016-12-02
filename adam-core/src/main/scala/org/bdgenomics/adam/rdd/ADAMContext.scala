@@ -156,7 +156,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
  *
  * @param sc The SparkContext to wrap.
  */
-class ADAMContext private (@transient val sc: SparkContext) extends Serializable with Logging {
+class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
 
   /**
    * @param samHeader The header to extract a sequence dictionary from.
