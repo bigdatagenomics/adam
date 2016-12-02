@@ -20,10 +20,8 @@ package org.bdgenomics.adam.cli
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
 
@@ -138,5 +136,4 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
         println(output)
     }
   }
-
 }

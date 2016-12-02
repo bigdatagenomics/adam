@@ -37,7 +37,7 @@ private[adam] case class RichCigar(cigar: Cigar) {
   def moveLeft(index: Int): RichCigar = {
     // var elements = List[CigarElement]()
     // deepclone instead of empty list initialization
-    var elements = cigar.getCigarElements.map(e => new CigarElement(e.getLength, e.getOperator))
+    val elements = cigar.getCigarElements.map(e => new CigarElement(e.getLength, e.getOperator))
 
     /**
      * Moves an element of a cigar left.

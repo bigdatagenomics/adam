@@ -23,31 +23,20 @@ class AboutSuite extends FunSuite {
   val about = new About()
 
   test("template variables have been replaced") {
-    assert(about.artifactId() !== "${project.artifactId}")
-    assert(about.buildTimestamp() !== "${maven.build.timestamp}")
-    assert(about.commit() !== "${git.commit.id}")
-    assert(about.hadoopVersion() !== "${hadoop.version}")
-    assert(about.scalaVersion() !== "${scala.version}")
-    assert(about.version() !== "${version}")
+    assert(about.artifactId !== "${project.artifactId}")
+    assert(about.buildTimestamp !== "${maven.build.timestamp}")
+    assert(about.commit !== "${git.commit.id}")
+    assert(about.hadoopVersion !== "${hadoop.version}")
+    assert(about.scalaVersion !== "${scala.version}")
+    assert(about.version !== "${version}")
   }
 
   test("templated values are not empty") {
-    assert(about.artifactId() !== null)
-    assert(!about.artifactId().isEmpty)
-
-    assert(about.buildTimestamp() !== null)
-    assert(!about.buildTimestamp().isEmpty)
-
-    assert(about.commit() !== null)
-    assert(!about.commit().isEmpty)
-
-    assert(about.hadoopVersion() !== null)
-    assert(!about.hadoopVersion().isEmpty)
-
-    assert(about.scalaVersion() !== null)
-    assert(!about.scalaVersion().isEmpty)
-
-    assert(about.version() !== null)
-    assert(!about.version().isEmpty())
+    assert(about.artifactId.nonEmpty)
+    assert(about.buildTimestamp.nonEmpty)
+    assert(about.commit.nonEmpty)
+    assert(about.hadoopVersion.nonEmpty)
+    assert(about.scalaVersion.nonEmpty)
+    assert(about.version.nonEmpty)
   }
 }

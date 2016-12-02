@@ -20,21 +20,16 @@ package org.bdgenomics.adam.apis.java;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.spark.api.java.JavaRDD;
-import org.bdgenomics.adam.apis.java.JavaADAMContext;
-import org.bdgenomics.adam.models.RecordGroupDictionary;
-import org.bdgenomics.adam.models.SequenceDictionary;
 import org.bdgenomics.adam.rdd.ADAMContext;
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD;
-import org.bdgenomics.formats.avro.AlignmentRecord;
 
 /**
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of fragments to
  * disk and reads it back.
  */
-class JavaADAMFragmentConduit {
-    public static FragmentRDD conduit(FragmentRDD recordRdd,
-                                      ADAMContext ac) throws IOException {
+final class JavaADAMFragmentConduit {
+    public static FragmentRDD conduit(final FragmentRDD recordRdd,
+                                      final ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");

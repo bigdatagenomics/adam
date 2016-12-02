@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.converters
 
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.formats.avro._

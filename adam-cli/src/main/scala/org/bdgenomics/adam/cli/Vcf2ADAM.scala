@@ -17,15 +17,11 @@
  */
 package org.bdgenomics.adam.cli
 
-import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ SequenceDictionary, VariantContext }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Option => Args4jOption, Argument }
-import java.io.File
 
 object Vcf2ADAM extends BDGCommandCompanion {
   val commandName = "vcf2adam"
@@ -60,12 +56,10 @@ class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] wit
   def run(sc: SparkContext) {
 
     val variantContextRdd = sc.loadVcf(args.vcfPath)
-    var variantContextsToSave = if (args.coalesce > 0) {
-      if (args.coalesce > variantContextRdd.rdd.partitions.size || args.forceShuffle) {
-        variantContextRdd.transform(_.coalesce(args.coalesce, shuffle = true))
-      } else {
-        variantContextRdd.transform(_.coalesce(args.coalesce, shuffle = false))
-      }
+    val variantContextsToSave = if (args.coalesce > 0) {
+      variantContextRdd.transform(
+        _.coalesce(args.coalesce, shuffle = args.coalesce > variantContextRdd.rdd.partitions.length || args.forceShuffle)
+      )
     } else {
       variantContextRdd
     }

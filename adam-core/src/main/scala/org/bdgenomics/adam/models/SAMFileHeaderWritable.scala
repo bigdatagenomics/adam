@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.models
 
-import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord }
+import htsjdk.samtools.SAMFileHeader
 import scala.collection.JavaConversions._
 
 private[adam] object SAMFileHeaderWritable {

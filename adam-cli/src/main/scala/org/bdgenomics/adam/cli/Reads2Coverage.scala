@@ -21,8 +21,7 @@ import org.apache.spark.SparkContext
 import org.bdgenomics.adam.projections.AlignmentRecordField._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.feature.CoverageRDD
-import org.bdgenomics.adam.rdd.read.{ AlignedReadRDD, AlignmentRecordRDD }
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
@@ -85,4 +84,3 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
       .save(args.outputPath, asSingleFile = args.asSingleFile)
   }
 }
-

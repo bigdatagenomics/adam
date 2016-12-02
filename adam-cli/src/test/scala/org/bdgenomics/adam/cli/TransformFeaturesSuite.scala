@@ -20,7 +20,6 @@ package org.bdgenomics.adam.cli
 import java.io._
 import org.bdgenomics.adam.projections.Projection
 import org.bdgenomics.adam.projections.FeatureField._
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.utils.cli.Args4j
 import org.bdgenomics.formats.avro.Feature

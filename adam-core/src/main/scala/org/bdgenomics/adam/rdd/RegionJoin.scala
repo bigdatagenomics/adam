@@ -17,11 +17,8 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.models.{ SequenceDictionary, ReferenceRegion }
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext._
-import scala.Predef._
-import org.apache.spark.SparkContext
 import scala.reflect.ClassTag
 
 /**

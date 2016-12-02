@@ -18,13 +18,12 @@
 package org.bdgenomics.adam.converters
 
 import htsjdk.samtools.{
-  CigarElement,
   SAMReadGroupRecord,
   SAMRecord,
   SAMUtils
 }
 import org.bdgenomics.utils.misc.Logging
-import org.bdgenomics.adam.models.{ Attribute, TagType }
+import org.bdgenomics.adam.models.Attribute
 import org.bdgenomics.adam.util.AttributeUtils
 import org.bdgenomics.formats.avro.AlignmentRecord
 import scala.collection.JavaConverters._
@@ -107,7 +106,7 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
         // set read alignment flag
         val start: Int = samRecord.getAlignmentStart
         assert(start != 0, "Start cannot equal 0 if contig is set.")
-        builder.setStart((start - 1))
+        builder.setStart(start - 1L)
 
         // set OP and OC flags, if applicable
         if (samRecord.getAttribute("OP") != null) {
@@ -152,7 +151,7 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
         val mateStart = samRecord.getMateAlignmentStart
         if (mateStart > 0) {
           // We subtract one here to be 0-based offset
-          builder.setMateAlignmentStart(mateStart - 1)
+          builder.setMateAlignmentStart(mateStart - 1L)
         }
       }
 
@@ -188,7 +187,7 @@ private[adam] class SAMRecordConverter extends Serializable with Logging {
       var tags = List[Attribute]()
       val tlen = samRecord.getInferredInsertSize
       if (tlen != 0) {
-        builder.setInferredInsertSize(tlen)
+        builder.setInferredInsertSize(tlen.toLong)
       }
       if (samRecord.getAttributes != null) {
         samRecord.getAttributes.asScala.foreach {

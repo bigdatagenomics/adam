@@ -40,7 +40,7 @@ import org.apache.hadoop.util.LineReader;
  * a single Text output. This is then fed into the FastqConverter, which
  * converts the single Text instance into two AlignmentRecords.
  */
-abstract class FastqRecordReader extends RecordReader<Void,Text> {
+abstract class FastqRecordReader extends RecordReader<Void, Text> {
     /*
      * fastq format:
      * <fastq>  :=  <block>+
@@ -57,53 +57,53 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
      * For now I'm going to assume single-line sequences.  This works for our sequencing
      * application.  We'll see if someone complains in other applications.
      */
-    
+
     /**
      * First valid data index in the stream.
      */
     private long start;
-    
+
     /**
      * First index value beyond the slice, i.e. slice is in range [start,end).
      */
     protected long end;
-    
+
     /**
      * Current position in file.
      */
     protected long pos;
-    
+
     /**
      * Path of the file being parsed.
      */
     private Path file;
-    
+
     /**
      * The line reader we are using to read the file.
      */
     private LineReader lineReader;
-    
+
     /**
      * The input stream we are using to read the file.
      */
     private InputStream inputStream;
-    
+
     /**
      * The text for a single record pair we have parsed out.
      * Hadoop's RecordReader contract requires us to save this as state.
      */
     private Text currentValue;
-    
+
     /**
      * Newline string for matching on.
      */
     private static final byte[] newline = "\n".getBytes();
-    
+
     /**
      * Maximum length for a read string.
      */
     private static final int MAX_LINE_LENGTH = 10000;
-    
+
     /**
      * Builds a new record reader given a config file and an input split.
      *
@@ -115,13 +115,13 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
         file = split.getPath();
         start = split.getStart();
         end = start + split.getLength();
-        
+
         FileSystem fs = file.getFileSystem(conf);
         FSDataInputStream fileIn = fs.open(file);
-        
+
         CompressionCodecFactory codecFactory = new CompressionCodecFactory(conf);
         CompressionCodec codec = codecFactory.getCodec(file);
-        
+
         if (codec == null) { // no codec.  Uncompressed file.
             positionAtFirstRecord(fileIn);
             inputStream = fileIn;
@@ -130,14 +130,12 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
             if (start != 0) {
                 throw new RuntimeException("Start position for compressed file is not 0! (found " + start + ")");
             }
-            
             inputStream = codec.createInputStream(fileIn);
             end = Long.MAX_VALUE; // read until the end of the file
         }
-        
         lineReader = new LineReader(inputStream);
     }
-    
+
     /**
      * Checks to see whether the buffer is positioned at a valid record.
      *
@@ -154,19 +152,19 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
      *
      * @param stream The stream to reposition.
      */
-    protected void positionAtFirstRecord(FSDataInputStream stream) throws IOException {
+    protected final void positionAtFirstRecord(final FSDataInputStream stream) throws IOException {
         Text buffer = new Text();
-        
+
         if (true) { // (start > 0) // use start>0 to assume that files start with valid data
             // Advance to the start of the first record that ends with /1
             // We use a temporary LineReader to read lines until we find the
             // position of the right one.  We then seek the file to that position.
             stream.seek(start);
             LineReader reader = new LineReader(stream);
-            
+
             int bytesRead = 0;
             do {
-                bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
+                bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
                 int bufferLength = buffer.getLength();
                 if (bytesRead > 0 && !checkBuffer(bufferLength, buffer)) {
                     start += bytesRead;
@@ -175,9 +173,9 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
                     //
                     // If this isn't the start of a record, we want to backtrack to its end
                     long backtrackPosition = start + bytesRead;
-                    
-                    bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
-                    bytesRead = reader.readLine(buffer, (int)Math.min(MAX_LINE_LENGTH, end - start));
+
+                    bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
+                    bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
                     if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
                         break; // all good!
                     } else {
@@ -188,39 +186,39 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
                     }
                 }
             } while (bytesRead > 0);
-            
+
             stream.seek(start);
         }
-        
         pos = start;
     }
-    
+
     /**
      * Method is a no-op.
      *
      * @param split The input split that we will parse.
      * @param context The Hadoop task context.
      */
-    public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {}
-    
+    public final void initialize(final InputSplit split, final TaskAttemptContext context)
+            throws IOException, InterruptedException {}
+
     /**
      * FASTQ has no keys, so we return null.
      *
      * @return Always returns null.
      */
-    public Void getCurrentKey() {
+    public final Void getCurrentKey() {
         return null;
     }
-    
+
     /**
      * Returns the last interleaved FASTQ record.
      *
      * @return The text corresponding to the last read pair.
      */
-    public Text getCurrentValue() {
+    public final Text getCurrentValue() {
         return currentValue;
     }
-    
+
     /**
      * Seeks ahead in our split to the next key-value pair.
      *
@@ -229,42 +227,41 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
      *
      * @return True if reading the next read pair succeeded.
      */
-    public boolean nextKeyValue() throws IOException, InterruptedException {
+    public final boolean nextKeyValue() throws IOException, InterruptedException {
         currentValue = new Text();
-        
         return next(currentValue);
     }
-    
+
     /**
      * Close this RecordReader to future operations.
      */
-    public void close() throws IOException {
+    public final void close() throws IOException {
         inputStream.close();
     }
-    
+
     /**
      * How much of the input has the RecordReader consumed?
      *
      * @return Returns a value on [0.0, 1.0] that notes how many bytes we
      *   have read so far out of the total bytes to read.
      */
-    public float getProgress() {
+    public final float getProgress() {
         if (start == end) {
             return 1.0f;
         } else {
             return Math.min(1.0f, (pos - start) / (float)(end - start));
         }
     }
-    
+
     /**
      * Produces a debugging message with the file position.
      *
      * @return Returns a string containing {filename}:{index}.
      */
-    protected String makePositionMessage() {
+    protected final String makePositionMessage() {
         return file.toString() + ":" + pos;
     }
-    
+
     /**
      * Parses a read from an interleaved FASTQ file.
      *
@@ -277,7 +274,9 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
      * @throws RuntimeException Throws exception if FASTQ record doesn't
      *   have proper formatting (e.g., record doesn't start with @).
      */
-    protected boolean lowLevelFastqRead(Text readName, Text value) throws IOException {
+    protected final boolean lowLevelFastqRead(final Text readName, final Text value)
+            throws IOException {
+
         // ID line
         readName.clear();
         long skipped = appendLineInto(readName, true);
@@ -292,31 +291,30 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
                                        ". Line: " +
                                        readName + ". \n");
         }
-        
         value.append(readName.getBytes(), 0, readName.getLength());
-        
+
         // sequence
         appendLineInto(value, false);
-        
+
         // separator line
         appendLineInto(value, false);
-        
+
         // quality
         appendLineInto(value, false);
-        
+
         return true;
     }
-    
+
     /**
      * Reads from the input split.
      *
      * @param value Text record to write input value into.
      * @return Returns whether this read was successful or not.
      *
-     * @see lowLevelFastqRead
+     * @see #lowLevelFastqRead(Text, Text)
      */
     abstract protected boolean next(Text value) throws IOException;
-        
+
     /**
      * Reads a newline into a text record from the underlying line reader.
      *
@@ -330,14 +328,15 @@ abstract class FastqRecordReader extends RecordReader<Void,Text> {
     private int appendLineInto(final Text dest, final boolean eofOk) throws EOFException, IOException {
         Text buf = new Text();
         int bytesRead = lineReader.readLine(buf, MAX_LINE_LENGTH);
-        
-        if (bytesRead < 0 || (bytesRead == 0 && !eofOk))
+
+        if (bytesRead < 0 || (bytesRead == 0 && !eofOk)) {
             throw new EOFException();
-        
+        }
+
         dest.append(buf.getBytes(), 0, buf.getLength());
         dest.append(newline, 0, 1);
         pos += bytesRead;
-        
+
         return bytesRead;
     }
 }

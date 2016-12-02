@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.models
 
 import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.Consensus
 import org.bdgenomics.adam.rdd.ADAMContext._

@@ -20,10 +20,6 @@ package org.bdgenomics.adam.apis.java;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.spark.api.java.JavaRDD;
-import org.bdgenomics.adam.apis.java.JavaADAMContext;
-import org.bdgenomics.adam.models.RecordGroupDictionary;
-import org.bdgenomics.adam.models.SequenceDictionary;
 import org.bdgenomics.adam.rdd.ADAMContext;
 import org.bdgenomics.adam.rdd.variant.GenotypeRDD;
 
@@ -31,9 +27,9 @@ import org.bdgenomics.adam.rdd.variant.GenotypeRDD;
  * A simple test class for the JavaADAMRDD/Context. Writes an RDD of annotations to
  * disk and reads it back.
  */
-class JavaADAMGenotypeConduit {
-    public static GenotypeRDD conduit(GenotypeRDD recordRdd,
-                                      ADAMContext ac) throws IOException {
+final class JavaADAMGenotypeConduit {
+    public static GenotypeRDD conduit(final GenotypeRDD recordRdd,
+                                      final ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");

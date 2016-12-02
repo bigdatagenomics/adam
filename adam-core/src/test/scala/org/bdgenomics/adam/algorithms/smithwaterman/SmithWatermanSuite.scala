@@ -19,7 +19,6 @@ package org.bdgenomics.adam.algorithms.smithwaterman
 
 import org.scalatest.FunSuite
 import scala.math.abs
-import scala.util.Random
 
 class SmithWatermanSuite extends FunSuite {
 

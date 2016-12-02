@@ -40,7 +40,7 @@ private[adam] class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) ex
   // checks to all the methods below to make sure that 'endpoints' isn't empty.  Also, it shouldn't
   // make any sense to have a set of non-overlapping regions for ... no regions.
   // Also, without this check, we can't tell which chromosome this NonoverlappingRegions object is for.
-  assert(regions.size > 0, "regions list must be non-empty")
+  assert(regions.nonEmpty, "regions list must be non-empty")
   assert(regions.head != null, "regions must have at least one non-null entry")
 
   /**
@@ -235,7 +235,7 @@ private[adam] class MultiContigNonoverlappingRegions(
    * nonoverlapping-regions.  Basically, reject the input value if its corresponding region is
    * completely outside the hull of all the input-set regions.
    *
-   * @param regionable The input value
+   * @param value The input value
    * @tparam U
    * @return a boolean -- the input value should only participate in the regionJoin if the return value
    *         here is 'true'.

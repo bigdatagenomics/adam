@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.models
 
 import htsjdk.samtools.SAMReadGroupRecord
-import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite
 
 class RecordGroupDictionarySuite extends FunSuite {

@@ -19,11 +19,6 @@ package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.util.ADAMFunSuite
 
-/**
- * Created by bryan on 4/18/15.
- *
- * Tests the alphabet class
- */
 class AlphabetSuite extends ADAMFunSuite {
 
   val testSymbols = Seq(

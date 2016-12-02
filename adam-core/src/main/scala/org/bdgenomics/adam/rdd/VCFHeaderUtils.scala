@@ -21,7 +21,6 @@ import htsjdk.variant.variantcontext.writer.{
   Options,
   VariantContextWriterBuilder
 }
-import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import htsjdk.variant.vcf.VCFHeader
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }

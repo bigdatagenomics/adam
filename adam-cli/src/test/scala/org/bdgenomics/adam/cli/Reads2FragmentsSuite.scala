@@ -17,8 +17,6 @@
  */
 package org.bdgenomics.adam.cli
 
-import java.nio.file.Files
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
 class Reads2FragmentsSuite extends ADAMFunSuite {

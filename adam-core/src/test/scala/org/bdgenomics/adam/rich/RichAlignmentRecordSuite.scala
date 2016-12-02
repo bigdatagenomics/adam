@@ -21,7 +21,6 @@ import org.bdgenomics.adam.models.{ ReferencePosition, TagType, Attribute }
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 import org.scalatest.FunSuite
-import org.scalatest.exceptions.TestFailedException
 
 class RichAlignmentRecordSuite extends FunSuite {
 

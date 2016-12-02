@@ -21,8 +21,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
   Coverage,
   ReferenceRegion,
-  SequenceDictionary,
-  SequenceRecord
+  SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.GenomicRDD
 import scala.annotation.tailrec

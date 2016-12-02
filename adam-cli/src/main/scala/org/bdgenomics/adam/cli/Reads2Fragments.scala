@@ -22,7 +22,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
-import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
+import org.kohsuke.args4j.Argument
 
 object Reads2Fragments extends BDGCommandCompanion {
   val commandName = "reads2fragments"
