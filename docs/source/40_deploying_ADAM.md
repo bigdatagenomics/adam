@@ -193,10 +193,10 @@ the amount of memory taken up by a single executor (or, theoretically, the
 driver) to exceed the `--driver-memory`/`--executor-memory` parameters. These
 parameters are what Spark provides as a memory resource request to YARN. By
 default, if one of your Spark containers (an executors or the driver) exceeds
-it's memory request, YARN will kill the container by sending a `SIGTERM`. This
+itss memory request, YARN will kill the container by sending a `SIGTERM`. This
 can cause jobs to fail. To eliminate this issue, you can set the
 `spark.yarn.<role>.memoryOverhead` parameter, where `<role>` is one of
-`driver` or `executor`. This parameter is used by Spark to increase it's
+`driver` or `executor`. This parameter is used by Spark to increase its
 resource request to YARN over the JVM Heap size indicated by `--driver-memory`
 or `--executor-memory`.
 
