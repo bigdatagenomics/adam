@@ -22,8 +22,8 @@ that assembles and delegates to the various CLI actions.
 To add a new command:
 
 Extend `Args4jBase` class to specify arguments to the command. Arguments are defined using
-the [args4j library](http://args4j.kohsuke.org/). If reading or writing to Parquet, consider
-including Parquet arguments via `with ParquetArgs`.
+the [args4j library](http://args4j.kohsuke.org/). If reading from or writing to Parquet,
+consider including Parquet arguments via `with ParquetArgs`.
 
 ```scala
 class MyCommandArgs extends Args4jBase with ParquetArgs {
@@ -48,7 +48,7 @@ object MyCommand extends BDGCommandCompanion {
 
 Extend `BDGSparkCommand` class and implement the `run(SparkContext)` method. The `MyCommandArgs`
 class defined above is provided in the constructor and specifies the generic type for `BDGSparkCommand`.
-The companion object defined above is declared as a field.  For access to the Apache Spark
+The companion object defined above is declared as a field.  For access to an
 [slf4j](http://www.slf4j.org/) Logger via the `log` field, specify `with Logging`.
 
 ```scala
@@ -109,9 +109,9 @@ Then consider making a pull request to include the new command in ADAM!
 ## Extend the ADAM CLI by adding new commands in an external repository {#external-commands}
 
 To extend the ADAM CLI by adding new commands in an external repository,
-instead of editing `ADAMMain` to add new commands, create a new main class
-that delegates to `ADAMMain` and provides additional command(s) via its
-constructor.
+instead of editing `ADAMMain` to add new commands as above, create a new
+object with a `main(args: Array[String])` method that delegates to `ADAMMain`
+and provides additional command(s) via its constructor.
 
 ```scala
 import org.bdgenomics.adam.cli.{ ADAMMain, CommandGroup }
@@ -173,8 +173,9 @@ A complete example of this pattern can be found in the
 
 To use ADAM as a library in new applications:
 
-Create a main object and handle command line arguments. Feel free to use the
-[args4j library](http://www.slf4j.org/) or any other argument parsing library.
+Create an object with a `main(args: Array[String])` method and handle
+command line arguments. Feel free to use the [args4j library](http://www.slf4j.org/)
+or any other argument parsing library.
 
 ```scala
 object MyExample {
