@@ -20,13 +20,12 @@ package org.bdgenomics.adam.cli
 import java.io._
 import org.apache.avro.generic.GenericRecord
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.Genotype
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Genotype }
 import org.bdgenomics.utils.cli.Args4j
-import org.bdgenomics.utils.misc.HadoopUtil
 
 class FlattenSuite extends ADAMFunSuite {
 
-  sparkTest("can flatten a simple VCF file") {
+  ignore("can flatten a simple VCF file") {
 
     val loader = Thread.currentThread().getContextClassLoader
     val inputPath = loader.getResource("small.vcf").getPath
@@ -65,4 +64,36 @@ class FlattenSuite extends ADAMFunSuite {
     assert(flatRecords(0).get("end") === 14400L)
   }
 
+  sparkTest("can flatten a SAM file") {
+
+    val loader = Thread.currentThread().getContextClassLoader
+    val inputPath = loader.getResource("bqsr1.sam").getPath
+    val outputFile = File.createTempFile("adam-cli.FlattenSuite", ".adam")
+    val outputPath = outputFile.getAbsolutePath
+    val flatFile = File.createTempFile("adam-cli.FlattenSuite", ".adam-flat")
+    val flatPath = flatFile.getAbsolutePath
+
+    assert(outputFile.delete(), "Couldn't delete (empty) temp file")
+    assert(flatFile.delete(), "Couldn't delete (empty) temp file")
+
+    val argLine = "%s %s".format(inputPath, outputPath).split("\\s+")
+    val args: TransformArgs = Args4j.apply[TransformArgs](argLine)
+    val transform = new Transform(args)
+    transform.run(sc)
+
+    val lister = new ParquetLister[AlignmentRecord]()
+    val records = lister.materialize(outputPath).toSeq
+
+    assert(records.size === 1000)
+
+    val flattenArgLine = "%s %s".format(outputPath, flatPath).split("\\s+")
+    val flattenArgs: FlattenArgs = Args4j.apply[FlattenArgs](flattenArgLine)
+    val flatten = new Flatten(flattenArgs)
+    flatten.run(sc)
+
+    val flatLister = new ParquetLister[GenericRecord]()
+    val flatRecords = flatLister.materialize(flatPath).toSeq
+
+    assert(flatRecords.size === 1000)
+  }
 }

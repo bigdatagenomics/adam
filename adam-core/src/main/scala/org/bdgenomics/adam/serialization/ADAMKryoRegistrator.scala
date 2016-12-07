@@ -220,8 +220,9 @@ class ADAMKryoRegistrator extends KryoRegistrator {
       new AvroSerializer[org.bdgenomics.formats.avro.VariantCallingAnnotations])
 
     // org.codehaus.jackson.node
-    kryo.register(classOf[org.codehaus.jackson.node.NullNode])
     kryo.register(classOf[org.codehaus.jackson.node.BooleanNode])
+    kryo.register(classOf[org.codehaus.jackson.node.IntNode])
+    kryo.register(classOf[org.codehaus.jackson.node.NullNode])
     kryo.register(classOf[org.codehaus.jackson.node.TextNode])
 
     // scala

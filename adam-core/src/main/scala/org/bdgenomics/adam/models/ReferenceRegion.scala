@@ -162,16 +162,6 @@ object ReferenceRegion {
   }
 
   /**
-   * Builds a reference region from a variant annotation.
-   *
-   * @param annotation VariantAnnotation to extract region from.
-   * @return The site where the variant for the specified variant annotation covers.
-   */
-  def apply(annotation: VariantAnnotation): ReferenceRegion = {
-    ReferenceRegion(annotation.getVariant)
-  }
-
-  /**
    * Builds a reference region for an aligned read.
    *
    * @throws IllegalArgumentException If this read is not aligned or alignment
