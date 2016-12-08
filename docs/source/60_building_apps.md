@@ -187,9 +187,15 @@ object MyExample {
 ```
 
 Create an Apache Spark configuration `SparkConf` and use it to create a new `SparkContext`.
-The following serialization configuration needs to be present to register ADAM classes.
+The following serialization configuration needs to be present to register ADAM classes. If
+any additional [Kyro serializers](https://github.com/EsotericSoftware/kryo) need to be
+registered, [create a registrator that delegates to the ADAM registrator](#registrator).
+You might want to provide your own serializer registrator if you need custom serializers for
+a class in your code that either has a complex structure that Kryo fails to serialize properly
+via Kryo's serializer inference, or if you want to require registration of all classes in your
+application to improve performance.
 
-```
+```scala
     val conf = new SparkConf()
       .setAppName("MyCommand")
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -249,3 +255,32 @@ $ spark-submit \
 
 A complete example of this pattern can be found in the
 [heuermh/adam-examples](https://github.com/heuermh/adam-examples) repository.
+
+### Writing your own registrator that calls the ADAM registrator {#registrator}
+
+As we do in ADAM, an application may want to provide its own Kryo serializer
+registrator. The custom registrator may be needed in order to register custom
+serializers, or because the application's configuration requires all serializers
+to be registered. In either case, the application will need to provide its own
+Kryo registrator. While this registrator can manually register ADAM's serializers,
+it is simpler to call to the ADAM registrator from within the registrator. As an
+example, this pattern looks like the following code:
+
+```scala
+import com.esotericsoftware.kryo.Kryo
+import org.apache.spark.serializer.KryoRegistrator
+import org.bdgenomics.adam.serialization.ADAMKryoRegistrator
+
+class MyCommandKryoRegistrator extends KryoRegistrator {
+
+  private val akr = new ADAMKryoRegistrator()
+
+  override def registerClasses(kryo: Kryo) {
+
+    // register adam's requirements
+    akr.registerClasses(kryo)
+
+    // ... register any other classes I need ...
+  }
+}
+```
