@@ -66,7 +66,7 @@ case class GenotypeRDD(rdd: RDD[Genotype],
     val vcRdd = vcIntRdd.groupByKey
       .map {
         case (v: RichVariant, g) => {
-          new VariantContext(ReferencePosition(v.variant), v, g, None)
+          new VariantContext(ReferencePosition(v.variant), v, g)
         }
       }
 

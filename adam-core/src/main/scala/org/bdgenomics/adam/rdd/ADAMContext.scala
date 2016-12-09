@@ -927,11 +927,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load vcf metadata
     val (sd, samples, headers) = loadVcfMetadata(filePath)
 
-    val vcc = new VariantContextConverter()
-    val variantContextConvFn = vcc.makeHtsjdkVariantContextConverter(headers)
-    val genotypeConvFn = vcc.makeHtsjdkGenotypeConverter(headers)
-
-    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get, variantContextConvFn, genotypeConvFn)),
+    val vcc = new VariantContextConverter(headers, stringency)
+    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
       cleanAndMixInSupportedLines(headers, stringency))
@@ -971,11 +968,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load vcf metadata
     val (sd, samples, headers) = loadVcfMetadata(filePath)
 
-    val vcc = new VariantContextConverter()
-    val variantContextConvFn = vcc.makeHtsjdkVariantContextConverter(headers)
-    val genotypeConvFn = vcc.makeHtsjdkGenotypeConverter(headers)
-
-    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get, variantContextConvFn, genotypeConvFn)),
+    val vcc = new VariantContextConverter(headers, stringency)
+    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
       cleanAndMixInSupportedLines(headers, stringency))

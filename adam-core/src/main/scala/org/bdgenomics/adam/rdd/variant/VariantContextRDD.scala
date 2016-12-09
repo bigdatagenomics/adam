@@ -113,11 +113,9 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     val sampleIds = samples.map(_.getSampleId)
 
     // convert the variants to htsjdk VCs
-    val converter = new VariantContextConverter()
-    val variantContextConvFn = converter.makeBdgVariantContextConverter(headerLines)
-    val genotypeConvFn = converter.makeBdgGenotypeConverter(headerLines)
+    val converter = new VariantContextConverter(headerLines, stringency)
     val writableVCs: RDD[(LongWritable, VariantContextWritable)] = rdd.flatMap(vc => {
-      converter.convert(vc, variantContextConvFn, genotypeConvFn, stringency = stringency)
+      converter.convert(vc)
         .map(htsjdkVc => {
           val vcw = new VariantContextWritable
           vcw.set(htsjdkVc)

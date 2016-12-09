@@ -34,7 +34,10 @@ class VariantAnnotationFieldSuite extends ADAMFunSuite {
       .setAlleleCount(42)
       .setReadDepth(10)
       .setForwardReadDepth(4)
-      .setReverseReadDepth(13)
+      .setReverseReadDepth(6)
+      .setReferenceReadDepth(5)
+      .setReferenceForwardReadDepth(2)
+      .setReferenceReverseReadDepth(3)
       .setAlleleFrequency(20.0f)
       .setCigar("M")
       .setDbSnp(true)
@@ -57,6 +60,9 @@ class VariantAnnotationFieldSuite extends ADAMFunSuite {
       readDepth,
       forwardReadDepth,
       reverseReadDepth,
+      referenceReadDepth,
+      referenceForwardReadDepth,
+      referenceReverseReadDepth,
       alleleFrequency,
       cigar,
       dbSnp,
@@ -75,7 +81,10 @@ class VariantAnnotationFieldSuite extends ADAMFunSuite {
     assert(variantAnnotations.first.getAlleleCount === 42)
     assert(variantAnnotations.first.getReadDepth === 10)
     assert(variantAnnotations.first.getForwardReadDepth === 4)
-    assert(variantAnnotations.first.getReverseReadDepth === 13)
+    assert(variantAnnotations.first.getReverseReadDepth === 6)
+    assert(variantAnnotations.first.getReferenceReadDepth === 5)
+    assert(variantAnnotations.first.getReferenceForwardReadDepth === 2)
+    assert(variantAnnotations.first.getReferenceReverseReadDepth === 3)
     assert(variantAnnotations.first.getAlleleFrequency === 20.0f)
     assert(variantAnnotations.first.getCigar === "M")
     assert(variantAnnotations.first.getDbSnp === true)
