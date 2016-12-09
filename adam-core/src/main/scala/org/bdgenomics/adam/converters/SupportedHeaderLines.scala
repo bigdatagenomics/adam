@@ -108,27 +108,35 @@ private[adam] object SupportedHeaderLines {
     transcriptEffects
   )
 
-  lazy val genotype = VCFStandardHeaderLines.getFormatLine(
-    VCFConstants.GENOTYPE_KEY)
-  lazy val genotypeQuality = VCFStandardHeaderLines.getFormatLine(
-    VCFConstants.GENOTYPE_QUALITY_KEY)
+  lazy val genotype = new VCFFormatHeaderLine("GT",
+    1,
+    VCFHeaderLineType.String,
+    "Genotype")
+  lazy val genotypeQuality = new VCFFormatHeaderLine("GQ",
+    1,
+    VCFHeaderLineType.Integer,
+    "Genotype Quality")
   lazy val allelicDepth = new VCFFormatHeaderLine("AD",
     VCFHeaderLineCount.R,
     VCFHeaderLineType.Integer,
     "Allelic depths for the ref and alt alleles in the order listed")
-  lazy val formatReadDepth = VCFStandardHeaderLines.getFormatLine(
-    VCFConstants.DEPTH_KEY)
+  lazy val formatReadDepth = new VCFFormatHeaderLine("DP",
+    1,
+    VCFHeaderLineType.Integer,
+    "Approximate read depth (reads with MQ=255 or with bad mates are filtered)")
   lazy val minReadDepth = new VCFFormatHeaderLine("MIN_DP",
     1,
     VCFHeaderLineType.Integer,
     "Minimum DP observed within the gVCF block")
-  lazy val phredLikelihoods = VCFStandardHeaderLines.getFormatLine(
-    VCFConstants.GENOTYPE_PL_KEY)
+  lazy val phredLikelihoods = new VCFFormatHeaderLine("PL",
+    VCFHeaderLineCount.G,
+    VCFHeaderLineType.Integer,
+    "Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification")
   lazy val strandBiasComponents = new VCFFormatHeaderLine("SB",
     4,
     VCFHeaderLineType.Integer,
     "Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.")
-  lazy val phaseSetId = new VCFFormatHeaderLine(VCFConstants.PHASE_SET_KEY,
+  lazy val phaseSetId = new VCFFormatHeaderLine("PS",
     1,
     VCFHeaderLineType.Integer,
     "Phase set ID")
@@ -137,12 +145,14 @@ private[adam] object SupportedHeaderLines {
   // however, this is due to a bug in htsjdk --> https://github.com/samtools/htsjdk/issues/751
   // the standard header lines get populated no matter what the header lines are on the
   // file. not clear how to disable this...
-  lazy val phaseQuality = new VCFFormatHeaderLine(VCFConstants.PHASE_QUALITY_KEY,
+  lazy val phaseQuality = new VCFFormatHeaderLine("PQ",
     1,
     VCFHeaderLineType.Float,
     "Read-backed phasing quality")
-  lazy val genotypeFilter = VCFStandardHeaderLines.getFormatLine(
-    VCFConstants.GENOTYPE_FILTER_KEY)
+  lazy val genotypeFilter = new VCFFormatHeaderLine("FT",
+    1,
+    VCFHeaderLineType.String,
+    "Genotype-level filter")
   lazy val fisherStrand = new VCFFormatHeaderLine("FS",
     1,
     VCFHeaderLineType.Float,
