@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.variantcontext.writer.{
   Options,
   VariantContextWriterBuilder
@@ -58,9 +59,8 @@ private[variant] case class VCFInFormatter private (
   protected val companion = VCFInFormatter
 
   // make a converter
-  val converter = new VariantContextConverter()
-  val variantContextConvFn = converter.makeBdgVariantContextConverter(headerLines)
-  val genotypeConvFn = converter.makeBdgGenotypeConverter(headerLines)
+  val converter = new VariantContextConverter(headerLines,
+    ValidationStringency.LENIENT)
 
   /**
    * Writes variant contexts to an output stream in VCF format.
@@ -83,7 +83,7 @@ private[variant] case class VCFInFormatter private (
 
     // write the records
     iter.foreach(r => {
-      val optVc = converter.convert(r, variantContextConvFn, genotypeConvFn)
+      val optVc = converter.convert(r)
       optVc.foreach(vc => {
         writer.add(vc)
       })

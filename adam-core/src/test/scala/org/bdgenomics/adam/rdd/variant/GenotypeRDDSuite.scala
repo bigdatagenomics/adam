@@ -22,8 +22,7 @@ import org.bdgenomics.adam.util.ADAMFunSuite
 
 class GenotypeRDDSuite extends ADAMFunSuite {
 
-  // these tests will all fail until https://github.com/bigdatagenomics/adam/pull/1291 merges
-  ignore("use broadcast join to pull down genotypes mapped to targets") {
+  sparkTest("use broadcast join to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
@@ -35,7 +34,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(jRdd.rdd.count === 9L)
   }
 
-  ignore("use right outer broadcast join to pull down genotypes mapped to targets") {
+  sparkTest("use right outer broadcast join to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
@@ -49,7 +48,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(c.count(_._1.isDefined) === 9)
   }
 
-  ignore("use shuffle join to pull down genotypes mapped to targets") {
+  sparkTest("use shuffle join to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
@@ -66,11 +65,11 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(jRdd.rdd.partitions.length === 1)
     assert(jRdd0.rdd.partitions.length === 5)
 
-    assert(jRdd.rdd.count === 3L)
-    assert(jRdd0.rdd.count === 3L)
+    assert(jRdd.rdd.count === 9L)
+    assert(jRdd0.rdd.count === 9L)
   }
 
-  ignore("use right outer shuffle join to pull down genotypes mapped to targets") {
+  sparkTest("use right outer shuffle join to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
@@ -95,7 +94,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(c0.count(_._1.isDefined) === 9)
   }
 
-  ignore("use left outer shuffle join to pull down genotypes mapped to targets") {
+  sparkTest("use left outer shuffle join to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
@@ -120,7 +119,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(c0.count(_._2.isDefined) === 9)
   }
 
-  ignore("use full outer shuffle join to pull down genotypes mapped to targets") {
+  sparkTest("use full outer shuffle join to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
@@ -149,7 +148,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(c0.count(t => t._1.isDefined && t._2.isDefined) === 9)
   }
 
-  ignore("use shuffle join with group by to pull down genotypes mapped to targets") {
+  sparkTest("use shuffle join with group by to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
@@ -174,7 +173,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(c0.forall(_._2.size == 1))
   }
 
-  ignore("use right outer shuffle join with group by to pull down genotypes mapped to targets") {
+  sparkTest("use right outer shuffle join with group by to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
