@@ -36,7 +36,6 @@ object ADAMMain {
           CountContigKmers,
           Transform,
           TransformFeatures,
-          Flatten,
           MergeShards,
           Reads2Coverage
         )
