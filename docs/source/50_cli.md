@@ -422,6 +422,9 @@ fragment representations.
 `fragments2reads` takes the [default options](#default-args). Additionally,
 `fragments2reads` takes the following options:
 
+* `-mark_duplicate_reads`: Marks reads as fragment duplicates. Running mark
+  duplicates on fragments improves performance by eliminating one `groupBy`
+  (and therefore, a shuffle) versus running on reads.
 * `-sort_reads`: Sorts reads by alignment position. Unmapped reads are
   placed at the end of all reads. Contigs are ordered by sequence record
   index.
