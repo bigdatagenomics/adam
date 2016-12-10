@@ -25,7 +25,8 @@ import org.bdgenomics.adam.models.{
   ReferencePosition
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment }
 
 private[rdd] object MarkDuplicates extends Serializable with Logging {
 
@@ -64,10 +65,21 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
 
   def apply(rdd: AlignmentRecordRDD): RDD[AlignmentRecord] = {
 
+    markBuckets(rdd.groupReadsByFragment(), rdd.recordGroups)
+      .flatMap(_.allReads)
+  }
+
+  def apply(rdd: FragmentRDD): RDD[Fragment] = {
+
+    markBuckets(rdd.rdd.map(f => SingleReadBucket(f)), rdd.recordGroups)
+      .map(_.toFragment)
+  }
+
+  private def checkRecordGroups(recordGroups: RecordGroupDictionary) {
     // do we have record groups where the library name is not set? if so, print a warning message
     // to the user, as all record groups without a library name will be treated as coming from
     // a single library
-    val emptyRgs = rdd.recordGroups.recordGroups
+    val emptyRgs = recordGroups.recordGroups
       .filter(_.library.isEmpty)
 
     emptyRgs.foreach(rg => {
@@ -78,6 +90,11 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
     if (emptyRgs.nonEmpty) {
       log.warn("For duplicate marking, all reads whose library is unknown will be treated as coming from the same library.")
     }
+  }
+
+  private def markBuckets(rdd: RDD[SingleReadBucket],
+                          recordGroups: RecordGroupDictionary): RDD[SingleReadBucket] = {
+    checkRecordGroups(recordGroups)
 
     // Group by library and left position
     def leftPositionAndLibrary(p: (ReferencePositionPair, SingleReadBucket),
@@ -94,9 +111,8 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
       p._1.read2refPos
     }
 
-    rdd.groupReadsByFragment()
-      .keyBy(ReferencePositionPair(_))
-      .groupBy(leftPositionAndLibrary(_, rdd.recordGroups))
+    rdd.keyBy(ReferencePositionPair(_))
+      .groupBy(leftPositionAndLibrary(_, recordGroups))
       .flatMap(kv => PerformDuplicateMarking.time {
 
         val leftPos: Option[ReferencePosition] = kv._1._1
@@ -140,10 +156,8 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
             })
         }
 
-        readsAtLeftPos.flatMap(read => { read._2.allReads })
-
+        readsAtLeftPos.map(_._2)
       })
-
   }
 
   private object ScoreOrdering extends Ordering[(ReferencePositionPair, SingleReadBucket)] {

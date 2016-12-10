@@ -90,6 +90,10 @@ private[read] object SingleReadBucket extends Logging {
         fromGroupedReads(reads)
       })
   }
+
+  def apply(fragment: Fragment): SingleReadBucket = {
+    fromGroupedReads(fragment.getAlignments.toIterable)
+  }
 }
 
 /**

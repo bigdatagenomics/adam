@@ -1560,7 +1560,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       if (filesAreQuerynameSorted(filePath)) {
         log.info(s"Loading $filePath as queryname sorted SAM/BAM and converting to Fragments.")
         sc.hadoopConfiguration.setBoolean(BAMInputFormat.KEEP_PAIRED_READS_TOGETHER_PROPERTY,
-                                          true)        
+          true)
         loadBam(filePath).querynameSortedToFragments
       } else {
         log.info(s"Loading $filePath as SAM/BAM and converting to Fragments.")

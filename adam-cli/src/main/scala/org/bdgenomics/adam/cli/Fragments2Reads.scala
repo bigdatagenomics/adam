@@ -20,6 +20,7 @@ package org.bdgenomics.adam.cli
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -46,6 +47,8 @@ class Fragments2ReadsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetAr
   var deferMerging: Boolean = false
   @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
   var sortLexicographically: Boolean = false
+  @Args4jOption(required = false, name = "-mark_duplicate_reads", usage = "Mark duplicate reads")
+  var markDuplicates: Boolean = false
 
   // this is required because of the ADAMSaveAnyArgs trait... fix this trait???
   var sortFastqOutput = false
@@ -54,11 +57,22 @@ class Fragments2ReadsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetAr
 class Fragments2Reads(protected val args: Fragments2ReadsArgs) extends BDGSparkCommand[Fragments2ReadsArgs] with Logging {
   val companion = Fragments2Reads
 
+  def maybeDedupe(reads: FragmentRDD): FragmentRDD = {
+    if (args.markDuplicates) {
+      reads.markDuplicates()
+    } else {
+      reads
+    }
+  }
+
   def run(sc: SparkContext) {
     val rdd = sc.loadFragments(args.inputPath)
 
+    // should we dedupe the reads?
+    val maybeDedupedReads = maybeDedupe(rdd)
+
     // save rdd as reads
-    val readRdd = rdd.toReads
+    val readRdd = maybeDedupedReads.toReads
 
     // prep to save
     val finalRdd = if (args.sortReads) {

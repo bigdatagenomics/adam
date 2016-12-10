@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd.fragment
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
+import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
   ReferenceRegion,
@@ -29,6 +30,7 @@ import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.adam.rdd.read.{
   AlignedReadRDD,
   AlignmentRecordRDD,
+  MarkDuplicates,
   UnalignedReadRDD
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
@@ -122,6 +124,16 @@ case class FragmentRDD(rdd: RDD[Fragment],
     } else {
       AlignedReadRDD(newRdd, sequences, recordGroups)
     }
+  }
+
+  /**
+   * Marks reads as possible fragment duplicates.
+   *
+   * @return A new RDD where reads have the duplicate read flag set. Duplicate
+   *   reads are NOT filtered out.
+   */
+  def markDuplicates(): FragmentRDD = MarkDuplicatesInDriver.time {
+    replaceRdd(MarkDuplicates(this))
   }
 
   /**
