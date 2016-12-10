@@ -28,10 +28,52 @@ import org.bdgenomics.formats.avro.{
 }
 import scala.collection.JavaConversions._
 
+private class FragmentIterator(
+    reads: Iterator[AlignmentRecord]) extends Iterator[Iterable[AlignmentRecord]] with Serializable {
+
+  private var readIter: BufferedIterator[AlignmentRecord] = reads.buffered
+
+  def hasNext: Boolean = {
+    readIter.hasNext
+  }
+
+  def next: Iterable[AlignmentRecord] = {
+
+    // get the read name
+    val readName = readIter.head.getReadName
+
+    // take the reads that have this read name
+    readIter.takeWhile(_.getReadName == readName).toIterable
+  }
+}
+
 /**
  * Companion object for building SingleReadBuckets.
  */
 private[read] object SingleReadBucket extends Logging {
+
+  private def fromGroupedReads(reads: Iterable[AlignmentRecord]): SingleReadBucket = {
+    // split by mapping
+    val (mapped, unmapped) = reads.partition(_.getReadMapped)
+    val (primaryMapped, secondaryMapped) = mapped.partition(_.getPrimaryAlignment)
+
+    // TODO: consider doing validation here
+    // (e.g. read says mate mapped but it doesn't exist)
+    new SingleReadBucket(primaryMapped, secondaryMapped, unmapped)
+  }
+
+  /**
+   * Builds an RDD of SingleReadBuckets from a queryname sorted RDD of AlignmentRecords.
+   *
+   * @param rdd The RDD of AlignmentRecords to build the RDD of single read
+   *   buckets from.
+   * @return Returns an RDD of SingleReadBuckets.
+   *
+   * @note We do not validate that the input RDD is sorted by read name.
+   */
+  def fromQuerynameSorted(rdd: RDD[AlignmentRecord]): RDD[SingleReadBucket] = {
+    rdd.mapPartitions(iter => new FragmentIterator(iter).map(fromGroupedReads))
+  }
 
   /**
    * Builds an RDD of SingleReadBuckets from an RDD of AlignmentRecords.
@@ -45,13 +87,7 @@ private[read] object SingleReadBucket extends Logging {
       .map(kv => {
         val (_, reads) = kv
 
-        // split by mapping
-        val (mapped, unmapped) = reads.partition(_.getReadMapped)
-        val (primaryMapped, secondaryMapped) = mapped.partition(_.getPrimaryAlignment)
-
-        // TODO: consider doing validation here
-        // (e.g. read says mate mapped but it doesn't exist)
-        new SingleReadBucket(primaryMapped, secondaryMapped, unmapped)
+        fromGroupedReads(reads)
       })
   }
 }

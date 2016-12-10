@@ -113,6 +113,29 @@ sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord,
   }
 
   /**
+   * Groups all reads by record group and read name.
+   *
+   * @return SingleReadBuckets with primary, secondary and unmapped reads
+   */
+  private def locallyGroupReadsByFragment(): RDD[SingleReadBucket] = {
+    SingleReadBucket.fromQuerynameSorted(rdd)
+  }
+
+  /**
+   * Convert this set of reads into fragments.
+   *
+   * Assumes that reads are sorted by readname.
+   * *
+   * @return Returns a FragmentRDD where all reads have been grouped together by
+   *   the original sequence fragment they come from.
+   */
+  private[rdd] def querynameSortedToFragments: FragmentRDD = {
+    FragmentRDD(locallyGroupReadsByFragment().map(_.toFragment),
+      sequences,
+      recordGroups)
+  }
+
+  /**
    * Converts this set of reads into a corresponding CoverageRDD.
    *
    * @param collapse Determines whether to merge adjacent coverage elements with the same score a single coverage.

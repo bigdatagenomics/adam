@@ -486,6 +486,51 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Checks to see if a set of SAM/BAM/CRAM files are queryname sorted.
+   *
+   * If we are loading fragments and the SAM/BAM/CRAM files are sorted by the
+   * read names, this implies that all of the reads in a pair are consecutive in
+   * the file. If this is the case, we can configure Hadoop-BAM to keep all of
+   * the reads from a fragment in a single split. This allows us to eliminate
+   * an expensive groupBy when loading a BAM file as fragments.
+   *
+   * @param filePath The file path to load reads from. Globs/directories are
+   *   supported.
+   * @param stringency The validation stringency to use when reading the header.
+   * @return Returns true if all files described by the filepath are queryname
+   *   sorted.
+   */
+  private[rdd] def filesAreQuerynameSorted(filePath: String,
+                                           stringency: ValidationStringency = ValidationStringency.STRICT): Boolean = {
+    val path = new Path(filePath)
+
+    val bamFiles = getFsAndFiles(path)
+    val filteredFiles = bamFiles.filter(p => {
+      val pPath = p.getName()
+      pPath.endsWith(".bam") || pPath.endsWith(".cram") ||
+        pPath.endsWith(".sam") || pPath.startsWith("part-")
+    })
+
+    filteredFiles
+      .forall(fp => {
+        try {
+          // the sort order is saved in the file header
+          sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, stringency.toString)
+          val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
+
+          samHeader.getSortOrder == SAMFileHeader.SortOrder.queryname
+        } catch {
+          case e: Throwable => {
+            log.error(
+              s"Loading header failed for $fp:n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
+            )
+            false
+          }
+        }
+      })
+  }
+
+  /**
    * Loads a SAM/BAM file.
    *
    * This reads the sequence and record group dictionaries from the SAM/BAM file
@@ -1510,8 +1555,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam") ||
       filePath.endsWith(".cram")) {
-      log.info(s"Loading $filePath as SAM/BAM and converting to Fragments.")
-      loadBam(filePath).toFragments
+
+      // check to see if the input files are all queryname sorted
+      if (filesAreQuerynameSorted(filePath)) {
+        log.info(s"Loading $filePath as queryname sorted SAM/BAM and converting to Fragments.")
+        sc.hadoopConfiguration.setBoolean(BAMInputFormat.KEEP_PAIRED_READS_TOGETHER_PROPERTY,
+                                          true)        
+        loadBam(filePath).querynameSortedToFragments
+      } else {
+        log.info(s"Loading $filePath as SAM/BAM and converting to Fragments.")
+        loadBam(filePath).toFragments
+      }
     } else if (filePath.endsWith(".reads.adam")) {
       log.info(s"Loading $filePath as ADAM AlignmentRecords and converting to Fragments.")
       loadAlignments(filePath).toFragments
