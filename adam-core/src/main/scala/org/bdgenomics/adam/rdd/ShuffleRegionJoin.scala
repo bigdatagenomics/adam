@@ -263,6 +263,30 @@ private[rdd] case class ManualRegionPartitioner(partitions: Int) extends Partiti
   }
 }
 
+private class AppendableIterator[T] extends Iterator[T] {
+  var iterators: ListBuffer[Iterator[T]] = ListBuffer.empty
+
+  def append(iter: Iterator[T]) {
+    if (iter.hasNext) {
+      iterators += iter
+    }
+  }
+
+  def hasNext: Boolean = {
+    iterators.nonEmpty
+  }
+
+  def next: T = {
+    val nextVal = iterators.head.next
+
+    if (!iterators.head.hasNext) {
+      iterators = iterators.tail
+    }
+
+    nextVal
+  }
+}
+
 private trait SortedIntervalPartitionJoin[T, U, RT, RU] extends Iterator[(RT, RU)] with Serializable {
   val binRegion: ReferenceRegion
   val left: BufferedIterator[((ReferenceRegion, Int), T)]
@@ -271,7 +295,7 @@ private trait SortedIntervalPartitionJoin[T, U, RT, RU] extends Iterator[(RT, RU
   private var prevLeftRegion: ReferenceRegion = _
 
   // stores the current set of joined pairs
-  protected var hits: Iterator[(RT, RU)] = Iterator.empty
+  protected var hits: AppendableIterator[(RT, RU)] = new AppendableIterator
 
   protected def advanceCache(until: Long)
 
@@ -295,15 +319,13 @@ private trait SortedIntervalPartitionJoin[T, U, RT, RU] extends Iterator[(RT, RU
         nextLeftRegion.start > prevLeftRegion.start) {
         pruneCache(nextLeftRegion.start)
       }
+
       // at this point, we effectively do a cross-product and filter; this could probably
       // be improved by making cache a fancier data structure than just a list
       // we filter for things that overlap, where at least one side of the join has a start position
       // in this partition
-      //
-      // also, see note "important: fun times with iterators" in this file, which explains
-      // that these must apparently be two lines
       val newHits = processHits(nextLeft, nextLeftRegion)
-      hits = hits ++ newHits
+      hits.append(newHits)
 
       assert(prevLeftRegion == null ||
         (prevLeftRegion.referenceName == nextLeftRegion.referenceName &&
@@ -444,34 +466,8 @@ private trait SortedIntervalPartitionJoinWithVictims[T, U, RT, RU] extends Sorte
     cache = cache ++ victimCache.takeWhile(_._1.end > to)
     victimCache = victimCache.dropWhile(_._1.end > to)
 
-    // important: fun times with iterators
-    // 
-    // for reasons known only to God, if you combine these two lines down to a
-    // single line, it causes the hits iterator to be invalidated and become
-    // empty.
-    //
-    // MORE: it seems like there's some funniness with the underlying scala imp'l
-    // of append on two iterators. if the second line is written as:
-    //
-    // hits = hits ++ pped
-    //
-    // the line works as expected on scala 2.10. on scala 2.11, it occasionally
-    // fails. oddly enough, if you write the line above and then do a duplicate
-    // on the hits iterator (which you then reassign to hits), it works. i.e.,
-    //
-    // hits = hits ++ pped
-    // val (d, _) = hits.duplicate
-    // hits = d
-    //
-    // works on both scala 2.10 and 2.11 across all unit tests
-    //
-    // rewriting it as (pped ++ hits).toIterator seems to work all the time.
-    // that appends the hits iterator to a ListBuffer, and then returns an iterator
-    // over the list buffer. essentially, i think there's a bug in the Iterator.++
-    // method in scala that occasionally causes it to return an empty iterator, but
-    // i'm not sure why that is
     val pped = (victimCache.takeWhile(_._1.end <= to).map(u => postProcessPruned(u._2)))
-    hits = (pped ++ hits).toIterator
+    hits.append(pped.toIterator)
 
     victimCache = victimCache.dropWhile(_._1.end <= to)
   }
