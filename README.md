@@ -13,6 +13,21 @@ ADAM is a genomics analysis platform with specialized file formats built using [
 * [View our software artifacts on Maven Central](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) ([…including snapshots](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)).
 * [Look at our CHANGES file](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md).
 
+## Why ADAM?
+
+Over the last decade, DNA and RNA sequencing has evolved from an expensive, labor intensive method to a cheap commodity. The consequence of this is generation of _massive amounts of genomic and transcriptomic data_. Typically, tools to process and interpret these data are developed at academic labs, with a focus on excellence of the results generated, not on __scalability__ and __interoperability__. A typical _sequencing pipeline_ consists of a string of tools going from quality control, mapping, mapped read preprocessing, to variant calling or quantification, depending on the application at hand. Concretely, this usually means that such a pipeline is a string of tools, glued together by scripts or workflow engines, with data written to files in each step.
+This approach entails three main bottlenecks: 
+
+  1. __scaling the pipeline__ comes down to scaling each of the individual tools, 
+  2. the __stability of the pipeline__ heavily depends on the consistency of the intermediate file formats, and 
+  3. __writing to and reading__ from disk is a major slow-down.
+
+We propose here a transformative solution for these problems, by replacing ad-hoc pipelines by the [ADAM framework](http://bdgenomics.org/), developed in the [Apache Spark](http://spark.apache.org/) ecosystem.
+ADAM provides specialized file formats for the standard data structures used in genomics analysis: _mapped reads_ (typically stored as `.bam` files), _representation of genomic regions_ (`.bed` files), and _variants_ (`.vcf` files), using [Avro](https://avro.apache.org/) and [Parquet](http://parquet.apache.org/). This allows to use the in-memory cluster computing functionality of Apache Spark, ensuring efficient and fault-tolerant distribution based on data parallelism, without the intermediate disk operations required in classical distributed approaches.
+
+Furthermore, the ADAM-Spark approach comes with an additional benefit. Typically, the endpoint of a sequencing pipeline is a file with processed data for a single sample: e.g. variants for DNA sequencing, read counts for RNA sequencing, etc. The real endpoint. however, of a sequencing experiment initiated by an investigator is 
+__interpretation__ of these data in a certain context. This usually translates into (statistical) analysis of multiple samples, connection with (clinical) metadata, interactive visualization, using data science tools such as R, Python, Tableau and Spotfire. In addition to scalable distributed processing, Spark also allows such __interactive data analysis__ in the form of analysis notebooks (Spark Notebook or Zeppelin), or direct connection to the data in R and Python.
+
 ## Hello World: Counting K-mers
 
 Here's an example ADAM CLI command that will count 10-mers in [a test `.sam` file that lives in this repository](https://github.com/bigdatagenomics/adam/blob/master/adam-core/src/test/resources/small.sam):
