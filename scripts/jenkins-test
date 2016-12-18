@@ -10,7 +10,7 @@ find . -name pom.xml \
     -exec sed -i.bak \
     -e "s:sun.io.serialization.extendedDebugInfo=true:sun.io.serialization.extendedDebugInfo=true -Djava.io.tmpdir=${ADAM_MVN_TMP_DIR}:g" \
     {} \;
-find . -name "*.bak" -exec rm {} \;
+find . -name "*.bak" -exec rm -f {} \;
 
 # variable declarations
 export PATH=${JAVA_HOME}/bin/:${PATH}
@@ -37,18 +37,59 @@ then
     exit 1
 fi
 
+# this next line is supposed to fail
+set +e
+
+echo "Rewriting POM.xml files to Scala 2.10 and Spark 1 should error..."
+./scripts/move_to_spark_1.sh
+if [[ $? == 0 ]];
+then
+    echo "Running move_to_spark_1.sh when POMs are set up for Spark 1 should fail, but error code was 0 (success)."
+    exit 1
+fi
+
+./scripts/move_to_scala_2.10.sh
+if [[ $? == 0 ]];
+then
+    echo "Running move_to_scala_2.10.sh when POMs are set up for Scala 2.10 should fail, but error code was 0 (success)."
+    exit 1
+fi
+
+set -e
+
 # are we testing for spark 2.0.0? if so, we need to rewrite our poms first
 if [ ${SPARK_VERSION} == 2.0.0 ];
 then
-        echo "Rewriting POM.xml files for Scala 2.10."
-        ./scripts/move_to_spark_2.sh
+    
+    echo "Rewriting POM.xml files for Spark 2."
+    ./scripts/move_to_spark_2.sh
+
+    # shouldn't be able to move to spark 2 twice
+    set +e
+    ./scripts/move_to_spark_2.sh
+    if [[ $? == 0 ]];
+    then
+        echo "We have already moved to Spark 2, so running move_to_spark_2.sh a second time should fail, but error code was 0 (success)."
+        exit 1
+    fi
+    set -e
 fi
 
 # are we testing for scala 2.11? if so, we need to rewrite our poms to 2.11 first
 if [ ${SCALAVER} == 2.11 ];
 then
-        echo "Rewriting POM.xml files for Scala 2.10."
-        ./scripts/move_to_scala_2.11.sh
+    echo "Rewriting POM.xml files for Scala 2.11."
+    ./scripts/move_to_scala_2.11.sh
+
+    # shouldn't be able to move to scala 2.11 twice
+    set +e
+    ./scripts/move_to_scala_2.11.sh
+    if [[ $? == 0 ]];
+    then
+        echo "We have already moved to Scala 2.11, so running move_to_scala_2.11.sh a second time should fail, but error code was 0 (success)."
+        exit 1
+    fi
+    set -e
 fi
 
 # print versions
@@ -76,6 +117,33 @@ mvn -U \
 # we are done with maven, so clean up the maven temp dir
 find ${ADAM_MVN_TMP_DIR}
 rm -rf ${ADAM_MVN_TMP_DIR}
+
+# and move our poms back to their original values
+# this will allow us to pass our porcelain test at the end
+if [ ${SPARK_VERSION} == 2.0.0 ];
+then
+    
+    echo "Rewriting POM.xml files back to Spark 1."
+    ./scripts/move_to_spark_1.sh
+fi
+if [ ${SCALAVER} == 2.11 ];
+then
+    echo "Rewriting POM.xml files back to Scala 2.10."
+    ./scripts/move_to_scala_2.10.sh
+fi
+
+find . -name pom.xml \
+    -exec sed -i.bak \
+    -e "s:sun.io.serialization.extendedDebugInfo=true -Djava.io.tmpdir=${ADAM_MVN_TMP_DIR}:sun.io.serialization.extendedDebugInfo=true:g" \
+    {} \;
+find . -name "*.bak" -exec rm -f {} \;
+
+if test -n "$(git status --porcelain)"
+then
+    echo "Applying move_to_xyz script marred a pom.xml file."
+    echo "Exiting..."
+    exit 1
+fi
 
 # run integration tests on scala 2.10; prebuilt spark distributions are not available for 2.11
 if [ ${SCALAVER} == 2.10 ];
@@ -155,17 +223,15 @@ then
     popd
     
     # test that the source is formatted correctly
-    # we had modified the poms to add a temp dir, so check those out first
+    # we had modified the poms to add a temp dir, so back out that modification first
     pushd ${PROJECT_ROOT}
-    find . -name pom.xml -exec git checkout {} \;
     ./scripts/format-source
     if test -n "$(git status --porcelain)"
     then
         echo "Please run './scripts/format-source'"
         exit 1
     fi
-    popd
-    
+    popd    
 fi
 
 echo
