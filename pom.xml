@@ -195,6 +195,7 @@
             <gitDescribe>
               <always>true</always>
             </gitDescribe>
+            <failOnNoGitDirectory>false</failOnNoGitDirectory>
           </configuration>
         </plugin>
         <plugin>
