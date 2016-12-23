@@ -17,14 +17,10 @@
  */
 package org.bdgenomics.adam.rdd
 
-import com.esotericsoftware.kryo.io.{ Input, Output }
-import com.esotericsoftware.kryo.{ Kryo, Serializer }
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.utils.intervalarray.IntervalArray
-import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
 /**
@@ -76,24 +72,19 @@ trait TreeRegionJoin[T, U] {
 /**
  * Implements an inner region join where the left side of the join is broadcast.
  */
-case class InnerTreeRegionJoin[T, U]() extends RegionJoin[T, U, T, U] with TreeRegionJoin[T, U] {
+case class InnerTreeRegionJoin[T: ClassTag, U: ClassTag]() extends RegionJoin[T, U, T, U] with TreeRegionJoin[T, U] {
 
   /**
    * Performs an inner region join between two RDDs.
    *
    * @param baseRDD The 'left' side of the join
    * @param joinedRDD The 'right' side of the join
-   * @param tManifest implicit type of baseRDD
-   * @param uManifest implicit type of joinedRDD
-   * @tparam T type of baseRDD
-   * @tparam U type of joinedRDD
    * @return An RDD of pairs (x, y), where x is from baseRDD, y is from joinedRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
   def partitionAndJoin(
     baseRDD: RDD[(ReferenceRegion, T)],
-    joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                          uManifest: ClassTag[U]): RDD[(T, U)] = {
+    joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(T, U)] = {
     runJoinAndGroupByRight(baseRDD, joinedRDD)
       .flatMap(kv => {
         val (leftIterable, right) = kv
@@ -106,17 +97,15 @@ case class InnerTreeRegionJoin[T, U]() extends RegionJoin[T, U, T, U] with TreeR
  * Implements a right outer region join where the left side of the join is
  * broadcast.
  */
-case class RightOuterTreeRegionJoin[T, U]() extends RegionJoin[T, U, Option[T], U] with TreeRegionJoin[T, U] {
+case class RightOuterTreeRegionJoin[T: ClassTag, U: ClassTag]()
+    extends RegionJoin[T, U, Option[T], U]
+    with TreeRegionJoin[T, U] {
 
   /**
    * Performs a right outer region join between two RDDs.
    *
    * @param baseRDD The 'left' side of the join
    * @param joinedRDD The 'right' side of the join
-   * @param tManifest implicit type of baseRDD
-   * @param uManifest implicit type of joinedRDD
-   * @tparam T type of baseRDD
-   * @tparam U type of joinedRDD
    * @return An RDD of pairs (Option[x], y), where the optional x value is from
    *   baseRDD, y is from joinedRDD, and the region corresponding to x overlaps
    *   the region corresponding to y. If there are no keys in the baseRDD that
@@ -124,8 +113,7 @@ case class RightOuterTreeRegionJoin[T, U]() extends RegionJoin[T, U, Option[T], 
    */
   def partitionAndJoin(
     baseRDD: RDD[(ReferenceRegion, T)],
-    joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                          uManifest: ClassTag[U]): RDD[(Option[T], U)] = {
+    joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Option[T], U)] = {
     runJoinAndGroupByRight(baseRDD, joinedRDD)
       .flatMap(kv => {
         val (leftIterable, right) = kv
@@ -144,7 +132,9 @@ case class RightOuterTreeRegionJoin[T, U]() extends RegionJoin[T, U, Option[T], 
  * value. This is implemented without any shuffling; the join naturally returns
  * values on the left grouped by the right value.
  */
-case class InnerTreeRegionJoinAndGroupByRight[T, U]() extends RegionJoin[T, U, Iterable[T], U] with TreeRegionJoin[T, U] {
+case class InnerTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
+    extends RegionJoin[T, U, Iterable[T], U]
+    with TreeRegionJoin[T, U] {
 
   /**
    * Performs an inner join between two RDDs, followed by a groupBy on the
@@ -152,10 +142,6 @@ case class InnerTreeRegionJoinAndGroupByRight[T, U]() extends RegionJoin[T, U, I
    *
    * @param baseRDD The 'left' side of the join
    * @param joinedRDD The 'right' side of the join
-   * @param tManifest implicit type of baseRDD
-   * @param uManifest implicit type of joinedRDD
-   * @tparam T type of baseRDD
-   * @tparam U type of joinedRDD
    * @return An RDD of pairs (Iterable[x], y), where the Iterable[x] is from
    *   baseRDD, y is from joinedRDD, and all values in the Iterable[x] are
    *   aligned at regions that overlap the region corresponding to y. If the
@@ -163,8 +149,7 @@ case class InnerTreeRegionJoinAndGroupByRight[T, U]() extends RegionJoin[T, U, I
    */
   def partitionAndJoin(
     baseRDD: RDD[(ReferenceRegion, T)],
-    joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                          uManifest: ClassTag[U]): RDD[(Iterable[T], U)] = {
+    joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
     runJoinAndGroupByRight(baseRDD, joinedRDD)
       .filter(_._1.nonEmpty)
   }
@@ -176,7 +161,9 @@ case class InnerTreeRegionJoinAndGroupByRight[T, U]() extends RegionJoin[T, U, I
  * values on the left grouped by the right value. In this implementation, empty
  * collections on the left side of the join are kept.
  */
-case class RightOuterTreeRegionJoinAndGroupByRight[T, U]() extends RegionJoin[T, U, Iterable[T], U] with TreeRegionJoin[T, U] {
+case class RightOuterTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
+    extends RegionJoin[T, U, Iterable[T], U]
+    with TreeRegionJoin[T, U] {
 
   /**
    * Performs an inner join between two RDDs, followed by a groupBy on the
@@ -184,10 +171,6 @@ case class RightOuterTreeRegionJoinAndGroupByRight[T, U]() extends RegionJoin[T,
    *
    * @param baseRDD The 'left' side of the join
    * @param joinedRDD The 'right' side of the join
-   * @param tManifest implicit type of baseRDD
-   * @param uManifest implicit type of joinedRDD
-   * @tparam T type of baseRDD
-   * @tparam U type of joinedRDD
    * @return An RDD of pairs (Iterable[x], y), where the Iterable[x] is from
    *   baseRDD, y is from joinedRDD, and all values in the Iterable[x] are
    *   aligned at regions that overlap the region corresponding to y. If the
@@ -195,8 +178,7 @@ case class RightOuterTreeRegionJoinAndGroupByRight[T, U]() extends RegionJoin[T,
    */
   def partitionAndJoin(
     baseRDD: RDD[(ReferenceRegion, T)],
-    joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                          uManifest: ClassTag[U]): RDD[(Iterable[T], U)] = {
+    joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
     runJoinAndGroupByRight(baseRDD, joinedRDD)
   }
 }
