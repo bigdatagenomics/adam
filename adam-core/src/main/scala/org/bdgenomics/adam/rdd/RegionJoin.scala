@@ -32,22 +32,17 @@ import scala.reflect.ClassTag
  * @tparam RU The type of data yielded by the right RDD at the output of the
  *   join.
  */
-trait RegionJoin[T, U, RT, RU] extends Serializable {
+abstract class RegionJoin[T: ClassTag, U: ClassTag, RT, RU] extends Serializable {
 
   /**
    * Performs a region join between two RDDs.
    *
    * @param baseRDD The 'left' side of the join
    * @param joinedRDD The 'right' side of the join
-   * @param tManifest implicit type of baseRDD
-   * @param uManifest implicit type of joinedRDD
-   * @tparam T type of baseRDD
-   * @tparam U type of joinedRDD
    * @return An RDD of pairs (x, y), where x is from baseRDD, y is from joinedRDD, and the region
    *         corresponding to x overlaps the region corresponding to y.
    */
   def partitionAndJoin(
     baseRDD: RDD[(ReferenceRegion, T)],
-    joinedRDD: RDD[(ReferenceRegion, U)])(implicit tManifest: ClassTag[T],
-                                          uManifest: ClassTag[U]): RDD[(RT, RU)]
+    joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(RT, RU)]
 }
