@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.VCFHeaderLine
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.SupportedHeaderLines
@@ -108,6 +109,22 @@ case class GenotypeRDD(rdd: RDD[Genotype],
     } else {
       false
     }
+  }
+
+  /**
+   * Explicitly saves to VCF.
+   *
+   * @param filePath The filepath to save to.
+   * @param asSingleFile If true, saves the output as a single file by merging
+   *   the sharded output after completing the write to HDFS. If false, the
+   *   output of this call will be written as shards, where each shard has a
+   *   valid VCF header.
+   * @param stringency The validation stringency to use when writing the VCF.
+   */
+  def saveAsVcf(filePath: String,
+                asSingleFile: Boolean,
+                stringency: ValidationStringency) {
+    toVariantContextRDD.saveAsVcf(filePath, asSingleFile, stringency)
   }
 
   /**

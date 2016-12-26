@@ -1383,6 +1383,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param filePath The path to load.
    * @param projection An optional subset of fields to load.
+   * @param stringency The validation stringency to use when validating the VCF.
    * @return Returns a GenotypeRDD.
    *
    * @see loadVcf
@@ -1390,10 +1391,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadGenotypes(
     filePath: String,
-    projection: Option[Schema] = None): GenotypeRDD = {
+    projection: Option[Schema] = None,
+    stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeRDD = {
     if (isVcfExt(filePath)) {
       log.info(s"Loading $filePath as VCF, and converting to Genotypes. Projection is ignored.")
-      loadVcf(filePath).toGenotypeRDD
+      loadVcf(filePath, stringency).toGenotypeRDD
     } else {
       log.info(s"Loading $filePath as Parquet containing Genotypes. Sequence dictionary for translation is ignored.")
       loadParquetGenotypes(filePath, None, projection)
@@ -1408,6 +1410,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param filePath The path to load.
    * @param projection An optional subset of fields to load.
+   * @param stringency The validation stringency to use when validating the VCF.
    * @return Returns a VariantRDD.
    *
    * @see loadVcf
@@ -1415,10 +1418,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadVariants(
     filePath: String,
-    projection: Option[Schema] = None): VariantRDD = {
+    projection: Option[Schema] = None,
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantRDD = {
     if (isVcfExt(filePath)) {
       log.info(s"Loading $filePath as VCF, and converting to Variants. Projection is ignored.")
-      loadVcf(filePath).toVariantRDD
+      loadVcf(filePath, stringency).toVariantRDD
     } else {
       log.info(s"Loading $filePath as Parquet containing Variants. Sequence dictionary for translation is ignored.")
       loadParquetVariants(filePath, None, projection)

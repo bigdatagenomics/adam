@@ -204,4 +204,21 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(c.filter(_._1.isEmpty).forall(_._2.size == 1))
     assert(c0.filter(_._1.isEmpty).forall(_._2.size == 1))
   }
+
+  sparkTest("convert back to variant contexts") {
+    val genotypesPath = testFile("small.vcf")
+    val genotypes = sc.loadGenotypes(genotypesPath)
+    val variantContexts = genotypes.toVariantContextRDD
+
+    assert(variantContexts.sequences.containsRefName("1"))
+    assert(variantContexts.samples.nonEmpty)
+
+    val vcs = variantContexts.rdd.collect
+    assert(vcs.size === 6)
+
+    val vc = vcs.head
+    assert(vc.position.referenceName === "1")
+    assert(vc.variant.variant.contigName === "1")
+    assert(vc.genotypes.nonEmpty)
+  }
 }
