@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
+import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
@@ -48,14 +49,18 @@ class Vcf2ADAMArgs extends Args4jBase with ParquetSaveArgs {
 
   @Args4jOption(required = false, name = "-only_variants", usage = "Output Variant objects instead of Genotypes")
   var onlyVariants: Boolean = false
+
+  @Args4jOption(required = false, name = "-stringency", usage = "Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults to STRICT")
+  var stringency: String = "STRICT"
 }
 
 class Vcf2ADAM(val args: Vcf2ADAMArgs) extends BDGSparkCommand[Vcf2ADAMArgs] with Logging {
   val companion = Vcf2ADAM
+  val stringency = ValidationStringency.valueOf(args.stringency)
 
   def run(sc: SparkContext) {
 
-    val variantContextRdd = sc.loadVcf(args.vcfPath)
+    val variantContextRdd = sc.loadVcf(args.vcfPath, stringency)
     val variantContextsToSave = if (args.coalesce > 0) {
       variantContextRdd.transform(
         _.coalesce(args.coalesce, shuffle = args.coalesce > variantContextRdd.rdd.partitions.length || args.forceShuffle)

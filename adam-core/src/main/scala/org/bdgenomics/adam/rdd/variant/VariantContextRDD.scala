@@ -100,6 +100,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    *   the sharded output after completing the write to HDFS. If false, the
    *   output of this call will be written as shards, where each shard has a
    *   valid VCF header. Default is false.
+   * @param stringency The validation stringency to use when writing the VCF.
    */
   def saveAsVcf(filePath: String,
                 asSingleFile: Boolean = false,
