@@ -412,11 +412,62 @@ private[adam] class VariantContextConverter(dict: Option[SequenceDictionary] = N
    */
   private def extractVariantAnnotation(variant: Variant,
                                        vc: HtsjdkVariantContext): VariantAnnotation = {
-    val annotation = VariantAnnotation.newBuilder()
+    val vab = VariantAnnotation.newBuilder()
       .setVariant(variant)
-      .build
 
-    VariantAnnotationConverter.convert(vc, annotation)
+    // Number=0, Number=1, Number=N, Number=. VCF INFO reserved keys shared
+    // across all alternate alleles in the same VCF record
+    Option(vc.getAttributeAsString("AA", null)).foreach(vab.setAncestralAllele(_))
+    Option(vc.getAttribute("DB").asInstanceOf[java.lang.Boolean]).foreach(vab.setDbSnp(_))
+    Option(vc.getAttribute("H2").asInstanceOf[java.lang.Boolean]).foreach(vab.setHapMap2(_))
+    Option(vc.getAttribute("H3").asInstanceOf[java.lang.Boolean]).foreach(vab.setHapMap2(_))
+    Option(vc.getAttribute("VALIDATED").asInstanceOf[java.lang.Boolean]).foreach(vab.setValidated(_))
+    Option(vc.getAttribute("1000G").asInstanceOf[java.lang.Boolean]).foreach(vab.setThousandGenomes(_))
+
+    val index = vc.getAlternateAlleles.indexOf(variant.getAlternateAllele)
+
+    // Number=A VCF INFO reserved keys split for multi-allelic sites by index
+    val ac = vc.getAttributeAsList("AC")
+    if (ac.size > index) {
+      vab.setAlleleCount(ac.get(index).asInstanceOf[java.lang.Integer])
+    }
+
+    val af = vc.getAttributeAsList("AF")
+    if (af.size > index) {
+      vab.setAlleleFrequency(af.get(index).asInstanceOf[java.lang.Float])
+    }
+
+    val cigar = vc.getAttributeAsList("CIGAR")
+    if (cigar.size > index) {
+      vab.setCigar(cigar.get(index).asInstanceOf[java.lang.String])
+    }
+
+    // Number=R VCF INFO reserved keys split for multi-allelic sites by index + 1
+    val ad = vc.getAttributeAsList("AD")
+    if (ad.size > (index + 1)) {
+      vab.setReadDepth(ad.get(index + 1).asInstanceOf[java.lang.Integer])
+    }
+
+    val adf = vc.getAttributeAsList("ADF")
+    if (adf.size > (index + 1)) {
+      vab.setForwardReadDepth(adf.get(index + 1).asInstanceOf[java.lang.Integer])
+    }
+
+    val adr = vc.getAttributeAsList("ADR")
+    if (adr.size > (index + 1)) {
+      vab.setReverseReadDepth(adr.get(index + 1).asInstanceOf[java.lang.Integer])
+    }
+
+    // Number=. VCF INFO key ANN split for multi-allelic sites by alternate allele
+    TranscriptEffectConverter.convertToTranscriptEffects(variant, vc).foreach(vab.setTranscriptEffects(_))
+
+    // for all VCF INFO header lines {
+    //   if Number=0, 1, n, . share across all alternate alleles in the same VCF record
+    //   if Number=A split for multi-allelic sites by index
+    //   if Number=R split for multi-allelic sites by index + 1
+    // }
+
+    VariantAnnotationConverter.convert(vc, vab.build)
   }
 
   /**
