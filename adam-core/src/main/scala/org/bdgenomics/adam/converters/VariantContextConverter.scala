@@ -134,9 +134,9 @@ private[adam] object VariantContextConverter {
     var alleles = g.getAlleles
     if (alleles == null) return Collections.emptyList[Allele]
     else g.getAlleles.map {
-      case GenotypeAllele.NO_CALL                        => Allele.NO_CALL
-      case GenotypeAllele.REF | GenotypeAllele.OTHER_ALT => Allele.create(g.getVariant.getReferenceAllele, true)
-      case GenotypeAllele.ALT                            => Allele.create(g.getVariant.getAlternateAllele)
+      case GenotypeAllele.NO_CALL | GenotypeAllele.OTHER_ALT => Allele.NO_CALL
+      case GenotypeAllele.REF                                => Allele.create(g.getVariant.getReferenceAllele, true)
+      case GenotypeAllele.ALT                                => Allele.create(g.getVariant.getAlternateAllele)
     }
   }
 }

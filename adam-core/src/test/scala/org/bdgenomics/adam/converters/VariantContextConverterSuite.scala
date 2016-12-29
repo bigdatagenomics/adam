@@ -319,7 +319,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     }
   }
 
-  test("Convert htsjdk multi-allelic SNVs to ADAM") {
+  test("Convert htsjdk multi-allelic SNVs to ADAM and back to htsjdk") {
     val gb = new GenotypeBuilder("NA12878", List(Allele.create("T"), Allele.create("G")))
     gb.AD(Array(4, 2, 3)).PL(Array(59, 0, 181, 1, 66, 102))
 
@@ -351,6 +351,23 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       .map(f => f: scala.Float)
       .map(PhredUtils.logProbabilityToPhred)
       .sameElements(List(59, 1, 102)))
+
+    val optHtsjdkVC1 = converter.convert(adamVCs(0))
+    val optHtsjdkVC2 = converter.convert(adamVCs(1))
+    assert(optHtsjdkVC1.isDefined)
+    assert(optHtsjdkVC2.isDefined)
+    val htsjdkVC1 = optHtsjdkVC1.get
+    val htsjdkVC2 = optHtsjdkVC2.get
+    assert(htsjdkVC1.hasGenotype("NA12878"))
+    assert(htsjdkVC2.hasGenotype("NA12878"))
+    val gt1 = htsjdkVC1.getGenotype("NA12878")
+    val gt2 = htsjdkVC2.getGenotype("NA12878")
+    assert(gt1.getAllele(0).isNonReference)
+    assert(gt1.getAllele(0).getBaseString === "T")
+    assert(gt1.getAllele(1).isNoCall)
+    assert(gt2.getAllele(0).isNoCall)
+    assert(gt2.getAllele(1).isNonReference)
+    assert(gt2.getAllele(1).getBaseString === "G")
   }
 
   test("Convert gVCF reference records to ADAM") {
