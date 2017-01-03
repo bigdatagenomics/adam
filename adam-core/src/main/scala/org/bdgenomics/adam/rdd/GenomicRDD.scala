@@ -32,6 +32,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.formats.avro.{ Contig, RecordGroupMetadata, Sample }
 import org.bdgenomics.utils.cli.SaveArgs
+import org.bdgenomics.utils.intervalarray.IntervalArray
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
@@ -383,6 +384,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     }))
   }
 
+  protected def buildTree(
+    rdd: RDD[(ReferenceRegion, T)])(
+      implicit tTag: ClassTag[T]): IntervalArray[ReferenceRegion, T] = {
+    IntervalArray(rdd)
+  }
+
   /**
    * Performs a broadcast inner join between this RDD and another RDD.
    *
@@ -401,7 +408,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = {
 
     // key the RDDs and join
-    GenericGenomicRDD[(T, X)](InnerTreeRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
+    GenericGenomicRDD[(T, X)](InnerTreeRegionJoin[T, X]().broadcastAndJoin(
+      buildTree(flattenRddByRegions()),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
       kv => { getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2) })
@@ -429,7 +437,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Option[T], X)](RightOuterTreeRegionJoin[T, X]().partitionAndJoin(flattenRddByRegions(),
+    GenericGenomicRDD[(Option[T], X)](RightOuterTreeRegionJoin[T, X]().broadcastAndJoin(
+      buildTree(flattenRddByRegions()),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
       kv => {
@@ -492,7 +501,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[T], X), Z] = {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Iterable[T], X)](InnerTreeRegionJoinAndGroupByRight[T, X]().partitionAndJoin(flattenRddByRegions(),
+    GenericGenomicRDD[(Iterable[T], X)](InnerTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
+      buildTree(flattenRddByRegions()),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
       kv => { (kv._1.flatMap(getReferenceRegions) ++ genomicRdd.getReferenceRegions(kv._2)).toSeq })
@@ -519,7 +529,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[T], X), Z] = {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Iterable[T], X)](RightOuterTreeRegionJoinAndGroupByRight[T, X]().partitionAndJoin(flattenRddByRegions(),
+    GenericGenomicRDD[(Iterable[T], X)](RightOuterTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
+      buildTree(flattenRddByRegions()),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
       kv => {
