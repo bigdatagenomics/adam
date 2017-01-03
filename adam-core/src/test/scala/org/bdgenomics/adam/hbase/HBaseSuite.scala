@@ -48,12 +48,15 @@ class HBaseSuite extends ADAMFunSuite {
     val genoResult2 = genodataCaptor.getValue.take(1)(0)._2.head
 
     val correctResult1: Array[Byte] = Array(49, 95, 48, 48, 48, 48, 48, 49, 52, 51, 57, 54, 95, 67, 84, 71, 84, 95, 67, 95, 52)
+    /*
 
     val correctResult2: (String, Array[Byte]) = ("NA12878", Array(2, 2, -106, 2, 0, 0, 0, 2, 8, 67, 84, 71, 84, 2, 2,
       67, 0, 0, 0, 2, 2, 49, 2, -8, -32, 1, 2, -128, -31, 1, 2, 2, 0, 2, 14, 73, 110, 100, 101, 108, 81, 68, 0, 0, 0,
       2, -23, 38, -7, 64, 2, 82, -72, -42, 65, 2, 0, 2, -49, -9, -13, -65, 2, -90, -101, -60, 62, 0, 0, 0, 0, 0, 2, 14,
       78, 65, 49, 50, 56, 55, 56, 0, 0, 4, 0, 2, 0, 0, 2, 32, 2, 8, 2, 40, 0, 2, -58, 1, 6, 0, -68, -116, -85, 0, 0,
       -128, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+*/
+    val correctResult2: (String, Array[Byte]) = ("NA12878", Array(2, 0, 0, 0, 0, 2, 8, 67, 84, 71, 84, 2, 2, 67, 2, 1, 2, 0, 2, 14, 73, 110, 100, 101, 108, 81, 68, 0, 0, 0, 2, 2, 49, 2, -8, -32, 1, 2, -128, -31, 1, 2, 2, 1, 2, 0, 2, 4, 114, 100, 0, 0, 0, 2, -23, 38, -7, 64, 2, 82, -72, -42, 65, 2, 0, 2, -49, -9, -13, -65, 2, -90, -101, -60, 62, 0, 0, 0, 0, 0, 2, 14, 78, 65, 49, 50, 56, 55, 56, 0, 0, 4, 0, 2, 0, 0, 2, 32, 2, 8, 2, 40, 0, 2, -58, 1, 6, 0, -68, -116, -85, 0, 0, -128, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
     assert(genoResult1 === correctResult1)
     assert(genoResult2._1 === correctResult2._1)
@@ -67,12 +70,13 @@ class HBaseSuite extends ADAMFunSuite {
 
     val loadValueInput1: Array[Byte] = Array(49, 95, 48, 48, 48, 48, 48, 49, 52, 51, 57, 54, 95, 67, 84, 71, 84, 95, 67, 95, 52)
     val loadValue1 = new org.apache.hadoop.hbase.io.ImmutableBytesWritable(loadValueInput1)
-    val loadValue2array: Array[Byte] = Array(2, 2, -106, 2, 0, 0, 0, 2, 8, 67, 84, 71, 84, 2, 2, 67, 0, 0, 0, 2, 2, 49, 2, -8,
+    /*val loadValue2array: Array[Byte] = Array(2, 2, -106, 2, 0, 0, 0, 2, 8, 67, 84, 71, 84, 2, 2, 67, 0, 0, 0, 2, 2, 49, 2, -8,
       -32, 1, 2, -128, -31, 1, 2, 2, 0, 2, 14, 73, 110, 100, 101, 108, 81, 68, 0, 0, 0, 2, -23, 38, -7, 64, 2, 82,
       -72, -42, 65, 2, 0, 2, -49, -9, -13, -65, 2, -90, -101, -60, 62, 0, 0, 0, 0, 0, 2, 14, 78, 65, 49, 50, 56, 55,
       56, 0, 0, 4, 0, 2, 0, 0, 2, 32, 2, 8, 2, 40, 0, 2, -58, 1, 6, 0, -68, -116, -85, 0, 0, -128, -1, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0)
-
+*/
+    val loadValue2array: Array[Byte] = Array(2, 0, 0, 0, 0, 2, 8, 67, 84, 71, 84, 2, 2, 67, 2, 1, 2, 0, 2, 14, 73, 110, 100, 101, 108, 81, 68, 0, 0, 0, 2, 2, 49, 2, -8, -32, 1, 2, -128, -31, 1, 2, 2, 1, 2, 0, 2, 4, 114, 100, 0, 0, 0, 2, -23, 38, -7, 64, 2, 82, -72, -42, 65, 2, 0, 2, -49, -9, -13, -65, 2, -90, -101, -60, 62, 0, 0, 0, 0, 0, 2, 14, 78, 65, 49, 50, 56, 55, 56, 0, 0, 4, 0, 2, 0, 0, 2, 32, 2, 8, 2, 40, 0, 2, -58, 1, 6, 0, -68, -116, -85, 0, 0, -128, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     val myCell: Cell = new KeyValue(Bytes.toBytes("1_0000014396_CTGT_C_4"), Bytes.toBytes("g"), Bytes.toBytes("NA12878"), 100L, loadValue2array)
     val myCellArray = Array(myCell)
     val myResult: Result = Result.create(myCellArray)
@@ -97,8 +101,8 @@ class HBaseSuite extends ADAMFunSuite {
     assert(genoData.getContigName === "1")
     assert(genoData.getStart === 14396)
     assert(genoData.getEnd === 14400)
-    assert(genoData.getAlleles.get(0) === GenotypeAllele.Ref)
-    assert(genoData.getAlleles.get(1) === GenotypeAllele.Alt)
+    assert(genoData.getAlleles.get(0) === GenotypeAllele.REF)
+    assert(genoData.getAlleles.get(1) === GenotypeAllele.ALT)
   }
 
   sparkAfter("Done with HBase Tests") {
