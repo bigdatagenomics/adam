@@ -17,8 +17,11 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.formats.avro.{ Genotype, Variant, VariantAnnotation }
+import com.esotericsoftware.kryo.io.{ Input, Output }
+import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.bdgenomics.adam.rich.RichVariant
+import org.bdgenomics.adam.serialization.AvroSerializer
+import org.bdgenomics.formats.avro.{ Genotype, Variant, VariantAnnotation }
 
 /**
  * Singleton object for building VariantContexts.
@@ -83,4 +86,28 @@ class VariantContext(
     val position: ReferencePosition,
     val variant: RichVariant,
     val genotypes: Iterable[Genotype]) extends Serializable {
+}
+
+class VariantContextSerializer extends Serializer[VariantContext] {
+
+  val rpSerializer = new ReferencePositionSerializer
+  val vSerializer = new AvroSerializer[Variant]
+  val gtSerializer = new AvroSerializer[Genotype]
+
+  def write(kryo: Kryo, output: Output, obj: VariantContext) = {
+    rpSerializer.write(kryo, output, obj.position)
+    vSerializer.write(kryo, output, obj.variant.variant)
+    output.writeInt(obj.genotypes.size)
+    obj.genotypes.foreach(gt => gtSerializer.write(kryo, output, gt))
+  }
+
+  def read(kryo: Kryo, input: Input, klazz: Class[VariantContext]): VariantContext = {
+    val rp = rpSerializer.read(kryo, input, classOf[ReferencePosition])
+    val v = vSerializer.read(kryo, input, classOf[Variant])
+    val gts = new Array[Genotype](input.readInt())
+    gts.indices.foreach(idx => {
+      gts(idx) = gtSerializer.read(kryo, input, classOf[Genotype])
+    })
+    new VariantContext(rp, new RichVariant(v), gts.toIterable)
+  }
 }

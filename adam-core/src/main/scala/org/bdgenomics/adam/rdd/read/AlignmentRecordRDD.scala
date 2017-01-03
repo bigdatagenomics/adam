@@ -49,14 +49,46 @@ import org.bdgenomics.adam.rdd.feature.CoverageRDD
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro._
+import org.bdgenomics.utils.interval.array.{
+  IntervalArray,
+  IntervalArraySerializer
+}
 import org.seqdoop.hadoop_bam._
 import scala.collection.JavaConversions._
 import scala.language.implicitConversions
 import scala.math.{ abs, min }
+import scala.reflect.ClassTag
+
+private[adam] case class AlignmentRecordArray(
+    array: Array[(ReferenceRegion, AlignmentRecord)],
+    maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, AlignmentRecord] {
+
+  protected def replace(arr: Array[(ReferenceRegion, AlignmentRecord)],
+                        maxWidth: Long): IntervalArray[ReferenceRegion, AlignmentRecord] = {
+    AlignmentRecordArray(arr, maxWidth)
+  }
+}
+
+private[adam] class AlignmentRecordArraySerializer extends IntervalArraySerializer[ReferenceRegion, AlignmentRecord, AlignmentRecordArray] {
+
+  protected val kSerializer = new ReferenceRegionSerializer
+  protected val tSerializer = new AvroSerializer[AlignmentRecord]
+
+  protected def builder(arr: Array[(ReferenceRegion, AlignmentRecord)],
+                        maxIntervalWidth: Long): AlignmentRecordArray = {
+    AlignmentRecordArray(arr, maxIntervalWidth)
+  }
+}
 
 sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
+
+  protected def buildTree(rdd: RDD[(ReferenceRegion, AlignmentRecord)])(
+    implicit tTag: ClassTag[AlignmentRecord]): IntervalArray[ReferenceRegion, AlignmentRecord] = {
+    IntervalArray(rdd, AlignmentRecordArray.apply(_, _))
+  }
 
   /**
    * Replaces the underlying RDD and SequenceDictionary and emits a new object.

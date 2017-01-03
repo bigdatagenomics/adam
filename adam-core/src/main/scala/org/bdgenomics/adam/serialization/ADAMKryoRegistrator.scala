@@ -139,11 +139,30 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.adam.models.SequenceDictionary])
     kryo.register(classOf[org.bdgenomics.adam.models.SequenceRecord])
     kryo.register(classOf[org.bdgenomics.adam.models.SnpTable])
-    kryo.register(classOf[org.bdgenomics.adam.models.VariantContext])
+    kryo.register(classOf[org.bdgenomics.adam.models.VariantContext],
+      new org.bdgenomics.adam.models.VariantContextSerializer)
 
     // org.bdgenomics.adam.rdd
     kryo.register(classOf[org.bdgenomics.adam.rdd.GenomeBins])
     kryo.register(Class.forName("org.bdgenomics.adam.rdd.SortedIntervalPartitionJoinAndGroupByLeft$$anonfun$postProcessHits$1"))
+
+    // IntervalArray registrations for org.bdgenomics.adam.rdd
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.AlignmentRecordArray],
+      new org.bdgenomics.adam.rdd.read.AlignmentRecordArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.feature.CoverageArray],
+      new org.bdgenomics.adam.rdd.feature.CoverageArraySerializer(kryo))
+    kryo.register(classOf[org.bdgenomics.adam.rdd.feature.FeatureArray],
+      new org.bdgenomics.adam.rdd.feature.FeatureArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.fragment.FragmentArray],
+      new org.bdgenomics.adam.rdd.fragment.FragmentArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.variant.GenotypeArray],
+      new org.bdgenomics.adam.rdd.variant.GenotypeArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentArray],
+      new org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.variant.VariantArray],
+      new org.bdgenomics.adam.rdd.variant.VariantArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.variant.VariantContextArray],
+      new org.bdgenomics.adam.rdd.variant.VariantContextArraySerializer)
 
     // org.bdgenomics.adam.rdd.read
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.FlagStatMetrics])
@@ -219,24 +238,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.formats.avro.VariantAnnotationMessage])
     kryo.register(classOf[org.bdgenomics.formats.avro.VariantCallingAnnotations],
       new AvroSerializer[org.bdgenomics.formats.avro.VariantCallingAnnotations])
-
-    // org.bdgenomics.utils.intervalarray
-    // this is only exposed officially through the genomicrdd trait, thus, we'll only
-    // register it for said traits
-    kryo.register(classOf[org.bdgenomics.utils.intervalarray.IntervalArray[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.AlignmentRecord]],
-      new org.bdgenomics.utils.intervalarray.IntervalArraySerializer[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.AlignmentRecord](kryo))
-    kryo.register(classOf[org.bdgenomics.utils.intervalarray.IntervalArray[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.Feature]],
-      new org.bdgenomics.utils.intervalarray.IntervalArraySerializer[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.Feature](kryo))
-    kryo.register(classOf[org.bdgenomics.utils.intervalarray.IntervalArray[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.Fragment]],
-      new org.bdgenomics.utils.intervalarray.IntervalArraySerializer[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.Fragment](kryo))
-    kryo.register(classOf[org.bdgenomics.utils.intervalarray.IntervalArray[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.Genotype]],
-      new org.bdgenomics.utils.intervalarray.IntervalArraySerializer[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.Genotype](kryo))
-    kryo.register(classOf[org.bdgenomics.utils.intervalarray.IntervalArray[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.NucleotideContigFragment]],
-      new org.bdgenomics.utils.intervalarray.IntervalArraySerializer[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.NucleotideContigFragment](kryo))
-    kryo.register(classOf[org.bdgenomics.utils.intervalarray.IntervalArray[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.Variant]],
-      new org.bdgenomics.utils.intervalarray.IntervalArraySerializer[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.formats.avro.Variant](kryo))
-    kryo.register(classOf[org.bdgenomics.utils.intervalarray.IntervalArray[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.adam.models.VariantContext]],
-      new org.bdgenomics.utils.intervalarray.IntervalArraySerializer[org.bdgenomics.adam.models.ReferenceRegion, org.bdgenomics.adam.models.VariantContext](kryo))
 
     // org.codehaus.jackson.node
     kryo.register(classOf[org.codehaus.jackson.node.NullNode])

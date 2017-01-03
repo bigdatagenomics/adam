@@ -17,14 +17,43 @@
  */
 package org.bdgenomics.adam.rdd.feature
 
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.serializers.FieldSerializer
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
   Coverage,
   ReferenceRegion,
+  ReferenceRegionSerializer,
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.GenomicRDD
+import org.bdgenomics.utils.interval.array.{
+  IntervalArray,
+  IntervalArraySerializer
+}
 import scala.annotation.tailrec
+import scala.reflect.ClassTag
+
+private[adam] case class CoverageArray(
+    array: Array[(ReferenceRegion, Coverage)],
+    maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, Coverage] {
+
+  protected def replace(arr: Array[(ReferenceRegion, Coverage)],
+                        maxWidth: Long): IntervalArray[ReferenceRegion, Coverage] = {
+    CoverageArray(arr, maxWidth)
+  }
+}
+
+private[adam] class CoverageArraySerializer(kryo: Kryo) extends IntervalArraySerializer[ReferenceRegion, Coverage, CoverageArray] {
+
+  protected val kSerializer = new ReferenceRegionSerializer
+  protected val tSerializer = new FieldSerializer[Coverage](kryo, classOf[Coverage])
+
+  protected def builder(arr: Array[(ReferenceRegion, Coverage)],
+                        maxIntervalWidth: Long): CoverageArray = {
+    CoverageArray(arr, maxIntervalWidth)
+  }
+}
 
 /**
  * An RDD containing Coverage data.
@@ -35,6 +64,11 @@ import scala.annotation.tailrec
  */
 case class CoverageRDD(rdd: RDD[Coverage],
                        sequences: SequenceDictionary) extends GenomicRDD[Coverage, CoverageRDD] {
+
+  protected def buildTree(rdd: RDD[(ReferenceRegion, Coverage)])(
+    implicit tTag: ClassTag[Coverage]): IntervalArray[ReferenceRegion, Coverage] = {
+    IntervalArray(rdd, CoverageArray.apply(_, _))
+  }
 
   /**
    * Saves coverage as feature file.

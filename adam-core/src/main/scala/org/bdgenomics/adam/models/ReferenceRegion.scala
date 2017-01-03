@@ -20,7 +20,7 @@ package org.bdgenomics.adam.models
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
 import org.bdgenomics.formats.avro._
-import org.bdgenomics.utils.intervalarray.Interval
+import org.bdgenomics.utils.interval.array.Interval
 import scala.math.{ max, min }
 
 trait ReferenceOrdering[T <: ReferenceRegion] extends Ordering[T] {

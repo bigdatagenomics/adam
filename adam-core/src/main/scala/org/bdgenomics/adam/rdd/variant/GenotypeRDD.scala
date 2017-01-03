@@ -24,13 +24,41 @@ import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models.{
   ReferencePosition,
   ReferenceRegion,
+  ReferenceRegionSerializer,
   SequenceDictionary,
   VariantContext
 }
 import org.bdgenomics.adam.rdd.{ JavaSaveArgs, MultisampleAvroGenomicRDD }
 import org.bdgenomics.adam.rich.RichVariant
+import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.utils.cli.SaveArgs
+import org.bdgenomics.utils.interval.array.{
+  IntervalArray,
+  IntervalArraySerializer
+}
 import org.bdgenomics.formats.avro.{ Contig, Genotype, Sample }
+import scala.reflect.ClassTag
+
+private[adam] case class GenotypeArray(
+    array: Array[(ReferenceRegion, Genotype)],
+    maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, Genotype] {
+
+  protected def replace(arr: Array[(ReferenceRegion, Genotype)],
+                        maxWidth: Long): IntervalArray[ReferenceRegion, Genotype] = {
+    GenotypeArray(arr, maxWidth)
+  }
+}
+
+private[adam] class GenotypeArraySerializer extends IntervalArraySerializer[ReferenceRegion, Genotype, GenotypeArray] {
+
+  protected val kSerializer = new ReferenceRegionSerializer
+  protected val tSerializer = new AvroSerializer[Genotype]
+
+  protected def builder(arr: Array[(ReferenceRegion, Genotype)],
+                        maxIntervalWidth: Long): GenotypeArray = {
+    GenotypeArray(arr, maxIntervalWidth)
+  }
+}
 
 /**
  * An RDD containing genotypes called in a set of samples against a given
@@ -46,6 +74,11 @@ case class GenotypeRDD(rdd: RDD[Genotype],
                        sequences: SequenceDictionary,
                        @transient samples: Seq[Sample],
                        @transient headerLines: Seq[VCFHeaderLine] = SupportedHeaderLines.allHeaderLines) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
+
+  protected def buildTree(rdd: RDD[(ReferenceRegion, Genotype)])(
+    implicit tTag: ClassTag[Genotype]): IntervalArray[ReferenceRegion, Genotype] = {
+    IntervalArray(rdd, GenotypeArray.apply(_, _))
+  }
 
   /**
    * Java-friendly method for saving.

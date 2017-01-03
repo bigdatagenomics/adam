@@ -22,6 +22,7 @@ import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
   ReferenceRegion,
+  ReferenceRegionSerializer,
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, JavaSaveArgs }
@@ -30,9 +31,36 @@ import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
   UnalignedReadRDD
 }
+import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro._
+import org.bdgenomics.utils.interval.array.{
+  IntervalArray,
+  IntervalArraySerializer
+}
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
+import scala.reflect.ClassTag
+
+private[adam] case class FragmentArray(
+    array: Array[(ReferenceRegion, Fragment)],
+    maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, Fragment] {
+
+  protected def replace(arr: Array[(ReferenceRegion, Fragment)],
+                        maxWidth: Long): IntervalArray[ReferenceRegion, Fragment] = {
+    FragmentArray(arr, maxWidth)
+  }
+}
+
+private[adam] class FragmentArraySerializer extends IntervalArraySerializer[ReferenceRegion, Fragment, FragmentArray] {
+
+  protected val kSerializer = new ReferenceRegionSerializer
+  protected val tSerializer = new AvroSerializer[Fragment]
+
+  protected def builder(arr: Array[(ReferenceRegion, Fragment)],
+                        maxIntervalWidth: Long): FragmentArray = {
+    FragmentArray(arr, maxIntervalWidth)
+  }
+}
 
 /**
  * Helper singleton object for building FragmentRDDs.
@@ -60,6 +88,11 @@ private[rdd] object FragmentRDD {
 case class FragmentRDD(rdd: RDD[Fragment],
                        sequences: SequenceDictionary,
                        recordGroups: RecordGroupDictionary) extends AvroReadGroupGenomicRDD[Fragment, FragmentRDD] {
+
+  protected def buildTree(rdd: RDD[(ReferenceRegion, Fragment)])(
+    implicit tTag: ClassTag[Fragment]): IntervalArray[ReferenceRegion, Fragment] = {
+    IntervalArray(rdd, FragmentArray.apply(_, _))
+  }
 
   /**
    * Replaces the underlying RDD with a new RDD.

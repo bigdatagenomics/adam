@@ -30,8 +30,10 @@ import org.bdgenomics.adam.converters.{
 import org.bdgenomics.adam.models.{
   ReferencePosition,
   ReferenceRegion,
+  ReferenceRegionSerializer,
   SequenceDictionary,
-  VariantContext
+  VariantContext,
+  VariantContextSerializer
 }
 import org.bdgenomics.adam.rdd.{
   FileMerger,
@@ -39,11 +41,38 @@ import org.bdgenomics.adam.rdd.{
   VCFHeaderUtils
 }
 import org.bdgenomics.adam.rich.RichVariant
+import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro.Sample
-import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.cli.SaveArgs
+import org.bdgenomics.utils.misc.Logging
+import org.bdgenomics.utils.interval.array.{
+  IntervalArray,
+  IntervalArraySerializer
+}
 import org.seqdoop.hadoop_bam._
 import scala.collection.JavaConversions._
+import scala.reflect.ClassTag
+
+private[adam] case class VariantContextArray(
+    array: Array[(ReferenceRegion, VariantContext)],
+    maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, VariantContext] {
+
+  protected def replace(arr: Array[(ReferenceRegion, VariantContext)],
+                        maxWidth: Long): IntervalArray[ReferenceRegion, VariantContext] = {
+    VariantContextArray(arr, maxWidth)
+  }
+}
+
+private[adam] class VariantContextArraySerializer extends IntervalArraySerializer[ReferenceRegion, VariantContext, VariantContextArray] {
+
+  protected val kSerializer = new ReferenceRegionSerializer
+  protected val tSerializer = new VariantContextSerializer
+
+  protected def builder(arr: Array[(ReferenceRegion, VariantContext)],
+                        maxIntervalWidth: Long): VariantContextArray = {
+    VariantContextArray(arr, maxIntervalWidth)
+  }
+}
 
 /**
  * An RDD containing VariantContexts attached to a reference and samples.
@@ -59,6 +88,11 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
                              @transient samples: Seq[Sample],
                              @transient headerLines: Seq[VCFHeaderLine] = SupportedHeaderLines.allHeaderLines) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
+
+  protected def buildTree(rdd: RDD[(ReferenceRegion, VariantContext)])(
+    implicit tTag: ClassTag[VariantContext]): IntervalArray[ReferenceRegion, VariantContext] = {
+    IntervalArray(rdd, VariantContextArray.apply(_, _))
+  }
 
   /**
    * @return Returns a GenotypeRDD containing the Genotypes in this RDD.

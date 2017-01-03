@@ -19,14 +19,17 @@ package org.bdgenomics.adam.rdd
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.rdd.read.AlignmentRecordArray
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.interval.array.IntervalArray
 
 class RightOuterTreeRegionJoinSuite extends OuterRegionJoinSuite {
 
   def runJoin(leftRdd: RDD[(ReferenceRegion, AlignmentRecord)],
               rightRdd: RDD[(ReferenceRegion, AlignmentRecord)]): RDD[(Option[AlignmentRecord], AlignmentRecord)] = {
-    RightOuterTreeRegionJoin[AlignmentRecord, AlignmentRecord]().partitionAndJoin(
-      leftRdd,
+    RightOuterTreeRegionJoin[AlignmentRecord, AlignmentRecord]().broadcastAndJoin(
+      IntervalArray[ReferenceRegion, AlignmentRecord](leftRdd,
+        AlignmentRecordArray.apply(_, _)),
       rightRdd)
   }
 }
