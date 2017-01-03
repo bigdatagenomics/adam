@@ -70,9 +70,8 @@ private[rdd] object VCFHeaderUtils {
     // write the header
     vcw.writeHeader(header)
 
-    // close the writer and the underlying stream
+    // close the writer
+    // vcw.close calls close on the underlying stream, see ADAM-1337
     vcw.close()
-    os.flush()
-    os.close()
   }
 }
