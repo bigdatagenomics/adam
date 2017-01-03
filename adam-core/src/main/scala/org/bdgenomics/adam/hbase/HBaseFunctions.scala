@@ -46,7 +46,7 @@ import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles
 import org.apache.hadoop.fs.{ FSDataInputStream, FileSystem, Path }
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.variation.{ VariantContextRDD }
+import org.bdgenomics.adam.rdd.variant.{ VariantContextRDD }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion, SequenceDictionary, VariantContext }
