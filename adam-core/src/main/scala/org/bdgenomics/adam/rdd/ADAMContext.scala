@@ -277,8 +277,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   private def loadHeaderLines(filePath: String): Seq[VCFHeaderLine] = {
-    val header = readVcfHeader(filePath + "/_header")
-    headerLines(header)
+    getFsAndFilesWithFilter(filePath, new FileFilter("_header"))
+      .map(p => headerLines(readVcfHeader(p.toString)))
+      .flatten
+      .distinct
   }
 
   /**
