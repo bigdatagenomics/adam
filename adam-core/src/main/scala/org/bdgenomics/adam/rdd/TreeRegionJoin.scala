@@ -31,6 +31,29 @@ import scala.reflect.ClassTag
  */
 trait TreeRegionJoin[T, U] {
 
+  private[rdd] def runJoinAndGroupByRightWithTree(
+    tree: IntervalArray[ReferenceRegion, T],
+    rightRdd: RDD[(ReferenceRegion, U)])(
+      implicit tTag: ClassTag[T]): RDD[(Iterable[T], U)] = {
+    RunningMapSideJoin.time {
+      // broadcast this tree
+      val broadcastTree = rightRdd.context
+        .broadcast(tree)
+
+      // map and join
+      rightRdd.map(kv => {
+        val (rr, u) = kv
+
+        // what values keys does this overlap in the tree?
+        val overlappingValues = broadcastTree.value
+          .get(rr)
+          .map(_._2)
+
+        (overlappingValues, u)
+      })
+    }
+  }
+
   /**
    * Performs an inner region join between two RDDs, and groups by the
    * value on the right side of the join.
@@ -49,23 +72,8 @@ trait TreeRegionJoin[T, U] {
     // build the tree from the left RDD
     val tree = IntervalArray(leftRdd)
 
-    RunningMapSideJoin.time {
-      // broadcast this tree
-      val broadcastTree = leftRdd.context
-        .broadcast(tree)
-
-      // map and join
-      rightRdd.map(kv => {
-        val (rr, u) = kv
-
-        // what values keys does this overlap in the tree?
-        val overlappingValues = broadcastTree.value
-          .get(rr)
-          .map(_._2)
-
-        (overlappingValues, u)
-      })
-    }
+    // and join
+    runJoinAndGroupByRightWithTree(tree, rightRdd)
   }
 }
 
@@ -73,6 +81,15 @@ trait TreeRegionJoin[T, U] {
  * Implements an inner region join where the left side of the join is broadcast.
  */
 case class InnerTreeRegionJoin[T: ClassTag, U: ClassTag]() extends RegionJoin[T, U, T, U] with TreeRegionJoin[T, U] {
+
+  def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
+                       joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(T, U)] = {
+    runJoinAndGroupByRightWithTree(tree, joinedRDD)
+      .flatMap(kv => {
+        val (leftIterable, right) = kv
+        leftIterable.map(left => (left, right))
+      })
+  }
 
   /**
    * Performs an inner region join between two RDDs.
@@ -100,6 +117,20 @@ case class InnerTreeRegionJoin[T: ClassTag, U: ClassTag]() extends RegionJoin[T,
 case class RightOuterTreeRegionJoin[T: ClassTag, U: ClassTag]()
     extends RegionJoin[T, U, Option[T], U]
     with TreeRegionJoin[T, U] {
+
+  def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
+                       joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Option[T], U)] = {
+    runJoinAndGroupByRightWithTree(tree, joinedRDD)
+      .flatMap(kv => {
+        val (leftIterable, right) = kv
+
+        if (leftIterable.isEmpty) {
+          Iterable((None, right))
+        } else {
+          leftIterable.map(left => (Some(left), right))
+        }
+      })
+  }
 
   /**
    * Performs a right outer region join between two RDDs.
@@ -136,6 +167,12 @@ case class InnerTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
     extends RegionJoin[T, U, Iterable[T], U]
     with TreeRegionJoin[T, U] {
 
+  def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
+                       joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
+    runJoinAndGroupByRightWithTree(tree, joinedRDD)
+      .filter(_._1.nonEmpty)
+  }
+
   /**
    * Performs an inner join between two RDDs, followed by a groupBy on the
    * right object.
@@ -164,6 +201,11 @@ case class InnerTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
 case class RightOuterTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
     extends RegionJoin[T, U, Iterable[T], U]
     with TreeRegionJoin[T, U] {
+
+  def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
+                       joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
+    runJoinAndGroupByRightWithTree(tree, joinedRDD)
+  }
 
   /**
    * Performs an inner join between two RDDs, followed by a groupBy on the
