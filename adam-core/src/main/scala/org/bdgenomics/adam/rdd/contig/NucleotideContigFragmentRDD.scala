@@ -22,14 +22,42 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.FragmentConverter
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
+  ReferenceRegionSerializer,
   SequenceRecord,
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
+import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
+import org.bdgenomics.utils.interval.array.{
+  IntervalArray,
+  IntervalArraySerializer
+}
 import scala.collection.JavaConversions._
 import scala.math.max
+import scala.reflect.ClassTag
+
+private[adam] case class NucleotideContigFragmentArray(
+    array: Array[(ReferenceRegion, NucleotideContigFragment)],
+    maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, NucleotideContigFragment] {
+
+  protected def replace(arr: Array[(ReferenceRegion, NucleotideContigFragment)],
+                        maxWidth: Long): IntervalArray[ReferenceRegion, NucleotideContigFragment] = {
+    NucleotideContigFragmentArray(arr, maxWidth)
+  }
+}
+
+private[adam] class NucleotideContigFragmentArraySerializer extends IntervalArraySerializer[ReferenceRegion, NucleotideContigFragment, NucleotideContigFragmentArray] {
+
+  protected val kSerializer = new ReferenceRegionSerializer
+  protected val tSerializer = new AvroSerializer[NucleotideContigFragment]
+
+  protected def builder(arr: Array[(ReferenceRegion, NucleotideContigFragment)],
+                        maxIntervalWidth: Long): NucleotideContigFragmentArray = {
+    NucleotideContigFragmentArray(arr, maxIntervalWidth)
+  }
+}
 
 private[rdd] object NucleotideContigFragmentRDD extends Serializable {
 
@@ -71,6 +99,11 @@ private[rdd] object NucleotideContigFragmentRDD extends Serializable {
 case class NucleotideContigFragmentRDD(
     rdd: RDD[NucleotideContigFragment],
     sequences: SequenceDictionary) extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] with ReferenceFile {
+
+  protected def buildTree(rdd: RDD[(ReferenceRegion, NucleotideContigFragment)])(
+    implicit tTag: ClassTag[NucleotideContigFragment]): IntervalArray[ReferenceRegion, NucleotideContigFragment] = {
+    IntervalArray(rdd, NucleotideContigFragmentArray.apply(_, _))
+  }
 
   /**
    * Converts an RDD of nucleotide contig fragments into reads. Adjacent contig fragments are

@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.utils.intervalarray.IntervalArray
+import org.bdgenomics.utils.interval.array.IntervalArray
 import scala.reflect.ClassTag
 
 /**

@@ -18,8 +18,10 @@
 package org.bdgenomics.adam.rdd
 
 import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.rdd.variant.VariantArray
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Variant }
+import org.bdgenomics.utils.interval.array.IntervalArray
 import scala.reflect.ClassTag
 
 private case class ConcreteTreeRegionJoin[T: ClassTag, U]() extends TreeRegionJoin[T, U] {
@@ -43,6 +45,9 @@ class TreeRegionJoinSuite extends ADAMFunSuite {
           .build)
       })
 
+    val tree = IntervalArray[ReferenceRegion, Variant](rightRdd,
+      VariantArray.apply(_, _))
+
     val leftRdd = sc.parallelize(Seq(
       (ReferenceRegion("chr1", 12L, 22L), 0),
       (ReferenceRegion("chr1", 20L, 35L), 1),
@@ -57,7 +62,8 @@ class TreeRegionJoinSuite extends ADAMFunSuite {
           .build)
       })
 
-    val joinData = ConcreteTreeRegionJoin().runJoinAndGroupByRight(rightRdd, leftRdd)
+    val joinData = ConcreteTreeRegionJoin().runJoinAndGroupByRightWithTree(tree,
+      leftRdd)
       .map(kv => {
         val (k, v) = kv
         (k.map(_.getStart.toInt), v.getStart.toInt)

@@ -24,6 +24,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
+  ReferenceRegionSerializer,
   SequenceDictionary,
   VariantContext
 }
@@ -32,12 +33,40 @@ import org.bdgenomics.adam.rdd.{
   JavaSaveArgs,
   VCFHeaderUtils
 }
+import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro.{
   Contig,
   Sample,
   Variant
 }
+import org.bdgenomics.formats.avro.{ Contig, Variant }
+import org.bdgenomics.utils.interval.array.{
+  IntervalArray,
+  IntervalArraySerializer
+}
 import scala.collection.JavaConversions._
+import scala.reflect.ClassTag
+
+private[adam] case class VariantArray(
+    array: Array[(ReferenceRegion, Variant)],
+    maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, Variant] {
+
+  protected def replace(arr: Array[(ReferenceRegion, Variant)],
+                        maxWidth: Long): IntervalArray[ReferenceRegion, Variant] = {
+    VariantArray(arr, maxWidth)
+  }
+}
+
+private[adam] class VariantArraySerializer extends IntervalArraySerializer[ReferenceRegion, Variant, VariantArray] {
+
+  protected val kSerializer = new ReferenceRegionSerializer
+  protected val tSerializer = new AvroSerializer[Variant]
+
+  protected def builder(arr: Array[(ReferenceRegion, Variant)],
+                        maxIntervalWidth: Long): VariantArray = {
+    VariantArray(arr, maxIntervalWidth)
+  }
+}
 
 /**
  * An RDD containing variants called against a given reference genome.
@@ -50,6 +79,11 @@ import scala.collection.JavaConversions._
 case class VariantRDD(rdd: RDD[Variant],
                       sequences: SequenceDictionary,
                       @transient headerLines: Seq[VCFHeaderLine] = SupportedHeaderLines.allHeaderLines) extends AvroGenomicRDD[Variant, VariantRDD] {
+
+  protected def buildTree(rdd: RDD[(ReferenceRegion, Variant)])(
+    implicit tTag: ClassTag[Variant]): IntervalArray[ReferenceRegion, Variant] = {
+    IntervalArray(rdd, VariantArray.apply(_, _))
+  }
 
   override protected def saveMetadata(filePath: String) {
 
