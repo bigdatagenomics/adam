@@ -9,7 +9,7 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.bdgenomics.adam</groupId>
-  <artifactId>adam-parent_2.10</artifactId>
+  <artifactId>adam-parent_2.11</artifactId>
   <version>0.20.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>ADAM_${scala.version.prefix}</name>
@@ -19,8 +19,8 @@
   <properties>
     <java.version>1.8</java.version>
     <avro.version>1.8.0</avro.version>
-    <scala.version>2.10.6</scala.version>
-    <scala.version.prefix>2.10</scala.version.prefix>
+    <scala.version>2.11.8</scala.version>
+    <scala.version.prefix>2.11</scala.version.prefix>
     <spark.version>1.6.3</spark.version>
     <parquet.version>1.8.1</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
@@ -476,7 +476,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.parquet</groupId>
-        <!-- This library has no Scala 2.11 version, but using the 2.10 version seems to work. -->
+        <!-- This library has no Scala 2.11 version, but using the 2.11 version seems to work. -->
         <artifactId>parquet-scala_2.10</artifactId>
         <version>${parquet.version}</version>
         <exclusions>
