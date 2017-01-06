@@ -219,16 +219,6 @@ options]{#legacy-output}, `transformFeatures` has one optional argument:
   Parquet), sets the number of partitions to load. If not provided, this is
   chosen by Spark.
 
-### flatten
-
-Loads a Parquet file and rewrites the file as a new Parquet file with a flat
-schema. This is useful if loading the data into a database that supports Parquet
-but that does not support nested schemas. Takes two required arguments:
-
-1. `INPUT`: The input path to a Parquet file.
-2. `OUTPUT`: The path to save a Parquet file containing the input data, but
-   written using a flattened schema.
-
 ### mergeShards
 
 A CLI tool for merging a [sharded legacy file](#legacy-output) that was written
@@ -278,7 +268,7 @@ following options:
 These tools convert data between a legacy genomic file format and using ADAM's
 schemas to store data in Parquet.
 
-### vcf2adam, anno2adam, and adam2vcf
+### vcf2adam and adam2vcf
 
 These commands convert between VCF and Parquet using the Genotype and Variant
 schemas.
@@ -303,15 +293,9 @@ Additionally, `vcf2adam` takes the following options:
   if it would reduce the number of partitions to fewer than the number of
   Spark executors. This may have a substantial performance cost, and will
   invalidate any sort order.
-
-`anno2adam` converts VCFs with annotated variants (i.e., the VCF INFO fields)
-into Parquet using the VariantAnnotation schema. `anno2adam` takes the same two
-required arguments as `vcf2adam`. `anno2adam` takes the [default
-options](#default-args), and one additional option:
-
-* `-annotations_to_join`: A path to an existing Parquet file of
-  VariantAnnotations. These two files are joined together, and the annotations
-  are merged.
+* `-stringency`: Sets the validation stringency for conversion.
+  Defaults to `LENIENT.` See [validation stringency](#validation) for more
+  details.
 
 `adam2vcf` takes two required arguments:
 
@@ -329,6 +313,22 @@ options](#default-args). Additionally, `adam2vcf` takes the following options:
   contigs are ordered lexicographically. Conflicts with `-sort_on_save`.
 * `-single`: Saves the VCF file as headerless shards, and then merges the
   sharded files into a single VCF.
+* `-stringency`: Sets the validation stringency for conversion.
+  Defaults to `LENIENT.` See [validation stringency](#validation) for more
+  details.
+
+In these commands, the validation stringency is applied to the
+individual variants and genotypes. If a variant or genotype fails validation, the
+individual variant or genotype will be dropped (for lenient or silent validation,
+under strict validation, conversion will fail). Header lines are not validated.
+Due to a constraint imposed by the [htsjdk](https://github.com/samtools/htsjdk)
+library, which we use to parse VCF files, user provided header lines that do not
+match the header line definitions from the
+[VCF 4.2](https://samtools.github.io/hts-specs/VCFv4.2.pdf) spec will be
+overridden with the line definitions from the specification. Unfortunately, this
+behavior cannot be disabled. If there is a user provided vs. spec mismatch in
+format/info field count or type, this will likely cause validation failures
+during conversion.
 
 ### fasta2adam and adam2fasta
 
