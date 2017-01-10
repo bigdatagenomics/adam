@@ -404,6 +404,18 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(variants.rdd.count === 6)
   }
 
+  sparkTest("parse annotations for multi-allelic rows") {
+    val path = new File(testFile("gvcf_dir/gvcf_multiallelic.g.vcf")).getParent()
+
+    val variants = sc.loadVcf(path).toVariantRDD
+    val multiAllelicVariants = variants.rdd.filter(_.getReferenceAllele == "TAAA").sortBy(_.getAlternateAllele.length).collect()
+
+    val mleCounts = multiAllelicVariants.map(_.getAnnotation.getAttributes.get("MLEAC"))
+    //ALT    T,TA,TAA,<NON_REF>
+    //MLEAC  0,1,1,0
+    assert(mleCounts === Array("0", "1", "1"))
+  }
+
   sparkTest("load parquet with globs") {
     val inputPath = testFile("small.sam")
     val reads = sc.loadAlignments(inputPath)
