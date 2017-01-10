@@ -230,7 +230,12 @@ private[adam] class VariantContextConverter(
             val idx = vc.getAlleleIndex(allele)
             require(idx >= 1, "Unexpected index for alternate allele: " + vc.toString)
 
-            val variant = variantFormatFn(vc, Some(allele.getDisplayString), idx)
+            // variant annotations only contain values for alternate alleles so
+            // we need to subtract one from real index
+            val variantIdx = idx - 1
+            val variant = variantFormatFn(vc,
+              Some(allele.getDisplayString),
+              variantIdx)
             val genotypes = vc.getGenotypes.map(g => {
               genotypeFormatFn(g, variant, allele, idx, referenceModelIndex, true)
             })
