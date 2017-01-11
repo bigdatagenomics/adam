@@ -1,9 +1,23 @@
+/**
+ * Licensed to Big Data Genomics (BDG) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The BDG licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.bdgenomics.adam.hbase
 
-import org.bdgenomics.adam.util.ADAMFunSuite
 import org.apache.hadoop.hbase.{ HBaseConfiguration, TableName }
-import org.mockito.{ ArgumentCaptor, Matchers, Mockito }
-import org.mockito.Mockito._
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.Cell
@@ -11,23 +25,23 @@ import org.apache.hadoop.hbase.KeyValue
 import org.apache.hadoop.hbase.client.Result
 import org.apache.hadoop.hbase.client._
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.formats.avro.{ Genotype, GenotypeAllele }
-import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util.ADAMFunSuite
+import org.mockito.{ ArgumentCaptor, Matchers, Mockito }
+import org.mockito.Mockito._
 
 /**
  * Created by paschallj on 11/25/16.
  */
 class HBaseSuite extends ADAMFunSuite {
 
-  sparkBefore("Start HBase tests") {
-  }
-
   sparkTest("Save data from a VCF into HBase using KeyStrategy1") {
 
     val inputVariantContext = sc.loadVcf(testFile("small.vcf"))
 
-    val dao = Mockito.mock(classOf[HBaseFunctions.HBaseSparkDAO])
+    val dao = Mockito.mock(classOf[HBaseFunctions.HBaseDataAccessObject])
 
     val mockTable = Mockito.mock(classOf[org.apache.hadoop.hbase.client.Table])
     when(dao.getTable(Matchers.anyObject())).thenReturn(mockTable)
@@ -66,7 +80,7 @@ class HBaseSuite extends ADAMFunSuite {
 
   sparkTest("Load data from  HBase using KeyStrategy1") {
 
-    val dao = Mockito.mock(classOf[HBaseFunctions.HBaseSparkDAO])
+    val dao = Mockito.mock(classOf[HBaseFunctions.HBaseDataAccessObject])
 
     val loadValueInput1: Array[Byte] = Array(49, 95, 48, 48, 48, 48, 48, 49, 52, 51, 57, 54, 95, 67, 84, 71, 84, 95, 67, 95, 52)
     val loadValue1 = new org.apache.hadoop.hbase.io.ImmutableBytesWritable(loadValueInput1)
@@ -103,9 +117,6 @@ class HBaseSuite extends ADAMFunSuite {
     assert(genoData.getEnd === 14400)
     assert(genoData.getAlleles.get(0) === GenotypeAllele.REF)
     assert(genoData.getAlleles.get(1) === GenotypeAllele.ALT)
-  }
-
-  sparkAfter("Done with HBase Tests") {
   }
 
 }

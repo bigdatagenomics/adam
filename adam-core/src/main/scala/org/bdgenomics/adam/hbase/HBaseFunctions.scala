@@ -18,11 +18,13 @@
 package org.bdgenomics.adam.hbase
 
 import java.io.ByteArrayOutputStream
+
 import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.DatumReader
 import org.apache.avro.io.DatumWriter
+import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.avro.specific.SpecificDatumReader
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding
@@ -42,14 +44,16 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.{ HBaseConfiguration, TableName }
 import org.apache.hadoop.hbase.io.compress.Compression.Algorithm
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles
 import org.apache.hadoop.fs.{ FSDataInputStream, FileSystem, Path }
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.rdd.variant.{ VariantContextRDD }
+import org.bdgenomics.adam.rdd.variant.VariantContextRDD
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion, SequenceDictionary, VariantContext }
+
 import scala.io.Source
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConverters._
@@ -64,37 +68,65 @@ object HBaseFunctions {
    * when using the HBaseFunctions public API functions
    *
    * @param sc SparkContext
-   * @param inConf optional HBase Configuration parameter, only used if manually configuring HBase connection
-   * @param inConnection optional HBase Connection parameter, only used if manually configuring HBase connection
-   * @param inAdmin optional HBase Admin parameter, only used if manually configuring HBase connection
-   * @param inHBaseContext optional HBaseContext parameter, only used if manually configuring HBase connection
+   * @param optConf optional HBase Configuration parameter, only used if manually configuring HBase connection
+   * @param optConnection optional HBase Connection parameter, only used if manually configuring HBase connection
+   * @param optAdmin optional HBase Admin parameter, only used if manually configuring HBase connection
+   * @param optHBaseContext optional HBaseContext parameter, only used if manually configuring HBase connection
    */
+  class HBaseDataAccessObject(sc: SparkContext,
+                              optConf: Option[Configuration] = None,
+                              optConnection: Option[Connection] = None,
+                              optAdmin: Option[Admin] = None,
+                              optHBaseContext: Option[HBaseContext] = None) {
 
-  class HBaseSparkDAO(sc: SparkContext,
-                      inConf: Option[Configuration] = None,
-                      inConnection: Option[Connection] = None,
-                      inAdmin: Option[Admin] = None,
-                      inHBaseContext: Option[HBaseContext] = None) {
+    val conf = optConf.getOrElse(HBaseConfiguration.create())
+    val connection = optConf.getOrElse(ConnectionFactory.createConnection(conf)).asInstanceOf[Connection]
+    val admin = optAdmin.getOrElse(connection.getAdmin)
+    val hbaseContext = if (optHBaseContext.isDefined) optHBaseContext.get else new HBaseContext(sc, conf)
 
-    val conf = if (inConf.isDefined) inConf.get else HBaseConfiguration.create()
-    val connection = if (inConnection.isDefined) inConnection.get else ConnectionFactory.createConnection(conf)
-    val admin = if (inAdmin.isDefined) inAdmin.get else connection.getAdmin
-    val hbaseContext = if (inHBaseContext.isDefined) inHBaseContext.get else new HBaseContext(sc, conf)
+    /**
+     * Create HBase table
+     *
+     * @param tableDescriptorMeta
+     */
+    private[hbase] def createTable(tableDescriptorMeta: HTableDescriptor) { admin.createTable(tableDescriptorMeta) }
 
-    def createTable(tableDescriptorMeta: HTableDescriptor) { admin.createTable(tableDescriptorMeta) }
-    def getTable(tableName: TableName): Table = { connection.getTable(tableName) }
+    /**
+     * Get HBase Table
+     *
+     * @param tableName
+     * @return
+     */
+    private[hbase] def getTable(tableName: TableName): Table = { connection.getTable(tableName) }
 
-    def getHBaseRDD(tableName: org.apache.hadoop.hbase.TableName,
-                    scans: org.apache.hadoop.hbase.client.Scan): RDD[scala.Tuple2[org.apache.hadoop.hbase.io.ImmutableBytesWritable, org.apache.hadoop.hbase.client.Result]] = {
+    /**
+     * Perform HBase query and return data as RDD
+     *
+     * @param tableName
+     * @param scans defines HBase query
+     * @return RDD of HBase Key and Result
+     */
+    private[hbase] def getHBaseRDD(tableName: org.apache.hadoop.hbase.TableName,
+                                   scans: org.apache.hadoop.hbase.client.Scan): RDD[scala.Tuple2[org.apache.hadoop.hbase.io.ImmutableBytesWritable, org.apache.hadoop.hbase.client.Result]] = {
       hbaseContext.hbaseRDD(tableName, scans)
 
     }
 
-    def hbaseBulkLoad(genodata: RDD[(Array[Byte], List[(String, Array[Byte])])],
-                      hbaseTableName: String,
-                      flatMap: scala.Function1[(Array[Byte], List[(String, Array[Byte])]), scala.Iterator[scala.Tuple2[org.apache.hadoop.hbase.spark.KeyFamilyQualifier, scala.Array[scala.Byte]]]],
-                      stagingFolder: String) = {
-
+    /**
+     * Bulk loads data already formatted as Array[Byte] key and values into HBase
+     *
+     * @param genodata
+     * @param hbaseTableName
+     * @param flatMap
+     * @param stagingFolder
+     *
+     * Note:  org.apache.hadoop.hbase.spark.FamilyHFileWriteOptions are currently hard-coded as
+     *        FamilyHFileWriteOptions("GZ", "ROW", 128, "FAST_DIFF")
+     */
+    private[hbase] def hbaseBulkLoad(genodata: RDD[(Array[Byte], List[(String, Array[Byte])])],
+                                     hbaseTableName: String,
+                                     flatMap: ((Array[Byte], List[(String, Array[Byte])])) => Iterator[(Tuple2[KeyFamilyQualifier, Array[scala.Byte]])],
+                                     stagingFolder: String) = {
       val familyHBaseWriterOptions = new java.util.HashMap[Array[Byte], FamilyHFileWriteOptions]
       val f1Options = new FamilyHFileWriteOptions("GZ", "ROW", 128, "FAST_DIFF")
       familyHBaseWriterOptions.put(Bytes.toBytes("g"), f1Options)
@@ -110,16 +142,15 @@ object HBaseFunctions {
         HConstants.DEFAULT_MAX_FILE_SIZE)
 
       // This permission change appears necessary, plan to revisit to find better way
-      ("hadoop fs -chmod -R 660 " + stagingFolder) !
+
+      val fileSystem = FileSystem.get(conf)
+      fileSystem.setPermission(new Path(stagingFolder), FsPermission.createImmutable(660))
 
       val load = new LoadIncrementalHFiles(conf)
       load.doBulkLoad(new Path(stagingFolder), admin, connection.getTable(TableName.valueOf(hbaseTableName)),
         connection.getRegionLocator(TableName.valueOf(hbaseTableName)))
 
     }
-
-    def hbaseBulkDelete() {}
-
   }
 
   /**
@@ -133,6 +164,15 @@ object HBaseFunctions {
     def getKeyRangePrefix(rangePrefixInfo: U): (Array[Byte], Array[Byte])
   }
 
+  /**
+   * Contains the data fields needed to define a key in KeyStrategy1
+   *
+   * @param contigName
+   * @param start
+   * @param end
+   * @param refAllele
+   * @param altAllele
+   */
   private[hbase] case class KeyStrategy1rowKeyInfo(contigName: String,
                                                    start: Int,
                                                    end: Int,
@@ -159,18 +199,28 @@ object HBaseFunctions {
 
   private[hbase] object KeyStrategy1 extends KeyStrategy[KeyStrategy1rowKeyInfo, KeyStrategy1RangePrefixInfo] {
     def getKey(rowKeyInfo: KeyStrategy1rowKeyInfo): Array[Byte] = {
-      Bytes.toBytes(rowKeyInfo.contigName + "_" +
-        String.format("%10s", rowKeyInfo.start.toString).replace(' ', '0') + "_" +
-        rowKeyInfo.refAllele + "_" +
-        rowKeyInfo.altAllele + "_" +
-        (rowKeyInfo.end - rowKeyInfo.start).toString)
+
+      println("rowkey: " + "%s_%010d_%s_%s_%d".format(rowKeyInfo.contigName,
+        rowKeyInfo.start,
+        rowKeyInfo.refAllele,
+        rowKeyInfo.altAllele,
+        rowKeyInfo.end - rowKeyInfo.start))
+
+      Bytes.toBytes("%s_%010d_%s_%s_%d".format(rowKeyInfo.contigName,
+        rowKeyInfo.start,
+        rowKeyInfo.refAllele,
+        rowKeyInfo.altAllele,
+        rowKeyInfo.end - rowKeyInfo.start))
     }
 
     def getKeyRangePrefix(rangePrefixInfo: KeyStrategy1RangePrefixInfo): (Array[Byte], Array[Byte]) = {
-      val start = Bytes.toBytes(rangePrefixInfo.queryRegion.referenceName + "_" +
-        String.format("%10s", rangePrefixInfo.queryRegion.start.toString).replace(' ', '0'))
-      val stop = Bytes.toBytes(rangePrefixInfo.queryRegion.referenceName + "_" +
-        String.format("%10s", rangePrefixInfo.queryRegion.end.toString).replace(' ', '0'))
+
+      val start = Bytes.toBytes("%s_%010d".format(rangePrefixInfo.queryRegion.referenceName,
+        rangePrefixInfo.queryRegion.start))
+
+      val stop = Bytes.toBytes("%s_%010d".format(rangePrefixInfo.queryRegion.referenceName,
+        rangePrefixInfo.queryRegion.end))
+
       (start, stop)
     }
   }
@@ -178,13 +228,13 @@ object HBaseFunctions {
   /**
    * saves Sequence Dictionary data to HBase
    *
-   * @param dao
-   * @param hbaseTableName
-   * @param sequences
-   * @param sequenceDictionaryId
+   * @param dao HBase data access object
+   * @param hbaseTableName HBase table name in which to save this Sequence Dictionary
+   * @param sequences the SequenceDictionary which is being saved
+   * @param sequenceDictionaryId ID for this sequenc edictioanry
    */
 
-  private[hbase] def saveSequenceDictionaryToHBase(dao: HBaseSparkDAO,
+  private[hbase] def saveSequenceDictionaryToHBase(dao: HBaseDataAccessObject,
                                                    hbaseTableName: String,
                                                    sequences: SequenceDictionary,
                                                    sequenceDictionaryId: String): Unit = {
@@ -219,7 +269,7 @@ object HBaseFunctions {
    * @return
    */
 
-  private[hbase] def loadSequenceDictionaryFromHBase(dao: HBaseSparkDAO,
+  private[hbase] def loadSequenceDictionaryFromHBase(dao: HBaseDataAccessObject,
                                                      HbaseTableName: String,
                                                      sequenceDictionaryId: String): SequenceDictionary = {
 
@@ -252,7 +302,7 @@ object HBaseFunctions {
    * @param samples
    */
 
-  private[hbase] def saveSampleMetadataToHBase(dao: HBaseSparkDAO,
+  private[hbase] def saveSampleMetadataToHBase(dao: HBaseDataAccessObject,
                                                hbaseTableName: String,
                                                samples: Seq[Sample]): Unit = {
 
@@ -284,7 +334,7 @@ object HBaseFunctions {
    * @param sampleIds
    * @return
    */
-  private[hbase] def loadSampleMetadataFromHBase(dao: HBaseSparkDAO,
+  private[hbase] def loadSampleMetadataFromHBase(dao: HBaseDataAccessObject,
                                                  hbaseTableName: String,
                                                  sampleIds: Seq[String]): Seq[Sample] = {
 
@@ -292,16 +342,15 @@ object HBaseFunctions {
 
     var resultList = new ListBuffer[Sample]
 
+    val sampleDatumReader: DatumReader[Sample] =
+      new SpecificDatumReader[Sample](scala.reflect.classTag[Sample]
+        .runtimeClass
+        .asInstanceOf[Class[Sample]])
+
     sampleIds.foreach((sampleId) => {
       val get = new Get(Bytes.toBytes(sampleId))
       val result = table.get(get)
       val dataBytes = result.getValue(Bytes.toBytes("meta"), Bytes.toBytes("sampledata"))
-
-      val sampleDatumReader: DatumReader[Sample] =
-        new SpecificDatumReader[Sample](scala.reflect.classTag[Sample]
-          .runtimeClass
-          .asInstanceOf[Class[Sample]])
-
       val decoder = DecoderFactory.get().binaryDecoder(dataBytes, null)
 
       while (!decoder.isEnd) {
@@ -320,10 +369,10 @@ object HBaseFunctions {
    * @param sampleListFile File containing sample IDs, one per line
    * @param queryRegion Genomic ReferenceRegion used to limit query
    * @param partitions number of partitions in which to repartition RDD
+   * @param cachingValue used for HBase scan caching parameter, default to 100
    * @return
    */
-
-  private[hbase] def loadVariantContextsFromHBase(dao: HBaseSparkDAO,
+  private[hbase] def loadVariantContextsFromHBase(dao: HBaseDataAccessObject,
                                                   hbaseTableName: String,
                                                   sampleIds: Option[List[String]] = None,
                                                   sampleListFile: Option[String] = None,
@@ -359,7 +408,7 @@ object HBaseFunctions {
     val resultHBaseRDDrepar = if (partitions.isDefined) resultHBaseRDD.repartition(partitions.get)
     else resultHBaseRDD
 
-    val result: RDD[VariantContext] = resultHBaseRDDrepar.mapPartitions((iterator) => {
+    resultHBaseRDDrepar.mapPartitions((iterator) => {
 
       val genotypeDatumReader: DatumReader[Genotype] =
         new SpecificDatumReader[Genotype](scala.reflect.classTag[Genotype]
@@ -379,7 +428,7 @@ object HBaseFunctions {
         result
         val x = result.toList
 
-        val firstGenotype: Genotype = x.head
+        val firstGenotype = x.head
         val currVar: RichVariant = RichVariant.genotypeToRichVariant(firstGenotype)
         val currRefPos = ReferencePosition(currVar.variant.getContigName, currVar.variant.getStart)
 
@@ -388,8 +437,6 @@ object HBaseFunctions {
       })
 
     })
-
-    result
   }
 
   /**
@@ -397,11 +444,14 @@ object HBaseFunctions {
    * @param dao HBase Data Access Object
    * @param hbaseTableName HBase Table Name
    * @param splitsFileName File path and name for file with pre-defined splits of HBase key space
+   *
    */
 
-  def createHBaseGenotypeTable(dao: HBaseSparkDAO, hbaseTableName: String, splitsFileName: Option[String] = None) {
+  def createHBaseGenotypeTable(dao: HBaseDataAccessObject, hbaseTableName: String, splitsFileName: Option[String] = None) {
 
     val tableDescriptor = new HTableDescriptor(TableName.valueOf(hbaseTableName))
+
+    // Compression set of gzip
     tableDescriptor.addFamily(new HColumnDescriptor("g".getBytes()).setCompressionType(Algorithm.GZ)
       .setDataBlockEncoding(DataBlockEncoding.FAST_DIFF)
       .setMaxVersions(1))
@@ -413,7 +463,7 @@ object HBaseFunctions {
       val splits: Array[Array[Byte]] = Source.fromFile(splitsFileName.get).getLines.toArray
         .map(x => x.split(" "))
         .map(g => Bytes.toBytes(g(0) + "_"
-          + String.format("%10s", g(1)).replace(' ', '0')))
+          + "%010s".format(g(1))))
 
       dao.admin.createTable(tableDescriptor, splits)
     } else dao.admin.createTable(tableDescriptor)
@@ -440,7 +490,7 @@ object HBaseFunctions {
    * @param stagingFolder - user defined location (on HDFS) to which to save temporary staging files
    */
 
-  def saveVariantContextRDDToHBaseBulk(dao: HBaseSparkDAO,
+  def saveVariantContextRDDToHBaseBulk(dao: HBaseDataAccessObject,
                                        vcRdd: VariantContextRDD,
                                        hbaseTableName: String,
                                        sequenceDictionaryId: String,
@@ -509,33 +559,26 @@ object HBaseFunctions {
   }
 
   /**
+   * Delete samples(s) from HBase
    *
    * @param dao HBase Data Access Object
    * @param hbaseTableName HBase table name
-   * @param sampleIds List of sample ids
-   * @param sampleListFile File containing one sample id per row
-   * @param partitions number of paritions to use when performing bulk delete
+   * @param optSampleIds List of sample ids
+   * @param optSampleListFile File containing one sample id per row
+   * @param optPartitions number of paritions to use when performing bulk delete
    */
-
-  def deleteGenotypeSamplesFromHBase(dao: HBaseSparkDAO,
+  def deleteGenotypeSamplesFromHBase(dao: HBaseDataAccessObject,
                                      hbaseTableName: String,
-                                     sampleIds: Option[List[String]] = None,
-                                     sampleListFile: Option[String] = None,
-                                     partitions: Option[Int] = Some(1)): Unit = {
+                                     optSampleIds: Option[List[String]] = None,
+                                     optSampleListFile: Option[String] = None,
+                                     optPartitions: Option[Int] = Some(1)): Unit = {
 
     val scan = new Scan()
     scan.setCaching(100)
     scan.setMaxVersions(1)
 
-    val sampleIdsFinal: List[String] =
-      if (sampleListFile.isDefined) {
-        val sampleIdsLst: List[String] = Source.fromFile(sampleListFile.get).getLines.toList
-        sampleIdsLst.foreach((sampleId) => { scan.addColumn(Bytes.toBytes("g"), Bytes.toBytes(sampleId)) })
-        sampleIdsLst
-      } else {
-        sampleIds.get.foreach((sampleId) => { scan.addColumn(Bytes.toBytes("g"), Bytes.toBytes(sampleId)) })
-        sampleIds.get
-      }
+    val sampleIdsFinal = optSampleIds.getOrElse(Source.fromFile(optSampleListFile.get).getLines.toList)
+    sampleIdsFinal.foreach((sampleId) => { scan.addColumn(Bytes.toBytes("g"), Bytes.toBytes(sampleId)) })
 
     val resultHBaseRDD: RDD[(ImmutableBytesWritable, Result)] =
       dao.hbaseContext.hbaseRDD(TableName.valueOf(hbaseTableName), scan)
@@ -549,7 +592,7 @@ object HBaseFunctions {
         })
         currDelete
       },
-      partitions.get)
+      optPartitions.get)
   }
 
   /**
@@ -563,8 +606,7 @@ object HBaseFunctions {
    * @param partitions number of partitions in which to repartition RDD
    * @return
    */
-
-  def loadGenotypesFromHBase(dao: HBaseSparkDAO,
+  def loadGenotypesFromHBase(dao: HBaseDataAccessObject,
                              hbaseTableName: String,
                              sampleIds: List[String],
                              sequenceDictionaryId: String,
@@ -581,7 +623,5 @@ object HBaseFunctions {
       partitions = partitions)
 
     VariantContextRDD(genotypes, sequenceDictionary, sampleMetadata)
-
   }
-
 }

@@ -72,10 +72,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     // Register Avro classes using fully qualified class names
     // Sort alphabetically and add blank lines between packages
 
-    kryo.register(classOf[org.apache.hadoop.hbase.io.ImmutableBytesWritable])
-    kryo.register(classOf[org.apache.hadoop.hbase.client.Result])
-    kryo.register(classOf[org.apache.hadoop.hbase.Cell])
-    kryo.register(classOf[org.apache.hadoop.hbase.KeyValue])
     kryo.register(classOf[scala.Array[org.apache.hadoop.hbase.Cell]])
     kryo.register(classOf[org.apache.hadoop.hbase.protobuf.generated.ClientProtos.RegionLoadStats])
 
@@ -124,6 +120,12 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(Class.forName("org.apache.avro.Schema$Name"))
     kryo.register(Class.forName("org.apache.avro.Schema$LongSchema"))
     kryo.register(Class.forName("org.apache.avro.generic.GenericData$Array"))
+
+    // org.apache.hadoop.hbase
+    kryo.register(classOf[org.apache.hadoop.hbase.io.ImmutableBytesWritable])
+    kryo.register(classOf[org.apache.hadoop.hbase.client.Result])
+    kryo.register(classOf[org.apache.hadoop.hbase.Cell])
+    kryo.register(classOf[org.apache.hadoop.hbase.KeyValue])
 
     // org.apache.hadoop.io
     kryo.register(classOf[org.apache.hadoop.io.Text])
