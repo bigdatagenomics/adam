@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-
   <repositories>
     <repository>
       <id>cloudera</id>
@@ -479,6 +477,7 @@
         <artifactId>spark-streaming_2.10</artifactId>
         <version>${spark.version}</version>
         <scope>provided</scope>
+        <!--
         <exclusions>
           <exclusion>
             <groupId>org.apache.hadoop</groupId>
@@ -488,7 +487,7 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-mapreduce</artifactId>
           </exclusion>
-        </exclusions>
+        </exclusions> -->
       </dependency>
       <dependency>
         <groupId>org.apache.avro</groupId>
@@ -618,6 +617,7 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+  
   <profiles>
     <profile>
       <id>distribution</id>
