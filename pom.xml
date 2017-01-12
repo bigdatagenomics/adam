@@ -617,7 +617,7 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-  
+
   <profiles>
     <profile>
       <id>distribution</id>
