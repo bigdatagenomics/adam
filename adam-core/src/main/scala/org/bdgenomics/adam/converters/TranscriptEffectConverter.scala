@@ -172,15 +172,15 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
   /**
    * Parse the VCF INFO reserved key "ANN" value into zero or more TranscriptEffects.
    *
-   * @param s string to parse
+   * @param ann VCF INFO reserved key "ANN" value
    * @param stringency validation stringency
    * @return the VCF INFO reserved key "ANN" value parsed into zero or more TranscriptEffects
    */
   private[converters] def parseAnn(
-    s: String,
+    ann: Iterable[String],
     stringency: ValidationStringency): List[TranscriptEffect] = {
 
-    s.split(",").map(parseTranscriptEffect(_, stringency)).flatten.toList
+    ann.map(parseTranscriptEffect(_, stringency)).flatten.toList
   }
 
   /**
@@ -198,8 +198,8 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
     vc: VariantContext,
     stringency: ValidationStringency = ValidationStringency.STRICT): Option[List[TranscriptEffect]] = {
 
-    def parseAndFilter(attr: String): Option[List[TranscriptEffect]] = {
-      if (attr == VCFConstants.MISSING_VALUE_v4) {
+    def parseAndFilter(attr: Iterable[String]): Option[List[TranscriptEffect]] = {
+      if (attr.isEmpty) {
         None
       } else {
         val filtered = parseAnn(attr, stringency)
@@ -212,9 +212,9 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
       }
     }
 
-    val attrOpt = Option(vc.getAttributeAsString("ANN", null))
+    val attrOpt = Option(vc.getAttributeAsList("ANN"))
     try {
-      attrOpt.flatMap(attr => parseAndFilter(attr))
+      attrOpt.flatMap(attr => parseAndFilter(attr.asScala.map(_.asInstanceOf[java.lang.String])))
     } catch {
       case t: Throwable => {
         if (stringency == ValidationStringency.STRICT) {
@@ -235,7 +235,7 @@ private[adam] object TranscriptEffectConverter extends Serializable with Logging
    * @return the specified transcript effects converted into a string suitable for a VCF INFO
    *    reserved key "ANN" value
    */
-  def convertToVcfInfoAnnValue(effects: Seq[TranscriptEffect]): String = {
+  def convertToVcfInfoAnnValue(effects: Iterable[TranscriptEffect]): String = {
     def toFraction(numerator: java.lang.Integer, denominator: java.lang.Integer): String = {
       val numOpt = Option(numerator)
       val denomOpt = Option(denominator)

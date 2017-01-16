@@ -35,6 +35,7 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
   final val INVALID_NUMBER = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4|1/42|not a number|"
   final val INVALID_FRACTION = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|not a number/2|c.-485C>T|||4|1/42|453|"
   final val VALID = "T|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4|1/42|453|"
+  final val DIFFERENT_ALT = "A|upstream_gene_variant||TAS1R3|ENSG00000169962|transcript|ENST00000339381.5|protein_coding|1/2|c.-485C>T|||4|1/42|453|"
 
   var variant: Variant = null
   var variantContext: VariantContext = null
@@ -88,28 +89,36 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
     assert(te.getMessages.isEmpty)
   }
 
-  test("parse empty VCF ANN attribute") {
-    TranscriptEffectConverter.parseAnn(EMPTY, ValidationStringency.SILENT).isEmpty
+  test("parse empty list VCF ANN attribute") {
+    TranscriptEffectConverter.parseAnn(Seq.empty, ValidationStringency.SILENT).isEmpty
   }
 
-  test("parse empty VCF ANN attribute strict validation stringency") {
+  test("parse empty list VCF ANN attribute strict validation stringency") {
+    TranscriptEffectConverter.parseAnn(Seq.empty, ValidationStringency.STRICT).isEmpty
+  }
+
+  test("parse empty string VCF ANN attribute") {
+    TranscriptEffectConverter.parseAnn(Seq(EMPTY), ValidationStringency.SILENT).isEmpty
+  }
+
+  test("parse empty string VCF ANN attribute strict validation stringency") {
     intercept[IllegalArgumentException] {
-      TranscriptEffectConverter.parseAnn(EMPTY, ValidationStringency.STRICT)
+      TranscriptEffectConverter.parseAnn(Seq(EMPTY), ValidationStringency.STRICT)
     }
   }
 
   test("parse invalid VCF ANN attribute") {
-    TranscriptEffectConverter.parseAnn(INVALID, ValidationStringency.SILENT).isEmpty
+    TranscriptEffectConverter.parseAnn(Seq(INVALID), ValidationStringency.SILENT).isEmpty
   }
 
   test("parse invalid VCF ANN attribute strict validation stringency") {
     intercept[IllegalArgumentException] {
-      TranscriptEffectConverter.parseAnn(INVALID, ValidationStringency.STRICT)
+      TranscriptEffectConverter.parseAnn(Seq(INVALID), ValidationStringency.STRICT)
     }
   }
 
   test("parse VCF ANN attribute with one transcript effect") {
-    val ann = TranscriptEffectConverter.parseAnn(VALID, ValidationStringency.STRICT)
+    val ann = TranscriptEffectConverter.parseAnn(Seq(VALID), ValidationStringency.STRICT)
     assert(ann.length == 1)
 
     val te = ann.head
@@ -134,29 +143,63 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
     assert(te.getMessages.isEmpty)
   }
 
+  test("parse VCF ANN attribute with multiple transcript effects") {
+    val ann = TranscriptEffectConverter.parseAnn(Seq(VALID, VALID, VALID), ValidationStringency.STRICT)
+    assert(ann.length == 3)
+
+    ann.foreach(te => {
+      assert(te.getAlternateAllele == "T")
+      assert(te.getEffects.contains("upstream_gene_variant"))
+      assert(te.getGeneName == "TAS1R3")
+      assert(te.getGeneId == "ENSG00000169962")
+      assert(te.getFeatureType == "transcript")
+      assert(te.getFeatureId == "ENST00000339381.5")
+      assert(te.getBiotype == "protein_coding")
+      assert(te.getRank == 1)
+      assert(te.getTotal == 2)
+      assert(te.getTranscriptHgvs == "c.-485C>T")
+      assert(te.getProteinHgvs == null)
+      assert(te.getCdnaPosition == null)
+      assert(te.getCdnaLength == null)
+      assert(te.getCdsPosition == 4)
+      assert(te.getCdsLength == null)
+      assert(te.getProteinPosition == 1)
+      assert(te.getProteinLength == 42)
+      assert(te.getDistance == 453)
+      assert(te.getMessages.isEmpty)
+    })
+  }
+
   test("convert to transcript effect from null VCF ANN attribute in variant context") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(null)
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(null)
 
     val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext)
     assert(!transcriptEffects.isDefined)
   }
 
-  test("convert to transcript effect from missing value VCF ANN attribute in variant context") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(VCFConstants.MISSING_VALUE_v4)
-
-    val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext)
-    assert(!transcriptEffects.isDefined)
-  }
-
-  test("convert to transcript effect from empty VCF ANN attribute in variant context") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(EMPTY)
+  test("convert to transcript effect from empty list VCF ANN attribute in variant context") {
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList())
 
     val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.SILENT)
     assert(!transcriptEffects.isDefined)
   }
 
-  test("convert to transcript effect from empty VCF ANN attribute in variant context strict validation stringency") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(EMPTY)
+  test("convert to transcript effect from empty list VCF ANN attribute in variant context strict validation stringency") {
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList())
+
+    val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.STRICT)
+    assert(!transcriptEffects.isDefined)
+  }
+
+  test("convert to transcript effect from empty string VCF ANN attribute in variant context") {
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(EMPTY))
+
+    val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.SILENT)
+    assert(!transcriptEffects.isDefined)
+  }
+
+  test("convert to transcript effect from empty string VCF ANN attribute in variant context strict validation stringency") {
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(EMPTY))
 
     intercept[IllegalArgumentException] {
       TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.STRICT)
@@ -164,14 +207,14 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
   }
 
   test("convert to transcript effect from invalid VCF ANN attribute in variant context") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID)
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(INVALID))
 
     val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.SILENT)
     assert(!transcriptEffects.isDefined)
   }
 
   test("convert to transcript effect from invalid VCF ANN attribute in variant context strict validation stringency") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID)
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(INVALID))
 
     intercept[IllegalArgumentException] {
       TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.STRICT)
@@ -179,21 +222,21 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
   }
 
   test("convert to transcript effect from VCF ANN attribute with invalid number in variant context lenient validation stringency") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID_NUMBER)
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(INVALID_NUMBER))
 
     val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.LENIENT)
     assert(!transcriptEffects.isDefined)
   }
 
   test("convert to transcript effect from VCF ANN attribute with invalid fraction in variant context lenient validation stringency") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID_FRACTION)
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(INVALID_FRACTION))
 
     val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.LENIENT)
     assert(!transcriptEffects.isDefined)
   }
 
   test("convert to transcript effect from VCF ANN attribute with invalid number in variant context strict validation stringency") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID_NUMBER)
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(INVALID_NUMBER))
 
     intercept[NumberFormatException] {
       TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.STRICT)
@@ -201,7 +244,7 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
   }
 
   test("convert to transcript effect from VCF ANN attribute with invalid fraction in variant context strict validation stringency") {
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(INVALID_FRACTION)
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(INVALID_FRACTION))
 
     intercept[NumberFormatException] {
       TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext, ValidationStringency.STRICT)
@@ -213,7 +256,7 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
       .setAlternateAllele("A")
       .build()
 
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(VALID)
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(VALID))
 
     val transcriptEffects = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext)
     assert(!transcriptEffects.isDefined)
@@ -224,7 +267,7 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
       .setAlternateAllele("T")
       .build()
 
-    when(variantContext.getAttributeAsString("ANN", null)).thenReturn(VALID)
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(VALID))
 
     val transcriptEffectsOpt = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext)
     assert(transcriptEffectsOpt.isDefined)
@@ -250,6 +293,42 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
       assert(te.getProteinLength == 42)
       assert(te.getDistance == 453)
       assert(te.getMessages.isEmpty)
+    })
+  }
+
+  test("convert to transcript effect from VCF ANN attribute in variant context multiple effects same alt allele") {
+    variant = Variant.newBuilder()
+      .setAlternateAllele("T")
+      .build()
+
+    when(variantContext.getAttributeAsList("ANN")).thenReturn(toObjectList(VALID, VALID, VALID, DIFFERENT_ALT))
+
+    val transcriptEffectsOpt = TranscriptEffectConverter.convertToTranscriptEffects(variant, variantContext)
+    assert(transcriptEffectsOpt.isDefined)
+
+    transcriptEffectsOpt.foreach(transcriptEffects => {
+      assert(transcriptEffects.size === 3)
+      transcriptEffects.foreach(te => {
+        assert(te.getAlternateAllele == "T")
+        assert(te.getEffects.contains("upstream_gene_variant"))
+        assert(te.getGeneName == "TAS1R3")
+        assert(te.getGeneId == "ENSG00000169962")
+        assert(te.getFeatureType == "transcript")
+        assert(te.getFeatureId == "ENST00000339381.5")
+        assert(te.getBiotype == "protein_coding")
+        assert(te.getRank == 1)
+        assert(te.getTotal == 2)
+        assert(te.getTranscriptHgvs == "c.-485C>T")
+        assert(te.getProteinHgvs == null)
+        assert(te.getCdnaPosition == null)
+        assert(te.getCdnaLength == null)
+        assert(te.getCdsPosition == 4)
+        assert(te.getCdsLength == null)
+        assert(te.getProteinPosition == 1)
+        assert(te.getProteinLength == 42)
+        assert(te.getDistance == 453)
+        assert(te.getMessages.isEmpty)
+      })
     })
   }
 
@@ -309,5 +388,11 @@ class TranscriptEffectConverterSuite extends ADAMFunSuite {
     // should log warning "Incorrect fractional value ?/2, missing numerator" and set to empty string
     // when ValidationStringency is made available for --> VCF, test STRICT throws exception
     assert(!TranscriptEffectConverter.convertToVcfInfoAnnValue(Seq(te)).contains("2"))
+  }
+
+  def toObjectList(values: String*): java.util.List[Object] = {
+    val list = new java.util.ArrayList[Object]()
+    values.foreach(list.add(_))
+    list
   }
 }

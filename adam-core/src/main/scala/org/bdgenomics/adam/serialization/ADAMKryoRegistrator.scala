@@ -246,6 +246,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     // scala
     kryo.register(classOf[scala.Array[htsjdk.variant.vcf.VCFHeader]])
+    kryo.register(classOf[scala.Array[java.lang.Long]])
     kryo.register(classOf[scala.Array[java.lang.Object]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.AlignmentRecord]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Contig]])
@@ -274,6 +275,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.rich.RichAlignmentRecord]])
     kryo.register(classOf[scala.Array[scala.collection.Seq[_]]])
     kryo.register(classOf[scala.Array[Int]])
+    kryo.register(classOf[scala.Array[Long]])
     kryo.register(classOf[scala.Array[String]])
     kryo.register(classOf[scala.Array[Option[_]]])
     kryo.register(Class.forName("scala.Tuple2$mcCC$sp"))

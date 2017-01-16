@@ -385,7 +385,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("bqsr1.vcf").replace("bqsr1", "*")
 
     val variants = sc.loadVcf(path).toVariantRDD
-    assert(variants.rdd.count === 710)
+    assert(variants.rdd.count === 715)
   }
 
   sparkTest("load vcf from a directory") {
@@ -445,6 +445,50 @@ class ADAMContextSuite extends ADAMFunSuite {
     intercept[FileNotFoundException] {
       sc.getFsAndFiles(new Path(outputPath))
     }
+  }
+
+  sparkTest("can read a SnpEff-annotated .vcf file") {
+    val path = testFile("small_snpeff.vcf")
+    val variantRdd = sc.loadVariants(path)
+    val variants = variantRdd.rdd.sortBy(_.getStart).collect
+
+    variants.foreach(v => v.getStart.longValue match {
+      case 14396L => {
+        assert(v.getReferenceAllele === "CTGT")
+        assert(v.getAlternateAllele === "C")
+        assert(v.getAnnotation.getTranscriptEffects.size === 4)
+
+        val te = v.getAnnotation.getTranscriptEffects.get(0)
+        assert(te.getAlternateAllele === "C")
+        assert(te.getEffects.contains("downstream_gene_variant"))
+        assert(te.getGeneName === "WASH7P")
+        assert(te.getGeneId === "ENSG00000227232")
+        assert(te.getFeatureType === "transcript")
+        assert(te.getFeatureId === "ENST00000488147.1")
+        assert(te.getBiotype === "unprocessed_pseudogene")
+      }
+      case 14521L => {
+        assert(v.getReferenceAllele === "G")
+        assert(v.getAlternateAllele === "A")
+        assert(v.getAnnotation.getTranscriptEffects.size === 4)
+      }
+      case 19189L => {
+        assert(v.getReferenceAllele === "GC")
+        assert(v.getAlternateAllele === "G")
+        assert(v.getAnnotation.getTranscriptEffects.size === 3)
+      }
+      case 63734L => {
+        assert(v.getReferenceAllele === "CCTA")
+        assert(v.getAlternateAllele === "C")
+        assert(v.getAnnotation.getTranscriptEffects.size === 1)
+      }
+      case 752720L => {
+        assert(v.getReferenceAllele === "A")
+        assert(v.getAlternateAllele === "G")
+        assert(v.getAnnotation.getTranscriptEffects.size === 2)
+      }
+      case _ => fail("unexpected variant start " + v.getStart)
+    })
   }
 }
 
