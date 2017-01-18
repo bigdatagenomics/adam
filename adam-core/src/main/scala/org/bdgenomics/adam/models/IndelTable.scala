@@ -50,18 +50,6 @@ private[adam] class IndelTable(private val table: Map[String, Iterable[Consensus
 private[adam] object IndelTable {
 
   /**
-   * Creates an indel table from a file containing known indels.
-   *
-   * @param knownIndelsFile Path to file with known indels.
-   * @param sc SparkContext to use for loading.
-   * @return Returns a table with the known indels populated.
-   */
-  def apply(knownIndelsFile: String, sc: SparkContext): IndelTable = {
-    val rdd: RDD[Variant] = sc.loadVariants(knownIndelsFile).rdd
-    apply(rdd)
-  }
-
-  /**
    * Creates an indel table from an RDD containing known variants.
    *
    * @param variants RDD of variants.
@@ -76,11 +64,12 @@ private[adam] object IndelTable {
           val deletionLength = v.getReferenceAllele.length - v.getAlternateAllele.length
           val start = v.getStart + v.getAlternateAllele.length
 
-          Consensus("", ReferenceRegion(referenceName, start, start + deletionLength))
+          Consensus("", ReferenceRegion(referenceName, start, start + deletionLength + 1))
         } else {
           val start = v.getStart + v.getReferenceAllele.length
 
-          Consensus(v.getAlternateAllele.drop(v.getReferenceAllele.length), ReferenceRegion(referenceName, start, start + 1))
+          Consensus(v.getAlternateAllele.drop(v.getReferenceAllele.length),
+            ReferenceRegion(referenceName, start, start + 1))
         }
 
         (referenceName, consensus)

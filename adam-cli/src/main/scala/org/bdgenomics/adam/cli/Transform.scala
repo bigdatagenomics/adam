@@ -174,9 +174,9 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
 
       // fold and get the consensus model for this realignment run
       val consensusGenerator = Option(args.knownIndelsFile)
-        .fold(new ConsensusGeneratorFromReads().asInstanceOf[ConsensusGenerator])(
-          new ConsensusGeneratorFromKnowns(_, rdd.rdd.context).asInstanceOf[ConsensusGenerator]
-        )
+        .fold(ConsensusGenerator.fromReads)(file => {
+          ConsensusGenerator.fromKnownIndels(rdd.rdd.context.loadVariants(file))
+        })
 
       // run realignment
       val realignmentRdd = rdd.realignIndels(

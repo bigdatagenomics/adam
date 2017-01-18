@@ -21,7 +21,7 @@ import htsjdk.samtools.{ Cigar, CigarElement, CigarOperator }
 import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.algorithms.consensus.{ Consensus, ConsensusGenerator, ConsensusGeneratorFromReads }
+import org.bdgenomics.adam.algorithms.consensus.{ Consensus, ConsensusGenerator }
 import org.bdgenomics.adam.models.{ MdTag, ReferencePosition, ReferenceRegion }
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
@@ -43,7 +43,7 @@ private[read] object RealignIndels extends Serializable with Logging {
    */
   def apply(
     rdd: RDD[AlignmentRecord],
-    consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
+    consensusModel: ConsensusGenerator = ConsensusGenerator.fromReads,
     dataIsSorted: Boolean = false,
     maxIndelSize: Int = 500,
     maxConsensusNumber: Int = 30,
@@ -222,7 +222,7 @@ private[read] object RealignIndels extends Serializable with Logging {
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels._
 
 private[read] class RealignIndels(
-    val consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
+    val consensusModel: ConsensusGenerator = ConsensusGenerator.fromReads,
     val dataIsSorted: Boolean = false,
     val maxIndelSize: Int = 500,
     val maxConsensusNumber: Int = 30,
@@ -258,6 +258,8 @@ private[read] class RealignIndels(
         refRegion
       )
       var consensus = consensusModel.findConsensus(readsToClean)
+        .toSeq
+        .distinct
 
       // reduce count of consensus sequences
       if (consensus.size > maxConsensusNumber) {

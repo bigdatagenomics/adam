@@ -70,7 +70,7 @@ class IndelTableSuite extends ADAMFunSuite {
     assert(delT.head.consensus === "")
     assert(delT.head.index.referenceName === "2")
     assert(delT.head.index.start === 51)
-    assert(delT.head.index.end === 54)
+    assert(delT.head.index.end === 55)
   }
 
 }
