@@ -36,10 +36,9 @@ import scala.transient
  * @param file Path to file containing variants.
  * @param sc Spark context to use.
  */
-private[adam] class ConsensusGeneratorFromKnowns(file: String,
-                                                 sc: SparkContext) extends ConsensusGenerator {
+private[adam] class ConsensusGeneratorFromKnowns(rdd: RDD[Variant]) extends ConsensusGenerator {
 
-  private val indelTable = sc.broadcast(IndelTable(file, sc))
+  private val indelTable = rdd.context.broadcast(IndelTable(rdd))
 
   /**
    * Generates targets to add to initial set of indel realignment targets, if additional
@@ -48,10 +47,11 @@ private[adam] class ConsensusGeneratorFromKnowns(file: String,
    * @return Returns an option which wraps an RDD of indel realignment targets.
    */
   def targetsToAdd(): Option[RDD[IndelRealignmentTarget]] = {
-    val rdd: RDD[Variant] = sc.loadVariants(file).rdd
 
     Some(rdd.filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
-      .map(v => ReferenceRegion(v.getContigName, v.getStart, v.getStart + v.getReferenceAllele.length))
+      .map(v => ReferenceRegion(v.getContigName,
+        v.getStart,
+        v.getStart + v.getReferenceAllele.length))
       .map(r => new IndelRealignmentTarget(Some(r), r)))
   }
 

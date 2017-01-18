@@ -126,6 +126,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     // org.bdgenomics.adam.models
     kryo.register(classOf[org.bdgenomics.adam.models.Coverage])
+    kryo.register(classOf[org.bdgenomics.adam.models.IndelTable])
     kryo.register(classOf[org.bdgenomics.adam.models.MdTag])
     kryo.register(classOf[org.bdgenomics.adam.models.MultiContigNonoverlappingRegions])
     kryo.register(classOf[org.bdgenomics.adam.models.NonoverlappingRegions])
