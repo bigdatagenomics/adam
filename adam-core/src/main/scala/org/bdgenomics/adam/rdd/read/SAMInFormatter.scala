@@ -40,7 +40,7 @@ object SAMInFormatter extends AnySAMInFormatterCompanion[SAMInFormatter] {
   }
 }
 
-private[read] case class SAMInFormatter private (
+case class SAMInFormatter private (
     header: SAMFileHeaderWritable,
     recordGroups: RecordGroupDictionary,
     converter: AlignmentRecordConverter) extends AnySAMInFormatter[SAMInFormatter] {

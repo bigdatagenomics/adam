@@ -51,7 +51,7 @@ object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContex
   }
 }
 
-private[variant] case class VCFInFormatter private (
+case class VCFInFormatter private (
     sequences: SequenceDictionary,
     samples: Seq[String],
     headerLines: Seq[VCFHeaderLine]) extends InFormatter[VariantContext, VariantContextRDD, VCFInFormatter] {
