@@ -55,7 +55,7 @@ object InterleavedFASTQInFormatter extends InFormatterCompanion[Fragment, Fragme
   }
 }
 
-private[fragment] class InterleavedFASTQInFormatter private (
+class InterleavedFASTQInFormatter private (
     conf: Configuration) extends InFormatter[Fragment, FragmentRDD, InterleavedFASTQInFormatter] with Logging {
 
   protected val companion = InterleavedFASTQInFormatter
