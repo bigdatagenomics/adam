@@ -1,6 +1,7 @@
 ##fileformat=VCFv4.1
 ##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
 ##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">
+##contig=<ID=22,length=51304566>
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
 22	16050612	rs2186463	C	G	.	.	WGT=3
 22	16050612	rs146752890	C	G	.	.	WGT=1

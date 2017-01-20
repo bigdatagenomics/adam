@@ -164,7 +164,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.adam.models.MdTag])
     kryo.register(classOf[org.bdgenomics.adam.models.MultiContigNonoverlappingRegions])
     kryo.register(classOf[org.bdgenomics.adam.models.NonoverlappingRegions])
-    kryo.register(classOf[org.bdgenomics.adam.models.QualityScore])
     kryo.register(classOf[org.bdgenomics.adam.models.RecordGroup])
     kryo.register(classOf[org.bdgenomics.adam.models.RecordGroupDictionary])
     kryo.register(classOf[org.bdgenomics.adam.models.ReferencePosition],
@@ -173,7 +172,8 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.adam.models.SAMFileHeaderWritable])
     kryo.register(classOf[org.bdgenomics.adam.models.SequenceDictionary])
     kryo.register(classOf[org.bdgenomics.adam.models.SequenceRecord])
-    kryo.register(classOf[org.bdgenomics.adam.models.SnpTable])
+    kryo.register(classOf[org.bdgenomics.adam.models.SnpTable],
+      new org.bdgenomics.adam.models.SnpTableSerializer)
     kryo.register(classOf[org.bdgenomics.adam.models.VariantContext],
       new org.bdgenomics.adam.models.VariantContextSerializer)
 
@@ -216,16 +216,13 @@ class ADAMKryoRegistrator extends KryoRegistrator {
       new org.bdgenomics.adam.rdd.read.realignment.ZippedTargetSetSerializer)
 
     // org.bdgenomics.adam.rdd.read.recalibration.
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CovariateSpace])
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CovariateKey])
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CycleCovariate])
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.DinucCovariate])
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CovariateKey])
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.ObservationAccumulator])
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.RecalibrationTable])
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.Observation])
 
     // org.bdgenomics.adam.rich
-    kryo.register(classOf[org.bdgenomics.adam.rich.DecadentRead])
-    kryo.register(classOf[org.bdgenomics.adam.rich.ReferenceSequenceContext])
     kryo.register(classOf[org.bdgenomics.adam.rich.RichAlignmentRecord])
     kryo.register(classOf[org.bdgenomics.adam.rich.RichVariant])
 
@@ -308,6 +305,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.ReferenceRegion]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.SequenceRecord]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.VariantContext]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.rdd.read.recalibration.CovariateKey]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.rich.RichAlignmentRecord]])
     kryo.register(classOf[scala.Array[scala.collection.Seq[_]]])
     kryo.register(classOf[scala.Array[Int]])

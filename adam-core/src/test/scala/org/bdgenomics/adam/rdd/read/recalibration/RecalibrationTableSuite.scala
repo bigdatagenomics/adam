@@ -18,36 +18,28 @@
 package org.bdgenomics.adam.rdd.read.recalibration
 
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.scalatest.FunSuite
 
-/**
- * A Covariate represents a predictor, also known as a "feature" or
- * "independent variable".
- *
- * @tparam T The type of this feature.
- */
-private[recalibration] abstract class Covariate[T] {
+class RecalibrationTableSuite extends FunSuite {
 
-  /**
-   * Given a read, computes the value of this covariate for each residue in the
-   * read.
-   *
-   * @param read The read to observe.
-   * @return The covariates corresponding to each base in this read.
-   */
-  def compute(read: AlignmentRecord): Array[T]
+  val observedCovariates = Map((CovariateKey(0,
+    (50 + 33).toChar,
+    2,
+    'A',
+    'C') -> new Aggregate(1000000, 1, 10.0)),
+    (CovariateKey(0,
+      (40 + 33).toChar,
+      1,
+      'N',
+      'N') -> new Aggregate(100000, 1, 10.0)))
+  val table = RecalibrationTable(new ObservationTable(
+    observedCovariates))
 
-  /**
-   * Format the provided covariate value to be compatible with GATK's CSV output.
-   *
-   * @param cov A covariate value to render.
-   * @return Returns the covariate value rendered as a single CSV cell.
-   */
-  def toCSV(cov: T): String = {
-    cov.toString
+  test("look up quality scores in table") {
+    val scores = table(observedCovariates.map(_._1).toArray)
+
+    assert(scores.size === 2)
+    assert(scores(0) === (50 + 33).toChar)
+    assert(scores(1) === (47 + 33).toChar)
   }
-
-  /**
-   * A short name for this covariate, used in CSV output header.
-   */
-  val csvFieldName: String
 }

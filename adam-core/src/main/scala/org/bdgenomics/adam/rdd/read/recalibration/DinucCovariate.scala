@@ -17,13 +17,24 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.rich.DecadentRead
+import org.bdgenomics.adam.instrumentation.Timers._
+import org.bdgenomics.formats.avro.AlignmentRecord
+import scala.annotation.tailrec
 
-// TODO: should inherit from something like AbstractCovariate[(DNABase, DNABase)]
-private[adam] class DinucCovariate extends AbstractCovariate[(Char, Char)] {
-  def compute(read: DecadentRead): Seq[Option[(Char, Char)]] = {
-    val sequence = read.residues.map(_.base)
-    if (read.isNegativeRead) {
+/**
+ * An error covariate that tracks quality score estimation errors that are
+ * correlated with two nucleotides appearing in sequence in a read.
+ */
+private[adam] class DinucCovariate extends Covariate[(Char, Char)] {
+
+  /**
+   * @param read The read to compute the covariate for.
+   * @return Returns an array of dinucleotides.
+   */
+  def compute(read: AlignmentRecord): Array[(Char, Char)] = ComputingDinucCovariate.time {
+    val sequence = read.getSequence
+    if (read.getReadNegativeStrand) {
+
       /* Use the reverse-complement of the sequence to get back the original
        * sequence as it was read by the sequencing machine. The sequencer
        * always reads from the 5' to the 3' end of each strand, but the output
@@ -31,46 +42,73 @@ private[adam] class DinucCovariate extends AbstractCovariate[(Char, Char)] {
        * use the reverse-complement if this read was originally from the
        * complementary strand.
        */
-      dinucs(complement(sequence.reverse)).reverse
+      revDinucs(complement(sequence))
     } else {
-      dinucs(sequence)
+      fwdDinucs(sequence)
     }
   }
 
-  private def dinucs(sequence: Seq[Char]): Seq[Option[(Char, Char)]] = {
-    sequence.zipWithIndex.map {
-      case (current, index) =>
-        assert(Seq('A', 'C', 'T', 'G', 'N').contains(current))
-        def previous = sequence(index - 1)
-        if (index > 0 && previous != 'N' && current != 'N') {
-          Some((previous, current))
+  private[recalibration] def fwdDinucs(sequence: String): Array[(Char, Char)] = {
+    val array = new Array[(Char, Char)](sequence.length)
+    dinucs(sequence, false, array)
+  }
+
+  private[recalibration] def revDinucs(sequence: String): Array[(Char, Char)] = {
+    val array = new Array[(Char, Char)](sequence.length)
+    dinucs(sequence, true, array)
+  }
+
+  @tailrec private def dinucs(sequence: String,
+                              swap: Boolean,
+                              array: Array[(Char, Char)],
+                              idx: Int = 0): Array[(Char, Char)] = {
+    if (idx < 0 || idx >= sequence.length) {
+      array
+    } else {
+      val current = sequence(idx)
+      // previously, this was implemented as a lookup into a set
+      // unrolling this and not using a set is 40% faster
+      //
+      // this is ugly, but as they say,
+      // "At 50, everyone has the face they deserve"
+      require(current == 'A' ||
+        current == 'C' ||
+        current == 'G' ||
+        current == 'T' ||
+        current == 'N',
+        "Saw invalid base %s. Accepted bases are A,C,G,T,N.".format(current))
+      val elem = if ((!swap && idx > 0) || (swap && idx < sequence.length - 1)) {
+        val previous = if (swap) {
+          sequence(idx + 1)
         } else {
-          None
+          sequence(idx - 1)
         }
+        if (previous != 'N' && current != 'N') {
+          (previous, current)
+        } else {
+          ('N', 'N')
+        }
+      } else {
+        ('N', 'N')
+      }
+      array(idx) = elem
+      dinucs(sequence, swap, array, idx = idx + 1)
     }
   }
 
-  private def complement(sequence: Seq[Char]): Seq[Char] = {
+  override def toCSV(cov: (Char, Char)): String = {
+    "%s%s".format(cov._1, cov._2)
+  }
+
+  private def complement(sequence: String): String = {
     sequence.map {
       case 'A' => 'T'
       case 'T' => 'A'
       case 'C' => 'G'
       case 'G' => 'C'
-      case 'W' | 'S' | 'Y' | 'R' | 'M' | 'K' | 'B' | 'D' | 'V' | 'H' | 'N' => 'N'
+      case _   => 'N'
     }
   }
 
-  override def toCSV(option: Option[Value]): String = option match {
-    case None        => "NN"
-    case Some(value) => "%s%s".format(value._1, value._2)
-  }
-
-  override def csvFieldName: String = "Dinuc"
-
-  override def equals(other: Any) = other match {
-    case that: DinucCovariate => true
-    case _                    => false
-  }
-
-  override def hashCode = 0x9EAC50CB
+  val csvFieldName: String = "Dinuc"
 }

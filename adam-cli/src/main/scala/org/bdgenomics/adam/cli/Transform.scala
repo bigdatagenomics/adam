@@ -59,10 +59,10 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
   var recalibrateBaseQualities: Boolean = false
+  @Args4jOption(required = false, name = "-min_acceptable_quality", usage = "Minimum acceptable quality for recalibrating a base in a read. Default is 5.")
+  var minAcceptableQuality: Int = 5
   @Args4jOption(required = false, name = "-stringency", usage = "Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults to LENIENT")
   var stringency: String = "LENIENT"
-  @Args4jOption(required = false, name = "-dump_observations", usage = "Local path to dump BQSR observations to. Outputs CSV format.")
-  var observationsPath: String = null
   @Args4jOption(required = false, name = "-known_snps", usage = "Sites-only VCF giving location of known SNPs")
   var knownSnpsFile: String = null
   @Args4jOption(required = false, name = "-realign_indels", usage = "Locally realign indels present in reads.")
@@ -218,24 +218,24 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       log.info("Recalibrating base qualities")
 
       // bqsr is a two pass algorithm, so cache the rdd if requested
-      if (args.cache) {
-        rdd.rdd.persist(sl)
+      val optSl = if (args.cache) {
+        Some(sl)
+      } else {
+        None
       }
 
       // create the known sites file, if one is available
       val knownSnps: SnpTable = createKnownSnpsTable(rdd.rdd.context)
+      val broadcastedSnps = BroadcastingKnownSnps.time {
+        rdd.rdd.context.broadcast(knownSnps)
+      }
 
       // run bqsr
       val bqsredRdd = rdd.recalibateBaseQualities(
-        rdd.rdd.context.broadcast(knownSnps),
-        Option(args.observationsPath),
-        stringency
+        broadcastedSnps,
+        args.minAcceptableQuality,
+        optSl
       )
-
-      // if we cached the input, unpersist it, as it is never reused after bqsr
-      if (args.cache) {
-        rdd.rdd.unpersist()
-      }
 
       bqsredRdd
     } else {
@@ -477,7 +477,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       isSorted = args.sortReads || args.sortLexicographically)
   }
 
-  private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {
-    Option(args.knownSnpsFile).fold(SnpTable())(f => SnpTable(sc.loadVariants(f).rdd.map(new RichVariant(_))))
+  private def createKnownSnpsTable(sc: SparkContext): SnpTable = {
+    Option(args.knownSnpsFile).fold(SnpTable())(f => SnpTable(sc.loadVariants(f)))
   }
 }

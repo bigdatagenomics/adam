@@ -629,15 +629,20 @@ case class AlignmentRecordRDD(
    * known SNPs to mask true variation during the recalibration process.
    *
    * @param knownSnps A table of known SNPs to mask valid variants.
-   * @param observationDumpFile An optional local path to dump recalibration
-   *                            observations to.
+   * @param minAcceptableQuality The minimum quality score to recalibrate.
+   * @param optStorageLevel An optional storage level to set for the output
+   *   of the first stage of BQSR. Defaults to StorageLevel.MEMORY_ONLY.
    * @return Returns an RDD of recalibrated reads.
    */
   def recalibateBaseQualities(
     knownSnps: Broadcast[SnpTable],
-    observationDumpFile: Option[String] = None,
-    validationStringency: ValidationStringency = ValidationStringency.LENIENT): AlignmentRecordRDD = BQSRInDriver.time {
-    replaceRdd(BaseQualityRecalibration(rdd, knownSnps, observationDumpFile, validationStringency))
+    minAcceptableQuality: Int = 5,
+    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY)): AlignmentRecordRDD = BQSRInDriver.time {
+    replaceRdd(BaseQualityRecalibration(rdd,
+      knownSnps,
+      recordGroups,
+      (minAcceptableQuality + 33).toChar,
+      optStorageLevel))
   }
 
   /**

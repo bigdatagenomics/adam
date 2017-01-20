@@ -17,39 +17,57 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.rich.DecadentRead
+import org.bdgenomics.adam.instrumentation.Timers._
+import org.bdgenomics.formats.avro.AlignmentRecord
 
-// This is based on the CycleCovariate in GATK 1.6.
-private[adam] class CycleCovariate extends AbstractCovariate[Int] {
-  def compute(read: DecadentRead): Seq[Option[Int]] = {
+/**
+ * A covariate representing sequencer base errors that are correlated with
+ * sequencer cycle. Maps first of pair reads into positive cycles and
+ * second of pair reads into negative cycles.
+ */
+private[adam] class CycleCovariate extends Covariate[Int] {
+
+  /**
+   * @param read The read to compute cycle covariates for.
+   * @return Returns an integer array where the array elements indicate the
+   *   sequencer cycle that a base was from.
+   */
+  def compute(read: AlignmentRecord): Array[Int] = ComputingCycleCovariate.time {
     val (initial, increment) = initialization(read)
-    read.residues.indices.map(pos => Some(initial + increment * pos))
+    val seqLength = read.getSequence.length
+    val cycleArray = new Array[Int](seqLength)
+    var idx = 0
+    var currVal = initial
+    while (idx < seqLength) {
+      cycleArray(idx) = currVal
+      idx += 1
+      currVal += increment
+    }
+    cycleArray
   }
 
-  // Returns (initialValue, increment)
-  private def initialization(read: DecadentRead): (Int, Int) = {
-    if (!read.isNegativeRead) {
-      if (read.isSecondOfPair) {
+  /**
+   * @param read The read to generate cycle values for. Used to get the
+   *   pairing, strand, and read length.
+   * @return Returns (initialValue, increment)
+   */
+  private def initialization(read: AlignmentRecord): (Int, Int) = {
+    if (!read.getReadNegativeStrand) {
+      if (read.getReadInFragment != 0) {
         (-1, -1)
       } else {
         (1, 1)
       }
     } else {
-      if (read.isSecondOfPair) {
-        (-read.residues.length, 1)
+      val readLength = read.getSequence.length
+      if (read.getReadInFragment != 0) {
+        (-readLength, 1)
       } else {
-        (read.residues.length, -1)
+        (readLength, -1)
       }
     }
   }
 
-  override def csvFieldName: String = "Cycle"
-
-  override def equals(other: Any) = other match {
-    case that: CycleCovariate => true
-    case _                    => false
-  }
-
-  override def hashCode = 0x83EFAB61
+  val csvFieldName: String = "Cycle"
 }
 
