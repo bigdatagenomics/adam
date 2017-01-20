@@ -150,8 +150,6 @@ options fall into several general categories:
       sites are treated as correct observations. If BQSR is run, this option
       should be passed, along with a path to a known variation database (e.g.,
       [dbSNP](https://www.ncbi.nlm.nih.gov/projects/SNP/)). {#known-snps}
-    * `-dump_observations`: If provided, a path to dump the recalibration table
-      in CSV format.
 * Indel realignment options: Indel realignment is run with the `-realign_indels`
   flag. Additionally, the Indel realignment engine takes the following options:
     * `-known_indels`: Path to a VCF file/Parquet variant file containing known
