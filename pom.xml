@@ -16,9 +16,12 @@
   <description>A fast, scalable genome analysis system</description>
   <url>http://bdgenomics.org/</url>
 
+  <prerequisites>
+    <maven>3.1.1</maven>
+  </prerequisites>
   <properties>
     <java.version>1.8</java.version>
-    <avro.version>1.8.0</avro.version>
+    <avro.version>1.8.1</avro.version>
     <scala.version>2.10.6</scala.version>
     <scala.version.prefix>2.10</scala.version.prefix>
     <spark.version>1.6.3</spark.version>
@@ -26,7 +29,7 @@
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.7.3</hadoop.version>
     <hadoop-bam.version>7.8.0</hadoop-bam.version>
-    <slf4j.version>1.7.21</slf4j.version>
+    <slf4j.version>1.7.22</slf4j.version>
     <bdg-formats.version>0.10.1</bdg-formats.version>
     <bdg-utils.version>0.2.13</bdg-utils.version>
     <htsjdk.version>2.9.1</htsjdk.version>
@@ -76,17 +79,17 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-assembly-plugin</artifactId>
-          <version>2.5.5</version>
+          <version>2.6</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.10.3</version>
+          <version>2.10.4</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
-          <version>2.5.2</version>
+          <version>2.5.3</version>
           <configuration>
             <mavenExecutorId>forked-path</mavenExecutorId>
             <useReleaseProfile>false</useReleaseProfile>
@@ -111,7 +114,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>2.6.1</version>
+          <version>3.0.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -160,7 +163,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>2.6</version>
+          <version>3.0.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -171,6 +174,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
           <version>2.4.3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.0.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -227,7 +235,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>build-helper-maven-plugin</artifactId>
-          <version>1.10</version>
+          <version>1.12</version>
         </plugin>
         <plugin>
           <groupId>org.scalariform</groupId>
@@ -325,7 +333,7 @@
       <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
-        <version>2.4</version>
+        <version>2.5</version>
       </dependency>
       <dependency>
         <groupId>it.unimi.dsi</groupId>
@@ -462,6 +470,18 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-mapreduce</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
       <dependency>
@@ -476,7 +496,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.parquet</groupId>
-        <!-- This library has no Scala 2.11 version, but using the 2.10 version seems to work. -->
+        <!-- This library has no Scala 2.11 version, but using the 2 dot 10 version seems to work. -->
         <artifactId>parquet-scala_2.10</artifactId>
         <version>${parquet.version}</version>
         <exclusions>
@@ -538,18 +558,7 @@
         <artifactId>httpclient</artifactId>
         <version>4.5.2</version>
       </dependency>
-      <dependency>
-        <groupId>com.netflix.servo</groupId>
-        <artifactId>servo-core</artifactId>
-        <version>0.10.0</version> <!-- note: versions 0.11.0+ (currently 0.12.3) are jdk8-only -->
-        <exclusions>
-          <exclusion>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
+     <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>16.0.1</version> <!-- note: version 17.0 breaks hadoop 2.6+ at runtime -->
@@ -557,13 +566,13 @@
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
-        <version>1.10.19</version>
+        <version>2.6.4</version>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>net.codingwell</groupId>
         <artifactId>scala-guice_${scala.version.prefix}</artifactId>
-        <version>4.0.1</version>
+        <version>4.1.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -584,7 +593,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-source-plugin</artifactId>
-            <version>2.4</version>
+            <version>3.0.1</version>
             <executions>
               <execution>
                 <id>attach-sources</id>
@@ -598,7 +607,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.3</version>
+            <version>2.10.4</version>
             <executions>
               <execution>
                 <id>attach-javadocs</id>
