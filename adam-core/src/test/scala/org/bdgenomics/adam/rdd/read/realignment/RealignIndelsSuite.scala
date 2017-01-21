@@ -109,8 +109,9 @@ class RealignIndelsSuite extends ADAMFunSuite {
     def checkReference(readReference: (String, Long, Long)) {
       // the first three lines of artificial.fasta
       val refStr = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-      val startIndex = Math.min(readReference._2.toInt, 120)
-      val stopIndex = Math.min(readReference._3.toInt, 180)
+      val startIndex = readReference._2.toInt
+      val stopIndex = readReference._3.toInt
+      assert(readReference._1.length === stopIndex - startIndex)
       assert(readReference._1 === refStr.substring(startIndex, stopIndex))
     }
 
