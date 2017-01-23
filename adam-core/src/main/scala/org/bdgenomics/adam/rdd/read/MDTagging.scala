@@ -71,8 +71,20 @@ private[read] case class MDTagging(
         contig <- Option(read.getContigName)
         if read.getReadMapped
       } yield {
-        maybeMDTagRead(read, referenceFileB.value
-          .extract(ReferenceRegion.unstranded(read)))
+        try {
+          maybeMDTagRead(read, referenceFileB.value
+            .extract(ReferenceRegion.unstranded(read)))
+        } catch {
+          case t: Throwable => {
+            if (validationStringency == ValidationStringency.STRICT) {
+              throw t
+            } else if (validationStringency == ValidationStringency.LENIENT) {
+              log.warn("Caught exception when processing read %s: %s".format(
+                read.getContigName, t))
+            }
+            read
+          }
+        }
       }).getOrElse({
         numUnmappedReads += 1
         read
