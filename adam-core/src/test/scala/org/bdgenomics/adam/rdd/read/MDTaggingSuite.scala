@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read
 
+import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceContigMap }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, NucleotideContigFragment }
@@ -26,6 +27,12 @@ class MDTaggingSuite extends ADAMFunSuite {
     Contig
       .newBuilder()
       .setContigName("chr1")
+      .setContigLength(100L)
+      .build()
+  val chr2 =
+    Contig
+      .newBuilder()
+      .setContigName("chr2")
       .setContigLength(100L)
       .build()
 
@@ -169,5 +176,22 @@ class MDTaggingSuite extends ADAMFunSuite {
         (chr1, 15, 35, "AAAATTCCCCCCCCCGGGGG", "20M") → "4A0C14",
         (chr1, 15, 35, "AAAAACCCCCCCCCTTGGGG", "20M") → "14C0G4"
       )(5, 0, 0, 0)
+  }
+
+  sparkTest("try realigning a read on a missing contig, stringency == STRICT") {
+    val read = (chr2, 15, 35, "AAAAACCCCCCCCCCGGGGG", "20M") → "20"
+    val tagger = MDTagging(makeReads(read)._2,
+      ReferenceContigMap(makeFrags((chr1, 0, "TTTTTTTTTT"))))
+    intercept[Exception] {
+      tagger.taggedReads.collect
+    }
+  }
+
+  sparkTest("try realigning a read on a missing contig, stringency == LENIENT") {
+    val read = (chr2, 15, 35, "AAAAACCCCCCCCCCGGGGG", "20M") → "20"
+    val tagger = MDTagging(makeReads(read)._2,
+      ReferenceContigMap(makeFrags((chr1, 0, "TTTTTTTTTT"))),
+      validationStringency = ValidationStringency.LENIENT)
+    assert(tagger.taggedReads.collect.size === 1)
   }
 }
