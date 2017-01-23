@@ -268,6 +268,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.VariantAnnotation]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.VariantAnnotationMessage]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.VariantCallingAnnotations]])
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.algorithms.consensus.Consensus]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.Coverage]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.ReferencePosition]])
     kryo.register(classOf[scala.Array[org.bdgenomics.adam.models.ReferenceRegion]])
