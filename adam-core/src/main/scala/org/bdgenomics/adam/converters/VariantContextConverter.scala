@@ -1974,10 +1974,10 @@ private[adam] class VariantContextConverter(
   def convert(
     vc: ADAMVariantContext): Option[HtsjdkVariantContext] = {
 
-    val vcb = new VariantContextBuilder(variantExtractFn(vc))
-
     // attach genotypes
     try {
+      val vcb = new VariantContextBuilder(variantExtractFn(vc))
+
       Some(vcb.genotypes(vc.genotypes.map(g => genotypeExtractFn(g)))
         .make)
     } catch {
