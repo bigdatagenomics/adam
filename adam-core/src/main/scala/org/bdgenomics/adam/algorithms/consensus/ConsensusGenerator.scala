@@ -83,10 +83,13 @@ object ConsensusGenerator {
    * Provides a generator to extract consensuses from a known set of INDELs.
    *
    * @param rdd The previously called INDEL variants.
+   * @param flankSize The number of bases to flank each known INDEL by. Default
+   *   is 0 bases.
    * @return A consensus generator that looks at previously called INDELs.
    */
-  def fromKnownIndels(rdd: VariantRDD): ConsensusGenerator = {
-    new ConsensusGeneratorFromKnowns(rdd.rdd)
+  def fromKnownIndels(rdd: VariantRDD,
+                      flankSize: Int = 0): ConsensusGenerator = {
+    new ConsensusGeneratorFromKnowns(rdd.rdd, flankSize)
   }
 
   /**

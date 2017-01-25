@@ -24,6 +24,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.formats.avro.Variant
+import scala.math.max
 import scala.transient
 
 /**
@@ -36,7 +37,8 @@ import scala.transient
  * @param file Path to file containing variants.
  * @param sc Spark context to use.
  */
-private[adam] class ConsensusGeneratorFromKnowns(rdd: RDD[Variant]) extends ConsensusGenerator {
+private[adam] class ConsensusGeneratorFromKnowns(rdd: RDD[Variant],
+                                                 val flankSize: Int) extends ConsensusGenerator {
 
   private val indelTable = rdd.context.broadcast(IndelTable(rdd))
 
@@ -50,7 +52,10 @@ private[adam] class ConsensusGeneratorFromKnowns(rdd: RDD[Variant]) extends Cons
 
     Some(rdd.filter(v => v.getReferenceAllele.length != v.getAlternateAllele.length)
       .map(v => ReferenceRegion(v))
-      .map(r => new IndelRealignmentTarget(Some(r), r)))
+      .map(r => {
+        new IndelRealignmentTarget(Some(r),
+          ReferenceRegion(r.referenceName, max(0L, r.start - flankSize), r.end + flankSize))
+      }))
   }
 
   /**

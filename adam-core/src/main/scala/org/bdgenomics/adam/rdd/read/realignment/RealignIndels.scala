@@ -369,11 +369,19 @@ private[read] class RealignIndels(
               }
 
               // update mdtag and cigar
-              builder.setMismatchingPositions(MdTag.moveAlignment(r, newCigar, reference.drop(remapping), refStart + remapping).toString())
-              builder.setOldPosition(r.getStart())
-              builder.setOldCigar(r.getCigar())
-              builder.setCigar(newCigar.toString)
-              new RichAlignmentRecord(builder.build())
+              try {
+                builder.setMismatchingPositions(MdTag.moveAlignment(r, newCigar, reference.drop(remapping), refStart + remapping).toString())
+                builder.setOldPosition(r.getStart())
+                builder.setOldCigar(r.getCigar())
+                builder.setCigar(newCigar.toString)
+                new RichAlignmentRecord(builder.build())
+              } catch {
+                case t: Throwable => {
+                  log.warn("Caught %s when trying to move alignment to %s for %s.".format(
+                    t, newCigar, r))
+                  new RichAlignmentRecord(r)
+                }
+              }
             } else
               new RichAlignmentRecord(builder.build())
           })
