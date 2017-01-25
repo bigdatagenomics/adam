@@ -24,7 +24,7 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.{
-  SupportedHeaderLines,
+  DefaultHeaderLines,
   VariantContextConverter
 }
 import org.bdgenomics.adam.models.{
@@ -86,7 +86,7 @@ private[adam] class VariantContextArraySerializer extends IntervalArraySerialize
 case class VariantContextRDD(rdd: RDD[VariantContext],
                              sequences: SequenceDictionary,
                              @transient samples: Seq[Sample],
-                             @transient headerLines: Seq[VCFHeaderLine] = SupportedHeaderLines.allHeaderLines) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
+                             @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, VariantContext)])(

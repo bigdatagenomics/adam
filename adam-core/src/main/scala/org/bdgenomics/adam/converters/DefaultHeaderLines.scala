@@ -27,9 +27,9 @@ import htsjdk.variant.vcf.{
 }
 
 /**
- * All header lines for VCF INFO and GT format fields that are supported in ADAM.
+ * Default set of VCF header lines for INFO and GT format fields supported in ADAM.
  */
-private[adam] object SupportedHeaderLines {
+object DefaultHeaderLines {
 
   lazy val ancestralAllele = new VCFInfoHeaderLine("AA",
     1,
@@ -89,7 +89,7 @@ private[adam] object SupportedHeaderLines {
     "Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO'")
 
   /**
-   * All info keys in VCF format.
+   * Default set of VCF header lines for INFO fields supported in ADAM.
    */
   lazy val infoHeaderLines = Seq(
     ancestralAllele,
@@ -167,7 +167,7 @@ private[adam] object SupportedHeaderLines {
     "Total number of reads with mapping quality=0")
 
   /**
-   * All format lines in VCF format.
+   * Default set of VCF header lines for GT format fields supported in ADAM.
    */
   lazy val formatHeaderLines = Seq(
     genotype,
@@ -186,7 +186,7 @@ private[adam] object SupportedHeaderLines {
   )
 
   /**
-   * All supported header lines in VCF format.
+   * Default set of VCF header lines for INFO and GT format fields supported in ADAM.
    */
   lazy val allHeaderLines = infoHeaderLines ++ formatHeaderLines
 }

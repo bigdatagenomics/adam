@@ -239,7 +239,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     deduped.flatMap(line => line match {
       case fl: VCFFormatHeaderLine => {
         val key = fl.getID
-        SupportedHeaderLines.formatHeaderLines
+        DefaultHeaderLines.formatHeaderLines
           .find(_.getID == key)
           .fold(Some(fl).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
             auditLine(fl, defaultLine, (newId, oldLine) => {
@@ -252,7 +252,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       }
       case il: VCFInfoHeaderLine => {
         val key = il.getID
-        SupportedHeaderLines.infoHeaderLines
+        DefaultHeaderLines.infoHeaderLines
           .find(_.getID == key)
           .fold(Some(il).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
             auditLine(il, defaultLine, (newId, oldLine) => {
@@ -266,7 +266,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       case l => {
         Some(l)
       }
-    }) ++ SupportedHeaderLines.allHeaderLines
+    }) ++ DefaultHeaderLines.allHeaderLines
   }
 
   private def headerLines(header: VCFHeader): Seq[VCFHeaderLine] = {

@@ -1394,7 +1394,7 @@ private[adam] class VariantContextConverter(
           val key = il.getID
 
           // filter out the lines that we already support
-          if (SupportedHeaderLines.infoHeaderLines
+          if (DefaultHeaderLines.infoHeaderLines
             .find(_.getID == key)
             .isEmpty) {
 
@@ -1467,7 +1467,7 @@ private[adam] class VariantContextConverter(
           val key = fl.getID
 
           // filter out the lines that we already support
-          if (SupportedHeaderLines.formatHeaderLines
+          if (DefaultHeaderLines.formatHeaderLines
             .find(_.getID == key)
             .isEmpty) {
 
@@ -1818,7 +1818,7 @@ private[adam] class VariantContextConverter(
           val key = il.getID
 
           // filter out the lines that we already support
-          if (SupportedHeaderLines.infoHeaderLines
+          if (DefaultHeaderLines.infoHeaderLines
             .find(_.getID == key)
             .isDefined) {
 
@@ -1891,7 +1891,7 @@ private[adam] class VariantContextConverter(
           val key = fl.getID
 
           // filter out the lines that we already support
-          if (SupportedHeaderLines.formatHeaderLines
+          if (DefaultHeaderLines.formatHeaderLines
             .find(_.getID == key)
             .isDefined) {
 
