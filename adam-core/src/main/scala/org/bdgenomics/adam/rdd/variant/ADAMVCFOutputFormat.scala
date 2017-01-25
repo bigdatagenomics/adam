@@ -20,7 +20,6 @@ package org.bdgenomics.adam.rdd.variant
 import htsjdk.variant.vcf.{ VCFHeaderLine, VCFHeader }
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.hadoop.mapreduce.{ RecordWriter, TaskAttemptContext }
-import org.bdgenomics.adam.converters.SupportedHeaderLines
 import org.bdgenomics.adam.models.SequenceDictionary
 import org.seqdoop.hadoop_bam.{
   KeyIgnoringVCFOutputFormat,

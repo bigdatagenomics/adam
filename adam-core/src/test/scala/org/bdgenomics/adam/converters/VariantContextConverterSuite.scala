@@ -53,9 +53,9 @@ class VariantContextConverterSuite extends ADAMFunSuite {
   }
 
   val lenient = ValidationStringency.LENIENT
-  val converter = new VariantContextConverter(SupportedHeaderLines.allHeaderLines,
+  val converter = new VariantContextConverter(DefaultHeaderLines.allHeaderLines,
     lenient)
-  val strictConverter = new VariantContextConverter(SupportedHeaderLines.allHeaderLines,
+  val strictConverter = new VariantContextConverter(DefaultHeaderLines.allHeaderLines,
     ValidationStringency.STRICT)
 
   def htsjdkSNVBuilder: VariantContextBuilder = new VariantContextBuilder()
@@ -1883,7 +1883,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Flag,
       "Flag")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ flagHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ flagHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasAttribute("FLAG"))
@@ -1917,7 +1917,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
      * this behavior.
      */
     intercept[IllegalArgumentException] {
-      new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ flagHeader,
+      new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ flagHeader,
         ValidationStringency.STRICT)
     }
   }
@@ -1934,7 +1934,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=1 Type=Integer")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ oneIntHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ oneIntHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasAttribute("ONE_INT"))
@@ -1953,7 +1953,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=4 Type=Integer")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ fourIntsHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ fourIntsHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasAttribute("FOUR_INTS"))
@@ -1976,7 +1976,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=A Type=Integer")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ aIntHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ aIntHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasAttribute("A_INT"))
@@ -1995,7 +1995,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=R Type=Integer")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ rIntHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ rIntHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasAttribute("R_INT"))
@@ -2016,7 +2016,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.String,
       "Number=R Type=String")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ rStringHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ rStringHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasAttribute("R_STRING"))
@@ -2038,7 +2038,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       "Number=G Type=String")
 
     intercept[IllegalArgumentException] {
-      val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ gStringHeader, lenient)
+      val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ gStringHeader, lenient)
         .convert(adamVc).orNull
     }
   }
@@ -2053,7 +2053,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Flag,
       "Flag")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ flagHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ flagHeader, lenient)
       .convert(vc)
       .head
 
@@ -2072,7 +2072,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=1 Type=Integer")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ oneIntHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ oneIntHeader, lenient)
       .convert(vc)
       .head
 
@@ -2092,7 +2092,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=4 Type=Integer")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ fourIntsHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ fourIntsHeader, lenient)
       .convert(vc)
       .head
 
@@ -2112,7 +2112,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Float,
       "Number=4 Type=Float")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ fourFloatsHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ fourFloatsHeader, lenient)
       .convert(vc)
       .head
 
@@ -2131,7 +2131,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=A Type=Integer")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ aIntHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ aIntHeader, lenient)
       .convert(vc)
       .head
 
@@ -2150,7 +2150,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=R Type=Integer")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ rIntHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ rIntHeader, lenient)
       .convert(vc)
       .head
 
@@ -2169,7 +2169,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.String,
       "Number=R Type=String")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ rStringHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ rStringHeader, lenient)
       .convert(vc)
       .head
 
@@ -2189,7 +2189,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       "Number=G Type=String")
 
     intercept[IllegalArgumentException] {
-      val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ gStringHeader, lenient)
+      val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ gStringHeader, lenient)
         .convert(vc)
     }
   }
@@ -2210,7 +2210,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
         VCFHeaderLineType.Flag,
         "Flag")
 
-      val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ flagHeader, lenient)
+      val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ flagHeader, lenient)
         .convert(adamVc).orNull
     }
   }
@@ -2231,7 +2231,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=1 Type=Integer")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ oneIntHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ oneIntHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasGenotypes)
@@ -2256,7 +2256,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=4 Type=Integer")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ fourIntsHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ fourIntsHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasGenotypes)
@@ -2286,7 +2286,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=A Type=Integer")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ aIntHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ aIntHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasGenotypes)
@@ -2313,7 +2313,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=R Type=Integer")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ rIntHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ rIntHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasGenotypes)
@@ -2341,7 +2341,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.String,
       "Number=R Type=String")
 
-    val vc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ rStringHeader, lenient)
+    val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ rStringHeader, lenient)
       .convert(adamVc).orNull
 
     assert(vc.hasGenotypes)
@@ -2364,7 +2364,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
         VCFHeaderLineType.Flag,
         "Flag")
 
-      val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ flagHeader, lenient)
+      val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ flagHeader, lenient)
         .convert(vc)
         .head
 
@@ -2387,7 +2387,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=1 Type=Integer")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ oneIntHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ oneIntHeader, lenient)
       .convert(vc)
       .head
 
@@ -2410,7 +2410,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=4 Type=Integer")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ fourIntsHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ fourIntsHeader, lenient)
       .convert(vc)
       .head
 
@@ -2433,7 +2433,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Float,
       "Number=4 Type=Float")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ fourFloatsHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ fourFloatsHeader, lenient)
       .convert(vc)
       .head
 
@@ -2456,7 +2456,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=A Type=Integer")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ aIntHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ aIntHeader, lenient)
       .convert(vc)
       .head
 
@@ -2479,7 +2479,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.Integer,
       "Number=R Type=Integer")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ rIntHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ rIntHeader, lenient)
       .convert(vc)
       .head
 
@@ -2502,7 +2502,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.String,
       "Number=R Type=String")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ rStringHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ rStringHeader, lenient)
       .convert(vc)
       .head
 
@@ -2525,7 +2525,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       VCFHeaderLineType.String,
       "Number=G Type=String")
 
-    val adamVc = new VariantContextConverter(SupportedHeaderLines.allHeaderLines :+ gStringHeader, lenient)
+    val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ gStringHeader, lenient)
       .convert(vc)
       .head
 

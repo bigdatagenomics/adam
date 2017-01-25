@@ -24,7 +24,7 @@ import htsjdk.variant.variantcontext.{
   VariantContextBuilder
 }
 import org.bdgenomics.adam.converters.{
-  SupportedHeaderLines,
+  DefaultHeaderLines,
   VariantContextConverter
 }
 import org.bdgenomics.formats.avro._
@@ -444,7 +444,7 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("convert a genotype and then get the reference region") {
-    val converter = new VariantContextConverter(SupportedHeaderLines.allHeaderLines,
+    val converter = new VariantContextConverter(DefaultHeaderLines.allHeaderLines,
       ValidationStringency.LENIENT)
     val vcb = new VariantContextBuilder()
       .alleles(List(Allele.create("A", true), Allele.create("T")))
