@@ -359,11 +359,21 @@ private[read] class RealignIndels(
                 // compensate the end
                 builder.setEnd(refStart + remapping + r.getSequence.length + endPenalty)
 
-                val cigarElements = List[CigarElement](
-                  new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
-                  idElement,
-                  new CigarElement(endLength.toInt, CigarOperator.M)
-                )
+                val cigarElements = if (endLength > 0) {
+                  List[CigarElement](
+                    new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
+                    idElement,
+                    new CigarElement(endLength.toInt, CigarOperator.M)
+                  )
+                } else if (endLength == 0) {
+                  List[CigarElement](
+                    new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
+                    idElement)
+                } else {
+                  List[CigarElement](
+                    new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
+                    new CigarElement(idElement.getLength + endLength.toInt, idElement.getOperator))
+                }
 
                 new Cigar(cigarElements)
               }
