@@ -406,7 +406,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @throws FileNotFoundException if the path does not match any files.
    */
-  private def getFiles(path: Path, fs: FileSystem): Array[Path] = {
+  protected def getFiles(path: Path, fs: FileSystem): Array[Path] = {
 
     // elaborate out the path; this returns FileStatuses
     val paths = if (fs.isDirectory(path)) fs.listStatus(path) else fs.globStatus(path)
@@ -435,7 +435,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @throws FileNotFoundException if the path does not match any files.
    */
-  private[rdd] def getFsAndFiles(path: Path): Array[Path] = {
+  protected def getFsAndFiles(path: Path): Array[Path] = {
 
     // get the underlying fs for the file
     val fs = Option(path.getFileSystem(sc.hadoopConfiguration)).getOrElse(
@@ -457,7 +457,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @throws FileNotFoundException if the path does not match any files.
    */
-  private def getFsAndFilesWithFilter(filename: String, filter: PathFilter): Array[Path] = {
+  protected def getFsAndFilesWithFilter(filename: String, filter: PathFilter): Array[Path] = {
 
     val path = new Path(filename)
 
@@ -475,7 +475,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
 
     // the path must match at least one file
-    if (paths.isEmpty) {
+    if (paths == null || paths.isEmpty) {
       throw new FileNotFoundException(
         s"Couldn't find any files matching ${path.toUri}"
       )

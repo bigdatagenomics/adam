@@ -427,23 +427,22 @@ class ADAMContextSuite extends ADAMFunSuite {
     reads.saveAsParquet(outputPath.replace(".adam", ".2.adam"))
 
     val paths = new Path(outputPath.replace(".adam", "*.adam") + "/*")
-    assert(sc.getFsAndFiles(paths).size > 2)
 
     val reloadedReads = sc.loadParquetAlignments(outputPath.replace(".adam", "*.adam") + "/*")
     assert((2 * reads.rdd.count) === reloadedReads.rdd.count)
   }
 
   sparkTest("bad glob should fail") {
-    val inputPath = testFile("small.sam")
+    val inputPath = testFile("small.sam").replace(".sam", "*.sad")
     intercept[FileNotFoundException] {
-      sc.getFsAndFiles(new Path(inputPath.replace(".sam", "*.sad")))
+      sc.loadAlignments(inputPath)
     }
   }
 
   sparkTest("empty directory should fail") {
-    val outputPath = tmpLocation()
+    val inputPath = tmpLocation()
     intercept[FileNotFoundException] {
-      sc.getFsAndFiles(new Path(outputPath))
+      sc.loadAlignments(inputPath)
     }
   }
 
@@ -491,4 +490,3 @@ class ADAMContextSuite extends ADAMFunSuite {
     })
   }
 }
-
