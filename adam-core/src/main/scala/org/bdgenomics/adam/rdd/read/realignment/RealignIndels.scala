@@ -284,6 +284,7 @@ private[read] class RealignIndels(
 
         // loop over all consensuses and evaluate
         consensus.foreach(c => {
+
           // generate a reference sequence from the consensus
           val consensusSequence = c.insertIntoReference(reference, refRegion)
 
@@ -294,7 +295,7 @@ private[read] class RealignIndels(
 
             // if the read's mismatch quality improves over the original alignment, save
             // its alignment in the consensus sequence, else store -1
-            if (qual < originalQual) {
+            if (qual <= originalQual) {
               (r, (qual, pos))
             } else {
               (r, (originalQual, -1))
@@ -359,21 +360,20 @@ private[read] class RealignIndels(
                 // compensate the end
                 builder.setEnd(refStart + remapping + r.getSequence.length + endPenalty)
 
-                val cigarElements = if (endLength > 0) {
-                  List[CigarElement](
-                    new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
-                    idElement,
-                    new CigarElement(endLength.toInt, CigarOperator.M)
-                  )
-                } else if (endLength == 0) {
-                  List[CigarElement](
-                    new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
-                    idElement)
+                val startLength = bestConsensus.index.start - (refStart + remapping)
+                val adjustedIdElement = if (endLength < 0) {
+                  new CigarElement(idElement.getLength + endLength.toInt, idElement.getOperator)
+                } else if (startLength < 0) {
+                  new CigarElement(idElement.getLength + startLength.toInt, idElement.getOperator)
                 } else {
-                  List[CigarElement](
-                    new CigarElement((bestConsensus.index.start - (refStart + remapping)).toInt, CigarOperator.M),
-                    new CigarElement(idElement.getLength + endLength.toInt, idElement.getOperator))
+                  idElement
                 }
+
+                val cigarElements = List[CigarElement](
+                  new CigarElement(startLength.toInt, CigarOperator.M),
+                  adjustedIdElement,
+                  new CigarElement(endLength.toInt, CigarOperator.M)
+                ).filter(_.getLength > 0)
 
                 new Cigar(cigarElements)
               }
@@ -392,8 +392,9 @@ private[read] class RealignIndels(
                   new RichAlignmentRecord(r)
                 }
               }
-            } else
+            } else {
               new RichAlignmentRecord(builder.build())
+            }
           })
 
           log.info("On " + refRegion + ", realigned " + realignedReadCount + " reads to " +
