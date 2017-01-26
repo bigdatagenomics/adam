@@ -602,6 +602,13 @@ support the following:
     pipe, with the exact format autodetected from the stream.
   * We do not support piping CRAM due to complexities around the reference-based
     compression.
+* `FeatureRDD`:
+  * `InForamtter`s: `BEDInFormatter`, `GFF3InFormatter`, `GTFInFormatter`, and
+  `NarrowPeakInFormatter` for writing features out to a pipe in BED, GFF3, GTF/GFF2,
+  or NarrowPeak format, respectively.
+  * `OutFormatter`s: `BEDOutFormatter`, `GFF3OutFormatter`, `GTFOutFormatter`, and
+  `NarrowPeakInFormatter` for reading features in BED, GFF3, GTF/GFF2, or NarrowPeak
+  format in from a pipe, respectively.
 * `FragmentRDD`:
   * `InFormatter`: `InterleavedFASTQInFormatter` writes FASTQ with the reads
     from a paired sequencing protocol interleaved in the FASTQ stream to a pipe.
