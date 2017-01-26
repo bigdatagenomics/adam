@@ -784,4 +784,52 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     assert(features.sequences.apply("chr1").isDefined)
     assert(features.sequences.apply("chr1").get.length >= 794336L)
   }
+
+  sparkTest("don't lose any features when piping as BED format") {
+    val inputPath = testFile("dvl1.200.bed")
+    val frdd = sc.loadBed(inputPath)
+
+    implicit val tFormatter = BEDInFormatter
+    implicit val uFormatter = new BEDOutFormatter
+
+    val pipedRdd: FeatureRDD = frdd.pipe("tee /dev/null")
+    assert(pipedRdd.rdd.count >= frdd.rdd.count)
+    assert(pipedRdd.rdd.distinct.count === frdd.rdd.distinct.count)
+  }
+
+  sparkTest("don't lose any features when piping as GTF format") {
+    val inputPath = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
+    val frdd = sc.loadGtf(inputPath)
+
+    implicit val tFormatter = GTFInFormatter
+    implicit val uFormatter = new GTFOutFormatter
+
+    val pipedRdd: FeatureRDD = frdd.pipe("tee /dev/null")
+    assert(pipedRdd.rdd.count >= frdd.rdd.count)
+    assert(pipedRdd.rdd.distinct.count === frdd.rdd.distinct.count)
+  }
+
+  sparkTest("don't lose any features when piping as GFF3 format") {
+    val inputPath = testFile("dvl1.200.gff3")
+    val frdd = sc.loadGff3(inputPath)
+
+    implicit val tFormatter = GFF3InFormatter
+    implicit val uFormatter = new GFF3OutFormatter
+
+    val pipedRdd: FeatureRDD = frdd.pipe("tee /dev/null")
+    assert(pipedRdd.rdd.count >= frdd.rdd.count)
+    assert(pipedRdd.rdd.distinct.count === frdd.rdd.distinct.count)
+  }
+
+  sparkTest("don't lose any features when piping as NarrowPeak format") {
+    val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val frdd = sc.loadNarrowPeak(inputPath)
+
+    implicit val tFormatter = NarrowPeakInFormatter
+    implicit val uFormatter = new NarrowPeakOutFormatter
+
+    val pipedRdd: FeatureRDD = frdd.pipe("tee /dev/null")
+    assert(pipedRdd.rdd.count >= frdd.rdd.count)
+    assert(pipedRdd.rdd.distinct.count === frdd.rdd.distinct.count)
+  }
 }

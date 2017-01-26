@@ -1,4 +1,3 @@
-seqname	source	feature	start	end	score	strand	frame	gene_id	transcript_id
 1	Ensembl	similarity	1331346	1331534	100	+	.		
 1	Ensembl	similarity	1331346	1331540	199	+	.		
 1	Ensembl	similarity	1331346	1331558	344	+	.		
