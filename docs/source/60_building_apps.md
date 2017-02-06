@@ -293,7 +293,8 @@ applications should also depend on `adam-apis`. The main entrypoint to ADAM is
 the [ADAMContext](#adam-context), which allows genomic data to be loaded in to
 Spark as [GenomicRDD](#genomic-rdd). GenomicRDDs can be transformed using ADAM's
 built in [pre-processing algorithms](#algorithms), [Spark's RDD
-primitives](#transforming), and ADAM's [pipe](#pipes) APIs.
+primitives](#transforming), the [region join](#join) primitive, and ADAM's
+[pipe](#pipes) APIs.
 
 ### Accessing pre-built libraries
 
@@ -473,6 +474,64 @@ type into another `RDD` of the base type. For example, we could use `transform`
 on an `AlignmentRecordRDD` to filter out reads that have a low mapping quality,
 but we cannot use `transform` to translate those reads into `Feature`s showing
 the genomic locations covered by reads.
+
+#### Using ADAM’s RegionJoin API {#join}
+
+Another useful API implemented in ADAM is the RegionJoin API, which joins two
+genomic datasets that contain overlapping regions. This primitive is useful for
+a number of applications including variant calling (identifying all of the reads 
+that overlap a candidate variant), coverage analysis (determining the coverage 
+depth for each region in a reference), and INDEL realignment (identify INDELs 
+aligned against a reference).
+
+There are two overlap join implementations available in ADAM: 
+BroadcastRegionJoin and ShuffleRegionJoin. The result of a ShuffleRegionJoin 
+is identical to the BroadcastRegionJoin, however they serve different 
+purposes depending on the content of the two datasets.
+
+The ShuffleRegionJoin is at its core a distributed sort-merge overlap join. 
+To ensure that the data is appropriately colocated, we perform a copartition 
+on the right dataset before the each node conducts the join locally. The 
+BroadcastRegionJoin performs an overlap join by broadcasting a copy of the 
+entire left dataset to each node. ShuffleRegionJoin should be used if the right 
+dataset is too large to send to all nodes and both datasets have low 
+cardinality. The BroadcastRegionJoin should be used when you are joining a 
+smaller dataset to a larger one and/or the datasets in the join have high 
+cardinality.
+
+Another important distinction between ShuffleRegionJoin and 
+BroadcastRegionJoin is the join operations available in ADAM. See the table
+below for an exact list of what joins are available for each type of
+RegionJoin.
+
+To perform a ShuffleRegionJoin, add the following to your ADAM script:
+
+```dataset1.shuffleRegionJoin(dataset2)```
+
+To perform a BroadcastRegionJoin, add the following to your ADAM script:
+
+```dataset1.broadcastRegionJoin(dataset2)```
+
+Where dataset1 and dataset2 are GenomicRDDs. If you used the ADAMContext to 
+read a genomic dataset into memory, this condition is met.
+
+ADAM has a variety of ShuffleRegionJoin types that you can perform on your 
+data, and all are called in a similar way:
+
+![Joins Available]
+(img/join_examples.png)
+
+
+Join call | action | Availability
+----------|--------|
+```dataset1.shuffleRegionJoin(dataset2) ``` ```dataset1.broadcastRegionJoin(dataset2)```| perform an inner join | ShuffleRegionJoin BroadcastRegionJoin
+```dataset1.fullOuterShuffleRegionJoin(datset2)```|perform an outer join | ShuffleRegionJoin
+```dataset1.leftOuterShuffleRegionJoin(dataset2)```|perform a left outer join | ShuffleRegionJoin
+```dataset1.rightOuterShuffleRegionJoin(dataset2)``` ```dataset1.rightOuterBroadcastRegionJoin(dataset2)```|perform a right outer join | ShuffleRegionJoin BroadcastRegionJoin
+```dataset1.shuffleRegionJoinAndGroupByLeft(dataset2)``` |perform an inner join and group joined values by the records on the left | ShuffleRegionJoin
+```dataset1.broadcastRegionJoinnAndGroupByRight(dataset2)``` | perform an inner join and group joined values by the records on the right | ShuffleRegionJoin
+```dataset1.rightOuterShuffleRegionJoinAndGroupByLeft(dataset2)```|perform a right outer join and group joined values by the records on the left | ShuffleRegionJoin
+```rightOuterBroadcastRegionJoinAndGroupByRight``` | perform a right outer join and group joined values by the records on the right | BroadcastRegionJoin
 
 #### Using ADAM's Pipe API {#pipes}
 
