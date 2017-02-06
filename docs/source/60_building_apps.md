@@ -256,6 +256,39 @@ $ spark-submit \
 A complete example of this pattern can be found in the
 [heuermh/adam-examples](https://github.com/heuermh/adam-examples) repository.
 
+### Using ADAM’s ShuffleRegionJoin API
+Another useful API implemented in ADAM is the ShuffleRegionJoin API, which joins two genomic datasets that contain overlapping regions. This primitive is useful for a number of applications including Variant calls and Feature mapping.
+
+To perform a ShuffleRegionJoin, add the following to your ADAM script:
+
+```dataset1.shuffleRegionJoin(dataset2)```
+
+Where dataset1 and dataset2 are GenomicRDDs. If you used the ADAMContext to read a genomic dataset into memory, this condition is met.
+
+ADAM has a variety of ShuffleRegionJoin types that you can perform on your data, and all are called in a similar way:
+
+``` scala
+	// perform an inner join
+	dataset1.shuffleRegionJoin(dataset2)
+
+	// perform an outer join
+	dataset1.fullOuterShuffleRegionJoin(datset2)
+
+	// perform a left outer join
+	dataset1.leftOuterShuffleRegionJoin(dataset2)
+
+	// perform a right outer join
+	dataset1.rightOuterShuffleRegionJoin(dataset2)
+
+	// perform an inner join, but group joined values by
+	// the records on the left
+	dataset1.shuffleRegionJoinAndGroupByLeft(dataset2)
+
+	// perform a right outer join, but group joined values by
+	// the records on the left
+	dataset1.rightOuterShuffleRegionJoinAndGroupByLeft(dataset2)
+```
+
 ### Writing your own registrator that calls the ADAM registrator {#registrator}
 
 As we do in ADAM, an application may want to provide its own Kryo serializer
