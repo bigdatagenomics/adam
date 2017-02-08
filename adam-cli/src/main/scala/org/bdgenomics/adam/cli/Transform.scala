@@ -27,7 +27,7 @@ import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Filter }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.adam.rdd.read.{ AlignedReadRDD, AlignmentRecordRDD }
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
@@ -453,7 +453,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     })
 
     // make a new aligned read rdd, that merges the two RDDs together
-    val newRdd = AlignedReadRDD(mergedRdd, mergedSd, mergedRgd)
+    val newRdd = AlignmentRecordRDD(mergedRdd, mergedSd, mergedRgd)
 
     // run our transformation
     val outputRdd = this.apply(newRdd)

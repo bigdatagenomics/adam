@@ -96,7 +96,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   }
 
   private def markDuplicates(reads: AlignmentRecord*): Array[AlignmentRecord] = {
-    AlignedReadRDD(sc.parallelize(reads), SequenceDictionary.empty, rgd)
+    AlignmentRecordRDD(sc.parallelize(reads), SequenceDictionary.empty, rgd)
       .markDuplicates()
       .rdd
       .collect()
@@ -205,7 +205,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   }
 
   private def markDuplicateFragments(reads: AlignmentRecord*): Array[AlignmentRecord] = {
-    AlignedReadRDD(sc.parallelize(reads), SequenceDictionary.empty, rgd)
+    AlignmentRecordRDD(sc.parallelize(reads), SequenceDictionary.empty, rgd)
       .toFragments
       .markDuplicates()
       .toReads

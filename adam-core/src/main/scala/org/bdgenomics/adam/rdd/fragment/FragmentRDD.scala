@@ -28,10 +28,8 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.adam.rdd.read.{
-  AlignedReadRDD,
   AlignmentRecordRDD,
-  MarkDuplicates,
-  UnalignedReadRDD
+  MarkDuplicates
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro._
@@ -119,11 +117,7 @@ case class FragmentRDD(rdd: RDD[Fragment],
     val newRdd = rdd.flatMap(converter.convertFragment)
 
     // are we aligned?
-    if (sequences.isEmpty) {
-      UnalignedReadRDD(newRdd, recordGroups)
-    } else {
-      AlignedReadRDD(newRdd, sequences, recordGroups)
-    }
+    AlignmentRecordRDD(newRdd, sequences, recordGroups)
   }
 
   /**
