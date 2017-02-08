@@ -83,7 +83,7 @@ private[adam] class AlignmentRecordArraySerializer extends IntervalArraySerializ
   }
 }
 
-sealed trait AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
+abstract class AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, AlignmentRecord)])(
     implicit tTag: ClassTag[AlignmentRecord]): IntervalArray[ReferenceRegion, AlignmentRecord] = {
