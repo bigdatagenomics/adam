@@ -72,7 +72,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val contigNames = rdd.flatMap(r => Option(r.getContigName)).distinct.collect
     val sd = new SequenceDictionary(contigNames.map(v => SequenceRecord(v, 1000000L)).toVector)
 
-    val sortedReads = AlignedReadRDD(rdd, sd, RecordGroupDictionary.empty)
+    val sortedReads = AlignmentRecordRDD(rdd, sd, RecordGroupDictionary.empty)
       .sortReadsByReferencePosition()
       .rdd
       .collect()
@@ -151,7 +151,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       }).toVector)
 
     val rdd = sc.parallelize(reads)
-    val sortedReads = AlignedReadRDD(rdd, sd, RecordGroupDictionary.empty)
+    val sortedReads = AlignmentRecordRDD(rdd, sd, RecordGroupDictionary.empty)
       .sortReadsByReferencePositionAndIndex()
       .rdd
       .collect()
