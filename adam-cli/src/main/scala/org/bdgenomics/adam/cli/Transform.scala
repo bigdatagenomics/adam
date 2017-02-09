@@ -226,7 +226,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       val knownSnps: SnpTable = createKnownSnpsTable(rdd.rdd.context)
 
       // run bqsr
-      val bqsredRdd = rdd.recalibateBaseQualities(
+      val bqsredRdd = rdd.recalibrateBaseQualities(
         rdd.rdd.context.broadcast(knownSnps),
         Option(args.observationsPath),
         stringency

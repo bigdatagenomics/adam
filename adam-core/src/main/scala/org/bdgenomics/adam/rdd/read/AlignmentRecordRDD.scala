@@ -25,6 +25,7 @@ import java.net.URI
 import java.nio.file.Paths
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
+import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
@@ -126,7 +127,7 @@ case class AlignmentRecordRDD(
    * @return Returns a FragmentRDD where all reads have been grouped together by
    *   the original sequence fragment they come from.
    */
-  def toFragments: FragmentRDD = {
+  def toFragments(): FragmentRDD = {
     FragmentRDD(groupReadsByFragment().map(_.toFragment),
       sequences,
       recordGroups)
@@ -153,6 +154,17 @@ case class AlignmentRecordRDD(
     FragmentRDD(locallyGroupReadsByFragment().map(_.toFragment),
       sequences,
       recordGroups)
+  }
+
+  /**
+   * Converts this set of reads into a corresponding CoverageRDD.
+   *
+   * @param collapse Determines whether to merge adjacent coverage elements with the same score a single coverage.
+   * @return CoverageRDD containing mapped RDD of Coverage.
+   */
+  def toCoverage(collapse: java.lang.Boolean): CoverageRDD = {
+    val c: Boolean = collapse
+    toCoverage(c)
   }
 
   /**
@@ -351,6 +363,22 @@ case class AlignmentRecordRDD(
     })
 
     (convertedRDD, header)
+  }
+
+  /**
+   * Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
+   *
+   * Java friendly variant.
+   *
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
+   * @return Returns an RDD containing k-mer/count pairs.
+   */
+  def countKmers(kmerLength: java.lang.Integer): JavaRDD[(String, java.lang.Long)] = {
+    val k: Int = kmerLength
+    countKmers(k).map(kv => {
+      val (k, v) = kv
+      (k, v: java.lang.Long)
+    }).toJavaRDD()
   }
 
   /**
@@ -628,16 +656,67 @@ case class AlignmentRecordRDD(
    * Runs base quality score recalibration on a set of reads. Uses a table of
    * known SNPs to mask true variation during the recalibration process.
    *
+   * Java friendly variant.
+   *
    * @param knownSnps A table of known SNPs to mask valid variants.
    * @param observationDumpFile An optional local path to dump recalibration
    *                            observations to.
    * @return Returns an RDD of recalibrated reads.
    */
-  def recalibateBaseQualities(
+  def recalibrateBaseQualities(
+    knownSnps: SnpTable,
+    validationStringency: ValidationStringency): AlignmentRecordRDD = {
+    val bcastSnps = rdd.context.broadcast(knownSnps)
+    recalibrateBaseQualities(bcastSnps, validationStringency = validationStringency)
+  }
+
+  /**
+   * Runs base quality score recalibration on a set of reads. Uses a table of
+   * known SNPs to mask true variation during the recalibration process.
+   *
+   * @param knownSnps A table of known SNPs to mask valid variants.
+   * @param observationDumpFile An optional local path to dump recalibration
+   *                            observations to.
+   * @return Returns an RDD of recalibrated reads.
+   */
+  def recalibrateBaseQualities(
     knownSnps: Broadcast[SnpTable],
     observationDumpFile: Option[String] = None,
     validationStringency: ValidationStringency = ValidationStringency.LENIENT): AlignmentRecordRDD = BQSRInDriver.time {
     replaceRdd(BaseQualityRecalibration(rdd, knownSnps, observationDumpFile, validationStringency))
+  }
+
+  /**
+   * Realigns indels using a concensus-based heuristic.
+   *
+   * Java friendly variant.
+   *
+   * @param consensusModel The model to use for generating consensus sequences
+   *   to realign against.
+   * @param isSorted If the input data is sorted, setting this parameter to true
+   *   avoids a second sort.
+   * @param maxIndelSize The size of the largest indel to use for realignment.
+   * @param maxConsensusNumber The maximum number of consensus sequences to
+   *   realign against per target region.
+   * @param lodThreshold Log-odds threshold to use when realigning; realignments
+   *   are only finalized if the log-odds threshold is exceeded.
+   * @param maxTargetSize The maximum width of a single target region for
+   *   realignment.
+   * @return Returns an RDD of mapped reads which have been realigned.
+   */
+  def realignIndels(
+    consensusModel: ConsensusGenerator,
+    isSorted: java.lang.Boolean,
+    maxIndelSize: java.lang.Integer,
+    maxConsensusNumber: java.lang.Integer,
+    lodThreshold: java.lang.Double,
+    maxTargetSize: java.lang.Integer): AlignmentRecordRDD = {
+    replaceRdd(RealignIndels(rdd,
+      consensusModel,
+      isSorted: Boolean,
+      maxIndelSize: Int,
+      maxConsensusNumber: Int,
+      lodThreshold: Double))
   }
 
   /**
@@ -662,8 +741,13 @@ case class AlignmentRecordRDD(
     maxIndelSize: Int = 500,
     maxConsensusNumber: Int = 30,
     lodThreshold: Double = 5.0,
-    maxTargetSize: Int = 3000): AlignmentRecordRDD = RealignIndelsInDriver.time {
-    replaceRdd(RealignIndels(rdd, consensusModel, isSorted, maxIndelSize, maxConsensusNumber, lodThreshold))
+    maxTargetSize: Int = 3000): AlignmentRecordRDD = {
+    replaceRdd(RealignIndels(rdd,
+      consensusModel,
+      isSorted,
+      maxIndelSize,
+      maxConsensusNumber,
+      lodThreshold))
   }
 
   /**
@@ -706,6 +790,35 @@ case class AlignmentRecordRDD(
    */
   private[read] def groupReadsByFragment(): RDD[SingleReadBucket] = {
     SingleReadBucket(rdd)
+  }
+
+  /**
+   * Saves these AlignmentRecords to two FASTQ files.
+   *
+   * The files are one for the first mate in each pair, and the other for the
+   * second mate in the pair. Java friendly variant.
+   *
+   * @param fileName1 Path at which to save a FASTQ file containing the first
+   *   mate of each pair.
+   * @param fileName2 Path at which to save a FASTQ file containing the second
+   *   mate of each pair.
+   * @param outputOriginalBaseQualities If true, writes out reads with the base
+   *   qualities from the original qualities (SAM "OQ") field. If false, writes
+   *   out reads with the base qualities from the qual field. Default is false.
+   * @param validationStringency Iff strict, throw an exception if any read in
+   *   this RDD is not accompanied by its mate.
+   * @param persistLevel The persistence level to cache reads at between passes.
+   */
+  def saveAsPairedFastq(
+    fileName1: String,
+    fileName2: String,
+    outputOriginalBaseQualities: java.lang.Boolean,
+    validationStringency: ValidationStringency,
+    persistLevel: StorageLevel) {
+    saveAsPairedFastq(fileName1, fileName2,
+      outputOriginalBaseQualities = outputOriginalBaseQualities: Boolean,
+      validationStringency = validationStringency,
+      persistLevel = Some(persistLevel))
   }
 
   /**
@@ -835,6 +948,32 @@ case class AlignmentRecordRDD(
   /**
    * Saves reads in FASTQ format.
    *
+   * Java friendly variant.
+   *
+   * @param fileName Path to save files at.
+   * @param outputOriginalBaseQualities If true, writes out reads with the base
+   *   qualities from the original qualities (SAM "OQ") field. If false, writes
+   *   out reads with the base qualities from the qual field. Default is false.
+   * @param sort Whether to sort the FASTQ files by read name or not. Defaults
+   *   to false. Sorting the output will recover pair order, if desired.
+   * @param validationStringency Iff strict, throw an exception if any read in
+   *   this RDD is not accompanied by its mate.
+   */
+  def saveAsFastq(
+    fileName: String,
+    outputOriginalBaseQualities: java.lang.Boolean,
+    sort: java.lang.Boolean,
+    validationStringency: ValidationStringency) {
+    saveAsFastq(fileName, fileName2Opt = None,
+      outputOriginalBaseQualities = outputOriginalBaseQualities: Boolean,
+      sort = sort: Boolean,
+      validationStringency = validationStringency,
+      persistLevel = None)
+  }
+
+  /**
+   * Saves reads in FASTQ format.
+   *
    * @param fileName Path to save files at.
    * @param fileName2Opt Optional second path for saving files. If set, two
    *   files will be saved.
@@ -881,6 +1020,22 @@ case class AlignmentRecordRDD(
           .map(record => arc.convertToFastq(record, outputOriginalBaseQualities = outputOriginalBaseQualities))
           .saveAsTextFile(fileName)
     }
+  }
+
+  /**
+   * Reassembles read pairs from two sets of unpaired reads. The assumption is that the two sets
+   * were _originally_ paired together. Java friendly variant.
+   *
+   * @note The RDD that this is called on should be the RDD with the first read from the pair.
+   * @param secondPairRdd The rdd containing the second read from the pairs.
+   * @param validationStringency How stringently to validate the reads.
+   * @return Returns an RDD with the pair information recomputed.
+   */
+  def reassembleReadPairs(
+    secondPairRdd: JavaRDD[AlignmentRecord],
+    validationStringency: ValidationStringency): AlignmentRecordRDD = {
+    reassembleReadPairs(secondPairRdd.rdd,
+      validationStringency = validationStringency)
   }
 
   /**
