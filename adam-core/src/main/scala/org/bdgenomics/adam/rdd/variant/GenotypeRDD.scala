@@ -113,7 +113,7 @@ case class GenotypeRDD(rdd: RDD[Genotype],
   /**
    * @return Returns this GenotypeRDD squared off as a VariantContextRDD.
    */
-  def toVariantContextRDD: VariantContextRDD = {
+  def toVariantContextRDD(): VariantContextRDD = {
     val vcIntRdd: RDD[(RichVariant, Genotype)] = rdd.keyBy(g => {
       RichVariant.genotypeToRichVariant(g)
     })
