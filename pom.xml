@@ -37,6 +37,7 @@
   </properties>
 
   <modules>
+    <module>adam-codegen</module>
     <module>adam-core</module>
     <module>adam-apis</module>
     <module>adam-cli</module>
@@ -462,6 +463,24 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>net.razorvine</groupId>
+        <artifactId>pyrolite</artifactId>
+        <version>4.9</version>
+        <scope>provided</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>net.razorvine</groupId>
+            <artifactId>serpent</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_${scala.version.prefix}</artifactId>
+        <version>${spark.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
         <groupId>org.apache.spark</groupId>
         <artifactId>spark-core_${scala.version.prefix}</artifactId>
         <version>${spark.version}</version>
@@ -567,6 +586,11 @@
         <artifactId>scala-guice_${scala.version.prefix}</artifactId>
         <version>4.1.0</version>
       </dependency>
+      <dependency>
+        <groupId>org.bdgenomics.adam</groupId>
+        <artifactId>adam-codegen_${scala.version.prefix}</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -574,6 +598,7 @@
     <profile>
       <id>python</id>
       <modules>
+        <module>adam-codegen</module>
         <module>adam-core</module>
         <module>adam-apis</module>
         <module>adam-python</module>
@@ -666,6 +691,7 @@
             <version>${scoverage.plugin.version}</version>
             <configuration>
               <scalaVersion>${scala.version}</scalaVersion>
+              <!--<excludedPackages>org.bdgenomics.adam.codegen,org.bdgenomics.adam.sql</excludedPackages>-->
               <aggregate>true</aggregate>
             </configuration>
           </plugin>

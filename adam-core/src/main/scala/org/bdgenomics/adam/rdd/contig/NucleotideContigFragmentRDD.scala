@@ -18,8 +18,11 @@
 package org.bdgenomics.adam.rdd.contig
 
 import com.google.common.base.Splitter
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.FragmentConverter
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
@@ -27,9 +30,10 @@ import org.bdgenomics.adam.models.{
   SequenceRecord,
   SequenceDictionary
 }
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.adam.util.ReferenceFile
+import org.bdgenomics.adam.sql.{ NucleotideContigFragment => NucleotideContigFragmentProduct }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
@@ -73,7 +77,7 @@ object NucleotideContigFragmentRDD extends Serializable {
    *   this RDD.
    * @return Returns a new NucleotideContigFragmentRDD.
    */
-  def apply(rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
+  private[rdd] def apply(rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
 
     // get sequence dictionary
     val sd = new SequenceDictionary(rdd.flatMap(ncf => {
@@ -99,23 +103,73 @@ object NucleotideContigFragmentRDD extends Serializable {
   def apply(rdd: RDD[NucleotideContigFragment],
             sequences: SequenceDictionary): NucleotideContigFragmentRDD = {
 
-    NucleotideContigFragmentRDD(rdd, sequences, None)
+    RDDBoundNucleotideContigFragmentRDD(rdd, sequences, None)
+  }
+}
+
+case class ParquetUnboundNucleotideContigFragmentRDD private[rdd] (
+    @transient private val sc: SparkContext,
+    private val parquetFilename: String,
+    sequences: SequenceDictionary) extends NucleotideContigFragmentRDD {
+
+  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
+
+  lazy val rdd: RDD[NucleotideContigFragment] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[NucleotideContigFragmentProduct]
+  }
+}
+
+case class DatasetBoundNucleotideContigFragmentRDD(
+    dataset: Dataset[NucleotideContigFragmentProduct],
+    sequences: SequenceDictionary) extends NucleotideContigFragmentRDD {
+
+  lazy val rdd: RDD[NucleotideContigFragment] = dataset.rdd.map(_.toAvro)
+
+  protected lazy val optPartitionMap = None
+
+  override def saveAsParquet(filePath: String,
+                             blockSize: Int = 128 * 1024 * 1024,
+                             pageSize: Int = 1 * 1024 * 1024,
+                             compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                             disableDictionaryEncoding: Boolean = false) {
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    dataset.toDF()
+      .write
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    saveMetadata(filePath)
   }
 }
 
 /**
  * A wrapper class for RDD[NucleotideContigFragment].
- * NucleotideContigFragmentRDD extends ReferenceFile. To specifically access a ReferenceFile within an RDD,
- * refer to:
- * @see ReferenceContigMap
  *
  * @param rdd Underlying RDD
  * @param sequences Sequence dictionary computed from rdd
  */
-case class NucleotideContigFragmentRDD(
+case class RDDBoundNucleotideContigFragmentRDD(
     rdd: RDD[NucleotideContigFragment],
     sequences: SequenceDictionary,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] with ReferenceFile {
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends NucleotideContigFragmentRDD {
+
+  /**
+   * A SQL Dataset of contig fragments.
+   */
+  lazy val dataset: Dataset[NucleotideContigFragmentProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(NucleotideContigFragmentProduct.fromAvro))
+  }
+}
+
+sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, NucleotideContigFragment)])(
     implicit tTag: ClassTag[NucleotideContigFragment]): IntervalArray[ReferenceRegion, NucleotideContigFragment] = {
@@ -147,7 +201,7 @@ case class NucleotideContigFragmentRDD(
    */
   protected def replaceRdd(newRdd: RDD[NucleotideContigFragment],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): NucleotideContigFragmentRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    new RDDBoundNucleotideContigFragmentRDD(newRdd, sequences, newPartitionMap)
   }
 
   /**
@@ -158,6 +212,19 @@ case class NucleotideContigFragmentRDD(
    */
   protected def getReferenceRegions(elem: NucleotideContigFragment): Seq[ReferenceRegion] = {
     ReferenceRegion(elem).toSeq
+  }
+
+  /**
+   * Applies a function that transforms the underlying RDD into a new RDD using
+   * the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a Dataset.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataset(
+    tFn: Dataset[NucleotideContigFragmentProduct] => Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
+    DatasetBoundNucleotideContigFragmentRDD(tFn(dataset), sequences)
   }
 
   /**

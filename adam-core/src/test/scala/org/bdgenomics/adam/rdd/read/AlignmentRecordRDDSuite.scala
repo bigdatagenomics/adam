@@ -34,6 +34,7 @@ import org.bdgenomics.adam.rdd.variant.{
   VariantContextRDD,
   VCFOutFormatter
 }
+import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.{ CRAMInputFormat, SAMFormat }
@@ -487,6 +488,31 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val outputPath = tmpLocation()
     reads.saveAsParquet(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
+  }
+
+  sparkTest("load parquet to sql, save, re-read from avro") {
+    val inputPath = testFile("small.sam")
+    val outputPath = tmpLocation()
+    val rdd = sc.loadAlignments(inputPath)
+      .transformDataset(ds => {
+        // all reads are on 1, so this is effectively a no-op
+        import ds.sqlContext.implicits._
+        val df = ds.toDF()
+        df.where(df("contigName") === "1")
+          .as[AlignmentRecordProduct]
+      })
+    assert(rdd.dataset.count === 20)
+    assert(rdd.rdd.count === 20)
+    rdd.saveAsParquet(outputPath)
+    val rdd2 = sc.loadAlignments(outputPath)
+    assert(rdd2.rdd.count === 20)
+    assert(rdd2.dataset.count === 20)
+    val outputPath2 = tmpLocation()
+    rdd.transform(rdd => rdd) // no-op but force to rdd
+      .saveAsParquet(outputPath2)
+    val rdd3 = sc.loadAlignments(outputPath2)
+    assert(rdd3.rdd.count === 20)
+    assert(rdd3.dataset.count === 20)
   }
 
   sparkTest("save as SAM format") {

@@ -19,7 +19,10 @@ package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import org.apache.hadoop.fs.Path
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
@@ -27,13 +30,18 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext
 }
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
   VCFHeaderUtils
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.formats.avro.Sample
-import org.bdgenomics.formats.avro.{ Contig, Variant }
+import org.bdgenomics.adam.sql.{ Variant => VariantProduct }
+import org.bdgenomics.formats.avro.{
+  Contig,
+  Sample,
+  Variant
+}
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
@@ -78,23 +86,93 @@ object VariantRDD extends Serializable {
    */
   def apply(rdd: RDD[Variant],
             sequences: SequenceDictionary,
+            headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): VariantRDD = {
+
+    new RDDBoundVariantRDD(rdd, sequences, headerLines, None)
+  }
+
+  /**
+   * An dataset containing variants called against a given reference genome.
+   *
+   * @param ds Variants.
+   * @param sequences A dictionary describing the reference genome.
+   * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
+   *   needed to represent this RDD of Variants.
+   */
+  def apply(ds: Dataset[VariantProduct],
+            sequences: SequenceDictionary,
             headerLines: Seq[VCFHeaderLine]): VariantRDD = {
-    VariantRDD(rdd, sequences, headerLines, None)
+    new DatasetBoundVariantRDD(ds, sequences, headerLines)
   }
 }
 
-/**
- * An RDD containing variants called against a given reference genome.
- *
- * @param rdd Variants.
- * @param sequences A dictionary describing the reference genome.
- * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
- *   needed to represent this RDD of Variants.
- */
-case class VariantRDD(rdd: RDD[Variant],
-                      sequences: SequenceDictionary,
-                      @transient headerLines: Seq[VCFHeaderLine],
-                      optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[Variant, VariantRDD] {
+case class ParquetUnboundVariantRDD private[rdd] (
+    private val sc: SparkContext,
+    private val parquetFilename: String,
+    sequences: SequenceDictionary,
+    @transient headerLines: Seq[VCFHeaderLine]) extends VariantRDD {
+
+  lazy val rdd: RDD[Variant] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[VariantProduct]
+  }
+}
+
+case class DatasetBoundVariantRDD private[rdd] (
+    dataset: Dataset[VariantProduct],
+    sequences: SequenceDictionary,
+    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantRDD {
+
+  protected lazy val optPartitionMap = None
+
+  lazy val rdd = dataset.rdd.map(_.toAvro)
+
+  override def saveAsParquet(filePath: String,
+                             blockSize: Int = 128 * 1024 * 1024,
+                             pageSize: Int = 1 * 1024 * 1024,
+                             compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                             disableDictionaryEncoding: Boolean = false) {
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    dataset.toDF()
+      .write
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    saveMetadata(filePath)
+  }
+
+  override def transformDataset(
+    tFn: Dataset[VariantProduct] => Dataset[VariantProduct]): VariantRDD = {
+    copy(dataset = tFn(dataset))
+  }
+}
+
+case class RDDBoundVariantRDD private[rdd] (
+    rdd: RDD[Variant],
+    sequences: SequenceDictionary,
+    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends VariantRDD {
+
+  /**
+   * A SQL Dataset of reads.
+   */
+  lazy val dataset: Dataset[VariantProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(VariantProduct.fromAvro))
+  }
+}
+
+sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct, VariantRDD] {
+
+  val headerLines: Seq[VCFHeaderLine]
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Variant)])(
     implicit tTag: ClassTag[Variant]): IntervalArray[ReferenceRegion, Variant] = {
@@ -124,10 +202,27 @@ case class VariantRDD(rdd: RDD[Variant],
   }
 
   /**
+   * Applies a function that transforms the underlying RDD into a new RDD using
+   * the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a Dataset.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataset(
+    tFn: Dataset[VariantProduct] => Dataset[VariantProduct]): VariantRDD = {
+    DatasetBoundVariantRDD(tFn(dataset), sequences, headerLines)
+  }
+
+  /**
    * @return Returns this VariantRDD as a VariantContextRDD.
    */
   def toVariantContextRDD(): VariantContextRDD = {
-    VariantContextRDD(rdd.map(VariantContext(_)), sequences, Seq.empty[Sample], headerLines)
+    VariantContextRDD(rdd.map(VariantContext(_)),
+      sequences,
+      Seq.empty[Sample],
+      headerLines,
+      None)
   }
 
   /**
@@ -136,7 +231,7 @@ case class VariantRDD(rdd: RDD[Variant],
    */
   protected def replaceRdd(newRdd: RDD[Variant],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    RDDBoundVariantRDD(newRdd, sequences, headerLines, newPartitionMap)
   }
 
   /**

@@ -51,10 +51,23 @@ import org.bdgenomics.adam.projections.{
   FeatureField,
   Projection
 }
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
+import org.bdgenomics.adam.rdd.contig.{
+  NucleotideContigFragmentRDD,
+  ParquetUnboundNucleotideContigFragmentRDD,
+  RDDBoundNucleotideContigFragmentRDD
+}
 import org.bdgenomics.adam.rdd.feature._
-import org.bdgenomics.adam.rdd.fragment.FragmentRDD
-import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, RepairPartitions }
+import org.bdgenomics.adam.rdd.fragment.{
+  FragmentRDD,
+  ParquetUnboundFragmentRDD,
+  RDDBoundFragmentRDD
+}
+import org.bdgenomics.adam.rdd.read.{
+  AlignmentRecordRDD,
+  RepairPartitions,
+  ParquetUnboundAlignmentRecordRDD,
+  RDDBoundAlignmentRecordRDD
+}
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.FileExtensions._
@@ -322,6 +335,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     log.info("Reading the ADAM file at %s to create RDD".format(pathName))
     val job = HadoopUtil.newJob(sc)
     ParquetInputFormat.setReadSupportClass(job, classOf[AvroReadSupport[T]])
+    AvroParquetInputFormat.setAvroReadSchema(job,
+      manifest[T].runtimeClass.newInstance().asInstanceOf[T].getSchema)
 
     optPredicate.foreach { (pred) =>
       log.info("Using the specified push-down predicate")
@@ -841,16 +856,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): AlignmentRecordRDD = {
 
-    // load from disk
-    val rdd = loadParquet[AlignmentRecord](pathName, optPredicate, optProjection)
-
     // convert avro to sequence dictionary
     val sd = loadAvroSequenceDictionary(pathName)
 
     // convert avro to sequence dictionary
     val rgd = loadAvroRecordGroupDictionary(pathName)
 
-    AlignmentRecordRDD(rdd, sd, rgd, optPartitionMap = extractPartitionMap(pathName))
+    (optPredicate, optProjection) match {
+      case (None, None) => {
+        ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd)
+      }
+      case (_, _) => {
+        // load from disk
+        val rdd = loadParquet[AlignmentRecord](pathName, optPredicate, optProjection)
+
+        RDDBoundAlignmentRecordRDD(rdd, sd, rgd,
+          optPartitionMap = extractPartitionMap(pathName))
+      }
+    }
   }
 
   /**
@@ -1137,8 +1160,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): GenotypeRDD = {
 
-    val rdd = loadParquet[Genotype](pathName, optPredicate, optProjection)
-
     // load header lines
     val headers = loadHeaderLines(pathName)
 
@@ -1148,8 +1169,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load avro record group dictionary and convert to samples
     val samples = loadAvroSamples(pathName)
 
-    GenotypeRDD(rdd, sd, samples, headers,
-      optPartitionMap = extractPartitionMap(pathName))
+    (optPredicate, optProjection) match {
+      case (None, None) => {
+        ParquetUnboundGenotypeRDD(sc, pathName, sd, samples, headers)
+      }
+      case (_, _) => {
+        // load from disk
+        val rdd = loadParquet[Genotype](pathName, optPredicate, optProjection)
+
+        new RDDBoundGenotypeRDD(rdd, sd, samples, headers,
+          optPartitionMap = extractPartitionMap(pathName))
+      }
+    }
   }
 
   /**
@@ -1168,14 +1199,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): VariantRDD = {
 
-    val rdd = loadParquet[Variant](pathName, optPredicate, optProjection)
     val sd = loadAvroSequenceDictionary(pathName)
 
     // load header lines
     val headers = loadHeaderLines(pathName)
 
-    VariantRDD(rdd, sd, headers,
-      optPartitionMap = extractPartitionMap(pathName))
+    (optPredicate, optProjection) match {
+      case (None, None) => {
+        new ParquetUnboundVariantRDD(sc, pathName, sd, headers)
+      }
+      case _ => {
+        val rdd = loadParquet[Variant](pathName, optPredicate, optProjection)
+        new RDDBoundVariantRDD(rdd, sd, headers,
+          optPartitionMap = extractPartitionMap(pathName))
+      }
+    }
   }
 
   /**
@@ -1306,14 +1344,29 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
+   * @param forceRdd Forces loading the RDD.
    * @return Returns a FeatureRDD converted to a CoverageRDD.
    */
   def loadParquetCoverage(
     pathName: String,
-    optPredicate: Option[FilterPredicate] = None): CoverageRDD = {
+    optPredicate: Option[FilterPredicate] = None,
+    forceRdd: Boolean = false): CoverageRDD = {
 
-    val coverageFields = Projection(FeatureField.contigName, FeatureField.start, FeatureField.end, FeatureField.score)
-    loadParquetFeatures(pathName, optPredicate = optPredicate, optProjection = Some(coverageFields)).toCoverage
+    if (optPredicate.isEmpty && !forceRdd) {
+      // convert avro to sequence dictionary
+      val sd = loadAvroSequenceDictionary(pathName)
+
+      new ParquetUnboundCoverageRDD(sc, pathName, sd)
+    } else {
+      val coverageFields = Projection(FeatureField.contigName,
+        FeatureField.start,
+        FeatureField.end,
+        FeatureField.score)
+      loadParquetFeatures(pathName,
+        optPredicate = optPredicate,
+        optProjection = Some(coverageFields))
+        .toCoverage
+    }
   }
 
   /**
@@ -1460,7 +1513,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val sd = loadAvroSequenceDictionary(pathName)
     val rdd = loadParquet[Feature](pathName, optPredicate, optProjection)
 
-    FeatureRDD(rdd, sd, optPartitionMap = extractPartitionMap(pathName))
+    (optPredicate, optProjection) match {
+      case (None, None) => {
+        ParquetUnboundFeatureRDD(sc, pathName, sd)
+      }
+      case (_, _) => {
+        // load from disk
+        val rdd = loadParquet[Feature](pathName, optPredicate, optProjection)
+
+        new RDDBoundFeatureRDD(rdd, sd, optPartitionMap = extractPartitionMap(pathName))
+      }
+    }
   }
 
   /**
@@ -1482,7 +1545,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val sd = loadAvroSequenceDictionary(pathName)
     val rdd = loadParquet[NucleotideContigFragment](pathName, optPredicate, optProjection)
 
-    NucleotideContigFragmentRDD(rdd, sd, optPartitionMap = extractPartitionMap(pathName))
+    (optPredicate, optProjection) match {
+      case (None, None) => {
+        ParquetUnboundNucleotideContigFragmentRDD(
+          sc, pathName, sd)
+      }
+      case (_, _) => {
+        val rdd = loadParquet[NucleotideContigFragment](pathName, optPredicate, optProjection)
+        new RDDBoundNucleotideContigFragmentRDD(rdd,
+          sd,
+          optPartitionMap = extractPartitionMap(pathName))
+      }
+    }
   }
 
   /**
@@ -1507,10 +1581,20 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert avro to sequence dictionary
     val rgd = loadAvroRecordGroupDictionary(pathName)
 
-    // load fragment data from parquet
-    val rdd = loadParquet[Fragment](pathName, optPredicate, optProjection)
+    (optPredicate, optProjection) match {
+      case (None, None) => {
+        ParquetUnboundFragmentRDD(sc, pathName, sd, rgd)
+      }
+      case (_, _) => {
+        // load from disk
+        val rdd = loadParquet[Fragment](pathName, optPredicate, optProjection)
 
-    FragmentRDD(rdd, sd, rgd, optPartitionMap = extractPartitionMap(pathName))
+        new RDDBoundFragmentRDD(rdd,
+          sd,
+          rgd,
+          optPartitionMap = extractPartitionMap(pathName))
+      }
+    }
   }
 
   /**

@@ -29,6 +29,7 @@ import org.apache.avro.io.{ BinaryDecoder, BinaryEncoder, DecoderFactory, Encode
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificDatumWriter, SpecificRecord }
 import org.apache.hadoop.io.Writable
 import org.apache.spark.serializer.KryoRegistrator
+import org.bdgenomics.utils.misc.Logging
 import scala.reflect.ClassTag
 
 case class InputStreamWithDecoder(size: Int) {
@@ -89,7 +90,7 @@ class WritableSerializer[T <: Writable] extends Serializer[T] {
   }
 }
 
-class ADAMKryoRegistrator extends KryoRegistrator {
+class ADAMKryoRegistrator extends KryoRegistrator with Logging {
   override def registerClasses(kryo: Kryo) {
 
     // Register Avro classes using fully qualified class names
@@ -276,10 +277,36 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.codehaus.jackson.node.BooleanNode])
     kryo.register(classOf[org.codehaus.jackson.node.TextNode])
 
+    // org.apache.spark
+    try {
+      val cls = Class.forName("org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage")
+      kryo.register(cls)
+    } catch {
+      case cnfe: java.lang.ClassNotFoundException => {
+        log.info("Did not find Spark internal class. This is expected for Spark 1.")
+      }
+    }
+    kryo.register(classOf[org.apache.spark.sql.catalyst.expressions.UnsafeRow])
+    kryo.register(Class.forName("org.apache.spark.sql.types.BooleanType$"))
+    kryo.register(Class.forName("org.apache.spark.sql.types.DoubleType$"))
+    kryo.register(Class.forName("org.apache.spark.sql.types.FloatType$"))
+    kryo.register(Class.forName("org.apache.spark.sql.types.IntegerType$"))
+    kryo.register(Class.forName("org.apache.spark.sql.types.LongType$"))
+    kryo.register(Class.forName("org.apache.spark.sql.types.StringType$"))
+    kryo.register(classOf[org.apache.spark.sql.types.ArrayType])
+    kryo.register(classOf[org.apache.spark.sql.types.MapType])
+    kryo.register(classOf[org.apache.spark.sql.types.Metadata])
+    kryo.register(classOf[org.apache.spark.sql.types.StructField])
+    kryo.register(classOf[org.apache.spark.sql.types.StructType])
+
     // scala
+    kryo.register(classOf[scala.Array[scala.Array[Byte]]])
     kryo.register(classOf[scala.Array[htsjdk.variant.vcf.VCFHeader]])
     kryo.register(classOf[scala.Array[java.lang.Long]])
     kryo.register(classOf[scala.Array[java.lang.Object]])
+    kryo.register(classOf[scala.Array[org.apache.spark.sql.catalyst.InternalRow]])
+    kryo.register(classOf[scala.Array[org.apache.spark.sql.types.StructField]])
+    kryo.register(classOf[scala.Array[org.apache.spark.sql.types.StructType]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.AlignmentRecord]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Contig]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Dbxref]])

@@ -20,10 +20,14 @@ package org.bdgenomics.adam.rdd.feature
 import com.google.common.collect.ComparisonChain
 import java.util.Comparator
 import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
   FileMerger,
@@ -31,6 +35,7 @@ import org.bdgenomics.adam.rdd.{
   SAMHeaderWriter
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
+import org.bdgenomics.adam.sql.{ Feature => FeatureProduct }
 import org.bdgenomics.formats.avro.{ Feature, Strand }
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
@@ -109,6 +114,17 @@ private object FeatureOrdering extends FeatureOrdering[Feature] {}
 object FeatureRDD {
 
   /**
+   * A GenomicRDD that wraps a dataset of Feature data.
+   *
+   * @param ds A Dataset of genomic Features.
+   * @param sequences The reference genome this data is aligned to.
+   */
+  def apply(ds: Dataset[FeatureProduct],
+            sequences: SequenceDictionary): FeatureRDD = {
+    new DatasetBoundFeatureRDD(ds, sequences)
+  }
+
+  /**
    * Builds a FeatureRDD without SequenceDictionary information by running an
    * aggregate to rebuild the SequenceDictionary.
    *
@@ -144,8 +160,9 @@ object FeatureRDD {
    * @return Returns a new FeatureRDD.
    */
   def apply(rdd: RDD[Feature], sd: SequenceDictionary): FeatureRDD = {
-    FeatureRDD(rdd, sd, None)
+    new RDDBoundFeatureRDD(rdd, sd, None)
   }
+
   /**
    * @param feature Feature to convert to GTF format.
    * @return Returns this feature as a GTF line.
@@ -247,15 +264,96 @@ object FeatureRDD {
   }
 }
 
-/**
- * A GenomicRDD that wraps Feature data.
- *
- * @param rdd An RDD of genomic Features.
- * @param sequences The reference genome this data is aligned to.
- */
-case class FeatureRDD(rdd: RDD[Feature],
-                      sequences: SequenceDictionary,
-                      optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[Feature, FeatureRDD] with Logging {
+case class ParquetUnboundFeatureRDD private[rdd] (
+    private val sc: SparkContext,
+    private val parquetFilename: String,
+    sequences: SequenceDictionary) extends FeatureRDD {
+
+  lazy val rdd: RDD[Feature] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[FeatureProduct]
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def toCoverage(): CoverageRDD = {
+    ParquetUnboundCoverageRDD(sc, parquetFilename, sequences)
+  }
+}
+
+case class DatasetBoundFeatureRDD private[rdd] (
+    dataset: Dataset[FeatureProduct],
+    sequences: SequenceDictionary) extends FeatureRDD {
+
+  lazy val rdd = dataset.rdd.map(_.toAvro)
+  protected lazy val optPartitionMap = None
+
+  override def saveAsParquet(filePath: String,
+                             blockSize: Int = 128 * 1024 * 1024,
+                             pageSize: Int = 1 * 1024 * 1024,
+                             compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                             disableDictionaryEncoding: Boolean = false) {
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    dataset.toDF()
+      .write
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    saveMetadata(filePath)
+  }
+
+  override def transformDataset(
+    tFn: Dataset[FeatureProduct] => Dataset[FeatureProduct]): FeatureRDD = {
+    copy(dataset = tFn(dataset))
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def toCoverage(): CoverageRDD = {
+    import dataset.sqlContext.implicits._
+    DatasetBoundCoverageRDD(dataset.toDF
+      .select("contigName", "start", "end", "score")
+      .withColumnRenamed("score", "count")
+      .as[Coverage], sequences)
+  }
+}
+
+case class RDDBoundFeatureRDD private[rdd] (
+    rdd: RDD[Feature],
+    sequences: SequenceDictionary,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FeatureRDD {
+
+  /**
+   * A SQL Dataset of reads.
+   */
+  lazy val dataset: Dataset[FeatureProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(FeatureProduct.fromAvro))
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def toCoverage(): CoverageRDD = {
+    val coverageRdd = rdd.map(f => Coverage(f))
+    RDDBoundCoverageRDD(coverageRdd, sequences, optPartitionMap)
+  }
+}
+
+sealed abstract class FeatureRDD extends AvroGenomicRDD[Feature, FeatureProduct, FeatureRDD] with Logging {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Feature)])(
     implicit tTag: ClassTag[Feature]): IntervalArray[ReferenceRegion, Feature] = {
@@ -266,6 +364,19 @@ case class FeatureRDD(rdd: RDD[Feature],
     val iterableRdds = rdds.toSeq
     FeatureRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
       iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+  }
+
+  /**
+   * Applies a function that transforms the underlying RDD into a new RDD using
+   * the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a Dataset.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataset(
+    tFn: Dataset[FeatureProduct] => Dataset[FeatureProduct]): FeatureRDD = {
+    DatasetBoundFeatureRDD(tFn(dataset), sequences)
   }
 
   /**
@@ -321,10 +432,7 @@ case class FeatureRDD(rdd: RDD[Feature],
    *
    * @return CoverageRDD containing RDD of Coverage.
    */
-  def toCoverage(): CoverageRDD = {
-    val coverageRdd = rdd.map(f => Coverage(f))
-    CoverageRDD(coverageRdd, sequences)
-  }
+  def toCoverage(): CoverageRDD
 
   /**
    * @param newRdd The RDD to replace the underlying RDD with.
@@ -332,7 +440,7 @@ case class FeatureRDD(rdd: RDD[Feature],
    */
   protected def replaceRdd(newRdd: RDD[Feature],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FeatureRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    new RDDBoundFeatureRDD(newRdd, sequences, newPartitionMap)
   }
 
   /**
@@ -519,4 +627,12 @@ case class FeatureRDD(rdd: RDD[Feature],
 
     replaceRdd(rdd.sortBy(f => f, ascending, numPartitions))
   }
+
+  /**
+   * Replaces the sequence dictionary attached to a FeatureRDD.
+   *
+   * @param newSequences The sequence dictionary to add.
+   * @return Returns a new FeatureRDD with sequence dictionary attached.
+   */
+  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD
 }

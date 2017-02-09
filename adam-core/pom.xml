@@ -69,6 +69,7 @@
             <configuration>
               <sources>
                 <source>src/main/scala</source>
+                <source>target/generated-sources/src/main/scala</source>
               </sources>
             </configuration>
           </execution>
@@ -82,6 +83,39 @@
               <sources>
                 <source>src/test/scala</source>
               </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>generate-scala-products</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.bdgenomics.adam.codegen.DumpSchemasToProduct</mainClass>
+              <arguments>
+                <argument>org.bdgenomics.adam.sql</argument>
+                <argument>org.bdgenomics.formats.avro.AlignmentRecord</argument>
+                <argument>org.bdgenomics.formats.avro.Contig</argument>
+                <argument>org.bdgenomics.formats.avro.Dbxref</argument>
+                <argument>org.bdgenomics.formats.avro.Feature</argument>
+                <argument>org.bdgenomics.formats.avro.Fragment</argument>
+                <argument>org.bdgenomics.formats.avro.Genotype</argument>
+                <argument>org.bdgenomics.formats.avro.NucleotideContigFragment</argument>
+                <argument>org.bdgenomics.formats.avro.OntologyTerm</argument>
+                <argument>org.bdgenomics.formats.avro.TranscriptEffect</argument>
+                <argument>org.bdgenomics.formats.avro.Variant</argument>
+                <argument>org.bdgenomics.formats.avro.VariantAnnotation</argument>
+                <argument>org.bdgenomics.formats.avro.VariantCallingAnnotations</argument>
+                <argument>adam-core/target/generated-sources/src/main/scala/org/bdgenomics/adam/sql/Schemas.scala</argument>
+              </arguments>
+              <classpathScope>compile</classpathScope>
             </configuration>
           </execution>
         </executions>
@@ -147,6 +181,10 @@
       <!-- provided scope from parent -->
     </dependency>
     <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-sql_${scala.version.prefix}</artifactId>
+    </dependency>
+    <dependency>
       <groupId>it.unimi.dsi</groupId>
       <artifactId>fastutil</artifactId>
       <scope>compile</scope>
@@ -201,5 +239,25 @@
       <artifactId>guava</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.bdgenomics.adam</groupId>
+      <artifactId>adam-codegen_${scala.version.prefix}</artifactId>
+    </dependency>
   </dependencies>
+  <profiles>
+    <profile>
+      <id>coverage</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.scoverage</groupId>
+            <artifactId>scoverage-maven-plugin</artifactId>
+            <configuration>
+              <excludedPackages>org.bdgenomics.adam.sql</excludedPackages>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

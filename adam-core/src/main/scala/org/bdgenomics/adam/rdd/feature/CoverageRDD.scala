@@ -19,14 +19,17 @@ package org.bdgenomics.adam.rdd.feature
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.serializers.FieldSerializer
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models.{
   Coverage,
   ReferenceRegion,
   ReferenceRegionSerializer,
   SequenceDictionary
 }
-import org.bdgenomics.adam.rdd.GenomicRDD
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.GenomicDataset
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
@@ -59,17 +62,52 @@ private[adam] class CoverageArraySerializer(kryo: Kryo) extends IntervalArraySer
   }
 }
 
-object CoverageRDD {
+case class ParquetUnboundCoverageRDD private[rdd] (
+    private val sc: SparkContext,
+    private val parquetFilename: String,
+    sequences: SequenceDictionary) extends CoverageRDD {
 
-  /**
-   * Builds a CoverageRDD that does not have a partition map.
-   *
-   * @param rdd The underlying Coverage RDD.
-   * @param sd The SequenceDictionary for the RDD.
-   * @return A new Coverage RDD.
-   */
-  def apply(rdd: RDD[Coverage], sd: SequenceDictionary): CoverageRDD = {
-    CoverageRDD(rdd, sd, None)
+  lazy val rdd: RDD[Coverage] = {
+    sc.loadParquetCoverage(parquetFilename,
+      forceRdd = true).rdd
+  }
+
+  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename)
+      .select("contigName", "start", "end", "score")
+      .withColumnRenamed("score", "count")
+      .as[Coverage]
+  }
+
+  def toFeatureRDD(): FeatureRDD = {
+    ParquetUnboundFeatureRDD(sc, parquetFilename, sequences)
+  }
+}
+
+/**
+ * An Dataset containing Coverage data.
+ *
+ * @param dataset A SQL Dataset containing data describing how many reads cover
+ *   a genomic locus/region.
+ * @param sequences A dictionary describing the reference genome.
+ */
+case class DatasetBoundCoverageRDD private[rdd] (
+    dataset: Dataset[Coverage],
+    sequences: SequenceDictionary) extends CoverageRDD {
+
+  protected lazy val optPartitionMap = None
+
+  lazy val rdd: RDD[Coverage] = {
+    dataset.rdd
+  }
+
+  def toFeatureRDD(): FeatureRDD = {
+    import dataset.sqlContext.implicits._
+    DatasetBoundFeatureRDD(dataset.map(_.toSqlFeature), sequences)
   }
 }
 
@@ -80,9 +118,24 @@ object CoverageRDD {
  *   locus/region.
  * @param sequences A dictionary describing the reference genome.
  */
-case class CoverageRDD(rdd: RDD[Coverage],
-                       sequences: SequenceDictionary,
-                       optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends GenomicRDD[Coverage, CoverageRDD] {
+case class RDDBoundCoverageRDD private[rdd] (
+    rdd: RDD[Coverage],
+    sequences: SequenceDictionary,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends CoverageRDD {
+
+  lazy val dataset: Dataset[Coverage] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd)
+  }
+
+  def toFeatureRDD(): FeatureRDD = {
+    val featureRdd = rdd.map(_.toFeature)
+    FeatureRDD(featureRdd, sequences)
+  }
+}
+
+abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Coverage)])(
     implicit tTag: ClassTag[Coverage]): IntervalArray[ReferenceRegion, Coverage] = {
@@ -91,8 +144,25 @@ case class CoverageRDD(rdd: RDD[Coverage],
 
   def union(rdds: CoverageRDD*): CoverageRDD = {
     val iterableRdds = rdds.toSeq
-    CoverageRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+
+    val mergedSequences = iterableRdds.map(_.sequences).fold(sequences)(_ ++ _)
+
+    if (iterableRdds.forall(rdd => rdd match {
+      case DatasetBoundCoverageRDD(_, _) => true
+      case _                             => false
+    })) {
+      DatasetBoundCoverageRDD(iterableRdds.map(_.dataset)
+        .fold(dataset)(_.union(_)), mergedSequences)
+    } else {
+      RDDBoundCoverageRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+        mergedSequences,
+        None)
+    }
+  }
+
+  def transformDataset(
+    tFn: Dataset[Coverage] => Dataset[Coverage]): CoverageRDD = {
+    DatasetBoundCoverageRDD(tFn(dataset), sequences)
   }
 
   /**
@@ -184,10 +254,7 @@ case class CoverageRDD(rdd: RDD[Coverage],
    *
    * @return Returns a FeatureRDD from CoverageRDD.
    */
-  def toFeatureRDD(): FeatureRDD = {
-    val featureRdd = rdd.map(_.toFeature)
-    FeatureRDD(featureRdd, sequences, optPartitionMap)
-  }
+  def toFeatureRDD(): FeatureRDD
 
   /**
    * Gets coverage overlapping specified ReferenceRegion.
@@ -296,7 +363,7 @@ case class CoverageRDD(rdd: RDD[Coverage],
    */
   protected def replaceRdd(newRdd: RDD[Coverage],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): CoverageRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    RDDBoundCoverageRDD(newRdd, sequences, newPartitionMap)
   }
 
   /**

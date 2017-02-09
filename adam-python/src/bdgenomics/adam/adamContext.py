@@ -59,7 +59,7 @@ class ADAMContext(object):
         return AlignmentRecordRDD(adamRdd, self._sc)
 
 
-    def loadSequence(self, filePath):
+    def loadContigFragments(self, filePath):
         """
         Loads in sequence fragments.
 
@@ -70,7 +70,7 @@ class ADAMContext(object):
         :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentRDD
         """
 
-        adamRdd = self.__jac.loadSequences(filePath)
+        adamRdd = self.__jac.loadContigFragments(filePath)
 
         return NucleotideContigFragmentRDD(adamRdd, self._sc)
 
