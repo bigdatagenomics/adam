@@ -6,6 +6,7 @@ using ADAM's built in [pre-processing algorithms](#algorithms), [Spark's RDD
 primitives](#transforming), the [region join](#join) primitive, and ADAM's
 [pipe](#pipes) APIs.
 
+In addition to the Scala API, ADAM can be used from [Python](#python).
 
 ## Adding dependencies on ADAM libraries
 
@@ -43,6 +44,12 @@ Additionally, we push nightly SNAPSHOT releases of ADAM to the
 for developers who are interested in working on top of the latest changes in
 ADAM.
 
+## The ADAM Python API {#python}
+
+ADAM's Python API wraps the [ADAMContext](#adam-context) and
+[GenomicRDD](#genomic-rdd) APIs so they can be used from PySpark. The Python API
+is feature complete relative to ADAM's Java API, with the exception of the
+[region join](#join) and [pipe](#pipes) APIs, which are not supported.
 
 ## Loading data with the ADAMContext {#adam-context}
 
@@ -68,7 +75,7 @@ In Java, instantiate a JavaADAMContext, which wraps an ADAMContext:
 
 ```java
 import org.apache.spark.apis.java.JavaSparkContext;
-import org.bdgenomics.adam.apis.java.JavaADAMContext
+import org.bdgenomics.adam.apis.java.JavaADAMContext;
 import org.bdgenomics.adam.rdd.ADAMContext;
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD;
 
@@ -87,6 +94,16 @@ class LoadReads {
 }
 ```
 
+From Python, instantiate an ADAMContext, which wraps a SparkContext:
+
+```python
+from bdgenomics.adam.adamContext import ADAMContext
+
+ac = ADAMContext(sc)
+
+reads = ac.loadAlignments("my/read/file.adam")
+```
+
 With an `ADAMContext`, you can load:
 
 * Single reads as an `AlignmentRecordRDD`:
@@ -97,7 +114,7 @@ With an `ADAMContext`, you can load:
     (Scala only)
   * From Parquet using `loadParquetAlignments` (Scala only)
   * The `loadAlignments` method will load from any of the above formats, and
-    will autodetect the underlying format (Scala and Java, also supports loading
+    will autodetect the underlying format (Scala, Java, and Python, also supports loading
     reads from FASTA)
 * Paired reads as a `FragmentRDD`:
   * From interleaved FASTQ using `loadInterleavedFastqAsFragments` (Scala only)
@@ -105,15 +122,15 @@ With an `ADAMContext`, you can load:
   * The `loadFragments` method will load from either of the above formats, as
     well as SAM/BAM/CRAM, and will autodetect the underlying file format. If the
     file is a SAM/BAM/CRAM file and the file is queryname sorted, the data will
-    be converted to fragments without performing a shuffle. (Scala and Java)
+    be converted to fragments without performing a shuffle. (Scala, Java, and Python)
 * VCF lines as a `VariantContextRDD` from VCF/BCF1 using `loadVcf` (Scala only)
 * Selected lines from a tabix indexed VCF using `loadIndexedVcf` (Scala only)
 * Genotypes as a `GenotypeRDD`:
   * From Parquet using `loadParquetGenotypes` (Scala only)
-  * From either Parquet or VCF/BCF1 using `loadGenotypes` (Scala and Java)
+  * From either Parquet or VCF/BCF1 using `loadGenotypes` (Scala, Java, and Python)
 * Variants as a `VariantRDD`:
   * From Parquet using `loadParquetVariants` (Scala only)
-  * From either Parquet or VCF/BCF1 using `loadVariants` (Scala and Java)
+  * From either Parquet or VCF/BCF1 using `loadVariants` (Scala, Java, and Python)
 * Genomic features as a `FeatureRDD`:
   * From BED using `loadBed` (Scala only)
   * From GFF3 using `loadGff3` (Scala only)
@@ -121,11 +138,11 @@ With an `ADAMContext`, you can load:
   * From NarrowPeak using `loadNarrowPeak` (Scala only)
   * From IntervalList using `loadIntervalList` (Scala only)
   * From Parquet using `loadParquetFeatures` (Scala only)
-  * Autodetected from any of the above using `loadFeatures` (Scala and Java)
+  * Autodetected from any of the above using `loadFeatures` (Scala, Java, and Python)
 * Fragmented contig sequence as a `NucleotideContigFragmentRDD`:
   * From FASTA with `loadFasta` (Scala only)
   * From Parquet with `loadParquetContigFragments` (Scala only)
-  * Autodetected from either of the above using `loadSequences` (Scala and Java)
+  * Autodetected from either of the above using `loadSequences` (Scala, Java, and Python)
 * Coverage data as a `CoverageRDD`:
   * From Parquet using `loadParquetCoverage` (Scala only)
   * From Parquet or any of the feature file formats using `loadCoverage` (Scala

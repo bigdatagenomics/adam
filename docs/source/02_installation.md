@@ -54,3 +54,31 @@ Once this alias is in place, you can run ADAM by simply typing `adam-submit` at 
 ```bash
 $ adam-submit
 ```
+
+## Building for Python {#python-build}
+
+To build and test [ADAM's Python bindings](#python), enable the `python`
+profile:
+
+```bash
+mvn -Ppython package
+```
+
+This will enable the `adam-python` module as part of the ADAM build. This module
+uses Maven to invoke a Makefile that builds a Python egg and runs tests. To
+build this module, we require either an active [Conda](https://conda.io/) or
+[virtualenv](https://virtualenv.pypa.io/en/stable/) environment. Additionally,
+to run tests, the PySpark dependencies must be on the Python module load path
+and the ADAM JARs must be built and provided to PySpark. This can be done with
+the following bash commands:
+
+```bash
+# add pyspark to the python path
+PY4J_ZIP="$(ls -1 "${SPARK_HOME}/python/lib" | grep py4j)"
+export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/${PY4J_ZIP}:${PYTHONPATH}
+
+# put adam jar on the pyspark path
+ASSEMBLY_DIR="${ADAM_HOME}/adam-assembly/target"
+ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\.\_-]*\.jar$" | grep -v javadoc | grep -v sources || true)"
+export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
+```

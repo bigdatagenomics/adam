@@ -164,9 +164,22 @@ then
     exit 1
 fi
 
-# run integration tests on scala 2.10; prebuilt spark distributions are not available for 2.11
-if [ ${SCALAVER} == 2.10 ];
+# run integration tests
+# prebuilt spark distributions are scala 2.10 for spark 1.x, scala 2.11 for spark 2.x
+if [[ ( ${SPARK_VERSION} != 2.0.0 && ${SCALAVER} == 2.10 ) || ( ${SPARK_VERSION} == 2.0.0 && ${SCALAVER} == 2.11 ) ]];
 then
+
+    # we moved away from spark 2/scala 2.11 in our poms earlier,
+    # so rewrite poms
+    if [ ${SPARK_VERSION} == 2.0.0 ];
+    then
+        
+        echo "Rewriting POM.xml files for Spark 2."
+        ./scripts/move_to_spark_2.sh
+
+        echo "Rewriting POM.xml files for Scala 2.11."
+        ./scripts/move_to_scala_2.11.sh
+    fi
 
     # make a temp directory
     ADAM_TMP_DIR=$(mktemp -d -t adamTestXXXXXXX)
@@ -175,6 +188,9 @@ then
     ADAM_TMP_DIR=$ADAM_TMP_DIR/deleteMePleaseThisIsNoLongerNeeded
     mkdir $ADAM_TMP_DIR
 
+    # set the TMPDIR envar, which is used by python to choose where to make temp directories
+    export TMPDIR=${ADAM_TMP_DIR}
+
     pushd $PROJECT_ROOT
 
     # Copy the jar into our temp space for testing
@@ -182,6 +198,11 @@ then
     popd
 
     pushd $ADAM_TMP_DIR
+
+    # create a conda environment for python build, if necessary
+    uuid=$(uuidgen)
+    conda create -q -n adam-build-${uuid} python=2.7 anaconda
+    source activate adam-build-${uuid}
 
     # what hadoop version are we on? format string for downloading spark assembly
     if [[ $HADOOP_VERSION =~ ^2\.6 ]]; then
@@ -203,6 +224,30 @@ then
     
     # set the path to the adam submit script
     ADAM=./bin/adam-submit
+
+    # add pyspark to the python path
+    PY4J_ZIP="$(ls -1 "${SPARK_HOME}/python/lib" | grep py4j)"
+    export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/${PY4J_ZIP}:${PYTHONPATH}
+
+    # put adam jar on the pyspark path
+    ASSEMBLY_DIR="${ADAM_TMP_DIR}/adam-assembly/target"
+    ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\_\.-]*\.jar$" | grep -v javadoc | grep -v sources || true)"
+    export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
+
+    # we can run the python build, now that we have a spark executable
+    mvn -U \
+        -P python \
+        package \
+        -DskipTests \
+        -Dhadoop.version=${HADOOP_VERSION} \
+        -Dspark.version=${SPARK_VERSION}
+
+    # copy python targets back
+    cp -r adam-python/target ${PROJECT_ROOT}/adam-python/
+
+    # deactivate and remove the conda env
+    source deactivate
+    conda remove -n adam-build-${uuid} --all
 
     # define filenames
     BAM=mouse_chrM.bam
@@ -240,6 +285,17 @@ then
     ${ADAM} flagstat -print_metrics ${READS}
     rm -rf ${ADAM_TMP_DIR}
     popd
+
+    # we rewrote our poms to spark 2/scala 2.11 earlier, so rewrite now
+    if [ ${SPARK_VERSION} == 2.0.0 ];
+    then
+        
+        echo "Reverting POM.xml file changes for Spark 2."
+        ./scripts/move_to_spark_1.sh
+
+        echo "Reverting POM.xml file changess for Scala 2.11."
+        ./scripts/move_to_scala_2.10.sh
+    fi
     
     # test that the source is formatted correctly
     # we had modified the poms to add a temp dir, so back out that modification first
