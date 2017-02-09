@@ -126,7 +126,7 @@ case class VariantRDD(rdd: RDD[Variant],
   /**
    * @return Returns this VariantRDD as a VariantContextRDD.
    */
-  def toVariantContextRDD: VariantContextRDD = {
+  def toVariantContextRDD(): VariantContextRDD = {
     VariantContextRDD(rdd.map(VariantContext(_)), sequences, Seq.empty[Sample], headerLines)
   }
 

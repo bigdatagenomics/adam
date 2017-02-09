@@ -132,7 +132,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   /**
    * @return Returns a GenotypeRDD containing the Genotypes in this RDD.
    */
-  def toGenotypeRDD: GenotypeRDD = {
+  def toGenotypeRDD(): GenotypeRDD = {
     GenotypeRDD(rdd.flatMap(_.genotypes),
       sequences,
       samples,
@@ -142,7 +142,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   /**
    * @return Returns the Variants in this RDD.
    */
-  def toVariantRDD: VariantRDD = {
+  def toVariantRDD(): VariantRDD = {
     VariantRDD(rdd.map(_.variant.variant),
       sequences,
       headerLines)
