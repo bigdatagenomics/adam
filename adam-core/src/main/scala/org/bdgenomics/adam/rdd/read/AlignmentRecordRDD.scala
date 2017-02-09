@@ -50,6 +50,7 @@ import org.bdgenomics.adam.rdd.feature.CoverageRDD
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.variant.VariantRDD
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.util.ReferenceFile
 import org.bdgenomics.formats.avro._
@@ -664,9 +665,10 @@ case class AlignmentRecordRDD(
    * @return Returns an RDD of recalibrated reads.
    */
   def recalibrateBaseQualities(
-    knownSnps: SnpTable,
+    knownSnps: VariantRDD,
     validationStringency: ValidationStringency): AlignmentRecordRDD = {
-    val bcastSnps = rdd.context.broadcast(knownSnps)
+    val snpTable = SnpTable(knownSnps)
+    val bcastSnps = rdd.context.broadcast(snpTable)
     recalibrateBaseQualities(bcastSnps, validationStringency = validationStringency)
   }
 
@@ -687,7 +689,7 @@ case class AlignmentRecordRDD(
   }
 
   /**
-   * Realigns indels using a concensus-based heuristic.
+   * Realigns indels using a consensus-based heuristic.
    *
    * Java friendly variant.
    *

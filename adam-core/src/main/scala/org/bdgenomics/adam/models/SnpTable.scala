@@ -17,10 +17,11 @@
  */
 package org.bdgenomics.adam.models
 
-import org.bdgenomics.adam.rich.RichVariant
-import org.bdgenomics.adam.rich.DecadentRead._
-import org.bdgenomics.utils.misc.Logging
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.rdd.variant.VariantRDD
+import org.bdgenomics.adam.rich.DecadentRead._
+import org.bdgenomics.adam.rich.RichVariant
+import org.bdgenomics.utils.misc.Logging
 import scala.collection.immutable._
 import scala.collection.mutable
 
@@ -87,7 +88,24 @@ object SnpTable {
    */
   def apply(variants: RDD[RichVariant]): SnpTable = {
     val positions = variants.map(variant => (variant.variant.getContigName,
-      variant.variant.getStart)).collect()
+      variant.variant.getStart: Long))
+    fromPos(positions)
+  }
+
+  /**
+   * Creates a SNP Table from a VariantRDD.
+   *
+   * @param variants The variants to populate the table from.
+   * @return Returns a new SNPTable containing the input variants.
+   */
+  def apply(variants: VariantRDD): SnpTable = {
+    val positions = variants.rdd.map(variant => (variant.getContigName,
+      variant.getStart: Long))
+    fromPos(positions)
+  }
+
+  private def fromPos(rdd: RDD[(String, Long)]): SnpTable = {
+    val positions = rdd.collect()
     val table = new mutable.HashMap[String, mutable.HashSet[Long]]
     positions.foreach(tup => table.getOrElseUpdate(tup._1, { new mutable.HashSet[Long] }) += tup._2)
     new SnpTable(table.mapValues(_.toSet).toMap)
