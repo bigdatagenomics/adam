@@ -293,7 +293,7 @@ then
         echo "Reverting POM.xml file changes for Spark 2."
         ./scripts/move_to_spark_1.sh
 
-        echo "Reverting POM.xml file changess for Scala 2.11."
+        echo "Reverting POM.xml file changes for Scala 2.11."
         ./scripts/move_to_scala_2.10.sh
     fi
     

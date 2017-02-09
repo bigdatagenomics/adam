@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.sql.{ Feature => FeatureProduct }
 import org.bdgenomics.formats.avro.Feature
 
 /**
@@ -94,6 +95,36 @@ case class Coverage(contigName: String, start: Long, end: Long, count: Double) {
       .setEnd(end)
       .setScore(count)
       .build()
+  }
+
+  /**
+   * Converts Coverage to a Feature case class, for use with Spark SQL.
+   */
+  def toSqlFeature: FeatureProduct = {
+    new FeatureProduct(featureId = None,
+      name = None,
+      source = None,
+      featureType = None,
+      contigName = Some(contigName),
+      start = Some(start),
+      end = Some(end),
+      strand = None,
+      phase = None,
+      frame = None,
+      score = Some(count),
+      geneId = None,
+      transcriptId = None,
+      exonId = None,
+      aliases = Seq.empty,
+      parentIds = Seq.empty,
+      target = None,
+      gap = None,
+      derivesFrom = None,
+      notes = Seq.empty,
+      dbxrefs = Seq.empty,
+      ontologyTerms = Seq.empty,
+      circular = None,
+      attributes = Map.empty)
   }
 }
 

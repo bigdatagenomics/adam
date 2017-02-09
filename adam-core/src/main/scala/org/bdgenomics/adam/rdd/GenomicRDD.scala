@@ -28,6 +28,7 @@ import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ DataFrame, Dataset }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -167,11 +168,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   //   second.
   protected val optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]
 
-  assert(optPartitionMap.isEmpty ||
+  assert(optPartitionMap == null ||
+    optPartitionMap.isEmpty ||
     optPartitionMap.exists(_.length == rdd.partitions.length),
     "Partition map length differs from number of partitions.")
 
-  val isSorted: Boolean = optPartitionMap.isDefined
+  def isSorted: Boolean = optPartitionMap.isDefined
 
   /**
    * Repartitions all data in rdd and distributes it as evenly as possible
@@ -1256,12 +1258,40 @@ trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends Genomic
 }
 
 /**
+ * A trait describing a GenomicRDD that also supports the Spark SQL APIs.
+ */
+trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicRDD[T, V] {
+
+  /**
+   * This data as a Spark SQL Dataset.
+   */
+  val dataset: Dataset[U]
+
+  /**
+   * @return This data as a Spark SQL DataFrame.
+   */
+  def toDF(): DataFrame = {
+    dataset.toDF()
+  }
+
+  /**
+   * Applies a function that transforms the underlying Dataset into a new Dataset
+   * using the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a Dataset.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataset(tFn: Dataset[U] => Dataset[U]): V
+}
+
+/**
  * An abstract class describing a GenomicRDD where:
  *
  * * The data are Avro IndexedRecords.
  * * The data are associated to read groups (i.e., they are reads or fragments).
  */
-abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroReadGroupGenomicRDD[T, U]] extends AvroGenomicRDD[T, U] {
+abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: AvroReadGroupGenomicRDD[T, U, V]] extends AvroGenomicRDD[T, U, V] {
 
   /**
    * A dictionary describing the read groups attached to this GenomicRDD.
@@ -1294,8 +1324,8 @@ abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroRe
  * An abstract class that extends the MultisampleGenomicRDD trait, where the data
  * are Avro IndexedRecords.
  */
-abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: MultisampleAvroGenomicRDD[T, U]] extends AvroGenomicRDD[T, U]
-    with MultisampleGenomicRDD[T, U] {
+abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: MultisampleAvroGenomicRDD[T, U, V]] extends AvroGenomicRDD[T, U, V]
+    with MultisampleGenomicRDD[T, V] {
 
   /**
    * The header lines attached to the file.
@@ -1331,8 +1361,8 @@ abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Mult
  * Avro IndexedRecords. This abstract class provides methods for saving to
  * Parquet, and provides hooks for writing the metadata.
  */
-abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[T, U]] extends ADAMRDDFunctions[T]
-    with GenomicRDD[T, U] {
+abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: AvroGenomicRDD[T, U, V]] extends ADAMRDDFunctions[T]
+    with GenomicDataset[T, U, V] {
 
   /**
    * Save the partition map to the disk. This is done by adding the partition

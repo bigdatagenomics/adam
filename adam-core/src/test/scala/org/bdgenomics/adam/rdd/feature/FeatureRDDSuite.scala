@@ -22,38 +22,9 @@ import java.io.File
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ Feature, Strand }
-import org.scalactic.{ Equivalence, TypeCheckedTripleEquals }
 import scala.io.Source
 
-class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
-  implicit val strongFeatureEq = new Equivalence[Feature] {
-    def areEquivalent(a: Feature, b: Feature): Boolean = {
-      a.getContigName === b.getContigName &&
-        a.getStart === b.getStart &&
-        a.getEnd === b.getEnd &&
-        a.getStrand === b.getStrand &&
-        a.getFeatureId === b.getFeatureId &&
-        a.getName === b.getName &&
-        a.getFeatureType === b.getFeatureType &&
-        a.getSource === b.getSource &&
-        a.getPhase === b.getPhase &&
-        a.getFrame === b.getFrame &&
-        a.getScore === b.getScore &&
-        a.getGeneId === b.getGeneId &&
-        a.getTranscriptId === b.getTranscriptId &&
-        a.getExonId === b.getExonId &&
-        a.getTarget === b.getTarget &&
-        a.getGap === b.getGap &&
-        a.getDerivesFrom === b.getDerivesFrom &&
-        a.getCircular === b.getCircular &&
-        a.getAliases === b.getAliases &&
-        a.getNotes === b.getNotes &&
-        a.getParentIds === b.getParentIds &&
-        a.getDbxrefs === b.getDbxrefs &&
-        a.getOntologyTerms === b.getOntologyTerms &&
-        a.getAttributes === b.getAttributes
-    }
-  }
+class FeatureRDDSuite extends ADAMFunSuite {
 
   def tempLocation(suffix: String = ".adam"): String = {
     val tempFile = File.createTempFile("FeatureRDDFunctionsSuite", "")
@@ -614,7 +585,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
 
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
-      .copy(sequences = sd)
+      .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform(_.repartition(1))
 
@@ -636,7 +607,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
 
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
-      .copy(sequences = sd)
+      .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform(_.repartition(1))
 
@@ -662,7 +633,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
 
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
-      .copy(sequences = sd)
+      .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform(_.repartition(1))
 
@@ -688,7 +659,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
 
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
-      .copy(sequences = sd)
+      .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform(_.repartition(1))
 
@@ -718,7 +689,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
 
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
-      .copy(sequences = sd)
+      .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform(_.repartition(1))
 
@@ -744,7 +715,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
 
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
-      .copy(sequences = sd)
+      .replaceSequences(sd)
     val targets = sc.loadFeatures(targetsPath)
       .transform(_.repartition(1))
 
@@ -878,5 +849,24 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val pipedRdd: FeatureRDD = frdd.pipe("tee /dev/null")
     assert(pipedRdd.rdd.count >= frdd.rdd.count)
     assert(pipedRdd.rdd.distinct.count === frdd.rdd.distinct.count)
+  }
+
+  sparkTest("load parquet to sql, save, re-read from avro") {
+    val inputPath = testFile("small.1.bed")
+    val outputPath = tmpLocation()
+    val rdd = sc.loadFeatures(inputPath)
+      .transformDataset(ds => ds) // no-op but force to ds
+    assert(rdd.dataset.count === 4)
+    assert(rdd.rdd.count === 4)
+    rdd.saveAsParquet(outputPath)
+    val rdd2 = sc.loadFeatures(outputPath)
+    assert(rdd2.rdd.count === 4)
+    assert(rdd2.dataset.count === 4)
+    val outputPath2 = tmpLocation()
+    rdd.transform(rdd => rdd) // no-op but force to rdd
+      .saveAsParquet(outputPath2)
+    val rdd3 = sc.loadFeatures(outputPath2)
+    assert(rdd3.rdd.count === 4)
+    assert(rdd3.dataset.count === 4)
   }
 }

@@ -36,6 +36,8 @@ class FragmentRDDSuite extends ADAMFunSuite {
     val ardd = sc.loadFragments(fragmentsPath)
     val records = ardd.rdd.count
     assert(records === 3)
+    assert(ardd.dataset.count === 3)
+    assert(ardd.dataset.rdd.count === 3)
 
     implicit val tFormatter = InterleavedFASTQInFormatter
     implicit val uFormatter = new AnySAMOutFormatter
@@ -295,5 +297,29 @@ class FragmentRDDSuite extends ADAMFunSuite {
     assert(union.sequences.size === reads1.sequences.size)
     // small.sam has no record groups
     assert(union.recordGroups.size === reads1.recordGroups.size)
+  }
+
+  sparkTest("load parquet to sql, save, re-read from avro") {
+    val inputPath = testFile("small.sam")
+    val outputPath = tmpLocation()
+    val rdd = sc.loadFragments(inputPath)
+      .transformDataset(ds => ds) // no-op, force conversion to ds
+    assert(rdd.dataset.count === 20)
+    assert(rdd.rdd.count === 20)
+    rdd.saveAsParquet(outputPath)
+    val rdd2 = sc.loadFragments(outputPath)
+    assert(rdd2.rdd.count === 20)
+    assert(rdd2.dataset.count === 20)
+    val outputPath2 = tmpLocation()
+    rdd.transform(rdd => rdd) // no-op but force to rdd
+      .saveAsParquet(outputPath2)
+    val rdd3 = sc.loadFragments(outputPath2)
+    assert(rdd3.rdd.count === 20)
+    assert(rdd3.dataset.count === 20)
+    val outputPath3 = tmpLocation()
+    rdd3.save(outputPath3)
+    val rdd4 = sc.loadFragments(outputPath3)
+    assert(rdd4.rdd.count === 20)
+    assert(rdd4.dataset.count === 20)
   }
 }
