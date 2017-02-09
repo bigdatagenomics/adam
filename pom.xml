@@ -242,6 +242,11 @@
           <artifactId>scalariform-maven-plugin</artifactId>
           <version>0.1.4</version>
         </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>1.5.0</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -571,6 +576,16 @@
   </dependencyManagement>
 
   <profiles>
+    <profile>
+      <id>python</id>
+      <modules>
+        <module>adam-core</module>
+        <module>adam-apis</module>
+        <module>adam-python</module>
+        <module>adam-cli</module>
+        <module>adam-assembly</module>
+      </modules>
+    </profile>
     <profile>
       <id>distribution</id>
       <modules>

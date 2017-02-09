@@ -185,7 +185,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
                 asSingleFile: Boolean,
                 deferMerging: Boolean,
                 disableFastConcat: Boolean,
-                stringency: ValidationStringency): Unit = {
+                stringency: ValidationStringency) {
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
