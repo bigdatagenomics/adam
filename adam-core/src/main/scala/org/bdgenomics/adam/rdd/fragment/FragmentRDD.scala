@@ -17,7 +17,10 @@
  */
 package org.bdgenomics.adam.rdd.fragment
 
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -26,6 +29,7 @@ import org.bdgenomics.adam.models.{
   ReferenceRegionSerializer,
   SequenceDictionary
 }
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
@@ -34,6 +38,7 @@ import org.bdgenomics.adam.rdd.read.{
   QualityScoreBin
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
+import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct }
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
@@ -109,21 +114,88 @@ object FragmentRDD {
             sequences: SequenceDictionary,
             recordGroupDictionary: RecordGroupDictionary): FragmentRDD = {
 
-    FragmentRDD(rdd, sequences, recordGroupDictionary, None)
+    new RDDBoundFragmentRDD(rdd, sequences, recordGroupDictionary, None)
+  }
+
+  /**
+   * A genomic RDD that supports Datasets of Fragments.
+   *
+   * @param ds The underlying Dataset of Fragment data.
+   * @param sequences The genomic sequences this data was aligned to, if any.
+   * @param recordGroups The record groups these Fragments came from.
+   */
+  def apply(ds: Dataset[FragmentProduct],
+            sequences: SequenceDictionary,
+            recordGroups: RecordGroupDictionary): FragmentRDD = {
+    DatasetBoundFragmentRDD(ds, sequences, recordGroups)
   }
 }
 
-/**
- * A genomic RDD that supports RDDs of Fragments.
- *
- * @param rdd The underlying RDD of Fragment data.
- * @param sequences The genomic sequences this data was aligned to, if any.
- * @param recordGroups The record groups these Fragments came from.
- */
-case class FragmentRDD(rdd: RDD[Fragment],
-                       sequences: SequenceDictionary,
-                       recordGroups: RecordGroupDictionary,
-                       optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroReadGroupGenomicRDD[Fragment, FragmentRDD] {
+case class ParquetUnboundFragmentRDD private[rdd] (
+    @transient private val sc: SparkContext,
+    private val parquetFilename: String,
+    sequences: SequenceDictionary,
+    recordGroups: RecordGroupDictionary) extends FragmentRDD {
+
+  lazy val rdd: RDD[Fragment] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[FragmentProduct]
+  }
+}
+
+case class DatasetBoundFragmentRDD private[rdd] (
+    dataset: Dataset[FragmentProduct],
+    sequences: SequenceDictionary,
+    recordGroups: RecordGroupDictionary) extends FragmentRDD {
+
+  lazy val rdd = dataset.rdd.map(_.toAvro)
+
+  protected lazy val optPartitionMap = None
+
+  override def saveAsParquet(filePath: String,
+                             blockSize: Int = 128 * 1024 * 1024,
+                             pageSize: Int = 1 * 1024 * 1024,
+                             compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                             disableDictionaryEncoding: Boolean = false) {
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    dataset.toDF()
+      .write
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    saveMetadata(filePath)
+  }
+
+  override def transformDataset(
+    tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentRDD = {
+    copy(dataset = tFn(dataset))
+  }
+}
+
+case class RDDBoundFragmentRDD private[rdd] (
+    rdd: RDD[Fragment],
+    sequences: SequenceDictionary,
+    recordGroups: RecordGroupDictionary,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FragmentRDD {
+
+  /**
+   * A SQL Dataset of reads.
+   */
+  lazy val dataset: Dataset[FragmentProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(FragmentProduct.fromAvro))
+  }
+}
+
+sealed abstract class FragmentRDD extends AvroReadGroupGenomicRDD[Fragment, FragmentProduct, FragmentRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Fragment)])(
     implicit tTag: ClassTag[Fragment]): IntervalArray[ReferenceRegion, Fragment] = {
@@ -139,7 +211,7 @@ case class FragmentRDD(rdd: RDD[Fragment],
    */
   protected def replaceRdd(newRdd: RDD[Fragment],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FragmentRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    RDDBoundFragmentRDD(newRdd, sequences, recordGroups, newPartitionMap)
   }
 
   def union(rdds: FragmentRDD*): FragmentRDD = {
@@ -147,6 +219,19 @@ case class FragmentRDD(rdd: RDD[Fragment],
     FragmentRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
       iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
       iterableRdds.map(_.recordGroups).fold(recordGroups)(_ ++ _))
+  }
+
+  /**
+   * Applies a function that transforms the underlying RDD into a new RDD using
+   * the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a Dataset.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataset(
+    tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentRDD = {
+    DatasetBoundFragmentRDD(tFn(dataset), sequences, recordGroups)
   }
 
   /**

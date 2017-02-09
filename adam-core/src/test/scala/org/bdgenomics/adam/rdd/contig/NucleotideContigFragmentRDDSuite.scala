@@ -36,6 +36,26 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     assert(union.sequences.size === 2)
   }
 
+  sparkTest("round trip a ncf to parquet") {
+    val fragments1 = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
+    assert(fragments1.rdd.count === 8L)
+    assert(fragments1.dataset.count === 8L)
+
+    // save using dataset path
+    val output1 = tmpFile("ctg.adam")
+    fragments1.transformDataset(ds => ds).saveAsParquet(output1)
+    val fragments2 = sc.loadContigFragments(output1)
+    assert(fragments2.rdd.count === 8L)
+    assert(fragments2.dataset.count === 8L)
+
+    // save using rdd path
+    val output2 = tmpFile("ctg.adam")
+    fragments2.transform(rdd => rdd).saveAsParquet(output2)
+    val fragments3 = sc.loadContigFragments(output2)
+    assert(fragments3.rdd.count === 8L)
+    assert(fragments3.dataset.count === 8L)
+  }
+
   sparkTest("generate sequence dict from fasta") {
 
     val contig1 = Contig.newBuilder
@@ -317,14 +337,21 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
 
-    val outputDir = Files.createTempDir()
-    val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
-    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
-    val fastaLines = scala.io.Source.fromFile(new File(outputFastaFile + "/part-00000")).getLines().toSeq
+    def validate(fileName: String) {
+      val fastaLines = scala.io.Source.fromFile(new File(fileName + "/part-00000")).getLines().toSeq
 
-    assert(fastaLines.length === 2)
-    assert(fastaLines(0) === ">chr1")
-    assert(fastaLines(1) === "ACTGTAC")
+      assert(fastaLines.length === 2)
+      assert(fastaLines(0) === ">chr1")
+      assert(fastaLines(1) === "ACTGTAC")
+    }
+
+    val outputFastaFile = tmpFile("test.fa")
+    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile)
+    validate(outputFastaFile)
+
+    val outputFastaFile2 = tmpFile("test2.fa")
+    rdd.transform(_.coalesce(1)).saveAsFasta(outputFastaFile2)
+    validate(outputFastaFile2)
   }
 
   sparkTest("save multiple contig fragments from same contig as FASTA text file") {

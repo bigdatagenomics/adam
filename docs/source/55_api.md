@@ -4,9 +4,10 @@ The main entrypoint to ADAM is the [ADAMContext](#adam-context), which allows ge
 data to be loaded in to Spark as [GenomicRDD](#genomic-rdd). GenomicRDDs can be transformed
 using ADAM's built in [pre-processing algorithms](#algorithms), [Spark's RDD
 primitives](#transforming), the [region join](#join) primitive, and ADAM's
-[pipe](#pipes) APIs.
+[pipe](#pipes) APIs. GenomicRDDs can also be interacted with as [Spark SQL
+tables](#sql).
 
-In addition to the Scala API, ADAM can be used from [Python](#python).
+In addition to the Scala/Java API, ADAM can be used from [Python](#python).
 
 ## Adding dependencies on ADAM libraries
 
@@ -197,6 +198,7 @@ Parquet and VCF.
   * Fragments:
     * [Mark duplicate fragments](#duplicate-marking)
 * [RDD transformations](#transforming)
+* [Spark SQL transformations](#sql)
 * [By using ADAM to pipe out to another tool](#pipes)
 
 ### Transforming GenomicRDDs {#transforming}
@@ -211,6 +213,45 @@ on an `AlignmentRecordRDD` to filter out reads that have a low mapping quality,
 but we cannot use `transform` to translate those reads into `Feature`s showing
 the genomic locations covered by reads.
 
+### Transforming GenomicRDDs via Spark SQL {#sql}
+
+Spark SQL introduced the strongly-typed [`Dataset` API in Spark
+1.6.0](https://spark.apache.org/docs/1.6.0/sql-programming-guide.html#datasets).
+This API supports seamless translation between the RDD API and a strongly typed
+DataFrame style API. While Spark SQL supports many types of encoders for
+translating data from an RDD into a Dataset, no encoders support the Avro models
+used by ADAM to describe our genomic schemas. In spite of this, Spark SQL is
+highly desirable because it has a more efficient execution engine than the Spark
+RDD APIs, which can lead to substantial speedups for certain queries.
+
+To resolve this, we added an `adam-codegen` package that generates Spark SQL
+compatible classes representing the ADAM schemas. These classes are available
+in the `org.bdgenomics.adam.sql` package. All Avro-backed GenomicRDDs now
+support translation to Datasets via the `dataset` field, and transformation
+via the Spark SQL APIs through the `transformDataset` method. As an optimization,
+we lazily choose either the RDD or Dataset API depending on the calculation
+being performed. For example, if one were to load a Parquet file of reads, we
+would not decide to load the Parquet file as an RDD or a Dataset until we
+saw your query. If you were to load the reads from Parquet and then were to
+immediately run a `transformDataset` call, it would be more efficient to
+load the data directly using the Spark SQL APIs, instead of loading the data
+as an RDD, and then transforming that RDD into a SQL Dataset.
+
+The functionality of the `adam-codegen` package is simple. The goal of this
+package is to take ADAM's Avro schemas and to remap them into classes that
+implement Scala's `Product` interface, and which have a specific style of
+constructor that is expected by Spark SQL. Additionally, we define functions
+that translate between these Product classes and the bdg-formats Avro models.
+Parquet files written with either the Product classes and Spark SQL
+Parquet writer or the Avro classes and the RDD/ParquetAvroOutputFormat are
+equivalent and can be read through either API. However, to support this, we
+must explicitly set the requested schema on read when loading data through
+the RDD read path. This is because Spark SQL writes a Parquet schema that is
+equivalent but not strictly identical to the Parquet schema that the Avro/RDD
+write path writes. If the schema is not set, then schema validation on read
+fails. If reading data using the [ADAMContext](#adam-context) APIs, this is
+handled properly; this is an implementation note necessary only for those
+bypassing the ADAM APIs.
 
 ## Using ADAM’s RegionJoin API {#join}
 

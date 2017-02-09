@@ -97,7 +97,7 @@ class ADAMContext(object):
         :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentRDD
         """
 
-        adamRdd = self.__jac.loadSequences(filePath)
+        adamRdd = self.__jac.loadContigFragments(filePath)
 
         return NucleotideContigFragmentRDD(adamRdd, self._sc)
 

@@ -18,7 +18,7 @@
 
 
 from pyspark.rdd import RDD
-
+from pyspark.sql import DataFrame, SQLContext
 
 from bdgenomics.adam.stringency import LENIENT, _toJava
 
@@ -94,6 +94,14 @@ class AlignmentRecordRDD(GenomicRDD):
     def _replaceRdd(self, newRdd):
 
         return AlignmentRecordRDD(newRdd, self.sc)
+
+    
+    def toDF(self):
+        """
+        :return: Returns a dataframe representing this RDD.
+        """
+        
+        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
 
 
     def toFragments(self):
@@ -538,7 +546,15 @@ class FeatureRDD(GenomicRDD):
         GenomicRDD.__init__(self, jvmRdd, sc)
 
 
-    def save(self, filePath, asSingleFile = False):
+    def toDF(self):
+        """
+        :return: Returns a dataframe representing this RDD.
+        """
+        
+        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+
+
+    def save(self, filePath, asSingleFile = False, disableFastConcat = False):
         """
         Saves coverage, autodetecting the file type from the extension.
 
@@ -551,9 +567,11 @@ class FeatureRDD(GenomicRDD):
         :param str filePath: The location to write the output.
         :param bool asSingleFile: If true, merges the sharded output into a
         single file.
+        :param bool disableFastConcat: If asSingleFile is true, disables the use
+        of the fast concatenation engine for saving to HDFS.
         """
 
-        self._jvmRdd.save(filePath, asSingleFile)
+        self._jvmRdd.save(filePath, asSingleFile, disableFastConcat)
 
         
     def toCoverage(self):
@@ -588,6 +606,14 @@ class FragmentRDD(GenomicRDD):
         GenomicRDD.__init__(self, jvmRdd, sc)
 
         
+    def toDF(self):
+        """
+        :return: Returns a dataframe representing this RDD.
+        """
+        
+        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+
+
     def toReads(self):
         """
         Splits up the reads in a Fragment, and creates a new RDD.
@@ -641,6 +667,14 @@ class GenotypeRDD(GenomicRDD):
 
         GenomicRDD.__init__(self, jvmRdd, sc)
 
+
+    def toDF(self):
+        """
+        :return: Returns a dataframe representing this RDD.
+        """
+        
+        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+
         
     def save(self, filePath):
         """
@@ -661,7 +695,8 @@ class GenotypeRDD(GenomicRDD):
                   asSingleFile=True,
                   deferMerging=False,
                   stringency=LENIENT,
-                  sortOnSave=None):
+                  sortOnSave=None,
+                  disableFastConcat=False):
         """
         Saves this RDD of genotypes to disk as VCF.
 
@@ -675,6 +710,8 @@ class GenotypeRDD(GenomicRDD):
         :param bool sortOnSave: Whether to sort when saving. If None, does not
         sort. If True, sorts by contig index. If "lexicographically", sorts by
         contig name.
+        :param bool disableFastConcat: If asSingleFile is true, disables the use
+        of the fast concatenation engine for saving to HDFS.
         """
 
         vcs = self._jvmRdd.toVariantContextRDD()
@@ -714,6 +751,14 @@ class NucleotideContigFragmentRDD(GenomicRDD):
         """
 
         GenomicRDD.__init__(self, jvmRdd, sc)
+
+
+    def toDF(self):
+        """
+        :return: Returns a dataframe representing this RDD.
+        """
+        
+        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
 
 
     def save(self, fileName):
@@ -779,8 +824,6 @@ class VariantRDD(GenomicRDD):
         GenomicRDD.__init__(self, jvmRdd, sc)
 
 
-<<<<<<< HEAD
-=======
     def toDF(self):
         """
         :return: Returns a dataframe representing this RDD.
@@ -831,7 +874,6 @@ class VariantRDD(GenomicRDD):
                            _toJava(stringency, self.sc._jvm))
 
 
->>>>>>> d86c62f... Update adam-python to use new VariantContextRDD Java-friendly methods.
     def save(self, filePath):
         """
         Saves this RDD of variants to disk.

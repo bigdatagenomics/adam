@@ -247,4 +247,25 @@ class VariantRDDSuite extends ADAMFunSuite {
     assert(vc.variant.variant.contigName === "1")
     assert(vc.genotypes.isEmpty)
   }
+
+  sparkTest("load parquet to sql, save, re-read from avro") {
+    val inputPath = testFile("small.vcf")
+    val outputPath = tmpLocation()
+    val rdd = sc.loadVariants(inputPath)
+      .transformDataset(ds => ds) // no-op but force to sql
+    assert(rdd.dataset.count === 6)
+    assert(rdd.rdd.count === 6)
+    rdd.saveAsParquet(outputPath)
+    println(outputPath)
+    val rdd2 = sc.loadVariants(outputPath)
+    assert(rdd2.rdd.count === 6)
+    assert(rdd2.dataset.count === 6)
+    val outputPath2 = tmpLocation()
+    println(outputPath2)
+    rdd.transform(rdd => rdd) // no-op but force to rdd
+      .saveAsParquet(outputPath2)
+    val rdd3 = sc.loadVariants(outputPath2)
+    assert(rdd3.rdd.count === 6)
+    assert(rdd3.dataset.count === 6)
+  }
 }

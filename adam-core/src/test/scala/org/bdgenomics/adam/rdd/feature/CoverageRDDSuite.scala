@@ -57,14 +57,45 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
     val coverage = sc.loadCoverage(outputFile)
     assert(coverage.rdd.count == 3)
+    assert(coverage.dataset.count == 3)
+
+    // go to dataset and save as parquet
+    val outputFile2 = tmpLocation(".adam")
+    coverageRDD.transformDataset(ds => ds).save(outputFile2, false, false)
+    val coverage2 = sc.loadCoverage(outputFile2)
+    assert(coverage2.rdd.count == 3)
+    assert(coverage2.dataset.count == 3)
+
+    // load as features, force to dataset, convert to coverage, and count
+    val features2Ds = sc.loadFeatures(outputFile2)
+      .transformDataset(ds => ds) // no-op, force to dataset
+    val coverage2Ds = features2Ds.toCoverage
+    assert(coverage2Ds.rdd.count == 3)
+    assert(coverage2Ds.dataset.count == 3)
+
+    // translate to features and count
+    val features2 = coverage2.toFeatureRDD
+    assert(features2.rdd.count == 3)
+    assert(features2.dataset.count == 3)
+
+    // go to rdd and save as parquet
+    val outputFile3 = tmpLocation(".adam")
+    coverageRDD.transform(rdd => rdd).save(outputFile3, false, false)
+    val coverage3 = sc.loadCoverage(outputFile3)
+    assert(coverage3.rdd.count == 3)
+    assert(coverage3.dataset.count == 3)
   }
 
   sparkTest("can read a bed file to coverage") {
     val inputPath = testFile("sample_coverage.bed")
     val coverage = sc.loadCoverage(inputPath)
     assert(coverage.rdd.count() == 3)
+    assert(coverage.dataset.count() == 3)
     val selfUnion = coverage.union(coverage)
     assert(selfUnion.rdd.count === 6)
+    val coverageDs = coverage.transformDataset(ds => ds) // no-op, forces to dataset
+    val selfUnionDs = coverageDs.union(coverageDs)
+    assert(selfUnionDs.rdd.count === 6)
   }
 
   sparkTest("correctly filters coverage with predicate") {
@@ -114,7 +145,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
   sparkTest("collapses coverage records in one partition") {
     val cov = generateCoverage(20)
-    val coverage = CoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd)
+    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd, None)
     val collapsed = coverage.collapse
 
     assert(coverage.rdd.count == 20)
@@ -123,7 +154,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
   sparkTest("approximately collapses coverage records in multiple partitions") {
     val cov = generateCoverage(20)
-    val coverage = CoverageRDD(sc.parallelize(cov), sd)
+    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov), sd, None)
     val collapsed = coverage.collapse
 
     assert(collapsed.rdd.count == 8)
