@@ -256,10 +256,10 @@ $ spark-submit \
 A complete example of this pattern can be found in the
 [heuermh/adam-examples](https://github.com/heuermh/adam-examples) repository.
 
-### Using ADAM’s ShuffleRegionJoin API
-Another useful API implemented in ADAM is the ShuffleRegionJoin API, which joins two genomic datasets that contain overlapping regions. This primitive is useful for a number of applications including variant calls (identifying all of the reads that overlap a candidate variant), coverage analysis (determining the coverage depth for each region in a reference), and indel realignment (identify indels aligned against a reference).
+### Using ADAM’s RegionJoin API
+Another useful API implemented in ADAM is the RegionJoin API, which joins two genomic datasets that contain overlapping regions. This primitive is useful for a number of applications including variant calls (identifying all of the reads that overlap a candidate variant), coverage analysis (determining the coverage depth for each region in a reference), and indel realignment (identify indels aligned against a reference).
 
-The result of a ShuffleRegionJoin is identical to the BroadcastRegionJoin, however the use cases between these differ. The ShuffleRegionJoin performs a copartition on the right dataset before the join on the entire dataset, but the BroadcastRegionJoin sends a copy of the entire right dataset to each node. ShuffleRegionJoin should be used in the case that the right dataset is too large to send to all datasets or there is high coverage skew in either dataset. 
+There are two implementations of joins available in ADAM: BroadcastRegionJoin and ShuffleRegionJoin. The result of a ShuffleRegionJoin is identical to the BroadcastRegionJoin, however they should each be used in specific circumstances. The ShuffleRegionJoin performs a copartition on the right dataset before the join on the entire dataset, but the BroadcastRegionJoin sends a copy of the entire right dataset to each node. ShuffleRegionJoin should be used in the case that the right dataset is too large to send to all nodes or if there is high coverage skew in either dataset. The BroadcastRegionJoin should be used when you are joining a smaller dataset to a larger one.
 
 To perform a ShuffleRegionJoin, add the following to your ADAM script:
 
