@@ -302,7 +302,6 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
         assert(readB.getQual == "B" * readB.getSequence.length)
         assert(readB.getQual == readC.getQual)
     }
-
   }
 
   sparkTest("round trip from ADAM to FASTQ and back to ADAM produces equivalent Read values") {

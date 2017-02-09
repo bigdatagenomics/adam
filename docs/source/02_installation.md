@@ -1,4 +1,4 @@
-# Building ADAM from Source
+# Building ADAM from Source {#build-from-source}
 
 You will need to have [Apache Maven](http://maven.apache.org/) version 3.1.1 or later
 installed in order to build ADAM.
@@ -53,4 +53,59 @@ Once this alias is in place, you can run ADAM by simply typing `adam-submit` at 
 
 ```bash
 $ adam-submit
+```
+
+## Building for Python {#python-build}
+
+To build and test [ADAM's Python bindings](#python), enable the `python`
+profile:
+
+```bash
+mvn -Ppython package
+```
+
+This will enable the `adam-python` module as part of the ADAM build. This module
+uses Maven to invoke a Makefile that builds a Python egg and runs tests. To
+build this module, we require either an active [Conda](https://conda.io/) or
+[virtualenv](https://virtualenv.pypa.io/en/stable/) environment.
+
+[To setup and activate a Conda
+environment](https://conda.io/docs/using/envs.html), run:
+
+```bash
+conda create -n adam python=2.7 anaconda
+source activate adam
+```
+
+[To setup and activate a virtualenv
+environment](https://virtualenv.pypa.io/en/stable/userguide/#usage), run:
+
+```bash
+virtualenv adam
+. adam/bin/activate
+```
+
+Additionally, to run tests, the PySpark dependencies must be on the Python module
+load path and the ADAM JARs must be built and provided to PySpark. This can be
+done with the following bash commands:
+
+```bash
+# add pyspark to the python path
+PY4J_ZIP="$(ls -1 "${SPARK_HOME}/python/lib" | grep py4j)"
+export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/${PY4J_ZIP}:${PYTHONPATH}
+
+# put adam jar on the pyspark path
+ASSEMBLY_DIR="${ADAM_HOME}/adam-assembly/target"
+ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\.\_-]*\.jar$" | grep -v javadoc | grep -v sources || true)"
+export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
+```
+
+This assumes that the [ADAM JARs have already been built](#build-from-source).
+Additionally, we require [pytest](https://docs.pytest.org/en/latest/) to be
+installed. The adam-python makefile can install this dependency. Once you have
+an active virtualenv or Conda environment, run:
+
+```bash
+cd adam-python
+make prepare
 ```
