@@ -323,7 +323,7 @@ case class FeatureRDD(rdd: RDD[Feature],
    *
    * @return CoverageRDD containing RDD of Coverage.
    */
-  def toCoverage: CoverageRDD = {
+  def toCoverage(): CoverageRDD = {
     val coverageRdd = rdd.map(f => Coverage(f))
     CoverageRDD(coverageRdd, sequences)
   }

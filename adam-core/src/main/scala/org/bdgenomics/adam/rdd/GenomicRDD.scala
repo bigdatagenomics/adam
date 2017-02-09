@@ -26,6 +26,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -135,6 +136,16 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   def union(rdds: U*): U
 
   /**
+   * Unions together multiple genomic RDDs.
+   *
+   * @param rdds RDDs to union with this RDD.
+   */
+  def union(rdds: java.util.List[U]): U = {
+    val rddSeq: Seq[U] = rdds.toSeq
+    union(rddSeq: _*)
+  }
+
+  /**
    * Applies a function that transforms the underlying RDD into a new RDD.
    *
    * @param tFn A function that transforms the underlying RDD.
@@ -220,6 +231,30 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   }
 
   /**
+   * Applies a function that transforms the underlying RDD into a new RDD.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transform(tFn: JFunction[JavaRDD[T], JavaRDD[T]]): U = {
+    replaceRdd(tFn.call(jrdd).rdd)
+  }
+
+  /**
+   * Sorts our genome aligned data by reference positions, with contigs ordered
+   * by index.
+   *
+   * @return Returns a new RDD containing sorted data.
+   *
+   * @see sortLexicographically
+   */
+  def sort(): U = {
+    sort(partitions = rdd.partitions.length,
+      stringency = ValidationStringency.STRICT)(ClassTag.AnyRef.asInstanceOf[ClassTag[T]])
+  }
+
+  /**
    * Sorts our genome aligned data by reference positions, with contigs ordered
    * by index.
    *
@@ -266,6 +301,18 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       }
     }).sortByKey(ascending = true, numPartitions = partitions)
       .values)
+  }
+
+  /**
+   * Sorts our genome aligned data by reference positions, with contigs ordered
+   * lexicographically.
+   *
+   * @return Returns a new RDD containing sorted data.
+   *
+   * @see sort
+   */
+  def sortLexicographically(): U = {
+    sortLexicographically(storePartitionMap = false)(ClassTag.AnyRef.asInstanceOf[ClassTag[T]])
   }
 
   /**
