@@ -35,6 +35,7 @@ import org.mockito.Mockito._
 /**
  * Created by paschallj on 11/25/16.
  */
+
 class HBaseSuite extends ADAMFunSuite {
 
   sparkTest("Save data from a VCF into HBase using KeyStrategy1") {
@@ -124,3 +125,4 @@ class HBaseSuite extends ADAMFunSuite {
   }
 
 }
+
