@@ -8,7 +8,7 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-hbase_2.10_2.10</artifactId>
+  <artifactId>adam-hbase_2.10</artifactId>
   <packaging>jar</packaging>
   <name>ADAM_${scala.version.prefix}: HBase</name>
   <build>

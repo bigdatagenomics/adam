@@ -701,7 +701,7 @@
       <activation>
         <activeByDefault>false</activeByDefault>
         <property>
-          <name>SPARKVERSION</name>
+          <name>env.SPARKVERSION</name>
           <value>1.6.3</value>
         </property>
       </activation>
