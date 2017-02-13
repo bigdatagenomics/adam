@@ -399,8 +399,6 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = new File(testFile("gvcf_dir/gvcf_multiallelic.g.vcf")).getParent()
 
     val variants = sc.loadVcf(path).toVariantRDD
-    // Not sure that the count should be 7 below, however the current failure to read the mult-allelic site happens
-    // before this assertion is even reached
     assert(variants.rdd.count === 6)
   }
 
