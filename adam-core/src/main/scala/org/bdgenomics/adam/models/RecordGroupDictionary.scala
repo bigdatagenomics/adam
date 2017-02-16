@@ -59,6 +59,13 @@ object RecordGroupDictionary {
 case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
 
   /**
+   * @return Returns true if this dictionary contains no record groups.
+   */
+  def isEmpty: Boolean = {
+    recordGroups.isEmpty
+  }
+
+  /**
    * A representation of this record group dictionary that can be indexed into
    * by record group name.
    */
