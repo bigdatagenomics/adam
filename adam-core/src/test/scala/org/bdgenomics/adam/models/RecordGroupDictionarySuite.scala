@@ -69,11 +69,19 @@ class RecordGroupDictionarySuite extends FunSuite {
       RecordGroup("sample2", "rgSample2"),
       RecordGroup("sample3", "rg1Sample3"),
       RecordGroup("sample3", "rg2Sample3")))
+    assert(!rgd.isEmpty)
     val samples = rgd.toSamples
 
     assert(samples.size === 3)
     assert(samples.count(_.getSampleId == "sample1") === 1)
     assert(samples.count(_.getSampleId == "sample2") === 1)
     assert(samples.count(_.getSampleId == "sample3") === 1)
+  }
+
+  test("empty record group is empty") {
+    val emptyRgd = RecordGroupDictionary.empty
+
+    assert(emptyRgd.isEmpty)
+    assert(emptyRgd.recordGroups.size === 0)
   }
 }
