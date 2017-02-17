@@ -280,7 +280,6 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
         // ID line
         readName.clear();
         long skipped = appendLineInto(readName, true);
-        pos += skipped;
         if (skipped == 0) {
             return false; // EOF
         }
@@ -327,7 +326,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
      */
     private int appendLineInto(final Text dest, final boolean eofOk) throws EOFException, IOException {
         Text buf = new Text();
-        int bytesRead = lineReader.readLine(buf, MAX_LINE_LENGTH);
+        int bytesRead = lineReader.readLine(buf, (int) Math.min(MAX_LINE_LENGTH, end - start));
 
         if (bytesRead < 0 || (bytesRead == 0 && !eofOk)) {
             throw new EOFException();
