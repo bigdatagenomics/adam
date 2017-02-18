@@ -62,7 +62,7 @@ public final class SingleFastqInputFormat extends FileInputFormat<Void, Text> {
          *   formatted pair of FASTQ records.
          */
         protected boolean checkBuffer(final int bufferLength, final Text buffer) {
-            return (bufferLength >= 0 &&
+            return (bufferLength > 0 &&
                     buffer.getBytes()[0] == '@');
         }
 

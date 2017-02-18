@@ -71,7 +71,7 @@ public final class InterleavedFastqInputFormat extends FileInputFormat<Void, Tex
          *   formatted pair of FASTQ records.
          */
         protected boolean checkBuffer(final int bufferLength, final Text buffer) {
-            return (bufferLength >= 2 &&
+            return (bufferLength > 2 &&
                     buffer.getBytes()[0] == '@' &&
                     buffer.getBytes()[bufferLength - 2] == '/' &&
                     buffer.getBytes()[bufferLength - 1] == '1');
