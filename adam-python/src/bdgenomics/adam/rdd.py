@@ -158,13 +158,13 @@ class AlignmentRecordRDD(GenomicRDD):
 
         if asType is None:
 
-            type = self.sc._jvm.org.seqdoop.hadoop_bam.SAMFormat.inferFromFilePath(filePath)
+            fileType = self.sc._jvm.org.seqdoop.hadoop_bam.SAMFormat.inferFromFilePath(filePath)
 
         else:
 
-            type = self.sc._jvm.org.seqdoop.hadoop_bam.SAMFormat.valueOf(asType)
+            fileType = self.sc._jvm.org.seqdoop.hadoop_bam.SAMFormat.valueOf(asType)
 
-        self._jvmRdd.saveAsSam(filePath, type, asSingleFile, isSorted)
+        self._jvmRdd.saveAsSam(filePath, fileType, asSingleFile, isSorted)
 
         
     def saveAsSamString(self):

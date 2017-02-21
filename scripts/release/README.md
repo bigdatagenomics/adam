@@ -31,3 +31,5 @@ version, give the commit hash of the release commit (from the 2.10 release) and 
 the release script.
 
 Finally, be sure to announce the release on the ADAM mailing list and Twitter (@bigdatagenomics).
+
+Additionally, once the release is done, you will need to bump the R and Python development versions on trunk.
