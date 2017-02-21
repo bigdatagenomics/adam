@@ -57,8 +57,8 @@ fi
 
 set -e
 
-# are we testing for spark 2.0.0? if so, we need to rewrite our poms first
-if [ ${SPARK_VERSION} == 2.0.0 ];
+# are we testing for spark 2.1.0? if so, we need to rewrite our poms first
+if [ ${SPARK_VERSION} == 2.1.0 ];
 then
     
     echo "Rewriting POM.xml files for Spark 2."
@@ -139,7 +139,7 @@ rm -rf ${ADAM_MVN_TMP_DIR}
 
 # and move our poms back to their original values
 # this will allow us to pass our porcelain test at the end
-if [ ${SPARK_VERSION} == 2.0.0 ];
+if [ ${SPARK_VERSION} == 2.1.0 ];
 then
     
     echo "Rewriting POM.xml files back to Spark 1."
@@ -166,12 +166,12 @@ fi
 
 # run integration tests
 # prebuilt spark distributions are scala 2.10 for spark 1.x, scala 2.11 for spark 2.x
-if [[ ( ${SPARK_VERSION} != 2.0.0 && ${SCALAVER} == 2.10 ) || ( ${SPARK_VERSION} == 2.0.0 && ${SCALAVER} == 2.11 ) ]];
+if [[ ( ${SPARK_VERSION} != 2.1.0 && ${SCALAVER} == 2.10 ) || ( ${SPARK_VERSION} == 2.1.0 && ${SCALAVER} == 2.11 ) ]];
 then
 
     # we moved away from spark 2/scala 2.11 in our poms earlier,
     # so rewrite poms
-    if [ ${SPARK_VERSION} == 2.0.0 ];
+    if [ ${SPARK_VERSION} == 2.1.0 ];
     then
         
         echo "Rewriting POM.xml files for Spark 2."
@@ -234,13 +234,36 @@ then
     ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\_\.-]*\.jar$" | grep -v javadoc | grep -v sources || true)"
     export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
 
-    # we can run the python build, now that we have a spark executable
-    mvn -U \
-        -P python \
-        package \
-        -DskipTests \
-        -Dhadoop.version=${HADOOP_VERSION} \
-        -Dspark.version=${SPARK_VERSION}
+    # we only support SparkR on Spark 2.x
+    if [ ${SPARK_VERSION} == 2.1.0 ];
+    then
+
+	# make a directory to install SparkR into, and set the R user libs path
+	export R_LIBS_USER=${SPARK_HOME}/local_R_libs
+	mkdir -p ${R_LIBS_USER}
+	R CMD INSTALL \
+	    -l ${R_LIBS_USER} \
+	    ${SPARK_HOME}/R/lib/SparkR/
+
+	export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
+    
+        # we can run the python build, now that we have a spark executable
+	mvn -U \
+            -P python,r \
+            package \
+            -DskipTests \
+            -Dhadoop.version=${HADOOP_VERSION} \
+            -Dspark.version=${SPARK_VERSION}
+
+    else
+        # we can run the python build, now that we have a spark executable
+	mvn -U \
+            -P python \
+            package \
+            -DskipTests \
+            -Dhadoop.version=${HADOOP_VERSION} \
+            -Dspark.version=${SPARK_VERSION}
+    fi
 
     # copy python targets back
     cp -r adam-python/target ${PROJECT_ROOT}/adam-python/
@@ -287,7 +310,7 @@ then
     popd
 
     # we rewrote our poms to spark 2/scala 2.11 earlier, so rewrite now
-    if [ ${SPARK_VERSION} == 2.0.0 ];
+    if [ ${SPARK_VERSION} == 2.1.0 ];
     then
         
         echo "Reverting POM.xml file changes for Spark 2."

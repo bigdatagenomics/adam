@@ -82,3 +82,28 @@ ASSEMBLY_DIR="${ADAM_HOME}/adam-assembly/target"
 ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\.\_-]*\.jar$" | grep -v javadoc | grep -v sources || true)"
 export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
 ```
+
+## Building for R {#r-build}
+
+ADAM supports SparkR, for Spark 2.0.0 and onwards. To build and test [ADAM's R
+bindings](#r), enable the `r` profile:
+
+```bash
+mvn -Pr package
+```
+
+This will enable the `adam-r` module as part of the ADAM build. This module
+uses Maven to invoke the `R` executable to build the `bdg.adam` package and run
+tests. Beyond having `R` installed, we require you to have the `SparkR` package
+installed, and the ADAM JARs must be built and provided to `SparkR`. This can be
+done with the following bash commands:
+
+```bash
+# put adam jar on the SparkR path
+ASSEMBLY_DIR="${ADAM_HOME}/adam-assembly/target"
+ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\_\.-]*\.jar$" | grep -v javadoc | grep -v sources || true)"
+export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
+```
+
+Note that the `ASSEMBLY_DIR` and `ASSEMBLY_JAR` lines are the same as for the
+[Python build](#python-build).

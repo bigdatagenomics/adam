@@ -1,0 +1,25 @@
+Package: bdg.adam
+Type: Package
+Version: 0.23.0
+Title: R Frontend for Big Data Genomics/ADAM
+Description: The SparkR package provides an R Frontend for Apache Spark.
+Author: Big Data Genomics
+Maintainer: Frank Austin Nothaft <fnothaft@alumni.stanford.edu>
+Authors@R: c(person("Frank", "Nothaft", role = c("aut", "cre"),
+                    email = "fnothaft@alumni.stanford.edu"),
+             person(family = "Big Data Genomics", role = c("aut", "cph")))
+License: Apache License (== 2.0)
+URL: http://www.bdgenomics.org https://github.com/bigdatagenomics/adam
+BugReports: https://github.com/bigdatagenomics/adam/issues
+Imports:
+    methods
+Depends:
+    R (>= 3.0),
+    SparkR (>= 1.6.0)
+Suggests:
+    testthat
+Collate:
+    'generics.R'
+    'adam-context.R'
+    'rdd.R'
+RoxygenNote: 6.0.1
