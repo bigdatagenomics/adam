@@ -257,29 +257,49 @@ A complete example of this pattern can be found in the
 [heuermh/adam-examples](https://github.com/heuermh/adam-examples) repository.
 
 ### Using ADAM’s RegionJoin API
-Another useful API implemented in ADAM is the RegionJoin API, which joins two genomic datasets that contain overlapping regions. This primitive is useful for a number of applications including variant calls (identifying all of the reads that overlap a candidate variant), coverage analysis (determining the coverage depth for each region in a reference), and indel realignment (identify indels aligned against a reference).
+Another useful API implemented in ADAM is the RegionJoin API, which joins two
+genomic datasets that contain overlapping regions. This primitive is useful for
+a number of applications including variant calling (identifying all of the reads 
+that overlap a candidate variant), coverage analysis (determining the coverage 
+depth for each region in a reference), and INDEL realignment (identify INDELs 
+aligned against a reference).
 
-There are two implementations of joins available in ADAM: BroadcastRegionJoin and ShuffleRegionJoin. The result of a ShuffleRegionJoin is identical to the BroadcastRegionJoin, however they should each be used in specific circumstances. The ShuffleRegionJoin performs a copartition on the right dataset before the join on the entire dataset, but the BroadcastRegionJoin sends a copy of the entire right dataset to each node. ShuffleRegionJoin should be used in the case that the right dataset is too large to send to all nodes or if there is high coverage skew in either dataset. The BroadcastRegionJoin should be used when you are joining a smaller dataset to a larger one.
+There are two join implementations available in ADAM: BroadcastRegionJoin 
+and ShuffleRegionJoin. The result of a ShuffleRegionJoin is identical to the 
+BroadcastRegionJoin, however they should each be used in specific circumstances.
+The ShuffleRegionJoin performs a copartition on the right dataset before the 
+join on the entire dataset, but the BroadcastRegionJoin sends a copy of the 
+entire right dataset to each node. ShuffleRegionJoin should be used if the 
+right dataset is too large to send to all nodes. The BroadcastRegionJoin 
+should be used when you are joining a smaller dataset to a larger one.
 
 To perform a ShuffleRegionJoin, add the following to your ADAM script:
 
 ```dataset1.shuffleRegionJoin(dataset2)```
 
-Where dataset1 and dataset2 are GenomicRDDs. If you used the ADAMContext to read a genomic dataset into memory, this condition is met.
+To perform a BroadcastRegionJoin, add the following to your ADAM script:
 
-ADAM has a variety of ShuffleRegionJoin types that you can perform on your data, and all are called in a similar way:
+```dataset1.broadcastRegionJoin(dataset2)```
 
-![Joins Available](https://cloud.githubusercontent.com/assets/3752466/22659423/700c8aae-ec52-11e6-8534-0e364f91700a.png)
+Where dataset1 and dataset2 are GenomicRDDs. If you used the ADAMContext to 
+read a genomic dataset into memory, this condition is met.
+
+ADAM has a variety of ShuffleRegionJoin types that you can perform on your 
+data, and all are called in a similar way:
+
+![Joins Available]()
 
 
 Join call | action |
 ----------|--------|
-```dataset1.shuffleRegionJoin(dataset2) ```| perform an inner join
+```dataset1.shuffleRegionJoin(dataset2) ``` ```dataset1.broadcastRegionJoin(dataset2)```| perform an inner join
 ```dataset1.fullOuterShuffleRegionJoin(datset2)```|perform an outer join
 ```dataset1.leftOuterShuffleRegionJoin(dataset2)```|perform a left outer join
-```dataset1.rightOuterShuffleRegionJoin(dataset2)```|perform a right outer join
-```dataset1.shuffleRegionJoinAndGroupByLeft(dataset2)```|perform an inner join, but group joined values by the records on the left
-```dataset1.rightOuterShuffleRegionJoinAndGroupByLeft(dataset2)```|perform a right outer join, but group joined values by the records on the left
+```dataset1.rightOuterShuffleRegionJoin(dataset2)``` ```dataset1.rightOuterBroadcastRegionJoin(dataset2)```|perform a right outer join
+```dataset1.shuffleRegionJoinAndGroupByLeft(dataset2)``` |perform an inner join and group joined values by the records on the left
+```dataset1.broadcastRegionJoinnAndGroupByRight(dataset2)``` | perform an inner join and group joined values by the records on the right
+```dataset1.rightOuterShuffleRegionJoinAndGroupByLeft(dataset2)```|perform a right outer join and group joined values by the records on the left
+```rightOuterBroadcastRegionJoinAndGroupByRight``` | perform a right outer join and group joined values by the records on the right
 
 ### Writing your own registrator that calls the ADAM registrator {#registrator}
 
