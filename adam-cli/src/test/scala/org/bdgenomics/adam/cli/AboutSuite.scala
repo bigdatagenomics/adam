@@ -28,6 +28,7 @@ class AboutSuite extends FunSuite {
     assert(about.commit !== "${git.commit.id}")
     assert(about.hadoopVersion !== "${hadoop.version}")
     assert(about.scalaVersion !== "${scala.version}")
+    assert(about.sparkVersion !== "${spark.version}")
     assert(about.version !== "${version}")
   }
 
@@ -37,6 +38,7 @@ class AboutSuite extends FunSuite {
     assert(about.commit.nonEmpty)
     assert(about.hadoopVersion.nonEmpty)
     assert(about.scalaVersion.nonEmpty)
+    assert(about.sparkVersion.nonEmpty)
     assert(about.version.nonEmpty)
   }
 }

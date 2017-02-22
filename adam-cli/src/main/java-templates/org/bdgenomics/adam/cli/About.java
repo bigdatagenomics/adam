@@ -26,6 +26,7 @@ public final class About {
     private static final String COMMIT = "${git.commit.id}";
     private static final String HADOOP_VERSION = "${hadoop.version}";
     private static final String SCALA_VERSION = "${scala.version}";
+    private static final String SPARK_VERSION = "${spark.version}";
     private static final String VERSION = "${project.version}";
 
     /**
@@ -56,36 +57,45 @@ public final class About {
     }
 
     /**
-     * Return the Hadoop version.
+     * Return the Hadoop compile scope dependency version.
      *
-     * @return the Hadoop version
+     * @return the Hadoop compile scope dependency version
      */
     public String hadoopVersion() {
         return HADOOP_VERSION;
     }
 
     /**
-     * Return the Scala version.
+     * Return the Scala compile scope dependency version.
      *
-     * @return the Scala version
+     * @return the Scala compile scope dependency version
      */
     public String scalaVersion() {
         return SCALA_VERSION;
     }
 
     /**
-     * Return the version.
+     * Return the Apache Spark compile scope dependency version.
      *
-     * @return the version
+     * @return the Apache Spark compile scope dependency version
+     */
+    public String sparkVersion() {
+        return SPARK_VERSION;
+    }
+
+    /**
+     * Return the ADAM version.
+     *
+     * @return the ADAM version
      */
     public String version() {
         return VERSION;
     }
 
     /**
-     * Return true if the version is a snapshot.
+     * Return true if the ADAM version is a snapshot.
      *
-     * @return true if the version is a snapshot
+     * @return true if the ADAM version is a snapshot
      */
     public boolean isSnapshot() {
         return VERSION.contains("SNAPSHOT");
