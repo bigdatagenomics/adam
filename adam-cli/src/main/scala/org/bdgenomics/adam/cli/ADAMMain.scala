@@ -90,7 +90,8 @@ class ADAMMain @Inject() (commandGroups: List[CommandGroup]) extends Logging {
     if (about.isSnapshot) {
       println("Commit: %s Build: %s".format(about.commit, about.buildTimestamp))
     }
-    println("Built for: Scala %s and Hadoop %s".format(about.scalaVersion, about.hadoopVersion))
+    println("Built for: Apache Spark %s, Scala %s, and Hadoop %s"
+      .format(about.sparkVersion, about.scalaVersion, about.hadoopVersion))
   }
 
   private def printCommands() {
