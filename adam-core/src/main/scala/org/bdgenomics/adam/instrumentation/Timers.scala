@@ -87,4 +87,16 @@ object Timers extends Metrics {
   val SortingRightSide = timer("Sorting right side of join")
   val GrowingTrees = timer("Growing forest of trees")
   val RunningMapSideJoin = timer("Running map-side join")
+
+  // org.bdgenomics.adam.rdd.GenomicRDD
+  val InnerBroadcastJoin = timer("Inner broadcast region join")
+  val RightOuterBroadcastJoin = timer("Right outer broadcast region join")
+  val BroadcastJoinAndGroupByRight = timer("Broadcast join followed by group-by on right")
+  val RightOuterBroadcastJoinAndGroupByRight = timer("Right outer broadcast join followed by group-by on right")
+  val InnerShuffleJoin = timer("Inner shuffle region join")
+  val RightOuterShuffleJoin = timer("Right outer shuffle region join")
+  val LeftOuterShuffleJoin = timer("Left outer shuffle region join")
+  val FullOuterShuffleJoin = timer("Full outer shuffle region join")
+  val ShuffleJoinAndGroupByLeft = timer("Shuffle join followed by group-by on left")
+  val RightOuterShuffleJoinAndGroupByLeft = timer("Right outer shuffle join followed by group-by on left")
 }
