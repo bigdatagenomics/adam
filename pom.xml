@@ -660,6 +660,29 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>coveralls</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <version>3.0.1</version>
+            <configuration>
+              <coberturaReports>
+                <param>${project.build.directory}/cobertura.xml</param>
+              </coberturaReports>
+              <sourceDirectories>
+                <param>adam-core/src/main/scala</param>
+                <param>adam-core/src/main/java</param>
+                <param>adam-apis/src/main/scala</param>
+                <param>adam-cli/src/main/scala</param>
+              </sourceDirectories>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <!-- Only sign artifacts when we are performing a release, not snapshots -->
     <profile>
       <id>sonatype-oss-release</id>

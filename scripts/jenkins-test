@@ -100,10 +100,29 @@ mvn clean \
     -Dhadoop.version=${HADOOP_VERSION} \
     -Dspark.version=${SPARK_VERSION} 
     
+# if this is a pull request, we need to set the coveralls pr id
+if [[ ! -z $ghprbPullId ]];
+then
+    COVERALLS_PRB_OPTION="-DpullRequest=${ghprbPullId}"
+fi
+
+# coveralls token should not be visible
+set +x +v
+
+if [[ -z ${COVERALLS_REPO_TOKEN} ]];
+then
+    echo "Coveralls token is not set. Exiting..."
+    exit 1
+fi
+
 # if those pass, build the distribution package and the integration tests
 mvn -U \
     test \
-    -P coverage scoverage:report
+    -P coverage,coveralls  scoverage:report coveralls:report \
+    -DrepoToken=${COVERALLS_REPO_TOKEN} ${COVERALLS_PRB_OPTION}
+
+# make verbose again
+set -x -v
 
 # if those pass, build the distribution package
 mvn -U \
