@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rich
 
-import htsjdk.samtools.Cigar
+import htsjdk.samtools.{ Cigar, TextCigarCodec }
 import org.bdgenomics.adam.rich.RichAlignmentRecord._
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.scalatest.FunSuite
@@ -79,5 +79,24 @@ class RichCigarSuite extends FunSuite {
 
     assert(newCigar.cigar.getReadLength == read.samtoolsCigar.getReadLength)
     assert(newCigar.cigar.toString === "1D2M")
+  }
+
+  val rightClippedCigar = new RichCigar(TextCigarCodec.decode("10H2S10M"))
+  val leftClippedCigar = new RichCigar(TextCigarCodec.decode("12M4S5H"))
+  val bothClippedCigar = new RichCigar(TextCigarCodec.decode("1S12M3S2H"))
+
+  test("process right clipped cigar") {
+    assert(rightClippedCigar.softClippedBasesAtStart === 2)
+    assert(rightClippedCigar.softClippedBasesAtEnd === 0)
+  }
+
+  test("process left clipped cigar") {
+    assert(leftClippedCigar.softClippedBasesAtStart === 0)
+    assert(leftClippedCigar.softClippedBasesAtEnd === 4)
+  }
+
+  test("process cigar clipped on both ends") {
+    assert(bothClippedCigar.softClippedBasesAtStart === 1)
+    assert(bothClippedCigar.softClippedBasesAtEnd === 3)
   }
 }

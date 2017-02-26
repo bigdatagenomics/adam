@@ -210,10 +210,10 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     // org.bdgenomics.adam.rdd.read.realignment
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget],
       new org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTargetSerializer)
+    kryo.register(classOf[scala.Array[org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTarget]],
+      new org.bdgenomics.adam.rdd.read.realignment.IndelRealignmentTargetArraySerializer)
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.TargetSet],
       new org.bdgenomics.adam.rdd.read.realignment.TargetSetSerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.realignment.ZippedTargetSet],
-      new org.bdgenomics.adam.rdd.read.realignment.ZippedTargetSetSerializer)
 
     // org.bdgenomics.adam.rdd.read.recalibration.
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.recalibration.CovariateKey])
@@ -227,7 +227,8 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[org.bdgenomics.adam.rich.RichVariant])
 
     // org.bdgenomics.adam.util
-    kryo.register(classOf[org.bdgenomics.adam.util.ReferenceContigMap])
+    kryo.register(classOf[org.bdgenomics.adam.util.ReferenceContigMap],
+      new org.bdgenomics.adam.util.ReferenceContigMapSerializer)
     kryo.register(classOf[org.bdgenomics.adam.util.TwoBitFile],
       new org.bdgenomics.adam.util.TwoBitFileSerializer)
 
@@ -326,6 +327,7 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[scala.collection.immutable.Range])
     kryo.register(Class.forName("scala.collection.immutable.Stream$Cons"))
     kryo.register(Class.forName("scala.collection.immutable.Stream$Empty$"))
+    kryo.register(Class.forName("scala.collection.immutable.Set$EmptySet$"))
 
     // scala.collection.mutable
     kryo.register(classOf[scala.collection.mutable.ArrayBuffer[_]])

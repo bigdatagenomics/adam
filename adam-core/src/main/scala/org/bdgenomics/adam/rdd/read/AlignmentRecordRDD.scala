@@ -663,6 +663,10 @@ case class AlignmentRecordRDD(
    *   are only finalized if the log-odds threshold is exceeded.
    * @param maxTargetSize The maximum width of a single target region for
    *   realignment.
+   * @param optReferenceFile An optional reference. If not provided, reference
+   *   will be inferred from MD tags.
+   * @param unclipReads If true, unclips reads prior to realignment. Else, omits
+   *   clipped bases during realignment.
    * @return Returns an RDD of mapped reads which have been realigned.
    */
   def realignIndels(
@@ -671,8 +675,20 @@ case class AlignmentRecordRDD(
     maxIndelSize: Int = 500,
     maxConsensusNumber: Int = 30,
     lodThreshold: Double = 5.0,
-    maxTargetSize: Int = 3000): AlignmentRecordRDD = RealignIndelsInDriver.time {
-    replaceRdd(RealignIndels(rdd, consensusModel, isSorted, maxIndelSize, maxConsensusNumber, lodThreshold))
+    maxTargetSize: Int = 3000,
+    maxReadsPerTarget: Int = 20000,
+    optReferenceFile: Option[ReferenceFile] = None,
+    unclipReads: Boolean = false): AlignmentRecordRDD = RealignIndelsInDriver.time {
+    replaceRdd(RealignIndels(rdd,
+      consensusModel = consensusModel,
+      dataIsSorted = isSorted,
+      maxIndelSize = maxIndelSize,
+      maxConsensusNumber = maxConsensusNumber,
+      lodThreshold = lodThreshold,
+      maxTargetSize = maxTargetSize,
+      maxReadsPerTarget = maxReadsPerTarget,
+      optReferenceFile = optReferenceFile,
+      unclipReads = unclipReads))
   }
 
   /**

@@ -79,6 +79,12 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
     assert(targets.head.variation.get.end === 8)
     assert(targets.head.readRange.start === 3)
     assert(targets.head.readRange.end === 10)
+    assert(TargetOrdering.contains(targets.head, read))
+    assert(!TargetOrdering.lt(targets.head, read))
+    val read2 = make_read(2L, "2M3D2M", "2^AAA2", 4, 7)
+    val read4 = make_read(4L, "2M3D2M", "2^AAA2", 4, 7)
+    assert(!TargetOrdering.lt(targets.head, read))
+    assert(TargetOrdering.lt(targets.head, read4))
   }
 
   sparkTest("creating simple target from read with insertion") {
