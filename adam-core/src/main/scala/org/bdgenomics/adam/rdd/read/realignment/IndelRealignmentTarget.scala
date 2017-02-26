@@ -28,20 +28,6 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import scala.collection.JavaConversions._
 import scala.collection.immutable.TreeSet
 
-private[realignment] object ZippedTargetOrdering extends Ordering[(IndelRealignmentTarget, Int)] {
-
-  /**
-   * Order two indel realignment targets by earlier starting position.
-   *
-   * @param a Indel realignment target to compare.
-   * @param b Indel realignment target to compare.
-   * @return Comparison done by starting position.
-   */
-  def compare(a: (IndelRealignmentTarget, Int), b: (IndelRealignmentTarget, Int)): Int = {
-    TargetOrdering.compare(a._1, b._1)
-  }
-}
-
 private[realignment] object TargetOrdering extends Ordering[IndelRealignmentTarget] {
 
   /**
@@ -65,7 +51,7 @@ private[realignment] object TargetOrdering extends Ordering[IndelRealignmentTarg
   }
 
   /**
-   * Compares a read to an indel realignment target to see if it starts before the start of the indel realignment target.
+   * Compares a read to an indel realignment target to see if the target is before the read.
    *
    * @param target Realignment target to compare.
    * @param read Read to compare.
@@ -217,27 +203,22 @@ private[adam] class TargetSetSerializer extends Serializer[TargetSet] {
   }
 }
 
-private[adam] class ZippedTargetSetSerializer extends Serializer[ZippedTargetSet] {
+private[adam] class IndelRealignmentTargetArraySerializer extends Serializer[Array[IndelRealignmentTarget]] {
 
-  val irts = new IndelRealignmentTargetSerializer()
+  private val irts = new IndelRealignmentTargetSerializer
 
-  def write(kryo: Kryo, output: Output, obj: ZippedTargetSet) = {
-    output.writeInt(obj.set.size)
-    obj.set.foreach(innerObj => {
-      irts.write(kryo, output, innerObj._1)
-      output.writeInt(innerObj._2)
-    })
+  def write(kryo: Kryo, output: Output, obj: Array[IndelRealignmentTarget]) = {
+    output.writeInt(obj.length)
+    obj.foreach(irts.write(kryo, output, _))
   }
 
-  def read(kryo: Kryo, input: Input, klazz: Class[ZippedTargetSet]): ZippedTargetSet = {
-    val size = input.readInt()
-    val array = new Array[(IndelRealignmentTarget, Int)](size)
-    (0 until size).foreach(i => {
-      val target = irts.read(kryo, input, classOf[IndelRealignmentTarget])
-      val idx = input.readInt()
-      array(i) = (target, idx)
+  def read(kryo: Kryo, input: Input, klazz: Class[Array[IndelRealignmentTarget]]): Array[IndelRealignmentTarget] = {
+    val arrSize = input.readInt()
+    val arr = new Array[IndelRealignmentTarget](arrSize)
+    (0 until arrSize).foreach(idx => {
+      arr(idx) = irts.read(kryo, input, classOf[IndelRealignmentTarget])
     })
-    new ZippedTargetSet(TreeSet(array: _*)(ZippedTargetOrdering))
+    arr
   }
 }
 
@@ -247,9 +228,6 @@ private[realignment] object TargetSet {
   }
 }
 
-// These two case classes are needed to get around some serialization issues
+// this case class is needed to get around some serialization issues (type erasure)
 private[adam] case class TargetSet(set: TreeSet[IndelRealignmentTarget]) extends Serializable {
-}
-
-private[adam] case class ZippedTargetSet(set: TreeSet[(IndelRealignmentTarget, Int)]) extends Serializable {
 }

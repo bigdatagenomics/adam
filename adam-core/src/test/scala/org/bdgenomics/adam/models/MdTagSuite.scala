@@ -482,6 +482,20 @@ class MdTagSuite extends FunSuite {
     assert(tag.getReference(read) === "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAA")
   }
 
+  test("get gapped reference") {
+    val read = AlignmentRecord.newBuilder()
+      .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+      .setReadMapped(true)
+      .setCigar("29M10D31M")
+      .setStart(5)
+      .setEnd(75)
+      .setMismatchingPositions("29^GGGGGGGGGG10G0G0G0G0G0G0G0G0G0G11")
+      .build()
+
+    val tag = read.mdTag.get
+    assert(tag.getReference(read, withGaps = true) === "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGGGGGGGGGAAAAAAAAAAA")
+  }
+
   test("move a cigar alignment by two for a read") {
     val read = AlignmentRecord.newBuilder()
       .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")

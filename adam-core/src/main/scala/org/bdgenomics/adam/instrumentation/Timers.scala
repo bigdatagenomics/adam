@@ -77,7 +77,11 @@ object Timers extends Metrics {
   val MapTargets = timer("Map Targets")
   val RealignTargetGroup = timer("Realign Target Group")
   val GetReferenceFromReads = timer("Get Reference From Reads")
+  val GetReferenceFromFile = timer("Get Reference From File")
+  val ComputingOriginalScores = timer("Computing Original Mismatch Scores")
+  val SweepReadsOverConsensus = timer("Sweeping Reads Over A Single Consensus")
   val SweepReadOverReferenceForQuality = timer("Sweep Read Over Reference For Quality")
+  val FinalizingRealignments = timer("Finalizing Realignments")
 
   // Sort Reads
   val SortReads = timer("Sort Reads")

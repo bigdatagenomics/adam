@@ -208,7 +208,8 @@ object MdTag {
 
           // dirty dancing to recalculate match sets
           for (i <- 0 until cigarElement.getLength) {
-            if (reference(referencePos) == sequence(readPos)) {
+            if (reference(referencePos) ==
+              sequence(readPos)) {
               if (!inMatch) {
                 rangeStart = referencePos.toLong
                 inMatch = true
@@ -439,10 +440,15 @@ case class MdTag(
    * Given a read, returns the reference.
    *
    * @param read A read for which one desires the reference sequence.
+   * @param withGaps If true, applies INDEL gaps to the reference. Else, returns
+   *   the raw reference sequence.
    * @return A string corresponding to the reference overlapping this read.
    */
-  def getReference(read: RichAlignmentRecord): String = {
-    getReference(read.getSequence, read.samtoolsCigar, read.getStart)
+  def getReference(read: RichAlignmentRecord, withGaps: Boolean = false): String = {
+    getReferenceSequence(read.getSequence,
+      read.samtoolsCigar,
+      read.getStart,
+      withGaps = withGaps)
   }
 
   /**
@@ -451,9 +457,14 @@ case class MdTag(
    * @param readSequence The base sequence of the read.
    * @param cigar The cigar for the read.
    * @param referenceFrom The starting point of this read alignment vs. the reference.
+   * @param withGaps If true, applies INDEL gaps to the reference. Else, returns
+   *   the raw reference sequence.
    * @return A string corresponding to the reference overlapping this read.
    */
-  def getReference(readSequence: String, cigar: Cigar, referenceFrom: Long): String = {
+  private def getReferenceSequence(readSequence: String,
+                                   cigar: Cigar,
+                                   referenceFrom: Long,
+                                   withGaps: Boolean = false): String = {
 
     var referencePos = start
     var readPos = 0
@@ -476,22 +487,28 @@ case class MdTag(
           }
         }
         case CigarOperator.D => {
-          // if a delete, get from the delete pool
-          for (i <- 0 until cigarElement.getLength) {
-            reference += {
-              deletions.get(referencePos) match {
-                case Some(base) => base
-                case _          => throw new IllegalStateException("Could not find deleted base at cigar offset " + i)
+          if (!withGaps) {
+            // if a delete, get from the delete pool
+            for (i <- 0 until cigarElement.getLength) {
+              reference += {
+                deletions.get(referencePos) match {
+                  case Some(base) => base
+                  case _          => throw new IllegalStateException("Could not find deleted base at cigar offset " + i)
+                }
               }
+              referencePos += 1
             }
-
-            referencePos += 1
+          } else {
+            referencePos += cigarElement.getLength
           }
         }
         case _ => {
-          // ignore inserts
           if (cigarElement.getOperator.consumesReadBases) {
-            readPos += cigarElement.getLength
+            val insLength = cigarElement.getLength
+            if (withGaps) {
+              reference += ("_" * insLength)
+            }
+            readPos += insLength
           }
           if (cigarElement.getOperator.consumesReferenceBases) {
             throw new IllegalArgumentException("Cannot handle operator: " + cigarElement.getOperator)

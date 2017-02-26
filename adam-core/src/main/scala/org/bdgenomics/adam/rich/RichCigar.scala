@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rich
 import htsjdk.samtools.{ Cigar, CigarOperator, CigarElement }
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
+import scala.collection.mutable.Buffer
 
 /**
  * A wrapper around a CIGAR object that provides additional convenience methods.
@@ -112,5 +113,41 @@ private[adam] case class RichCigar(cigar: Cigar) {
    */
   def isWellFormed(readLength: Int): Boolean = {
     readLength == getLength
+  }
+
+  /**
+   * @param ops A collection of cigar operators to look at the head of.
+   * @return Returns the number of soft clipped bases from the start of the
+   *    cigar.
+   */
+  private def getSoftClippedBases(ops: Buffer[CigarElement]): Int = {
+    ops.dropWhile(_.getOperator == CigarOperator.H)
+      .takeWhile(_.getOperator == CigarOperator.S)
+      .headOption
+      .fold(0)(_.getLength)
+  }
+
+  /**
+   * @return Returns the number of bases soft clipped from the start of the
+   *   read. Disregards hard clipped bases.
+   */
+  def softClippedBasesAtStart: Int = {
+    if (cigar.isLeftClipped) {
+      getSoftClippedBases(cigar.getCigarElements)
+    } else {
+      0
+    }
+  }
+
+  /**
+   * @return Returns the number of bases soft clipped from the end of the read.
+   *   Disregards hard clipped bases.
+   */
+  def softClippedBasesAtEnd: Int = {
+    if (cigar.isRightClipped) {
+      getSoftClippedBases(cigar.getCigarElements.reverse)
+    } else {
+      0
+    }
   }
 }
