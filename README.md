@@ -1,6 +1,8 @@
 ADAM
 ====
 
+[![Coverage Status](https://coveralls.io/repos/github/bigdatagenomics/adam/badge.svg?branch=master)](https://coveralls.io/github/bigdatagenomics/adam?branch=master)
+
 # Introduction
 
 ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro][Avro], [Apache Spark][Spark] and [Apache Parquet][Parquet]. Apache 2 licensed. Some quick links: 
