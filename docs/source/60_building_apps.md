@@ -264,14 +264,20 @@ that overlap a candidate variant), coverage analysis (determining the coverage
 depth for each region in a reference), and INDEL realignment (identify INDELs 
 aligned against a reference).
 
-There are two join implementations available in ADAM: BroadcastRegionJoin 
-and ShuffleRegionJoin. The result of a ShuffleRegionJoin is identical to the 
-BroadcastRegionJoin, however they should each be used in specific circumstances.
-The ShuffleRegionJoin performs a copartition on the right dataset before the 
-join on the entire dataset, but the BroadcastRegionJoin sends a copy of the 
-entire right dataset to each node. ShuffleRegionJoin should be used if the 
-right dataset is too large to send to all nodes. The BroadcastRegionJoin 
-should be used when you are joining a smaller dataset to a larger one.
+There are two overlap join implementations available in ADAM: 
+BroadcastRegionJoin and ShuffleRegionJoin. The result of a ShuffleRegionJoin 
+is identical to the BroadcastRegionJoin, however they serve different 
+purposes depending on the content of the two datasets.
+
+The ShuffleRegionJoin is at its core a distributed sort-merge overlap join. 
+To ensure that the data is appropriately colocated, we perform a copartition 
+on the right dataset before the each node conducts the join locally. The 
+BroadcastRegionJoin performs an overlap join by broadcasting a copy of the 
+entire left dataset to each node. ShuffleRegionJoin should be used if the right 
+dataset is too large to send to all nodes and both datasets have low 
+cardinality. The BroadcastRegionJoin should be used when you are joining a 
+smaller dataset to a larger one and/or the datasets in the join have high 
+cardinality.
 
 To perform a ShuffleRegionJoin, add the following to your ADAM script:
 
@@ -287,7 +293,8 @@ read a genomic dataset into memory, this condition is met.
 ADAM has a variety of ShuffleRegionJoin types that you can perform on your 
 data, and all are called in a similar way:
 
-![Joins Available]()
+![Joins Available]
+(https://github.com/bigdatagenomics/adam/tree/master/docs/source/img/join_examples.png)
 
 
 Join call | action |
