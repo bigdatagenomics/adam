@@ -1243,7 +1243,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       .map(new IntervalListParser().parseWithHeader(_, stringency))
     val (seqDict, records) = (SequenceDictionary(parsedLines.flatMap(_._1).collect(): _*),
       parsedLines.flatMap(_._2))
-    val seqDictMap = seqDict.records.map(sr => sr.name -> sr).toMap
 
     if (Metrics.isRecording) records.instrument() else records
     FeatureRDD(records, seqDict)
