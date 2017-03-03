@@ -36,6 +36,7 @@ import org.bdgenomics.utils.interval.array.{
 }
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
+import scala.math.max
 import scala.reflect.ClassTag
 
 private[adam] case class FeatureArray(
@@ -102,14 +103,6 @@ private object FeatureOrdering extends FeatureOrdering[Feature] {}
 object FeatureRDD {
 
   /**
-   * @param elem The feature to extract a sequence record from.
-   * @return Gets the SequenceRecord for this feature.
-   */
-  private def getSequenceRecord(elem: Feature): SequenceRecord = {
-    SequenceRecord(elem.getContigName, 1L)
-  }
-
-  /**
    * Builds a FeatureRDD without SequenceDictionary information by running an
    * aggregate to rebuild the SequenceDictionary.
    *
@@ -121,11 +114,14 @@ object FeatureRDD {
     // cache the rdd, since we're making multiple passes
     rdd.cache()
 
-    // aggregate to create the sequence dictionary
-    val sd = new SequenceDictionary(rdd.map(getSequenceRecord)
-      .distinct
-      .collect
-      .toVector)
+    // create sequence records with length max(start, end) + 1L
+    val sequenceRecords = rdd
+      .keyBy(_.getContigName)
+      .map(kv => (kv._1, max(kv._2.getStart, kv._2.getEnd) + 1L))
+      .reduceByKey(max(_, _))
+      .map(kv => SequenceRecord(kv._1, kv._2))
+
+    val sd = new SequenceDictionary(sequenceRecords.collect.toVector)
 
     FeatureRDD(rdd, sd)
   }

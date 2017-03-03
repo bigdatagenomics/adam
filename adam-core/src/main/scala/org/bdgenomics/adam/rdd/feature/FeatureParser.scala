@@ -250,8 +250,9 @@ private[rdd] class IntervalListParser extends FeatureParser {
         (attrs("SN"), attrs("LN").toLong, attrs("UR"), attrs("M5"))
       }
       Some(SequenceRecord(name, length, md5, url))
+    } else {
+      None
     }
-    None
   }
 
   override def parse(line: String,

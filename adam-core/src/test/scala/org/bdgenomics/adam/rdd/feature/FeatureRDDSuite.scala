@@ -732,5 +732,56 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     assert(c.filter(_._1.isEmpty).forall(_._2.size == 1))
     assert(c0.filter(_._1.isEmpty).forall(_._2.size == 1))
   }
-}
 
+  sparkTest("estimate sequence dictionary contig lengths from GTF format") {
+    val inputPath = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
+    val features = sc.loadGtf(inputPath)
+    // max(start,end) = 1 36081
+    assert(features.sequences.containsRefName("1"))
+    assert(features.sequences.apply("1").isDefined)
+    assert(features.sequences.apply("1").get.length >= 36081L)
+  }
+
+  sparkTest("estimate sequence dictionary contig lengths from GFF3 format") {
+    val inputPath = testFile("dvl1.200.gff3")
+    val features = sc.loadGff3(inputPath)
+    // max(start, end) = 1 1356705
+    assert(features.sequences.containsRefName("1"))
+    assert(features.sequences.apply("1").isDefined)
+    assert(features.sequences.apply("1").get.length >= 1356705L)
+  }
+
+  sparkTest("estimate sequence dictionary contig lengths from BED format") {
+    val inputPath = testFile("dvl1.200.bed")
+    val features = sc.loadBed(inputPath)
+    // max(start, end) = 1 1358504
+    assert(features.sequences.containsRefName("1"))
+    assert(features.sequences.apply("1").isDefined)
+    assert(features.sequences.apply("1").get.length >= 1358504L)
+  }
+
+  sparkTest("obtain sequence dictionary contig lengths from header in IntervalList format") {
+    val inputPath = testFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
+    val features = sc.loadIntervalList(inputPath)
+    /*
+@SQ	SN:chr1	LN:249250621
+@SQ	SN:chr2	LN:243199373
+     */
+    assert(features.sequences.containsRefName("chr1"))
+    assert(features.sequences.apply("chr1").isDefined)
+    assert(features.sequences.apply("chr1").get.length >= 249250621L)
+
+    assert(features.sequences.containsRefName("chr2"))
+    assert(features.sequences.apply("chr2").isDefined)
+    assert(features.sequences.apply("chr2").get.length >= 243199373L)
+  }
+
+  sparkTest("estimate sequence dictionary contig lengths from NarrowPeak format") {
+    val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
+    val features = sc.loadNarrowPeak(inputPath)
+    // max(start, end) = chr1 794336
+    assert(features.sequences.containsRefName("chr1"))
+    assert(features.sequences.apply("chr1").isDefined)
+    assert(features.sequences.apply("chr1").get.length >= 794336L)
+  }
+}
