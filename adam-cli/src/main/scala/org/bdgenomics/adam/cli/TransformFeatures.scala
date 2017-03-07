@@ -47,6 +47,9 @@ class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
   @Args4jOption(required = false, name = "-single",
     usage = "Save as a single file, for the text formats.")
   var single: Boolean = false
+
+  @Args4jOption(required = false, name = "-cache", usage = "True if features should be cached before building the SequenceDictionary.")
+  var cache: Boolean = true
 }
 
 class TransformFeatures(val args: TransformFeaturesArgs)
@@ -54,7 +57,7 @@ class TransformFeatures(val args: TransformFeaturesArgs)
   val companion = TransformFeatures
 
   def run(sc: SparkContext) {
-    sc.loadFeatures(args.featuresFile, None, Option(args.numPartitions))
+    sc.loadFeatures(args.featuresFile, args.cache, None, Option(args.numPartitions))
       .save(args.outputPath, args.single)
   }
 }
