@@ -24,6 +24,7 @@ import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
@@ -127,9 +128,8 @@ class ADAMContextSuite extends ADAMFunSuite {
   }
 
   sparkTest("Can read a .bed file without cache") {
-    // note: this .bed doesn't actually conform to the UCSC BED spec...sigh...
     val path = testFile("gencode.v7.annotation.trunc10.bed")
-    val features: RDD[Feature] = sc.loadFeatures(path, false).rdd
+    val features: RDD[Feature] = sc.loadFeatures(path, StorageLevel.NONE).rdd
     assert(features.count === 10)
   }
 

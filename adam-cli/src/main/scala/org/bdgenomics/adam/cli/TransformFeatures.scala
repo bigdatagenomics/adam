@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
+import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
@@ -48,16 +49,17 @@ class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
     usage = "Save as a single file, for the text formats.")
   var single: Boolean = false
 
-  @Args4jOption(required = false, name = "-cache", usage = "True if features should be cached before building the SequenceDictionary.")
-  var cache: Boolean = true
+  @Args4jOption(required = false, name = "-storage_level", usage = "Set the storage level to use for caching.")
+  var storageLevel: String = "MEMORY_ONLY"
 }
 
 class TransformFeatures(val args: TransformFeaturesArgs)
     extends BDGSparkCommand[TransformFeaturesArgs] {
   val companion = TransformFeatures
+  val storageLevel = StorageLevel.fromString(args.storageLevel)
 
   def run(sc: SparkContext) {
-    sc.loadFeatures(args.featuresFile, args.cache, None, Option(args.numPartitions))
+    sc.loadFeatures(args.featuresFile, storageLevel, None, Option(args.numPartitions))
       .save(args.outputPath, args.single)
   }
 }

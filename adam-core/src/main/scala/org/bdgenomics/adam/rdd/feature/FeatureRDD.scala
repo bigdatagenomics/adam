@@ -21,6 +21,7 @@ import com.google.common.collect.ComparisonChain
 import java.util.Comparator
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.{
@@ -108,15 +109,15 @@ object FeatureRDD {
    * aggregate to rebuild the SequenceDictionary.
    *
    * @param rdd The underlying Feature RDD to build from.
-   * @param cache True if the rdd should be cached before building the SequenceDictionary.
+   * @param storageLevel Storage level to use for cache before building the SequenceDictionary.
    * @return Returns a new FeatureRDD.
    */
-  def apply(rdd: RDD[Feature], cache: Boolean = true): FeatureRDD = BuildSequenceDictionary.time {
+  def apply(
+    rdd: RDD[Feature],
+    storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY): FeatureRDD = BuildSequenceDictionary.time {
 
     // cache the rdd, since we're making multiple passes
-    if (cache) {
-      rdd.cache()
-    }
+    rdd.persist(storageLevel)
 
     // create sequence records with length max(start, end) + 1L
     val sequenceRecords = rdd
