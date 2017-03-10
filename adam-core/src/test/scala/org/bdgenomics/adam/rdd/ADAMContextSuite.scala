@@ -507,10 +507,13 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("NA12878.sam")
     var lines = Source.fromFile(path).getLines().filter(!_.startsWith("@")).toArray
     val samRDD = sc.parallelize(lines)
-    val testRDD = sc.loadAlignments(path)  //only easier get sequenceDictionary and recordGroupDictionary, there also can be create by other method
+    val testRDD = sc.loadAlignments(path) //only easier get sequenceDictionary and recordGroupDictionary, there also can be create by other method
     val sequenceDictionary: SequenceDictionary = testRDD.sequences
     val recordGroupDictionary: RecordGroupDictionary = testRDD.recordGroups
     var alignmentRecordRDD = sc.loadReadsFromSamString(samRDD, sequenceDictionary, recordGroupDictionary)
-    assert(alignmentRecordRDD.rdd.count()===565)
+    assert(alignmentRecordRDD.rdd.count() === 565)
+    //see the part of result
+    //    alignmentRecordRDD.rdd.take(10).foreach(println)
+    //    assert(1===2)
   }
 }
