@@ -351,15 +351,16 @@ just as easily use this Avro IDL description as the basis for a Python project. 
 
 There are a number of projects built on ADAM, e.g.
 
-- [RNAdam](https://github.com/bigdatagenomics/rice) provides an RNA pipeline on top of ADAM with isoform quantification and fusion transcription detection
-- [Avocado](https://github.com/bigdatagenomics/avocado) is a variant caller built on top of ADAM for germline and somatic calling
-- [PacMin](https://github.com/bigdatagenomics/PacMin) is an assembler for PacBio reads
-- A `Mutect` port is nearly feature complete
-- Read error correction
-- a graphing and genome visualization library
-- [BDG-Services](https://github.com/bigdatagenomics/bdg-services) is a library for accessing a running Spark cluster through web-services or a [Thrift](https://thrift.apache.org/)- interface
-- [Short read assembly](https://github.com/fnothaft/xASSEMBLEx)
-- Variant filtration (train model via `MLlib`)
+ - [avocado](https://github.com/bigdatagenomics/avocado)  Variant caller
+ - [cannoli](https://github.com/heuermh/cannoli)  Pipe API wrappers for bioinformatics tools
+ - [cs-bwamem](https://github.com/ytchen0323/cloud-scale-bwamem)  Scalable alignment using bwamem
+ - [eggo](https://github.com/bigdatagenomics/eggo)	 Parquet-formatted public 'omics datasets
+ - [gnocchi](https://github.com/bigdatagenomics/gnocchi)	Genotype-phenotype analysis
+ - [guacamole](https://github.com/hammerlab/guacamole)  Variant caller from Hammer Lab at Mt. Sinai
+ - [mango](https://github.com/bigdatagenomics/mango)  Scalable genome visualization
+ - [quinine](https://github.com/bigdatagenomics/quinine)  Read and variant quality control metrics
+ - [rice](https://github.com/bigdatagenomics/rice)	 RNA quantification pipeline
+ - [snappea](https://github.com/bigdatagenomics/snappea)	Parallel alignment using SNAP
 
 # License
 
