@@ -26,10 +26,13 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.CRAMInputFormat
+
+import scala.io.Source
 
 case class TestSaveArgs(var outputPath: String) extends ADAMSaveAnyArgs {
   var sortFastqOutput = false
@@ -47,8 +50,6 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("ctr is accessible") {
     new ADAMContext(sc)
   }
-
-
 
   sparkTest("sc.loadParquet should not fail on unmapped reads") {
     val readsFilepath = testFile("unmapped.sam")
@@ -500,5 +501,16 @@ class ADAMContextSuite extends ADAMFunSuite {
       }
       case _ => fail("unexpected variant start " + v.getStart)
     })
+  }
+
+  sparkTest("add test sample for loadReadsFromSamString ") {
+    val path = testFile("NA12878.sam")
+    var lines = Source.fromFile(path).getLines().filter(!_.startsWith("@")).toArray
+    val samRDD = sc.parallelize(lines)
+    val testRDD = sc.loadAlignments(path)  //only easier get sequenceDictionary and recordGroupDictionary, there also can be create by other method
+    val sequenceDictionary: SequenceDictionary = testRDD.sequences
+    val recordGroupDictionary: RecordGroupDictionary = testRDD.recordGroups
+    var alignmentRecordRDD = sc.loadReadsFromSamString(samRDD, sequenceDictionary, recordGroupDictionary)
+    assert(alignmentRecordRDD.rdd.count()===565)
   }
 }

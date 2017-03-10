@@ -1,40 +1,40 @@
 /**
- * Licensed to Big Data Genomics (BDG) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The BDG licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+  * Licensed to Big Data Genomics (BDG) under one
+  * or more contributor license agreements.  See the NOTICE file
+  * distributed with this work for additional information
+  * regarding copyright ownership.  The BDG licenses this file
+  * to you under the Apache License, Version 2.0 (the
+  * "License"); you may not use this file except in compliance
+  * with the License.  You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
 package org.bdgenomics.adam.rdd
 
-import java.io.{ File, FileNotFoundException, InputStream }
-import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
+import java.io.{File, FileNotFoundException, InputStream}
+import htsjdk.samtools.{SAMLineParser, SAMRecord, SAMFileHeader, ValidationStringency}
 import htsjdk.samtools.util.Locatable
 import htsjdk.variant.vcf.{
-  VCFHeader,
-  VCFCompoundHeaderLine,
-  VCFFormatHeaderLine,
-  VCFHeaderLine,
-  VCFInfoHeaderLine
+VCFHeader,
+VCFCompoundHeaderLine,
+VCFFormatHeaderLine,
+VCFHeaderLine,
+VCFInfoHeaderLine
 }
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
 import org.apache.avro.generic.IndexedRecord
-import org.apache.avro.specific.{ SpecificDatumReader, SpecificRecord, SpecificRecordBase }
-import org.apache.hadoop.fs.{ FileSystem, Path, PathFilter }
-import org.apache.hadoop.io.{ LongWritable, Text }
+import org.apache.avro.specific.{SpecificDatumReader, SpecificRecord, SpecificRecordBase}
+import org.apache.hadoop.fs.{FileSystem, Path, PathFilter}
+import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-import org.apache.parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
+import org.apache.parquet.avro.{AvroParquetInputFormat, AvroReadSupport}
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.parquet.hadoop.ParquetInputFormat
 import org.apache.parquet.hadoop.util.ContextUtil
@@ -46,8 +46,8 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.projections.{
-  FeatureField,
-  Projection
+FeatureField,
+Projection
 }
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature._
@@ -55,43 +55,43 @@ import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.{ ReferenceContigMap, ReferenceFile, TwoBitFile }
+import org.bdgenomics.adam.util.{Constants, ReferenceContigMap, ReferenceFile, TwoBitFile}
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
-import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
+import org.bdgenomics.utils.misc.{HadoopUtil, Logging}
 import org.seqdoop.hadoop_bam._
 import org.seqdoop.hadoop_bam.util._
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 
 /**
- * Case class that wraps a reference region for use with the Indexed VCF/BAM loaders.
- *
- * @param rr Reference region to wrap.
- */
+  * Case class that wraps a reference region for use with the Indexed VCF/BAM loaders.
+  *
+  * @param rr Reference region to wrap.
+  */
 private case class LocatableReferenceRegion(rr: ReferenceRegion) extends Locatable {
 
   /**
-   * @return the start position in a 1-based closed coordinate system.
-   */
+    * @return the start position in a 1-based closed coordinate system.
+    */
   def getStart(): Int = rr.start.toInt + 1
 
   /**
-   * @return the end position in a 1-based closed coordinate system.
-   */
+    * @return the end position in a 1-based closed coordinate system.
+    */
   def getEnd(): Int = rr.end.toInt
 
   /**
-   * @return the reference contig this interval is on.
-   */
+    * @return the reference contig this interval is on.
+    */
   def getContig(): String = rr.referenceName
 }
 
 /**
- * This singleton provides an implicit conversion from a SparkContext to the
- * ADAMContext, as well as implicit functions for the Pipe API.
- */
+  * This singleton provides an implicit conversion from a SparkContext to the
+  * ADAMContext, as well as implicit functions for the Pipe API.
+  */
 object ADAMContext {
 
   // conversion functions for pipes
@@ -121,53 +121,76 @@ object ADAMContext {
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
-}
 
-/**
- * A filter to run on globs/directories that finds all files with a given name.
- *
- * @param name The name to search for.
- */
-private class FileFilter(private val name: String) extends PathFilter {
 
   /**
-   * @param path Path to evaluate.
-   * @return Returns true if the filename of the path matches the name passed
-   *   to the constructor.
-   */
-  def accept(path: Path): Boolean = {
-    path.getName == name
+    * parse a SAM String to SAMRecord
+    *
+    * @param samString
+    * @param sequenceDictionary
+    * @param recordGroupDictionary
+    * @return
+    */
+  def parseSAMString(samString: String, sequenceDictionary: SequenceDictionary, recordGroupDictionary: RecordGroupDictionary): SAMRecord = {
+    try {
+      val arc = new AlignmentRecordConverter
+      var SAMHeader = arc.createSAMHeader(sequenceDictionary, recordGroupDictionary)
+      val samLineParser = new SAMLineParser(SAMHeader)
+      samLineParser.parseLine(new String(samString.getBytes(), "UTF-8"))
+    } catch {
+      case exc: Exception =>
+        val msg = "Error \"%s\" parse sam String error (%s)".format(exc.getMessage, samString)
+        throw new IllegalArgumentException(msg, exc)
+    }
   }
 }
 
 /**
- * The ADAMContext provides functions on top of a SparkContext for loading genomic data.
- *
- * @param sc The SparkContext to wrap.
- */
+  * A filter to run on globs/directories that finds all files with a given name.
+  *
+  * @param name The name to search for.
+  */
+private class FileFilter(private val name: String) extends PathFilter {
+
+  /**
+    * @param path Path to evaluate.
+    * @return Returns true if the filename of the path matches the name passed
+    *         to the constructor.
+    */
+  def accept(path: Path): Boolean = {
+    path.getName == name
+  }
+
+}
+
+/**
+  * The ADAMContext provides functions on top of a SparkContext for loading genomic data.
+  *
+  * @param sc The SparkContext to wrap.
+  */
 class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
 
   /**
-   * @param samHeader The header to extract a sequence dictionary from.
-   * @return Returns the dictionary converted to an ADAM model.
-   */
+    * @param samHeader The header to extract a sequence dictionary from.
+    * @return Returns the dictionary converted to an ADAM model.
+    */
   private[rdd] def loadBamDictionary(samHeader: SAMFileHeader): SequenceDictionary = {
     SequenceDictionary(samHeader)
   }
 
   /**
-   * @param samHeader The header to extract a read group dictionary from.
-   * @return Returns the dictionary converted to an ADAM model.
-   */
+    * @param samHeader The header to extract a read group dictionary from.
+    * @return Returns the dictionary converted to an ADAM model.
+    */
   private[rdd] def loadBamReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
     RecordGroupDictionary.fromSAMHeader(samHeader)
   }
 
   /**
-   * @param filePath The (possibly globbed) filepath to load a VCF from.
-   * @return Returns a tuple of metadata from the VCF header, including the
-   *   sequence dictionary and a list of the samples contained in the VCF.
-   */
+    * @param filePath The (possibly globbed) filepath to load a VCF from.
+    * @return Returns a tuple of metadata from the VCF header, including the
+    *         sequence dictionary and a list of the samples contained in the VCF.
+    */
   private[rdd] def loadVcfMetadata(filePath: String): (SequenceDictionary, Seq[Sample], Seq[VCFHeaderLine]) = {
     // get the paths to all vcfs
     val files = getFsAndFiles(new Path(filePath))
@@ -179,12 +202,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param filePath The (possibly globbed) filepath to load a VCF from.
-   * @return Returns a tuple of metadata from the VCF header, including the
-   *   sequence dictionary and a list of the samples contained in the VCF.
-   *
-   * @see loadVcfMetadata
-   */
+    * @param filePath The (possibly globbed) filepath to load a VCF from.
+    * @return Returns a tuple of metadata from the VCF header, including the
+    *         sequence dictionary and a list of the samples contained in the VCF.
+    * @see loadVcfMetadata
+    */
   private def loadSingleVcfMetadata(filePath: String): (SequenceDictionary, Seq[Sample], Seq[VCFHeaderLine]) = {
     def headerToMetadata(vcfHeader: VCFHeader): (SequenceDictionary, Seq[Sample], Seq[VCFHeaderLine]) = {
       val sd = SequenceDictionary.fromVCFHeader(vcfHeader)
@@ -206,8 +228,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   private def cleanAndMixInSupportedLines(
-    headerLines: Seq[VCFHeaderLine],
-    stringency: ValidationStringency): Seq[VCFHeaderLine] = {
+                                           headerLines: Seq[VCFHeaderLine],
+                                           stringency: ValidationStringency): Seq[VCFHeaderLine] = {
 
     // dedupe
     val deduped = headerLines.distinct
@@ -280,10 +302,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param filePath The (possibly globbed) filepath to load Avro sequence
-   *   dictionary info from.
-   * @return Returns the SequenceDictionary representing said reference build.
-   */
+    * @param filePath The (possibly globbed) filepath to load Avro sequence
+    *                 dictionary info from.
+    * @return Returns the SequenceDictionary representing said reference build.
+    */
   private[rdd] def loadAvroSequences(filePath: String): SequenceDictionary = {
     getFsAndFilesWithFilter(filePath, new FileFilter("_seqdict.avro"))
       .map(p => loadAvroSequencesFile(p.toString))
@@ -291,22 +313,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param filePath The filepath to load a single Avro file of sequence
-   *   dictionary info from.
-   * @return Returns the SequenceDictionary representing said reference build.
-   *
-   * @see loadAvroSequences
-   */
+    * @param filePath The filepath to load a single Avro file of sequence
+    *                 dictionary info from.
+    * @return Returns the SequenceDictionary representing said reference build.
+    * @see loadAvroSequences
+    */
   private def loadAvroSequencesFile(filePath: String): SequenceDictionary = {
     val avroSd = loadAvro[Contig](filePath, Contig.SCHEMA$)
     SequenceDictionary.fromAvro(avroSd)
   }
 
   /**
-   * @param filePath The (possibly globbed) filepath to load Avro sample
-   *   metadata descriptions from.
-   * @return Returns a Seq of Sample descriptions.
-   */
+    * @param filePath The (possibly globbed) filepath to load Avro sample
+    *                 metadata descriptions from.
+    * @return Returns a Seq of Sample descriptions.
+    */
   private[rdd] def loadAvroSampleMetadata(filePath: String): Seq[Sample] = {
     getFsAndFilesWithFilter(filePath, new FileFilter("_samples.avro"))
       .map(p => loadAvro[Sample](p.toString, Sample.SCHEMA$))
@@ -314,10 +335,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param filePath The (possibly globbed) filepath to load Avro read group
-   *   metadata descriptions from.
-   * @return Returns a RecordGroupDictionary.
-   */
+    * @param filePath The (possibly globbed) filepath to load Avro read group
+    *                 metadata descriptions from.
+    * @return Returns a RecordGroupDictionary.
+    */
   private[rdd] def loadAvroReadGroupMetadata(filePath: String): RecordGroupDictionary = {
     getFsAndFilesWithFilter(filePath, new FileFilter("_rgdict.avro"))
       .map(p => loadAvroReadGroupMetadataFile(p.toString))
@@ -325,12 +346,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param filePath The filepath to load a single Avro file containing read
-   *   group metadata.
-   * @return Returns a RecordGroupDictionary.
-   *
-   * @see loadAvroReadGroupMetadata
-   */
+    * @param filePath The filepath to load a single Avro file containing read
+    *                 group metadata.
+    * @return Returns a RecordGroupDictionary.
+    * @see loadAvroReadGroupMetadata
+    */
   private def loadAvroReadGroupMetadataFile(filePath: String): RecordGroupDictionary = {
     val avroRgd = loadAvro[RecordGroupMetadata](filePath,
       RecordGroupMetadata.SCHEMA$)
@@ -340,18 +360,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * This method will create a new RDD.
-   *
-   * @param filePath The path to the input data
-   * @param predicate An optional pushdown predicate to use when reading the data
-   * @param projection An option projection schema to use when reading the data
-   * @tparam T The type of records to return
-   * @return An RDD with records of the specified type
-   */
+    * This method will create a new RDD.
+    *
+    * @param filePath   The path to the input data
+    * @param predicate  An optional pushdown predicate to use when reading the data
+    * @param projection An option projection schema to use when reading the data
+    * @tparam T The type of records to return
+    * @return An RDD with records of the specified type
+    */
   def loadParquet[T](
-    filePath: String,
-    predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): RDD[T] = {
+                      filePath: String,
+                      predicate: Option[FilterPredicate] = None,
+                      projection: Option[Schema] = None)(implicit ev1: T => SpecificRecord, ev2: Manifest[T]): RDD[T] = {
     //make sure a type was specified
     //not using require as to make the message clearer
     if (manifest[T] == manifest[scala.Nothing])
@@ -392,16 +412,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Elaborates out a directory/glob/plain path.
-   *
-   * @param path Path to elaborate.
-   * @param fs The underlying file system that this path is on.
-   * @return Returns an array of Paths to load.
-   *
-   * @see getFsAndFiles
-   *
-   * @throws FileNotFoundException if the path does not match any files.
-   */
+    * Elaborates out a directory/glob/plain path.
+    *
+    * @param path Path to elaborate.
+    * @param fs   The underlying file system that this path is on.
+    * @return Returns an array of Paths to load.
+    * @see getFsAndFiles
+    * @throws FileNotFoundException if the path does not match any files.
+    */
   protected def getFiles(path: Path, fs: FileSystem): Array[Path] = {
 
     // elaborate out the path; this returns FileStatuses
@@ -422,15 +440,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Elaborates out a directory/glob/plain path.
-   *
-   * @param path Path to elaborate.
-   * @return Returns an array of Paths to load.
-   *
-   * @see getFiles
-   *
-   * @throws FileNotFoundException if the path does not match any files.
-   */
+    * Elaborates out a directory/glob/plain path.
+    *
+    * @param path Path to elaborate.
+    * @return Returns an array of Paths to load.
+    * @see getFiles
+    * @throws FileNotFoundException if the path does not match any files.
+    */
   protected def getFsAndFiles(path: Path): Array[Path] = {
 
     // get the underlying fs for the file
@@ -443,16 +459,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Elaborates out a directory/glob/plain path.
-   *
-   * @param filename Path to elaborate.
-   * @param filter Filter to discard paths.
-   * @return Returns an array of Paths to load.
-   *
-   * @see getFiles
-   *
-   * @throws FileNotFoundException if the path does not match any files.
-   */
+    * Elaborates out a directory/glob/plain path.
+    *
+    * @param filename Path to elaborate.
+    * @param filter   Filter to discard paths.
+    * @return Returns an array of Paths to load.
+    * @see getFiles
+    * @throws FileNotFoundException if the path does not match any files.
+    */
   protected def getFsAndFilesWithFilter(filename: String, filter: PathFilter): Array[Path] = {
 
     val path = new Path(filename)
@@ -482,20 +496,20 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Checks to see if a set of SAM/BAM/CRAM files are queryname sorted.
-   *
-   * If we are loading fragments and the SAM/BAM/CRAM files are sorted by the
-   * read names, this implies that all of the reads in a pair are consecutive in
-   * the file. If this is the case, we can configure Hadoop-BAM to keep all of
-   * the reads from a fragment in a single split. This allows us to eliminate
-   * an expensive groupBy when loading a BAM file as fragments.
-   *
-   * @param filePath The file path to load reads from. Globs/directories are
-   *   supported.
-   * @param stringency The validation stringency to use when reading the header.
-   * @return Returns true if all files described by the filepath are queryname
-   *   sorted.
-   */
+    * Checks to see if a set of SAM/BAM/CRAM files are queryname sorted.
+    *
+    * If we are loading fragments and the SAM/BAM/CRAM files are sorted by the
+    * read names, this implies that all of the reads in a pair are consecutive in
+    * the file. If this is the case, we can configure Hadoop-BAM to keep all of
+    * the reads from a fragment in a single split. This allows us to eliminate
+    * an expensive groupBy when loading a BAM file as fragments.
+    *
+    * @param filePath   The file path to load reads from. Globs/directories are
+    *                   supported.
+    * @param stringency The validation stringency to use when reading the header.
+    * @return Returns true if all files described by the filepath are queryname
+    *         sorted.
+    */
   private[rdd] def filesAreQuerynameSorted(filePath: String,
                                            stringency: ValidationStringency = ValidationStringency.STRICT): Boolean = {
     val path = new Path(filePath)
@@ -527,19 +541,19 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads a SAM/BAM file.
-   *
-   * This reads the sequence and record group dictionaries from the SAM/BAM file
-   * header. SAMRecords are read from the file and converted to the
-   * AlignmentRecord schema.
-   *
-   * @param filePath Path to the file on disk.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
-   *   sequence dictionary representing the contigs these reads are aligned to
-   *   if the reads are aligned, and the record group dictionary for the reads
-   *   if one is available.
-   * @see loadAlignments
-   */
+    * Loads a SAM/BAM file.
+    *
+    * This reads the sequence and record group dictionaries from the SAM/BAM file
+    * header. SAMRecords are read from the file and converted to the
+    * AlignmentRecord schema.
+    *
+    * @param filePath Path to the file on disk.
+    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
+    *         sequence dictionary representing the contigs these reads are aligned to
+    *         if the reads are aligned, and the record group dictionary for the reads
+    *         if one is available.
+    * @see loadAlignments
+    */
   def loadBam(filePath: String,
               validationStringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
     val path = new Path(filePath)
@@ -576,8 +590,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             }
           }
         }).reduce((kv1, kv2) => {
-          (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
-        })
+        (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
+      })
 
     val job = HadoopUtil.newJob(sc)
 
@@ -605,26 +619,27 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       readGroups)
   }
 
+
   /**
-   * Functions like loadBam, but uses bam index files to look at fewer blocks,
-   * and only returns records within a specified ReferenceRegion. Bam index file required.
-   *
-   * @param filePath The path to the input data. Currently this path must correspond to
-   *        a single Bam file. The bam index file associated needs to have the same name.
-   * @param viewRegion The ReferenceRegion we are filtering on
-   */
+    * Functions like loadBam, but uses bam index files to look at fewer blocks,
+    * and only returns records within a specified ReferenceRegion. Bam index file required.
+    *
+    * @param filePath   The path to the input data. Currently this path must correspond to
+    *                   a single Bam file. The bam index file associated needs to have the same name.
+    * @param viewRegion The ReferenceRegion we are filtering on
+    */
   def loadIndexedBam(filePath: String, viewRegion: ReferenceRegion): AlignmentRecordRDD = {
     loadIndexedBam(filePath, Iterable(viewRegion))
   }
 
   /**
-   * Functions like loadBam, but uses bam index files to look at fewer blocks,
-   * and only returns records within the specified ReferenceRegions. Bam index file required.
-   *
-   * @param filePath The path to the input data. Currently this path must correspond to
-   *        a single Bam file. The bam index file associated needs to have the same name.
-   * @param viewRegions Iterable of ReferenceRegions we are filtering on
-   */
+    * Functions like loadBam, but uses bam index files to look at fewer blocks,
+    * and only returns records within the specified ReferenceRegions. Bam index file required.
+    *
+    * @param filePath    The path to the input data. Currently this path must correspond to
+    *                    a single Bam file. The bam index file associated needs to have the same name.
+    * @param viewRegions Iterable of ReferenceRegions we are filtering on
+    */
   def loadIndexedBam(filePath: String, viewRegions: Iterable[ReferenceRegion])(implicit s: DummyImplicit): AlignmentRecordRDD = {
     val path = new Path(filePath)
     val bamFiles = getFsAndFiles(path).filter(p => p.toString.endsWith(".bam"))
@@ -644,8 +659,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
         (sd, rg)
       }).reduce((kv1, kv2) => {
-        (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
-      })
+      (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
+    })
 
     val job = HadoopUtil.newJob(sc)
     val conf = ContextUtil.getConfiguration(job)
@@ -663,25 +678,25 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads Avro data from a Hadoop File System.
-   *
-   * This method uses the SparkContext wrapped by this class to identify our
-   * underlying file system. We then use the underlying FileSystem imp'l to
-   * open the Avro file, and we read the Avro files into a Seq.
-   *
-   * Frustratingly enough, although all records generated by the Avro IDL
-   * compiler have a static SCHEMA$ field, this field does not belong to
-   * the SpecificRecordBase abstract class, or the SpecificRecord interface.
-   * As such, we must force the user to pass in the schema.
-   *
-   * @tparam T The type of the specific record we are loading.
-   * @param filename Path to Vf file from.
-   * @param schema Schema of records we are loading.
-   * @return Returns a Seq containing the avro records.
-   */
+    * Loads Avro data from a Hadoop File System.
+    *
+    * This method uses the SparkContext wrapped by this class to identify our
+    * underlying file system. We then use the underlying FileSystem imp'l to
+    * open the Avro file, and we read the Avro files into a Seq.
+    *
+    * Frustratingly enough, although all records generated by the Avro IDL
+    * compiler have a static SCHEMA$ field, this field does not belong to
+    * the SpecificRecordBase abstract class, or the SpecificRecord interface.
+    * As such, we must force the user to pass in the schema.
+    *
+    * @tparam T The type of the specific record we are loading.
+    * @param filename Path to Vf file from.
+    * @param schema   Schema of records we are loading.
+    * @return Returns a Seq containing the avro records.
+    */
   private def loadAvro[T <: SpecificRecordBase](filename: String,
                                                 schema: Schema)(
-                                                  implicit tTag: ClassTag[T]): Seq[T] = {
+                                                 implicit tTag: ClassTag[T]): Seq[T] = {
 
     // get our current file system
     val path = new Path(filename)
@@ -739,25 +754,25 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads alignment data from a Parquet file.
-   *
-   * @param filePath The path of the file to load.
-   * @param predicate An optional predicate to push down into the file.
-   * @param projection An optional schema designating the fields to project.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
-   *   sequence dictionary representing the contigs these reads are aligned to
-   *   if the reads are aligned, and the record group dictionary for the reads
-   *   if one is available.
-   * @note The sequence dictionary is read from an avro file stored at
-   *   filePath/_seqdict.avro and the record group dictionary is read from an
-   *   avro file stored at filePath/_rgdict.avro. These files are pure avro,
-   *   not Parquet.
-   * @see loadAlignments
-   */
+    * Loads alignment data from a Parquet file.
+    *
+    * @param filePath   The path of the file to load.
+    * @param predicate  An optional predicate to push down into the file.
+    * @param projection An optional schema designating the fields to project.
+    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
+    *         sequence dictionary representing the contigs these reads are aligned to
+    *         if the reads are aligned, and the record group dictionary for the reads
+    *         if one is available.
+    * @note The sequence dictionary is read from an avro file stored at
+    *       filePath/_seqdict.avro and the record group dictionary is read from an
+    *       avro file stored at filePath/_rgdict.avro. These files are pure avro,
+    *       not Parquet.
+    * @see loadAlignments
+    */
   def loadParquetAlignments(
-    filePath: String,
-    predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): AlignmentRecordRDD = {
+                             filePath: String,
+                             predicate: Option[FilterPredicate] = None,
+                             projection: Option[Schema] = None): AlignmentRecordRDD = {
 
     // load from disk
     val rdd = loadParquet[AlignmentRecord](filePath, predicate, projection)
@@ -772,17 +787,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads reads from interleaved FASTQ.
-   *
-   * In interleaved FASTQ, the two reads from a paired sequencing protocol are
-   * interleaved in a single file. This is a zipped representation of the
-   * typical paired FASTQ.
-   *
-   * @param filePath Path to load.
-   * @return Returns the file as an unaligned AlignmentRecordRDD.
-   */
+    * Loads reads from interleaved FASTQ.
+    *
+    * In interleaved FASTQ, the two reads from a paired sequencing protocol are
+    * interleaved in a single file. This is a zipped representation of the
+    * typical paired FASTQ.
+    *
+    * @param filePath Path to load.
+    * @return Returns the file as an unaligned AlignmentRecordRDD.
+    */
   def loadInterleavedFastq(
-    filePath: String): AlignmentRecordRDD = {
+                            filePath: String): AlignmentRecordRDD = {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -800,23 +815,22 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads (possibly paired) FASTQ data.
-   *
-   * @see loadPairedFastq
-   * @see loadUnpairedFastq
-   *
-   * @param filePath1 The path where the first set of reads are.
-   * @param filePath2Opt The path where the second set of reads are, if provided.
-   * @param recordGroupOpt The optional record group name to associate to the
-   *   reads.
-   * @param stringency The validation stringency to use when validating the reads.
-   * @return Returns the reads as an unaligned AlignmentRecordRDD.
-   */
+    * Loads (possibly paired) FASTQ data.
+    *
+    * @see loadPairedFastq
+    * @see loadUnpairedFastq
+    * @param filePath1      The path where the first set of reads are.
+    * @param filePath2Opt   The path where the second set of reads are, if provided.
+    * @param recordGroupOpt The optional record group name to associate to the
+    *                       reads.
+    * @param stringency     The validation stringency to use when validating the reads.
+    * @return Returns the reads as an unaligned AlignmentRecordRDD.
+    */
   def loadFastq(
-    filePath1: String,
-    filePath2Opt: Option[String],
-    recordGroupOpt: Option[String] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
+                 filePath1: String,
+                 filePath2Opt: Option[String],
+                 recordGroupOpt: Option[String] = None,
+                 stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
     filePath2Opt.fold({
       loadUnpairedFastq(filePath1,
         recordGroupOpt,
@@ -830,22 +844,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads paired FASTQ data from two files.
-   *
-   * @see loadFastq
-   *
-   * @param filePath1 The path where the first set of reads are.
-   * @param filePath2 The path where the second set of reads are.
-   * @param recordGroupOpt The optional record group name to associate to the
-   *   reads.
-   * @param stringency The validation stringency to use when validating the reads.
-   * @return Returns the reads as an unaligned AlignmentRecordRDD.
-   */
+    * Loads paired FASTQ data from two files.
+    *
+    * @see loadFastq
+    * @param filePath1      The path where the first set of reads are.
+    * @param filePath2      The path where the second set of reads are.
+    * @param recordGroupOpt The optional record group name to associate to the
+    *                       reads.
+    * @param stringency     The validation stringency to use when validating the reads.
+    * @return Returns the reads as an unaligned AlignmentRecordRDD.
+    */
   def loadPairedFastq(
-    filePath1: String,
-    filePath2: String,
-    recordGroupOpt: Option[String],
-    stringency: ValidationStringency): AlignmentRecordRDD = {
+                       filePath1: String,
+                       filePath2: String,
+                       recordGroupOpt: Option[String],
+                       stringency: ValidationStringency): AlignmentRecordRDD = {
     val reads1 = loadUnpairedFastq(filePath1,
       recordGroupOpt,
       setFirstOfPair = true,
@@ -876,24 +889,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads unpaired FASTQ data from two files.
-   *
-   * @see loadFastq
-   *
-   * @param filePath The path where the first set of reads are.
-   * @param recordGroupOpt The optional record group name to associate to the
-   *   reads.
-   * @param setFirstOfPair If true, sets the read as first from the fragment.
-   * @param setSecondOfPair If true, sets the read as second from the fragment.
-   * @param stringency The validation stringency to use when validating the reads.
-   * @return Returns the reads as an unaligned AlignmentRecordRDD.
-   */
+    * Loads unpaired FASTQ data from two files.
+    *
+    * @see loadFastq
+    * @param filePath        The path where the first set of reads are.
+    * @param recordGroupOpt  The optional record group name to associate to the
+    *                        reads.
+    * @param setFirstOfPair  If true, sets the read as first from the fragment.
+    * @param setSecondOfPair If true, sets the read as second from the fragment.
+    * @param stringency      The validation stringency to use when validating the reads.
+    * @return Returns the reads as an unaligned AlignmentRecordRDD.
+    */
   def loadUnpairedFastq(
-    filePath: String,
-    recordGroupOpt: Option[String] = None,
-    setFirstOfPair: Boolean = false,
-    setSecondOfPair: Boolean = false,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
+                         filePath: String,
+                         recordGroupOpt: Option[String] = None,
+                         setFirstOfPair: Boolean = false,
+                         setSecondOfPair: Boolean = false,
+                         stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -923,10 +935,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param filePath File to read VCF records from.
-   * @param viewRegions Optional intervals to push down into file using index.
-   * @return Returns a raw RDD of (LongWritable, VariantContextWritable)s.
-   */
+    * @param filePath    File to read VCF records from.
+    * @param viewRegions Optional intervals to push down into file using index.
+    * @return Returns a raw RDD of (LongWritable, VariantContextWritable)s.
+    */
   private def readVcfRecords(filePath: String,
                              viewRegions: Option[Iterable[ReferenceRegion]]): RDD[(LongWritable, VariantContextWritable)] = {
     // load vcf data
@@ -949,17 +961,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads a VCF file into an RDD.
-   *
-   * @param filePath The file to load.
-   * @param stringency The validation stringency to use when validating the VCF.
-   * @return Returns a VariantContextRDD.
-   *
-   * @see loadVcfAnnotations
-   */
+    * Loads a VCF file into an RDD.
+    *
+    * @param filePath   The file to load.
+    * @param stringency The validation stringency to use when validating the VCF.
+    * @return Returns a VariantContextRDD.
+    * @see loadVcfAnnotations
+    */
   def loadVcf(
-    filePath: String,
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextRDD = {
+               filePath: String,
+               stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextRDD = {
 
     // load records from VCF
     val records = readVcfRecords(filePath, None)
@@ -978,29 +989,29 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads a VCF file indexed by a tabix (tbi) file into an RDD.
-   *
-   * @param filePath The file to load.
-   * @param viewRegion ReferenceRegions we are filtering on.
-   * @return Returns a VariantContextRDD.
-   */
+    * Loads a VCF file indexed by a tabix (tbi) file into an RDD.
+    *
+    * @param filePath   The file to load.
+    * @param viewRegion ReferenceRegions we are filtering on.
+    * @return Returns a VariantContextRDD.
+    */
   def loadIndexedVcf(
-    filePath: String,
-    viewRegion: ReferenceRegion): VariantContextRDD =
+                      filePath: String,
+                      viewRegion: ReferenceRegion): VariantContextRDD =
     loadIndexedVcf(filePath, Iterable(viewRegion))
 
   /**
-   * Loads a VCF file indexed by a tabix (tbi) file into an RDD.
-   *
-   * @param filePath The file to load.
-   * @param viewRegions Iterator of ReferenceRegions we are filtering on.
-   * @param stringency The validation stringency to use when validating the VCF.
-   * @return Returns a VariantContextRDD.
-   */
+    * Loads a VCF file indexed by a tabix (tbi) file into an RDD.
+    *
+    * @param filePath    The file to load.
+    * @param viewRegions Iterator of ReferenceRegions we are filtering on.
+    * @param stringency  The validation stringency to use when validating the VCF.
+    * @return Returns a VariantContextRDD.
+    */
   def loadIndexedVcf(
-    filePath: String,
-    viewRegions: Iterable[ReferenceRegion],
-    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): VariantContextRDD = {
+                      filePath: String,
+                      viewRegions: Iterable[ReferenceRegion],
+                      stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): VariantContextRDD = {
 
     // load records from VCF
     val records = readVcfRecords(filePath, Some(viewRegions))
@@ -1019,17 +1030,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads Genotypes stored in Parquet with accompanying metadata.
-   *
-   * @param filePath The path to load files from.
-   * @param predicate An optional predicate to push down into the file.
-   * @param projection An optional projection to use for reading.
-   * @return Returns a GenotypeRDD.
-   */
+    * Loads Genotypes stored in Parquet with accompanying metadata.
+    *
+    * @param filePath   The path to load files from.
+    * @param predicate  An optional predicate to push down into the file.
+    * @param projection An optional projection to use for reading.
+    * @return Returns a GenotypeRDD.
+    */
   def loadParquetGenotypes(
-    filePath: String,
-    predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): GenotypeRDD = {
+                            filePath: String,
+                            predicate: Option[FilterPredicate] = None,
+                            projection: Option[Schema] = None): GenotypeRDD = {
     val rdd = loadParquet[Genotype](filePath, predicate, projection)
 
     // load header lines
@@ -1045,17 +1056,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads Variants stored in Parquet with accompanying metadata.
-   *
-   * @param filePath The path to load files from.
-   * @param predicate An optional predicate to push down into the file.
-   * @param projection An optional projection to use for reading.
-   * @return Returns a VariantRDD.
-   */
+    * Loads Variants stored in Parquet with accompanying metadata.
+    *
+    * @param filePath   The path to load files from.
+    * @param predicate  An optional predicate to push down into the file.
+    * @param projection An optional projection to use for reading.
+    * @return Returns a VariantRDD.
+    */
   def loadParquetVariants(
-    filePath: String,
-    predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): VariantRDD = {
+                           filePath: String,
+                           predicate: Option[FilterPredicate] = None,
+                           projection: Option[Schema] = None): VariantRDD = {
     val rdd = loadParquet[Variant](filePath, predicate, projection)
     val sd = loadAvroSequences(filePath)
 
@@ -1066,16 +1077,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads a FASTA file.
-   *
-   * @param filePath The path to load from.
-   * @param fragmentLength The length to split contigs into. This sets the
-   *   parallelism achievable.
-   * @return Returns a NucleotideContigFragmentRDD containing the contigs.
-   */
+    * Loads a FASTA file.
+    *
+    * @param filePath       The path to load from.
+    * @param fragmentLength The length to split contigs into. This sets the
+    *                       parallelism achievable.
+    * @return Returns a NucleotideContigFragmentRDD containing the contigs.
+    */
   def loadFasta(
-    filePath: String,
-    fragmentLength: Long): NucleotideContigFragmentRDD = {
+                 filePath: String,
+                 fragmentLength: Long): NucleotideContigFragmentRDD = {
     val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
       filePath,
       classOf[TextInputFormat],
@@ -1094,17 +1105,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads interleaved FASTQ data as Fragments.
-   *
-   * Fragments represent all of the reads from a single sequenced fragment as
-   * a single object, which is a useful representation for some tasks.
-   *
-   * @param filePath The path to load.
-   * @return Returns a FragmentRDD containing the paired reads grouped by
-   *   sequencing fragment.
-   */
+    * Loads interleaved FASTQ data as Fragments.
+    *
+    * Fragments represent all of the reads from a single sequenced fragment as
+    * a single object, which is a useful representation for some tasks.
+    *
+    * @param filePath The path to load.
+    * @return Returns a FragmentRDD containing the paired reads grouped by
+    *         sequencing fragment.
+    */
   def loadInterleavedFastqAsFragments(
-    filePath: String): FragmentRDD = {
+                                       filePath: String): FragmentRDD = {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -1122,22 +1133,22 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads file of Features to a CoverageRDD.
-   * Coverage is stored in the score attribute of Feature.
-   *
-   * @param filePath File path to load coverage from.
-   * @return CoverageRDD containing an RDD of Coverage
-   */
+    * Loads file of Features to a CoverageRDD.
+    * Coverage is stored in the score attribute of Feature.
+    *
+    * @param filePath File path to load coverage from.
+    * @return CoverageRDD containing an RDD of Coverage
+    */
   def loadCoverage(filePath: String): CoverageRDD = loadFeatures(filePath).toCoverage
 
   /**
-   * Loads Parquet file of Features to a CoverageRDD.
-   * Coverage is stored in the score attribute of Feature.
-   *
-   * @param filePath File path to load coverage from.
-   * @param predicate An optional predicate to push down into the file.
-   * @return CoverageRDD containing an RDD of Coverage
-   */
+    * Loads Parquet file of Features to a CoverageRDD.
+    * Coverage is stored in the score attribute of Feature.
+    *
+    * @param filePath  File path to load coverage from.
+    * @param predicate An optional predicate to push down into the file.
+    * @return CoverageRDD containing an RDD of Coverage
+    */
   def loadParquetCoverage(filePath: String,
                           predicate: Option[FilterPredicate] = None): CoverageRDD = {
     val proj = Projection(FeatureField.contigName, FeatureField.start, FeatureField.end, FeatureField.score)
@@ -1145,16 +1156,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads features stored in GFF3 format.
-   *
-   * @param filePath The path to the file to load.
-   * @param minPartitions An optional minimum number of partitions to load. If
-   *   not set, falls back to the configured Spark default parallelism.
-   * @param stringency Optional stringency to pass. LENIENT stringency will warn
-   *   when a malformed line is encountered, SILENT will ignore the malformed
-   *   line, STRICT will throw an exception.
-   * @return Returns a FeatureRDD.
-   */
+    * Loads features stored in GFF3 format.
+    *
+    * @param filePath      The path to the file to load.
+    * @param minPartitions An optional minimum number of partitions to load. If
+    *                      not set, falls back to the configured Spark default parallelism.
+    * @param stringency    Optional stringency to pass. LENIENT stringency will warn
+    *                      when a malformed line is encountered, SILENT will ignore the malformed
+    *                      line, STRICT will throw an exception.
+    * @return Returns a FeatureRDD.
+    */
   def loadGff3(filePath: String,
                minPartitions: Option[Int] = None,
                stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
@@ -1165,16 +1176,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads features stored in GFF2/GTF format.
-   *
-   * @param filePath The path to the file to load.
-   * @param minPartitions An optional minimum number of partitions to load. If
-   *   not set, falls back to the configured Spark default parallelism.
-   * @param stringency Optional stringency to pass. LENIENT stringency will warn
-   *   when a malformed line is encountered, SILENT will ignore the malformed
-   *   line, STRICT will throw an exception.
-   * @return Returns a FeatureRDD.
-   */
+    * Loads features stored in GFF2/GTF format.
+    *
+    * @param filePath      The path to the file to load.
+    * @param minPartitions An optional minimum number of partitions to load. If
+    *                      not set, falls back to the configured Spark default parallelism.
+    * @param stringency    Optional stringency to pass. LENIENT stringency will warn
+    *                      when a malformed line is encountered, SILENT will ignore the malformed
+    *                      line, STRICT will throw an exception.
+    * @return Returns a FeatureRDD.
+    */
   def loadGtf(filePath: String,
               minPartitions: Option[Int] = None,
               stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
@@ -1185,16 +1196,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads features stored in BED6/12 format.
-   *
-   * @param filePath The path to the file to load.
-   * @param minPartitions An optional minimum number of partitions to load. If
-   *   not set, falls back to the configured Spark default parallelism.
-   * @param stringency Optional stringency to pass. LENIENT stringency will warn
-   *   when a malformed line is encountered, SILENT will ignore the malformed
-   *   line, STRICT will throw an exception.
-   * @return Returns a FeatureRDD.
-   */
+    * Loads features stored in BED6/12 format.
+    *
+    * @param filePath      The path to the file to load.
+    * @param minPartitions An optional minimum number of partitions to load. If
+    *                      not set, falls back to the configured Spark default parallelism.
+    * @param stringency    Optional stringency to pass. LENIENT stringency will warn
+    *                      when a malformed line is encountered, SILENT will ignore the malformed
+    *                      line, STRICT will throw an exception.
+    * @return Returns a FeatureRDD.
+    */
   def loadBed(filePath: String,
               minPartitions: Option[Int] = None,
               stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
@@ -1205,16 +1216,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads features stored in NarrowPeak format.
-   *
-   * @param filePath The path to the file to load.
-   * @param minPartitions An optional minimum number of partitions to load. If
-   *   not set, falls back to the configured Spark default parallelism.
-   * @param stringency Optional stringency to pass. LENIENT stringency will warn
-   *   when a malformed line is encountered, SILENT will ignore the malformed
-   *   line, STRICT will throw an exception.
-   * @return Returns a FeatureRDD.
-   */
+    * Loads features stored in NarrowPeak format.
+    *
+    * @param filePath      The path to the file to load.
+    * @param minPartitions An optional minimum number of partitions to load. If
+    *                      not set, falls back to the configured Spark default parallelism.
+    * @param stringency    Optional stringency to pass. LENIENT stringency will warn
+    *                      when a malformed line is encountered, SILENT will ignore the malformed
+    *                      line, STRICT will throw an exception.
+    * @return Returns a FeatureRDD.
+    */
   def loadNarrowPeak(filePath: String,
                      minPartitions: Option[Int] = None,
                      stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
@@ -1225,16 +1236,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads features stored in IntervalList format.
-   *
-   * @param filePath The path to the file to load.
-   * @param minPartitions An optional minimum number of partitions to load. If
-   *   not set, falls back to the configured Spark default parallelism.
-   * @param stringency Optional stringency to pass. LENIENT stringency will warn
-   *   when a malformed line is encountered, SILENT will ignore the malformed
-   *   line, STRICT will throw an exception.
-   * @return Returns a FeatureRDD.
-   */
+    * Loads features stored in IntervalList format.
+    *
+    * @param filePath      The path to the file to load.
+    * @param minPartitions An optional minimum number of partitions to load. If
+    *                      not set, falls back to the configured Spark default parallelism.
+    * @param stringency    Optional stringency to pass. LENIENT stringency will warn
+    *                      when a malformed line is encountered, SILENT will ignore the malformed
+    *                      line, STRICT will throw an exception.
+    * @return Returns a FeatureRDD.
+    */
   def loadIntervalList(filePath: String,
                        minPartitions: Option[Int] = None,
                        stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
@@ -1249,51 +1260,51 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads Features stored in Parquet, with accompanying metadata.
-   *
-   * @param filePath The path to load files from.
-   * @param predicate An optional predicate to push down into the file.
-   * @param projection An optional projection to use for reading.
-   * @return Returns a FeatureRDD.
-   */
+    * Loads Features stored in Parquet, with accompanying metadata.
+    *
+    * @param filePath   The path to load files from.
+    * @param predicate  An optional predicate to push down into the file.
+    * @param projection An optional projection to use for reading.
+    * @return Returns a FeatureRDD.
+    */
   def loadParquetFeatures(
-    filePath: String,
-    predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): FeatureRDD = {
+                           filePath: String,
+                           predicate: Option[FilterPredicate] = None,
+                           projection: Option[Schema] = None): FeatureRDD = {
     val sd = loadAvroSequences(filePath)
     val rdd = loadParquet[Feature](filePath, predicate, projection)
     FeatureRDD(rdd, sd)
   }
 
   /**
-   * Loads NucleotideContigFragments stored in Parquet, with metadata.
-   *
-   * @param filePath The path to load files from.
-   * @param predicate An optional predicate to push down into the file.
-   * @param projection An optional projection to use for reading.
-   * @return Returns a NucleotideContigFragmentRDD.
-   */
+    * Loads NucleotideContigFragments stored in Parquet, with metadata.
+    *
+    * @param filePath   The path to load files from.
+    * @param predicate  An optional predicate to push down into the file.
+    * @param projection An optional projection to use for reading.
+    * @return Returns a NucleotideContigFragmentRDD.
+    */
   def loadParquetContigFragments(
-    filePath: String,
-    predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): NucleotideContigFragmentRDD = {
+                                  filePath: String,
+                                  predicate: Option[FilterPredicate] = None,
+                                  projection: Option[Schema] = None): NucleotideContigFragmentRDD = {
     val sd = loadAvroSequences(filePath)
     val rdd = loadParquet[NucleotideContigFragment](filePath, predicate, projection)
     NucleotideContigFragmentRDD(rdd, sd)
   }
 
   /**
-   * Loads Fragments stored in Parquet, with accompanying metadata.
-   *
-   * @param filePath The path to load files from.
-   * @param predicate An optional predicate to push down into the file.
-   * @param projection An optional projection to use for reading.
-   * @return Returns a FragmentRDD.
-   */
+    * Loads Fragments stored in Parquet, with accompanying metadata.
+    *
+    * @param filePath   The path to load files from.
+    * @param predicate  An optional predicate to push down into the file.
+    * @param projection An optional projection to use for reading.
+    * @return Returns a FragmentRDD.
+    */
   def loadParquetFragments(
-    filePath: String,
-    predicate: Option[FilterPredicate] = None,
-    projection: Option[Schema] = None): FragmentRDD = {
+                            filePath: String,
+                            predicate: Option[FilterPredicate] = None,
+                            projection: Option[Schema] = None): FragmentRDD = {
 
     // convert avro to sequence dictionary
     val sd = loadAvroSequences(filePath)
@@ -1308,26 +1319,25 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads Features from a file, autodetecting the file type.
-   *
-   * Loads files ending in .bed as BED6/12, .gff3 as GFF3, .gtf/.gff as
-   * GTF/GFF2, .narrow[pP]eak as NarrowPeak, and .interval_list as
-   * IntervalList. If none of these match, we fall back to Parquet.
-   *
-   * @param filePath The path to the file to load.
-   * @param projection An optional projection to push down.
-   * @param minPartitions An optional minimum number of partitions to use. For
-   *   textual formats, if this is None, we fall back to the Spark default
-   *   parallelism.
-   * @return Returns a FeatureRDD.
-   *
-   * @see loadBed
-   * @see loadGtf
-   * @see loadGff3
-   * @see loadNarrowPeak
-   * @see loadIntervalList
-   * @see loadParquetFeatures
-   */
+    * Loads Features from a file, autodetecting the file type.
+    *
+    * Loads files ending in .bed as BED6/12, .gff3 as GFF3, .gtf/.gff as
+    * GTF/GFF2, .narrow[pP]eak as NarrowPeak, and .interval_list as
+    * IntervalList. If none of these match, we fall back to Parquet.
+    *
+    * @param filePath      The path to the file to load.
+    * @param projection    An optional projection to push down.
+    * @param minPartitions An optional minimum number of partitions to use. For
+    *                      textual formats, if this is None, we fall back to the Spark default
+    *                      parallelism.
+    * @return Returns a FeatureRDD.
+    * @see loadBed
+    * @see loadGtf
+    * @see loadGff3
+    * @see loadNarrowPeak
+    * @see loadIntervalList
+    * @see loadParquetFeatures
+    */
   def loadFeatures(filePath: String,
                    projection: Option[Schema] = None,
                    minPartitions: Option[Int] = None): FeatureRDD = {
@@ -1356,17 +1366,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Auto-detects the file type and loads a broadcastable ReferenceFile.
-   *
-   * If the file type is 2bit, loads a 2bit file. Else, uses loadSequences
-   * to load the reference as an RDD, which is then collected to the driver.
-   *
-   * @param filePath The path to load.
-   * @param fragmentLength The length of fragment to use for splitting.
-   * @return Returns a broadcastable ReferenceFile.
-   *
-   * @see loadSequences
-   */
+    * Auto-detects the file type and loads a broadcastable ReferenceFile.
+    *
+    * If the file type is 2bit, loads a 2bit file. Else, uses loadSequences
+    * to load the reference as an RDD, which is then collected to the driver.
+    *
+    * @param filePath       The path to load.
+    * @param fragmentLength The length of fragment to use for splitting.
+    * @return Returns a broadcastable ReferenceFile.
+    * @see loadSequences
+    */
   def loadReferenceFile(filePath: String, fragmentLength: Long): ReferenceFile = {
     if (filePath.endsWith(".2bit")) {
       //TODO(ryan): S3ByteAccess
@@ -1377,24 +1386,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Auto-detects the file type and loads contigs as a NucleotideContigFragmentRDD.
-   *
-   * Loads files ending in .fa/.fasta/.fa.gz/.fasta.gz as FASTA, else, falls
-   * back to Parquet.
-   *
-   * @param filePath The path to load.
-   * @param projection An optional subset of fields to load.
-   * @param fragmentLength The length of fragment to use for splitting.
-   * @return Returns a NucleotideContigFragmentRDD.
-   *
-   * @see loadFasta
-   * @see loadParquetContigFragments
-   * @see loadReferenceFile
-   */
+    * Auto-detects the file type and loads contigs as a NucleotideContigFragmentRDD.
+    *
+    * Loads files ending in .fa/.fasta/.fa.gz/.fasta.gz as FASTA, else, falls
+    * back to Parquet.
+    *
+    * @param filePath       The path to load.
+    * @param projection     An optional subset of fields to load.
+    * @param fragmentLength The length of fragment to use for splitting.
+    * @return Returns a NucleotideContigFragmentRDD.
+    * @see loadFasta
+    * @see loadParquetContigFragments
+    * @see loadReferenceFile
+    */
   def loadSequences(
-    filePath: String,
-    projection: Option[Schema] = None,
-    fragmentLength: Long = 10000): NucleotideContigFragmentRDD = {
+                     filePath: String,
+                     projection: Option[Schema] = None,
+                     fragmentLength: Long = 10000): NucleotideContigFragmentRDD = {
     if (filePath.endsWith(".fa") ||
       filePath.endsWith(".fasta") ||
       filePath.endsWith(".fa.gz") ||
@@ -1418,23 +1426,22 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Auto-detects the file type and loads a GenotypeRDD.
-   *
-   * If the file has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, loads as VCF. Else, falls back to
-   * Parquet.
-   *
-   * @param filePath The path to load.
-   * @param projection An optional subset of fields to load.
-   * @param stringency The validation stringency to use when validating the VCF.
-   * @return Returns a GenotypeRDD.
-   *
-   * @see loadVcf
-   * @see loadParquetGenotypes
-   */
+    * Auto-detects the file type and loads a GenotypeRDD.
+    *
+    * If the file has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, loads as VCF. Else, falls back to
+    * Parquet.
+    *
+    * @param filePath   The path to load.
+    * @param projection An optional subset of fields to load.
+    * @param stringency The validation stringency to use when validating the VCF.
+    * @return Returns a GenotypeRDD.
+    * @see loadVcf
+    * @see loadParquetGenotypes
+    */
   def loadGenotypes(
-    filePath: String,
-    projection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeRDD = {
+                     filePath: String,
+                     projection: Option[Schema] = None,
+                     stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeRDD = {
     if (isVcfExt(filePath)) {
       log.info(s"Loading $filePath as VCF, and converting to Genotypes. Projection is ignored.")
       loadVcf(filePath, stringency).toGenotypeRDD
@@ -1445,23 +1452,22 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Auto-detects the file type and loads a VariantRDD.
-   *
-   * If the file has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, loads as VCF. Else, falls back to
-   * Parquet.
-   *
-   * @param filePath The path to load.
-   * @param projection An optional subset of fields to load.
-   * @param stringency The validation stringency to use when validating the VCF.
-   * @return Returns a VariantRDD.
-   *
-   * @see loadVcf
-   * @see loadParquetVariants
-   */
+    * Auto-detects the file type and loads a VariantRDD.
+    *
+    * If the file has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, loads as VCF. Else, falls back to
+    * Parquet.
+    *
+    * @param filePath   The path to load.
+    * @param projection An optional subset of fields to load.
+    * @param stringency The validation stringency to use when validating the VCF.
+    * @return Returns a VariantRDD.
+    * @see loadVcf
+    * @see loadParquetVariants
+    */
   def loadVariants(
-    filePath: String,
-    projection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantRDD = {
+                    filePath: String,
+                    projection: Option[Schema] = None,
+                    stringency: ValidationStringency = ValidationStringency.STRICT): VariantRDD = {
     if (isVcfExt(filePath)) {
       log.info(s"Loading $filePath as VCF, and converting to Variants. Projection is ignored.")
       loadVcf(filePath, stringency).toVariantRDD
@@ -1472,40 +1478,40 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Loads alignments from a given path, and infers the input type.
-   *
-   * This method can load:
-   *
-   * * AlignmentRecords via Parquet (default)
-   * * SAM/BAM/CRAM (.sam, .bam, .cram)
-   * * FASTQ (interleaved, single end, paired end) (.ifq, .fq/.fastq)
-   * * FASTA (.fa, .fasta)
-   * * NucleotideContigFragments via Parquet (.contig.adam)
-   *
-   * As hinted above, the input type is inferred from the file path extension.
-   *
-   * @param filePath Path to load data from.
-   * @param projection The fields to project; ignored if not Parquet.
-   * @param filePath2Opt The path to load a second end of FASTQ data from.
-   *  Ignored if not FASTQ.
-   * @param recordGroupOpt Optional record group name to set if loading FASTQ.
-   * @param stringency Validation stringency used on FASTQ import/merging.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
-   *   sequence dictionary representing the contigs these reads are aligned to
-   *   if the reads are aligned, and the record group dictionary for the reads
-   *   if one is available.
-   * @see loadBam
-   * @see loadParquetAlignments
-   * @see loadInterleavedFastq
-   * @see loadFastq
-   * @see loadFasta
-   */
+    * Loads alignments from a given path, and infers the input type.
+    *
+    * This method can load:
+    *
+    * * AlignmentRecords via Parquet (default)
+    * * SAM/BAM/CRAM (.sam, .bam, .cram)
+    * * FASTQ (interleaved, single end, paired end) (.ifq, .fq/.fastq)
+    * * FASTA (.fa, .fasta)
+    * * NucleotideContigFragments via Parquet (.contig.adam)
+    *
+    * As hinted above, the input type is inferred from the file path extension.
+    *
+    * @param filePath       Path to load data from.
+    * @param projection     The fields to project; ignored if not Parquet.
+    * @param filePath2Opt   The path to load a second end of FASTQ data from.
+    *                       Ignored if not FASTQ.
+    * @param recordGroupOpt Optional record group name to set if loading FASTQ.
+    * @param stringency     Validation stringency used on FASTQ import/merging.
+    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
+    *         sequence dictionary representing the contigs these reads are aligned to
+    *         if the reads are aligned, and the record group dictionary for the reads
+    *         if one is available.
+    * @see loadBam
+    * @see loadParquetAlignments
+    * @see loadInterleavedFastq
+    * @see loadFastq
+    * @see loadFasta
+    */
   def loadAlignments(
-    filePath: String,
-    projection: Option[Schema] = None,
-    filePath2Opt: Option[String] = None,
-    recordGroupOpt: Option[String] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadAlignmentRecords.time {
+                      filePath: String,
+                      projection: Option[Schema] = None,
+                      filePath2Opt: Option[String] = None,
+                      recordGroupOpt: Option[String] = None,
+                      stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadAlignmentRecords.time {
 
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam") ||
@@ -1533,18 +1539,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Auto-detects the file type and loads a FragmentRDD.
-   *
-   * This method can load:
-   *
-   * * Fragments via Parquet (default)
-   * * SAM/BAM/CRAM (.sam, .bam, .cram)
-   * * FASTQ (interleaved only --> .ifq)
-   * * Autodetects AlignmentRecord as Parquet with .reads.adam extension.
-   *
-   * @param filePath Path to load data from.
-   * @return Returns the loaded data as a FragmentRDD.
-   */
+    * Auto-detects the file type and loads a FragmentRDD.
+    *
+    * This method can load:
+    *
+    * * Fragments via Parquet (default)
+    * * SAM/BAM/CRAM (.sam, .bam, .cram)
+    * * FASTQ (interleaved only --> .ifq)
+    * * Autodetects AlignmentRecord as Parquet with .reads.adam extension.
+    *
+    * @param filePath Path to load data from.
+    * @return Returns the loaded data as a FragmentRDD.
+    */
   def loadFragments(filePath: String): FragmentRDD = LoadFragments.time {
     if (filePath.endsWith(".sam") ||
       filePath.endsWith(".bam") ||
@@ -1570,4 +1576,39 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       loadParquetFragments(filePath)
     }
   }
+
+  /**
+    * load Reads From RDD[SAM String] and return AlignmentRecordRDD
+    * In reads mapping, like BWA(bwasw,bwamem), we can get SAM string in distributed enviroment,
+    * this function can derect transform reads mapping result (SAM string) to AlignmentRecordRDD
+    * and need not save the read mapping results into file system and load by adam later.
+    * It can save time.
+    *
+    * avoid error like :
+    * chr1_99683104_99683640_1:0:0_6:0:0_15655e	73	chr1	91199704	0	31M19S	=	91199704	0	AAGAAAGAAAGAAAGAAAGAAAGCAAGAAAGAAAGAAAGAAAGAAAGAAA	22222222222222222222222222222222222222222222222222	NM:i:0	MD:Z:31	AS:i:31	XS:i:31	SA:Z:chr1,12789437,-,30M20S,0,0;	chr1_99683104_99683640_1:0:0_6:0:0_15655e	2169	chr1	12789437	0	30M20H	=	12789437	0	TTTCTTTCTTTCTTTCTTTCTTTCTTGCTT	222222222222222222222222222222	NM:i:0	MD:Z:30	AS:i:30	XS:i:30	SA:Z:chr1,91199704,+,31M19S,0,0;
+    * chr1_99683104_99683640_1:0:0_6:0:0_15655e	133	chr1	91199704	0	*	=	91199704	0	CAAAACTATATGAAGATGGTGAAATCCAGGTTGGTTTCCAGTATAAGGGT	22222222222222222222222222222222222222222222222222	AS:i:0	XS:i:0
+    * and Constants.NUM_REQUIRED_FIELDS for filter like that:
+    * 20GAVAAXX100126:4:6:16280:102045	163	20	225026	60	101M	=	225252	326	CCTCAGTGTATATATGTGGCTATACCACTGACAGGCCGCCAGTCATTAAATTCAAGCTCCAAGAGACAAACTCTTGAAAAAAAGGCAGCCTAGGAGAAAGC	?BDCCBDCCDFEFEFEDEECFEF4BDCDEDC;A?ACB5DDDB3>DBDDFEFEBCA>DE>9:=AADEC?D4?BBFA<CFD>DC8@?CE=DCD7>CAB>AA?;	MD:Z:101	PG:Z:BWA	RG:Z:20GAV.4	AM:i:37	NM:i:0	SM:i:37	MQ:i:60	OQ:Z:BBCBAA@CABCBCBBBBBBABBB7AA?B?A>=@?@B@>BAA@4?@@BABABB@A;=AA=:5>?<A@A@?2>@@A?=?A@;@=6:=@?;A>=37@:@:::::	UQ:i:0
+    *
+    * @param samRDD                SAM String RDD, maybe from reads mapping results
+    * @param sequenceDictionary    sequence Dictionary
+    * @param recordGroupDictionary record Group Dictionary
+    * @return AlignmentRecordRDD
+    */
+  def loadReadsFromSamString(samRDD: RDD[String], sequenceDictionary: SequenceDictionary, recordGroupDictionary: RecordGroupDictionary): AlignmentRecordRDD = {
+    val samRecordConverter = new SAMRecordConverter
+    var rdd = samRDD.map { each =>
+
+      var eachFirst: String = each
+      var eachArr = each.split(";\t")
+      if (eachArr.length > 1 && eachArr(0).split("\\s+").length > Constants.NUM_REQUIRED_FIELDS) {
+        eachFirst = eachArr(0)
+      }
+
+      var samRecord = ADAMContext.parseSAMString(eachFirst, sequenceDictionary, recordGroupDictionary)
+      samRecordConverter.convert(samRecord)
+    }
+    AlignmentRecordRDD(rdd, sequenceDictionary, recordGroupDictionary)
+  }
+
 }
