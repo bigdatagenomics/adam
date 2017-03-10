@@ -1,8 +1,9 @@
 # Building ADAM from Source
 
-You will need to have [Maven](http://maven.apache.org/) installed in order to build ADAM.
+You will need to have [Apache Maven](http://maven.apache.org/) version 3.1.1 or later
+installed in order to build ADAM.
 
-> **Note:** The default configuration is for Hadoop 2.6.0. If building against a different
+> **Note:** The default configuration is for Hadoop 2.7.3. If building against a different
 > version of Hadoop, please pass `-Dhadoop.version=<HADOOP_VERSION>` to the Maven command.
 > ADAM will cross-build for both Spark 1.x and 2.x, but builds by default against Spark
 > 1.6.3. To build for Spark 2, run the `./scripts/move_to_spark2.sh` script.
@@ -10,7 +11,7 @@ You will need to have [Maven](http://maven.apache.org/) installed in order to bu
 ```bash
 $ git clone https://github.com/bigdatagenomics/adam.git
 $ cd adam
-$ export "MAVEN_OPTS=-Xmx512m -XX:MaxPermSize=128m"
+$ export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
 $ mvn clean package -DskipTests
 ```
 Outputs
@@ -45,8 +46,8 @@ The first alias should be used for running ADAM jobs that operate locally. The l
 call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You'll need
 to have the Spark binaries on your system; prebuilt binaries can be downloaded from the
 [Spark website](http://spark.apache.org/downloads.html). Our [continuous integration setup](
-https://amplab.cs.berkeley.edu/jenkins/job/ADAM/) builds ADAM against Spark 1.4.1, 1.5.2, 1.6.2,
-and 2.0.0, as well as Hadoop 2.3.0 and 2.6.0.
+https://amplab.cs.berkeley.edu/jenkins/job/ADAM/) builds ADAM against Spark versions 1.6.1 and 2.0.0,
+Scala versions 2.10 and 2.11, and Hadoop versions 2.3.0 and 2.6.0.
 
 Once this alias is in place, you can run ADAM by simply typing `adam-submit` at the commandline, e.g.
 
