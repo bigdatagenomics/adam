@@ -60,6 +60,12 @@ class CoverageRDDSuite extends ADAMFunSuite {
     assert(coverage.rdd.count == 3)
   }
 
+  sparkTest("can read a bed file to coverage") {
+    val inputPath = testFile("sample_coverage.bed")
+    val coverage = sc.loadCoverage(inputPath)
+    assert(coverage.rdd.count() == 3)
+  }
+
   sparkTest("correctly filters coverage with predicate") {
     val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).build()
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
