@@ -42,6 +42,10 @@ private[adam] case class NucleotideContigFragmentArray(
     array: Array[(ReferenceRegion, NucleotideContigFragment)],
     maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, NucleotideContigFragment] {
 
+  def duplicate(): IntervalArray[ReferenceRegion, NucleotideContigFragment] = {
+    copy()
+  }
+
   protected def replace(arr: Array[(ReferenceRegion, NucleotideContigFragment)],
                         maxWidth: Long): IntervalArray[ReferenceRegion, NucleotideContigFragment] = {
     NucleotideContigFragmentArray(arr, maxWidth)
