@@ -66,6 +66,10 @@ private[adam] case class AlignmentRecordArray(
     array: Array[(ReferenceRegion, AlignmentRecord)],
     maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, AlignmentRecord] {
 
+  def duplicate(): IntervalArray[ReferenceRegion, AlignmentRecord] = {
+    copy()
+  }
+
   protected def replace(arr: Array[(ReferenceRegion, AlignmentRecord)],
                         maxWidth: Long): IntervalArray[ReferenceRegion, AlignmentRecord] = {
     AlignmentRecordArray(arr, maxWidth)

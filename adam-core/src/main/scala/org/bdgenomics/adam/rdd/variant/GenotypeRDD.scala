@@ -43,6 +43,10 @@ private[adam] case class GenotypeArray(
     array: Array[(ReferenceRegion, Genotype)],
     maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, Genotype] {
 
+  def duplicate(): IntervalArray[ReferenceRegion, Genotype] = {
+    copy()
+  }
+
   protected def replace(arr: Array[(ReferenceRegion, Genotype)],
                         maxWidth: Long): IntervalArray[ReferenceRegion, Genotype] = {
     GenotypeArray(arr, maxWidth)

@@ -45,6 +45,10 @@ private[adam] case class FeatureArray(
     array: Array[(ReferenceRegion, Feature)],
     maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, Feature] {
 
+  def duplicate(): IntervalArray[ReferenceRegion, Feature] = {
+    copy()
+  }
+
   protected def replace(arr: Array[(ReferenceRegion, Feature)],
                         maxWidth: Long): IntervalArray[ReferenceRegion, Feature] = {
     FeatureArray(arr, maxWidth)

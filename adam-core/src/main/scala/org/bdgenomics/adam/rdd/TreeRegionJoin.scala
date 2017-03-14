@@ -41,15 +41,19 @@ trait TreeRegionJoin[T, U] {
         .broadcast(tree)
 
       // map and join
-      rightRdd.map(kv => {
-        val (rr, u) = kv
+      rightRdd.mapPartitions(iter => {
+        val shallowCopyTree = broadcastTree.value
+          .duplicate()
 
-        // what values keys does this overlap in the tree?
-        val overlappingValues = broadcastTree.value
-          .get(rr)
-          .map(_._2)
+        iter.map(kv => {
+          val (rr, u) = kv
 
-        (overlappingValues, u)
+          // what values keys does this overlap in the tree?
+          val overlappingValues = shallowCopyTree.get(rr)
+            .map(_._2)
+
+          (overlappingValues, u)
+        })
       })
     }
   }

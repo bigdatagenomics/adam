@@ -45,6 +45,10 @@ private[adam] case class FragmentArray(
     array: Array[(ReferenceRegion, Fragment)],
     maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, Fragment] {
 
+  def duplicate(): IntervalArray[ReferenceRegion, Fragment] = {
+    copy()
+  }
+
   protected def replace(arr: Array[(ReferenceRegion, Fragment)],
                         maxWidth: Long): IntervalArray[ReferenceRegion, Fragment] = {
     FragmentArray(arr, maxWidth)
