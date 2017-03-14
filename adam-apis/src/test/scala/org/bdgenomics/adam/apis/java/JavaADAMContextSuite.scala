@@ -67,6 +67,16 @@ class JavaADAMContextSuite extends ADAMFunSuite {
     assert(newRdd.jrdd.count() === 10)
   }
 
+  sparkTest("can read and write a small .bed file as coverage") {
+    val path = copyResource("sample_coverage.bed")
+    val aRdd = sc.loadCoverage(path)
+    assert(aRdd.jrdd.count() === 3)
+
+    val newRdd = JavaADAMCoverageConduit.conduit(aRdd, sc)
+
+    assert(newRdd.jrdd.count() === 3)
+  }
+
   ignore("can read and write a small .vcf as genotypes") {
     val path = copyResource("small.vcf")
     val aRdd = sc.loadGenotypes(path)
