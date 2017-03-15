@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.cli
 
-import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
@@ -55,14 +54,10 @@ class ADAM2VcfArgs extends Args4jBase with ParquetArgs {
 
   @Args4jOption(required = false, name = "-single", usage = "Save as a single VCF file.")
   var single: Boolean = false
-
-  @Args4jOption(required = false, name = "-stringency", usage = "Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults to STRICT")
-  var stringency: String = "STRICT"
 }
 
 class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] with Logging {
   val companion = ADAM2Vcf
-  val stringency = ValidationStringency.valueOf(args.stringency)
 
   def run(sc: SparkContext) {
     require(!(args.sort && args.sortLexicographically),
@@ -94,7 +89,6 @@ class ADAM2Vcf(val args: ADAM2VcfArgs) extends BDGSparkCommand[ADAM2VcfArgs] wit
     }
 
     maybeSortedVcs.saveAsVcf(args.outputPath,
-      asSingleFile = args.single,
-      stringency)
+      asSingleFile = args.single)
   }
 }

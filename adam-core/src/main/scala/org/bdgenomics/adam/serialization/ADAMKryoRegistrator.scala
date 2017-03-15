@@ -24,6 +24,11 @@ import org.apache.avro.io.{ BinaryDecoder, BinaryEncoder, DecoderFactory, Encode
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificDatumWriter, SpecificRecord }
 import org.apache.spark.serializer.KryoRegistrator
 import scala.reflect.ClassTag
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable
+import org.apache.hadoop.hbase.client.Result
+import org.apache.hadoop.hbase.Cell
+import org.apache.hadoop.hbase.KeyValue
+import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 
 case class InputStreamWithDecoder(size: Int) {
   val buffer = new Array[Byte](size)
@@ -66,6 +71,9 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     // Register Avro classes using fully qualified class names
     // Sort alphabetically and add blank lines between packages
+
+    kryo.register(classOf[scala.Array[org.apache.hadoop.hbase.Cell]])
+    kryo.register(classOf[org.apache.hadoop.hbase.protobuf.generated.ClientProtos.RegionLoadStats])
 
     // htsjdk.samtools
     kryo.register(classOf[htsjdk.samtools.CigarElement])
@@ -112,6 +120,12 @@ class ADAMKryoRegistrator extends KryoRegistrator {
     kryo.register(Class.forName("org.apache.avro.Schema$Name"))
     kryo.register(Class.forName("org.apache.avro.Schema$LongSchema"))
     kryo.register(Class.forName("org.apache.avro.generic.GenericData$Array"))
+
+    // org.apache.hadoop.hbase
+    kryo.register(classOf[org.apache.hadoop.hbase.io.ImmutableBytesWritable])
+    kryo.register(classOf[org.apache.hadoop.hbase.client.Result])
+    kryo.register(classOf[org.apache.hadoop.hbase.Cell])
+    kryo.register(classOf[org.apache.hadoop.hbase.KeyValue])
 
     // org.apache.hadoop.io
     kryo.register(classOf[org.apache.hadoop.io.Text])

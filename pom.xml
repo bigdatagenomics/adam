@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <repositories>
+    <repository>
+      <id>cloudera</id>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+    </repository>
+  </repositories>
+
+
   <parent>
     <groupId>org.sonatype.oss</groupId>
     <artifactId>oss-parent</artifactId>
@@ -38,6 +46,7 @@
     <module>adam-apis</module>
     <module>adam-cli</module>
     <module>adam-assembly</module>
+    <!-- <module>adam-hbase</module> -->
   </modules>
 
   <licenses>
@@ -465,6 +474,23 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-streaming_2.10</artifactId>
+        <version>${spark.version}</version>
+        <scope>provided</scope>
+        <!--
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce</artifactId>
+          </exclusion>
+        </exclusions> -->
+      </dependency>
+      <dependency>
         <groupId>org.apache.avro</groupId>
         <artifactId>avro</artifactId>
         <version>${avro.version}</version>
@@ -565,6 +591,31 @@
         <artifactId>scala-guice_${scala.version.prefix}</artifactId>
         <version>4.0.1</version>
       </dependency>
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-hadoop2-compat</artifactId>
+        <version>1.2.0-cdh5.8.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-server</artifactId>
+        <version>1.2.0-cdh5.8.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-it</artifactId>
+        <version>1.2.0-cdh5.8.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-client</artifactId>
+        <version>1.2.0-cdh5.8.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-spark</artifactId>
+        <version>1.2.0-cdh5.8.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -644,6 +695,91 @@
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <id>hbase</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <property>
+          <name>env.SPARKVERSION</name>
+          <value>1.6.3</value>
+        </property>
+      </activation>
+      <modules>
+        <module>adam-core</module>
+        <module>adam-apis</module>
+        <module>adam-cli</module>
+        <module>adam-assembly</module>
+        <!-- distribution should be last -->
+        <module>adam-hbase</module>
+      </modules>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.4</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.3</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>scala-compile-first</id>
+                <phase>process-resources</phase>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <args>
+                    <arg>-g:vars</arg>
+                  </args>
+                </configuration>
+              </execution>
+              <execution>
+                <id>scala-test-compile-first</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>testCompile</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>attach-scaladocs</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>doc-jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+
     <profile>
       <id>coverage</id>
       <build>
