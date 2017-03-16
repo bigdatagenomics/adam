@@ -327,7 +327,7 @@ case class FeatureRDD(rdd: RDD[Feature],
       val fs = FileSystem.get(rdd.context.hadoopConfiguration)
 
       // and then merge
-      FileMerger.mergeFiles(rdd.context.hadoopConfiguration,
+      FileMerger.mergeFiles(rdd.context,
         fs,
         new Path(outputPath),
         new Path(tailPath))
@@ -399,7 +399,7 @@ case class FeatureRDD(rdd: RDD[Feature],
       intervalEntities.saveAsTextFile(tailPath.toString)
 
       // merge
-      FileMerger.mergeFiles(rdd.context.hadoopConfiguration,
+      FileMerger.mergeFiles(rdd.context,
         fs,
         new Path(fileName),
         tailPath,
