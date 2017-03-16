@@ -193,7 +193,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
       )
 
       // merge shards
-      FileMerger.mergeFiles(rdd.context.hadoopConfiguration,
+      FileMerger.mergeFiles(rdd.context,
         fs,
         new Path(filePath),
         new Path(tailPath),

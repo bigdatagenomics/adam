@@ -521,7 +521,7 @@ case class AlignmentRecordRDD(
       )
 
       if (!deferMerging) {
-        FileMerger.mergeFiles(rdd.context.hadoopConfiguration,
+        FileMerger.mergeFiles(rdd.context,
           fs,
           outputPath,
           tailPath,

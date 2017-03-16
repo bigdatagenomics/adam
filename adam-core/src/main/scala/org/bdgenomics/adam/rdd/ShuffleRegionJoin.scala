@@ -261,6 +261,7 @@ private[rdd] case class ManualRegionPartitioner(partitions: Int) extends Partiti
 
   override def getPartition(key: Any): Int = key match {
     case (_: ReferenceRegion, p: Int) => p
+    case (i: Int)                     => i
     case _                            => throw new IllegalStateException("Unexpected key in ManualRegionPartitioner")
   }
 }
