@@ -28,6 +28,7 @@ object Timers extends Metrics {
   val LoadAlignmentRecords = timer("Load Alignment Records")
   val BAMLoad = timer("BAM File Load")
   val ParquetLoad = timer("Parquet File Load")
+  val LoadFeatures = timer("Load Features")
   val LoadFragments = timer("Load Fragments")
 
   // Trim Reads
@@ -99,4 +100,7 @@ object Timers extends Metrics {
   val FullOuterShuffleJoin = timer("Full outer shuffle region join")
   val ShuffleJoinAndGroupByLeft = timer("Shuffle join followed by group-by on left")
   val RightOuterShuffleJoinAndGroupByLeft = timer("Right outer shuffle join followed by group-by on left")
+
+  // org.bdgenomics.adam.rdd.feature.FeatureRDD
+  val BuildSequenceDictionary = timer("Build SequenceDictionary for Features")
 }

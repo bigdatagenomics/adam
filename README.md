@@ -68,30 +68,25 @@ Usage: adam-submit [<spark-args> --] <adam-args>
 Choose one of the following commands:
 
 ADAM ACTIONS
-               depth : Calculate the depth from a given ADAM file, at each variant in a VCF
-         count_kmers : Counts the k-mers/q-mers from a read dataset.
-  count_contig_kmers : Counts the k-mers/q-mers from a read dataset.
+          countKmers : Counts the k-mers/q-mers from a read dataset.
+    countContigKmers : Counts the k-mers/q-mers from a read dataset.
            transform : Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations
-          adam2fastq : Convert BAM to FASTQ files
-             flatten : Convert a ADAM format file to a version with a flattened schema, suitable for querying with tools like Impala
+   transformFeatures : Convert a file with sequence features into corresponding ADAM format and vice versa
          mergeShards : Merges the shards of a file
+      reads2coverage : Calculate the coverage from a given ADAM file
 
 CONVERSION OPERATIONS
             vcf2adam : Convert a VCF file to the corresponding ADAM format
             adam2vcf : Convert an ADAM variant to the VCF ADAM format
           fasta2adam : Converts a text FASTA sequence file into an ADAMNucleotideContig Parquet file which represents assembled sequences.
           adam2fasta : Convert ADAM nucleotide contig fragments to FASTA files
-   transformFeatures : Convert a file with sequence features into corresponding ADAM format and vice versa
-          wigfix2bed : Locally convert a wigFix file to BED format
+          adam2fastq : Convert BAM to FASTQ files
      fragments2reads : Convert alignment records into fragment records.
      reads2fragments : Convert alignment records into fragment records.
-      reads2coverage : Calculate the coverage from a given ADAM file
 
 PRINT
                print : Print an ADAM formatted file
             flagstat : Print statistics on reads in an ADAM file (similar to samtools flagstat)
-            listdict : Print the contents of an ADAM sequence dictionary
-         allelecount : Calculate Allele frequencies
                 view : View certain reads from an alignment-record file.
 ```
 
@@ -162,17 +157,22 @@ Bundled release binaries can be found on our [releases][] page.
 
 ### Building from Source
 
-You will need to have [Maven](http://maven.apache.org/) installed in order to build ADAM.
+You will need to have [Apache Maven](http://maven.apache.org/) version 3.1.1 or later
+installed in order to build ADAM.
 
-> **Note:** The default configuration is for Hadoop 2.6.0. If building against a different
-> version of Hadoop, please edit the build configuration in the `<properties>` section of
-> the `pom.xml` file.
+> **Note:** The default configuration is for Hadoop 2.7.3. If building against a different
+> version of Hadoop, please pass `-Dhadoop.version=<HADOOP_VERSION>` to the Maven command.
+> ADAM will cross-build for both Spark 1.x and 2.x, but builds by default against Spark
+> 1.6.3. To build for Spark 2, run the `./scripts/move_to_spark2.sh` script.
 
-```
+```bash
 $ git clone https://github.com/bigdatagenomics/adam.git
 $ cd adam
-$ export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=256m"
+$ export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
 $ mvn clean package -DskipTests
+```
+Outputs
+```
 ...
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
@@ -203,7 +203,7 @@ alias adam-shell="${ADAM_HOME}/bin/adam-shell"
 
 `$ADAM_HOME` should be the path to a [binary release][releases] or a clone of this repository on your local filesystem. 
 
-These aliases call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM.Once they are in place, you can run adam by simply typing `adam-submit` at the command line, [as demonstrated above](./README.md#more-than-k-mer-counting).
+These aliases call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. Once they are in place, you can run adam by simply typing `adam-submit` at the command line, [as demonstrated above](./README.md#more-than-k-mer-counting).
 
 ## Running ADAM
 
@@ -309,7 +309,7 @@ $ adam-shell -i kmer.scala
 # Running on a cluster
 
 The `adam-submit` and `adam-shell` commands can also
-be used to submit ADAM jobs to a Spark cluster, or to run ADAM interactively. Cluster mode can be enabled by passing [the same flags you'd pass to Spark](https://spark.apache.org/docs/1.5.2/submitting-applications.html#launching-applications-with-spark-submit), e.g. `--master yarn --deploy-mode client`.
+be used to submit ADAM jobs to a Spark cluster, or to run ADAM interactively. Cluster mode can be enabled by passing [the same flags you'd pass to Spark](https://spark.apache.org/docs/1.6.3/submitting-applications.html#launching-applications-with-spark-submit), e.g. `--master yarn --deploy-mode client`.
 
 # Under the Hood
 ADAM relies on several open-source technologies to make genomic analyses fast and massively parallelizable…
@@ -351,15 +351,16 @@ just as easily use this Avro IDL description as the basis for a Python project. 
 
 There are a number of projects built on ADAM, e.g.
 
-- [RNAdam](https://github.com/bigdatagenomics/rice) provides an RNA pipeline on top of ADAM with isoform quantification and fusion transcription detection
-- [Avocado](https://github.com/bigdatagenomics/avocado) is a variant caller built on top of ADAM for germline and somatic calling
-- [PacMin](https://github.com/bigdatagenomics/PacMin) is an assembler for PacBio reads
-- A `Mutect` port is nearly feature complete
-- Read error correction
-- a graphing and genome visualization library
-- [BDG-Services](https://github.com/bigdatagenomics/bdg-services) is a library for accessing a running Spark cluster through web-services or a [Thrift](https://thrift.apache.org/)- interface
-- [Short read assembly](https://github.com/fnothaft/xASSEMBLEx)
-- Variant filtration (train model via `MLlib`)
+ - [avocado](https://github.com/bigdatagenomics/avocado)  Variant caller
+ - [cannoli](https://github.com/heuermh/cannoli)  Pipe API wrappers for bioinformatics tools
+ - [cs-bwamem](https://github.com/ytchen0323/cloud-scale-bwamem)  Scalable alignment using bwamem
+ - [eggo](https://github.com/bigdatagenomics/eggo)	 Parquet-formatted public 'omics datasets
+ - [gnocchi](https://github.com/bigdatagenomics/gnocchi)	Genotype-phenotype analysis
+ - [guacamole](https://github.com/hammerlab/guacamole)  Variant caller from Hammer Lab at Mt. Sinai
+ - [mango](https://github.com/bigdatagenomics/mango)  Scalable genome visualization
+ - [quinine](https://github.com/bigdatagenomics/quinine)  Read and variant quality control metrics
+ - [rice](https://github.com/bigdatagenomics/rice)	 RNA quantification pipeline
+ - [snappea](https://github.com/bigdatagenomics/snappea)	Parallel alignment using SNAP
 
 # License
 
@@ -369,3 +370,40 @@ ADAM is released under an [Apache 2.0 license](LICENSE.txt).
 [Spark]: https://spark.apache.org/
 [Parquet]: https://parquet.apache.org/
 [releases]: https://github.com/bigdatagenomics/adam/releases
+
+# Citing ADAM
+
+ADAM has been described in two manuscripts. The first, [a tech
+report](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2013/EECS-2013-207.pdf),
+came out in 2013 and described the rationale behind using schemas for genomics,
+and presented an early implementation of some of the preprocessing algorithms.
+To cite this paper, please cite:
+
+```
+@techreport{massie13,
+  title={{ADAM}: Genomics Formats and Processing Patterns for Cloud Scale Computing},
+  author={Massie, Matt and Nothaft, Frank and Hartl, Christopher and Kozanitis, Christos and Schumacher, Andr{\'e} and Joseph, Anthony D and Patterson, David A},
+  year={2013},
+  institution={UCB/EECS-2013-207, EECS Department, University of California, Berkeley}
+}
+```
+
+The second, [a conference paper](http://dl.acm.org/ft_gateway.cfm?ftid=1586788&id=2742787),
+appeared in the SIGMOD 2015 Industrial Track. This paper described how ADAM's
+design was influenced by database systems, expanded upon the concept of a stack
+architecture for scientific analyses, presented more results comparing ADAM to
+state-of-the-art single node genomics tools, and demonstrated how the
+architecture generalized beyond genomics. To cite this paper, please cite:
+
+```
+@inproceedings{nothaft15,
+  title={Rethinking Data-Intensive Science Using Scalable Analytics Systems},
+  author={Nothaft, Frank A and Massie, Matt and Danford, Timothy and Zhang, Zhao and Laserson, Uri and Yeksigian, Carl and Kottalam, Jey and Ahuja, Arun and Hammerbacher, Jeff and Linderman, Michael and Franklin, Michael and Joseph, Anthony D. and Patterson, David A.},
+  booktitle={Proceedings of the 2015 International Conference on Management of Data (SIGMOD '15)},
+  year={2015},
+  organization={ACM}
+}
+```
+
+We prefer that you cite both papers, but if you can only cite one paper, we
+prefer that you cite the SIGMOD 2015 manuscript.

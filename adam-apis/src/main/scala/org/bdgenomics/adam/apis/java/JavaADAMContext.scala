@@ -20,7 +20,7 @@ package org.bdgenomics.adam.apis.java
 import org.apache.spark.api.java.JavaSparkContext
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
-import org.bdgenomics.adam.rdd.feature.FeatureRDD
+import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.variant.{
@@ -81,6 +81,16 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    */
   def loadFeatures(filePath: java.lang.String): FeatureRDD = {
     ac.loadFeatures(filePath)
+  }
+
+  /**
+   * Loads in a coverage file. This method can load BED, NarrowPeak, GFF3, GTF/GFF2, IntervalList and ADAM files.
+   *
+   * @param filePath Path to load the file from.
+   * @return Returns a Coverage RDD.
+   */
+  def loadCoverage(filePath: java.lang.String): CoverageRDD = {
+    ac.loadCoverage(filePath)
   }
 
   /**
