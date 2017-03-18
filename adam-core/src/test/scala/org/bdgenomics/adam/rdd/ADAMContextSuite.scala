@@ -520,7 +520,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val alignmentRecordRDD = sc.loadReadsFromSamString(samRDD, sequenceDictionary, recordGroupDictionary)
     assert(alignmentRecordRDD.rdd.count() === 565)
     //see the part of result
-    //    alignmentRecordRDD.rdd.take(10).foreach(println)
-    //    assert(1===2)
+    //        alignmentRecordRDD.rdd.take(10).foreach(println)
+    //        assert(1===2)
   }
 }

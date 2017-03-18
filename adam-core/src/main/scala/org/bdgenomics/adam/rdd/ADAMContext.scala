@@ -132,16 +132,10 @@ object ADAMContext {
    * @return
    */
   def parseSAMString(samString: String, sequenceDictionary: SequenceDictionary, recordGroupDictionary: RecordGroupDictionary): SAMRecord = {
-    try {
-      val arc = new AlignmentRecordConverter
-      val samHeader = arc.createSAMHeader(sequenceDictionary, recordGroupDictionary)
-      val samLineParser = new SAMLineParser(samHeader)
-      samLineParser.parseLine(new String(samString.getBytes(), "UTF-8"))
-    } catch {
-      case exc: Exception =>
-        val msg = "Error \"%s\" parse sam String error (%s)".format(exc.getMessage, samString)
-        null
-    }
+    val arc = new AlignmentRecordConverter
+    val samHeader = arc.createSAMHeader(sequenceDictionary, recordGroupDictionary)
+    val samLineParser = new SAMLineParser(samHeader)
+    samLineParser.parseLine(new String(samString.getBytes(), "UTF-8"))
   }
 }
 
@@ -1612,20 +1606,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       val eachArr = each.split(";\t")
       if (eachArr.length > 1 && eachArr(0).split("\\s+").length > Constants.num_required_fields) {
         val samRecord = ADAMContext.parseSAMString(eachArr(0), sequenceDictionary, recordGroupDictionary)
-        if (samRecord == null) {
-          null
-        } else {
-          samRecordConverter.convert(samRecord)
-        }
+        samRecordConverter.convert(samRecord)
       } else {
         val samRecord = ADAMContext.parseSAMString(each, sequenceDictionary, recordGroupDictionary)
-        if (samRecord == null) {
-          null
-        } else {
-          samRecordConverter.convert(samRecord)
-        }
+        samRecordConverter.convert(samRecord)
       }
-    }.filter(_ != null)
+    }
     AlignmentRecordRDD(rdd, sequenceDictionary, recordGroupDictionary)
   }
 
