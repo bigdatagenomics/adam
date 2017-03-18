@@ -22,5 +22,5 @@ package org.bdgenomics.adam.util
  */
 object Constants {
   // design for org.bdgenomics.adam.rdd.ADAMContext.loadReadsFromSamString
-  var NUM_REQUIRED_FIELDS = 11
+  val num_required_fields = 11
 }

@@ -134,13 +134,13 @@ object ADAMContext {
   def parseSAMString(samString: String, sequenceDictionary: SequenceDictionary, recordGroupDictionary: RecordGroupDictionary): SAMRecord = {
     try {
       val arc = new AlignmentRecordConverter
-      var SAMHeader = arc.createSAMHeader(sequenceDictionary, recordGroupDictionary)
-      val samLineParser = new SAMLineParser(SAMHeader)
+      val samHeader = arc.createSAMHeader(sequenceDictionary, recordGroupDictionary)
+      val samLineParser = new SAMLineParser(samHeader)
       samLineParser.parseLine(new String(samString.getBytes(), "UTF-8"))
     } catch {
       case exc: Exception =>
         val msg = "Error \"%s\" parse sam String error (%s)".format(exc.getMessage, samString)
-        throw new IllegalArgumentException(msg, exc)
+        null
     }
   }
 }
@@ -1159,7 +1159,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param filePath The path to the file to load.
    * @param storageLevel Storage level to use for cache before building the SequenceDictionary.
-
+   *
    * @param minPartitions An optional minimum number of partitions to load. If
    *                      not set, falls back to the configured Spark default parallelism.
    * @param stringency    Optional stringency to pass. LENIENT stringency will warn
@@ -1182,7 +1182,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param filePath The path to the file to load.
    * @param storageLevel Storage level to use for cache before building the SequenceDictionary.
-
+   *
    * @param minPartitions An optional minimum number of partitions to load. If
    *                      not set, falls back to the configured Spark default parallelism.
    * @param stringency    Optional stringency to pass. LENIENT stringency will warn
@@ -1598,7 +1598,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * avoid error like :
    * chr1_99683104_99683640_1:0:0_6:0:0_15655e	73	chr1	91199704	0	31M19S	=	91199704	0	AAGAAAGAAAGAAAGAAAGAAAGCAAGAAAGAAAGAAAGAAAGAAAGAAA	22222222222222222222222222222222222222222222222222	NM:i:0	MD:Z:31	AS:i:31	XS:i:31	SA:Z:chr1,12789437,-,30M20S,0,0;	chr1_99683104_99683640_1:0:0_6:0:0_15655e	2169	chr1	12789437	0	30M20H	=	12789437	0	TTTCTTTCTTTCTTTCTTTCTTTCTTGCTT	222222222222222222222222222222	NM:i:0	MD:Z:30	AS:i:30	XS:i:30	SA:Z:chr1,91199704,+,31M19S,0,0;
    * chr1_99683104_99683640_1:0:0_6:0:0_15655e	133	chr1	91199704	0	*	=	91199704	0	CAAAACTATATGAAGATGGTGAAATCCAGGTTGGTTTCCAGTATAAGGGT	22222222222222222222222222222222222222222222222222	AS:i:0	XS:i:0
-   * and Constants.NUM_REQUIRED_FIELDS for filter like that:
+   * and Constants.num_required_fields for filter like that:
    * 20GAVAAXX100126:4:6:16280:102045	163	20	225026	60	101M	=	225252	326	CCTCAGTGTATATATGTGGCTATACCACTGACAGGCCGCCAGTCATTAAATTCAAGCTCCAAGAGACAAACTCTTGAAAAAAAGGCAGCCTAGGAGAAAGC	?BDCCBDCCDFEFEFEDEECFEF4BDCDEDC;A?ACB5DDDB3>DBDDFEFEBCA>DE>9:=AADEC?D4?BBFA<CFD>DC8@?CE=DCD7>CAB>AA?;	MD:Z:101	PG:Z:BWA	RG:Z:20GAV.4	AM:i:37	NM:i:0	SM:i:37	MQ:i:60	OQ:Z:BBCBAA@CABCBCBBBBBBABBB7AA?B?A>=@?@B@>BAA@4?@@BABABB@A;=AA=:5>?<A@A@?2>@@A?=?A@;@=6:=@?;A>=37@:@:::::	UQ:i:0
    *
    * @param samRDD                SAM String RDD, maybe from reads mapping results
@@ -1608,17 +1608,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadReadsFromSamString(samRDD: RDD[String], sequenceDictionary: SequenceDictionary, recordGroupDictionary: RecordGroupDictionary): AlignmentRecordRDD = {
     val samRecordConverter = new SAMRecordConverter
-    var rdd = samRDD.map { each =>
-
-      var eachFirst: String = each
-      var eachArr = each.split(";\t")
-      if (eachArr.length > 1 && eachArr(0).split("\\s+").length > Constants.NUM_REQUIRED_FIELDS) {
-        eachFirst = eachArr(0)
+    val rdd = samRDD.map { each =>
+      val eachArr = each.split(";\t")
+      if (eachArr.length > 1 && eachArr(0).split("\\s+").length > Constants.num_required_fields) {
+        val samRecord = ADAMContext.parseSAMString(eachArr(0), sequenceDictionary, recordGroupDictionary)
+        if (samRecord == null) {
+          null
+        } else {
+          samRecordConverter.convert(samRecord)
+        }
+      } else {
+        val samRecord = ADAMContext.parseSAMString(each, sequenceDictionary, recordGroupDictionary)
+        if (samRecord == null) {
+          null
+        } else {
+          samRecordConverter.convert(samRecord)
+        }
       }
-
-      var samRecord = ADAMContext.parseSAMString(eachFirst, sequenceDictionary, recordGroupDictionary)
-      samRecordConverter.convert(samRecord)
-    }
+    }.filter(_ != null)
     AlignmentRecordRDD(rdd, sequenceDictionary, recordGroupDictionary)
   }
 
