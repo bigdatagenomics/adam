@@ -54,7 +54,7 @@ object ConsensusGenerator {
    *   present in a single aligned read back into the reference sequence where
    *   they are aligned.
    */
-  def fromReads: ConsensusGenerator = {
+  def fromReads(): ConsensusGenerator = {
     new ConsensusGeneratorFromReads
   }
 

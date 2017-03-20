@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -120,6 +121,17 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    */
   def transform(tFn: RDD[T] => RDD[T]): U = {
     replaceRdd(tFn(rdd))
+  }
+
+  /**
+   * Applies a function that transforms the underlying RDD into a new RDD.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transform(tFn: JFunction[JavaRDD[T], JavaRDD[T]]): U = {
+    replaceRdd(tFn.call(jrdd).rdd)
   }
 
   /**

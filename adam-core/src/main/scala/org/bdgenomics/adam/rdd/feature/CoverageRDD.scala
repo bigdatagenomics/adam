@@ -97,7 +97,7 @@ case class CoverageRDD(rdd: RDD[Coverage],
    *
    * @return merged tuples of adjacent ReferenceRegions and coverage.
    */
-  def collapse: CoverageRDD = {
+  def collapse(): CoverageRDD = {
     val newRDD: RDD[Coverage] = rdd
       .mapPartitions(iter => {
         if (iter.hasNext) {
@@ -148,15 +148,31 @@ case class CoverageRDD(rdd: RDD[Coverage],
    *
    * @return Returns a FeatureRDD from CoverageRDD.
    */
-  def toFeatureRDD: FeatureRDD = {
+  def toFeatureRDD(): FeatureRDD = {
     val featureRdd = rdd.map(_.toFeature)
     FeatureRDD(featureRdd, sequences)
   }
 
   /**
    * Gets coverage overlapping specified ReferenceRegion.
-   * For large ReferenceRegions, base pairs per bin (bpPerBin) can be specified to bin together ReferenceRegions of
-   * equal size. The coverage of each bin is coverage of the first base pair in that bin.
+   *
+   * For large ReferenceRegions, base pairs per bin (bpPerBin) can be specified
+   * to bin together ReferenceRegions of equal size. The coverage of each bin is
+   * coverage of the first base pair in that bin. Java friendly variant.
+   *
+   * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
+   * @return RDD of Coverage Records.
+   */
+  def coverage(bpPerBin: java.lang.Integer): CoverageRDD = {
+    val bp: Int = bpPerBin
+    coverage(bpPerBin = bp)
+  }
+
+  /**
+   * Gets coverage overlapping specified ReferenceRegion.
+   * For large ReferenceRegions, base pairs per bin (bpPerBin) can be specified
+   * to bin together ReferenceRegions of equal size. The coverage of each bin is
+   * coverage of the first base pair in that bin.
    *
    * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
    * @return RDD of Coverage Records.
@@ -175,9 +191,26 @@ case class CoverageRDD(rdd: RDD[Coverage],
   }
 
   /**
-   * Gets coverage overlapping specified ReferenceRegion. For large ReferenceRegions,
-   * base pairs per bin (bpPerBin) can be specified to bin together ReferenceRegions of
-   * equal size. The coverage of each bin is the mean coverage over all base pairs in that bin.
+   * Gets coverage overlapping specified ReferenceRegion.
+   *
+   * For large ReferenceRegions, base pairs per bin (bpPerBin) can be specified
+   * to bin together ReferenceRegions of equal size. The coverage of each bin is
+   * the mean coverage over all base pairs in that bin. Java friendly variant.
+   *
+   * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
+   * @return RDD of Coverage Records.
+   */
+  def aggregatedCoverage(bpPerBin: java.lang.Integer): CoverageRDD = {
+    val bp: Int = bpPerBin
+    aggregatedCoverage(bpPerBin = bp)
+  }
+
+  /**
+   * Gets coverage overlapping specified ReferenceRegion.
+   *
+   * For large ReferenceRegions, base pairs per bin (bpPerBin) can be specified
+   * to bin together ReferenceRegions of equal size. The coverage of each bin is
+   * the mean coverage over all base pairs in that bin.
    *
    * @param bpPerBin base pairs per bin, number of bases to combine to one bin.
    * @return RDD of Coverage Records.

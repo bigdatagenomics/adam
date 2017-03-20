@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd.contig
 
 import com.google.common.base.Splitter
+import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.FragmentConverter
 import org.bdgenomics.adam.models.{
@@ -272,6 +273,21 @@ case class NucleotideContigFragmentRDD(
    * For all adjacent records in the RDD, we extend the records so that the adjacent
    * records now overlap by _n_ bases, where _n_ is the flank length.
    *
+   * Java friendly variant.
+   *
+   * @param flankLength The length to extend adjacent records by.
+   * @return Returns the RDD, with all adjacent fragments extended with flanking sequence.
+   */
+  def flankAdjacentFragments(
+    flankLength: java.lang.Integer): NucleotideContigFragmentRDD = {
+    val flank: Int = flankLength
+    flankAdjacentFragments(flank)
+  }
+
+  /**
+   * For all adjacent records in the RDD, we extend the records so that the adjacent
+   * records now overlap by _n_ bases, where _n_ is the flank length.
+   *
    * @param flankLength The length to extend adjacent records by.
    * @return Returns the RDD, with all adjacent fragments extended with flanking sequence.
    */
@@ -295,5 +311,21 @@ case class NucleotideContigFragmentRDD(
         .sliding(kmerLength)
         .map(k => (k, 1L))
     }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
+  }
+
+  /**
+   * Counts the k-mers contained in a FASTA contig.
+   *
+   * Java friendly variant.
+   *
+   * @param kmerLength The length of k-mers to count.
+   * @return Returns an RDD containing k-mer/count pairs.
+   */
+  def countKmers(
+    kmerLength: java.lang.Integer): JavaRDD[(String, java.lang.Long)] = {
+    val k: Int = kmerLength
+    countKmers(k).map(p => {
+      (p._1, p._2: java.lang.Long)
+    }).toJavaRDD()
   }
 }
