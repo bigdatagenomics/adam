@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
-import java.util.concurrent.Executors
+import java.lang.Thread
 import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
@@ -286,26 +286,15 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       val os = process.getOutputStream()
       val is = process.getInputStream()
 
-      // wrap in and out formatters
+      // wrap in formatter and run as a thread
       val ifr = new InFormatterRunner[T, U, V](iter, tFormatter, os)
-      val ofr = new OutFormatterRunner[X, OutFormatter[X]](xFormatter, is)
+      new Thread(ifr).start()
 
-      // launch thread pool and submit formatters
-      val pool = Executors.newFixedThreadPool(2)
-      pool.submit(ifr)
-      val futureIter = pool.submit(ofr)
-
-      // wait for process to finish
-      val exitCode = process.waitFor()
-      if (exitCode != 0) {
-        throw new RuntimeException("Piped command %s exited with error code %d.".format(
-          finalCmd, exitCode))
-      }
-
-      // shut thread pool
-      pool.shutdown()
-
-      futureIter.get
+      // wrap out formatter
+      new OutFormatterRunner[X, OutFormatter[X]](xFormatter,
+        is,
+        process,
+        finalCmd)
     })
 
     // build the new GenomicRDD

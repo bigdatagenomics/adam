@@ -18,13 +18,33 @@
 package org.bdgenomics.adam.rdd
 
 import java.io.InputStream
+import java.lang.Process
 import java.util.concurrent.Callable
 
 private[rdd] class OutFormatterRunner[T, U <: OutFormatter[T]](formatter: U,
-                                                               is: InputStream) extends Callable[Iterator[T]] {
+                                                               is: InputStream,
+                                                               process: Process,
+                                                               finalCmd: List[String]) extends Iterator[T] {
 
-  def call(): Iterator[T] = {
-    formatter.read(is)
+  private val iter = formatter.read(is)
+
+  def hasNext: Boolean = {
+    if (iter.hasNext) {
+      true
+    } else {
+      val exitCode = process.waitFor()
+      if (exitCode != 0) {
+        throw new RuntimeException("Piped command %s exited with error code %d.".format(
+          finalCmd, exitCode))
+      }
+
+      false
+    }
+  }
+
+  def next: T = {
+    assert(iter.hasNext)
+    iter.next
   }
 }
 
