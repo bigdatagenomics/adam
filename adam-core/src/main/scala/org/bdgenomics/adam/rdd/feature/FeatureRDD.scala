@@ -109,15 +109,17 @@ object FeatureRDD {
    * aggregate to rebuild the SequenceDictionary.
    *
    * @param rdd The underlying Feature RDD to build from.
-   * @param storageLevel Storage level to use for cache before building the SequenceDictionary.
+   * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
    * @return Returns a new FeatureRDD.
    */
-  def apply(
+  def inferSequenceDictionary(
     rdd: RDD[Feature],
-    storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY): FeatureRDD = BuildSequenceDictionary.time {
+    optStorageLevel: Option[StorageLevel]): FeatureRDD = BuildSequenceDictionary.time {
 
-    // cache the rdd, since we're making multiple passes
-    rdd.persist(storageLevel)
+    // optionally cache the rdd, since we're making multiple passes
+    optStorageLevel.map(
+      rdd.persist(_)
+    )
 
     // create sequence records with length max(start, end) + 1L
     val sequenceRecords = rdd
