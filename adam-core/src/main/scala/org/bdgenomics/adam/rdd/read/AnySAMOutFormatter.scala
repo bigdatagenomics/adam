@@ -39,28 +39,27 @@ class AnySAMOutFormatter extends OutFormatter[AlignmentRecord] {
    */
   def read(is: InputStream): Iterator[AlignmentRecord] = {
 
-    // make converter and empty dicts
-    val converter = new SAMRecordConverter
-
     // make reader
     val reader = SamReaderFactory.makeDefault()
       .open(SamInputResource.of(is))
 
-    // make iterator from said reader
-    val iter = reader.iterator()
+    SAMIteratorConverter(reader)
+  }
+}
 
-    @tailrec def convertIterator(iter: SAMRecordIterator,
-                                 records: ListBuffer[AlignmentRecord] = ListBuffer.empty): Iterator[AlignmentRecord] = {
-      if (!iter.hasNext) {
-        iter.close()
-        records.toIterator
-      } else {
-        val nextRecords = records += converter.convert(iter.next)
-        convertIterator(iter, nextRecords)
-      }
-    }
+private case class SAMIteratorConverter(val reader: SamReader) extends Iterator[AlignmentRecord] {
 
-    // convert the iterator
-    convertIterator(iter)
+  val iter = reader.iterator()
+
+  // make converter and empty dicts
+  val converter = new SAMRecordConverter
+
+  def hasNext: Boolean = {
+    iter.hasNext
+  }
+
+  def next: AlignmentRecord = {
+    assert(iter.hasNext)
+    converter.convert(iter.next)
   }
 }
