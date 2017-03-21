@@ -49,17 +49,26 @@ class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
     usage = "Save as a single file, for the text formats.")
   var single: Boolean = false
 
-  @Args4jOption(required = false, name = "-storage_level", usage = "Set the storage level to use for caching.")
+  @Args4jOption(required = false, name = "-cache", usage = "Cache before building the sequence dictionary. Recommended for formats other than IntervalList and Parquet.")
+  var cache: Boolean = false
+
+  @Args4jOption(required = false, name = "-storage_level", usage = "Set the storage level to use for caching. Defaults to MEMORY_ONLY.")
   var storageLevel: String = "MEMORY_ONLY"
 }
 
 class TransformFeatures(val args: TransformFeaturesArgs)
     extends BDGSparkCommand[TransformFeaturesArgs] {
+
   val companion = TransformFeatures
   val storageLevel = StorageLevel.fromString(args.storageLevel)
+  val optStorageLevel = if (args.cache) Some(storageLevel) else None
 
   def run(sc: SparkContext) {
-    sc.loadFeatures(args.featuresFile, storageLevel, None, Option(args.numPartitions))
-      .save(args.outputPath, args.single)
+    sc.loadFeatures(
+      args.featuresFile,
+      optStorageLevel = optStorageLevel,
+      projection = None,
+      minPartitions = Option(args.numPartitions)
+    ).save(args.outputPath, args.single)
   }
 }

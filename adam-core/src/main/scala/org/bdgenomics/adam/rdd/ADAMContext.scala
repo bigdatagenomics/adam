@@ -1149,7 +1149,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Loads features stored in GFF3 format.
    *
    * @param filePath The path to the file to load.
-   * @param storageLevel Storage level to use for cache before building the SequenceDictionary.
+   * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
+   *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param minPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism.
    * @param stringency Optional stringency to pass. LENIENT stringency will warn
@@ -1158,20 +1159,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns a FeatureRDD.
    */
   def loadGff3(filePath: String,
-               storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
+               optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
                minPartitions: Option[Int] = None,
                stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GFF3Parser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD(records, storageLevel)
+    FeatureRDD.inferSequenceDictionary(records, optStorageLevel = optStorageLevel)
   }
 
   /**
    * Loads features stored in GFF2/GTF format.
    *
    * @param filePath The path to the file to load.
-   * @param storageLevel Storage level to use for cache before building the SequenceDictionary.
+   * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
+   *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param minPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism.
    * @param stringency Optional stringency to pass. LENIENT stringency will warn
@@ -1180,20 +1182,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns a FeatureRDD.
    */
   def loadGtf(filePath: String,
-              storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
+              optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
               minPartitions: Option[Int] = None,
               stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GTFParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD(records, storageLevel)
+    FeatureRDD.inferSequenceDictionary(records, optStorageLevel = optStorageLevel)
   }
 
   /**
    * Loads features stored in BED6/12 format.
    *
    * @param filePath The path to the file to load.
-   * @param storageLevel Storage level to use for cache before building the SequenceDictionary.
+   * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
+   *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param minPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism.
    * @param stringency Optional stringency to pass. LENIENT stringency will warn
@@ -1202,20 +1205,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns a FeatureRDD.
    */
   def loadBed(filePath: String,
-              storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
+              optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
               minPartitions: Option[Int] = None,
               stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new BEDParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD(records, storageLevel)
+    FeatureRDD.inferSequenceDictionary(records, optStorageLevel = optStorageLevel)
   }
 
   /**
    * Loads features stored in NarrowPeak format.
    *
    * @param filePath The path to the file to load.
-   * @param storageLevel Storage level to use for cache before building the SequenceDictionary.
+   * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
+   *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param minPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism.
    * @param stringency Optional stringency to pass. LENIENT stringency will warn
@@ -1224,13 +1228,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns a FeatureRDD.
    */
   def loadNarrowPeak(filePath: String,
-                     storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
+                     optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
                      minPartitions: Option[Int] = None,
                      stringency: ValidationStringency = ValidationStringency.LENIENT): FeatureRDD = {
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new NarrowPeakParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD(records, storageLevel)
+    FeatureRDD.inferSequenceDictionary(records, optStorageLevel = optStorageLevel)
   }
 
   /**
@@ -1324,7 +1328,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * IntervalList. If none of these match, we fall back to Parquet.
    *
    * @param filePath The path to the file to load.
-   * @param storageLevel Storage level to use for cache before building the SequenceDictionary.
+   * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
+   *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param projection An optional projection to push down.
    * @param minPartitions An optional minimum number of partitions to use. For
    *   textual formats, if this is None, we fall back to the Spark default
@@ -1339,30 +1344,30 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @see loadParquetFeatures
    */
   def loadFeatures(filePath: String,
-                   storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
+                   optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
                    projection: Option[Schema] = None,
                    minPartitions: Option[Int] = None): FeatureRDD = LoadFeatures.time {
 
     if (filePath.endsWith(".bed")) {
       log.info(s"Loading $filePath as BED and converting to features. Projection is ignored.")
-      loadBed(filePath, storageLevel, minPartitions)
+      loadBed(filePath, optStorageLevel = optStorageLevel, minPartitions = minPartitions)
     } else if (filePath.endsWith(".gff3")) {
       log.info(s"Loading $filePath as GFF3 and converting to features. Projection is ignored.")
-      loadGff3(filePath, storageLevel, minPartitions)
+      loadGff3(filePath, optStorageLevel = optStorageLevel, minPartitions = minPartitions)
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
       log.info(s"Loading $filePath as GTF/GFF2 and converting to features. Projection is ignored.")
-      loadGtf(filePath, storageLevel, minPartitions)
+      loadGtf(filePath, optStorageLevel = optStorageLevel, minPartitions = minPartitions)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
       log.info(s"Loading $filePath as NarrowPeak and converting to features. Projection is ignored.")
-      loadNarrowPeak(filePath, storageLevel, minPartitions)
+      loadNarrowPeak(filePath, optStorageLevel = optStorageLevel, minPartitions = minPartitions)
     } else if (filePath.endsWith(".interval_list")) {
       log.info(s"Loading $filePath as IntervalList and converting to features. Projection is ignored.")
-      loadIntervalList(filePath, minPartitions)
+      loadIntervalList(filePath, minPartitions = minPartitions)
     } else {
       log.info(s"Loading $filePath as Parquet containing Features.")
-      loadParquetFeatures(filePath, None, projection)
+      loadParquetFeatures(filePath, predicate = None, projection = projection)
     }
   }
 
