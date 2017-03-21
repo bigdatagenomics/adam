@@ -117,9 +117,7 @@ object FeatureRDD {
     optStorageLevel: Option[StorageLevel]): FeatureRDD = BuildSequenceDictionary.time {
 
     // optionally cache the rdd, since we're making multiple passes
-    optStorageLevel.map(
-      rdd.persist(_)
-    )
+    optStorageLevel.foreach(rdd.persist(_))
 
     // create sequence records with length max(start, end) + 1L
     val sequenceRecords = rdd

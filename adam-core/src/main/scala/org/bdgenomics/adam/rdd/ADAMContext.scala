@@ -1165,7 +1165,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GFF3Parser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD.inferSequenceDictionary(records, optStorageLevel)
+    FeatureRDD.inferSequenceDictionary(records, optStorageLevel = optStorageLevel)
   }
 
   /**
@@ -1188,7 +1188,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GTFParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD.inferSequenceDictionary(records, optStorageLevel)
+    FeatureRDD.inferSequenceDictionary(records, optStorageLevel = optStorageLevel)
   }
 
   /**
@@ -1211,7 +1211,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new BEDParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD.inferSequenceDictionary(records, optStorageLevel)
+    FeatureRDD.inferSequenceDictionary(records, optStorageLevel = optStorageLevel)
   }
 
   /**
@@ -1234,7 +1234,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val records = sc.textFile(filePath, minPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new NarrowPeakParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD.inferSequenceDictionary(records, optStorageLevel)
+    FeatureRDD.inferSequenceDictionary(records, optStorageLevel = optStorageLevel)
   }
 
   /**
@@ -1350,24 +1350,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (filePath.endsWith(".bed")) {
       log.info(s"Loading $filePath as BED and converting to features. Projection is ignored.")
-      loadBed(filePath, optStorageLevel, minPartitions)
+      loadBed(filePath, optStorageLevel = optStorageLevel, minPartitions = minPartitions)
     } else if (filePath.endsWith(".gff3")) {
       log.info(s"Loading $filePath as GFF3 and converting to features. Projection is ignored.")
-      loadGff3(filePath, optStorageLevel, minPartitions)
+      loadGff3(filePath, optStorageLevel = optStorageLevel, minPartitions = minPartitions)
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
       log.info(s"Loading $filePath as GTF/GFF2 and converting to features. Projection is ignored.")
-      loadGtf(filePath, optStorageLevel, minPartitions)
+      loadGtf(filePath, optStorageLevel = optStorageLevel, minPartitions = minPartitions)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
       log.info(s"Loading $filePath as NarrowPeak and converting to features. Projection is ignored.")
-      loadNarrowPeak(filePath, optStorageLevel, minPartitions)
+      loadNarrowPeak(filePath, optStorageLevel = optStorageLevel, minPartitions = minPartitions)
     } else if (filePath.endsWith(".interval_list")) {
       log.info(s"Loading $filePath as IntervalList and converting to features. Projection is ignored.")
-      loadIntervalList(filePath, minPartitions)
+      loadIntervalList(filePath, minPartitions = minPartitions)
     } else {
       log.info(s"Loading $filePath as Parquet containing Features.")
-      loadParquetFeatures(filePath, None, projection)
+      loadParquetFeatures(filePath, predicate = None, projection = projection)
     }
   }
 

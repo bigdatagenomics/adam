@@ -58,12 +58,17 @@ class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
 
 class TransformFeatures(val args: TransformFeaturesArgs)
     extends BDGSparkCommand[TransformFeaturesArgs] {
+
   val companion = TransformFeatures
   val storageLevel = StorageLevel.fromString(args.storageLevel)
   val optStorageLevel = if (args.cache) Some(storageLevel) else None
 
   def run(sc: SparkContext) {
-    sc.loadFeatures(args.featuresFile, optStorageLevel, None, Option(args.numPartitions))
-      .save(args.outputPath, args.single)
+    sc.loadFeatures(
+      args.featuresFile,
+      optStorageLevel = optStorageLevel,
+      projection = None,
+      minPartitions = Option(args.numPartitions)
+    ).save(args.outputPath, args.single)
   }
 }
