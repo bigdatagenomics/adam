@@ -56,7 +56,7 @@ import scala.collection.mutable.{ Buffer, HashMap }
  * annotations in the VCF GT field while Variant annotations are annotations
  * contained in the VCF INFO field.
  */
-private[adam] object VariantContextConverter {
+object VariantContextConverter {
 
   /**
    * Representation for an unknown non-ref/symbolic allele in VCF.
@@ -162,7 +162,7 @@ private[adam] object VariantContextConverter {
  * a conversion to/from the htsjdk VariantContext should be implemented in this
  * class.
  */
-private[adam] class VariantContextConverter(
+class VariantContextConverter(
     headerLines: Seq[VCFHeaderLine],
     stringency: ValidationStringency) extends Serializable with Logging {
   import VariantContextConverter._
