@@ -53,7 +53,7 @@ import org.bdgenomics.adam.projections.{
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature._
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, RepairPartitions }
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.{ ReferenceContigMap, ReferenceFile, TwoBitFile }
@@ -1569,9 +1569,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       // check to see if the input files are all queryname sorted
       if (filesAreQuerynameSorted(filePath)) {
         log.info(s"Loading $filePath as queryname sorted SAM/BAM and converting to Fragments.")
-        sc.hadoopConfiguration.setBoolean(BAMInputFormat.KEEP_PAIRED_READS_TOGETHER_PROPERTY,
-          true)
-        loadBam(filePath).querynameSortedToFragments
+        loadBam(filePath).transform(RepairPartitions(_))
+          .querynameSortedToFragments
       } else {
         log.info(s"Loading $filePath as SAM/BAM and converting to Fragments.")
         loadBam(filePath).toFragments
