@@ -518,4 +518,15 @@ class ReferenceRegionSuite extends FunSuite {
     assert(rr.end === 15L)
     assert(rr.strand === Strand.REVERSE)
   }
+
+  test("can generate positions from a region") {
+    val rr = ReferenceRegion("chr1", 100, 201)
+    val rps = rr.toPositions
+
+    assert(rps.length === (rr.width + 1))
+    assert(rps.map(_.pos).distinct.length === rps.length)
+    assert(rps.map(_.pos).min === rr.start)
+    assert(rps.map(_.pos).max === rr.end - 1)
+    assert(rps.forall(_.referenceName == rr.referenceName))
+  }
 }

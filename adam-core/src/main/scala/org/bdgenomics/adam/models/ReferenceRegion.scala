@@ -336,6 +336,15 @@ case class ReferenceRegion(
   def disorient: ReferenceRegion = new ReferenceRegion(referenceName, start, end)
 
   /**
+   * From one reference region, creates reference positions spanning the region.
+   *
+   * @return Returns a seq of positions covering the region.
+   */
+  def toPositions(): Seq[ReferencePosition] = {
+    (start until end).map(i => ReferencePosition(referenceName, i))
+  }
+
+  /**
    * Merges two reference regions that are contiguous.
    *
    * @throws AssertionError Thrown if regions are not overlapping or adjacent.
