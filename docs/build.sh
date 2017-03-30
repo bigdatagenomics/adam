@@ -1,10 +1,10 @@
 #/usr/bin/env bash
 
-git_version=$(git rev-parse --short HEAD)
+git_version=$(git log -1 --pretty=format:%H)
 
 output_dir="output"
-pdf_output="$output_dir/ADAM_v$git_version.pdf"
-html_output="$output_dir/ADAM_v$git_version.html"
+pdf_output="$output_dir/ADAM_${git_version}.pdf"
+html_output="$output_dir/ADAM_${git_version}.html"
 date_str=$(date '+%Y-%m-%d')
 
 mkdir -p ${output_dir}
