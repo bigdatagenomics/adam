@@ -108,6 +108,9 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
+# publish docs
+./scripts/publish-scaladoc.sh ${release}
+
 if [ $branch = "master" ]; then
   # if original branch was master, update versions on original branch
   git checkout ${branch}
