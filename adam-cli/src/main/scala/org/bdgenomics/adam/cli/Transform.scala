@@ -247,7 +247,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       }
 
       // run bqsr
-      val bqsredRdd = rdd.recalibateBaseQualities(
+      val bqsredRdd = rdd.recalibrateBaseQualities(
         broadcastedSnps,
         args.minAcceptableQuality,
         optSl
