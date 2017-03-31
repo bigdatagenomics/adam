@@ -638,7 +638,7 @@ case class AlignmentRecordRDD(
    *   of the first stage of BQSR. Defaults to StorageLevel.MEMORY_ONLY.
    * @return Returns an RDD of recalibrated reads.
    */
-  def recalibateBaseQualities(
+  def recalibrateBaseQualities(
     knownSnps: Broadcast[SnpTable],
     minAcceptableQuality: Int = 5,
     optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY)): AlignmentRecordRDD = BQSRInDriver.time {
