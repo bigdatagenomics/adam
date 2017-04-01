@@ -329,8 +329,10 @@ private[rdd] object ParallelFileMerger extends Logging {
       val maybeUnqualifiedPath = indexToPath(idx, tmpPathString)
       fs.makeQualified(maybeUnqualifiedPath)
     })
-    fs.concat(outputPaths.head,
-      outputPaths.tail.toArray)
+    if (outputPaths.size > 1) {
+      fs.concat(outputPaths.head,
+        outputPaths.tail.toArray)
+    }
 
     fs.rename(outputPaths.head, outputPath)
   }
