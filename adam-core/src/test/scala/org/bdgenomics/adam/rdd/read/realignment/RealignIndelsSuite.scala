@@ -307,7 +307,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .collect()
 
     val movedReads = result.filter(pair => pair._1 != pair._2)
-    assert(movedReads.size === 22)
+    assert(movedReads.size === 41)
     val read = movedReads.map(_._2)
       .filter(_.getReadName === "H06HDADXX130110:1:1114:19044:27806")
       .head
@@ -552,7 +552,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
     val realignedReads = rdd.realignIndels(lodThreshold = 0.0)
       .rdd
       .collect
-    assert(realignedReads.count(_.getMapq >= 50) === 6)
+    assert(realignedReads.count(_.getMapq >= 50) === 7)
     val realignedExtRead = realignedReads.filter(_.getMapq == 50).head
     assert(realignedExtRead.getStart === 8L)
     assert(realignedExtRead.getEnd === 14L)

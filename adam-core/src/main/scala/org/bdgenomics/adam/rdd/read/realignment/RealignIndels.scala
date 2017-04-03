@@ -289,7 +289,6 @@ private[read] class RealignIndels(
         val (targetIdx, _) = target.get
         val startTime = System.nanoTime()
         // bootstrap realigned read set with the reads that need to be realigned
-        val (realignedReads, readsToRealign) = reads.partition(r => r.mdTag.exists(!_.hasMismatches))
 
         // get reference from reads
         val refStart = reads.map(_.getStart).min
@@ -299,7 +298,7 @@ private[read] class RealignIndels(
 
         // preprocess reads and get consensus
         val readsToClean = consensusModel.preprocessReadsForRealignment(
-          readsToRealign,
+          reads,
           reference,
           refRegion
         ).zipWithIndex
@@ -318,7 +317,7 @@ private[read] class RealignIndels(
           observedConsensus
         }
 
-        val finalReads = if (readsToClean.size > 0 && consensus.size > 0) {
+        val finalReads = if (reads.size > 0 && consensus.size > 0) {
 
           // do not check realigned reads - they must match
           val mismatchQualities = ComputingOriginalScores.time {
@@ -443,7 +442,7 @@ private[read] class RealignIndels(
               log.info("On " + refRegion + ", realigned " + realignedReadCount + " reads to " +
                 bestConsensus + " due to LOD improvement of " + lodImprovement)
 
-              cleanedReads ++ realignedReads
+              cleanedReads
             }
           } else {
             log.info("On " + refRegion + ", skipping realignment due to insufficient LOD improvement (" +
