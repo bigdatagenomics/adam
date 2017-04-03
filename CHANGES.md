@@ -142,7 +142,7 @@
 - [ADAM-1280] Silence CRAM logging in tests. [\#1294](https://github.com/bigdatagenomics/adam/pull/1294) ([fnothaft](https://github.com/fnothaft))
 - Added test to try and repro #1282. [\#1292](https://github.com/bigdatagenomics/adam/pull/1292) ([fnothaft](https://github.com/fnothaft))
 
-### Version 0.22.0 ###
+### Version 0.21.0 ###
 
 **Closed issues:**
 
