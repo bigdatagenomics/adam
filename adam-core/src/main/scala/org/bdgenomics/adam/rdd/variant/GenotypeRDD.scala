@@ -62,6 +62,25 @@ private[adam] class GenotypeArraySerializer extends IntervalArraySerializer[Refe
   }
 }
 
+object GenotypeRDD extends Serializable {
+
+  /**
+   * Builds a GenotypeRDD without a partition map.
+   *
+   * @param rdd The underlying RDD.
+   * @param sequences The sequence dictionary for the RDD.
+   * @param samples The samples for the RDD.
+   * @param headerLines The header lines for the RDD.
+   * @return A new GenotypeRDD.
+   */
+  def apply(rdd: RDD[Genotype],
+            sequences: SequenceDictionary,
+            @transient samples: Seq[Sample],
+            @transient headerLines: Seq[VCFHeaderLine]): GenotypeRDD = {
+    GenotypeRDD(rdd, sequences, samples, headerLines, None)
+  }
+}
+
 /**
  * An RDD containing genotypes called in a set of samples against a given
  * reference genome.
@@ -75,7 +94,8 @@ private[adam] class GenotypeArraySerializer extends IntervalArraySerializer[Refe
 case class GenotypeRDD(rdd: RDD[Genotype],
                        sequences: SequenceDictionary,
                        @transient samples: Seq[Sample],
-                       @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
+                       @transient headerLines: Seq[VCFHeaderLine],
+                       optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
 
   def union(rdds: GenotypeRDD*): GenotypeRDD = {
     val iterableRdds = rdds.toSeq
@@ -111,8 +131,9 @@ case class GenotypeRDD(rdd: RDD[Genotype],
    * @param newRdd An RDD to replace the underlying RDD with.
    * @return Returns a new GenotypeRDD with the underlying RDD replaced.
    */
-  protected def replaceRdd(newRdd: RDD[Genotype]): GenotypeRDD = {
-    copy(rdd = newRdd)
+  protected def replaceRdd(newRdd: RDD[Genotype],
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenotypeRDD = {
+    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
   }
 
   /**

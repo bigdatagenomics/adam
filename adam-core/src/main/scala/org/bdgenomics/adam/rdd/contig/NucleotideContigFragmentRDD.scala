@@ -63,11 +63,10 @@ private[adam] class NucleotideContigFragmentArraySerializer extends IntervalArra
   }
 }
 
-private[rdd] object NucleotideContigFragmentRDD extends Serializable {
+object NucleotideContigFragmentRDD extends Serializable {
 
   /**
-   * Helper function for building a NucleotideContigFragmentRDD when no
-   * sequence dictionary is available.
+   * Builds a NucleotideContigFragmentRDD when no sequence dictionary is given.
    *
    * @param rdd Underlying RDD. We recompute the sequence dictionary from
    *   this RDD.
@@ -88,6 +87,19 @@ private[rdd] object NucleotideContigFragmentRDD extends Serializable {
 
     NucleotideContigFragmentRDD(rdd, sd)
   }
+
+  /**
+   * Builds a NucleotideContigFragmentRDD without a partition map.
+   *
+   * @param rdd The underlying NucleotideContigFragment RDD.
+   * @param sequences The sequence dictionary for the RDD.
+   * @return A new NucleotideContigFragmentRDD.
+   */
+  def apply(rdd: RDD[NucleotideContigFragment],
+            sequences: SequenceDictionary): NucleotideContigFragmentRDD = {
+
+    NucleotideContigFragmentRDD(rdd, sequences, None)
+  }
 }
 
 /**
@@ -101,7 +113,8 @@ private[rdd] object NucleotideContigFragmentRDD extends Serializable {
  */
 case class NucleotideContigFragmentRDD(
     rdd: RDD[NucleotideContigFragment],
-    sequences: SequenceDictionary) extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] with ReferenceFile {
+    sequences: SequenceDictionary,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] with ReferenceFile {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, NucleotideContigFragment)])(
     implicit tTag: ClassTag[NucleotideContigFragment]): IntervalArray[ReferenceRegion, NucleotideContigFragment] = {
@@ -131,8 +144,9 @@ case class NucleotideContigFragmentRDD(
    * @return Returns a new NucleotideContigFragmentRDD where the underlying RDD
    *   has been replaced.
    */
-  protected def replaceRdd(newRdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    copy(rdd = newRdd)
+  protected def replaceRdd(newRdd: RDD[NucleotideContigFragment],
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): NucleotideContigFragmentRDD = {
+    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
   }
 
   /**

@@ -74,6 +74,31 @@ private[adam] class VariantContextArraySerializer extends IntervalArraySerialize
   }
 }
 
+object VariantContextRDD extends Serializable {
+
+  /**
+   * Builds a VariantContextRDD without a partition map.
+   *
+   * @param rdd The underlying VariantContext RDD.
+   * @param sequences The sequence dictionary for the RDD.
+   * @param samples The samples for the RDD.
+   * @param headerLines The header lines for the RDD.
+   * @return A new VariantContextRDD.
+   */
+  def apply(rdd: RDD[VariantContext],
+            sequences: SequenceDictionary,
+            @transient samples: Seq[Sample],
+            @transient headerLines: Seq[VCFHeaderLine]): VariantContextRDD = {
+    VariantContextRDD(rdd, sequences, samples, headerLines, None)
+  }
+
+  def apply(rdd: RDD[VariantContext],
+            sequences: SequenceDictionary,
+            @transient samples: Seq[Sample]): VariantContextRDD = {
+    VariantContextRDD(rdd, sequences, samples, null)
+  }
+}
+
 /**
  * An RDD containing VariantContexts attached to a reference and samples.
  *
@@ -86,7 +111,8 @@ private[adam] class VariantContextArraySerializer extends IntervalArraySerialize
 case class VariantContextRDD(rdd: RDD[VariantContext],
                              sequences: SequenceDictionary,
                              @transient samples: Seq[Sample],
-                             @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
+                             @transient headerLines: Seq[VCFHeaderLine],
+                             optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, VariantContext)])(
@@ -243,8 +269,9 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * @return Returns a new VariantContextRDD where the underlying RDD has
    *   been replaced.
    */
-  protected def replaceRdd(newRdd: RDD[VariantContext]): VariantContextRDD = {
-    copy(rdd = newRdd)
+  protected def replaceRdd(newRdd: RDD[VariantContext],
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantContextRDD = {
+    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
   }
 
   /**

@@ -66,6 +66,23 @@ private[adam] class VariantArraySerializer extends IntervalArraySerializer[Refer
   }
 }
 
+object VariantRDD extends Serializable {
+
+  /**
+   * Builds a VariantRDD without a partition map.
+   *
+   * @param rdd The underlying Variant RDD.
+   * @param sequences The sequence dictionary for the RDD.
+   * @param headerLines The header lines for the RDD.
+   * @return A new Variant RDD.
+   */
+  def apply(rdd: RDD[Variant],
+            sequences: SequenceDictionary,
+            @transient headerLines: Seq[VCFHeaderLine]): VariantRDD = {
+    VariantRDD(rdd, sequences, headerLines, None)
+  }
+}
+
 /**
  * An RDD containing variants called against a given reference genome.
  *
@@ -76,7 +93,8 @@ private[adam] class VariantArraySerializer extends IntervalArraySerializer[Refer
  */
 case class VariantRDD(rdd: RDD[Variant],
                       sequences: SequenceDictionary,
-                      @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends AvroGenomicRDD[Variant, VariantRDD] {
+                      @transient headerLines: Seq[VCFHeaderLine],
+                      optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[Variant, VariantRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Variant)])(
     implicit tTag: ClassTag[Variant]): IntervalArray[ReferenceRegion, Variant] = {
@@ -116,8 +134,9 @@ case class VariantRDD(rdd: RDD[Variant],
    * @param newRdd An RDD to replace the underlying RDD with.
    * @return Returns a new VariantRDD with the underlying RDD replaced.
    */
-  protected def replaceRdd(newRdd: RDD[Variant]): VariantRDD = {
-    copy(rdd = newRdd)
+  protected def replaceRdd(newRdd: RDD[Variant],
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantRDD = {
+    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
   }
 
   /**
