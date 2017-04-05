@@ -96,6 +96,21 @@ object FragmentRDD {
   private[rdd] def fromRdd(rdd: RDD[Fragment]): FragmentRDD = {
     FragmentRDD(rdd, SequenceDictionary.empty, RecordGroupDictionary.empty)
   }
+
+  /**
+   * Builds a FragmentRDD without a partition map.
+   *
+   * @param rdd The underlying Franment RDD.
+   * @param sequences The sequence dictionary for the RDD.
+   * @param recordGroupDictionary The record group dictionary for the RDD.
+   * @return A new FragmentRDD.
+   */
+  def apply(rdd: RDD[Fragment],
+            sequences: SequenceDictionary,
+            recordGroupDictionary: RecordGroupDictionary): FragmentRDD = {
+
+    FragmentRDD(rdd, sequences, recordGroupDictionary, None)
+  }
 }
 
 /**
@@ -107,7 +122,8 @@ object FragmentRDD {
  */
 case class FragmentRDD(rdd: RDD[Fragment],
                        sequences: SequenceDictionary,
-                       recordGroups: RecordGroupDictionary) extends AvroReadGroupGenomicRDD[Fragment, FragmentRDD] {
+                       recordGroups: RecordGroupDictionary,
+                       optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroReadGroupGenomicRDD[Fragment, FragmentRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Fragment)])(
     implicit tTag: ClassTag[Fragment]): IntervalArray[ReferenceRegion, Fragment] = {
@@ -121,8 +137,9 @@ case class FragmentRDD(rdd: RDD[Fragment],
    * @return Returns a new FragmentRDD where the underlying RDD has been
    *   swapped out.
    */
-  protected def replaceRdd(newRdd: RDD[Fragment]): FragmentRDD = {
-    copy(rdd = newRdd)
+  protected def replaceRdd(newRdd: RDD[Fragment],
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FragmentRDD = {
+    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
   }
 
   def union(rdds: FragmentRDD*): FragmentRDD = {

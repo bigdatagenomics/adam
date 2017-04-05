@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.io.Files
 import htsjdk.samtools.ValidationStringency
 import java.io.File
+import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
   SequenceDictionary,
   SequenceRecord,
@@ -60,7 +61,8 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       VariantContext(v0, Seq(g0))), 1),
       SequenceDictionary.fromAvro(Seq(contig)), Seq(Sample.newBuilder()
         .setSampleId("NA12878")
-        .build))
+        .build),
+      DefaultHeaderLines.allHeaderLines)
   }
 
   sparkTest("union two variant context rdds together") {

@@ -42,8 +42,7 @@ import org.bdgenomics.adam.rdd.{
   ADAMSaveAnyArgs,
   FileMerger,
   JavaSaveArgs,
-  SAMHeaderWriter,
-  Unaligned
+  SAMHeaderWriter
 }
 import org.bdgenomics.adam.rdd.feature.CoverageRDD
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
@@ -87,12 +86,19 @@ private[adam] class AlignmentRecordArraySerializer extends IntervalArraySerializ
   }
 }
 
-object AlignmentRecordRDD {
+object AlignmentRecordRDD extends Serializable {
 
+  /**
+   * Builds an AlignmentRecordRDD for unaligned reads.
+   *
+   * @param rdd The underlying AlignmentRecord RDD.
+   * @return A new AlignmentRecordRDD.
+   */
   def unaligned(rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     AlignmentRecordRDD(rdd,
       SequenceDictionary.empty,
-      RecordGroupDictionary.empty)
+      RecordGroupDictionary.empty,
+      None)
   }
 
   /**
@@ -122,12 +128,27 @@ object AlignmentRecordRDD {
       })
     }
   }
+
+  /**
+   * Builds an AlignmentRecordRDD without a partition map.
+   *
+   * @param rdd The underlying AlignmentRecord RDD.
+   * @param sequences The sequence dictionary for the RDD.
+   * @param recordGroupDictionary The record group dictionary for the RDD.
+   * @return A new AlignmentRecordRDD.
+   */
+  def apply(rdd: RDD[AlignmentRecord],
+            sequences: SequenceDictionary,
+            recordGroupDictionary: RecordGroupDictionary): AlignmentRecordRDD = {
+    AlignmentRecordRDD(rdd, sequences, recordGroupDictionary, None)
+  }
 }
 
 case class AlignmentRecordRDD(
     rdd: RDD[AlignmentRecord],
     sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary) extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
+    recordGroups: RecordGroupDictionary,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
 
   /**
    * Replaces the underlying RDD and SequenceDictionary and emits a new object.
@@ -137,14 +158,17 @@ case class AlignmentRecordRDD(
    * @return Returns a new AlignmentRecordRDD.
    */
   protected def replaceRddAndSequences(newRdd: RDD[AlignmentRecord],
-                                       newSequences: SequenceDictionary): AlignmentRecordRDD = {
+                                       newSequences: SequenceDictionary,
+                                       partitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): AlignmentRecordRDD = {
     AlignmentRecordRDD(newRdd,
       newSequences,
-      recordGroups)
+      recordGroups,
+      partitionMap)
   }
 
-  protected def replaceRdd(newRdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    copy(rdd = newRdd)
+  protected def replaceRdd(newRdd: RDD[AlignmentRecord],
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): AlignmentRecordRDD = {
+    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
   }
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, AlignmentRecord)])(
@@ -185,6 +209,7 @@ case class AlignmentRecordRDD(
    *
    * Assumes that reads are sorted by readname.
    * *
+   *
    * @return Returns a FragmentRDD where all reads have been grouped together by
    *   the original sequence fragment they come from.
    */
@@ -682,8 +707,8 @@ case class AlignmentRecordRDD(
    *
    * @param consensusModel The model to use for generating consensus sequences
    *   to realign against.
-   * @param isSorted If the input data is sorted, setting this parameter to true
-   *   avoids a second sort.
+   * @param isSorted If the input data is sorted, setting this parameter to
+   *   true avoids a second sort.
    * @param maxIndelSize The size of the largest indel to use for realignment.
    * @param maxConsensusNumber The maximum number of consensus sequences to
    *   realign against per target region.
@@ -693,8 +718,8 @@ case class AlignmentRecordRDD(
    *   realignment.
    * @param optReferenceFile An optional reference. If not provided, reference
    *   will be inferred from MD tags.
-   * @param unclipReads If true, unclips reads prior to realignment. Else, omits
-   *   clipped bases during realignment.
+   * @param unclipReads If true, unclips reads prior to realignment. Else,
+   *   omits clipped bases during realignment.
    * @return Returns an RDD of mapped reads which have been realigned.
    */
   def realignIndels(

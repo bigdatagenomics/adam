@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.apache.spark.SparkContext._
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
@@ -51,15 +50,12 @@ class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
     val record2 = AlignmentRecord.newBuilder(built).setStart(3L).setEnd(4L).build()
     val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion.unstranded(_))
-    val recordsRdd = sc.parallelize(Seq(record1, record2)).keyBy(ReferenceRegion.unstranded(_))
+    val baseRdd = sc.parallelize(Seq(baseRecord), 1).keyBy(ReferenceRegion.unstranded(_))
+    val recordsRdd = sc.parallelize(Seq(record1, record2), 1).keyBy(ReferenceRegion.unstranded(_))
 
     assert(
-      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
-        .partitionAndJoin(
-          baseRdd,
-          recordsRdd
-        )
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](baseRdd, recordsRdd)
+        .compute()
         .aggregate(true)(
           InnerShuffleRegionJoinSuite.merge,
           InnerShuffleRegionJoinSuite.and
@@ -67,11 +63,8 @@ class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
     )
 
     assert(
-      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
-        .partitionAndJoin(
-          baseRdd,
-          recordsRdd
-        )
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](baseRdd, recordsRdd)
+        .compute()
         .count() === 2
     )
   }
@@ -110,28 +103,23 @@ class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
     val baseRecord1 = AlignmentRecord.newBuilder(builtRef1).setCigar("4M").setEnd(5L).build()
     val baseRecord2 = AlignmentRecord.newBuilder(builtRef2).setCigar("4M").setEnd(5L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2)).keyBy(ReferenceRegion.unstranded(_))
-    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion.unstranded(_))
+    val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2), 1).keyBy(ReferenceRegion.unstranded(_))
+    val recordsRdd = sc.parallelize(Seq(record1, record2, record3), 1).keyBy(ReferenceRegion.unstranded(_))
 
     assert(
-      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
-        .partitionAndJoin(
-          baseRdd,
-          recordsRdd
-        )
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](baseRdd, recordsRdd)
+        .compute()
         .aggregate(true)(
           InnerShuffleRegionJoinSuite.merge,
           InnerShuffleRegionJoinSuite.and
         )
     )
 
-    assert(
-      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](seqDict, partitionSize, sc)
-        .partitionAndJoin(
-          baseRdd,
-          recordsRdd
-        )
+    assert({
+      InnerShuffleRegionJoin[AlignmentRecord, AlignmentRecord](baseRdd, recordsRdd)
+        .compute()
         .count() === 3
+    }
     )
   }
 }

@@ -179,7 +179,6 @@ class ADAMKryoRegistrator extends KryoRegistrator {
 
     // org.bdgenomics.adam.rdd
     kryo.register(classOf[org.bdgenomics.adam.rdd.GenomeBins])
-    kryo.register(Class.forName("org.bdgenomics.adam.rdd.SortedIntervalPartitionJoinAndGroupByLeft$$anonfun$postProcessHits$1"))
 
     // IntervalArray registrations for org.bdgenomics.adam.rdd
     kryo.register(classOf[org.bdgenomics.adam.rdd.read.AlignmentRecordArray],

@@ -116,7 +116,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   private val byName: Map[String, SequenceRecord] = records.view.map(r => r.name -> r).toMap
   assert(byName.size == records.length, "SequenceRecords with duplicate names aren't permitted")
 
-  private val hasSequenceOrdering = records.forall(_.referenceIndex.isDefined)
+  val hasSequenceOrdering = records.forall(_.referenceIndex.isDefined)
 
   /**
    * The number of sequences in the dictionary.

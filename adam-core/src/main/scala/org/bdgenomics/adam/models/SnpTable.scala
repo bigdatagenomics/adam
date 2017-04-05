@@ -150,7 +150,7 @@ object SnpTable {
    */
   def apply(variants: VariantRDD): SnpTable = CreatingKnownSnpsTable.time {
     val (indices, positions) = CollectingSnps.time {
-      val sortedVariants = variants.sort
+      val sortedVariants = variants.sort()
         .rdd
         .cache()
 

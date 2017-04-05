@@ -50,7 +50,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
     val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
 
-    val featureRDD: FeatureRDD = FeatureRDD.inferSequenceDictionary(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
+    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
 
     val outputFile = tmpLocation(".bed")
@@ -73,7 +73,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
     val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
 
-    val featureRDD: FeatureRDD = FeatureRDD.inferSequenceDictionary(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
+    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
 
     val outputFile = tmpLocation(".adam")
@@ -90,7 +90,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(5).setEnd(7).setScore(3.0).build()
     val f3 = Feature.newBuilder().setContigName("chr1").setStart(7).setEnd(20).setScore(4.0).build()
 
-    val featureRDD: FeatureRDD = FeatureRDD.inferSequenceDictionary(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
+    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
     val coverage = coverageRDD.coverage(bpPerBin = 4)
 
@@ -102,7 +102,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(5).setEnd(7).setScore(3.0).build()
     val f3 = Feature.newBuilder().setContigName("chr1").setStart(7).setEnd(20).setScore(4.0).build()
 
-    val featureRDD: FeatureRDD = FeatureRDD.inferSequenceDictionary(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
+    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
 
     val coverage = coverageRDD

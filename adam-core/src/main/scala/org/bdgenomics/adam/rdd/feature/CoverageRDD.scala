@@ -59,6 +59,20 @@ private[adam] class CoverageArraySerializer(kryo: Kryo) extends IntervalArraySer
   }
 }
 
+object CoverageRDD {
+
+  /**
+   * Builds a CoverageRDD that does not have a partition map.
+   *
+   * @param rdd The underlying Coverage RDD.
+   * @param sd The SequenceDictionary for the RDD.
+   * @return A new Coverage RDD.
+   */
+  def apply(rdd: RDD[Coverage], sd: SequenceDictionary): CoverageRDD = {
+    CoverageRDD(rdd, sd, None)
+  }
+}
+
 /**
  * An RDD containing Coverage data.
  *
@@ -67,7 +81,8 @@ private[adam] class CoverageArraySerializer(kryo: Kryo) extends IntervalArraySer
  * @param sequences A dictionary describing the reference genome.
  */
 case class CoverageRDD(rdd: RDD[Coverage],
-                       sequences: SequenceDictionary) extends GenomicRDD[Coverage, CoverageRDD] {
+                       sequences: SequenceDictionary,
+                       optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends GenomicRDD[Coverage, CoverageRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Coverage)])(
     implicit tTag: ClassTag[Coverage]): IntervalArray[ReferenceRegion, Coverage] = {
@@ -171,7 +186,7 @@ case class CoverageRDD(rdd: RDD[Coverage],
    */
   def toFeatureRDD: FeatureRDD = {
     val featureRdd = rdd.map(_.toFeature)
-    FeatureRDD(featureRdd, sequences)
+    FeatureRDD(featureRdd, sequences, optPartitionMap)
   }
 
   /**
@@ -246,8 +261,9 @@ case class CoverageRDD(rdd: RDD[Coverage],
    * @param newRdd The RDD to replace the underlying RDD with.
    * @return Returns a new CoverageRDD with the underlying RDD replaced.
    */
-  protected def replaceRdd(newRdd: RDD[Coverage]): CoverageRDD = {
-    copy(rdd = newRdd)
+  protected def replaceRdd(newRdd: RDD[Coverage],
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): CoverageRDD = {
+    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
   }
 
   /**

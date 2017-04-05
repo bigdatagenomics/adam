@@ -17,28 +17,18 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{
-  ReferenceRegion,
-  SequenceDictionary,
-  SequenceRecord
-}
-import org.bdgenomics.formats.avro.AlignmentRecord
+import org.apache.spark.Partitioner
 
-class RightOuterShuffleRegionJoinSuite(partitionMap: Seq[Option[(ReferenceRegion, ReferenceRegion)]])
-    extends OuterRegionJoinSuite {
+private[rdd] case class ManualRegionPartitioner[V](partitions: Int) extends Partitioner {
 
-  val partitionSize = 3
-  var seqDict: SequenceDictionary = _
+  override def numPartitions: Int = partitions
 
-  before {
-    seqDict = SequenceDictionary(
-      SequenceRecord("chr1", 15, url = "test://chrom1"),
-      SequenceRecord("chr2", 15, url = "tes=t://chrom2"))
-  }
-
-  def runJoin(leftRdd: RDD[(ReferenceRegion, AlignmentRecord)],
-              rightRdd: RDD[(ReferenceRegion, AlignmentRecord)]): RDD[(Option[AlignmentRecord], AlignmentRecord)] = {
-    RightOuterShuffleRegionJoin[AlignmentRecord, AlignmentRecord](leftRdd, rightRdd).compute()
+  def getPartition(key: Any): Int = {
+    key match {
+      case (_, f2: Int) => f2
+      case _ => {
+        throw new Exception("Unable to partition key %s without destination assignment.".format(key))
+      }
+    }
   }
 }
