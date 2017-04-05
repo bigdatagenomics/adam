@@ -50,7 +50,7 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("merge") {
-    intercept[AssertionError] {
+    intercept[IllegalArgumentException] {
       region("chr0", 10, 100).merge(region("chr1", 10, 100))
     }
 
@@ -64,13 +64,34 @@ class ReferenceRegionSuite extends FunSuite {
     assert(r1.merge(r1) === r1)
     assert(r1.merge(r2) === r12)
     assert(r1.merge(r3) === r13)
+
+    val r4 = region("chr0", 1, 100)
+    val r5 = region("chr0", 102, 202)
+    val r6 = region("chr0", 2, 5)
+
+    val r45 = region("chr0", 1, 202)
+
+    assert(r4.merge(r5, 3) === r45)
+
+    intercept[IllegalArgumentException] {
+      r4.merge(r5, -1)
+    }
+
+    intercept[IllegalArgumentException] {
+      r4.merge(r5, 1L)
+    }
+
   }
 
-  test("overlaps") {
+  test("overlaps and covers") {
 
     // contained
     assert(region("chr0", 10, 100).overlaps(region("chr0", 20, 50)))
     assert(region("chr0", 10, 100).covers(region("chr0", 20, 50)))
+
+    // equivalent regions
+    assert(region("chr0", 10, 100).overlaps(region("chr0", 10, 100)))
+    assert(region("chr0", 10, 100).covers(region("chr0", 10, 100)))
 
     // different strands
     assert(!ReferenceRegion("chr0", 10, 100, strand = Strand.FORWARD)
@@ -101,6 +122,33 @@ class ReferenceRegionSuite extends FunSuite {
     // different sequences
     assert(!region("chr0", 10, 100).overlaps(region("chr1", 50, 200)))
     assert(!region("chr0", 10, 100).covers(region("chr1", 50, 200)))
+
+    // thresholded
+    assert(region("chr0", 1, 100).overlaps(region("chr0", 101, 201), 2))
+    assert(region("chr0", 1, 100).covers(region("chr0", 101, 201), 2))
+    assert(!region("chr0", 1, 100).overlaps(region("chr0", 101, 201), 1))
+    assert(!region("chr0", 1, 100).covers(region("chr0", 101, 201), 1))
+  }
+
+  test("overlapsBy and coversBy") {
+    // right side
+    assert(region("chr0", 10, 100).overlapsBy(region("chr0", 50, 250)).exists(_ == 50))
+    assert(region("chr0", 10, 100).coversBy(region("chr0", 50, 250)).exists(_ == 50))
+
+    // left side
+    assert(region("chr0", 10, 100).overlapsBy(region("chr0", 5, 15)).exists(_ == 5))
+    assert(region("chr0", 10, 100).coversBy(region("chr0", 5, 15)).exists(_ == 5))
+
+    // different strands
+    assert(ReferenceRegion("chr0", 10, 100, strand = Strand.FORWARD)
+      .overlapsBy(ReferenceRegion("chr0", 20, 50, strand = Strand.REVERSE)).isEmpty)
+    assert(ReferenceRegion("chr0", 10, 100, strand = Strand.FORWARD)
+      .coversBy(ReferenceRegion("chr0", 20, 50, strand = Strand.REVERSE)).exists(_ == 30))
+
+    // contained
+    assert(region("chr0", 10, 100).overlapsBy(region("chr0", 50, 75)).exists(_ == 25))
+    assert(region("chr0", 10, 100).coversBy(region("chr0", 50, 75)).exists(_ == 25))
+
   }
 
   test("distance(: ReferenceRegion)") {
@@ -113,6 +161,10 @@ class ReferenceRegionSuite extends FunSuite {
 
     // different sequences
     assert(region("chr0", 100, 200).distance(region("chr1", 10, 50)) === None)
+
+    // different strands
+    assert(ReferenceRegion("chr0", 10, 100, strand = Strand.FORWARD)
+      .distance(ReferenceRegion("chr0", 200, 300, strand = Strand.REVERSE)).isEmpty)
 
     // touches on the right
     assert(region("chr0", 10, 100).distance(region("chr0", 100, 200)) === Some(1))
@@ -143,6 +195,56 @@ class ReferenceRegionSuite extends FunSuite {
 
     // different sequences
     assert(region("chr0", 100, 200).distance(point("chr1", 50)) === None)
+
+  }
+
+  test("unstrandedDistance") {
+    // distance on the right
+    assert(ReferenceRegion("chr0", 10, 100, Strand.FORWARD).unstrandedDistance(ReferenceRegion("chr0", 200, 300, Strand.REVERSE)) === Some(101))
+
+    // distance on the left
+    assert(ReferenceRegion("chr0", 100, 200, Strand.FORWARD).unstrandedDistance(ReferenceRegion("chr0", 10, 50, Strand.REVERSE)) === Some(51))
+
+    // different sequences
+    assert(ReferenceRegion("chr0", 100, 200, Strand.FORWARD).unstrandedDistance(ReferenceRegion("chr1", 10, 50, Strand.REVERSE)) === None)
+
+    // touches on the right
+    assert(ReferenceRegion("chr0", 10, 100, Strand.FORWARD).unstrandedDistance(ReferenceRegion("chr0", 100, 200, Strand.REVERSE)) === Some(1))
+
+    // overlaps
+    assert(ReferenceRegion("chr0", 10, 100, Strand.FORWARD).unstrandedDistance(ReferenceRegion("chr0", 50, 150, Strand.REVERSE)) === Some(0))
+
+    // touches on the left
+    assert(ReferenceRegion("chr0", 10, 100, Strand.FORWARD).unstrandedDistance(ReferenceRegion("chr0", 0, 10, Strand.REVERSE)) === Some(1))
+  }
+
+  test("subtract fails on non-overlapping and non-covering regions") {
+    intercept[IllegalArgumentException] {
+      ReferenceRegion("chr0", 10, 100, Strand.FORWARD).subtract(ReferenceRegion("chr0", 90, 150, Strand.REVERSE), true)
+    }
+
+    intercept[IllegalArgumentException] {
+      ReferenceRegion("chr0", 10, 100, Strand.FORWARD).subtract(ReferenceRegion("chr0", 120, 150, Strand.REVERSE), true)
+    }
+
+    intercept[IllegalArgumentException] {
+      ReferenceRegion("chr0", 10, 100, Strand.FORWARD).subtract(ReferenceRegion("chr0", 120, 150, Strand.REVERSE), false)
+    }
+  }
+
+  test("subtract") {
+    // right end unstranded
+    assert(ReferenceRegion("chr0", 10, 100, Strand.FORWARD).subtract(ReferenceRegion("chr0", 90, 150, Strand.REVERSE), false) === List(ReferenceRegion("chr0", 10, 90)))
+    // left end unstranded
+    assert(ReferenceRegion("chr0", 90, 150, Strand.REVERSE).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), false) === List(ReferenceRegion("chr0", 90, 100)))
+    // contained unstranded
+    assert(ReferenceRegion("chr0", 2, 150, Strand.REVERSE).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), false) === List(ReferenceRegion("chr0", 2, 10), ReferenceRegion("chr0", 100, 150)))
+    // right end stranded
+    assert(ReferenceRegion("chr0", 10, 100, Strand.FORWARD).subtract(ReferenceRegion("chr0", 90, 150, Strand.FORWARD), true) === List(ReferenceRegion("chr0", 10, 90, Strand.FORWARD)))
+    // left end stranded
+    assert(ReferenceRegion("chr0", 90, 150, Strand.FORWARD).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), true) === List(ReferenceRegion("chr0", 90, 100, Strand.FORWARD)))
+    // contained stranded
+    assert(ReferenceRegion("chr0", 2, 150, Strand.FORWARD).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), true) === List(ReferenceRegion("chr0", 2, 10, Strand.FORWARD), ReferenceRegion("chr0", 100, 150, Strand.FORWARD)))
 
   }
 
@@ -255,8 +357,28 @@ class ReferenceRegionSuite extends FunSuite {
 
     assert(!r1.isAdjacent(r2))
 
-    intercept[AssertionError] {
+    intercept[IllegalArgumentException] {
       r1.merge(r2)
+    }
+  }
+
+  test("validate that nearby regions can be merged") {
+    val r1 = region("chr1", 0L, 5L)
+    val r2 = region("chr1", 7L, 10L)
+
+    assert(r1.isNearby(r2, 3))
+
+    assert(r1.merge(r2, 3) == region("chr1", 0L, 10L))
+  }
+
+  test("validate that non-nearby regions cannot be merged") {
+    val r1 = region("chr1", 0L, 5L)
+    val r2 = region("chr1", 7L, 10L)
+
+    assert(!r1.isNearby(r2, 2L))
+
+    intercept[IllegalArgumentException] {
+      r1.merge(r2, 2)
     }
   }
 
@@ -299,16 +421,31 @@ class ReferenceRegionSuite extends FunSuite {
   }
 
   test("intersection fails on non-overlapping regions") {
-    intercept[AssertionError] {
+    intercept[IllegalArgumentException] {
       ReferenceRegion("chr1", 1L, 10L).intersection(ReferenceRegion("chr1", 11L, 20L))
     }
-    intercept[AssertionError] {
+    intercept[IllegalArgumentException] {
       ReferenceRegion("chr1", 1L, 10L).intersection(ReferenceRegion("chr2", 1L, 10L))
+    }
+  }
+
+  test("intersection fails when minOverlap is not met") {
+    intercept[IllegalArgumentException] {
+      ReferenceRegion("chr1", 1L, 10L).intersection(ReferenceRegion("chr1", 9L, 20L), 3)
+    }
+    intercept[IllegalArgumentException] {
+      ReferenceRegion("chr1", 1L, 10L).intersection(ReferenceRegion("chr1", 11L, 20L), 2)
     }
   }
 
   test("compute intersection") {
     val overlapRegion = ReferenceRegion("chr1", 1L, 10L).intersection(ReferenceRegion("chr1", 5L, 15L))
+    assert(overlapRegion.referenceName === "chr1")
+    assert(overlapRegion.start === 5L)
+    assert(overlapRegion.end === 10L)
+
+    val minOverlap = 4
+    val secondOverlapRegion = ReferenceRegion("chr1", 1L, 10L).intersection(ReferenceRegion("chr1", 5L, 15L), minOverlap)
     assert(overlapRegion.referenceName === "chr1")
     assert(overlapRegion.start === 5L)
     assert(overlapRegion.end === 10L)

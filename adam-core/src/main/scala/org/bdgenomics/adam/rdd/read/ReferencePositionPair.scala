@@ -47,6 +47,7 @@ private[read] object ReferencePositionPair extends Logging {
       singleReadBucket.unmapped.filter(_.getReadInFragment == 1)).toSeq
 
     def getPos(r: AlignmentRecord): ReferencePosition = {
+      require(r.sequence != null, "AlignmentRecord sequence must not be null!")
       if (r.getReadMapped) {
         new RichAlignmentRecord(r).fivePrimeReferencePosition
       } else {

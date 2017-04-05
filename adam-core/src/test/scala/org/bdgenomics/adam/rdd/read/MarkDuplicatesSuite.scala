@@ -36,6 +36,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
   def createUnmappedRead() = {
     AlignmentRecord.newBuilder()
       .setReadMapped(false)
+      .setSequence("ACGT")
       .build()
   }
 
@@ -63,6 +64,7 @@ class MarkDuplicatesSuite extends ADAMFunSuite {
       .setRecordGroupName("machine foo")
       .setDuplicateRead(false)
       .setReadNegativeStrand(isNegativeStrand)
+      .setSequence("ACGT")
       .build()
   }
 
