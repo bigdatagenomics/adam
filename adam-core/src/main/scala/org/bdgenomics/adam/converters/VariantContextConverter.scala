@@ -190,9 +190,11 @@ class VariantContextConverter(
   def convert(
     vc: HtsjdkVariantContext): Seq[ADAMVariantContext] = {
 
+    log.info("Processing %s with alt alleles %s.".format(vc, vc.getAlternateAlleles.toList.mkString(",")))
+
     try {
       vc.getAlternateAlleles.toList match {
-        case List(NON_REF_ALLELE) => {
+        case List(NON_REF_ALLELE) | List() => {
           val variant = variantFormatFn(vc, None, 0)
           val genotypes = vc.getGenotypes.map(g => {
             genotypeFormatFn(g, variant, NON_REF_ALLELE, 0, Some(1), false)
