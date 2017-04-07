@@ -43,6 +43,7 @@ class Reads2FragmentsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetAr
   var asSingleFile = false
   var sortFastqOutput = false
   var deferMerging = false
+  var disableFastConcat = false
 }
 
 class Reads2Fragments(protected val args: Reads2FragmentsArgs) extends BDGSparkCommand[Reads2FragmentsArgs] with Logging {

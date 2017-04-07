@@ -79,10 +79,18 @@ class ViewArgs extends Args4jBase with ParquetArgs with ADAMSaveAnyArgs {
   )
   var outputPathArg: String = null
 
+  @Args4jOption(required = false, name = "-single",
+    usage = "Saves OUTPUT as single file")
+  var asSingleFile: Boolean = false
+  @Args4jOption(required = false, name = "-defer_merging",
+    usage = "Defers merging single file output")
+  var deferMerging: Boolean = false
+  @Args4jOption(required = false, name = "-disable_fast_concat",
+    usage = "Disables the parallel file concatenation engine.")
+  var disableFastConcat: Boolean = false
+
   // required by ADAMAnySaveArgs
   var sortFastqOutput: Boolean = false
-  var asSingleFile: Boolean = false
-  var deferMerging: Boolean = false
 }
 
 object View extends BDGCommandCompanion {

@@ -64,6 +64,12 @@ trait ADAMSaveAnyArgs extends SaveArgs {
    * @see asSingleFile
    */
   var deferMerging: Boolean
+
+  /**
+   * If asSingleFile is true and deferMerging is false, disables the use of the
+   * fast file concatenation engine.
+   */
+  var disableFastConcat: Boolean
 }
 
 private[rdd] abstract class ADAMRDDFunctions[T <% IndexedRecord: Manifest] extends Serializable with Logging {

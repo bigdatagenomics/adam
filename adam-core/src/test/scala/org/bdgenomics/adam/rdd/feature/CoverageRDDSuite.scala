@@ -54,7 +54,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
 
     val outputFile = tmpLocation(".bed")
-    coverageRDD.save(outputFile, false)
+    coverageRDD.save(outputFile, false, false)
 
     val coverage = sc.loadCoverage(outputFile)
     assert(coverage.rdd.count == 3)
@@ -75,7 +75,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
 
     val outputFile = tmpLocation(".adam")
-    coverageRDD.save(outputFile, false)
+    coverageRDD.save(outputFile, false, false)
 
     val region = ReferenceRegion("chr1", 1, 9)
     val predicate = ((LongColumn("end") >= region.start) && (LongColumn("start") <= region.end) && (BinaryColumn("contigName") === region.referenceName))

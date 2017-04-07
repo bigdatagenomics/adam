@@ -43,7 +43,8 @@ private[rdd] class JavaSaveArgs(var outputPath: String,
                                 var pageSize: Int = 1 * 1024 * 1024,
                                 var compressionCodec: CompressionCodecName = CompressionCodecName.GZIP,
                                 var disableDictionaryEncoding: Boolean = false,
-                                var asSingleFile: Boolean = false) extends ADAMSaveAnyArgs {
+                                var asSingleFile: Boolean = false,
+                                var disableFastConcat: Boolean = false) extends ADAMSaveAnyArgs {
   var sortFastqOutput = false
   var deferMerging = false
 }

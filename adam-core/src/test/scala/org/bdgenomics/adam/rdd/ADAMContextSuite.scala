@@ -41,6 +41,7 @@ case class TestSaveArgs(var outputPath: String) extends ADAMSaveAnyArgs {
   var compressionCodec = CompressionCodecName.GZIP
   var logLevel = "SEVERE"
   var disableDictionaryEncoding = false
+  var disableFastConcat = false
 }
 
 class ADAMContextSuite extends ADAMFunSuite {

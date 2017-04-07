@@ -49,6 +49,10 @@ class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
     usage = "Save as a single file, for the text formats.")
   var single: Boolean = false
 
+  @Args4jOption(required = false, name = "-disable_fast_concat",
+    usage = "Disables the parallel file concatenation engine.")
+  var disableFastConcat: Boolean = false
+
   @Args4jOption(required = false, name = "-cache", usage = "Cache before building the sequence dictionary. Recommended for formats other than IntervalList and Parquet.")
   var cache: Boolean = false
 
@@ -69,6 +73,6 @@ class TransformFeatures(val args: TransformFeaturesArgs)
       optStorageLevel = optStorageLevel,
       optMinPartitions = Option(args.numPartitions),
       optProjection = None
-    ).save(args.outputPath, args.single)
+    ).save(args.outputPath, args.single, args.disableFastConcat)
   }
 }

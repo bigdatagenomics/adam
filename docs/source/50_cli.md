@@ -59,6 +59,14 @@ tool saving to one of these formats supports the following options:
 * `-defer_merging`: If both `-defer_merging` and `-single` are provided, the
   output will be saved as if is a single file, but the output files will not be
   merged.
+* `-disable_fast_concat`: If `-single` is provided and `-defer_merging` is not,
+  this disables the use of the parallel concatenation engine. This engine is
+  used when running on top of HDFS, and resizes the output files to match the
+  HDFS block size before calling the Hadoop FileSystem `concat` method which
+  concatenates the files by modifying the filesystem metadata and not the bytes
+  on disk. This method is vastly more performant for large files, but has many
+  invariants that may prevent it from being run (e.g., it cannot be run on an
+  encrypted HDFS directory).
 
 #### Validation stringency {#validation}
 
