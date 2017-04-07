@@ -139,10 +139,13 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    *   output of this call will be written as shards, where each shard has a
    *   valid VCF header. Default is false.
    * @param stringency The validation stringency to use when writing the VCF.
+   * @param disableFastConcat If asSingleFile is true and deferMerging is false,
+   *   disables the use of the parallel file merging engine.
    */
   def saveAsVcf(filePath: String,
                 asSingleFile: Boolean = false,
-                stringency: ValidationStringency = ValidationStringency.LENIENT) {
+                stringency: ValidationStringency = ValidationStringency.LENIENT,
+                disableFastConcat: Boolean = false) {
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
@@ -201,7 +204,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
         fs,
         new Path(filePath),
         new Path(tailPath),
-        Some(headPath))
+        Some(headPath),
+        disableFastConcat = disableFastConcat)
     } else {
 
       // write shards

@@ -234,7 +234,8 @@ case class AlignmentRecordRDD(
         args.outputPath,
         isSorted = isSorted,
         asSingleFile = args.asSingleFile,
-        deferMerging = args.deferMerging
+        deferMerging = args.deferMerging,
+        disableFastConcat = args.disableFastConcat
       )
       true
     } else {
@@ -382,13 +383,16 @@ case class AlignmentRecordRDD(
    * @param isSorted If the output is sorted, this will modify the header.
    * @param deferMerging If true and asSingleFile is true, we will save the
    *   output shards as a headerless file, but we will not merge the shards.
+   * @param disableFastConcat If asSingleFile is true and deferMerging is false,
+   *   disables the use of the parallel file merging engine.
    */
   def saveAsSam(
     filePath: String,
     asType: Option[SAMFormat] = None,
     asSingleFile: Boolean = false,
     isSorted: Boolean = false,
-    deferMerging: Boolean = false): Unit = SAMSave.time {
+    deferMerging: Boolean = false,
+    disableFastConcat: Boolean = false): Unit = SAMSave.time {
 
     val fileType = asType.getOrElse(SAMFormat.inferFromFilePath(filePath))
 
@@ -531,7 +535,8 @@ case class AlignmentRecordRDD(
           tailPath,
           optHeaderPath = Some(headPath),
           writeEmptyGzipBlock = (fileType == SAMFormat.BAM),
-          writeCramEOF = (fileType == SAMFormat.CRAM))
+          writeCramEOF = (fileType == SAMFormat.CRAM),
+          disableFastConcat = disableFastConcat)
       }
     }
   }

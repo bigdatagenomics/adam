@@ -56,6 +56,11 @@ private[adam] object FileMerger extends Logging {
    * @param optBufferSize The size in bytes of the buffer used for copying. If
    *   not set, we check the config for this value. If that is not set, we
    *   default to 4MB.
+   * @param disableFastConcat If true, disables the parallel file merger. By
+   *   default, the fast file merger is invoked when running on HDFS. However,
+   *   the fast file merger can fail if the underlying file system is encrypted,
+   *   or any number of undocumented invariants are not met. In that case, we
+   *   provide this switch to disable fast merging.
    *
    * @see mergeFilesAcrossFilesystems
    */
@@ -66,10 +71,11 @@ private[adam] object FileMerger extends Logging {
                  optHeaderPath: Option[Path] = None,
                  writeEmptyGzipBlock: Boolean = false,
                  writeCramEOF: Boolean = false,
-                 optBufferSize: Option[Int] = None) {
+                 optBufferSize: Option[Int] = None,
+                 disableFastConcat: Boolean = false) {
 
     // if our file system is an hdfs mount, we can use the parallel merger
-    if (fs.getScheme == "hdfs") {
+    if (!disableFastConcat && (fs.getScheme == "hdfs")) {
       ParallelFileMerger.mergeFiles(sc,
         outputPath,
         tailPath,

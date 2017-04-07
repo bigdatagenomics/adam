@@ -88,9 +88,18 @@ case class CoverageRDD(rdd: RDD[Coverage],
    *   val coverage = feature.getScore
    *
    * @param filePath The location to write the output.
+   * @param asSingleFile If false, writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   fast file concatenation engine.
    */
-  def save(filePath: java.lang.String, asSingleFile: java.lang.Boolean) = {
-    this.toFeatureRDD.save(filePath, asSingleFile = asSingleFile)
+  def save(filePath: java.lang.String,
+           asSingleFile: java.lang.Boolean,
+           disableFastConcat: java.lang.Boolean) = {
+    toFeatureRDD.save(filePath,
+      asSingleFile,
+      disableFastConcat)
   }
 
   /**

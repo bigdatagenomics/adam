@@ -56,6 +56,8 @@ class Reads2CoverageArgs extends Args4jBase with ParquetArgs {
   var onlyPositiveStrands: Boolean = false
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false
+  @Args4jOption(required = false, name = "-disable_fast_concat", usage = "Disables the parallel file concatenation engine.")
+  var disableFastConcat: Boolean = false
 }
 
 class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCommand[Reads2CoverageArgs] {
@@ -81,6 +83,8 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
     }
 
     finalReads.toCoverage(args.collapse)
-      .save(args.outputPath, asSingleFile = args.asSingleFile)
+      .save(args.outputPath,
+        asSingleFile = args.asSingleFile,
+        disableFastConcat = args.disableFastConcat)
   }
 }

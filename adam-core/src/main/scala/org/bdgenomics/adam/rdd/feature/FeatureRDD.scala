@@ -262,20 +262,34 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @param asSingleFile If false, writes file to disk as shards with
    *   one shard per partition. If true, we save the file to disk as a single
    *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   fast file concatenation engine.
    */
-  def save(filePath: java.lang.String, asSingleFile: java.lang.Boolean) {
+  def save(filePath: java.lang.String,
+           asSingleFile: java.lang.Boolean,
+           disableFastConcat: java.lang.Boolean) {
     if (filePath.endsWith(".bed")) {
-      saveAsBed(filePath, asSingleFile = asSingleFile)
+      saveAsBed(filePath,
+        asSingleFile = asSingleFile,
+        disableFastConcat = disableFastConcat)
     } else if (filePath.endsWith(".gtf") ||
       filePath.endsWith(".gff")) {
-      saveAsGtf(filePath, asSingleFile = asSingleFile)
+      saveAsGtf(filePath,
+        asSingleFile = asSingleFile,
+        disableFastConcat = disableFastConcat)
     } else if (filePath.endsWith(".gff3")) {
-      saveAsGff3(filePath, asSingleFile = asSingleFile)
+      saveAsGff3(filePath,
+        asSingleFile = asSingleFile,
+        disableFastConcat = disableFastConcat)
     } else if (filePath.endsWith(".narrowPeak") ||
       filePath.endsWith(".narrowpeak")) {
-      saveAsNarrowPeak(filePath, asSingleFile = asSingleFile)
+      saveAsNarrowPeak(filePath,
+        asSingleFile = asSingleFile,
+        disableFastConcat = disableFastConcat)
     } else if (filePath.endsWith(".interval_list")) {
-      saveAsIntervalList(filePath, asSingleFile = asSingleFile)
+      saveAsIntervalList(filePath,
+        asSingleFile = asSingleFile,
+        disableFastConcat = disableFastConcat)
     } else {
       if (asSingleFile) {
         log.warn("asSingleFile = true ignored when saving as Parquet.")
@@ -317,10 +331,13 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @param rdd RDD to save.
    * @param outputPath Output path to save text files to.
    * @param asSingleFile If true, combines all partition shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    */
   private def writeTextRdd[T](rdd: RDD[T],
                               outputPath: String,
-                              asSingleFile: Boolean) {
+                              asSingleFile: Boolean,
+                              disableFastConcat: Boolean) {
     if (asSingleFile) {
 
       // write rdd to disk
@@ -334,7 +351,8 @@ case class FeatureRDD(rdd: RDD[Feature],
       FileMerger.mergeFiles(rdd.context,
         fs,
         new Path(outputPath),
-        new Path(tailPath))
+        new Path(tailPath),
+        disableFastConcat = disableFastConcat)
     } else {
       rdd.saveAsTextFile(outputPath)
     }
@@ -347,9 +365,16 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @param asSingleFile By default (false), writes file to disk as shards with
    *   one shard per partition. If true, we save the file to disk as a single
    *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    */
-  def saveAsGtf(fileName: String, asSingleFile: Boolean = false) = {
-    writeTextRdd(rdd.map(FeatureRDD.toGtf), fileName, asSingleFile)
+  def saveAsGtf(fileName: String,
+                asSingleFile: Boolean = false,
+                disableFastConcat: Boolean = false) = {
+    writeTextRdd(rdd.map(FeatureRDD.toGtf),
+      fileName,
+      asSingleFile,
+      disableFastConcat)
   }
 
   /**
@@ -359,9 +384,16 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @param asSingleFile By default (false), writes file to disk as shards with
    *   one shard per partition. If true, we save the file to disk as a single
    *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    */
-  def saveAsGff3(fileName: String, asSingleFile: Boolean = false) = {
-    writeTextRdd(rdd.map(FeatureRDD.toGff3), fileName, asSingleFile)
+  def saveAsGff3(fileName: String,
+                 asSingleFile: Boolean = false,
+                 disableFastConcat: Boolean = false) = {
+    writeTextRdd(rdd.map(FeatureRDD.toGff3),
+      fileName,
+      asSingleFile,
+      disableFastConcat)
   }
 
   /**
@@ -371,9 +403,16 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @param asSingleFile By default (false), writes file to disk as shards with
    *   one shard per partition. If true, we save the file to disk as a single
    *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    */
-  def saveAsBed(fileName: String, asSingleFile: Boolean = false) = {
-    writeTextRdd(rdd.map(FeatureRDD.toBed), fileName, asSingleFile)
+  def saveAsBed(fileName: String,
+                asSingleFile: Boolean = false,
+                disableFastConcat: Boolean = false) = {
+    writeTextRdd(rdd.map(FeatureRDD.toBed),
+      fileName,
+      asSingleFile,
+      disableFastConcat)
   }
 
   /**
@@ -383,8 +422,12 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @param asSingleFile By default (false), writes file to disk as shards with
    *   one shard per partition. If true, we save the file to disk as a single
    *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    */
-  def saveAsIntervalList(fileName: String, asSingleFile: Boolean = false) = {
+  def saveAsIntervalList(fileName: String,
+                         asSingleFile: Boolean = false,
+                         disableFastConcat: Boolean = false) = {
     val intervalEntities = rdd.map(FeatureRDD.toInterval)
 
     if (asSingleFile) {
@@ -407,7 +450,8 @@ case class FeatureRDD(rdd: RDD[Feature],
         fs,
         new Path(fileName),
         tailPath,
-        Some(headPath))
+        optHeaderPath = Some(headPath),
+        disableFastConcat = disableFastConcat)
     } else {
       intervalEntities.saveAsTextFile(fileName)
     }
@@ -420,9 +464,16 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @param asSingleFile By default (false), writes file to disk as shards with
    *   one shard per partition. If true, we save the file to disk as a single
    *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    */
-  def saveAsNarrowPeak(fileName: String, asSingleFile: Boolean = false) {
-    writeTextRdd(rdd.map(FeatureRDD.toNarrowPeak), fileName, asSingleFile)
+  def saveAsNarrowPeak(fileName: String,
+                       asSingleFile: Boolean = false,
+                       disableFastConcat: Boolean = false) {
+    writeTextRdd(rdd.map(FeatureRDD.toNarrowPeak),
+      fileName,
+      asSingleFile,
+      disableFastConcat)
   }
 
   /**
