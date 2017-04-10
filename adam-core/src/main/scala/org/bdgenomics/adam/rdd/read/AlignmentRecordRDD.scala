@@ -94,6 +94,34 @@ object AlignmentRecordRDD {
       SequenceDictionary.empty,
       RecordGroupDictionary.empty)
   }
+
+  /**
+   * Validates that there are no gaps in a set of quality score bins.
+   *
+   * @param bins Bins to validate.
+   *
+   * @throws IllegalArgumentException Throws exception if the bins are empty,
+   *   there is a gap between bins, or two bins overlap.
+   */
+  private[rdd] def validateBins(bins: Seq[QualityScoreBin]) {
+    require(bins.nonEmpty, "Bins cannot be empty.")
+
+    // if we have multiple bins, validate them
+    // - check that we don't have gaps between bins
+    // - check that we don't have overlapping bins
+    if (bins.size > 1) {
+      val sortedBins = bins.sortBy(_.low)
+      (0 until (sortedBins.size - 1)).foreach(idx => {
+        if (sortedBins(idx).high < sortedBins(idx + 1).low) {
+          throw new IllegalArgumentException("Gap between bins %s and %s (all bins: %s).".format(
+            sortedBins(idx), sortedBins(idx + 1), bins.mkString(",")))
+        } else if (sortedBins(idx).high > sortedBins(idx + 1).low) {
+          throw new IllegalArgumentException("Bins %s and %s overlap (all bins: %s).".format(
+            sortedBins(idx), sortedBins(idx + 1), bins.mkString(",")))
+        }
+      })
+    }
+  }
 }
 
 case class AlignmentRecordRDD(
@@ -966,5 +994,20 @@ case class AlignmentRecordRDD(
 
     // return
     replaceRdd(finalRdd)
+  }
+
+  /**
+   * Rewrites the quality scores of reads to place all quality scores in bins.
+   *
+   * Quality score binning maps all quality scores to a limited number of
+   * discrete values, thus reducing the entropy of the quality score
+   * distribution, and reducing the amount of space that reads consume on disk.
+   *
+   * @param bins The bins to use.
+   * @return Reads whose quality scores are binned.
+   */
+  def binQualityScores(bins: Seq[QualityScoreBin]): AlignmentRecordRDD = {
+    AlignmentRecordRDD.validateBins(bins)
+    BinQualities(this, bins)
   }
 }

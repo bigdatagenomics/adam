@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
 class TransformSuite extends ADAMFunSuite {
@@ -54,5 +55,19 @@ class TransformSuite extends ADAMFunSuite {
     Transform(Array(inputPath, intermediateAdamPath)).run(sc)
     Transform(Array("-single", "-sort_reads", "-sort_lexicographically", intermediateAdamPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
+  }
+
+  sparkTest("put quality scores into bins") {
+    val inputPath = copyResource("bqsr1.sam")
+    val finalPath = tmpFile("binned.adam")
+    Transform(Array(inputPath, finalPath, "-bin_quality_scores", "0,20,10;20,40,30;40,60,50")).run(sc)
+    val qualityScoreCounts = sc.loadAlignments(finalPath)
+      .rdd
+      .flatMap(_.getQual)
+      .map(s => s.toInt - 33)
+      .countByValue
+
+    assert(qualityScoreCounts(30) === 92899)
+    assert(qualityScoreCounts(10) === 7101)
   }
 }

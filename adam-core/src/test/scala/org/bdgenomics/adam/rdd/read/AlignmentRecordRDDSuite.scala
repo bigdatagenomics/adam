@@ -895,4 +895,51 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(c.filter(_._1.isEmpty).forall(_._2.size == 1))
     assert(c0.filter(_._1.isEmpty).forall(_._2.size == 1))
   }
+
+  sparkTest("cannot provide empty quality score bins") {
+    val reads = sc.loadAlignments(testFile("small.sam"))
+    intercept[IllegalArgumentException] {
+      reads.binQualityScores(Seq.empty)
+    }
+  }
+
+  sparkTest("cannot provide bins with a gap") {
+    val reads = sc.loadAlignments(testFile("small.sam"))
+    intercept[IllegalArgumentException] {
+      reads.binQualityScores(Seq(QualityScoreBin(0, 10, 5),
+        QualityScoreBin(11, 21, 16)))
+    }
+  }
+
+  sparkTest("cannot provide overlapping bins") {
+    val reads = sc.loadAlignments(testFile("small.sam"))
+    intercept[IllegalArgumentException] {
+      reads.binQualityScores(Seq(QualityScoreBin(0, 10, 5),
+        QualityScoreBin(9, 19, 14)))
+    }
+  }
+
+  sparkTest("binning quality scores in reads succeeds even if reads have no quality scores") {
+    val reads = sc.loadAlignments(testFile("small.sam"))
+    val binnedReads = reads.binQualityScores(Seq(QualityScoreBin(0, 20, 10)))
+    val numQualities = binnedReads.rdd.flatMap(read => {
+      Option(read.getQual)
+    }).flatMap(s => s)
+      .count
+    assert(numQualities === 0)
+  }
+
+  sparkTest("bin quality scores in reads") {
+    val reads = sc.loadAlignments(testFile("bqsr1.sam"))
+    val binnedReads = reads.binQualityScores(Seq(QualityScoreBin(0, 20, 10),
+      QualityScoreBin(20, 40, 30),
+      QualityScoreBin(40, 60, 50)))
+    val qualityScoreCounts = binnedReads.rdd.flatMap(read => {
+      read.getQual
+    }).map(s => s.toInt - 33)
+      .countByValue
+
+    assert(qualityScoreCounts(30) === 92899)
+    assert(qualityScoreCounts(10) === 7101)
+  }
 }

@@ -29,7 +29,9 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
-  MarkDuplicates
+  BinQualities,
+  MarkDuplicates,
+  QualityScoreBin
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro._
@@ -155,6 +157,21 @@ case class FragmentRDD(rdd: RDD[Fragment],
    */
   def save(filePath: java.lang.String) {
     saveAsParquet(new JavaSaveArgs(filePath))
+  }
+
+  /**
+   * Rewrites the quality scores of fragments to place all quality scores in bins.
+   *
+   * Quality score binning maps all quality scores to a limited number of
+   * discrete values, thus reducing the entropy of the quality score
+   * distribution, and reducing the amount of space that fragments consume on disk.
+   *
+   * @param bins The bins to use.
+   * @return Fragments whose quality scores are binned.
+   */
+  def binQualityScores(bins: Seq[QualityScoreBin]): FragmentRDD = {
+    AlignmentRecordRDD.validateBins(bins)
+    BinQualities(this, bins)
   }
 
   /**
