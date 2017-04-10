@@ -188,6 +188,13 @@ options fall into several general categories:
       given consensus/reference pair is a sufficient improvement over the
       original reference realignments. This option sets that improvement weight.
       Defaults to 5.0.
+* Base quality binning: If the `-bin_quality_scores` option is passed, the quality
+  scores attached to the reads will be rewritten into bins. This option takes a
+  semicolon (`;`) delimited list, where each element describes a bin. The
+  description for a bin is three integers: the bottom of the bin, the top of the
+  bin, and the value to assign to bases in the bin. E.g., given the description
+  `0,20,10:20,50,30`, all quality scores between 0--19 will be rewritten to 10,
+  and all quality scores between 20--49 will be rewritten to 30.
 * `mismatchingPositions` tagging options: We can recompute the
   `mismatchingPositions` field of an AlignmentRecord (SAM "MD" tag) with the
   `-add_md_tags` flag. This flag takes a path to a reference file in either

@@ -27,7 +27,7 @@ import org.bdgenomics.adam.models.SnpTable
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Filter }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, QualityScoreBin }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
@@ -117,6 +117,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var mdTagsFragmentSize: Long = 1000000L
   @Args4jOption(required = false, name = "-md_tag_overwrite", usage = "When adding MD tags to reads, overwrite existing incorrect tags.")
   var mdTagsOverwrite: Boolean = false
+  @Args4jOption(required = false, name = "-bin_quality_scores", usage = "Rewrites quality scores of reads into bins from a string of bin descriptions, e.g. 0,20,10;20,40,30.")
+  var binQualityScores: String = null
   @Args4jOption(required = false, name = "-cache", usage = "Cache data to avoid recomputing between stages.")
   var cache: Boolean = false
   @Args4jOption(required = false, name = "-storage_level", usage = "Set the storage level to use for caching.")
@@ -127,6 +129,18 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
   val companion = Transform
 
   val stringency = ValidationStringency.valueOf(args.stringency)
+
+  /**
+   * @param rdd An RDD of reads.
+   * @return If the binQualityScores argument is set, rewrites the quality scores of the
+   *   reads into bins. Else, returns the original RDD.
+   */
+  private def maybeBin(rdd: AlignmentRecordRDD): AlignmentRecordRDD = {
+    Option(args.binQualityScores).fold(rdd)(binDescription => {
+      val bins = QualityScoreBin(binDescription)
+      rdd.binQualityScores(bins)
+    })
+  }
 
   /**
    * @param rdd An RDD of reads.
@@ -354,8 +368,11 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     // first repartition if needed
     val initialRdd = maybeRepartition(rdd)
 
+    // then bin, if desired
+    val binnedRdd = maybeBin(rdd)
+
     // then, mark duplicates, if desired
-    val maybeDedupedRdd = maybeDedupe(initialRdd)
+    val maybeDedupedRdd = maybeDedupe(binnedRdd)
 
     // once we've deduped our reads, maybe realign them
     val maybeRealignedRdd = maybeRealign(sc, maybeDedupedRdd, sl)

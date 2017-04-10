@@ -18,8 +18,13 @@
 package org.bdgenomics.adam.rdd.fragment
 
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, AnySAMOutFormatter }
+import org.bdgenomics.adam.rdd.read.{
+  AlignmentRecordRDD,
+  AnySAMOutFormatter,
+  QualityScoreBin
+}
 import org.bdgenomics.adam.util.ADAMFunSuite
+import scala.collection.JavaConversions._
 
 class FragmentRDDSuite extends ADAMFunSuite {
 
@@ -245,5 +250,21 @@ class FragmentRDDSuite extends ADAMFunSuite {
     assert(c0.count(_._1.isEmpty) === 1)
     assert(c.filter(_._1.isEmpty).forall(_._2.size == 1))
     assert(c0.filter(_._1.isEmpty).forall(_._2.size == 1))
+  }
+
+  sparkTest("bin quality scores in fragments") {
+    val fragments = sc.loadFragments(testFile("bqsr1.sam"))
+    val binnedFragments = fragments.binQualityScores(Seq(QualityScoreBin(0, 20, 10),
+      QualityScoreBin(20, 40, 30),
+      QualityScoreBin(40, 60, 50)))
+    val qualityScoreCounts = binnedFragments.rdd.flatMap(fragment => {
+      fragment.getAlignments.toSeq
+    }).flatMap(read => {
+      read.getQual
+    }).map(s => s.toInt - 33)
+      .countByValue
+
+    assert(qualityScoreCounts(30) === 92899)
+    assert(qualityScoreCounts(10) === 7101)
   }
 }
