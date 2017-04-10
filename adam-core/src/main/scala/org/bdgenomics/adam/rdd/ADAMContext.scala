@@ -1496,7 +1496,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * * SAM/BAM/CRAM (.sam, .bam, .cram)
    * * FASTQ (interleaved, single end, paired end) (.ifq, .fq/.fastq)
    * * FASTA (.fa, .fasta)
-   * * NucleotideContigFragments via Parquet (.contig.adam)
    *
    * As hinted above, the input type is inferred from the file path extension.
    *
@@ -1507,7 +1506,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param recordGroupOpt Optional record group name to set if loading FASTQ.
    * @param stringency Validation stringency used on FASTQ import/merging.
    * @return Returns an AlignmentRecordRDD which wraps the RDD of reads,
-   *   sequence dictionary representing the contigs these reads are aligned to
+   *   the sequence dictionary representing the contigs these reads are aligned to
    *   if the reads are aligned, and the record group dictionary for the reads
    *   if one is available.
    * @see loadBam
@@ -1539,11 +1538,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       filePath.endsWith(".fasta")) {
       log.info(s"Loading $filePath as FASTA and converting to AlignmentRecords. Projection is ignored.")
       AlignmentRecordRDD.unaligned(loadFasta(filePath, fragmentLength = 10000).toReads)
-    } else if (filePath.endsWith("contig.adam")) {
-      log.info(s"Loading $filePath as Parquet of NucleotideContigFragment and converting to AlignmentRecords. Projection is ignored.")
-      AlignmentRecordRDD.unaligned(loadParquetContigFragments(filePath).toReads)
     } else {
-      log.info(s"Loading $filePath as Parquet of AlignmentRecords.")
+      log.info(s"Loading $filePath as Parquet containing AlignmentRecords.")
       loadParquetAlignments(filePath, None, projection)
     }
   }
@@ -1555,8 +1551,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * * Fragments via Parquet (default)
    * * SAM/BAM/CRAM (.sam, .bam, .cram)
-   * * FASTQ (interleaved only --> .ifq)
-   * * Autodetects AlignmentRecord as Parquet with .reads.adam extension.
+   * * FASTQ (interleaved only, .ifq)
    *
    * @param filePath Path to load data from.
    * @return Returns the loaded data as a FragmentRDD.
@@ -1575,13 +1570,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         log.info(s"Loading $filePath as SAM/BAM and converting to Fragments.")
         loadBam(filePath).toFragments
       }
-    } else if (filePath.endsWith(".reads.adam")) {
-      log.info(s"Loading $filePath as ADAM AlignmentRecords and converting to Fragments.")
-      loadAlignments(filePath).toFragments
     } else if (filePath.endsWith(".ifq")) {
-      log.info("Loading interleaved FASTQ " + filePath + " and converting to Fragments.")
+      log.info(s"Loading $filePath as interleaved FASTQ and converting to Fragments.")
       loadInterleavedFastqAsFragments(filePath)
     } else {
+      log.info(s"Loading $filePath as Parquet containing Fragments.")
       loadParquetFragments(filePath)
     }
   }
