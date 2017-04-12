@@ -70,7 +70,7 @@ class AlignmentRecordFieldSuite extends ADAMFunSuite {
       inferredInsertSize
     )
 
-    val alignmentRecords: RDD[AlignmentRecord] = sc.loadParquet(path, projection = Some(projection))
+    val alignmentRecords: RDD[AlignmentRecord] = sc.loadParquet(path, optProjection = Some(projection))
     assert(alignmentRecords.count() === 1)
     assert(alignmentRecords.first.getContigName === "6")
     assert(alignmentRecords.first.getStart === 29941260L)

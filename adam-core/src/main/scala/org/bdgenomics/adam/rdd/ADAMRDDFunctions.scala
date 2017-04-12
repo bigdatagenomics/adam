@@ -82,18 +82,18 @@ private[rdd] abstract class ADAMRDDFunctions[T <% IndexedRecord: Manifest] exten
    * As such, we must force the user to pass in the schema.
    *
    * @tparam U The type of the specific record we are saving.
-   * @param filename Path to save records to.
+   * @param pathName Path to save records to.
    * @param sc SparkContext used for identifying underlying file system.
    * @param schema Schema of records we are saving.
    * @param avro Seq of records we are saving.
    */
-  protected def saveAvro[U <: SpecificRecordBase](filename: String,
+  protected def saveAvro[U <: SpecificRecordBase](pathName: String,
                                                   sc: SparkContext,
                                                   schema: Schema,
                                                   avro: Seq[U])(implicit tUag: ClassTag[U]) {
 
     // get our current file system
-    val path = new Path(filename)
+    val path = new Path(pathName)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
 
     // get an output stream
@@ -126,21 +126,21 @@ private[rdd] abstract class ADAMRDDFunctions[T <% IndexedRecord: Manifest] exten
   /**
    * Saves an RDD of Avro data to Parquet.
    *
-   * @param filePath The path to save the file to.
-   * @param blockSize The size in bytes of blocks to write.
-   * @param pageSize The size in bytes of pages to write.
-   * @param compressCodec The compression codec to apply to pages.
+   * @param pathName The path to save the file to.
+   * @param blockSize The size in bytes of blocks to write. Defaults to 128 * 1024 * 1024.
+   * @param pageSize The size in bytes of pages to write. Defaults to 1 * 1024 * 1024.
+   * @param compressCodec The compression codec to apply to pages. Defaults to CompressionCodecName.GZIP.
    * @param disableDictionaryEncoding If false, dictionary encoding is used. If
-   *   true, delta encoding is used.
-   * @param schema The schema to set.
+   *   true, delta encoding is used. Defaults to false.
+   * @param optSchema The optional schema to set. Defaults to None.
    */
   protected def saveRddAsParquet(
-    filePath: String,
+    pathName: String,
     blockSize: Int = 128 * 1024 * 1024,
     pageSize: Int = 1 * 1024 * 1024,
     compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
     disableDictionaryEncoding: Boolean = false,
-    schema: Option[Schema] = None): Unit = SaveAsADAM.time {
+    optSchema: Option[Schema] = None): Unit = SaveAsADAM.time {
     log.info("Saving data in ADAM format")
 
     val job = HadoopUtil.newJob(rdd.context)
@@ -150,14 +150,14 @@ private[rdd] abstract class ADAMRDDFunctions[T <% IndexedRecord: Manifest] exten
     ParquetOutputFormat.setPageSize(job, pageSize)
     AvroParquetOutputFormat.setSchema(
       job,
-      schema.getOrElse(manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema)
+      optSchema.getOrElse(manifest[T].runtimeClass.asInstanceOf[Class[T]].newInstance().getSchema)
     )
 
     // Add the Void Key
     val recordToSave = rdd.map(p => (null, p))
     // Save the values to the ADAM/Parquet file
     recordToSave.saveAsNewAPIHadoopFile(
-      filePath,
+      pathName,
       classOf[java.lang.Void], manifest[T].runtimeClass.asInstanceOf[Class[T]], classOf[InstrumentedADAMAvroParquetOutputFormat],
       ContextUtil.getConfiguration(job)
     )
@@ -180,7 +180,7 @@ private[rdd] class ConcreteADAMRDDFunctions[T <% IndexedRecord: Manifest](val rd
   /**
    * Saves an RDD of Avro data to Parquet.
    *
-   * @param filePath The path to save the file to.
+   * @param pathName The path to save the file to.
    * @param blockSize The size in bytes of blocks to write.
    * @param pageSize The size in bytes of pages to write.
    * @param compressCodec The compression codec to apply to pages.
@@ -189,13 +189,13 @@ private[rdd] class ConcreteADAMRDDFunctions[T <% IndexedRecord: Manifest](val rd
    * @param schema The schema to set.
    */
   def saveAsParquet(
-    filePath: String,
+    pathName: String,
     blockSize: Int = 128 * 1024 * 1024,
     pageSize: Int = 1 * 1024 * 1024,
     compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
     disableDictionaryEncoding: Boolean = false,
     schema: Option[Schema] = None): Unit = {
-    saveRddAsParquet(filePath, blockSize, pageSize, compressCodec, disableDictionaryEncoding, schema)
+    saveRddAsParquet(pathName, blockSize, pageSize, compressCodec, disableDictionaryEncoding, schema)
   }
 }
 

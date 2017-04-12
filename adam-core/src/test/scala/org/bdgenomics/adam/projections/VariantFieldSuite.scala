@@ -54,7 +54,7 @@ class VariantFieldSuite extends ADAMFunSuite {
       filtersFailed
     )
 
-    val variants: RDD[Variant] = sc.loadParquet(path, projection = Some(projection))
+    val variants: RDD[Variant] = sc.loadParquet(path, optProjection = Some(projection))
     assert(variants.count() === 1)
     assert(variants.first.getContigName === "6")
     assert(variants.first.getStart === 29941260L)

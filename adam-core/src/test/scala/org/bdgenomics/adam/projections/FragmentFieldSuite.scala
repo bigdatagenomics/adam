@@ -49,7 +49,7 @@ class FragmentFieldSuite extends ADAMFunSuite {
       alignments
     )
 
-    val fragments: RDD[Fragment] = sc.loadParquet(path, projection = Some(projection))
+    val fragments: RDD[Fragment] = sc.loadParquet(path, optProjection = Some(projection))
     assert(fragments.count() === 1)
     assert(fragments.first.getReadName === "read_name")
     assert(fragments.first.getInstrument === "instrument")

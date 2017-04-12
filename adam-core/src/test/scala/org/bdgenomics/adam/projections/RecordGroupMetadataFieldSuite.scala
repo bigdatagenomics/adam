@@ -56,7 +56,7 @@ class RecordGroupMetadataFieldSuite extends ADAMFunSuite {
       platformUnit
     )
 
-    val recordGroupMetadata: RDD[RecordGroupMetadata] = sc.loadParquet(path, projection = Some(projection))
+    val recordGroupMetadata: RDD[RecordGroupMetadata] = sc.loadParquet(path, optProjection = Some(projection))
     assert(recordGroupMetadata.count() === 1)
     assert(recordGroupMetadata.first.getName === "name")
     assert(recordGroupMetadata.first.getSequencingCenter === "sequencing_center")

@@ -40,7 +40,7 @@ class SampleFieldSuite extends ADAMFunSuite {
       attributes
     )
 
-    val samples: RDD[Sample] = sc.loadParquet(path, projection = Some(projection))
+    val samples: RDD[Sample] = sc.loadParquet(path, optProjection = Some(projection))
     assert(samples.count() === 1)
     assert(samples.first.getSampleId === "sample_id")
     assert(samples.first.getName === "name")

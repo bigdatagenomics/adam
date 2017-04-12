@@ -55,7 +55,7 @@ class SliceFieldSuite extends ADAMFunSuite {
       length
     )
 
-    val slices: RDD[Slice] = sc.loadParquet(path, projection = Some(projection));
+    val slices: RDD[Slice] = sc.loadParquet(path, optProjection = Some(projection));
     assert(slices.count() === 1)
     assert(slices.first.getName === "6")
     assert(slices.first.getDescription === "Chromosome 6")

@@ -188,7 +188,7 @@ class FastaConverterSuite extends ADAMFunSuite {
     val fasta = fasta1 ::: fasta2
     val rdd = sc.parallelize(fasta.toSeq)
 
-    val adamFasta = FastaConverter(rdd, maxFragmentLength = 35)
+    val adamFasta = FastaConverter(rdd, maximumFragmentLength = 35)
     assert(adamFasta.count === 64)
 
     val fastaElement1 = adamFasta.filter(_.getContig.getContigName == "chr1").collect()
@@ -209,7 +209,7 @@ class FastaConverterSuite extends ADAMFunSuite {
 
   sparkTest("convert reference fasta file") {
     //Loading "human_g1k_v37_chr1_59kb.fasta"
-    val referenceSequences = sc.loadSequences(chr1File, fragmentLength = 10).rdd.collect()
+    val referenceSequences = sc.loadSequences(chr1File, maximumFragmentLength = 10).rdd.collect()
     assert(referenceSequences.forall(_.getContig.getContigName.toString == "1"))
     assert(referenceSequences.slice(0, referenceSequences.length - 2).forall(_.getFragmentSequence.length == 10))
 

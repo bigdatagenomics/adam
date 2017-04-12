@@ -94,20 +94,21 @@ private[adam] object FastaConverter {
    * contig fragments.
    *
    * @note Input dataset is assumed to have come in from a Hadoop TextInputFormat reader. This sets
-   * a specific format for the RDD's Key-Value pairs.
+   *   a specific format for the RDD's Key-Value pairs.
    *
    * @throws AssertionError Thrown if there appear to be multiple sequences in a single file
-   * that do not have descriptions.
+   *   that do not have descriptions.
    * @throws IllegalArgumentException Thrown if a sequence does not have sequence data.
    *
    * @param rdd RDD containing Long,String tuples, where the Long corresponds to the number
-   * of the file line, and the String is the line of the file.
-   * @param maxFragmentLength The maximum length of fragments in the contig.
+   *   of the file line, and the String is the line of the file.
+   * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
+   *   than 1e9 should be avoided.
    * @return An RDD of ADAM FASTA data.
    */
   def apply(
     rdd: RDD[(Long, String)],
-    maxFragmentLength: Long = 10000L): RDD[NucleotideContigFragment] = {
+    maximumFragmentLength: Long = 10000L): RDD[NucleotideContigFragment] = {
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
       .filter((kv: (Long, String)) => !kv._2.startsWith(";"))
 
@@ -125,7 +126,7 @@ private[adam] object FastaConverter {
 
     val groupedContigs = keyedSequences.groupByKey()
 
-    val converter = new FastaConverter(maxFragmentLength)
+    val converter = new FastaConverter(maximumFragmentLength)
 
     groupedContigs.flatMap {
       case (id, lines) =>

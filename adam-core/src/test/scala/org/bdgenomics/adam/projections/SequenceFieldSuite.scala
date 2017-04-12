@@ -45,7 +45,7 @@ class SequenceFieldSuite extends ADAMFunSuite {
       length
     )
 
-    val sequences: RDD[Sequence] = sc.loadParquet(path, projection = Some(projection));
+    val sequences: RDD[Sequence] = sc.loadParquet(path, optProjection = Some(projection));
     assert(sequences.count() === 1)
     assert(sequences.first.getName === "6")
     assert(sequences.first.getDescription === "Chromosome 6")

@@ -42,7 +42,7 @@ class Fasta2ADAMArgs extends Args4jBase with ParquetSaveArgs {
   @Args4jOption(required = false, name = "-reads", usage = "Maps contig IDs to match contig IDs of reads.")
   var reads: String = ""
   @Args4jOption(required = false, name = "-fragment_length", usage = "Sets maximum fragment length. Default value is 10,000. Values greater than 1e9 should be avoided.")
-  var fragmentLength: Long = 10000L
+  var maximumFragmentLength: Long = 10000L
   @Args4jOption(required = false, name = "-repartition", usage = "Sets the number of output partitions to write, if desired.")
   var partitions: Int = -1
 }
@@ -52,7 +52,7 @@ class Fasta2ADAM(protected val args: Fasta2ADAMArgs) extends BDGSparkCommand[Fas
 
   def run(sc: SparkContext) {
     log.info("Loading FASTA data from disk.")
-    val adamFasta = sc.loadFasta(args.fastaFile, fragmentLength = args.fragmentLength)
+    val adamFasta = sc.loadFasta(args.fastaFile, maximumFragmentLength = args.maximumFragmentLength)
 
     if (args.verbose) {
       log.info("FASTA contains: %s", adamFasta.sequences.toString)

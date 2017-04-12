@@ -75,7 +75,7 @@ class VariantAnnotationFieldSuite extends ADAMFunSuite {
       attributes
     )
 
-    val variantAnnotations: RDD[VariantAnnotation] = sc.loadParquet(path, projection = Some(projection))
+    val variantAnnotations: RDD[VariantAnnotation] = sc.loadParquet(path, optProjection = Some(projection))
     assert(variantAnnotations.count() === 1)
     assert(variantAnnotations.first.getAncestralAllele === "T")
     assert(variantAnnotations.first.getAlleleCount === 42)

@@ -44,11 +44,11 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   /**
    * Loads in an ADAM read file. This method can load SAM, BAM, and ADAM files.
    *
-   * @param filePath Path to load the file from.
+   * @param pathName Path to load the file from.
    * @return Returns a read RDD.
    */
-  def loadAlignments(filePath: java.lang.String): AlignmentRecordRDD = {
-    ac.loadAlignments(filePath)
+  def loadAlignments(pathName: java.lang.String): AlignmentRecordRDD = {
+    ac.loadAlignments(pathName)
   }
 
   /**
@@ -56,60 +56,60 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * Can load from FASTA or from Parquet encoded NucleotideContigFragments.
    *
-   * @param filePath Path to load the file from.
+   * @param pathName Path to load the file from.
    * @return Returns a NucleotideContigFragment RDD.
    */
-  def loadSequences(filePath: java.lang.String): NucleotideContigFragmentRDD = {
-    ac.loadSequences(filePath)
+  def loadSequences(pathName: java.lang.String): NucleotideContigFragmentRDD = {
+    ac.loadSequences(pathName)
   }
 
   /**
    * Loads in read pairs as fragments.
    *
-   * @param filePath The path to load the file from.
+   * @param pathName The path to load the file from.
    * @return Returns a FragmentRDD.
    */
-  def loadFragments(filePath: java.lang.String): FragmentRDD = {
-    ac.loadFragments(filePath)
+  def loadFragments(pathName: java.lang.String): FragmentRDD = {
+    ac.loadFragments(pathName)
   }
 
   /**
    * Loads in features.
    *
-   * @param filePath The path to load the file from.
+   * @param pathName The path to load the file from.
    * @return Returns a FeatureRDD.
    */
-  def loadFeatures(filePath: java.lang.String): FeatureRDD = {
-    ac.loadFeatures(filePath)
+  def loadFeatures(pathName: java.lang.String): FeatureRDD = {
+    ac.loadFeatures(pathName)
   }
 
   /**
    * Loads in a coverage file. This method can load BED, NarrowPeak, GFF3, GTF/GFF2, IntervalList and ADAM files.
    *
-   * @param filePath Path to load the file from.
+   * @param pathName Path to load the file from.
    * @return Returns a Coverage RDD.
    */
-  def loadCoverage(filePath: java.lang.String): CoverageRDD = {
-    ac.loadCoverage(filePath)
+  def loadCoverage(pathName: java.lang.String): CoverageRDD = {
+    ac.loadCoverage(pathName)
   }
 
   /**
    * Loads in genotypes.
    *
-   * @param filePath The path to load the file from.
+   * @param pathName The path to load the file from.
    * @return Returns a GenotypeRDD.
    */
-  def loadGenotypes(filePath: java.lang.String): GenotypeRDD = {
-    ac.loadGenotypes(filePath)
+  def loadGenotypes(pathName: java.lang.String): GenotypeRDD = {
+    ac.loadGenotypes(pathName)
   }
 
   /**
    * Loads in variants.
    *
-   * @param filePath The path to load the file from.
+   * @param pathName The path to load the file from.
    * @return Returns a VariantRDD.
    */
-  def loadVariants(filePath: java.lang.String): VariantRDD = {
-    ac.loadVariants(filePath)
+  def loadVariants(pathName: java.lang.String): VariantRDD = {
+    ac.loadVariants(pathName)
   }
 }

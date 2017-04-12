@@ -94,7 +94,7 @@ class FeatureFieldSuite extends ADAMFunSuite {
       attributes
     )
 
-    val features: RDD[Feature] = sc.loadParquet(path, projection = Some(projection))
+    val features: RDD[Feature] = sc.loadParquet(path, optProjection = Some(projection))
     assert(features.count() === 1)
     assert(features.first.getFeatureId === "ENSG00000206503")
     assert(features.first.getName === "HLA-A")

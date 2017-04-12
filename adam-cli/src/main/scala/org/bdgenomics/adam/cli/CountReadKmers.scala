@@ -54,7 +54,7 @@ class CountReadKmers(protected val args: CountReadKmersArgs) extends BDGSparkCom
     // read from disk
     var adamRecords = sc.loadAlignments(
       args.inputPath,
-      projection = Some(Projection(AlignmentRecordField.sequence))
+      optProjection = Some(Projection(AlignmentRecordField.sequence))
     )
 
     if (args.repartition != -1) {

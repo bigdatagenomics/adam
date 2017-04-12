@@ -188,7 +188,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       // optionally load a reference
       val optReferenceFile = Option(args.reference).map(f => {
         sc.loadReferenceFile(f,
-          fragmentLength = args.mdTagsFragmentSize)
+          maximumFragmentLength = args.mdTagsFragmentSize)
       })
 
       // run realignment
@@ -332,7 +332,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     if (args.mdTagsReferenceFile != null) {
       log.info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
       val referenceFile = sc.loadReferenceFile(args.mdTagsReferenceFile,
-        fragmentLength = args.mdTagsFragmentSize)
+        maximumFragmentLength = args.mdTagsFragmentSize)
       rdd.computeMismatchingPositions(
         referenceFile,
         overwriteExistingTags = args.mdTagsOverwrite,
@@ -432,14 +432,15 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         }
 
         sc.loadParquetAlignments(args.inputPath,
-          predicate = pred,
-          projection = proj)
+          optPredicate = pred,
+          optProjection = proj)
       } else {
         sc.loadAlignments(
           args.inputPath,
-          filePath2Opt = Option(args.pairedFastqFile),
-          recordGroupOpt = Option(args.fastqRecordGroup),
-          stringency = stringency)
+          optPathName2 = Option(args.pairedFastqFile),
+          optRecordGroup = Option(args.fastqRecordGroup),
+          stringency = stringency
+        )
       }
     val rdd = aRdd.rdd
     val sd = aRdd.sequences
@@ -459,7 +460,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
         } else {
           sc.loadAlignments(
             concatFilename,
-            recordGroupOpt = Option(args.fastqRecordGroup)
+            optRecordGroup = Option(args.fastqRecordGroup)
           )
         })
 
