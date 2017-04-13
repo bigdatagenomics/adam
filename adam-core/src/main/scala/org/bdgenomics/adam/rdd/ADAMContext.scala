@@ -165,7 +165,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param pathName The (possibly globbed) path to load a VCF from.
+    * @param pathName The path name to load VCF format metadata from.
+    *   Globs/directories are supported.
    * @return Returns a tuple of metadata from the VCF header, including the
    *   sequence dictionary and a list of the samples contained in the VCF.
    */
@@ -180,7 +181,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param pathName The (possibly globbed) path to load a VCF from.
+   * @param pathName The path name to load VCF format metadata from.
+   *   Globs/directories are supported.
    * @return Returns a tuple of metadata from the VCF header, including the
    *   sequence dictionary and a list of the samples contained in the VCF.
    *
@@ -492,10 +494,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * the reads from a fragment in a single split. This allows us to eliminate
    * an expensive groupBy when loading a BAM file as fragments.
    *
-   * @param pathName The path name to load reads from. Globs/directories are
-   *   supported.
-   * @param stringency The validation stringency to use when reading the header.
-   * @return Returns true if all files described by the filepath are queryname
+   * @param pathName The path name to load SAM/BAM/CRAM formatted alignment records from.
+   *   Globs/directories are supported (todo: confirm).
+   * @param stringency The validation stringency to use when validating the
+   *   SAM/BAM/CRAM format header. Defaults to ValidationStringency.STRICT.
+   * @return Returns true if all files described by the path name are queryname
    *   sorted.
    */
   private[rdd] def filesAreQuerynameSorted(
@@ -536,8 +539,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * header. SAMRecords are read from the file and converted to the
    * AlignmentRecord schema.
    *
-   * @param pathName The path name to load SAM/BAM/CRAM formatted alignments from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load SAM/BAM/CRAM formatted alignment records from.
+   *   Globs/directories are supported (todo: confirm).
    * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
