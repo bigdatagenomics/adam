@@ -56,6 +56,7 @@ import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, RepairPartitions }
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
+import org.bdgenomics.adam.util.FileExtensions._
 import org.bdgenomics.adam.util.{ ReferenceContigMap, ReferenceFile, TwoBitFile }
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.instrumentation.Metrics
@@ -165,8 +166,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-    * @param pathName The path name to load VCF format metadata from.
-    *   Globs/directories are supported.
+   * @param pathName The path name to load VCF format metadata from.
+   *   Globs/directories are supported.
    * @return Returns a tuple of metadata from the VCF header, including the
    *   sequence dictionary and a list of the samples contained in the VCF.
    */
@@ -182,7 +183,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   /**
    * @param pathName The path name to load VCF format metadata from.
-   *   Globs/directories are supported.
+   *   Globs/directories are not supported.
    * @return Returns a tuple of metadata from the VCF header, including the
    *   sequence dictionary and a list of the samples contained in the VCF.
    *
@@ -283,58 +284,58 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * @param pathName The path name to load Avro sequence dictionaries from. Globs/directories are
-   *   supported.
-   * @return Returns the SequenceDictionary representing said reference build.
+   * @param pathName The path name to load Avro sequence dictionaries from.
+   *   Globs/directories are supported.
+   * @return Returns a SequenceDictionary.
    */
-  private[rdd] def loadAvroSequences(pathName: String): SequenceDictionary = {
+  private[rdd] def loadAvroSequenceDictionary(pathName: String): SequenceDictionary = {
     getFsAndFilesWithFilter(pathName, new FileFilter("_seqdict.avro"))
-      .map(p => loadAvroSequencesFile(p.toString))
+      .map(p => loadSingleAvroSequenceDictionary(p.toString))
       .reduce(_ ++ _)
   }
 
   /**
-   * @see loadAvroSequences
+   * @see loadAvroSequenceDictionary
    *
-   * @param pathName The path name to load a single Avro sequence dictionary from. Globs/directories are
-   *   not supported.
-   * @return Returns the SequenceDictionary representing said reference build.
+   * @param pathName The path name to load a single Avro sequence dictionary from.
+   *   Globs/directories are not supported.
+   * @return Returns a SequenceDictionary.
    */
-  private def loadAvroSequencesFile(pathName: String): SequenceDictionary = {
+  private def loadSingleAvroSequenceDictionary(pathName: String): SequenceDictionary = {
     val avroSd = loadAvro[Contig](pathName, Contig.SCHEMA$)
     SequenceDictionary.fromAvro(avroSd)
   }
 
   /**
-   * @param pathName The path name to load Avro sample metadata from. Globs/directories are
-   *   supported.
-   * @return Returns a Seq of Sample descriptions.
+   * @param pathName The path name to load Avro samples from.
+   *   Globs/directories are supported.
+   * @return Returns a Seq of Samples.
    */
-  private[rdd] def loadAvroSampleMetadata(pathName: String): Seq[Sample] = {
+  private[rdd] def loadAvroSamples(pathName: String): Seq[Sample] = {
     getFsAndFilesWithFilter(pathName, new FileFilter("_samples.avro"))
       .map(p => loadAvro[Sample](p.toString, Sample.SCHEMA$))
       .reduce(_ ++ _)
   }
 
   /**
-   * @param pathName The path name to load Avro read group metadata from. Globs/directories are
-   *   supported.
+   * @param pathName The path name to load Avro record group dictionaries from.
+   *   Globs/directories are supported.
    * @return Returns a RecordGroupDictionary.
    */
-  private[rdd] def loadAvroReadGroupMetadata(pathName: String): RecordGroupDictionary = {
+  private[rdd] def loadAvroRecordGroupDictionary(pathName: String): RecordGroupDictionary = {
     getFsAndFilesWithFilter(pathName, new FileFilter("_rgdict.avro"))
-      .map(p => loadAvroReadGroupMetadataFile(p.toString))
+      .map(p => loadSingleAvroRecordGroupDictionary(p.toString))
       .reduce(_ ++ _)
   }
 
   /**
-   * @see loadAvroReadGroupMetadata
+   * @see loadAvroRecordGroupDictionary
    *
-   * @param pathName The path name to load a single Avro read group dictionary from. Globs/directories are
-   *   not supported.
+   * @param pathName The path name to load a single Avro record group dictionary from.
+   *   Globs/directories are not supported.
    * @return Returns a RecordGroupDictionary.
    */
-  private def loadAvroReadGroupMetadataFile(pathName: String): RecordGroupDictionary = {
+  private def loadSingleAvroRecordGroupDictionary(pathName: String): RecordGroupDictionary = {
     val avroRgd = loadAvro[RecordGroupMetadata](pathName,
       RecordGroupMetadata.SCHEMA$)
 
@@ -345,8 +346,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into an RDD.
    *
-   * @param pathName The path name to load Parquet + Avro formatted data from. Globs/directories are
-   *   supported.
+   * @param pathName The path name to load Parquet + Avro formatted data from.
+   *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -486,18 +487,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Checks to see if a set of SAM/BAM/CRAM files are queryname sorted.
+   * Checks to see if a set of BAM/CRAM/SAM files are queryname sorted.
    *
-   * If we are loading fragments and the SAM/BAM/CRAM files are sorted by the
+   * If we are loading fragments and the BAM/CRAM/SAM files are sorted by the
    * read names, this implies that all of the reads in a pair are consecutive in
    * the file. If this is the case, we can configure Hadoop-BAM to keep all of
    * the reads from a fragment in a single split. This allows us to eliminate
    * an expensive groupBy when loading a BAM file as fragments.
    *
-   * @param pathName The path name to load SAM/BAM/CRAM formatted alignment records from.
-   *   Globs/directories are supported (todo: confirm).
+   * @param pathName The path name to load BAM/CRAM/SAM formatted alignment records from.
+   *   Globs/directories are supported.
    * @param stringency The validation stringency to use when validating the
-   *   SAM/BAM/CRAM format header. Defaults to ValidationStringency.STRICT.
+   *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
    * @return Returns true if all files described by the path name are queryname
    *   sorted.
    */
@@ -509,8 +510,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val bamFiles = getFsAndFiles(path)
     val filteredFiles = bamFiles.filter(p => {
       val pPath = p.getName()
-      pPath.endsWith(".bam") || pPath.endsWith(".cram") ||
-        pPath.endsWith(".sam") || pPath.startsWith("part-")
+      isBamExt(pPath) || pPath.startsWith("part-")
     })
 
     filteredFiles
@@ -533,14 +533,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load alignment records from SAM/BAM/CRAM into an AlignmentRecordRDD.
+   * Load alignment records from BAM/CRAM/SAM into an AlignmentRecordRDD.
    *
-   * This reads the sequence and record group dictionaries from the SAM/BAM/CRAM file
+   * This reads the sequence and record group dictionaries from the BAM/CRAM/SAM file
    * header. SAMRecords are read from the file and converted to the
    * AlignmentRecord schema.
    *
-   * @param pathName The path name to load SAM/BAM/CRAM formatted alignment records from.
-   *   Globs/directories are supported (todo: confirm).
+   * @param pathName The path name to load BAM/CRAM/SAM formatted alignment records from.
+   *   Globs/directories are supported.
    * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
@@ -553,8 +553,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val bamFiles = getFsAndFiles(path)
     val filteredFiles = bamFiles.filter(p => {
       val pPath = p.getName()
-      pPath.endsWith(".bam") || pPath.endsWith(".cram") ||
-        pPath.endsWith(".sam") || pPath.startsWith("part-")
+      isBamExt(pPath) || pPath.startsWith("part-")
     })
 
     require(filteredFiles.nonEmpty,
@@ -594,7 +593,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // contains bams, hadoop-bam is a-ok! i believe that it is better (perf) to
     // just load from a single newAPIHadoopFile call instead of a union across
     // files, so we do that whenever possible
-    val records = if (filteredFiles.size != bamFiles.size) {
+    val records = if (filteredFiles.length != bamFiles.length) {
       sc.union(filteredFiles.map(p => {
         sc.newAPIHadoopFile(p.toString, classOf[AnySAMInputFormat], classOf[LongWritable],
           classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
@@ -615,9 +614,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Functions like loadBam, but uses BAM index files to look at fewer blocks,
    * and only returns records within a specified ReferenceRegion. BAM index file required.
    *
-   * @param pathName The path name to load indexed BAM formatted alignment records from. Globs/directories are
-   *   not supported. Currently this path must correspond to a single BAM file. The BAM index file associated
-   *   needs to have the same name.
+   * @param pathName The path name to load indexed BAM formatted alignment records from.
+   *   Globs/directories are supported.
    * @param viewRegion The ReferenceRegion we are filtering on.
    * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
@@ -633,9 +631,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Functions like loadBam, but uses BAM index files to look at fewer blocks,
    * and only returns records within the specified ReferenceRegions. BAM index file required.
    *
-   * @param pathName The path name to load indexed BAM formatted alignment records from. Globs/directories are
-   *   not supported. Currently this path must correspond to a single BAM file. The BAM index file associated
-   *   needs to have the same name.
+   * @param pathName The path name to load indexed BAM formatted alignment records from.
+   *   Globs/directories are supported.
    * @param viewRegions Iterable of ReferenceRegion we are filtering on.
    * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
@@ -646,6 +643,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     viewRegions: Iterable[ReferenceRegion])(implicit s: DummyImplicit): AlignmentRecordRDD = {
 
     val path = new Path(pathName)
+    // todo: can this method handle SAM and CRAM, or just BAM?
     val bamFiles = getFsAndFiles(path).filter(p => p.toString.endsWith(".bam"))
 
     require(bamFiles.nonEmpty,
@@ -694,8 +692,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * As such, we must force the user to pass in the schema.
    *
    * @tparam T The type of the specific record we are loading.
-   * @param pathName The path name to load Avro records from. Globs/directories are
-   *   not supported (todo: confirm).
+   * @param pathName The path name to load Avro records from.
+   *   Globs/directories are supported.
    * @param schema Schema of records we are loading.
    * @return Returns a Seq containing the Avro records.
    */
@@ -766,8 +764,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Avro file stored at pathName/_rgdict.avro. These files are pure Avro,
    *   not Parquet + Avro.
    *
-   * @param pathName The path name to load alignment records from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -785,10 +783,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val rdd = loadParquet[AlignmentRecord](pathName, optPredicate, optProjection)
 
     // convert avro to sequence dictionary
-    val sd = loadAvroSequences(pathName)
+    val sd = loadAvroSequenceDictionary(pathName)
 
     // convert avro to sequence dictionary
-    val rgd = loadAvroReadGroupMetadata(pathName)
+    val rgd = loadAvroRecordGroupDictionary(pathName)
 
     AlignmentRecordRDD(rdd, sd, rgd)
   }
@@ -800,8 +798,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * interleaved in a single file. This is a zipped representation of the
    * typical paired FASTQ.
    *
-   * @param pathName The path name to load unaligned alignment records from. Globs/directories are
-   *   not supported (todo: confirm).
+   * @param pathName The path name to load unaligned alignment records from.
+   *   Globs/directories are supported.
    * @return Returns an unaligned AlignmentRecordRDD.
    */
   def loadInterleavedFastq(
@@ -829,9 +827,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @see loadUnpairedFastq
    *
    * @param pathName1 The path name to load the first set of unaligned alignment records from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported.
    * @param optPathName2 The path name to load the second set of unaligned alignment records from,
-   *   if provided. Globs/directories are not supported (todo: confirm).
+   *   if provided. Globs/directories are supported.
    * @param optRecordGroup The optional record group name to associate to the unaligned alignment
    *   records. Defaults to None.
    * @param stringency The validation stringency to use when validating (possibly paired) FASTQ format.
@@ -860,9 +858,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load unaligned alignment records from paired FASTQ into an AlignmentRecordRDD.
    *
    * @param pathName1 The path name to load the first set of unaligned alignment records from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported.
    * @param pathName2 The path name to load the second set of unaligned alignment records from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported.
    * @param optRecordGroup The optional record group name to associate to the unaligned alignment
    *   records. Defaults to None.
    * @param stringency The validation stringency to use when validating paired FASTQ format.
@@ -912,7 +910,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load unaligned alignment records from unpaired FASTQ into an AlignmentRecordRDD.
    *
    * @param pathName The path name to load unaligned alignment records from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported.
    * @param setFirstOfPair If true, sets the unaligned alignment record as first from the fragment.
    *   Defaults to false.
    * @param setSecondOfPair If true, sets the unaligned alignment record as second from the fragment.
@@ -959,7 +957,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   /**
    * @param pathName The path name to load VCF variant context records from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported.
    * @param optViewRegions Optional intervals to push down into file using index.
    * @return Returns a raw RDD of (LongWritable, VariantContextWritable)s.
    */
@@ -990,7 +988,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load variant context records from VCF into a VariantContextRDD.
    *
    * @param pathName The path name to load VCF variant context records from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported.
    * @param stringency The validation stringency to use when validating VCF format.
    *   Defaults to ValidationStringency.STRICT.
    * @return Returns a VariantContextRDD.
@@ -1019,7 +1017,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load variant context records from VCF indexed by tabix (tbi) into a VariantContextRDD.
    *
    * @param pathName The path name to load VCF variant context records from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported.
    * @param viewRegion ReferenceRegion we are filtering on.
    * @return Returns a VariantContextRDD.
    */
@@ -1034,7 +1032,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load variant context records from VCF indexed by tabix (tbi) into a VariantContextRDD.
    *
    * @param pathName The path name to load VCF variant context records from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported.
    * @param viewRegions Iterator of ReferenceRegions we are filtering on.
    * @param stringency The validation stringency to use when validating VCF format.
    *   Defaults to ValidationStringency.STRICT.
@@ -1064,8 +1062,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into a GenotypeRDD.
    *
-   * @param pathName The path name to load genotypes from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load genotypes from.
+   *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -1083,10 +1081,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val headers = loadHeaderLines(pathName)
 
     // load sequence info
-    val sd = loadAvroSequences(pathName)
+    val sd = loadAvroSequenceDictionary(pathName)
 
     // load avro record group dictionary and convert to samples
-    val samples = loadAvroSampleMetadata(pathName)
+    val samples = loadAvroSamples(pathName)
 
     GenotypeRDD(rdd, sd, samples, headers)
   }
@@ -1094,8 +1092,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into a VariantRDD.
    *
-   * @param pathName The path name to load variants from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load variants from.
+   *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -1108,7 +1106,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None): VariantRDD = {
 
     val rdd = loadParquet[Variant](pathName, optPredicate, optProjection)
-    val sd = loadAvroSequences(pathName)
+    val sd = loadAvroSequenceDictionary(pathName)
 
     // load header lines
     val headers = loadHeaderLines(pathName)
@@ -1120,7 +1118,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load nucleotide contig fragments from FASTA into a NucleotideContigFragmentRDD.
    *
    * @param pathName The path name to load nucleotide contig fragments from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported.
    * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
    * @return Returns a NucleotideContigFragmentRDD.
@@ -1157,8 +1155,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Fragments represent all of the reads from a single sequenced fragment as
    * a single object, which is a useful representation for some tasks.
    *
-   * @param pathName The path name to load unaligned alignment records from. Globs/directories are
-   *   not supported (todo: confirm).
+   * @param pathName The path name to load unaligned alignment records from.
+   *   Globs/directories are supported.
    * @return Returns a FragmentRDD containing the paired reads grouped by
    *   sequencing fragment.
    */
@@ -1184,9 +1182,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load features into a FeatureRDD and convert to a CoverageRDD.
    * Coverage is stored in the score field of Feature.
    *
-   * Loads files ending in .bed as BED6/12, .gff3 as GFF3, .gtf/.gff as
-   * GTF/GFF2, .narrow[pP]eak as NarrowPeak, and .interval_list as
-   * IntervalList. If none of these match, fall back to Parquet.
+   * Loads files ending in:
+   * * .bed/.bed.gz/.bed.bz2 as BED6/12 format,
+   * * .gff3/.gff3.gz/.gff3.bz2 as GFF3 format,
+   * * .gtf/.gtf.gz/.gtf.bz2/.gff/.gff.gz/.gff.bz2 as GTF/GFF2 format,
+   * * .narrow[pP]eak/.narrow[pP]eak.gz/.narrow[pP]eak.bz2 as NarrowPeak format, and
+   * * .interval_list/.interval_list.gz/.interval_list.bz2 as IntervalList format.
+   *
+   * If none of these match, fall back to Parquet + Avro.
    *
    * @see loadBed
    * @see loadGtf
@@ -1195,8 +1198,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @see loadIntervalList
    * @see loadParquetFeatures
    *
-   * @param pathName The path name to load features from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load features from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
    *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to use. For
@@ -1231,8 +1235,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load a path name in Parquet + Avro format into a FeatureRDD and convert to a CoverageRDD.
    * Coverage is stored in the score field of Feature.
    *
-   * @param pathName The path name to load features from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load features from.
+   *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @return Returns a FeatureRDD converted to a CoverageRDD.
@@ -1241,15 +1245,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optPredicate: Option[FilterPredicate] = None): CoverageRDD = {
 
-    val proj = Projection(FeatureField.contigName, FeatureField.start, FeatureField.end, FeatureField.score)
-    loadParquetFeatures(pathName, optPredicate = optPredicate, optProjection = Some(proj)).toCoverage
+    val coverageFields = Projection(FeatureField.contigName, FeatureField.start, FeatureField.end, FeatureField.score)
+    loadParquetFeatures(pathName, optPredicate = optPredicate, optProjection = Some(coverageFields)).toCoverage
   }
 
   /**
    * Load a path name in GFF3 format into a FeatureRDD.
    *
-   * @param pathName The path name to load features in GFF3 format from. Globs/directories are
-   *   not supported (todo: confirm).
+   * @param pathName The path name to load features in GFF3 format from.
+   *   Globs/directories are supported.
    * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
    *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to load. If
@@ -1271,15 +1275,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in GFF2/GTF format into a FeatureRDD.
+   * Load a path name in GTF/GFF2 format into a FeatureRDD.
    *
-   * @param pathName The path name to load features in GFF2/GTF format from. Globs/directories are
-   *   not supported (todo: confirm).
+   * @param pathName The path name to load features in GTF/GFF2 format from.
+   *   Globs/directories are supported.
    * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
    *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
-   * @param stringency The validation stringency to use when validating GFF2/GTF format.
+   * @param stringency The validation stringency to use when validating GTF/GFF2 format.
    *   Defaults to ValidationStringency.STRICT.
    * @return Returns a FeatureRDD.
    */
@@ -1298,8 +1302,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in BED6/12 format into a FeatureRDD.
    *
-   * @param pathName The path name to load features in BED6/12 format from. Globs/directories are
-   *   not supported (todo: confirm).
+   * @param pathName The path name to load features in BED6/12 format from.
+   *   Globs/directories are supported.
    * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
    *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to load. If
@@ -1323,8 +1327,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in NarrowPeak format into a FeatureRDD.
    *
-   * @param pathName The path name to load features in NarrowPeak format from. Globs/directories are
-   *   not supported (todo: confirm).
+   * @param pathName The path name to load features in NarrowPeak format from.
+   *   Globs/directories are supported.
    * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
    *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to load. If
@@ -1348,8 +1352,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in IntervalList format into a FeatureRDD.
    *
-   * @param pathName The path name to load features in IntervalList format from. Globs/directories are
-   *   not supported (todo: confirm).
+   * @param pathName The path name to load features in IntervalList format from.
+   *   Globs/directories are supported.
    * @param optMinPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating IntervalList format.
@@ -1373,8 +1377,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into a FeatureRDD.
    *
-   * @param pathName The path name to load features from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load features from.
+   *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -1386,7 +1390,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): FeatureRDD = {
 
-    val sd = loadAvroSequences(pathName)
+    val sd = loadAvroSequenceDictionary(pathName)
     val rdd = loadParquet[Feature](pathName, optPredicate, optProjection)
     FeatureRDD(rdd, sd)
   }
@@ -1394,8 +1398,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into a NucleotideContigFragmentRDD.
    *
-   * @param pathName The path name to load nucleotide contig fragments from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load nucleotide contig fragments from.
+   *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -1407,7 +1411,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): NucleotideContigFragmentRDD = {
 
-    val sd = loadAvroSequences(pathName)
+    val sd = loadAvroSequenceDictionary(pathName)
     val rdd = loadParquet[NucleotideContigFragment](pathName, optPredicate, optProjection)
     NucleotideContigFragmentRDD(rdd, sd)
   }
@@ -1415,8 +1419,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into a FragmentRDD.
    *
-   * @param pathName The path name to load fragments from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load fragments from.
+   *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -1429,10 +1433,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None): FragmentRDD = {
 
     // convert avro to sequence dictionary
-    val sd = loadAvroSequences(pathName)
+    val sd = loadAvroSequenceDictionary(pathName)
 
     // convert avro to sequence dictionary
-    val rgd = loadAvroReadGroupMetadata(pathName)
+    val rgd = loadAvroRecordGroupDictionary(pathName)
 
     // load fragment data from parquet
     val rdd = loadParquet[Fragment](pathName, optPredicate, optProjection)
@@ -1443,9 +1447,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load features into a FeatureRDD.
    *
-   * Loads files ending in .bed as BED6/12, .gff3 as GFF3, .gtf/.gff as
-   * GTF/GFF2, .narrow[pP]eak as NarrowPeak, and .interval_list as
-   * IntervalList. If none of these match, fall back to Parquet.
+   * Loads files ending in:
+   * * .bed/.bed.gz/.bed.bz2 as BED6/12 format,
+   * * .gff3/.gff3.gz/.gff3.bz2 as GFF3 format,
+   * * .gtf/.gtf.gz/.gtf.bz2/.gff/.gff.gz/.gff.bz2 as GTF/GFF2 format,
+   * * .narrow[pP]eak/.narrow[pP]eak.gz/.narrow[pP]eak.bz2 as NarrowPeak format, and
+   * * .interval_list/.interval_list.gz/.interval_list.bz2 as IntervalList format.
+   *
+   * If none of these match, fall back to Parquet + Avro.
    *
    * @see loadBed
    * @see loadGtf
@@ -1454,8 +1463,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @see loadIntervalList
    * @see loadParquetFeatures
    *
-   * @param pathName The path name to load features from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load features from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param optStorageLevel Optional storage level to use for cache before building the SequenceDictionary.
    *   Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to use. For
@@ -1477,33 +1487,31 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadFeatures.time {
 
-    if (pathName.endsWith(".bed")) {
+    if (isBedExt(pathName)) {
       log.info(s"Loading $pathName as BED and converting to features.")
       loadBed(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
-    } else if (pathName.endsWith(".gff3")) {
+    } else if (isGff3Ext(pathName)) {
       log.info(s"Loading $pathName as GFF3 and converting to features.")
       loadGff3(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
-    } else if (pathName.endsWith(".gtf") ||
-      pathName.endsWith(".gff")) {
+    } else if (isGtfExt(pathName)) {
       log.info(s"Loading $pathName as GTF/GFF2 and converting to features.")
       loadGtf(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
-    } else if (pathName.endsWith(".narrowPeak") ||
-      pathName.endsWith(".narrowpeak")) {
+    } else if (isNarrowPeakExt(pathName)) {
       log.info(s"Loading $pathName as NarrowPeak and converting to features.")
       loadNarrowPeak(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
-    } else if (pathName.endsWith(".interval_list")) {
+    } else if (isIntervalListExt(pathName)) {
       log.info(s"Loading $pathName as IntervalList and converting to features.")
       loadIntervalList(pathName,
         optMinPartitions = optMinPartitions,
@@ -1519,10 +1527,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load reference sequences into a broadcastable ReferenceFile.
    *
-   * If the file type is 2bit, loads a 2bit file. Else, uses loadSequences
+   * If the file type is 2bit, loads a 2bit file. Else, uses loadContigFragments
    * to load the reference as an RDD, which is then collected to the driver.
    *
-   * @see loadSequences
+   * @see loadContigFragments
    *
    * @param pathName The path name to load reference sequences from. Globs/directories are
    *   not supported.
@@ -1534,24 +1542,25 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     maximumFragmentLength: Long): ReferenceFile = {
 
-    if (pathName.endsWith(".2bit")) {
+    if (is2BitExt(pathName)) {
       new TwoBitFile(new LocalFileByteAccess(new File(pathName)))
     } else {
-      ReferenceContigMap(loadSequences(pathName, maximumFragmentLength = maximumFragmentLength).rdd)
+      ReferenceContigMap(loadContigFragments(pathName, maximumFragmentLength = maximumFragmentLength).rdd)
     }
   }
 
   /**
    * Load nucleotide contig fragments into a NucleotideContigFragmentRDD.
    *
-   * If the path name has a .fa/.fasta/.fa.gz/.fasta.gz extension, load as FASTA format.
-   * Else, fall back to Parquet + Avro.
+   * If the path name has a .fa/.fa.gz/.fa.bz2/.fasta/.fasta.gz/.fasta.bz2 extension,
+   * load as FASTA format. Else, fall back to Parquet + Avro.
    *
    * @see loadFasta
    * @see loadParquetContigFragments
    *
-   * @param pathName The path name to load nucleotide contig fragments from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load nucleotide contig fragments from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
    * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
@@ -1560,16 +1569,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @return Returns a NucleotideContigFragmentRDD.
    */
-  def loadSequences(
+  def loadContigFragments(
     pathName: String,
     maximumFragmentLength: Long = 10000L,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): NucleotideContigFragmentRDD = {
 
-    if (pathName.endsWith(".fa") ||
-      pathName.endsWith(".fasta") ||
-      pathName.endsWith(".fa.gz") ||
-      pathName.endsWith(".fasta.gz")) {
+    if (isFastaExt(pathName)) {
       log.info(s"Loading $pathName as FASTA and converting to NucleotideContigFragment.")
       loadFasta(
         pathName,
@@ -1581,13 +1587,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  private def isVcfExt(pathName: String): Boolean = {
-    pathName.endsWith(".vcf") ||
-      pathName.endsWith(".vcf.gz") ||
-      pathName.endsWith(".vcf.bgzf") ||
-      pathName.endsWith(".vcf.bgz")
-  }
-
   /**
    * Load genotypes into a GenotypeRDD.
    *
@@ -1597,8 +1596,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @see loadVcf
    * @see loadParquetGenotypes
    *
-   * @param pathName The path name to load genotypes from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load genotypes from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for VCF format.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -1631,8 +1631,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @see loadVcf
    * @see loadParquetVariants
    *
-   * @param pathName The path name to load variants from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load variants from.
+   *   Globs/directories are supported, although file extension must be present for VCF format.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -1662,7 +1662,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * This method can load:
    *
    * * AlignmentRecords via Parquet (default)
-   * * SAM/BAM/CRAM (.sam, .bam, .cram)
+   * * BAM/CRAM/SAM (.bam, .cram, .sam)
    * * FASTQ (interleaved, single end, paired end) (.ifq, .fq/.fastq)
    * * FASTA (.fa, .fasta)
    *
@@ -1675,7 +1675,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @see loadParquetAlignments
    *
    * @param pathName The path name to load alignment records from.
-   *   Globs/directories are not supported (todo: confirm).
+   *   Globs/directories are supported, although file extension must be present
+   *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
    * @param optPathName2 The optional path name to load the second set of alignment
    *   records from, if loading paired FASTQ format. Globs/directories are not supported (todo: confirm).
    *   Defaults to None.
@@ -1685,7 +1686,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
-   * @param stringency The validation stringency to use when validating SAM/BAM/CRAM or FASTQ formats.
+   * @param stringency The validation stringency to use when validating BAM/CRAM/SAM or FASTQ formats.
    *   Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
@@ -1699,20 +1700,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadAlignmentRecords.time {
 
-    if (pathName.endsWith(".sam") ||
-      pathName.endsWith(".bam") ||
-      pathName.endsWith(".cram")) {
-      log.info(s"Loading $pathName as SAM/BAM/CRAM and converting to AlignmentRecords.")
+    if (isBamExt(pathName)) {
+      log.info(s"Loading $pathName as BAM/CRAM/SAM and converting to AlignmentRecords.")
       loadBam(pathName, stringency)
-    } else if (pathName.endsWith(".ifq")) {
+    } else if (isInterleavedFastqExt(pathName)) {
       log.info(s"Loading $pathName as interleaved FASTQ and converting to AlignmentRecords.")
       loadInterleavedFastq(pathName)
-    } else if (pathName.endsWith(".fq") ||
-      pathName.endsWith(".fastq")) {
+    } else if (isFastqExt(pathName)) {
       log.info(s"Loading $pathName as unpaired FASTQ and converting to AlignmentRecords.")
       loadFastq(pathName, optPathName2, optRecordGroup, stringency)
-    } else if (pathName.endsWith(".fa") ||
-      pathName.endsWith(".fasta")) {
+    } else if (isFastaExt(pathName)) {
       log.info(s"Loading $pathName as FASTA and converting to AlignmentRecords.")
       AlignmentRecordRDD.unaligned(loadFasta(pathName, maximumFragmentLength = 10000L).toReads)
     } else {
@@ -1727,16 +1724,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * This method can load:
    *
    * * Fragments via Parquet (default)
+<<<<<<< HEAD
    * * SAM/BAM/CRAM (.sam, .bam, .cram)
    * * FASTQ (interleaved only, .ifq)
+=======
+   * * BAM/CRAM/SAM (.bam, .cram, .sam)
+   * * FASTQ (interleaved only --> .ifq)
+   * * Autodetects AlignmentRecord as Parquet with .reads.adam extension.
+>>>>>>> 579126af... Add FileExtensions, confirm pathName doc strings
    *
    * @see loadBam
    * @see loadAlignments
    * @see loadInterleavedFastqAsFragments
    * @see loadParquetFragments
    *
-   * @param pathName The path name to load fragments from. Globs/directories are
-   *   supported (todo: confirm).
+   * @param pathName The path name to load fragments from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for BAM/CRAM/SAM and FASTQ formats.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -1748,24 +1752,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): FragmentRDD = LoadFragments.time {
 
-    if (pathName.endsWith(".sam") ||
-      pathName.endsWith(".bam") ||
-      pathName.endsWith(".cram")) {
-
+    if (isBamExt(pathName)) {
       // check to see if the input files are all queryname sorted
       if (filesAreQuerynameSorted(pathName)) {
-        log.info(s"Loading $pathName as queryname sorted SAM/BAM and converting to Fragments.")
+        log.info(s"Loading $pathName as queryname sorted BAM/CRAM/SAM and converting to Fragments.")
         loadBam(pathName).transform(RepairPartitions(_))
           .querynameSortedToFragments
       } else {
-        log.info(s"Loading $pathName as SAM/BAM and converting to Fragments.")
+        log.info(s"Loading $pathName as BAM/CRAM/SAM and converting to Fragments.")
         loadBam(pathName).toFragments
       }
-    } else if (pathName.endsWith(".ifq")) {
-      log.info(s"Loading $filePath as interleaved FASTQ and converting to Fragments.")
+    } else if (isInterleavedFastqExt(pathName)) {
+      log.info(s"Loading $pathName as interleaved FASTQ and converting to Fragments.")
       loadInterleavedFastqAsFragments(pathName)
     } else {
-      log.info(s"Loading $filePath as Parquet containing Fragments.")
+      log.info(s"Loading $pathName as Parquet containing Fragments.")
       loadParquetFragments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
   }

@@ -52,15 +52,15 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Loads in sequence fragments.
+   * Loads in nucleotide contig fragments.
    *
    * Can load from FASTA or from Parquet encoded NucleotideContigFragments.
    *
    * @param pathName Path to load the file from.
    * @return Returns a NucleotideContigFragment RDD.
    */
-  def loadSequences(pathName: java.lang.String): NucleotideContigFragmentRDD = {
-    ac.loadSequences(pathName)
+  def loadContigFragments(pathName: java.lang.String): NucleotideContigFragmentRDD = {
+    ac.loadContigFragments(pathName)
   }
 
   /**
@@ -84,7 +84,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Loads in a coverage file. This method can load BED, NarrowPeak, GFF3, GTF/GFF2, IntervalList and ADAM files.
+   * Loads in a coverage file. This method can load BED6/12, NarrowPeak, GFF3, GTF/GFF2, IntervalList and ADAM files.
    *
    * @param pathName Path to load the file from.
    * @return Returns a Coverage RDD.

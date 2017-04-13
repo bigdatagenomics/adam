@@ -50,7 +50,7 @@ class ADAM2Fasta(val args: ADAM2FastaArgs) extends BDGSparkCommand[ADAM2FastaArg
   override def run(sc: SparkContext): Unit = {
 
     log.info("Loading ADAM nucleotide contig fragments from disk.")
-    val contigFragments = sc.loadSequences(args.inputPath)
+    val contigFragments = sc.loadContigFragments(args.inputPath)
 
     log.info("Merging fragments and writing FASTA to disk.")
     val contigs = contigFragments.mergeFragments()

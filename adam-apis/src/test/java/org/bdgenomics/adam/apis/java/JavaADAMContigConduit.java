@@ -38,6 +38,6 @@ final class JavaADAMContigConduit {
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(ac);
-        return jac.loadSequences(fileName);
+        return jac.loadContigFragments(fileName);
     }
 }

@@ -49,7 +49,7 @@ class CountContigKmers(protected val args: CountContigKmersArgs) extends BDGSpar
   def run(sc: SparkContext) {
 
     // read from disk
-    val fragments = sc.loadSequences(args.inputPath)
+    val fragments = sc.loadContigFragments(args.inputPath)
 
     // count kmers
     val countedKmers = fragments.countKmers(args.kmerLength)

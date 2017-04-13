@@ -39,7 +39,7 @@ class JavaADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can read and write a small FASTA file") {
     val path = copyResource("chr20.250k.fa.gz")
-    val aRdd = sc.loadSequences(path)
+    val aRdd = sc.loadContigFragments(path)
     assert(aRdd.jrdd.count() === 26)
 
     val newRdd = JavaADAMContigConduit.conduit(aRdd, sc)
