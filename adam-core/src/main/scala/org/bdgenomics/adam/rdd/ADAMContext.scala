@@ -1724,14 +1724,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * This method can load:
    *
    * * Fragments via Parquet (default)
-<<<<<<< HEAD
-   * * SAM/BAM/CRAM (.sam, .bam, .cram)
-   * * FASTQ (interleaved only, .ifq)
-=======
    * * BAM/CRAM/SAM (.bam, .cram, .sam)
    * * FASTQ (interleaved only --> .ifq)
    * * Autodetects AlignmentRecord as Parquet with .reads.adam extension.
->>>>>>> 579126af... Add FileExtensions, confirm pathName doc strings
    *
    * @see loadBam
    * @see loadAlignments
