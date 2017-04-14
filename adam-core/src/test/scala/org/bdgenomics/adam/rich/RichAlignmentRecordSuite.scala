@@ -43,64 +43,12 @@ class RichAlignmentRecordSuite extends FunSuite {
     assert(recordWithHardClipping.unclippedEnd == 20L)
   }
 
-  test("Cigar Clipping Sequence") {
-    val contig = Contig.newBuilder.setContigName("chr1").build
-    val softClippedRead = AlignmentRecord.newBuilder().setReadMapped(true).setStart(100).setCigar("10S90M").setContigName(contig.getContigName).build()
-    assert(softClippedRead.referencePositions(0).map(_.pos) == Some(90L))
-
-  }
-
   test("tags contains optional fields") {
     val contig = Contig.newBuilder.setContigName("chr1").build
     val rec = AlignmentRecord.newBuilder().setAttributes("XX:i:3\tYY:Z:foo").setContigName(contig.getContigName).build()
     assert(rec.tags.size === 2)
     assert(rec.tags(0) === Attribute("XX", TagType.Integer, 3))
     assert(rec.tags(1) === Attribute("YY", TagType.String, "foo"))
-  }
-
-  test("Reference Positions") {
-
-    val contig = Contig.newBuilder.setContigName("chr1").build
-
-    val hardClippedRead = AlignmentRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("90M10H").setContigName(contig.getContigName).build()
-    assert(hardClippedRead.referencePositions.length == 90)
-    assert(hardClippedRead.referencePositions(0).map(_.pos) == Some(1000L))
-
-    val softClippedRead = AlignmentRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10S90M").setContigName(contig.getContigName).build()
-    assert(softClippedRead.referencePositions.length == 100)
-    assert(softClippedRead.referencePositions(0).map(_.pos) == Some(990L))
-    assert(softClippedRead.referencePositions(10).map(_.pos) == Some(1000L))
-
-    val doubleMatchNonsenseRead = AlignmentRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M10M").setContigName(contig.getContigName).build()
-    Range(0, 20).foreach(i => assert(doubleMatchNonsenseRead.referencePositions(i).map(_.pos) == Some(1000 + i)))
-
-    val deletionRead = AlignmentRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("5M5D10M").setContigName(contig.getContigName).build()
-    assert(deletionRead.referencePositions.length == 15)
-    assert(deletionRead.referencePositions(0).map(_.pos) == Some(1000L))
-    assert(deletionRead.referencePositions(5).map(_.pos) == Some(1010L))
-
-    val insertionRead = AlignmentRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M2I10M").setContigName(contig.getContigName).build()
-    assert(insertionRead.referencePositions.length == 22)
-    assert(insertionRead.referencePositions(0).map(_.pos) == Some(1000L))
-    assert(insertionRead.referencePositions(10).map(_.pos) == None)
-    assert(insertionRead.referencePositions(12).map(_.pos) == Some(1010L))
-
-    val indelRead = AlignmentRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("10M3D10M2I").setContigName(contig.getContigName).build()
-    assert(indelRead.referencePositions.length == 22)
-    assert(indelRead.referencePositions(0).map(_.pos) == Some(1000L))
-    assert(indelRead.referencePositions(10).map(_.pos) == Some(1013L))
-    assert(indelRead.referencePositions(20).map(_.pos) == None)
-
-    val hg00096read = AlignmentRecord.newBuilder().setReadMapped(true).setStart(1000).setCigar("1S28M1D32M1I15M1D23M").setContigName(contig.getContigName).build()
-    assert(hg00096read.referencePositions.length == 100)
-    assert(hg00096read.referencePositions(0).map(_.pos) == Some(999L))
-    assert(hg00096read.referencePositions(1).map(_.pos) == Some(1000L))
-    assert(hg00096read.referencePositions(29).map(_.pos) == Some(1029L))
-    assert(hg00096read.referencePositions(61).map(_.pos) == None)
-    assert(hg00096read.referencePositions(62).map(_.pos) == Some(1061L))
-    assert(hg00096read.referencePositions(78).map(_.pos) == Some(1078L))
-    assert(hg00096read.referencePositions(99).map(_.pos) == Some(1099L))
-
   }
 
   test("read overlap unmapped read") {

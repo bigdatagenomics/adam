@@ -51,6 +51,10 @@ private[adam] case class VariantArray(
     array: Array[(ReferenceRegion, Variant)],
     maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, Variant] {
 
+  def duplicate(): IntervalArray[ReferenceRegion, Variant] = {
+    copy()
+  }
+
   protected def replace(arr: Array[(ReferenceRegion, Variant)],
                         maxWidth: Long): IntervalArray[ReferenceRegion, Variant] = {
     VariantArray(arr, maxWidth)

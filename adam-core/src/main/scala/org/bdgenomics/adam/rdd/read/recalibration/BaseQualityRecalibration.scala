@@ -17,115 +17,336 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import htsjdk.samtools.ValidationStringency
-import java.io._
-import org.bdgenomics.utils.misc.Logging
+import htsjdk.samtools.{
+  CigarElement,
+  CigarOperator,
+  TextCigarCodec,
+  ValidationStringency
+}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ QualityScore, SnpTable }
-import org.bdgenomics.adam.rich.DecadentRead
-import org.bdgenomics.adam.rich.DecadentRead._
+import org.apache.spark.storage.StorageLevel
+import org.bdgenomics.adam.models.{
+  MdTag,
+  RecordGroupDictionary,
+  ReferenceRegion,
+  SnpTable
+}
+import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.formats.avro.AlignmentRecord
+import org.bdgenomics.utils.misc.Logging
+import scala.annotation.tailrec
 
 /**
  * The algorithm proceeds in two phases. First, we make a pass over the reads
  * to collect statistics and build the recalibration tables. Then, we perform
  * a second pass over the reads to apply the recalibration and assign adjusted
  * quality scores.
+ *
+ * @param input The reads to recalibrate.
+ * @param knownSnps A broadcast variable containing the locations of any known
+ *   SNPs to ignore during recalibration table generation.
+ * @param recordGroups The record groups that the reads in this dataset are from.
+ * @param minAcceptableAsciiPhred The minimum acceptable Phred score to attempt
+ *   recalibrating, expressed as an ASCII character with Illumina (33) encodings.
+ *   Defaults to '&' (Phred 5).
+ * @param optStorageLevel An optional storage level to apply if caching the
+ *   output of the first stage of BQSR.
  */
 private class BaseQualityRecalibration(
-  val input: RDD[(Option[DecadentRead], Option[AlignmentRecord])],
+  val input: RDD[AlignmentRecord],
   val knownSnps: Broadcast[SnpTable],
-  val dumpObservationTableFile: Option[String] = None)
+  val recordGroups: RecordGroupDictionary,
+  val minAcceptableAsciiPhred: Char = (5 + 33).toChar,
+  val optStorageLevel: Option[StorageLevel] = None)
     extends Serializable with Logging {
 
-  // Additional covariates to use when computing the correction
-  // TODO: parameterize
-  val covariates = CovariateSpace(new CycleCovariate, new DinucCovariate)
+  /**
+   * An RDD representing the input reads along with any error covariates that
+   * the bases in the read map to.
+   */
+  val dataset: RDD[(AlignmentRecord, Array[CovariateKey])] = {
+    val covRdd = input.map(read => {
+      val covariates = if (BaseQualityRecalibration.shouldIncludeRead(read)) {
+        BaseQualityRecalibration.observe(read, knownSnps, recordGroups)
+      } else {
+        Array.empty[CovariateKey]
+      }
+      (read, covariates)
+    })
 
-  // Bases with quality less than this will be skipped and left alone
-  // TODO: parameterize
-  val minAcceptableQuality = QualityScore(5)
-
-  // Debug: Log the visited/skipped residues to bqsr-visits.dump
-  val enableVisitLogging = false
-
-  val dataset: RDD[(CovariateKey, Residue)] = {
-    def shouldIncludeRead(read: DecadentRead) =
-      read.isCanonicalRecord &&
-        read.record.record.getQual != null &&
-        read.alignmentQuality.exists(_ > QualityScore.zero) &&
-        read.passedQualityChecks
-
-    def shouldIncludeResidue(residue: Residue) =
-      residue.quality > QualityScore.zero &&
-        residue.isRegularBase &&
-        !residue.isInsertion &&
-        !knownSnps.value.isMasked(residue)
-
-    def observe(read: DecadentRead): Seq[(CovariateKey, Residue)] =
-      covariates(read).zip(read.residues).
-        filter { case (key, residue) => shouldIncludeResidue(residue) }
-
-    input.flatMap(_._1).filter(shouldIncludeRead).flatMap(observe)
+    optStorageLevel.fold(covRdd)(sl => {
+      log.info("User requested %s persistance for covariate RDD.".format(sl))
+      covRdd.persist(sl)
+    })
   }
 
-  if (enableVisitLogging) {
-    input.cache()
-    dataset.cache()
-    dumpVisits("bqsr-visits.dump")
-  }
-
+  /**
+   * A table containing the error frequency observations for the given reads.
+   */
   val observed: ObservationTable = {
-    dataset.
-      map { case (key, residue) => (key, Observation(residue.isSNP)) }.
-      aggregate(ObservationAccumulator(covariates))(_ += _, _ ++= _).result
+    val observations = dataset.flatMap(p => p._2).flatMap(cov => {
+      if (cov.shouldInclude) {
+        Some((cov.toDefault, Observation(cov.isMismatch)))
+      } else {
+        None
+      }
+    }).reduceByKeyLocally(_ + _)
+    new ObservationTable(observations)
   }
 
-  dumpObservationTableFile.foreach(p => {
-    val writer = new PrintWriter(new File(p))
-
-    writer.write(observed.toCSV)
-    writer.close()
-  })
-
+  /**
+   * The input reads but with the quality scores of the reads replaced with
+   * the quality scores given by the observation table.
+   */
   val result: RDD[AlignmentRecord] = {
-    val recalibrator = Recalibrator(observed, minAcceptableQuality)
-    input.map(recalibrator(_))
-  }
-
-  private def dumpVisits(filename: String) = {
-    def readId(read: DecadentRead): String =
-      read.name +
-        (if (read.isNegativeRead) "-" else "+") +
-        (if (read.record.getReadInFragment == 0) "1" else "") +
-        (if (read.record.getReadInFragment == 1) "2" else "")
-
-    val readLengths =
-      input.flatMap(_._1).map(read => (readId(read), read.residues.length)).collectAsMap()
-
-    val visited = dataset.
-      map { case (key, residue) => (readId(residue.read), Seq(residue.offset)) }.
-      reduceByKeyLocally((left, right) => left ++ right)
-
-    val outf = new java.io.File(filename)
-    val writer = new java.io.PrintWriter(outf)
-    visited.foreach {
-      case (readName, visited) =>
-        val length = readLengths(readName)
-        val buf = Array.fill[Char](length)('O')
-        visited.foreach { idx => buf(idx) = 'X' }
-        writer.println(readName + "\t" + String.valueOf(buf))
-    }
-    writer.close()
+    val recalibrator = Recalibrator(observed, minAcceptableAsciiPhred)
+    dataset.map(p => recalibrator(p._1, p._2))
   }
 }
 
 private[read] object BaseQualityRecalibration {
+
+  /**
+   * @param read The read to check to see if it is a proper quality read.
+   * @return We consider a read valid for use in generating the recalibration
+   *   table if it is a "proper" read. That is to say, it is the canonical read
+   *   (mapped as a primary alignment with non-zero mapQ and not marked as a
+   *   duplicate), it did not fail vendor checks, and the quality and CIGAR
+   *   are defined.
+   */
+  private def shouldIncludeRead(read: AlignmentRecord) = {
+    (read.getReadMapped && read.getPrimaryAlignment && !read.getDuplicateRead) &&
+      read.getQual != null &&
+      (read.getMapq != null && read.getMapq > 0) &&
+      (read.getCigar != null && read.getCigar != "*") &&
+      !read.getFailedVendorQualityChecks
+  }
+
+  /**
+   * @param read The read to generate residue inclusion/mismatch flags for.
+   * @param maskedSites The set of positions overlapped by this read that
+   *   contain known SNPs. This is the product of a join-like operation.
+   * @return Returns two arrays that have the length of the read. The first
+   *   array contains true at an index if the base at this index should be
+   *   included in recalibration (non-zero quality, not in INDEL, not an N,
+   *   not masked) and the second array contains true if the base is not a
+   *   mismatch.
+   */
+  private def computeResiduesToInclude(read: AlignmentRecord,
+                                       maskedSites: Set[Long]): (Array[Boolean], Array[Boolean]) = {
+    val readSequence = read.getSequence.toArray
+    val readQualities = read.getQual.toArray
+    val shouldInclude = new Array[Boolean](readSequence.length)
+    val isMismatch = new Array[Boolean](readSequence.length)
+    val readCigar = TextCigarCodec.decode(read.getCigar)
+    val readCigarIterator = readCigar.iterator
+    val firstCigarElement = readCigarIterator.next
+
+    @tailrec def shouldIncludeResidue(shouldInclude: Array[Boolean],
+                                      isMismatch: Array[Boolean],
+                                      currentPos: Long,
+                                      readSequence: Array[Char],
+                                      readQualities: Array[Char],
+                                      readCigar: java.util.Iterator[CigarElement],
+                                      currentCigarElem: CigarElement,
+                                      optMd: Option[MdTag],
+                                      maskedSites: Set[Long],
+                                      cigarIdx: Int,
+                                      baseIdx: Int) {
+      if (baseIdx < readSequence.length) {
+        val currentCigarOp = currentCigarElem.getOperator
+        val (newPos,
+          newCigarElem,
+          newCigarIdx,
+          newBaseIdx) = if (currentCigarOp == CigarOperator.H) {
+          // we must either be at the start or the end of the read
+          // if we are at the end, we will have exited the loop already
+          // so just check to make sure we're at base 0
+          assert(baseIdx == 0)
+          (currentPos, readCigar.next, 0, 0)
+        } else if (currentCigarOp == CigarOperator.N ||
+          currentCigarOp == CigarOperator.D) {
+          (currentPos + currentCigarElem.getLength,
+            readCigar.next,
+            0,
+            baseIdx)
+        } else if (currentCigarOp == CigarOperator.I ||
+          currentCigarOp == CigarOperator.S) {
+
+          // soft clip at start needs "unclipped start pos"
+          val pos = if (currentCigarOp == CigarOperator.S &&
+            baseIdx == 0) {
+            currentPos - currentCigarElem.getLength
+          } else {
+            currentPos
+          }
+
+          // set all the overlaping bases to be ignored
+          val opLength = currentCigarElem.getLength
+          var localIdx = baseIdx
+          val baseIdxEnd = baseIdx + opLength - 1
+          while (localIdx < baseIdxEnd) {
+            shouldInclude(localIdx) = false
+            isMismatch(localIdx) = false
+            localIdx += 1
+          }
+
+          // if we have an insertion, we have already advanced
+          // the start position in the match preceding the insertion
+          // if we have a soft clip, we have no need to advance the
+          // start position, since a soft clip implies that this base
+          // is not part of the local alignment
+          if (readCigar.hasNext) {
+            (currentPos, readCigar.next, 0, baseIdxEnd + 1)
+          } else {
+            // we cannot pop off the next cigar element when we are at the
+            // end of the read, so fake it
+            assert(baseIdxEnd >= readSequence.length - 1, baseIdxEnd)
+            (currentPos, currentCigarElem, 0, baseIdxEnd + 1)
+          }
+        } else {
+          shouldInclude(baseIdx) = ((readSequence(baseIdx) != 'N') &&
+            !maskedSites(currentPos) &&
+            readQualities(baseIdx) > '!')
+          isMismatch(baseIdx) = currentCigarOp match {
+            case CigarOperator.X => true
+            case CigarOperator.M => {
+              // TODO: allow user to broadcast a ReferenceFile
+              require(optMd.isDefined,
+                "Cigar M was seen for read with undefined MD tag.")
+              !optMd.get.isMatch(currentPos)
+            }
+            case _ => {
+              // we fall through to this case IFF we see a Cigar =
+              // however, the compiler can't check this since we
+              // if/else out of the non-X/M cases above (DHSIN, disregard P)
+              // so, we treat it as a case _
+              false
+            }
+          }
+
+          // are we at the end of this cigar block? if so, grab a new operator
+          val (nextCigarElem,
+            nextCigarIdx) = if (cigarIdx == currentCigarElem.getLength - 1) {
+            if (readCigar.hasNext) {
+              (readCigar.next, 0)
+            } else {
+              // we cannot pop off the next cigar element when we are at the
+              // end of the read, so fake it
+              assert(baseIdx >= readSequence.length - 1, baseIdx.toString)
+              (currentCigarElem, cigarIdx + 1)
+            }
+          } else {
+            (currentCigarElem, cigarIdx + 1)
+          }
+
+          (currentPos + 1L,
+            nextCigarElem,
+            nextCigarIdx,
+            baseIdx + 1)
+        }
+
+        // call recursively
+        shouldIncludeResidue(shouldInclude,
+          isMismatch,
+          newPos,
+          readSequence,
+          readQualities,
+          readCigar,
+          newCigarElem,
+          optMd,
+          maskedSites,
+          newCigarIdx,
+          newBaseIdx)
+      }
+    }
+
+    shouldIncludeResidue(shouldInclude, isMismatch,
+      read.getStart,
+      readSequence,
+      readQualities,
+      readCigarIterator,
+      firstCigarElement,
+      Option(read.getMismatchingPositions)
+        .map(MdTag(_, read.getStart, readCigar)),
+      maskedSites,
+      0, 0)
+    (shouldInclude, isMismatch)
+  }
+
+  /**
+   * Observes the error covariates contained in a read.
+   *
+   * @param read The read to observe.
+   * @param recordGroups A record group dictionary containing the read group
+   *   this read is from.
+   * @param maskedSites The known SNP loci that this read covers.
+   * @return Returns an array of CovariateKeys that describe the per-base
+   *   error covariates seen in this read.
+   *
+   * @note This method was split out from the other observe method to make it
+   *   simpler to write unit tests for this package. Similarly, that is why
+   *   this method is package private, while the other is private.
+   */
+  private[recalibration] def observe(
+    read: AlignmentRecord,
+    recordGroups: RecordGroupDictionary,
+    maskedSites: Set[Long] = Set.empty): Array[CovariateKey] = ObservingRead.time {
+    val (toInclude, isMismatch) = ReadResidues.time {
+      computeResiduesToInclude(read, maskedSites)
+    }
+    ReadCovariates.time {
+      CovariateSpace(read,
+        toInclude,
+        isMismatch,
+        recordGroups)
+    }
+  }
+
+  /**
+   * Observes the error covariates contained in a read.
+   *
+   * @param read The read to observe.
+   * @param knownSnps A broadcast variable containing all known SNP loci to mask.
+   * @param recordGroups A record group dictionary containing the read group
+   *   this read is from.
+   * @return Returns an array of CovariateKeys that describe the per-base
+   *   error covariates seen in this read.
+   */
+  private def observe(
+    read: AlignmentRecord,
+    knownSnps: Broadcast[SnpTable],
+    recordGroups: RecordGroupDictionary): Array[CovariateKey] = ObservingRead.time {
+    val maskedSites = knownSnps.value
+      .maskedSites(ReferenceRegion.unstranded(read))
+    observe(read, recordGroups, maskedSites)
+  }
+
+  /**
+   * Runs base quality score recalibration.
+   *
+   * @param rdd The reads to recalibrate.
+   * @param knownSnps A broadcast table of known variation to mask during the
+   *   recalibration process.
+   * @param recordGroups The read groups that generated these reads.
+   * @param minAcceptableQuality The minimum quality score to attempt to
+   *   recalibrate.
+   * @param optStorageLevel An optional storage level to apply if caching the
+   *   output of the first stage of BQSR.
+   */
   def apply(
     rdd: RDD[AlignmentRecord],
     knownSnps: Broadcast[SnpTable],
-    observationDumpFile: Option[String] = None,
-    validationStringency: ValidationStringency = ValidationStringency.STRICT): RDD[AlignmentRecord] =
-    new BaseQualityRecalibration(cloy(rdd, validationStringency), knownSnps).result
+    recordGroups: RecordGroupDictionary,
+    minAcceptableQuality: Int,
+    optStorageLevel: Option[StorageLevel]): RDD[AlignmentRecord] = {
+    require(minAcceptableQuality >= 0 && minAcceptableQuality < 93,
+      "MinAcceptableQuality (%d) must be positive and less than 93.")
+    new BaseQualityRecalibration(rdd,
+      knownSnps,
+      recordGroups,
+      (minAcceptableQuality + 33).toChar,
+      optStorageLevel).result
+  }
 }

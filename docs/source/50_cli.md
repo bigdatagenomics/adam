@@ -150,8 +150,6 @@ options fall into several general categories:
       sites are treated as correct observations. If BQSR is run, this option
       should be passed, along with a path to a known variation database (e.g.,
       [dbSNP](https://www.ncbi.nlm.nih.gov/projects/SNP/)). {#known-snps}
-    * `-dump_observations`: If provided, a path to dump the recalibration table
-      in CSV format.
 * Indel realignment options: Indel realignment is run with the `-realign_indels`
   flag. Additionally, the Indel realignment engine takes the following options:
     * `-known_indels`: Path to a VCF file/Parquet variant file containing known
@@ -167,6 +165,15 @@ options fall into several general categories:
     * `-max_target_size`: The maximum length of a target to realign. Targets
       longer than this size are dropped before trying to realign. Defaults to
       3,000bp.
+    * `-max_reads_per_target`: The maximum number of reads in a target that
+      we will try to realign. By default, this value is 20,000 reads. If we
+      encounter a target with more than this number of reads, we skip realigning
+      this target.
+    * `-reference`: An optional path to a reference genome assembly build. If this
+      is not provided, then we attempt to reconstruct the reference at each target
+      from the MD tags on each read.
+    * `-unclip_reads`: If provided, we will unclip reads when attempting to realign
+      them to the reference. If not provided, we leave clipped reads clipped.
     * `-log_odds_threshold`: The log odds threshold to use for picking a
       consensus sequence to finalize realignments against. A consensus will not
       be realigned against unless the Phred weighted edit distance against the

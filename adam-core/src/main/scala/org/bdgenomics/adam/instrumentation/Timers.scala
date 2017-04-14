@@ -49,13 +49,24 @@ object Timers extends Metrics {
 
   // Recalibrate Base Qualities
   val BQSRInDriver = timer("Base Quality Recalibration")
-  val CreateKnownSnpsTable = timer("Create Known SNPs Table")
+  val CreatingKnownSnpsTable = timer("Creating Known SNPs Table")
+  val CollectingSnps = timer("Collecting SNPs")
+  val BroadcastingKnownSnps = timer("Broadcasting known SNPs")
   val ComputeCovariates = timer("Compute Covariates")
+  val ObservingRead = timer("Observing covariates per read")
+  val ReadCovariates = timer("Computing covariates per read base")
+  val ComputingDinucCovariate = timer("Computing dinuc covariate")
+  val ComputingCycleCovariate = timer("Computing cycle covariate")
+  val ReadResidues = timer("Splitting read into residues")
+  val CheckingForMask = timer("Checking if residue is masked")
   val ObservationAccumulatorComb = timer("Observation Accumulator: comb")
   val ObservationAccumulatorSeq = timer("Observation Accumulator: seq")
   val RecalibrateRead = timer("Recalibrate Read")
   val ComputeQualityScore = timer("Compute Quality Score")
   val GetExtraValues = timer("Get Extra Values")
+  val CreatingRecalibrationTable = timer("Creating recalibration table")
+  val InvertingRecalibrationTable = timer("Inverting recalibration table")
+  val QueryingRecalibrationTable = timer("Querying recalibration table")
 
   // Realign Indels
   val RealignIndelsInDriver = timer("Realign Indels")
@@ -66,7 +77,11 @@ object Timers extends Metrics {
   val MapTargets = timer("Map Targets")
   val RealignTargetGroup = timer("Realign Target Group")
   val GetReferenceFromReads = timer("Get Reference From Reads")
+  val GetReferenceFromFile = timer("Get Reference From File")
+  val ComputingOriginalScores = timer("Computing Original Mismatch Scores")
+  val SweepReadsOverConsensus = timer("Sweeping Reads Over A Single Consensus")
   val SweepReadOverReferenceForQuality = timer("Sweep Read Over Reference For Quality")
+  val FinalizingRealignments = timer("Finalizing Realignments")
 
   // Sort Reads
   val SortReads = timer("Sort Reads")

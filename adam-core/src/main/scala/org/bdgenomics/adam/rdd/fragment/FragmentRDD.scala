@@ -45,6 +45,10 @@ private[adam] case class FragmentArray(
     array: Array[(ReferenceRegion, Fragment)],
     maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, Fragment] {
 
+  def duplicate(): IntervalArray[ReferenceRegion, Fragment] = {
+    copy()
+  }
+
   protected def replace(arr: Array[(ReferenceRegion, Fragment)],
                         maxWidth: Long): IntervalArray[ReferenceRegion, Fragment] = {
     FragmentArray(arr, maxWidth)
@@ -65,7 +69,7 @@ private[adam] class FragmentArraySerializer extends IntervalArraySerializer[Refe
 /**
  * Helper singleton object for building FragmentRDDs.
  */
-private[rdd] object FragmentRDD {
+object FragmentRDD {
 
   /**
    * Creates a FragmentRDD where no record groups or sequence info are attached.
@@ -73,7 +77,7 @@ private[rdd] object FragmentRDD {
    * @param rdd RDD of fragments.
    * @return Returns a FragmentRDD with an empty record group dictionary and sequence dictionary.
    */
-  def fromRdd(rdd: RDD[Fragment]): FragmentRDD = {
+  private[rdd] def fromRdd(rdd: RDD[Fragment]): FragmentRDD = {
     FragmentRDD(rdd, SequenceDictionary.empty, RecordGroupDictionary.empty)
   }
 }

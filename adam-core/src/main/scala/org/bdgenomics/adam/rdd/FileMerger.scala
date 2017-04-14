@@ -23,13 +23,16 @@ import htsjdk.samtools.cram.common.CramVersions
 import java.io.{ InputStream, OutputStream }
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.spark.SparkContext
 import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 
 /**
  * Helper object to merge sharded files together.
+ *
+ * @see ParallelFileMerger
  */
-object FileMerger extends Logging {
+private[adam] object FileMerger extends Logging {
 
   /**
    * The config entry for the buffer size in bytes.
@@ -38,6 +41,9 @@ object FileMerger extends Logging {
 
   /**
    * Merges together sharded files, while preserving partition ordering.
+   *
+   * Automatically checks to see if the filesystem is HDFS, and if so, uses the
+   * parallel file merging implementation to concatenate files.
    *
    * @param fs The file system implementation to use.
    * @param outputPath The location to write the merged file at.
@@ -53,20 +59,34 @@ object FileMerger extends Logging {
    *
    * @see mergeFilesAcrossFilesystems
    */
-  private[adam] def mergeFiles(conf: Configuration,
-                               fs: FileSystem,
-                               outputPath: Path,
-                               tailPath: Path,
-                               optHeaderPath: Option[Path] = None,
-                               writeEmptyGzipBlock: Boolean = false,
-                               writeCramEOF: Boolean = false,
-                               optBufferSize: Option[Int] = None) {
-    mergeFilesAcrossFilesystems(conf,
-      fs, fs,
-      outputPath, tailPath, optHeaderPath = optHeaderPath,
-      writeEmptyGzipBlock = writeEmptyGzipBlock,
-      writeCramEOF = writeCramEOF,
-      optBufferSize = optBufferSize)
+  def mergeFiles(sc: SparkContext,
+                 fs: FileSystem,
+                 outputPath: Path,
+                 tailPath: Path,
+                 optHeaderPath: Option[Path] = None,
+                 writeEmptyGzipBlock: Boolean = false,
+                 writeCramEOF: Boolean = false,
+                 optBufferSize: Option[Int] = None) {
+
+    // if our file system is an hdfs mount, we can use the parallel merger
+    if (fs.getScheme == "hdfs") {
+      ParallelFileMerger.mergeFiles(sc,
+        outputPath,
+        tailPath,
+        optHeaderPath = optHeaderPath,
+        writeEmptyGzipBlock = writeEmptyGzipBlock,
+        writeCramEOF = writeCramEOF,
+        optBufferSize = optBufferSize)
+    } else {
+      mergeFilesAcrossFilesystems(sc.hadoopConfiguration,
+        fs, fs,
+        outputPath,
+        tailPath,
+        optHeaderPath = optHeaderPath,
+        writeEmptyGzipBlock = writeEmptyGzipBlock,
+        writeCramEOF = writeCramEOF,
+        optBufferSize = optBufferSize)
+    }
   }
 
   /**
@@ -87,15 +107,15 @@ object FileMerger extends Logging {
    *   not set, we check the config for this value. If that is not set, we
    *   default to 4MB.
    */
-  private[adam] def mergeFilesAcrossFilesystems(conf: Configuration,
-                                                fsIn: FileSystem,
-                                                fsOut: FileSystem,
-                                                outputPath: Path,
-                                                tailPath: Path,
-                                                optHeaderPath: Option[Path] = None,
-                                                writeEmptyGzipBlock: Boolean = false,
-                                                writeCramEOF: Boolean = false,
-                                                optBufferSize: Option[Int] = None) {
+  def mergeFilesAcrossFilesystems(conf: Configuration,
+                                  fsIn: FileSystem,
+                                  fsOut: FileSystem,
+                                  outputPath: Path,
+                                  tailPath: Path,
+                                  optHeaderPath: Option[Path] = None,
+                                  writeEmptyGzipBlock: Boolean = false,
+                                  writeCramEOF: Boolean = false,
+                                  optBufferSize: Option[Int] = None) {
 
     // check for buffer size in option, if not in option, check hadoop conf,
     // if not in hadoop conf, fall back on 4MB

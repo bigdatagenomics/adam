@@ -57,6 +57,10 @@ private[adam] case class VariantContextArray(
     array: Array[(ReferenceRegion, VariantContext)],
     maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, VariantContext] {
 
+  def duplicate(): IntervalArray[ReferenceRegion, VariantContext] = {
+    copy()
+  }
+
   protected def replace(arr: Array[(ReferenceRegion, VariantContext)],
                         maxWidth: Long): IntervalArray[ReferenceRegion, VariantContext] = {
     VariantContextArray(arr, maxWidth)
@@ -193,7 +197,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
       )
 
       // merge shards
-      FileMerger.mergeFiles(rdd.context.hadoopConfiguration,
+      FileMerger.mergeFiles(rdd.context,
         fs,
         new Path(filePath),
         new Path(tailPath),

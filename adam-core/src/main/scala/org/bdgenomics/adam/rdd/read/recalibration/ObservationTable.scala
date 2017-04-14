@@ -17,139 +17,35 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.models.QualityScore
-import scala.collection.mutable
+import org.bdgenomics.adam.models.RecordGroupDictionary
 
 /**
- * An empirical frequency count of mismatches from the reference.
+ * Table containing the empirical frequency of mismatches for each set of
+ * covariate values.
  *
- * This is used in ObservationTable, which maps from CovariateKey to Observation.
- */
-private[adam] class Observation(val total: Long, val mismatches: Long) extends Serializable {
-  require(mismatches >= 0 && mismatches <= total)
-
-  def this(that: Observation) = this(that.total, that.mismatches)
-
-  def +(that: Observation) =
-    new Observation(this.total + that.total, this.mismatches + that.mismatches)
-
-  /**
-   * Empirically estimated probability of a mismatch.
-   */
-  def empiricalErrorProbability: Double =
-    bayesianErrorProbability
-
-  /**
-   * Empirically estimated probability of a mismatch, as a QualityScore.
-   */
-  def empiricalQuality: QualityScore =
-    QualityScore.fromErrorProbability(empiricalErrorProbability)
-
-  /**
-   * Estimates the probability of a mismatch under a Bayesian model with
-   * Binomial likelihood and Beta(a, b) prior. When a = b = 1, this is also
-   * known as "Laplace's rule of succession".
-   *
-   * TODO: Beta(1, 1) is the safest choice, but maybe Beta(1/2, 1/2) is more
-   * accurate?
-   */
-  def bayesianErrorProbability: Double = bayesianErrorProbability(1, 1)
-  def bayesianErrorProbability(a: Double, b: Double): Double = (a + mismatches) / (a + b + total)
-
-  // Format as string compatible with GATK's CSV output
-  def toCSV: Seq[String] = Seq(total.toString, mismatches.toString, empiricalQuality.phred.toString)
-
-  override def toString: String =
-    "%s / %s (%s)".format(mismatches, total, empiricalQuality)
-
-  override def equals(other: Any): Boolean = other match {
-    case that: Observation => this.total == that.total && this.mismatches == that.mismatches
-    case _                 => false
-  }
-
-  override def hashCode: Int = {
-    41 * (
-      41 + total.hashCode
-    ) + mismatches.hashCode
-  }
-
-}
-
-private[recalibration] object Observation {
-  val empty = new Observation(0, 0)
-
-  def apply(isMismatch: Boolean) = new Observation(1, if (isMismatch) 1 else 0)
-}
-
-private[adam] class Aggregate private (
-    total: Long, // number of total observations
-    mismatches: Long, // number of mismatches observed
-    val expectedMismatches: Double // expected number of mismatches based on reported quality scores
-    ) extends Observation(total, mismatches) {
-
-  require(expectedMismatches <= total)
-
-  def reportedErrorProbability: Double = expectedMismatches / total.toDouble
-
-  def +(that: Aggregate): Aggregate =
-    new Aggregate(
-      this.total + that.total,
-      this.mismatches + that.mismatches,
-      this.expectedMismatches + that.expectedMismatches
-    )
-}
-
-private[recalibration] object Aggregate {
-  val empty: Aggregate = new Aggregate(0, 0, 0)
-
-  def apply(key: CovariateKey, value: Observation) =
-    new Aggregate(value.total, value.mismatches, key.quality.errorProbability * value.total)
-}
-
-/**
- * Table containing the empirical frequency of mismatches for each set of covariate values.
+ * @param entries The error covariate &rarr; observed error frequency mapping.
  */
 private[adam] class ObservationTable(
-    val space: CovariateSpace,
-    val entries: Map[CovariateKey, Observation]) extends Serializable {
+    val entries: scala.collection.Map[CovariateKey, Observation]) extends Serializable {
 
   override def toString = entries.map { case (k, v) => "%s\t%s".format(k, v) }.mkString("\n")
 
-  // Format as CSV compatible with GATK's output
-  def toCSV: String = {
+  /**
+   * @param recordGroups The record groups that generated the reads in this table.
+   * @return Return this table as CSV.
+   */
+  def toCSV(recordGroups: RecordGroupDictionary): String = {
     val rows = entries.map {
       case (key, obs) =>
-        space.toCSV(key) ++ obs.toCSV ++ (if (key.containsNone) Seq("**") else Seq())
+        (CovariateSpace.toCSV(key, recordGroups) ++
+          obs.toCSV ++
+          (if (key.containsNone) Seq("**") else Seq()))
     }
     (Seq(csvHeader) ++ rows).map(_.mkString(",")).mkString("\n")
   }
 
-  def csvHeader: Seq[String] = space.csvHeader ++ Seq("TotalCount", "MismatchCount", "EmpiricalQ", "IsSkipped")
-}
-
-private[adam] class ObservationAccumulator(val space: CovariateSpace) extends Serializable {
-  private val entries = mutable.HashMap[CovariateKey, Observation]()
-
-  def +=(that: (CovariateKey, Observation)): ObservationAccumulator = ObservationAccumulatorSeq.time {
-    accum(that._1, that._2)
+  private def csvHeader: Seq[String] = {
+    (CovariateSpace.csvHeader ++
+      Seq("TotalCount", "MismatchCount", "EmpiricalQ", "IsSkipped"))
   }
-
-  def ++=(that: ObservationAccumulator): ObservationAccumulator = ObservationAccumulatorComb.time {
-    if (this.space != that.space)
-      throw new IllegalArgumentException("Can only combine observations with matching CovariateSpaces")
-    that.entries.foreach { case (k, v) => accum(k, v) }
-    this
-  }
-
-  def accum(key: CovariateKey, value: Observation): ObservationAccumulator = {
-    entries(key) = value + entries.getOrElse(key, Observation.empty)
-    this
-  }
-
-  def result: ObservationTable = new ObservationTable(space, entries.toMap)
-}
-
-private[recalibration] object ObservationAccumulator {
-  def apply(space: CovariateSpace) = new ObservationAccumulator(space)
 }

@@ -66,6 +66,10 @@ private[adam] case class AlignmentRecordArray(
     array: Array[(ReferenceRegion, AlignmentRecord)],
     maxIntervalWidth: Long) extends IntervalArray[ReferenceRegion, AlignmentRecord] {
 
+  def duplicate(): IntervalArray[ReferenceRegion, AlignmentRecord] = {
+    copy()
+  }
+
   protected def replace(arr: Array[(ReferenceRegion, AlignmentRecord)],
                         maxWidth: Long): IntervalArray[ReferenceRegion, AlignmentRecord] = {
     AlignmentRecordArray(arr, maxWidth)
@@ -521,7 +525,7 @@ case class AlignmentRecordRDD(
       )
 
       if (!deferMerging) {
-        FileMerger.mergeFiles(rdd.context.hadoopConfiguration,
+        FileMerger.mergeFiles(rdd.context,
           fs,
           outputPath,
           tailPath,
@@ -629,15 +633,20 @@ case class AlignmentRecordRDD(
    * known SNPs to mask true variation during the recalibration process.
    *
    * @param knownSnps A table of known SNPs to mask valid variants.
-   * @param observationDumpFile An optional local path to dump recalibration
-   *                            observations to.
+   * @param minAcceptableQuality The minimum quality score to recalibrate.
+   * @param optStorageLevel An optional storage level to set for the output
+   *   of the first stage of BQSR. Defaults to StorageLevel.MEMORY_ONLY.
    * @return Returns an RDD of recalibrated reads.
    */
-  def recalibateBaseQualities(
+  def recalibrateBaseQualities(
     knownSnps: Broadcast[SnpTable],
-    observationDumpFile: Option[String] = None,
-    validationStringency: ValidationStringency = ValidationStringency.LENIENT): AlignmentRecordRDD = BQSRInDriver.time {
-    replaceRdd(BaseQualityRecalibration(rdd, knownSnps, observationDumpFile, validationStringency))
+    minAcceptableQuality: Int = 5,
+    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY)): AlignmentRecordRDD = BQSRInDriver.time {
+    replaceRdd(BaseQualityRecalibration(rdd,
+      knownSnps,
+      recordGroups,
+      (minAcceptableQuality + 33).toChar,
+      optStorageLevel))
   }
 
   /**
@@ -654,6 +663,10 @@ case class AlignmentRecordRDD(
    *   are only finalized if the log-odds threshold is exceeded.
    * @param maxTargetSize The maximum width of a single target region for
    *   realignment.
+   * @param optReferenceFile An optional reference. If not provided, reference
+   *   will be inferred from MD tags.
+   * @param unclipReads If true, unclips reads prior to realignment. Else, omits
+   *   clipped bases during realignment.
    * @return Returns an RDD of mapped reads which have been realigned.
    */
   def realignIndels(
@@ -662,8 +675,20 @@ case class AlignmentRecordRDD(
     maxIndelSize: Int = 500,
     maxConsensusNumber: Int = 30,
     lodThreshold: Double = 5.0,
-    maxTargetSize: Int = 3000): AlignmentRecordRDD = RealignIndelsInDriver.time {
-    replaceRdd(RealignIndels(rdd, consensusModel, isSorted, maxIndelSize, maxConsensusNumber, lodThreshold))
+    maxTargetSize: Int = 3000,
+    maxReadsPerTarget: Int = 20000,
+    optReferenceFile: Option[ReferenceFile] = None,
+    unclipReads: Boolean = false): AlignmentRecordRDD = RealignIndelsInDriver.time {
+    replaceRdd(RealignIndels(rdd,
+      consensusModel = consensusModel,
+      dataIsSorted = isSorted,
+      maxIndelSize = maxIndelSize,
+      maxConsensusNumber = maxConsensusNumber,
+      lodThreshold = lodThreshold,
+      maxTargetSize = maxTargetSize,
+      maxReadsPerTarget = maxReadsPerTarget,
+      optReferenceFile = optReferenceFile,
+      unclipReads = unclipReads))
   }
 
   /**

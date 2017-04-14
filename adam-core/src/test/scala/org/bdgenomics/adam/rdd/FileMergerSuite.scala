@@ -25,7 +25,7 @@ class FileMergerSuite extends ADAMFunSuite {
   sparkTest("cannot write both empty gzip block and cram eof") {
     intercept[IllegalArgumentException] {
       // we don't need to pass real paths here
-      FileMerger.mergeFiles(sc.hadoopConfiguration,
+      FileMerger.mergeFiles(sc,
         FileSystem.getLocal(sc.hadoopConfiguration),
         new Path("output"),
         new Path("head"),
@@ -37,7 +37,7 @@ class FileMergerSuite extends ADAMFunSuite {
   sparkTest("buffer size must be non-negative") {
     intercept[IllegalArgumentException] {
       // we don't need to pass real paths here
-      FileMerger.mergeFiles(sc.hadoopConfiguration,
+      FileMerger.mergeFiles(sc,
         FileSystem.getLocal(sc.hadoopConfiguration),
         new Path("output"),
         new Path("head"),

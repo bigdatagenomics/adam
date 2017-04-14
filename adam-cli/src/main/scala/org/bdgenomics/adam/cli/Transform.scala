@@ -59,10 +59,10 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
   var recalibrateBaseQualities: Boolean = false
+  @Args4jOption(required = false, name = "-min_acceptable_quality", usage = "Minimum acceptable quality for recalibrating a base in a read. Default is 5.")
+  var minAcceptableQuality: Int = 5
   @Args4jOption(required = false, name = "-stringency", usage = "Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults to LENIENT")
   var stringency: String = "LENIENT"
-  @Args4jOption(required = false, name = "-dump_observations", usage = "Local path to dump BQSR observations to. Outputs CSV format.")
-  var observationsPath: String = null
   @Args4jOption(required = false, name = "-known_snps", usage = "Sites-only VCF giving location of known SNPs")
   var knownSnpsFile: String = null
   @Args4jOption(required = false, name = "-realign_indels", usage = "Locally realign indels present in reads.")
@@ -75,8 +75,14 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var maxConsensusNumber = 30
   @Args4jOption(required = false, name = "-log_odds_threshold", usage = "The log-odds threshold for accepting a realignment. Default value is 5.0.")
   var lodThreshold = 5.0
+  @Args4jOption(required = false, name = "-unclip_reads", usage = "If true, unclips reads during realignment.")
+  var unclipReads = false
   @Args4jOption(required = false, name = "-max_target_size", usage = "The maximum length of a target region to attempt realigning. Default length is 3000.")
   var maxTargetSize = 3000
+  @Args4jOption(required = false, name = "-max_reads_per_target", usage = "The maximum number of reads attached to a target considered for realignment. Default is 20000.")
+  var maxReadsPerTarget = 20000
+  @Args4jOption(required = false, name = "-reference", usage = "Path to a reference file to use for indel realignment.")
+  var reference: String = null
   @Args4jOption(required = false, name = "-repartition", usage = "Set the number of partitions to map data to")
   var repartition: Int = -1
   @Args4jOption(required = false, name = "-coalesce", usage = "Set the number of partitions written to the ADAM output directory")
@@ -161,7 +167,8 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
    *   Else, we generate candidate INDELs from the reads and then realign. If
    *   -realign_indels is not set, we return the input RDD.
    */
-  private def maybeRealign(rdd: AlignmentRecordRDD,
+  private def maybeRealign(sc: SparkContext,
+                           rdd: AlignmentRecordRDD,
                            sl: StorageLevel): AlignmentRecordRDD = {
     if (args.locallyRealign) {
 
@@ -178,14 +185,23 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
           ConsensusGenerator.fromKnownIndels(rdd.rdd.context.loadVariants(file))
         })
 
+      // optionally load a reference
+      val optReferenceFile = Option(args.reference).map(f => {
+        sc.loadReferenceFile(f,
+          fragmentLength = args.mdTagsFragmentSize)
+      })
+
       // run realignment
       val realignmentRdd = rdd.realignIndels(
         consensusGenerator,
         isSorted = false,
-        args.maxIndelSize,
-        args.maxConsensusNumber,
-        args.lodThreshold,
-        args.maxTargetSize
+        maxIndelSize = args.maxIndelSize,
+        maxConsensusNumber = args.maxConsensusNumber,
+        lodThreshold = args.lodThreshold,
+        maxTargetSize = args.maxTargetSize,
+        maxReadsPerTarget = args.maxReadsPerTarget,
+        optReferenceFile = optReferenceFile,
+        unclipReads = args.unclipReads
       )
 
       // unpersist our input, if persisting was requested
@@ -218,24 +234,24 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       log.info("Recalibrating base qualities")
 
       // bqsr is a two pass algorithm, so cache the rdd if requested
-      if (args.cache) {
-        rdd.rdd.persist(sl)
+      val optSl = if (args.cache) {
+        Some(sl)
+      } else {
+        None
       }
 
       // create the known sites file, if one is available
       val knownSnps: SnpTable = createKnownSnpsTable(rdd.rdd.context)
+      val broadcastedSnps = BroadcastingKnownSnps.time {
+        rdd.rdd.context.broadcast(knownSnps)
+      }
 
       // run bqsr
-      val bqsredRdd = rdd.recalibateBaseQualities(
-        rdd.rdd.context.broadcast(knownSnps),
-        Option(args.observationsPath),
-        stringency
+      val bqsredRdd = rdd.recalibrateBaseQualities(
+        broadcastedSnps,
+        args.minAcceptableQuality,
+        optSl
       )
-
-      // if we cached the input, unpersist it, as it is never reused after bqsr
-      if (args.cache) {
-        rdd.rdd.unpersist()
-      }
 
       bqsredRdd
     } else {
@@ -340,7 +356,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
     val maybeDedupedRdd = maybeDedupe(initialRdd)
 
     // once we've deduped our reads, maybe realign them
-    val maybeRealignedRdd = maybeRealign(maybeDedupedRdd, sl)
+    val maybeRealignedRdd = maybeRealign(sc, maybeDedupedRdd, sl)
 
     // run BQSR
     val maybeRecalibratedRdd = maybeRecalibrate(maybeRealignedRdd, sl)
@@ -477,7 +493,7 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       isSorted = args.sortReads || args.sortLexicographically)
   }
 
-  private def createKnownSnpsTable(sc: SparkContext): SnpTable = CreateKnownSnpsTable.time {
-    Option(args.knownSnpsFile).fold(SnpTable())(f => SnpTable(sc.loadVariants(f).rdd.map(new RichVariant(_))))
+  private def createKnownSnpsTable(sc: SparkContext): SnpTable = {
+    Option(args.knownSnpsFile).fold(SnpTable())(f => SnpTable(sc.loadVariants(f)))
   }
 }

@@ -1,36 +1,58 @@
 #!/bin/bash
 
+set -x -v -e
+
+version=${1:-latest}
+
+# clone repo
+git clone -b gh-pages git@github.com:bigdatagenomics/adam.git adam-docs
+
 # get current sha1
 sha1=$(git log -1 --pretty=format:%H)
 
 # generate scaladoc
 mvn scala:doc
 
+# generate markdown docs
+cd docs
+./build.sh
+cd ..
+
 # get current scaladoc dir
 scaladoc=${PWD}/adam-core/target/site/scaladocs/
 
-# clone repo
-git clone git@github.com:bigdatagenomics/bigdatagenomics.github.io.git
+# make directory to copy docs to, if it does not already exist
+mkdir -p adam-docs/${version} adam-docs/${version}/docs
 
-# get maven artifact version
-version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v "\[")
-
-# clean and make new dir
-bdgscaladocdir=${PWD}/bigdatagenomics.github.io/projects/adam/scaladoc/${version}
-rm -rf ${bdgscaladocdir}
-mkdir -p ${bdgscaladocdir}
-
-# copy scaladoc over
-cp -rv ${scaladoc}/* ${bdgscaladocdir}
+# copy docs over
+cp -rvf ${scaladoc} adam-docs/${version}/scaladocs
+cp -f docs/output/ADAM_${sha1}.html adam-docs/${version}/docs/index.html
 
 # step into repo
-cd bigdatagenomics.github.io
+cd adam-docs
 
 # mark for add and commit
-git add projects/adam/scaladoc/${version}/*
-git commit -m "Adding scaladoc for ADAM commit ${sha1}."
-git push origin master
+if [[ ${version} == "latest" ]];
+then
+    git commit --author "Big Data Genomics <adam-developers@googlegroups.com>" \
+        -a -m "Updating docs for ADAM commit ${sha1}."
+else
+    
+    # insert new version html into index.html
+    mv index.html index.old
+    head -n 17 index.old > index.html
+    echo "      <li>${version}:" >> index.html
+    echo "        <a href=\"${version}/scaladocs/index.html\">Scaladoc</a>" >> index.html
+    echo "        <a href=\"${version}/docs/index.html\">Project docs</a>" >> index.html
+    echo "      </li>" >> index.html
+    tail -n +18 index.old >> index.html
+    rm index.old
 
-# clean up bdg repo
+    git add index.html ${version}
+    git commit -m "Adding docs for ADAM ${version} release."
+fi    
+git push origin gh-pages
+
+# remove adam docs clone
 cd ..
-rm -rf bigdatagenomics.github.io
+rm -rf adam-docs

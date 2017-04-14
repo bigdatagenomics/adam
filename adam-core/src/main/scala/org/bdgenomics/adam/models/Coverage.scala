@@ -43,6 +43,13 @@ private[adam] object Coverage {
    * @return Coverage spanning the specified feature
    */
   def apply(feature: Feature): Coverage = {
+    require(feature.getContigName != null && feature.getContigName.length > 0,
+      "Features must have Contig name to convert to Coverage")
+    require(feature.getStart != null && feature.getEnd != null,
+      "Features must have valid position data to convert to Coverage")
+    require(feature.getScore != null,
+      "Features must have valid score to convert to Coverage")
+
     Coverage(feature.getContigName,
       feature.getStart,
       feature.getEnd,

@@ -17,160 +17,79 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.models.QualityScore
-import org.bdgenomics.adam.rich.DecadentRead.Residue
-import org.bdgenomics.adam.rich.RichAlignmentRecord._
-import org.bdgenomics.adam.rich.DecadentRead
-import org.bdgenomics.formats.avro.AlignmentRecord
+import java.lang.StringBuilder
 import org.bdgenomics.adam.instrumentation.Timers._
-import scala.math.{ exp, log }
+import org.bdgenomics.adam.util.PhredUtils
+import org.bdgenomics.formats.avro.AlignmentRecord
 
-private[recalibration] class Recalibrator(val table: RecalibrationTable, val minAcceptableQuality: QualityScore)
-    extends Serializable {
+/**
+ * The engine that recalibrates a read given a table of recalibrated qualities.
+ *
+ * @param table A table mapping error covariates back to finalized qualities.
+ * @param minAcceptableAsciiPhred The minimum quality score to attempt to
+ *   recalibrate, encoded as an ASCII character on the Illumina (33) scale.
+ */
+private[recalibration] case class Recalibrator(
+    table: RecalibrationTable,
+    minAcceptableAsciiPhred: Char) {
 
-  def apply(r: (Option[DecadentRead], Option[AlignmentRecord])): AlignmentRecord = RecalibrateRead.time {
-    r._1.fold(r._2.get)(read => {
-      val record: AlignmentRecord = read.record
-      if (record.getQual != null) {
-        AlignmentRecord.newBuilder(record)
-          .setQual(QualityScore.toString(computeQual(read)))
-          .setOrigQual(record.getQual)
-          .build()
-      } else {
-        record
-      }
-    })
+  /**
+   * Rewrites the qualities for a read, given the recalibration table.
+   *
+   * @param record The read to recalibrate.
+   * @param covariates An array containing the covariate that each base in this
+   *   read mapped to.
+   * @return Returns a recalibrated read if the read has defined qualities and
+   * if the covariates for this read were observed.
+   */
+  def apply(record: AlignmentRecord,
+            covariates: Array[CovariateKey]): AlignmentRecord = RecalibrateRead.time {
+    if (record.getQual != null &&
+      covariates.nonEmpty) {
+      AlignmentRecord.newBuilder(record)
+        .setQual(computeQual(record, covariates))
+        .setOrigQual(record.getQual)
+        .build()
+    } else {
+      record
+    }
   }
 
-  def computeQual(read: DecadentRead): Seq[QualityScore] = ComputeQualityScore.time {
-    val origQuals = read.residues.map(_.quality)
-    val newQuals = table(read)
-    origQuals.zip(newQuals).map {
-      case (origQ, newQ) =>
-        // Keep original quality score if below recalibration threshold
-        if (origQ >= minAcceptableQuality) newQ else origQ
+  /**
+   * @param record The read to recalibrate.
+   * @param covariates An array containing the covariate that each base in this
+   *   read mapped to.
+   * @return Returns the new quality scores for this read by querying the error
+   *   covariate table.
+   */
+  private def computeQual(read: AlignmentRecord,
+                          covariates: Array[CovariateKey]): String = ComputeQualityScore.time {
+    val origQuals = read.getQual
+    val quals = new StringBuilder(origQuals)
+    val newQuals = table(covariates.map(_.toDefault))
+    var idx = 0
+    while (idx < origQuals.length) {
+      // Keep original quality score if below recalibration threshold
+      if (origQuals(idx) >= minAcceptableAsciiPhred) {
+        quals.setCharAt(idx, newQuals(idx))
+      }
+      idx += 1
     }
+
+    quals.toString
   }
 }
 
 private[recalibration] object Recalibrator {
-  def apply(observed: ObservationTable, minAcceptableQuality: QualityScore): Recalibrator = {
-    new Recalibrator(RecalibrationTable(observed), minAcceptableQuality)
+
+  /**
+   * @param observed The observation table to invert to build the recalibrator.
+   * @param minAcceptableAsciiPhred The minimum quality score to attempt to
+   *   recalibrate, encoded as an ASCII character on the Illumina (33) scale.
+   * @return Returns a recalibrator gained by inverting the observation table.
+   */
+  def apply(observed: ObservationTable,
+            minAcceptableAsciiPhred: Char): Recalibrator = CreatingRecalibrationTable.time {
+    Recalibrator(RecalibrationTable(observed), minAcceptableAsciiPhred)
   }
 }
-
-private[recalibration] class RecalibrationTable(
-  // covariates for this recalibration
-  val covariates: CovariateSpace,
-  // marginal and quality scores by read group,
-  val globalTable: Map[String, (Aggregate, QualityTable)])
-    extends (DecadentRead => Seq[QualityScore]) with Serializable {
-
-  // TODO: parameterize?
-  val maxQualScore = QualityScore(50)
-
-  val maxLogP = log(maxQualScore.errorProbability)
-
-  def apply(read: DecadentRead): Seq[QualityScore] = {
-    val globalEntry: Option[(Aggregate, QualityTable)] = globalTable.get(read.readGroup)
-    val globalDelta = computeGlobalDelta(globalEntry)
-    val extraValues: IndexedSeq[Seq[Option[Covariate#Value]]] = getExtraValues(read)
-    read.residues.zipWithIndex.map(lookup(_, globalEntry, globalDelta, extraValues))
-  }
-
-  def lookup(residueWithIndex: (Residue, Int), globalEntry: Option[(Aggregate, QualityTable)], globalDelta: Double,
-             extraValues: IndexedSeq[Seq[Option[Covariate#Value]]]): QualityScore = {
-    val (residue, index) = residueWithIndex
-    val residueLogP = log(residue.quality.errorProbability)
-    val qualityEntry: Option[(Aggregate, ExtrasTables)] = getQualityEntry(residue.quality, globalEntry)
-    val qualityDelta = computeQualityDelta(qualityEntry, residueLogP + globalDelta)
-    val extrasDelta = computeExtrasDelta(qualityEntry, index, extraValues, residueLogP + globalDelta + qualityDelta)
-    val correctedLogP = residueLogP + globalDelta + qualityDelta + extrasDelta
-    qualityFromLogP(correctedLogP)
-  }
-
-  def qualityFromLogP(logP: Double): QualityScore = {
-    val boundedLogP = math.min(0.0, math.max(maxLogP, logP))
-    QualityScore.fromErrorProbability(exp(boundedLogP))
-  }
-
-  def computeGlobalDelta(globalEntry: Option[(Aggregate, QualityTable)]): Double = {
-    globalEntry.map(bucket => log(bucket._1.empiricalErrorProbability) - log(bucket._1.reportedErrorProbability)).
-      getOrElse(0.0)
-  }
-
-  def getQualityEntry(
-    quality: QualityScore,
-    globalEntry: Option[(Aggregate, QualityTable)]): Option[(Aggregate, ExtrasTables)] = {
-    globalEntry.flatMap(_._2.table.get(quality))
-  }
-
-  def computeQualityDelta(qualityEntry: Option[(Aggregate, ExtrasTables)], offset: Double): Double = {
-    qualityEntry.map(bucket => log(bucket._1.empiricalErrorProbability) - offset).
-      getOrElse(0.0)
-  }
-
-  def computeExtrasDelta(maybeQualityEntry: Option[(Aggregate, ExtrasTables)], residueIndex: Int,
-                         extraValues: IndexedSeq[Seq[Option[Covariate#Value]]], offset: Double): Double = {
-    // Returns sum(delta for each extra covariate)
-    maybeQualityEntry.map(qualityEntry => {
-      val extrasTables = qualityEntry._2.extrasTables
-      assert(extrasTables.size == extraValues.size)
-      var extrasDelta = 0.0
-      var index = 0
-      extraValues.foreach(residueValues => {
-        val table = extrasTables(index)
-        extrasDelta += table.get(residueValues(residueIndex)).
-          map(aggregate => log(aggregate.empiricalErrorProbability) - offset).
-          getOrElse(0.0)
-        index += 1
-      })
-      extrasDelta
-    }).getOrElse(0.0)
-  }
-
-  def getExtraValues(read: DecadentRead): IndexedSeq[Seq[Option[Covariate#Value]]] = GetExtraValues.time {
-    covariates.extras.map(extra => extra(read))
-  }
-
-}
-
-object RecalibrationTable {
-
-  def apply(observed: ObservationTable): RecalibrationTable = {
-    // The ".map(identity)" calls are needed to force the result to be serializable.
-    val globalTable: Map[String, (Aggregate, QualityTable)] = observed.entries.groupBy(_._1.readGroup).map(globalEntry => {
-      (globalEntry._1, (aggregateObservations(globalEntry._2), new QualityTable(computeQualityTable(globalEntry, observed.space))))
-    }).map(identity)
-    new RecalibrationTable(observed.space, globalTable)
-  }
-
-  def computeQualityTable(
-    globalEntry: (String, Map[CovariateKey, Observation]),
-    space: CovariateSpace): Map[QualityScore, (Aggregate, ExtrasTables)] = {
-    globalEntry._2.groupBy(_._1.quality).map(qualityEntry => {
-      (qualityEntry._1, (aggregateObservations(qualityEntry._2), new ExtrasTables(computeExtrasTables(qualityEntry._2, space))))
-    }).map(identity)
-  }
-
-  def computeExtrasTables(
-    table: Map[CovariateKey, Observation],
-    space: CovariateSpace): IndexedSeq[Map[Option[Covariate#Value], Aggregate]] = {
-    Range(0, space.extras.length).map(index => {
-      table.groupBy(_._1.extras(index)).map(extraEntry => {
-        (extraEntry._1, aggregateObservations(extraEntry._2))
-      }).map(identity)
-    })
-  }
-
-  def aggregateObservations[K](observations: Map[CovariateKey, Observation]): Aggregate = {
-    observations.map { case (oldKey, obs) => Aggregate(oldKey, obs) }.fold(Aggregate.empty)(_ + _)
-  }
-
-}
-
-private[recalibration] class QualityTable(
-  val table: Map[QualityScore, (Aggregate, ExtrasTables)]) extends Serializable
-
-private[recalibration] class ExtrasTables(
-  val extrasTables: IndexedSeq[Map[Option[Covariate#Value], Aggregate]]) extends Serializable

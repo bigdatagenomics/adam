@@ -17,17 +17,24 @@
  */
 package org.bdgenomics.adam.rdd.read.realignment
 
+import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.algorithms.consensus.{
   Consensus,
   ConsensusGenerator
 }
-import org.bdgenomics.adam.models.ReferencePosition
+import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
+  ReferencePosition,
+  ReferenceRegion,
+  SequenceDictionary,
+  SequenceRecord
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.variant.VariantRDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceFile }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Variant }
 
 class RealignIndelsSuite extends ADAMFunSuite {
@@ -41,9 +48,13 @@ class RealignIndelsSuite extends ADAMFunSuite {
     artificialReadsRdd.rdd
   }
 
-  def artificialRealignedReads(cg: ConsensusGenerator = ConsensusGenerator.fromReads): RDD[AlignmentRecord] = {
+  def artificialRealignedReads(cg: ConsensusGenerator = ConsensusGenerator.fromReads,
+                               maxCoverage: Int = 3000,
+                               optRefFile: Option[ReferenceFile] = None): RDD[AlignmentRecord] = {
     artificialReadsRdd
-      .realignIndels(consensusModel = cg)
+      .realignIndels(consensusModel = cg,
+        maxReadsPerTarget = maxCoverage,
+        optReferenceFile = optRefFile)
       .sortReadsByReferencePosition()
       .rdd
   }
@@ -53,8 +64,40 @@ class RealignIndelsSuite extends ADAMFunSuite {
     sc.loadAlignments(path).rdd
   }
 
+  def makeRead(start: Long, end: Long): RichAlignmentRecord = {
+    RichAlignmentRecord(AlignmentRecord.newBuilder()
+      .setContigName("ctg")
+      .setStart(start)
+      .setEnd(end)
+      .setReadMapped(true)
+      .build())
+  }
+
+  test("map reads to targets") {
+    val targets = Array(
+      new IndelRealignmentTarget(None, ReferenceRegion("ctg", 1L, 4L)),
+      new IndelRealignmentTarget(None, ReferenceRegion("ctg", 10L, 44L)),
+      new IndelRealignmentTarget(None, ReferenceRegion("ctg", 100L, 400L)))
+
+    assert(RealignIndels.mapToTarget(makeRead(0L, 1L), targets, 0, 3) < 0)
+    assert(RealignIndels.mapToTarget(makeRead(0L, 2L), targets, 0, 3) === 0)
+    assert(RealignIndels.mapToTarget(makeRead(1L, 2L), targets, 0, 3) === 0)
+    assert(RealignIndels.mapToTarget(makeRead(3L, 6L), targets, 0, 3) === 0)
+    assert(RealignIndels.mapToTarget(makeRead(6L, 8L), targets, 0, 3) < 0)
+    assert(RealignIndels.mapToTarget(makeRead(8L, 12L), targets, 0, 3) === 1)
+    assert(RealignIndels.mapToTarget(makeRead(10L, 12L), targets, 0, 3) === 1)
+    assert(RealignIndels.mapToTarget(makeRead(14L, 36L), targets, 0, 3) === 1)
+    assert(RealignIndels.mapToTarget(makeRead(35L, 50L), targets, 0, 3) === 1)
+    assert(RealignIndels.mapToTarget(makeRead(45L, 50L), targets, 0, 3) < 0)
+    assert(RealignIndels.mapToTarget(makeRead(90L, 100L), targets, 0, 3) < 0)
+    assert(RealignIndels.mapToTarget(makeRead(90L, 101L), targets, 0, 3) === 2)
+    assert(RealignIndels.mapToTarget(makeRead(200L, 300L), targets, 0, 3) === 2)
+    assert(RealignIndels.mapToTarget(makeRead(200L, 600L), targets, 0, 3) === 2)
+    assert(RealignIndels.mapToTarget(makeRead(700L, 1000L), targets, 0, 3) < 0)
+  }
+
   sparkTest("checking mapping to targets for artificial reads") {
-    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignmentRecord(_)))
+    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignmentRecord(_))).toArray
     assert(targets.size === 1)
     val rr = artificialReads.map(RichAlignmentRecord(_))
     val readsMappedToTarget = RealignIndels.mapTargets(rr, targets).map(kv => {
@@ -63,22 +106,22 @@ class RealignIndelsSuite extends ADAMFunSuite {
       (t, r.map(r => r.record))
     }).collect()
 
-    assert(readsMappedToTarget.size === 2)
+    assert(readsMappedToTarget.count(_._1.isDefined) === 1)
 
-    readsMappedToTarget.forall {
-      case (target: Option[IndelRealignmentTarget], reads: Seq[AlignmentRecord]) => reads.forall {
+    assert(readsMappedToTarget.forall {
+      case (target: Option[(Int, IndelRealignmentTarget)], reads: Seq[AlignmentRecord]) => reads.forall {
         read =>
           {
             if (read.getStart <= 25) {
-              val result = target.get.readRange.start <= read.getStart.toLong
-              result && (target.get.readRange.end >= read.getEnd)
+              val result = target.get._2.readRange.start <= read.getStart.toLong
+              result && (target.get._2.readRange.end >= read.getEnd)
             } else {
               target.isEmpty
             }
           }
       }
       case _ => false
-    }
+    })
   }
 
   sparkTest("checking alternative consensus for artificial reads") {
@@ -115,9 +158,9 @@ class RealignIndelsSuite extends ADAMFunSuite {
       assert(readReference._1 === refStr.substring(startIndex, stopIndex))
     }
 
-    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignmentRecord(_)))
+    val targets = RealignmentTargetFinder(artificialReads.map(RichAlignmentRecord(_))).toArray
     val rr = artificialReads.map(RichAlignmentRecord(_))
-    val readsMappedToTarget: Array[(IndelRealignmentTarget, Iterable[AlignmentRecord])] = RealignIndels.mapTargets(rr, targets)
+    val readsMappedToTarget: Array[((Int, IndelRealignmentTarget), Iterable[AlignmentRecord])] = RealignIndels.mapTargets(rr, targets)
       .filter(_._1.isDefined)
       .map(kv => {
         val (t, r) = kv
@@ -126,7 +169,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       }).collect()
 
     val readReference = readsMappedToTarget.map {
-      case (target, reads) =>
+      case ((_, target), reads) =>
         if (!target.isEmpty) {
           val referenceFromReads: (String, Long, Long) = RealignIndels.getReferenceFromReads(reads.map(r => new RichAlignmentRecord(r)).toSeq)
           assert(referenceFromReads._2 == -1 || referenceFromReads._1.length > 0)
@@ -149,14 +192,28 @@ class RealignIndelsSuite extends ADAMFunSuite {
     val gatkRead4 = gatkArtificialRealignedReadsCollected.filter(_.getReadName == "read4")
     val result = artificialRead4.zip(gatkRead4)
 
-    assert(result.forall(
-      pair => pair._1.getReadName == pair._2.getReadName))
-    assert(result.forall(
-      pair => pair._1.getStart == pair._2.getStart))
-    assert(result.forall(
-      pair => pair._1.getCigar == pair._2.getCigar))
-    assert(result.forall(
-      pair => pair._1.getMapq == pair._2.getMapq))
+    result.foreach(pair => assert(pair._1.getReadName === pair._2.getReadName))
+    result.foreach(pair => assert(pair._1.getStart === pair._2.getStart))
+    result.foreach(pair => assert(pair._1.getCigar === pair._2.getCigar))
+    result.foreach(pair => assert(pair._1.getMapq === pair._2.getMapq))
+  }
+
+  sparkTest("checking realigned reads for artificial input with reference file") {
+    val artificialRealignedReadsCollected = artificialRealignedReads(optRefFile = Some(sc.loadReferenceFile(testFile("artificial.fa"), 1000)))
+      .collect()
+    val gatkArtificialRealignedReadsCollected = gatkArtificialRealignedReads
+      .collect()
+
+    assert(artificialRealignedReadsCollected.size === gatkArtificialRealignedReadsCollected.size)
+
+    val artificialRead4 = artificialRealignedReadsCollected.filter(_.getReadName == "read4")
+    val gatkRead4 = gatkArtificialRealignedReadsCollected.filter(_.getReadName == "read4")
+    val result = artificialRead4.zip(gatkRead4)
+
+    result.foreach(pair => assert(pair._1.getReadName === pair._2.getReadName))
+    result.foreach(pair => assert(pair._1.getStart === pair._2.getStart))
+    result.foreach(pair => assert(pair._1.getCigar === pair._2.getCigar))
+    result.foreach(pair => assert(pair._1.getMapq === pair._2.getMapq))
   }
 
   sparkTest("checking realigned reads for artificial input using knowns") {
@@ -181,14 +238,10 @@ class RealignIndelsSuite extends ADAMFunSuite {
     val gatkRead4 = gatkArtificialRealignedReadsCollected.filter(_.getReadName == "read4")
     val result = artificialRead4.zip(gatkRead4)
 
-    assert(result.forall(
-      pair => pair._1.getReadName == pair._2.getReadName))
-    assert(result.forall(
-      pair => pair._1.getStart == pair._2.getStart))
-    assert(result.forall(
-      pair => pair._1.getCigar == pair._2.getCigar))
-    assert(result.forall(
-      pair => pair._1.getMapq == pair._2.getMapq))
+    result.foreach(pair => assert(pair._1.getReadName === pair._2.getReadName))
+    result.foreach(pair => assert(pair._1.getStart === pair._2.getStart))
+    result.foreach(pair => assert(pair._1.getCigar === pair._2.getCigar))
+    result.foreach(pair => assert(pair._1.getMapq === pair._2.getMapq))
   }
 
   sparkTest("checking realigned reads for artificial input using knowns and reads") {
@@ -214,38 +267,95 @@ class RealignIndelsSuite extends ADAMFunSuite {
     val gatkRead4 = gatkArtificialRealignedReadsCollected.filter(_.getReadName == "read4")
     val result = artificialRead4.zip(gatkRead4)
 
-    assert(result.forall(
-      pair => pair._1.getReadName == pair._2.getReadName))
-    assert(result.forall(
-      pair => pair._1.getStart == pair._2.getStart))
-    assert(result.forall(
-      pair => pair._1.getCigar == pair._2.getCigar))
-    assert(result.forall(
-      pair => pair._1.getMapq == pair._2.getMapq))
+    result.foreach(pair => assert(pair._1.getReadName === pair._2.getReadName))
+    result.foreach(pair => assert(pair._1.getStart === pair._2.getStart))
+    result.foreach(pair => assert(pair._1.getCigar === pair._2.getCigar))
+    result.foreach(pair => assert(pair._1.getMapq === pair._2.getMapq))
   }
 
-  sparkTest("test mismatch quality scoring") {
-    val ri = new RealignIndels()
+  sparkTest("skip realigning reads if target is highly covered") {
+    val artificialRealignedReadsCollected = artificialRealignedReads(maxCoverage = 0)
+      .collect()
+    val reads = artificialReads
+    val result = artificialRealignedReadsCollected.zip(reads.collect())
+
+    result.foreach(pair => assert(pair._1.getReadName === pair._2.getReadName))
+    result.foreach(pair => assert(pair._1.getStart === pair._2.getStart))
+    result.foreach(pair => assert(pair._1.getCigar === pair._2.getCigar))
+    result.foreach(pair => assert(pair._1.getMapq === pair._2.getMapq))
+  }
+
+  sparkTest("skip realignment if target is an insufficient LOD improvement") {
+    val path = testFile("NA12878.1_922305.G_GC_hom.sam")
+    val reads = sc.loadAlignments(path)
+    val realignedReads = reads.realignIndels()
+    val result = reads.rdd.filter(!_.getSupplementaryAlignment).keyBy(r => (r.getReadName, r.getReadInFragment))
+      .join(realignedReads.rdd.filter(!_.getSupplementaryAlignment).keyBy(r => (r.getReadName, r.getReadInFragment)))
+      .map(_._2)
+      .collect()
+
+    result.foreach(pair => assert(pair._1 === pair._2))
+  }
+
+  sparkTest("realign reads to an insertion") {
+    val path = testFile("NA12878.1_922305.G_GC_hom.sam")
+    val reads = sc.loadAlignments(path)
+    val realignedReads = reads.realignIndels(lodThreshold = 0.0, unclipReads = true)
+    val result = reads.rdd.filter(!_.getSupplementaryAlignment).keyBy(r => (r.getReadName, r.getReadInFragment))
+      .join(realignedReads.rdd.filter(!_.getSupplementaryAlignment).keyBy(r => (r.getReadName, r.getReadInFragment)))
+      .map(_._2)
+      .collect()
+
+    val movedReads = result.filter(pair => pair._1 != pair._2)
+    assert(movedReads.size === 41)
+    val read = movedReads.map(_._2)
+      .filter(_.getReadName === "H06HDADXX130110:1:1114:19044:27806")
+      .head
+    assert(read.getStart === 922057)
+    assert(read.getCigar === "248M1I1M")
+    assert(read.getMismatchingPositions === "249")
+  }
+
+  test("test mismatch quality scoring") {
+    val ri = new RealignIndels(sc)
     val read = "AAAAAAAA"
     val ref = "AAGGGGAA"
     val qScores = Seq(40, 40, 40, 40, 40, 40, 40, 40)
 
-    assert(ri.sumMismatchQualityIgnoreCigar(read, ref, qScores) === 160)
+    assert(ri.sumMismatchQualityIgnoreCigar(read, ref, qScores, Int.MaxValue, 0) === 160)
   }
 
-  sparkTest("test mismatch quality scoring for no mismatches") {
-    val ri = new RealignIndels()
+  test("test mismatch quality scoring for no mismatches") {
+    val ri = new RealignIndels(sc)
     val read = "AAAAAAAA"
     val qScores = Seq(40, 40, 40, 40, 40, 40, 40, 40)
 
-    assert(ri.sumMismatchQualityIgnoreCigar(read, read, qScores) === 0)
+    assert(ri.sumMismatchQualityIgnoreCigar(read, read, qScores, Int.MaxValue, 0) === 0)
+  }
+
+  test("test mismatch quality scoring for offset") {
+    val ri = new RealignIndels(sc)
+    val read = "AAAAAAAA"
+    val ref = "G%s".format(read)
+    val qScores = Seq(40, 40, 40, 40, 40, 40, 40, 40)
+
+    assert(ri.sumMismatchQualityIgnoreCigar(read, ref, qScores, Int.MaxValue, 1) === 0)
+  }
+
+  test("test mismatch quality scoring with early exit") {
+    val ri = new RealignIndels(sc)
+    val read = "AAAAAAAA"
+    val ref = "AAGGGGAA"
+    val qScores = Seq(40, 40, 40, 40, 40, 40, 40, 40)
+
+    assert(ri.sumMismatchQualityIgnoreCigar(read, ref, qScores, 120, 0) === Int.MaxValue)
   }
 
   sparkTest("test mismatch quality scoring after unpacking read") {
-    val ri = new RealignIndels()
+    val ri = new RealignIndels(sc)
     val read = artificialReads.first()
 
-    assert(ri.sumMismatchQuality(read) === 800)
+    assert(ri.sumMismatchQuality(read) === 400)
   }
 
   test("we shouldn't try to realign a region with no target") {
@@ -272,11 +382,11 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setMismatchingPositions("3")
       .build()).map(RichAlignmentRecord(_))
       .toIterable
-    val ri = new RealignIndels()
+    val ri = new RealignIndels(sc)
 
     // this should be a NOP
-    assert(ri.realignTargetGroup(None.asInstanceOf[Option[IndelRealignmentTarget]],
-      reads).size === 2)
+    assert(ri.realignTargetGroup((None.asInstanceOf[Option[(Int, IndelRealignmentTarget)]],
+      reads)).size === 2)
   }
 
   sparkTest("we shouldn't try to realign reads with no indel evidence") {
@@ -335,9 +445,356 @@ class RealignIndelsSuite extends ADAMFunSuite {
 
         Option(op).filter(_ >= 0).foreach(oPos => {
           val s = artificialReads.collect().filter(x => (x.getReadName() == readName))
-          assert(s.filter(x => (x.getStart() == oPos)).length > 0)
-          assert(s.filter(x => (x.getCigar() == oc)).length > 0)
+          assert(s.filter(x => (x.getStart() === oPos)).length > 0)
+          assert(s.filter(x => (x.getCigar() === oc)).length > 0)
         })
       })
+  }
+
+  sparkTest("realign a read with an insertion that goes off the end of the read") {
+    // ref: TTACCA___CCACA
+    // ins:   ACCAGTTC
+    // ext: TTACCA   GT
+    // ovl:  TACCA   GTTC
+    // ovs:   AGTT   CCAC
+    // st:      TT   CCACA
+    // sc:     agA   GGTC
+    // ec:       A   GGTCt
+    val insRead = AlignmentRecord.newBuilder
+      .setContigName("1")
+      .setStart(10L)
+      .setEnd(15L)
+      .setSequence("ACCAGTTC")
+      .setQual("........")
+      .setCigar("4M3I1M")
+      .setMismatchingPositions("5")
+      .setReadMapped(true)
+      .setMapq(40)
+      .build
+    val extRead = AlignmentRecord.newBuilder
+      .setContigName("1")
+      .setStart(8L)
+      .setEnd(16L)
+      .setSequence("TTACCAGT")
+      .setQual("........")
+      .setCigar("8M")
+      .setMismatchingPositions("6C0C0")
+      .setReadMapped(true)
+      .setMapq(40)
+      .build
+    val ovlRead = AlignmentRecord.newBuilder
+      .setContigName("1")
+      .setStart(9L)
+      .setEnd(18L)
+      .setSequence("TACCAGTTC")
+      .setQual("........")
+      .setCigar("9M")
+      .setMismatchingPositions("5C0C0A1")
+      .setReadMapped(true)
+      .setMapq(41)
+      .build
+    val ovsRead = AlignmentRecord.newBuilder
+      .setContigName("1")
+      .setStart(10L)
+      .setEnd(18L)
+      .setSequence("AGTTCCAC")
+      .setQual("........")
+      .setCigar("8M")
+      .setMismatchingPositions("1C0C0A4")
+      .setReadMapped(true)
+      .setMapq(42)
+      .build
+    val stRead = AlignmentRecord.newBuilder
+      .setContigName("1")
+      .setStart(12L)
+      .setEnd(19L)
+      .setSequence("TTCCACA")
+      .setQual(".......")
+      .setCigar("7M")
+      .setMismatchingPositions("0C0A5")
+      .setReadMapped(true)
+      .setMapq(43)
+      .build
+    val scRead = AlignmentRecord.newBuilder
+      .setReadName("sc")
+      .setContigName("1")
+      .setStart(13L)
+      .setEnd(18L)
+      .setSequence("AGAGGTC")
+      .setQual(".......")
+      .setCigar("2S5M")
+      .setMismatchingPositions("1C0C0A1")
+      .setReadMapped(true)
+      .setMapq(44)
+      .build
+    val ecRead = AlignmentRecord.newBuilder
+      .setContigName("1")
+      .setStart(13L)
+      .setEnd(18L)
+      .setSequence("AGGTCA")
+      .setQual("......")
+      .setCigar("5M1S1H")
+      .setMismatchingPositions("1C0C0A1")
+      .setBasesTrimmedFromEnd(1)
+      .setReadMapped(true)
+      .setMapq(45)
+      .build
+
+    val rdd = AlignmentRecordRDD(sc.parallelize(Seq(insRead,
+      extRead,
+      ovlRead,
+      ovsRead,
+      stRead,
+      scRead,
+      ecRead)),
+      new SequenceDictionary(Vector(SequenceRecord("1", 20L))),
+      RecordGroupDictionary.empty)
+    val realignedReads = rdd.realignIndels(lodThreshold = 0.0)
+      .rdd
+      .collect
+    assert(realignedReads.count(_.getMapq >= 50) === 7)
+    val realignedExtRead = realignedReads.filter(_.getMapq == 50).head
+    assert(realignedExtRead.getStart === 8L)
+    assert(realignedExtRead.getEnd === 14L)
+    assert(realignedExtRead.getCigar === "6M2S")
+    assert(realignedExtRead.getMismatchingPositions === "6")
+    val realignedOvlRead = realignedReads.filter(_.getMapq == 51).head
+    assert(realignedOvlRead.getStart === 9L)
+    assert(realignedOvlRead.getEnd === 15L)
+    assert(realignedOvlRead.getCigar === "5M3I1M")
+    assert(realignedOvlRead.getMismatchingPositions === "6")
+    val realignedOvsRead = realignedReads.filter(_.getMapq == 52).head
+    assert(realignedOvsRead.getStart === 13L)
+    assert(realignedOvsRead.getEnd === 18L)
+    assert(realignedOvsRead.getCigar === "1M3I4M")
+    assert(realignedOvsRead.getMismatchingPositions === "5")
+    val realignedStRead = realignedReads.filter(_.getMapq == 53).head
+    assert(realignedStRead.getStart === 14L)
+    assert(realignedStRead.getEnd === 19L)
+    assert(realignedStRead.getCigar === "2S5M")
+    assert(realignedStRead.getMismatchingPositions === "5")
+    val realignedScRead = realignedReads.filter(_.getMapq == 54).head
+    assert(realignedScRead.getStart === 13L)
+    assert(realignedScRead.getEnd === 15L)
+    assert(realignedScRead.getCigar === "2S1M3I1M")
+    assert(realignedScRead.getMismatchingPositions === "2")
+    val realignedEcRead = realignedReads.filter(_.getMapq == 55).head
+    assert(realignedEcRead.getStart === 13L)
+    assert(realignedEcRead.getEnd === 15L)
+    assert(realignedEcRead.getCigar === "1M3I1M1S1H")
+    assert(realignedEcRead.getMismatchingPositions === "2")
+    assert(realignedEcRead.getBasesTrimmedFromEnd === 1)
+  }
+
+  sparkTest("if realigning a target doesn't improve the LOD, don't drop reads") {
+    val reads = sc.loadAlignments(testFile("NA12878.1_854950_855150.sam"))
+    val realignedReads = reads.realignIndels()
+    assert(reads.rdd.count === realignedReads.rdd.count)
+  }
+
+  test("extract seq/qual from a read with no clipped bases") {
+    val read = new RichAlignmentRecord(AlignmentRecord.newBuilder
+      .setSequence("ACTCG")
+      .setQual(Seq(20, 30, 40, 50, 60).map(i => (i + 33).toChar).mkString)
+      .setCigar("5M")
+      .build)
+
+    val (seq, qual) = new RealignIndels(sc).extractSequenceAndQuality(read)
+
+    assert(seq === "ACTCG")
+    assert(qual.length === 5)
+    assert(qual(0) === 20)
+    assert(qual(1) === 30)
+    assert(qual(2) === 40)
+    assert(qual(3) === 50)
+    assert(qual(4) === 60)
+  }
+
+  test("extract seq/qual from a read with clipped bases at start") {
+    val read = new RichAlignmentRecord(AlignmentRecord.newBuilder
+      .setSequence("ACTCG")
+      .setQual(Seq(20, 30, 40, 50, 60).map(i => (i + 33).toChar).mkString)
+      .setCigar("2H1S4M")
+      .build)
+
+    val (seq, qual) = new RealignIndels(sc).extractSequenceAndQuality(read)
+
+    assert(seq === "CTCG")
+    assert(qual.length === 4)
+    assert(qual(0) === 30)
+    assert(qual(1) === 40)
+    assert(qual(2) === 50)
+    assert(qual(3) === 60)
+  }
+
+  test("extract seq/qual from a read with clipped bases at end") {
+    val read = new RichAlignmentRecord(AlignmentRecord.newBuilder
+      .setSequence("ACTCG")
+      .setQual(Seq(20, 30, 40, 50, 60).map(i => (i + 33).toChar).mkString)
+      .setCigar("3M2S")
+      .build)
+
+    val (seq, qual) = new RealignIndels(sc).extractSequenceAndQuality(read)
+
+    assert(seq === "ACT")
+    assert(qual.length === 3)
+    assert(qual(0) === 20)
+    assert(qual(1) === 30)
+    assert(qual(2) === 40)
+  }
+
+  test("if unclip is selected, don't drop base when extracting from a read with clipped bases") {
+    val read = new RichAlignmentRecord(AlignmentRecord.newBuilder
+      .setSequence("ACTCG")
+      .setQual(Seq(20, 30, 40, 50, 60).map(i => (i + 33).toChar).mkString)
+      .setCigar("1S2M2S")
+      .build)
+
+    val (seq, qual) = new RealignIndels(sc,
+      unclipReads = true).extractSequenceAndQuality(read)
+
+    assert(seq === "ACTCG")
+    assert(qual.length === 5)
+    assert(qual(0) === 20)
+    assert(qual(1) === 30)
+    assert(qual(2) === 40)
+    assert(qual(3) === 50)
+    assert(qual(4) === 60)
+  }
+
+  test("get cigar and coordinates for read that spans indel, no clipped bases") {
+    // start: 10
+    // ref:   ACACGT__TCCA
+    // read:     CGTTTTC
+    val (start, end, cigar) = new RealignIndels(sc).cigarAndCoordinates(
+      7,
+      0, 0, 0, 0,
+      10L,
+      3,
+      Consensus("TT", ReferenceRegion("ctg", 15L, 16L)))
+
+    assert(start === 13L)
+    assert(end === 18L)
+    assert(cigar.toString === "3M2I2M")
+  }
+
+  test("get cigar and coordinates for read that spans deletion, clipped bases at start") {
+    // start: 10
+    // ref:   ACACGTACTCCACG
+    // read:    cCGT__TCCA
+    //
+    //             ||
+    // cons:  ACACGTTCCA
+    // read:     CGTTCCA
+    // csi:        5
+    // cei:         6
+    // rsi:      3
+    // rei:             10
+    val (start, end, cigar) = new RealignIndels(sc).cigarAndCoordinates(
+      8,
+      1, 0, 0, 0,
+      10L,
+      3,
+      Consensus("", ReferenceRegion("ctg", 16L, 19L)))
+
+    assert(start === 13L)
+    assert(end === 22L)
+    assert(cigar.toString === "1S3M2D4M")
+  }
+
+  test("get cigar and coordinates for read that falls wholly before insertion") {
+    // start: 10
+    // ref:   ACACGTACTCCACG__AC
+    // read:      GTACTCgc
+    val (start, end, cigar) = new RealignIndels(sc).cigarAndCoordinates(
+      8,
+      0, 2, 0, 0,
+      10L,
+      4,
+      Consensus("AA", ReferenceRegion("ctg", 23L, 24L)))
+    assert(start === 14L)
+    assert(end === 20L)
+    assert(cigar.toString === "6M2S")
+  }
+
+  test("get cigar and coordinates for read that falls wholly after insertion") {
+    // start: 10
+    // ref:   ACA__CGTACTCCACGAC
+    // read:        GTACTCgc
+    val (start, end, cigar) = new RealignIndels(sc).cigarAndCoordinates(
+      8,
+      0, 2, 0, 0,
+      10L,
+      6,
+      Consensus("AA", ReferenceRegion("ctg", 12L, 13L)))
+    assert(start === 14L)
+    assert(end === 20L)
+    assert(cigar.toString === "6M2S")
+  }
+
+  test("get cigar and coordinates for read that falls wholly after deletion") {
+    // start: 10
+    // ref:   ACACGTACTCCACG
+    // con:    _  
+    // read:     aGTACTCa
+    // 1 bp deletion at 11
+    val (start, end, cigar) = new RealignIndels(sc).cigarAndCoordinates(
+      8,
+      1, 1, 0, 1,
+      10L,
+      4,
+      Consensus("", ReferenceRegion("ctg", 11L, 12L)))
+    assert(start === 14L)
+    assert(end === 20L)
+    assert(cigar.toString === "1S6M1S1H")
+  }
+
+  test("get cigar and coordinates for read that partially spans insertion, no clipped bases") {
+    // start: 10
+    // ref:   ACACGTACTC__CACG
+    // read:     aGTACTCA
+    // insert:          AT
+    val (start, end, cigar) = new RealignIndels(sc).cigarAndCoordinates(
+      8,
+      1, 0, 0, 0,
+      10L,
+      4,
+      Consensus("AT", ReferenceRegion("ctg", 19L, 20L)))
+    assert(start === 14L)
+    assert(end === 20L)
+    assert(cigar.toString === "1S6M1S")
+  }
+
+  test("get cigar and coordinates for read that partially spans insertion, clipped bases at end") {
+    // start: 10
+    // ref:   ACACGTACTC__CACG
+    // read:      GTACTCAg
+    // insert:          AT
+    val (start, end, cigar) = new RealignIndels(sc).cigarAndCoordinates(
+      8,
+      0, 1, 1, 0,
+      10L,
+      4,
+      Consensus("AT", ReferenceRegion("ctg", 19L, 20L)))
+    assert(start === 14L)
+    assert(end === 20L)
+    assert(cigar.toString === "1H6M2S")
+  }
+
+  test("get cigar and coordinates for read that partially spans insertion, clipped bases both ends") {
+    // start: 10
+    // ref:   ACACGTACTC__CACG
+    // read:            tTCACGgc
+    // insert:          AT
+    val (start, end, cigar) = new RealignIndels(sc).cigarAndCoordinates(
+      8,
+      1, 2, 0, 0,
+      10L,
+      11,
+      Consensus("AT", ReferenceRegion("ctg", 19L, 20L)))
+
+    assert(start === 20L)
+    assert(end === 24L)
+    assert(cigar.toString === "2S4M2S")
   }
 }

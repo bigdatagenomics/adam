@@ -62,8 +62,8 @@ private[adam] object Consensus extends Serializable {
           case CigarOperator.I => Some(new Consensus(sequence.substring(readPos,
             readPos + cigarElement.getLength),
             ReferenceRegion(start.referenceName,
-              referencePos,
-              referencePos + 1)))
+              referencePos - 1,
+              referencePos)))
           case CigarOperator.D => Some(new Consensus("",
             ReferenceRegion(start.referenceName,
               referencePos,
@@ -111,9 +111,14 @@ private[adam] case class Consensus(consensus: String, index: ReferenceRegion) {
       "Consensus not contained in reference region: %s vs. %s.".format(
         index, rr))
 
-    "%s%s%s".format(reference.substring(0, (index.start - rr.start).toInt),
-      consensus,
-      reference.substring((index.end - 1 - rr.start).toInt))
+    if (consensus.isEmpty) {
+      "%s%s".format(reference.substring(0, (index.start - rr.start).toInt),
+        reference.substring((index.end - rr.start - 1).toInt))
+    } else {
+      "%s%s%s".format(reference.substring(0, (index.start - rr.start + 1).toInt),
+        consensus,
+        reference.substring((index.end - rr.start).toInt))
+    }
   }
 
   override def toString: String = {

@@ -142,7 +142,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("Can read a .bed file without cache") {
     val path = testFile("gencode.v7.annotation.trunc10.bed")
-    val features: RDD[Feature] = sc.loadFeatures(path, StorageLevel.NONE).rdd
+    val features: RDD[Feature] = sc.loadFeatures(path, optStorageLevel = Some(StorageLevel.NONE)).rdd
     assert(features.count === 10)
   }
 
@@ -195,33 +195,39 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("can read a gzipped .vcf file") {
     val path = testFile("test.vcf.gz")
     val vcs = sc.loadVcf(path)
-    assert(vcs.rdd.count === 6)
+    assert(vcs.rdd.count === 7)
+  }
+
+  sparkTest("can read a vcf file with an empty alt") {
+    val path = testFile("test.vcf")
+    val vcs = sc.loadVariants(path)
+    assert(vcs.rdd.count === 7)
   }
 
   sparkTest("can read a BGZF gzipped .vcf file with .gz file extension") {
     val path = testFile("test.vcf.bgzf.gz")
     val vcs = sc.loadVcf(path)
-    assert(vcs.rdd.count === 6)
+    assert(vcs.rdd.count === 7)
   }
 
   sparkTest("can read a BGZF gzipped .vcf file with .bgz file extension") {
     val path = testFile("test.vcf.bgz")
     val vcs = sc.loadVcf(path)
-    assert(vcs.rdd.count === 6)
+    assert(vcs.rdd.count === 7)
   }
 
   ignore("can read an uncompressed BCFv2.2 file") {
     // see https://github.com/samtools/htsjdk/issues/507
     val path = testFile("test.uncompressed.bcf")
     val vcs = sc.loadVcf(path)
-    assert(vcs.rdd.count === 6)
+    assert(vcs.rdd.count === 7)
   }
 
   ignore("can read a BGZF compressed BCFv2.2 file") {
     // see https://github.com/samtools/htsjdk/issues/507
     val path = testFile("test.compressed.bcf")
     val vcs = sc.loadVcf(path)
-    assert(vcs.rdd.count === 6)
+    assert(vcs.rdd.count === 7)
   }
 
   sparkTest("loadIndexedVcf with 1 ReferenceRegion") {
@@ -407,7 +413,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("bqsr1.vcf").replace("bqsr1", "*")
 
     val variants = sc.loadVcf(path).toVariantRDD
-    assert(variants.rdd.count === 715)
+    assert(variants.rdd.count === 722)
   }
 
   sparkTest("load vcf from a directory") {
@@ -510,17 +516,15 @@ class ADAMContextSuite extends ADAMFunSuite {
     })
   }
 
-  sparkTest("add test sample for loadReadsFromSamString ") {
-    val path = testFile("NA12878.sam")
-    val lines = Source.fromFile(path).getLines().filter(!_.startsWith("@")).toArray
-    val samRDD = sc.parallelize(lines)
-    val testRDD = sc.loadAlignments(path) //only easier get sequenceDictionary and recordGroupDictionary, there also can be create by other method
-    val sequenceDictionary: SequenceDictionary = testRDD.sequences
-    val recordGroupDictionary: RecordGroupDictionary = testRDD.recordGroups
-    val alignmentRecordRDD = sc.loadReadsFromSamString(samRDD, sequenceDictionary, recordGroupDictionary)
-    assert(alignmentRecordRDD.rdd.count() === 565)
-    //see the part of result
-    //        alignmentRecordRDD.rdd.take(10).foreach(println)
-    //        assert(1===2)
+  sparkTest("loadAlignments should not fail on single-end and paired-end fastq reads") {
+    val readsFilepath1 = testFile("bqsr1-r1.fq")
+    val readsFilepath2 = testFile("bqsr1-r2.fq")
+    val fastqReads1: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath1).rdd
+    val fastqReads2: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath2).rdd
+    val pairedReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath1, filePath2Opt = Option(readsFilepath2)).rdd
+    assert(fastqReads1.rdd.count === 488)
+    assert(fastqReads2.rdd.count === 488)
+    assert(pairedReads.rdd.count === 976)
+
   }
 }

@@ -17,123 +17,37 @@
  */
 package org.bdgenomics.adam.rdd.read.recalibration
 
-import org.bdgenomics.adam.models.QualityScore
-import org.bdgenomics.adam.rich.DecadentRead
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 /**
  * A Covariate represents a predictor, also known as a "feature" or
  * "independent variable".
  *
- * @note Concrete implementations of Covariate should inherit from
- * AbstractCovariate, not Covariate.
+ * @tparam T The type of this feature.
  */
-private[recalibration] trait Covariate {
-  type Value
+private[recalibration] abstract class Covariate[T] {
 
   /**
    * Given a read, computes the value of this covariate for each residue in the
    * read.
    *
-   * The returned values must be in the same order as the residues. A value
-   * of None means this covariate does not apply to the corresponding residue.
-   *
-   * Example: The DinucCovariate returns a pair of bases for each residue,
-   * except for bases at the start of a read, for which it returns None.
+   * @param read The read to observe.
+   * @return The covariates corresponding to each base in this read.
    */
-  def compute(read: DecadentRead): Seq[Option[Value]]
+  def compute(read: AlignmentRecord): Array[T]
 
-  def apply(read: DecadentRead): Seq[Option[Value]] = compute(read)
-
-  // Format the provided Value to be compatible with GATK's CSV output
-  def toCSV(option: Option[Value]): String = option match {
-    case None        => "(none)"
-    case Some(value) => value.toString
+  /**
+   * Format the provided covariate value to be compatible with GATK's CSV output.
+   *
+   * @param cov A covariate value to render.
+   * @return Returns the covariate value rendered as a single CSV cell.
+   */
+  def toCSV(cov: T): String = {
+    cov.toString
   }
 
-  // A short name for this covariate, used in CSV output header
-  def csvFieldName: String
-}
-
-private[recalibration] abstract class AbstractCovariate[ValueT] extends Covariate with Serializable {
-  override type Value = ValueT
-}
-
-/**
- * Represents a tuple containing a value for each covariate.
- *
- * The values for mandatory covariates are stored in member fields and optional
- * covariate values are in `extras`.
- */
-private[adam] class CovariateKey(
-    val readGroup: String,
-    val quality: QualityScore,
-    val extras: Seq[Option[Covariate#Value]]) extends Serializable {
-
-  def containsNone: Boolean = extras.exists(_.isEmpty)
-
-  override def toString: String = {
-    def parts: Seq[Any] = Seq(readGroup, quality) ++ extras
-    "[" + parts.mkString(", ") + "]"
-  }
-
-  override def equals(other: Any) = other match {
-    case that: CovariateKey =>
-      this.readGroup == that.readGroup && this.quality == that.quality && this.extras == that.extras
-    case _ => false
-  }
-
-  override val hashCode: Int = {
-    41 * (
-      41 * (
-        41 + readGroup.hashCode
-      ) + quality.hashCode
-    ) + extras.hashCode
-  }
-}
-
-/**
- * Represents the abstract space of all possible CovariateKeys for the given set
- * of Covariates.
- */
-private[adam] class CovariateSpace(val extras: IndexedSeq[Covariate]) extends Serializable {
-  // Computes the covariate values for all residues in this read
-  def apply(read: DecadentRead): Seq[CovariateKey] = {
-    // Ask each 'extra' covariate to compute its values for this read
-    val extraVals = extras.map(cov => {
-      val result = cov(read)
-      // Each covariate must return a value per Residue
-      assert(result.size == read.residues.size)
-      result
-    })
-
-    // Construct the CovariateKeys
-    read.residues.zipWithIndex.map {
-      case (residue, residueIdx) =>
-        val residueExtras = extraVals.map(_(residueIdx))
-        new CovariateKey(read.readGroup, residue.quality, residueExtras)
-    }
-  }
-
-  // Format the provided key to be compatible with GATK's CSV output
-  def toCSV(key: CovariateKey): Seq[String] = {
-    val extraFields: Seq[String] = extras.zip(key.extras).map {
-      case (cov, value) => cov.toCSV(value.asInstanceOf[Option[cov.Value]])
-    }
-    Seq(key.readGroup, key.quality.phred.toString) ++ extraFields
-  }
-
-  def csvHeader: Seq[String] = Seq("ReadGroup", "ReportedQ") ++ extras.map(_.csvFieldName)
-
-  override def equals(other: Any): Boolean = other match {
-    case that: CovariateSpace => this.extras == that.extras
-    case _                    => false
-  }
-
-  override def hashCode = extras.hashCode
-
-}
-
-private[recalibration] object CovariateSpace {
-  def apply(extras: Covariate*): CovariateSpace =
-    new CovariateSpace(extras.toIndexedSeq)
+  /**
+   * A short name for this covariate, used in CSV output header.
+   */
+  val csvFieldName: String
 }
