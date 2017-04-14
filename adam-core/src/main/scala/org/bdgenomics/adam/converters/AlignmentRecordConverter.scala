@@ -30,31 +30,26 @@ import scala.collection.JavaConversions._
 class AlignmentRecordConverter extends Serializable {
 
   /**
-   * Converts a single record to FASTQ. FASTQ format is:
-   *
-   * {{{
-   * @readName
-   * sequence
-   * +<optional readname>
-   * ASCII quality scores
-   * }}}
+   * Prepare a single record for conversion to FASTQ and similar formats by
+   * splitting into a tuple of (name, sequence, qualityScores).
    *
    * If the base qualities are unknown (qual is null or equals "*"), the quality
    * scores will be a repeated string of 'B's that is equal to the read length.
    *
-   * @param adamRecord Read to convert to FASTQ.
+   * @param adamRecord Read to prepare for conversion to FASTQ and similar formats.
    * @param maybeAddSuffix If true, check if a "/%d" suffix is attached to the
    *   read. If there is no suffix, a slash and the number of the read in the
    *   sequenced fragment is appended to the readname. Default is false.
    * @param outputOriginalBaseQualities If true and the original base quality
    *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
    *   output the qual field. Defaults to false.
-   * @return Returns this read in string form.
+   * @return Returns tuple of (name, sequence, qualityScores).
    */
-  def convertToFastq(
+  private def prepareFastq(
     adamRecord: AlignmentRecord,
-    maybeAddSuffix: Boolean = false,
-    outputOriginalBaseQualities: Boolean = false): String = {
+    maybeAddSuffix: Boolean,
+    outputOriginalBaseQualities: Boolean): (String, String, String) = {
+
     val readNameSuffix =
       if (maybeAddSuffix &&
         !AlignmentRecordConverter.readNameHasPairedSuffix(adamRecord) &&
@@ -84,9 +79,8 @@ class AlignmentRecordConverter extends Serializable {
       else
         adamRecord.getQual
 
-    "@%s%s\n%s\n+\n%s".format(
-      adamRecord.getReadName,
-      readNameSuffix,
+    (
+      adamRecord.getReadName + readNameSuffix,
       if (adamRecord.getReadNegativeStrand)
         Alphabet.dna.reverseComplement(adamRecord.getSequence)
       else
@@ -96,6 +90,71 @@ class AlignmentRecordConverter extends Serializable {
       else
         qualityScores
     )
+  }
+
+  /**
+   * Converts a single record to FASTQ format.
+   *
+   * FASTQ format is:
+   * {{{
+   * @readName
+   * sequence
+   * +<optional readname>
+   * ASCII quality scores
+   * }}}
+   *
+   * If the base qualities are unknown (qual is null or equals "*"), the quality
+   * scores will be a repeated string of 'B's that is equal to the read length.
+   *
+   * @param adamRecord Read to convert to FASTQ.
+   * @param maybeAddSuffix If true, check if a "/%d" suffix is attached to the
+   *   read. If there is no suffix, a slash and the number of the read in the
+   *   sequenced fragment is appended to the readname. Default is false.
+   * @param outputOriginalBaseQualities If true and the original base quality
+   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
+   *   output the qual field. Defaults to false.
+   * @return Returns this read in string form.
+   */
+  def convertToFastq(
+    adamRecord: AlignmentRecord,
+    maybeAddSuffix: Boolean = false,
+    outputOriginalBaseQualities: Boolean = false): String = {
+
+    val (name, sequence, qualityScores) =
+      prepareFastq(adamRecord, maybeAddSuffix, outputOriginalBaseQualities)
+
+    "@%s\n%s\n+\n%s".format(name, sequence, qualityScores)
+  }
+
+  /**
+   * Converts a single record to Bowtie tab6 format.
+   *
+   * In Bowtie tab6 format, each alignment record or pair is on a single line.
+   * An unpaired alignment record line is [name]\t[seq]\t[qual]\n.
+   * For paired-end alignment records, the second end can have a different name
+   * from the first: [name1]\t[seq1]\t[qual1]\t[name2]\t[seq2]\t[qual2]\n.
+   *
+   * If the base qualities are unknown (qual is null or equals "*"), the quality
+   * scores will be a repeated string of 'B's that is equal to the read length.
+   *
+   * @param adamRecord Read to convert to FASTQ.
+   * @param maybeAddSuffix If true, check if a "/%d" suffix is attached to the
+   *   read. If there is no suffix, a slash and the number of the read in the
+   *   sequenced fragment is appended to the readname. Default is false.
+   * @param outputOriginalBaseQualities If true and the original base quality
+   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
+   *   output the qual field. Defaults to false.
+   * @return Returns this read in string form.
+   */
+  def convertToTab6(
+    adamRecord: AlignmentRecord,
+    maybeAddSuffix: Boolean = false,
+    outputOriginalBaseQualities: Boolean = false): String = {
+
+    val (name, sequence, qualityScores) =
+      prepareFastq(adamRecord, maybeAddSuffix, outputOriginalBaseQualities)
+
+    "%s\t%s\t%s".format(name, sequence, qualityScores)
   }
 
   /**

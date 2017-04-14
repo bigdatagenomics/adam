@@ -72,6 +72,20 @@ private[adam] class FragmentArraySerializer extends IntervalArraySerializer[Refe
 object FragmentRDD {
 
   /**
+   * Hadoop configuration path to check for a boolean value indicating whether
+   * the current or original read qualities should be written. True indicates
+   * to write the original qualities. The default is false.
+   */
+  val WRITE_ORIGINAL_QUALITIES = "org.bdgenomics.adam.rdd.fragment.FragmentRDD.writeOriginalQualities"
+
+  /**
+   * Hadoop configuration path to check for a boolean value indicating whether
+   * to write the "/1" "/2" suffixes to the read name that indicate whether a
+   * read is first or second in a pair. Default is false (no suffixes).
+   */
+  val WRITE_SUFFIXES = "org.bdgenomics.adam.rdd.fragment.FragmentRDD.writeSuffixes"
+
+  /**
    * Creates a FragmentRDD where no record groups or sequence info are attached.
    *
    * @param rdd RDD of fragments.
