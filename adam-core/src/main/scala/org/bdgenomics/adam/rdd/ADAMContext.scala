@@ -547,7 +547,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadBam(
     pathName: String,
-    validationStringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
+    validationStringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadBam.time {
 
     val path = new Path(pathName)
     val bamFiles = getFsAndFiles(path)
@@ -640,7 +640,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadIndexedBam(
     pathName: String,
-    viewRegions: Iterable[ReferenceRegion])(implicit s: DummyImplicit): AlignmentRecordRDD = {
+    viewRegions: Iterable[ReferenceRegion])(implicit s: DummyImplicit): AlignmentRecordRDD = LoadIndexedBam.time {
 
     val path = new Path(pathName)
     // todo: can this method handle SAM and CRAM, or just BAM?
@@ -803,7 +803,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns an unaligned AlignmentRecordRDD.
    */
   def loadInterleavedFastq(
-    pathName: String): AlignmentRecordRDD = {
+    pathName: String): AlignmentRecordRDD = LoadInterleavedFastq.time {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -840,7 +840,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName1: String,
     optPathName2: Option[String],
     optRecordGroup: Option[String] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadFastq.time {
 
     optPathName2.fold({
       loadUnpairedFastq(pathName1,
@@ -871,7 +871,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName1: String,
     pathName2: String,
     optRecordGroup: Option[String] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadPairedFastq.time {
 
     val reads1 = loadUnpairedFastq(
       pathName1,
@@ -926,7 +926,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     setFirstOfPair: Boolean = false,
     setSecondOfPair: Boolean = false,
     optRecordGroup: Option[String] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadUnpairedFastq.time {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -995,7 +995,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadVcf(
     pathName: String,
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextRDD = LoadVcf.time {
 
     // load records from VCF
     val records = readVcfRecords(pathName, None)
@@ -1041,7 +1041,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadIndexedVcf(
     pathName: String,
     viewRegions: Iterable[ReferenceRegion],
-    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): VariantContextRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): VariantContextRDD = LoadIndexedVcf.time {
 
     // load records from VCF
     val records = readVcfRecords(pathName, Some(viewRegions))
@@ -1125,7 +1125,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadFasta(
     pathName: String,
-    maximumFragmentLength: Long = 10000L): NucleotideContigFragmentRDD = {
+    maximumFragmentLength: Long = 10000L): NucleotideContigFragmentRDD = LoadFasta.time {
 
     val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
       pathName,
@@ -1161,7 +1161,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   sequencing fragment.
    */
   def loadInterleavedFastqAsFragments(
-    pathName: String): FragmentRDD = {
+    pathName: String): FragmentRDD = LoadInterleavedFastqFragments.time {
 
     val job = HadoopUtil.newJob(sc)
     val records = sc.newAPIHadoopFile(
@@ -1182,7 +1182,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load features into a FeatureRDD and convert to a CoverageRDD.
    * Coverage is stored in the score field of Feature.
    *
-   * Loads files ending in:
+   * Loads path names ending in:
    * * .bed/.bed.gz/.bed.bz2 as BED6/12 format,
    * * .gff3/.gff3.gz/.gff3.bz2 as GFF3 format,
    * * .gtf/.gtf.gz/.gtf.bz2/.gff/.gff.gz/.gff.bz2 as GTF/GFF2 format,
@@ -1212,7 +1212,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param stringency The validation stringency to use when validating BED6/12, GFF3,
    *   GTF/GFF2, NarrowPeak, or IntervalList formats. Defaults to ValidationStringency.STRICT.
-   *
    * @return Returns a FeatureRDD converted to a CoverageRDD.
    */
   def loadCoverage(
@@ -1221,7 +1220,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optMinPartitions: Option[Int] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): CoverageRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): CoverageRDD = LoadCoverage.time {
 
     loadFeatures(pathName,
       optStorageLevel = optStorageLevel,
@@ -1266,7 +1265,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadGff3.time {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GFF3Parser().parse(_, stringency))
@@ -1291,7 +1290,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadGtf.time {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GTFParser().parse(_, stringency))
@@ -1316,7 +1315,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadBed.time {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new BEDParser().parse(_, stringency))
@@ -1341,7 +1340,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadNarrowPeak.time {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new NarrowPeakParser().parse(_, stringency))
@@ -1363,7 +1362,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadIntervalList(
     pathName: String,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadIntervalList.time {
 
     val parsedLines = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .map(new IntervalListParser().parseWithHeader(_, stringency))
@@ -1447,7 +1446,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load features into a FeatureRDD.
    *
-   * Loads files ending in:
+   * Loads path names ending in:
    * * .bed/.bed.gz/.bed.bz2 as BED6/12 format,
    * * .gff3/.gff3.gz/.gff3.bz2 as GFF3 format,
    * * .gtf/.gtf.gz/.gtf.bz2/.gff/.gff.gz/.gff.bz2 as GTF/GFF2 format,
@@ -1488,31 +1487,31 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadFeatures.time {
 
     if (isBedExt(pathName)) {
-      log.info(s"Loading $pathName as BED and converting to features.")
+      log.info(s"Loading $pathName as BED and converting to Features.")
       loadBed(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isGff3Ext(pathName)) {
-      log.info(s"Loading $pathName as GFF3 and converting to features.")
+      log.info(s"Loading $pathName as GFF3 and converting to Features.")
       loadGff3(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isGtfExt(pathName)) {
-      log.info(s"Loading $pathName as GTF/GFF2 and converting to features.")
+      log.info(s"Loading $pathName as GTF/GFF2 and converting to Features.")
       loadGtf(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isNarrowPeakExt(pathName)) {
-      log.info(s"Loading $pathName as NarrowPeak and converting to features.")
+      log.info(s"Loading $pathName as NarrowPeak and converting to Features.")
       loadNarrowPeak(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isIntervalListExt(pathName)) {
-      log.info(s"Loading $pathName as IntervalList and converting to features.")
+      log.info(s"Loading $pathName as IntervalList and converting to Features.")
       loadIntervalList(pathName,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
@@ -1527,20 +1526,20 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load reference sequences into a broadcastable ReferenceFile.
    *
-   * If the file type is 2bit, loads a 2bit file. Else, uses loadContigFragments
+   * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
    * to load the reference as an RDD, which is then collected to the driver.
    *
    * @see loadContigFragments
    *
-   * @param pathName The path name to load reference sequences from. Globs/directories are
-   *   not supported.
+   * @param pathName The path name to load reference sequences from.
+   *   Globs/directories for 2bit format are not supported.
    * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
    * @return Returns a broadcastable ReferenceFile.
    */
   def loadReferenceFile(
     pathName: String,
-    maximumFragmentLength: Long): ReferenceFile = {
+    maximumFragmentLength: Long): ReferenceFile = LoadReferenceFile.time {
 
     if (is2BitExt(pathName)) {
       new TwoBitFile(new LocalFileByteAccess(new File(pathName)))
@@ -1573,7 +1572,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     maximumFragmentLength: Long = 10000L,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): NucleotideContigFragmentRDD = {
+    optProjection: Option[Schema] = None): NucleotideContigFragmentRDD = LoadContigFragments.time {
 
     if (isFastaExt(pathName)) {
       log.info(s"Loading $pathName as FASTA and converting to NucleotideContigFragment.")
@@ -1611,7 +1610,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeRDD = LoadGenotypes.time {
 
     if (isVcfExt(pathName)) {
       log.info(s"Loading $pathName as VCF and converting to Genotypes.")
@@ -1645,7 +1644,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantRDD = {
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantRDD = LoadVariants.time {
 
     if (isVcfExt(pathName)) {
       log.info(s"Loading $pathName as VCF and converting to Variants.")
@@ -1659,14 +1658,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load alignment records into an AlignmentRecordRDD.
    *
-   * This method can load:
+   * Loads path names ending in:
+   * * .bam/.cram/.sam as BAM/CRAM/SAM format,
+   * * .fa/.fa.gz/.fa.bz2/.fasta/.fasta.gz/.fasta.bz2 as FASTA format,
+   * * .fq/.fq.gz/.fq.bz2/.fastq/.fastq.gz/.fastq.bz2 as FASTQ format, and
+   * * .ifq/.ifq.gz/.ifq.bz2 as interleaved FASTQ format.
    *
-   * * AlignmentRecords via Parquet (default)
-   * * BAM/CRAM/SAM (.bam, .cram, .sam)
-   * * FASTQ (interleaved, single end, paired end) (.ifq, .fq/.fastq)
-   * * FASTA (.fa, .fasta)
-   *
-   * As hinted above, the input type is inferred from the file path extension.
+   * If none of these match, fall back to Parquet + Avro.
    *
    * @see loadBam
    * @see loadFastq
@@ -1678,8 +1676,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
    * @param optPathName2 The optional path name to load the second set of alignment
-   *   records from, if loading paired FASTQ format. Globs/directories are not supported (todo: confirm).
-   *   Defaults to None.
+   *   records from, if loading paired FASTQ format. Globs/directories are supported,
+   *   although file extension must be present. Defaults to None.
    * @param optRecordGroup The optional record group name to associate to the alignment
    *   records. Defaults to None.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
@@ -1698,7 +1696,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optRecordGroup: Option[String] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadAlignmentRecords.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadAlignments.time {
 
     if (isBamExt(pathName)) {
       log.info(s"Loading $pathName as BAM/CRAM/SAM and converting to AlignmentRecords.")
@@ -1721,12 +1719,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load fragments into a FragmentRDD.
    *
-   * This method can load:
+   * Loads path names ending in:
+   * * .bam/.cram/.sam as BAM/CRAM/SAM format and
+   * * .ifq/.ifq.gz/.ifq.bz2 as interleaved FASTQ format.
    *
-   * * Fragments via Parquet (default)
-   * * BAM/CRAM/SAM (.bam, .cram, .sam)
-   * * FASTQ (interleaved only --> .ifq)
-   * * Autodetects AlignmentRecord as Parquet with .reads.adam extension.
+   * If none of these match, fall back to Parquet + Avro.
    *
    * @see loadBam
    * @see loadAlignments

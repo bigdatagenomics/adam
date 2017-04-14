@@ -24,12 +24,33 @@ import org.bdgenomics.utils.instrumentation.Metrics
  */
 object Timers extends Metrics {
 
-  // File Loading
-  val LoadAlignmentRecords = timer("Load Alignment Records")
-  val BAMLoad = timer("BAM File Load")
-  val ParquetLoad = timer("Parquet File Load")
+  // Load methods
+  val LoadAlignments = timer("Load Alignments")
+  val LoadContigFragments = timer("Load Contig Fragments")
+  val LoadCoverage = timer("Load Coverage")
   val LoadFeatures = timer("Load Features")
   val LoadFragments = timer("Load Fragments")
+  val LoadGenotypes = timer("Load Genotypes")
+  val LoadReferenceFile = timer("Load ReferenceFile")
+  val LoadVariants = timer("Load Variants")
+
+  // Format specific load methods
+  val LoadBam = timer("Load BAM/CRAM/SAM format")
+  val LoadBed = timer("Load BED6/12 format")
+  val LoadFasta = timer("Load FASTA format")
+  val LoadFastq = timer("Load FASTQ format")
+  val LoadGff3 = timer("Load GFF3 format")
+  val LoadGtf = timer("Load GTF/GFF2 format")
+  val LoadIndexedBam = timer("Load indexed BAM format")
+  val LoadIndexedVcf = timer("Load indexed VCF format")
+  val LoadInterleavedFastq = timer("Load interleaved FASTQ format")
+  val LoadInterleavedFastqFragments = timer("Load interleaved FASTQ format as Fragments")
+  val LoadIntervalList = timer("Load IntervalList format")
+  val LoadNarrowPeak = timer("Load NarrowPeak format")
+  val LoadPairedFastq = timer("Load paired FASTQ format")
+  val LoadParquet = timer("Load Parquet + Avro format")
+  val LoadUnpairedFastq = timer("Load unpaired FASTQ format")
+  val LoadVcf = timer("Load VCF format")
 
   // Trim Reads
   val TrimReadsInDriver = timer("Trim Reads")
