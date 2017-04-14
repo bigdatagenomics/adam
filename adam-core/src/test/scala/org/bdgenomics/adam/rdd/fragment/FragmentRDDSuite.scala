@@ -25,7 +25,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
 
   sparkTest("don't lose any reads when piping interleaved fastq to sam") {
     // write suffixes at end of reads
-    sc.hadoopConfiguration.setBoolean(InterleavedFASTQInFormatter.WRITE_SUFFIXES, true)
+    sc.hadoopConfiguration.setBoolean(FragmentRDD.WRITE_SUFFIXES, true)
 
     val fragmentsPath = testFile("interleaved_fastq_sample1.ifq")
     val ardd = sc.loadFragments(fragmentsPath)
@@ -37,6 +37,27 @@ class FragmentRDDSuite extends ADAMFunSuite {
 
     // this script converts interleaved fastq to unaligned sam
     val scriptPath = testFile("fastq_to_usam.py")
+
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe("python $0",
+      files = Seq(scriptPath))
+    val newRecords = pipedRdd.rdd.count
+    assert(2 * records === newRecords)
+  }
+
+  sparkTest("don't lose any reads when piping tab6 to sam") {
+    // write suffixes at end of reads
+    sc.hadoopConfiguration.setBoolean(FragmentRDD.WRITE_SUFFIXES, true)
+
+    val fragmentsPath = testFile("interleaved_fastq_sample1.ifq")
+    val ardd = sc.loadFragments(fragmentsPath)
+    val records = ardd.rdd.count
+    assert(records === 3)
+
+    implicit val tFormatter = Tab6InFormatter
+    implicit val uFormatter = new AnySAMOutFormatter
+
+    // this script converts tab6 to unaligned sam
+    val scriptPath = testFile("tab6_to_usam.py")
 
     val pipedRdd: AlignmentRecordRDD = ardd.pipe("python $0",
       files = Seq(scriptPath))

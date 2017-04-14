@@ -25,63 +25,73 @@ import org.bdgenomics.formats.avro.Fragment
 import org.bdgenomics.utils.misc.Logging
 
 /**
- * InFormatter companion that creates an InFormatter that writes interleaved
- * FASTQ.
+ * InFormatter companion that creates an InFormatter that writes Bowtie tab6 format.
  */
-object InterleavedFASTQInFormatter extends InFormatterCompanion[Fragment, FragmentRDD, InterleavedFASTQInFormatter] {
+object Tab6InFormatter extends InFormatterCompanion[Fragment, FragmentRDD, Tab6InFormatter] {
 
   /**
-   * Builds an InterleavedFASTQInFormatter to write Interleaved FASTQ.
+   * Builds an Tab6InFormatter to write Bowtie tab6 format.
    *
    * @param gRdd GenomicRDD of Fragments. Used to get HadoopConfiguration.
-   * @return Returns a new Interleaved FASTQ InFormatter.
+   * @return Returns a new Tab6InFormatter.
    */
-  def apply(gRdd: FragmentRDD): InterleavedFASTQInFormatter = {
-    new InterleavedFASTQInFormatter(gRdd.rdd.context.hadoopConfiguration)
+  def apply(gRdd: FragmentRDD): Tab6InFormatter = {
+    new Tab6InFormatter(gRdd.rdd.context.hadoopConfiguration)
   }
 }
 
-class InterleavedFASTQInFormatter private (
-    conf: Configuration) extends InFormatter[Fragment, FragmentRDD, InterleavedFASTQInFormatter] with Logging {
+class Tab6InFormatter private (
+    conf: Configuration) extends InFormatter[Fragment, FragmentRDD, Tab6InFormatter] with Logging {
 
-  protected val companion = InterleavedFASTQInFormatter
+  protected val companion = Tab6InFormatter
+  private val newLine = "\n".getBytes
   private val converter = new AlignmentRecordConverter
   private val writeSuffixes = conf.getBoolean(FragmentRDD.WRITE_SUFFIXES, false)
   private val writeOriginalQualities = conf.getBoolean(FragmentRDD.WRITE_ORIGINAL_QUALITIES, false)
 
   /**
-   * Writes alignment records to an output stream in interleaved FASTQ format.
+   * Writes alignment records to an output stream in Bowtie tab6 format.
+   *
+   * In Bowtie tab6 format, each alignment record or pair is on a single line.
+   * An unpaired alignment record line is [name]\t[seq]\t[qual]\n.
+   * For paired-end alignment records, the second end can have a different name
+   * from the first: [name1]\t[seq1]\t[qual1]\t[name2]\t[seq2]\t[qual2]\n.
    *
    * @param os An OutputStream connected to a process we are piping to.
    * @param iter An iterator of records to write.
    */
   def write(os: OutputStream, iter: Iterator[Fragment]) {
-    iter.flatMap(frag => {
+    iter.map(frag => {
       val reads = converter.convertFragment(frag).toSeq
 
       if (reads.size < 2) {
-        log.warn("Fewer than two reads for %s. Dropping...".format(frag))
-        None
+        reads
       } else {
         if (reads.size > 2) {
           log.warn("More than two reads for %s. Taking first 2.".format(frag))
         }
-        Some((reads(0), reads(1)))
+        reads.take(2)
       }
-    }).foreach(p => {
-      val (read1, read2) = p
+    }).foreach(reads => {
 
-      // convert both reads to fastq
-      val fastq1 = converter.convertToFastq(read1,
+      // write unpaired read or first of paired-end reads
+      val first = converter.convertToTab6(reads(0),
         maybeAddSuffix = writeSuffixes,
-        outputOriginalBaseQualities = writeOriginalQualities) + "\n"
-      val fastq2 = converter.convertToFastq(read2,
-        maybeAddSuffix = writeSuffixes,
-        outputOriginalBaseQualities = writeOriginalQualities) + "\n"
+        outputOriginalBaseQualities = writeOriginalQualities)
 
-      // write both to the output stream
-      os.write(fastq1.getBytes)
-      os.write(fastq2.getBytes)
+      os.write(first.getBytes)
+
+      // write second of paired-end reads, if present
+      if (reads.size > 1) {
+        val second = "\t" + converter.convertToTab6(reads(1),
+          maybeAddSuffix = writeSuffixes,
+          outputOriginalBaseQualities = writeOriginalQualities)
+
+        os.write(second.getBytes)
+      }
+
+      // end line
+      os.write(newLine)
     })
   }
 }
