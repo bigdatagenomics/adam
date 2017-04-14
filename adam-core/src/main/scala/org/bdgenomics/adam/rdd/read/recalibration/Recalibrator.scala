@@ -66,7 +66,7 @@ private[recalibration] case class Recalibrator(
                           covariates: Array[CovariateKey]): String = ComputeQualityScore.time {
     val origQuals = read.getQual
     val quals = new StringBuilder(origQuals)
-    val newQuals = table(covariates.map(_.toDefault))
+    val newQuals = table(covariates)
     var idx = 0
     while (idx < origQuals.length) {
       // Keep original quality score if below recalibration threshold
