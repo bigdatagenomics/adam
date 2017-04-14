@@ -49,7 +49,7 @@ private[adam] case class RecalibrationTable private[recalibration] (
       var idx = 0
       while (idx < numCovariates) {
         val key = covariates(idx)
-        newQuals(idx) = table.getOrElse(key, key.quality)
+        newQuals(idx) = table.getOrElse(key.toDefault, key.quality)
         idx += 1
       }
     }
@@ -200,7 +200,7 @@ private[recalibration] object RecalibrationTable {
     val recalibrationQualityMappings = InvertingRecalibrationTable.time {
       observed.entries
         .keys
-        .map(key => (key, tt.lookup(key)))
+        .map(key => (key.toDefault, tt.lookup(key)))
         .toMap
     }
 

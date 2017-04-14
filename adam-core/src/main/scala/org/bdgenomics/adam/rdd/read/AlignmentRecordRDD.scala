@@ -645,7 +645,7 @@ case class AlignmentRecordRDD(
     replaceRdd(BaseQualityRecalibration(rdd,
       knownSnps,
       recordGroups,
-      (minAcceptableQuality + 33).toChar,
+      minAcceptableQuality,
       optStorageLevel))
   }
 
