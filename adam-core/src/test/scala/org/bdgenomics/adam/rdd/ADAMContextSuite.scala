@@ -27,10 +27,13 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.CRAMInputFormat
+
+import scala.io.Source
 
 case class TestSaveArgs(var outputPath: String) extends ADAMSaveAnyArgs {
   var sortFastqOutput = false
@@ -51,10 +54,20 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("sc.loadParquet should not fail on unmapped reads") {
     val readsFilepath = testFile("unmapped.sam")
-
     // Convert the reads12.sam file into a parquet file
     val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath).rdd
     assert(bamReads.rdd.count === 200)
+  }
+
+  sparkTest("sc.loadAlignments should not fail on single-end and paired-end fastq reads ") {
+    val readsFilepath1 = testFile("bqsr1-r1.fq")
+    val readsFilepath2 = testFile("bqsr1-r2.fq")
+    val fastqReads1: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath1).rdd
+    val fastqReads2: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath2).rdd
+    val pairedReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath1, filePath2Opt = Option(readsFilepath2)).rdd
+    assert(fastqReads1.rdd.count === 488)
+    assert(fastqReads2.rdd.count === 488)
+    assert(pairedReads.rdd.count === 976)
   }
 
   sparkTest("sc.loadParquet should not load a file without a type specified") {
@@ -203,13 +216,15 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vcs.rdd.count === 7)
   }
 
-  ignore("can read an uncompressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
+  ignore("can read an uncompressed BCFv2.2 file") {
+    // see https://github.com/samtools/htsjdk/issues/507
     val path = testFile("test.uncompressed.bcf")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 7)
   }
 
-  ignore("can read a BGZF compressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
+  ignore("can read a BGZF compressed BCFv2.2 file") {
+    // see https://github.com/samtools/htsjdk/issues/507
     val path = testFile("test.compressed.bcf")
     val vcs = sc.loadVcf(path)
     assert(vcs.rdd.count === 7)
@@ -510,5 +525,6 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(fastqReads1.rdd.count === 488)
     assert(fastqReads2.rdd.count === 488)
     assert(pairedReads.rdd.count === 976)
+
   }
 }
