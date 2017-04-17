@@ -277,6 +277,8 @@ following options:
   negative strand. Conflicts with `-only_positive_strands`.
 * `-only_positive_strands`: Only computes coverage for reads aligned on the
   positive strand. Conflicts with `-only_negative_strands`.
+* `-sort_lexicographically`: Sorts coverage by position. Contigs are ordered
+  lexicographically. Only applies if running with `-collapse`.
 
 ## Conversion tools {#conversions}
 

@@ -58,12 +58,18 @@ class Reads2CoverageArgs extends Args4jBase with ParquetArgs {
   var asSingleFile: Boolean = false
   @Args4jOption(required = false, name = "-disable_fast_concat", usage = "Disables the parallel file concatenation engine.")
   var disableFastConcat: Boolean = false
+  @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
+  var sortLexicographically: Boolean = false
 }
 
 class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCommand[Reads2CoverageArgs] {
   val companion: BDGCommandCompanion = Reads2Coverage
 
   def run(sc: SparkContext): Unit = {
+    if (args.sortLexicographically) {
+      require(args.collapse,
+        "-sort_lexicographically can only be provided when collapsing (-collapse).")
+    }
 
     val proj = Projection(readMapped, contigName, start, end, cigar)
 
@@ -82,9 +88,21 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
       readsRdd
     }
 
-    finalReads.toCoverage(args.collapse)
-      .save(args.outputPath,
-        asSingleFile = args.asSingleFile,
-        disableFastConcat = args.disableFastConcat)
+    val coverage = finalReads.toCoverage()
+
+    val maybeCollapsedCoverage = if (args.collapse) {
+      val sortedCoverage = if (args.sortLexicographically) {
+        coverage.sortLexicographically()
+      } else {
+        coverage.sort()
+      }
+      sortedCoverage.collapse()
+    } else {
+      coverage
+    }
+
+    maybeCollapsedCoverage.save(args.outputPath,
+      asSingleFile = args.asSingleFile,
+      disableFastConcat = args.disableFastConcat)
   }
 }
