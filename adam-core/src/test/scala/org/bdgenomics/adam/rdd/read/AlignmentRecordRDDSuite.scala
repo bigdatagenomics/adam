@@ -103,7 +103,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     // get pileup at position 30
     val pointCoverage = reads.filterByOverlappingRegion(ReferenceRegion("artificial", 30, 31)).rdd.count
-    val coverage: CoverageRDD = reads.toCoverage(false)
+    val coverage: CoverageRDD = reads.toCoverage()
     assert(coverage.rdd.filter(r => r.start == 30).first.count == pointCoverage)
   }
 
@@ -113,7 +113,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     // get pileup at position 30
     val pointCoverage = reads.filterByOverlappingRegions(Array(ReferenceRegion("artificial", 30, 31)).toList).rdd.count
-    val coverage: CoverageRDD = reads.toCoverage(false)
+    val coverage: CoverageRDD = reads.toCoverage()
     assert(coverage.rdd.filter(r => r.start == 30).first.count == pointCoverage)
   }
 
@@ -122,7 +122,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
 
     // repartition reads to 1 partition to acheive maximal merging of coverage
-    val coverage: CoverageRDD = reads.transform(_.repartition(1)).toCoverage(true)
+    val coverage: CoverageRDD = reads.transform(_.repartition(1))
+      .toCoverage()
+      .sort()
+      .collapse()
 
     assert(coverage.rdd.count == 18)
     assert(coverage.flatten.rdd.count == 170)

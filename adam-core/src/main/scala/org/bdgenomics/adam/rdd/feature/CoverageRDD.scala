@@ -108,9 +108,11 @@ case class CoverageRDD(rdd: RDD[Coverage],
    * For example, adjacent records Coverage("chr1", 1, 10, 3.0) and Coverage("chr1", 10, 20, 3.0)
    * would be merged into one record Coverage("chr1", 1, 20, 3.0).
    *
+   * @note Data must be sorted before collapse is called.
+   *
    * @return merged tuples of adjacent ReferenceRegions and coverage.
    */
-  def collapse: CoverageRDD = {
+  def collapse(): CoverageRDD = {
     val newRDD: RDD[Coverage] = rdd
       .mapPartitions(iter => {
         if (iter.hasNext) {
