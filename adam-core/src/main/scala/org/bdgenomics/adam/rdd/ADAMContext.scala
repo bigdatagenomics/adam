@@ -33,6 +33,7 @@ import org.apache.avro.generic.IndexedRecord
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificRecord, SpecificRecordBase }
 import org.apache.hadoop.fs.{ FileSystem, Path, PathFilter }
 import org.apache.hadoop.io.{ LongWritable, Text }
+import org.apache.hadoop.io.compress.CompressionCodecFactory
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 import org.apache.parquet.avro.{ AvroParquetInputFormat, AvroReadSupport }
 import org.apache.parquet.filter2.predicate.FilterPredicate
@@ -530,6 +531,25 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           }
         }
       })
+  }
+
+  /**
+   * Trim the default compression extension from the specified path name, if it is
+   * recognized as compressed by the compression codecs in the Hadoop configuration.
+   *
+   * @param pathName The path name to trim.
+   * @return The path name with the default compression extension trimmed.
+   */
+  private[rdd] def trimExtensionIfCompressed(pathName: String): String = {
+    val codecFactory = new CompressionCodecFactory(sc.hadoopConfiguration)
+    val path = new Path(pathName)
+    val codec = codecFactory.getCodec(path)
+    if (codec == null) {
+      pathName
+    } else {
+      val extension = codec.getDefaultExtension()
+      CompressionCodecFactory.removeSuffix(pathName, extension)
+    }
   }
 
   /**
@@ -1183,11 +1203,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Coverage is stored in the score field of Feature.
    *
    * Loads path names ending in:
-   * * .bed/.bed.gz/.bed.bz2 as BED6/12 format,
-   * * .gff3/.gff3.gz/.gff3.bz2 as GFF3 format,
-   * * .gtf/.gtf.gz/.gtf.bz2/.gff/.gff.gz/.gff.bz2 as GTF/GFF2 format,
-   * * .narrow[pP]eak/.narrow[pP]eak.gz/.narrow[pP]eak.bz2 as NarrowPeak format, and
-   * * .interval_list/.interval_list.gz/.interval_list.bz2 as IntervalList format.
+   * * .bed as BED6/12 format,
+   * * .gff3 as GFF3 format,
+   * * .gtf/.gff as GTF/GFF2 format,
+   * * .narrow[pP]eak as NarrowPeak format, and
+   * * .interval_list as IntervalList format.
    *
    * If none of these match, fall back to Parquet + Avro.
    *
@@ -1447,11 +1467,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Load features into a FeatureRDD.
    *
    * Loads path names ending in:
-   * * .bed/.bed.gz/.bed.bz2 as BED6/12 format,
-   * * .gff3/.gff3.gz/.gff3.bz2 as GFF3 format,
-   * * .gtf/.gtf.gz/.gtf.bz2/.gff/.gff.gz/.gff.bz2 as GTF/GFF2 format,
-   * * .narrow[pP]eak/.narrow[pP]eak.gz/.narrow[pP]eak.bz2 as NarrowPeak format, and
-   * * .interval_list/.interval_list.gz/.interval_list.bz2 as IntervalList format.
+   * * .bed as BED6/12 format,
+   * * .gff3 as GFF3 format,
+   * * .gtf/.gff as GTF/GFF2 format,
+   * * .narrow[pP]eak as NarrowPeak format, and
+   * * .interval_list as IntervalList format.
    *
    * If none of these match, fall back to Parquet + Avro.
    *
@@ -1486,31 +1506,32 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadFeatures.time {
 
-    if (isBedExt(pathName)) {
+    val trimmedPathName = trimExtensionIfCompressed(pathName)
+    if (isBedExt(trimmedPathName)) {
       log.info(s"Loading $pathName as BED and converting to Features.")
       loadBed(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
-    } else if (isGff3Ext(pathName)) {
+    } else if (isGff3Ext(trimmedPathName)) {
       log.info(s"Loading $pathName as GFF3 and converting to Features.")
       loadGff3(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
-    } else if (isGtfExt(pathName)) {
+    } else if (isGtfExt(trimmedPathName)) {
       log.info(s"Loading $pathName as GTF/GFF2 and converting to Features.")
       loadGtf(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
-    } else if (isNarrowPeakExt(pathName)) {
+    } else if (isNarrowPeakExt(trimmedPathName)) {
       log.info(s"Loading $pathName as NarrowPeak and converting to Features.")
       loadNarrowPeak(pathName,
         optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
-    } else if (isIntervalListExt(pathName)) {
+    } else if (isIntervalListExt(trimmedPathName)) {
       log.info(s"Loading $pathName as IntervalList and converting to Features.")
       loadIntervalList(pathName,
         optMinPartitions = optMinPartitions,
@@ -1551,8 +1572,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load nucleotide contig fragments into a NucleotideContigFragmentRDD.
    *
-   * If the path name has a .fa/.fa.gz/.fa.bz2/.fasta/.fasta.gz/.fasta.bz2 extension,
-   * load as FASTA format. Else, fall back to Parquet + Avro.
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
    *
    * @see loadFasta
    * @see loadParquetContigFragments
@@ -1574,7 +1595,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): NucleotideContigFragmentRDD = LoadContigFragments.time {
 
-    if (isFastaExt(pathName)) {
+    val trimmedPathName = trimExtensionIfCompressed(pathName)
+    if (isFastaExt(trimmedPathName)) {
       log.info(s"Loading $pathName as FASTA and converting to NucleotideContigFragment.")
       loadFasta(
         pathName,
@@ -1660,9 +1682,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format,
-   * * .fa/.fa.gz/.fa.bz2/.fasta/.fasta.gz/.fasta.bz2 as FASTA format,
-   * * .fq/.fq.gz/.fq.bz2/.fastq/.fastq.gz/.fastq.bz2 as FASTQ format, and
-   * * .ifq/.ifq.gz/.ifq.bz2 as interleaved FASTQ format.
+   * * .fa/.fasta as FASTA format,
+   * * .fq/.fastq as FASTQ format, and
+   * * .ifq as interleaved FASTQ format.
    *
    * If none of these match, fall back to Parquet + Avro.
    *
@@ -1698,16 +1720,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadAlignments.time {
 
-    if (isBamExt(pathName)) {
+    val trimmedPathName = trimExtensionIfCompressed(pathName)
+    if (isBamExt(trimmedPathName)) {
       log.info(s"Loading $pathName as BAM/CRAM/SAM and converting to AlignmentRecords.")
       loadBam(pathName, stringency)
-    } else if (isInterleavedFastqExt(pathName)) {
+    } else if (isInterleavedFastqExt(trimmedPathName)) {
       log.info(s"Loading $pathName as interleaved FASTQ and converting to AlignmentRecords.")
       loadInterleavedFastq(pathName)
-    } else if (isFastqExt(pathName)) {
+    } else if (isFastqExt(trimmedPathName)) {
       log.info(s"Loading $pathName as unpaired FASTQ and converting to AlignmentRecords.")
       loadFastq(pathName, optPathName2, optRecordGroup, stringency)
-    } else if (isFastaExt(pathName)) {
+    } else if (isFastaExt(trimmedPathName)) {
       log.info(s"Loading $pathName as FASTA and converting to AlignmentRecords.")
       AlignmentRecordRDD.unaligned(loadFasta(pathName, maximumFragmentLength = 10000L).toReads)
     } else {
@@ -1721,7 +1744,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format and
-   * * .ifq/.ifq.gz/.ifq.bz2 as interleaved FASTQ format.
+   * * .ifq as interleaved FASTQ format.
    *
    * If none of these match, fall back to Parquet + Avro.
    *
@@ -1744,7 +1767,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): FragmentRDD = LoadFragments.time {
 
-    if (isBamExt(pathName)) {
+    val trimmedPathName = trimExtensionIfCompressed(pathName)
+    if (isBamExt(trimmedPathName)) {
       // check to see if the input files are all queryname sorted
       if (filesAreQuerynameSorted(pathName)) {
         log.info(s"Loading $pathName as queryname sorted BAM/CRAM/SAM and converting to Fragments.")
@@ -1754,7 +1778,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         log.info(s"Loading $pathName as BAM/CRAM/SAM and converting to Fragments.")
         loadBam(pathName).toFragments
       }
-    } else if (isInterleavedFastqExt(pathName)) {
+    } else if (isInterleavedFastqExt(trimmedPathName)) {
       log.info(s"Loading $pathName as interleaved FASTQ and converting to Fragments.")
       loadInterleavedFastqAsFragments(pathName)
     } else {

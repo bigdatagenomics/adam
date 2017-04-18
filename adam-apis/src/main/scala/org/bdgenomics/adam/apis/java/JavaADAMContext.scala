@@ -51,9 +51,9 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format,
-   * * .fa/.fa.gz/.fa.bz2/.fasta/.fasta.gz/.fasta.bz2 as FASTA format,
-   * * .fq/.fq.gz/.fq.bz2/.fastq/.fastq.gz/.fastq.bz2 as FASTQ format, and
-   * * .ifq/.ifq.gz/.ifq.bz2 as interleaved FASTQ format.
+   * * .fa/.fasta as FASTA format,
+   * * .fq/.fastq as FASTQ format, and
+   * * .ifq as interleaved FASTQ format.
    *
    * If none of these match, fall back to Parquet + Avro.
    *
@@ -73,8 +73,8 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   /**
    * Load nucleotide contig fragments into a NucleotideContigFragmentRDD (java-friendly method).
    *
-   * If the path name has a .fa/.fa.gz/.fa.bz2/.fasta/.fasta.gz/.fasta.bz2 extension,
-   * load as FASTA format. Else, fall back to Parquet + Avro.
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
    *
    * @see ADAMContext#loadContigFragments
    *
@@ -92,7 +92,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format and
-   * * .ifq/.ifq.gz/.ifq.bz2 as interleaved FASTQ format.
+   * * .ifq as interleaved FASTQ format.
    *
    * If none of these match, fall back to Parquet + Avro.
    *
@@ -111,11 +111,11 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * Load features into a FeatureRDD (java-friendly method).
    *
    * Loads path names ending in:
-   * * .bed/.bed.gz/.bed.bz2 as BED6/12 format,
-   * * .gff3/.gff3.gz/.gff3.bz2 as GFF3 format,
-   * * .gtf/.gtf.gz/.gtf.bz2/.gff/.gff.gz/.gff.bz2 as GTF/GFF2 format,
-   * * .narrow[pP]eak/.narrow[pP]eak.gz/.narrow[pP]eak.bz2 as NarrowPeak format, and
-   * * .interval_list/.interval_list.gz/.interval_list.bz2 as IntervalList format.
+   * * .bed as BED6/12 format,
+   * * .gff3 as GFF3 format,
+   * * .gtf/.gff as GTF/GFF2 format,
+   * * .narrow[pP]eak as NarrowPeak format, and
+   * * .interval_list as IntervalList format.
    *
    * If none of these match, fall back to Parquet + Avro.
    *
@@ -135,11 +135,11 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * Coverage is stored in the score field of Feature.
    *
    * Loads path names ending in:
-   * * .bed/.bed.gz/.bed.bz2 as BED6/12 format,
-   * * .gff3/.gff3.gz/.gff3.bz2 as GFF3 format,
-   * * .gtf/.gtf.gz/.gtf.bz2/.gff/.gff.gz/.gff.bz2 as GTF/GFF2 format,
-   * * .narrow[pP]eak/.narrow[pP]eak.gz/.narrow[pP]eak.bz2 as NarrowPeak format, and
-   * * .interval_list/.interval_list.gz/.interval_list.bz2 as IntervalList format.
+   * * .bed as BED6/12 format,
+   * * .gff3 as GFF3 format,
+   * * .gtf/.gff as GTF/GFF2 format,
+   * * .narrow[pP]eak as NarrowPeak format, and
+   * * .interval_list as IntervalList format.
    *
    * If none of these match, fall back to Parquet + Avro.
    *

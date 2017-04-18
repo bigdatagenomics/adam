@@ -45,9 +45,7 @@ object FileExtensions {
    * @return Returns true if the path name matches a BED6/12 format file extension.
    */
   private[adam] def isBedExt(pathName: String): Boolean = {
-    pathName.endsWith(".bed") ||
-      pathName.endsWith(".bed.gz") ||
-      pathName.endsWith(".bed.bz2")
+    pathName.endsWith(".bed")
   }
 
   /**
@@ -56,11 +54,7 @@ object FileExtensions {
    */
   private[adam] def isFastaExt(pathName: String): Boolean = {
     pathName.endsWith(".fa") ||
-      pathName.endsWith(".fa.gz") ||
-      pathName.endsWith(".fa.bz2") ||
-      pathName.endsWith(".fasta") ||
-      pathName.endsWith(".fasta.gz") ||
-      pathName.endsWith(".fasta.bz2")
+      pathName.endsWith(".fasta")
   }
 
   /**
@@ -69,11 +63,7 @@ object FileExtensions {
    */
   private[adam] def isFastqExt(pathName: String): Boolean = {
     pathName.endsWith(".fq") ||
-      pathName.endsWith(".fq.gz") ||
-      pathName.endsWith(".fq.bz2") ||
-      pathName.endsWith(".fastq") ||
-      pathName.endsWith(".fastq.gz") ||
-      pathName.endsWith(".fastq.bz2")
+      pathName.endsWith(".fastq")
   }
 
   /**
@@ -81,9 +71,7 @@ object FileExtensions {
    * @return Returns true if the path name matches a GFF3 format file extension.
    */
   private[adam] def isGff3Ext(pathName: String): Boolean = {
-    pathName.endsWith(".gff3") ||
-      pathName.endsWith(".gff3.gz") ||
-      pathName.endsWith(".gff3.bz2")
+    pathName.endsWith(".gff3")
   }
 
   /**
@@ -92,11 +80,7 @@ object FileExtensions {
    */
   private[adam] def isGtfExt(pathName: String): Boolean = {
     pathName.endsWith(".gff") ||
-      pathName.endsWith(".gff.gz") ||
-      pathName.endsWith(".gff.bz2") ||
-      pathName.endsWith(".gtf") ||
-      pathName.endsWith(".gtf.gz") ||
-      pathName.endsWith(".gtf.bz2")
+      pathName.endsWith(".gtf")
   }
 
   /**
@@ -104,9 +88,7 @@ object FileExtensions {
    * @return Returns true if the path name matches an interleaved FASTQ format file extension.
    */
   private[adam] def isInterleavedFastqExt(pathName: String): Boolean = {
-    pathName.endsWith(".ifq") ||
-      pathName.endsWith(".ifq.gz") ||
-      pathName.endsWith(".ifq.bz2")
+    pathName.endsWith(".ifq")
   }
 
   /**
@@ -114,9 +96,7 @@ object FileExtensions {
    * @return Returns true if the path name matches an IntervalList format file extension.
    */
   private[adam] def isIntervalListExt(pathName: String): Boolean = {
-    pathName.endsWith(".interval_list") ||
-      pathName.endsWith(".interval_list.gz") ||
-      pathName.endsWith(".interval_list.bz2")
+    pathName.endsWith(".interval_list")
   }
 
   /**
@@ -125,11 +105,7 @@ object FileExtensions {
    */
   private[adam] def isNarrowPeakExt(pathName: String): Boolean = {
     pathName.endsWith(".narrowpeak") ||
-      pathName.endsWith(".narrowpeak.gz") ||
-      pathName.endsWith(".narrowpeak.bz2") ||
-      pathName.endsWith(".narrowPeak") ||
-      pathName.endsWith(".narrowPeak.gz") ||
-      pathName.endsWith(".narrowPeak.bz2")
+      pathName.endsWith(".narrowPeak")
   }
 
   /**
