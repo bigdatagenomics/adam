@@ -53,7 +53,7 @@ class NucleotideContigFragmentFieldSuite extends ADAMFunSuite {
       numberOfFragmentsInContig
     )
 
-    val nucleotideContigFragments: RDD[NucleotideContigFragment] = sc.loadParquet(path, projection = Some(projection))
+    val nucleotideContigFragments: RDD[NucleotideContigFragment] = sc.loadParquet(path, optProjection = Some(projection))
     assert(nucleotideContigFragments.count() === 1)
     assert(nucleotideContigFragments.first.getContig.getContigName === "6")
     assert(nucleotideContigFragments.first.getDescription === "Chromosome 6")

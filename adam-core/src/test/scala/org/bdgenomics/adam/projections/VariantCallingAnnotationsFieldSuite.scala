@@ -49,7 +49,7 @@ class VariantCallingAnnotationsFieldSuite extends ADAMFunSuite {
       attributes
     )
 
-    val variantCallingAnnotations: RDD[VariantCallingAnnotations] = sc.loadParquet(path, projection = Some(projection))
+    val variantCallingAnnotations: RDD[VariantCallingAnnotations] = sc.loadParquet(path, optProjection = Some(projection))
     assert(variantCallingAnnotations.count() === 1)
     assert(variantCallingAnnotations.first.getDownsampled === true)
     assert(variantCallingAnnotations.first.getMapq0Reads === 42)

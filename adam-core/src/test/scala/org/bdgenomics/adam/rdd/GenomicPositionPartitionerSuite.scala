@@ -112,7 +112,7 @@ class GenomicPositionPartitionerSuite extends ADAMFunSuite {
       import org.bdgenomics.adam.projections.AlignmentRecordField._
       Projection(contigName, start, readName, readMapped)
     }
-    val gRdd = sc.loadAlignments(filename, projection = Some(p))
+    val gRdd = sc.loadAlignments(filename, optProjection = Some(p))
     val rdd = gRdd.rdd
 
     val parter = GenomicPositionPartitioner(parts, gRdd.sequences)

@@ -70,7 +70,7 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
       "Cannot compute coverage for both negative and positive strands separately")
 
     // load reads
-    val readsRdd: AlignmentRecordRDD = sc.loadAlignments(args.inputPath, projection = Some(proj))
+    val readsRdd: AlignmentRecordRDD = sc.loadAlignments(args.inputPath, optProjection = Some(proj))
 
     val finalReads = if (args.onlyNegativeStrands && !args.onlyPositiveStrands) {
       readsRdd.transform(rdd => rdd.filter(_.getReadNegativeStrand))

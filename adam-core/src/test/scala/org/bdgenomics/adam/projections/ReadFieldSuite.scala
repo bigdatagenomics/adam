@@ -53,7 +53,7 @@ class ReadFieldSuite extends ADAMFunSuite {
       qualityScoreVariant
     )
 
-    val reads: RDD[Read] = sc.loadParquet(path, projection = Some(projection))
+    val reads: RDD[Read] = sc.loadParquet(path, optProjection = Some(projection))
     assert(reads.count() === 1)
     assert(reads.first.getName === "read 1")
     assert(reads.first.getDescription === "read 1")

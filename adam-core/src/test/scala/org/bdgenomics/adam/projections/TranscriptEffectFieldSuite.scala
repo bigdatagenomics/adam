@@ -76,7 +76,7 @@ class TranscriptEffectFieldSuite extends ADAMFunSuite {
       messages
     )
 
-    val transcriptEffects: RDD[TranscriptEffect] = sc.loadParquet(path, projection = Some(projection))
+    val transcriptEffects: RDD[TranscriptEffect] = sc.loadParquet(path, optProjection = Some(projection))
     assert(transcriptEffects.count() === 1)
     assert(transcriptEffects.first.getAlternateAllele === "A")
     assert(transcriptEffects.first.getEffects.get(0) === "SO:0002012")

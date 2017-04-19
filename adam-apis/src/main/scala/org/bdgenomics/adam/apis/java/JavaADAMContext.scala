@@ -34,6 +34,11 @@ object JavaADAMContext {
   implicit def toADAMContext(jac: JavaADAMContext): ADAMContext = jac.ac
 }
 
+/**
+ * The JavaADAMContext provides java-friendly functions on top of ADAMContext.
+ *
+ * @param ac The ADAMContext to wrap.
+ */
 class JavaADAMContext(val ac: ADAMContext) extends Serializable {
 
   /**
@@ -42,74 +47,161 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   def getSparkContext: JavaSparkContext = new JavaSparkContext(ac.sc)
 
   /**
-   * Loads in an ADAM read file. This method can load SAM, BAM, and ADAM files.
+   * Load alignment records into an AlignmentRecordRDD (java-friendly method).
    *
-   * @param filePath Path to load the file from.
-   * @return Returns a read RDD.
+   * Loads path names ending in:
+   * * .bam/.cram/.sam as BAM/CRAM/SAM format,
+   * * .fa/.fasta as FASTA format,
+   * * .fq/.fastq as FASTQ format, and
+   * * .ifq as interleaved FASTQ format.
+   *
+   * If none of these match, fall back to Parquet + Avro.
+   *
+   * For FASTA, FASTQ, and interleaved FASTQ formats, compressed files are supported
+   * through compression codecs configured in Hadoop, which by default include .gz and .bz2,
+   * but can include more.
+   *
+   * @see ADAMContext#loadAlignments
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
+   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   *   sequence dictionary representing contigs the alignment records may be aligned to,
+   *   and the record group dictionary for the alignment records if one is available.
    */
-  def loadAlignments(filePath: java.lang.String): AlignmentRecordRDD = {
-    ac.loadAlignments(filePath)
+  def loadAlignments(pathName: java.lang.String): AlignmentRecordRDD = {
+    ac.loadAlignments(pathName)
   }
 
   /**
-   * Loads in sequence fragments.
+   * Load nucleotide contig fragments into a NucleotideContigFragmentRDD (java-friendly method).
    *
-   * Can load from FASTA or from Parquet encoded NucleotideContigFragments.
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
    *
-   * @param filePath Path to load the file from.
-   * @return Returns a NucleotideContigFragment RDD.
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see ADAMContext#loadContigFragments
+   *
+   * @param pathName The path name to load nucleotide contig fragments from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @return Returns a NucleotideContigFragmentRDD.
    */
-  def loadSequences(filePath: java.lang.String): NucleotideContigFragmentRDD = {
-    ac.loadSequences(filePath)
+  def loadContigFragments(pathName: java.lang.String): NucleotideContigFragmentRDD = {
+    ac.loadContigFragments(pathName)
   }
 
   /**
-   * Loads in read pairs as fragments.
+   * Load fragments into a FragmentRDD (java-friendly method).
    *
-   * @param filePath The path to load the file from.
+   * Loads path names ending in:
+   * * .bam/.cram/.sam as BAM/CRAM/SAM format and
+   * * .ifq as interleaved FASTQ format.
+   *
+   * If none of these match, fall back to Parquet + Avro.
+   *
+   * For interleaved FASTQ format, compressed files are supported through compression codecs
+   * configured in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see ADAMContext#loadFragments
+   *
+   * @param pathName The path name to load fragments from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for BAM/CRAM/SAM and FASTQ formats.
    * @return Returns a FragmentRDD.
    */
-  def loadFragments(filePath: java.lang.String): FragmentRDD = {
-    ac.loadFragments(filePath)
+  def loadFragments(pathName: java.lang.String): FragmentRDD = {
+    ac.loadFragments(pathName)
   }
 
   /**
-   * Loads in features.
+   * Load features into a FeatureRDD (java-friendly method).
    *
-   * @param filePath The path to load the file from.
+   * Loads path names ending in:
+   * * .bed as BED6/12 format,
+   * * .gff3 as GFF3 format,
+   * * .gtf/.gff as GTF/GFF2 format,
+   * * .narrow[pP]eak as NarrowPeak format, and
+   * * .interval_list as IntervalList format.
+   *
+   * If none of these match, fall back to Parquet + Avro.
+   *
+   * For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+   * are supported through compression codecs configured in Hadoop, which by default include
+   * .gz and .bz2, but can include more.
+   *
+   * @see ADAMContext#loadFeatures
+   *
+   * @param pathName The path name to load features from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @return Returns a FeatureRDD.
    */
-  def loadFeatures(filePath: java.lang.String): FeatureRDD = {
-    ac.loadFeatures(filePath)
+  def loadFeatures(pathName: java.lang.String): FeatureRDD = {
+    ac.loadFeatures(pathName)
   }
 
   /**
-   * Loads in a coverage file. This method can load BED, NarrowPeak, GFF3, GTF/GFF2, IntervalList and ADAM files.
+   * Load features into a FeatureRDD and convert to a CoverageRDD (java-friendly method).
+   * Coverage is stored in the score field of Feature.
    *
-   * @param filePath Path to load the file from.
-   * @return Returns a Coverage RDD.
+   * Loads path names ending in:
+   * * .bed as BED6/12 format,
+   * * .gff3 as GFF3 format,
+   * * .gtf/.gff as GTF/GFF2 format,
+   * * .narrow[pP]eak as NarrowPeak format, and
+   * * .interval_list as IntervalList format.
+   *
+   * If none of these match, fall back to Parquet + Avro.
+   *
+   * For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+   * are supported through compression codecs configured in Hadoop, which by default include
+   * .gz and .bz2, but can include more.
+   *
+   * @see ADAMContext#loadCoverage
+   *
+   * @param pathName The path name to load features from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
+   * @return Returns a FeatureRDD converted to a CoverageRDD.
    */
-  def loadCoverage(filePath: java.lang.String): CoverageRDD = {
-    ac.loadCoverage(filePath)
+  def loadCoverage(pathName: java.lang.String): CoverageRDD = {
+    ac.loadCoverage(pathName)
   }
 
   /**
-   * Loads in genotypes.
+   * Load genotypes into a GenotypeRDD (java-friendly method).
    *
-   * @param filePath The path to load the file from.
+   * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * @see ADAMContext#loadGenotypes
+   *
+   * @param pathName The path name to load genotypes from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for VCF format.
    * @return Returns a GenotypeRDD.
    */
-  def loadGenotypes(filePath: java.lang.String): GenotypeRDD = {
-    ac.loadGenotypes(filePath)
+  def loadGenotypes(pathName: java.lang.String): GenotypeRDD = {
+    ac.loadGenotypes(pathName)
   }
 
   /**
-   * Loads in variants.
+   * Load variants into a VariantRDD (java-friendly method).
    *
-   * @param filePath The path to load the file from.
+   * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * @see ADAMContext#loadVariants
+   *
+   * @param pathName The path name to load variants from.
+   *   Globs/directories are supported, although file extension must be present for VCF format.
    * @return Returns a VariantRDD.
    */
-  def loadVariants(filePath: java.lang.String): VariantRDD = {
-    ac.loadVariants(filePath)
+  def loadVariants(pathName: java.lang.String): VariantRDD = {
+    ac.loadVariants(pathName)
   }
 }

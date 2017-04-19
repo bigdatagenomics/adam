@@ -288,7 +288,7 @@ class ADAMContextSuite extends ADAMFunSuite {
 
     val pred: FilterPredicate = (LongColumn("start") === 16097631L)
     // the following only reads one row group
-    val adamVariants = sc.loadParquetVariants(loc, predicate = Some(pred))
+    val adamVariants = sc.loadParquetVariants(loc, optPredicate = Some(pred))
     assert(adamVariants.rdd.count === 1)
   }
 
@@ -506,7 +506,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val readsFilepath2 = testFile("bqsr1-r2.fq")
     val fastqReads1: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath1).rdd
     val fastqReads2: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath2).rdd
-    val pairedReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath1, filePath2Opt = Option(readsFilepath2)).rdd
+    val pairedReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath1, optPathName2 = Option(readsFilepath2)).rdd
     assert(fastqReads1.rdd.count === 488)
     assert(fastqReads2.rdd.count === 488)
     assert(pairedReads.rdd.count === 976)

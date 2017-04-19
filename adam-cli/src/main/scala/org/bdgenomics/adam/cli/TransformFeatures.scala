@@ -67,8 +67,8 @@ class TransformFeatures(val args: TransformFeaturesArgs)
     sc.loadFeatures(
       args.featuresFile,
       optStorageLevel = optStorageLevel,
-      projection = None,
-      minPartitions = Option(args.numPartitions)
+      optMinPartitions = Option(args.numPartitions),
+      optProjection = None
     ).save(args.outputPath, args.single)
   }
 }

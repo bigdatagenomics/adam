@@ -69,7 +69,7 @@ class FlagStat(protected val args: FlagStatArgs) extends BDGSparkCommand[FlagSta
 
     val adamFile = sc.loadAlignments(
       args.inputPath,
-      projection = Some(projection),
+      optProjection = Some(projection),
       stringency = stringency
     )
 

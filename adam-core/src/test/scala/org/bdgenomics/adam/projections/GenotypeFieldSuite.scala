@@ -59,7 +59,7 @@ class GenotypeFieldSuite extends ADAMFunSuite {
       phaseQuality
     )
 
-    val genotypes: RDD[Genotype] = sc.loadParquet(path, projection = Some(projection))
+    val genotypes: RDD[Genotype] = sc.loadParquet(path, optProjection = Some(projection))
     assert(genotypes.count() === 1)
     assert(genotypes.first.getContigName === "6")
     assert(genotypes.first.getStart === 29941260L)

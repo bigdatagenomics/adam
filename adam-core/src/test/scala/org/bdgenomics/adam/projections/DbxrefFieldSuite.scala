@@ -39,7 +39,7 @@ class DbxrefFieldSuite extends ADAMFunSuite {
       accession
     )
 
-    val dbxrefs: RDD[Dbxref] = sc.loadParquet(path, projection = Some(projection))
+    val dbxrefs: RDD[Dbxref] = sc.loadParquet(path, optProjection = Some(projection))
     assert(dbxrefs.count() === 1)
     assert(dbxrefs.first.getDb === "EMBL")
     assert(dbxrefs.first.getAccession === "AA816246")

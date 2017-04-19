@@ -49,7 +49,7 @@ class ContigFieldSuite extends ADAMFunSuite {
       referenceIndex
     )
 
-    val contigs: RDD[Contig] = sc.loadParquet(path, projection = Some(projection))
+    val contigs: RDD[Contig] = sc.loadParquet(path, optProjection = Some(projection))
     assert(contigs.count() === 1)
     assert(contigs.first.getContigName === "6")
     assert(contigs.first.getContigLength === 170805979)

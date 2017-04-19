@@ -39,7 +39,7 @@ class OntologyTermFieldSuite extends ADAMFunSuite {
       accession
     )
 
-    val ontologyTerms: RDD[OntologyTerm] = sc.loadParquet(path, projection = Some(projection))
+    val ontologyTerms: RDD[OntologyTerm] = sc.loadParquet(path, optProjection = Some(projection))
     assert(ontologyTerms.count() === 1)
     assert(ontologyTerms.first.getDb === "GO")
     assert(ontologyTerms.first.getAccession === "0046703")
