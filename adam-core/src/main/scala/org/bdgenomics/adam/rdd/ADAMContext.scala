@@ -547,6 +547,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (codec == null) {
       pathName
     } else {
+      log.info(s"Found compression codec $codec for $pathName in Hadoop configuration.")
       val extension = codec.getDefaultExtension()
       CompressionCodecFactory.removeSuffix(pathName, extension)
     }
@@ -1211,6 +1212,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * If none of these match, fall back to Parquet + Avro.
    *
+   * For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+   * are supported through compression codecs configured in Hadoop, which by default include
+   * .gz and .bz2, but can include more.
+   *
    * @see loadBed
    * @see loadGtf
    * @see loadGff3
@@ -1475,6 +1480,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * If none of these match, fall back to Parquet + Avro.
    *
+   * For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+   * are supported through compression codecs configured in Hadoop, which by default include
+   * .gz and .bz2, but can include more.
+   *
    * @see loadBed
    * @see loadGtf
    * @see loadGff3
@@ -1574,6 +1583,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * If the path name has a .fa/.fasta extension, load as FASTA format.
    * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
    *
    * @see loadFasta
    * @see loadParquetContigFragments
@@ -1688,6 +1700,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * If none of these match, fall back to Parquet + Avro.
    *
+   * For FASTA, FASTQ, and interleaved FASTQ formats, compressed files are supported
+   * through compression codecs configured in Hadoop, which by default include .gz and .bz2,
+   * but can include more.
+   *
    * @see loadBam
    * @see loadFastq
    * @see loadFasta
@@ -1747,6 +1763,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * * .ifq as interleaved FASTQ format.
    *
    * If none of these match, fall back to Parquet + Avro.
+   *
+   * For interleaved FASTQ format, compressed files are supported through compression codecs
+   * configured in Hadoop, which by default include .gz and .bz2, but can include more.
    *
    * @see loadBam
    * @see loadAlignments

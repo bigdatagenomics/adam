@@ -57,6 +57,10 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * If none of these match, fall back to Parquet + Avro.
    *
+   * For FASTA, FASTQ, and interleaved FASTQ formats, compressed files are supported
+   * through compression codecs configured in Hadoop, which by default include .gz and .bz2,
+   * but can include more.
+   *
    * @see ADAMContext#loadAlignments
    *
    * @param pathName The path name to load alignment records from.
@@ -75,6 +79,9 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * If the path name has a .fa/.fasta extension, load as FASTA format.
    * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
    *
    * @see ADAMContext#loadContigFragments
    *
@@ -95,6 +102,9 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * * .ifq as interleaved FASTQ format.
    *
    * If none of these match, fall back to Parquet + Avro.
+   *
+   * For interleaved FASTQ format, compressed files are supported through compression codecs
+   * configured in Hadoop, which by default include .gz and .bz2, but can include more.
    *
    * @see ADAMContext#loadFragments
    *
@@ -119,6 +129,10 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * If none of these match, fall back to Parquet + Avro.
    *
+   * For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+   * are supported through compression codecs configured in Hadoop, which by default include
+   * .gz and .bz2, but can include more.
+   *
    * @see ADAMContext#loadFeatures
    *
    * @param pathName The path name to load features from.
@@ -142,6 +156,10 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * * .interval_list as IntervalList format.
    *
    * If none of these match, fall back to Parquet + Avro.
+   *
+   * For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+   * are supported through compression codecs configured in Hadoop, which by default include
+   * .gz and .bz2, but can include more.
    *
    * @see ADAMContext#loadCoverage
    *
