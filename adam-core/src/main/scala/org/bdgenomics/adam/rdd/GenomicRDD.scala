@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -392,6 +393,11 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
     rdd: RDD[(ReferenceRegion, T)])(
       implicit tTag: ClassTag[T]): IntervalArray[ReferenceRegion, T]
 
+  def broadcast()(
+    implicit tTag: ClassTag[T]): Broadcast[IntervalArray[ReferenceRegion, T]] = {
+    rdd.context.broadcast(buildTree(flattenRddByRegions()))
+  }
+
   /**
    * Performs a broadcast inner join between this RDD and another RDD.
    *
@@ -404,6 +410,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    * @param genomicRdd The right RDD in the join.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
+   *
+   * @see broadcastRegionJoinAgainst
    */
   def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](
     genomicRdd: GenomicRDD[X, Y])(
@@ -421,6 +429,38 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   }
 
   /**
+   * Performs a broadcast inner join between this RDD and data that has been broadcast.
+   *
+   * In a broadcast join, the left RDD is collected to the driver,
+   * and broadcast to all the nodes in the cluster (broadcastTree). The key equality
+   * function used for this join is the reference region overlap function. Since this
+   * is an inner join, all values who do not overlap a value from the other
+   * RDD are dropped. As compared to broadcastRegionJoin, this function allows the
+   * broadcast object to be reused across multiple joins.
+   *
+   * @note This function differs from other region joins as it treats the calling RDD
+   *   as the right side of the join, and not the left.
+   *
+   * @param broadcastTree The data on the left side of the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space.
+   *
+   * @see broadcastRegionJoin
+   */
+  def broadcastRegionJoinAgainst[X, Z <: GenomicRDD[(X, T), Z]](
+    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(X, T), Z] = InnerBroadcastJoin.time {
+
+    // key the RDDs and join
+    GenericGenomicRDD[(X, T)](InnerTreeRegionJoin[X, T]().join(
+      broadcastTree,
+      flattenRddByRegions()),
+      sequences,
+      kv => { getReferenceRegions(kv._2) }) // FIXME
+      .asInstanceOf[GenomicRDD[(X, T), Z]]
+  }
+
+  /**
    * Performs a broadcast right outer join between this RDD and another RDD.
    *
    * In a broadcast join, the left RDD (this RDD) is collected to the driver,
@@ -435,6 +475,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
+   *
+   * @see rightOuterBroadcastRegionJoin
    */
   def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](
     genomicRdd: GenomicRDD[X, Y])(
@@ -452,6 +494,42 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
           genomicRdd.getReferenceRegions(kv._2)
       })
       .asInstanceOf[GenomicRDD[(Option[T], X), Z]]
+  }
+
+  /**
+   * Performs a broadcast right outer join between this RDD and data that has been broadcast.
+   *
+   * In a broadcast join, the left RDD is collected to the driver,
+   * and broadcast to all the nodes in the cluster (broadcastTree). The key equality
+   * function used for this join is the reference region overlap function. Since this
+   * is a right outer join, all values in the left RDD that do not overlap a
+   * value from the right RDD are dropped. If a value from the right RDD does
+   * not overlap any values in the left RDD, it will be paired with a `None`
+   * in the product of the join. As compared to broadcastRegionJoin, this function allows the
+   * broadcast object to be reused across multiple joins.
+   *
+   * @note This function differs from other region joins as it treats the calling RDD
+   *   as the right side of the join, and not the left.
+   *
+   * @param broadcastTree The data on the left side of the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space.
+   *
+   * @see rightOuterBroadcastRegionJoin
+   */
+  def rightOuterBroadcastRegionJoinAgainst[X, Z <: GenomicRDD[(Option[X], T), Z]](
+    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[X], T), Z] = RightOuterBroadcastJoin.time {
+
+    // key the RDDs and join
+    GenericGenomicRDD[(Option[X], T)](RightOuterTreeRegionJoin[X, T]().join(
+      broadcastTree,
+      flattenRddByRegions()),
+      sequences,
+      kv => {
+        getReferenceRegions(kv._2) // FIXME
+      })
+      .asInstanceOf[GenomicRDD[(Option[X], T), Z]]
   }
 
   /**
@@ -502,6 +580,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    * @param genomicRdd The right RDD in the join.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
+   *
+   * @see broadcastRegionJoinAgainstAndGroupByRight
    */
   def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
     implicit tTag: ClassTag[T],
@@ -515,6 +595,38 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
       sequences ++ genomicRdd.sequences,
       kv => { (kv._1.flatMap(getReferenceRegions) ++ genomicRdd.getReferenceRegions(kv._2)).toSeq })
       .asInstanceOf[GenomicRDD[(Iterable[T], X), Z]]
+  }
+
+  /**
+   * Performs a broadcast inner join between this RDD and another RDD.
+   *
+   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
+   * and broadcast to all the nodes in the cluster. The key equality function
+   * used for this join is the reference region overlap function. Since this
+   * is an inner join, all values who do not overlap a value from the other
+   * RDD are dropped. As compared to broadcastRegionJoin, this function allows
+   * the broadcast object to be reused across multiple joins.
+   *
+   * @note This function differs from other region joins as it treats the calling RDD
+   *   as the right side of the join, and not the left.
+   *
+   * @param broadcastTree The data on the left side of the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space.
+   *
+   * @see broadcastRegionJoinAndGroupByRight
+   */
+  def broadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[X], T), Z]](
+    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[X], T), Z] = BroadcastJoinAndGroupByRight.time {
+
+    // key the RDDs and join
+    GenericGenomicRDD[(Iterable[X], T)](InnerTreeRegionJoinAndGroupByRight[X, T]().join(
+      broadcastTree,
+      flattenRddByRegions()),
+      sequences,
+      kv => { getReferenceRegions(kv._2).toSeq })
+      .asInstanceOf[GenomicRDD[(Iterable[X], T), Z]]
   }
 
   /**
@@ -532,6 +644,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
+   *
+   * @see rightOuterBroadcastRegionJoinAgainstAndGroupByRight
    */
   def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
     implicit tTag: ClassTag[T],
@@ -548,6 +662,40 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
           genomicRdd.getReferenceRegions(kv._2)
       })
       .asInstanceOf[GenomicRDD[(Iterable[T], X), Z]]
+  }
+
+  /**
+   * Performs a broadcast right outer join between this RDD and another RDD.
+   *
+   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
+   * and broadcast to all the nodes in the cluster. The key equality function
+   * used for this join is the reference region overlap function. Since this
+   * is a right outer join, all values in the left RDD that do not overlap a
+   * value from the right RDD are dropped. If a value from the right RDD does
+   * not overlap any values in the left RDD, it will be paired with a `None`
+   * in the product of the join. As compared to broadcastRegionJoin, this
+   * function allows the broadcast object to be reused across multiple joins.
+   *
+   * @note This function differs from other region joins as it treats the calling RDD
+   *   as the right side of the join, and not the left.
+   *
+   * @param broadcastTree The data on the left side of the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space.
+   *
+   * @see rightOuterBroadcastRegionJoinAndGroupByRight
+   */
+  def rightOuterBroadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[X], T), Z]](
+    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[X], T), Z] = RightOuterBroadcastJoinAndGroupByRight.time {
+
+    // key the RDDs and join
+    GenericGenomicRDD[(Iterable[X], T)](RightOuterTreeRegionJoinAndGroupByRight[X, T]().join(
+      broadcastTree,
+      flattenRddByRegions()),
+      sequences,
+      kv => getReferenceRegions(kv._2).toSeq)
+      .asInstanceOf[GenomicRDD[(Iterable[X], T), Z]]
   }
 
   /**

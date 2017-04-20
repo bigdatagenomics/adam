@@ -496,7 +496,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.parquet</groupId>
-        <!-- This library has no Scala 2.11 version, but using the 2 dot 10 version seems to work. -->
+        <!-- This library has no Scala 2.11 version, but using the 2.10 version seems to work. -->
         <artifactId>parquet-scala_2.10</artifactId>
         <version>${parquet.version}</version>
         <exclusions>

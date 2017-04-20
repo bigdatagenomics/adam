@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.ReferenceRegion
@@ -35,11 +36,20 @@ trait TreeRegionJoin[T, U, RT, RU] extends RegionJoin[T, U, RT, RU] {
     tree: IntervalArray[ReferenceRegion, T],
     rightRdd: RDD[(ReferenceRegion, U)])(
       implicit tTag: ClassTag[T]): RDD[(Iterable[T], U)] = {
-    RunningMapSideJoin.time {
-      // broadcast this tree
-      val broadcastTree = rightRdd.context
-        .broadcast(tree)
 
+    // broadcast this tree
+    val broadcastTree = rightRdd.context
+      .broadcast(tree)
+
+    runJoinAndGroupByRightWithBroadcast(broadcastTree, rightRdd)
+  }
+
+  private[rdd] def runJoinAndGroupByRightWithBroadcast(
+    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, T]],
+    rightRdd: RDD[(ReferenceRegion, U)])(
+      implicit tTag: ClassTag[T]): RDD[(Iterable[T], U)] = {
+
+    RunningMapSideJoin.time {
       // map and join
       rightRdd.mapPartitions(iter => {
         val shallowCopyTree = broadcastTree.value
@@ -86,6 +96,15 @@ trait TreeRegionJoin[T, U, RT, RU] extends RegionJoin[T, U, RT, RU] {
  */
 case class InnerTreeRegionJoin[T: ClassTag, U: ClassTag]() extends TreeRegionJoin[T, U, T, U] {
 
+  def join(broadcastTree: Broadcast[IntervalArray[ReferenceRegion, T]],
+           joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(T, U)] = {
+    runJoinAndGroupByRightWithBroadcast(broadcastTree, joinedRDD)
+      .flatMap(kv => {
+        val (leftIterable, right) = kv
+        leftIterable.map(left => (left, right))
+      })
+  }
+
   def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
                        joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(T, U)] = {
     runJoinAndGroupByRightWithTree(tree, joinedRDD)
@@ -120,6 +139,20 @@ case class InnerTreeRegionJoin[T: ClassTag, U: ClassTag]() extends TreeRegionJoi
  */
 case class RightOuterTreeRegionJoin[T: ClassTag, U: ClassTag]()
     extends TreeRegionJoin[T, U, Option[T], U] {
+
+  def join(broadcastTree: Broadcast[IntervalArray[ReferenceRegion, T]],
+           joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Option[T], U)] = {
+    runJoinAndGroupByRightWithBroadcast(broadcastTree, joinedRDD)
+      .flatMap(kv => {
+        val (leftIterable, right) = kv
+
+        if (leftIterable.isEmpty) {
+          Iterable((None, right))
+        } else {
+          leftIterable.map(left => (Some(left), right))
+        }
+      })
+  }
 
   def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
                        joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Option[T], U)] = {
@@ -169,6 +202,12 @@ case class RightOuterTreeRegionJoin[T: ClassTag, U: ClassTag]()
 case class InnerTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
     extends TreeRegionJoin[T, U, Iterable[T], U] {
 
+  def join(broadcastTree: Broadcast[IntervalArray[ReferenceRegion, T]],
+           joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
+    runJoinAndGroupByRightWithBroadcast(broadcastTree, joinedRDD)
+      .filter(_._1.nonEmpty)
+  }
+
   def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
                        joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
     runJoinAndGroupByRightWithTree(tree, joinedRDD)
@@ -202,6 +241,11 @@ case class InnerTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
  */
 case class RightOuterTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
     extends TreeRegionJoin[T, U, Iterable[T], U] {
+
+  def join(broadcastTree: Broadcast[IntervalArray[ReferenceRegion, T]],
+           joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
+    runJoinAndGroupByRightWithBroadcast(broadcastTree, joinedRDD)
+  }
 
   def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
                        joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
