@@ -27,7 +27,7 @@ class TwoBitFileSuite extends ADAMFunSuite {
     val byteAccess = new LocalFileByteAccess(file)
     val twoBitFile = new TwoBitFile(byteAccess)
     assert(twoBitFile.numSeq == 1)
-    assert(twoBitFile.seqRecords.toSeq.length == 1)
+    assert(twoBitFile.seqRecords.size == 1)
     assert(twoBitFile.extract(ReferenceRegion("hg19_chrM", 0, 10)) == "GATCACAGGT")
     assert(twoBitFile.extract(ReferenceRegion("hg19_chrM", 503, 513)) == "CATCCTACCC")
     assert(twoBitFile.extract(ReferenceRegion("hg19_chrM", 16561, 16571)) == "CATCACGATG")
@@ -55,5 +55,7 @@ class TwoBitFileSuite extends ADAMFunSuite {
     val dict = twoBitFile.sequences
     assert(dict.records.length == 1)
     assert(dict.records.head.length == 16571)
+    assert(dict.records.head.referenceIndex.isDefined)
+    assert(dict.records.head.referenceIndex.get === 0)
   }
 }
