@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd
 
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.lang.Thread
+import java.nio.file.Paths
 import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
@@ -62,11 +63,15 @@ private[rdd] object GenomicRDD {
    */
   def processCommand(cmd: String,
                      files: Seq[String]): List[String] = {
-    val filesWithIndex = files.zipWithIndex
+    val filesWithIndex: Seq[(String, String)] = files.zipWithIndex
       .map(p => {
         val (file, index) = p
         ("$%d".format(index), file)
       }).reverse
+    val rootPath: (String, String) = ("$root",
+      Paths.get(SparkFiles.getRootDirectory())
+      .toAbsolutePath.toString)
+    val filesAndPath: Seq[(String, String)] = filesWithIndex ++ Seq(rootPath)
 
     @tailrec def replaceEscapes(cmd: String,
                                 iter: Iterator[(String, String)]): String = {
@@ -81,7 +86,7 @@ private[rdd] object GenomicRDD {
 
     cmd.split(" ")
       .map(s => {
-        replaceEscapes(s, filesWithIndex.toIterator)
+        replaceEscapes(s, filesAndPath.toIterator)
       }).toList
   }
 }
@@ -182,7 +187,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    * Pipes genomic data to a subprocess that runs in parallel using Spark.
    *
    * Files are substituted in to the command with a $x syntax. E.g., to invoke
-   * a command that uses the first file from the files Seq, use $0.
+   * a command that uses the first file from the files Seq, use $0. To access
+   * the path to the directory where the files are copied, use $root.
    *
    * Pipes require the presence of an InFormatterCompanion and an OutFormatter
    * as implicit values. The InFormatterCompanion should be a singleton whose
