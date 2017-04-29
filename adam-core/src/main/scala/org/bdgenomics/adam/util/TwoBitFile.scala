@@ -63,17 +63,20 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
   private[util] val numSeq = readHeader()
   // hold current byte position of start of current index record
   var indexRecordStart = TwoBitFile.FILE_INDEX_OFFSET
-  private val seqRecordStarts = (0 until numSeq).map(i => {
-    val tup = readIndexEntry(indexRecordStart)
-    indexRecordStart += TwoBitFile.NAME_SIZE_SIZE + tup._1.length + TwoBitFile.OFFSET_SIZE
-    tup
-  }).toMap
-  private[util] val seqRecords = seqRecordStarts.map(tup => tup._1 -> TwoBitRecord(bytes, tup._1, tup._2))
+  private[util] val seqRecords = (0 until numSeq).map(idx => {
+    val (name, startIdx) = readIndexEntry(indexRecordStart)
+    indexRecordStart += TwoBitFile.NAME_SIZE_SIZE + name.length + TwoBitFile.OFFSET_SIZE
+    (name, TwoBitRecord(bytes, name, startIdx, idx))
+  })
+  private val seqRecordsMap = seqRecords.toMap
 
   /**
    * The sequence dictionary corresponding to the contigs in this two bit file.
    */
-  val sequences = new SequenceDictionary(seqRecords.toVector.map(r => SequenceRecord(r._1, r._2.dnaSize)))
+  val sequences = new SequenceDictionary(seqRecords.toVector
+    .map(r => SequenceRecord(r._1,
+      r._2.dnaSize,
+      referenceIndex = Some(r._2.seqIdx))))
 
   private def readHeader(): Int = {
     // figure out proper byte order
@@ -107,10 +110,10 @@ class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
    */
   def extract(region: ReferenceRegion, mask: Boolean): String = {
     val record =
-      seqRecords.getOrElse(
+      seqRecordsMap.getOrElse(
         region.referenceName,
         throw new Exception(
-          s"Contig ${region.referenceName} not found in reference map with keys: ${seqRecords.keys.toList.sortBy(x => x).mkString(", ")}"
+          s"Contig ${region.referenceName} not found in reference map with keys: ${seqRecordsMap.keys.toList.sortBy(x => x).mkString(", ")}"
         )
       )
     val contigLength = record.dnaSize
@@ -203,7 +206,7 @@ class TwoBitFileSerializer extends Serializer[TwoBitFile] {
 }
 
 private object TwoBitRecord {
-  def apply(twoBitBytes: ByteBuffer, name: String, seqRecordStart: Int): TwoBitRecord = {
+  def apply(twoBitBytes: ByteBuffer, name: String, seqRecordStart: Int, seqIdx: Int): TwoBitRecord = {
     val dnaSize = twoBitBytes.getInt(seqRecordStart)
     val nBlockCount = twoBitBytes.getInt(seqRecordStart + TwoBitFile.DNA_SIZE_SIZE)
     val nBlockArraysOffset = seqRecordStart + TwoBitFile.DNA_SIZE_SIZE + TwoBitFile.BLOCK_COUNT_SIZE
@@ -222,12 +225,13 @@ private object TwoBitRecord {
       ReferenceRegion(name, maskBlockStart, maskBlockStart + maskBlockSize) -> None
     })))
     val dnaOffset = maskBlockArraysOffset + (maskBlockCount * TwoBitFile.PER_BLOCK_SIZE) + TwoBitFile.SEQ_RECORD_RESERVED_SIZE
-    TwoBitRecord(dnaSize, nBlocks, maskBlocks, dnaOffset)
+    TwoBitRecord(dnaSize, nBlocks, maskBlocks, dnaOffset, seqIdx)
   }
 }
 
 private case class TwoBitRecord(dnaSize: Int,
                                 nBlocks: Option[NonoverlappingRegions],
                                 maskBlocks: Option[NonoverlappingRegions],
-                                dnaOffset: Int) {
+                                dnaOffset: Int,
+                                seqIdx: Int) {
 }
