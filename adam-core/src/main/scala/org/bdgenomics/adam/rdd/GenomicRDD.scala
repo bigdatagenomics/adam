@@ -266,7 +266,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
         files
       } else {
         files.map(f => {
-          SparkFiles.get(f)
+          SparkFiles.get(new Path(f).getName())
         })
       }
 
