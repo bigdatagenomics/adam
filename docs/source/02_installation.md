@@ -54,3 +54,42 @@ Once this alias is in place, you can run ADAM by simply typing `adam-submit` at 
 ```bash
 $ adam-submit
 ```
+
+## Running ADAM snapshots
+ADAM snapshots are in here: [ADAM snapshots](https://oss.sonatype.org/content/repositories/snapshots/org/bdgenomics/adam/)
+
+You need add repository to maven pom.xml
+
+    <repositories>
+        <repository>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+Then import jar to you project(also in pom.xml):
+	
+	<properties>     
+		<adam.version>0.21.1-SNAPSHOT</adam.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.bdgenomics.adam</groupId>
+			<artifactId>adam-core_2.10</artifactId>
+			<version>${adam.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bdgenomics.adam</groupId>
+			<artifactId>adam-cli_2.10</artifactId>
+			<version>${adam.version}</version>
+		</dependency>
+	</dependencies>
+
+Now you can invoke the latest ADAM snapshots function in you project.
