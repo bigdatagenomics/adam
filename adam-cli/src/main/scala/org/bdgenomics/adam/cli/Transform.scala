@@ -387,6 +387,22 @@ class Transform(protected val args: TransformArgs) extends BDGSparkCommand[Trans
       inputPath.endsWith(".fasta")
   }
 
+  def forceNonParquet(): Boolean = {
+    (args.forceLoadBam || args.forceLoadFastq || args.forceLoadIFastq)
+  }
+
+  def isNonParquet(inputPath: String): Boolean = {
+    (
+      inputPath.endsWith(".sam") ||
+      inputPath.endsWith(".bam") ||
+      inputPath.endsWith(".ifq") ||
+      inputPath.endsWith(".fq") ||
+      inputPath.endsWith(".fastq") ||
+      inputPath.endsWith(".fa") ||
+      inputPath.endsWith(".fasta")
+    )
+  }
+
   def run(sc: SparkContext) {
     // throw exception if aligned read predicate or limit projection flags are used improperly
     if (args.useAlignedReadPredicate && forceNonParquet()) {
