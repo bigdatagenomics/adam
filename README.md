@@ -35,7 +35,7 @@ __interpretation__ of these data in a certain context. This usually translates i
 Here's an example ADAM CLI command that will count 10-mers in [a test `.sam` file that lives in this repository](https://github.com/bigdatagenomics/adam/blob/master/adam-core/src/test/resources/small.sam):
 
 ```bash
-$ adam-submit count_kmers /tmp/small.adam /tmp/kmers.adam 10
+$ adam-submit countKmers /tmp/small.adam /tmp/kmers.adam 10
 $ head /tmp/kmers.adam/part-*
 (AATTGGCACT,1)
 (TTCCGATTTT,1)
@@ -163,7 +163,7 @@ installed in order to build ADAM.
 > **Note:** The default configuration is for Hadoop 2.7.3. If building against a different
 > version of Hadoop, please pass `-Dhadoop.version=<HADOOP_VERSION>` to the Maven command.
 > ADAM will cross-build for both Spark 1.x and 2.x, but builds by default against Spark
-> 1.6.3. To build for Spark 2, run the `./scripts/move_to_spark2.sh` script.
+> 1.6.3. To build for Spark 2, run the `./scripts/move_to_spark_2.sh` script.
 
 ```bash
 $ git clone https://github.com/bigdatagenomics/adam.git
