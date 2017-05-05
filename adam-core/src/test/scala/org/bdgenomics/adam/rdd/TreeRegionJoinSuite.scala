@@ -24,9 +24,6 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, Variant }
 import org.bdgenomics.utils.interval.array.IntervalArray
 import scala.reflect.ClassTag
 
-private case class ConcreteTreeRegionJoin[T: ClassTag, U]() extends TreeRegionJoin[T, U] {
-}
-
 class TreeRegionJoinSuite extends ADAMFunSuite {
 
   sparkTest("run a join between data on a single contig") {
@@ -62,7 +59,7 @@ class TreeRegionJoinSuite extends ADAMFunSuite {
           .build)
       })
 
-    val joinData = ConcreteTreeRegionJoin().runJoinAndGroupByRightWithTree(tree,
+    val joinData = InnerTreeRegionJoin().runJoinAndGroupByRightWithTree(tree,
       leftRdd)
       .map(kv => {
         val (k, v) = kv
