@@ -29,7 +29,7 @@ import scala.reflect.ClassTag
  * The broadcast values are stored in a sorted array. It was going to be an
  * ensemble of interval trees, but, that didn't work out.
  */
-trait TreeRegionJoin[T, U] {
+trait TreeRegionJoin[T, U, RT, RU] extends RegionJoin[T, U, RT, RU] {
 
   private[rdd] def runJoinAndGroupByRightWithTree(
     tree: IntervalArray[ReferenceRegion, T],
@@ -84,7 +84,7 @@ trait TreeRegionJoin[T, U] {
 /**
  * Implements an inner region join where the left side of the join is broadcast.
  */
-case class InnerTreeRegionJoin[T: ClassTag, U: ClassTag]() extends RegionJoin[T, U, T, U] with TreeRegionJoin[T, U] {
+case class InnerTreeRegionJoin[T: ClassTag, U: ClassTag]() extends TreeRegionJoin[T, U, T, U] {
 
   def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
                        joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(T, U)] = {
@@ -119,8 +119,7 @@ case class InnerTreeRegionJoin[T: ClassTag, U: ClassTag]() extends RegionJoin[T,
  * broadcast.
  */
 case class RightOuterTreeRegionJoin[T: ClassTag, U: ClassTag]()
-    extends RegionJoin[T, U, Option[T], U]
-    with TreeRegionJoin[T, U] {
+    extends TreeRegionJoin[T, U, Option[T], U] {
 
   def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
                        joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Option[T], U)] = {
@@ -168,8 +167,7 @@ case class RightOuterTreeRegionJoin[T: ClassTag, U: ClassTag]()
  * values on the left grouped by the right value.
  */
 case class InnerTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
-    extends RegionJoin[T, U, Iterable[T], U]
-    with TreeRegionJoin[T, U] {
+    extends TreeRegionJoin[T, U, Iterable[T], U] {
 
   def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
                        joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
@@ -203,8 +201,7 @@ case class InnerTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
  * collections on the left side of the join are kept.
  */
 case class RightOuterTreeRegionJoinAndGroupByRight[T: ClassTag, U: ClassTag]()
-    extends RegionJoin[T, U, Iterable[T], U]
-    with TreeRegionJoin[T, U] {
+    extends TreeRegionJoin[T, U, Iterable[T], U] {
 
   def broadcastAndJoin(tree: IntervalArray[ReferenceRegion, T],
                        joinedRDD: RDD[(ReferenceRegion, U)]): RDD[(Iterable[T], U)] = {
