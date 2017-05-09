@@ -66,6 +66,12 @@
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
               </transformers>
+              <relocations>
+                <relocation>
+                  <pattern>org.apache.avro</pattern>
+                  <shadedPattern>org.bdgenomics.avro</shadedPattern>
+                </relocation>
+              </relocations>
             </configuration>
           </execution>
         </executions>
