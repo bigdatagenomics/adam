@@ -524,6 +524,25 @@ sealed abstract class AlignmentRecordRDD extends AvroReadGroupGenomicRDD[Alignme
   }
 
   /**
+   * Cuts reads into _k_-mers, and then counts the number of occurrences of each _k_-mer.
+   *
+   * @param kmerLength The value of _k_ to use for cutting _k_-mers.
+   * @return Returns a Dataset containing k-mer/count pairs.
+   */
+  def countKmersAsDataset(kmerLength: java.lang.Integer): Dataset[(String, Long)] = {
+    import dataset.sqlContext.implicits._
+    val kmers = dataset.select($"sequence".as[String])
+      .flatMap(_.sliding(kmerLength))
+      .as[String]
+
+    kmers.toDF()
+      .groupBy($"value")
+      .count()
+      .select($"value".as("kmer"), $"count".as("count"))
+      .as[(String, Long)]
+  }
+
+  /**
    * Saves an RDD of ADAM read data into the SAM/BAM format.
    *
    * @param filePath Path to save files to.

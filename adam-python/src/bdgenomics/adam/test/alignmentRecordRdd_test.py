@@ -81,3 +81,14 @@ class AlignmentRecordRDDTest(SparkTestCase):
         
         self.assertEquals(bamReads._jvmRdd.jrdd().count(),
                           reads._jvmRdd.jrdd().count())
+
+
+    def test_count_kmers(self):
+
+        testFile = self.resourceFile("small.sam")
+        ac = ADAMContext(self.sc)
+        
+        reads = ac.loadAlignments(testFile)
+        kmers = reads.countKmers(6)
+
+        self.assertEquals(kmers.count(), 1040)

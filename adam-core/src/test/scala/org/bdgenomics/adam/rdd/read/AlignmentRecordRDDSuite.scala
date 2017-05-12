@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
+import org.apache.spark.sql.SQLContext
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
@@ -1007,5 +1008,23 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(union.sequences.size === reads1.sequences.size)
     // small.sam has no record groups
     assert(union.recordGroups.size === reads1.recordGroups.size)
+  }
+
+  sparkTest("test k-mer counter") {
+    val smallPath = testFile("small.sam")
+    val reads = sc.loadAlignments(smallPath)
+    val kmerCounts = reads.countKmers(6)
+    assert(kmerCounts.count === 1040)
+    assert(kmerCounts.filter(p => p._1 == "CCAAGA" && p._2 == 3).count === 1)
+  }
+
+  sparkTest("test dataset based k-mer counter") {
+    val smallPath = testFile("small.sam")
+    val reads = sc.loadAlignments(smallPath)
+    val kmerCounts = reads.countKmersAsDataset(6)
+    assert(kmerCounts.count === 1040)
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    assert(kmerCounts.toDF().where($"kmer" === "CCAAGA" && $"count" === 3).count === 1)
   }
 }
