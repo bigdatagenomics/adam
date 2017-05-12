@@ -458,7 +458,8 @@ object SequenceRecord {
    * @return The sequence record metadata from a single assembly fragment.
    */
   def fromADAMContigFragment(fragment: NucleotideContigFragment): SequenceRecord = {
-    fromADAMContig(fragment.getContig)
+    SequenceRecord(fragment.getContigName,
+      fragment.getContigLength)
   }
 }
 

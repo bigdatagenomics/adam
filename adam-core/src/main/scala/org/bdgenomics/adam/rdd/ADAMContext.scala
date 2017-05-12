@@ -63,7 +63,17 @@ import org.bdgenomics.adam.util.{
   ReferenceFile,
   TwoBitFile
 }
-import org.bdgenomics.formats.avro._
+import org.bdgenomics.formats.avro.{
+  AlignmentRecord,
+  Contig,
+  Feature,
+  Fragment,
+  Genotype,
+  NucleotideContigFragment,
+  RecordGroup => RecordGroupMetadata,
+  Sample,
+  Variant
+}
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
@@ -1150,13 +1160,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param pathName The path name to load nucleotide contig fragments from.
    *   Globs/directories are supported.
-   * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
+   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
    * @return Returns a NucleotideContigFragmentRDD.
    */
   def loadFasta(
     pathName: String,
-    maximumFragmentLength: Long = 10000L): NucleotideContigFragmentRDD = LoadFasta.time {
+    maximumLength: Long = 10000L): NucleotideContigFragmentRDD = LoadFasta.time {
 
     val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
       pathName,
@@ -1169,7 +1179,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
 
     // convert rdd and cache
-    val fragmentRdd = FastaConverter(remapData, maximumFragmentLength)
+    val fragmentRdd = FastaConverter(remapData, maximumLength)
       .cache()
 
     NucleotideContigFragmentRDD(fragmentRdd)
@@ -1573,18 +1583,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param pathName The path name to load reference sequences from.
    *   Globs/directories for 2bit format are not supported.
-   * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
+   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
    * @return Returns a broadcastable ReferenceFile.
    */
   def loadReferenceFile(
     pathName: String,
-    maximumFragmentLength: Long): ReferenceFile = LoadReferenceFile.time {
+    maximumLength: Long): ReferenceFile = LoadReferenceFile.time {
 
     if (is2BitExt(pathName)) {
       new TwoBitFile(new LocalFileByteAccess(new File(pathName)))
     } else {
-      ReferenceContigMap(loadContigFragments(pathName, maximumFragmentLength = maximumFragmentLength).rdd)
+      ReferenceContigMap(loadContigFragments(pathName, maximumLength = maximumLength).rdd)
     }
   }
 
@@ -1603,7 +1613,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load nucleotide contig fragments from.
    *   Globs/directories are supported, although file extension must be present
    *   for FASTA format.
-   * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
+   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
@@ -1613,7 +1623,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadContigFragments(
     pathName: String,
-    maximumFragmentLength: Long = 10000L,
+    maximumLength: Long = 10000L,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): NucleotideContigFragmentRDD = LoadContigFragments.time {
 
@@ -1622,7 +1632,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       log.info(s"Loading $pathName as FASTA and converting to NucleotideContigFragment.")
       loadFasta(
         pathName,
-        maximumFragmentLength
+        maximumLength
       )
     } else {
       log.info(s"Loading $pathName as Parquet containing NucleotideContigFragments.")
@@ -1758,7 +1768,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       loadFastq(pathName, optPathName2, optRecordGroup, stringency)
     } else if (isFastaExt(trimmedPathName)) {
       log.info(s"Loading $pathName as FASTA and converting to AlignmentRecords.")
-      AlignmentRecordRDD.unaligned(loadFasta(pathName, maximumFragmentLength = 10000L).toReads)
+      AlignmentRecordRDD.unaligned(loadFasta(pathName, maximumLength = 10000L).toReads)
     } else {
       log.info(s"Loading $pathName as Parquet of AlignmentRecords.")
       loadParquetAlignments(pathName, optPredicate = optPredicate, optProjection = optProjection)

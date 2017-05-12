@@ -19,7 +19,7 @@ package org.bdgenomics.adam.models
 
 import htsjdk.samtools.{ SAMFileHeader, SAMReadGroupRecord }
 import java.util.Date
-import org.bdgenomics.formats.avro.{ RecordGroupMetadata, Sample }
+import org.bdgenomics.formats.avro.{ RecordGroup => RecordGroupMetadata, Sample }
 import scala.collection.JavaConversions._
 
 /**

@@ -42,10 +42,11 @@ class MDTaggingSuite extends ADAMFunSuite {
         (contig, start, seq) <- frags
       } yield (
         NucleotideContigFragment.newBuilder()
-        .setContig(contig)
-        .setFragmentStartPosition(start.toLong)
-        .setFragmentEndPosition(start.toLong + seq.length)
-        .setFragmentSequence(seq).build()
+        .setContigLength(contig.getContigLength)
+        .setContigName(contig.getContigName)
+        .setStart(start.toLong)
+        .setEnd(start.toLong + seq.length)
+        .setSequence(seq).build()
       )
     )
 

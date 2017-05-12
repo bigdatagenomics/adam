@@ -62,21 +62,21 @@ private[contig] object FlankReferenceFragments extends Serializable {
 
         // are the two fragments adjacent? if so, we must add the flanking sequences
         if (copyLastFragment._1.isAdjacent(f._1)) {
-          val lastSequence = copyLastFragment._2.getFragmentSequence
-          val currSequence = f._2.getFragmentSequence
+          val lastSequence = copyLastFragment._2.getSequence
+          val currSequence = f._2.getSequence
 
           // update fragments with flanking sequences
-          copyLastFragment._2.setFragmentSequence(lastSequence + currSequence.take(flankSize))
+          copyLastFragment._2.setSequence(lastSequence + currSequence.take(flankSize))
           copyLastFragment._2.setDescription(Option(copyLastFragment._2.getDescription)
             .fold("rr")(_ + "rr"))
-          f._2.setFragmentSequence(lastSequence.takeRight(flankSize) + currSequence)
+          f._2.setSequence(lastSequence.takeRight(flankSize) + currSequence)
           f._2.setDescription("f")
 
           // we must change the start position of the fragment we are prepending to
-          f._2.setFragmentStartPosition(f._2.getFragmentStartPosition - flankSize.toLong)
+          f._2.setStart(f._2.getStart - flankSize.toLong)
           // and the end position of the fragment we are appending to
-          copyLastFragment._2.setFragmentEndPosition(
-            copyLastFragment._2.getFragmentStartPosition + copyLastFragment._2.getFragmentSequence.length - 1L)
+          copyLastFragment._2.setEnd(
+            copyLastFragment._2.getStart + copyLastFragment._2.getSequence.length - 1L)
         }
 
         // overwrite last fragment

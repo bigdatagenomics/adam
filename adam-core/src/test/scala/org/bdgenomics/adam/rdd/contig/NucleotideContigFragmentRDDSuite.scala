@@ -37,22 +37,17 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("generate sequence dict from fasta") {
-    val contig0 = Contig.newBuilder
-      .setContigName("chr0")
-      .setContigLength(1000L)
-      .setReferenceURL("http://bigdatagenomics.github.io/chr0.fa")
-      .build
 
     val contig1 = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(900L)
       .build
 
     val ctg0 = NucleotideContigFragment.newBuilder()
-      .setContig(contig0)
+      .setContigName("chr0")
+      .setContigLength(1000L)
       .build()
     val ctg1 = NucleotideContigFragment.newBuilder()
-      .setContig(contig1)
+      .setContigName("chr1")
+      .setContigLength(900L)
       .build()
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(ctg0, ctg1)))
@@ -60,25 +55,22 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     assert(rdd.sequences.containsRefName("chr0"))
     val chr0 = rdd.sequences("chr0").get
     assert(chr0.length === 1000L)
-    assert(chr0.url == Some("http://bigdatagenomics.github.io/chr0.fa"))
     assert(rdd.sequences.containsRefName("chr1"))
     val chr1 = rdd.sequences("chr1").get
     assert(chr1.length === 900L)
   }
 
   sparkTest("recover reference string from a single contig fragment") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
 
     val sequence = "ACTGTAC"
     val fragment = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence(sequence)
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(0L)
-      .setNumberOfFragmentsInContig(1)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence(sequence)
+      .setIndex(0)
+      .setStart(0L)
+      .setEnd(7L)
+      .setFragments(1)
       .build()
     val region = ReferenceRegion(fragment).get
 
@@ -88,18 +80,16 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("recover trimmed reference string from a single contig fragment") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
 
     val sequence = "ACTGTAC"
     val fragment = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence(sequence)
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(0L)
-      .setNumberOfFragmentsInContig(1)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence(sequence)
+      .setIndex(0)
+      .setStart(0L)
+      .setEnd(7L)
+      .setFragments(1)
       .build()
     val region = new ReferenceRegion("chr1", 1L, 6L)
 
@@ -109,40 +99,37 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("recover reference string from multiple contig fragments") {
-    val contig1 = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
-
-    val contig2 = Contig.newBuilder
-      .setContigName("chr2")
-      .setContigLength(11L)
-      .build
 
     val sequence = "ACTGTACTC"
     val sequence0 = sequence.take(7) // ACTGTAC
     val sequence1 = sequence.drop(3).take(5) // GTACT
     val sequence2 = sequence.takeRight(6).reverse // CTCATG
     val fragment0 = NucleotideContigFragment.newBuilder()
-      .setContig(contig1)
-      .setFragmentSequence(sequence0)
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(0L)
-      .setNumberOfFragmentsInContig(1)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence(sequence0)
+      .setIndex(0)
+      .setStart(0L)
+      .setEnd(7L)
+      .setFragments(1)
       .build()
     val fragment1 = NucleotideContigFragment.newBuilder()
-      .setContig(contig2)
-      .setFragmentSequence(sequence1)
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(0L)
-      .setNumberOfFragmentsInContig(2)
+      .setContigName("chr2")
+      .setContigLength(11L)
+      .setSequence(sequence1)
+      .setIndex(0)
+      .setStart(0L)
+      .setEnd(5L)
+      .setFragments(2)
       .build()
     val fragment2 = NucleotideContigFragment.newBuilder()
-      .setContig(contig2)
-      .setFragmentSequence(sequence2)
-      .setFragmentNumber(1)
-      .setFragmentStartPosition(5L)
-      .setNumberOfFragmentsInContig(2)
+      .setContigName("chr2")
+      .setContigLength(11L)
+      .setSequence(sequence2)
+      .setIndex(1)
+      .setStart(5L)
+      .setEnd(12L)
+      .setFragments(2)
       .build()
     val region0 = ReferenceRegion(fragment0).get
     val region1 = ReferenceRegion(fragment1).get.merge(ReferenceRegion(fragment2).get)
@@ -156,40 +143,37 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("recover trimmed reference string from multiple contig fragments") {
-    val contig1 = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
-
-    val contig2 = Contig.newBuilder
-      .setContigName("chr2")
-      .setContigLength(11L)
-      .build
 
     val sequence = "ACTGTACTC"
     val sequence0 = sequence.take(7) // ACTGTAC
     val sequence1 = sequence.drop(3).take(5) // GTACT
     val sequence2 = sequence.takeRight(6).reverse // CTCATG
     val fragment0 = NucleotideContigFragment.newBuilder()
-      .setContig(contig1)
-      .setFragmentSequence(sequence0)
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(0L)
-      .setNumberOfFragmentsInContig(1)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence(sequence0)
+      .setIndex(0)
+      .setStart(0L)
+      .setEnd(7L)
+      .setFragments(1)
       .build()
     val fragment1 = NucleotideContigFragment.newBuilder()
-      .setContig(contig2)
-      .setFragmentSequence(sequence1)
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(0L)
-      .setNumberOfFragmentsInContig(2)
+      .setContigName("chr2")
+      .setContigLength(11L)
+      .setSequence(sequence1)
+      .setIndex(0)
+      .setStart(0L)
+      .setEnd(5L)
+      .setFragments(2)
       .build()
     val fragment2 = NucleotideContigFragment.newBuilder()
-      .setContig(contig2)
-      .setFragmentSequence(sequence2)
-      .setFragmentNumber(1)
-      .setFragmentStartPosition(5L)
-      .setNumberOfFragmentsInContig(2)
+      .setContigName("chr2")
+      .setContigLength(11L)
+      .setSequence(sequence2)
+      .setIndex(1)
+      .setStart(5L)
+      .setEnd(11L)
+      .setFragments(2)
       .build()
     val region0 = new ReferenceRegion("chr1", 1L, 6L)
     val region1 = new ReferenceRegion("chr2", 3L, 9L)
@@ -203,18 +187,16 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("testing nondeterminism from reduce when recovering referencestring") {
-    val contig1 = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(1000L)
-      .build
 
     var fragments: ListBuffer[NucleotideContigFragment] = new ListBuffer[NucleotideContigFragment]()
     for (a <- 0L to 1000L) {
       val seq = "A"
       val frag = NucleotideContigFragment.newBuilder()
-        .setContig(contig1)
-        .setFragmentStartPosition(0L + a)
-        .setFragmentSequence(seq)
+        .setContigName("chr1")
+        .setContigLength(1000L)
+        .setStart(a)
+        .setEnd(a + 1L)
+        .setSequence(seq)
         .build()
       fragments += frag
     }
@@ -229,16 +211,13 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("save single contig fragment as FASTA text file") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
 
     val fragment = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence("ACTGTAC")
-      .setFragmentNumber(0)
-      .setNumberOfFragmentsInContig(1)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence("ACTGTAC")
+      .setIndex(0)
+      .setFragments(1)
       .build
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
@@ -254,17 +233,14 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("save single contig fragment with description as FASTA text file") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
 
     val fragment = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
+      .setContigName("chr1")
+      .setContigLength(7L)
       .setDescription("description")
-      .setFragmentSequence("ACTGTAC")
-      .setFragmentNumber(0)
-      .setNumberOfFragmentsInContig(1)
+      .setSequence("ACTGTAC")
+      .setIndex(0)
+      .setFragments(1)
       .build
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
@@ -280,18 +256,15 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("save single contig fragment with null fields as FASTA text file") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
 
     val fragment = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence("ACTGTAC")
-      .setFragmentNumber(null)
-      .setFragmentStartPosition(null)
-      .setFragmentEndPosition(null)
-      .setNumberOfFragmentsInContig(null)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence("ACTGTAC")
+      .setIndex(null)
+      .setStart(null)
+      .setEnd(null)
+      .setFragments(null)
       .build
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
@@ -307,18 +280,15 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("save single contig fragment with null fragment number as FASTA text file") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
 
     val fragment = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence("ACTGTAC")
-      .setFragmentNumber(null)
-      .setFragmentStartPosition(null)
-      .setFragmentEndPosition(null)
-      .setNumberOfFragmentsInContig(1)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence("ACTGTAC")
+      .setIndex(null)
+      .setStart(null)
+      .setEnd(null)
+      .setFragments(1)
       .build
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
@@ -334,18 +304,15 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("save single contig fragment with null number of fragments in contig as FASTA text file") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
 
     val fragment = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence("ACTGTAC")
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(null)
-      .setFragmentEndPosition(null)
-      .setNumberOfFragmentsInContig(null)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence("ACTGTAC")
+      .setIndex(0)
+      .setStart(null)
+      .setEnd(null)
+      .setFragments(null)
       .build
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
@@ -361,28 +328,27 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("save multiple contig fragments from same contig as FASTA text file") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(21L)
-      .build
 
     val fragment0 = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence("ACTGTAC")
-      .setFragmentNumber(0)
-      .setNumberOfFragmentsInContig(3)
+      .setContigName("chr1")
+      .setContigLength(21L)
+      .setSequence("ACTGTAC")
+      .setIndex(0)
+      .setFragments(3)
       .build
     val fragment1 = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence("GCATATC")
-      .setFragmentNumber(1)
-      .setNumberOfFragmentsInContig(3)
+      .setContigName("chr1")
+      .setContigLength(21L)
+      .setSequence("GCATATC")
+      .setIndex(1)
+      .setFragments(3)
       .build
     val fragment2 = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence("CTGATCG")
-      .setFragmentNumber(2)
-      .setNumberOfFragmentsInContig(3)
+      .setContigName("chr1")
+      .setContigLength(21L)
+      .setSequence("CTGATCG")
+      .setIndex(2)
+      .setFragments(3)
       .build
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0, fragment1, fragment2)))
@@ -402,31 +368,30 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("save multiple contig fragments with description from same contig as FASTA text file") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(21L)
-      .build
 
     val fragment0 = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
+      .setContigName("chr1")
+      .setContigLength(21L)
       .setDescription("description")
-      .setFragmentSequence("ACTGTAC")
-      .setFragmentNumber(0)
-      .setNumberOfFragmentsInContig(3)
+      .setSequence("ACTGTAC")
+      .setIndex(0)
+      .setFragments(3)
       .build
     val fragment1 = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
+      .setContigName("chr1")
+      .setContigLength(21L)
       .setDescription("description")
-      .setFragmentSequence("GCATATC")
-      .setFragmentNumber(1)
-      .setNumberOfFragmentsInContig(3)
+      .setSequence("GCATATC")
+      .setIndex(1)
+      .setFragments(3)
       .build
     val fragment2 = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
+      .setContigName("chr1")
+      .setContigLength(21L)
       .setDescription("description")
-      .setFragmentSequence("CTGATCG")
-      .setFragmentNumber(2)
-      .setNumberOfFragmentsInContig(3)
+      .setSequence("CTGATCG")
+      .setIndex(2)
+      .setFragments(3)
       .build
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0,
@@ -448,87 +413,75 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("merge single contig fragment null fragment number") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
 
     val fragment = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence("ACTGTAC")
-      .setFragmentNumber(null)
-      .setFragmentStartPosition(null)
-      .setFragmentEndPosition(null)
-      .setNumberOfFragmentsInContig(null)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence("ACTGTAC")
+      .setIndex(null)
+      .setStart(null)
+      .setEnd(null)
+      .setFragments(null)
       .build
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
     val merged = rdd.mergeFragments()
 
     assert(merged.rdd.count == 1L)
-    assert(merged.rdd.first.getFragmentSequence() === "ACTGTAC")
+    assert(merged.rdd.first.getSequence() === "ACTGTAC")
   }
 
   sparkTest("merge single contig fragment number zero") {
-    val contig = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
 
     val fragment = NucleotideContigFragment.newBuilder()
-      .setContig(contig)
-      .setFragmentSequence("ACTGTAC")
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(0L)
-      .setFragmentEndPosition(6L)
-      .setNumberOfFragmentsInContig(1)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence("ACTGTAC")
+      .setIndex(0)
+      .setStart(0L)
+      .setEnd(7L)
+      .setFragments(1)
       .build
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
     val merged = rdd.mergeFragments()
 
     assert(merged.rdd.count == 1L)
-    assert(merged.rdd.first.getFragmentSequence() === "ACTGTAC")
+    assert(merged.rdd.first.getSequence() === "ACTGTAC")
   }
 
   sparkTest("merge multiple contig fragments") {
-    val contig1 = Contig.newBuilder
-      .setContigName("chr1")
-      .setContigLength(7L)
-      .build
-
-    val contig2 = Contig.newBuilder
-      .setContigName("chr2")
-      .setContigLength(11L)
-      .build
 
     val sequence = "ACTGTACTC"
     val sequence0 = sequence.take(7) // ACTGTAC
     val sequence1 = sequence.drop(3).take(5) // GTACT
     val sequence2 = sequence.takeRight(6).reverse // CTCATG
     val fragment0 = NucleotideContigFragment.newBuilder()
-      .setContig(contig1)
-      .setFragmentSequence(sequence0)
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(0L)
-      .setFragmentEndPosition(sequence0.length - 1L)
-      .setNumberOfFragmentsInContig(1)
+      .setContigName("chr1")
+      .setContigLength(7L)
+      .setSequence(sequence0)
+      .setIndex(0)
+      .setStart(0L)
+      .setEnd(sequence0.length - 1L)
+      .setFragments(1)
       .build()
     val fragment1 = NucleotideContigFragment.newBuilder()
-      .setContig(contig2)
-      .setFragmentSequence(sequence1)
-      .setFragmentNumber(0)
-      .setFragmentStartPosition(0L)
-      .setFragmentEndPosition(sequence1.length - 1L)
-      .setNumberOfFragmentsInContig(2)
+      .setContigName("chr2")
+      .setContigLength(11L)
+      .setSequence(sequence1)
+      .setIndex(0)
+      .setStart(0L)
+      .setEnd(sequence1.length - 1L)
+      .setFragments(2)
       .build()
     val fragment2 = NucleotideContigFragment.newBuilder()
-      .setContig(contig2)
-      .setFragmentSequence(sequence2)
-      .setFragmentNumber(1)
-      .setFragmentStartPosition(5L)
-      .setFragmentEndPosition(sequence2.length - 1L)
-      .setNumberOfFragmentsInContig(2)
+      .setContigName("chr2")
+      .setContigLength(11L)
+      .setSequence(sequence2)
+      .setIndex(1)
+      .setStart(5L)
+      .setEnd(sequence2.length - 1L)
+      .setFragments(2)
       .build()
 
     val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment2,
@@ -539,7 +492,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     assert(merged.rdd.count == 2L)
 
     val collect = merged.rdd.collect
-    assert(collect(0).getFragmentSequence() === "ACTGTAC")
-    assert(collect(1).getFragmentSequence() === "GTACTCTCATG")
+    assert(collect(0).getSequence() === "ACTGTAC")
+    assert(collect(1).getSequence() === "GTACTCTCATG")
   }
 }

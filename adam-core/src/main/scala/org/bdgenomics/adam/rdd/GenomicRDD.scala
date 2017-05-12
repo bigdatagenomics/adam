@@ -33,7 +33,11 @@ import org.bdgenomics.adam.models.{
   ReferenceRegion,
   SequenceDictionary
 }
-import org.bdgenomics.formats.avro.{ Contig, RecordGroupMetadata, Sample }
+import org.bdgenomics.formats.avro.{
+  Contig,
+  RecordGroup => RecordGroupMetadata,
+  Sample
+}
 import org.bdgenomics.utils.cli.SaveArgs
 import org.bdgenomics.utils.interval.array.IntervalArray
 import scala.annotation.tailrec

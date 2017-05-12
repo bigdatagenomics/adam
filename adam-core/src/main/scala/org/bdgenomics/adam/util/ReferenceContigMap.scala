@@ -48,7 +48,7 @@ case class ReferenceContigMap(contigMap: Map[String, Seq[NucleotideContigFragmen
    * The sequence dictionary corresponding to the contigs in this collection of fragments.
    */
   val sequences: SequenceDictionary = new SequenceDictionary(contigMap.map(r =>
-    SequenceRecord(r._1, r._2.map(_.getFragmentEndPosition).max)).toVector)
+    SequenceRecord(r._1, r._2.map(_.getEnd).max)).toVector)
 
   /**
    * Extract reference sequence from the file.
@@ -64,8 +64,8 @@ case class ReferenceContigMap(contigMap: Map[String, Seq[NucleotideContigFragmen
           "Contig %s not found in reference map with keys: %s".format(region.referenceName, keys())
         )
       )
-      .dropWhile(f => f.getFragmentStartPosition + f.getFragmentSequence.length < region.start)
-      .takeWhile(_.getFragmentStartPosition < region.end)
+      .dropWhile(f => f.getStart + f.getSequence.length < region.start)
+      .takeWhile(_.getStart < region.end)
       .map(
         clipFragment(_, region.start, region.end)
       )
@@ -76,16 +76,16 @@ case class ReferenceContigMap(contigMap: Map[String, Seq[NucleotideContigFragmen
     val min =
       math.max(
         0L,
-        start - fragment.getFragmentStartPosition
+        start - fragment.getStart
       ).toInt
 
     val max =
       math.min(
-        fragment.getFragmentSequence.length,
-        end - fragment.getFragmentStartPosition
+        fragment.getSequence.length,
+        end - fragment.getStart
       ).toInt
 
-    fragment.getFragmentSequence.substring(min, max)
+    fragment.getSequence.substring(min, max)
   }
 }
 
@@ -106,8 +106,8 @@ object ReferenceContigMap {
   def apply(fragments: RDD[NucleotideContigFragment]): ReferenceContigMap = {
     ReferenceContigMap(
       fragments
-        .groupBy(_.getContig.getContigName)
-        .mapValues(_.toSeq.sortBy(_.getFragmentStartPosition))
+        .groupBy(_.getContigName)
+        .mapValues(_.toSeq.sortBy(_.getStart))
         .collectAsMap
         .toMap
     )

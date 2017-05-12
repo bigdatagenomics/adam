@@ -469,7 +469,6 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
             assert(p1.getMateNegativeStrand === p2.getMateNegativeStrand)
             assert(p1.getMateContigName === p2.getMateContigName)
             assert(p1.getMateAlignmentStart === p2.getMateAlignmentStart)
-            assert(p1.getMateAlignmentEnd === p2.getMateAlignmentEnd)
           }
         }
       })

@@ -204,7 +204,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       // optionally load a reference
       val optReferenceFile = Option(args.reference).map(f => {
         sc.loadReferenceFile(f,
-          maximumFragmentLength = args.mdTagsFragmentSize)
+          maximumLength = args.mdTagsFragmentSize)
       })
 
       // run realignment
@@ -348,7 +348,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
     if (args.mdTagsReferenceFile != null) {
       log.info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
       val referenceFile = sc.loadReferenceFile(args.mdTagsReferenceFile,
-        maximumFragmentLength = args.mdTagsFragmentSize)
+        maximumLength = args.mdTagsFragmentSize)
       rdd.computeMismatchingPositions(
         referenceFile,
         overwriteExistingTags = args.mdTagsOverwrite,

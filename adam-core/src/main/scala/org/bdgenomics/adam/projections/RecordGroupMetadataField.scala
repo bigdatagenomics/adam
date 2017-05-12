@@ -17,12 +17,12 @@
  */
 package org.bdgenomics.adam.projections
 
-import org.bdgenomics.formats.avro.RecordGroupMetadata
+import org.bdgenomics.formats.avro.RecordGroup
 
 /**
- * Enumeration of RecordGroupMetadata field names for predicates and projections.
+ * Enumeration of RecordGroup field names for predicates and projections.
  */
-object RecordGroupMetadataField extends FieldEnumeration(RecordGroupMetadata.SCHEMA$) {
+object RecordGroupField extends FieldEnumeration(RecordGroup.SCHEMA$) {
 
   val name, sample, sequencingCenter, description, runDateEpoch, flowOrder, keySequence, library, predictedMedianInsertSize, platform, platformUnit = SchemaValue
 }
