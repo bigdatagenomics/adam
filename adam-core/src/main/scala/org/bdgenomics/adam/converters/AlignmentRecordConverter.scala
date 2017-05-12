@@ -158,6 +158,72 @@ class AlignmentRecordConverter extends Serializable {
   }
 
   /**
+   * Converts a single record to Bowtie tab5 format.
+   *
+   * In Bowtie tab5 format, each alignment record or pair is on a single line.
+   * An unpaired alignment record line is [name]\t[seq]\t[qual]\n.
+   * A paired-end read line is [name]\t[seq1]\t[qual1]\t[seq2]\t[qual2]\n.
+   *
+   * The index suffix will be trimmed from the read name if present.
+   *
+   * If the base qualities are unknown (qual is null or equals "*"), the quality
+   * scores will be a repeated string of 'B's that is equal to the read length.
+   *
+   * @param adamRecord Read to convert to FASTQ.
+   * @param outputOriginalBaseQualities If true and the original base quality
+   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
+   *   output the qual field. Defaults to false.
+   * @return Returns this read in string form.
+   */
+  def convertToTab5(
+    adamRecord: AlignmentRecord,
+    outputOriginalBaseQualities: Boolean = false): String = {
+
+    val (name, sequence, qualityScores) =
+      prepareFastq(adamRecord, maybeAddSuffix = false, outputOriginalBaseQualities)
+
+    "%s\t%s\t%s".format(trimSuffix(name), sequence, qualityScores)
+  }
+
+  /**
+   * Converts a single record representing the second read of a pair to Bowtie
+   * tab5 format.
+   *
+   * In Bowtie tab5 format, each alignment record or pair is on a single line.
+   * An unpaired alignment record line is [name]\t[seq]\t[qual]\n.
+   * A paired-end read line is [name]\t[seq1]\t[qual1]\t[seq2]\t[qual2]\n.
+   *
+   * If the base qualities are unknown (qual is null or equals "*"), the quality
+   * scores will be a repeated string of 'B's that is equal to the read length.
+   *
+   * @param adamRecord Read to convert to FASTQ.
+   * @param outputOriginalBaseQualities If true and the original base quality
+   *   field is set (SAM "OQ" tag), outputs the original qualities. Else,
+   *   output the qual field. Defaults to false.
+   * @return Returns this read in string form.
+   */
+  def convertSecondReadToTab5(
+    adamRecord: AlignmentRecord,
+    outputOriginalBaseQualities: Boolean = false): String = {
+
+    val (name, sequence, qualityScores) =
+      prepareFastq(adamRecord, maybeAddSuffix = false, outputOriginalBaseQualities)
+
+    // name of second read is ignored
+    "%s\t%s".format(sequence, qualityScores)
+  }
+
+  /**
+   * Trim the index suffix from the read name if present.
+   *
+   * @param name Read name to trim.
+   * @return The read name after trimming the index suffix if present.
+   */
+  private def trimSuffix(name: String): String = {
+    name.replace("/[0-9]+^", "")
+  }
+
+  /**
    * Converts a single ADAM record into a SAM record.
    *
    * @param adamRecord ADAM formatted alignment record to convert.
