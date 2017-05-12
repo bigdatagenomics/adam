@@ -188,10 +188,11 @@ class AlignmentRecordRDD(GenomicRDD):
 
         :param int kmerLength: The value of _k_ to use for cutting _k_-mers.
         :return: Returns an RDD containing k-mer/count pairs.
-        :rtype: pyspark.rdd.RDD[str,long]
+        :rtype: DataFrame containing "kmer" string and "count" long.
         """
 
-        return RDD(self._jvmRdd.countKmers(kmerLength), self.sc)
+        return DataFrame(self._jvmRdd.countKmersAsDataset(kmerLength).toDF(),
+                         SQLContext(self.sc))
 
 
     def sortReadsByReferencePosition(self):
