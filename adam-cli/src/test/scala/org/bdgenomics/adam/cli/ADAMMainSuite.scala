@@ -61,7 +61,7 @@ class ADAMMainSuite extends FunSuite {
   test("single command group") {
     val stream = new ByteArrayOutputStream()
     Console.withOut(stream) {
-      new ADAMMain(List(CommandGroup("SINGLE COMMAND GROUP", List(Transform)))).apply(Array())
+      new ADAMMain(List(CommandGroup("SINGLE COMMAND GROUP", List(TransformAlignments)))).apply(Array())
     }
     val out = stream.toString()
     assert(out.contains("Usage"))
@@ -72,7 +72,7 @@ class ADAMMainSuite extends FunSuite {
   test("add new command group to default command groups") {
     val stream = new ByteArrayOutputStream()
     Console.withOut(stream) {
-      val commandGroups = defaultCommandGroups.union(List(CommandGroup("NEW COMMAND GROUP", List(Transform))))
+      val commandGroups = defaultCommandGroups.union(List(CommandGroup("NEW COMMAND GROUP", List(TransformAlignments))))
       new ADAMMain(commandGroups)(Array())
     }
     val out = stream.toString()
@@ -97,7 +97,7 @@ class ADAMMainSuite extends FunSuite {
     Console.withOut(stream) {
       val module = new AbstractModule with ScalaModule {
         def configure() = {
-          bind[List[CommandGroup]].toInstance(List(CommandGroup("SINGLE COMMAND GROUP", List(Transform))))
+          bind[List[CommandGroup]].toInstance(List(CommandGroup("SINGLE COMMAND GROUP", List(TransformAlignments))))
         }
       }
       val injector = Guice.createInjector(module)
@@ -115,7 +115,7 @@ class ADAMMainSuite extends FunSuite {
     Console.withOut(stream) {
       val module = new AbstractModule with ScalaModule {
         def configure() = {
-          bind[List[CommandGroup]].toInstance(defaultCommandGroups.union(List(CommandGroup("NEW COMMAND GROUP", List(Transform)))))
+          bind[List[CommandGroup]].toInstance(defaultCommandGroups.union(List(CommandGroup("NEW COMMAND GROUP", List(TransformAlignments)))))
         }
       }
       val injector = Guice.createInjector(module)

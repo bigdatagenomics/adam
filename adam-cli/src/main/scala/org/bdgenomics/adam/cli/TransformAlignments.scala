@@ -33,16 +33,16 @@ import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-object Transform extends BDGCommandCompanion {
-  val commandName = "transform"
+object TransformAlignments extends BDGCommandCompanion {
+  val commandName = "transformAlignments"
   val commandDescription = "Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations"
 
   def apply(cmdLine: Array[String]) = {
-    new Transform(Args4j[TransformArgs](cmdLine))
+    new TransformAlignments(Args4j[TransformAlignmentsArgs](cmdLine))
   }
 }
 
-class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
+class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM, BAM or SAM file to apply the transforms to", index = 0)
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location to write the transformed data in ADAM/Parquet format", index = 1)
@@ -91,13 +91,13 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var forceShuffle: Boolean = false
   @Args4jOption(required = false, name = "-sort_fastq_output", usage = "Sets whether to sort the FASTQ output, if saving as FASTQ. False by default. Ignored if not saving as FASTQ.")
   var sortFastqOutput: Boolean = false
-  @Args4jOption(required = false, name = "-force_load_bam", usage = "Forces Transform to load from BAM/SAM.")
+  @Args4jOption(required = false, name = "-force_load_bam", usage = "Forces TransformAlignments to load from BAM/SAM.")
   var forceLoadBam: Boolean = false
-  @Args4jOption(required = false, name = "-force_load_fastq", usage = "Forces Transform to load from unpaired FASTQ.")
+  @Args4jOption(required = false, name = "-force_load_fastq", usage = "Forces TransformAlignments to load from unpaired FASTQ.")
   var forceLoadFastq: Boolean = false
-  @Args4jOption(required = false, name = "-force_load_ifastq", usage = "Forces Transform to load from interleaved FASTQ.")
+  @Args4jOption(required = false, name = "-force_load_ifastq", usage = "Forces TransformAlignments to load from interleaved FASTQ.")
   var forceLoadIFastq: Boolean = false
-  @Args4jOption(required = false, name = "-force_load_parquet", usage = "Forces Transform to load from Parquet.")
+  @Args4jOption(required = false, name = "-force_load_parquet", usage = "Forces TransformAlignments to load from Parquet.")
   var forceLoadParquet: Boolean = false
   @Args4jOption(required = false, name = "-single", usage = "Saves OUTPUT as single file")
   var asSingleFile: Boolean = false
@@ -125,8 +125,8 @@ class TransformArgs extends Args4jBase with ADAMSaveAnyArgs with ParquetArgs {
   var storageLevel: String = "MEMORY_ONLY"
 }
 
-class Transform(protected val args: TransformArgs) extends BDGSparkCommand[TransformArgs] with Logging {
-  val companion = Transform
+class TransformAlignments(protected val args: TransformAlignmentsArgs) extends BDGSparkCommand[TransformAlignmentsArgs] with Logging {
+  val companion = TransformAlignments
 
   val stringency = ValidationStringency.valueOf(args.stringency)
 

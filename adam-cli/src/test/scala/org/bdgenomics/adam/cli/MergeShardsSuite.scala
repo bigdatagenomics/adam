@@ -26,7 +26,7 @@ class MergeShardsSuite extends ADAMFunSuite {
     val inputPath = copyResource("unordered.sam")
     val actualPath = tmpFile("unordered.sam")
     val expectedPath = inputPath
-    Transform(Array("-single", "-defer_merging", inputPath, actualPath)).run(sc)
+    TransformAlignments(Array("-single", "-defer_merging", inputPath, actualPath)).run(sc)
     MergeShards(Array(actualPath + "_tail", actualPath,
       "-header_path", actualPath + "_head")).run(sc)
     checkFiles(expectedPath, actualPath)
@@ -36,7 +36,7 @@ class MergeShardsSuite extends ADAMFunSuite {
     val inputPath = copyResource("unordered.sam")
     val actualPath = tmpFile("ordered.sam")
     val expectedPath = copyResource("ordered.sam")
-    Transform(Array("-single",
+    TransformAlignments(Array("-single",
       "-sort_reads",
       "-sort_lexicographically",
       "-defer_merging",
@@ -49,7 +49,7 @@ class MergeShardsSuite extends ADAMFunSuite {
   sparkTest("merge sharded bam") {
     val inputPath = copyResource("unordered.sam")
     val actualPath = tmpFile("unordered.bam")
-    Transform(Array("-single",
+    TransformAlignments(Array("-single",
       "-defer_merging",
       inputPath, actualPath)).run(sc)
     MergeShards(Array(actualPath + "_tail", actualPath,
@@ -66,7 +66,7 @@ class MergeShardsSuite extends ADAMFunSuite {
     println(referencePath)
 
     val actualPath = tmpFile("artificial.cram")
-    Transform(Array("-single",
+    TransformAlignments(Array("-single",
       "-sort_reads",
       "-sort_lexicographically",
       "-defer_merging",

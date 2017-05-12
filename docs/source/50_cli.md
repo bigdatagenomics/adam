@@ -101,13 +101,13 @@ Beyond the [default options](#default-args), both `countKmers` and
 * `-print_histogram`: If provided, prints a histogram of the $k$-mer count
   distribution to standard out.
 
-### transform {#transform}
+### transformAlignments {#transformAlignments}
 
-The `transform` CLI is the entrypoint to ADAM's read preprocessing tools. This
-command provides drop-in replacement commands for several commands in the
-[Genome Analysis Toolkit](https://software.broadinstitute.org/gatk/) "Best
-Practices" read preprocessing pipeline and more [@depristo11]. This CLI tool
-takes two required arguments:
+The `transformAlignments` CLI is the entrypoint to ADAM's read preprocessing
+tools. This command provides drop-in replacement commands for several commands
+in the [Genome Analysis Toolkit](https://software.broadinstitute.org/gatk/)
+"Best Practices" read preprocessing pipeline and more [@depristo11]. This CLI
+tool takes two required arguments:
 
 1. `INPUT`: The input path. A file containing reads in any of the supported
   ADAM read input formats.
@@ -115,8 +115,8 @@ takes two required arguments:
   read output formats.
 
 Beyond the [default options](#default-args) and the [legacy output
-options](#legacy-output), `transform` supports a vast range of options. These
-options fall into several general categories:
+options](#legacy-output), `transformAlignments` supports a vast range of options.
+These options fall into several general categories:
 
 * General options:
     * `-cache`: If provided, the results of intermediate stages will be cached.
@@ -204,7 +204,7 @@ options fall into several general categories:
       fragment to load. Defaults to 10,000bp.
     * `-md_tag_overwrite`: If provided, recomputes and overwrites the
       `mismatchingPositions` field for records where this field was provided.
-* Output options: `transform` supports the [legacy output](#legacy-output)
+* Output options: `transformAlignments` supports the [legacy output](#legacy-output)
   options. Additionally, there are the following options:
     * `-coalesce`: Sets the number of partitions to coalesce the output to.
       If `-force_shuffle_coalesce` is not provided, the Spark engine may ignore
@@ -399,9 +399,9 @@ options](#default-args). Additionally, `adam2fasta` takes the following options:
 
 ### adam2fastq
 
-While the [`transform`](#transform) command can export to FASTQ, the
-`adam2fastq` provides a simpler CLI with more output options. `adam2fastq`
-takes two required arguments and an optional third argument:
+While the [`transformAlignments`](#transformAlignments) command can export to
+FASTQ, the `adam2fastq` provides a simpler CLI with more output options.
+`adam2fastq` takes two required arguments and an optional third argument:
 
 1. `INPUT`: The input read file, in any ADAM-supported read format.
 2. `OUTPUT`: The path to save an unpaired or interleaved FASTQ file to, or the

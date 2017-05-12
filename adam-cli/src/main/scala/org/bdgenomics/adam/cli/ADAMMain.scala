@@ -34,7 +34,7 @@ object ADAMMain {
         List(
           CountReadKmers,
           CountContigKmers,
-          Transform,
+          TransformAlignments,
           TransformFeatures,
           MergeShards,
           Reads2Coverage

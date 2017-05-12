@@ -96,7 +96,7 @@ spark-master using `scp` and then copy to HDFS using
 From ADAM shell, or as parameter to ADAM submit, you would refer HDFS URLs
 such as:
 ```
-adam-submit transform hdfs://spark-master/work_dir/sample1.bam \
+adam-submit transformAlignments hdfs://spark-master/work_dir/sample1.bam \
                       hdfs://spark-master/work_dir/sample1.adam
 ```
 
@@ -200,9 +200,9 @@ can cause jobs to fail. To eliminate this issue, you can set the
 resource request to YARN over the JVM Heap size indicated by `--driver-memory`
 or `--executor-memory`.
 
-As a final example, to run the ADAM [transform](#transform) CLI using YARN
-cluster mode on a 64 node cluster with one executor per node and a 2GB per
-executor overhead, we would run:
+As a final example, to run the ADAM [transformAlignments](#transformAlignments)
+CLI using YARN cluster mode on a 64 node cluster with one executor per node and
+a 2GB per executor overhead, we would run:
 
 ```
 ./bin/adam-submit \
@@ -215,7 +215,7 @@ executor overhead, we would run:
   --conf spark.yarn.executor.memoryOverhead=2048 \
   --conf spark.executor.instances=64 \
   -- \
-  transform in.sam out.adam
+  transformAlignments in.sam out.adam
 ```
 
 In this example, we are allocating 200GB of JVM heap space per executor and for
@@ -258,7 +258,7 @@ include:
   this workflow was demonstrated in [@vivian16] and sets up a Spark cluster
   which then runs ADAM's [`countKmers` CLI](#countKmers).
 * [adam-pipeline](https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_pipeline):
-  this workflow runs several stages in the ADAM [`transform` CLI](#transform).
+  this workflow runs several stages in the ADAM [`transformAlignments` CLI](#transformAlignments).
   This pipeline is the ADAM equivalent to the GATK's "Best Practice" read
   preprocessing pipeline. We then stitch together this pipeline with
   [BWA-MEM](https://github.com/lh3/bwa) and the GATK in the [adam-gatk-pipeline](
@@ -446,7 +446,7 @@ does the following work:
         # convert the file
         _log.info('Converting %s into ADAM format at %s.', hdfs_tmp_file, hdfs_input_file)
         call_adam(master_ip,
-                  ['transform',
+                  ['transformAlignments',
                    hdfs_tmp_file, hdfs_input_file],
                   memory=memory, override_parameters=spark_conf)
 ```

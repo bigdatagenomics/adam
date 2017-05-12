@@ -70,7 +70,7 @@ Choose one of the following commands:
 ADAM ACTIONS
           countKmers : Counts the k-mers/q-mers from a read dataset.
     countContigKmers : Counts the k-mers/q-mers from a read dataset.
-           transform : Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations
+ transformAlignments : Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations
    transformFeatures : Convert a file with sequence features into corresponding ADAM format and vice versa
          mergeShards : Merges the shards of a file
       reads2coverage : Calculate the coverage from a given ADAM file
@@ -93,7 +93,7 @@ PRINT
 You can learn more about a command, by calling it without arguments or with `--help`, e.g.
 
 ```
-$ adam-submit transform --help
+$ adam-submit transformAlignments --help
  INPUT                                                           : The ADAM, BAM or SAM file to apply the transforms to
  OUTPUT                                                          : Location to write the transformed data in ADAM/Parquet format
  -add_md_tags VAL                                                : Add MD Tags to reads based on the FASTA (or equivalent) file passed to this option.
@@ -145,7 +145,7 @@ $ adam-submit transform --help
                                                                    to LENIENT
 ```
 
-The ADAM `transform` command allows you to mark duplicates, run base quality score recalibration (BQSR) and other pre-processing steps on your data.
+The ADAM `transformAlignments` command allows you to mark duplicates, run base quality score recalibration (BQSR) and other pre-processing steps on your data.
 
 # Getting Started
 
@@ -209,11 +209,11 @@ These aliases call scripts that wrap the `spark-submit` and `spark-shell` comman
 
 Now you can try running some simple ADAM commands:
 
-### `transform`
+### `transformAlignments`
 Make your first `.adam` file like this:
 
 ````
-adam-submit transform $ADAM_HOME/adam-core/src/test/resources/small.sam /tmp/small.adam
+adam-submit transformAlignments $ADAM_HOME/adam-core/src/test/resources/small.sam /tmp/small.adam
 ````
 
 If you didn't obtain your copy of adam from github, you can [grab `small.sam` here](https://raw.githubusercontent.com/bigdatagenomics/adam/master/adam-core/src/test/resources/small.sam).
