@@ -237,17 +237,14 @@ object ReferenceRegion {
    * @return Region corresponding to inclusive region of contig fragment.
    */
   def apply(fragment: NucleotideContigFragment): Option[ReferenceRegion] = {
-    for {
-      contig <- Option(fragment.getContig)
-      contigName <- Option(contig.getContigName)
-      startPosition <- Option(fragment.getFragmentStartPosition)
-      fragmentSequence = fragment.getFragmentSequence
-    } yield {
-      ReferenceRegion(
-        contig.getContigName,
-        fragment.getFragmentStartPosition,
-        fragment.getFragmentStartPosition + fragmentSequence.length
-      )
+    if (fragment.getContigName != null &&
+      fragment.getStart != null &&
+      fragment.getEnd != null) {
+      Some(ReferenceRegion(fragment.getContigName,
+        fragment.getStart,
+        fragment.getEnd))
+    } else {
+      None
     }
   }
 

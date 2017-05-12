@@ -77,8 +77,7 @@ private[rdd] object NucleotideContigFragmentRDD extends Serializable {
 
     // get sequence dictionary
     val sd = new SequenceDictionary(rdd.flatMap(ncf => {
-      if (ncf.getContig != null &&
-        ncf.getContig.getContigName != null) {
+      if (ncf.getContigName != null) {
         Some(SequenceRecord.fromADAMContigFragment(ncf))
       } else {
         None
@@ -171,18 +170,18 @@ case class NucleotideContigFragmentRDD(
   def saveAsFasta(fileName: String, lineWidth: Int = 60) {
 
     def isFragment(record: NucleotideContigFragment): Boolean = {
-      Option(record.getFragmentNumber).isDefined && Option(record.getNumberOfFragmentsInContig).fold(false)(_ > 1)
+      Option(record.getIndex).isDefined && Option(record.getFragments).fold(false)(_ > 1)
     }
 
     def toFasta(record: NucleotideContigFragment): String = {
       val sb = new StringBuilder()
       sb.append(">")
-      sb.append(record.getContig.getContigName)
+      sb.append(record.getContigName)
       Option(record.getDescription).foreach(n => sb.append(" ").append(n))
       if (isFragment(record)) {
-        sb.append(s" fragment ${record.getFragmentNumber + 1} of ${record.getNumberOfFragmentsInContig}")
+        sb.append(s" fragment ${record.getIndex + 1} of ${record.getFragments}")
       }
-      for (line <- Splitter.fixedLength(lineWidth).split(record.getFragmentSequence)) {
+      for (line <- Splitter.fixedLength(lineWidth).split(record.getSequence)) {
         sb.append("\n")
         sb.append(line)
       }
@@ -202,19 +201,19 @@ case class NucleotideContigFragmentRDD(
 
     def merge(first: NucleotideContigFragment, second: NucleotideContigFragment): NucleotideContigFragment = {
       val merged = NucleotideContigFragment.newBuilder(first)
-        .setFragmentNumber(null)
-        .setFragmentStartPosition(null)
-        .setNumberOfFragmentsInContig(null)
-        .setFragmentSequence(first.getFragmentSequence + second.getFragmentSequence)
+        .setIndex(null)
+        .setStart(null)
+        .setFragments(null)
+        .setSequence(first.getSequence + second.getSequence)
         .build
 
       merged
     }
 
-    replaceRdd(rdd.sortBy(fragment => (fragment.getContig.getContigName,
-      Option(fragment.getFragmentNumber).map(_.toInt)
+    replaceRdd(rdd.sortBy(fragment => (fragment.getContigName,
+      Option(fragment.getIndex).map(_.toInt)
       .getOrElse(-1)))
-      .map(fragment => (fragment.getContig.getContigName, fragment))
+      .map(fragment => (fragment.getContigName, fragment))
       .reduceByKey(merge)
       .values)
   }
@@ -232,7 +231,7 @@ case class NucleotideContigFragmentRDD(
       val trimStart = max(0, region.start - fragment._1.start).toInt
       val trimEnd = max(0, fragment._1.end - region.end).toInt
 
-      val fragmentSequence: String = fragment._2.getFragmentSequence
+      val fragmentSequence: String = fragment._2.getSequence
 
       val str = fragmentSequence.drop(trimStart)
         .dropRight(trimEnd)
@@ -301,7 +300,7 @@ case class NucleotideContigFragmentRDD(
   def countKmers(kmerLength: Int): RDD[(String, Long)] = {
     flankAdjacentFragments(kmerLength).rdd.flatMap(r => {
       // cut each read into k-mers, and attach a count of 1L
-      r.getFragmentSequence
+      r.getSequence
         .sliding(kmerLength)
         .map(k => (k, 1L))
     }).reduceByKey((k1: Long, k2: Long) => k1 + k2)

@@ -102,13 +102,13 @@ private[adam] object FastaConverter {
    *
    * @param rdd RDD containing Long,String tuples, where the Long corresponds to the number
    *   of the file line, and the String is the line of the file.
-   * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
+   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
    * @return An RDD of ADAM FASTA data.
    */
   def apply(
     rdd: RDD[(Long, String)],
-    maximumFragmentLength: Long = 10000L): RDD[NucleotideContigFragment] = {
+    maximumLength: Long = 10000L): RDD[NucleotideContigFragment] = {
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
       .filter((kv: (Long, String)) => !kv._2.startsWith(";"))
 
@@ -126,7 +126,7 @@ private[adam] object FastaConverter {
 
     val groupedContigs = keyedSequences.groupByKey()
 
-    val converter = new FastaConverter(maximumFragmentLength)
+    val converter = new FastaConverter(maximumLength)
 
     groupedContigs.flatMap {
       case (id, lines) =>
@@ -278,21 +278,19 @@ private[converters] class FastaConverter(fragmentLength: Long) extends Serializa
       .map(si => {
         val (bases, index) = si
 
-        val contig = Contig.newBuilder
+        val builder = NucleotideContigFragment.newBuilder()
+          .setSequence(bases)
+          .setIndex(index)
+          .setStart(index * fragmentLength)
+          .setEnd(index * fragmentLength + bases.length)
+          .setFragments(fragmentCount)
+          .setLength(bases.length)
           .setContigLength(sequenceLength)
 
-        val builder = NucleotideContigFragment.newBuilder()
-          .setFragmentSequence(bases)
-          .setFragmentNumber(index)
-          .setFragmentStartPosition(index * fragmentLength)
-          .setFragmentEndPosition(index * fragmentLength + bases.length - 1L)
-          .setNumberOfFragmentsInContig(fragmentCount)
-          .setFragmentLength(bases.length)
-
         // map over optional fields
-        name.foreach(contig.setContigName(_))
+        name.foreach(builder.setContigName(_))
         description.foreach(builder.setDescription(_))
-        builder.setContig(contig.build)
+
         // build and return
         builder.build()
       })

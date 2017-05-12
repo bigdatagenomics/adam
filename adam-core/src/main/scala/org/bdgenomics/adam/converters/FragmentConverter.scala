@@ -34,10 +34,10 @@ private object FragmentCollector extends Serializable {
    * @return Returns key value pair where the key is the contig metadata and the
    *   value is a Fragment Collector object.
    */
-  def apply(fragment: NucleotideContigFragment): Option[(Contig, FragmentCollector)] = {
+  def apply(fragment: NucleotideContigFragment): Option[(String, FragmentCollector)] = {
     ReferenceRegion(fragment).map(rr => {
-      (fragment.getContig,
-        FragmentCollector(Seq((rr, fragment.getFragmentSequence))))
+      (fragment.getContigName,
+        FragmentCollector(Seq((rr, fragment.getSequence))))
     })
   }
 }
@@ -123,9 +123,9 @@ private[adam] object FragmentConverter extends Serializable {
    * @param kv (Contig metadata, FragmentCollector) key value pair.
    * @return Returns one alignment record per sequence in the collector.
    */
-  private[converters] def convertFragment(kv: (Contig, FragmentCollector)): Seq[AlignmentRecord] = {
+  private[converters] def convertFragment(kv: (String, FragmentCollector)): Seq[AlignmentRecord] = {
     // extract kv pair
-    val (contig, fragment) = kv
+    val (contigName, fragment) = kv
 
     // extract the fragment string and region
     fragment.fragments.map(p => {
@@ -133,7 +133,7 @@ private[adam] object FragmentConverter extends Serializable {
 
       // build record
       AlignmentRecord.newBuilder()
-        .setContigName(contig.getContigName)
+        .setContigName(contigName)
         .setStart(fragmentRegion.start)
         .setEnd(fragmentRegion.end)
         .setSequence(fragmentString)

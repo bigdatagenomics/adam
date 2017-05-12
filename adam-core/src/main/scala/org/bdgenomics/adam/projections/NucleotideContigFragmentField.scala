@@ -24,5 +24,5 @@ import org.bdgenomics.formats.avro.NucleotideContigFragment
  */
 object NucleotideContigFragmentField extends FieldEnumeration(NucleotideContigFragment.SCHEMA$) {
 
-  val contig, description, fragmentSequence, fragmentNumber, fragmentStartPosition, fragmentEndPosition, fragmentLength, numberOfFragmentsInContig = SchemaValue
+  val contigName, contigLength, description, sequence, index, start, end, length, fragments = SchemaValue
 }

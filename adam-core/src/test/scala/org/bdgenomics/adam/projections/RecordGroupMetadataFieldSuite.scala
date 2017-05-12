@@ -18,17 +18,17 @@
 package org.bdgenomics.adam.projections
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.projections.RecordGroupMetadataField._
+import org.bdgenomics.adam.projections.RecordGroupField._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.RecordGroupMetadata
+import org.bdgenomics.formats.avro.RecordGroup
 
-class RecordGroupMetadataFieldSuite extends ADAMFunSuite {
+class RecordGroupFieldSuite extends ADAMFunSuite {
 
   sparkTest("Use projection when reading parquet record group metadata") {
     val path = tmpFile("recordGroupMetadata.parquet")
-    val rdd = sc.parallelize(Seq(RecordGroupMetadata.newBuilder()
+    val rdd = sc.parallelize(Seq(RecordGroup.newBuilder()
       .setName("name")
       .setSequencingCenter("sequencing_center")
       .setDescription("description")
@@ -56,7 +56,7 @@ class RecordGroupMetadataFieldSuite extends ADAMFunSuite {
       platformUnit
     )
 
-    val recordGroupMetadata: RDD[RecordGroupMetadata] = sc.loadParquet(path, optProjection = Some(projection))
+    val recordGroupMetadata: RDD[RecordGroup] = sc.loadParquet(path, optProjection = Some(projection))
     assert(recordGroupMetadata.count() === 1)
     assert(recordGroupMetadata.first.getName === "name")
     assert(recordGroupMetadata.first.getSequencingCenter === "sequencing_center")

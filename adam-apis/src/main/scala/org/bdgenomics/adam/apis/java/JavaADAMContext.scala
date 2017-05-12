@@ -216,13 +216,13 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *
    * @param pathName The path name to load reference sequences from.
    *   Globs/directories for 2bit format are not supported.
-   * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
+   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
    * @return Returns a broadcastable ReferenceFile.
    */
   def loadReferenceFile(pathName: java.lang.String,
-                        maximumFragmentLength: java.lang.Long): ReferenceFile = {
-    ac.loadReferenceFile(pathName, maximumFragmentLength)
+                        maximumLength: java.lang.Long): ReferenceFile = {
+    ac.loadReferenceFile(pathName, maximumLength)
   }
 
   /**

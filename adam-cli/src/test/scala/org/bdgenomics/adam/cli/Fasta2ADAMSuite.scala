@@ -29,12 +29,12 @@ class Fasta2ADAMSuite extends ADAMFunSuite {
     val contigFragments = sc.loadParquetContigFragments(convertPath)
     assert(contigFragments.rdd.count() === 26)
     val first = contigFragments.rdd.first()
-    assert(first.getContig.getContigName === null)
+    assert(first.getContigName === null)
     assert(first.getDescription === "gi|224384749|gb|CM000682.1| Homo sapiens chromosome 20, GRCh37 primary reference assembly")
-    assert(first.getFragmentNumber === 0)
-    assert(first.getFragmentSequence.length === 10000)
-    assert(first.getFragmentStartPosition === 0L)
-    assert(first.getFragmentEndPosition === 9999L)
-    assert(first.getNumberOfFragmentsInContig === 26)
+    assert(first.getIndex === 0)
+    assert(first.getSequence.length === 10000)
+    assert(first.getStart === 0L)
+    assert(first.getEnd === 10000L)
+    assert(first.getFragments === 26)
   }
 }

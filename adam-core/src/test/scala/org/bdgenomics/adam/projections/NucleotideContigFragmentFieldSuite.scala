@@ -29,39 +29,37 @@ class NucleotideContigFragmentFieldSuite extends ADAMFunSuite {
   sparkTest("Use projection when reading parquet nucleotide contig fragments") {
     val path = tmpFile("nucleotideContigFragments.parquet")
     val rdd = sc.parallelize(Seq(NucleotideContigFragment.newBuilder()
-      .setContig(Contig.newBuilder()
-        .setContigName("6")
-        .build())
+      .setContigName("6")
       .setDescription("Chromosome 6")
-      .setFragmentSequence("ACTG")
-      .setFragmentNumber(1)
-      .setFragmentStartPosition(0)
-      .setFragmentEndPosition(4)
-      .setFragmentLength(4)
-      .setNumberOfFragmentsInContig(4)
+      .setSequence("ACTG")
+      .setIndex(1)
+      .setStart(0)
+      .setEnd(4)
+      .setLength(4)
+      .setFragments(4)
       .build()))
     rdd.saveAsParquet(TestSaveArgs(path))
 
     val projection = Projection(
-      contig,
+      contigName,
       description,
-      fragmentSequence,
-      fragmentNumber,
-      fragmentStartPosition,
-      fragmentEndPosition,
-      fragmentLength,
-      numberOfFragmentsInContig
+      sequence,
+      index,
+      start,
+      end,
+      length,
+      fragments
     )
 
     val nucleotideContigFragments: RDD[NucleotideContigFragment] = sc.loadParquet(path, optProjection = Some(projection))
     assert(nucleotideContigFragments.count() === 1)
-    assert(nucleotideContigFragments.first.getContig.getContigName === "6")
+    assert(nucleotideContigFragments.first.getContigName === "6")
     assert(nucleotideContigFragments.first.getDescription === "Chromosome 6")
-    assert(nucleotideContigFragments.first.getFragmentSequence === "ACTG")
-    assert(nucleotideContigFragments.first.getFragmentNumber === 1)
-    assert(nucleotideContigFragments.first.getFragmentStartPosition === 0)
-    assert(nucleotideContigFragments.first.getFragmentEndPosition === 4)
-    assert(nucleotideContigFragments.first.getFragmentLength === 4)
-    assert(nucleotideContigFragments.first.getNumberOfFragmentsInContig === 4)
+    assert(nucleotideContigFragments.first.getSequence === "ACTG")
+    assert(nucleotideContigFragments.first.getIndex === 1)
+    assert(nucleotideContigFragments.first.getStart === 0)
+    assert(nucleotideContigFragments.first.getEnd === 4)
+    assert(nucleotideContigFragments.first.getLength === 4)
+    assert(nucleotideContigFragments.first.getFragments === 4)
   }
 }
