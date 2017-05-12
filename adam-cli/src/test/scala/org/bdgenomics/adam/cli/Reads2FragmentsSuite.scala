@@ -28,7 +28,7 @@ class Reads2FragmentsSuite extends ADAMFunSuite {
     val expectedPath = copyResource("ordered.sam")
     Reads2Fragments(Array(inputPath, fragmentsPath)).run(sc)
     Fragments2Reads(Array(fragmentsPath, readsPath)).run(sc)
-    Transform(Array("-single", "-sort_reads", "-sort_lexicographically",
+    TransformAlignments(Array("-single", "-sort_reads", "-sort_lexicographically",
       readsPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }

@@ -32,8 +32,8 @@ class ViewSuite extends ADAMFunSuite {
   sparkBefore("initialize 'reads' Array from flag-values.sam") {
 
     val transform =
-      new Transform(
-        Args4j[TransformArgs](
+      new TransformAlignments(
+        Args4j[TransformAlignmentsArgs](
           Array(
             inputSamPath,
             "unused_output_path"

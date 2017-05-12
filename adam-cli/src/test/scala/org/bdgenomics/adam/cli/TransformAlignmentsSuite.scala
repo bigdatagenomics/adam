@@ -20,12 +20,12 @@ package org.bdgenomics.adam.cli
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
-class TransformSuite extends ADAMFunSuite {
+class TransformAlignmentsSuite extends ADAMFunSuite {
   sparkTest("unordered sam to unordered sam") {
     val inputPath = copyResource("unordered.sam")
     val actualPath = tmpFile("unordered.sam")
     val expectedPath = inputPath
-    Transform(Array("-single", inputPath, actualPath)).run(sc)
+    TransformAlignments(Array("-single", inputPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
@@ -33,7 +33,7 @@ class TransformSuite extends ADAMFunSuite {
     val inputPath = copyResource("unordered.sam")
     val actualPath = tmpFile("ordered.sam")
     val expectedPath = copyResource("ordered.sam")
-    Transform(Array("-single", "-sort_reads", "-sort_lexicographically", inputPath, actualPath)).run(sc)
+    TransformAlignments(Array("-single", "-sort_reads", "-sort_lexicographically", inputPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
@@ -42,8 +42,8 @@ class TransformSuite extends ADAMFunSuite {
     val intermediateAdamPath = tmpFile("unordered.adam")
     val actualPath = tmpFile("unordered.sam")
     val expectedPath = inputPath
-    Transform(Array(inputPath, intermediateAdamPath)).run(sc)
-    Transform(Array("-single", intermediateAdamPath, actualPath)).run(sc)
+    TransformAlignments(Array(inputPath, intermediateAdamPath)).run(sc)
+    TransformAlignments(Array("-single", intermediateAdamPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
@@ -52,15 +52,15 @@ class TransformSuite extends ADAMFunSuite {
     val intermediateAdamPath = tmpFile("unordered.adam")
     val actualPath = tmpFile("ordered.sam")
     val expectedPath = copyResource("ordered.sam")
-    Transform(Array(inputPath, intermediateAdamPath)).run(sc)
-    Transform(Array("-single", "-sort_reads", "-sort_lexicographically", intermediateAdamPath, actualPath)).run(sc)
+    TransformAlignments(Array(inputPath, intermediateAdamPath)).run(sc)
+    TransformAlignments(Array("-single", "-sort_reads", "-sort_lexicographically", intermediateAdamPath, actualPath)).run(sc)
     checkFiles(expectedPath, actualPath)
   }
 
   sparkTest("put quality scores into bins") {
     val inputPath = copyResource("bqsr1.sam")
     val finalPath = tmpFile("binned.adam")
-    Transform(Array(inputPath, finalPath, "-bin_quality_scores", "0,20,10;20,40,30;40,60,50")).run(sc)
+    TransformAlignments(Array(inputPath, finalPath, "-bin_quality_scores", "0,20,10;20,40,30;40,60,50")).run(sc)
     val qualityScoreCounts = sc.loadAlignments(finalPath)
       .rdd
       .flatMap(_.getQual)

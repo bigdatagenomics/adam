@@ -140,7 +140,7 @@ PRINT
 You can learn more about a command, by calling it without arguments or with `--help`, e.g.
 
 ```
-$ adam-submit transform
+$ adam-submit transformAlignments
 Argument "INPUT" is required
  INPUT                                                           : The ADAM, BAM or SAM file to apply the transforms to
  OUTPUT                                                          : Location to write the transformed data in ADAM/Parquet format
@@ -191,7 +191,7 @@ Argument "INPUT" is required
                                                                    to LENIENT
 ```
 
-The ADAM transform command allows you to mark duplicates, run base quality score recalibration (BQSR) and other pre-processing steps on your data.
+The ADAM transformAlignments command allows you to mark duplicates, run base quality score recalibration (BQSR) and other pre-processing steps on your data.
 
 There are also a number of projects built on ADAM, e.g.
 

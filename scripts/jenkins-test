@@ -218,12 +218,12 @@ then
     # once fetched, convert BAM to ADAM
     echo "Converting BAM to ADAM read format"
     rm -rf ${READS}
-    ${ADAM} transform ${BAM} ${READS}
+    ${ADAM} transformAlignments ${BAM} ${READS}
 
     # then, sort the BAM
     echo "Converting BAM to ADAM read format with sorting"
     rm -rf ${SORTED_READS}
-    ${ADAM} transform -sort_reads ${READS} ${SORTED_READS}
+    ${ADAM} transformAlignments -sort_reads ${READS} ${SORTED_READS}
 
     # convert the reads to fragments to re-pair the reads
     echo "Converting read file to fragments"
