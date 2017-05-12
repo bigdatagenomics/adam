@@ -595,9 +595,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             Some((sd, rg))
           } catch {
             case e: Throwable => {
-              log.error(
-                s"Loading failed for $fp:n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
-              )
+              if (validationStringency == ValidationStringency.STRICT) {
+                throw e
+              } else if (validationStringency == ValidationStringency.LENIENT) {
+                log.error(
+                  s"Loading failed for $fp:\n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
+                )
+              }
               None
             }
           }

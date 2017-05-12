@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
+import htsjdk.samtools.{ SAMFormatException, ValidationStringency }
 import java.io.{ File, FileNotFoundException }
 import com.google.common.io.Files
 import org.apache.hadoop.fs.Path
@@ -79,6 +80,13 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("small.sam")
     val reads: RDD[AlignmentRecord] = sc.loadAlignments(path).rdd
     assert(reads.count() === 20)
+  }
+
+  sparkTest("loading a sam file with a bad header and strict stringency should fail") {
+    val path = testFile("badheader.sam")
+    intercept[SAMFormatException] {
+      sc.loadBam(path, validationStringency = ValidationStringency.STRICT)
+    }
   }
 
   sparkTest("can read a small .CRAM file") {
