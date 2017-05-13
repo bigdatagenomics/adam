@@ -267,18 +267,18 @@ functions. For example, given the following code:
 
 ```scala
 val reads = sc.loadAlignments("my/reads.adam")
-val panel = sc.loadFeatures("my/panel/features.adam")
+val features = sc.loadFeatures("my/features.adam")
 
-val readsByFeature = panel.broadcastRegionJoin(reads)
+val readsByFeature = features.broadcastRegionJoin(reads)
 ```
 
-We can get a handle to the broadcast panel by rewriting the code as:
+We can get a handle to the broadcast features by rewriting the code as:
 
 ```scala
 val reads = sc.loadAlignments("my/reads.adam")
-val bcastPanel = sc.loadFeatures("my/panel/features.adam").broadcast()
+val bcastFeatures = sc.loadFeatures("my/features.adam").broadcast()
 
-val readsByFeature = reads.broadcastRegionJoinAgainst(bcastPanel)
+val readsByFeature = reads.broadcastRegionJoinAgainst(bcastFeatures)
 ```
 
 ## Using ADAM's Pipe API {#pipes}
