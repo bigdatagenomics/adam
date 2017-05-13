@@ -59,6 +59,11 @@ object RecordGroupDictionary {
 case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
 
   /**
+   * The number of record groups in the dictionary.
+   */
+  def size: Int = recordGroups.size
+
+  /**
    * @return Returns true if this dictionary contains no record groups.
    */
   def isEmpty: Boolean = {

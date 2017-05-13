@@ -62,6 +62,15 @@ class VariantContextRDDSuite extends ADAMFunSuite {
         .build))
   }
 
+  sparkTest("union two variant context rdds together") {
+    val vc1 = sc.loadVcf(testFile("gvcf_dir/gvcf_multiallelic.g.vcf"))
+    val vc2 = sc.loadVcf(testFile("small.vcf"))
+    val union = vc1.union(vc2)
+    assert(union.rdd.count === (vc1.rdd.count + vc2.rdd.count))
+    assert(union.sequences.size === (vc1.sequences.size + vc2.sequences.size))
+    assert(union.samples.size === 4)
+  }
+
   sparkTest("can write, then read in .vcf file") {
     val path = new File(tempDir, "test.vcf")
     variants.saveAsVcf(TestSaveArgs(path.getAbsolutePath), false)

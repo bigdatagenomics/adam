@@ -125,6 +125,13 @@ case class FragmentRDD(rdd: RDD[Fragment],
     copy(rdd = newRdd)
   }
 
+  def union(rdds: FragmentRDD*): FragmentRDD = {
+    val iterableRdds = rdds.toSeq
+    FragmentRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableRdds.map(_.recordGroups).fold(recordGroups)(_ ++ _))
+  }
+
   /**
    * Essentially, splits up the reads in a Fragment.
    *

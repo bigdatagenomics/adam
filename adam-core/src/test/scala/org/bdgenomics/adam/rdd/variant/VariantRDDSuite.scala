@@ -22,6 +22,14 @@ import org.bdgenomics.adam.util.ADAMFunSuite
 
 class VariantRDDSuite extends ADAMFunSuite {
 
+  sparkTest("union two variant rdds together") {
+    val variant1 = sc.loadVariants(testFile("gvcf_dir/gvcf_multiallelic.g.vcf"))
+    val variant2 = sc.loadVariants(testFile("small.vcf"))
+    val union = variant1.union(variant2)
+    assert(union.rdd.count === (variant1.rdd.count + variant2.rdd.count))
+    assert(union.sequences.size === (variant1.sequences.size + variant2.sequences.size))
+  }
+
   sparkTest("use broadcast join to pull down variants mapped to targets") {
     val variantsPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")

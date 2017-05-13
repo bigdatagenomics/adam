@@ -733,6 +733,15 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     assert(c0.filter(_._1.isEmpty).forall(_._2.size == 1))
   }
 
+  sparkTest("union two feature rdds together") {
+    val features1 = sc.loadGtf(testFile("Homo_sapiens.GRCh37.75.trun100.gtf"))
+    val features2 = sc.loadGff3(testFile("dvl1.200.gff3"))
+    val union = features1.union(features2)
+    assert(union.rdd.count === (features1.rdd.count + features2.rdd.count))
+    // only a single contig between the two
+    assert(union.sequences.size === 1)
+  }
+
   sparkTest("estimate sequence dictionary contig lengths from GTF format") {
     val inputPath = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
     val features = sc.loadGtf(inputPath)

@@ -250,6 +250,12 @@ case class FeatureRDD(rdd: RDD[Feature],
     IntervalArray(rdd, FeatureArray.apply(_, _))
   }
 
+  def union(rdds: FeatureRDD*): FeatureRDD = {
+    val iterableRdds = rdds.toSeq
+    FeatureRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+  }
+
   /**
    * Java friendly save function. Automatically detects the output format.
    *

@@ -74,6 +74,12 @@ case class CoverageRDD(rdd: RDD[Coverage],
     IntervalArray(rdd, CoverageArray.apply(_, _))
   }
 
+  def union(rdds: CoverageRDD*): CoverageRDD = {
+    val iterableRdds = rdds.toSeq
+    CoverageRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+  }
+
   /**
    * Saves coverage as feature file.
    *

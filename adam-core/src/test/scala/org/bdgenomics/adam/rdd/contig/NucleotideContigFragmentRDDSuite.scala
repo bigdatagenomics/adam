@@ -21,12 +21,20 @@ import java.io.File
 
 import com.google.common.io.Files
 import org.bdgenomics.adam.models._
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
-
 import scala.collection.mutable.ListBuffer
 
 class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
+
+  sparkTest("union two ncf rdds together") {
+    val fragments1 = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 10000L)
+    val fragments2 = sc.loadFasta(testFile("artificial.fa"))
+    val union = fragments1.union(fragments2)
+    assert(union.rdd.count === (fragments1.rdd.count + fragments2.rdd.count))
+    assert(union.sequences.size === 2)
+  }
 
   sparkTest("generate sequence dict from fasta") {
     val contig0 = Contig.newBuilder

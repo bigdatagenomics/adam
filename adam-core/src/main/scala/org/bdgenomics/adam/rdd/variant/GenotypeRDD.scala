@@ -79,6 +79,14 @@ case class GenotypeRDD(rdd: RDD[Genotype],
                        @transient samples: Seq[Sample],
                        @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
 
+  def union(rdds: GenotypeRDD*): GenotypeRDD = {
+    val iterableRdds = rdds.toSeq
+    GenotypeRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      (samples ++ iterableRdds.flatMap(_.samples)).distinct,
+      (headerLines ++ iterableRdds.flatMap(_.headerLines)).distinct)
+  }
+
   protected def buildTree(rdd: RDD[(ReferenceRegion, Genotype)])(
     implicit tTag: ClassTag[Genotype]): IntervalArray[ReferenceRegion, Genotype] = {
     IntervalArray(rdd, GenotypeArray.apply(_, _))

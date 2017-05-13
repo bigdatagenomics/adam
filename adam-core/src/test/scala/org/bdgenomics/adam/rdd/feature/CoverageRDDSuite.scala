@@ -64,6 +64,8 @@ class CoverageRDDSuite extends ADAMFunSuite {
     val inputPath = testFile("sample_coverage.bed")
     val coverage = sc.loadCoverage(inputPath)
     assert(coverage.rdd.count() == 3)
+    val selfUnion = coverage.union(coverage)
+    assert(selfUnion.rdd.count === 6)
   }
 
   sparkTest("correctly filters coverage with predicate") {
