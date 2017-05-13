@@ -119,6 +119,11 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
   private val hasSequenceOrdering = records.forall(_.referenceIndex.isDefined)
 
   /**
+   * The number of sequences in the dictionary.
+   */
+  def size: Int = records.size
+
+  /**
    * @param that Sequence dictionary to compare against.
    * @return True if each record in this dictionary exists in the other dictionary.
    */

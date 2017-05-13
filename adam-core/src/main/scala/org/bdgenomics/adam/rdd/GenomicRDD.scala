@@ -118,6 +118,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   }
 
   /**
+   * Unions together multiple genomic RDDs.
+   *
+   * @param rdds RDDs to union with this RDD.
+   */
+  def union(rdds: U*): U
+
+  /**
    * Applies a function that transforms the underlying RDD into a new RDD.
    *
    * @param tFn A function that transforms the underlying RDD.
@@ -400,7 +407,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    */
   def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](
     genomicRdd: GenomicRDD[X, Y])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = InnerBroadcastJoin.time {
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      txTag: ClassTag[(T, X)]): GenomicRDD[(T, X), Z] = InnerBroadcastJoin.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(T, X)](InnerTreeRegionJoin[T, X]().broadcastAndJoin(
@@ -429,7 +438,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    */
   def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](
     genomicRdd: GenomicRDD[X, Y])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = RightOuterBroadcastJoin.time {
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      otxTag: ClassTag[(Option[T], X)]): GenomicRDD[(Option[T], X), Z] = RightOuterBroadcastJoin.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(Option[T], X)](RightOuterTreeRegionJoin[T, X]().broadcastAndJoin(
@@ -493,7 +504,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    *   overlapped in the genomic coordinate space.
    */
   def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
-    implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[T], X), Z] = BroadcastJoinAndGroupByRight.time {
+    implicit tTag: ClassTag[T],
+    xTag: ClassTag[X],
+    itxTag: ClassTag[(Iterable[T], X)]): GenomicRDD[(Iterable[T], X), Z] = BroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(Iterable[T], X)](InnerTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
@@ -521,7 +534,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    *   right RDD that did not overlap a key in the left RDD.
    */
   def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
-    implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[T], X), Z] = RightOuterBroadcastJoinAndGroupByRight.time {
+    implicit tTag: ClassTag[T],
+    xTag: ClassTag[X],
+    itxTag: ClassTag[(Iterable[T], X)]): GenomicRDD[(Iterable[T], X), Z] = RightOuterBroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(Iterable[T], X)](RightOuterTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
@@ -551,7 +566,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, X), Z] = InnerShuffleJoin.time {
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      txTag: ClassTag[(T, X)]): GenomicRDD[(T, X), Z] = InnerShuffleJoin.time {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
       genomicRdd)
@@ -586,7 +603,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], X), Z] = RightOuterShuffleJoin.time {
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      otxTag: ClassTag[(Option[T], X)]): GenomicRDD[(Option[T], X), Z] = RightOuterShuffleJoin.time {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
       genomicRdd)
@@ -624,7 +643,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Option[X]), Z]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Option[X]), Z] = LeftOuterShuffleJoin.time {
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      toxTag: ClassTag[(T, Option[X])]): GenomicRDD[(T, Option[X]), Z] = LeftOuterShuffleJoin.time {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
       genomicRdd)
@@ -661,7 +682,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Option[X]), Z]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Option[X]), Z] = FullOuterShuffleJoin.time {
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      otoxTag: ClassTag[(Option[T], Option[X])]): GenomicRDD[(Option[T], Option[X]), Z] = FullOuterShuffleJoin.time {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
       genomicRdd)
@@ -699,7 +722,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Iterable[X]), Z]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(T, Iterable[X]), Z] = ShuffleJoinAndGroupByLeft.time {
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      tixTag: ClassTag[(T, Iterable[X])]): GenomicRDD[(T, Iterable[X]), Z] = ShuffleJoinAndGroupByLeft.time {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
       genomicRdd)
@@ -739,7 +764,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Iterable[X]), Z]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[T], Iterable[X]), Z] = RightOuterShuffleJoinAndGroupByLeft.time {
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      otixTag: ClassTag[(Option[T], Iterable[X])]): GenomicRDD[(Option[T], Iterable[X]), Z] = RightOuterShuffleJoinAndGroupByLeft.time {
 
     val (partitionSize, endSequences) = joinPartitionSizeAndSequences(optPartitions,
       genomicRdd)
@@ -759,9 +786,17 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   }
 }
 
-private case class GenericGenomicRDD[T](rdd: RDD[T],
-                                        sequences: SequenceDictionary,
-                                        regionFn: T => Seq[ReferenceRegion]) extends GenomicRDD[T, GenericGenomicRDD[T]] {
+private case class GenericGenomicRDD[T](
+    rdd: RDD[T],
+    sequences: SequenceDictionary,
+    regionFn: T => Seq[ReferenceRegion])(implicit tTag: ClassTag[T]) extends GenomicRDD[T, GenericGenomicRDD[T]] {
+
+  def union(rdds: GenericGenomicRDD[T]*): GenericGenomicRDD[T] = {
+    val iterableRdds = rdds.toSeq
+    GenericGenomicRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      regionFn)
+  }
 
   protected def buildTree(
     rdd: RDD[(ReferenceRegion, T)])(

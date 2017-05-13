@@ -22,6 +22,15 @@ import org.bdgenomics.adam.util.ADAMFunSuite
 
 class GenotypeRDDSuite extends ADAMFunSuite {
 
+  sparkTest("union two genotype rdds together") {
+    val genotype1 = sc.loadGenotypes(testFile("gvcf_dir/gvcf_multiallelic.g.vcf"))
+    val genotype2 = sc.loadGenotypes(testFile("small.vcf"))
+    val union = genotype1.union(genotype2)
+    assert(union.rdd.count === (genotype1.rdd.count + genotype2.rdd.count))
+    assert(union.sequences.size === (genotype1.sequences.size + genotype2.sequences.size))
+    assert(union.samples.size === 4)
+  }
+
   sparkTest("use broadcast join to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")

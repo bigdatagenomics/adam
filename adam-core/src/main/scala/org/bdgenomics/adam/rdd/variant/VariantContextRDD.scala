@@ -98,6 +98,15 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     IntervalArray(rdd, VariantContextArray.apply(_, _))
   }
 
+  def union(rdds: VariantContextRDD*): VariantContextRDD = {
+    val iterableRdds = rdds.toSeq
+    VariantContextRDD(
+      rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      (samples ++ iterableRdds.flatMap(_.samples)).distinct,
+      (headerLines ++ iterableRdds.flatMap(_.headerLines)).distinct)
+  }
+
   /**
    * @return Returns a GenotypeRDD containing the Genotypes in this RDD.
    */

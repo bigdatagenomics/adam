@@ -942,4 +942,15 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(qualityScoreCounts(30) === 92899)
     assert(qualityScoreCounts(10) === 7101)
   }
+
+  sparkTest("union two read files together") {
+    val reads1 = sc.loadAlignments(testFile("bqsr1.sam"))
+    val reads2 = sc.loadAlignments(testFile("small.sam"))
+    val union = reads1.union(reads2)
+    assert(union.rdd.count === (reads1.rdd.count + reads2.rdd.count))
+    // all of the contigs small.sam has are in bqsr1.sam
+    assert(union.sequences.size === reads1.sequences.size)
+    // small.sam has no record groups
+    assert(union.recordGroups.size === reads1.recordGroups.size)
+  }
 }

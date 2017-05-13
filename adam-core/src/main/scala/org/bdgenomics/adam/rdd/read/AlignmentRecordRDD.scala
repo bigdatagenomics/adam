@@ -152,6 +152,13 @@ case class AlignmentRecordRDD(
     IntervalArray(rdd, AlignmentRecordArray.apply(_, _))
   }
 
+  def union(rdds: AlignmentRecordRDD*): AlignmentRecordRDD = {
+    val iterableRdds = rdds.toSeq
+    AlignmentRecordRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      iterableRdds.map(_.recordGroups).fold(recordGroups)(_ ++ _))
+  }
+
   /**
    * Convert this set of reads into fragments.
    *

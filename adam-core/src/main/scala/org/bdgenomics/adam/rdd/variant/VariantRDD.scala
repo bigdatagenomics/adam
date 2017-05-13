@@ -104,6 +104,13 @@ case class VariantRDD(rdd: RDD[Variant],
       contigs)
   }
 
+  def union(rdds: VariantRDD*): VariantRDD = {
+    val iterableRdds = rdds.toSeq
+    VariantRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      (headerLines ++ iterableRdds.flatMap(_.headerLines)).distinct)
+  }
+
   /**
    * Java-friendly method for saving to Parquet.
    *

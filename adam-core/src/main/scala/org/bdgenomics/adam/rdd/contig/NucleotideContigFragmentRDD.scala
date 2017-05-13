@@ -119,6 +119,12 @@ case class NucleotideContigFragmentRDD(
     FragmentConverter.convertRdd(rdd)
   }
 
+  def union(rdds: NucleotideContigFragmentRDD*): NucleotideContigFragmentRDD = {
+    val iterableRdds = rdds.toSeq
+    NucleotideContigFragmentRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+  }
+
   /**
    * Replaces the underlying RDD with a new RDD.
    *
