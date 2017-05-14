@@ -31,7 +31,7 @@ import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SQLContext }
+import org.apache.spark.sql.{ Dataset, Row, SQLContext }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus.{
   ConsensusGenerator,
@@ -48,7 +48,11 @@ import org.bdgenomics.adam.rdd.{
   JavaSaveArgs,
   SAMHeaderWriter
 }
-import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, RDDBoundCoverageRDD }
+import org.bdgenomics.adam.rdd.feature.{
+  CoverageRDD,
+  DatasetBoundCoverageRDD,
+  RDDBoundCoverageRDD
+}
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
@@ -218,6 +222,31 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
     import sqlContext.implicits._
     sqlContext.createDataset(rdd.map(AlignmentRecordProduct.fromAvro))
   }
+
+  override def toCoverage(): CoverageRDD = {
+    val covCounts =
+      rdd.rdd
+        .filter(r => {
+          val readMapped = r.getReadMapped
+
+          // validate alignment fields
+          if (readMapped) {
+            require(r.getStart != null && r.getEnd != null && r.getContigName != null,
+              "Read was mapped but was missing alignment start/end/contig (%s).".format(r))
+          }
+
+          readMapped
+        }).flatMap(r => {
+          val positions: List[Long] = List.range(r.getStart, r.getEnd)
+          positions.map(n => (ReferencePosition(r.getContigName, n), 1))
+        }).reduceByKey(_ + _)
+        .map(r => Coverage(r._1, r._2.toDouble))
+
+    RDDBoundCoverageRDD(covCounts, sequences, None)
+  }
+}
+
+private case class AlignmentWindow(contigName: String, start: Long, end: Long) {
 }
 
 sealed abstract class AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
@@ -311,25 +340,30 @@ sealed abstract class AlignmentRecordRDD extends AvroReadGroupGenomicRDD[Alignme
    * @return CoverageRDD containing mapped RDD of Coverage.
    */
   def toCoverage(): CoverageRDD = {
-    val covCounts =
-      rdd.rdd
-        .filter(r => {
-          val readMapped = r.getReadMapped
+    import dataset.sqlContext.implicits._
+    val covCounts = dataset.toDF
+      .where($"readMapped")
+      .select($"contigName", $"start", $"end")
+      .as[AlignmentWindow]
+      .flatMap(w => {
+        val width = (w.end - w.start).toInt
+        val buffer = new Array[Coverage](width)
+        var idx = 0
+        var pos = w.start
+        while (idx < width) {
+          val lastPos = pos
+          pos += 1L
+          buffer(idx) = Coverage(w.contigName, lastPos, pos, 1.0)
+          idx += 1
+        }
+        buffer
+      }).toDF
+      .groupBy("contigName", "start", "end")
+      .sum("count")
+      .withColumnRenamed("sum(count)", "count")
+      .as[Coverage]
 
-          // validate alignment fields
-          if (readMapped) {
-            require(r.getStart != null && r.getEnd != null && r.getContigName != null,
-              "Read was mapped but was missing alignment start/end/contig (%s).".format(r))
-          }
-
-          readMapped
-        }).flatMap(r => {
-          val t: List[Long] = List.range(r.getStart, r.getEnd)
-          t.map(n => (ReferenceRegion(r.getContigName, n, n + 1), 1))
-        }).reduceByKey(_ + _)
-        .map(r => Coverage(r._1, r._2.toDouble))
-
-    RDDBoundCoverageRDD(covCounts, sequences, None)
+    DatasetBoundCoverageRDD(covCounts, sequences)
   }
 
   /**
