@@ -23,6 +23,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ Feature, Strand }
 import org.scalactic.{ Equivalence, TypeCheckedTripleEquals }
+import scala.io.Source
 
 class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   implicit val strongFeatureEq = new Equivalence[Feature] {
@@ -172,6 +173,12 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val expected = sc.loadGff3(inputPath)
     val outputPath = tempLocation(".gff3")
     expected.saveAsGff3(outputPath, asSingleFile = true)
+
+    val lines = Source.fromFile(outputPath)
+      .getLines
+      .toSeq
+    assert(lines.size > 1)
+    assert(lines.head === GFF3HeaderWriter.HEADER_STRING)
 
     val feature = expected.rdd.first
     val gff3Columns = FeatureRDD.toGff3(feature).split('\t')

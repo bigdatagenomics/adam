@@ -333,11 +333,13 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @param asSingleFile If true, combines all partition shards.
    * @param disableFastConcat If asSingleFile is true, disables the use of the
    *   parallel file merging engine.
+   * @param optHeaderPath If provided, the header file to include.
    */
   private def writeTextRdd[T](rdd: RDD[T],
                               outputPath: String,
                               asSingleFile: Boolean,
-                              disableFastConcat: Boolean) {
+                              disableFastConcat: Boolean,
+                              optHeaderPath: Option[String] = None) {
     if (asSingleFile) {
 
       // write rdd to disk
@@ -352,8 +354,10 @@ case class FeatureRDD(rdd: RDD[Feature],
         fs,
         new Path(outputPath),
         new Path(tailPath),
-        disableFastConcat = disableFastConcat)
+        disableFastConcat = disableFastConcat,
+        optHeaderPath = optHeaderPath.map(p => new Path(p)))
     } else {
+      assert(optHeaderPath.isEmpty)
       rdd.saveAsTextFile(outputPath)
     }
   }
@@ -390,10 +394,18 @@ case class FeatureRDD(rdd: RDD[Feature],
   def saveAsGff3(fileName: String,
                  asSingleFile: Boolean = false,
                  disableFastConcat: Boolean = false) = {
+    val optHeaderPath = if (asSingleFile) {
+      val headerPath = "%s_head".format(fileName)
+      GFF3HeaderWriter(headerPath, rdd.context)
+      Some(headerPath)
+    } else {
+      None
+    }
     writeTextRdd(rdd.map(FeatureRDD.toGff3),
       fileName,
       asSingleFile,
-      disableFastConcat)
+      disableFastConcat,
+      optHeaderPath = optHeaderPath)
   }
 
   /**
