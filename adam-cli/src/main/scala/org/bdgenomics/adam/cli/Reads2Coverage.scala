@@ -71,14 +71,12 @@ class Reads2Coverage(protected val args: Reads2CoverageArgs) extends BDGSparkCom
         "-sort_lexicographically can only be provided when collapsing (-collapse).")
     }
 
-    val proj = Projection(readMapped, contigName, start, end, cigar)
-
     // If saving strand specific coverage, require that only one direction is specified
     require(!(args.onlyNegativeStrands && args.onlyPositiveStrands),
       "Cannot compute coverage for both negative and positive strands separately")
 
     // load reads
-    val readsRdd: AlignmentRecordRDD = sc.loadAlignments(args.inputPath, optProjection = Some(proj))
+    val readsRdd: AlignmentRecordRDD = sc.loadAlignments(args.inputPath)
 
     val finalReads = if (args.onlyNegativeStrands && !args.onlyPositiveStrands) {
       readsRdd.transform(rdd => rdd.filter(_.getReadNegativeStrand))
