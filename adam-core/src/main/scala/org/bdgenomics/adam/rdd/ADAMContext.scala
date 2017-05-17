@@ -58,7 +58,11 @@ import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, RepairPartitions }
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.FileExtensions._
-import org.bdgenomics.adam.util.{ ReferenceContigMap, ReferenceFile, TwoBitFile }
+import org.bdgenomics.adam.util.{
+  ReferenceContigMap,
+  ReferenceFile,
+  TwoBitFile
+}
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
