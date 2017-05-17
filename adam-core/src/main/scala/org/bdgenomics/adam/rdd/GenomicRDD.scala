@@ -431,8 +431,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   /**
    * Performs a broadcast inner join between this RDD and data that has been broadcast.
    *
-   * In a broadcast join, the left RDD is collected to the driver,
-   * and broadcast to all the nodes in the cluster (broadcastTree). The key equality
+   * In a broadcast join, the left side of the join (broadcastTree) is broadcast to
+   * to all the nodes in the cluster. The key equality
    * function used for this join is the reference region overlap function. Since this
    * is an inner join, all values who do not overlap a value from the other
    * RDD are dropped. As compared to broadcastRegionJoin, this function allows the
@@ -499,12 +499,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   /**
    * Performs a broadcast right outer join between this RDD and data that has been broadcast.
    *
-   * In a broadcast join, the left RDD is collected to the driver,
-   * and broadcast to all the nodes in the cluster (broadcastTree). The key equality
+   * In a broadcast join, the left side of the join (broadcastTree) is broadcast to
+   * to all the nodes in the cluster. The key equality
    * function used for this join is the reference region overlap function. Since this
-   * is a right outer join, all values in the left RDD that do not overlap a
+   * is a right outer join, all values in the left table that do not overlap a
    * value from the right RDD are dropped. If a value from the right RDD does
-   * not overlap any values in the left RDD, it will be paired with a `None`
+   * not overlap any values in the left table, it will be paired with a `None`
    * in the product of the join. As compared to broadcastRegionJoin, this function allows the
    * broadcast object to be reused across multiple joins.
    *
@@ -600,8 +600,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   /**
    * Performs a broadcast inner join between this RDD and another RDD.
    *
-   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
-   * and broadcast to all the nodes in the cluster. The key equality function
+   * In a broadcast join, the left side of the join (broadcastTree) is broadcast to
+   * to all the nodes in the cluster. The key equality function
    * used for this join is the reference region overlap function. Since this
    * is an inner join, all values who do not overlap a value from the other
    * RDD are dropped. As compared to broadcastRegionJoin, this function allows
@@ -632,8 +632,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   /**
    * Performs a broadcast right outer join between this RDD and another RDD.
    *
-   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
-   * and broadcast to all the nodes in the cluster. The key equality function
+   * In a broadcast join, the left side of the join (broadcastTree) is broadcast to
+   * to all the nodes in the cluster. The key equality function
    * used for this join is the reference region overlap function. Since this
    * is a right outer join, all values in the left RDD that do not overlap a
    * value from the right RDD are dropped. If a value from the right RDD does
@@ -667,12 +667,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
   /**
    * Performs a broadcast right outer join between this RDD and another RDD.
    *
-   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
-   * and broadcast to all the nodes in the cluster. The key equality function
+   * In a broadcast join, the left side of the join (broadcastTree) is broadcast to
+   * to all the nodes in the cluster. The key equality function
    * used for this join is the reference region overlap function. Since this
-   * is a right outer join, all values in the left RDD that do not overlap a
+   * is a right outer join, all values in the left table that do not overlap a
    * value from the right RDD are dropped. If a value from the right RDD does
-   * not overlap any values in the left RDD, it will be paired with a `None`
+   * not overlap any values in the left table, it will be paired with a `None`
    * in the product of the join. As compared to broadcastRegionJoin, this
    * function allows the broadcast object to be reused across multiple joins.
    *
