@@ -27,6 +27,7 @@ import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
   VariantRDD
 }
+import org.bdgenomics.adam.util.ReferenceFile
 
 object JavaADAMContext {
   // convert to and from java/scala implementations
@@ -203,5 +204,41 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    */
   def loadVariants(pathName: java.lang.String): VariantRDD = {
     ac.loadVariants(pathName)
+  }
+
+  /**
+   * Load reference sequences into a broadcastable ReferenceFile.
+   *
+   * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
+   * to load the reference as an RDD, which is then collected to the driver.
+   *
+   * @see loadContigFragments
+   *
+   * @param pathName The path name to load reference sequences from.
+   *   Globs/directories for 2bit format are not supported.
+   * @param maximumFragmentLength Maximum fragment length. Defaults to 10000L. Values greater
+   *   than 1e9 should be avoided.
+   * @return Returns a broadcastable ReferenceFile.
+   */
+  def loadReferenceFile(pathName: java.lang.String,
+                        maximumFragmentLength: java.lang.Long): ReferenceFile = {
+    ac.loadReferenceFile(pathName, maximumFragmentLength)
+  }
+
+  /**
+   * Load reference sequences into a broadcastable ReferenceFile.
+   *
+   * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
+   * to load the reference as an RDD, which is then collected to the driver. Uses a
+   * maximum fragment length of 10kbp.
+   *
+   * @see loadContigFragments
+   *
+   * @param pathName The path name to load reference sequences from.
+   *   Globs/directories for 2bit format are not supported.
+   * @return Returns a broadcastable ReferenceFile.
+   */
+  def loadReferenceFile(pathName: java.lang.String): ReferenceFile = {
+    loadReferenceFile(pathName, 10000L)
   }
 }

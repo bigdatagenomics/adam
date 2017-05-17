@@ -17,19 +17,18 @@
  */
 package org.bdgenomics.adam.apis.java
 
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
 class JavaADAMContextSuite extends ADAMFunSuite {
 
-  sparkTest("ctr is accessible") {
-    new JavaADAMContext(new ADAMContext(sc))
-  }
+  def jac: JavaADAMContext = new JavaADAMContext(new ADAMContext(sc))
 
   sparkTest("can read and write a small .SAM file") {
     val path = copyResource("small.sam")
-    val aRdd = sc.loadAlignments(path)
+    val aRdd = jac.loadAlignments(path)
     assert(aRdd.jrdd.count() === 20)
 
     val newRdd = JavaADAMReadConduit.conduit(aRdd, sc)
@@ -39,7 +38,7 @@ class JavaADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can read and write a small FASTA file") {
     val path = copyResource("chr20.250k.fa.gz")
-    val aRdd = sc.loadContigFragments(path)
+    val aRdd = jac.loadContigFragments(path)
     assert(aRdd.jrdd.count() === 26)
 
     val newRdd = JavaADAMContigConduit.conduit(aRdd, sc)
@@ -49,7 +48,7 @@ class JavaADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can read and write a small .SAM file as fragments") {
     val path = copyResource("small.sam")
-    val aRdd = sc.loadFragments(path)
+    val aRdd = jac.loadFragments(path)
     assert(aRdd.jrdd.count() === 20)
 
     val newRdd = JavaADAMFragmentConduit.conduit(aRdd, sc)
@@ -59,7 +58,7 @@ class JavaADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can read and write a small .bed file as features") {
     val path = copyResource("gencode.v7.annotation.trunc10.bed")
-    val aRdd = sc.loadFeatures(path)
+    val aRdd = jac.loadFeatures(path)
     assert(aRdd.jrdd.count() === 10)
 
     val newRdd = JavaADAMFeatureConduit.conduit(aRdd, sc)
@@ -69,7 +68,7 @@ class JavaADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("can read and write a small .bed file as coverage") {
     val path = copyResource("sample_coverage.bed")
-    val aRdd = sc.loadCoverage(path)
+    val aRdd = jac.loadCoverage(path)
     assert(aRdd.jrdd.count() === 3)
 
     val newRdd = JavaADAMCoverageConduit.conduit(aRdd, sc)
@@ -79,7 +78,7 @@ class JavaADAMContextSuite extends ADAMFunSuite {
 
   ignore("can read and write a small .vcf as genotypes") {
     val path = copyResource("small.vcf")
-    val aRdd = sc.loadGenotypes(path)
+    val aRdd = jac.loadGenotypes(path)
     assert(aRdd.jrdd.count() === 18)
 
     val newRdd = JavaADAMGenotypeConduit.conduit(aRdd, sc)
@@ -89,11 +88,17 @@ class JavaADAMContextSuite extends ADAMFunSuite {
 
   ignore("can read and write a small .vcf as variants") {
     val path = copyResource("small.vcf")
-    val aRdd = sc.loadVariants(path)
+    val aRdd = jac.loadVariants(path)
     assert(aRdd.jrdd.count() === 6)
 
     val newRdd = JavaADAMVariantConduit.conduit(aRdd, sc)
 
     assert(newRdd.jrdd.count() === 6)
+  }
+
+  sparkTest("can read a two bit file") {
+    val path = copyResource("hg19.chrM.2bit")
+    val refFile = jac.loadReferenceFile(path)
+    assert(refFile.extract(ReferenceRegion("hg19_chrM", 16561, 16571)) === "CATCACGATG")
   }
 }
