@@ -19,7 +19,6 @@ package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
-import java.io.OutputStream
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
@@ -28,7 +27,6 @@ import org.bdgenomics.adam.converters.{
   VariantContextConverter
 }
 import org.bdgenomics.adam.models.{
-  ReferencePosition,
   ReferenceRegion,
   ReferenceRegionSerializer,
   SequenceDictionary,
@@ -36,14 +34,12 @@ import org.bdgenomics.adam.models.{
   VariantContextSerializer
 }
 import org.bdgenomics.adam.rdd.{
+  ADAMSaveAnyArgs,
   FileMerger,
   MultisampleGenomicRDD,
   VCFHeaderUtils
 }
-import org.bdgenomics.adam.rich.RichVariant
-import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.formats.avro.Sample
-import org.bdgenomics.utils.cli.SaveArgs
 import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
@@ -130,12 +126,18 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
    * and saves to disk as VCF.
    *
-   * @param filePath The filepath to save to.
-   * @param sortOnSave Whether to sort before saving.
+   * @param args Arguments defining where to save the file.
+   * @param stringency The validation stringency to use when writing the VCF.
+   *   Defaults to LENIENT.
    */
-  def saveAsVcf(args: SaveArgs,
-                sortOnSave: Boolean) {
-    saveAsVcf(args.outputPath, sortOnSave)
+  def saveAsVcf(args: ADAMSaveAnyArgs,
+                stringency: ValidationStringency = ValidationStringency.LENIENT): Unit = {
+    saveAsVcf(
+      args.outputPath,
+      asSingleFile = args.asSingleFile,
+      deferMerging = args.deferMerging,
+      disableFastConcat = args.disableFastConcat,
+      stringency = stringency)
   }
 
   /**
@@ -147,14 +149,17 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    *   the sharded output after completing the write to HDFS. If false, the
    *   output of this call will be written as shards, where each shard has a
    *   valid VCF header. Default is false.
-   * @param stringency The validation stringency to use when writing the VCF.
+   * @param deferMerging If true and asSingleFile is true, we will save the
+   *   output shards as a headerless file, but we will not merge the shards.
    * @param disableFastConcat If asSingleFile is true and deferMerging is false,
    *   disables the use of the parallel file merging engine.
+   * @param stringency The validation stringency to use when writing the VCF.
    */
   def saveAsVcf(filePath: String,
-                asSingleFile: Boolean = false,
-                stringency: ValidationStringency = ValidationStringency.LENIENT,
-                disableFastConcat: Boolean = false) {
+                asSingleFile: Boolean,
+                deferMerging: Boolean,
+                disableFastConcat: Boolean,
+                stringency: ValidationStringency): Unit = {
     val vcfFormat = VCFFormat.inferFromFilePath(filePath)
     assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
 
@@ -208,13 +213,15 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
         conf
       )
 
-      // merge shards
-      FileMerger.mergeFiles(rdd.context,
-        fs,
-        new Path(filePath),
-        new Path(tailPath),
-        Some(headPath),
-        disableFastConcat = disableFastConcat)
+      // optionally merge
+      if (!deferMerging) {
+        FileMerger.mergeFiles(rdd.context,
+          fs,
+          new Path(filePath),
+          new Path(tailPath),
+          Some(headPath),
+          disableFastConcat = disableFastConcat)
+      }
     } else {
 
       // write shards

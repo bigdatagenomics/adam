@@ -34,7 +34,7 @@ final class JavaADAMVariantConduit {
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
         String fileName = tempDir.toString() + "/testRdd.variant.adam";
-        recordRdd.save(fileName);
+        recordRdd.saveAsParquet(fileName);
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(ac);
