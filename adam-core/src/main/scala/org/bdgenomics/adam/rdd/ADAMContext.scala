@@ -488,10 +488,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Checks to see if a set of BAM/CRAM/SAM files are queryname sorted.
+   * Checks to see if a set of BAM/CRAM/SAM files are queryname grouped.
    *
    * If we are loading fragments and the BAM/CRAM/SAM files are sorted by the
-   * read names, this implies that all of the reads in a pair are consecutive in
+   * read names, or the file is unsorted but is query grouped, this implies
+   * that all of the reads in a pair are consecutive in
    * the file. If this is the case, we can configure Hadoop-BAM to keep all of
    * the reads from a fragment in a single split. This allows us to eliminate
    * an expensive groupBy when loading a BAM file as fragments.
@@ -503,7 +504,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns true if all files described by the path name are queryname
    *   sorted.
    */
-  private[rdd] def filesAreQuerynameSorted(
+  private[rdd] def filesAreQueryGrouped(
     pathName: String,
     stringency: ValidationStringency = ValidationStringency.STRICT): Boolean = {
 
@@ -521,7 +522,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, stringency.toString)
           val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
 
-          samHeader.getSortOrder == SAMFileHeader.SortOrder.queryname
+          (samHeader.getSortOrder == SAMFileHeader.SortOrder.queryname ||
+            samHeader.getGroupOrder == SAMFileHeader.GroupOrder.query)
         } catch {
           case e: Throwable => {
             log.error(
@@ -1793,7 +1795,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isBamExt(trimmedPathName)) {
       // check to see if the input files are all queryname sorted
-      if (filesAreQuerynameSorted(pathName)) {
+      if (filesAreQueryGrouped(pathName)) {
         log.info(s"Loading $pathName as queryname sorted BAM/CRAM/SAM and converting to Fragments.")
         loadBam(pathName).transform(RepairPartitions(_))
           .querynameSortedToFragments

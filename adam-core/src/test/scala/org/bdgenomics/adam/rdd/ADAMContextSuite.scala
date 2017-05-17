@@ -520,4 +520,22 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(fastqReads2.rdd.count === 488)
     assert(pairedReads.rdd.count === 976)
   }
+
+  sparkTest("load queryname sorted sam as fragments") {
+    val samFile = testFile("sample1.queryname.sam")
+    assert(sc.filesAreQueryGrouped(samFile))
+    val fragments = sc.loadFragments(samFile)
+    assert(fragments.rdd.count === 3)
+    val reads = fragments.toReads
+    assert(reads.rdd.count === 6)
+  }
+
+  sparkTest("load query grouped sam as fragments") {
+    val samFile = testFile("sample1.query.sam")
+    assert(sc.filesAreQueryGrouped(samFile))
+    val fragments = sc.loadFragments(samFile)
+    assert(fragments.rdd.count === 3)
+    val reads = fragments.toReads
+    assert(reads.rdd.count === 6)
+  }
 }

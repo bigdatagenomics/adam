@@ -26,7 +26,9 @@ import org.bdgenomics.formats.avro.{
   AlignmentRecord,
   Fragment
 }
+import scala.annotation.tailrec
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 
 private class FragmentIterator(
     reads: Iterator[AlignmentRecord]) extends Iterator[Iterable[AlignmentRecord]] with Serializable {
@@ -42,8 +44,18 @@ private class FragmentIterator(
     // get the read name
     val readName = readIter.head.getReadName
 
-    // take the reads that have this read name
-    readIter.takeWhile(_.getReadName == readName).toIterable
+    @tailrec def getReads(
+      l: ListBuffer[AlignmentRecord]): Iterable[AlignmentRecord] = {
+
+      if (!readIter.hasNext ||
+        readIter.head.getReadName != readName) {
+        l.toIterable
+      } else {
+        getReads(l += readIter.next)
+      }
+    }
+
+    getReads(ListBuffer.empty)
   }
 }
 
