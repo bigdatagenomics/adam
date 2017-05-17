@@ -150,8 +150,7 @@ object DefaultHeaderLines {
     VCFHeaderLineType.Float,
     "Read-backed phasing quality")
   lazy val genotypeFilter = new VCFFormatHeaderLine("FT",
-    //VCFHeaderLineCount.UNBOUNDED,
-    1,
+    VCFHeaderLineCount.UNBOUNDED,
     VCFHeaderLineType.String,
     "Genotype-level filter")
   lazy val fisherStrand = new VCFFormatHeaderLine("FS",
