@@ -24,8 +24,8 @@ class TransformVariantsSuite extends ADAMFunSuite {
   sparkTest("save a file sorted by contig index") {
     val inputPath = copyResource("random.vcf")
     val intermediatePath = tmpFile("variants.adam")
-    val actualPath = tmpFile("sorted.vcf")
-    val expectedPath = copyResource("sorted.vcf")
+    val actualPath = tmpFile("sorted-variants.vcf")
+    val expectedPath = copyResource("sorted-variants.vcf")
 
     TransformVariants(
       Array(inputPath, intermediatePath)
@@ -35,14 +35,14 @@ class TransformVariantsSuite extends ADAMFunSuite {
       Array(intermediatePath, actualPath, "-sort_on_save", "-single")
     ).run(sc)
 
-    checkFiles(actualPath, expectedPath)
+    checkFiles(expectedPath, actualPath)
   }
 
   sparkTest("save a lexicographically sorted file") {
     val inputPath = copyResource("random.vcf")
     val intermediatePath = tmpFile("variants.lex.adam")
-    val actualPath = tmpFile("sorted.lex.vcf")
-    val expectedPath = copyResource("sorted.lex.vcf")
+    val actualPath = tmpFile("sorted-variants.lex.vcf")
+    val expectedPath = copyResource("sorted-variants.lex.vcf")
 
     TransformVariants(
       Array(inputPath, intermediatePath)
@@ -52,6 +52,6 @@ class TransformVariantsSuite extends ADAMFunSuite {
       Array(intermediatePath, actualPath, "-sort_lexicographically_on_save", "-single")
     ).run(sc)
 
-    checkFiles(actualPath, expectedPath)
+    checkFiles(expectedPath, actualPath)
   }
 }

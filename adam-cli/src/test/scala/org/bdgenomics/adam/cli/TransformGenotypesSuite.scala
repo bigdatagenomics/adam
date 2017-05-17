@@ -35,7 +35,7 @@ class TransformGenotypesSuite extends ADAMFunSuite {
       Array(intermediatePath, actualPath, "-sort_on_save", "-single")
     ).run(sc)
 
-    checkFiles(actualPath, expectedPath)
+    checkFiles(expectedPath, actualPath)
   }
 
   sparkTest("save a lexicographically sorted file") {
@@ -52,6 +52,6 @@ class TransformGenotypesSuite extends ADAMFunSuite {
       Array(intermediatePath, actualPath, "-sort_lexicographically_on_save", "-single")
     ).run(sc)
 
-    checkFiles(actualPath, expectedPath)
+    checkFiles(expectedPath, actualPath)
   }
 }
