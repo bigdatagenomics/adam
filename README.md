@@ -72,12 +72,12 @@ ADAM ACTIONS
     countContigKmers : Counts the k-mers/q-mers from a read dataset.
  transformAlignments : Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations
    transformFeatures : Convert a file with sequence features into corresponding ADAM format and vice versa
+  transformGenotypes : Convert a file with genotypes into corresponding ADAM format and vice versa
+   transformVariants : Convert a file with variants into corresponding ADAM format and vice versa
          mergeShards : Merges the shards of a file
       reads2coverage : Calculate the coverage from a given ADAM file
 
 CONVERSION OPERATIONS
-            vcf2adam : Convert a VCF file to the corresponding ADAM format
-            adam2vcf : Convert an ADAM variant to the VCF ADAM format
           fasta2adam : Converts a text FASTA sequence file into an ADAMNucleotideContig Parquet file which represents assembled sequences.
           adam2fasta : Convert ADAM nucleotide contig fragments to FASTA files
           adam2fastq : Convert BAM to FASTQ files

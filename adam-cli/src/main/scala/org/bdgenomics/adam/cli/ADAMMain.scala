@@ -36,6 +36,8 @@ object ADAMMain {
           CountContigKmers,
           TransformAlignments,
           TransformFeatures,
+          TransformGenotypes,
+          TransformVariants,
           MergeShards,
           Reads2Coverage
         )
@@ -43,8 +45,6 @@ object ADAMMain {
       CommandGroup(
         "CONVERSION OPERATIONS",
         List(
-          Vcf2ADAM,
-          ADAM2Vcf,
           Fasta2ADAM,
           ADAM2Fasta,
           ADAM2Fastq,

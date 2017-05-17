@@ -241,6 +241,96 @@ options]{#legacy-output}, `transformFeatures` has one optional argument:
   Parquet), sets the number of partitions to load. If not provided, this is
   chosen by Spark.
 
+### transformGenotypes
+
+Loads a genotype file into the ADAM `Genotype` schema, and saves it back. The
+input and output formats are autodetected. Takes two required arguments:
+
+1. `INPUT`: The input path. A file containing genotypes in any of the supported
+  ADAM genotype input formats.
+2. `OUTPUT`: The path to save the transformed genotypes to. Supports any of ADAM's
+  genotype output formats.
+
+Beyond the [default options](#default-args) and the [legacy output
+options]{#legacy-output}, `transformGenotypes` has additional arguments:
+
+* `-coalesce`: Sets the number of partitions to coalesce the output to.
+  If `-force_shuffle_coalesce` is not provided, the Spark engine may ignore
+  the coalesce directive.
+* `-force_shuffle_coalesce`: Forces a shuffle that leads to the output being
+  saved with the number of partitions requested by `-coalesce`. This is
+  necessary if the `-coalesce` would increase the number of partitions, or
+  if it would reduce the number of partitions to fewer than the number of
+  Spark executors. This may have a substantial performance cost, and will
+  invalidate any sort order.
+* `-sort_on_save`: Sorts the genotypes when saving, where contigs are ordered
+  by sequence index. Conflicts with `-sort_lexicographically_on_save`.
+* `-sort_lexicographically_on_save`: Sorts the genotypes when saving, where
+  contigs are ordered lexicographically. Conflicts with `-sort_on_save`.
+* `-single`: Saves the VCF file as headerless shards, and then merges the
+  sharded files into a single VCF.
+* `-stringency`: Sets the validation stringency for conversion.
+  Defaults to `LENIENT.` See [validation stringency](#validation) for more
+  details.
+
+In this command, the validation stringency is applied to the
+individual genotypes. If a genotype fails validation, the
+individual genotype will be dropped (for lenient or silent validation,
+under strict validation, conversion will fail). Header lines are not validated.
+Due to a constraint imposed by the [htsjdk](https://github.com/samtools/htsjdk)
+library, which we use to parse VCF files, user provided header lines that do not
+match the header line definitions from the
+[VCF 4.2](https://samtools.github.io/hts-specs/VCFv4.2.pdf) spec will be
+overridden with the line definitions from the specification. Unfortunately, this
+behavior cannot be disabled. If there is a user provided vs. spec mismatch in
+format/info field count or type, this will likely cause validation failures
+during conversion.
+
+### transformVariants
+
+Loads a variant file into the ADAM `Variant` schema, and saves it back. The
+input and output formats are autodetected. Takes two required arguments:
+
+1. `INPUT`: The input path. A file containing variants in any of the supported
+  ADAM variant input formats.
+2. `OUTPUT`: The path to save the transformed variants to. Supports any of ADAM's
+  variant output formats.
+
+Beyond the [default options](#default-args) and the [legacy output
+options]{#legacy-output}, `transformVariants` has additional arguments:
+
+* `-coalesce`: Sets the number of partitions to coalesce the output to.
+  If `-force_shuffle_coalesce` is not provided, the Spark engine may ignore
+  the coalesce directive.
+* `-force_shuffle_coalesce`: Forces a shuffle that leads to the output being
+  saved with the number of partitions requested by `-coalesce`. This is
+  necessary if the `-coalesce` would increase the number of partitions, or
+  if it would reduce the number of partitions to fewer than the number of
+  Spark executors. This may have a substantial performance cost, and will
+  invalidate any sort order.
+* `-sort_on_save`: Sorts the variants when saving, where contigs are ordered
+  by sequence index. Conflicts with `-sort_lexicographically_on_save`.
+* `-sort_lexicographically_on_save`: Sorts the variants when saving, where
+  contigs are ordered lexicographically. Conflicts with `-sort_on_save`.
+* `-single`: Saves the VCF file as headerless shards, and then merges the
+  sharded files into a single VCF.
+* `-stringency`: Sets the validation stringency for conversion.
+  Defaults to `LENIENT.` See [validation stringency](#validation) for more
+  details.
+
+In this command, the validation stringency is applied to the
+individual variants. If a variant fails validation, the
+individual variant will be dropped (for lenient or silent validation,
+under strict validation, conversion will fail). Header lines are not validated.
+Due to a constraint imposed by the [htsjdk](https://github.com/samtools/htsjdk)
+library, which we use to parse VCF files, user provided header lines that do not
+match the header line definitions from the
+[VCF 4.2](https://samtools.github.io/hts-specs/VCFv4.2.pdf) spec will be
+overridden with the line definitions from the specification. Unfortunately, this
+behavior cannot be disabled. If there is a user provided vs. spec mismatch in
+format/info field count or type, this will likely cause validation failures
+during conversion.
+
 ### mergeShards
 
 A CLI tool for merging a [sharded legacy file](#legacy-output) that was written
@@ -291,68 +381,6 @@ following options:
 
 These tools convert data between a legacy genomic file format and using ADAM's
 schemas to store data in Parquet.
-
-### vcf2adam and adam2vcf
-
-These commands convert between VCF and Parquet using the Genotype and Variant
-schemas.
-
-`vcf2adam` takes two required arguments:
-
-1. `VCF`: The VCF file to convert to Parquet.
-2. `ADAM`: The path to save the converted Parquet data at.
-
-`vcf2adam` supports the full set of [default options](#default-args).
-Additionally, `vcf2adam` takes the following options:
-
-* `-only_variants`: Instead of saving the VCF file as Genotypes, only save the
-  Variants from the VCF. This is useful if loading a sites-only VCF, e.g., for
-  [BQSR](#known-snps) or [Indel realignment](#known-indels).
-* `-coalesce`: Sets the number of partitions to coalesce the output to.
-  If `-force_shuffle_coalesce` is not provided, the Spark engine may ignore
-  the coalesce directive.
-* `-force_shuffle_coalesce`: Forces a shuffle that leads to the output being
-  saved with the number of partitions requested by `-coalesce`. This is
-  necessary if the `-coalesce` would increase the number of partitions, or
-  if it would reduce the number of partitions to fewer than the number of
-  Spark executors. This may have a substantial performance cost, and will
-  invalidate any sort order.
-* `-stringency`: Sets the validation stringency for conversion.
-  Defaults to `LENIENT.` See [validation stringency](#validation) for more
-  details.
-
-`adam2vcf` takes two required arguments:
-
-1. `ADAM`: The Parquet file of Genotypes to convert to VCF.
-2. `VCF`: The path to save the VCF file to.
-
-`adam2vcf` only supports the `-print_metrics` option from the [default
-options](#default-args). Additionally, `adam2vcf` takes the following options:
-
-* `-coalesce`: Sets the number of partitions to coalesce the output to.
-  The Spark engine may ignore the coalesce directive.
-* `-sort_on_save`: Sorts the variants when saving, where contigs are ordered
-  by sequence index. Conflicts with `-sort_lexicographically_on_save`.
-* `-sort_lexicographically_on_save`: Sorts the variants when saving, where
-  contigs are ordered lexicographically. Conflicts with `-sort_on_save`.
-* `-single`: Saves the VCF file as headerless shards, and then merges the
-  sharded files into a single VCF.
-* `-stringency`: Sets the validation stringency for conversion.
-  Defaults to `LENIENT.` See [validation stringency](#validation) for more
-  details.
-
-In these commands, the validation stringency is applied to the
-individual variants and genotypes. If a variant or genotype fails validation, the
-individual variant or genotype will be dropped (for lenient or silent validation,
-under strict validation, conversion will fail). Header lines are not validated.
-Due to a constraint imposed by the [htsjdk](https://github.com/samtools/htsjdk)
-library, which we use to parse VCF files, user provided header lines that do not
-match the header line definitions from the
-[VCF 4.2](https://samtools.github.io/hts-specs/VCFv4.2.pdf) spec will be
-overridden with the line definitions from the specification. Unfortunately, this
-behavior cannot be disabled. If there is a user provided vs. spec mismatch in
-format/info field count or type, this will likely cause validation failures
-during conversion.
 
 ### fasta2adam and adam2fasta
 

@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
-import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
@@ -30,15 +29,10 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
-  JavaSaveArgs,
   VCFHeaderUtils
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.formats.avro.{
-  Contig,
-  Sample,
-  Variant
-}
+import org.bdgenomics.formats.avro.Sample
 import org.bdgenomics.formats.avro.{ Contig, Variant }
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
@@ -109,31 +103,6 @@ case class VariantRDD(rdd: RDD[Variant],
     VariantRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
       iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
       (headerLines ++ iterableRdds.flatMap(_.headerLines)).distinct)
-  }
-
-  /**
-   * Java-friendly method for saving to Parquet.
-   *
-   * @param filePath Path to save to.
-   */
-  def save(filePath: java.lang.String) {
-    saveAsParquet(new JavaSaveArgs(filePath))
-  }
-
-  /**
-   * Explicitly saves to VCF.
-   *
-   * @param filePath The filepath to save to.
-   * @param asSingleFile If true, saves the output as a single file by merging
-   *   the sharded output after completing the write to HDFS. If false, the
-   *   output of this call will be written as shards, where each shard has a
-   *   valid VCF header.
-   * @param stringency The validation stringency to use when writing the VCF.
-   */
-  def saveAsVcf(filePath: String,
-                asSingleFile: Boolean,
-                stringency: ValidationStringency) {
-    toVariantContextRDD.saveAsVcf(filePath, asSingleFile, stringency)
   }
 
   /**

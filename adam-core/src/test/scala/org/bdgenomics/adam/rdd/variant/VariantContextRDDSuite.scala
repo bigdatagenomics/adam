@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd.variant
 
 import com.google.common.collect.ImmutableList
 import com.google.common.io.Files
+import htsjdk.samtools.ValidationStringency
 import java.io.File
 import org.bdgenomics.adam.models.{
   SequenceDictionary,
@@ -73,7 +74,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("can write, then read in .vcf file") {
     val path = new File(tempDir, "test.vcf")
-    variants.saveAsVcf(TestSaveArgs(path.getAbsolutePath), false)
+    variants.saveAsVcf(TestSaveArgs(path.getAbsolutePath))
     assert(path.exists)
 
     val vcRdd = sc.loadVcf("%s/test.vcf/part-r-00000".format(tempDir))
@@ -97,7 +98,11 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("can write as a single file, then read in .vcf file") {
     val path = new File(tempDir, "test_single.vcf")
-    variants.saveAsVcf(path.getAbsolutePath, asSingleFile = true)
+    variants.saveAsVcf(path.getAbsolutePath,
+      asSingleFile = true,
+      deferMerging = false,
+      disableFastConcat = false,
+      ValidationStringency.LENIENT)
     assert(path.exists)
     val vcRdd = sc.loadVcf("%s/test_single.vcf".format(tempDir))
     assert(vcRdd.rdd.count === 1)
@@ -127,7 +132,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     variants.sort()
       .saveAsVcf(outputPath,
-        asSingleFile = true)
+        asSingleFile = true,
+        deferMerging = false,
+        disableFastConcat = false,
+        ValidationStringency.LENIENT)
 
     checkFiles(outputPath, testFile("sorted.vcf"))
   }
@@ -139,7 +147,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     variants.sortLexicographically()
       .saveAsVcf(outputPath,
-        asSingleFile = true)
+        asSingleFile = true,
+        deferMerging = false,
+        disableFastConcat = false,
+        ValidationStringency.LENIENT)
 
     checkFiles(outputPath, testFile("sorted.lex.vcf"))
   }

@@ -19,33 +19,39 @@ package org.bdgenomics.adam.cli
 
 import org.bdgenomics.adam.util.ADAMFunSuite
 
-class ADAM2VcfSuite extends ADAMFunSuite {
+class TransformGenotypesSuite extends ADAMFunSuite {
 
-  ignore("save a file sorted by contig index") {
+  sparkTest("save a file sorted by contig index") {
     val inputPath = copyResource("random.vcf")
-    val intermediatePath = tmpFile("variants.adam")
-    val outputPath = tmpFile("sorted.vcf")
+    val intermediatePath = tmpFile("genotypes.adam")
+    val actualPath = tmpFile("sorted.vcf")
+    val expectedPath = copyResource("sorted.vcf")
 
-    Vcf2ADAM(Array(inputPath, intermediatePath)).run(sc)
-    ADAM2Vcf(Array(intermediatePath,
-      outputPath,
-      "-sort_on_save",
-      "-single")).run(sc)
+    TransformGenotypes(
+      Array(inputPath, intermediatePath)
+    ).run(sc)
 
-    checkFiles(outputPath, copyResource("sorted.vcf"))
+    TransformGenotypes(
+      Array(intermediatePath, actualPath, "-sort_on_save", "-single")
+    ).run(sc)
+
+    checkFiles(actualPath, expectedPath)
   }
 
-  ignore("save a lexicographically sorted file") {
+  sparkTest("save a lexicographically sorted file") {
     val inputPath = copyResource("random.vcf")
-    val intermediatePath = tmpFile("variants.lex.adam")
-    val outputPath = tmpFile("sorted.lex.vcf")
+    val intermediatePath = tmpFile("genotypes.lex.adam")
+    val actualPath = tmpFile("sorted.lex.vcf")
+    val expectedPath = copyResource("sorted.lex.vcf")
 
-    Vcf2ADAM(Array(inputPath, intermediatePath)).run(sc)
-    ADAM2Vcf(Array(intermediatePath,
-      outputPath,
-      "-sort_lexicographically_on_save",
-      "-single")).run(sc)
+    TransformGenotypes(
+      Array(inputPath, intermediatePath)
+    ).run(sc)
 
-    checkFiles(outputPath, copyResource("sorted.lex.vcf"))
+    TransformGenotypes(
+      Array(intermediatePath, actualPath, "-sort_lexicographically_on_save", "-single")
+    ).run(sc)
+
+    checkFiles(actualPath, expectedPath)
   }
 }

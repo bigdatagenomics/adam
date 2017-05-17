@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
-import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.VCFHeaderLine
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.DefaultHeaderLines
@@ -28,15 +27,14 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext
 }
-import org.bdgenomics.adam.rdd.{ JavaSaveArgs, MultisampleAvroGenomicRDD }
+import org.bdgenomics.adam.rdd.MultisampleAvroGenomicRDD
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.utils.cli.SaveArgs
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
 }
-import org.bdgenomics.formats.avro.{ Contig, Genotype, Sample }
+import org.bdgenomics.formats.avro.{ Genotype, Sample }
 import scala.reflect.ClassTag
 
 private[adam] case class GenotypeArray(
@@ -93,16 +91,6 @@ case class GenotypeRDD(rdd: RDD[Genotype],
   }
 
   /**
-   * Java-friendly method for saving.
-   *
-   * @param filePath Path to save file to. If ends in ".vcf", saves as VCF, else
-   *   saves as Parquet.
-   */
-  def save(filePath: java.lang.String) {
-    save(new JavaSaveArgs(filePath))
-  }
-
-  /**
    * @return Returns this GenotypeRDD squared off as a VariantContextRDD.
    */
   def toVariantContextRDD: VariantContextRDD = {
@@ -117,59 +105,6 @@ case class GenotypeRDD(rdd: RDD[Genotype],
       }
 
     VariantContextRDD(vcRdd, sequences, samples, headerLines)
-  }
-
-  /**
-   * Automatically detects the extension and saves to either VCF or Parquet.
-   *
-   * @param args Arguments configuring how to save the output.
-   */
-  def save(args: SaveArgs): Boolean = {
-    maybeSaveVcf(args) || {
-      saveAsParquet(args); true
-    }
-  }
-
-  /**
-   * Explicitly saves to VCF.
-   *
-   * @param args Arguments configuring how/where to save the output.
-   * @param sortOnSave Whether to sort when saving or not.
-   */
-  def saveAsVcf(args: SaveArgs,
-                sortOnSave: Boolean = false) {
-    toVariantContextRDD.saveAsVcf(args, sortOnSave)
-  }
-
-  /**
-   * If the file has a ".vcf" extension, saves to VCF.
-   *
-   * @param args Arguments defining how/where to save.
-   * @return True if file is successfully saved as VCF.
-   */
-  private def maybeSaveVcf(args: SaveArgs): Boolean = {
-    if (args.outputPath.endsWith(".vcf")) {
-      saveAsVcf(args)
-      true
-    } else {
-      false
-    }
-  }
-
-  /**
-   * Explicitly saves to VCF.
-   *
-   * @param filePath The filepath to save to.
-   * @param asSingleFile If true, saves the output as a single file by merging
-   *   the sharded output after completing the write to HDFS. If false, the
-   *   output of this call will be written as shards, where each shard has a
-   *   valid VCF header.
-   * @param stringency The validation stringency to use when writing the VCF.
-   */
-  def saveAsVcf(filePath: String,
-                asSingleFile: Boolean,
-                stringency: ValidationStringency) {
-    toVariantContextRDD.saveAsVcf(filePath, asSingleFile, stringency)
   }
 
   /**
