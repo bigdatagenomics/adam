@@ -253,10 +253,33 @@ Join call | action | Availability
 ```dataset1.leftOuterShuffleRegionJoin(dataset2)```|perform a left outer join | ShuffleRegionJoin
 ```dataset1.rightOuterShuffleRegionJoin(dataset2)``` ```dataset1.rightOuterBroadcastRegionJoin(dataset2)```|perform a right outer join | ShuffleRegionJoin BroadcastRegionJoin
 ```dataset1.shuffleRegionJoinAndGroupByLeft(dataset2)``` |perform an inner join and group joined values by the records on the left | ShuffleRegionJoin
-```dataset1.broadcastRegionJoinnAndGroupByRight(dataset2)``` | perform an inner join and group joined values by the records on the right | ShuffleRegionJoin
+```dataset1.broadcastRegionJoinAndGroupByRight(dataset2)``` | perform an inner join and group joined values by the records on the right | ShuffleRegionJoin
 ```dataset1.rightOuterShuffleRegionJoinAndGroupByLeft(dataset2)```|perform a right outer join and group joined values by the records on the left | ShuffleRegionJoin
 ```rightOuterBroadcastRegionJoinAndGroupByRight``` | perform a right outer join and group joined values by the records on the right | BroadcastRegionJoin
 
+One common pattern involves joining a single dataset against many datasets. An
+example of this is joining an RDD of features (e.g., gene/exon coordinates)
+against many different RDD's of reads. If the object that is being used many
+times (gene/exon coordinates, in this case), we can force that object to be
+broadcast once and reused many times with the `broadcast()` function. This
+pairs with the `broadcastRegionJoin` and `rightOuterBroadcastRegionJoin`
+functions. For example, given the following code:
+
+```scala
+val reads = sc.loadAlignments("my/reads.adam")
+val features = sc.loadFeatures("my/features.adam")
+
+val readsByFeature = features.broadcastRegionJoin(reads)
+```
+
+We can get a handle to the broadcast features by rewriting the code as:
+
+```scala
+val reads = sc.loadAlignments("my/reads.adam")
+val bcastFeatures = sc.loadFeatures("my/features.adam").broadcast()
+
+val readsByFeature = reads.broadcastRegionJoinAgainst(bcastFeatures)
+```
 
 ## Using ADAM's Pipe API {#pipes}
 

@@ -725,6 +725,18 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(jRdd.rdd.count === 5)
   }
 
+  sparkTest("use broadcast join against to pull down reads mapped to targets") {
+    val readsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val reads = sc.loadAlignments(readsPath)
+    val bcastTargets = sc.loadFeatures(targetsPath).broadcast()
+
+    val jRdd = reads.broadcastRegionJoinAgainst(bcastTargets)
+
+    assert(jRdd.rdd.count === 5)
+  }
+
   sparkTest("use right outer broadcast join to pull down reads mapped to targets") {
     val readsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
@@ -733,6 +745,20 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val targets = sc.loadFeatures(targetsPath)
 
     val jRdd = reads.rightOuterBroadcastRegionJoin(targets)
+
+    val c = jRdd.rdd.collect
+    assert(c.count(_._1.isEmpty) === 1)
+    assert(c.count(_._1.isDefined) === 5)
+  }
+
+  sparkTest("use right outer broadcast join against to pull down reads mapped to targets") {
+    val readsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val bcastReads = sc.loadAlignments(readsPath).broadcast()
+    val targets = sc.loadFeatures(targetsPath)
+
+    val jRdd = targets.rightOuterBroadcastRegionJoinAgainst(bcastReads)
 
     val c = jRdd.rdd.collect
     assert(c.count(_._1.isEmpty) === 1)
