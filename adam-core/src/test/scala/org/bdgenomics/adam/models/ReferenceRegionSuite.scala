@@ -33,6 +33,12 @@ import scala.collection.JavaConversions._
 
 class ReferenceRegionSuite extends FunSuite {
 
+  test("cannot create an empty predicate") {
+    intercept[IllegalArgumentException] {
+      ReferenceRegion.createPredicate()
+    }
+  }
+
   test("contains(: ReferenceRegion)") {
     assert(region("chr0", 10, 100).contains(region("chr0", 50, 70)))
     assert(region("chr0", 10, 100).contains(region("chr0", 10, 100)))

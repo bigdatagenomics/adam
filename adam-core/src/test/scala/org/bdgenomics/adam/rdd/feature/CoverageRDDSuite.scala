@@ -17,7 +17,6 @@
  */
 package org.bdgenomics.adam.rdd.feature
 
-import org.apache.parquet.filter2.dsl.Dsl._
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
   Coverage,
@@ -80,7 +79,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     coverageRDD.save(outputFile, false, false)
 
     val region = ReferenceRegion("chr1", 1, 9)
-    val predicate = ((LongColumn("end") >= region.start) && (LongColumn("start") <= region.end) && (BinaryColumn("contigName") === region.referenceName))
+    val predicate = region.toPredicate
     val coverage = sc.loadParquetCoverage(outputFile, Some(predicate))
     assert(coverage.rdd.count == 1)
   }

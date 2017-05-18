@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
@@ -29,6 +30,27 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(union.rdd.count === (genotype1.rdd.count + genotype2.rdd.count))
     assert(union.sequences.size === (genotype1.sequences.size + genotype2.sequences.size))
     assert(union.samples.size === 4)
+  }
+
+  sparkTest("round trip to parquet") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val outputPath = tmpLocation()
+    genotypes.saveAsParquet(outputPath)
+    val unfilteredGenotypes = sc.loadGenotypes(outputPath)
+    assert(unfilteredGenotypes.rdd.count === 18)
+
+    val predicate = ReferenceRegion.createPredicate(ReferenceRegion("1", 14399L, 14400L),
+      ReferenceRegion("1", 752720L, 757721L),
+      ReferenceRegion("1", 752790L, 752793L))
+    val filteredGenotypes = sc.loadParquetGenotypes(outputPath,
+      optPredicate = Some(predicate))
+    filteredGenotypes.rdd.foreach(println)
+    assert(filteredGenotypes.rdd.count === 9)
+    val starts = filteredGenotypes.rdd.map(_.getStart).distinct.collect.toSet
+    assert(starts.size === 3)
+    assert(starts(14396L))
+    assert(starts(752720L))
+    assert(starts(752790L))
   }
 
   sparkTest("use broadcast join to pull down genotypes mapped to targets") {
