@@ -487,7 +487,12 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation()
     reads.saveAsParquet(TestSaveArgs(outputPath))
-    assert(new File(outputPath).exists())
+    val unfilteredReads = sc.loadAlignments(outputPath)
+    assert(unfilteredReads.rdd.count === 20)
+    val regionToLoad = ReferenceRegion("1", 100000000L, 200000000L)
+    val filteredReads = sc.loadParquetAlignments(outputPath,
+      optPredicate = Some(regionToLoad.toPredicate))
+    assert(filteredReads.rdd.count === 8)
   }
 
   sparkTest("save as SAM format") {

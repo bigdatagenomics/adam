@@ -19,6 +19,8 @@ package org.bdgenomics.adam.models
 
 import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.{ Kryo, Serializer }
+import org.apache.parquet.filter2.dsl.Dsl._
+import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.interval.array.Interval
 import scala.math.{ max, min }
@@ -297,6 +299,21 @@ object ReferenceRegion {
    */
   def apply(coverage: Coverage): ReferenceRegion = {
     new ReferenceRegion(coverage.contigName, coverage.start, coverage.end)
+  }
+
+  /**
+   * Creates a predicate that filters records overlapping one or more regions.
+   *
+   * @param regions The regions to filter on.
+   * @return Returns a predicate that can be pushed into Parquet files that
+   *   keeps all records that overlap one or more region.
+   */
+  def createPredicate(regions: ReferenceRegion*): FilterPredicate = {
+    require(regions.nonEmpty,
+      "Cannot create a predicate from an empty set of regions.")
+    regions.toIterable
+      .map(_.toPredicate)
+      .reduce(_ || _)
   }
 }
 
@@ -664,6 +681,18 @@ case class ReferenceRegion(
     }
 
     first ++ second
+  }
+
+  /**
+   * Generates a predicate that can be used with Parquet files.
+   *
+   * @return A predicate that selects records that overlap a given genomic
+   *   region.
+   */
+  def toPredicate: FilterPredicate = {
+    ((LongColumn("end") > start) &&
+      (LongColumn("start") <= end) &&
+      (BinaryColumn("contigName") === referenceName))
   }
 
   override def hashCode: Int = {

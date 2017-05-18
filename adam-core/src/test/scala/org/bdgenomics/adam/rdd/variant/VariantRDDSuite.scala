@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
@@ -28,6 +29,23 @@ class VariantRDDSuite extends ADAMFunSuite {
     val union = variant1.union(variant2)
     assert(union.rdd.count === (variant1.rdd.count + variant2.rdd.count))
     assert(union.sequences.size === (variant1.sequences.size + variant2.sequences.size))
+  }
+
+  sparkTest("round trip to parquet") {
+    val variants = sc.loadVariants(testFile("small.vcf"))
+    val outputPath = tmpLocation()
+    variants.saveAsParquet(outputPath)
+    val unfilteredVariants = sc.loadVariants(outputPath)
+    assert(unfilteredVariants.rdd.count === 6)
+
+    val predicate = ReferenceRegion.toEnd("1", 752720L).toPredicate
+    val filteredVariants = sc.loadParquetVariants(outputPath,
+      optPredicate = Some(predicate))
+    assert(filteredVariants.rdd.count === 2)
+    val starts = filteredVariants.rdd.map(_.getStart).distinct.collect.toSet
+    assert(starts.size === 2)
+    assert(starts(752720L))
+    assert(starts(752790L))
   }
 
   sparkTest("use broadcast join to pull down variants mapped to targets") {
