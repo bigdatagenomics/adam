@@ -23,7 +23,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus._
 import org.bdgenomics.adam.instrumentation.Timers._
-import org.bdgenomics.adam.models.SnpTable
+import org.bdgenomics.adam.models.{ ReferenceRegion, SnpTable }
 import org.bdgenomics.adam.projections.{ AlignmentRecordField, Filter }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
@@ -49,8 +49,10 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var outputPath: String = null
   @Args4jOption(required = false, name = "-limit_projection", usage = "Only project necessary fields. Only works for Parquet files.")
   var limitProjection: Boolean = false
-  @Args4jOption(required = false, name = "-aligned_read_predicate", usage = "Only load aligned reads. Only works for Parquet files.")
+  @Args4jOption(required = false, name = "-aligned_read_predicate", usage = "Only load aligned reads. Only works for Parquet files. Exclusive of region predicate.")
   var useAlignedReadPredicate: Boolean = false
+  @Args4jOption(required = false, name = "-region_predicate", usage = "Only load a specific range of regions. Mutually exclusive with aligned read predicate.")
+  var regionPredicate: String = null
   @Args4jOption(required = false, name = "-sort_reads", usage = "Sort the reads by referenceId and read position")
   var sortReads: Boolean = false
   @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
@@ -426,10 +428,20 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         "-limit_projection only applies to Parquet files, but a non-Parquet input path was specified."
       )
     }
+    if (args.useAlignedReadPredicate && args.regionPredicate != null) {
+      throw new IllegalArgumentException(
+        "-aligned_read_predicate and -region_predicate are mutually exclusive"
+      )
+    }
 
     val aRdd: AlignmentRecordRDD =
       if (args.forceLoadBam) {
-        sc.loadBam(args.inputPath)
+        if (args.regionPredicate != null) {
+          val loci = ReferenceRegion.fromString(args.regionPredicate)
+          sc.loadIndexedBam(args.inputPath, loci)
+        } else {
+          sc.loadBam(args.inputPath)
+        }
       } else if (args.forceLoadFastq) {
         sc.loadFastq(args.inputPath, Option(args.pairedFastqFile), Option(args.fastqRecordGroup), stringency)
       } else if (args.forceLoadIFastq) {
@@ -439,6 +451,10 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         args.limitProjection) {
         val pred = if (args.useAlignedReadPredicate) {
           Some(BooleanColumn("readMapped") === true)
+        } else if (args.regionPredicate != null) {
+          Some(ReferenceRegion.createPredicate(
+            ReferenceRegion.fromString(args.regionPredicate).toSeq: _*
+          ))
         } else {
           None
         }
@@ -454,12 +470,19 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
           optPredicate = pred,
           optProjection = proj)
       } else {
-        sc.loadAlignments(
+        val loadedReads = sc.loadAlignments(
           args.inputPath,
           optPathName2 = Option(args.pairedFastqFile),
           optRecordGroup = Option(args.fastqRecordGroup),
           stringency = stringency
         )
+
+        if (args.regionPredicate != null) {
+          val loci = ReferenceRegion.fromString(args.regionPredicate)
+          loadedReads.filterByOverlappingRegions(loci)
+        } else {
+          loadedReads
+        }
       }
     val rdd = aRdd.rdd
     val sd = aRdd.sequences

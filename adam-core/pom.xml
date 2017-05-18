@@ -117,6 +117,11 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>org.hammerlab</groupId>
+      <artifactId>genomic-loci_${scala.version.prefix}</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>com.esotericsoftware.kryo</groupId>
       <artifactId>kryo</artifactId>
       <scope>compile</scope>

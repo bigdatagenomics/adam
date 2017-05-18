@@ -70,4 +70,24 @@ class TransformAlignmentsSuite extends ADAMFunSuite {
     assert(qualityScoreCounts(30) === 92899)
     assert(qualityScoreCounts(10) === 7101)
   }
+
+  sparkTest("run region predicate") {
+    // alas, copy resource does not work here...
+    val inputPath = testFile("sorted.bam")
+    val outputPath1 = tmpFile("predicate.1.adam")
+    val outputPath2 = tmpFile("predicate.2.adam")
+    val outputPath3 = tmpFile("predicate.3.adam")
+    TransformAlignments(Array(inputPath, outputPath1,
+      "-region_predicate", "1:0-200,chr2:0-1000",
+      "-force_load_bam")).run(sc)
+    TransformAlignments(Array(outputPath1, outputPath2,
+      "-region_predicate", "chr2:0-1000",
+      "-force_load_parquet")).run(sc)
+    TransformAlignments(Array(outputPath2, outputPath3,
+      "-region_predicate", "chr2:0-400")).run(sc)
+
+    assert(sc.loadAlignments(outputPath1).rdd.count === 3)
+    assert(sc.loadAlignments(outputPath2).rdd.count === 2)
+    assert(sc.loadAlignments(outputPath3).rdd.count === 1)
+  }
 }

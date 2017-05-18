@@ -518,9 +518,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
       val regions = getReferenceRegions(elem)
 
-      querys.map(query => {
+      querys.exists(query => {
         regions.exists(_.overlaps(query))
-      }).fold(false)((a, b) => a || b)
+      })
     }), optPartitionMap)
   }
 

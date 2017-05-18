@@ -23,6 +23,12 @@ import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.interval.array.Interval
+import org.hammerlab.genomics.loci.parsing.{
+  All,
+  LociRange,
+  LociRanges,
+  ParsedLoci
+}
 import scala.math.{ max, min }
 
 trait ReferenceOrdering[T <: ReferenceRegion] extends Ordering[T] {
@@ -85,6 +91,35 @@ object ReferenceRegion {
 
   implicit def orderingForPositions = RegionOrdering
   implicit def orderingForOptionalPositions = OptionalRegionOrdering
+
+  /**
+   * Parses a set of comma delimited loci from a string.
+   *
+   * Acceptable strings include:
+   * - ctg:start-end
+   * - ctg:pos
+   *
+   * @param loci The string describing the loci to create reference regions for.
+   * @return Returns an iterable collection of reference regions.
+   */
+  def fromString(loci: String): Iterable[ReferenceRegion] = {
+
+    ParsedLoci(loci) match {
+      case All => {
+        throw new IllegalArgumentException("Unsupported value 'all'")
+      }
+      case LociRanges(ranges) => {
+        ranges.map(range => range match {
+          case LociRange(contigName, start, None) => {
+            ReferencePosition(contigName, start)
+          }
+          case LociRange(contigName, start, Some(end)) => {
+            ReferenceRegion(contigName, start, end)
+          }
+        })
+      }
+    }
+  }
 
   /**
    * Creates a reference region that starts at the beginning of a contig.

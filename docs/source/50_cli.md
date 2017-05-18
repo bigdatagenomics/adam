@@ -146,6 +146,14 @@ These options fall into several general categories:
       not load the `attributes` or `origQual` fields of the `AlignmentRecord`.
     * `-aligned_read_predicate`: If loading as Parquet, only loads aligned
       reads.
+    * `-region_predicate`: A string indicating that reads should be filtered on
+      overlapping a genomic position or range. This argument takes a comma
+      separated list, where each element in the list takes the form:
+      * `contig:pos` for a single genomic position, or
+      * `contig:start-end` for a genomic range with closed start and open end
+      E.g., `-region_predicate 1:100,2:1000-2000` would filter all reads that
+      overlapped either position 100 on `1` or the range from 1,000 to 2,000
+      on `2`.
     * `-concat`: Provides a path to an optional second file to load, which is
       then concatenated to the file given as the `INPUT` path.
 * Duplicate marking options: Duplicate marking is run with the
