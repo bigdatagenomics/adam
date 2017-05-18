@@ -495,4 +495,16 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     assert(collect(0).getSequence() === "ACTGTAC")
     assert(collect(1).getSequence() === "GTACTCTCATG")
   }
+
+  sparkTest("save as parquet and apply predicate pushdown") {
+    val fragments1 = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
+    assert(fragments1.rdd.count === 8)
+    val output = tmpFile("contigs.adam")
+    fragments1.saveAsParquet(output)
+    val fragments2 = sc.loadContigFragments(output)
+    assert(fragments2.rdd.count === 8)
+    val fragments3 = sc.loadContigFragments(output,
+      optPredicate = Some(ReferenceRegion("HLA-DQB1*05:01:01:02", 500L, 1500L).toPredicate))
+    assert(fragments3.rdd.count === 2)
+  }
 }
