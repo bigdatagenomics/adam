@@ -417,7 +417,7 @@ options](#default-args). Additionally, `adam2fastq` takes the following options:
   fields.
 * `-output_oq`: Outputs the original read qualities, if available.
 * `-persist_level`: Sets the Spark
-  [persistance level](http://spark.apache.org/docs/latest/programming-guide.html#which-storage-level-to-choose)
+  [persistence level](http://spark.apache.org/docs/latest/programming-guide.html#which-storage-level-to-choose)
   for cached data during the conversion back to FASTQ. If not provided, the
   intermediate RDDs are not cached.
 * `-repartition`: The number of partitions to save the data to. If provided,
