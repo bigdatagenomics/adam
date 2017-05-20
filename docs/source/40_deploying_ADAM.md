@@ -6,8 +6,7 @@ CGCloud provides an automated means to create a cluster on EC2 for use with ADAM
 
 [CGCloud](https://github.com/BD2KGenomics/cgcloud) lets you automate the creation, 
 management and provisioning of VMs and clusters of VMs in Amazon EC2.  
-The [CGCloud plugin for Spark]
-(https://github.com/BD2KGenomics/cgcloud/blob/master/spark/README.rst) 
+The [CGCloud plugin for Spark](https://github.com/BD2KGenomics/cgcloud/blob/master/spark/README.rst) 
 lets you setup a fully configured Apache Spark cluster in EC2.
 
 Prior to following these instructions, you need to already have setup your AWS 
@@ -18,11 +17,9 @@ AWS access keys.  See https://aws.amazon.com/ for details.
 
 Begin by reading the CGcloud [readme](https://github.com/BD2KGenomics/cgcloud).
 
-Next, configure [CGCloud core]
-(https://github.com/BD2KGenomics/cgcloud/blob/master/core/README.rst) 
+Next, configure [CGCloud core](https://github.com/BD2KGenomics/cgcloud/blob/master/core/README.rst) 
 and then install the 
-[CGcloud spark plugin]
-(https://github.com/BD2KGenomics/cgcloud/blob/master/spark/README.rst).
+[CGcloud spark plugin](https://github.com/BD2KGenomics/cgcloud/blob/master/spark/README.rst).
 
 One modification to CGCloud install instructions: replace the two pip calls  
 `pip install cgcloud-core` and `pip install cgcloud-spark` with the single command:
