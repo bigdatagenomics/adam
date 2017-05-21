@@ -48,8 +48,7 @@ object ADAMMain {
           Fasta2ADAM,
           ADAM2Fasta,
           ADAM2Fastq,
-          Fragments2Reads,
-          Reads2Fragments
+          TransformFragments
         )
       ),
       CommandGroup(
