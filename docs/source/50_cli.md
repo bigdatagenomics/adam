@@ -426,35 +426,40 @@ options](#default-args). Additionally, `adam2fastq` takes the following options:
   paired when saving paired reads. Defaults to `LENIENT.` See [validation
   stringency](#validation) for more details.
 
-### reads2fragments and fragments2reads
+### transformFragments
 
 These two commands translate read data between the single read alignment and
 fragment representations.
 
-`reads2fragments` takes two required arguments:
+`transformFragments` takes two required arguments:
 
-1. `READS`: The input read file, in any ADAM-supported read format.
-2. `FRAGMENTS`: The path to save Parquet data with the Fragment schema.
+1. `INPUT`: The input fragment file, in any ADAM-supported read or fragment format.
+2. `OUTPUT`: The path to save reads at, in any ADAM-supported read or fragment format.
 
-`reads2fragments` takes the [default options](#default-args).
-
-`fragments2reads` takes two required arguments:
-
-1. `FRAGMENTS`: The input fragment file, in any ADAM-supported fragment format.
-2. `READS`: The path to save reads at, in any ADAM-supported read format.
-
-`fragments2reads` takes the [default options](#default-args). Additionally,
-`fragments2reads` takes the following options:
+`transformFragments` takes the [default options](#default-args). Additionally,
+`transformFragments` takes the following options:
 
 * `-mark_duplicate_reads`: Marks reads as fragment duplicates. Running mark
   duplicates on fragments improves performance by eliminating one `groupBy`
   (and therefore, a shuffle) versus running on reads.
-* `-sort_reads`: Sorts reads by alignment position. Unmapped reads are
-  placed at the end of all reads. Contigs are ordered by sequence record
-  index.
-* `-sort_lexicographically`: Sorts reads by alignment position. Unmapped
-  reads are placed at the end of all reads. Contigs are ordered
-  lexicographically.
+* Base quality binning: If the `-bin_quality_scores` option is passed, the quality
+  scores attached to the reads will be rewritten into bins. This option takes a
+  semicolon (`;`) delimited list, where each element describes a bin. The
+  description for a bin is three integers: the bottom of the bin, the top of the
+  bin, and the value to assign to bases in the bin. E.g., given the description
+  `0,20,10:20,50,30`, all quality scores between 0--19 will be rewritten to 10,
+  and all quality scores between 20--49 will be rewritten to 30.
+* `-load_as_reads`: Treats the input as a read file (uses `loadAlignments`
+  instead of `loadFragments`), which behaves differently for unpaired FASTQ.
+* `-save_as_reads`: Saves the output as a Parquet file of `AlignmentRecord`s,
+  as SAM/BAM/CRAM, or as FASTQ, depending on the output file extension.
+  If this option is specified, the output can also be sorted:
+  * `-sort_reads`: Sorts reads by alignment position. Unmapped reads are
+    placed at the end of all reads. Contigs are ordered by sequence record
+    index.
+  * `-sort_lexicographically`: Sorts reads by alignment position. Unmapped
+    reads are placed at the end of all reads. Contigs are ordered
+    lexicographically.
 
 ## Printing tools {#printers}
 
