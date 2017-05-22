@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
+import java.time.Instant
 import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
@@ -29,6 +30,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.ADAMSaveAnyArgs
 import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, QualityScoreBin }
 import org.bdgenomics.adam.rich.RichVariant
+import org.bdgenomics.formats.avro.ProcessingStep
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
@@ -38,7 +40,9 @@ object TransformAlignments extends BDGCommandCompanion {
   val commandDescription = "Convert SAM/BAM to ADAM format and optionally perform read pre-processing transformations"
 
   def apply(cmdLine: Array[String]) = {
-    new TransformAlignments(Args4j[TransformAlignmentsArgs](cmdLine))
+    val args = Args4j[TransformAlignmentsArgs](cmdLine)
+    args.command = cmdLine.mkString(" ")
+    new TransformAlignments(args)
   }
 }
 
@@ -125,6 +129,10 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var cache: Boolean = false
   @Args4jOption(required = false, name = "-storage_level", usage = "Set the storage level to use for caching.")
   var storageLevel: String = "MEMORY_ONLY"
+  @Args4jOption(required = false, name = "-disable_pg", usage = "Disable writing a new @PG line.")
+  var disableProcessingStep = false
+
+  var command: String = null
 }
 
 class TransformAlignments(protected val args: TransformAlignmentsArgs) extends BDGSparkCommand[TransformAlignmentsArgs] with Logging {
@@ -434,7 +442,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       )
     }
 
-    val aRdd: AlignmentRecordRDD =
+    val loadedRdd: AlignmentRecordRDD =
       if (args.forceLoadBam) {
         if (args.regionPredicate != null) {
           val loci = ReferenceRegion.fromString(args.regionPredicate)
@@ -484,9 +492,31 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
           loadedReads
         }
       }
+
+    val aRdd: AlignmentRecordRDD = if (args.disableProcessingStep) {
+      loadedRdd
+    } else {
+      // add program info
+      val about = new About()
+      val version = if (about.isSnapshot()) {
+        "%s--%s".format(about.version(), about.commit())
+      } else {
+        about.version()
+      }
+      val epoch = Instant.now.getEpochSecond
+      val processingStep = ProcessingStep.newBuilder
+        .setId("ADAM_%d".format(epoch))
+        .setProgramName("org.bdgenomics.adam.cli.TransformAlignments")
+        .setVersion(version)
+        .setCommandLine(args.command)
+        .build
+      loadedRdd.addProcessingStep(processingStep)
+    }
+
     val rdd = aRdd.rdd
     val sd = aRdd.sequences
     val rgd = aRdd.recordGroups
+    val pgs = aRdd.processingSteps
 
     // Optionally load a second RDD and concatenate it with the first.
     // Paired-FASTQ loading is avoided here because that wouldn't make sense
@@ -507,12 +537,12 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
         })
 
     // if we have a second rdd that we are merging in, process the merger here
-    val (mergedRdd, mergedSd, mergedRgd) = concatOpt.fold((rdd, sd, rgd))(t => {
-      (rdd ++ t.rdd, sd ++ t.sequences, rgd ++ t.recordGroups)
+    val (mergedRdd, mergedSd, mergedRgd, mergedPgs) = concatOpt.fold((rdd, sd, rgd, pgs))(t => {
+      (rdd ++ t.rdd, sd ++ t.sequences, rgd ++ t.recordGroups, pgs ++ t.processingSteps)
     })
 
     // make a new aligned read rdd, that merges the two RDDs together
-    val newRdd = AlignmentRecordRDD(mergedRdd, mergedSd, mergedRgd)
+    val newRdd = AlignmentRecordRDD(mergedRdd, mergedSd, mergedRgd, mergedPgs)
 
     // run our transformation
     val outputRdd = this.apply(newRdd)

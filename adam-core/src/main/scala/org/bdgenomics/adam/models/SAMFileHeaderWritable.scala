@@ -18,6 +18,8 @@
 package org.bdgenomics.adam.models
 
 import htsjdk.samtools.SAMFileHeader
+import org.bdgenomics.adam.rdd.ADAMContext
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import scala.collection.JavaConversions._
 
 private[adam] object SAMFileHeaderWritable {
@@ -51,7 +53,7 @@ private[adam] class SAMFileHeaderWritable private (hdr: SAMFileHeader) extends S
   private val sd = SequenceDictionary(hdr.getSequenceDictionary)
   private val pgl = {
     val pgs = hdr.getProgramRecords
-    pgs.map(ProgramRecord(_))
+    pgs.map(ADAMContext.convertSAMProgramRecord)
   }
   private val comments = {
     val cmts = hdr.getComments
@@ -68,7 +70,7 @@ private[adam] class SAMFileHeaderWritable private (hdr: SAMFileHeader) extends S
     // add back optional fields
     text.foreach(h.setTextHeader)
     h.setSequenceDictionary(sd.toSAMSequenceDictionary)
-    pgl.foreach(p => h.addProgramRecord(p.toSAMProgramRecord))
+    pgl.foreach(p => h.addProgramRecord(AlignmentRecordRDD.processingStepToSam(p)))
     comments.foreach(h.addComment)
     rgs.recordGroups.foreach(rg => h.addReadGroup(rg.toSAMReadGroupRecord))
 

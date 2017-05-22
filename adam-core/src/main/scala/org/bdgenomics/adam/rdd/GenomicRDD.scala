@@ -40,6 +40,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.formats.avro.{
   Contig,
+  ProcessingStep,
   RecordGroup => RecordGroupMetadata,
   Sample
 }
@@ -1412,13 +1413,40 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Geno
   }
 }
 
+trait GenomicRDDWithLineage[T, U <: GenomicRDDWithLineage[T, U]] extends GenomicRDD[T, U] {
+
+  /**
+   * The processing steps that have been applied to this GenomicRDD.
+   */
+  val processingSteps: Seq[ProcessingStep]
+
+  /**
+   * Replaces the processing steps attached to this RDD.
+   *
+   * @param newProcessingSteps The new processing steps to attach to this RDD.
+   * @return Returns a new GenomicRDD with new processing lineage attached.
+   */
+  def replaceProcessingSteps(newProcessingSteps: Seq[ProcessingStep]): U
+
+  /**
+   * Merges a new processing record with the extant computational lineage.
+   *
+   * @param newProcessingStep
+   * @return Returns a new GenomicRDD with new record groups merged in.
+   */
+  def addProcessingStep(newProcessingStep: ProcessingStep): U = {
+    replaceProcessingSteps(processingSteps :+ newProcessingStep)
+  }
+}
+
 /**
  * An abstract class describing a GenomicRDD where:
  *
  * * The data are Avro IndexedRecords.
  * * The data are associated to record groups (i.e., they are reads or fragments).
  */
-abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: AvroRecordGroupGenomicRDD[T, U, V]] extends AvroGenomicRDD[T, U, V] {
+abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: AvroRecordGroupGenomicRDD[T, U, V]] extends AvroGenomicRDD[T, U, V]
+    with GenomicRDDWithLineage[T, V] {
 
   /**
    * A dictionary describing the record groups attached to this GenomicRDD.
@@ -1461,6 +1489,7 @@ abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
    * @param filePath The filepath to the file where we will save the record groups.
    */
   protected def saveRecordGroups(filePath: String): Unit = {
+
     // convert record group to avro and save
     val rgMetadata = recordGroups.recordGroups
       .map(_.toMetadata)
@@ -1471,8 +1500,23 @@ abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
       rgMetadata)
   }
 
+  /**
+   * Save the processing steps to disk.
+   *
+   * @param filePath The filepath to the directory within which we will save the
+   *   processing step descriptions..
+   */
+  protected def saveProcessingSteps(filePath: String) {
+    // save processing metadata
+    saveAvro("%s/_processing.avro".format(filePath),
+      rdd.context,
+      ProcessingStep.SCHEMA$,
+      processingSteps)
+  }
+
   override protected def saveMetadata(filePath: String): Unit = {
     savePartitionMap(filePath)
+    saveProcessingSteps(filePath)
     saveSequences(filePath)
     saveRecordGroups(filePath)
   }

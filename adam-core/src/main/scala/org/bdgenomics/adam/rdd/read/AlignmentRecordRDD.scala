@@ -99,6 +99,24 @@ private[adam] class AlignmentRecordArraySerializer extends IntervalArraySerializ
 object AlignmentRecordRDD extends Serializable {
 
   /**
+   * Converts a processing step back to the SAM representation.
+   *
+   * @param ps The processing step to convert.
+   * @return Returns an HTSJDK program group.
+   */
+  private[adam] def processingStepToSam(
+    ps: ProcessingStep): SAMProgramRecord = {
+    require(ps.getId != null,
+      "Processing stage ID cannot be null (%s).".format(ps))
+    val pg = new SAMProgramRecord(ps.getId)
+    Option(ps.getPreviousId).foreach(pg.setPreviousProgramGroupId(_))
+    Option(ps.getProgramName).foreach(pg.setProgramName)
+    Option(ps.getVersion).foreach(pg.setProgramVersion)
+    Option(ps.getCommandLine).foreach(pg.setCommandLine)
+    pg
+  }
+
+  /**
    * Builds an AlignmentRecordRDD for unaligned reads.
    *
    * @param rdd The underlying AlignmentRecord RDD.
@@ -108,6 +126,7 @@ object AlignmentRecordRDD extends Serializable {
     RDDBoundAlignmentRecordRDD(rdd,
       SequenceDictionary.empty,
       RecordGroupDictionary.empty,
+      Seq.empty,
       None)
   }
 
@@ -149,14 +168,23 @@ object AlignmentRecordRDD extends Serializable {
    */
   def apply(rdd: RDD[AlignmentRecord],
             sequences: SequenceDictionary,
-            recordGroups: RecordGroupDictionary): AlignmentRecordRDD = {
-    RDDBoundAlignmentRecordRDD(rdd, sequences, recordGroups, None)
+            recordGroups: RecordGroupDictionary,
+            processingSteps: Seq[ProcessingStep]): AlignmentRecordRDD = {
+    RDDBoundAlignmentRecordRDD(rdd,
+      sequences,
+      recordGroups,
+      processingSteps,
+      None)
   }
 
   def apply(ds: Dataset[AlignmentRecordProduct],
             sequences: SequenceDictionary,
-            recordGroups: RecordGroupDictionary): AlignmentRecordRDD = {
-    DatasetBoundAlignmentRecordRDD(ds, sequences, recordGroups)
+            recordGroups: RecordGroupDictionary,
+            processingSteps: Seq[ProcessingStep]): AlignmentRecordRDD = {
+    DatasetBoundAlignmentRecordRDD(ds,
+      sequences,
+      recordGroups,
+      processingSteps)
   }
 }
 
@@ -164,7 +192,8 @@ case class ParquetUnboundAlignmentRecordRDD private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary) extends AlignmentRecordRDD {
+    recordGroups: RecordGroupDictionary,
+    @transient val processingSteps: Seq[ProcessingStep]) extends AlignmentRecordRDD {
 
   lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
@@ -187,12 +216,18 @@ case class ParquetUnboundAlignmentRecordRDD private[rdd] (
     newRecordGroups: RecordGroupDictionary): AlignmentRecordRDD = {
     copy(recordGroups = newRecordGroups)
   }
+
+  def replaceProcessingSteps(
+    newProcessingSteps: Seq[ProcessingStep]): AlignmentRecordRDD = {
+    copy(processingSteps = newProcessingSteps)
+  }
 }
 
 case class DatasetBoundAlignmentRecordRDD private[rdd] (
     dataset: Dataset[AlignmentRecordProduct],
     sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary) extends AlignmentRecordRDD {
+    recordGroups: RecordGroupDictionary,
+    @transient val processingSteps: Seq[ProcessingStep]) extends AlignmentRecordRDD {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
 
@@ -226,12 +261,18 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
     newRecordGroups: RecordGroupDictionary): AlignmentRecordRDD = {
     copy(recordGroups = newRecordGroups)
   }
+
+  def replaceProcessingSteps(
+    newProcessingSteps: Seq[ProcessingStep]): AlignmentRecordRDD = {
+    copy(processingSteps = newProcessingSteps)
+  }
 }
 
 case class RDDBoundAlignmentRecordRDD private[rdd] (
     rdd: RDD[AlignmentRecord],
     sequences: SequenceDictionary,
     recordGroups: RecordGroupDictionary,
+    @transient val processingSteps: Seq[ProcessingStep],
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AlignmentRecordRDD {
 
   /**
@@ -274,6 +315,11 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
     newRecordGroups: RecordGroupDictionary): AlignmentRecordRDD = {
     copy(recordGroups = newRecordGroups)
   }
+
+  def replaceProcessingSteps(
+    newProcessingSteps: Seq[ProcessingStep]): AlignmentRecordRDD = {
+    copy(processingSteps = newProcessingSteps)
+  }
 }
 
 private case class AlignmentWindow(contigName: String, start: Long, end: Long) {
@@ -291,7 +337,10 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    */
   def transformDataset(
     tFn: Dataset[AlignmentRecordProduct] => Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    DatasetBoundAlignmentRecordRDD(dataset, sequences, recordGroups)
+    DatasetBoundAlignmentRecordRDD(dataset,
+      sequences,
+      recordGroups,
+      processingSteps)
       .transformDataset(tFn)
   }
 
@@ -308,12 +357,17 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
     RDDBoundAlignmentRecordRDD(newRdd,
       newSequences,
       recordGroups,
+      processingSteps,
       partitionMap)
   }
 
   protected def replaceRdd(newRdd: RDD[AlignmentRecord],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): AlignmentRecordRDD = {
-    RDDBoundAlignmentRecordRDD(newRdd, sequences, recordGroups, newPartitionMap)
+    RDDBoundAlignmentRecordRDD(newRdd,
+      sequences,
+      recordGroups,
+      processingSteps,
+      newPartitionMap)
   }
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, AlignmentRecord)])(
@@ -325,7 +379,8 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
     val iterableRdds = rdds.toSeq
     AlignmentRecordRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
       iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
-      iterableRdds.map(_.recordGroups).fold(recordGroups)(_ ++ _))
+      iterableRdds.map(_.recordGroups).fold(recordGroups)(_ ++ _),
+      iterableRdds.map(_.processingSteps).fold(processingSteps)(_ ++ _))
   }
 
   /**
@@ -337,7 +392,8 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
   def toFragments(): FragmentRDD = {
     FragmentRDD(groupReadsByFragment().map(_.toFragment),
       sequences,
-      recordGroups)
+      recordGroups,
+      processingSteps)
   }
 
   /**
@@ -361,7 +417,8 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
   private[rdd] def querynameSortedToFragments: FragmentRDD = {
     FragmentRDD(locallyGroupReadsByFragment().map(_.toFragment),
       sequences,
-      recordGroups)
+      recordGroups,
+      processingSteps)
   }
 
   /**
@@ -541,6 +598,12 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
     } else {
       header.setSortOrder(SAMFileHeader.SortOrder.unsorted)
     }
+
+    // get program records and attach to header
+    val pgRecords = processingSteps.map(r => {
+      AlignmentRecordRDD.processingStepToSam(r)
+    })
+    header.setProgramRecords(pgRecords)
 
     // broadcast for efficiency
     val hdrBcast = rdd.context.broadcast(SAMFileHeaderWritable(header))

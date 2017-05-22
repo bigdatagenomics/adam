@@ -159,7 +159,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val contigNames = rdd.flatMap(r => Option(r.getContigName)).distinct.collect
     val sd = new SequenceDictionary(contigNames.map(v => SequenceRecord(v, 1000000L)).toVector)
 
-    val sortedReads = AlignmentRecordRDD(rdd, sd, RecordGroupDictionary.empty)
+    val sortedReads = AlignmentRecordRDD(rdd, sd, RecordGroupDictionary.empty, Seq.empty)
       .sortReadsByReferencePosition()
       .rdd
       .collect()
@@ -250,7 +250,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       }).toVector)
 
     val rdd = sc.parallelize(reads)
-    val sortedReads = AlignmentRecordRDD(rdd, sd, RecordGroupDictionary.empty)
+    val sortedReads = AlignmentRecordRDD(rdd, sd, RecordGroupDictionary.empty, Seq.empty)
       .sortReadsByReferencePositionAndIndex()
       .rdd
       .collect()
@@ -1310,5 +1310,27 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     })
 
     checkSave(variantsDs)
+  }
+
+  test("cannot have a null processing step ID") {
+    intercept[IllegalArgumentException] {
+      AlignmentRecordRDD.processingStepToSam(ProcessingStep.newBuilder.build)
+    }
+  }
+
+  test("convert a processing description to htsjdk") {
+    val htsjdkPg = AlignmentRecordRDD.processingStepToSam(
+      ProcessingStep.newBuilder()
+        .setId("pg")
+        .setProgramName("myProgram")
+        .setVersion("1")
+        .setPreviousId("ppg")
+        .setCommandLine("myProgram run")
+        .build)
+    assert(htsjdkPg.getId === "pg")
+    assert(htsjdkPg.getCommandLine === "myProgram run")
+    assert(htsjdkPg.getProgramName === "myProgram")
+    assert(htsjdkPg.getProgramVersion === "1")
+    assert(htsjdkPg.getPreviousProgramGroupId === "ppg")
   }
 }

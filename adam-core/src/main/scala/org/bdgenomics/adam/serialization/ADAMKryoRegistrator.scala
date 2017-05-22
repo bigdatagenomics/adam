@@ -251,6 +251,8 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       new AvroSerializer[org.bdgenomics.formats.avro.NucleotideContigFragment])
     kryo.register(classOf[org.bdgenomics.formats.avro.OntologyTerm],
       new AvroSerializer[org.bdgenomics.formats.avro.OntologyTerm])
+    kryo.register(classOf[org.bdgenomics.formats.avro.ProcessingStep],
+      new AvroSerializer[org.bdgenomics.formats.avro.ProcessingStep])
     kryo.register(classOf[org.bdgenomics.formats.avro.Read],
       new AvroSerializer[org.bdgenomics.formats.avro.Read])
     kryo.register(classOf[org.bdgenomics.formats.avro.RecordGroup],
