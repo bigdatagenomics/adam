@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import java.io.{ File, FileNotFoundException, InputStream }
-import htsjdk.samtools.{ SAMFileHeader, ValidationStringency }
+import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord, ValidationStringency }
 import htsjdk.samtools.util.Locatable
 import htsjdk.variant.vcf.{
   VCFHeader,
@@ -96,6 +96,7 @@ import org.bdgenomics.formats.avro.{
   Fragment,
   Genotype,
   NucleotideContigFragment,
+  ProcessingStep,
   RecordGroup => RecordGroupMetadata,
   Sample,
   Variant
@@ -175,25 +176,39 @@ object ADAMContext {
   implicit def contigsToFragmentsConversionFn(
     gRdd: NucleotideContigFragmentRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundFragmentRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def contigsToFragmentsDatasetConversionFn(
     gRdd: NucleotideContigFragmentRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundFragmentRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def contigsToAlignmentRecordsConversionFn(
     gRdd: NucleotideContigFragmentRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundAlignmentRecordRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def contigsToAlignmentRecordsDatasetConversionFn(
     gRdd: NucleotideContigFragmentRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundAlignmentRecordRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def contigsToGenotypesConversionFn(
@@ -268,25 +283,39 @@ object ADAMContext {
   implicit def coverageToFragmentsConversionFn(
     gRdd: CoverageRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundFragmentRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def coverageToFragmentsDatasetConversionFn(
     gRdd: CoverageRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundFragmentRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def coverageToAlignmentRecordsConversionFn(
     gRdd: CoverageRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundAlignmentRecordRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def coverageToAlignmentRecordsDatasetConversionFn(
     gRdd: CoverageRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundAlignmentRecordRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def coverageToGenotypesConversionFn(
@@ -361,25 +390,39 @@ object ADAMContext {
   implicit def featuresToFragmentsConversionFn(
     gRdd: FeatureRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundFragmentRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def featuresToFragmentsDatasetConversionFn(
     gRdd: FeatureRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundFragmentRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def featuresToAlignmentRecordsConversionFn(
     gRdd: FeatureRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundAlignmentRecordRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def featuresToAlignmentRecordsDatasetConversionFn(
     gRdd: FeatureRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundAlignmentRecordRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def featuresToGenotypesConversionFn(
@@ -466,13 +509,20 @@ object ADAMContext {
   implicit def fragmentsToFragmentsConversionFn(
     gRdd: FragmentRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    AlignmentRecordRDD(rdd, gRdd.sequences, gRdd.recordGroups)
+    new RDDBoundAlignmentRecordRDD(rdd,
+      gRdd.sequences,
+      gRdd.recordGroups,
+      gRdd.processingSteps,
+      None)
   }
 
   implicit def fragmentsToAlignmentRecordsDatasetConversionFn(
     gRdd: FragmentRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds, gRdd.sequences, gRdd.recordGroups)
+    new DatasetBoundAlignmentRecordRDD(ds,
+      gRdd.sequences,
+      gRdd.recordGroups,
+      gRdd.processingSteps)
   }
 
   implicit def fragmentsToGenotypesConversionFn(
@@ -544,13 +594,18 @@ object ADAMContext {
     new RDDBoundFragmentRDD(rdd,
       gRdd.sequences,
       RecordGroupDictionary.empty,
+      Seq.empty,
       None)
   }
 
   implicit def genericToAlignmentRecordsConversionFn[Y <: GenericGenomicRDD[_]](
     gRdd: Y,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    AlignmentRecordRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty)
+    new RDDBoundAlignmentRecordRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def genericToGenotypesConversionFn[Y <: GenericGenomicRDD[_]](
@@ -621,13 +676,20 @@ object ADAMContext {
   implicit def alignmentRecordsToFragmentsConversionFn(
     gRdd: AlignmentRecordRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd, gRdd.sequences, gRdd.recordGroups, None)
+    new RDDBoundFragmentRDD(rdd,
+      gRdd.sequences,
+      gRdd.recordGroups,
+      gRdd.processingSteps,
+      None)
   }
 
   implicit def alignmentRecordsToFragmentsDatasetConversionFn(
     gRdd: AlignmentRecordRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds, gRdd.sequences, gRdd.recordGroups)
+    new DatasetBoundFragmentRDD(ds,
+      gRdd.sequences,
+      gRdd.recordGroups,
+      gRdd.processingSteps)
   }
 
   implicit def alignmentRecordsToGenotypesConversionFn(
@@ -714,25 +776,39 @@ object ADAMContext {
   implicit def genotypesToFragmentsConversionFn(
     gRdd: GenotypeRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundFragmentRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def genotypesToFragmentsDatasetConversionFn(
     gRdd: GenotypeRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundFragmentRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def genotypesToAlignmentRecordsConversionFn(
     gRdd: GenotypeRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundAlignmentRecordRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def genotypesToAlignmentRecordsDatasetConversionFn(
     gRdd: GenotypeRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundAlignmentRecordRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def genotypesToVariantsConversionFn(
@@ -800,25 +876,39 @@ object ADAMContext {
   implicit def variantsToFragmentsConversionFn(
     gRdd: VariantRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundFragmentRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def variantsToFragmentsDatasetConversionFn(
     gRdd: VariantRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundFragmentRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def variantsToAlignmentRecordsConversionFn(
     gRdd: VariantRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundAlignmentRecordRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def variantsToAlignmentRecordsDatasetConversionFn(
     gRdd: VariantRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds, gRdd.sequences, RecordGroupDictionary.empty)
+    new DatasetBoundAlignmentRecordRDD(ds,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def variantsToGenotypesConversionFn(
@@ -870,13 +960,21 @@ object ADAMContext {
   implicit def variantContextsToFragmentsConversionFn(
     gRdd: VariantContextRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundFragmentRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def variantContextsToAlignmentRecordsConversionFn(
     gRdd: VariantContextRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd, gRdd.sequences, RecordGroupDictionary.empty, None)
+    new RDDBoundAlignmentRecordRDD(rdd,
+      gRdd.sequences,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
   implicit def variantContextsToGenotypesConversionFn(
@@ -906,6 +1004,23 @@ object ADAMContext {
 
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
+
+  /**
+   * Builds a program description from a htsjdk program record.
+   *
+   * @param record Program record to convert.
+   * @return Returns an Avro formatted program record.
+   */
+  private[adam] def convertSAMProgramRecord(
+    record: SAMProgramRecord): ProcessingStep = {
+    val builder = ProcessingStep.newBuilder
+      .setId(record.getId)
+    Option(record.getPreviousProgramGroupId).foreach(builder.setPreviousId(_))
+    Option(record.getProgramVersion).foreach(builder.setVersion(_))
+    Option(record.getProgramName).foreach(builder.setProgramName(_))
+    Option(record.getCommandLine).foreach(builder.setCommandLine(_))
+    builder.build
+  }
 }
 
 /**
@@ -968,6 +1083,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * @param samHeader The header to extract processing lineage from.
+   * @return Returns the dictionary converted to an Avro model.
+   */
+  private[rdd] def loadBamPrograms(
+    samHeader: SAMFileHeader): Seq[ProcessingStep] = {
+    val pgs = samHeader.getProgramRecords().toSeq
+    pgs.map(ADAMContext.convertSAMProgramRecord)
+  }
+
+  /**
    * @param pathName The path name to load VCF format metadata from.
    *   Globs/directories are supported.
    * @return Returns a tuple of metadata from the VCF header, including the
@@ -1016,6 +1141,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       .map(p => VariantContextConverter.headerLines(readVcfHeader(p.toString)))
       .flatten
       .distinct
+  }
+
+  /**
+   * @param pathName The path name to load Avro processing steps from.
+   *   Globs/directories are supported.
+   * @return Returns a seq of processing steps.
+   */
+  private[rdd] def loadAvroPrograms(pathName: String): Seq[ProcessingStep] = {
+    getFsAndFilesWithFilter(pathName, new FileFilter("_processing.avro"))
+      .map(p => {
+        loadAvro[ProcessingStep](p.toString, ProcessingStep.SCHEMA$)
+      }).reduce(_ ++ _)
   }
 
   /**
@@ -1318,7 +1455,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     require(filteredFiles.nonEmpty,
       "Did not find any BAM files at %s.".format(path))
 
-    val (seqDict, readGroups) =
+    val (seqDict, readGroups, programs) =
       filteredFiles
         .flatMap(fp => {
           try {
@@ -1330,7 +1467,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             log.info("Loaded header from " + fp)
             val sd = loadBamDictionary(samHeader)
             val rg = loadBamReadGroups(samHeader)
-            Some((sd, rg))
+            val pgs = loadBamPrograms(samHeader)
+            Some((sd, rg, pgs))
           } catch {
             case e: Throwable => {
               if (validationStringency == ValidationStringency.STRICT) {
@@ -1344,7 +1482,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             }
           }
         }).reduce((kv1, kv2) => {
-          (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
+          (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2, kv1._3 ++ kv2._3)
         })
 
     val job = HadoopUtil.newJob(sc)
@@ -1370,7 +1508,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p._2.get)),
       seqDict,
-      readGroups)
+      readGroups,
+      programs)
   }
 
   /**
@@ -1411,7 +1550,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     require(bamFiles.nonEmpty,
       "Did not find any BAM files at %s.".format(path))
-    val (seqDict, readGroups) = bamFiles
+    val (seqDict, readGroups, programs) = bamFiles
       .map(fp => {
         // We need to separately read the header, so that we can inject the sequence dictionary
         // data into each individual Read (see the argument to samRecordConverter.convert,
@@ -1421,10 +1560,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         log.info("Loaded header from " + fp)
         val sd = loadBamDictionary(samHeader)
         val rg = loadBamReadGroups(samHeader)
+        val pgs = loadBamPrograms(samHeader)
 
-        (sd, rg)
+        (sd, rg, pgs)
       }).reduce((kv1, kv2) => {
-        (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2)
+        (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2, kv1._3 ++ kv2._3)
       })
 
     val job = HadoopUtil.newJob(sc)
@@ -1439,7 +1579,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val samRecordConverter = new SAMRecordConverter
     AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p._2.get)),
       seqDict,
-      readGroups)
+      readGroups,
+      programs)
   }
 
   /**
@@ -1631,15 +1772,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert avro to sequence dictionary
     val rgd = loadAvroRecordGroupDictionary(pathName)
 
+    // load processing step descriptions
+    val pgs = loadAvroPrograms(pathName)
+
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd)
+        ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd, pgs)
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[AlignmentRecord](pathName, optPredicate, optProjection)
 
-        RDDBoundAlignmentRecordRDD(rdd, sd, rgd,
+        RDDBoundAlignmentRecordRDD(rdd, sd, rgd, pgs,
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
@@ -2351,9 +2495,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert avro to sequence dictionary
     val rgd = loadAvroRecordGroupDictionary(pathName)
 
+    // load processing step descriptions
+    val pgs = loadAvroPrograms(pathName)
+
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundFragmentRDD(sc, pathName, sd, rgd)
+        ParquetUnboundFragmentRDD(sc, pathName, sd, rgd, pgs)
       }
       case (_, _) => {
         // load from disk
@@ -2362,6 +2509,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         new RDDBoundFragmentRDD(rdd,
           sd,
           rgd,
+          pgs,
           optPartitionMap = extractPartitionMap(pathName))
       }
     }

@@ -17,7 +17,11 @@
  */
 package org.bdgenomics.adam.rdd
 
-import htsjdk.samtools.{ SAMFormatException, ValidationStringency }
+import htsjdk.samtools.{
+  SAMFormatException,
+  SAMProgramRecord,
+  ValidationStringency
+}
 import java.io.{ File, FileNotFoundException }
 import com.google.common.io.Files
 import org.apache.hadoop.fs.Path
@@ -31,6 +35,7 @@ import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.CRAMInputFormat
+import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 
 case class TestSaveArgs(var outputPath: String) extends ADAMSaveAnyArgs {
   var sortFastqOutput = false
@@ -630,5 +635,40 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(sequences("chr1").get.length === 249250621L)
     assert(sequences("chr17_gl000206_random").isDefined)
     assert(sequences("chr17_gl000206_random").get.length === 41001L)
+  }
+
+  sparkTest("convert program record") {
+    val pr = new SAMProgramRecord("pgId")
+    pr.setPreviousProgramGroupId("ppgId")
+    pr.setProgramName("myProg")
+    pr.setProgramVersion("1.2.3")
+    pr.setCommandLine("myProg aCommand")
+    val ps = ADAMContext.convertSAMProgramRecord(pr)
+    assert(ps.getId === "pgId")
+    assert(ps.getProgramName === "myProg")
+    assert(ps.getVersion === "1.2.3")
+    assert(ps.getCommandLine === "myProg aCommand")
+    assert(ps.getPreviousId === "ppgId")
+  }
+
+  sparkTest("load program record from sam file") {
+    val input = testFile("small.sam")
+    val samHeader = SAMHeaderReader.readSAMHeaderFrom(new Path(input),
+      sc.hadoopConfiguration)
+    val programs = sc.loadBamPrograms(samHeader)
+    assert(programs.size === 2)
+    val firstPg = programs.filter(_.getPreviousId == null)
+    assert(firstPg.size === 1)
+    assert(firstPg.head.getId === "p1")
+    assert(firstPg.head.getProgramName === "myProg")
+    assert(firstPg.head.getCommandLine === "\"myProg 123\"")
+    assert(firstPg.head.getVersion === "1.0.0")
+    val secondPg = programs.filter(_.getPreviousId != null)
+    assert(secondPg.size === 1)
+    assert(secondPg.head.getId === "p2")
+    assert(secondPg.head.getPreviousId === "p1")
+    assert(secondPg.head.getProgramName === "myProg")
+    assert(secondPg.head.getCommandLine === "\"myProg 456\"")
+    assert(secondPg.head.getVersion === "1.0.0")
   }
 }

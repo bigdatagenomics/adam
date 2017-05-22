@@ -49,7 +49,7 @@ class ParallelFileMergerSuite extends ADAMFunSuite {
     val files = Seq(testFile("unmapped.sam"),
       testFile("small.sam"))
       .map(new Path(_))
-    val fileSizes = Seq(29408, 3093)
+    val fileSizes = Seq(29408, 3189)
     val filesWithSizes = files.zip(fileSizes)
 
     val fs = FileSystem.get(sc.hadoopConfiguration)

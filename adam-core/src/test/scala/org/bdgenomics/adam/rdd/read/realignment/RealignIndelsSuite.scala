@@ -549,7 +549,8 @@ class RealignIndelsSuite extends ADAMFunSuite {
       scRead,
       ecRead)),
       new SequenceDictionary(Vector(SequenceRecord("1", 20L))),
-      RecordGroupDictionary.empty)
+      RecordGroupDictionary.empty,
+      Seq.empty)
     val realignedReads = rdd.realignIndels(lodThreshold = 0.0)
       .rdd
       .collect
