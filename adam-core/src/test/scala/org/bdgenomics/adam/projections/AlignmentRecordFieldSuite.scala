@@ -65,7 +65,6 @@ class AlignmentRecordFieldSuite extends ADAMFunSuite {
       recordGroupName,
       recordGroupSample,
       mateAlignmentStart,
-      mateAlignmentEnd,
       mateContigName,
       inferredInsertSize
     )

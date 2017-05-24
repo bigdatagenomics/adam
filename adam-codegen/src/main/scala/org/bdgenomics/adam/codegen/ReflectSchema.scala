@@ -15,14 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.projections
+package org.bdgenomics.adam.codegen
 
-import org.bdgenomics.formats.avro.Read
+import org.apache.avro.reflect.ReflectData
+import org.apache.avro.Schema
 
-/**
- * Enumeration of Read field names for predicates and projections.
- */
-object ReadField extends FieldEnumeration(Read.SCHEMA$) {
+object ReflectSchema {
 
-  val name, description, alphabet, sequence, length, qualityScores, qualityScoreVariant = SchemaValue
+  private[codegen] def getSchemaByReflection(className: String): Schema = {
+
+    // load the class
+    val classLoader = Thread.currentThread().getContextClassLoader()
+    val klazz = classLoader.loadClass(className)
+
+    // get the schema through reflection
+    ReflectData.get().getSchema(klazz)
+  }
 }
