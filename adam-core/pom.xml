@@ -118,6 +118,38 @@
               <classpathScope>compile</classpathScope>
             </configuration>
           </execution>
+          <execution>
+            <id>generate-scala-projection-fields</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.bdgenomics.adam.codegen.DumpSchemasToProjectionEnums</mainClass>
+              <arguments>
+                <argument>org.bdgenomics.adam.projections</argument>
+                <argument>org.bdgenomics.formats.avro.AlignmentRecord</argument>
+                <argument>org.bdgenomics.formats.avro.Contig</argument>
+                <argument>org.bdgenomics.formats.avro.Dbxref</argument>
+                <argument>org.bdgenomics.formats.avro.Feature</argument>
+                <argument>org.bdgenomics.formats.avro.Fragment</argument>
+                <argument>org.bdgenomics.formats.avro.Genotype</argument>
+                <argument>org.bdgenomics.formats.avro.NucleotideContigFragment</argument>
+                <argument>org.bdgenomics.formats.avro.OntologyTerm</argument>
+                <argument>org.bdgenomics.formats.avro.Read</argument>
+                <argument>org.bdgenomics.formats.avro.RecordGroup</argument>
+                <argument>org.bdgenomics.formats.avro.Sample</argument>
+                <argument>org.bdgenomics.formats.avro.Sequence</argument>
+                <argument>org.bdgenomics.formats.avro.Slice</argument>
+                <argument>org.bdgenomics.formats.avro.TranscriptEffect</argument>
+                <argument>org.bdgenomics.formats.avro.Variant</argument>
+                <argument>org.bdgenomics.formats.avro.VariantAnnotation</argument>
+                <argument>org.bdgenomics.formats.avro.VariantCallingAnnotations</argument>
+                <argument>adam-core/target/generated-sources/src/main/scala/org/bdgenomics/adam/projections/Enums.scala</argument>
+              </arguments>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>

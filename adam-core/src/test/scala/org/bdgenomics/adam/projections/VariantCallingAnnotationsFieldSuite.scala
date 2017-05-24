@@ -35,7 +35,7 @@ class VariantCallingAnnotationsFieldSuite extends ADAMFunSuite {
     rdd.saveAsParquet(TestSaveArgs(path))
 
     val projection = Projection(
-      variantFilters,
+      filtersApplied,
       downsampled,
       baseQRankSum,
       fisherStrandBiasPValue,

@@ -19,7 +19,6 @@ package org.bdgenomics.adam.codegen
 
 import java.io.{ File, FileWriter }
 import org.apache.avro.Schema
-import org.apache.avro.reflect.ReflectData
 import scala.collection.JavaConversions._
 
 object DumpSchemasToProduct {
@@ -29,17 +28,7 @@ object DumpSchemasToProduct {
   }
 }
 
-class DumpSchemasToProduct {
-
-  private def getSchemaByReflection(className: String): Schema = {
-
-    // load the class
-    val classLoader = Thread.currentThread().getContextClassLoader()
-    val klazz = classLoader.loadClass(className)
-
-    // get the schema through reflection
-    ReflectData.get().getSchema(klazz)
-  }
+class DumpSchemasToProduct extends Generator {
 
   private def toMatch(fields: Seq[(String, String)]): String = {
     fields.map(_._1)
@@ -145,7 +134,7 @@ class DumpSchemasToProduct {
   private def generateClassDump(className: String): String = {
 
     // get schema
-    val schema = getSchemaByReflection(className)
+    val schema = ReflectSchema.getSchemaByReflection(className)
 
     // get class name without package
     val classNameNoPackage = className.split('.').last
@@ -216,33 +205,6 @@ class DumpSchemasToProduct {
       schema.getName,
       schema.getName,
       getters(schema))
-  }
-
-  private def writeHeader(fw: FileWriter, packageName: String) {
-    val hdr = Seq(
-      "/**",
-      "* Licensed to Big Data Genomics (BDG) under one",
-      "* or more contributor license agreements.  See the NOTICE file",
-      "* distributed with this work for additional information",
-      "* regarding copyright ownership.  The BDG licenses this file",
-      "* to you under the Apache License, Version 2.0 (the",
-      "* \"License\"); you may not use this file except in compliance",
-      "* with the License.  You may obtain a copy of the License at",
-      "*",
-      "*     http://www.apache.org/licenses/LICENSE-2.0",
-      "*",
-      "* Unless required by applicable law or agreed to in writing, software",
-      "* distributed under the License is distributed on an \"AS IS\" BASIS,",
-      "* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
-      "* See the License for the specific language governing permissions and",
-      "* limitations under the License.",
-      "*/",
-      "package %s".format(packageName),
-      "",
-      "import scala.collection.JavaConversions._",
-      "import scala.collection.JavaConverters._").mkString("\n")
-
-    fw.write(hdr)
   }
 
   def apply(args: Array[String]) {
