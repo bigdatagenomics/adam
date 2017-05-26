@@ -35,7 +35,7 @@ import scala.collection.mutable.ListBuffer
  *       we are only sorting a number of elements equal to the number of
  *       partitions written.
  */
-private[rdd] class ADAMInputFormat[T] extends ParquetInputFormat[T] {
+private[rdd] class ADAMParquetInputFormat[T] extends ParquetInputFormat[T] {
 
   /**
    * Gets the splits of all the files for the JobContext object.

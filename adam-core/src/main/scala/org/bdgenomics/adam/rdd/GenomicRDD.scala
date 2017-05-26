@@ -27,6 +27,7 @@ import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
@@ -157,7 +158,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
   assert(optPartitionMap.isEmpty ||
     optPartitionMap.exists(_.length == rdd.partitions.length),
-    "Partition Map length differs from number of partitions.")
+    "Partition map length differs from number of partitions.")
 
   val isSorted: Boolean = optPartitionMap.isDefined
 
@@ -189,8 +190,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
         .repartitionAndSortWithinPartitions(
           ManualRegionPartitioner(finalPartitionNumber.toInt))
 
-    finalPartitionedRDD.cache()
-
     val newPartitionMap = finalPartitionedRDD.mapPartitions(iter =>
       getRegionBoundsFromPartition(
         iter.map(f => (f._1._1, f._2))),
@@ -203,9 +202,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * If the specified validation strategy is STRICT, throw an exception,
    * if LENIENT, log a warning, otherwise does nothing.
    *
+   * @throws IllegalArgumentException If stringency is STRICT.
+   *
    * @param message The error or warning message.
    * @param stringency The validation stringency.
-   * @throws IllegalArgumentException If stringency is STRICT.
    */
   private def throwWarnOrNone[K](message: String,
                                  stringency: ValidationStringency): Option[K] = {
@@ -213,7 +213,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       case ValidationStringency.STRICT => {
         throw new IllegalArgumentException(message)
       }
-      case ValidationStringency.LENIENT => logWarning(message)
+      case ValidationStringency.LENIENT => log.warn(message)
       case _                            =>
     }
     None
@@ -223,6 +223,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * Sorts our genome aligned data by reference positions, with contigs ordered
    * by index.
    *
+   * @param partitions The number of partitions for the new RDD.
+   * @param stringency The level of ValidationStringency to enforce.
    * @return Returns a new RDD containing sorted data.
    *
    * @note Uses ValidationStringency to handle unaligned or where objects align
@@ -236,7 +238,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     require(sequences.hasSequenceOrdering,
       "Sequence Dictionary does not have ordering defined.")
 
-    replaceRdd(rdd.keyBy(elem => {
+    replaceRdd(rdd.flatMap(elem => {
       val coveredRegions = getReferenceRegions(elem)
 
       // We don't use ValidationStringency here because multimapped elements
@@ -246,7 +248,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
           elem, coveredRegions.mkString(",")))
 
       if (coveredRegions.isEmpty) {
-        throwWarnOrNone(
+        throwWarnOrNone[((Int, Long), T)](
           "Cannot sort RDD containing an unmapped element %s.".format(elem),
           stringency)
       } else {
@@ -254,23 +256,27 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
         val sr = sequences(contigName)
 
         if (sr.isEmpty) {
-          throwWarnOrNone[(Int, Long)](
+          throwWarnOrNone[((Int, Long), T)](
             "Element %s has contig name %s not in dictionary %s.".format(
               elem, contigName, sequences),
             stringency)
         } else {
-          Some((sr.get.referenceIndex.get, coveredRegions.head.start))
+          Some(((sr.get.referenceIndex.get, coveredRegions.head.start), elem))
         }
       }
-    }).filter(f => f._1.nonEmpty)
-      .sortBy(elem => elem._1.get, ascending = true, numPartitions = partitions)
-      .map(_._2))
+    }).sortByKey(ascending = true, numPartitions = partitions)
+      .values)
   }
 
   /**
    * Sorts our genome aligned data by reference positions, with contigs ordered
    * lexicographically.
    *
+   * @param partitions The number of partitions for the new RDD.
+   * @param storePartitionMap A Boolean flag to determine whether to store the
+   *                          partition bounds from the resulting RDD.
+   * @param storageLevel The level at which to persist the resulting RDD.
+   * @param stringency The level of ValidationStringency to enforce.
    * @return Returns a new RDD containing sorted data.
    *
    * @note Uses ValidationStringency to handle data that is unaligned or where objects
@@ -278,10 +284,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @see sort
    */
   def sortLexicographically(partitions: Int = rdd.partitions.length,
+                            storePartitionMap: Boolean = false,
+                            storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
                             stringency: ValidationStringency = ValidationStringency.STRICT)(
                               implicit tTag: ClassTag[T]): U = {
 
-    val partitionedRDD = rdd.keyBy(elem => {
+    val partitionedRdd = rdd.flatMap(elem => {
       val coveredRegions = getReferenceRegions(elem)
 
       // We don't use ValidationStringency here because multimapped elements
@@ -291,20 +299,27 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
           elem, coveredRegions.mkString(",")))
 
       if (coveredRegions.isEmpty) {
-        throwWarnOrNone[ReferenceRegion](
+        throwWarnOrNone[(ReferenceRegion, T)](
           "Cannot sort RDD containing an unmapped element %s.".format(elem),
           stringency)
       } else {
-        Some(coveredRegions.head)
+        Some(coveredRegions.head, elem)
       }
-    }).filter(f => f._1.nonEmpty).map(f => (f._1.get, f._2))
-      .sortBy(elem => elem._1, ascending = true, numPartitions = partitions)
+    }).sortByKey(ascending = true, numPartitions = partitions)
 
-    partitionedRDD.cache()
-    val newPartitionMap = partitionedRDD.mapPartitions(iter =>
-      getRegionBoundsFromPartition(iter), preservesPartitioning = true).collect
+    partitionedRdd.persist(storageLevel)
 
-    replaceRdd(partitionedRDD.map(_._2), Some(newPartitionMap))
+    storePartitionMap match {
+      case true => {
+        val newPartitionMap = partitionedRdd.mapPartitions(iter =>
+          getRegionBoundsFromPartition(iter), preservesPartitioning = true).collect
+
+        replaceRdd(partitionedRdd.values, Some(newPartitionMap))
+      }
+      case false => {
+        replaceRdd(partitionedRdd.values)
+      }
+    }
   }
 
   /**
@@ -802,7 +817,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       case (true, _)     => (this, genomicRdd.copartitionByReferenceRegion(this))
       case (false, true) => (copartitionByReferenceRegion(genomicRdd), genomicRdd)
       case (false, false) => {
-        val repartitionedRdd = sortLexicographically(partitions)
+        val repartitionedRdd =
+          sortLexicographically(storePartitionMap = true, partitions = partitions)
+
         (repartitionedRdd, genomicRdd.copartitionByReferenceRegion(repartitionedRdd))
       }
     }
@@ -1062,22 +1079,33 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       "Cannot copartition with an unsorted rdd!")
 
     val destinationPartitionMap = rddToCoPartitionWith.optPartitionMap.get
-    //number of partitions we will have after repartition
+
+    // number of partitions we will have after repartition
     val numPartitions = destinationPartitionMap.length
+
     // here we create a partition map with a single ReferenceRegion that spans
     // the entire range, however we have to handle the case where the partition
     // spans multiple referenceNames because of load balancing.
     val adjustedPartitionMapWithIndex =
+
       // the zipWithIndex gives us the destination partition ID
       destinationPartitionMap.flatten.zipWithIndex.map(g => {
         val (firstRegion, secondRegion, index) = (g._1._1, g._1._2, g._2)
-        // in the case where we span multiple referenceNames
+
+        // in the case where we span multiple referenceNames using
+        // IntervalArray.get with requireOverlap set to false will assign all
+        // the remaining regions to this partition, in addition to all the
+        // regions up to the start of the next partition.
         if (firstRegion.referenceName != secondRegion.referenceName) {
-          // the first region is enough to represent the partition
+
+          // the first region is enough to represent the partition for
+          // IntervalArray.get.
           (firstRegion, index)
         } else {
           // otherwise we just have the ReferenceRegion span from partition
-          // start to end
+          // lower bound to upper bound.
+          // We cannot use the firstRegion bounds here because we may end up
+          // dropping data if it doesn't map anywhere.
           (ReferenceRegion(
             firstRegion.referenceName,
             firstRegion.start,
@@ -1093,8 +1121,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       sorted = true)
 
     val finalPartitionedRDD = {
-      // if not already sorted, we need to duplicate those records that are
-      // mapped to multiple ReferenceRegions, thus we use the flattenRddByRegions
       val referenceRegionKeyedGenomicRDD = flattenRddByRegions()
 
       referenceRegionKeyedGenomicRDD.mapPartitions(iter => {
@@ -1130,8 +1156,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
           // includes any extremely long regions. we include the firstRegion for
           // the case that the first region is extremely long
           (iter ++ Iterator(firstRegion)).maxBy(f => (f._1.referenceName, f._1.end, f._1.start))
-          // only one record on this partition, so this is the extent of the bounds
         } else {
+          // only one record on this partition, so this is the extent of the bounds
           firstRegion
         }
       Iterator(Some((firstRegion._1, lastRegion._1)))

@@ -27,7 +27,7 @@ private[rdd] case class ManualRegionPartitioner[V](partitions: Int) extends Part
     key match {
       case (_, f2: Int) => f2
       case _ => {
-        throw new Exception("Unable to partition without destination assignment")
+        throw new Exception("Unable to partition key %s without destination assignment.".format(key))
       }
     }
   }

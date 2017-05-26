@@ -87,14 +87,14 @@ object VariantContextRDD extends Serializable {
    */
   def apply(rdd: RDD[VariantContext],
             sequences: SequenceDictionary,
-            @transient samples: Seq[Sample],
-            @transient headerLines: Seq[VCFHeaderLine]): VariantContextRDD = {
+            samples: Seq[Sample],
+            headerLines: Seq[VCFHeaderLine]): VariantContextRDD = {
     VariantContextRDD(rdd, sequences, samples, headerLines, None)
   }
 
   def apply(rdd: RDD[VariantContext],
             sequences: SequenceDictionary,
-            @transient samples: Seq[Sample]): VariantContextRDD = {
+            samples: Seq[Sample]): VariantContextRDD = {
     VariantContextRDD(rdd, sequences, samples, null)
   }
 }

@@ -58,7 +58,7 @@ sealed abstract class ShuffleRegionJoin[T: ClassTag, U: ClassTag, RT, RU]
    *         corresponding to x overlaps the region corresponding to y.
    */
   def compute(): RDD[(RT, RU)] = {
-    leftRdd.zipPartitions(rightRdd, preservesPartitioning = true)(makeIterator)
+    leftRdd.zipPartitions(rightRdd)(makeIterator)
   }
 
   def partitionAndJoin(left: RDD[(ReferenceRegion, T)], right: RDD[(ReferenceRegion, U)]): RDD[(RT, RU)] = {

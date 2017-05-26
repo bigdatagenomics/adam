@@ -78,7 +78,7 @@ object VariantRDD extends Serializable {
    */
   def apply(rdd: RDD[Variant],
             sequences: SequenceDictionary,
-            @transient headerLines: Seq[VCFHeaderLine]): VariantRDD = {
+            headerLines: Seq[VCFHeaderLine]): VariantRDD = {
     VariantRDD(rdd, sequences, headerLines, None)
   }
 }

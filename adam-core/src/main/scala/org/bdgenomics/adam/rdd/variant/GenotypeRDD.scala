@@ -75,8 +75,8 @@ object GenotypeRDD extends Serializable {
    */
   def apply(rdd: RDD[Genotype],
             sequences: SequenceDictionary,
-            @transient samples: Seq[Sample],
-            @transient headerLines: Seq[VCFHeaderLine]): GenotypeRDD = {
+            samples: Seq[Sample],
+            headerLines: Seq[VCFHeaderLine]): GenotypeRDD = {
     GenotypeRDD(rdd, sequences, samples, headerLines, None)
   }
 }

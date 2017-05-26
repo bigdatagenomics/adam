@@ -402,7 +402,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     val records = sc.newAPIHadoopFile(
       pathName,
-      classOf[ADAMInputFormat[T]],
+      classOf[ADAMParquetInputFormat[T]],
       classOf[Void],
       manifest[T].runtimeClass.asInstanceOf[Class[T]],
       ContextUtil.getConfiguration(job)
@@ -881,8 +881,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       Some(partitionMapBuilder.toArray)
     } catch {
       case e: FileNotFoundException => None
-      // TODO: Log Exception
-      case e: Exception             => None
+      case e: Throwable             => throw e
     }
   }
 
@@ -893,6 +892,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   pathName/_seqdict.avro and the record group dictionary is read from an
    *   Avro file stored at pathName/_rgdict.avro. These files are pure Avro,
    *   not Parquet + Avro.
+   *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.

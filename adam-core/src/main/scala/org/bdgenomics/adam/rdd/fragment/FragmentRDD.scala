@@ -71,7 +71,7 @@ private[adam] class FragmentArraySerializer extends IntervalArraySerializer[Refe
 /**
  * Helper singleton object for building FragmentRDDs.
  */
-object FragmentRDD extends Serializable {
+object FragmentRDD {
 
   /**
    * Hadoop configuration path to check for a boolean value indicating whether

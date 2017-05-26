@@ -97,7 +97,8 @@ object AlignmentRecordRDD extends Serializable {
   def unaligned(rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     AlignmentRecordRDD(rdd,
       SequenceDictionary.empty,
-      RecordGroupDictionary.empty)
+      RecordGroupDictionary.empty,
+      None)
   }
 
   /**
@@ -271,7 +272,7 @@ case class AlignmentRecordRDD(
    *   file was saved.
    */
   private[rdd] def maybeSaveBam(args: ADAMSaveAnyArgs,
-                                isSorted: Boolean = isSorted): Boolean = {
+                                isSorted: Boolean = false): Boolean = {
 
     if (args.outputPath.endsWith(".sam") ||
       args.outputPath.endsWith(".bam") ||
@@ -319,7 +320,7 @@ case class AlignmentRecordRDD(
    * @return Returns true if saving succeeded.
    */
   def save(args: ADAMSaveAnyArgs,
-           isSorted: Boolean = isSorted): Boolean = {
+           isSorted: Boolean = false): Boolean = {
 
     (maybeSaveBam(args, isSorted) ||
       maybeSaveFastq(args) ||
@@ -378,7 +379,7 @@ case class AlignmentRecordRDD(
    *
    * @return Returns a SAM/BAM formatted RDD of reads, as well as the file header.
    */
-  def convertToSam(isSorted: Boolean = isSorted): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
+  def convertToSam(isSorted: Boolean = false): (RDD[SAMRecordWritable], SAMFileHeader) = ConvertToSAM.time {
 
     // create conversion object
     val adamRecordConverter = new AlignmentRecordConverter
@@ -437,7 +438,7 @@ case class AlignmentRecordRDD(
     filePath: String,
     asType: Option[SAMFormat] = None,
     asSingleFile: Boolean = false,
-    isSorted: Boolean = isSorted,
+    isSorted: Boolean = false,
     deferMerging: Boolean = false,
     disableFastConcat: Boolean = false): Unit = SAMSave.time {
 
@@ -721,7 +722,7 @@ case class AlignmentRecordRDD(
    */
   def realignIndels(
     consensusModel: ConsensusGenerator = new ConsensusGeneratorFromReads,
-    isSorted: Boolean = isSorted,
+    isSorted: Boolean = false,
     maxIndelSize: Int = 500,
     maxConsensusNumber: Int = 30,
     lodThreshold: Double = 5.0,

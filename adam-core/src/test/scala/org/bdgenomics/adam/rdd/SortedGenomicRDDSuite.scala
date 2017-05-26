@@ -68,13 +68,16 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
   sparkTest("testing that partition and sort provide correct outputs") {
     // load in a generic bam
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
+
     // sort and make into 16 partitions
-    val y = x.sortLexicographically(16)
+    val y = x.sortLexicographically(storePartitionMap = true, partitions = 16)
     assert(isSorted(y.optPartitionMap.get))
+
     // sort and make into 32 partitions
-    val z = x.sortLexicographically(32)
+    val z = x.sortLexicographically(storePartitionMap = true, partitions = 32)
     assert(isSorted(z.optPartitionMap.get))
     val arrayRepresentationOfZ = z.rdd.collect
+
     //verify sort worked on actual values
     for (currentArray <- List(y.rdd.collect, z.rdd.collect)) {
       for (i <- currentArray.indices) {
@@ -96,8 +99,8 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
   sparkTest("testing copartition maintains or adds sort") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(16)
-    val y = x.sortLexicographically(32)
+    val z = x.sortLexicographically(storePartitionMap = true, partitions = 16)
+    val y = x.sortLexicographically(storePartitionMap = true, partitions = 32)
     val a = x.copartitionByReferenceRegion(y)
     val b = z.copartitionByReferenceRegion(y)
 
@@ -234,7 +237,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     val genotypes =
       GenotypeRDD(sc.parallelize(genotypeRddBuilder),
         sd, Seq(), DefaultHeaderLines.allHeaderLines)
-        .sortLexicographically(2)
+        .sortLexicographically(storePartitionMap = true, partitions = 2)
     genotypes.rdd.mapPartitionsWithIndex((idx, iter) => {
       iter.map(f => (idx, f))
     }).collect
@@ -260,7 +263,8 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
   sparkTest("testing that sorted shuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
     // sort and make into 16 partitions
-    val z = x.sortLexicographically(1600)
+    val z =
+      x.sortLexicographically(storePartitionMap = true, partitions = 1600)
 
     // perform join using 1600 partitions
     // 1600 is much more than the amount of data in the GenomicRDD
@@ -278,7 +282,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
   sparkTest("testing that sorted fullOuterShuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(16)
+    val z = x.sortLexicographically(storePartitionMap = true, partitions = 16)
     val d = x.fullOuterShuffleRegionJoin(z, Some(1))
     val e = z.fullOuterShuffleRegionJoin(x, Some(1))
 
@@ -289,7 +293,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
   sparkTest("testing that sorted rightOuterShuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(1)
+    val z = x.sortLexicographically(storePartitionMap = true, partitions = 1)
     val f = z.rightOuterShuffleRegionJoin(x, Some(1)).rdd.collect
     val g = x.rightOuterShuffleRegionJoin(x).rdd.collect
 
@@ -300,7 +304,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
   sparkTest("testing that sorted leftOuterShuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(1)
+    val z = x.sortLexicographically(storePartitionMap = true, partitions = 1)
     val h = z.leftOuterShuffleRegionJoin(x, Some(1)).rdd
     val i = z.leftOuterShuffleRegionJoin(x).rdd
 
@@ -311,7 +315,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
   sparkTest("testing that we can persist the sorted knowledge") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(4)
+    val z = x.sortLexicographically(storePartitionMap = true, partitions = 4)
     val fileLocation = tmpLocation()
     val saveArgs = new JavaSaveArgs(fileLocation, asSingleFile = false)
     z.save(saveArgs, isSorted = true)
