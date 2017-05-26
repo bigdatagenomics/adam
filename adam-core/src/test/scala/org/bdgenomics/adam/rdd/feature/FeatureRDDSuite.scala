@@ -725,7 +725,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     assert(jRdd.rdd.partitions.length === 1)
     assert(jRdd0.rdd.partitions.length === 4)
 
-    val c = jRdd0.rdd.collect // FIXME
+    val c = jRdd.rdd.collect
     val c0 = jRdd0.rdd.collect
 
     assert(c.count(_._1.isDefined) === 20)
