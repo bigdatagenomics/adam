@@ -382,7 +382,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] {
    * @return Returns a new GenomicRDD containing only data that overlaps the
    *   querys region.
    */
-  def filterByOverlappingRegions(querys: List[ReferenceRegion]): U = {
+  def filterByOverlappingRegions(querys: Iterable[ReferenceRegion]): U = {
     replaceRdd(rdd.filter(elem => {
 
       val regions = getReferenceRegions(elem)
