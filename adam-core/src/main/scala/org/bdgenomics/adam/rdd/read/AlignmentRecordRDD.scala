@@ -617,6 +617,7 @@ case class AlignmentRecordRDD(
    * lexicographically.
    *
    * @return Returns a new RDD containing sorted reads.
+   *
    * @see sortReadsByReferencePositionAndIndex
    */
   def sortReadsByReferencePosition(): AlignmentRecordRDD = SortReads.time {
@@ -643,6 +644,7 @@ case class AlignmentRecordRDD(
    * that they are ordered in the SequenceDictionary.
    *
    * @return Returns a new RDD containing sorted reads.
+   *
    * @see sortReadsByReferencePosition
    */
   def sortReadsByReferencePositionAndIndex(): AlignmentRecordRDD = SortByIndex.time {
