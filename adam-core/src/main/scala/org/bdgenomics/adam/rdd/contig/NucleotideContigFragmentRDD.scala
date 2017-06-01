@@ -166,8 +166,6 @@ case class NucleotideContigFragmentRDD(
   }
 
   /**
-   * Returns the regions that this fragment covers.
-   *
    * Save nucleotide contig fragments as Parquet or FASTA.
    *
    * If filename ends in .fa or .fasta, saves as Fasta. If not, saves fragments

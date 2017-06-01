@@ -247,7 +247,7 @@ case class AlignmentRecordRDD(
   }
 
   /**
-   * Returns all reference regions that overlap this alignment record.
+   * Returns all reference regions that overlap this read.
    *
    * If a read is unaligned, it covers no reference region. If a read is aligned
    * we expect it to cover a single region. A chimeric read would cover multiple
