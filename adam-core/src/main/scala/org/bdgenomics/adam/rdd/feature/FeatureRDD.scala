@@ -341,7 +341,13 @@ case class FeatureRDD(rdd: RDD[Feature],
    *   method will always return a Seq of exactly one ReferenceRegion.
    */
   protected def getReferenceRegions(elem: Feature): Seq[ReferenceRegion] = {
-    Seq(ReferenceRegion.unstranded(elem))
+    Seq({
+      try {
+        ReferenceRegion.stranded(elem)
+      } catch {
+        case e: IllegalArgumentException => ReferenceRegion.unstranded(elem)
+      }
+    })
   }
 
   /**
