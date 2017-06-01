@@ -253,7 +253,8 @@ case class CoverageRDD(rdd: RDD[Coverage],
    * @param elem The Coverage to get an underlying region for.
    * @return Sequence of ReferenceRegions extracted from Coverage.
    */
-  protected def getReferenceRegions(elem: Coverage): Seq[ReferenceRegion] = {
+  protected def getReferenceRegions(elem: Coverage,
+                                    stranded: Boolean = false): Seq[ReferenceRegion] = {
     Seq(ReferenceRegion(elem.contigName, elem.start, elem.end))
   }
 

@@ -278,7 +278,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * @param elem The variant context to get a reference region for.
    * @return Returns a seq containing the position key from the variant context.
    */
-  protected def getReferenceRegions(elem: VariantContext): Seq[ReferenceRegion] = {
+  protected def getReferenceRegions(elem: VariantContext,
+                                    stranded: Boolean = false): Seq[ReferenceRegion] = {
     Seq(ReferenceRegion(elem.position))
   }
 }

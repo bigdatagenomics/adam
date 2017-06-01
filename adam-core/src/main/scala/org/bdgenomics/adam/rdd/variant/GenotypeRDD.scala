@@ -140,7 +140,8 @@ case class GenotypeRDD(rdd: RDD[Genotype],
    * @param elem The genotype to get a reference region for.
    * @return Returns the singular region this genotype covers.
    */
-  protected def getReferenceRegions(elem: Genotype): Seq[ReferenceRegion] = {
+  protected def getReferenceRegions(elem: Genotype,
+                                    stranded: Boolean = false): Seq[ReferenceRegion] = {
     Seq(ReferenceRegion(elem))
   }
 }

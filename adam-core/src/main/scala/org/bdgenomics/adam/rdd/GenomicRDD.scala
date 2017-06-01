@@ -478,7 +478,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     newRdd: RDD[T],
     newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): U
 
-  protected def getReferenceRegions(elem: T): Seq[ReferenceRegion]
+  protected def getReferenceRegions(
+    elem: T,
+    stranded: Boolean = false): Seq[ReferenceRegion]
 
   protected def flattenRddByRegions(): RDD[(ReferenceRegion, T)] = {
     rdd.flatMap(elem => {
@@ -692,7 +694,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       buildTree(flattenRddByRegions()),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
-      kv => { (kv._1.flatMap(getReferenceRegions) ++ genomicRdd.getReferenceRegions(kv._2)).toSeq })
+      kv => {
+        (kv._1.flatMap(getReferenceRegions(_)) ++
+          genomicRdd.getReferenceRegions(kv._2)).toSeq
+      })
       .asInstanceOf[GenomicRDD[(Iterable[T], X), Z]]
   }
 
@@ -1185,7 +1190,8 @@ private case class GenericGenomicRDD[T](
     IntervalArray(rdd)
   }
 
-  protected def getReferenceRegions(elem: T): Seq[ReferenceRegion] = {
+  protected def getReferenceRegions(elem: T,
+                                    stranded: Boolean = false): Seq[ReferenceRegion] = {
     regionFn(elem)
   }
 

@@ -340,14 +340,22 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @return Since a feature maps directly to a single genomic region, this
    *   method will always return a Seq of exactly one ReferenceRegion.
    */
-  protected def getReferenceRegions(elem: Feature): Seq[ReferenceRegion] = {
-    Seq({
-      try {
-        ReferenceRegion.stranded(elem)
-      } catch {
-        case e: IllegalArgumentException => ReferenceRegion.unstranded(elem)
+  protected def getReferenceRegions(elem: Feature, stranded: Boolean = false): Seq[ReferenceRegion] = {
+    stranded match {
+      case true => {
+        Seq({
+          try {
+            ReferenceRegion.stranded(elem)
+          } catch {
+            case e: Throwable => ReferenceRegion.unstranded(elem)
+          }
+        })
       }
-    })
+      case false => {
+        Seq(ReferenceRegion.unstranded(elem))
+      }
+    }
+
   }
 
   /**

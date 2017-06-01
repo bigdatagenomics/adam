@@ -257,7 +257,8 @@ case class AlignmentRecordRDD(
    * @param elem Read to produce regions for.
    * @return The seq of reference regions this read covers.
    */
-  protected def getReferenceRegions(elem: AlignmentRecord): Seq[ReferenceRegion] = {
+  protected def getReferenceRegions(elem: AlignmentRecord,
+                                    stranded: Boolean = false): Seq[ReferenceRegion] = {
     ReferenceRegion.opt(elem).toSeq
   }
 

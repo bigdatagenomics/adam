@@ -155,7 +155,8 @@ case class NucleotideContigFragmentRDD(
    *   reference region. If the fragment start position and name is not defined,
    *   returns no regions.
    */
-  protected def getReferenceRegions(elem: NucleotideContigFragment): Seq[ReferenceRegion] = {
+  protected def getReferenceRegions(elem: NucleotideContigFragment,
+                                    stranded: Boolean = false): Seq[ReferenceRegion] = {
     ReferenceRegion(elem).toSeq
   }
 

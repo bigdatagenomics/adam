@@ -207,7 +207,8 @@ case class FragmentRDD(rdd: RDD[Fragment],
    * @param elem The Fragment to get the region from.
    * @return Returns all regions covered by this fragment.
    */
-  protected def getReferenceRegions(elem: Fragment): Seq[ReferenceRegion] = {
+  protected def getReferenceRegions(elem: Fragment,
+                                    stranded: Boolean = false): Seq[ReferenceRegion] = {
     elem.getAlignments
       .flatMap(r => ReferenceRegion.opt(r))
       .toSeq

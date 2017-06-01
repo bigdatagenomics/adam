@@ -143,7 +143,8 @@ case class VariantRDD(rdd: RDD[Variant],
    * @param elem The variant to get a reference region for.
    * @return Returns the singular region this variant covers.
    */
-  protected def getReferenceRegions(elem: Variant): Seq[ReferenceRegion] = {
+  protected def getReferenceRegions(elem: Variant,
+                                    stranded: Boolean = false): Seq[ReferenceRegion] = {
     Seq(ReferenceRegion(elem))
   }
 }
