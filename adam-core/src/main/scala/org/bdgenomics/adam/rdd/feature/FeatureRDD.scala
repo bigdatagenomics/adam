@@ -336,27 +336,21 @@ case class FeatureRDD(rdd: RDD[Feature],
   }
 
   /**
+   * Returns all reference regions that overlap this feature.
+   *
    * @param elem The Feature to get an underlying region for.
+   * @param stranded Whether or not to report stranded data for each Feature
+   *   such that true reports stranded data and false does not.
    * @return Since a feature maps directly to a single genomic region, this
    *   method will always return a Seq of exactly one ReferenceRegion.
    */
   protected def getReferenceRegions(elem: Feature,
                                     stranded: Boolean = false): Seq[ReferenceRegion] = {
-    stranded match {
-      case true => {
-        Seq({
-          try {
-            ReferenceRegion.stranded(elem)
-          } catch {
-            case e: IllegalArgumentException => ReferenceRegion.unstranded(elem)
-          }
-        })
-      }
-      case false => {
-        Seq(ReferenceRegion.unstranded(elem))
-      }
+    if (stranded && elem.getStrand != null) {
+      Seq(ReferenceRegion.stranded(elem))
+    } else {
+      Seq(ReferenceRegion.unstranded(elem))
     }
-
   }
 
   /**

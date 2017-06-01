@@ -205,12 +205,25 @@ case class FragmentRDD(rdd: RDD[Fragment],
    * the hull of the underlying element.
    *
    * @param elem The Fragment to get the region from.
+   * @param stranded Whether or not to report stranded data for each Fragment
+   *   such that true reports stranded data and false does not.
    * @return Returns all regions covered by this fragment.
    */
   protected def getReferenceRegions(elem: Fragment,
                                     stranded: Boolean = false): Seq[ReferenceRegion] = {
-    elem.getAlignments
-      .flatMap(r => ReferenceRegion.opt(r))
-      .toSeq
+    if (stranded) {
+      elem.getAlignments
+        .map(r => {
+          if (r.getReadMapped && r.getReadNegativeStrand != null) {
+            ReferenceRegion.stranded(r)
+          } else {
+            ReferenceRegion.unstranded(r)
+          }
+        })
+    } else {
+      elem.getAlignments
+        .flatMap(r => ReferenceRegion.opt(r))
+        .toSeq
+    }
   }
 }

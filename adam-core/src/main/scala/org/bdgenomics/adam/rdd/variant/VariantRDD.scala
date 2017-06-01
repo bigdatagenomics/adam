@@ -140,7 +140,11 @@ case class VariantRDD(rdd: RDD[Variant],
   }
 
   /**
+   * Returns the regions that this Variant covers.
+   *
    * @param elem The variant to get a reference region for.
+   * @param stranded Whether or not to report stranded data for each Variant
+   *   such that true reports stranded data and false does not.
    * @return Returns the singular region this variant covers.
    */
   protected def getReferenceRegions(elem: Variant,

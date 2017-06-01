@@ -247,7 +247,7 @@ case class AlignmentRecordRDD(
   }
 
   /**
-   * Returns all reference regions that overlap this read.
+   * Returns all reference regions that overlap this alignment record.
    *
    * If a read is unaligned, it covers no reference region. If a read is aligned
    * we expect it to cover a single region. A chimeric read would cover multiple
@@ -255,11 +255,17 @@ case class AlignmentRecordRDD(
    * split alignments are stored in multiple separate reads.
    *
    * @param elem Read to produce regions for.
+   * @param stranded Whether or not to report stranded data for each
+   *   AlignmentRecord such that true reports stranded data and false does not.
    * @return The seq of reference regions this read covers.
    */
   protected def getReferenceRegions(elem: AlignmentRecord,
                                     stranded: Boolean = false): Seq[ReferenceRegion] = {
-    ReferenceRegion.opt(elem).toSeq
+    if (stranded && elem.getReadNegativeStrand != null) {
+      Seq(ReferenceRegion.stranded(elem))
+    } else {
+      ReferenceRegion.opt(elem).toSeq
+    }
   }
 
   /**

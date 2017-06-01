@@ -150,7 +150,12 @@ case class NucleotideContigFragmentRDD(
   }
 
   /**
+   * Returns all reference regions that overlap this NucleotideContigFragment.
+   *
    * @param elem Fragment to extract a region from.
+   * @param stranded Whether or not to report stranded data for each
+   *   NucleotideContigFragment such that true reports stranded data and false
+   *   does not.
    * @return If a fragment is aligned to a reference location, returns a single
    *   reference region. If the fragment start position and name is not defined,
    *   returns no regions.
@@ -161,6 +166,8 @@ case class NucleotideContigFragmentRDD(
   }
 
   /**
+   * Returns the regions that this fragment covers.
+   *
    * Save nucleotide contig fragments as Parquet or FASTA.
    *
    * If filename ends in .fa or .fasta, saves as Fasta. If not, saves fragments
