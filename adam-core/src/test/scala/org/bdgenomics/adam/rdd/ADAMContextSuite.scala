@@ -551,4 +551,91 @@ class ADAMContextSuite extends ADAMFunSuite {
     val reads = fragments.toReads
     assert(reads.rdd.count === 6)
   }
+
+  sparkTest("load HTSJDK sequence dictionary") {
+    val path = testFile("hs37d5.dict")
+    val sequences = sc.loadSequenceDictionary(path)
+
+    assert(sequences.records.size === 85)
+    assert(sequences("1").isDefined)
+    assert(sequences("1").get.length === 249250621L)
+    assert(sequences("NC_007605").isDefined)
+    assert(sequences("NC_007605").get.length === 171823L)
+  }
+
+  sparkTest("load Bedtools .genome file as sequence dictionary") {
+    val path = testFile("hg19.genome")
+    val sequences = sc.loadSequenceDictionary(path)
+
+    assert(sequences.records.size === 93)
+    assert(sequences("chr1").isDefined)
+    assert(sequences("chr1").get.length === 249250621L)
+    assert(sequences("chr17_gl000206_random").isDefined)
+    assert(sequences("chr17_gl000206_random").get.length === 41001L)
+  }
+
+  sparkTest("load Bedtools .genome.txt file as sequence dictionary") {
+    val path = testFile("hg19.genome.txt")
+    val sequences = sc.loadSequenceDictionary(path)
+
+    assert(sequences.records.size === 93)
+    assert(sequences("chr1").isDefined)
+    assert(sequences("chr1").get.length === 249250621L)
+    assert(sequences("chr17_gl000206_random").isDefined)
+    assert(sequences("chr17_gl000206_random").get.length === 41001L)
+  }
+
+  sparkTest("load UCSC Genome Browser chromInfo.txt file as sequence dictionary") {
+    val path = testFile("chromInfo.txt")
+    val sequences = sc.loadSequenceDictionary(path)
+
+    assert(sequences.records.size === 93)
+    assert(sequences("chr1").isDefined)
+    assert(sequences("chr1").get.length === 249250621L)
+    assert(sequences("chr1").get.url.get === "/gbdb/hg19/hg19.2bit")
+    assert(sequences("chr17_ctg5_hap1").isDefined)
+    assert(sequences("chr17_ctg5_hap1").get.length === 1680828L)
+    assert(sequences("chr17_ctg5_hap1").get.url.get === "/gbdb/hg19/hg19.2bit")
+  }
+
+  sparkTest("load unrecognized file extension as sequence dictionary fails") {
+    val path = testFile("unmapped.sam")
+    intercept[IllegalArgumentException] {
+      sc.loadSequenceDictionary(path)
+    }
+  }
+
+  sparkTest("load BED features with Bedtools .genome file as sequence dictionary") {
+    val sdPath = testFile("hg19.genome") // uses "chr1"
+    val sd = sc.loadSequenceDictionary(sdPath)
+
+    val path = testFile("gencode.v7.annotation.trunc10.bed") // uses "chr1"
+    val featureRdd = sc.sc.loadFeatures(path, optSequenceDictionary = Some(sd))
+    val features: RDD[Feature] = featureRdd.rdd
+    assert(features.count === 10)
+
+    val sequences = featureRdd.sequences
+    assert(sequences.records.size === 93)
+    assert(sequences("chr1").isDefined)
+    assert(sequences("chr1").get.length === 249250621L)
+    assert(sequences("chr17_gl000206_random").isDefined)
+    assert(sequences("chr17_gl000206_random").get.length === 41001L)
+  }
+
+  sparkTest("load BED features with Bedtools .genome file as sequence dictionary, no matching features") {
+    val sdPath = testFile("hg19.genome") // uses "chr1"
+    val sd = sc.loadSequenceDictionary(sdPath)
+
+    val path = testFile("dvl1.200.bed") // uses "1"
+    val featureRdd = sc.sc.loadFeatures(path, optSequenceDictionary = Some(sd))
+    val features: RDD[Feature] = featureRdd.rdd
+    assert(features.count === 197)
+
+    val sequences = featureRdd.sequences
+    assert(sequences.records.size === 93)
+    assert(sequences("chr1").isDefined)
+    assert(sequences("chr1").get.length === 249250621L)
+    assert(sequences("chr17_gl000206_random").isDefined)
+    assert(sequences("chr17_gl000206_random").get.length === 41001L)
+  }
 }
