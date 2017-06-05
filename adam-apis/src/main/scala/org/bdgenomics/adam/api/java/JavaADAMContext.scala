@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.apis.java
+package org.bdgenomics.adam.api.java
 
 import org.apache.spark.api.java.JavaSparkContext
 import org.bdgenomics.adam.rdd.ADAMContext

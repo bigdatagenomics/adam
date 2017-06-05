@@ -15,29 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.apis.java;
+package org.bdgenomics.adam.api.java;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.feature.FeatureRDD;
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD;
 
 /**
- * A simple test class for the JavaADAMRDD/Context. Writes an RDD of features to
+ * A simple test class for the JavaADAMRDD/Context. Writes an RDD of fragments to
  * disk and reads it back.
  */
-final class JavaADAMFeatureConduit {
-    public static FeatureRDD conduit(final FeatureRDD recordRdd,
-                                     final ADAMContext ac) throws IOException {
+final class JavaADAMFragmentConduit {
+    public static FragmentRDD conduit(final FragmentRDD recordRdd,
+                                      final ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
-        String fileName = tempDir.toString() + "/testRdd.feature.adam";
-        recordRdd.save(fileName, false, false);
+        String fileName = tempDir.toString() + "/testRdd.fragment.adam";
+        recordRdd.save(fileName);
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(ac);
-        return jac.loadFeatures(fileName);
+        return jac.loadFragments(fileName);
     }
 }
