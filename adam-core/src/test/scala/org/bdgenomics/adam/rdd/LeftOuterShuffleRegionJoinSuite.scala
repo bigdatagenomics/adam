@@ -23,6 +23,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   SequenceRecord
 }
+import org.bdgenomics.adam.rdd.settheory.LeftOuterShuffleRegionJoin
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 class LeftOuterShuffleRegionJoinSuite(partitionMap: Seq[Option[(ReferenceRegion, ReferenceRegion)]])

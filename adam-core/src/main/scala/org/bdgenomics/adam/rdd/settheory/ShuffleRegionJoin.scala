@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.rdd.settheory
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
@@ -33,7 +33,7 @@ import scala.reflect.ClassTag
  *   join.
  */
 sealed abstract class ShuffleRegionJoin[T: ClassTag, U: ClassTag, RT, RU]
-    extends RegionJoin[T, U, RT, RU] {
+    extends SetTheoryBetweenCollections[T, U, RT, RU] {
 
   protected def advanceCache(cache: SetTheoryCache[U, RT, RU],
                              right: BufferedIterator[(ReferenceRegion, U)],
@@ -44,8 +44,6 @@ sealed abstract class ShuffleRegionJoin[T: ClassTag, U: ClassTag, RT, RU]
                                 currentLeft: T): Iterable[(RT, RU)]
   protected def finalizeHits(cache: SetTheoryCache[U, RT, RU],
                              right: BufferedIterator[(ReferenceRegion, U)]): Iterable[(RT, RU)]
-  protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
-                        right: Iterator[(ReferenceRegion, U)]): Iterator[(RT, RU)]
 
   protected val leftRdd: RDD[(ReferenceRegion, T)]
   protected val rightRdd: RDD[(ReferenceRegion, U)]
@@ -374,7 +372,6 @@ sealed trait VictimlessSortedIntervalPartitionJoin[T, U, RT, RU]
    * and reassigned the pointers every time. We fixed this by using trimStart()
    * and ++=() to improve performance. Overall, we see roughly 25% improvement
    * in runtime by doing things this way.
-   *
    * @param cache The cache for this partition.
    * @param to The next region in the left iterator.
    */

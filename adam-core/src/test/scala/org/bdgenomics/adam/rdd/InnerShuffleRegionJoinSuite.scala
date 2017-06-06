@@ -18,6 +18,7 @@
 package org.bdgenomics.adam.rdd
 
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
+import org.bdgenomics.adam.rdd.settheory.InnerShuffleRegionJoin
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
