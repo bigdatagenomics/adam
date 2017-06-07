@@ -111,11 +111,11 @@ object VariantContextConverter {
 
   private val OPT_NON_REF = Some(Allele.create("<NON_REF>", false))
 
-  private def optNonRef(v: Variant): Option[Allele] = {
-    if (v.getAlternateAllele != null) {
-      None
-    } else {
+  private def optNonRef(v: Variant, hasNonRefModel: Boolean): Option[Allele] = {
+    if (hasNonRefModel || v.getAlternateAllele == null) {
       OPT_NON_REF
+    } else {
+      None
     }
   }
 
@@ -123,13 +123,15 @@ object VariantContextConverter {
    * Converts the alleles in a variant into a Java collection of htsjdk alleles.
    *
    * @param v Avro model of the variant at a site.
+   * @param hasNonRefModel Does this site have non-reference model likelihoods
+   *   attached?
    * @return Returns a Java collection representing the reference allele and any
    *   alternate allele at the site.
    */
-  private def convertAlleles(v: Variant): java.util.Collection[Allele] = {
+  private def convertAlleles(v: Variant, hasNonRefModel: Boolean): java.util.Collection[Allele] = {
     val asSeq = Seq(convertAlleleOpt(v.getReferenceAllele, true),
       convertAlleleOpt(v.getAlternateAllele),
-      optNonRef(v)).flatten
+      optNonRef(v, hasNonRefModel)).flatten
 
     asSeq
   }
@@ -1929,11 +1931,13 @@ class VariantContextConverter(
 
     def convert(vc: ADAMVariantContext): HtsjdkVariantContext = {
       val v = vc.variant.variant
+      val hasNonRefAlleles = vc.genotypes
+        .exists(_.getNonReferenceLikelihoods.length != 0)
       val builder = new VariantContextBuilder()
         .chr(v.getContigName)
         .start(v.getStart + 1)
         .stop(v.getEnd)
-        .alleles(VariantContextConverter.convertAlleles(v))
+        .alleles(VariantContextConverter.convertAlleles(v, hasNonRefAlleles))
 
       // bind the conversion functions and fold
       val convertedWithVariants = variantExtractFns.foldLeft(builder)(
@@ -2059,10 +2063,8 @@ class VariantContextConverter(
           throw t
         } else {
           if (stringency == ValidationStringency.LENIENT) {
-            log.error("Encountered error when converting variant context with variant: \n" +
-              vc.variant.variant + "\n" +
-              "and genotypes: \n" +
-              vc.genotypes.mkString("\n"))
+            log.error(
+              "Encountered error %s when converting variant context with variant:\n%s\nand genotypes: \n%s".format(t, vc.variant.variant, vc.genotypes.mkString("\n")))
           }
           None
         }
