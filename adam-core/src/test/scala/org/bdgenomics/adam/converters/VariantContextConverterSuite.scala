@@ -2450,7 +2450,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     val vcb = htsjdkSNVBuilder
     val gt = GenotypeBuilder.create("NA12878",
       vcb.getAlleles(),
-      Map[String, java.lang.Object](("A_INT", "5,10,15,20")))
+      Map[String, java.lang.Object](("A_INT", "10,15,20")))
     val vc = vcb.genotypes(gt)
       .make
 
