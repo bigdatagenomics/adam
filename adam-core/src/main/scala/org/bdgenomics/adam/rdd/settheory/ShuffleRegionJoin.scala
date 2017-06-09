@@ -56,21 +56,21 @@ sealed abstract class ShuffleRegionJoin[T: ClassTag, U: ClassTag, RT, RU]
   }
 
   override protected def prepare(): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, U)]) = {
-    
+
     val (preparedLeft, destinationPartitionMap) = {
-      if(optPartitionMap.isDefined) {
-        (leftRdd, optPartitionMap.get.map(_.get))
+      if (optPartitionMap.isDefined) {
+        (leftRdd, optPartitionMap.get)
       } else {
         val sortedLeft = leftRdd.sortByKey()
         val partitionMap =
           sortedLeft.mapPartitions(getRegionBoundsFromPartition).collect
-        (sortedLeft, partitionMap.map(_.get))
+        (sortedLeft, partitionMap)
       }
     }
 
     val adjustedPartitionMapWithIndex =
-    // the zipWithIndex gives us the destination partition ID
-      destinationPartitionMap.zipWithIndex.map(g => {
+      // the zipWithIndex gives us the destination partition ID
+      destinationPartitionMap.flatten.zipWithIndex.map(g => {
         val (firstRegion, secondRegion, index) = (g._1._1, g._1._2, g._2)
         // in the case where we span multiple referenceNames using
         // IntervalArray.get with requireOverlap set to false will assign all

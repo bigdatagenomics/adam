@@ -808,7 +808,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       txTag: ClassTag[(T, X)]): GenomicRDD[(T, X), Z] = InnerShuffleJoin.time {
 
     val preparedLeft =
-      if(!isSorted) {
+      if (!isSorted) {
         sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
           storePartitionMap = true)
       } else {
@@ -860,7 +860,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       otxTag: ClassTag[(Option[T], X)]): GenomicRDD[(Option[T], X), Z] = RightOuterShuffleJoin.time {
 
     val preparedLeft =
-      if(!isSorted) {
+      if (!isSorted) {
         sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
           storePartitionMap = true)
       } else {
@@ -913,7 +913,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       toxTag: ClassTag[(T, Option[X])]): GenomicRDD[(T, Option[X]), Z] = LeftOuterShuffleJoin.time {
 
     val preparedLeft =
-      if(!isSorted) {
+      if (!isSorted) {
         sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
           storePartitionMap = true)
       } else {
@@ -965,7 +965,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       otoxTag: ClassTag[(Option[T], Option[X])]): GenomicRDD[(Option[T], Option[X]), Z] = FullOuterShuffleJoin.time {
 
     val preparedLeft =
-      if(!isSorted) {
+      if (!isSorted) {
         sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
           storePartitionMap = true)
       } else {
@@ -1018,7 +1018,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       tixTag: ClassTag[(T, Iterable[X])]): GenomicRDD[(T, Iterable[X]), Z] = ShuffleJoinAndGroupByLeft.time {
 
     val preparedLeft =
-      if(!isSorted) {
+      if (!isSorted) {
         sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
           storePartitionMap = true)
       } else {
@@ -1073,7 +1073,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       otixTag: ClassTag[(Option[T], Iterable[X])]): GenomicRDD[(Option[T], Iterable[X]), Z] = RightOuterShuffleJoinAndGroupByLeft.time {
 
     val preparedLeft =
-      if(!isSorted) {
+      if (!isSorted) {
         sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
           storePartitionMap = true)
       } else {
