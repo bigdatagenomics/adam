@@ -101,8 +101,8 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
     val z = x.sortLexicographically(storePartitionMap = true, partitions = 16)
     val y = x.sortLexicographically(storePartitionMap = true, partitions = 32)
-    val a = x.copartitionByReferenceRegion(y)
-    val b = z.copartitionByReferenceRegion(y)
+    val a = x.copartitionByReferenceRegion(y, 0L)
+    val b = z.copartitionByReferenceRegion(y, 0L)
 
     assert(isSorted(a.optPartitionMap.get))
     assert(isSorted(b.optPartitionMap.get))
@@ -242,7 +242,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
       iter.map(f => (idx, f))
     }).collect
     val features = FeatureRDD(sc.parallelize(featureRddBuilder), sd)
-    val x = features.copartitionByReferenceRegion(genotypes)
+    val x = features.copartitionByReferenceRegion(genotypes, 0L)
     val z = x.rdd.mapPartitionsWithIndex((idx, iter) => {
       if (idx == 0 && iter.size != 6) {
         Iterator(true)
