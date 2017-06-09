@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.variant
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.{
   VCFCodec,
+  VCFHeader,
   VCFHeaderLine
 }
 import htsjdk.tribble.readers.{
@@ -27,16 +28,18 @@ import htsjdk.tribble.readers.{
   AsciiLineReaderIterator
 }
 import java.io.InputStream
+import org.bdgenomics.adam.converters.VariantContextConverter._
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.VariantContext
 import org.bdgenomics.adam.rdd.OutFormatter
+import org.bdgenomics.utils.misc.Logging
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 
 /**
  * OutFormatter that reads streaming VCF.
  */
-case class VCFOutFormatter(headerLines: Seq[VCFHeaderLine]) extends OutFormatter[VariantContext] {
+case class VCFOutFormatter extends OutFormatter[VariantContext] with Logging {
 
   /**
    * Reads VariantContexts from an input stream. Autodetects VCF format.
@@ -46,18 +49,20 @@ case class VCFOutFormatter(headerLines: Seq[VCFHeaderLine]) extends OutFormatter
    */
   def read(is: InputStream): Iterator[VariantContext] = {
 
-    // make converter and empty dicts
-    val converter = new VariantContextConverter(headerLines,
-      ValidationStringency.LENIENT)
-
     // make line reader iterator
     val lri = new AsciiLineReaderIterator(new AsciiLineReader(is))
 
     // make reader
     val codec = new VCFCodec()
 
-    // read the header, and then throw it away
-    val header = codec.readActualHeader(lri)
+    // read the header
+    val header = codec.readActualHeader(lri).asInstanceOf[VCFHeader]
+
+    // merge header lines with our supported header lines
+    val lines = cleanAndMixInSupportedLines(headerLines(header), ValidationStringency.LENIENT, log)
+
+    // make converter
+    val converter = new VariantContextConverter(lines, ValidationStringency.LENIENT)
 
     @tailrec def convertIterator(iter: AsciiLineReaderIterator,
                                  records: ListBuffer[VariantContext] = ListBuffer.empty): Iterator[VariantContext] = {
