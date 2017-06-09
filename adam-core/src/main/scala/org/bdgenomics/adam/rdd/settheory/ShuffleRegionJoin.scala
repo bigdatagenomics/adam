@@ -56,8 +56,7 @@ sealed abstract class ShuffleRegionJoin[T: ClassTag, U: ClassTag, RT, RU]
   }
 
   override protected def prepare(): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, U)]) = {
-    //(leftRdd, rightRdd)
-
+    
     val (preparedLeft, destinationPartitionMap) = {
       if(optPartitionMap.isDefined) {
         (leftRdd, optPartitionMap.get.map(_.get))

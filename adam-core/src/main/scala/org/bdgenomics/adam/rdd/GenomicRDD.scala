@@ -809,7 +809,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
     val preparedLeft =
       if(!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length))
+        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
+          storePartitionMap = true)
       } else {
         this
       }
@@ -860,7 +861,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
     val preparedLeft =
       if(!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length))
+        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
+          storePartitionMap = true)
       } else {
         this
       }
@@ -912,7 +914,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
     val preparedLeft =
       if(!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length))
+        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
+          storePartitionMap = true)
       } else {
         this
       }
@@ -963,7 +966,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
     val preparedLeft =
       if(!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length))
+        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
+          storePartitionMap = true)
       } else {
         this
       }
@@ -1015,7 +1019,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
     val preparedLeft =
       if(!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length))
+        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
+          storePartitionMap = true)
       } else {
         this
       }
@@ -1069,7 +1074,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
     val preparedLeft =
       if(!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length))
+        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
+          storePartitionMap = true)
       } else {
         this
       }
