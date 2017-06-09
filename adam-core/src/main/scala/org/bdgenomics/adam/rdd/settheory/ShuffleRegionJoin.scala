@@ -19,6 +19,8 @@ package org.bdgenomics.adam.rdd.settheory
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.rdd.ManualRegionPartitioner
+import org.bdgenomics.utils.interval.array.IntervalArray
 import scala.reflect.ClassTag
 
 /**
@@ -54,7 +56,64 @@ sealed abstract class ShuffleRegionJoin[T: ClassTag, U: ClassTag, RT, RU]
   }
 
   override protected def prepare(): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, U)]) = {
-    (leftRdd, rightRdd)
+    //(leftRdd, rightRdd)
+
+    val (preparedLeft, destinationPartitionMap) = {
+      if(optPartitionMap.isDefined) {
+        (leftRdd, optPartitionMap.get.map(_.get))
+      } else {
+        val sortedLeft = leftRdd.sortByKey()
+        val partitionMap =
+          sortedLeft.mapPartitions(getRegionBoundsFromPartition).collect
+        (sortedLeft, partitionMap.map(_.get))
+      }
+    }
+
+    val adjustedPartitionMapWithIndex =
+    // the zipWithIndex gives us the destination partition ID
+      destinationPartitionMap.zipWithIndex.map(g => {
+        val (firstRegion, secondRegion, index) = (g._1._1, g._1._2, g._2)
+        // in the case where we span multiple referenceNames using
+        // IntervalArray.get with requireOverlap set to false will assign all
+        // the remaining regions to this partition, in addition to all the
+        // regions up to the start of the next partition.
+        if (firstRegion.referenceName != secondRegion.referenceName) {
+
+          // the first region is enough to represent the partition for
+          // IntervalArray.get.
+          (firstRegion, index)
+        } else {
+          // otherwise we just have the ReferenceRegion span from partition
+          // lower bound to upper bound.
+          // We cannot use the firstRegion bounds here because we may end up
+          // dropping data if it doesn't map anywhere.
+          (ReferenceRegion(
+            firstRegion.referenceName,
+            firstRegion.start,
+            secondRegion.end),
+            index)
+        }
+      })
+
+    // convert to an IntervalArray for fast range query
+    val partitionMapIntervals = IntervalArray(
+      adjustedPartitionMapWithIndex,
+      adjustedPartitionMapWithIndex.maxBy(_._1.width)._1.width,
+      sorted = true)
+
+    val preparedRight = {
+      rightRdd.mapPartitions(iter => {
+        iter.flatMap(f => {
+          val intervals = partitionMapIntervals.get(f._1.pad(threshold), requireOverlap = false)
+          intervals.map(g => ((f._1, g._2), f._2))
+        })
+      }, preservesPartitioning = true)
+        .repartitionAndSortWithinPartitions(
+          ManualRegionPartitioner(destinationPartitionMap.length))
+        .map(f => (f._1._1, f._2))
+    }
+
+    (preparedLeft, preparedRight)
   }
 }
 

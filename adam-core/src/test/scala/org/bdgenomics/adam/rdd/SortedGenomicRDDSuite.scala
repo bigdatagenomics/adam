@@ -97,19 +97,6 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     assert(partitionTupleCounts.sum == partitionTupleCounts2.sum)
   }
 
-  sparkTest("testing copartition maintains or adds sort") {
-    val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(storePartitionMap = true, partitions = 16)
-    val y = x.sortLexicographically(storePartitionMap = true, partitions = 32)
-    val a = x.copartitionByReferenceRegion(y, 0L)
-    val b = z.copartitionByReferenceRegion(y, 0L)
-
-    assert(isSorted(a.optPartitionMap.get))
-    assert(isSorted(b.optPartitionMap.get))
-
-    val starts = z.rdd.map(f => f.getStart)
-  }
-
   sparkTest("testing that we don't drop any data on the right side even though it doesn't map to a partition on the left") {
     // testing the left side with an extremely large region that is
     // not the last record on a partition
@@ -242,7 +229,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
       iter.map(f => (idx, f))
     }).collect
     val features = FeatureRDD(sc.parallelize(featureRddBuilder), sd)
-    val x = features.copartitionByReferenceRegion(genotypes, 0L)
+    val x = features
     val z = x.rdd.mapPartitionsWithIndex((idx, iter) => {
       if (idx == 0 && iter.size != 6) {
         Iterator(true)
