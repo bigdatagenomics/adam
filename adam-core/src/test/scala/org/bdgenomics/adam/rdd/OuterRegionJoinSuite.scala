@@ -17,16 +17,16 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.models.{ RecordGroupDictionary, SequenceDictionary, ReferenceRegion }
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
 
 trait OuterRegionJoinSuite extends ADAMFunSuite {
 
-  def runJoin(leftRdd: RDD[(ReferenceRegion, AlignmentRecord)],
-              rightRdd: RDD[(ReferenceRegion, AlignmentRecord)]): RDD[(Option[AlignmentRecord], AlignmentRecord)]
+  def runJoin(leftRdd: AlignmentRecordRDD,
+              rightRdd: AlignmentRecordRDD): RDD[(Option[AlignmentRecord], AlignmentRecord)]
 
   sparkTest("Ensure same reference regions get passed together") {
     val contig = Contig.newBuilder
@@ -53,10 +53,22 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
       .setEnd(11L)
       .build()
 
-    val rdd1 = sc.parallelize(Seq(record1, record3)).keyBy(ReferenceRegion.unstranded(_))
-    val rdd2 = sc.parallelize(Seq(record2, record4)).keyBy(ReferenceRegion.unstranded(_))
+    val baseRdd = sc.parallelize(Seq(record1, record3))
+    val recordsRdd = sc.parallelize(Seq(record2, record4))
 
-    val jrdd = runJoin(rdd1, rdd2).cache()
+    val baseGenomicRdd =
+      AlignmentRecordRDD(baseRdd,
+        SequenceDictionary.empty,
+        RecordGroupDictionary.empty,
+        None)
+
+    val recordsGenomicRdd =
+      AlignmentRecordRDD(recordsRdd,
+        SequenceDictionary.empty,
+        RecordGroupDictionary.empty,
+        None)
+
+    val jrdd = runJoin(baseGenomicRdd, recordsGenomicRdd).cache()
 
     assert(jrdd.count === 2)
     assert(jrdd.filter(_._1.isDefined).count === 1)
@@ -86,10 +98,22 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
     val baseRecord = AlignmentRecord.newBuilder(built).setCigar("4M").setEnd(5L).build()
     val record3 = AlignmentRecord.newBuilder(built).setStart(6L).setEnd(7L).build()
 
-    val baseRdd = sc.parallelize(Seq(baseRecord)).keyBy(ReferenceRegion.unstranded(_))
-    val recordsRdd = sc.parallelize(Seq(record1, record2, record3)).keyBy(ReferenceRegion.unstranded(_))
+    val baseRdd = sc.parallelize(Seq(baseRecord))
+    val recordsRdd = sc.parallelize(Seq(record1, record2, record3))
 
-    val jrdd = runJoin(baseRdd, recordsRdd).cache
+    val baseGenomicRdd =
+      AlignmentRecordRDD(baseRdd,
+        SequenceDictionary.empty,
+        RecordGroupDictionary.empty,
+        None)
+
+    val recordsGenomicRdd =
+      AlignmentRecordRDD(recordsRdd,
+        SequenceDictionary.empty,
+        RecordGroupDictionary.empty,
+        None)
+
+    val jrdd = runJoin(baseGenomicRdd, recordsGenomicRdd).cache()
 
     assert(jrdd.count() === 3)
     assert(jrdd.filter(_._1.isDefined).count == 2)

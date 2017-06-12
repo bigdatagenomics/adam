@@ -154,7 +154,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   // The (ReferenceRegion, ReferenceRegion) tuple contains the bounds of the 
   //   partition, such that the lowest start is first and the highest end is
   //   second.
-  protected val optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]
+  private[rdd] val optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]
 
   assert(optPartitionMap.isEmpty ||
     optPartitionMap.exists(_.length == rdd.partitions.length),
@@ -807,23 +807,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       xTag: ClassTag[X],
       txTag: ClassTag[(T, X)]): GenomicRDD[(T, X), Z] = InnerShuffleJoin.time {
 
-    val preparedLeft =
-      if (!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
-          storePartitionMap = true)
-      } else {
-        this
-      }
-
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
     GenericGenomicRDD[(T, X)](
-      InnerShuffleRegionJoin[T, X](
-        preparedLeft.flattenRddByRegions(),
-        genomicRdd.flattenRddByRegions(),
-        preparedLeft.optPartitionMap,
-        threshold).compute(),
+      InnerShuffleRegionJoin[T, U, X, Y](this, genomicRdd, threshold, optPartitions)
+        .compute(),
       combinedSequences,
       kv => {
         getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2)
@@ -859,23 +848,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       xTag: ClassTag[X],
       otxTag: ClassTag[(Option[T], X)]): GenomicRDD[(Option[T], X), Z] = RightOuterShuffleJoin.time {
 
-    val preparedLeft =
-      if (!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
-          storePartitionMap = true)
-      } else {
-        this
-      }
-
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
     GenericGenomicRDD[(Option[T], X)](
-      RightOuterShuffleRegionJoin[T, X](
-        preparedLeft.flattenRddByRegions(),
-        genomicRdd.flattenRddByRegions(),
-        preparedLeft.optPartitionMap,
-        threshold).compute(),
+      RightOuterShuffleRegionJoin[T, U, X, Y](this, genomicRdd, threshold, optPartitions)
+        .compute(),
       combinedSequences,
       kv => {
         Seq(kv._1.map(v => getReferenceRegions(v))).flatten.flatten ++
@@ -912,23 +890,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       xTag: ClassTag[X],
       toxTag: ClassTag[(T, Option[X])]): GenomicRDD[(T, Option[X]), Z] = LeftOuterShuffleJoin.time {
 
-    val preparedLeft =
-      if (!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
-          storePartitionMap = true)
-      } else {
-        this
-      }
-
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
     GenericGenomicRDD[(T, Option[X])](
-      LeftOuterShuffleRegionJoin[T, X](
-        preparedLeft.flattenRddByRegions(),
-        genomicRdd.flattenRddByRegions(),
-        preparedLeft.optPartitionMap,
-        threshold).compute(),
+      LeftOuterShuffleRegionJoin[T, U, X, Y](this, genomicRdd, threshold, optPartitions)
+        .compute(),
       combinedSequences,
       kv => {
         Seq(kv._2.map(v => genomicRdd.getReferenceRegions(v))).flatten.flatten ++
@@ -964,23 +931,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       xTag: ClassTag[X],
       otoxTag: ClassTag[(Option[T], Option[X])]): GenomicRDD[(Option[T], Option[X]), Z] = FullOuterShuffleJoin.time {
 
-    val preparedLeft =
-      if (!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
-          storePartitionMap = true)
-      } else {
-        this
-      }
-
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
     GenericGenomicRDD[(Option[T], Option[X])](
-      FullOuterShuffleRegionJoin[T, X](
-        preparedLeft.flattenRddByRegions(),
-        genomicRdd.flattenRddByRegions(),
-        preparedLeft.optPartitionMap,
-        threshold).compute(),
+      FullOuterShuffleRegionJoin[T, U, X, Y](this, genomicRdd, threshold, optPartitions)
+        .compute(),
       combinedSequences,
       kv => {
         Seq(kv._2.map(v => genomicRdd.getReferenceRegions(v)),
@@ -1017,23 +973,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       xTag: ClassTag[X],
       tixTag: ClassTag[(T, Iterable[X])]): GenomicRDD[(T, Iterable[X]), Z] = ShuffleJoinAndGroupByLeft.time {
 
-    val preparedLeft =
-      if (!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
-          storePartitionMap = true)
-      } else {
-        this
-      }
-
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
     GenericGenomicRDD[(T, Iterable[X])](
-      InnerShuffleRegionJoinAndGroupByLeft[T, X](
-        preparedLeft.flattenRddByRegions(),
-        genomicRdd.flattenRddByRegions(),
-        preparedLeft.optPartitionMap,
-        threshold).compute(),
+      InnerShuffleRegionJoinAndGroupByLeft[T, U, X, Y](this, genomicRdd, threshold, optPartitions)
+        .compute(),
       combinedSequences,
       kv => {
         (kv._2.flatMap(v => genomicRdd.getReferenceRegions(v)) ++
@@ -1072,23 +1017,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       xTag: ClassTag[X],
       otixTag: ClassTag[(Option[T], Iterable[X])]): GenomicRDD[(Option[T], Iterable[X]), Z] = RightOuterShuffleJoinAndGroupByLeft.time {
 
-    val preparedLeft =
-      if (!isSorted) {
-        sortLexicographically(optPartitions.getOrElse(rdd.partitions.length),
-          storePartitionMap = true)
-      } else {
-        this
-      }
-
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
     GenericGenomicRDD[(Option[T], Iterable[X])](
-      RightOuterShuffleRegionJoinAndGroupByLeft[T, X](
-        preparedLeft.flattenRddByRegions(),
-        genomicRdd.flattenRddByRegions(),
-        preparedLeft.optPartitionMap,
-        threshold).compute(),
+      RightOuterShuffleRegionJoinAndGroupByLeft[T, U, X, Y](this, genomicRdd, threshold, optPartitions)
+        .compute(),
       combinedSequences,
       kv => {
         (kv._2.flatMap(v => genomicRdd.getReferenceRegions(v)) ++

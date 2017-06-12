@@ -28,9 +28,11 @@ class ClosestSuite extends ADAMFunSuite {
       .sortLexicographically(storePartitionMap = true)
     val rightFile = sc.loadBed(resourceUrl("intersect_with_overlap_01.bed").getFile)
 
-    val x = ShuffleClosestRegion(leftFile.flattenRddByRegions(),
-      rightFile.flattenRddByRegions(), leftFile.optPartitionMap)
-      .compute()
+    val x =
+      ShuffleClosestRegion(leftFile,
+        rightFile,
+        leftFile.optPartitionMap).compute()
+
     val result = x.map(f =>
       (ReferenceRegion(f._1.getContigName, f._1.getStart, f._1.getEnd),
         f._2.map(g => ReferenceRegion(g.getContigName, g.getStart, g.getEnd))))

@@ -19,12 +19,13 @@ package org.bdgenomics.adam.rdd.settheory
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.rdd.GenomicRDD
 import scala.collection.mutable.ListBuffer
+import scala.reflect.ClassTag
 
-private[settheory] sealed abstract class SetTheory extends Serializable {
+private[settheory] sealed trait SetTheory extends Serializable {
 
   protected val threshold: Long
-  protected val optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]
 
   /**
    * The condition that should be met in order for the primitive to be
@@ -80,11 +81,12 @@ private[settheory] trait SetTheoryPrimitive extends SetTheory {
  * @tparam RT The return type for the left side row data.
  * @tparam RU The return type for the right side row data.
  */
-private[settheory] abstract class SetTheoryBetweenCollections[T, U, RT, RU] extends SetTheory {
+private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RU]
+    extends SetTheory {
 
-  protected val leftRdd: RDD[(ReferenceRegion, T)]
-  protected val rightRdd: RDD[(ReferenceRegion, U)]
-
+  protected val leftRdd: GenomicRDD[T, U]
+  protected val rightRdd: GenomicRDD[X, Y]
+  protected val optPartitions: Option[Int]
   /**
    * Post process and format the hits for a given left record.
    *
@@ -93,7 +95,7 @@ private[settheory] abstract class SetTheoryBetweenCollections[T, U, RT, RU] exte
    * @return The post processed hits.
    */
   protected def postProcessHits(currentLeft: (ReferenceRegion, T),
-                                iter: Iterable[(ReferenceRegion, U)]): Iterable[(RT, RU)]
+                                iter: Iterable[(ReferenceRegion, X)]): Iterable[(RT, RU)]
 
   /**
    * The condition by which a candidate is removed from the cache.
@@ -127,31 +129,30 @@ private[settheory] abstract class SetTheoryBetweenCollections[T, U, RT, RU] exte
    * @return The formatted resulting RDD.
    */
   protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
-                        right: Iterator[(ReferenceRegion, U)]): Iterator[(RT, RU)]
+                        right: Iterator[(ReferenceRegion, X)]): Iterator[(RT, RU)]
 
   /**
    * Prunes the cache based on the condition set in pruneCacheCondition.
    *
    * @see pruneCacheCondition
-   *
    * @param to The region to prune against.
    * @param cache The cache for this partition.
    */
   protected def pruneCache(to: ReferenceRegion,
-                           cache: SetTheoryCache[U, RT, RU])
+                           cache: SetTheoryCache[X, RT, RU])
 
   /**
    * Advances the cache based on the condition set in advanceCacheCondition
    *
    * @see advanceCacheCondition
-   *
    * @param right The right buffered iterator to pull from.
    * @param until The region to compare against.
    * @param cache The cache for this partition.
    */
-  protected def advanceCache(right: BufferedIterator[(ReferenceRegion, U)],
+  protected def advanceCache(right: BufferedIterator[(ReferenceRegion, X)],
                              until: ReferenceRegion,
-                             cache: SetTheoryCache[U, RT, RU])
+                             cache: SetTheoryCache[X, RT, RU])
+
   /**
    * Computes all victims for the partition.
    *
@@ -159,8 +160,8 @@ private[settheory] abstract class SetTheoryBetweenCollections[T, U, RT, RU] exte
    * @param right The right iterator.
    * @return The finalized hits for this partition.
    */
-  protected def finalizeHits(cache: SetTheoryCache[U, RT, RU],
-                             right: BufferedIterator[(ReferenceRegion, U)]): Iterable[(RT, RU)]
+  protected def finalizeHits(cache: SetTheoryCache[X, RT, RU],
+                             right: BufferedIterator[(ReferenceRegion, X)]): Iterable[(RT, RU)]
 
   /**
    * Prepares and partitions the left and right. Makes no assumptions about the
@@ -169,14 +170,14 @@ private[settheory] abstract class SetTheoryBetweenCollections[T, U, RT, RU] exte
    *
    * @return The prepared and partitioned left and right RDD.
    */
-  protected def prepare(): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, U)])
+  protected def prepare()(implicit tTag: ClassTag[T], xtag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)])
 
   /**
    * Computes the set theory primitive for the two RDDs.
    *
    * @return An RDD resulting from the primitive operation.
    */
-  def compute(): RDD[(RT, RU)] = {
+  def compute()(implicit tTag: ClassTag[T], xtag: ClassTag[X]): RDD[(RT, RU)] = {
     val (preparedLeft, preparedRight) = prepare()
     preparedLeft.zipPartitions(preparedRight)(makeIterator)
   }
@@ -190,7 +191,7 @@ private[settheory] abstract class SetTheoryBetweenCollections[T, U, RT, RU] exte
    * @return An iterator containing all processed hits.
    */
   protected def processHits(currentLeft: (ReferenceRegion, T),
-                            cache: SetTheoryCache[U, RT, RU]): Iterable[(RT, RU)] = {
+                            cache: SetTheoryCache[X, RT, RU]): Iterable[(RT, RU)] = {
 
     val (currentLeftRegion, _) = currentLeft
     // post processing formats the hits for each individual type of join
@@ -210,9 +211,9 @@ private[settheory] abstract class SetTheoryBetweenCollections[T, U, RT, RU] exte
    * @return The resulting Iterator based on the primitive operation.
    */
   protected def makeIterator(leftIter: Iterator[(ReferenceRegion, T)],
-                             rightIter: Iterator[(ReferenceRegion, U)]): Iterator[(RT, RU)] = {
+                             rightIter: Iterator[(ReferenceRegion, X)]): Iterator[(RT, RU)] = {
 
-    val cache = new SetTheoryCache[U, RT, RU]
+    val cache = new SetTheoryCache[X, RT, RU]
 
     if (leftIter.isEmpty || rightIter.isEmpty) {
       emptyFn(leftIter, rightIter)
@@ -236,10 +237,10 @@ private[settheory] abstract class SetTheoryBetweenCollections[T, U, RT, RU] exte
  * @tparam T The left side row data.
  * @tparam U The right side row data.
  * @tparam RT The return type for the left side row data.
- * @tparam RU The return type for the right side row data.
+ * @tparam RX The return type for the right side row data.
  */
-private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U, RT, RU]
-    extends SetTheoryBetweenCollections[T, U, RT, RU] {
+private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+    extends SetTheoryBetweenCollections[T, U, X, Y, RT, RX] {
 
   /**
    * Post processes the pruned records to format them appropriately.
@@ -247,10 +248,10 @@ private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U, RT, RU]
    * @param pruned The pruned record.
    * @return The formatted, post processed record.
    */
-  protected def postProcessPruned(pruned: U): (RT, RU)
+  protected def postProcessPruned(pruned: X): (RT, RX)
 
   override protected def pruneCache(to: ReferenceRegion,
-                                    cache: SetTheoryCache[U, RT, RU]) = {
+                                    cache: SetTheoryCache[X, RT, RX]) = {
 
     val toThreshold = to.pad(threshold)
     // remove everything from cache that will never again be joined
@@ -289,9 +290,9 @@ private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U, RT, RU]
     cache.victimCache.trimStart(prunedAddition.size)
   }
 
-  override protected def advanceCache(right: BufferedIterator[(ReferenceRegion, U)],
+  override protected def advanceCache(right: BufferedIterator[(ReferenceRegion, X)],
                                       until: ReferenceRegion,
-                                      cache: SetTheoryCache[U, RT, RU]) = {
+                                      cache: SetTheoryCache[X, RT, RX]) = {
 
     while (right.hasNext &&
       advanceCacheCondition(right.head._1, until.pad(threshold))) {
@@ -301,8 +302,8 @@ private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U, RT, RU]
     }
   }
 
-  override protected def finalizeHits(cache: SetTheoryCache[U, RT, RU],
-                                      right: BufferedIterator[(ReferenceRegion, U)]): Iterable[(RT, RU)] = {
+  override protected def finalizeHits(cache: SetTheoryCache[X, RT, RX],
+                                      right: BufferedIterator[(ReferenceRegion, X)]): Iterable[(RT, RX)] = {
     cache.pruned ++
       right.map(f => postProcessPruned(f._2))
   }
@@ -314,13 +315,13 @@ private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U, RT, RU]
  * @tparam T The left side row data.
  * @tparam U The right side row data.
  * @tparam RT The return type for the left side row data.
- * @tparam RU The return type for the right side row data.
+ * @tparam RX The return type for the right side row data.
  */
-private[settheory] trait VictimlessSetTheoryBetweenCollections[T, U, RT, RU]
-    extends SetTheoryBetweenCollections[T, U, RT, RU] {
+private[settheory] trait VictimlessSetTheoryBetweenCollections[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+    extends SetTheoryBetweenCollections[T, U, X, Y, RT, RX] {
 
   override protected def pruneCache(to: ReferenceRegion,
-                                    cache: SetTheoryCache[U, RT, RU]) = {
+                                    cache: SetTheoryCache[X, RT, RX]) = {
     cache.cache.trimStart({
       val index = cache.cache.indexWhere(f => !pruneCacheCondition(f._1, to))
       if (index <= 0) {
@@ -331,16 +332,16 @@ private[settheory] trait VictimlessSetTheoryBetweenCollections[T, U, RT, RU]
     })
   }
 
-  override protected def advanceCache(right: BufferedIterator[(ReferenceRegion, U)],
+  override protected def advanceCache(right: BufferedIterator[(ReferenceRegion, X)],
                                       until: ReferenceRegion,
-                                      cache: SetTheoryCache[U, RT, RU]) = {
+                                      cache: SetTheoryCache[X, RT, RX]) = {
     while (right.hasNext && advanceCacheCondition(right.head._1, until)) {
       cache.cache += right.next
     }
   }
 
-  override protected def finalizeHits(cache: SetTheoryCache[U, RT, RU],
-                                      right: BufferedIterator[(ReferenceRegion, U)]): Iterable[(RT, RU)] = {
+  override protected def finalizeHits(cache: SetTheoryCache[X, RT, RX],
+                                      right: BufferedIterator[(ReferenceRegion, X)]): Iterable[(RT, RX)] = {
     // Victimless Set Theory drops the remaining records
     Iterable.empty
   }
@@ -349,15 +350,15 @@ private[settheory] trait VictimlessSetTheoryBetweenCollections[T, U, RT, RU]
 /**
  * Contains all the caching data for a set theory operation.
  *
- * @tparam U The right side record type.
+ * @tparam X The right side record type.
  * @tparam RT The left side result type.
- * @tparam RU The right side result type.
+ * @tparam RX The right side result type.
  */
-private[settheory] class SetTheoryCache[U, RT, RU] {
+private[settheory] class SetTheoryCache[X, RT, RX] {
   // caches potential hits
-  val cache: ListBuffer[(ReferenceRegion, U)] = ListBuffer.empty
+  val cache: ListBuffer[(ReferenceRegion, X)] = ListBuffer.empty
   // caches potential pruned and joined values
-  val victimCache: ListBuffer[(ReferenceRegion, U)] = ListBuffer.empty
+  val victimCache: ListBuffer[(ReferenceRegion, X)] = ListBuffer.empty
   // the pruned values that do not contain any hits from the left
-  val pruned: ListBuffer[(RT, RU)] = ListBuffer.empty
+  val pruned: ListBuffer[(RT, RX)] = ListBuffer.empty
 }

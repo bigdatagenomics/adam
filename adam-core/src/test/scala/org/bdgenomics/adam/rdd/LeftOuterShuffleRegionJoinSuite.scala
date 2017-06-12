@@ -23,6 +23,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   SequenceRecord
 }
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.settheory.LeftOuterShuffleRegionJoin
 import org.bdgenomics.formats.avro.AlignmentRecord
 
@@ -38,9 +39,9 @@ class LeftOuterShuffleRegionJoinSuite(partitionMap: Seq[Option[(ReferenceRegion,
       SequenceRecord("chr2", 15, url = "tes=t://chrom2"))
   }
 
-  def runJoin(leftRdd: RDD[(ReferenceRegion, AlignmentRecord)],
-              rightRdd: RDD[(ReferenceRegion, AlignmentRecord)]): RDD[(Option[AlignmentRecord], AlignmentRecord)] = {
-    LeftOuterShuffleRegionJoin[AlignmentRecord, AlignmentRecord](rightRdd, leftRdd)
+  def runJoin(leftRdd: AlignmentRecordRDD,
+              rightRdd: AlignmentRecordRDD): RDD[(Option[AlignmentRecord], AlignmentRecord)] = {
+    LeftOuterShuffleRegionJoin(rightRdd, leftRdd)
       .compute().map(_.swap)
   }
 }

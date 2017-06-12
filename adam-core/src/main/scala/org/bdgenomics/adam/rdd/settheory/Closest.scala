@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.settheory
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.rdd.ManualRegionPartitioner
+import org.bdgenomics.adam.rdd.{ GenomicRDD, ManualRegionPartitioner }
 import org.bdgenomics.utils.interval.array.IntervalArray
 import scala.reflect.ClassTag
 
@@ -28,11 +28,11 @@ import scala.reflect.ClassTag
  *
  * @tparam T The type of the left records.
  * @tparam U The type of the right records.
- * @tparam RT The resulting type of the left after the join.
- * @tparam RU The resulting type of the right after the join.
+ * @tparam RT The resulting type of the left after the operation.
+ * @tparam RX The resulting type of the right after the operation.
  */
-sealed abstract class Closest[T: ClassTag, U: ClassTag, RT, RU]
-    extends SetTheoryBetweenCollections[T, U, RT, RU]
+sealed trait Closest[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+    extends SetTheoryBetweenCollections[T, U, X, Y, RT, RX]
     with SetTheoryPrimitive {
 
   var currentClosest: ReferenceRegion = ReferenceRegion.empty
@@ -49,7 +49,8 @@ sealed abstract class Closest[T: ClassTag, U: ClassTag, RT, RU]
     if (cachedRegion.referenceName != to.referenceName) {
       true
     } else {
-      to.unstrandedDistance(cachedRegion).get > to.unstrandedDistance(currentClosest).getOrElse(Long.MaxValue)
+      to.unstrandedDistance(cachedRegion).get >
+        to.unstrandedDistance(currentClosest).getOrElse(Long.MaxValue)
     }
   }
 
@@ -69,18 +70,14 @@ sealed abstract class Closest[T: ClassTag, U: ClassTag, RT, RU]
     }
   }
 
-  override protected def prepare(): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, U)]) = {
+  override protected def prepare()(implicit tTag: ClassTag[T], xtag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
 
-    val (partitionMap: Array[Option[(ReferenceRegion, ReferenceRegion)]],
-      preparedLeftRdd: RDD[(ReferenceRegion, T)]) = {
-      if (optPartitionMap.isDefined) {
-        (optPartitionMap.get, leftRdd)
+    val (preparedLeftRdd, partitionMap) = {
+      if (leftRdd.optPartitionMap.isDefined) {
+        (leftRdd.flattenRddByRegions, leftRdd.optPartitionMap.get)
       } else {
-        val sortedLeft = leftRdd.sortByKey()
-        val newPartitionMap =
-          sortedLeft.mapPartitions(getRegionBoundsFromPartition)
-            .collect
-        (newPartitionMap, sortedLeft)
+        val sortedLeft = leftRdd.sortLexicographically(storePartitionMap = true)
+        (sortedLeft.flattenRddByRegions, sortedLeft.optPartitionMap.get)
       }
     }
 
@@ -115,7 +112,7 @@ sealed abstract class Closest[T: ClassTag, U: ClassTag, RT, RU]
       sorted = true)
 
     val assignedRightRdd = {
-      val firstPass = rightRdd.mapPartitions(iter => {
+      val firstPass = rightRdd.flattenRddByRegions.mapPartitions(iter => {
         iter.flatMap(f => {
           val rangeOfHits = partitionMapIntervals.get(f._1, requireOverlap = false)
           rangeOfHits.map(g => ((f._1, g._2), f._2))
@@ -181,16 +178,17 @@ sealed abstract class Closest[T: ClassTag, U: ClassTag, RT, RU]
  * @tparam T The type of the left records.
  * @tparam U The type of the right records.
  */
-case class ShuffleClosestRegion[T: ClassTag, U: ClassTag](
-  protected val leftRdd: RDD[(ReferenceRegion, T)],
-  protected val rightRdd: RDD[(ReferenceRegion, U)],
+case class ShuffleClosestRegion[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y]](
+  protected val leftRdd: GenomicRDD[T, U],
+  protected val rightRdd: GenomicRDD[X, Y],
   protected val optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]],
-  protected val threshold: Long = Long.MaxValue)
-    extends Closest[T, U, T, Iterable[U]]
-    with VictimlessSetTheoryBetweenCollections[T, U, T, Iterable[U]] {
+  protected val threshold: Long = Long.MaxValue,
+  protected val optPartitions: Option[Int] = None)
+    extends Closest[T, U, X, Y, T, Iterable[X]]
+    with VictimlessSetTheoryBetweenCollections[T, U, X, Y, T, Iterable[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
-                                 right: Iterator[(ReferenceRegion, U)]): Iterator[(T, Iterable[U])] = {
+                                 right: Iterator[(ReferenceRegion, X)]): Iterator[(T, Iterable[X])] = {
 
     // if the left iterator is not empty, we have failed to correctly
     // partition the data. the right iterator is only allowed to be empty
@@ -201,7 +199,7 @@ case class ShuffleClosestRegion[T: ClassTag, U: ClassTag](
   }
 
   override protected def postProcessHits(currentLeft: (ReferenceRegion, T),
-                                         iter: Iterable[(ReferenceRegion, U)]): Iterable[(T, Iterable[U])] = {
+                                         iter: Iterable[(ReferenceRegion, X)]): Iterable[(T, Iterable[X])] = {
     Iterable((currentLeft._2, iter.map(_._2)))
   }
 }
