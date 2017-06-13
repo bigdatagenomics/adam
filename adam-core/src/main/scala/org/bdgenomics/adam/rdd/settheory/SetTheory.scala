@@ -23,7 +23,8 @@ import org.bdgenomics.adam.rdd.GenomicRDD
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-private[settheory] sealed trait SetTheory extends Serializable {
+private[settheory] trait SetTheory[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+    extends Serializable {
 
   protected val threshold: Long
 
@@ -39,38 +40,8 @@ private[settheory] sealed trait SetTheory extends Serializable {
    */
   protected def condition(firstRegion: ReferenceRegion,
                           secondRegion: ReferenceRegion,
+                          cache: SetTheoryCache[X, RT, RX],
                           distanceThreshold: Long = 0L): Boolean
-}
-
-private[settheory] trait SetTheoryPrimitive extends SetTheory {
-
-  /**
-   * Gets the partition bounds from a ReferenceRegion keyed Iterator
-   *
-   * @param iter The data on a given partition. ReferenceRegion keyed
-   * @return The bounds of the ReferenceRegions on that partition, in an Iterator
-   */
-  protected def getRegionBoundsFromPartition[X](
-    iter: Iterator[(ReferenceRegion, X)]): Iterator[Option[(ReferenceRegion, ReferenceRegion)]] = {
-
-    if (iter.isEmpty) {
-      // This means that there is no data on the partition, so we have no bounds
-      Iterator(None)
-    } else {
-      val firstRegion = iter.next
-      val lastRegion =
-        if (iter.hasNext) {
-          // we have to make sure we get the full bounds of this partition, this
-          // includes any extremely long regions. we include the firstRegion for
-          // the case that the first region is extremely long
-          (iter ++ Iterator(firstRegion)).maxBy(f => (f._1.referenceName, f._1.end, f._1.start))
-          // only one record on this partition, so this is the extent of the bounds
-        } else {
-          firstRegion
-        }
-      Iterator(Some((firstRegion._1, lastRegion._1)))
-    }
-  }
 }
 
 /**
@@ -79,10 +50,10 @@ private[settheory] trait SetTheoryPrimitive extends SetTheory {
  * @tparam T The left side row data.
  * @tparam U The right side row data.
  * @tparam RT The return type for the left side row data.
- * @tparam RU The return type for the right side row data.
+ * @tparam RX The return type for the right side row data.
  */
-private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RU]
-    extends SetTheory {
+private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+    extends SetTheory[T, U, X, Y, RT, RX] {
 
   protected val leftRdd: GenomicRDD[T, U]
   protected val rightRdd: GenomicRDD[X, Y]
@@ -95,7 +66,7 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    * @return The post processed hits.
    */
   protected def postProcessHits(currentLeft: (ReferenceRegion, T),
-                                iter: Iterable[(ReferenceRegion, X)]): Iterable[(RT, RU)]
+                                iter: Iterable[(ReferenceRegion, X)]): Iterable[(RT, RX)]
 
   /**
    * The condition by which a candidate is removed from the cache.
@@ -107,7 +78,8 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    *         False for all regions that should remain in the cache.
    */
   protected def pruneCacheCondition(cachedRegion: ReferenceRegion,
-                                    to: ReferenceRegion): Boolean
+                                    to: ReferenceRegion,
+                                    cache: SetTheoryCache[X, RT, RX]): Boolean
 
   /**
    * The condition by which a candidate region is added to the cache.
@@ -119,7 +91,8 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    *         False for regions that should not be added to the cache.
    */
   protected def advanceCacheCondition(candidateRegion: ReferenceRegion,
-                                      until: ReferenceRegion): Boolean
+                                      until: ReferenceRegion,
+                                      cache: SetTheoryCache[X, RT, RX]): Boolean
 
   /**
    * Handles the situation where the left or right iterator is empty.
@@ -129,7 +102,7 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    * @return The formatted resulting RDD.
    */
   protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
-                        right: Iterator[(ReferenceRegion, X)]): Iterator[(RT, RU)]
+                        right: Iterator[(ReferenceRegion, X)]): Iterator[(RT, RX)]
 
   /**
    * Prunes the cache based on the condition set in pruneCacheCondition.
@@ -139,7 +112,7 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    * @param cache The cache for this partition.
    */
   protected def pruneCache(to: ReferenceRegion,
-                           cache: SetTheoryCache[X, RT, RU])
+                           cache: SetTheoryCache[X, RT, RX])
 
   /**
    * Advances the cache based on the condition set in advanceCacheCondition
@@ -151,7 +124,7 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    */
   protected def advanceCache(right: BufferedIterator[(ReferenceRegion, X)],
                              until: ReferenceRegion,
-                             cache: SetTheoryCache[X, RT, RU])
+                             cache: SetTheoryCache[X, RT, RX])
 
   /**
    * Computes all victims for the partition.
@@ -160,8 +133,8 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    * @param right The right iterator.
    * @return The finalized hits for this partition.
    */
-  protected def finalizeHits(cache: SetTheoryCache[X, RT, RU],
-                             right: BufferedIterator[(ReferenceRegion, X)]): Iterable[(RT, RU)]
+  protected def finalizeHits(cache: SetTheoryCache[X, RT, RX],
+                             right: BufferedIterator[(ReferenceRegion, X)]): Iterable[(RT, RX)]
 
   /**
    * Prepares and partitions the left and right. Makes no assumptions about the
@@ -177,7 +150,7 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    *
    * @return An RDD resulting from the primitive operation.
    */
-  def compute()(implicit tTag: ClassTag[T], xtag: ClassTag[X]): RDD[(RT, RU)] = {
+  def compute()(implicit tTag: ClassTag[T], xtag: ClassTag[X]): RDD[(RT, RX)] = {
     val (preparedLeft, preparedRight) = prepare()
     preparedLeft.zipPartitions(preparedRight)(makeIterator)
   }
@@ -191,14 +164,14 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    * @return An iterator containing all processed hits.
    */
   protected def processHits(currentLeft: (ReferenceRegion, T),
-                            cache: SetTheoryCache[X, RT, RU]): Iterable[(RT, RU)] = {
+                            cache: SetTheoryCache[X, RT, RX]): Iterable[(RT, RX)] = {
 
     val (currentLeftRegion, _) = currentLeft
     // post processing formats the hits for each individual type of join
     postProcessHits(currentLeft,
       cache.cache.filter(y => {
         // everything that overlaps the left region is a hit
-        condition(currentLeftRegion, y._1, threshold)
+        condition(currentLeftRegion, y._1, cache, threshold)
       }))
   }
 
@@ -211,9 +184,9 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
    * @return The resulting Iterator based on the primitive operation.
    */
   protected def makeIterator(leftIter: Iterator[(ReferenceRegion, T)],
-                             rightIter: Iterator[(ReferenceRegion, X)]): Iterator[(RT, RU)] = {
+                             rightIter: Iterator[(ReferenceRegion, X)]): Iterator[(RT, RX)] = {
 
-    val cache = new SetTheoryCache[X, RT, RU]
+    val cache = new SetTheoryCache[X, RT, RX]
 
     if (leftIter.isEmpty || rightIter.isEmpty) {
       emptyFn(leftIter, rightIter)
@@ -258,7 +231,7 @@ private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U <: GenomicR
     cache.cache.trimStart({
       val trimLocation =
         cache.cache
-          .indexWhere(f => !pruneCacheCondition(f._1, toThreshold))
+          .indexWhere(f => !pruneCacheCondition(f._1, toThreshold, cache))
 
       if (trimLocation < 0) {
         0
@@ -271,7 +244,7 @@ private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U <: GenomicR
     // the the current left
     val cacheAddition =
       cache.victimCache
-        .takeWhile(f => !pruneCacheCondition(f._1, toThreshold))
+        .takeWhile(f => !pruneCacheCondition(f._1, toThreshold, cache))
 
     cache.cache ++= cacheAddition
     // remove the values from the victimCache that were just added to cache
@@ -280,8 +253,7 @@ private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U <: GenomicR
     // add to pruned any values that do not have any matches to a left
     // and perform post processing to format the new pruned values
     val prunedAddition =
-      cache
-        .victimCache
+      cache.victimCache
         .takeWhile(f => f._1.compareTo(toThreshold) <= 0)
 
     cache.pruned ++= prunedAddition
@@ -295,7 +267,7 @@ private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U <: GenomicR
                                       cache: SetTheoryCache[X, RT, RX]) = {
 
     while (right.hasNext &&
-      advanceCacheCondition(right.head._1, until.pad(threshold))) {
+      advanceCacheCondition(right.head._1, until.pad(threshold), cache)) {
 
       val x = right.next()
       cache.victimCache += ((x._1, x._2))
@@ -323,7 +295,7 @@ private[settheory] trait VictimlessSetTheoryBetweenCollections[T, U <: GenomicRD
   override protected def pruneCache(to: ReferenceRegion,
                                     cache: SetTheoryCache[X, RT, RX]) = {
     cache.cache.trimStart({
-      val index = cache.cache.indexWhere(f => !pruneCacheCondition(f._1, to))
+      val index = cache.cache.indexWhere(f => !pruneCacheCondition(f._1, to, cache))
       if (index <= 0) {
         0
       } else {
@@ -335,7 +307,7 @@ private[settheory] trait VictimlessSetTheoryBetweenCollections[T, U <: GenomicRD
   override protected def advanceCache(right: BufferedIterator[(ReferenceRegion, X)],
                                       until: ReferenceRegion,
                                       cache: SetTheoryCache[X, RT, RX]) = {
-    while (right.hasNext && advanceCacheCondition(right.head._1, until)) {
+    while (right.hasNext && advanceCacheCondition(right.head._1, until, cache)) {
       cache.cache += right.next
     }
   }
@@ -355,10 +327,16 @@ private[settheory] trait VictimlessSetTheoryBetweenCollections[T, U <: GenomicRD
  * @tparam RX The right side result type.
  */
 private[settheory] class SetTheoryCache[X, RT, RX] {
+
   // caches potential hits
   val cache: ListBuffer[(ReferenceRegion, X)] = ListBuffer.empty
+
   // caches potential pruned and joined values
   val victimCache: ListBuffer[(ReferenceRegion, X)] = ListBuffer.empty
+
   // the pruned values that do not contain any hits from the left
   val pruned: ListBuffer[(RT, RX)] = ListBuffer.empty
+
+  // the closest values for the hits.
+  var closest: Option[ReferenceRegion] = None
 }

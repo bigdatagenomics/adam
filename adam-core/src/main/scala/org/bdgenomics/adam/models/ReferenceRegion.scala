@@ -85,13 +85,6 @@ object ReferenceRegion {
   implicit def orderingForOptionalPositions = OptionalRegionOrdering
 
   /**
-   * Creates an empty ReferenceRegion.
-   *
-   * @return An empty ReferenceRegion.
-   */
-  private[adam] val empty: ReferenceRegion = ReferenceRegion("", 0L, 0L)
-
-  /**
    * Creates a reference region that starts at the beginning of a contig.
    *
    * @param referenceName The name of the reference contig that this region is

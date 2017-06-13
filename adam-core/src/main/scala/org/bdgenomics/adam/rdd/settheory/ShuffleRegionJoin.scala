@@ -32,10 +32,11 @@ import scala.reflect.ClassTag
  * @tparam RX The resulting type of the right after the join.
  */
 sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
-    extends SetTheoryBetweenCollections[T, U, X, Y, RT, RX] with SetTheoryPrimitive {
+    extends SetTheoryBetweenCollections[T, U, X, Y, RT, RX] {
 
   override protected def condition(firstRegion: ReferenceRegion,
                                    secondRegion: ReferenceRegion,
+                                   cache: SetTheoryCache[X, RT, RX],
                                    distanceThreshold: Long = 0L): Boolean = {
 
     firstRegion.isNearby(secondRegion,
@@ -44,21 +45,25 @@ sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y
   }
 
   override protected def pruneCacheCondition(cachedRegion: ReferenceRegion,
-                                             to: ReferenceRegion): Boolean = {
+                                             to: ReferenceRegion,
+                                             cache: SetTheoryCache[X, RT, RX]): Boolean = {
 
     cachedRegion.compareTo(to) < 0 && !cachedRegion.covers(to)
   }
 
   override protected def advanceCacheCondition(candidateRegion: ReferenceRegion,
-                                               until: ReferenceRegion): Boolean = {
+                                               until: ReferenceRegion,
+                                               cache: SetTheoryCache[X, RT, RX]): Boolean = {
 
     candidateRegion.compareTo(until) < 0 || candidateRegion.covers(until)
   }
 
   override protected def prepare()(implicit tTag: ClassTag[T], xtag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
 
+    // default to current partition number if user did not specify
     val numPartitions = optPartitions.getOrElse(leftRdd.rdd.partitions.length)
 
+    // we don't know if the left is sorted unless it has a partition map
     val (preparedLeft, destinationPartitionMap) = {
       if (leftRdd.optPartitionMap.isDefined &&
         leftRdd.rdd.partitions.length == numPartitions) {
@@ -109,7 +114,9 @@ sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y
       rightRdd.flattenRddByRegions()
         .mapPartitions(iter => {
           iter.flatMap(f => {
+            // we pad by the threshold here to ensure that our invariant is met
             val intervals = partitionMapIntervals.get(f._1.pad(threshold), requireOverlap = false)
+            // for each index identified in intervals, create a record
             intervals.map(g => ((f._1, g._2), f._2))
           })
         }, preservesPartitioning = true)
@@ -128,6 +135,7 @@ sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y
  * @param leftRdd The left RDD.
  * @param rightRdd The right RDD.
  * @param threshold The threshold for the join.
+ * @param optPartitions Optionally sets the number of partitions for the join.
  * @tparam T The type of the left records.
  * @tparam U The type of the right records.
  */
@@ -156,6 +164,7 @@ case class InnerShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X
  * @param leftRdd The left RDD.
  * @param rightRdd The right RDD.
  * @param threshold The threshold for the join.
+ * @param optPartitions Optionally sets the number of partitions for the join.
  * @tparam T The type of the left records.
  * @tparam U THe type of the right records.
  */
@@ -190,6 +199,7 @@ case class InnerShuffleRegionJoinAndGroupByLeft[T, U <: GenomicRDD[T, U], X, Y <
  * @param leftRdd The left RDD.
  * @param rightRdd The right RDD.
  * @param threshold The threshold for the join.
+ * @param optPartitions Optionally sets the number of partitions for the join.
  * @tparam T The type of the left records.
  * @tparam U The type of the right records.
  */
@@ -224,6 +234,7 @@ case class LeftOuterShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicR
  * @param leftRdd The left RDD.
  * @param rightRdd The right RDD.
  * @param threshold The threshold for the join.
+ * @param optPartitions Optionally sets the number of partitions for the join.
  * @tparam T The type of the left records.
  * @tparam U The type of the right records.
  */
@@ -261,6 +272,7 @@ case class RightOuterShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: Genomic
  * @param leftRdd The left RDD.
  * @param rightRdd The right RDD.
  * @param threshold The threshold for the join.
+ * @param optPartitions Optionally sets the number of partitions for the join.
  * @tparam T The type of the left records.
  * @tparam U The type of the right records.
  */
@@ -299,6 +311,7 @@ case class FullOuterShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicR
  * @param leftRdd The left RDD.
  * @param rightRdd The right RDD.
  * @param threshold The threshold for the join.
+ * @param optPartitions Optionally sets the number of partitions for the join.
  * @tparam T The type of the left records.
  * @tparam U The type of the right records.
  */
