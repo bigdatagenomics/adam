@@ -34,7 +34,7 @@ import org.bdgenomics.adam.models.{
   ReferenceRegion,
   SequenceDictionary
 }
-import org.bdgenomics.adam.rdd.settheory._
+import org.bdgenomics.adam.rdd.sets._
 import org.bdgenomics.formats.avro.{
   Contig,
   RecordGroup => RecordGroupMetadata,

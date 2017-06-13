@@ -15,13 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.rdd.sets
 
-import org.bdgenomics.adam.models.{ RecordGroupDictionary, ReferenceRegion, SequenceDictionary, SequenceRecord }
+import org.bdgenomics.adam.models.{RecordGroupDictionary, ReferenceRegion, SequenceDictionary, SequenceRecord}
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
-import org.bdgenomics.adam.rdd.settheory.InnerShuffleRegionJoin
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig }
+import org.bdgenomics.formats.avro.{AlignmentRecord, Contig}
 
 class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
   val partitionSize = 3

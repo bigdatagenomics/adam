@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.settheory
+package org.bdgenomics.adam.rdd.sets
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
@@ -32,7 +32,7 @@ import scala.reflect.ClassTag
  * @tparam RX The resulting type of the right after the join.
  */
 sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
-    extends SetTheoryBetweenCollections[T, U, X, Y, RT, RX] {
+    extends SetOperationBetweenCollections[T, U, X, Y, RT, RX] {
 
   override protected def condition(firstRegion: ReferenceRegion,
                                    secondRegion: ReferenceRegion,
@@ -115,7 +115,7 @@ case class InnerShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
     extends ShuffleRegionJoin[T, U, X, Y, T, X]
-    with VictimlessSetTheoryBetweenCollections[T, U, X, Y, T, X] {
+    with VictimlessSetOperationBetweenCollections[T, U, X, Y, T, X] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(T, X)] = {
@@ -144,7 +144,7 @@ case class InnerShuffleRegionJoinAndGroupByLeft[T, U <: GenomicRDD[T, U], X, Y <
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
     extends ShuffleRegionJoin[T, U, X, Y, T, Iterable[X]]
-    with VictimlessSetTheoryBetweenCollections[T, U, X, Y, T, Iterable[X]] {
+    with VictimlessSetOperationBetweenCollections[T, U, X, Y, T, Iterable[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(T, Iterable[X])] = {
@@ -179,7 +179,7 @@ case class LeftOuterShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicR
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
     extends ShuffleRegionJoin[T, U, X, Y, T, Option[X]]
-    with VictimlessSetTheoryBetweenCollections[T, U, X, Y, T, Option[X]] {
+    with VictimlessSetOperationBetweenCollections[T, U, X, Y, T, Option[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(T, Option[X])] = {
@@ -214,7 +214,7 @@ case class RightOuterShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: Genomic
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
     extends ShuffleRegionJoin[T, U, X, Y, Option[T], X]
-    with SetTheoryBetweenCollectionsWithVictims[T, U, X, Y, Option[T], X] {
+    with SetOperationBetweenCollectionsWithVictims[T, U, X, Y, Option[T], X] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(Option[T], X)] = {
@@ -252,7 +252,7 @@ case class FullOuterShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicR
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
     extends ShuffleRegionJoin[T, U, X, Y, Option[T], Option[X]]
-    with SetTheoryBetweenCollectionsWithVictims[T, U, X, Y, Option[T], Option[X]] {
+    with SetOperationBetweenCollectionsWithVictims[T, U, X, Y, Option[T], Option[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(Option[T], Option[X])] = {
@@ -291,7 +291,7 @@ case class RightOuterShuffleRegionJoinAndGroupByLeft[T, U <: GenomicRDD[T, U], X
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
     extends ShuffleRegionJoin[T, U, X, Y, Option[T], Iterable[X]]
-    with SetTheoryBetweenCollectionsWithVictims[T, U, X, Y, Option[T], Iterable[X]] {
+    with SetOperationBetweenCollectionsWithVictims[T, U, X, Y, Option[T], Iterable[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(Option[T], Iterable[X])] = {

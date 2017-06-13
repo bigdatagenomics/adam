@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd.settheory
+package org.bdgenomics.adam.rdd.sets
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
@@ -23,7 +23,7 @@ import org.bdgenomics.adam.rdd.GenomicRDD
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-private[settheory] trait SetTheory[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+private[sets] trait SetOperation[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
     extends Serializable {
 
   protected val threshold: Long
@@ -52,8 +52,8 @@ private[settheory] trait SetTheory[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[
  * @tparam RT The return type for the left side row data.
  * @tparam RX The return type for the right side row data.
  */
-private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
-    extends SetTheory[T, U, X, Y, RT, RX] {
+private[rdd] abstract class SetOperationBetweenCollections[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+    extends SetOperation[T, U, X, Y, RT, RX] {
 
   protected val leftRdd: GenomicRDD[T, U]
   protected val rightRdd: GenomicRDD[X, Y]
@@ -212,8 +212,8 @@ private[rdd] abstract class SetTheoryBetweenCollections[T, U <: GenomicRDD[T, U]
  * @tparam RT The return type for the left side row data.
  * @tparam RX The return type for the right side row data.
  */
-private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
-    extends SetTheoryBetweenCollections[T, U, X, Y, RT, RX] {
+private[sets] trait SetOperationBetweenCollectionsWithVictims[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+    extends SetOperationBetweenCollections[T, U, X, Y, RT, RX] {
 
   /**
    * Post processes the pruned records to format them appropriately.
@@ -289,8 +289,8 @@ private[settheory] trait SetTheoryBetweenCollectionsWithVictims[T, U <: GenomicR
  * @tparam RT The return type for the left side row data.
  * @tparam RX The return type for the right side row data.
  */
-private[settheory] trait VictimlessSetTheoryBetweenCollections[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
-    extends SetTheoryBetweenCollections[T, U, X, Y, RT, RX] {
+private[sets] trait VictimlessSetOperationBetweenCollections[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+    extends SetOperationBetweenCollections[T, U, X, Y, RT, RX] {
 
   override protected def pruneCache(to: ReferenceRegion,
                                     cache: SetTheoryCache[X, RT, RX]) = {
@@ -326,7 +326,7 @@ private[settheory] trait VictimlessSetTheoryBetweenCollections[T, U <: GenomicRD
  * @tparam RT The left side result type.
  * @tparam RX The right side result type.
  */
-private[settheory] class SetTheoryCache[X, RT, RX] {
+private[sets] class SetTheoryCache[X, RT, RX] {
 
   // caches potential hits
   val cache: ListBuffer[(ReferenceRegion, X)] = ListBuffer.empty
