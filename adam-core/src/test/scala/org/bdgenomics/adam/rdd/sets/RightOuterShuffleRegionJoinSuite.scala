@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.sets
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ReferenceRegion, SequenceDictionary, SequenceRecord}
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.rdd.OuterRegionJoinSuite
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.formats.avro.AlignmentRecord
