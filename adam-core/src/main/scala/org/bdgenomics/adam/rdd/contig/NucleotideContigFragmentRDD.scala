@@ -153,9 +153,8 @@ case class NucleotideContigFragmentRDD(
    * Returns all reference regions that overlap this NucleotideContigFragment.
    *
    * @param elem Fragment to extract a region from.
-   * @param stranded Whether or not to report stranded data for each
-   *   NucleotideContigFragment such that true reports stranded data and false
-   *   does not.
+   * @param stranded True to report stranded data for each
+   *   NucleotideContigFragment.
    * @return If a fragment is aligned to a reference location, returns a single
    *   reference region. If the fragment start position and name is not defined,
    *   returns no regions.

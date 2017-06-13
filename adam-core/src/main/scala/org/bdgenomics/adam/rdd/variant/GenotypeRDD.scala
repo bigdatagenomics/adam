@@ -140,8 +140,7 @@ case class GenotypeRDD(rdd: RDD[Genotype],
 
   /**
    * @param elem The genotype to get a reference region for.
-   * @param stranded Whether or not to report stranded data for each Genotype
-   *   such that true reports stranded data and false does not.
+   * @param stranded True to report stranded data for each Genotype.
    * @return Returns the singular region this genotype covers.
    */
   protected def getReferenceRegions(elem: Genotype,

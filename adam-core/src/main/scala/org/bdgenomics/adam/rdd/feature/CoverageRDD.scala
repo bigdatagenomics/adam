@@ -251,8 +251,7 @@ case class CoverageRDD(rdd: RDD[Coverage],
    * return a Seq of exactly one ReferenceRegion.
    *
    * @param elem The Coverage to get an underlying region for.
-   * @param stranded Whether or not to report stranded data for each Coverage
-   *   such that true reports stranded data and false does not.
+   * @param stranded True to report stranded data for each Coverage.
    * @return Sequence of ReferenceRegions extracted from Coverage.
    */
   protected def getReferenceRegions(elem: Coverage,

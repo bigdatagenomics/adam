@@ -339,8 +339,7 @@ case class FeatureRDD(rdd: RDD[Feature],
    * Returns all reference regions that overlap this feature.
    *
    * @param elem The Feature to get an underlying region for.
-   * @param stranded Whether or not to report stranded data for each Feature
-   *   such that true reports stranded data and false does not.
+   * @param stranded True to report stranded data for each Feature.
    * @return Since a feature maps directly to a single genomic region, this
    *   method will always return a Seq of exactly one ReferenceRegion.
    */

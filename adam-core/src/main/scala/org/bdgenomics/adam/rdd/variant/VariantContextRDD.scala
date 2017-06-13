@@ -278,8 +278,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * Returns the regions that this VariantContext covers.
    *
    * @param elem The variant context to get a reference region for.
-   * @param stranded Whether or not to report stranded data for each
-   *   VariantContext such that true reports stranded data and false does not.
+   * @param stranded True to report stranded data for each VariantContext.
    * @return Returns a seq containing the position key from the variant context.
    */
   protected def getReferenceRegions(elem: VariantContext,

@@ -205,8 +205,7 @@ case class FragmentRDD(rdd: RDD[Fragment],
    * the hull of the underlying element.
    *
    * @param elem The Fragment to get the region from.
-   * @param stranded Whether or not to report stranded data for each Fragment
-   *   such that true reports stranded data and false does not.
+   * @param stranded True to report stranded data for each Fragment.
    * @return Returns all regions covered by this fragment.
    */
   protected def getReferenceRegions(elem: Fragment,
