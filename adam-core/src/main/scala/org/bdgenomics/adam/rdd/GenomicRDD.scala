@@ -154,13 +154,15 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   // The (ReferenceRegion, ReferenceRegion) tuple contains the bounds of the 
   //   partition, such that the lowest start is first and the highest end is
   //   second.
-  private[rdd] val optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]
+  protected val optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]
 
   assert(optPartitionMap.isEmpty ||
     optPartitionMap.exists(_.length == rdd.partitions.length),
     "Partition map length differs from number of partitions.")
 
   val isSorted: Boolean = optPartitionMap.isDefined
+
+  private[rdd] val partitionMap = PartitionMap(optPartitionMap)
 
   /**
    * Repartitions all data in rdd and distributes it as evenly as possible
@@ -1190,7 +1192,7 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[
   protected def savePartitionMap(filePath: String): Unit = {
     if (isSorted) {
       // converting using json4s
-      val jsonString = "partitionMap" -> optPartitionMap.get.toSeq.map(f =>
+      val jsonString = "partitionMap" -> partitionMap.get.toSeq.map(f =>
         if (f.isEmpty) {
           ("ReferenceRegion1" -> "None") ~ ("ReferenceRegion2" -> "None")
         } else {
@@ -1304,6 +1306,54 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[
    */
   def saveAsParquet(filePath: java.lang.String) {
     saveAsParquet(new JavaSaveArgs(filePath))
+  }
+}
+
+private[rdd] case class PartitionMap(private val optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) {
+
+  lazy val get: Array[Option[(ReferenceRegion, ReferenceRegion)]] = {
+    optPartitionMap.get
+  }
+
+  def isEmpty: Boolean = {
+    optPartitionMap.isEmpty
+  }
+
+  def isDefined: Boolean = {
+    optPartitionMap.isDefined
+  }
+
+  def exists(f: (Array[Option[(ReferenceRegion, ReferenceRegion)]]) => Boolean): Boolean = {
+    optPartitionMap.exists(f)
+  }
+
+  def toIntervalArray(): IntervalArray[ReferenceRegion, Int] = {
+
+    val adjustedPartitionMapWithIndex =
+      // the zipWithIndex gives us the destination partition ID
+      get.zipWithIndex
+        .filter(_._1.nonEmpty)
+        .map(f => (f._1.get, f._2)).map(g => {
+          // first region for the bound
+          val rr = g._1._1
+          // second region for the bound
+          val secondrr = g._1._2
+          // in the case where we span multiple referenceNames
+          if (rr.referenceName != g._1._2.referenceName) {
+            // create a ReferenceRegion that goes to the end of the chromosome
+            (ReferenceRegion(rr.referenceName, rr.start, rr.end), g._2)
+          } else {
+            // otherwise we just have the ReferenceRegion span from partition
+            // start to end
+            (ReferenceRegion(rr.referenceName, rr.start, secondrr.end), g._2)
+          }
+        })
+
+    // we use an interval array to quickly look up the destination partitions
+    IntervalArray(
+      adjustedPartitionMapWithIndex,
+      adjustedPartitionMapWithIndex.maxBy(_._1.width)._1.width,
+      sorted = true)
   }
 }
 

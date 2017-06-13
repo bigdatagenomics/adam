@@ -65,50 +65,20 @@ sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y
 
     // we don't know if the left is sorted unless it has a partition map
     val (preparedLeft, destinationPartitionMap) = {
-      if (leftRdd.optPartitionMap.isDefined &&
+      if (leftRdd.partitionMap.isDefined &&
         leftRdd.rdd.partitions.length == numPartitions) {
-        (leftRdd.flattenRddByRegions(), leftRdd.optPartitionMap.get)
+        (leftRdd.flattenRddByRegions(), leftRdd.partitionMap)
       } else {
         val sortedLeft =
           leftRdd.sortLexicographically(numPartitions, storePartitionMap = true)
 
-        val partitionMap =
-          sortedLeft.optPartitionMap.get
+        val partitionMap = sortedLeft.partitionMap
         (sortedLeft.flattenRddByRegions(), partitionMap)
       }
     }
 
-    val adjustedPartitionMapWithIndex =
-      // the zipWithIndex gives us the destination partition ID
-      destinationPartitionMap.flatten.zipWithIndex.map(g => {
-        val (firstRegion, secondRegion, index) = (g._1._1, g._1._2, g._2)
-        // in the case where we span multiple referenceNames using
-        // IntervalArray.get with requireOverlap set to false will assign all
-        // the remaining regions to this partition, in addition to all the
-        // regions up to the start of the next partition.
-        if (firstRegion.referenceName != secondRegion.referenceName) {
-
-          // the first region is enough to represent the partition for
-          // IntervalArray.get.
-          (firstRegion, index)
-        } else {
-          // otherwise we just have the ReferenceRegion span from partition
-          // lower bound to upper bound.
-          // We cannot use the firstRegion bounds here because we may end up
-          // dropping data if it doesn't map anywhere.
-          (ReferenceRegion(
-            firstRegion.referenceName,
-            firstRegion.start,
-            secondRegion.end),
-            index)
-        }
-      })
-
     // convert to an IntervalArray for fast range query
-    val partitionMapIntervals = IntervalArray(
-      adjustedPartitionMapWithIndex,
-      adjustedPartitionMapWithIndex.maxBy(_._1.width)._1.width,
-      sorted = true)
+    val partitionMapIntervals = destinationPartitionMap.toIntervalArray()
 
     val preparedRight = {
       rightRdd.flattenRddByRegions()
@@ -121,7 +91,7 @@ sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y
           })
         }, preservesPartitioning = true)
         .repartitionAndSortWithinPartitions(
-          ManualRegionPartitioner(destinationPartitionMap.length))
+          ManualRegionPartitioner(destinationPartitionMap.get.length))
         .map(f => (f._1._1, f._2))
     }
 

@@ -101,39 +101,16 @@ sealed trait Closest[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
     implicit tTag: ClassTag[T], xtag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
 
     val (preparedLeftRdd, partitionMap) = {
-      if (leftRdd.optPartitionMap.isDefined) {
-        (leftRdd.flattenRddByRegions(), leftRdd.optPartitionMap.get)
+      if (leftRdd.partitionMap.isDefined) {
+        (leftRdd.flattenRddByRegions(), leftRdd.partitionMap)
       } else {
         val sortedLeft = leftRdd.sortLexicographically(storePartitionMap = true)
-        (sortedLeft.flattenRddByRegions(), sortedLeft.optPartitionMap.get)
+        (sortedLeft.flattenRddByRegions(), sortedLeft.partitionMap)
       }
     }
 
-    val adjustedPartitionMapWithIndex = partitionMap
-      // the zipWithIndex gives us the destination partition ID
-      .zipWithIndex
-      .filter(_._1.nonEmpty)
-      .map(f => (f._1.get, f._2)).map(g => {
-        // first region for the bound
-        val rr = g._1._1
-        // second region for the bound
-        val secondrr = g._1._2
-        // in the case where we span multiple referenceNames
-        if (rr.referenceName != g._1._2.referenceName) {
-          // create a ReferenceRegion that goes to the end of the chromosome
-          (ReferenceRegion(rr.referenceName, rr.start, rr.end), g._2)
-        } else {
-          // otherwise we just have the ReferenceRegion span from partition
-          // start to end
-          (ReferenceRegion(rr.referenceName, rr.start, secondrr.end), g._2)
-        }
-      })
-
     // we use an interval array to quickly look up the destination partitions
-    val partitionMapIntervals = IntervalArray(
-      adjustedPartitionMapWithIndex,
-      adjustedPartitionMapWithIndex.maxBy(_._1.width)._1.width,
-      sorted = true)
+    val partitionMapIntervals = partitionMap.toIntervalArray()
 
     val assignedRightRdd: RDD[((ReferenceRegion, Int), X)] = {
       // copartitioning for the closest is tricky, and requires that we handle
@@ -150,7 +127,7 @@ sealed trait Closest[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
       // we have to find the partitions that don't have right data going there
       // so we can send the flanking partitions' data there
       val partitionsWithoutData =
-        partitionMap.indices.filterNot(firstPass.map(_._1._2).distinct().collect.contains)
+        partitionMap.get.indices.filterNot(firstPass.map(_._1._2).distinct().collect.contains)
 
       // this gives us a list of partitions that are sending copies of their
       // data and the number of nodes to send to. a negative number of nodes
@@ -201,7 +178,7 @@ sealed trait Closest[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
     val preparedRightRdd =
       assignedRightRdd
         .repartitionAndSortWithinPartitions(
-          ManualRegionPartitioner(partitionMap.length))
+          ManualRegionPartitioner(partitionMap.get.length))
         // return to an RDD[(ReferenceRegion, T)], removing the partition ID
         .map(f => (f._1._1, f._2))
 
