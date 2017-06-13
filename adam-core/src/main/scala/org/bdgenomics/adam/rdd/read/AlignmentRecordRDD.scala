@@ -255,8 +255,7 @@ case class AlignmentRecordRDD(
    * split alignments are stored in multiple separate reads.
    *
    * @param elem Read to produce regions for.
-   * @param stranded Whether or not to report stranded data for each
-   *   AlignmentRecord such that true reports stranded data and false does not.
+   * @param stranded True to report stranded data for each AlignmentRecord.
    * @return The seq of reference regions this read covers.
    */
   protected def getReferenceRegions(elem: AlignmentRecord,
