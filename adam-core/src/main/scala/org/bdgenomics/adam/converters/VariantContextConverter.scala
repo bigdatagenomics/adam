@@ -30,12 +30,14 @@ import htsjdk.variant.variantcontext.{
   VariantContextBuilder
 }
 import htsjdk.variant.vcf.{
+  VCFCompoundHeaderLine,
   VCFConstants,
-  VCFInfoHeaderLine,
   VCFFormatHeaderLine,
+  VCFHeader,
   VCFHeaderLine,
   VCFHeaderLineCount,
-  VCFHeaderLineType
+  VCFHeaderLineType,
+  VCFInfoHeaderLine
 }
 import java.util.Collections
 import org.bdgenomics.utils.misc.Logging
@@ -45,6 +47,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.util.PhredUtils
 import org.bdgenomics.formats.avro._
+import org.slf4j.Logger
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ Buffer, HashMap }
 
@@ -149,6 +152,74 @@ object VariantContextConverter {
       case GenotypeAllele.REF                                => Allele.create(g.getVariant.getReferenceAllele, true)
       case GenotypeAllele.ALT                                => Allele.create(g.getVariant.getAlternateAllele)
     }
+  }
+
+  private[adam] def cleanAndMixInSupportedLines(
+    headerLines: Seq[VCFHeaderLine],
+    stringency: ValidationStringency,
+    log: Logger): Seq[VCFHeaderLine] = {
+
+    // dedupe
+    val deduped = headerLines.distinct
+
+    def auditLine(line: VCFCompoundHeaderLine,
+                  defaultLine: VCFCompoundHeaderLine,
+                  replaceFn: (String, VCFCompoundHeaderLine) => VCFCompoundHeaderLine): Option[VCFCompoundHeaderLine] = {
+      if (line.getType != defaultLine.getType) {
+        val msg = "Field type for provided header line (%s) does not match supported line (%s)".format(
+          line, defaultLine)
+        if (stringency == ValidationStringency.STRICT) {
+          throw new IllegalArgumentException(msg)
+        } else {
+          if (stringency == ValidationStringency.LENIENT) {
+            log.warn(msg)
+          }
+          Some(replaceFn("BAD_%s".format(line.getID), line))
+        }
+      } else {
+        None
+      }
+    }
+
+    // remove our supported header lines
+    deduped.flatMap(line => line match {
+      case fl: VCFFormatHeaderLine => {
+        val key = fl.getID
+        DefaultHeaderLines.formatHeaderLines
+          .find(_.getID == key)
+          .fold(Some(fl).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
+            auditLine(fl, defaultLine, (newId, oldLine) => {
+              new VCFFormatHeaderLine(newId,
+                oldLine.getCountType,
+                oldLine.getType,
+                oldLine.getDescription)
+            })
+          })
+      }
+      case il: VCFInfoHeaderLine => {
+        val key = il.getID
+        DefaultHeaderLines.infoHeaderLines
+          .find(_.getID == key)
+          .fold(Some(il).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
+            auditLine(il, defaultLine, (newId, oldLine) => {
+              new VCFInfoHeaderLine(newId,
+                oldLine.getCountType,
+                oldLine.getType,
+                oldLine.getDescription)
+            })
+          })
+      }
+      case l => {
+        Some(l)
+      }
+    }) ++ DefaultHeaderLines.allHeaderLines
+  }
+
+  private[adam] def headerLines(header: VCFHeader): Seq[VCFHeaderLine] = {
+    (header.getFilterLines ++
+      header.getFormatHeaderLines ++
+      header.getInfoHeaderLines ++
+      header.getOtherHeaderLines).toSeq
   }
 }
 

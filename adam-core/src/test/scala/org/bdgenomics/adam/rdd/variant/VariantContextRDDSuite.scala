@@ -118,13 +118,35 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val records = rdd.rdd.count
 
     implicit val tFormatter = VCFInFormatter
-    implicit val uFormatter = new VCFOutFormatter(rdd.headerLines)
+    implicit val uFormatter = new VCFOutFormatter
 
     val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
       .transform(_.cache())
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
     assert(pipedRdd.rdd.flatMap(_.genotypes).count === 18)
+  }
+
+  sparkTest("don't lose any non-default VCF header lines or attributes when piping as VCF") {
+    val freebayesVcf = testFile("NA12878.chr22.tiny.freebayes.vcf")
+    val rdd: VariantContextRDD = sc.loadVcf(freebayesVcf)
+
+    implicit val tFormatter = VCFInFormatter
+    implicit val uFormatter = new VCFOutFormatter
+
+    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
+
+    // check for freebayes-specific VCF INFO keys
+    val variant = pipedRdd.toVariantRDD.rdd.first
+    for (freebayesInfoKey <- Seq("NS", "DPB", "RO", "AO", "PRO", "PAO", "QR", "QA")) {
+      assert(variant.getAnnotation.getAttributes.containsKey(freebayesInfoKey))
+    }
+
+    // check for freebayes-specific VCF FORMAT keys
+    val genotype = pipedRdd.toGenotypeRDD.rdd.first
+    for (freebayesFormatKey <- Seq("RO", "QR", "AO", "QA")) {
+      assert(genotype.getVariantCallingAnnotations.getAttributes.containsKey(freebayesFormatKey))
+    }
   }
 
   sparkTest("save a file sorted by contig index") {

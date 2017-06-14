@@ -218,7 +218,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             .setSampleId(s)
             .build()
         }).toSeq
-      (sd, samples, headerLines(vcfHeader))
+      (sd, samples, VariantContextConverter.headerLines(vcfHeader))
     }
 
     headerToMetadata(readVcfHeader(pathName))
@@ -229,76 +229,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       new Path(pathName)))
   }
 
-  private def cleanAndMixInSupportedLines(
-    headerLines: Seq[VCFHeaderLine],
-    stringency: ValidationStringency): Seq[VCFHeaderLine] = {
-
-    // dedupe
-    val deduped = headerLines.distinct
-
-    def auditLine(line: VCFCompoundHeaderLine,
-                  defaultLine: VCFCompoundHeaderLine,
-                  replaceFn: (String, VCFCompoundHeaderLine) => VCFCompoundHeaderLine): Option[VCFCompoundHeaderLine] = {
-      if (line.getType != defaultLine.getType) {
-        val msg = "Field type for provided header line (%s) does not match supported line (%s)".format(
-          line, defaultLine)
-        if (stringency == ValidationStringency.STRICT) {
-          throw new IllegalArgumentException(msg)
-        } else {
-          if (stringency == ValidationStringency.LENIENT) {
-            log.warn(msg)
-          }
-          Some(replaceFn("BAD_%s".format(line.getID), line))
-        }
-      } else {
-        None
-      }
-    }
-
-    // remove our supported header lines
-    deduped.flatMap(line => line match {
-      case fl: VCFFormatHeaderLine => {
-        val key = fl.getID
-        DefaultHeaderLines.formatHeaderLines
-          .find(_.getID == key)
-          .fold(Some(fl).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
-            auditLine(fl, defaultLine, (newId, oldLine) => {
-              new VCFFormatHeaderLine(newId,
-                oldLine.getCountType,
-                oldLine.getType,
-                oldLine.getDescription)
-            })
-          })
-      }
-      case il: VCFInfoHeaderLine => {
-        val key = il.getID
-        DefaultHeaderLines.infoHeaderLines
-          .find(_.getID == key)
-          .fold(Some(il).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
-            auditLine(il, defaultLine, (newId, oldLine) => {
-              new VCFInfoHeaderLine(newId,
-                oldLine.getCountType,
-                oldLine.getType,
-                oldLine.getDescription)
-            })
-          })
-      }
-      case l => {
-        Some(l)
-      }
-    }) ++ DefaultHeaderLines.allHeaderLines
-  }
-
-  private def headerLines(header: VCFHeader): Seq[VCFHeaderLine] = {
-    (header.getFilterLines ++
-      header.getFormatHeaderLines ++
-      header.getInfoHeaderLines ++
-      header.getOtherHeaderLines).toSeq
-  }
-
   private def loadHeaderLines(pathName: String): Seq[VCFHeaderLine] = {
     getFsAndFilesWithFilter(pathName, new FileFilter("_header"))
-      .map(p => headerLines(readVcfHeader(p.toString)))
+      .map(p => VariantContextConverter.headerLines(readVcfHeader(p.toString)))
       .flatten
       .distinct
   }
@@ -1139,7 +1072,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
-      cleanAndMixInSupportedLines(headers, stringency))
+      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
   }
 
   /**
@@ -1185,7 +1118,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
-      cleanAndMixInSupportedLines(headers, stringency))
+      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
   }
 
   /**
