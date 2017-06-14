@@ -39,7 +39,7 @@ import scala.collection.mutable.ListBuffer
 /**
  * OutFormatter that reads streaming VCF.
  */
-case class VCFOutFormatter extends OutFormatter[VariantContext] with Logging {
+case class VCFOutFormatter() extends OutFormatter[VariantContext] with Logging {
 
   /**
    * Reads VariantContexts from an input stream. Autodetects VCF format.
