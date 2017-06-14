@@ -44,7 +44,6 @@ import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.converters._
-import org.bdgenomics.adam.converters.VariantContextConverter._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
@@ -219,7 +218,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             .setSampleId(s)
             .build()
         }).toSeq
-      (sd, samples, headerLines(vcfHeader))
+      (sd, samples, VariantContextConverter.headerLines(vcfHeader))
     }
 
     headerToMetadata(readVcfHeader(pathName))
@@ -232,7 +231,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   private def loadHeaderLines(pathName: String): Seq[VCFHeaderLine] = {
     getFsAndFilesWithFilter(pathName, new FileFilter("_header"))
-      .map(p => headerLines(readVcfHeader(p.toString)))
+      .map(p => VariantContextConverter.headerLines(readVcfHeader(p.toString)))
       .flatten
       .distinct
   }
@@ -1073,7 +1072,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
-      cleanAndMixInSupportedLines(headers, stringency, log))
+      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
   }
 
   /**
@@ -1119,7 +1118,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
-      cleanAndMixInSupportedLines(headers, stringency, log))
+      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
   }
 
   /**
