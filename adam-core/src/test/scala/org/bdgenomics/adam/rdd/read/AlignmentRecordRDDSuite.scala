@@ -61,7 +61,8 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   private class TestAlignments(override val rdd: RDD[AlignmentRecord])
       extends AlignmentRecordRDD(rdd,
         SequenceDictionary.empty,
-        RecordGroupDictionary.empty) {
+        RecordGroupDictionary.empty,
+        None) {
 
     /**
      * Gets the reference regions for an AlignmentRecord.

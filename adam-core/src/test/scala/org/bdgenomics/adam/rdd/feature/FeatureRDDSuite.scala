@@ -69,7 +69,9 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
    * @param rdd An RDD of genomic Features.
    */
   private class TestFeatures(override val rdd: RDD[Feature])
-      extends FeatureRDD(rdd, SequenceDictionary.empty) {
+      extends FeatureRDD(rdd,
+        SequenceDictionary.empty,
+        None) {
 
     /**
      * Gets the reference regions for a feature.
@@ -586,7 +588,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
         .build()
 
     val featureRDD: FeatureRDD =
-      FeatureRDD.inferSequenceDictionary(sc.parallelize(Seq(f1, f2, f3)),
+      FeatureRDD(sc.parallelize(Seq(f1, f2, f3)),
         optStorageLevel = None)
 
     val coverageRDD: CoverageRDD = featureRDD.toCoverage

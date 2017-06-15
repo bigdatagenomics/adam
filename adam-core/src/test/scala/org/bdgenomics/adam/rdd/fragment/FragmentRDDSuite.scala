@@ -41,7 +41,10 @@ class FragmentRDDSuite extends ADAMFunSuite {
    * @param rdd An RDD of genomic Fragments.
    */
   private class TestFragments(override val rdd: RDD[Fragment])
-      extends FragmentRDD(rdd, SequenceDictionary.empty, RecordGroupDictionary.empty) {
+      extends FragmentRDD(rdd,
+        SequenceDictionary.empty,
+        RecordGroupDictionary.empty,
+        None) {
 
     /**
      * Gets the reference regions for a feature.
