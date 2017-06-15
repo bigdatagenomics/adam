@@ -17,6 +17,12 @@
  */
 package org.bdgenomics.adam.rdd.fragment
 
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{
+  RecordGroupDictionary,
+  ReferenceRegion,
+  SequenceDictionary
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
@@ -24,9 +30,34 @@ import org.bdgenomics.adam.rdd.read.{
   QualityScoreBin
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.formats.avro.{ Fragment, Feature, Strand }
 import scala.collection.JavaConversions._
 
 class FragmentRDDSuite extends ADAMFunSuite {
+
+  /**
+   * Class to test protected and private methods
+   *
+   * @param rdd An RDD of genomic Fragments.
+   */
+  private class TestFragments(override val rdd: RDD[Fragment])
+      extends FragmentRDD(rdd, SequenceDictionary.empty, RecordGroupDictionary.empty) {
+
+    /**
+     * Gets the reference regions for a feature.
+     *
+     * @param fragment The fragment.
+     * @param stranded True to report stranded data for each Feature.
+     * @return Since a feature maps directly to a single genomic region, this
+     *   method will always return a Seq of exactly one ReferenceRegion.
+     */
+    override def getReferenceRegions(
+      fragment: Fragment,
+      stranded: Boolean): Seq[ReferenceRegion] = {
+
+      super.getReferenceRegions(fragment, stranded)
+    }
+  }
 
   sparkTest("don't lose any reads when piping interleaved fastq to sam") {
     // write suffixes at end of reads
@@ -86,6 +117,16 @@ class FragmentRDDSuite extends ADAMFunSuite {
       files = Seq(scriptPath))
     val newRecords = pipedRdd.rdd.count
     assert(2 * records === newRecords)
+  }
+
+  sparkTest("getReferenceRegions with stranded set to true gets the stranded region") {
+    val features = sc.loadFragments(testFile("small.1.sam"))
+
+    val tempFeatures = new TestFragments(features.rdd)
+
+    assert(!tempFeatures.rdd.collect
+      .map(f => tempFeatures.getReferenceRegions(f, true))
+      .exists(_.head.strand == Strand.INDEPENDENT))
   }
 
   sparkTest("use broadcast join to pull down fragments mapped to targets") {

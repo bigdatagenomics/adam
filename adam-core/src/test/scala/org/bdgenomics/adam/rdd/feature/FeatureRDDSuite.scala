@@ -19,6 +19,8 @@ package org.bdgenomics.adam.rdd.feature
 
 import com.google.common.collect.ImmutableMap
 import java.io.File
+import org.apache.spark.rdd.RDD
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ Feature, Strand }
@@ -59,6 +61,30 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     val tempFile = File.createTempFile("FeatureRDDFunctionsSuite", "")
     val tempDir = tempFile.getParentFile
     new File(tempDir, tempFile.getName + suffix).getAbsolutePath
+  }
+
+  /**
+   * Class to test protected and private methods
+   *
+   * @param rdd An RDD of genomic Features.
+   */
+  private class TestFeatures(override val rdd: RDD[Feature])
+      extends FeatureRDD(rdd, SequenceDictionary.empty) {
+
+    /**
+     * Gets the reference regions for a feature.
+     *
+     * @param feature The feature.
+     * @param stranded True to report stranded data for each Feature.
+     * @return Since a feature maps directly to a single genomic region, this
+     *   method will always return a Seq of exactly one ReferenceRegion.
+     */
+    override def getReferenceRegions(
+      feature: Feature,
+      stranded: Boolean): Seq[ReferenceRegion] = {
+
+      super.getReferenceRegions(feature, stranded)
+    }
   }
 
   sparkTest("round trip GTF format") {
@@ -535,15 +561,48 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
   }
 
   sparkTest("correctly flatmaps CoverageRDD from FeatureRDD") {
-    val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).build()
-    val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
-    val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
+    val f1 =
+      Feature.newBuilder()
+        .setContigName("chr1")
+        .setStart(1)
+        .setEnd(10)
+        .setScore(3.0)
+        .build()
 
-    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
+    val f2 =
+      Feature.newBuilder()
+        .setContigName("chr1")
+        .setStart(15)
+        .setEnd(20)
+        .setScore(2.0)
+        .build()
+
+    val f3 =
+      Feature.newBuilder()
+        .setContigName("chr2")
+        .setStart(15)
+        .setEnd(20)
+        .setScore(2.0)
+        .build()
+
+    val featureRDD: FeatureRDD =
+      FeatureRDD.inferSequenceDictionary(sc.parallelize(Seq(f1, f2, f3)),
+        optStorageLevel = None)
+
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
     val coverage = coverageRDD.flatten
 
     assert(coverage.rdd.count == 19)
+  }
+
+  sparkTest("getReferenceRegions with stranded set to true gets the stranded region") {
+    val features = sc.loadFeatures(testFile("small.1.narrowPeak"))
+
+    val tempFeatures = new TestFeatures(features.rdd)
+
+    assert(!tempFeatures.rdd.collect
+      .map(f => tempFeatures.getReferenceRegions(f, true))
+      .exists(_.head.strand == Strand.INDEPENDENT))
   }
 
   sparkTest("use broadcast join to pull down features mapped to targets") {

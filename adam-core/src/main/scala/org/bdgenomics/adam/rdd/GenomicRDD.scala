@@ -482,9 +482,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     elem: T,
     stranded: Boolean = false): Seq[ReferenceRegion]
 
-  protected def flattenRddByRegions(): RDD[(ReferenceRegion, T)] = {
+  protected def flattenRddByRegions(stranded: Boolean = false): RDD[(ReferenceRegion, T)] = {
     rdd.flatMap(elem => {
-      getReferenceRegions(elem).map(r => (r, elem))
+      getReferenceRegions(elem, stranded).map(r => (r, elem))
     })
   }
 

@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
@@ -51,6 +52,32 @@ private object SequenceIndexWithReadOrdering extends Ordering[((Int, Long), (Ali
 }
 
 class AlignmentRecordRDDSuite extends ADAMFunSuite {
+
+  /**
+   * Class to test protected and private methods
+   *
+   * @param rdd An RDD of genomic Alignments.
+   */
+  private class TestAlignments(override val rdd: RDD[AlignmentRecord])
+      extends AlignmentRecordRDD(rdd,
+        SequenceDictionary.empty,
+        RecordGroupDictionary.empty) {
+
+    /**
+     * Gets the reference regions for an AlignmentRecord.
+     *
+     * @param alignmentRecord The AlignmentRecord.
+     * @param stranded True to report stranded data for each Feature.
+     * @return Since a feature maps directly to a single genomic region, this
+     *   method will always return a Seq of exactly one ReferenceRegion.
+     */
+    override def getReferenceRegions(
+      alignmentRecord: AlignmentRecord,
+      stranded: Boolean): Seq[ReferenceRegion] = {
+
+      super.getReferenceRegions(alignmentRecord, stranded)
+    }
+  }
 
   sparkTest("sorting reads") {
     val random = new Random("sorting".hashCode)
@@ -710,6 +737,16 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val tempBam = sc.loadBam(tempPath)
     assert(tempBam.rdd.count === ardd.rdd.count)
+  }
+
+  sparkTest("getReferenceRegions with stranded set to true gets the stranded region") {
+    val reads = sc.loadAlignments(testFile("small.1.sam"))
+
+    val testAlignments = new TestAlignments(reads.rdd)
+
+    assert(!testAlignments.rdd.collect
+      .map(f => testAlignments.getReferenceRegions(f, true))
+      .exists(_.head.strand == Strand.INDEPENDENT))
   }
 
   sparkTest("use broadcast join to pull down reads mapped to targets") {
