@@ -178,4 +178,24 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     checkFiles(outputPath, testFile("sorted.lex.vcf"))
   }
+
+  ignore("save a multiallelic gvcf") {
+
+    // this test relies on sort order to pass
+    // however, the sort order is not canonical
+    // specifically, we don't define how to canonically sort multiallelic sites
+
+    val inputPath = testFile("gvcf_dir/gvcf_multiallelic.g.vcf")
+    val variants = sc.loadVcf(inputPath)
+    val outputPath = tmpFile("multiallelic.vcf")
+
+    variants.sort()
+      .saveAsVcf(outputPath,
+        asSingleFile = true,
+        deferMerging = false,
+        disableFastConcat = false,
+        ValidationStringency.LENIENT)
+
+    checkFiles(outputPath, testFile("gvcf_multiallelic/multiallelic.vcf"))
+  }
 }

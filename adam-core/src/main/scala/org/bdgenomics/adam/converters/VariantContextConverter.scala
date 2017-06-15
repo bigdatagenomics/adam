@@ -40,7 +40,7 @@ import htsjdk.variant.vcf.{
   VCFInfoHeaderLine
 }
 import java.util.Collections
-import org.bdgenomics.utils.misc.Logging
+import org.bdgenomics.utils.misc.{ Logging, MathUtils }
 import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext => ADAMVariantContext
@@ -48,6 +48,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.util.PhredUtils
 import org.bdgenomics.formats.avro._
 import org.slf4j.Logger
+import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ Buffer, HashMap }
 
@@ -954,15 +955,63 @@ class VariantContextConverter(
     Option(g.getGenotypeQuality).fold(gb.noGQ)(gq => gb.GQ(gq))
   }
 
+  private[converters] def numPls(copyNumber: Int): Int = {
+
+    @tailrec def plCalculator(cn: Int, sum: Int = 0): Int = {
+      if (cn == 0) {
+        sum + 1
+      } else {
+        plCalculator(cn - 1, sum + cn + 1)
+      }
+    }
+
+    plCalculator(copyNumber)
+  }
+
+  private[converters] def nonRefPls(gls: java.util.List[java.lang.Float],
+                                    nls: java.util.List[java.lang.Float]): Array[Int] = {
+    require(gls.length == nls.length,
+      "Genotype likelihoods (%s) and non-reference likelihoods (%s) disagree on copy number".format(
+        gls.mkString(","), nls.mkString(",")))
+    val copyNumber = gls.length - 1
+    val elements = numPls(copyNumber)
+
+    val array = Array.fill(elements) { Int.MinValue }
+
+    (0 to copyNumber).foreach(idx => {
+      array(idx) = PhredUtils.logProbabilityToPhred(gls.get(idx))
+    })
+
+    var cnIdx = copyNumber + 1
+    (1 to copyNumber).foreach(idx => {
+      array(cnIdx + 1) = PhredUtils.logProbabilityToPhred(nls.get(idx))
+      cnIdx += (copyNumber - idx)
+    })
+
+    array
+  }
+
   private[converters] def extractGenotypeLikelihoods(g: Genotype,
                                                      gb: GenotypeBuilder): GenotypeBuilder = {
     val gls = g.getGenotypeLikelihoods
+    val nls = g.getNonReferenceLikelihoods
 
     if (gls.isEmpty) {
-      gb.noPL
-    } else {
+      if (g.getVariant == null ||
+        g.getVariant.getAlternateAllele != null) {
+        if (nls.nonEmpty) {
+          log.warn("Expected empty non-reference likelihoods for genotype with empty likelihoods (%s).".format(g))
+        }
+        gb.noPL
+      } else {
+        gb.PL(nls.map(l => PhredUtils.logProbabilityToPhred(l))
+          .toArray)
+      }
+    } else if (nls.isEmpty) {
       gb.PL(gls.map(l => PhredUtils.logProbabilityToPhred(l))
         .toArray)
+    } else {
+      gb.PL(nonRefPls(gls, nls))
     }
   }
 
