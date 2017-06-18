@@ -256,6 +256,14 @@ class VariantContextConverter(
   private def jFloat(f: Float): java.lang.Float = f
 
   /**
+   * Converts a Scala double to a Java double.
+   *
+   * @param f Scala double precision floating point value.
+   * @return Java double precision floating point value.
+   */
+  private def jDouble(f: Double): java.lang.Double = f
+
+  /**
    * Converts a GATK variant context into one or more ADAM variant context(s).
    *
    * @param vc GATK variant context to convert.
@@ -818,7 +826,7 @@ class VariantContextConverter(
       val pl = g.getPL
       try {
         val likelihoods = gIndices.map(idx => {
-          jFloat(PhredUtils.phredToLogProbability(pl(idx)).toFloat)
+          jDouble(PhredUtils.phredToLogProbability(pl(idx)))
         }).toList
         gb.setGenotypeLikelihoods(likelihoods)
       } catch {
@@ -838,7 +846,7 @@ class VariantContextConverter(
     if (g.hasPL) {
       val pl = g.getPL
       gb.setNonReferenceLikelihoods(gIndices.map(idx => {
-        jFloat(PhredUtils.phredToLogProbability(pl(idx)).toFloat)
+        jDouble(PhredUtils.phredToLogProbability(pl(idx)))
       }).toList)
     } else {
       gb
@@ -968,8 +976,8 @@ class VariantContextConverter(
     plCalculator(copyNumber)
   }
 
-  private[converters] def nonRefPls(gls: java.util.List[java.lang.Float],
-                                    nls: java.util.List[java.lang.Float]): Array[Int] = {
+  private[converters] def nonRefPls(gls: java.util.List[java.lang.Double],
+                                    nls: java.util.List[java.lang.Double]): Array[Int] = {
     require(gls.length == nls.length,
       "Genotype likelihoods (%s) and non-reference likelihoods (%s) disagree on copy number".format(
         gls.mkString(","), nls.mkString(",")))
@@ -979,12 +987,12 @@ class VariantContextConverter(
     val array = Array.fill(elements) { Int.MinValue }
 
     (0 to copyNumber).foreach(idx => {
-      array(idx) = PhredUtils.logProbabilityToPhred(gls.get(idx).toDouble)
+      array(idx) = PhredUtils.logProbabilityToPhred(gls.get(idx))
     })
 
     var cnIdx = copyNumber + 1
     (1 to copyNumber).foreach(idx => {
-      array(cnIdx + 1) = PhredUtils.logProbabilityToPhred(nls.get(idx).toDouble)
+      array(cnIdx + 1) = PhredUtils.logProbabilityToPhred(nls.get(idx))
       cnIdx += (copyNumber - idx)
     })
 
@@ -1004,11 +1012,11 @@ class VariantContextConverter(
         }
         gb.noPL
       } else {
-        gb.PL(nls.map(l => PhredUtils.logProbabilityToPhred(l.toDouble))
+        gb.PL(nls.map(l => PhredUtils.logProbabilityToPhred(l))
           .toArray)
       }
     } else if (nls.isEmpty) {
-      gb.PL(gls.map(l => PhredUtils.logProbabilityToPhred(l.toDouble))
+      gb.PL(gls.map(l => PhredUtils.logProbabilityToPhred(l))
         .toArray)
     } else {
       gb.PL(nonRefPls(gls, nls))
