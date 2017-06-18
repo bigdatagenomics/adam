@@ -303,7 +303,7 @@ class VariantContextConverter(
           // is the last allele the non-ref allele?
           val alleles = vc.getAlternateAlleles.toSeq
           val referenceModelIndex = if (alleles.nonEmpty && alleles.last == NON_REF_ALLELE) {
-            Some(alleles.length - 1)
+            Some(alleles.length)
           } else {
             None
           }
@@ -818,7 +818,7 @@ class VariantContextConverter(
       val pl = g.getPL
       try {
         val likelihoods = gIndices.map(idx => {
-          jFloat(PhredUtils.phredToLogProbability(pl(idx)))
+          jFloat(PhredUtils.phredToLogProbability(pl(idx)).toFloat)
         }).toList
         gb.setGenotypeLikelihoods(likelihoods)
       } catch {
@@ -838,7 +838,7 @@ class VariantContextConverter(
     if (g.hasPL) {
       val pl = g.getPL
       gb.setNonReferenceLikelihoods(gIndices.map(idx => {
-        jFloat(PhredUtils.phredToLogProbability(pl(idx)))
+        jFloat(PhredUtils.phredToLogProbability(pl(idx)).toFloat)
       }).toList)
     } else {
       gb
@@ -979,12 +979,12 @@ class VariantContextConverter(
     val array = Array.fill(elements) { Int.MinValue }
 
     (0 to copyNumber).foreach(idx => {
-      array(idx) = PhredUtils.logProbabilityToPhred(gls.get(idx))
+      array(idx) = PhredUtils.logProbabilityToPhred(gls.get(idx).toDouble)
     })
 
     var cnIdx = copyNumber + 1
     (1 to copyNumber).foreach(idx => {
-      array(cnIdx + 1) = PhredUtils.logProbabilityToPhred(nls.get(idx))
+      array(cnIdx + 1) = PhredUtils.logProbabilityToPhred(nls.get(idx).toDouble)
       cnIdx += (copyNumber - idx)
     })
 
@@ -1004,11 +1004,11 @@ class VariantContextConverter(
         }
         gb.noPL
       } else {
-        gb.PL(nls.map(l => PhredUtils.logProbabilityToPhred(l))
+        gb.PL(nls.map(l => PhredUtils.logProbabilityToPhred(l.toDouble))
           .toArray)
       }
     } else if (nls.isEmpty) {
-      gb.PL(gls.map(l => PhredUtils.logProbabilityToPhred(l))
+      gb.PL(gls.map(l => PhredUtils.logProbabilityToPhred(l.toDouble))
         .toArray)
     } else {
       gb.PL(nonRefPls(gls, nls))
@@ -1663,7 +1663,7 @@ class VariantContextConverter(
       val coreWithOptNonRefs = nonRefIndex.fold(convertedCore)(nonRefAllele => {
 
         // non-ref pl indices
-        val nrIndices = GenotypeLikelihoods.getPLIndecesOfAlleles(alleleIdx, nonRefAllele)
+        val nrIndices = GenotypeLikelihoods.getPLIndecesOfAlleles(0, nonRefAllele)
 
         formatNonRefGenotypeLikelihoods(g, convertedCore, nrIndices)
       })

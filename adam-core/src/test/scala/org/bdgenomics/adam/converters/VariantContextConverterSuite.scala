@@ -344,13 +344,15 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamGT1.getAlternateReadDepth === 2)
     assert(adamGT1.getGenotypeLikelihoods
       .map(f => f: scala.Float)
+      .map(_.toDouble)
       .map(PhredUtils.logProbabilityToPhred)
-      .sameElements(List(59, 0, 256)))
+      .sameElements(List(59, 0, Int.MaxValue)))
 
     assert(adamGT2.getAlleles.sameElements(List(GenotypeAllele.OTHER_ALT, GenotypeAllele.ALT)))
     assert(adamGT2.getAlternateReadDepth === 3)
     assert(adamGT2.getGenotypeLikelihoods
       .map(f => f: scala.Float)
+      .map(_.toDouble)
       .map(PhredUtils.logProbabilityToPhred)
       .sameElements(List(59, 1, 102)))
 
@@ -391,6 +393,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamGT.getGenotypeLikelihoods.isEmpty)
     assert(adamGT.getNonReferenceLikelihoods
       .map(f => f: scala.Float)
+      .map(_.toDouble)
       .map(PhredUtils.logProbabilityToPhred)
       .sameElements(List(0, 1, 2)))
   }

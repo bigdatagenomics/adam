@@ -17,7 +17,15 @@
  */
 package org.bdgenomics.adam.util
 
-import scala.math.{ exp, pow, log, log10 }
+import scala.math.{
+  exp,
+  expm1,
+  pow,
+  log,
+  log1p,
+  log10,
+  round
+}
 
 /**
  * Helper singleton for converting Phred scores to/from probabilities.
@@ -36,11 +44,20 @@ object PhredUtils extends Serializable {
     phredToErrorProbabilityCache.map { p => 1.0 - p }
   }
 
+  private val MLOG10_DIV10 = -log(10.0) / 10.0
+  private val M10_DIV_LOG10 = -10.0 / log(10.0)
+
   /**
    * @param phred The phred score to convert.
    * @return The input phred score as a log success probability.
    */
-  def phredToLogProbability(phred: Int): Float = log(phredToSuccessProbability(phred)).toFloat
+  def phredToLogProbability(phred: Int): Double = {
+    if (phred < 255) {
+      log(phredToSuccessProbability(phred)).toFloat
+    } else {
+      log1p(-exp(phred * MLOG10_DIV10))
+    }
+  }
 
   /**
    * @param phred The phred score to convert.
@@ -82,11 +99,11 @@ object PhredUtils extends Serializable {
   /**
    * @param p A log-scaled success probability to conver to phred.
    * @return Returns this probability as a Phred score. If the log value is 0.0,
-   *   we clip the phred score to 256.
+   *   we clip the phred score to Int.MaxValue.
    */
-  def logProbabilityToPhred(p: Float): Int = if (p == 0.0) {
-    256
+  def logProbabilityToPhred(p: Double): Int = if (p == 0.0) {
+    Int.MaxValue
   } else {
-    successProbabilityToPhred(exp(p))
+    round(M10_DIV_LOG10 * log(-expm1(p))).toInt
   }
 }
