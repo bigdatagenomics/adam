@@ -343,16 +343,14 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamGT1.getAlleles.sameElements(List(GenotypeAllele.ALT, GenotypeAllele.OTHER_ALT)))
     assert(adamGT1.getAlternateReadDepth === 2)
     assert(adamGT1.getGenotypeLikelihoods
-      .map(f => f: scala.Float)
-      .map(_.toDouble)
+      .map(d => d: scala.Double)
       .map(PhredUtils.logProbabilityToPhred)
       .sameElements(List(59, 0, Int.MaxValue)))
 
     assert(adamGT2.getAlleles.sameElements(List(GenotypeAllele.OTHER_ALT, GenotypeAllele.ALT)))
     assert(adamGT2.getAlternateReadDepth === 3)
     assert(adamGT2.getGenotypeLikelihoods
-      .map(f => f: scala.Float)
-      .map(_.toDouble)
+      .map(d => d: scala.Double)
       .map(PhredUtils.logProbabilityToPhred)
       .sameElements(List(59, 1, 102)))
 
@@ -392,8 +390,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamGT.getMinReadDepth === 38)
     assert(adamGT.getGenotypeLikelihoods.isEmpty)
     assert(adamGT.getNonReferenceLikelihoods
-      .map(f => f: scala.Float)
-      .map(_.toDouble)
+      .map(d => d: scala.Double)
       .map(PhredUtils.logProbabilityToPhred)
       .sameElements(List(0, 1, 2)))
   }
@@ -925,8 +922,8 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
   test("extract genotype likelihoods going adam->htsjdk") {
     val g = converter.extractGenotypeLikelihoods(Genotype.newBuilder
-      .setGenotypeLikelihoods(Seq(-0.1f, -0.001f, -0.000001f)
-        .map(f => f: java.lang.Float))
+      .setGenotypeLikelihoods(Seq(-0.1, -0.001, -0.000001)
+        .map(d => d: java.lang.Double))
       .build, newGb)
       .make
 
