@@ -4,7 +4,7 @@ For those groups with access to a HPC cluster managed by [Slurm](https://en.wiki
  
 While the full IO bandwidth benefits of Spark processing are likely best realized through a set of co-located compute/storage nodes, depending of on your network setup you may find Spark deployed on HPC to be a workable solution for testing or even production at scale, especially for those applications which perform multiple in-memory transformations and thus benefit from Spark's in-memory processing model.
  
-Follow the primary instructions in the ADAM README.md for install ADAM into `$ADAM_HOME` 
+Follow the primary instructions in the ADAM README.md for installing ADAM into `$ADAM_HOME` 
  
 ## Start Spark cluster 
  
@@ -40,13 +40,9 @@ submit the job file to Slurm:
 sbatch run.cmd
 ```
  
-This will start a Spark cluster containing 2 nodes that persist for 5 hours, unless you kill it sooner.
+This will start a Spark cluster containing 2 nodes that persists for 5 hours, unless you kill it sooner.
 The `slurm.out` file  created in the current directory will contain a line produced by `echo $MASTER` above which will 
-indicate the address of the Spark master to which your application or ADAM-shell should connect.
-Example:
-```
-spark://somehostname:7077
-```
+indicate the address of the Spark master to which your application or ADAM-shell should connect such as `spark://somehostname:7077`
  
 ## Start ADAM Shell
 Your sys admin will probably prefer that you aunch your ADAM-shell or start an application from a cluster node rather than the head node you log in to so you may want to do so with:
@@ -64,7 +60,7 @@ $ADAM_HOME/bin/adam-shell --master spark://hostnamefromslurmdotout:7077
 $ADAM_HOME/bin/adam-submit --master spark://hostnamefromslurmdotout:7077
 ```
  
-You should be able to connect to the Spark Web UI at `spark://hostnamefromslurmdotout:4040', however you may need to ask your local sys admin to open the requried ports.
+You should be able to connect to the Spark Web UI at `spark://hostnamefromslurmdotout:4040`, however you may need to ask your local sys admin to open the requried ports.
  
 ## Feedback
 We'd love to hear feedback on your experience running ADAM on HPC/Slurm or other deployment architectures, and let us know of any problems you run into via the mailing list or Gitter.
