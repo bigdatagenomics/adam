@@ -59,14 +59,12 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
     val baseGenomicRdd =
       AlignmentRecordRDD(baseRdd,
         SequenceDictionary.empty,
-        RecordGroupDictionary.empty,
-        None)
+        RecordGroupDictionary.empty)
 
     val recordsGenomicRdd =
       AlignmentRecordRDD(recordsRdd,
         SequenceDictionary.empty,
-        RecordGroupDictionary.empty,
-        None)
+        RecordGroupDictionary.empty)
 
     val jrdd = runJoin(baseGenomicRdd, recordsGenomicRdd).cache()
 
@@ -104,14 +102,12 @@ trait OuterRegionJoinSuite extends ADAMFunSuite {
     val baseGenomicRdd =
       AlignmentRecordRDD(baseRdd,
         SequenceDictionary.empty,
-        RecordGroupDictionary.empty,
-        None)
+        RecordGroupDictionary.empty)
 
     val recordsGenomicRdd =
       AlignmentRecordRDD(recordsRdd,
         SequenceDictionary.empty,
-        RecordGroupDictionary.empty,
-        None)
+        RecordGroupDictionary.empty)
 
     val jrdd = runJoin(baseGenomicRdd, recordsGenomicRdd).cache()
 

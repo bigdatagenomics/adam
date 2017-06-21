@@ -77,7 +77,7 @@ object GenotypeRDD extends Serializable {
             sequences: SequenceDictionary,
             samples: Seq[Sample],
             headerLines: Seq[VCFHeaderLine]): GenotypeRDD = {
-    GenotypeRDD(rdd, sequences, samples, headerLines, None)
+    GenotypeRDD(rdd, sequences, samples, headerLines, isSorted = false)
   }
 }
 
@@ -95,7 +95,7 @@ case class GenotypeRDD(rdd: RDD[Genotype],
                        sequences: SequenceDictionary,
                        @transient samples: Seq[Sample],
                        @transient headerLines: Seq[VCFHeaderLine],
-                       optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
+                       isSorted: Boolean) extends MultisampleAvroGenomicRDD[Genotype, GenotypeRDD] {
 
   def union(rdds: GenotypeRDD*): GenotypeRDD = {
     val iterableRdds = rdds.toSeq
@@ -124,7 +124,11 @@ case class GenotypeRDD(rdd: RDD[Genotype],
         }
       }
 
-    VariantContextRDD(vcRdd, sequences, samples, headerLines)
+    VariantContextRDD(vcRdd,
+      sequences,
+      samples,
+      headerLines,
+      isSorted = isSorted)
   }
 
   /**
@@ -132,8 +136,8 @@ case class GenotypeRDD(rdd: RDD[Genotype],
    * @return Returns a new GenotypeRDD with the underlying RDD replaced.
    */
   protected def replaceRdd(newRdd: RDD[Genotype],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenotypeRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+                           isSorted: Boolean = false): GenotypeRDD = {
+    copy(rdd = newRdd, isSorted = isSorted)
   }
 
   /**

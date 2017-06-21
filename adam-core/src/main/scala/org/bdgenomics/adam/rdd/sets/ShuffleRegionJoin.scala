@@ -19,20 +19,19 @@ package org.bdgenomics.adam.rdd.sets
 
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferenceRegion
-import org.bdgenomics.adam.rdd.{ GenomicRDD, ManualRegionPartitioner }
-import org.bdgenomics.utils.interval.array.IntervalArray
+import org.bdgenomics.adam.rdd.{ PartitionMap, GenomicRDD, ManualRegionPartitioner }
 import scala.reflect.ClassTag
 
 /**
  * A trait describing join implementations that are based on a sort-merge join.
  *
  * @tparam T The type of the left records.
- * @tparam U The type of the right records.
+ * @tparam X The type of the right records.
  * @tparam RT The resulting type of the left after the join.
  * @tparam RX The resulting type of the right after the join.
  */
-sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
-    extends SetOperationBetweenCollections[T, U, X, Y, RT, RX] {
+sealed trait ShuffleRegionJoin[T, X, RT, RX]
+    extends SetOperationBetweenCollections[T, X, RT, RX] {
 
   override protected def condition(firstRegion: ReferenceRegion,
                                    secondRegion: ReferenceRegion,
@@ -58,22 +57,21 @@ sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y
     candidateRegion.compareTo(until) < 0 || candidateRegion.covers(until)
   }
 
-  override protected def prepare()(implicit tTag: ClassTag[T], xtag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
+  protected def prepareRdds(
+    leftRdd: RDD[(ReferenceRegion, T)],
+    rightRdd: RDD[(ReferenceRegion, X)],
+    partitionMap: PartitionMap)(implicit tTag: ClassTag[T], xtag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
 
-    // default to current partition number if user did not specify
-    val numPartitions = optPartitions.getOrElse(leftRdd.rdd.partitions.length)
+    val numPartitions = optPartitions.getOrElse(leftRdd.partitions.length)
 
-    // we don't know if the left is sorted unless it has a partition map
     val (preparedLeft, destinationPartitionMap) = {
-      if (leftRdd.partitionMap.isDefined &&
-        leftRdd.rdd.partitions.length == numPartitions) {
-        (leftRdd.flattenRddByRegions(), leftRdd.partitionMap)
-      } else {
-        val sortedLeft =
-          leftRdd.sortLexicographically(numPartitions, storePartitionMap = true)
+      if (!partitionMap.isEmpty &&
+        numPartitions != leftRdd.partitions.length) {
 
-        val partitionMap = sortedLeft.partitionMap
-        (sortedLeft.flattenRddByRegions(), partitionMap)
+        (leftRdd, partitionMap)
+      } else {
+        val sortedLeft = leftRdd.sortByKey(ascending = true, numPartitions = numPartitions)
+        (sortedLeft, PartitionMap(sortedLeft))
       }
     }
 
@@ -81,7 +79,7 @@ sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y
     val partitionMapIntervals = destinationPartitionMap.toIntervalArray()
 
     val preparedRight = {
-      rightRdd.flattenRddByRegions()
+      rightRdd
         .mapPartitions(iter => {
           iter.flatMap(f => {
             // we pad by the threshold here to ensure that our invariant is met
@@ -91,7 +89,7 @@ sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y
           })
         }, preservesPartitioning = true)
         .repartitionAndSortWithinPartitions(
-          ManualRegionPartitioner(destinationPartitionMap.get.length))
+          ManualRegionPartitioner(destinationPartitionMap.length))
         .map(f => (f._1._1, f._2))
     }
 
@@ -99,23 +97,32 @@ sealed trait ShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y
   }
 }
 
-/**
- * Perform an Inner Shuffle Region Join.
- *
- * @param leftRdd The left RDD.
- * @param rightRdd The right RDD.
- * @param threshold The threshold for the join.
- * @param optPartitions Optionally sets the number of partitions for the join.
- * @tparam T The type of the left records.
- * @tparam U The type of the right records.
- */
-case class InnerShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y]](
-  protected val leftRdd: GenomicRDD[T, U],
-  protected val rightRdd: GenomicRDD[X, Y],
-  protected val threshold: Long = 0L,
-  protected val optPartitions: Option[Int] = None)
-    extends ShuffleRegionJoin[T, U, X, Y, T, X]
-    with VictimlessSetOperationBetweenCollections[T, U, X, Y, T, X] {
+private[rdd] sealed trait ShuffleRegionJoinOnGenomicRDD[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
+    extends ShuffleRegionJoin[T, X, RT, RX] {
+
+  protected val leftRdd: GenomicRDD[T, U]
+  protected val rightRdd: GenomicRDD[X, Y]
+
+  override protected def prepare()(implicit tTag: ClassTag[T], xTag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
+    prepareRdds(
+      leftRdd.flattenRddByRegions(),
+      rightRdd.flattenRddByRegions(),
+      leftRdd.partitionMap)
+  }
+}
+
+private[rdd] sealed trait ShuffleRegionJoinOnReferenceRegionKeyedRDD[T, X, RT, RX]
+    extends ShuffleRegionJoin[T, X, RT, RX] {
+
+  protected val leftRdd: RDD[(ReferenceRegion, T)]
+  protected val rightRdd: RDD[(ReferenceRegion, X)]
+
+  override protected def prepare()(implicit tTag: ClassTag[T], xTag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
+    prepareRdds(leftRdd, rightRdd, PartitionMap(None))
+  }
+}
+
+sealed trait InnerShuffleRegionJoin[T, X] extends VictimlessSetOperationBetweenCollections[T, X, T, X] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(T, X)] = {
@@ -127,6 +134,41 @@ case class InnerShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X
     iter.map(f => (currentLeft._2, f._2))
   }
 }
+
+object InnerShuffleRegionJoin {
+  def apply[T, X](
+    leftRdd: RDD[(ReferenceRegion, T)],
+    rightRdd: RDD[(ReferenceRegion, X)]): InnerShuffleRegionJoin[T, X] = {
+
+    InnerShuffleRegionJoinOnReferenceRegionKeyedRDD(leftRdd, rightRdd)
+  }
+}
+
+private[rdd] case class InnerShuffleRegionJoinOnReferenceRegionKeyedRDD[T, X](
+  protected val leftRdd: RDD[(ReferenceRegion, T)],
+  protected val rightRdd: RDD[(ReferenceRegion, X)],
+  protected val threshold: Long = 0L,
+  protected val optPartitions: Option[Int] = None)
+    extends InnerShuffleRegionJoin[T, X]
+    with ShuffleRegionJoinOnReferenceRegionKeyedRDD[T, X, T, X]
+
+/**
+ * Perform an Inner Shuffle Region Join.
+ *
+ * @param leftRdd The left RDD.
+ * @param rightRdd The right RDD.
+ * @param threshold The threshold for the join.
+ * @param optPartitions Optionally sets the number of partitions for the join.
+ * @tparam T The type of the left records.
+ * @tparam U The type of the right records.
+ */
+private[rdd] case class InnerShuffleRegionJoinOnGenomicRDD[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y]](
+  protected val leftRdd: GenomicRDD[T, U],
+  protected val rightRdd: GenomicRDD[X, Y],
+  protected val threshold: Long = 0L,
+  protected val optPartitions: Option[Int] = None)
+    extends ShuffleRegionJoinOnGenomicRDD[T, U, X, Y, T, X]
+    with InnerShuffleRegionJoin[T, X]
 
 /**
  * Perform an Inner Shuffle Region Join and Group By left records.
@@ -143,8 +185,8 @@ case class InnerShuffleRegionJoinAndGroupByLeft[T, U <: GenomicRDD[T, U], X, Y <
   protected val rightRdd: GenomicRDD[X, Y],
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
-    extends ShuffleRegionJoin[T, U, X, Y, T, Iterable[X]]
-    with VictimlessSetOperationBetweenCollections[T, U, X, Y, T, Iterable[X]] {
+    extends ShuffleRegionJoinOnGenomicRDD[T, U, X, Y, T, Iterable[X]]
+    with VictimlessSetOperationBetweenCollections[T, X, T, Iterable[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(T, Iterable[X])] = {
@@ -178,8 +220,8 @@ case class LeftOuterShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicR
   protected val rightRdd: GenomicRDD[X, Y],
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
-    extends ShuffleRegionJoin[T, U, X, Y, T, Option[X]]
-    with VictimlessSetOperationBetweenCollections[T, U, X, Y, T, Option[X]] {
+    extends ShuffleRegionJoinOnGenomicRDD[T, U, X, Y, T, Option[X]]
+    with VictimlessSetOperationBetweenCollections[T, X, T, Option[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(T, Option[X])] = {
@@ -213,8 +255,8 @@ case class RightOuterShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: Genomic
   protected val rightRdd: GenomicRDD[X, Y],
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
-    extends ShuffleRegionJoin[T, U, X, Y, Option[T], X]
-    with SetOperationBetweenCollectionsWithVictims[T, U, X, Y, Option[T], X] {
+    extends ShuffleRegionJoinOnGenomicRDD[T, U, X, Y, Option[T], X]
+    with SetOperationBetweenCollectionsWithVictims[T, X, Option[T], X] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(Option[T], X)] = {
@@ -251,8 +293,8 @@ case class FullOuterShuffleRegionJoin[T, U <: GenomicRDD[T, U], X, Y <: GenomicR
   protected val rightRdd: GenomicRDD[X, Y],
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
-    extends ShuffleRegionJoin[T, U, X, Y, Option[T], Option[X]]
-    with SetOperationBetweenCollectionsWithVictims[T, U, X, Y, Option[T], Option[X]] {
+    extends ShuffleRegionJoinOnGenomicRDD[T, U, X, Y, Option[T], Option[X]]
+    with SetOperationBetweenCollectionsWithVictims[T, X, Option[T], Option[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(Option[T], Option[X])] = {
@@ -290,8 +332,8 @@ case class RightOuterShuffleRegionJoinAndGroupByLeft[T, U <: GenomicRDD[T, U], X
   protected val rightRdd: GenomicRDD[X, Y],
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
-    extends ShuffleRegionJoin[T, U, X, Y, Option[T], Iterable[X]]
-    with SetOperationBetweenCollectionsWithVictims[T, U, X, Y, Option[T], Iterable[X]] {
+    extends ShuffleRegionJoinOnGenomicRDD[T, U, X, Y, Option[T], Iterable[X]]
+    with SetOperationBetweenCollectionsWithVictims[T, X, Option[T], Iterable[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(Option[T], Iterable[X])] = {

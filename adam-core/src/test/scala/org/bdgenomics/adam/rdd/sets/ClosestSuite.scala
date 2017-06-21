@@ -25,7 +25,7 @@ import scala.collection.mutable.ListBuffer
 class ClosestSuite extends ADAMFunSuite {
   sparkTest("testing closest") {
     val leftFile = sc.loadBed(resourceUrl("intersect_with_overlap_00.bed").getFile)
-      .sortLexicographically(storePartitionMap = true)
+      .sortLexicographically()
     val rightFile = sc.loadBed(resourceUrl("intersect_with_overlap_01.bed").getFile)
 
     val x = ShuffleClosestRegion(leftFile, rightFile).compute()

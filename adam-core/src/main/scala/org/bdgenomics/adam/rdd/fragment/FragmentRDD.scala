@@ -109,7 +109,7 @@ object FragmentRDD {
             sequences: SequenceDictionary,
             recordGroupDictionary: RecordGroupDictionary): FragmentRDD = {
 
-    FragmentRDD(rdd, sequences, recordGroupDictionary, None)
+    FragmentRDD(rdd, sequences, recordGroupDictionary, false)
   }
 }
 
@@ -123,7 +123,7 @@ object FragmentRDD {
 case class FragmentRDD(rdd: RDD[Fragment],
                        sequences: SequenceDictionary,
                        recordGroups: RecordGroupDictionary,
-                       optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroReadGroupGenomicRDD[Fragment, FragmentRDD] {
+                       isSorted: Boolean) extends AvroReadGroupGenomicRDD[Fragment, FragmentRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Fragment)])(
     implicit tTag: ClassTag[Fragment]): IntervalArray[ReferenceRegion, Fragment] = {
@@ -138,8 +138,8 @@ case class FragmentRDD(rdd: RDD[Fragment],
    *   swapped out.
    */
   protected def replaceRdd(newRdd: RDD[Fragment],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FragmentRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+                           isSorted: Boolean = false): FragmentRDD = {
+    copy(rdd = newRdd, isSorted = isSorted)
   }
 
   def union(rdds: FragmentRDD*): FragmentRDD = {
@@ -161,7 +161,7 @@ case class FragmentRDD(rdd: RDD[Fragment],
     val newRdd = rdd.flatMap(converter.convertFragment)
 
     // are we aligned?
-    AlignmentRecordRDD(newRdd, sequences, recordGroups)
+    AlignmentRecordRDD(newRdd, sequences, recordGroups, isSorted)
   }
 
   /**

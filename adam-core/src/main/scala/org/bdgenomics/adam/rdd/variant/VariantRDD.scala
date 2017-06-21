@@ -79,7 +79,7 @@ object VariantRDD extends Serializable {
   def apply(rdd: RDD[Variant],
             sequences: SequenceDictionary,
             headerLines: Seq[VCFHeaderLine]): VariantRDD = {
-    VariantRDD(rdd, sequences, headerLines, None)
+    VariantRDD(rdd, sequences, headerLines, isSorted = false)
   }
 }
 
@@ -94,7 +94,7 @@ object VariantRDD extends Serializable {
 case class VariantRDD(rdd: RDD[Variant],
                       sequences: SequenceDictionary,
                       @transient headerLines: Seq[VCFHeaderLine],
-                      optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[Variant, VariantRDD] {
+                      isSorted: Boolean) extends AvroGenomicRDD[Variant, VariantRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Variant)])(
     implicit tTag: ClassTag[Variant]): IntervalArray[ReferenceRegion, Variant] = {
@@ -127,7 +127,11 @@ case class VariantRDD(rdd: RDD[Variant],
    * @return Returns this VariantRDD as a VariantContextRDD.
    */
   def toVariantContextRDD: VariantContextRDD = {
-    VariantContextRDD(rdd.map(VariantContext(_)), sequences, Seq.empty[Sample], headerLines)
+    VariantContextRDD(
+      rdd.map(VariantContext(_)),
+      sequences, Seq.empty[Sample],
+      headerLines,
+      isSorted = isSorted)
   }
 
   /**
@@ -135,8 +139,8 @@ case class VariantRDD(rdd: RDD[Variant],
    * @return Returns a new VariantRDD with the underlying RDD replaced.
    */
   protected def replaceRdd(newRdd: RDD[Variant],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+                           isSorted: Boolean = false): VariantRDD = {
+    copy(rdd = newRdd, isSorted = isSorted)
   }
 
   /**

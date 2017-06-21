@@ -89,7 +89,7 @@ object VariantContextRDD extends Serializable {
             sequences: SequenceDictionary,
             samples: Seq[Sample],
             headerLines: Seq[VCFHeaderLine]): VariantContextRDD = {
-    VariantContextRDD(rdd, sequences, samples, headerLines, None)
+    VariantContextRDD(rdd, sequences, samples, headerLines, isSorted = false)
   }
 
   def apply(rdd: RDD[VariantContext],
@@ -112,7 +112,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
                              sequences: SequenceDictionary,
                              @transient samples: Seq[Sample],
                              @transient headerLines: Seq[VCFHeaderLine],
-                             optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
+                             isSorted: Boolean) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, VariantContext)])(
@@ -136,7 +136,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     GenotypeRDD(rdd.flatMap(_.genotypes),
       sequences,
       samples,
-      headerLines)
+      headerLines,
+      isSorted = isSorted)
   }
 
   /**
@@ -145,7 +146,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   def toVariantRDD: VariantRDD = {
     VariantRDD(rdd.map(_.variant.variant),
       sequences,
-      headerLines)
+      headerLines,
+      isSorted = isSorted)
   }
 
   /**
@@ -270,8 +272,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    *   been replaced.
    */
   protected def replaceRdd(newRdd: RDD[VariantContext],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantContextRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+                           isSorted: Boolean = false): VariantContextRDD = {
+    copy(rdd = newRdd, isSorted = isSorted)
   }
 
   /**

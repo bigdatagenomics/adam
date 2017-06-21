@@ -69,7 +69,7 @@ object CoverageRDD {
    * @return A new Coverage RDD.
    */
   def apply(rdd: RDD[Coverage], sd: SequenceDictionary): CoverageRDD = {
-    CoverageRDD(rdd, sd, None)
+    CoverageRDD(rdd, sd, isSorted = false)
   }
 }
 
@@ -82,7 +82,7 @@ object CoverageRDD {
  */
 case class CoverageRDD(rdd: RDD[Coverage],
                        sequences: SequenceDictionary,
-                       optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends GenomicRDD[Coverage, CoverageRDD] {
+                       isSorted: Boolean) extends GenomicRDD[Coverage, CoverageRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Coverage)])(
     implicit tTag: ClassTag[Coverage]): IntervalArray[ReferenceRegion, Coverage] = {
@@ -186,7 +186,7 @@ case class CoverageRDD(rdd: RDD[Coverage],
    */
   def toFeatureRDD: FeatureRDD = {
     val featureRdd = rdd.map(_.toFeature)
-    FeatureRDD(featureRdd, sequences, optPartitionMap)
+    FeatureRDD(featureRdd, sequences, isSorted)
   }
 
   /**
@@ -262,8 +262,8 @@ case class CoverageRDD(rdd: RDD[Coverage],
    * @return Returns a new CoverageRDD with the underlying RDD replaced.
    */
   protected def replaceRdd(newRdd: RDD[Coverage],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): CoverageRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+                           isSorted: Boolean = false): CoverageRDD = {
+    copy(rdd = newRdd, isSorted = isSorted)
   }
 
   /**

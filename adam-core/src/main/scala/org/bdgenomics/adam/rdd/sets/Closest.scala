@@ -32,7 +32,10 @@ import scala.reflect.ClassTag
  * @tparam RX The resulting type of the right after the operation.
  */
 sealed trait Closest[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
-    extends SetOperationBetweenCollections[T, U, X, Y, RT, RX] {
+    extends SetOperationBetweenCollections[T, X, RT, RX] {
+
+  protected val leftRdd: GenomicRDD[T, U]
+  protected val rightRdd: GenomicRDD[X, Y]
 
   override protected def condition(firstRegion: ReferenceRegion,
                                    secondRegion: ReferenceRegion,
@@ -100,17 +103,21 @@ sealed trait Closest[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
   override protected def prepare()(
     implicit tTag: ClassTag[T], xtag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
 
-    val (preparedLeftRdd, partitionMap) = {
-      if (leftRdd.partitionMap.isDefined) {
+    val numPartitions = optPartitions.getOrElse(leftRdd.rdd.partitions.length)
+
+    val (preparedLeftRdd, destinationPartitionMap) = {
+      if (leftRdd.partitionMap.isDefined &&
+        numPartitions != leftRdd.rdd.partitions.length) {
+
         (leftRdd.flattenRddByRegions(), leftRdd.partitionMap)
       } else {
-        val sortedLeft = leftRdd.sortLexicographically(storePartitionMap = true)
+        val sortedLeft = leftRdd.sortLexicographically(numPartitions)
         (sortedLeft.flattenRddByRegions(), sortedLeft.partitionMap)
       }
     }
 
     // we use an interval array to quickly look up the destination partitions
-    val partitionMapIntervals = partitionMap.toIntervalArray()
+    val partitionMapIntervals = destinationPartitionMap.toIntervalArray()
 
     val assignedRightRdd: RDD[((ReferenceRegion, Int), X)] = {
       // copartitioning for the closest is tricky, and requires that we handle
@@ -127,7 +134,7 @@ sealed trait Closest[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
       // we have to find the partitions that don't have right data going there
       // so we can send the flanking partitions' data there
       val partitionsWithoutData =
-        partitionMap.get.indices.filterNot(firstPass.map(_._1._2).distinct().collect.contains)
+        destinationPartitionMap.indices.filterNot(firstPass.map(_._1._2).distinct().collect.contains)
 
       // this gives us a list of partitions that are sending copies of their
       // data and the number of nodes to send to. a negative number of nodes
@@ -178,7 +185,7 @@ sealed trait Closest[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
     val preparedRightRdd =
       assignedRightRdd
         .repartitionAndSortWithinPartitions(
-          ManualRegionPartitioner(partitionMap.get.length))
+          ManualRegionPartitioner(destinationPartitionMap.length))
         // return to an RDD[(ReferenceRegion, T)], removing the partition ID
         .map(f => (f._1._1, f._2))
 
@@ -202,7 +209,7 @@ case class ShuffleClosestRegion[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, 
   protected val threshold: Long = Long.MaxValue,
   protected val optPartitions: Option[Int] = None)
     extends Closest[T, U, X, Y, T, Iterable[X]]
-    with VictimlessSetOperationBetweenCollections[T, U, X, Y, T, Iterable[X]] {
+    with VictimlessSetOperationBetweenCollections[T, X, T, Iterable[X]] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
                                  right: Iterator[(ReferenceRegion, X)]): Iterator[(T, Iterable[X])] = {

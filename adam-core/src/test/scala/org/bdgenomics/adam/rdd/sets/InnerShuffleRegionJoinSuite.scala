@@ -54,11 +54,29 @@ class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord), 1)
     val recordsRdd = sc.parallelize(Seq(record1, record2), 1)
 
-    val baseGenomicRdd = AlignmentRecordRDD(baseRdd, SequenceDictionary.empty, RecordGroupDictionary.empty, None)
-    val recordsGenomicRdd = AlignmentRecordRDD(recordsRdd, SequenceDictionary.empty, RecordGroupDictionary.empty, None)
+    assert(
+      InnerShuffleRegionJoin(
+        baseRdd.keyBy(ReferenceRegion.unstranded),
+        recordsRdd.keyBy(ReferenceRegion.unstranded)
+      ).compute()
+        .aggregate(true)(
+          InnerShuffleRegionJoinSuite.merge,
+          InnerShuffleRegionJoinSuite.and)
+    )
 
     assert(
-      InnerShuffleRegionJoin(baseGenomicRdd, recordsGenomicRdd)
+      InnerShuffleRegionJoin(
+        baseRdd.keyBy(ReferenceRegion.unstranded),
+        recordsRdd.keyBy(ReferenceRegion.unstranded)
+      ).compute()
+        .count() === 2
+    )
+
+    val baseGenomicRdd = AlignmentRecordRDD(baseRdd, SequenceDictionary.empty, RecordGroupDictionary.empty)
+    val recordsGenomicRdd = AlignmentRecordRDD(recordsRdd, SequenceDictionary.empty, RecordGroupDictionary.empty)
+
+    assert(
+      InnerShuffleRegionJoinOnGenomicRDD(baseGenomicRdd, recordsGenomicRdd)
         .compute()
         .aggregate(true)(
           InnerShuffleRegionJoinSuite.merge,
@@ -67,7 +85,7 @@ class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
     )
 
     assert(
-      InnerShuffleRegionJoin(baseGenomicRdd, recordsGenomicRdd)
+      InnerShuffleRegionJoinOnGenomicRDD(baseGenomicRdd, recordsGenomicRdd)
         .compute()
         .count() === 2
     )
@@ -110,11 +128,11 @@ class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
     val baseRdd = sc.parallelize(Seq(baseRecord1, baseRecord2), 1)
     val recordsRdd = sc.parallelize(Seq(record1, record2, record3), 1)
 
-    val baseGenomicRdd = AlignmentRecordRDD(baseRdd, SequenceDictionary.empty, RecordGroupDictionary.empty, None)
-    val recordsGenomicRdd = AlignmentRecordRDD(recordsRdd, SequenceDictionary.empty, RecordGroupDictionary.empty, None)
+    val baseGenomicRdd = AlignmentRecordRDD(baseRdd, SequenceDictionary.empty, RecordGroupDictionary.empty)
+    val recordsGenomicRdd = AlignmentRecordRDD(recordsRdd, SequenceDictionary.empty, RecordGroupDictionary.empty)
 
     assert(
-      InnerShuffleRegionJoin(baseGenomicRdd, recordsGenomicRdd)
+      InnerShuffleRegionJoinOnGenomicRDD(baseGenomicRdd, recordsGenomicRdd)
         .compute()
         .aggregate(true)(
           InnerShuffleRegionJoinSuite.merge,
@@ -123,7 +141,7 @@ class InnerShuffleRegionJoinSuite extends ADAMFunSuite {
     )
 
     assert({
-      InnerShuffleRegionJoin(baseGenomicRdd, recordsGenomicRdd)
+      InnerShuffleRegionJoinOnGenomicRDD(baseGenomicRdd, recordsGenomicRdd)
         .compute()
         .count() === 3
     }

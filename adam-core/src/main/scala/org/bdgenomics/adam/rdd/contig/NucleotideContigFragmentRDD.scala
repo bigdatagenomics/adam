@@ -98,7 +98,7 @@ object NucleotideContigFragmentRDD extends Serializable {
   def apply(rdd: RDD[NucleotideContigFragment],
             sequences: SequenceDictionary): NucleotideContigFragmentRDD = {
 
-    NucleotideContigFragmentRDD(rdd, sequences, None)
+    NucleotideContigFragmentRDD(rdd, sequences, isSorted = false)
   }
 }
 
@@ -114,7 +114,7 @@ object NucleotideContigFragmentRDD extends Serializable {
 case class NucleotideContigFragmentRDD(
     rdd: RDD[NucleotideContigFragment],
     sequences: SequenceDictionary,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] with ReferenceFile {
+    isSorted: Boolean) extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] with ReferenceFile {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, NucleotideContigFragment)])(
     implicit tTag: ClassTag[NucleotideContigFragment]): IntervalArray[ReferenceRegion, NucleotideContigFragment] = {
@@ -145,8 +145,8 @@ case class NucleotideContigFragmentRDD(
    *   has been replaced.
    */
   protected def replaceRdd(newRdd: RDD[NucleotideContigFragment],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): NucleotideContigFragmentRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+                           isSorted: Boolean = false): NucleotideContigFragmentRDD = {
+    copy(rdd = newRdd, isSorted = isSorted)
   }
 
   /**
