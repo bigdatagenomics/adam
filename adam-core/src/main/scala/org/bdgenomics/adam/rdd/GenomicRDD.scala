@@ -1412,11 +1412,3 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: AvroGenomicRDD[
     saveAsParquet(new JavaSaveArgs(filePath))
   }
 }
-
-/**
- * A trait for genomic data that is not aligned to a reference (e.g., raw reads).
- */
-trait Unaligned {
-
-  val sequences = SequenceDictionary.empty
-}
