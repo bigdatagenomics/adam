@@ -57,6 +57,14 @@ sealed trait ShuffleRegionJoin[T, X, RT, RX]
     candidateRegion.compareTo(until) < 0 || candidateRegion.covers(until)
   }
 
+  /**
+   * Prepares the two RDDs for the join.
+   *
+   * @param leftRdd The left RDD.
+   * @param rightRdd The right RDD.
+   * @param partitionMap The partition map for the left side, if exists.
+   * @return A tuple with the prepared left and right RDDs.
+   */
   protected def prepareRdds(
     leftRdd: RDD[(ReferenceRegion, T)],
     rightRdd: RDD[(ReferenceRegion, X)],
@@ -97,6 +105,16 @@ sealed trait ShuffleRegionJoin[T, X, RT, RX]
   }
 }
 
+/**
+ * Perform a ShuffleRegionJoin on a GenomicRDD.
+ *
+ * @tparam T The type of the left records.
+ * @tparam U The type of the left, a subclass of GenomicRDD.
+ * @tparam X The type of the right records.
+ * @tparam Y The type of the right, a subclass of GenomicRDD.
+ * @tparam RT The resulting type of the left after the join.
+ * @tparam RX The resulting type of the right after the join.
+ */
 private[rdd] sealed trait ShuffleRegionJoinOnGenomicRDD[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y], RT, RX]
     extends ShuffleRegionJoin[T, X, RT, RX] {
 
@@ -111,6 +129,14 @@ private[rdd] sealed trait ShuffleRegionJoinOnGenomicRDD[T, U <: GenomicRDD[T, U]
   }
 }
 
+/**
+ * Perform a ShuffleRegionJoin on ReferenceRegion keyed RDDs.
+ *
+ * @tparam T The type of the left records.
+ * @tparam X The type of the right records.
+ * @tparam RT The resulting type of the left after the join.
+ * @tparam RX The resulting type of the right after the join.
+ */
 private[rdd] sealed trait ShuffleRegionJoinOnReferenceRegionKeyedRDD[T, X, RT, RX]
     extends ShuffleRegionJoin[T, X, RT, RX] {
 
@@ -122,6 +148,12 @@ private[rdd] sealed trait ShuffleRegionJoinOnReferenceRegionKeyedRDD[T, X, RT, R
   }
 }
 
+/**
+ * Perform an Inner ShuffleRegionJoin.
+ *
+ * @tparam T The left side row data.
+ * @tparam X The right side row data.
+ */
 sealed trait InnerShuffleRegionJoin[T, X] extends VictimlessSetOperationBetweenCollections[T, X, T, X] {
 
   override protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
@@ -135,7 +167,20 @@ sealed trait InnerShuffleRegionJoin[T, X] extends VictimlessSetOperationBetweenC
   }
 }
 
+/**
+ * Perform an Inner ShuffleRegionJoin. This is publicly accessible to be
+ * compatible with legacy code.
+ */
 object InnerShuffleRegionJoin {
+
+  /**
+   * Create a new InnerShuffleRegionJoin object by passing in ReferenceRegion
+   * keyed RDDs.
+   *
+   * @param leftRdd The left RDD.
+   * @param rightRdd The right RDD.
+   * @return An InnerShuffleRegionJoin object.
+   */
   def apply[T, X](
     leftRdd: RDD[(ReferenceRegion, T)],
     rightRdd: RDD[(ReferenceRegion, X)]): InnerShuffleRegionJoin[T, X] = {
@@ -144,6 +189,16 @@ object InnerShuffleRegionJoin {
   }
 }
 
+/**
+ * Perform an Inner ShuffleRegionJoin on ReferenceRegion keyed RDDs.
+ *
+ * @param leftRdd The left RDD.
+ * @param rightRdd The right RDD.
+ * @param threshold The threshold for the join.
+ * @param optPartitions Optionally sets the number of partitions for the join.
+ * @tparam T The left side row data.
+ * @tparam X The right side row data.
+ */
 private[rdd] case class InnerShuffleRegionJoinOnReferenceRegionKeyedRDD[T, X](
   protected val leftRdd: RDD[(ReferenceRegion, T)],
   protected val rightRdd: RDD[(ReferenceRegion, X)],
@@ -160,15 +215,15 @@ private[rdd] case class InnerShuffleRegionJoinOnReferenceRegionKeyedRDD[T, X](
  * @param threshold The threshold for the join.
  * @param optPartitions Optionally sets the number of partitions for the join.
  * @tparam T The type of the left records.
- * @tparam U The type of the right records.
+ * @tparam X The type of the right records.
  */
 private[rdd] case class InnerShuffleRegionJoinOnGenomicRDD[T, U <: GenomicRDD[T, U], X, Y <: GenomicRDD[X, Y]](
   protected val leftRdd: GenomicRDD[T, U],
   protected val rightRdd: GenomicRDD[X, Y],
   protected val threshold: Long = 0L,
   protected val optPartitions: Option[Int] = None)
-    extends ShuffleRegionJoinOnGenomicRDD[T, U, X, Y, T, X]
-    with InnerShuffleRegionJoin[T, X]
+    extends InnerShuffleRegionJoin[T, X]
+    with ShuffleRegionJoinOnGenomicRDD[T, U, X, Y, T, X]
 
 /**
  * Perform an Inner Shuffle Region Join and Group By left records.
