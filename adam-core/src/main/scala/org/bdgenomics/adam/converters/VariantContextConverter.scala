@@ -40,7 +40,7 @@ import htsjdk.variant.vcf.{
   VCFInfoHeaderLine
 }
 import java.util.Collections
-import org.bdgenomics.utils.misc.Logging
+import org.bdgenomics.utils.misc.{ Logging, MathUtils }
 import org.bdgenomics.adam.models.{
   SequenceDictionary,
   VariantContext => ADAMVariantContext
@@ -48,6 +48,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.util.PhredUtils
 import org.bdgenomics.formats.avro._
 import org.slf4j.Logger
+import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ Buffer, HashMap }
 
@@ -111,11 +112,11 @@ object VariantContextConverter {
 
   private val OPT_NON_REF = Some(Allele.create("<NON_REF>", false))
 
-  private def optNonRef(v: Variant): Option[Allele] = {
-    if (v.getAlternateAllele != null) {
-      None
-    } else {
+  private def optNonRef(v: Variant, hasNonRefModel: Boolean): Option[Allele] = {
+    if (hasNonRefModel || v.getAlternateAllele == null) {
       OPT_NON_REF
+    } else {
+      None
     }
   }
 
@@ -123,13 +124,15 @@ object VariantContextConverter {
    * Converts the alleles in a variant into a Java collection of htsjdk alleles.
    *
    * @param v Avro model of the variant at a site.
+   * @param hasNonRefModel Does this site have non-reference model likelihoods
+   *   attached?
    * @return Returns a Java collection representing the reference allele and any
    *   alternate allele at the site.
    */
-  private def convertAlleles(v: Variant): java.util.Collection[Allele] = {
+  private def convertAlleles(v: Variant, hasNonRefModel: Boolean): java.util.Collection[Allele] = {
     val asSeq = Seq(convertAlleleOpt(v.getReferenceAllele, true),
       convertAlleleOpt(v.getAlternateAllele),
-      optNonRef(v)).flatten
+      optNonRef(v, hasNonRefModel)).flatten
 
     asSeq
   }
@@ -253,6 +256,14 @@ class VariantContextConverter(
   private def jFloat(f: Float): java.lang.Float = f
 
   /**
+   * Converts a Scala double to a Java double.
+   *
+   * @param f Scala double precision floating point value.
+   * @return Java double precision floating point value.
+   */
+  private def jDouble(f: Double): java.lang.Double = f
+
+  /**
    * Converts a GATK variant context into one or more ADAM variant context(s).
    *
    * @param vc GATK variant context to convert.
@@ -300,7 +311,7 @@ class VariantContextConverter(
           // is the last allele the non-ref allele?
           val alleles = vc.getAlternateAlleles.toSeq
           val referenceModelIndex = if (alleles.nonEmpty && alleles.last == NON_REF_ALLELE) {
-            Some(alleles.length - 1)
+            Some(alleles.length)
           } else {
             None
           }
@@ -815,7 +826,7 @@ class VariantContextConverter(
       val pl = g.getPL
       try {
         val likelihoods = gIndices.map(idx => {
-          jFloat(PhredUtils.phredToLogProbability(pl(idx)))
+          jDouble(PhredUtils.phredToLogProbability(pl(idx)))
         }).toList
         gb.setGenotypeLikelihoods(likelihoods)
       } catch {
@@ -835,7 +846,7 @@ class VariantContextConverter(
     if (g.hasPL) {
       val pl = g.getPL
       gb.setNonReferenceLikelihoods(gIndices.map(idx => {
-        jFloat(PhredUtils.phredToLogProbability(pl(idx)))
+        jDouble(PhredUtils.phredToLogProbability(pl(idx)))
       }).toList)
     } else {
       gb
@@ -952,15 +963,63 @@ class VariantContextConverter(
     Option(g.getGenotypeQuality).fold(gb.noGQ)(gq => gb.GQ(gq))
   }
 
+  private[converters] def numPls(copyNumber: Int): Int = {
+
+    @tailrec def plCalculator(cn: Int, sum: Int = 0): Int = {
+      if (cn == 0) {
+        sum + 1
+      } else {
+        plCalculator(cn - 1, sum + cn + 1)
+      }
+    }
+
+    plCalculator(copyNumber)
+  }
+
+  private[converters] def nonRefPls(gls: java.util.List[java.lang.Double],
+                                    nls: java.util.List[java.lang.Double]): Array[Int] = {
+    require(gls.length == nls.length,
+      "Genotype likelihoods (%s) and non-reference likelihoods (%s) disagree on copy number".format(
+        gls.mkString(","), nls.mkString(",")))
+    val copyNumber = gls.length - 1
+    val elements = numPls(copyNumber)
+
+    val array = Array.fill(elements) { Int.MinValue }
+
+    (0 to copyNumber).foreach(idx => {
+      array(idx) = PhredUtils.logProbabilityToPhred(gls.get(idx))
+    })
+
+    var cnIdx = copyNumber + 1
+    (1 to copyNumber).foreach(idx => {
+      array(cnIdx + 1) = PhredUtils.logProbabilityToPhred(nls.get(idx))
+      cnIdx += (copyNumber - idx)
+    })
+
+    array
+  }
+
   private[converters] def extractGenotypeLikelihoods(g: Genotype,
                                                      gb: GenotypeBuilder): GenotypeBuilder = {
     val gls = g.getGenotypeLikelihoods
+    val nls = g.getNonReferenceLikelihoods
 
     if (gls.isEmpty) {
-      gb.noPL
-    } else {
+      if (g.getVariant == null ||
+        g.getVariant.getAlternateAllele != null) {
+        if (nls.nonEmpty) {
+          log.warn("Expected empty non-reference likelihoods for genotype with empty likelihoods (%s).".format(g))
+        }
+        gb.noPL
+      } else {
+        gb.PL(nls.map(l => PhredUtils.logProbabilityToPhred(l))
+          .toArray)
+      }
+    } else if (nls.isEmpty) {
       gb.PL(gls.map(l => PhredUtils.logProbabilityToPhred(l))
         .toArray)
+    } else {
+      gb.PL(nonRefPls(gls, nls))
     }
   }
 
@@ -1612,7 +1671,7 @@ class VariantContextConverter(
       val coreWithOptNonRefs = nonRefIndex.fold(convertedCore)(nonRefAllele => {
 
         // non-ref pl indices
-        val nrIndices = GenotypeLikelihoods.getPLIndecesOfAlleles(alleleIdx, nonRefAllele)
+        val nrIndices = GenotypeLikelihoods.getPLIndecesOfAlleles(0, nonRefAllele)
 
         formatNonRefGenotypeLikelihoods(g, convertedCore, nrIndices)
       })
@@ -1929,11 +1988,13 @@ class VariantContextConverter(
 
     def convert(vc: ADAMVariantContext): HtsjdkVariantContext = {
       val v = vc.variant.variant
+      val hasNonRefAlleles = vc.genotypes
+        .exists(_.getNonReferenceLikelihoods.length != 0)
       val builder = new VariantContextBuilder()
         .chr(v.getContigName)
         .start(v.getStart + 1)
         .stop(v.getEnd)
-        .alleles(VariantContextConverter.convertAlleles(v))
+        .alleles(VariantContextConverter.convertAlleles(v, hasNonRefAlleles))
 
       // bind the conversion functions and fold
       val convertedWithVariants = variantExtractFns.foldLeft(builder)(
@@ -2059,10 +2120,8 @@ class VariantContextConverter(
           throw t
         } else {
           if (stringency == ValidationStringency.LENIENT) {
-            log.error("Encountered error when converting variant context with variant: \n" +
-              vc.variant.variant + "\n" +
-              "and genotypes: \n" +
-              vc.genotypes.mkString("\n"))
+            log.error(
+              "Encountered error %s when converting variant context with variant:\n%s\nand genotypes: \n%s".format(t, vc.variant.variant, vc.genotypes.mkString("\n")))
           }
           None
         }
