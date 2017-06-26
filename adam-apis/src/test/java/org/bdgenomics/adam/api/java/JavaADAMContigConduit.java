@@ -34,7 +34,7 @@ final class JavaADAMContigConduit {
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
         String fileName = tempDir.toString() + "/testRdd.contig.adam";
-        recordRdd.save(fileName);
+        recordRdd.save(fileName, true);
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(ac);

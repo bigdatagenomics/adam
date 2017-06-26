@@ -21,7 +21,7 @@ import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.nio.file.Paths
 import htsjdk.samtools.ValidationStringency
 import org.apache.avro.generic.IndexedRecord
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
@@ -1210,6 +1210,43 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
           firstRegion
         }
       Iterator(Some((firstRegion._1, lastRegion._1)))
+    }
+  }
+
+  /**
+   * Writes an RDD to disk as text and optionally merges.
+   *
+   * @param rdd RDD to save.
+   * @param outputPath Output path to save text files to.
+   * @param asSingleFile If true, combines all partition shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
+   * @param optHeaderPath If provided, the header file to include.
+   */
+  protected def writeTextRdd[T](rdd: RDD[T],
+                                outputPath: String,
+                                asSingleFile: Boolean,
+                                disableFastConcat: Boolean,
+                                optHeaderPath: Option[String] = None) {
+    if (asSingleFile) {
+
+      // write rdd to disk
+      val tailPath = "%s_tail".format(outputPath)
+      rdd.saveAsTextFile(tailPath)
+
+      // get the filesystem impl
+      val fs = FileSystem.get(rdd.context.hadoopConfiguration)
+
+      // and then merge
+      FileMerger.mergeFiles(rdd.context,
+        fs,
+        new Path(outputPath),
+        new Path(tailPath),
+        disableFastConcat = disableFastConcat,
+        optHeaderPath = optHeaderPath.map(p => new Path(p)))
+    } else {
+      assert(optHeaderPath.isEmpty)
+      rdd.saveAsTextFile(outputPath)
     }
   }
 }

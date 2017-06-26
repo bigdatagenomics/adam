@@ -435,43 +435,6 @@ sealed abstract class FeatureRDD extends AvroGenomicRDD[Feature, FeatureProduct,
   }
 
   /**
-   * Writes an RDD to disk as text and optionally merges.
-   *
-   * @param rdd RDD to save.
-   * @param outputPath Output path to save text files to.
-   * @param asSingleFile If true, combines all partition shards.
-   * @param disableFastConcat If asSingleFile is true, disables the use of the
-   *   parallel file merging engine.
-   * @param optHeaderPath If provided, the header file to include.
-   */
-  private def writeTextRdd[T](rdd: RDD[T],
-                              outputPath: String,
-                              asSingleFile: Boolean,
-                              disableFastConcat: Boolean,
-                              optHeaderPath: Option[String] = None) {
-    if (asSingleFile) {
-
-      // write rdd to disk
-      val tailPath = "%s_tail".format(outputPath)
-      rdd.saveAsTextFile(tailPath)
-
-      // get the filesystem impl
-      val fs = FileSystem.get(rdd.context.hadoopConfiguration)
-
-      // and then merge
-      FileMerger.mergeFiles(rdd.context,
-        fs,
-        new Path(outputPath),
-        new Path(tailPath),
-        disableFastConcat = disableFastConcat,
-        optHeaderPath = optHeaderPath.map(p => new Path(p)))
-    } else {
-      assert(optHeaderPath.isEmpty)
-      rdd.saveAsTextFile(outputPath)
-    }
-  }
-
-  /**
    * Save this FeatureRDD in GTF format.
    *
    * @param fileName The path to save GTF formatted text file(s) to.

@@ -234,10 +234,14 @@ sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicRDD[Nucleot
    * to Parquet. Defaults to 60 character line length, if saving to FASTA.
    *
    * @param fileName file name
+   * @param asSingleFile If false, writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
    */
-  def save(fileName: java.lang.String) {
+  def save(fileName: java.lang.String,
+           asSingleFile: java.lang.Boolean) {
     if (fileName.endsWith(".fa") || fileName.endsWith(".fasta")) {
-      saveAsFasta(fileName)
+      saveAsFasta(fileName, asSingleFile = asSingleFile)
     } else {
       saveAsParquet(new JavaSaveArgs(fileName))
     }
@@ -248,8 +252,16 @@ sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicRDD[Nucleot
    *
    * @param fileName file name
    * @param lineWidth hard wrap FASTA formatted sequence at line width, default 60
+   * @param asSingleFile By default (false), writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    */
-  def saveAsFasta(fileName: String, lineWidth: Int = 60) {
+  def saveAsFasta(fileName: String,
+                  lineWidth: Int = 60,
+                  asSingleFile: Boolean = false,
+                  disableFastConcat: Boolean = false) {
 
     def isFragment(record: NucleotideContigFragment): Boolean = {
       Option(record.getIndex).isDefined && Option(record.getFragments).fold(false)(_ > 1)
@@ -270,7 +282,12 @@ sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicRDD[Nucleot
       sb.toString
     }
 
-    rdd.map(toFasta).saveAsTextFile(fileName)
+    val asFasta = rdd.map(toFasta)
+
+    writeTextRdd(asFasta,
+      fileName,
+      asSingleFile,
+      disableFastConcat)
   }
 
   /**

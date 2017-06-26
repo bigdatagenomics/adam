@@ -56,6 +56,14 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     assert(fragments3.dataset.count === 8L)
   }
 
+  sparkTest("save fasta back as a single file") {
+    val origFasta = testFile("artificial.fa")
+    val tmpFasta = tmpFile("test.fa")
+    sc.loadFasta(origFasta)
+      .saveAsFasta(tmpFasta, asSingleFile = true, lineWidth = 70)
+    checkFiles(origFasta, tmpFasta)
+  }
+
   sparkTest("generate sequence dict from fasta") {
 
     val contig1 = Contig.newBuilder
