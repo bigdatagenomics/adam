@@ -29,7 +29,11 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.TestSaveArgs
+import org.bdgenomics.adam.rdd.{
+  GenomicRDD,
+  SortedGenomicRDD,
+  TestSaveArgs
+}
 import org.bdgenomics.adam.rdd.feature.CoverageRDD
 import org.bdgenomics.adam.rdd.variant.{
   VariantContextRDD,
@@ -372,6 +376,16 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
         asSingleFile = true)
 
     checkFiles(testFile("sorted.sam"), actualSortedPath)
+
+    val reloadedReads = sc.loadAlignments(actualSortedPath)
+    assert(reloadedReads match {
+      case _: SortedGenomicRDD[AlignmentRecord, AlignmentRecordRDD] => {
+        true
+      }
+      case _ => {
+        false
+      }
+    })
   }
 
   sparkTest("writing unordered sam from unordered sam") {
@@ -522,6 +536,24 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val outputPath = tmpLocation(".sam")
     reads.save(TestSaveArgs(outputPath))
     assert(new File(outputPath).exists())
+  }
+
+  sparkTest("save as sorted parquet then reload yields sorted file") {
+    val inputPath = testFile("small.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+      .sortReadsByReferencePosition()
+    val outputPath = tmpLocation(".adam")
+    reads.saveAsParquet(outputPath)
+
+    val reloadedReads = sc.loadAlignments(outputPath)
+    assert(reloadedReads match {
+      case _: SortedGenomicRDD[AlignmentRecord, AlignmentRecordRDD] => {
+        true
+      }
+      case _ => {
+        false
+      }
+    })
   }
 
   sparkTest("save as sorted SAM format") {
@@ -794,6 +826,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val readsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val reads = sc.loadAlignments(readsPath)
       .transform(_.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
@@ -814,6 +849,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("use right outer shuffle join to pull down reads mapped to targets") {
     val readsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val reads = sc.loadAlignments(readsPath)
       .transform(_.repartition(1))
@@ -840,6 +878,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val readsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val reads = sc.loadAlignments(readsPath)
       .transform(_.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
@@ -864,6 +905,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("use full outer shuffle join to pull down reads mapped to targets") {
     val readsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val reads = sc.loadAlignments(readsPath)
       .transform(_.repartition(1))
@@ -894,6 +938,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val readsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val reads = sc.loadAlignments(readsPath)
       .transform(_.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
@@ -918,6 +965,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("use right outer shuffle join with group by to pull down reads mapped to targets") {
     val readsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val reads = sc.loadAlignments(readsPath)
       .transform(_.repartition(1))

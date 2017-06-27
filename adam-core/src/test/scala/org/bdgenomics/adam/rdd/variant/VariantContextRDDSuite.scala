@@ -57,7 +57,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       .setAlleles(List(GenotypeAllele.REF, GenotypeAllele.ALT))
       .build
 
-    VariantContextRDD(sc.parallelize(List(
+    UnorderedVariantContextRDD(sc.parallelize(List(
       VariantContext(v0, Seq(g0))), 1),
       SequenceDictionary.fromAvro(Seq(contig)), Seq(Sample.newBuilder()
         .setSampleId("NA12878")

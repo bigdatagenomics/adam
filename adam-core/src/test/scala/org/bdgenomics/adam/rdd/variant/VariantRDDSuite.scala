@@ -18,7 +18,9 @@
 package org.bdgenomics.adam.rdd.variant
 
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.{ GenomicRDD, SortedGenomicRDD }
 import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.formats.avro.Variant
 
 class VariantRDDSuite extends ADAMFunSuite {
 
@@ -60,6 +62,9 @@ class VariantRDDSuite extends ADAMFunSuite {
     val variantsPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val variants = sc.loadVariants(variantsPath)
       .transform(_.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
@@ -80,6 +85,9 @@ class VariantRDDSuite extends ADAMFunSuite {
   sparkTest("use right outer shuffle join to pull down variants mapped to targets") {
     val variantsPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val variants = sc.loadVariants(variantsPath)
       .transform(_.repartition(1))
@@ -106,6 +114,9 @@ class VariantRDDSuite extends ADAMFunSuite {
     val variantsPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val variants = sc.loadVariants(variantsPath)
       .transform(_.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
@@ -130,6 +141,9 @@ class VariantRDDSuite extends ADAMFunSuite {
   sparkTest("use full outer shuffle join to pull down variants mapped to targets") {
     val variantsPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val variants = sc.loadVariants(variantsPath)
       .transform(_.repartition(1))
@@ -160,6 +174,9 @@ class VariantRDDSuite extends ADAMFunSuite {
     val variantsPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val variants = sc.loadVariants(variantsPath)
       .transform(_.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
@@ -184,6 +201,9 @@ class VariantRDDSuite extends ADAMFunSuite {
   sparkTest("use right outer shuffle join with group by to pull down variants mapped to targets") {
     val variantsPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val variants = sc.loadVariants(variantsPath)
       .transform(_.repartition(1))
@@ -233,20 +253,35 @@ class VariantRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     val inputPath = testFile("small.vcf")
     val outputPath = tmpLocation()
-    val rdd = sc.loadVariants(inputPath)
-      .transformDataset(ds => ds) // no-op but force to sql
+    val vcfRdd = sc.loadVariants(inputPath)
+    assert(vcfRdd match {
+      case _: SortedGenomicRDD[Variant, VariantRDD] => {
+        true
+      }
+      case _ => {
+        false
+      }
+    })
+
+    val rdd = vcfRdd.transformDataset(ds => ds) // no-op but force to sql
     assert(rdd.dataset.count === 6)
     assert(rdd.rdd.count === 6)
     rdd.saveAsParquet(outputPath)
-    println(outputPath)
     val rdd2 = sc.loadVariants(outputPath)
     assert(rdd2.rdd.count === 6)
     assert(rdd2.dataset.count === 6)
     val outputPath2 = tmpLocation()
-    println(outputPath2)
-    rdd.transform(rdd => rdd) // no-op but force to rdd
-      .saveAsParquet(outputPath2)
+    val sortedRdd = rdd.sort()
+    sortedRdd.saveAsParquet(outputPath2)
     val rdd3 = sc.loadVariants(outputPath2)
+    assert(rdd3 match {
+      case _: SortedGenomicRDD[Variant, VariantRDD] => {
+        true
+      }
+      case _ => {
+        false
+      }
+    })
     assert(rdd3.rdd.count === 6)
     assert(rdd3.dataset.count === 6)
   }

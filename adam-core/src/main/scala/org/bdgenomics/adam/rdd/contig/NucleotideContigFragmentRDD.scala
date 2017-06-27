@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.contig
 
 import com.google.common.base.Splitter
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
-import org.apache.spark.SparkContext
+import org.apache.spark.{ Partitioner, SparkContext }
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
@@ -31,7 +31,12 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
+import org.bdgenomics.adam.rdd.{
+  AvroGenomicRDD,
+  GenomicRangePartitioner,
+  JavaSaveArgs,
+  SortedGenomicRDD
+}
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ NucleotideContigFragment => NucleotideContigFragmentProduct }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
@@ -75,9 +80,11 @@ object NucleotideContigFragmentRDD extends Serializable {
    *
    * @param rdd Underlying RDD. We recompute the sequence dictionary from
    *   this RDD.
+   * @param isSorted Is this RDD sorted?
    * @return Returns a new NucleotideContigFragmentRDD.
    */
-  private[rdd] def apply(rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
+  private[rdd] def apply(rdd: RDD[NucleotideContigFragment],
+                         isSorted: Boolean = false): NucleotideContigFragmentRDD = {
 
     // get sequence dictionary
     val sd = new SequenceDictionary(rdd.flatMap(ncf => {
@@ -90,7 +97,11 @@ object NucleotideContigFragmentRDD extends Serializable {
       .collect
       .toVector)
 
-    NucleotideContigFragmentRDD(rdd, sd)
+    if (isSorted) {
+      SortedRDDBoundNucleotideContigFragmentRDD(rdd, sd)
+    } else {
+      NucleotideContigFragmentRDD(rdd, sd)
+    }
   }
 
   /**
@@ -103,7 +114,28 @@ object NucleotideContigFragmentRDD extends Serializable {
   def apply(rdd: RDD[NucleotideContigFragment],
             sequences: SequenceDictionary): NucleotideContigFragmentRDD = {
 
-    RDDBoundNucleotideContigFragmentRDD(rdd, sequences, None)
+    RDDBoundNucleotideContigFragmentRDD(rdd, sequences)
+  }
+}
+
+case class SortedParquetUnboundNucleotideContigFragmentRDD private[rdd] (
+  @transient private val sc: SparkContext,
+  private val parquetFilename: String,
+  sequences: SequenceDictionary) extends NucleotideContigFragmentRDD
+    with SortedNucleotideContigFragmentRDD {
+
+  lazy val partitioner: Partitioner = {
+    GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
+  }
+
+  lazy val rdd: RDD[NucleotideContigFragment] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[NucleotideContigFragmentProduct]
   }
 }
 
@@ -111,8 +143,6 @@ case class ParquetUnboundNucleotideContigFragmentRDD private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary) extends NucleotideContigFragmentRDD {
-
-  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
   lazy val rdd: RDD[NucleotideContigFragment] = {
     sc.loadParquet(parquetFilename)
@@ -130,8 +160,6 @@ case class DatasetBoundNucleotideContigFragmentRDD(
     sequences: SequenceDictionary) extends NucleotideContigFragmentRDD {
 
   lazy val rdd: RDD[NucleotideContigFragment] = dataset.rdd.map(_.toAvro)
-
-  protected lazy val optPartitionMap = None
 
   override def saveAsParquet(filePath: String,
                              blockSize: Int = 128 * 1024 * 1024,
@@ -156,8 +184,7 @@ case class DatasetBoundNucleotideContigFragmentRDD(
  */
 case class RDDBoundNucleotideContigFragmentRDD(
     rdd: RDD[NucleotideContigFragment],
-    sequences: SequenceDictionary,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends NucleotideContigFragmentRDD {
+    sequences: SequenceDictionary) extends NucleotideContigFragmentRDD {
 
   /**
    * A SQL Dataset of contig fragments.
@@ -166,6 +193,59 @@ case class RDDBoundNucleotideContigFragmentRDD(
     val sqlContext = SQLContext.getOrCreate(rdd.context)
     import sqlContext.implicits._
     sqlContext.createDataset(rdd.map(NucleotideContigFragmentProduct.fromAvro))
+  }
+}
+
+private[rdd] object SortedRDDBoundNucleotideContigFragmentRDD {
+
+  def apply(rdd: RDD[NucleotideContigFragment],
+            sequences: SequenceDictionary): SortedRDDBoundNucleotideContigFragmentRDD = {
+
+    val partitioner = GenomicRangePartitioner.fromRdd(rdd.flatMap(ncf => {
+      ReferenceRegion(ncf).map(rr => (rr, ncf))
+    }), sequences)
+
+    new SortedRDDBoundNucleotideContigFragmentRDD(
+      rdd,
+      sequences,
+      partitioner)
+  }
+}
+
+/**
+ * A wrapper class for RDD[NucleotideContigFragment].
+ *
+ * @param rdd Underlying RDD
+ * @param sequences Sequence dictionary computed from rdd
+ */
+case class SortedRDDBoundNucleotideContigFragmentRDD(
+  rdd: RDD[NucleotideContigFragment],
+  sequences: SequenceDictionary,
+  partitioner: Partitioner) extends NucleotideContigFragmentRDD
+    with SortedNucleotideContigFragmentRDD {
+
+  /**
+   * A SQL Dataset of contig fragments.
+   */
+  lazy val dataset: Dataset[NucleotideContigFragmentProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(NucleotideContigFragmentProduct.fromAvro))
+  }
+}
+
+sealed trait SortedNucleotideContigFragmentRDD
+    extends SortedGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] {
+
+  override protected def replaceRdd(
+    newRdd: RDD[NucleotideContigFragment],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): NucleotideContigFragmentRDD = {
+    if (isSorted || preservesPartitioning) {
+      new SortedRDDBoundNucleotideContigFragmentRDD(newRdd, sequences, partitioner)
+    } else {
+      new RDDBoundNucleotideContigFragmentRDD(newRdd, sequences)
+    }
   }
 }
 
@@ -192,16 +272,17 @@ sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicRDD[Nucleot
       iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
   }
 
-  /**
-   * Replaces the underlying RDD with a new RDD.
-   *
-   * @param newRdd The RDD to use for the new NucleotideContigFragmentRDD.
-   * @return Returns a new NucleotideContigFragmentRDD where the underlying RDD
-   *   has been replaced.
-   */
-  protected def replaceRdd(newRdd: RDD[NucleotideContigFragment],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(newRdd, sequences, newPartitionMap)
+  protected def replaceRdd(
+    newRdd: RDD[NucleotideContigFragment],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): NucleotideContigFragmentRDD = {
+    if (isSorted) {
+      new SortedRDDBoundNucleotideContigFragmentRDD(newRdd,
+        sequences,
+        extractPartitioner(newRdd))
+    } else {
+      new RDDBoundNucleotideContigFragmentRDD(newRdd, sequences)
+    }
   }
 
   /**

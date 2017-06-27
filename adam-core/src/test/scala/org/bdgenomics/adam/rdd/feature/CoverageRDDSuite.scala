@@ -25,6 +25,7 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.SortedGenomicRDD
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.Feature
 
@@ -81,10 +82,19 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
     // go to rdd and save as parquet
     val outputFile3 = tmpLocation(".adam")
-    coverageRDD.transform(rdd => rdd).save(outputFile3, false, false)
+    coverageRDD.transform(rdd => rdd).sortLexicographically()
+      .save(outputFile3, false, false)
     val coverage3 = sc.loadCoverage(outputFile3)
     assert(coverage3.rdd.count == 3)
     assert(coverage3.dataset.count == 3)
+    assert(coverage3 match {
+      case _: SortedGenomicRDD[Coverage, CoverageRDD] => {
+        true
+      }
+      case _ => {
+        false
+      }
+    })
   }
 
   sparkTest("can read a bed file to coverage") {
@@ -146,7 +156,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
   sparkTest("collapses coverage records in one partition") {
     val cov = generateCoverage(20)
-    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd, None)
+    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov.toSeq).repartition(1), sd)
     val collapsed = coverage.collapse
 
     assert(coverage.rdd.count == 20)
@@ -155,7 +165,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
 
   sparkTest("approximately collapses coverage records in multiple partitions") {
     val cov = generateCoverage(20)
-    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov), sd, None)
+    val coverage = RDDBoundCoverageRDD(sc.parallelize(cov), sd)
     val collapsed = coverage.collapse
 
     assert(collapsed.rdd.count == 8)

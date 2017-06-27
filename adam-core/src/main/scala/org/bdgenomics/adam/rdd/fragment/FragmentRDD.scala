@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.rdd.fragment
 
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
-import org.apache.spark.SparkContext
+import org.apache.spark.{ Partitioner, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
@@ -30,7 +30,12 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, JavaSaveArgs }
+import org.bdgenomics.adam.rdd.{
+  AvroReadGroupGenomicRDD,
+  GenomicRangePartitioner,
+  JavaSaveArgs,
+  SortedGenomicRDD
+}
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
   BinQualities,
@@ -114,7 +119,7 @@ object FragmentRDD {
             sequences: SequenceDictionary,
             recordGroupDictionary: RecordGroupDictionary): FragmentRDD = {
 
-    new RDDBoundFragmentRDD(rdd, sequences, recordGroupDictionary, None)
+    new RDDBoundFragmentRDD(rdd, sequences, recordGroupDictionary)
   }
 
   /**
@@ -131,6 +136,28 @@ object FragmentRDD {
   }
 }
 
+case class SortedParquetUnboundFragmentRDD private[rdd] (
+  private val sc: SparkContext,
+  private val parquetFilename: String,
+  sequences: SequenceDictionary,
+  recordGroups: RecordGroupDictionary) extends FragmentRDD
+    with SortedFragmentRDD {
+
+  lazy val partitioner: Partitioner = {
+    GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
+  }
+
+  lazy val rdd: RDD[Fragment] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[FragmentProduct]
+  }
+}
+
 case class ParquetUnboundFragmentRDD private[rdd] (
     private val sc: SparkContext,
     private val parquetFilename: String,
@@ -140,8 +167,6 @@ case class ParquetUnboundFragmentRDD private[rdd] (
   lazy val rdd: RDD[Fragment] = {
     sc.loadParquet(parquetFilename)
   }
-
-  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
   lazy val dataset = {
     val sqlContext = SQLContext.getOrCreate(sc)
@@ -156,8 +181,6 @@ case class DatasetBoundFragmentRDD private[rdd] (
     recordGroups: RecordGroupDictionary) extends FragmentRDD {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
-
-  protected lazy val optPartitionMap = None
 
   override def saveAsParquet(filePath: String,
                              blockSize: Int = 128 * 1024 * 1024,
@@ -182,8 +205,7 @@ case class DatasetBoundFragmentRDD private[rdd] (
 case class RDDBoundFragmentRDD private[rdd] (
     rdd: RDD[Fragment],
     sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FragmentRDD {
+    recordGroups: RecordGroupDictionary) extends FragmentRDD {
 
   /**
    * A SQL Dataset of reads.
@@ -195,6 +217,57 @@ case class RDDBoundFragmentRDD private[rdd] (
   }
 }
 
+private[rdd] object SortedRDDBoundFragmentRDD {
+
+  def apply(rdd: RDD[Fragment],
+            sequences: SequenceDictionary,
+            recordGroups: RecordGroupDictionary): SortedRDDBoundFragmentRDD = {
+    val partitioner = GenomicRangePartitioner.fromRdd(rdd.flatMap(f => {
+      f.getAlignments
+        .flatMap(r => ReferenceRegion.opt(r))
+        .map(rr => (rr, f))
+    }), sequences)
+
+    SortedRDDBoundFragmentRDD(rdd,
+      sequences,
+      recordGroups,
+      partitioner)
+  }
+}
+
+case class SortedRDDBoundFragmentRDD private[rdd] (
+  rdd: RDD[Fragment],
+  sequences: SequenceDictionary,
+  recordGroups: RecordGroupDictionary,
+  partitioner: Partitioner) extends FragmentRDD
+    with SortedFragmentRDD {
+
+  /**
+   * A SQL Dataset of reads.
+   */
+  lazy val dataset: Dataset[FragmentProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(FragmentProduct.fromAvro))
+  }
+}
+
+sealed trait SortedFragmentRDD extends SortedGenomicRDD[Fragment, FragmentRDD] {
+
+  val recordGroups: RecordGroupDictionary
+
+  override protected def replaceRdd(
+    newRdd: RDD[Fragment],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): FragmentRDD = {
+    if (isSorted || preservesPartitioning) {
+      SortedRDDBoundFragmentRDD(newRdd, sequences, recordGroups, partitioner)
+    } else {
+      RDDBoundFragmentRDD(newRdd, sequences, recordGroups)
+    }
+  }
+}
+
 sealed abstract class FragmentRDD extends AvroReadGroupGenomicRDD[Fragment, FragmentProduct, FragmentRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Fragment)])(
@@ -202,16 +275,18 @@ sealed abstract class FragmentRDD extends AvroReadGroupGenomicRDD[Fragment, Frag
     IntervalArray(rdd, FragmentArray.apply(_, _))
   }
 
-  /**
-   * Replaces the underlying RDD with a new RDD.
-   *
-   * @param newRdd The RDD to replace our underlying RDD with.
-   * @return Returns a new FragmentRDD where the underlying RDD has been
-   *   swapped out.
-   */
-  protected def replaceRdd(newRdd: RDD[Fragment],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FragmentRDD = {
-    RDDBoundFragmentRDD(newRdd, sequences, recordGroups, newPartitionMap)
+  protected def replaceRdd(
+    newRdd: RDD[Fragment],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): FragmentRDD = {
+    if (isSorted) {
+      SortedRDDBoundFragmentRDD(newRdd,
+        sequences,
+        recordGroups,
+        extractPartitioner(newRdd))
+    } else {
+      RDDBoundFragmentRDD(newRdd, sequences, recordGroups)
+    }
   }
 
   def union(rdds: FragmentRDD*): FragmentRDD = {

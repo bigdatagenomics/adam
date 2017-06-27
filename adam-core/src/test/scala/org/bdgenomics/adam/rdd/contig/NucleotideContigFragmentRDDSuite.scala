@@ -18,10 +18,10 @@
 package org.bdgenomics.adam.rdd.contig
 
 import java.io.File
-
 import com.google.common.io.Files
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.SortedGenomicRDD
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import scala.collection.mutable.ListBuffer
@@ -40,6 +40,27 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     val fragments1 = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
     assert(fragments1.rdd.count === 8L)
     assert(fragments1.dataset.count === 8L)
+    assert(fragments1 match {
+      case _: SortedGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] => {
+        true
+      }
+      case _ => {
+        false
+      }
+    })
+
+    // saving using parquet path and reloading should keep sortedness
+    val sortedOutput = tmpFile("ctg.adam")
+    fragments1.saveAsParquet(sortedOutput)
+    val sortedFragments = sc.loadContigFragments(sortedOutput)
+    assert(sortedFragments match {
+      case _: SortedGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentRDD] => {
+        true
+      }
+      case _ => {
+        false
+      }
+    })
 
     // save using dataset path
     val output1 = tmpFile("ctg.adam")

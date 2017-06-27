@@ -54,19 +54,25 @@ import org.bdgenomics.adam.projections.{
 import org.bdgenomics.adam.rdd.contig.{
   NucleotideContigFragmentRDD,
   ParquetUnboundNucleotideContigFragmentRDD,
-  RDDBoundNucleotideContigFragmentRDD
+  RDDBoundNucleotideContigFragmentRDD,
+  SortedParquetUnboundNucleotideContigFragmentRDD,
+  SortedRDDBoundNucleotideContigFragmentRDD
 }
 import org.bdgenomics.adam.rdd.feature._
 import org.bdgenomics.adam.rdd.fragment.{
   FragmentRDD,
   ParquetUnboundFragmentRDD,
-  RDDBoundFragmentRDD
+  RDDBoundFragmentRDD,
+  SortedParquetUnboundFragmentRDD,
+  SortedRDDBoundFragmentRDD
 }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
   RepairPartitions,
   ParquetUnboundAlignmentRecordRDD,
-  RDDBoundAlignmentRecordRDD
+  RDDBoundAlignmentRecordRDD,
+  SortedParquetUnboundAlignmentRecordRDD,
+  SortedRDDBoundAlignmentRecordRDD
 }
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -137,7 +143,7 @@ object ADAMContext {
 
   implicit def readsToVCConversionFn(arRdd: AlignmentRecordRDD,
                                      rdd: RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(rdd,
+    UnorderedVariantContextRDD(rdd,
       arRdd.sequences,
       arRdd.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
@@ -196,6 +202,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   private[rdd] def loadBamReadGroups(samHeader: SAMFileHeader): RecordGroupDictionary = {
     RecordGroupDictionary.fromSAMHeader(samHeader)
+  }
+
+  /**
+   * @param filePath The path where the parquet file is saved.
+   * @return Returns true if this parquet file has metadata indicating that the
+   *   file was saved.
+   */
+  private[rdd] def parquetFileIsSorted(filePath: String): Boolean = {
+    val path = new Path("%s/_sorted".format(filePath))
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    fs.exists(path)
   }
 
   /**
@@ -396,6 +413,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     paths.map(_.getPath)
   }
 
+  protected def isSingleFile(fileName: String): Boolean = {
+    getFsAndFiles(new Path(fileName)).size == 1
+  }
+
   /**
    * Elaborates out a directory/glob/plain path.
    *
@@ -455,6 +476,51 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Checks to see if a BAM/CRAM/SAM file is coordinate sorted.
+   *
+   * @param pathName The path name to load BAM/CRAM/SAM formatted alignment records from.
+   *   Globs/directories are supported.
+   * @param stringency The validation stringency to use when validating the
+   *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
+   * @return Returns true if there is a single file described by the path name,
+   *   and it is coordinate sorted.
+   */
+  private[rdd] def filesAreCoordinateSorted(
+    pathName: String,
+    stringency: ValidationStringency = ValidationStringency.STRICT): Boolean = {
+
+    val path = new Path(pathName)
+    val bamFiles = getFsAndFiles(path)
+    val filteredFiles = bamFiles.filter(p => {
+      val pPath = p.getName()
+      isBamExt(pPath) || pPath.startsWith("part-")
+    })
+
+    if (filteredFiles.size == 1) {
+      filteredFiles
+        .forall(fp => {
+          try {
+            // the sort order is saved in the file header
+            sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY,
+              stringency.toString)
+            val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
+
+            (samHeader.getSortOrder == SAMFileHeader.SortOrder.coordinate)
+          } catch {
+            case e: Throwable => {
+              log.error(
+                s"Loading header failed for $fp:n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
+              )
+              false
+            }
+          }
+        })
+    } else {
+      false
+    }
+  }
+
+  /**
    * Checks to see if a set of BAM/CRAM/SAM files are queryname grouped.
    *
    * If we are loading fragments and the BAM/CRAM/SAM files are sorted by the
@@ -486,7 +552,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       .forall(fp => {
         try {
           // the sort order is saved in the file header
-          sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, stringency.toString)
+          sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY,
+            stringency.toString)
           val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
 
           (samHeader.getSortOrder == SAMFileHeader.SortOrder.queryname ||
@@ -598,10 +665,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
+    val reads = records.map(p => samRecordConverter.convert(p._2.get))
 
-    AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p._2.get)),
-      seqDict,
-      readGroups)
+    if (filesAreCoordinateSorted(pathName, validationStringency)) {
+      SortedRDDBoundAlignmentRecordRDD(reads,
+        seqDict,
+        readGroups)
+    } else {
+      AlignmentRecordRDD(reads,
+        seqDict,
+        readGroups)
+    }
   }
 
   /**
@@ -668,9 +742,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }))
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
-    AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p._2.get)),
-      seqDict,
-      readGroups)
+    val reads = records.map(p => samRecordConverter.convert(p._2.get))
+
+    if (bamFiles.size == 1) {
+      SortedRDDBoundAlignmentRecordRDD(reads,
+        seqDict,
+        readGroups)
+    } else {
+      AlignmentRecordRDD(reads,
+        seqDict,
+        readGroups)
+    }
   }
 
   /**
@@ -751,89 +833,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Gets the sort and partition map metadata from the header of the file given
-   * as input.
-   *
-   * @param filename the filename for the metadata
-   * @return a partition map if the data was written sorted, or an empty Seq if unsorted
-   */
-  private[rdd] def extractPartitionMap(
-    filename: String): Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = {
-
-    val path = new Path(filename + "/_partitionMap.avro")
-    val fs = path.getFileSystem(sc.hadoopConfiguration)
-
-    try {
-      // get an input stream
-      val is = fs.open(path)
-
-      // set up avro for reading
-      val dr = new GenericDatumReader[GenericRecord]
-      val fr = new DataFileStream[GenericRecord](is, dr)
-
-      // parsing the json from the metadata header
-      // this unfortunately seems to be the only way to do this
-      // avro does not seem to support getting metadata fields out once
-      // you have the input from the string
-      val metaDataMap = JSON.parseFull(fr.getMetaString("avro.schema"))
-        // the cast here is required because parsefull does not cast for
-        // us. parsefull returns an object of type Any and leaves it to 
-        // the user to cast.
-        .get.asInstanceOf[Map[String, String]]
-
-      val optPartitionMap = metaDataMap.get("partitionMap")
-      // we didn't write a partition map, which means this was not sorted at write
-      // or at least we didn't have information that it was sorted
-      val partitionMap = optPartitionMap.getOrElse("")
-
-      // this is used to parse out the json. we use default because we don't need
-      // anything special
-      implicit val formats = DefaultFormats
-      val partitionMapBuilder = new ArrayBuffer[Option[(ReferenceRegion, ReferenceRegion)]]
-
-      // using json4s to parse the json values
-      // we have to cast it because the JSON parser does not actually give
-      // us the raw types. instead, it uses a wrapper which requires that we
-      // cast to the correct types. we also have to use Any because there
-      // are both Strings and BigInts stored there (by json4s), so we cast
-      // them later
-      val parsedJson = (parse(partitionMap) \ "partitionMap").values
-        .asInstanceOf[List[Map[String, Any]]]
-      for (f <- parsedJson) {
-        if (f.get("ReferenceRegion1").get.toString == "None") {
-          partitionMapBuilder += None
-        } else {
-          // ReferenceRegion1 in storage is the lower bound for the partition
-          val lowerBoundJson = f.get("ReferenceRegion1")
-            .get
-            .asInstanceOf[Map[String, Any]]
-
-          val lowerBound = ReferenceRegion(
-            lowerBoundJson.get("referenceName").get.toString,
-            lowerBoundJson.get("start").get.asInstanceOf[BigInt].toLong,
-            lowerBoundJson.get("end").get.asInstanceOf[BigInt].toLong)
-          // ReferenceRegion2 in storage is the upper bound for the partition
-          val upperBoundJson = f.get("ReferenceRegion2")
-            .get
-            .asInstanceOf[Map[String, Any]]
-
-          val upperBound = ReferenceRegion(
-            upperBoundJson.get("referenceName").get.toString,
-            upperBoundJson.get("start").get.asInstanceOf[BigInt].toLong,
-            upperBoundJson.get("end").get.asInstanceOf[BigInt].toLong)
-
-          partitionMapBuilder += Some((lowerBound, upperBound))
-        }
-      }
-
-      Some(partitionMapBuilder.toArray)
-    } catch {
-      case e: FileNotFoundException => None
-      case e: Throwable             => throw e
-    }
-  }
-
-  /**
    * Load a path name in Parquet + Avro format into an AlignmentRecordRDD.
    *
    * @note The sequence dictionary is read from an Avro file stored at
@@ -862,16 +861,26 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert avro to sequence dictionary
     val rgd = loadAvroRecordGroupDictionary(pathName)
 
+    // is the parquet file on disk sorted?
+    val isSorted = parquetFileIsSorted(pathName)
+
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd)
+        if (isSorted) {
+          SortedParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd)
+        } else {
+          ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd)
+        }
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[AlignmentRecord](pathName, optPredicate, optProjection)
 
-        RDDBoundAlignmentRecordRDD(rdd, sd, rgd,
-          optPartitionMap = extractPartitionMap(pathName))
+        if (isSorted) {
+          SortedRDDBoundAlignmentRecordRDD(rdd, sd, rgd)
+        } else {
+          RDDBoundAlignmentRecordRDD(rdd, sd, rgd)
+        }
       }
     }
   }
@@ -1092,10 +1101,29 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val (sd, samples, headers) = loadVcfMetadata(pathName)
 
     val vcc = new VariantContextConverter(headers, stringency)
-    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
-      sd,
-      samples,
-      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
+    val convertedRecords = records.flatMap(p => vcc.convert(p._2.get))
+    val cleanedLines = VariantContextConverter.cleanAndMixInSupportedLines(
+      headers, stringency, log)
+    makeVariantContextRDD(pathName, convertedRecords, sd, samples, cleanedLines)
+  }
+
+  private def makeVariantContextRDD(pathName: String,
+                                    convertedRecords: RDD[VariantContext],
+                                    sd: SequenceDictionary,
+                                    samples: Seq[Sample],
+                                    cleanedLines: Seq[VCFHeaderLine]): VariantContextRDD = {
+    if (isSingleFile(pathName)) {
+      SortedVariantContextRDD(convertedRecords,
+        sd,
+        GenomicRangePartitioner.fromRdd(convertedRecords.keyBy(_.position), sd),
+        samples,
+        cleanedLines)
+    } else {
+      UnorderedVariantContextRDD(convertedRecords,
+        sd,
+        samples,
+        cleanedLines)
+    }
   }
 
   /**
@@ -1138,10 +1166,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val (sd, samples, headers) = loadVcfMetadata(pathName)
 
     val vcc = new VariantContextConverter(headers, stringency)
-    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
-      sd,
-      samples,
-      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
+    val convertedRecords = records.flatMap(p => vcc.convert(p._2.get))
+    val cleanedLines = VariantContextConverter.cleanAndMixInSupportedLines(
+      headers, stringency, log)
+    makeVariantContextRDD(pathName, convertedRecords, sd, samples, cleanedLines)
   }
 
   /**
@@ -1169,16 +1197,26 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load avro record group dictionary and convert to samples
     val samples = loadAvroSamples(pathName)
 
+    // is the parquet file on disk sorted?
+    val isSorted = parquetFileIsSorted(pathName)
+
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundGenotypeRDD(sc, pathName, sd, samples, headers)
+        if (isSorted) {
+          SortedParquetUnboundGenotypeRDD(sc, pathName, sd, samples, headers)
+        } else {
+          ParquetUnboundGenotypeRDD(sc, pathName, sd, samples, headers)
+        }
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[Genotype](pathName, optPredicate, optProjection)
 
-        new RDDBoundGenotypeRDD(rdd, sd, samples, headers,
-          optPartitionMap = extractPartitionMap(pathName))
+        if (isSorted) {
+          SortedRDDBoundGenotypeRDD(rdd, sd, samples, headers)
+        } else {
+          new RDDBoundGenotypeRDD(rdd, sd, samples, headers)
+        }
       }
     }
   }
@@ -1204,14 +1242,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load header lines
     val headers = loadHeaderLines(pathName)
 
+    // is the parquet file on disk sorted?
+    val isSorted = parquetFileIsSorted(pathName)
+
     (optPredicate, optProjection) match {
       case (None, None) => {
-        new ParquetUnboundVariantRDD(sc, pathName, sd, headers)
+        if (isSorted) {
+          new SortedParquetUnboundVariantRDD(sc, pathName, sd, headers)
+        } else {
+          new ParquetUnboundVariantRDD(sc, pathName, sd, headers)
+        }
       }
       case _ => {
         val rdd = loadParquet[Variant](pathName, optPredicate, optProjection)
-        new RDDBoundVariantRDD(rdd, sd, headers,
-          optPartitionMap = extractPartitionMap(pathName))
+        if (isSorted) {
+          SortedRDDBoundVariantRDD(rdd, sd, headers)
+        } else {
+          new RDDBoundVariantRDD(rdd, sd, headers)
+        }
       }
     }
   }
@@ -1243,7 +1291,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val fragmentRdd = FastaConverter(remapData, maximumLength)
       .cache()
 
-    NucleotideContigFragmentRDD(fragmentRdd)
+    // by definition, FASTA is sorted
+    NucleotideContigFragmentRDD(fragmentRdd, isSorted = true)
   }
 
   /**
@@ -1352,11 +1401,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     forceRdd: Boolean = false): CoverageRDD = {
 
+    // is the parquet file on disk sorted?
+    val isSorted = parquetFileIsSorted(pathName)
+
     if (optPredicate.isEmpty && !forceRdd) {
       // convert avro to sequence dictionary
       val sd = loadAvroSequenceDictionary(pathName)
 
-      new ParquetUnboundCoverageRDD(sc, pathName, sd)
+      if (isSorted) {
+        new SortedParquetUnboundCoverageRDD(sc, pathName, sd)
+      } else {
+        new ParquetUnboundCoverageRDD(sc, pathName, sd)
+      }
     } else {
       val coverageFields = Projection(FeatureField.contigName,
         FeatureField.start,
@@ -1511,17 +1567,27 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None): FeatureRDD = {
 
     val sd = loadAvroSequenceDictionary(pathName)
-    val rdd = loadParquet[Feature](pathName, optPredicate, optProjection)
+
+    // is the parquet file on disk sorted?
+    val isSorted = parquetFileIsSorted(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundFeatureRDD(sc, pathName, sd)
+        if (isSorted) {
+          SortedParquetUnboundFeatureRDD(sc, pathName, sd)
+        } else {
+          ParquetUnboundFeatureRDD(sc, pathName, sd)
+        }
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[Feature](pathName, optPredicate, optProjection)
 
-        new RDDBoundFeatureRDD(rdd, sd, optPartitionMap = extractPartitionMap(pathName))
+        if (isSorted) {
+          SortedRDDBoundFeatureRDD(rdd, sd)
+        } else {
+          new RDDBoundFeatureRDD(rdd, sd)
+        }
       }
     }
   }
@@ -1543,18 +1609,29 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None): NucleotideContigFragmentRDD = {
 
     val sd = loadAvroSequenceDictionary(pathName)
-    val rdd = loadParquet[NucleotideContigFragment](pathName, optPredicate, optProjection)
+
+    // is the parquet file on disk sorted?
+    val isSorted = parquetFileIsSorted(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundNucleotideContigFragmentRDD(
-          sc, pathName, sd)
+        if (isSorted) {
+          SortedParquetUnboundNucleotideContigFragmentRDD(
+            sc, pathName, sd)
+        } else {
+          ParquetUnboundNucleotideContigFragmentRDD(
+            sc, pathName, sd)
+        }
       }
       case (_, _) => {
         val rdd = loadParquet[NucleotideContigFragment](pathName, optPredicate, optProjection)
-        new RDDBoundNucleotideContigFragmentRDD(rdd,
-          sd,
-          optPartitionMap = extractPartitionMap(pathName))
+        if (isSorted) {
+          SortedRDDBoundNucleotideContigFragmentRDD(rdd,
+            sd)
+        } else {
+          new RDDBoundNucleotideContigFragmentRDD(rdd,
+            sd)
+        }
       }
     }
   }
@@ -1581,18 +1658,28 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert avro to sequence dictionary
     val rgd = loadAvroRecordGroupDictionary(pathName)
 
+    // is the parquet file on disk sorted?
+    val isSorted = parquetFileIsSorted(pathName)
+
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundFragmentRDD(sc, pathName, sd, rgd)
+        if (isSorted) {
+          SortedParquetUnboundFragmentRDD(sc, pathName, sd, rgd)
+        } else {
+          ParquetUnboundFragmentRDD(sc, pathName, sd, rgd)
+        }
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[Fragment](pathName, optPredicate, optProjection)
 
-        new RDDBoundFragmentRDD(rdd,
-          sd,
-          rgd,
-          optPartitionMap = extractPartitionMap(pathName))
+        if (isSorted) {
+          SortedRDDBoundFragmentRDD(rdd, sd, rgd)
+        } else {
+          new RDDBoundFragmentRDD(rdd,
+            sd,
+            rgd)
+        }
       }
     }
   }

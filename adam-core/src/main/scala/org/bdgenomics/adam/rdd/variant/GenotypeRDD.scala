@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.variant.vcf.VCFHeaderLine
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
-import org.apache.spark.SparkContext
+import org.apache.spark.{ Partitioner, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.DefaultHeaderLines
@@ -31,7 +31,12 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ JavaSaveArgs, MultisampleAvroGenomicRDD }
+import org.bdgenomics.adam.rdd.{
+  GenomicRangePartitioner,
+  JavaSaveArgs,
+  MultisampleAvroGenomicRDD,
+  SortedGenomicRDD
+}
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Genotype => GenotypeProduct }
@@ -84,7 +89,7 @@ object GenotypeRDD extends Serializable {
             sequences: SequenceDictionary,
             samples: Seq[Sample],
             headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): GenotypeRDD = {
-    RDDBoundGenotypeRDD(rdd, sequences, samples, headerLines, None)
+    RDDBoundGenotypeRDD(rdd, sequences, samples, headerLines)
   }
 
   /**
@@ -112,7 +117,28 @@ case class ParquetUnboundGenotypeRDD private[rdd] (
     @transient samples: Seq[Sample],
     @transient headerLines: Seq[VCFHeaderLine]) extends GenotypeRDD {
 
-  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
+  lazy val rdd: RDD[Genotype] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[GenotypeProduct]
+  }
+}
+
+case class SortedParquetUnboundGenotypeRDD private[rdd] (
+  private val sc: SparkContext,
+  private val parquetFilename: String,
+  sequences: SequenceDictionary,
+  @transient samples: Seq[Sample],
+  @transient headerLines: Seq[VCFHeaderLine]) extends GenotypeRDD
+    with SortedGenotypeRDD {
+
+  lazy val partitioner: Partitioner = {
+    GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
+  }
 
   lazy val rdd: RDD[Genotype] = {
     sc.loadParquet(parquetFilename)
@@ -130,8 +156,6 @@ case class DatasetBoundGenotypeRDD private[rdd] (
     sequences: SequenceDictionary,
     @transient samples: Seq[Sample],
     @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends GenotypeRDD {
-
-  protected lazy val optPartitionMap = None
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
 
@@ -159,8 +183,7 @@ case class RDDBoundGenotypeRDD private[rdd] (
     rdd: RDD[Genotype],
     sequences: SequenceDictionary,
     @transient samples: Seq[Sample],
-    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends GenotypeRDD {
+    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends GenotypeRDD {
 
   /**
    * A SQL Dataset of reads.
@@ -169,6 +192,60 @@ case class RDDBoundGenotypeRDD private[rdd] (
     val sqlContext = SQLContext.getOrCreate(rdd.context)
     import sqlContext.implicits._
     sqlContext.createDataset(rdd.map(GenotypeProduct.fromAvro))
+  }
+}
+
+private[rdd] object SortedRDDBoundGenotypeRDD {
+
+  def apply(rdd: RDD[Genotype],
+            sequences: SequenceDictionary,
+            samples: Seq[Sample],
+            headerLines: Seq[VCFHeaderLine]): SortedRDDBoundGenotypeRDD = {
+    val partitioner = GenomicRangePartitioner.fromRdd(rdd.map(v => {
+      (ReferenceRegion(v), v)
+    }), sequences)
+
+    SortedRDDBoundGenotypeRDD(rdd,
+      sequences,
+      partitioner,
+      samples,
+      headerLines)
+  }
+}
+
+case class SortedRDDBoundGenotypeRDD private[rdd] (
+  rdd: RDD[Genotype],
+  sequences: SequenceDictionary,
+  partitioner: Partitioner,
+  @transient samples: Seq[Sample],
+  @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends GenotypeRDD
+    with SortedGenotypeRDD {
+
+  /**
+   * A SQL Dataset of reads.
+   */
+  lazy val dataset: Dataset[GenotypeProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(GenotypeProduct.fromAvro))
+  }
+}
+
+sealed trait SortedGenotypeRDD extends SortedGenomicRDD[Genotype, GenotypeRDD] {
+
+  val samples: Seq[Sample]
+
+  val headerLines: Seq[VCFHeaderLine]
+
+  override protected def replaceRdd(
+    newRdd: RDD[Genotype],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): GenotypeRDD = {
+    if (isSorted) {
+      SortedRDDBoundGenotypeRDD(newRdd, sequences, samples, headerLines)
+    } else {
+      RDDBoundGenotypeRDD(newRdd, sequences, samples, headerLines)
+    }
   }
 }
 
@@ -214,16 +291,22 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicRDD[Genotype, Ge
         }
       }
 
-    VariantContextRDD(vcRdd, sequences, samples, headerLines)
+    UnorderedVariantContextRDD(vcRdd, sequences, samples, headerLines)
   }
 
-  /**
-   * @param newRdd An RDD to replace the underlying RDD with.
-   * @return Returns a new GenotypeRDD with the underlying RDD replaced.
-   */
-  protected def replaceRdd(newRdd: RDD[Genotype],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenotypeRDD = {
-    RDDBoundGenotypeRDD(newRdd, sequences, samples, headerLines, newPartitionMap)
+  protected def replaceRdd(
+    newRdd: RDD[Genotype],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): GenotypeRDD = {
+    if (isSorted) {
+      SortedRDDBoundGenotypeRDD(newRdd,
+        sequences,
+        extractPartitioner(newRdd),
+        samples,
+        headerLines)
+    } else {
+      RDDBoundGenotypeRDD(newRdd, sequences, samples, headerLines)
+    }
   }
 
   /**

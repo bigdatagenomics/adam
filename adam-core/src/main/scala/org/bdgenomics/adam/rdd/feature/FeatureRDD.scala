@@ -21,7 +21,7 @@ import com.google.common.collect.ComparisonChain
 import java.util.Comparator
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
-import org.apache.spark.SparkContext
+import org.apache.spark.{ Partitioner, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.apache.spark.storage.StorageLevel
@@ -31,8 +31,10 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
   FileMerger,
+  GenomicRangePartitioner,
   JavaSaveArgs,
-  SAMHeaderWriter
+  SAMHeaderWriter,
+  SortedGenomicRDD
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Feature => FeatureProduct }
@@ -160,7 +162,7 @@ object FeatureRDD {
    * @return Returns a new FeatureRDD.
    */
   def apply(rdd: RDD[Feature], sd: SequenceDictionary): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, sd, None)
+    new RDDBoundFeatureRDD(rdd, sd)
   }
 
   /**
@@ -273,15 +275,13 @@ case class ParquetUnboundFeatureRDD private[rdd] (
     sc.loadParquet(parquetFilename)
   }
 
-  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
-
   lazy val dataset = {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename).as[FeatureProduct]
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+  override def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
     copy(sequences = newSequences)
   }
 
@@ -290,12 +290,40 @@ case class ParquetUnboundFeatureRDD private[rdd] (
   }
 }
 
+case class SortedParquetUnboundFeatureRDD private[rdd] (
+  private val sc: SparkContext,
+  private val parquetFilename: String,
+  sequences: SequenceDictionary) extends FeatureRDD
+    with SortedFeatureRDD {
+
+  lazy val partitioner: Partitioner = {
+    GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
+  }
+
+  lazy val rdd: RDD[Feature] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[FeatureProduct]
+  }
+
+  override def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+    ParquetUnboundFeatureRDD(sc, parquetFilename, newSequences)
+  }
+
+  def toCoverage(): CoverageRDD = {
+    SortedParquetUnboundCoverageRDD(sc, parquetFilename, sequences)
+  }
+}
+
 case class DatasetBoundFeatureRDD private[rdd] (
     dataset: Dataset[FeatureProduct],
     sequences: SequenceDictionary) extends FeatureRDD {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
-  protected lazy val optPartitionMap = None
 
   override def saveAsParquet(filePath: String,
                              blockSize: Int = 128 * 1024 * 1024,
@@ -316,7 +344,7 @@ case class DatasetBoundFeatureRDD private[rdd] (
     copy(dataset = tFn(dataset))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+  override def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
     copy(sequences = newSequences)
   }
 
@@ -331,8 +359,7 @@ case class DatasetBoundFeatureRDD private[rdd] (
 
 case class RDDBoundFeatureRDD private[rdd] (
     rdd: RDD[Feature],
-    sequences: SequenceDictionary,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends FeatureRDD {
+    sequences: SequenceDictionary) extends FeatureRDD {
 
   /**
    * A SQL Dataset of reads.
@@ -343,13 +370,56 @@ case class RDDBoundFeatureRDD private[rdd] (
     sqlContext.createDataset(rdd.map(FeatureProduct.fromAvro))
   }
 
-  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
-    copy(sequences = newSequences)
+  def toCoverage(): CoverageRDD = {
+    val coverageRdd = rdd.map(f => Coverage(f))
+    RDDBoundCoverageRDD(coverageRdd, sequences)
+  }
+}
+
+private[rdd] object SortedRDDBoundFeatureRDD {
+
+  def apply(rdd: RDD[Feature],
+            sequences: SequenceDictionary): SortedRDDBoundFeatureRDD = {
+    val partitioner = GenomicRangePartitioner.fromRdd(rdd.map(f => {
+      (ReferenceRegion.unstranded(f), f)
+    }), sequences)
+
+    new SortedRDDBoundFeatureRDD(rdd, sequences, partitioner)
+  }
+}
+
+case class SortedRDDBoundFeatureRDD private[rdd] (
+  rdd: RDD[Feature],
+  sequences: SequenceDictionary,
+  partitioner: Partitioner) extends FeatureRDD
+    with SortedFeatureRDD {
+
+  /**
+   * A SQL Dataset of reads.
+   */
+  lazy val dataset: Dataset[FeatureProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(FeatureProduct.fromAvro))
   }
 
   def toCoverage(): CoverageRDD = {
     val coverageRdd = rdd.map(f => Coverage(f))
-    RDDBoundCoverageRDD(coverageRdd, sequences, optPartitionMap)
+    SortedRDDBoundCoverageRDD(coverageRdd, sequences, partitioner)
+  }
+}
+
+sealed trait SortedFeatureRDD extends SortedGenomicRDD[Feature, FeatureRDD] {
+
+  override protected def replaceRdd(
+    newRdd: RDD[Feature],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): FeatureRDD = {
+    if (isSorted || preservesPartitioning) {
+      new SortedRDDBoundFeatureRDD(newRdd, sequences, partitioner)
+    } else {
+      new RDDBoundFeatureRDD(newRdd, sequences)
+    }
   }
 }
 
@@ -434,13 +504,17 @@ sealed abstract class FeatureRDD extends AvroGenomicRDD[Feature, FeatureProduct,
    */
   def toCoverage(): CoverageRDD
 
-  /**
-   * @param newRdd The RDD to replace the underlying RDD with.
-   * @return Returns a new FeatureRDD with the underlying RDD replaced.
-   */
-  protected def replaceRdd(newRdd: RDD[Feature],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FeatureRDD = {
-    new RDDBoundFeatureRDD(newRdd, sequences, newPartitionMap)
+  protected def replaceRdd(
+    newRdd: RDD[Feature],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): FeatureRDD = {
+    if (isSorted) {
+      new SortedRDDBoundFeatureRDD(newRdd,
+        sequences,
+        extractPartitioner(newRdd))
+    } else {
+      new RDDBoundFeatureRDD(newRdd, sequences)
+    }
   }
 
   /**
@@ -625,7 +699,7 @@ sealed abstract class FeatureRDD extends AvroGenomicRDD[Feature, FeatureProduct,
   def sortByReference(ascending: Boolean = true, numPartitions: Int = rdd.partitions.length): FeatureRDD = {
     implicit def ord = FeatureOrdering
 
-    replaceRdd(rdd.sortBy(f => f, ascending, numPartitions))
+    replaceRdd(rdd.sortBy(f => f, ascending, numPartitions), isSorted = true)
   }
 
   /**
@@ -634,5 +708,7 @@ sealed abstract class FeatureRDD extends AvroGenomicRDD[Feature, FeatureProduct,
    * @param newSequences The sequence dictionary to add.
    * @return Returns a new FeatureRDD with sequence dictionary attached.
    */
-  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD
+  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD = {
+    new RDDBoundFeatureRDD(rdd, newSequences)
+  }
 }

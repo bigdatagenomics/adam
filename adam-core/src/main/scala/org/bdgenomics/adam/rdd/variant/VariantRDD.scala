@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.variant
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
-import org.apache.spark.SparkContext
+import org.apache.spark.{ Partitioner, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.DefaultHeaderLines
@@ -33,6 +33,8 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
+  GenomicRangePartitioner,
+  SortedGenomicRDD,
   VCFHeaderUtils
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
@@ -88,7 +90,7 @@ object VariantRDD extends Serializable {
             sequences: SequenceDictionary,
             headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): VariantRDD = {
 
-    new RDDBoundVariantRDD(rdd, sequences, headerLines, None)
+    new RDDBoundVariantRDD(rdd, sequences, headerLines)
   }
 
   /**
@@ -116,8 +118,6 @@ case class ParquetUnboundVariantRDD private[rdd] (
     sc.loadParquet(parquetFilename)
   }
 
-  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
-
   lazy val dataset = {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
@@ -125,12 +125,40 @@ case class ParquetUnboundVariantRDD private[rdd] (
   }
 }
 
+case class SortedParquetUnboundVariantRDD private[rdd] (
+  private val sc: SparkContext,
+  private val parquetFilename: String,
+  sequences: SequenceDictionary,
+  @transient headerLines: Seq[VCFHeaderLine]) extends VariantRDD
+    with SortedVariantRDD {
+
+  lazy val partitioner: Partitioner = {
+    GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
+  }
+
+  lazy val rdd: RDD[Variant] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[VariantProduct]
+  }
+
+  override def toVariantContextRDD(): VariantContextRDD = {
+    SortedVariantContextRDD(rdd.map(VariantContext(_)),
+      sequences,
+      partitioner,
+      Seq.empty[Sample],
+      headerLines)
+  }
+}
+
 case class DatasetBoundVariantRDD private[rdd] (
     dataset: Dataset[VariantProduct],
     sequences: SequenceDictionary,
     @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantRDD {
-
-  protected lazy val optPartitionMap = None
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
 
@@ -157,8 +185,7 @@ case class DatasetBoundVariantRDD private[rdd] (
 case class RDDBoundVariantRDD private[rdd] (
     rdd: RDD[Variant],
     sequences: SequenceDictionary,
-    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends VariantRDD {
+    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantRDD {
 
   /**
    * A SQL Dataset of reads.
@@ -167,6 +194,63 @@ case class RDDBoundVariantRDD private[rdd] (
     val sqlContext = SQLContext.getOrCreate(rdd.context)
     import sqlContext.implicits._
     sqlContext.createDataset(rdd.map(VariantProduct.fromAvro))
+  }
+}
+
+private[rdd] object SortedRDDBoundVariantRDD {
+
+  def apply(rdd: RDD[Variant],
+            sequences: SequenceDictionary,
+            headerLines: Seq[VCFHeaderLine]): SortedRDDBoundVariantRDD = {
+    val partitioner = GenomicRangePartitioner.fromRdd(rdd.map(v => {
+      (ReferenceRegion(v), v)
+    }), sequences)
+
+    new SortedRDDBoundVariantRDD(rdd,
+      sequences,
+      partitioner,
+      headerLines)
+  }
+}
+
+case class SortedRDDBoundVariantRDD private[rdd] (
+  rdd: RDD[Variant],
+  sequences: SequenceDictionary,
+  partitioner: Partitioner,
+  @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantRDD
+    with SortedVariantRDD {
+
+  /**
+   * A SQL Dataset of reads.
+   */
+  lazy val dataset: Dataset[VariantProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(VariantProduct.fromAvro))
+  }
+
+  override def toVariantContextRDD(): VariantContextRDD = {
+    SortedVariantContextRDD(rdd.map(VariantContext(_)),
+      sequences,
+      partitioner,
+      Seq.empty[Sample],
+      headerLines)
+  }
+}
+
+sealed trait SortedVariantRDD extends SortedGenomicRDD[Variant, VariantRDD] {
+
+  val headerLines: Seq[VCFHeaderLine]
+
+  override protected def replaceRdd(
+    newRdd: RDD[Variant],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): VariantRDD = {
+    if (isSorted || preservesPartitioning) {
+      SortedRDDBoundVariantRDD(newRdd, sequences, partitioner, headerLines)
+    } else {
+      RDDBoundVariantRDD(newRdd, sequences, headerLines)
+    }
   }
 }
 
@@ -180,6 +264,10 @@ sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct,
   }
 
   override protected def saveMetadata(filePath: String) {
+
+    SortedGenomicRDD.touchSortedMetadataFile(this,
+      rdd.context,
+      filePath)
 
     // write vcf headers to file
     VCFHeaderUtils.write(new VCFHeader(headerLines.toSet),
@@ -218,20 +306,24 @@ sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct,
    * @return Returns this VariantRDD as a VariantContextRDD.
    */
   def toVariantContextRDD(): VariantContextRDD = {
-    VariantContextRDD(rdd.map(VariantContext(_)),
+    UnorderedVariantContextRDD(rdd.map(VariantContext(_)),
       sequences,
       Seq.empty[Sample],
-      headerLines,
-      None)
+      headerLines)
   }
 
-  /**
-   * @param newRdd An RDD to replace the underlying RDD with.
-   * @return Returns a new VariantRDD with the underlying RDD replaced.
-   */
-  protected def replaceRdd(newRdd: RDD[Variant],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantRDD = {
-    RDDBoundVariantRDD(newRdd, sequences, headerLines, newPartitionMap)
+  protected def replaceRdd(
+    newRdd: RDD[Variant],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): VariantRDD = {
+    if (isSorted) {
+      SortedRDDBoundVariantRDD(newRdd,
+        sequences,
+        extractPartitioner(newRdd),
+        headerLines)
+    } else {
+      RDDBoundVariantRDD(newRdd, sequences, headerLines)
+    }
   }
 
   /**

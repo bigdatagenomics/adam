@@ -21,6 +21,7 @@ import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.fs.Path
+import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.{
   DefaultHeaderLines,
@@ -37,6 +38,7 @@ import org.bdgenomics.adam.rdd.{
   ADAMSaveAnyArgs,
   FileMerger,
   MultisampleGenomicRDD,
+  SortedGenomicRDD,
   VCFHeaderUtils
 }
 import org.bdgenomics.formats.avro.Sample
@@ -74,46 +76,68 @@ private[adam] class VariantContextArraySerializer extends IntervalArraySerialize
   }
 }
 
-object VariantContextRDD extends Serializable {
-
-  /**
-   * Builds a VariantContextRDD without a partition map.
-   *
-   * @param rdd The underlying VariantContext RDD.
-   * @param sequences The sequence dictionary for the RDD.
-   * @param samples The samples for the RDD.
-   * @param headerLines The header lines for the RDD.
-   * @return A new VariantContextRDD.
-   */
-  def apply(rdd: RDD[VariantContext],
-            sequences: SequenceDictionary,
-            samples: Seq[Sample],
-            headerLines: Seq[VCFHeaderLine]): VariantContextRDD = {
-    VariantContextRDD(rdd, sequences, samples, headerLines, None)
-  }
-
-  def apply(rdd: RDD[VariantContext],
-            sequences: SequenceDictionary,
-            samples: Seq[Sample]): VariantContextRDD = {
-    VariantContextRDD(rdd, sequences, samples, null)
-  }
-}
-
 /**
- * An RDD containing VariantContexts attached to a reference and samples.
- *
  * @param rdd The underlying RDD of VariantContexts.
  * @param sequences The genome sequence these variants were called against.
  * @param samples The genotyped samples in this RDD of VariantContexts.
  * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
  *   needed to represent this RDD of VariantContexts.
  */
-case class VariantContextRDD(rdd: RDD[VariantContext],
-                             sequences: SequenceDictionary,
-                             @transient samples: Seq[Sample],
-                             @transient headerLines: Seq[VCFHeaderLine],
-                             optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
+case class UnorderedVariantContextRDD(rdd: RDD[VariantContext],
+                                      sequences: SequenceDictionary,
+                                      @transient samples: Seq[Sample],
+                                      @transient headerLines: Seq[VCFHeaderLine]) extends VariantContextRDD {
+}
+
+/**
+ * @param rdd The underlying RDD of VariantContexts.
+ * @param sequences The genome sequence these variants were called against.
+ * @param samples The genotyped samples in this RDD of VariantContexts.
+ * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
+ *   needed to represent this RDD of VariantContexts.
+ */
+case class SortedVariantContextRDD(rdd: RDD[VariantContext],
+                                   sequences: SequenceDictionary,
+                                   partitioner: Partitioner,
+                                   @transient samples: Seq[Sample],
+                                   @transient headerLines: Seq[VCFHeaderLine]) extends VariantContextRDD with SortedGenomicRDD[VariantContext, VariantContextRDD] {
+
+  override protected def replaceRdd(
+    newRdd: RDD[VariantContext],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): VariantContextRDD = {
+    if (isSorted || preservesPartitioning) {
+      copy(rdd = newRdd)
+    } else {
+      UnorderedVariantContextRDD(newRdd,
+        sequences,
+        samples,
+        headerLines)
+    }
+  }
+
+  override def toGenotypeRDD(): GenotypeRDD = {
+    SortedRDDBoundGenotypeRDD(rdd.flatMap(_.genotypes),
+      sequences,
+      samples,
+      headerLines)
+  }
+
+  override def toVariantRDD(): VariantRDD = {
+    SortedRDDBoundVariantRDD(rdd.map(_.variant.variant),
+      sequences,
+      partitioner,
+      headerLines)
+  }
+}
+
+/**
+ * An RDD containing VariantContexts attached to a reference and samples.
+ */
+sealed abstract class VariantContextRDD extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
     with Logging {
+
+  val headerLines: Seq[VCFHeaderLine]
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, VariantContext)])(
     implicit tTag: ClassTag[VariantContext]): IntervalArray[ReferenceRegion, VariantContext] = {
@@ -122,7 +146,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
 
   def union(rdds: VariantContextRDD*): VariantContextRDD = {
     val iterableRdds = rdds.toSeq
-    VariantContextRDD(
+    UnorderedVariantContextRDD(
       rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
       iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
       (samples ++ iterableRdds.flatMap(_.samples)).distinct,
@@ -264,14 +288,22 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     }
   }
 
-  /**
-   * @param newRdd The RDD of VariantContexts to replace the underlying RDD.
-   * @return Returns a new VariantContextRDD where the underlying RDD has
-   *   been replaced.
-   */
-  protected def replaceRdd(newRdd: RDD[VariantContext],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantContextRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+  protected def replaceRdd(
+    newRdd: RDD[VariantContext],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): VariantContextRDD = {
+    if (isSorted) {
+      SortedVariantContextRDD(newRdd,
+        sequences,
+        extractPartitioner(newRdd),
+        samples,
+        headerLines)
+    } else {
+      UnorderedVariantContextRDD(newRdd,
+        sequences,
+        samples,
+        headerLines)
+    }
   }
 
   /**

@@ -19,7 +19,7 @@ package org.bdgenomics.adam.rdd.feature
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.serializers.FieldSerializer
-import org.apache.spark.SparkContext
+import org.apache.spark.{ Partitioner, SparkContext }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models.{
@@ -29,7 +29,11 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.GenomicDataset
+import org.bdgenomics.adam.rdd.{
+  GenomicDataset,
+  GenomicRangePartitioner,
+  SortedGenomicRDD
+}
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
@@ -72,8 +76,6 @@ case class ParquetUnboundCoverageRDD private[rdd] (
       forceRdd = true).rdd
   }
 
-  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
-
   lazy val dataset = {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
@@ -88,6 +90,46 @@ case class ParquetUnboundCoverageRDD private[rdd] (
   }
 }
 
+case class SortedParquetUnboundCoverageRDD private[rdd] (
+  private val sc: SparkContext,
+  private val parquetFilename: String,
+  sequences: SequenceDictionary) extends CoverageRDD
+    with SortedGenomicRDD[Coverage, CoverageRDD] {
+
+  lazy val partitioner: Partitioner = {
+    GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
+  }
+
+  lazy val rdd: RDD[Coverage] = {
+    sc.loadParquetCoverage(parquetFilename,
+      forceRdd = true).rdd
+  }
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename)
+      .select("contigName", "start", "end", "score")
+      .withColumnRenamed("score", "count")
+      .as[Coverage]
+  }
+
+  def toFeatureRDD(): FeatureRDD = {
+    SortedParquetUnboundFeatureRDD(sc, parquetFilename, sequences)
+  }
+
+  override protected def replaceRdd(
+    newRdd: RDD[Coverage],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): CoverageRDD = {
+    if (isSorted || preservesPartitioning) {
+      SortedRDDBoundCoverageRDD(newRdd, sequences, partitioner)
+    } else {
+      RDDBoundCoverageRDD(newRdd, sequences)
+    }
+  }
+}
+
 /**
  * An Dataset containing Coverage data.
  *
@@ -98,8 +140,6 @@ case class ParquetUnboundCoverageRDD private[rdd] (
 case class DatasetBoundCoverageRDD private[rdd] (
     dataset: Dataset[Coverage],
     sequences: SequenceDictionary) extends CoverageRDD {
-
-  protected lazy val optPartitionMap = None
 
   lazy val rdd: RDD[Coverage] = {
     dataset.rdd
@@ -120,8 +160,7 @@ case class DatasetBoundCoverageRDD private[rdd] (
  */
 case class RDDBoundCoverageRDD private[rdd] (
     rdd: RDD[Coverage],
-    sequences: SequenceDictionary,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends CoverageRDD {
+    sequences: SequenceDictionary) extends CoverageRDD {
 
   lazy val dataset: Dataset[Coverage] = {
     val sqlContext = SQLContext.getOrCreate(rdd.context)
@@ -132,6 +171,47 @@ case class RDDBoundCoverageRDD private[rdd] (
   def toFeatureRDD(): FeatureRDD = {
     val featureRdd = rdd.map(_.toFeature)
     FeatureRDD(featureRdd, sequences)
+  }
+}
+
+private[rdd] object SortedRDDBoundCoverageRDD {
+
+  def apply(rdd: RDD[Coverage],
+            sequences: SequenceDictionary): SortedRDDBoundCoverageRDD = {
+    val partitioner = GenomicRangePartitioner.fromRdd(rdd.map(f => {
+      (ReferenceRegion(f.contigName, f.start, f.end), f)
+    }), sequences)
+
+    new SortedRDDBoundCoverageRDD(rdd, sequences, partitioner)
+  }
+}
+
+case class SortedRDDBoundCoverageRDD private[rdd] (
+  rdd: RDD[Coverage],
+  sequences: SequenceDictionary,
+  partitioner: Partitioner) extends CoverageRDD
+    with SortedGenomicRDD[Coverage, CoverageRDD] {
+
+  lazy val dataset: Dataset[Coverage] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd)
+  }
+
+  def toFeatureRDD(): FeatureRDD = {
+    val featureRdd = rdd.map(_.toFeature)
+    SortedRDDBoundFeatureRDD(featureRdd, sequences, partitioner)
+  }
+
+  override protected def replaceRdd(
+    newRdd: RDD[Coverage],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): CoverageRDD = {
+    if (isSorted || preservesPartitioning) {
+      copy(rdd = newRdd)
+    } else {
+      RDDBoundCoverageRDD(newRdd, sequences)
+    }
   }
 }
 
@@ -155,8 +235,7 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
         .fold(dataset)(_.union(_)), mergedSequences)
     } else {
       RDDBoundCoverageRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-        mergedSequences,
-        None)
+        mergedSequences)
     }
   }
 
@@ -357,13 +436,17 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
     Seq(ReferenceRegion(elem.contigName, elem.start, elem.end))
   }
 
-  /**
-   * @param newRdd The RDD to replace the underlying RDD with.
-   * @return Returns a new CoverageRDD with the underlying RDD replaced.
-   */
-  protected def replaceRdd(newRdd: RDD[Coverage],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): CoverageRDD = {
-    RDDBoundCoverageRDD(newRdd, sequences, newPartitionMap)
+  protected def replaceRdd(
+    newRdd: RDD[Coverage],
+    isSorted: Boolean = false,
+    preservesPartitioning: Boolean = false): CoverageRDD = {
+    if (isSorted) {
+      SortedRDDBoundCoverageRDD(newRdd,
+        sequences,
+        extractPartitioner(newRdd))
+    } else {
+      RDDBoundCoverageRDD(newRdd, sequences)
+    }
   }
 
   /**

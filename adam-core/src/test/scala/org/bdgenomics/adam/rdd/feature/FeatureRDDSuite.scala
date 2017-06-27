@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.feature
 import com.google.common.collect.ImmutableMap
 import java.io.File
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.{ GenomicRDD, SortedGenomicRDD }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ Feature, Strand }
 import scala.io.Source
@@ -396,7 +397,8 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val f7 = fb.setContigName("2").build()
 
     val features = FeatureRDD(sc.parallelize(Seq(f7, f6, f5, f4, f3, f2, f1)), optStorageLevel = None)
-    val sorted = features.sortByReference().rdd.collect()
+    val sortedRdd = features.sortByReference()
+    val sorted = sortedRdd.rdd.collect()
 
     assert(f1 == sorted(0))
     assert(f2 == sorted(1))
@@ -405,6 +407,18 @@ class FeatureRDDSuite extends ADAMFunSuite {
     assert(f5 == sorted(4))
     assert(f6 == sorted(5))
     assert(f7 == sorted(6))
+
+    val sortedOutput = tmpFile(".adam")
+    sortedRdd.saveAsParquet(sortedOutput)
+    val sortedFeatures = sc.loadFeatures(sortedOutput)
+    assert(sortedFeatures match {
+      case _: SortedGenomicRDD[Feature, FeatureRDD] => {
+        true
+      }
+      case _ => {
+        false
+      }
+    })
   }
 
   sparkTest("sort by reference and feature fields") {
@@ -552,6 +566,9 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val featuresPath = testFile("small.1.narrowPeak")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
       .replaceSequences(sd)
@@ -573,6 +590,9 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("use right outer shuffle join to pull down features mapped to targets") {
     val featuresPath = testFile("small.1.narrowPeak")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
@@ -600,6 +620,9 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val featuresPath = testFile("small.1.narrowPeak")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
       .replaceSequences(sd)
@@ -625,6 +648,9 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("use full outer shuffle join to pull down features mapped to targets") {
     val featuresPath = testFile("small.1.narrowPeak")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
@@ -656,6 +682,9 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val featuresPath = testFile("small.1.narrowPeak")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))
       .replaceSequences(sd)
@@ -681,6 +710,9 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("use right outer shuffle join with group by to pull down features mapped to targets") {
     val featuresPath = testFile("small.1.narrowPeak")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val features = sc.loadFeatures(featuresPath)
       .transform(_.repartition(1))

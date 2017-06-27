@@ -18,12 +18,14 @@
 package org.bdgenomics.adam.rdd.fragment
 
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.{ GenomicRDD, SortedGenomicRDD }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
   AnySAMOutFormatter,
   QualityScoreBin
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.formats.avro.Fragment
 import scala.collection.JavaConversions._
 
 class FragmentRDDSuite extends ADAMFunSuite {
@@ -120,6 +122,9 @@ class FragmentRDDSuite extends ADAMFunSuite {
     val fragmentsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val fragments = sc.loadFragments(fragmentsPath)
       .transform(_.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
@@ -140,6 +145,9 @@ class FragmentRDDSuite extends ADAMFunSuite {
   sparkTest("use right outer shuffle join to pull down fragments mapped to targets") {
     val fragmentsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val fragments = sc.loadFragments(fragmentsPath)
       .transform(_.repartition(1))
@@ -166,6 +174,9 @@ class FragmentRDDSuite extends ADAMFunSuite {
     val fragmentsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val fragments = sc.loadFragments(fragmentsPath)
       .transform(_.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
@@ -190,6 +201,9 @@ class FragmentRDDSuite extends ADAMFunSuite {
   sparkTest("use full outer shuffle join to pull down fragments mapped to targets") {
     val fragmentsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val fragments = sc.loadFragments(fragmentsPath)
       .transform(_.repartition(1))
@@ -220,6 +234,9 @@ class FragmentRDDSuite extends ADAMFunSuite {
     val fragmentsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
 
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
+
     val fragments = sc.loadFragments(fragmentsPath)
       .transform(_.repartition(1))
     val targets = sc.loadFeatures(targetsPath)
@@ -244,6 +261,9 @@ class FragmentRDDSuite extends ADAMFunSuite {
   sparkTest("use right outer shuffle join with group by to pull down fragments mapped to targets") {
     val fragmentsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
+
+    // rdd is too small for sampling rate of 0.1 to reliably work
+    sc.hadoopConfiguration.setDouble(GenomicRDD.FLANK_SAMPLING_PERCENT, 1.0)
 
     val fragments = sc.loadFragments(fragmentsPath)
       .transform(_.repartition(1))
@@ -311,9 +331,17 @@ class FragmentRDDSuite extends ADAMFunSuite {
     assert(rdd2.rdd.count === 20)
     assert(rdd2.dataset.count === 20)
     val outputPath2 = tmpLocation()
-    rdd.transform(rdd => rdd) // no-op but force to rdd
+    rdd.sort()
       .saveAsParquet(outputPath2)
     val rdd3 = sc.loadFragments(outputPath2)
+    assert(rdd3 match {
+      case _: SortedGenomicRDD[Fragment, FragmentRDD] => {
+        true
+      }
+      case _ => {
+        false
+      }
+    })
     assert(rdd3.rdd.count === 20)
     assert(rdd3.dataset.count === 20)
     val outputPath3 = tmpLocation()
