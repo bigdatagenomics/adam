@@ -70,6 +70,13 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
     ) assert(converter.parseReadInFastq(s"${desc}\nATCG\n+\n1234")._1 === "more desc")
   }
 
+  test("test parseReadInFastq, read metadata removal") {
+    Seq("@desc 1:N:0:2",
+      "@desc 2:Y:4:0",
+      "@desc 1:N:0:1234").foreach(desc =>
+        assert(converter.parseReadInFastq(s"${desc}\nATCG\n+\n1234")._1 === "desc"))
+  }
+
   test("test parseReadInFastq, read quality shorter than read length, padded with B") {
     assert(converter.parseReadInFastq("@description\nAAA\n+\nZ", stringency = lenient) ===
       ("description", "AAA", "ZBB"))

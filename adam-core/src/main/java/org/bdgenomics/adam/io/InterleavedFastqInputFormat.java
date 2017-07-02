@@ -19,6 +19,8 @@ package org.bdgenomics.adam.io;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -71,6 +73,9 @@ public final class InterleavedFastqInputFormat extends FileInputFormat<Void, Tex
      */
     private static class InterleavedFastqRecordReader extends FastqRecordReader {
 
+        private final String firstReadSuffix = ".+([/ +_]1| 1:[YN]:[02468]+:[0-9]+)$";
+        private Pattern firstReadRegex;
+
         InterleavedFastqRecordReader(final Configuration conf,
                                      final FileSplit split) throws IOException {
             super(conf, split);
@@ -90,10 +95,19 @@ public final class InterleavedFastqInputFormat extends FileInputFormat<Void, Tex
          *   formatted pair of FASTQ records.
          */
         protected boolean checkBuffer(final int bufferLength, final Text buffer) {
-            return (bufferLength > 2 &&
-                    buffer.getBytes()[0] == '@' &&
-                    buffer.getBytes()[bufferLength - 2] == '/' &&
-                    buffer.getBytes()[bufferLength - 1] == '1');
+            if (firstReadRegex == null) {
+                firstReadRegex = Pattern.compile(firstReadSuffix);
+            }
+
+            if (bufferLength > 2 &&
+                buffer.getBytes()[0] == '@') {
+                
+                // attempt to match regex
+                Matcher bufferMatcher = firstReadRegex.matcher(buffer.toString());
+                return bufferMatcher.matches();
+            } else {
+                return false;
+            }
         }
 
         /**
