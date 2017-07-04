@@ -240,7 +240,7 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     assert(features.rdd.count === reloadedFeatures.rdd.count)
   }
 
-  sparkTest("round trip BED format") {
+  sparkTest("round trip BED6 format") {
     val inputPath = testFile("dvl1.200.bed")
     val expected = sc.loadBed(inputPath)
     val outputPath = tempLocation(".bed")
@@ -261,6 +261,37 @@ class FeatureRDDSuite extends ADAMFunSuite with TypeCheckedTripleEquals {
     pairs.foreach(p => {
       assert(p._1 === p._2)
     })
+  }
+
+  sparkTest("round trip BED12 format") {
+    val inputPath = testFile("small.1_12.bed")
+    val expected = sc.loadBed(inputPath)
+    val outputPath = tempLocation(".bed")
+    expected.saveAsBed(outputPath, asSingleFile = true)
+
+    val feature = expected.rdd.first
+    val bedCols = FeatureRDD.toBed(feature).split('\t')
+    assert(bedCols.size === 12)
+    assert(bedCols(0) === "1")
+    assert(bedCols(1) === "143")
+    assert(bedCols(2) === "26423")
+    assert(bedCols(3) === "line1")
+    assert(bedCols(4) === "0.0")
+    assert(bedCols(5) === ".")
+    assert(bedCols(6) === "150")
+    assert(bedCols(7) === "26400")
+    assert(bedCols(8) === "0,0,0")
+    assert(bedCols(9) === ".")
+    assert(bedCols(10) === ".")
+    assert(bedCols(11) === ".")
+
+    val actual = sc.loadBed(outputPath)
+    val pairs = expected.rdd.collect.zip(actual.rdd.collect)
+    pairs.foreach(p => {
+      assert(p._1 === p._2)
+    })
+
+    checkFiles(inputPath, outputPath)
   }
 
   sparkTest("save IntervalList as GTF format") {

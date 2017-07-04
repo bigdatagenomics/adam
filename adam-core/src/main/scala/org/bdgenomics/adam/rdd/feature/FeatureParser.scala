@@ -323,7 +323,7 @@ private[rdd] class BEDParser extends FeatureParser {
 
     if (hasColumn(3)) f.setName(fields(3))
     if (hasColumn(4)) f.setScore(fields(4).toDouble)
-    if (hasColumn(5)) Features.toStrand(fields(5)).foreach(f.setStrand(_))
+    if (fields.length > 5) Features.toStrand(fields(5)).foreach(f.setStrand(_))
 
     val attributes = new ArrayBuffer[(String, String)]()
     if (hasColumn(6)) attributes += ("thickStart" -> fields(6))

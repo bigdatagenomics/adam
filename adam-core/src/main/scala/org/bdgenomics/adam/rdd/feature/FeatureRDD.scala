@@ -210,7 +210,9 @@ object FeatureRDD {
     val score = Option(feature.getScore).getOrElse(".")
     val strand = Features.asString(feature.getStrand)
 
-    if (!feature.getAttributes.containsKey("thickStart")) {
+    if (!feature.getAttributes.containsKey("thickStart") &&
+      !feature.getAttributes.containsKey("itemRgb") &&
+      !feature.getAttributes.containsKey("blockCount")) {
       // write BED6 format
       List(chrom, start, end, name, score, strand).mkString("\t")
     } else {
