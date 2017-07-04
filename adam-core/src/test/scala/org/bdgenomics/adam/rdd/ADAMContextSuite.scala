@@ -136,6 +136,13 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(features.count === 10)
   }
 
+  sparkTest("Can read a BED 12 file") {
+    // note: this .bed doesn't actually conform to the UCSC BED spec...sigh...
+    val path = testFile("small.1_12.bed")
+    val features: RDD[Feature] = sc.loadFeatures(path).rdd
+    assert(features.count === 4)
+  }
+
   sparkTest("Can read a .bed file without cache") {
     val path = testFile("gencode.v7.annotation.trunc10.bed")
     val features: RDD[Feature] = sc.loadFeatures(path, optStorageLevel = Some(StorageLevel.NONE)).rdd
