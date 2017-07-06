@@ -426,7 +426,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val f6 = fb.setContigName("1").setStart(10L).setEnd(110L).clearStrand().build() // null strand last
     val f7 = fb.setContigName("2").build()
 
-    val features = FeatureRDD(sc.parallelize(Seq(f7, f6, f5, f4, f3, f2, f1)), optStorageLevel = None)
+    val features = FeatureRDD(sc.parallelize(Seq(f7, f6, f5, f4, f3, f2, f1)))
     val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
@@ -448,7 +448,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val f6 = fb.setScore(0.9).build() // Double defaults to increasing sort order
     val f7 = fb.clearScore().build() // nulls last
 
-    val features = FeatureRDD(sc.parallelize(Seq(f7, f6, f5, f4, f3, f2, f1)), optStorageLevel = None)
+    val features = FeatureRDD(sc.parallelize(Seq(f7, f6, f5, f4, f3, f2, f1)))
     val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
@@ -466,7 +466,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val f2 = fb.setGeneId("gene2").build()
     val f3 = fb.clearGeneId().build() // nulls last
 
-    val features = FeatureRDD(sc.parallelize(Seq(f3, f2, f1)), optStorageLevel = None)
+    val features = FeatureRDD(sc.parallelize(Seq(f3, f2, f1)))
     val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
@@ -482,7 +482,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val f4 = fb.setGeneId("gene2").setTranscriptId("transcript2").build()
     val f5 = fb.setGeneId("gene2").clearTranscriptId().build() // nulls last
 
-    val features = FeatureRDD(sc.parallelize(Seq(f5, f4, f3, f2, f1)), optStorageLevel = None)
+    val features = FeatureRDD(sc.parallelize(Seq(f5, f4, f3, f2, f1)))
     val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
@@ -504,7 +504,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val f8 = fb.setGeneId("gene2").setTranscriptId("transcript1").setAttributes(ImmutableMap.of("rank", "2")).build()
     val f9 = fb.setGeneId("gene2").setTranscriptId("transcript1").clearAttributes().build() // nulls last
 
-    val features = FeatureRDD(sc.parallelize(Seq(f9, f8, f7, f6, f5, f4, f3, f2, f1)), optStorageLevel = None)
+    val features = FeatureRDD(sc.parallelize(Seq(f9, f8, f7, f6, f5, f4, f3, f2, f1)))
     val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
@@ -526,7 +526,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val f4 = fb.setAttributes(ImmutableMap.of("rank", "2")).build()
     val f5 = fb.clearAttributes().build() // nulls last
 
-    val features = FeatureRDD(sc.parallelize(Seq(f5, f4, f3, f2, f1)), optStorageLevel = None)
+    val features = FeatureRDD(sc.parallelize(Seq(f5, f4, f3, f2, f1)))
     val sorted = features.sortByReference().rdd.collect()
 
     assert(f1 == sorted(0))
@@ -541,7 +541,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
     val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
 
-    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)), optStorageLevel = None)
+    val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
     val coverage = coverageRDD.flatten
 
@@ -747,35 +747,6 @@ class FeatureRDDSuite extends ADAMFunSuite {
     val features2 = sc.loadGff3(testFile("dvl1.200.gff3"))
     val union = features1.union(features2)
     assert(union.rdd.count === (features1.rdd.count + features2.rdd.count))
-    // only a single contig between the two
-    assert(union.sequences.size === 1)
-  }
-
-  sparkTest("estimate sequence dictionary contig lengths from GTF format") {
-    val inputPath = testFile("Homo_sapiens.GRCh37.75.trun100.gtf")
-    val features = sc.loadGtf(inputPath)
-    // max(start,end) = 1 36081
-    assert(features.sequences.containsRefName("1"))
-    assert(features.sequences.apply("1").isDefined)
-    assert(features.sequences.apply("1").get.length >= 36081L)
-  }
-
-  sparkTest("estimate sequence dictionary contig lengths from GFF3 format") {
-    val inputPath = testFile("dvl1.200.gff3")
-    val features = sc.loadGff3(inputPath)
-    // max(start, end) = 1 1356705
-    assert(features.sequences.containsRefName("1"))
-    assert(features.sequences.apply("1").isDefined)
-    assert(features.sequences.apply("1").get.length >= 1356705L)
-  }
-
-  sparkTest("estimate sequence dictionary contig lengths from BED format") {
-    val inputPath = testFile("dvl1.200.bed")
-    val features = sc.loadBed(inputPath)
-    // max(start, end) = 1 1358504
-    assert(features.sequences.containsRefName("1"))
-    assert(features.sequences.apply("1").isDefined)
-    assert(features.sequences.apply("1").get.length >= 1358504L)
   }
 
   sparkTest("obtain sequence dictionary contig lengths from header in IntervalList format") {
@@ -792,15 +763,6 @@ class FeatureRDDSuite extends ADAMFunSuite {
     assert(features.sequences.containsRefName("chr2"))
     assert(features.sequences.apply("chr2").isDefined)
     assert(features.sequences.apply("chr2").get.length >= 243199373L)
-  }
-
-  sparkTest("estimate sequence dictionary contig lengths from NarrowPeak format") {
-    val inputPath = testFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
-    val features = sc.loadNarrowPeak(inputPath)
-    // max(start, end) = chr1 794336
-    assert(features.sequences.containsRefName("chr1"))
-    assert(features.sequences.apply("chr1").isDefined)
-    assert(features.sequences.apply("chr1").get.length >= 794336L)
   }
 
   sparkTest("don't lose any features when piping as BED format") {
