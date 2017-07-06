@@ -25,7 +25,6 @@ import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
@@ -145,12 +144,6 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("small.1_12.bed")
     val features: RDD[Feature] = sc.loadFeatures(path).rdd
     assert(features.count === 4)
-  }
-
-  sparkTest("Can read a .bed file without cache") {
-    val path = testFile("gencode.v7.annotation.trunc10.bed")
-    val features: RDD[Feature] = sc.loadFeatures(path, optStorageLevel = Some(StorageLevel.NONE)).rdd
-    assert(features.count === 10)
   }
 
   sparkTest("Can read a .narrowPeak file") {

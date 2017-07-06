@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
-import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
@@ -52,25 +51,16 @@ class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
   @Args4jOption(required = false, name = "-disable_fast_concat",
     usage = "Disables the parallel file concatenation engine.")
   var disableFastConcat: Boolean = false
-
-  @Args4jOption(required = false, name = "-cache", usage = "Cache before building the sequence dictionary. Recommended for formats other than IntervalList and Parquet.")
-  var cache: Boolean = false
-
-  @Args4jOption(required = false, name = "-storage_level", usage = "Set the storage level to use for caching. Defaults to MEMORY_ONLY.")
-  var storageLevel: String = "MEMORY_ONLY"
 }
 
 class TransformFeatures(val args: TransformFeaturesArgs)
     extends BDGSparkCommand[TransformFeaturesArgs] {
 
   val companion = TransformFeatures
-  val storageLevel = StorageLevel.fromString(args.storageLevel)
-  val optStorageLevel = if (args.cache) Some(storageLevel) else None
 
   def run(sc: SparkContext) {
     sc.loadFeatures(
       args.featuresFile,
-      optStorageLevel = optStorageLevel,
       optMinPartitions = Option(args.numPartitions),
       optProjection = None
     ).save(args.outputPath, args.single, args.disableFastConcat)

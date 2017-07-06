@@ -42,7 +42,6 @@ import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
@@ -1310,8 +1309,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported, although file extension must be present
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param optSequenceDictionary Optional sequence dictionary. Defaults to None.
-   * @param optStorageLevel Optional storage level to use for cache before building
-   *   the sequence dictionary, if one is not provided. Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to use. For
    *   textual formats, if this is None, fall back to the Spark default
    *   parallelism. Defaults to None.
@@ -1326,7 +1323,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadCoverage(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
-    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
@@ -1334,7 +1330,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     loadFeatures(pathName,
       optSequenceDictionary = optSequenceDictionary,
-      optStorageLevel = optStorageLevel,
       optMinPartitions = optMinPartitions,
       optPredicate = optPredicate,
       optProjection = optProjection,
@@ -1380,8 +1375,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load features in GFF3 format from.
    *   Globs/directories are supported.
    * @param optSequenceDictionary Optional sequence dictionary. Defaults to None.
-   * @param optStorageLevel Optional storage level to use for cache before building
-   *   the sequence dictionary, if one is not provided. Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating GFF3 format.
@@ -1391,7 +1384,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadGff3(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
-    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadGff3.time {
 
@@ -1400,7 +1392,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records, optStorageLevel = optStorageLevel))(FeatureRDD(records, _))
+      .fold(FeatureRDD(records))(FeatureRDD(records, _))
   }
 
   /**
@@ -1409,8 +1401,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load features in GTF/GFF2 format from.
    *   Globs/directories are supported.
    * @param optSequenceDictionary Optional sequence dictionary. Defaults to None.
-   * @param optStorageLevel Optional storage level to use for cache before building
-   *   the sequence dictionary, if one is not provided. Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating GTF/GFF2 format.
@@ -1420,7 +1410,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadGtf(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
-    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadGtf.time {
 
@@ -1429,7 +1418,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records, optStorageLevel = optStorageLevel))(FeatureRDD(records, _))
+      .fold(FeatureRDD(records))(FeatureRDD(records, _))
   }
 
   /**
@@ -1438,8 +1427,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load features in BED6/12 format from.
    *   Globs/directories are supported.
    * @param optSequenceDictionary Optional sequence dictionary. Defaults to None.
-   * @param optStorageLevel Optional storage level to use for cache before building
-   *   the sequence dictionary, if one is not provided. Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating BED6/12 format.
@@ -1449,7 +1436,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadBed(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
-    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadBed.time {
 
@@ -1458,7 +1444,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records, optStorageLevel = optStorageLevel))(FeatureRDD(records, _))
+      .fold(FeatureRDD(records))(FeatureRDD(records, _))
   }
 
   /**
@@ -1467,8 +1453,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load features in NarrowPeak format from.
    *   Globs/directories are supported.
    * @param optSequenceDictionary Optional sequence dictionary. Defaults to None.
-   * @param optStorageLevel Optional storage level to use for cache before building
-   *   the sequence dictionary, if one is not provided. Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to load. If
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating NarrowPeak format.
@@ -1478,7 +1462,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadNarrowPeak(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
-    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadNarrowPeak.time {
 
@@ -1487,7 +1470,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records, optStorageLevel = optStorageLevel))(FeatureRDD(records, _))
+      .fold(FeatureRDD(records))(FeatureRDD(records, _))
   }
 
   /**
@@ -1643,8 +1626,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported, although file extension must be present
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param optSequenceDictionary Optional sequence dictionary. Defaults to None.
-   * @param optStorageLevel Optional storage level to use for cache before building
-   *   the sequence dictionary, if one is not provided. Defaults to StorageLevel.MEMORY_ONLY.
    * @param optMinPartitions An optional minimum number of partitions to use. For
    *   textual formats, if this is None, fall back to the Spark default
    *   parallelism. Defaults to None.
@@ -1659,7 +1640,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadFeatures(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
-    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     optMinPartitions: Option[Int] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
@@ -1670,28 +1650,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       log.info(s"Loading $pathName as BED and converting to Features.")
       loadBed(pathName,
         optSequenceDictionary = optSequenceDictionary,
-        optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isGff3Ext(trimmedPathName)) {
       log.info(s"Loading $pathName as GFF3 and converting to Features.")
       loadGff3(pathName,
         optSequenceDictionary = optSequenceDictionary,
-        optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isGtfExt(trimmedPathName)) {
       log.info(s"Loading $pathName as GTF/GFF2 and converting to Features.")
       loadGtf(pathName,
         optSequenceDictionary = optSequenceDictionary,
-        optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isNarrowPeakExt(trimmedPathName)) {
       log.info(s"Loading $pathName as NarrowPeak and converting to Features.")
       loadNarrowPeak(pathName,
         optSequenceDictionary = optSequenceDictionary,
-        optStorageLevel = optStorageLevel,
         optMinPartitions = optMinPartitions,
         stringency = stringency)
     } else if (isIntervalListExt(trimmedPathName)) {

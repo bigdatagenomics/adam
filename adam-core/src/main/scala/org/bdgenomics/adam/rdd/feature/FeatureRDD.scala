@@ -24,7 +24,6 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
-import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -116,7 +115,7 @@ object FeatureRDD {
    * A GenomicRDD that wraps a dataset of Feature data.
    *
    * @param ds A Dataset of genomic Features.
-   * @param sequences The reference genome this data is aligned to.
+   * @param sequences The reference genome these data are aligned to.
    */
   def apply(ds: Dataset[FeatureProduct],
             sequences: SequenceDictionary): FeatureRDD = {
@@ -124,38 +123,20 @@ object FeatureRDD {
   }
 
   /**
-   * Builds a FeatureRDD without SequenceDictionary information by running an
-   * aggregate to rebuild the SequenceDictionary.
+   * Builds a FeatureRDD with an empty sequence dictionary.
    *
    * @param rdd The underlying Feature RDD to build from.
-   * @param optStorageLevel Optional storage level to use for cache before
-   *                        building the SequenceDictionary.
    * @return Returns a new FeatureRDD.
    */
-  def apply(
-    rdd: RDD[Feature],
-    optStorageLevel: Option[StorageLevel]): FeatureRDD = BuildSequenceDictionary.time {
-
-    // optionally cache the rdd, since we're making multiple passes
-    optStorageLevel.foreach(rdd.persist(_))
-
-    // create sequence records with length max(start, end) + 1L
-    val sequenceRecords = rdd
-      .keyBy(_.getContigName)
-      .map(kv => (kv._1, max(kv._2.getStart, kv._2.getEnd) + 1L))
-      .reduceByKey(max(_, _))
-      .map(kv => SequenceRecord(kv._1, kv._2))
-
-    val sd = new SequenceDictionary(sequenceRecords.collect.toVector)
-
-    FeatureRDD(rdd, sd)
+  def apply(rdd: RDD[Feature]): FeatureRDD = {
+    FeatureRDD(rdd, SequenceDictionary.empty)
   }
 
   /**
-   * Builds a FeatureRDD without a partitionMap.
+   * Builds a FeatureRDD given a sequence dictionary.
    *
-   * @param rdd The underlying Feature RDD.
-   * @param sd The Sequence Dictionary for the Feature RDD.
+   * @param rdd The underlying Feature RDD to build from.
+   * @param sd The sequence dictionary for this FeatureRDD.
    * @return Returns a new FeatureRDD.
    */
   def apply(rdd: RDD[Feature], sd: SequenceDictionary): FeatureRDD = {
