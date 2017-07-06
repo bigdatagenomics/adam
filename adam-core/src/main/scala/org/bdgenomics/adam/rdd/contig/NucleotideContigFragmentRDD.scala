@@ -124,7 +124,7 @@ case class SortedParquetUnboundNucleotideContigFragmentRDD private[rdd] (
   sequences: SequenceDictionary) extends NucleotideContigFragmentRDD
     with SortedNucleotideContigFragmentRDD {
 
-  lazy val partitioner: Partitioner = {
+  @transient lazy val partitioner: Partitioner = {
     GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
   }
 

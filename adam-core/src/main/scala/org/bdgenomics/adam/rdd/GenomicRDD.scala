@@ -381,30 +381,11 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     val bins = GenomeBins(totalLength / rdd.partitions.size, seqLengths)
 
     // if the input rdd is mapped, then we need to repartition
-    val partitionedRdd = if (sequences.records.size > 0) {
-      // get region covered, expand region by flank size, and tag with bins
-      val binKeyedRdd = rdd.flatMap(r => {
-
-        // get regions and expand
-        val regions = getReferenceRegions(r).map(_.pad(flankSize))
-
-        // get all the bins this record falls into
-        val recordBins = regions.flatMap(rr => {
-          (bins.getStartBin(rr) to bins.getEndBin(rr)).map(b => (rr, b))
-        })
-
-        // key the record by those bins and return
-        // TODO: this should key with the reference region corresponding to a bin
-        recordBins.map(b => (b, r))
-      })
-
-      // repartition yonder our data
-      binKeyedRdd
-        .repartitionAndSortWithinPartitions(
-          ManualRegionPartitioner(bins.numBins))
-        .values
+    val (partitionedRdd, optPartitioner) = if (sequences.records.size > 0) {
+      val (pRdd, partitioner) = sortAndFlank(flankSize)
+      (pRdd, Some(partitioner))
     } else {
-      rdd
+      (rdd, None)
     }
 
     // are we in local mode?
@@ -456,15 +437,23 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // build the new GenomicRDD
     val newRdd = convFn(this.asInstanceOf[U], pipedRdd)
 
-    // if the original rdd was aligned and the final rdd is aligned, then we must filter
-    if (newRdd.sequences.isEmpty ||
-      sequences.isEmpty) {
-      newRdd
-    } else {
-      def filterPartition(idx: Int, iter: Iterator[X]): Iterator[X] = {
+    // if the original rdd was aligned and the final rdd is aligned, then we
+    // must filter
+    //
+    // implementation note:
+    //
+    // the correct way to implement this is to fold over the optPartitioner,
+    // instead of checking if the optional partitioner is defined and doing a
+    // get on the option. however, if you implement the code this way,
+    // something---specifically, i think the spark closure cleaner---goes wild
+    // and nullifies the newRdd object inside the mapPartitionsWithIndex call,
+    // leading to a NPE.
+    //
+    // writing it as an ugly if/else doesn't trigger this behavior...
+    if (optPartitioner.isDefined) {
+      val rPartitioner = optPartitioner.get
 
-        // get the region for this partition
-        val region = bins.invert(idx)
+      def filterPartition(idx: Int, iter: Iterator[X]): Iterator[X] = {
 
         // map over the iterator and filter out any items that don't belong
         iter.filter(x => {
@@ -473,14 +462,30 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
           val regions = newRdd.getReferenceRegions(x)
 
           // are there any regions that overlap our current region
-          !regions.forall(!_.overlaps(region))
+          regions.exists(region => {
+            rPartitioner.getPartition(region) == idx
+          })
         })
       }
 
       // run a map partitions with index and discard all items that fall
       // outside of their own partition's region bound
       newRdd.transform(_.mapPartitionsWithIndex(filterPartition))
+    } else {
+      newRdd
     }
+  }
+
+  protected def sortAndFlank(
+    margin: Int)(implicit tTag: ClassTag[T]): (RDD[T], GenomicRangePartitioner[_]) = {
+    val partitioner = new RangePartitioner(rdd.partitions.length,
+      flattenRddByRegions())
+    val gPartitioner = GenomicRangePartitioner.fromPartitioner(partitioner,
+      sequences)
+
+    (resortOtherRdd(this,
+      gPartitioner,
+      flankSize = margin).map(_._2), gPartitioner)
   }
 
   protected def replaceRdd(newRdd: RDD[T],
@@ -1129,11 +1134,23 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
   protected def resortOtherRdd[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y],
-    partitioner: Partitioner)(
+    partitioner: Partitioner,
+    flankSize: Int = 0)(
       implicit xTag: ClassTag[X]): RDD[(ReferenceRegion, X)] = {
+    def copartition(
+      grp: GenomicRangePartitioner[_]): RDD[(ReferenceRegion, X)] = {
+      grp.copartitionAgainst(genomicRdd.flattenRddByRegions(),
+        flankSize = flankSize)
+    }
+
     partitioner match {
+      case rp: RangePartitioner[_, T] => {
+        val grp = GenomicRangePartitioner.fromPartitioner(rp,
+          sequences)
+        copartition(grp)
+      }
       case grp: GenomicRangePartitioner[_] => {
-        grp.copartitionAgainst(genomicRdd.flattenRddByRegions())
+        copartition(grp)
       }
       case _ => {
         throw new IllegalArgumentException("Bad partitioner.")
@@ -1143,7 +1160,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
   protected def extractPartitioner(
     newRdd: RDD[T]): Partitioner = newRdd.partitioner match {
-    case Some(rp: RangePartitioner[_, T]) => rp
+    case Some(rp: RangePartitioner[_, T]) => {
+      GenomicRangePartitioner.fromPartitioner(rp,
+        sequences)
+    }
     case _ => {
       GenomicRangePartitioner.fromRdd(
         flattenRddByRegions(toFlatten = newRdd),
@@ -1270,6 +1290,13 @@ trait SortedGenomicRDD[T, U <: GenomicRDD[T, U]] extends GenomicRDD[T, U] {
         resortAndFlankRight
       }
     })
+  }
+
+  override protected def sortAndFlank(
+    margin: Int)(implicit tTag: ClassTag[T]): (RDD[T], GenomicRangePartitioner[_]) = {
+    (flank(flattenRddByRegions(), margin * 2)
+      .map(_._2), GenomicRangePartitioner.fromPartitioner(partitioner,
+        sequences).shift(margin))
   }
 
   private def flank[R](flankRdd: RDD[(ReferenceRegion, R)],

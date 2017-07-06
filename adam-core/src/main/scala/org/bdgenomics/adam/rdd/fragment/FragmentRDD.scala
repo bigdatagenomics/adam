@@ -137,13 +137,13 @@ object FragmentRDD {
 }
 
 case class SortedParquetUnboundFragmentRDD private[rdd] (
-  private val sc: SparkContext,
+  @transient private val sc: SparkContext,
   private val parquetFilename: String,
   sequences: SequenceDictionary,
   recordGroups: RecordGroupDictionary) extends FragmentRDD
     with SortedFragmentRDD {
 
-  lazy val partitioner: Partitioner = {
+  @transient lazy val partitioner: Partitioner = {
     GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
   }
 

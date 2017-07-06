@@ -175,13 +175,13 @@ case class ParquetUnboundAlignmentRecordRDD private[rdd] (
 }
 
 case class SortedParquetUnboundAlignmentRecordRDD private[rdd] (
-  private val sc: SparkContext,
+  @transient private val sc: SparkContext,
   private val parquetFilename: String,
   sequences: SequenceDictionary,
   recordGroups: RecordGroupDictionary) extends AlignmentRecordRDD
     with SortedAlignmentRecordRDD {
 
-  lazy val partitioner: Partitioner = {
+  @transient lazy val partitioner: Partitioner = {
     GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
   }
 

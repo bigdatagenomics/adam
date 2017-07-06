@@ -291,12 +291,12 @@ case class ParquetUnboundFeatureRDD private[rdd] (
 }
 
 case class SortedParquetUnboundFeatureRDD private[rdd] (
-  private val sc: SparkContext,
+  @transient private val sc: SparkContext,
   private val parquetFilename: String,
   sequences: SequenceDictionary) extends FeatureRDD
     with SortedFeatureRDD {
 
-  lazy val partitioner: Partitioner = {
+  @transient lazy val partitioner: Partitioner = {
     GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
   }
 

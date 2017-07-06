@@ -91,12 +91,12 @@ case class ParquetUnboundCoverageRDD private[rdd] (
 }
 
 case class SortedParquetUnboundCoverageRDD private[rdd] (
-  private val sc: SparkContext,
+  @transient private val sc: SparkContext,
   private val parquetFilename: String,
   sequences: SequenceDictionary) extends CoverageRDD
     with SortedGenomicRDD[Coverage, CoverageRDD] {
 
-  lazy val partitioner: Partitioner = {
+  @transient lazy val partitioner: Partitioner = {
     GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
   }
 

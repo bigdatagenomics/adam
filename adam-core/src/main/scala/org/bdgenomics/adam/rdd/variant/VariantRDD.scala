@@ -126,13 +126,13 @@ case class ParquetUnboundVariantRDD private[rdd] (
 }
 
 case class SortedParquetUnboundVariantRDD private[rdd] (
-  private val sc: SparkContext,
+  @transient private val sc: SparkContext,
   private val parquetFilename: String,
   sequences: SequenceDictionary,
   @transient headerLines: Seq[VCFHeaderLine]) extends VariantRDD
     with SortedVariantRDD {
 
-  lazy val partitioner: Partitioner = {
+  @transient lazy val partitioner: Partitioner = {
     GenomicRangePartitioner.fromRdd(flattenRddByRegions(), sequences)
   }
 

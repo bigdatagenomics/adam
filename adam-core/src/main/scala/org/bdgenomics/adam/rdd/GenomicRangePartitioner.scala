@@ -17,8 +17,12 @@
  */
 package org.bdgenomics.adam.rdd
 
+import java.lang.reflect.{ Array => ReflectArray }
 import java.util.Arrays
-import org.apache.spark.Partitioner
+import org.apache.spark.{
+  Partitioner,
+  RangePartitioner
+}
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
@@ -31,14 +35,18 @@ import scala.reflect.ClassTag
 private[rdd] object GenomicRangePartitioner {
 
   private def getHeads[V](rdd: RDD[(ReferenceRegion, V)]): Array[ReferenceRegion] = {
-    rdd.mapPartitionsWithIndex((idx, iter) => {
-      iter.take(1).map(p => (idx, p._1))
-    }).collect
-      .toSeq
-      .sortBy(_._1)
-      .tail
-      .map(_._2)
-      .toArray
+    if (rdd.partitions.length > 1) {
+      rdd.mapPartitionsWithIndex((idx, iter) => {
+        iter.take(1).map(p => (idx, p._1))
+      }).collect
+        .toSeq
+        .sortBy(_._1)
+        .tail
+        .map(_._2)
+        .toArray
+    } else {
+      Array.empty
+    }
   }
 
   def isLexSorted(heads: Array[ReferenceRegion]): Boolean = {
@@ -100,6 +108,53 @@ private[rdd] object GenomicRangePartitioner {
         sequences)
     }
   }
+
+  private def extractFromRangePartitioner[K](
+    partitioner: RangePartitioner[_, _])(implicit kTag: ClassTag[K]): Array[K] = {
+
+    val rangeBoundField = classOf[RangePartitioner[K, _]].getDeclaredFields
+      .filter(_.getName.contains("rangeBounds"))
+      .head
+    rangeBoundField.setAccessible(true)
+
+    // get array from instance
+    val rpArray = rangeBoundField.get(partitioner)
+    val rpArrayLength = ReflectArray.getLength(rpArray)
+
+    // copy array
+    val array = new Array[K](rpArrayLength)
+
+    (0 until rpArrayLength).foreach(idx => {
+      array(idx) = ReflectArray.get(rpArray, idx).asInstanceOf[K]
+    })
+
+    array
+  }
+
+  def fromPartitioner(
+    partitioner: Partitioner,
+    sequences: SequenceDictionary): GenomicRangePartitioner[_] = {
+
+    partitioner match {
+      case rp: RangePartitioner[_, _] => {
+        try {
+          LexicographicalGenomicRangePartitioner(
+            extractFromRangePartitioner[ReferenceRegion](rp))
+        } catch {
+          case _: Throwable => {
+            IndexedGenomicRangePartitioner(
+              extractFromRangePartitioner[(Int, Long)](rp),
+              sequences)
+          }
+        }
+      }
+      case lgrp: LexicographicalGenomicRangePartitioner => lgrp
+      case igrp: IndexedGenomicRangePartitioner         => igrp
+      case _ => {
+        throw new IllegalArgumentException("Invalid partitioner.")
+      }
+    }
+  }
 }
 
 private[rdd] case class LexicographicalGenomicRangePartitioner(
@@ -144,6 +199,12 @@ private[rdd] case class LexicographicalGenomicRangePartitioner(
     } else {
       Iterable(partition)
     }
+  }
+
+  private[rdd] def shift(by: Long): GenomicRangePartitioner[_] = {
+    LexicographicalGenomicRangePartitioner(rangeBounds.map(rr => {
+      ReferenceRegion(rr.referenceName, rr.start + by, rr.end + by)
+    }))
   }
 }
 
@@ -222,6 +283,11 @@ private[rdd] case class IndexedGenomicRangePartitioner(
         }
       })
   }
+
+  private[rdd] def shift(by: Long): GenomicRangePartitioner[_] = {
+    IndexedGenomicRangePartitioner(rangeBounds.map(p => (p._1, p._2 + by)),
+      sequences)
+  }
 }
 
 /**
@@ -243,9 +309,11 @@ sealed trait GenomicRangePartitioner[K] extends Partitioner {
     binSearch(_)
   }
 
+  private[rdd] def shift(by: Long): GenomicRangePartitioner[_]
+
   def numPartitions: Int = rangeBounds.length + 1
 
-  def partitionsForRegion(rr: ReferenceRegion): Iterable[Int] = {
+  private[rdd] def partitionsForRegion(rr: ReferenceRegion): Iterable[Int] = {
     if (rangeBounds.isEmpty) {
       Iterable(0)
     } else {
@@ -256,11 +324,18 @@ sealed trait GenomicRangePartitioner[K] extends Partitioner {
   protected def internalPartitionsForRegion(rr: ReferenceRegion): Iterable[Int]
 
   def copartitionAgainst[T](
-    rdd: RDD[(ReferenceRegion, T)])(
+    rdd: RDD[(ReferenceRegion, T)],
+    flankSize: Int = 0)(
       implicit tTag: ClassTag[T]): RDD[(ReferenceRegion, T)] = {
     val outputPartitioner = ManualRegionPartitioner(numPartitions)
 
-    rdd.flatMap(kv => {
+    val maybeFlankedRdd = if (flankSize > 0) {
+      rdd.map(kv => (kv._1.pad(flankSize), kv._2))
+    } else {
+      rdd
+    }
+
+    maybeFlankedRdd.flatMap(kv => {
       val (rr, v) = kv
       val idxs = partitionsForRegion(rr)
 
