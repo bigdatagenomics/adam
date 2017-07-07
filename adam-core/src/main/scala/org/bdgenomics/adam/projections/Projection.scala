@@ -38,8 +38,8 @@ object Projection {
   private def createFilterPredicate(fieldNames: Set[String],
                                     exclude: Boolean = false): Field => Boolean = {
     val filterPred = (f: Field) => fieldNames.contains(f.name)
-    val includeOrExlcude = (contains: Boolean) => if (exclude) !contains else contains
-    filterPred.andThen(includeOrExlcude)
+    val includeOrExclude = (contains: Boolean) => if (exclude) !contains else contains
+    filterPred.andThen(includeOrExclude)
   }
 
   /**
@@ -58,25 +58,6 @@ object Projection {
   def apply(includedFields: FieldValue*): Schema = {
     require(!includedFields.isEmpty, "Can't project down to zero fields!")
     Projection(false, includedFields: _*)
-  }
-
-  /**
-   * Creates a projection that includes a variable number of fields.
-   *
-   * @param includedFields Fields to include in the projection
-   * @return Returns the specified schema with the fields predicated out.
-   *
-   * @note The schema is inferred from the provided FieldValues. Undefined
-   *   behavior may result if you provide FieldValues from multiple different
-   *   FieldEnumerations.
-   *
-   * @throws IllegalArgumentException if there are no fields included in the
-   *   projection.
-   */
-  def apply(includedFields: Traversable[FieldValue]): Schema = {
-    require(includedFields.size > 0, "Can't project down to zero fields!")
-    val baseSchema = includedFields.head.schema
-    createProjection(baseSchema, includedFields.map(_.toString).toSet, false)
   }
 
   /**

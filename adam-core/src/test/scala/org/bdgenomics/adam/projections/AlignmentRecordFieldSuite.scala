@@ -75,4 +75,20 @@ class AlignmentRecordFieldSuite extends ADAMFunSuite {
     assert(alignmentRecords.first.getContigName === "6")
     assert(alignmentRecords.first.getStart === 29941260L)
   }
+
+  sparkTest("filter contigName when reading parquet alignment records") {
+    val path = tmpFile("alignmentRecords.parquet")
+    val rdd = sc.parallelize(Seq(AlignmentRecord.newBuilder()
+      .setContigName("6")
+      .setStart(29941260L)
+      .build()))
+    rdd.saveAsParquet(TestSaveArgs(path))
+
+    val projection = Filter(contigName)
+
+    val alignmentRecords: RDD[AlignmentRecord] = sc.loadParquet(path, optProjection = Some(projection))
+    assert(alignmentRecords.count() === 1)
+    assert(alignmentRecords.first.getContigName == null)
+    assert(alignmentRecords.first.getStart === 29941260L)
+  }
 }
