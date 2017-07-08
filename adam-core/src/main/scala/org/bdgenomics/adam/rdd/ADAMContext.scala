@@ -850,7 +850,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert avro to sequence dictionary
     val rgd = loadAvroRecordGroupDictionary(pathName)
 
-    AlignmentRecordRDD(rdd, sd, rgd, optPartitionMap = extractPartitionMap(pathName))
+    AlignmentRecordRDD(rdd, sd, rgd, isSorted = extractPartitionMap(pathName).nonEmpty)
   }
 
   /**
@@ -1149,7 +1149,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val samples = loadAvroSamples(pathName)
 
     GenotypeRDD(rdd, sd, samples, headers,
-      optPartitionMap = extractPartitionMap(pathName))
+      isSorted = extractPartitionMap(pathName).nonEmpty)
   }
 
   /**
@@ -1175,7 +1175,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val headers = loadHeaderLines(pathName)
 
     VariantRDD(rdd, sd, headers,
-      optPartitionMap = extractPartitionMap(pathName))
+      isSorted = extractPartitionMap(pathName).nonEmpty)
   }
 
   /**
@@ -1460,7 +1460,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val sd = loadAvroSequenceDictionary(pathName)
     val rdd = loadParquet[Feature](pathName, optPredicate, optProjection)
 
-    FeatureRDD(rdd, sd, optPartitionMap = extractPartitionMap(pathName))
+    FeatureRDD(rdd, sd, isSorted = extractPartitionMap(pathName).nonEmpty)
   }
 
   /**
@@ -1482,7 +1482,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val sd = loadAvroSequenceDictionary(pathName)
     val rdd = loadParquet[NucleotideContigFragment](pathName, optPredicate, optProjection)
 
-    NucleotideContigFragmentRDD(rdd, sd, optPartitionMap = extractPartitionMap(pathName))
+    NucleotideContigFragmentRDD(rdd, sd, isSorted = extractPartitionMap(pathName).nonEmpty)
   }
 
   /**
@@ -1510,7 +1510,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load fragment data from parquet
     val rdd = loadParquet[Fragment](pathName, optPredicate, optProjection)
 
-    FragmentRDD(rdd, sd, rgd, optPartitionMap = extractPartitionMap(pathName))
+    FragmentRDD(rdd, sd, rgd, isSorted = extractPartitionMap(pathName).nonEmpty)
   }
 
   /**

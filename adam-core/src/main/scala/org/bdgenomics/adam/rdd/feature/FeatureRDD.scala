@@ -144,7 +144,7 @@ object FeatureRDD {
    * @return Returns a new FeatureRDD.
    */
   def apply(rdd: RDD[Feature], sd: SequenceDictionary): FeatureRDD = {
-    FeatureRDD(rdd, sd, None)
+    FeatureRDD(rdd, sd, isSorted = false)
   }
   /**
    * @param feature Feature to convert to GTF format.
@@ -257,7 +257,7 @@ object FeatureRDD {
  */
 case class FeatureRDD(rdd: RDD[Feature],
                       sequences: SequenceDictionary,
-                      optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[Feature, FeatureRDD] with Logging {
+                      isSorted: Boolean) extends AvroGenomicRDD[Feature, FeatureRDD] with Logging {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Feature)])(
     implicit tTag: ClassTag[Feature]): IntervalArray[ReferenceRegion, Feature] = {
@@ -333,8 +333,8 @@ case class FeatureRDD(rdd: RDD[Feature],
    * @return Returns a new FeatureRDD with the underlying RDD replaced.
    */
   protected def replaceRdd(newRdd: RDD[Feature],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): FeatureRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+                           isSorted: Boolean = false): FeatureRDD = {
+    copy(rdd = newRdd, isSorted = isSorted)
   }
 
   /**

@@ -17,12 +17,8 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{ SequenceRecord, SequenceDictionary, ReferenceRegion }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.feature.FeatureRDD
-import org.bdgenomics.adam.rdd.variant.GenotypeRDD
-import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.misc.SparkFunSuite
 import scala.collection.mutable.ListBuffer
 
@@ -70,12 +66,12 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
 
     // sort and make into 16 partitions
-    val y = x.sortLexicographically(storePartitionMap = true, partitions = 16)
-    assert(isSorted(y.optPartitionMap.get))
+    val y = x.sortLexicographically(partitions = 16)
+    assert(isSorted(y.partitionMap.get))
 
     // sort and make into 32 partitions
-    val z = x.sortLexicographically(storePartitionMap = true, partitions = 32)
-    assert(isSorted(z.optPartitionMap.get))
+    val z = x.sortLexicographically(partitions = 32)
+    assert(isSorted(z.partitionMap.get))
     val arrayRepresentationOfZ = z.rdd.collect
 
     //verify sort worked on actual values
@@ -97,174 +93,11 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     assert(partitionTupleCounts.sum == partitionTupleCounts2.sum)
   }
 
-  sparkTest("testing copartition maintains or adds sort") {
-    val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(storePartitionMap = true, partitions = 16)
-    val y = x.sortLexicographically(storePartitionMap = true, partitions = 32)
-    val a = x.copartitionByReferenceRegion(y)
-    val b = z.copartitionByReferenceRegion(y)
-
-    assert(isSorted(a.optPartitionMap.get))
-    assert(isSorted(b.optPartitionMap.get))
-
-    val starts = z.rdd.map(f => f.getStart)
-  }
-
-  sparkTest("testing that we don't drop any data on the right side even though it doesn't map to a partition on the left") {
-    // testing the left side with an extremely large region that is
-    // not the last record on a partition
-    // this test also tests the case that our
-    val genotypeRddBuilder = new ListBuffer[Genotype]()
-
-    genotypeRddBuilder += {
-      Genotype.newBuilder()
-        .setContigName("chr1")
-        .setStart(2L)
-        .setEnd(100L)
-        .setVariant(
-          Variant.newBuilder()
-            .setStart(2L)
-            .setEnd(100L)
-            .setAlternateAllele("A")
-            .setReferenceAllele("T")
-            .build()
-        )
-        .setSampleId("1")
-        .build()
-    }
-
-    genotypeRddBuilder += {
-      Genotype.newBuilder()
-        .setContigName("chr1")
-        .setStart(3L)
-        .setEnd(5L)
-        .setVariant(
-          Variant.newBuilder()
-            .setStart(3L)
-            .setEnd(5L)
-            .setAlternateAllele("A")
-            .setReferenceAllele("T")
-            .build()
-        )
-        .setSampleId("2")
-        .build()
-    }
-
-    genotypeRddBuilder += {
-      Genotype.newBuilder()
-        .setContigName("chr1")
-        .setStart(6L)
-        .setEnd(7L)
-        .setVariant(
-          Variant.newBuilder()
-            .setStart(6L)
-            .setEnd(7L)
-            .setAlternateAllele("A")
-            .setReferenceAllele("T")
-            .build()
-        )
-        .setSampleId("3")
-        .build()
-    }
-
-    genotypeRddBuilder += {
-      Genotype.newBuilder()
-        .setContigName("chr1")
-        .setStart(8L)
-        .setEnd(12L)
-        .setVariant(
-          Variant.newBuilder()
-            .setStart(8L)
-            .setEnd(12L)
-            .setAlternateAllele("A")
-            .setReferenceAllele("T")
-            .build()
-        )
-        .setSampleId("3")
-        .build()
-    }
-
-    val featureRddBuilder = new ListBuffer[Feature]()
-
-    featureRddBuilder += {
-      Feature.newBuilder()
-        .setContigName("chr1")
-        .setStart(61L)
-        .setEnd(62L)
-        .build()
-    }
-
-    featureRddBuilder += {
-      Feature.newBuilder()
-        .setContigName("chr1")
-        .setStart(11L)
-        .setEnd(15L)
-        .build()
-    }
-
-    featureRddBuilder += {
-      Feature.newBuilder()
-        .setContigName("chr1")
-        .setStart(3L)
-        .setEnd(6L)
-        .build()
-    }
-
-    featureRddBuilder += {
-      Feature.newBuilder()
-        .setContigName("chr1")
-        .setStart(6L)
-        .setEnd(8L)
-        .build()
-    }
-
-    featureRddBuilder += {
-      Feature.newBuilder()
-        .setContigName("chr1")
-        .setStart(50L)
-        .setEnd(52L)
-        .build()
-    }
-
-    featureRddBuilder += {
-      Feature.newBuilder()
-        .setContigName("chr1")
-        .setStart(1L)
-        .setEnd(2L)
-        .build()
-    }
-
-    val genotypes =
-      GenotypeRDD(sc.parallelize(genotypeRddBuilder),
-        sd, Seq(), DefaultHeaderLines.allHeaderLines)
-        .sortLexicographically(storePartitionMap = true, partitions = 2)
-    genotypes.rdd.mapPartitionsWithIndex((idx, iter) => {
-      iter.map(f => (idx, f))
-    }).collect
-    val features = FeatureRDD(sc.parallelize(featureRddBuilder), sd)
-    val x = features.copartitionByReferenceRegion(genotypes)
-    val z = x.rdd.mapPartitionsWithIndex((idx, iter) => {
-      if (idx == 0 && iter.size != 6) {
-        Iterator(true)
-      } else if (idx == 1 && iter.size != 2) {
-        Iterator(true)
-      } else {
-        Iterator()
-      }
-    })
-
-    x.rdd.mapPartitionsWithIndex((idx, iter) => {
-      iter.map(f => (idx, f))
-    }).collect
-    assert(z.collect.length == 0)
-
-  }
-
   sparkTest("testing that sorted shuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
     // sort and make into 16 partitions
     val z =
-      x.sortLexicographically(storePartitionMap = true, partitions = 1600)
+      x.sortLexicographically(partitions = 1600)
 
     // perform join using 1600 partitions
     // 1600 is much more than the amount of data in the GenomicRDD
@@ -282,7 +115,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
   sparkTest("testing that sorted fullOuterShuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(storePartitionMap = true, partitions = 16)
+    val z = x.sortLexicographically(partitions = 16)
     val d = x.fullOuterShuffleRegionJoin(z, Some(1))
     val e = z.fullOuterShuffleRegionJoin(x, Some(1))
 
@@ -293,7 +126,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
   sparkTest("testing that sorted rightOuterShuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(storePartitionMap = true, partitions = 1)
+    val z = x.sortLexicographically(partitions = 1)
     val f = z.rightOuterShuffleRegionJoin(x, Some(1)).rdd.collect
     val g = x.rightOuterShuffleRegionJoin(x).rdd.collect
 
@@ -304,7 +137,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
   sparkTest("testing that sorted leftOuterShuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(storePartitionMap = true, partitions = 1)
+    val z = x.sortLexicographically(partitions = 1)
     val h = z.leftOuterShuffleRegionJoin(x, Some(1)).rdd
     val i = z.leftOuterShuffleRegionJoin(x).rdd
 
@@ -315,7 +148,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
   sparkTest("testing that we can persist the sorted knowledge") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
-    val z = x.sortLexicographically(storePartitionMap = true, partitions = 4)
+    val z = x.sortLexicographically(partitions = 4)
     val fileLocation = tmpLocation()
     val saveArgs = new JavaSaveArgs(fileLocation, asSingleFile = false)
     z.save(saveArgs, isSorted = true)
@@ -331,7 +164,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         val fitsWithinPartitionMap =
           if (ReferenceRegion(next.getContigName,
             next.getStart,
-            next.getEnd).compareTo(t.optPartitionMap.get.apply(idx).get._1) >= 0) {
+            next.getEnd).compareTo(t.partitionMap.get.apply(idx).get._1) >= 0) {
             true
           } else {
             false
@@ -339,7 +172,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         tempList += fitsWithinPartitionMap && (
           if (ReferenceRegion(next.getContigName,
             next.getStart,
-            next.getEnd).compareTo(t.optPartitionMap.get.apply(idx).get._2) <= 0 &&
+            next.getEnd).compareTo(t.partitionMap.get.apply(idx).get._2) <= 0 &&
             fitsWithinPartitionMap) {
             true
           } else {

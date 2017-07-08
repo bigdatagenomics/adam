@@ -98,7 +98,7 @@ object AlignmentRecordRDD extends Serializable {
     AlignmentRecordRDD(rdd,
       SequenceDictionary.empty,
       RecordGroupDictionary.empty,
-      None)
+      isSorted = false)
   }
 
   /**
@@ -140,7 +140,7 @@ object AlignmentRecordRDD extends Serializable {
   def apply(rdd: RDD[AlignmentRecord],
             sequences: SequenceDictionary,
             recordGroupDictionary: RecordGroupDictionary): AlignmentRecordRDD = {
-    AlignmentRecordRDD(rdd, sequences, recordGroupDictionary, None)
+    AlignmentRecordRDD(rdd, sequences, recordGroupDictionary, isSorted = false)
   }
 }
 
@@ -148,7 +148,7 @@ case class AlignmentRecordRDD(
     rdd: RDD[AlignmentRecord],
     sequences: SequenceDictionary,
     recordGroups: RecordGroupDictionary,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
+    isSorted: Boolean) extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordRDD] {
 
   /**
    * Replaces the underlying RDD and SequenceDictionary and emits a new object.
@@ -159,16 +159,16 @@ case class AlignmentRecordRDD(
    */
   protected def replaceRddAndSequences(newRdd: RDD[AlignmentRecord],
                                        newSequences: SequenceDictionary,
-                                       partitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): AlignmentRecordRDD = {
+                                       isSorted: Boolean = false): AlignmentRecordRDD = {
     AlignmentRecordRDD(newRdd,
       newSequences,
       recordGroups,
-      partitionMap)
+      isSorted)
   }
 
   protected def replaceRdd(newRdd: RDD[AlignmentRecord],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): AlignmentRecordRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+                           isSorted: Boolean = false): AlignmentRecordRDD = {
+    copy(rdd = newRdd, isSorted = isSorted)
   }
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, AlignmentRecord)])(
@@ -192,7 +192,8 @@ case class AlignmentRecordRDD(
   def toFragments: FragmentRDD = {
     FragmentRDD(groupReadsByFragment().map(_.toFragment),
       sequences,
-      recordGroups)
+      recordGroups,
+      isSorted)
   }
 
   /**
@@ -208,7 +209,7 @@ case class AlignmentRecordRDD(
    * Convert this set of reads into fragments.
    *
    * Assumes that reads are sorted by readname.
-   * *
+   *
    *
    * @return Returns a FragmentRDD where all reads have been grouped together by
    *   the original sequence fragment they come from.
@@ -216,7 +217,8 @@ case class AlignmentRecordRDD(
   private[rdd] def querynameSortedToFragments: FragmentRDD = {
     FragmentRDD(locallyGroupReadsByFragment().map(_.toFragment),
       sequences,
-      recordGroups)
+      recordGroups,
+      isSorted)
   }
 
   /**
@@ -243,7 +245,7 @@ case class AlignmentRecordRDD(
         }).reduceByKey(_ + _)
         .map(r => Coverage(r._1, r._2.toDouble))
 
-    CoverageRDD(covCounts, sequences)
+    CoverageRDD(covCounts, sequences, isSorted)
   }
 
   /**
@@ -633,7 +635,7 @@ case class AlignmentRecordRDD(
       } else {
         ReferencePosition(s"~~~${r.getReadName}", 0)
       }
-    }), sequences.stripIndices.sorted)
+    }), sequences.stripIndices.sorted, isSorted = true)
   }
 
   /**

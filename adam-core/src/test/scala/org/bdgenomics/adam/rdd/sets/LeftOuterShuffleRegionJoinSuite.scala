@@ -15,17 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.rdd.sets
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{
-  ReferenceRegion,
-  SequenceDictionary,
-  SequenceRecord
-}
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
+import org.bdgenomics.adam.rdd.OuterRegionJoinSuite
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.formats.avro.AlignmentRecord
 
-class RightOuterShuffleRegionJoinSuite(partitionMap: Seq[Option[(ReferenceRegion, ReferenceRegion)]])
+class LeftOuterShuffleRegionJoinSuite(partitionMap: Seq[Option[(ReferenceRegion, ReferenceRegion)]])
     extends OuterRegionJoinSuite {
 
   val partitionSize = 3
@@ -37,8 +35,9 @@ class RightOuterShuffleRegionJoinSuite(partitionMap: Seq[Option[(ReferenceRegion
       SequenceRecord("chr2", 15, url = "tes=t://chrom2"))
   }
 
-  def runJoin(leftRdd: RDD[(ReferenceRegion, AlignmentRecord)],
-              rightRdd: RDD[(ReferenceRegion, AlignmentRecord)]): RDD[(Option[AlignmentRecord], AlignmentRecord)] = {
-    RightOuterShuffleRegionJoin[AlignmentRecord, AlignmentRecord](leftRdd, rightRdd).compute()
+  def runJoin(leftRdd: AlignmentRecordRDD,
+              rightRdd: AlignmentRecordRDD): RDD[(Option[AlignmentRecord], AlignmentRecord)] = {
+    LeftOuterShuffleRegionJoin(rightRdd, leftRdd)
+      .compute().map(_.swap)
   }
 }
