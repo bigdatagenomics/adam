@@ -66,46 +66,6 @@ private[adam] class FeatureArraySerializer extends IntervalArraySerializer[Refer
   }
 }
 
-private trait FeatureOrdering[T <: Feature] extends Ordering[T] {
-  def allowNull(s: java.lang.String): java.lang.Integer = {
-    if (s == null) {
-      return null
-    }
-    java.lang.Integer.parseInt(s)
-  }
-
-  def compare(x: Feature, y: Feature) = {
-    val doubleNullsLast: Comparator[java.lang.Double] = com.google.common.collect.Ordering.natural().nullsLast()
-    val intNullsLast: Comparator[java.lang.Integer] = com.google.common.collect.Ordering.natural().nullsLast()
-    val strandNullsLast: Comparator[Strand] = com.google.common.collect.Ordering.natural().nullsLast()
-    val stringNullsLast: Comparator[java.lang.String] = com.google.common.collect.Ordering.natural().nullsLast()
-    // use ComparisonChain to safely handle nulls, as Feature is a java object
-    ComparisonChain.start()
-      // consider reference region first
-      .compare(x.getContigName, y.getContigName)
-      .compare(x.getStart, y.getStart)
-      .compare(x.getEnd, y.getEnd)
-      .compare(x.getStrand, y.getStrand, strandNullsLast)
-      // then feature fields
-      .compare(x.getFeatureId, y.getFeatureId, stringNullsLast)
-      .compare(x.getFeatureType, y.getFeatureType, stringNullsLast)
-      .compare(x.getName, y.getName, stringNullsLast)
-      .compare(x.getSource, y.getSource, stringNullsLast)
-      .compare(x.getPhase, y.getPhase, intNullsLast)
-      .compare(x.getFrame, y.getFrame, intNullsLast)
-      .compare(x.getScore, y.getScore, doubleNullsLast)
-      // finally gene structure
-      .compare(x.getGeneId, y.getGeneId, stringNullsLast)
-      .compare(x.getTranscriptId, y.getTranscriptId, stringNullsLast)
-      .compare(x.getExonId, y.getExonId, stringNullsLast)
-      .compare(allowNull(x.getAttributes.get("exon_number")), allowNull(y.getAttributes.get("exon_number")), intNullsLast)
-      .compare(allowNull(x.getAttributes.get("intron_number")), allowNull(y.getAttributes.get("intron_number")), intNullsLast)
-      .compare(allowNull(x.getAttributes.get("rank")), allowNull(y.getAttributes.get("rank")), intNullsLast)
-      .result()
-  }
-}
-private object FeatureOrdering extends FeatureOrdering[Feature] {}
-
 object FeatureRDD {
 
   /**
@@ -507,18 +467,5 @@ case class FeatureRDD(rdd: RDD[Feature],
       fileName,
       asSingleFile,
       disableFastConcat)
-  }
-
-  /**
-   * Sorts the RDD by the reference ordering.
-   *
-   * @param ascending Whether to sort in ascending order or not.
-   * @param numPartitions The number of partitions to have after sorting.
-   *   Defaults to the partition count of the underlying RDD.
-   */
-  def sortByReference(ascending: Boolean = true, numPartitions: Int = rdd.partitions.length): FeatureRDD = {
-    implicit def ord = FeatureOrdering
-
-    replaceRdd(rdd.sortBy(f => f, ascending, numPartitions))
   }
 }
