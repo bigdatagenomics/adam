@@ -72,11 +72,9 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
 
     // sort and make into 16 partitions
     val y = x.sortLexicographically(storePartitionMap = true, partitions = 16)
-    //assert(isSorted(y.optPartitionMap.get))
 
     // sort and make into 32 partitions
     val z = x.sortLexicographically(storePartitionMap = true, partitions = 32)
-    //assert(isSorted(z.optPartitionMap.get))
     val arrayRepresentationOfZ = z.rdd.collect
 
     //verify sort worked on actual values
@@ -105,10 +103,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     val a = x.copartitionByReferenceRegion(y)
     val b = z.copartitionByReferenceRegion(y)
 
-    //assert(isSorted(a.optPartitionMap.get))
-    //assert(isSorted(b.optPartitionMap.get))
-
-    val starts = z.rdd.map(f => f.getStart)
+    assert(!a.rdd.zip(b.rdd).collect.exists(f => f._1 != f._2))
   }
 
   sparkTest("testing that we don't drop any data on the right side even though it doesn't map to a partition on the left") {
@@ -314,7 +309,6 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     assert(h.count == i.count)
   }
 
-  /*
   sparkTest("testing that we can persist the sorted knowledge") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
     val z = x.sortLexicographically(storePartitionMap = true, partitions = 4)
@@ -326,30 +320,12 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     assert(t.isSorted)
     assert(t.rdd.partitions.length == z.rdd.partitions.length)
     // determine that our data still fits within the partition map
-    assert(t.rdd.mapPartitionsWithIndex((idx, iter) => {
-      val tempList = ListBuffer.empty[Boolean]
-      while (iter.hasNext) {
-        val next = iter.next()
-        val fitsWithinPartitionMap =
-          if (ReferenceRegion(next.getContigName,
-            next.getStart,
-            next.getEnd).compareTo(t.optPartitionMap.get.apply(idx).get._1) >= 0) {
-            true
-          } else {
-            false
-          }
-        tempList += fitsWithinPartitionMap && (
-          if (ReferenceRegion(next.getContigName,
-            next.getStart,
-            next.getEnd).compareTo(t.optPartitionMap.get.apply(idx).get._2) <= 0 &&
-            fitsWithinPartitionMap) {
-            true
-          } else {
-            false
-          })
-      }
-      tempList.iterator
-    }).filter(f => !f).count == 0)
+    assert(!t.rdd.mapPartitionsWithIndex((idx, iter) => {
+      iter.map(f => (idx, f))
+    }).zip(z.rdd.mapPartitionsWithIndex((idx, iter) => {
+      iter.map(f => (idx, f))
+    })).collect.exists(f => f._1 != f._2))
+
     val test = t.rdd.collect.drop(1)
     val test2 = t.rdd.collect.dropRight(1)
     assert(!test2.zip(test).exists(f => {
@@ -357,5 +333,4 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
         .compareTo(ReferenceRegion(f._2.getContigName, f._2.getStart, f._2.getEnd)) >= 0
     }))
   }
-  */
 }
