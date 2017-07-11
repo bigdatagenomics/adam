@@ -22,14 +22,20 @@ import com.google.common.io.Files
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.VCFHeaderLine
 import java.io.File
+import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
+  Coverage,
   SequenceDictionary,
   SequenceRecord,
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
+import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
@@ -254,5 +260,124 @@ class VariantContextRDDSuite extends ADAMFunSuite {
         disableFastConcat = false,
         stringency = ValidationStringency.STRICT)
     }
+  }
+
+  sparkTest("transform variant contexts to contig rdd") {
+    val variantContexts = sc.loadVcf(testFile("small.vcf"))
+
+    def checkSave(contigs: NucleotideContigFragmentRDD) {
+      val tempPath = tmpLocation(".adam")
+      contigs.saveAsParquet(tempPath)
+
+      assert(sc.loadContigFragments(tempPath).rdd.count === 6)
+    }
+
+    val contigs: NucleotideContigFragmentRDD = variantContexts.transmute(rdd => {
+      rdd.map(VariantRDDSuite.ncfFn)
+    })
+
+    checkSave(contigs)
+  }
+
+  sparkTest("transform variant contexts to coverage rdd") {
+    val variantContexts = sc.loadVcf(testFile("small.vcf"))
+
+    def checkSave(coverage: CoverageRDD) {
+      val tempPath = tmpLocation(".bed")
+      coverage.save(tempPath, false, false)
+
+      assert(sc.loadCoverage(tempPath).rdd.count === 6)
+    }
+
+    val coverage: CoverageRDD = variantContexts.transmute(rdd => {
+      rdd.map(VariantRDDSuite.covFn)
+    })
+
+    checkSave(coverage)
+  }
+
+  sparkTest("transform variant contexts to feature rdd") {
+    val variantContexts = sc.loadVcf(testFile("small.vcf"))
+
+    def checkSave(features: FeatureRDD) {
+      val tempPath = tmpLocation(".bed")
+      features.save(tempPath, false, false)
+
+      assert(sc.loadFeatures(tempPath).rdd.count === 6)
+    }
+
+    val features: FeatureRDD = variantContexts.transmute(rdd => {
+      rdd.map(VariantRDDSuite.featFn)
+    })
+
+    checkSave(features)
+  }
+
+  sparkTest("transform variant contexts to fragment rdd") {
+    val variantContexts = sc.loadVcf(testFile("small.vcf"))
+
+    def checkSave(fragments: FragmentRDD) {
+      val tempPath = tmpLocation(".adam")
+      fragments.saveAsParquet(tempPath)
+
+      assert(sc.loadFragments(tempPath).rdd.count === 6)
+    }
+
+    val fragments: FragmentRDD = variantContexts.transmute(rdd => {
+      rdd.map(VariantRDDSuite.fragFn)
+    })
+
+    checkSave(fragments)
+  }
+
+  sparkTest("transform variant contexts to read rdd") {
+    val variantContexts = sc.loadVcf(testFile("small.vcf"))
+
+    def checkSave(reads: AlignmentRecordRDD) {
+      val tempPath = tmpLocation(".adam")
+      reads.saveAsParquet(tempPath)
+
+      assert(sc.loadAlignments(tempPath).rdd.count === 6)
+    }
+
+    val reads: AlignmentRecordRDD = variantContexts.transmute(rdd => {
+      rdd.map(VariantRDDSuite.readFn)
+    })
+
+    checkSave(reads)
+  }
+
+  sparkTest("transform variant contexts to genotype rdd") {
+    val variantContexts = sc.loadVcf(testFile("small.vcf"))
+
+    def checkSave(genotypes: GenotypeRDD) {
+      val tempPath = tmpLocation(".adam")
+      genotypes.saveAsParquet(tempPath)
+
+      assert(sc.loadGenotypes(tempPath).rdd.count === 6)
+    }
+
+    val genotypes: GenotypeRDD = variantContexts.transmute(rdd => {
+      rdd.map(VariantRDDSuite.genFn)
+    })
+
+    checkSave(genotypes)
+  }
+
+  sparkTest("transform variant contexts to variant rdd") {
+    val variantContexts = sc.loadVcf(testFile("small.vcf"))
+
+    def checkSave(variants: VariantRDD) {
+      val tempPath = tmpLocation(".adam")
+      variants.saveAsParquet(tempPath)
+
+      assert(sc.loadVariants(tempPath).rdd.count === 6)
+    }
+
+    val variants: VariantRDD = variantContexts.transmute(rdd => {
+      rdd.map(_.variant.variant)
+    })
+
+    checkSave(variants)
   }
 }
