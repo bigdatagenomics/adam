@@ -18,9 +18,107 @@
 package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.variant.vcf.VCFHeaderLine
-import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceRecord }
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
+import org.bdgenomics.adam.models.{
+  Coverage,
+  ReferenceRegion,
+  SequenceRecord,
+  VariantContext
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
+import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
+import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.sql.{
+  AlignmentRecord => AlignmentRecordProduct,
+  Feature => FeatureProduct,
+  Fragment => FragmentProduct,
+  Genotype => GenotypeProduct,
+  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Variant => VariantProduct
+}
 import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.formats.avro._
+
+object VariantRDDSuite extends Serializable {
+
+  def covFn(v: Variant): Coverage = {
+    Coverage(v.getContigName,
+      v.getStart,
+      v.getEnd,
+      1)
+  }
+
+  def covFn(vc: VariantContext): Coverage = {
+    covFn(vc.variant.variant)
+  }
+
+  def featFn(v: Variant): Feature = {
+    Feature.newBuilder
+      .setContigName(v.getContigName)
+      .setStart(v.getStart)
+      .setEnd(v.getEnd)
+      .build
+  }
+
+  def featFn(vc: VariantContext): Feature = {
+    featFn(vc.variant.variant)
+  }
+
+  def fragFn(v: Variant): Fragment = {
+    Fragment.newBuilder
+      .setReadName(v.getContigName)
+      .build
+  }
+
+  def fragFn(vc: VariantContext): Fragment = {
+    fragFn(vc.variant.variant)
+  }
+
+  def ncfFn(v: Variant): NucleotideContigFragment = {
+    NucleotideContigFragment.newBuilder
+      .setContigName(v.getContigName)
+      .build
+  }
+
+  def ncfFn(vc: VariantContext): NucleotideContigFragment = {
+    ncfFn(vc.variant.variant)
+  }
+
+  def readFn(v: Variant): AlignmentRecord = {
+    AlignmentRecord.newBuilder
+      .setContigName(v.getContigName)
+      .setStart(v.getStart)
+      .setEnd(v.getEnd)
+      .build
+  }
+
+  def readFn(vc: VariantContext): AlignmentRecord = {
+    readFn(vc.variant.variant)
+  }
+
+  def genFn(v: Variant): Genotype = {
+    Genotype.newBuilder
+      .setContigName(v.getContigName)
+      .setStart(v.getStart)
+      .setEnd(v.getEnd)
+      .build
+  }
+
+  def genFn(vc: VariantContext): Genotype = {
+    genFn(vc.variant.variant)
+  }
+
+  def vcFn(v: Variant): VariantContext = {
+    VariantContext(Variant.newBuilder
+      .setContigName(v.getContigName)
+      .setStart(v.getStart)
+      .setEnd(v.getEnd)
+      .build)
+  }
+}
 
 class VariantRDDSuite extends ADAMFunSuite {
 
@@ -94,6 +192,14 @@ class VariantRDDSuite extends ADAMFunSuite {
 
     assert(jRdd.rdd.count === 3L)
     assert(jRdd0.rdd.count === 3L)
+
+    val joinedVariants: VariantRDD = jRdd
+      .transmute((rdd: RDD[(Variant, Feature)]) => {
+        rdd.map(_._1)
+      })
+    val tempPath = tmpLocation(".adam")
+    joinedVariants.saveAsParquet(tempPath)
+    assert(sc.loadVariants(tempPath).rdd.count === 3)
   }
 
   sparkTest("use right outer shuffle join to pull down variants mapped to targets") {
@@ -279,5 +385,190 @@ class VariantRDDSuite extends ADAMFunSuite {
     val rdd3 = sc.loadVariants(outputPath2)
     assert(rdd3.rdd.count === 6)
     assert(rdd3.dataset.count === 6)
+  }
+
+  sparkTest("transform variants to contig rdd") {
+    val variants = sc.loadVariants(testFile("small.vcf"))
+
+    def checkSave(contigs: NucleotideContigFragmentRDD) {
+      val tempPath = tmpLocation(".adam")
+      contigs.saveAsParquet(tempPath)
+
+      assert(sc.loadContigFragments(tempPath).rdd.count === 6)
+    }
+
+    val contigs: NucleotideContigFragmentRDD = variants.transmute(rdd => {
+      rdd.map(VariantRDDSuite.ncfFn)
+    })
+
+    checkSave(contigs)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val contigsDs: NucleotideContigFragmentRDD = variants.transmuteDataset(ds => {
+      ds.map(r => {
+        NucleotideContigFragmentProduct.fromAvro(
+          VariantRDDSuite.ncfFn(r.toAvro))
+      })
+    })
+
+    checkSave(contigsDs)
+  }
+
+  sparkTest("transform variants to coverage rdd") {
+    val variants = sc.loadVariants(testFile("small.vcf"))
+
+    def checkSave(coverage: CoverageRDD) {
+      val tempPath = tmpLocation(".bed")
+      coverage.save(tempPath, false, false)
+
+      assert(sc.loadCoverage(tempPath).rdd.count === 6)
+    }
+
+    val coverage: CoverageRDD = variants.transmute(rdd => {
+      rdd.map(VariantRDDSuite.covFn)
+    })
+
+    checkSave(coverage)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val coverageDs: CoverageRDD = variants.transmuteDataset(ds => {
+      ds.map(r => VariantRDDSuite.covFn(r.toAvro))
+    })
+
+    checkSave(coverageDs)
+  }
+
+  sparkTest("transform variants to feature rdd") {
+    val variants = sc.loadVariants(testFile("small.vcf"))
+
+    def checkSave(features: FeatureRDD) {
+      val tempPath = tmpLocation(".bed")
+      features.save(tempPath, false, false)
+
+      assert(sc.loadFeatures(tempPath).rdd.count === 6)
+    }
+
+    val features: FeatureRDD = variants.transmute(rdd => {
+      rdd.map(VariantRDDSuite.featFn)
+    })
+
+    checkSave(features)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val featureDs: FeatureRDD = variants.transmuteDataset(ds => {
+      ds.map(r => {
+        FeatureProduct.fromAvro(
+          VariantRDDSuite.featFn(r.toAvro))
+      })
+    })
+
+    checkSave(featureDs)
+  }
+
+  sparkTest("transform variants to fragment rdd") {
+    val variants = sc.loadVariants(testFile("small.vcf"))
+
+    def checkSave(fragments: FragmentRDD) {
+      val tempPath = tmpLocation(".adam")
+      fragments.saveAsParquet(tempPath)
+
+      assert(sc.loadFragments(tempPath).rdd.count === 6)
+    }
+
+    val fragments: FragmentRDD = variants.transmute(rdd => {
+      rdd.map(VariantRDDSuite.fragFn)
+    })
+
+    checkSave(fragments)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val fragmentsDs: FragmentRDD = variants.transmuteDataset(ds => {
+      ds.map(r => {
+        FragmentProduct.fromAvro(
+          VariantRDDSuite.fragFn(r.toAvro))
+      })
+    })
+
+    checkSave(fragmentsDs)
+  }
+
+  sparkTest("transform variants to read rdd") {
+    val variants = sc.loadVariants(testFile("small.vcf"))
+
+    def checkSave(reads: AlignmentRecordRDD) {
+      val tempPath = tmpLocation(".adam")
+      reads.saveAsParquet(tempPath)
+
+      assert(sc.loadAlignments(tempPath).rdd.count === 6)
+    }
+
+    val reads: AlignmentRecordRDD = variants.transmute(rdd => {
+      rdd.map(VariantRDDSuite.readFn)
+    })
+
+    checkSave(reads)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val readsDs: AlignmentRecordRDD = variants.transmuteDataset(ds => {
+      ds.map(r => {
+        AlignmentRecordProduct.fromAvro(
+          VariantRDDSuite.readFn(r.toAvro))
+      })
+    })
+
+    checkSave(readsDs)
+  }
+
+  sparkTest("transform variants to genotype rdd") {
+    val variants = sc.loadVariants(testFile("small.vcf"))
+
+    def checkSave(genotypes: GenotypeRDD) {
+      val tempPath = tmpLocation(".adam")
+      genotypes.saveAsParquet(tempPath)
+
+      assert(sc.loadGenotypes(tempPath).rdd.count === 6)
+    }
+
+    val genotypes: GenotypeRDD = variants.transmute(rdd => {
+      rdd.map(VariantRDDSuite.genFn)
+    })
+
+    checkSave(genotypes)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val genotypesDs: GenotypeRDD = variants.transmuteDataset(ds => {
+      ds.map(r => {
+        GenotypeProduct.fromAvro(
+          VariantRDDSuite.genFn(r.toAvro))
+      })
+    })
+
+    checkSave(genotypesDs)
+  }
+
+  sparkTest("transform variants to variant context rdd") {
+    val variants = sc.loadVariants(testFile("small.vcf"))
+
+    def checkSave(variantContexts: VariantContextRDD) {
+      assert(variantContexts.rdd.count === 6)
+    }
+
+    val variantContexts: VariantContextRDD = variants.transmute(rdd => {
+      rdd.map(VariantRDDSuite.vcFn)
+    })
+
+    checkSave(variantContexts)
   }
 }

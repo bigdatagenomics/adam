@@ -213,6 +213,48 @@ on an `AlignmentRecordRDD` to filter out reads that have a low mapping quality,
 but we cannot use `transform` to translate those reads into `Feature`s showing
 the genomic locations covered by reads.
 
+If we want to transform a `GenomicRDD` into a new `GenomicRDD` that contains
+a different datatype (e.g., reads to features), we can instead use the
+`transmute` function. The `transmute` function takes a function that transforms
+an `RDD` of the type of the first `GenomicRDD` into a new `RDD` that contains
+records of the type of the second `GenomicRDD`. Additionally, it takes an
+implicit function that maps the metadata in the first `GenomicRDD` into the
+metadata needed by the second `GenomicRDD`. This is akin to the implicit
+function required by the [pipe](#pipes) API. As an example, let's use the
+`transmute` function to make features corresponding to reads containing
+INDELs:
+
+```scala
+// pick up implicits from ADAMContext
+import org.bdgenomics.adam.rdd.ADAMContext._
+
+val reads = sc.loadAlignments("path/to/my/reads.adam")
+
+// the type of the transmuted RDD normally needs to be specified
+// import the FeatureRDD, which is the output type
+import org.bdgenomics.adam.rdd.feature.FeatureRDD
+import org.bdgenomics.formats.avro.Feature
+
+val features: FeatureRDD = reads.transmute(rdd => {
+  rdd.filter(r => {
+    // does the CIGAR for this read contain an I or a D?
+    Option(r.getCigar)
+      .exists(c => c.contains("I") || c.contains("D"))
+  }).map(r => {
+    Feature.newBuilder
+      .setContigName(r.getContigName)
+      .setStart(r.getStart)
+      .setEnd(r.getEnd)
+      .build
+  })
+})
+```
+
+`ADAMContext` provides the implicit functions needed to run the `transmute`
+function between all `GenomicRDD`s contained within the
+`org.bdgenomics.adam.rdd` package hierarchy. Any custom `GenomicRDD` can be
+supported by providing a user defined conversion function.
+
 ### Transforming GenomicRDDs via Spark SQL {#sql}
 
 Spark SQL introduced the strongly-typed [`Dataset` API in Spark
@@ -252,6 +294,10 @@ write path writes. If the schema is not set, then schema validation on read
 fails. If reading data using the [ADAMContext](#adam-context) APIs, this is
 handled properly; this is an implementation note necessary only for those
 bypassing the ADAM APIs.
+
+Similar to `transform`/`transformDataset`, there exists a `transmuteDataset`
+function that enables transformations between `GenomicRDD`s of different
+types.
 
 ## Using ADAM’s RegionJoin API {#join}
 

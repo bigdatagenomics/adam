@@ -187,6 +187,19 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     replaceRdd(tFn(rdd))
   }
 
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transmute[X, Y <: GenomicRDD[X, Y]](tFn: RDD[T] => RDD[X])(
+    implicit convFn: (U, RDD[X]) => Y): Y = {
+    convFn(this.asInstanceOf[U], tFn(rdd))
+  }
+
   // The partition map is structured as follows:
   // The outer option is for whether or not there is a partition map.
   //   - This is None in the case that we don't know the bounds on each 
@@ -918,12 +931,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
    */
-  def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](
+  def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      txTag: ClassTag[(T, X)]): GenomicRDD[(T, X), Z] = InnerShuffleJoin.time {
+      txTag: ClassTag[(T, X)]): GenericGenomicRDD[(T, X)] = InnerShuffleJoin.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions)
@@ -937,7 +950,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       combinedSequences,
       kv => {
         getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2)
-      }).asInstanceOf[GenomicRDD[(T, X), Z]]
+      })
   }
 
   /**
@@ -1281,7 +1294,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   }
 }
 
-private case class GenericGenomicRDD[T](
+case class GenericGenomicRDD[T] private[rdd] (
     rdd: RDD[T],
     sequences: SequenceDictionary,
     regionFn: T => Seq[ReferenceRegion],
@@ -1383,6 +1396,20 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Geno
    *   metadata (sequence dictionary, and etc) is copied without modification.
    */
   def transformDataset(tFn: Dataset[U] => Dataset[U]): V
+
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transmuteDataset[X <: Product, Y <: GenomicDataset[_, X, Y]](
+    tFn: Dataset[U] => Dataset[X])(
+      implicit convFn: (V, Dataset[X]) => Y): Y = {
+    convFn(this.asInstanceOf[V], tFn(dataset))
+  }
 }
 
 /**

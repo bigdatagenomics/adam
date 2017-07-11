@@ -17,18 +17,50 @@
  */
 package org.bdgenomics.adam.rdd.fragment
 
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
 import org.bdgenomics.adam.models.{
+  Coverage,
   RecordGroup,
-  SequenceRecord
+  SequenceRecord,
+  VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
+import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
+  AlignmentRecordRDDSuite,
   AnySAMOutFormatter,
   QualityScoreBin
 }
+import org.bdgenomics.adam.rdd.variant.{
+  GenotypeRDD,
+  VariantRDD,
+  VariantContextRDD
+}
+import org.bdgenomics.adam.sql.{
+  AlignmentRecord => AlignmentRecordProduct,
+  Feature => FeatureProduct,
+  Fragment => FragmentProduct,
+  Genotype => GenotypeProduct,
+  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Variant => VariantProduct
+}
 import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
+
+object FragmentRDDSuite extends Serializable {
+
+  def readFn(f: Fragment): AlignmentRecord = {
+    f.getAlignments.get(0)
+  }
+
+  def vcFn(f: Fragment): VariantContext = {
+    VariantContext(AlignmentRecordRDDSuite.varFn(f))
+  }
+}
 
 class FragmentRDDSuite extends ADAMFunSuite {
 
@@ -139,6 +171,14 @@ class FragmentRDDSuite extends ADAMFunSuite {
 
     assert(jRdd.rdd.count === 5)
     assert(jRdd0.rdd.count === 5)
+
+    val joinedFragments: FragmentRDD = jRdd
+      .transmute((rdd: RDD[(Fragment, Feature)]) => {
+        rdd.map(_._1)
+      })
+    val tempPath = tmpLocation(".adam")
+    joinedFragments.saveAsParquet(tempPath)
+    assert(sc.loadFragments(tempPath).rdd.count === 5)
   }
 
   sparkTest("use right outer shuffle join to pull down fragments mapped to targets") {
@@ -336,5 +376,190 @@ class FragmentRDDSuite extends ADAMFunSuite {
     val rdd4 = sc.loadFragments(outputPath3)
     assert(rdd4.rdd.count === 20)
     assert(rdd4.dataset.count === 20)
+  }
+
+  sparkTest("transform fragments to contig rdd") {
+    val fragments = sc.loadFragments(testFile("small.sam"))
+
+    def checkSave(ncRdd: NucleotideContigFragmentRDD) {
+      val tempPath = tmpLocation(".fa")
+      ncRdd.saveAsFasta(tempPath)
+
+      assert(sc.loadContigFragments(tempPath).rdd.count.toInt === 20)
+    }
+
+    val features: NucleotideContigFragmentRDD = fragments.transmute(rdd => {
+      rdd.map(AlignmentRecordRDDSuite.ncfFn)
+    })
+
+    checkSave(features)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val featuresDs: NucleotideContigFragmentRDD = fragments.transmuteDataset(ds => {
+      ds.map(r => {
+        NucleotideContigFragmentProduct.fromAvro(
+          AlignmentRecordRDDSuite.ncfFn(r.toAvro))
+      })
+    })
+
+    checkSave(featuresDs)
+  }
+
+  sparkTest("transform fragments to coverage rdd") {
+    val fragments = sc.loadFragments(testFile("small.sam"))
+
+    def checkSave(coverage: CoverageRDD) {
+      val tempPath = tmpLocation(".bed")
+      coverage.save(tempPath, false, false)
+
+      assert(sc.loadCoverage(tempPath).rdd.count === 20)
+    }
+
+    val coverage: CoverageRDD = fragments.transmute(rdd => {
+      rdd.map(AlignmentRecordRDDSuite.covFn)
+    })
+
+    checkSave(coverage)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val coverageDs: CoverageRDD = fragments.transmuteDataset(ds => {
+      ds.map(r => AlignmentRecordRDDSuite.covFn(r.toAvro))
+    })
+
+    checkSave(coverageDs)
+  }
+
+  sparkTest("transform fragments to feature rdd") {
+    val fragments = sc.loadFragments(testFile("small.sam"))
+
+    def checkSave(features: FeatureRDD) {
+      val tempPath = tmpLocation(".bed")
+      features.saveAsBed(tempPath)
+
+      assert(sc.loadFeatures(tempPath).rdd.count === 20)
+    }
+
+    val features: FeatureRDD = fragments.transmute(rdd => {
+      rdd.map(AlignmentRecordRDDSuite.featFn)
+    })
+
+    checkSave(features)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val featuresDs: FeatureRDD = fragments.transmuteDataset(ds => {
+      ds.map(r => {
+        FeatureProduct.fromAvro(
+          AlignmentRecordRDDSuite.featFn(r.toAvro))
+      })
+    })
+
+    checkSave(featuresDs)
+  }
+
+  sparkTest("transform fragments to read rdd") {
+    val fragments = sc.loadFragments(testFile("small.sam"))
+
+    def checkSave(reads: AlignmentRecordRDD) {
+      val tempPath = tmpLocation(".sam")
+      reads.saveAsSam(tempPath)
+
+      assert(sc.loadAlignments(tempPath).rdd.count === 20)
+    }
+
+    val reads: AlignmentRecordRDD = fragments.transmute(rdd => {
+      rdd.map(FragmentRDDSuite.readFn)
+    })
+
+    checkSave(reads)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val readDs: AlignmentRecordRDD = fragments.transmuteDataset(ds => {
+      ds.map(r => {
+        AlignmentRecordProduct.fromAvro(
+          FragmentRDDSuite.readFn(r.toAvro))
+      })
+    })
+
+    checkSave(readDs)
+  }
+
+  sparkTest("transform fragments to genotype rdd") {
+    val fragments = sc.loadFragments(testFile("small.sam"))
+
+    def checkSave(genotypes: GenotypeRDD) {
+      val tempPath = tmpLocation(".adam")
+      genotypes.saveAsParquet(tempPath)
+
+      assert(sc.loadGenotypes(tempPath).rdd.count === 20)
+    }
+
+    val genotypes: GenotypeRDD = fragments.transmute(rdd => {
+      rdd.map(AlignmentRecordRDDSuite.genFn)
+    })
+
+    checkSave(genotypes)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val genotypesDs: GenotypeRDD = fragments.transmuteDataset(ds => {
+      ds.map(r => {
+        GenotypeProduct.fromAvro(
+          AlignmentRecordRDDSuite.genFn(r.toAvro))
+      })
+    })
+
+    checkSave(genotypesDs)
+  }
+
+  sparkTest("transform fragments to variant rdd") {
+    val fragments = sc.loadFragments(testFile("small.sam"))
+
+    def checkSave(variants: VariantRDD) {
+      val tempPath = tmpLocation(".adam")
+      variants.saveAsParquet(tempPath)
+
+      assert(sc.loadVariants(tempPath).rdd.count === 20)
+    }
+
+    val variants: VariantRDD = fragments.transmute(rdd => {
+      rdd.map(AlignmentRecordRDDSuite.varFn)
+    })
+
+    checkSave(variants)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+
+    val variantsDs: VariantRDD = fragments.transmuteDataset(ds => {
+      ds.map(r => {
+        VariantProduct.fromAvro(
+          AlignmentRecordRDDSuite.varFn(r.toAvro))
+      })
+    })
+
+    checkSave(variantsDs)
+  }
+
+  sparkTest("transform fragments to variant context rdd") {
+    val fragments = sc.loadFragments(testFile("small.sam"))
+
+    def checkSave(variantContexts: VariantContextRDD) {
+      assert(variantContexts.rdd.count === 20)
+    }
+
+    val variantContexts: VariantContextRDD = fragments.transmute(rdd => {
+      rdd.map(FragmentRDDSuite.vcFn)
+    })
+
+    checkSave(variantContexts)
   }
 }
