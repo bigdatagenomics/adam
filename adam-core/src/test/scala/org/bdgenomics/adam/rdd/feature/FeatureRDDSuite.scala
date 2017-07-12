@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd.feature
 
 import com.google.common.collect.ImmutableMap
 import java.io.File
+import org.bdgenomics.adam.models.SequenceRecord
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.{ Feature, Strand }
@@ -814,14 +815,22 @@ class FeatureRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("load parquet to sql, save, re-read from avro") {
+    def testMetadata(fRdd: FeatureRDD) {
+      val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+    }
+
     val inputPath = testFile("small.1.bed")
     val outputPath = tmpLocation()
-    val rdd = sc.loadFeatures(inputPath)
-      .transformDataset(ds => ds) // no-op but force to ds
+    val rrdd = sc.loadFeatures(inputPath)
+    testMetadata(rrdd)
+    val rdd = rrdd.transformDataset(ds => ds) // no-op but force to ds
+    testMetadata(rdd)
     assert(rdd.dataset.count === 4)
     assert(rdd.rdd.count === 4)
     rdd.saveAsParquet(outputPath)
     val rdd2 = sc.loadFeatures(outputPath)
+    testMetadata(rdd2)
     assert(rdd2.rdd.count === 4)
     assert(rdd2.dataset.count === 4)
     val outputPath2 = tmpLocation()

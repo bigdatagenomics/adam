@@ -32,9 +32,11 @@ import org.apache.spark.sql.{ DataFrame, Dataset }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
+  RecordGroup,
   RecordGroupDictionary,
   ReferenceRegion,
-  SequenceDictionary
+  SequenceDictionary,
+  SequenceRecord
 }
 import org.bdgenomics.formats.avro.{
   Contig,
@@ -121,6 +123,34 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * aligned to.
    */
   val sequences: SequenceDictionary
+
+  /**
+   * Replaces the sequence dictionary attached to a GenomicRDD.
+   *
+   * @param newSequences The new sequence dictionary to attach.
+   * @return Returns a new GenomicRDD with the sequences replaced.
+   */
+  def replaceSequences(newSequences: SequenceDictionary): U
+
+  /**
+   * Appends sequence metadata to the current RDD.
+   *
+   * @param sequencesToAdd The new sequences to append.
+   * @return Returns a new GenomicRDD with the sequences appended.
+   */
+  def addSequences(sequencesToAdd: SequenceDictionary): U = {
+    replaceSequences(sequences ++ sequencesToAdd)
+  }
+
+  /**
+   * Appends metadata for a single sequence to the current RDD.
+   *
+   * @param sequenceToAdd The sequence to add.
+   * @return Returns a new GenomicRDD with this sequence appended.
+   */
+  def addSequence(sequenceToAdd: SequenceRecord): U = {
+    addSequences(SequenceDictionary(sequenceToAdd))
+  }
 
   /**
    * The underlying RDD of genomic data, as a JavaRDD.
@@ -1258,6 +1288,11 @@ private case class GenericGenomicRDD[T](
     optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None)(
         implicit tTag: ClassTag[T]) extends GenomicRDD[T, GenericGenomicRDD[T]] {
 
+  def replaceSequences(
+    newSequences: SequenceDictionary): GenericGenomicRDD[T] = {
+    copy(sequences = newSequences)
+  }
+
   def union(rdds: GenericGenomicRDD[T]*): GenericGenomicRDD[T] = {
     val iterableRdds = rdds.toSeq
     GenericGenomicRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
@@ -1292,6 +1327,34 @@ trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends Genomic
    * The samples who have data contained in this GenomicRDD.
    */
   val samples: Seq[Sample]
+
+  /**
+   * Replaces the sample metadata attached to the RDD.
+   *
+   * @param newSamples The new sample metadata to attach.
+   * @return A GenomicRDD with new sample metadata.
+   */
+  def replaceSamples(newSamples: Iterable[Sample]): U
+
+  /**
+   * Adds samples to the current RDD.
+   *
+   * @param samplesToAdd Zero or more samples to add.
+   * @return Returns a new RDD with samples added.
+   */
+  def addSamples(samplesToAdd: Iterable[Sample]): U = {
+    replaceSamples(samples ++ samplesToAdd)
+  }
+
+  /**
+   * Adds a single sample to the current RDD.
+   *
+   * @param sampleToAdd A single sample to add.
+   * @return Returns a new RDD with this sample added.
+   */
+  def addSample(sampleToAdd: Sample): U = {
+    addSamples(Seq(sampleToAdd))
+  }
 }
 
 /**
@@ -1335,6 +1398,36 @@ abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Produc
    */
   val recordGroups: RecordGroupDictionary
 
+  /**
+   * Replaces the record groups attached to this RDD.
+   *
+   * @param newRecordGroups The new record group dictionary to attach.
+   * @return Returns a new GenomicRDD with new record groups attached.
+   */
+  def replaceRecordGroups(newRecordGroups: RecordGroupDictionary): V
+
+  /**
+   * Merges a new set of record groups with the extant record groups.
+   *
+   * @param recordGroupsToAdd The record group dictionary to append to the
+   *   extant record groups.
+   * @return Returns a new GenomicRDD with new record groups merged in.
+   */
+  def addRecordGroups(recordGroupsToAdd: RecordGroupDictionary): V = {
+    replaceRecordGroups(recordGroups ++ recordGroupsToAdd)
+  }
+
+  /**
+   * Adds a single record group to the extant record groups.
+   *
+   * @param recordGroupToAdd The record group to append to the extant record
+   *   groups.
+   * @return Returns a new GenomicRDD with the new record group added.
+   */
+  def addRecordGroup(recordGroupToAdd: RecordGroup): V = {
+    addRecordGroups(RecordGroupDictionary(Seq(recordGroupToAdd)))
+  }
+
   override protected def saveMetadata(filePath: String) {
 
     // convert sequence dictionary to avro form and save
@@ -1368,6 +1461,34 @@ abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
    * The header lines attached to the file.
    */
   val headerLines: Seq[VCFHeaderLine]
+
+  /**
+   * Replaces the header lines attached to this RDD.
+   *
+   * @param newHeaderLines The new header lines to attach to this RDD.
+   * @return A new RDD with the header lines replaced.
+   */
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): V
+
+  /**
+   * Appends new header lines to the existing lines.
+   *
+   * @param headerLinesToAdd Zero or more header lines to add.
+   * @return A new RDD with the new header lines added.
+   */
+  def addHeaderLines(headerLinesToAdd: Seq[VCFHeaderLine]): V = {
+    replaceHeaderLines(headerLines ++ headerLinesToAdd)
+  }
+
+  /**
+   * Appends a new header line to the existing lines.
+   *
+   * @param headerLineToAdd A header line to add.
+   * @return A new RDD with the new header line added.
+   */
+  def addHeaderLine(headerLineToAdd: VCFHeaderLine): V = {
+    addHeaderLines(Seq(headerLineToAdd))
+  }
 
   override protected def saveMetadata(filePath: String) {
 

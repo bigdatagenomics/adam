@@ -37,20 +37,31 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("round trip a ncf to parquet") {
+    def testMetadata(fRdd: NucleotideContigFragmentRDD) {
+      val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+    }
+
     val fragments1 = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
     assert(fragments1.rdd.count === 8L)
     assert(fragments1.dataset.count === 8L)
+    testMetadata(fragments1)
 
     // save using dataset path
     val output1 = tmpFile("ctg.adam")
-    fragments1.transformDataset(ds => ds).saveAsParquet(output1)
+    val dsBound = fragments1.transformDataset(ds => ds)
+    testMetadata(dsBound)
+    dsBound.saveAsParquet(output1)
     val fragments2 = sc.loadContigFragments(output1)
+    testMetadata(fragments2)
     assert(fragments2.rdd.count === 8L)
     assert(fragments2.dataset.count === 8L)
 
     // save using rdd path
     val output2 = tmpFile("ctg.adam")
-    fragments2.transform(rdd => rdd).saveAsParquet(output2)
+    val rddBound = fragments2.transform(rdd => rdd)
+    testMetadata(rddBound)
+    rddBound.saveAsParquet(output2)
     val fragments3 = sc.loadContigFragments(output2)
     assert(fragments3.rdd.count === 8L)
     assert(fragments3.dataset.count === 8L)

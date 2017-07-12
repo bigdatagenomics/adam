@@ -51,7 +51,7 @@ object RecordGroupDictionary {
  * This dictionary provides numerical IDs for each group; these IDs are only
  * consistent when referencing a single dictionary.
  *
- * @param recordGroups A seq of record groups to popualate the dictionary.
+ * @param recordGroups A seq of record groups to populate the dictionary.
  *
  * @throws IllegalArgumentError Throws an assertion error if there are multiple record
  *   groups with the same name.

@@ -17,6 +17,10 @@
  */
 package org.bdgenomics.adam.rdd.fragment
 
+import org.bdgenomics.adam.models.{
+  RecordGroup,
+  SequenceRecord
+}
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
@@ -300,14 +304,25 @@ class FragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("load parquet to sql, save, re-read from avro") {
+    def testMetadata(fRdd: FragmentRDD) {
+      val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+
+      val rgRdd = fRdd.addRecordGroup(RecordGroup("test", "aRg"))
+      assert(rgRdd.recordGroups("aRg").sample === "test")
+    }
+
     val inputPath = testFile("small.sam")
     val outputPath = tmpLocation()
-    val rdd = sc.loadFragments(inputPath)
-      .transformDataset(ds => ds) // no-op, force conversion to ds
+    val rrdd = sc.loadFragments(inputPath)
+    testMetadata(rrdd)
+    val rdd = rrdd.transformDataset(ds => ds) // no-op, force conversion to ds
+    testMetadata(rdd)
     assert(rdd.dataset.count === 20)
     assert(rdd.rdd.count === 20)
     rdd.saveAsParquet(outputPath)
     val rdd2 = sc.loadFragments(outputPath)
+    testMetadata(rdd2)
     assert(rdd2.rdd.count === 20)
     assert(rdd2.dataset.count === 20)
     val outputPath2 = tmpLocation()

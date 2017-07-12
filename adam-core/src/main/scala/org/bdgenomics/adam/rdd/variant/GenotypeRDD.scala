@@ -82,9 +82,9 @@ object GenotypeRDD extends Serializable {
    */
   def apply(rdd: RDD[Genotype],
             sequences: SequenceDictionary,
-            samples: Seq[Sample],
+            samples: Iterable[Sample],
             headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): GenotypeRDD = {
-    RDDBoundGenotypeRDD(rdd, sequences, samples, headerLines, None)
+    RDDBoundGenotypeRDD(rdd, sequences, samples.toSeq, headerLines, None)
   }
 
   /**
@@ -99,9 +99,9 @@ object GenotypeRDD extends Serializable {
    */
   def apply(ds: Dataset[GenotypeProduct],
             sequences: SequenceDictionary,
-            samples: Seq[Sample],
+            samples: Iterable[Sample],
             headerLines: Seq[VCFHeaderLine]): GenotypeRDD = {
-    DatasetBoundGenotypeRDD(ds, sequences, samples, headerLines)
+    DatasetBoundGenotypeRDD(ds, sequences, samples.toSeq, headerLines)
   }
 }
 
@@ -122,6 +122,19 @@ case class ParquetUnboundGenotypeRDD private[rdd] (
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename).as[GenotypeProduct]
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): GenotypeRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeRDD = {
+    copy(headerLines = newHeaderLines)
+  }
+
+  def replaceSamples(newSamples: Iterable[Sample]): GenotypeRDD = {
+    copy(samples = newSamples.toSeq)
   }
 }
 
@@ -153,6 +166,19 @@ case class DatasetBoundGenotypeRDD private[rdd] (
     tFn: Dataset[GenotypeProduct] => Dataset[GenotypeProduct]): GenotypeRDD = {
     copy(dataset = tFn(dataset))
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): GenotypeRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeRDD = {
+    copy(headerLines = newHeaderLines)
+  }
+
+  def replaceSamples(newSamples: Iterable[Sample]): GenotypeRDD = {
+    copy(samples = newSamples.toSeq)
+  }
 }
 
 case class RDDBoundGenotypeRDD private[rdd] (
@@ -169,6 +195,19 @@ case class RDDBoundGenotypeRDD private[rdd] (
     val sqlContext = SQLContext.getOrCreate(rdd.context)
     import sqlContext.implicits._
     sqlContext.createDataset(rdd.map(GenotypeProduct.fromAvro))
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): GenotypeRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): GenotypeRDD = {
+    copy(headerLines = newHeaderLines)
+  }
+
+  def replaceSamples(newSamples: Iterable[Sample]): GenotypeRDD = {
+    copy(samples = newSamples.toSeq)
   }
 }
 
