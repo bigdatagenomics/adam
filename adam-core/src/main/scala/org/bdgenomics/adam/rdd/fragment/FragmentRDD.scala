@@ -148,6 +148,16 @@ case class ParquetUnboundFragmentRDD private[rdd] (
     import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename).as[FragmentProduct]
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): FragmentRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceRecordGroups(
+    newRecordGroups: RecordGroupDictionary): FragmentRDD = {
+    copy(recordGroups = newRecordGroups)
+  }
 }
 
 case class DatasetBoundFragmentRDD private[rdd] (
@@ -177,6 +187,16 @@ case class DatasetBoundFragmentRDD private[rdd] (
     tFn: Dataset[FragmentProduct] => Dataset[FragmentProduct]): FragmentRDD = {
     copy(dataset = tFn(dataset))
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): FragmentRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceRecordGroups(
+    newRecordGroups: RecordGroupDictionary): FragmentRDD = {
+    copy(recordGroups = newRecordGroups)
+  }
 }
 
 case class RDDBoundFragmentRDD private[rdd] (
@@ -192,6 +212,16 @@ case class RDDBoundFragmentRDD private[rdd] (
     val sqlContext = SQLContext.getOrCreate(rdd.context)
     import sqlContext.implicits._
     sqlContext.createDataset(rdd.map(FragmentProduct.fromAvro))
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): FragmentRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceRecordGroups(
+    newRecordGroups: RecordGroupDictionary): FragmentRDD = {
+    copy(recordGroups = newRecordGroups)
   }
 }
 

@@ -23,6 +23,7 @@ import htsjdk.samtools.ValidationStringency
 import org.apache.spark.sql.SQLContext
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
+  RecordGroup,
   RecordGroupDictionary,
   ReferenceRegion,
   SequenceDictionary,
@@ -496,20 +497,31 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("load parquet to sql, save, re-read from avro") {
+    def testMetadata(arRdd: AlignmentRecordRDD) {
+      val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+
+      val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
+      assert(rgRdd.recordGroups("aRg").sample === "test")
+    }
+
     val inputPath = testFile("small.sam")
     val outputPath = tmpLocation()
-    val rdd = sc.loadAlignments(inputPath)
-      .transformDataset(ds => {
-        // all reads are on 1, so this is effectively a no-op
-        import ds.sqlContext.implicits._
-        val df = ds.toDF()
-        df.where(df("contigName") === "1")
-          .as[AlignmentRecordProduct]
-      })
+    val rrdd = sc.loadAlignments(inputPath)
+    testMetadata(rrdd)
+    val rdd = rrdd.transformDataset(ds => {
+      // all reads are on 1, so this is effectively a no-op
+      import ds.sqlContext.implicits._
+      val df = ds.toDF()
+      df.where(df("contigName") === "1")
+        .as[AlignmentRecordProduct]
+    })
+    testMetadata(rdd)
     assert(rdd.dataset.count === 20)
     assert(rdd.rdd.count === 20)
     rdd.saveAsParquet(outputPath)
     val rdd2 = sc.loadAlignments(outputPath)
+    testMetadata(rdd2)
     assert(rdd2.rdd.count === 20)
     assert(rdd2.dataset.count === 20)
     val outputPath2 = tmpLocation()

@@ -123,6 +123,11 @@ case class ParquetUnboundNucleotideContigFragmentRDD private[rdd] (
     import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename).as[NucleotideContigFragmentProduct]
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): NucleotideContigFragmentRDD = {
+    copy(sequences = newSequences)
+  }
 }
 
 case class DatasetBoundNucleotideContigFragmentRDD private[rdd] (
@@ -146,6 +151,11 @@ case class DatasetBoundNucleotideContigFragmentRDD private[rdd] (
       .save(filePath)
     saveMetadata(filePath)
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): NucleotideContigFragmentRDD = {
+    copy(sequences = newSequences)
+  }
 }
 
 /**
@@ -166,6 +176,11 @@ case class RDDBoundNucleotideContigFragmentRDD private[rdd] (
     val sqlContext = SQLContext.getOrCreate(rdd.context)
     import sqlContext.implicits._
     sqlContext.createDataset(rdd.map(NucleotideContigFragmentProduct.fromAvro))
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): NucleotideContigFragmentRDD = {
+    copy(sequences = newSequences)
   }
 }
 

@@ -86,6 +86,11 @@ case class ParquetUnboundCoverageRDD private[rdd] (
   def toFeatureRDD(): FeatureRDD = {
     ParquetUnboundFeatureRDD(sc, parquetFilename, sequences)
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): CoverageRDD = {
+    copy(sequences = newSequences)
+  }
 }
 
 /**
@@ -108,6 +113,11 @@ case class DatasetBoundCoverageRDD private[rdd] (
   def toFeatureRDD(): FeatureRDD = {
     import dataset.sqlContext.implicits._
     DatasetBoundFeatureRDD(dataset.map(_.toSqlFeature), sequences)
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): CoverageRDD = {
+    copy(sequences = newSequences)
   }
 }
 
@@ -132,6 +142,11 @@ case class RDDBoundCoverageRDD private[rdd] (
   def toFeatureRDD(): FeatureRDD = {
     val featureRdd = rdd.map(_.toFeature)
     new RDDBoundFeatureRDD(featureRdd, sequences, optPartitionMap = optPartitionMap)
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): CoverageRDD = {
+    copy(sequences = newSequences)
   }
 }
 

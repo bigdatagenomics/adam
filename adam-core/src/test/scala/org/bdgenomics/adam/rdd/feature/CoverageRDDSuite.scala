@@ -45,24 +45,34 @@ class CoverageRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("correctly saves coverage") {
+    def testMetadata(cRdd: CoverageRDD) {
+      val sequenceRdd = cRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+    }
+
     val f1 = Feature.newBuilder().setContigName("chr1").setStart(1).setEnd(10).setScore(3.0).build()
     val f2 = Feature.newBuilder().setContigName("chr1").setStart(15).setEnd(20).setScore(2.0).build()
     val f3 = Feature.newBuilder().setContigName("chr2").setStart(15).setEnd(20).setScore(2.0).build()
 
     val featureRDD: FeatureRDD = FeatureRDD(sc.parallelize(Seq(f1, f2, f3)))
     val coverageRDD: CoverageRDD = featureRDD.toCoverage
+    testMetadata(coverageRDD)
 
     val outputFile = tmpLocation(".bed")
     coverageRDD.save(outputFile, false, false)
 
     val coverage = sc.loadCoverage(outputFile)
+    testMetadata(coverage)
     assert(coverage.rdd.count == 3)
     assert(coverage.dataset.count == 3)
 
     // go to dataset and save as parquet
     val outputFile2 = tmpLocation(".adam")
-    coverageRDD.transformDataset(ds => ds).save(outputFile2, false, false)
+    val dsCov = coverageRDD.transformDataset(ds => ds)
+    testMetadata(dsCov)
+    dsCov.save(outputFile2, false, false)
     val coverage2 = sc.loadCoverage(outputFile2)
+    testMetadata(coverage2)
     assert(coverage2.rdd.count == 3)
     assert(coverage2.dataset.count == 3)
 

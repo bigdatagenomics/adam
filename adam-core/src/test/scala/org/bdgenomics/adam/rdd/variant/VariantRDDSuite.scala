@@ -17,7 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
-import org.bdgenomics.adam.models.ReferenceRegion
+import htsjdk.variant.vcf.VCFHeaderLine
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceRecord }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
@@ -249,15 +250,26 @@ class VariantRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("load parquet to sql, save, re-read from avro") {
+    def testMetadata(vRdd: VariantRDD) {
+      val sequenceRdd = vRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+
+      val headerRdd = vRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
+      assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
+    }
+
     val inputPath = testFile("small.vcf")
     val outputPath = tmpLocation()
-    val rdd = sc.loadVariants(inputPath)
-      .transformDataset(ds => ds) // no-op but force to sql
+    val rrdd = sc.loadVariants(inputPath)
+    testMetadata(rrdd)
+    val rdd = rrdd.transformDataset(ds => ds) // no-op but force to sql
+    testMetadata(rdd)
     assert(rdd.dataset.count === 6)
     assert(rdd.rdd.count === 6)
     rdd.saveAsParquet(outputPath)
     println(outputPath)
     val rdd2 = sc.loadVariants(outputPath)
+    testMetadata(rdd2)
     assert(rdd2.rdd.count === 6)
     assert(rdd2.dataset.count === 6)
     val outputPath2 = tmpLocation()

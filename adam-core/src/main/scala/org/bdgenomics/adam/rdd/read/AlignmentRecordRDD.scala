@@ -177,6 +177,16 @@ case class ParquetUnboundAlignmentRecordRDD private[rdd] (
     import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename).as[AlignmentRecordProduct]
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): AlignmentRecordRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceRecordGroups(
+    newRecordGroups: RecordGroupDictionary): AlignmentRecordRDD = {
+    copy(recordGroups = newRecordGroups)
+  }
 }
 
 case class DatasetBoundAlignmentRecordRDD private[rdd] (
@@ -205,6 +215,16 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
   override def transformDataset(
     tFn: Dataset[AlignmentRecordProduct] => Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
     copy(dataset = tFn(dataset))
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): AlignmentRecordRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceRecordGroups(
+    newRecordGroups: RecordGroupDictionary): AlignmentRecordRDD = {
+    copy(recordGroups = newRecordGroups)
   }
 }
 
@@ -243,6 +263,16 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
         .map(r => Coverage(r._1, r._2.toDouble))
 
     RDDBoundCoverageRDD(covCounts, sequences, None)
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): AlignmentRecordRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceRecordGroups(
+    newRecordGroups: RecordGroupDictionary): AlignmentRecordRDD = {
+    copy(recordGroups = newRecordGroups)
   }
 }
 

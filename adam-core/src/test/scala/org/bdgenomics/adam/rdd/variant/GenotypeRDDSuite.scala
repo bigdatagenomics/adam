@@ -17,9 +17,11 @@
  */
 package org.bdgenomics.adam.rdd.variant
 
-import org.bdgenomics.adam.models.ReferenceRegion
+import htsjdk.variant.vcf.VCFHeaderLine
+import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceRecord }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.formats.avro.Sample
 
 class GenotypeRDDSuite extends ADAMFunSuite {
 
@@ -254,14 +256,30 @@ class GenotypeRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("load parquet to sql, save, re-read from avro") {
+    def testMetadata(gRdd: GenotypeRDD) {
+      val sequenceRdd = gRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+
+      val headerRdd = gRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
+      assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
+
+      val sampleRdd = gRdd.addSample(Sample.newBuilder
+        .setSampleId("aSample")
+        .build)
+      assert(sampleRdd.samples.exists(_.getSampleId == "aSample"))
+    }
+
     val inputPath = testFile("small.vcf")
     val outputPath = tmpLocation()
-    val rdd = sc.loadGenotypes(inputPath)
-      .transformDataset(ds => ds) // no-op but force to sql
+    val rrdd = sc.loadGenotypes(inputPath)
+    testMetadata(rrdd)
+    val rdd = rrdd.transformDataset(ds => ds) // no-op but force to sql
+    testMetadata(rdd)
     assert(rdd.dataset.count === 18)
     assert(rdd.rdd.count === 18)
     rdd.saveAsParquet(outputPath)
     val rdd2 = sc.loadGenotypes(outputPath)
+    testMetadata(rdd2)
     assert(rdd2.rdd.count === 18)
     assert(rdd2.dataset.count === 18)
     val outputPath2 = tmpLocation()

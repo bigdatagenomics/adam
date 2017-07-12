@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.variant
 import com.google.common.collect.ImmutableList
 import com.google.common.io.Files
 import htsjdk.samtools.ValidationStringency
+import htsjdk.variant.vcf.VCFHeaderLine
 import java.io.File
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
@@ -197,5 +198,22 @@ class VariantContextRDDSuite extends ADAMFunSuite {
         ValidationStringency.LENIENT)
 
     checkFiles(outputPath, testFile("gvcf_multiallelic/multiallelic.vcf"))
+  }
+
+  sparkTest("test metadata") {
+    def testMetadata(vRdd: VariantContextRDD) {
+      val sequenceRdd = vRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+
+      val headerRdd = vRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
+      assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
+
+      val sampleRdd = vRdd.addSample(Sample.newBuilder
+        .setSampleId("aSample")
+        .build)
+      assert(sampleRdd.samples.exists(_.getSampleId == "aSample"))
+    }
+
+    testMetadata(sc.loadVcf(testFile("small.vcf")))
   }
 }

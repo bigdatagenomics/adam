@@ -572,12 +572,4 @@ sealed abstract class FeatureRDD extends AvroGenomicRDD[Feature, FeatureProduct,
 
     replaceRdd(rdd.sortBy(f => f, ascending, numPartitions))
   }
-
-  /**
-   * Replaces the sequence dictionary attached to a FeatureRDD.
-   *
-   * @param newSequences The sequence dictionary to add.
-   * @return Returns a new FeatureRDD with sequence dictionary attached.
-   */
-  def replaceSequences(newSequences: SequenceDictionary): FeatureRDD
 }

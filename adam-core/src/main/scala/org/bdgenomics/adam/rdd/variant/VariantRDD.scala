@@ -123,6 +123,15 @@ case class ParquetUnboundVariantRDD private[rdd] (
     import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename).as[VariantProduct]
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): VariantRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantRDD = {
+    copy(headerLines = newHeaderLines)
+  }
 }
 
 case class DatasetBoundVariantRDD private[rdd] (
@@ -152,6 +161,15 @@ case class DatasetBoundVariantRDD private[rdd] (
     tFn: Dataset[VariantProduct] => Dataset[VariantProduct]): VariantRDD = {
     copy(dataset = tFn(dataset))
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): VariantRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantRDD = {
+    copy(headerLines = newHeaderLines)
+  }
 }
 
 case class RDDBoundVariantRDD private[rdd] (
@@ -168,11 +186,48 @@ case class RDDBoundVariantRDD private[rdd] (
     import sqlContext.implicits._
     sqlContext.createDataset(rdd.map(VariantProduct.fromAvro))
   }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): VariantRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantRDD = {
+    copy(headerLines = newHeaderLines)
+  }
 }
 
 sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct, VariantRDD] {
 
   val headerLines: Seq[VCFHeaderLine]
+
+  /**
+   * Replaces the header lines attached to this RDD.
+   *
+   * @param newHeaderLines The new header lines to attach to this RDD.
+   * @return A new RDD with the header lines replaced.
+   */
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantRDD
+
+  /**
+   * Appends new header lines to the existing lines.
+   *
+   * @param headerLinesToAdd Zero or more header lines to add.
+   * @return A new RDD with the new header lines added.
+   */
+  def addHeaderLines(headerLinesToAdd: Seq[VCFHeaderLine]): VariantRDD = {
+    replaceHeaderLines(headerLines ++ headerLinesToAdd)
+  }
+
+  /**
+   * Appends a new header line to the existing lines.
+   *
+   * @param headerLineToAdd A header line to add.
+   * @return A new RDD with the new header line added.
+   */
+  def addHeaderLine(headerLineToAdd: VCFHeaderLine): VariantRDD = {
+    addHeaderLines(Seq(headerLineToAdd))
+  }
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Variant)])(
     implicit tTag: ClassTag[Variant]): IntervalArray[ReferenceRegion, Variant] = {
