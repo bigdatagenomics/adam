@@ -42,7 +42,7 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
-  AvroReadGroupGenomicRDD,
+  AvroRecordGroupGenomicRDD,
   ADAMSaveAnyArgs,
   FileMerger,
   JavaSaveArgs,
@@ -279,7 +279,7 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
 private case class AlignmentWindow(contigName: String, start: Long, end: Long) {
 }
 
-sealed abstract class AlignmentRecordRDD extends AvroReadGroupGenomicRDD[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
+sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
 
   /**
    * Applies a function that transforms the underlying RDD into a new RDD using

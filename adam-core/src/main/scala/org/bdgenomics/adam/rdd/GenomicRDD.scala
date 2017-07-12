@@ -1389,12 +1389,12 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Geno
  * An abstract class describing a GenomicRDD where:
  *
  * * The data are Avro IndexedRecords.
- * * The data are associated to read groups (i.e., they are reads or fragments).
+ * * The data are associated to record groups (i.e., they are reads or fragments).
  */
-abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: AvroReadGroupGenomicRDD[T, U, V]] extends AvroGenomicRDD[T, U, V] {
+abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: AvroRecordGroupGenomicRDD[T, U, V]] extends AvroGenomicRDD[T, U, V] {
 
   /**
-   * A dictionary describing the read groups attached to this GenomicRDD.
+   * A dictionary describing the record groups attached to this GenomicRDD.
    */
   val recordGroups: RecordGroupDictionary
 
@@ -1428,17 +1428,12 @@ abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Produc
     addRecordGroups(RecordGroupDictionary(Seq(recordGroupToAdd)))
   }
 
-  override protected def saveMetadata(filePath: String) {
-
-    // convert sequence dictionary to avro form and save
-    val contigs = sequences.toAvro
-    savePartitionMap(filePath)
-
-    saveAvro("%s/_seqdict.avro".format(filePath),
-      rdd.context,
-      Contig.SCHEMA$,
-      contigs)
-
+  /**
+   * Save the record groups to disk.
+   *
+   * @param filePath The filepath to the file where we will save the record groups.
+   */
+  protected def saveRecordGroups(filePath: String): Unit = {
     // convert record group to avro and save
     val rgMetadata = recordGroups.recordGroups
       .map(_.toMetadata)
@@ -1447,6 +1442,12 @@ abstract class AvroReadGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Produc
       rdd.context,
       RecordGroupMetadata.SCHEMA$,
       rgMetadata)
+  }
+
+  override protected def saveMetadata(filePath: String): Unit = {
+    savePartitionMap(filePath)
+    saveSequences(filePath)
+    saveRecordGroups(filePath)
   }
 }
 
@@ -1458,59 +1459,22 @@ abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
     with MultisampleGenomicRDD[T, V] {
 
   /**
-   * The header lines attached to the file.
-   */
-  val headerLines: Seq[VCFHeaderLine]
-
-  /**
-   * Replaces the header lines attached to this RDD.
+   * Save the samples to disk.
    *
-   * @param newHeaderLines The new header lines to attach to this RDD.
-   * @return A new RDD with the header lines replaced.
+   * @param filePath The filepath to the file where we will save the samples.
    */
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): V
-
-  /**
-   * Appends new header lines to the existing lines.
-   *
-   * @param headerLinesToAdd Zero or more header lines to add.
-   * @return A new RDD with the new header lines added.
-   */
-  def addHeaderLines(headerLinesToAdd: Seq[VCFHeaderLine]): V = {
-    replaceHeaderLines(headerLines ++ headerLinesToAdd)
-  }
-
-  /**
-   * Appends a new header line to the existing lines.
-   *
-   * @param headerLineToAdd A header line to add.
-   * @return A new RDD with the new header line added.
-   */
-  def addHeaderLine(headerLineToAdd: VCFHeaderLine): V = {
-    addHeaderLines(Seq(headerLineToAdd))
-  }
-
-  override protected def saveMetadata(filePath: String) {
-
-    // write vcf headers to file
-    VCFHeaderUtils.write(new VCFHeader(headerLines.toSet),
-      new Path("%s/_header".format(filePath)),
-      rdd.context.hadoopConfiguration)
-
+  protected def saveSamples(filePath: String): Unit = {
     // get file to write to
     saveAvro("%s/_samples.avro".format(filePath),
       rdd.context,
       Sample.SCHEMA$,
       samples)
+  }
 
+  override protected def saveMetadata(filePath: String): Unit = {
     savePartitionMap(filePath)
-
-    // convert sequence dictionary to avro form and save
-    val contigs = sequences.toAvro
-    saveAvro("%s/_seqdict.avro".format(filePath),
-      rdd.context,
-      Contig.SCHEMA$,
-      contigs)
+    saveSequences(filePath)
+    saveSamples(filePath)
   }
 }
 
@@ -1523,10 +1487,10 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
     with GenomicDataset[T, U, V] {
 
   /**
-   * Save the partition map to the disk. This is done by adding the partition
+   * Save the partition map to disk. This is done by adding the partition
    * map to the schema.
    *
-   * @param filePath The filepath where we will save the Metadata.
+   * @param filePath The filepath where we will save the partition map.
    */
   protected def savePartitionMap(filePath: String): Unit = {
     if (isSorted) {
@@ -1551,6 +1515,22 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
         sequences.toAvro)
     }
   }
+
+  /**
+   * Save the sequence dictionary to disk.
+   *
+   * @param filePath The filepath where we will save the sequence dictionary.
+   */
+  protected def saveSequences(filePath: String): Unit = {
+    // convert sequence dictionary to avro form and save
+    val contigs = sequences.toAvro
+
+    saveAvro("%s/_seqdict.avro".format(filePath),
+      rdd.context,
+      Contig.SCHEMA$,
+      contigs)
+  }
+
   /**
    * Called in saveAsParquet after saving RDD to Parquet to save metadata.
    *
@@ -1559,16 +1539,9 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
    *
    * @param filePath The filepath to the file where we will save the Metadata.
    */
-  protected def saveMetadata(filePath: String) {
-
-    // convert sequence dictionary to avro form and save
-    val contigs = sequences.toAvro
+  protected def saveMetadata(filePath: String): Unit = {
     savePartitionMap(filePath)
-
-    saveAvro("%s/_seqdict.avro".format(filePath),
-      rdd.context,
-      Contig.SCHEMA$,
-      contigs)
+    saveSequences(filePath)
   }
 
   /**

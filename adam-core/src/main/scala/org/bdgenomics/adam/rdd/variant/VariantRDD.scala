@@ -37,11 +37,7 @@ import org.bdgenomics.adam.rdd.{
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Variant => VariantProduct }
-import org.bdgenomics.formats.avro.{
-  Contig,
-  Sample,
-  Variant
-}
+import org.bdgenomics.formats.avro.{ Sample, Variant }
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
@@ -229,24 +225,27 @@ sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct,
     addHeaderLines(Seq(headerLineToAdd))
   }
 
-  protected def buildTree(rdd: RDD[(ReferenceRegion, Variant)])(
-    implicit tTag: ClassTag[Variant]): IntervalArray[ReferenceRegion, Variant] = {
-    IntervalArray(rdd, VariantArray.apply(_, _))
-  }
-
-  override protected def saveMetadata(filePath: String) {
-
+  /**
+   * Save the VCF headers to disk.
+   *
+   * @param filePath The filepath to the file where we will save the VCF headers.
+   */
+  def saveVcfHeaders(filePath: String): Unit = {
     // write vcf headers to file
     VCFHeaderUtils.write(new VCFHeader(headerLines.toSet),
       new Path("%s/_header".format(filePath)),
       rdd.context.hadoopConfiguration)
+  }
 
-    // convert sequence dictionary to avro form and save
-    val contigs = sequences.toAvro
-    saveAvro("%s/_seqdict.avro".format(filePath),
-      rdd.context,
-      Contig.SCHEMA$,
-      contigs)
+  override protected def saveMetadata(filePath: String): Unit = {
+    savePartitionMap(filePath)
+    saveSequences(filePath)
+    saveVcfHeaders(filePath)
+  }
+
+  protected def buildTree(rdd: RDD[(ReferenceRegion, Variant)])(
+    implicit tTag: ClassTag[Variant]): IntervalArray[ReferenceRegion, Variant] = {
+    IntervalArray(rdd, VariantArray.apply(_, _))
   }
 
   def union(rdds: VariantRDD*): VariantRDD = {

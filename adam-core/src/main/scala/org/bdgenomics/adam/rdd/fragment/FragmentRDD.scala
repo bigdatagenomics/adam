@@ -30,7 +30,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ AvroReadGroupGenomicRDD, JavaSaveArgs }
+import org.bdgenomics.adam.rdd.{ AvroRecordGroupGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
   BinQualities,
@@ -225,7 +225,7 @@ case class RDDBoundFragmentRDD private[rdd] (
   }
 }
 
-sealed abstract class FragmentRDD extends AvroReadGroupGenomicRDD[Fragment, FragmentProduct, FragmentRDD] {
+sealed abstract class FragmentRDD extends AvroRecordGroupGenomicRDD[Fragment, FragmentProduct, FragmentRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Fragment)])(
     implicit tTag: ClassTag[Fragment]): IntervalArray[ReferenceRegion, Fragment] = {
