@@ -86,7 +86,7 @@ class LoadReads {
                                              JavaSparkContext jsc) {
     // create an ADAMContext first
     ADAMContext ac = new ADAMContext(jsc.sc());
-    
+   
     // then wrap that in a JavaADAMContext
     JavaADAMContext jac = new JavaADAMContext(ac);
 
@@ -257,27 +257,29 @@ bypassing the ADAM APIs.
 
 Another useful API implemented in ADAM is the RegionJoin API, which joins two
 genomic datasets that contain overlapping regions. This primitive is useful for
-a number of applications including variant calling (identifying all of the reads 
-that overlap a candidate variant), coverage analysis (determining the coverage 
-depth for each region in a reference), and INDEL realignment (identify INDELs 
+a number of applications including variant calling (identifying all of the reads
+that overlap a candidate variant), coverage analysis (determining the coverage
+depth for each region in a reference), and INDEL realignment (identify INDELs
 aligned against a reference).
 
-There are two overlap join implementations available in ADAM: 
-BroadcastRegionJoin and ShuffleRegionJoin. The result of a ShuffleRegionJoin 
-is identical to the BroadcastRegionJoin, however they serve different 
+There are two overlap join implementations available in ADAM:
+BroadcastRegionJoin and ShuffleRegionJoin. The result of a ShuffleRegionJoin
+is identical to the BroadcastRegionJoin, however they serve different
 purposes depending on the content of the two datasets.
 
-The ShuffleRegionJoin is at its core a distributed sort-merge overlap join. 
-To ensure that the data is appropriately colocated, we perform a copartition 
-on the right dataset before the each node conducts the join locally. The 
-BroadcastRegionJoin performs an overlap join by broadcasting a copy of the 
-entire left dataset to each node. ShuffleRegionJoin should be used if the right 
-dataset is too large to send to all nodes and both datasets have low 
-cardinality. The BroadcastRegionJoin should be used when you are joining a 
-smaller dataset to a larger one and/or the datasets in the join have high 
+The ShuffleRegionJoin is at its core a distributed sort-merge overlap join.
+To ensure that the data is appropriately colocated, we perform a copartition
+on the right dataset before the each node conducts the join locally.
+ShuffleRegionJoin should be used if the right dataset is too large to send to
+all nodes and both datasets have low
 cardinality.
 
-Another important distinction between ShuffleRegionJoin and 
+The BroadcastRegionJoin performs an overlap join by broadcasting a copy of the
+entire left dataset to each node. The BroadcastRegionJoin should be used when
+you are joining a smaller dataset to a larger one and/or the datasets in the
+join have high cardinality.
+
+Another important distinction between ShuffleRegionJoin and
 BroadcastRegionJoin is the join operations available in ADAM. See the table
 below for an exact list of what joins are available for each type of
 RegionJoin.
@@ -294,10 +296,10 @@ To perform a BroadcastRegionJoin, use the following:
 dataset1.broadcastRegionJoin(dataset2)
 ```
 
-Where `dataset1` and `dataset2` are `GenomicRDD`s. If you used the ADAMContext to 
+Where `dataset1` and `dataset2` are `GenomicRDD`s. If you used the ADAMContext to
 read a genomic dataset into memory, this condition is met.
 
-ADAM has a variety of ShuffleRegionJoin types that you can perform on your 
+ADAM has a variety of ShuffleRegionJoin types that you can perform on your
 data, and all are called in a similar way:
 
 ![Joins Available]
@@ -339,7 +341,19 @@ val bcastFeatures = sc.loadFeatures("my/features.adam").broadcast()
 val readsByFeature = reads.broadcastRegionJoinAgainst(bcastFeatures)
 ```
 
-#### Examples of real-world analyses possible with the RegionJoin API
+To demonstrate how the RegionJoin APIs can be used to answer scientific
+questions, we will walk through three common queries that can be written using
+the RegionJoin API. First, we will perform a simple filter on genotypes based
+on a file of features. We will then demonstrate a join and group by on variants
+and features, providing variant data grouped by the feature they overlap.
+Finally, we will separate reads into those that overlap and those that do not
+overlap features from a feature file.
+
+Each of these demonstrations illustrates the difference between calling the
+ShuffleRegionJoin and BroadcastRegionJoin and provides example code that can
+be expanded from. For a detailed difference on the optimal performance of
+ShuffleRegionJoin and BroadcastRegionJoin, see above.
+
 ###### Filter Genotypes by Features
 
 ```scala
@@ -348,29 +362,62 @@ val genotypes = sc.loadGenotypes(“my/genotypes.adam”)
 val features = sc.loadFeatures(“my/features.adam”)
 
 // We can use ShuffleRegionJoin…
-val filteredGenotypes_shuffle = genotypes.shuffleRegionJoin(features)
+val joinedGenotypesShuffle = genotypes.shuffleRegionJoin(features)
 
 // …or BroadcastRegionJoin
-val filteredGenotypes_bcast = genotypes.broadcastRegionJoin(features)
+val joinedGenotypesBcast = genotypes.broadcastRegionJoin(features)
+
+// In the case that we only want Genotypes, we can use a simple predicate
+val filteredGenotypes = joinedGenotypesShuffle.rdd.map(_._1)
 ```
 
+After the join, we can perform a predicate function on the resulting RDD to
+manipulate it into providing the answer to our question. Because we were
+interested in only getting the Genotypes that overlap the features, we used a
+predicate.
+
+Notice that at the end of the join, we can access the RDD resulting from the
+join and perform a map operation on it. This `map` call can, in fact, be
+replaced with any predicate function.
+
 ###### Group overlapping variant data by the gene they overlap
+
 ```scala
 // Inner join with a group by on the features
 val features = sc.loadFeatures(“my/features.adam”)
 val variants = sc.loadVariants(“my/variants.adam")
 
 // As a ShuffleRegionJoin, it can be implemented as follows:
-val variantsByFeature_shuffle = features.shuffleRegionJoinAndGroupByLeft(variants)
+val variantsByFeatureShuffle = features.shuffleRegionJoinAndGroupByLeft(variants)
 
 // As a BroadcastRegionJoin, it can be implemented as follows:
-val variantsByFeature_bcast = variants.broadcastRegionJoinAndGroupByRight(features)
+val variantsByFeatureBcast = variants.broadcastRegionJoinAndGroupByRight(features)
 ```
 
+Notice that the type of join determines which dataset calls the join and which
+gets passed as an argument. In the ShuffleRegionJoin, `features` calls the
+join, but in BroadcastRegionJoin, `variants` calls the join.
+
+This distinction is very important to understanding the difference between
+BroadcastRegionJoin and ShuffleRegionJoin. It is important to first understand
+the difference between what is called the "left" and "right" datasets. Simply
+put, the left dataset is the dataset that calls the join, and the right dataset
+is what gets passed to the join.
+
+ShuffleRegionJoin Example: `leftDataset.shuffleRegionJoin(rightDataset)`
+
+BroadcastRegionJoin Example: `leftDataset.broadcastRegionJoin(rightDataset)`
+
+To perform a `groupBy` after the join, BroadcastRegionJoin only supports
+grouping by the right dataset, and ShuffleRegionJoin supports only grouping by
+the left dataset. Thus, depending on the type of join, the left and right
+dataset may change between BroadcastRegionJoin and ShuffleRegionJoin.
+
 ###### Separate reads into overlapping and non-overlapping features
+
 ```scala
 // An outer join provides us with both overlapping and non-overlapping data
-val reads = sc.loadAlightments(“my/reads.adam”)
+val reads = sc.loadAlignments(“my/reads.adam”)
 val features = sc.loadFeatures(“my/features.adam”)
 
 // As a ShuffleRegionJoin, we can use a LeftOuterShuffleRegionJoin:
@@ -384,6 +431,14 @@ val overlapsFeatures = readsToFeatures.rdd.filter(_._2 != None)
 val notOverlapsFeatures = readsToFeatures.rdd.filter(_._2 == None)
 ```
 
+Previously, we illustrated that join calls can be different between
+ShuffleRegionJoin and BroadcastRegionJoin. This is another example of a
+question that requires different structure based on whether you prefer a
+BroadcastRegionJoin or a ShuffleRegionJoin.
+
+We also previously demonstrated that predicate functions can be called on an
+RDD after the join. In this example, we call a filter function on the RDD twice
+to split it into overlapping and non-overlapping reads.
 
 ## Using ADAM's Pipe API {#pipes}
 
