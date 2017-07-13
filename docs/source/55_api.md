@@ -339,6 +339,52 @@ val bcastFeatures = sc.loadFeatures("my/features.adam").broadcast()
 val readsByFeature = reads.broadcastRegionJoinAgainst(bcastFeatures)
 ```
 
+#### Examples of real-world analyses possible with the RegionJoin API
+###### Filter Genotypes by Features
+
+```scala
+// Inner join will filter out genotypic data not represented in the feature dataset
+val genotypes = sc.loadGenotypes(“my/genotypes.adam”)
+val features = sc.loadFeatures(“my/features.adam”)
+
+// We can use ShuffleRegionJoin…
+val filteredGenotypes_shuffle = genotypes.shuffleRegionJoin(features)
+
+// …or BroadcastRegionJoin
+val filteredGenotypes_bcast = genotypes.broadcastRegionJoin(features)
+```
+
+###### Group overlapping variant data by the gene they overlap
+```scala
+// Inner join with a group by on the features
+val features = sc.loadFeatures(“my/features.adam”)
+val variants = sc.loadVariants(“my/variants.adam")
+
+// As a ShuffleRegionJoin, it can be implemented as follows:
+val variantsByFeature_shuffle = features.shuffleRegionJoinAndGroupByLeft(variants)
+
+// As a BroadcastRegionJoin, it can be implemented as follows:
+val variantsByFeature_bcast = variants.broadcastRegionJoinAndGroupByRight(features)
+```
+
+###### Separate reads into overlapping and non-overlapping features
+```scala
+// An outer join provides us with both overlapping and non-overlapping data
+val reads = sc.loadAlightments(“my/reads.adam”)
+val features = sc.loadFeatures(“my/features.adam”)
+
+// As a ShuffleRegionJoin, we can use a LeftOuterShuffleRegionJoin:
+val readsToFeatures = reads.leftOuterShuffleRegionJoin(features)
+
+// As a BroadcastRegionJoin, we can use a RightOuterBroadcastRegionJoin:
+val featuresToReads = features.rightOuterShuffleRegionJoin(reads)
+
+// After we have our join, we need to separate the RDD
+val overlapsFeatures = readsToFeatures.rdd.filter(_._2 != None)
+val notOverlapsFeatures = readsToFeatures.rdd.filter(_._2 == None)
+```
+
+
 ## Using ADAM's Pipe API {#pipes}
 
 ADAM's `GenomicRDD` API provides support for piping the underlying genomic data
@@ -351,7 +397,7 @@ strings to the pipe. ADAM's pipe API adds several important functions:
   and get variants back from the pipe)
 * It adds the ability to set environment variables and to make local files
   (e.g., a reference genome) available to the run command
-* If the data is aligned, we ensure that each subcommand runs over a contiguious
+* If the data is aligned, we ensure that each subcommand runs over a contiguous
   section of the reference genome, and that data is sorted on this chunk. We
   provide control over the size of any flanking region that is desired.
 
