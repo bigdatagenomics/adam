@@ -89,6 +89,16 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(expectedSortedReads === mapped)
   }
 
+  sparkTest("unmapped reads go at the end when sorting") {
+    val inputPath = testFile("reads13.sam")
+    val reads = sc.loadAlignments(inputPath)
+    val sortedReads = reads.sortReadsByReferencePosition()
+      .rdd
+      .collect()
+    assert(!sortedReads.last.getReadMapped)
+    assert(sortedReads.last.getReadName === "&5[d@xJO")
+  }
+
   sparkTest("coverage does not fail on unmapped reads") {
     val inputPath = testFile("unmapped.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
