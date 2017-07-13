@@ -851,7 +851,9 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
 
         (sr.get.referenceIndex.get, r.getStart: Long)
       } else {
-        (min(abs(r.getReadName.hashCode + maxContigIndex), Int.MaxValue), 0L)
+        val readHash = abs(r.getReadName.hashCode + maxContigIndex)
+        val idx = if (readHash > maxContigIndex) readHash else Int.MaxValue
+        (idx, 0L)
       }
     }))
   }
