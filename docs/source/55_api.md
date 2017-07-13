@@ -86,7 +86,7 @@ class LoadReads {
                                              JavaSparkContext jsc) {
     // create an ADAMContext first
     ADAMContext ac = new ADAMContext(jsc.sc());
-   
+  
     // then wrap that in a JavaADAMContext
     JavaADAMContext jac = new JavaADAMContext(ac);
 
@@ -356,6 +356,15 @@ ShuffleRegionJoin and BroadcastRegionJoin, see above.
 
 ###### Filter Genotypes by Features
 
+This query joins an RDD of Genotypes against an RDD of Features using an inner
+join. The inner join will result in an RDD of key-value pairs, where the key is
+a genotype and the value is the feature that it overlaps. Because this is an
+inner join, records from either dataset that don't pair to the other are
+automatically dropped, providing the filter we are interested in. This query is
+useful for trying to identify genotypes that overlap features of interest. For
+example, if our feature file contains all the exonic regions of the genome, we
+could perform this query to extract all genotypes that fall in exonic regions.
+
 ```scala
 // Inner join will filter out genotypic data not represented in the feature dataset
 val genotypes = sc.loadGenotypes(“my/genotypes.adam”)
@@ -365,10 +374,12 @@ val features = sc.loadFeatures(“my/features.adam”)
 val joinedGenotypesShuffle = genotypes.shuffleRegionJoin(features)
 
 // …or BroadcastRegionJoin
-val joinedGenotypesBcast = genotypes.broadcastRegionJoin(features)
+val joinedGenotypesBcast = features.broadcastRegionJoin(genotypes)
 
 // In the case that we only want Genotypes, we can use a simple predicate
-val filteredGenotypes = joinedGenotypesShuffle.rdd.map(_._1)
+val filteredGenotypesShuffle = joinedGenotypesShuffle.rdd.map(_._1)
+
+val filteredGenotypesBcast = joinedGenotypesBcast.rdd.map(_._2)
 ```
 
 After the join, we can perform a predicate function on the resulting RDD to
@@ -381,6 +392,14 @@ join and perform a map operation on it. This `map` call can, in fact, be
 replaced with any predicate function.
 
 ###### Group overlapping variant data by the gene they overlap
+
+This query joins an RDD of Variants against an RDD of Features, and immediately
+performs a group-by on the Feature. This produces an RDD whose elements are a
+tuple containing a Feature, and all of the Variants overlapping the Feature.
+This query is useful for trying to identify annotated variants that may
+interact (identifying frameshift mutations within a transcript that may act as
+a pair to shift and then restore the reading frame) or as the start of a query
+that computes variant density over a set of genomic features.
 
 ```scala
 // Inner join with a group by on the features
@@ -415,6 +434,15 @@ dataset may change between BroadcastRegionJoin and ShuffleRegionJoin.
 
 ###### Separate reads into overlapping and non-overlapping features
 
+This query joins an RDD of Reads with an RDD of features using an outer join.
+The outer join will produce an RDD where each read is optionally mapped to a
+feature. If a given read does not overlap with any features provided, it is
+paired with a `None`. After we perform the join, we use a predicate to separate
+the reads into two RDDs. This query is useful for filtering out reads based on
+feature data. For example, identifying reads that overlap with ChIPSeq data to
+perform chromatin accessibility studies. It may be useful to separate the reads
+to perform distinct analyses on each resulting dataset.
+
 ```scala
 // An outer join provides us with both overlapping and non-overlapping data
 val reads = sc.loadAlignments(“my/reads.adam”)
@@ -427,14 +455,19 @@ val readsToFeatures = reads.leftOuterShuffleRegionJoin(features)
 val featuresToReads = features.rightOuterShuffleRegionJoin(reads)
 
 // After we have our join, we need to separate the RDD
+// If we used the ShuffleRegionJoin, we filter by None in the values
 val overlapsFeatures = readsToFeatures.rdd.filter(_._2 != None)
 val notOverlapsFeatures = readsToFeatures.rdd.filter(_._2 == None)
+
+// If we used BroadcastRegionJoin, we filter by None in the keys
+val overlapsFeatures = featuresToReads.rdd.filter(_._1 != None)
+val notOverlapsFeatures = featuresToReads.rdd.filter(_._1 != None)
 ```
 
 Previously, we illustrated that join calls can be different between
 ShuffleRegionJoin and BroadcastRegionJoin. This is another example of a
-question that requires different structure based on whether you prefer a
-BroadcastRegionJoin or a ShuffleRegionJoin.
+question that requires different structure based on whether your dataset is
+better for a BroadcastRegionJoin or a ShuffleRegionJoin.
 
 We also previously demonstrated that predicate functions can be called on an
 RDD after the join. In this example, we call a filter function on the RDD twice
