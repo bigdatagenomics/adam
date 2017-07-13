@@ -86,7 +86,7 @@ class LoadReads {
                                              JavaSparkContext jsc) {
     // create an ADAMContext first
     ADAMContext ac = new ADAMContext(jsc.sc());
-  
+
     // then wrap that in a JavaADAMContext
     JavaADAMContext jac = new JavaADAMContext(ac);
 
@@ -271,13 +271,14 @@ The ShuffleRegionJoin is at its core a distributed sort-merge overlap join.
 To ensure that the data is appropriately colocated, we perform a copartition
 on the right dataset before the each node conducts the join locally.
 ShuffleRegionJoin should be used if the right dataset is too large to send to
-all nodes and both datasets have low
-cardinality.
+all nodes and both datasets have high cardinality. Because of the flexibility
+of the sort-merge paradigm, some joins can only be performed as a
+ShuffleRegionJoin (e.g. full outer join).
 
 The BroadcastRegionJoin performs an overlap join by broadcasting a copy of the
 entire left dataset to each node. The BroadcastRegionJoin should be used when
 you are joining a smaller dataset to a larger one and/or the datasets in the
-join have high cardinality.
+join have low cardinality.
 
 Another important distinction between ShuffleRegionJoin and
 BroadcastRegionJoin is the join operations available in ADAM. See the table
@@ -384,12 +385,13 @@ val filteredGenotypesBcast = joinedGenotypesBcast.rdd.map(_._2)
 
 After the join, we can perform a predicate function on the resulting RDD to
 manipulate it into providing the answer to our question. Because we were
-interested in only getting the Genotypes that overlap the features, we used a
-predicate.
+interested in the Genotypes that overlap the features, we used a map function
+to extract them.
 
-Notice that at the end of the join, we can access the RDD resulting from the
-join and perform a map operation on it. This `map` call can, in fact, be
-replaced with any predicate function.
+Another important distinction between ShuffleRegionJoin and BroadcastRegionJoin
+is that in a BroadcastRegionJoin, the left dataset is sent to all executors. In
+this case, we chose to send the `features` dataset because feature data is
+usually smaller in size than genotypic data.
 
 ###### Group overlapping variant data by the gene they overlap
 
@@ -413,28 +415,27 @@ val variantsByFeatureShuffle = features.shuffleRegionJoinAndGroupByLeft(variants
 val variantsByFeatureBcast = variants.broadcastRegionJoinAndGroupByRight(features)
 ```
 
-Notice that the type of join determines which dataset calls the join and which
-gets passed as an argument. In the ShuffleRegionJoin, `features` calls the
-join, but in BroadcastRegionJoin, `variants` calls the join.
-
-This distinction is very important to understanding the difference between
-BroadcastRegionJoin and ShuffleRegionJoin. It is important to first understand
-the difference between what is called the "left" and "right" datasets. Simply
-put, the left dataset is the dataset that calls the join, and the right dataset
-is what gets passed to the join.
-
-ShuffleRegionJoin Example: `leftDataset.shuffleRegionJoin(rightDataset)`
-
-BroadcastRegionJoin Example: `leftDataset.broadcastRegionJoin(rightDataset)`
+When we switch join strategies, we need to change the dataset that is on the
+left side of the join. This distinction is very important to understanding the
+difference between BroadcastRegionJoin and ShuffleRegionJoin.
 
 To perform a `groupBy` after the join, BroadcastRegionJoin only supports
 grouping by the right dataset, and ShuffleRegionJoin supports only grouping by
 the left dataset. Thus, depending on the type of join, the left and right
 dataset may change between BroadcastRegionJoin and ShuffleRegionJoin.
 
+The reason BroadcastRegionJoin does not have a `joinAndGroupByLeft`
+implementation is due to the fact that the left dataset is broadcasted to all
+nodes. It would be impossible to perform a group by function on the resulting
+join without a shuffle phase because joined tuples could be on any partition.
+ShuffleRejionJoin, however, performs a sort-merge join, and grouping by the
+left data does not require a shuffle. This is primarily due to the invariant
+enforced in the API: data are guaranteed to be colocated with all data they
+will join to.
+
 ###### Separate reads into overlapping and non-overlapping features
 
-This query joins an RDD of Reads with an RDD of features using an outer join.
+This query joins an RDD of reads with an RDD of features using an outer join.
 The outer join will produce an RDD where each read is optionally mapped to a
 feature. If a given read does not overlap with any features provided, it is
 paired with a `None`. After we perform the join, we use a predicate to separate
@@ -456,22 +457,22 @@ val featuresToReads = features.rightOuterShuffleRegionJoin(reads)
 
 // After we have our join, we need to separate the RDD
 // If we used the ShuffleRegionJoin, we filter by None in the values
-val overlapsFeatures = readsToFeatures.rdd.filter(_._2 != None)
-val notOverlapsFeatures = readsToFeatures.rdd.filter(_._2 == None)
+val overlapsFeatures = readsToFeatures.rdd.filter(_._2.isDefined)
+val notOverlapsFeatures = readsToFeatures.rdd.filter(_._2.isEmpty)
 
 // If we used BroadcastRegionJoin, we filter by None in the keys
-val overlapsFeatures = featuresToReads.rdd.filter(_._1 != None)
-val notOverlapsFeatures = featuresToReads.rdd.filter(_._1 != None)
+val overlapsFeatures = featuresToReads.rdd.filter(_._1.isDefined)
+val notOverlapsFeatures = featuresToReads.rdd.filter(_._1.isEmpty)
 ```
 
-Previously, we illustrated that join calls can be different between
-ShuffleRegionJoin and BroadcastRegionJoin. This is another example of a
-question that requires different structure based on whether your dataset is
-better for a BroadcastRegionJoin or a ShuffleRegionJoin.
-
-We also previously demonstrated that predicate functions can be called on an
-RDD after the join. In this example, we call a filter function on the RDD twice
-to split it into overlapping and non-overlapping reads.
+Because of the difference in how ShuffleRegionJoin and BroadcastRegionJoin are
+called, the predicate changes between them. It is not possible to call a
+`leftOuterJoin` using the BroadcastRegionJoin. As previously mentioned, the
+BroadcastRegionJoin broadcasts the left dataset, so a left outer join would
+require an additional shuffle phase. For an outer join, using a
+ShuffleRegionJoin will be cheaper if your reads are already sorted, however if
+the feature dataset is small, the BroadcastRegionJoin call would likely be more
+performant.
 
 ## Using ADAM's Pipe API {#pipes}
 
