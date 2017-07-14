@@ -303,20 +303,18 @@ read a genomic dataset into memory, this condition is met.
 ADAM has a variety of ShuffleRegionJoin types that you can perform on your
 data, and all are called in a similar way:
 
-![Joins Available]
-(img/join_examples.png)
+[Joins Available](img/join_examples.png)
 
-
-Join call | action | Availability
-----------|--------|
-```dataset1.shuffleRegionJoin(dataset2) ``` ```dataset1.broadcastRegionJoin(dataset2)```| perform an inner join | ShuffleRegionJoin BroadcastRegionJoin
-```dataset1.fullOuterShuffleRegionJoin(datset2)```|perform an outer join | ShuffleRegionJoin
-```dataset1.leftOuterShuffleRegionJoin(dataset2)```|perform a left outer join | ShuffleRegionJoin
-```dataset1.rightOuterShuffleRegionJoin(dataset2)``` ```dataset1.rightOuterBroadcastRegionJoin(dataset2)```|perform a right outer join | ShuffleRegionJoin BroadcastRegionJoin
-```dataset1.shuffleRegionJoinAndGroupByLeft(dataset2)``` |perform an inner join and group joined values by the records on the left | ShuffleRegionJoin
-```dataset1.broadcastRegionJoinAndGroupByRight(dataset2)``` | perform an inner join and group joined values by the records on the right | ShuffleRegionJoin
-```dataset1.rightOuterShuffleRegionJoinAndGroupByLeft(dataset2)```|perform a right outer join and group joined values by the records on the left | ShuffleRegionJoin
-```rightOuterBroadcastRegionJoinAndGroupByRight``` | perform a right outer join and group joined values by the records on the right | BroadcastRegionJoin
+| Join call | action | Availability |
+|----------|--------|--------|
+| ```dataset1.shuffleRegionJoin(dataset2) ``` ```dataset1.broadcastRegionJoin(dataset2)```| perform an inner join | ShuffleRegionJoin BroadcastRegionJoin |
+| ```dataset1.fullOuterShuffleRegionJoin(datset2)```| perform an outer join | ShuffleRegionJoin |
+| ```dataset1.leftOuterShuffleRegionJoin(dataset2)```| perform a left outer join | ShuffleRegionJoin |
+| ```dataset1.rightOuterShuffleRegionJoin(dataset2)``` ```dataset1.rightOuterBroadcastRegionJoin(dataset2)```| perform a right outer join | ShuffleRegionJoin BroadcastRegionJoin |
+| ```dataset1.shuffleRegionJoinAndGroupByLeft(dataset2)``` | perform an inner join and group joined values by the records on the left | ShuffleRegionJoin |
+| ```dataset1.broadcastRegionJoinAndGroupByRight(dataset2)``` | perform an inner join and group joined values by the records on the right | ShuffleRegionJoin |
+| ```dataset1.rightOuterShuffleRegionJoinAndGroupByLeft(dataset2)```| perform a right outer join and group joined values by the records on the left | ShuffleRegionJoin |
+| ```rightOuterBroadcastRegionJoinAndGroupByRight``` | perform a right outer join and group joined values by the records on the right | BroadcastRegionJoin |
 
 One common pattern involves joining a single dataset against many datasets. An
 example of this is joining an RDD of features (e.g., gene/exon coordinates)
