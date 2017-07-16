@@ -216,4 +216,43 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     testMetadata(sc.loadVcf(testFile("small.vcf")))
   }
+
+  sparkTest("save sharded bgzip vcf") {
+    val smallVcf = testFile("bqsr1.vcf")
+    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+    val outputPath = tmpFile("bqsr1.vcf.bgz")
+    rdd.transform(_.repartition(4)).saveAsVcf(outputPath,
+      asSingleFile = false,
+      deferMerging = false,
+      disableFastConcat = false,
+      stringency = ValidationStringency.STRICT)
+
+    assert(sc.loadVcf(outputPath).rdd.count === 681)
+  }
+
+  sparkTest("save bgzip vcf as single file") {
+    val smallVcf = testFile("small.vcf")
+    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+    val outputPath = tmpFile("small.vcf.bgz")
+    rdd.saveAsVcf(outputPath,
+      asSingleFile = true,
+      deferMerging = false,
+      disableFastConcat = false,
+      stringency = ValidationStringency.STRICT)
+
+    assert(sc.loadVcf(outputPath).rdd.count === 6)
+  }
+
+  sparkTest("can't save file with non-vcf extension") {
+    val smallVcf = testFile("small.vcf")
+    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+
+    intercept[IllegalArgumentException] {
+      rdd.saveAsVcf("small.bcf",
+        asSingleFile = false,
+        deferMerging = false,
+        disableFastConcat = false,
+        stringency = ValidationStringency.STRICT)
+    }
+  }
 }

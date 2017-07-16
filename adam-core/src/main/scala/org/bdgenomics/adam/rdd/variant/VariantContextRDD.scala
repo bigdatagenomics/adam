@@ -18,9 +18,12 @@
 package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.samtools.ValidationStringency
+import htsjdk.samtools.util.BlockCompressedOutputStream
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
-import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.LongWritable
+import org.apache.hadoop.io.compress.CompressionCodec
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.{
   DefaultHeaderLines,
@@ -39,6 +42,7 @@ import org.bdgenomics.adam.rdd.{
   MultisampleGenomicRDD,
   VCFHeaderUtils
 }
+import org.bdgenomics.adam.util.FileExtensions
 import org.bdgenomics.formats.avro.Sample
 import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.interval.array.{
@@ -46,6 +50,10 @@ import org.bdgenomics.utils.interval.array.{
   IntervalArraySerializer
 }
 import org.seqdoop.hadoop_bam._
+import org.seqdoop.hadoop_bam.util.{
+  BGZFCodec,
+  BGZFEnhancedGzipCodec
+}
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 
@@ -211,6 +219,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
    * and saves to disk as VCF.
    *
+   * Files that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
+   *
    * @param filePath The filepath to save to.
    * @param asSingleFile If true, saves the output as a single file by merging
    *   the sharded output after completing the write to HDFS. If false, the
@@ -227,8 +237,15 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
                 deferMerging: Boolean,
                 disableFastConcat: Boolean,
                 stringency: ValidationStringency) {
-    val vcfFormat = VCFFormat.inferFromFilePath(filePath)
-    assert(vcfFormat == VCFFormat.VCF, "BCF not yet supported") // TODO: Add BCF support
+
+    // TODO: Add BCF support
+    val vcfFormat = VCFFormat.VCF
+    val isBgzip = FileExtensions.isGzip(filePath)
+    if (!FileExtensions.isVcfExt(filePath)) {
+      throw new IllegalArgumentException(
+        "Saw non-VCF extension for file %s. Extensions supported are .vcf<.gz, .bgz>"
+          .format(filePath))
+    }
 
     log.info(s"Writing $vcfFormat file to $filePath")
 
@@ -262,13 +279,27 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     // write vcf header
     VCFHeaderUtils.write(header,
       headPath,
-      fs)
+      fs,
+      isBgzip,
+      asSingleFile)
 
     // set path to header file and the vcf format
     conf.set("org.bdgenomics.adam.rdd.variant.vcf_header_path", headPath.toString)
     conf.set(VCFOutputFormat.OUTPUT_VCF_FORMAT_PROPERTY, vcfFormat.toString)
+    if (isBgzip) {
+      conf.setStrings("io.compression.codecs",
+        classOf[BGZFCodec].getCanonicalName,
+        classOf[BGZFEnhancedGzipCodec].getCanonicalName)
+      conf.setBoolean(FileOutputFormat.COMPRESS, true)
+      conf.setClass(FileOutputFormat.COMPRESS_CODEC,
+        classOf[BGZFCodec], classOf[CompressionCodec])
+    }
 
     if (asSingleFile) {
+
+      // disable writing header
+      conf.setBoolean(KeyIgnoringVCFOutputFormat.WRITE_HEADER_PROPERTY,
+        false)
 
       // write shards to disk
       val tailPath = "%s_tail".format(filePath)
@@ -276,18 +307,20 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
         tailPath,
         classOf[LongWritable],
         classOf[VariantContextWritable],
-        classOf[ADAMHeaderlessVCFOutputFormat[LongWritable]],
+        classOf[ADAMVCFOutputFormat[LongWritable]],
         conf
       )
 
       // optionally merge
       if (!deferMerging) {
+
         FileMerger.mergeFiles(rdd.context,
           fs,
           new Path(filePath),
           new Path(tailPath),
           Some(headPath),
-          disableFastConcat = disableFastConcat)
+          disableFastConcat = disableFastConcat,
+          writeEmptyGzipBlock = isBgzip)
       }
     } else {
 

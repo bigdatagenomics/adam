@@ -115,8 +115,16 @@ private[adam] object FileExtensions {
   def isVcfExt(pathName: String): Boolean = {
     pathName.endsWith(".vcf") ||
       pathName.endsWith(".vcf.gz") ||
-      pathName.endsWith(".vcf.bgzf") ||
       pathName.endsWith(".vcf.bgz")
+  }
+
+  /**
+   * @param pathName The path name to match.
+   * @return Returns true if the path name matches a GZIP format file extension.
+   */
+  def isGzip(pathName: String): Boolean = {
+    pathName.endsWith(".gz") ||
+      pathName.endsWith(".bgz")
   }
 
   /**
