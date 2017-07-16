@@ -234,7 +234,9 @@ sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct,
     // write vcf headers to file
     VCFHeaderUtils.write(new VCFHeader(headerLines.toSet),
       new Path("%s/_header".format(filePath)),
-      rdd.context.hadoopConfiguration)
+      rdd.context.hadoopConfiguration,
+      false,
+      false)
   }
 
   override protected def saveMetadata(filePath: String): Unit = {

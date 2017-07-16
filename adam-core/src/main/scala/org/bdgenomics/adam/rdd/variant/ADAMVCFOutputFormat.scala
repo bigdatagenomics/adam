@@ -45,33 +45,6 @@ class ADAMVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF
     readHeaderFrom(path, FileSystem.get(conf))
 
     // return record writer
-    return new KeyIgnoringVCFRecordWriter[K](getDefaultWorkFile(context, ""),
-      header,
-      true,
-      context);
-  }
-}
-
-/**
- * Wrapper for Hadoop-BAM to work around requirement for no-args constructor.
- *
- * @tparam K The key type. Keys are not written.
- */
-class ADAMHeaderlessVCFOutputFormat[K] extends KeyIgnoringVCFOutputFormat[K](VCFFormat.VCF) with Serializable {
-
-  override def getRecordWriter(context: TaskAttemptContext): RecordWriter[K, VariantContextWritable] = {
-    val conf = context.getConfiguration()
-
-    // where is our header file?
-    val path = new Path(conf.get("org.bdgenomics.adam.rdd.variant.vcf_header_path"))
-
-    // read the header file
-    readHeaderFrom(path, FileSystem.get(conf))
-
-    // return record writer
-    return new KeyIgnoringVCFRecordWriter[K](getDefaultWorkFile(context, ""),
-      header,
-      false,
-      context);
+    super.getRecordWriter(context)
   }
 }

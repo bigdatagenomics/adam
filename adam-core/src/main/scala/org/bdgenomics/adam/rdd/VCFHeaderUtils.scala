@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.rdd
 
+import htsjdk.samtools.util.BlockCompressedOutputStream
 import htsjdk.variant.variantcontext.writer.{
   Options,
   VariantContextWriterBuilder
@@ -36,14 +37,19 @@ private[rdd] object VCFHeaderUtils {
    * @param header The header to write.
    * @param path The path to write it to.
    * @param conf The configuration to get the file system.
+   * @param isCompressed If true, writes as BGZIP.
+   * @param noEof If writing a compressed file, omits the terminating BGZF EOF
+   *   block. Ignored if output is uncompressed.
    */
   def write(header: VCFHeader,
             path: Path,
-            conf: Configuration) {
+            conf: Configuration,
+            isCompressed: Boolean,
+            noEof: Boolean) {
 
     val fs = path.getFileSystem(conf)
 
-    write(header, path, fs)
+    write(header, path, fs, isCompressed, noEof)
   }
 
   /**
@@ -52,13 +58,25 @@ private[rdd] object VCFHeaderUtils {
    * @param header The header to write.
    * @param path The path to write it to.
    * @param fs The file system to write to.
+   * @param isCompressed If true, writes as BGZIP.
+   * @param noEof If writing a compressed file, omits the terminating BGZF EOF
+   *   block. Ignored if output is uncompressed.
    */
   def write(header: VCFHeader,
             path: Path,
-            fs: FileSystem) {
+            fs: FileSystem,
+            isCompressed: Boolean,
+            noEof: Boolean) {
 
     // get an output stream
-    val os = fs.create(path)
+    val fos = fs.create(path)
+    val os = if (isCompressed) {
+      // BGZF stream requires java.io.File
+      // we can't get one in hadoop land, so it is OK to provide a null file
+      new BlockCompressedOutputStream(fos, null)
+    } else {
+      fos
+    }
 
     // build a vcw
     val vcw = new VariantContextWriterBuilder()
@@ -71,7 +89,22 @@ private[rdd] object VCFHeaderUtils {
     vcw.writeHeader(header)
 
     // close the writer
-    // vcw.close calls close on the underlying stream, see ADAM-1337
-    vcw.close()
+    // originally, this was vcw.close, which calls close on the underlying
+    // stream (see ADAM-1337 for a longer history). however, to support BGZF, we
+    // need to separate out the calls. specifically, calling close on the vcw
+    // calls close on the BlockCompressOutputStream, which leads to the stream
+    // writing the BGZF EOF indicator (an empty BGZF block).
+    //
+    // if we are writing an uncompressed VCF or a sharded BGZF'ed VCF, this is
+    // OK. if we write the BGZF EOF indicator at the end of the BGZF'ed VCF's
+    // header and we are writing a merged BGZF'ed VCF, this leads to the reader
+    // seeing an EOF at the end of the header and reading no records from the
+    // vcf. if we call flush and close seperately, this behavior doesn't occur.
+    if (isCompressed && noEof) {
+      os.flush()
+      fos.close()
+    } else {
+      vcw.close()
+    }
   }
 }

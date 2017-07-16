@@ -177,6 +177,25 @@ private class FileFilter(private val name: String) extends PathFilter {
 }
 
 /**
+ * A filter to run on globs/directories that finds all files that do not start
+ * with a given string.
+ *
+ * @param prefix The prefix to search for. Files that contain this prefix are
+ *   discarded.
+ */
+private class NoPrefixFileFilter(private val prefix: String) extends PathFilter {
+
+  /**
+   * @param path Path to evaluate.
+   * @return Returns true if the pathName of the path does not match the prefix passed
+   *   to the constructor.
+   */
+  def accept(path: Path): Boolean = {
+    !path.getName.startsWith(prefix)
+  }
+}
+
+/**
  * The ADAMContext provides functions on top of a SparkContext for loading genomic data.
  *
  * @param sc The SparkContext to wrap.
@@ -207,7 +226,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   private[rdd] def loadVcfMetadata(pathName: String): (SequenceDictionary, Seq[Sample], Seq[VCFHeaderLine]) = {
     // get the paths to all vcfs
-    val files = getFsAndFiles(new Path(pathName))
+    val files = getFsAndFilesWithFilter(pathName, new NoPrefixFileFilter("_"))
 
     // load yonder the metadata
     files.map(p => loadSingleVcfMetadata(p.toString)).reduce((p1, p2) => {
