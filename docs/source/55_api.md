@@ -267,23 +267,25 @@ BroadcastRegionJoin and ShuffleRegionJoin. The result of a ShuffleRegionJoin
 is identical to the BroadcastRegionJoin, however they serve different
 purposes depending on the content of the two datasets.
 
-The ShuffleRegionJoin is at its core a distributed sort-merge overlap join.
-To ensure that the data is appropriately colocated, we perform a copartition
-on the right dataset before the each node conducts the join locally.
-ShuffleRegionJoin should be used if the right dataset is too large to send to
-all nodes and both datasets have high cardinality. Because of the flexibility
-of the sort-merge paradigm, some joins can only be performed as a
-ShuffleRegionJoin (e.g. full outer join).
+The ShuffleRegionJoin is a distributed sort-merge overlap join. To ensure that
+the data is appropriately colocated, we perform a copartition on the right
+dataset before the each node conducts the join locally. ShuffleRegionJoin
+should be used if the right dataset is too large to send to all nodes and both
+datasets have high cardinality.
 
 The BroadcastRegionJoin performs an overlap join by broadcasting a copy of the
 entire left dataset to each node. The BroadcastRegionJoin should be used when
-you are joining a smaller dataset to a larger one and/or the datasets in the
-join have low cardinality.
+you have a dataset that is small enough to be collected and broadcast out, the
+larger side of the join is unsorted and either the data is so skewed that it is
+hard to load balance, the data is too large to be worth shuffling, or you don't
+want sorted output.
 
 Another important distinction between ShuffleRegionJoin and
-BroadcastRegionJoin is the join operations available in ADAM. See the table
-below for an exact list of what joins are available for each type of
-RegionJoin.
+BroadcastRegionJoin is the join operations available in ADAM. Since the
+broadcast join doesn't co-partition the datasets and instead sends the full
+right table to all nodes, some joins (e.g. left/full outer joins) cannot be
+written as broadcast joins. See the table below for an exact list of what joins
+are available for each type of region join.
 
 To perform a ShuffleRegionJoin, use the following:
 
@@ -300,8 +302,8 @@ dataset1.broadcastRegionJoin(dataset2)
 Where `dataset1` and `dataset2` are `GenomicRDD`s. If you used the ADAMContext to
 read a genomic dataset into memory, this condition is met.
 
-ADAM has a variety of ShuffleRegionJoin types that you can perform on your
-data, and all are called in a similar way:
+ADAM has a variety of region join types that you can perform on your data, and
+all are called in a similar way:
 
 [Joins Available](img/join_examples.png)
 
@@ -350,8 +352,7 @@ overlap features from a feature file.
 
 Each of these demonstrations illustrates the difference between calling the
 ShuffleRegionJoin and BroadcastRegionJoin and provides example code that can
-be expanded from. For a detailed difference on the optimal performance of
-ShuffleRegionJoin and BroadcastRegionJoin, see above.
+be expanded from.
 
 ###### Filter Genotypes by Features
 
@@ -361,8 +362,8 @@ a genotype and the value is the feature that it overlaps. Because this is an
 inner join, records from either dataset that don't pair to the other are
 automatically dropped, providing the filter we are interested in. This query is
 useful for trying to identify genotypes that overlap features of interest. For
-example, if our feature file contains all the exonic regions of the genome, we
-could perform this query to extract all genotypes that fall in exonic regions.
+example, if our feature file contains all the exonic regions of the genome,
+this query would extract all genotypes that fall in exonic regions.
 
 ```scala
 // Inner join will filter out genotypic data not represented in the feature dataset
@@ -414,8 +415,7 @@ val variantsByFeatureBcast = variants.broadcastRegionJoinAndGroupByRight(feature
 ```
 
 When we switch join strategies, we need to change the dataset that is on the
-left side of the join. This distinction is very important to understanding the
-difference between BroadcastRegionJoin and ShuffleRegionJoin.
+left side of the join.
 
 To perform a `groupBy` after the join, BroadcastRegionJoin only supports
 grouping by the right dataset, and ShuffleRegionJoin supports only grouping by
@@ -425,11 +425,9 @@ dataset may change between BroadcastRegionJoin and ShuffleRegionJoin.
 The reason BroadcastRegionJoin does not have a `joinAndGroupByLeft`
 implementation is due to the fact that the left dataset is broadcasted to all
 nodes. It would be impossible to perform a group by function on the resulting
-join without a shuffle phase because joined tuples could be on any partition.
-ShuffleRejionJoin, however, performs a sort-merge join, and grouping by the
-left data does not require a shuffle. This is primarily due to the invariant
-enforced in the API: data are guaranteed to be colocated with all data they
-will join to.
+join with predictable performance because, unlike the ShuffleRegionJoin, we do
+not guarantee any sort invariants. Because the ShuffleRegionJoin performs a
+sort-merge join, grouping by the left data does not require a shuffle.
 
 ###### Separate reads into overlapping and non-overlapping features
 
@@ -438,7 +436,7 @@ The outer join will produce an RDD where each read is optionally mapped to a
 feature. If a given read does not overlap with any features provided, it is
 paired with a `None`. After we perform the join, we use a predicate to separate
 the reads into two RDDs. This query is useful for filtering out reads based on
-feature data. For example, identifying reads that overlap with ChIPSeq data to
+feature data. For example, identifying reads that overlap with ATAC-seq data to
 perform chromatin accessibility studies. It may be useful to separate the reads
 to perform distinct analyses on each resulting dataset.
 
