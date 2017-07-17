@@ -163,7 +163,7 @@ described above, the `ADAMContext` adds the implicit methods needed for using
 
 ## Working with genomic data using GenomicRDDs {#genomic-rdd}
 
-As described in the section on using the [ADAMContext}(#adam-context), ADAM
+As described in the section on using the [ADAMContext](#adam-context), ADAM
 loads genomic data into a `GenomicRDD` which is specialized for each datatype.
 This `GenomicRDD` wraps Apache Spark's Resilient Distributed Dataset (RDD,
 [@zaharia12]) API with genomic metadata. The `RDD` abstraction presents an
@@ -449,7 +449,7 @@ val features = sc.loadFeatures(“my/features.adam”)
 val readsToFeatures = reads.leftOuterShuffleRegionJoin(features)
 
 // As a BroadcastRegionJoin, we can use a RightOuterBroadcastRegionJoin:
-val featuresToReads = features.rightOuterShuffleRegionJoin(reads)
+val featuresToReads = features.rightOuterBroadcastRegionJoin(reads)
 
 // After we have our join, we need to separate the RDD
 // If we used the ShuffleRegionJoin, we filter by None in the values
