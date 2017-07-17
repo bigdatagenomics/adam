@@ -37,22 +37,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  * This reader is based on the FastqInputFormat that's part of Hadoop-BAM,
  * found at https://github.com/HadoopGenomics/Hadoop-BAM/blob/master/src/main/java/org/seqdoop/hadoop_bam/FastqInputFormat.java
  */
-public final class SingleFastqInputFormat extends FileInputFormat<Void, Text> {
-
-    /**
-     * For now, we do not support splittable compression codecs. As in, we will
-     * read the compressed data, but we will not allow it to be splittable. We
-     * will fix this in #1457.
-     *
-     * @param context The job context to get the configuration from.
-     * @param filename The path the input file is saved at.
-     * @return Returns false if this file is compressed.
-     */
-    @Override protected boolean isSplitable(JobContext context, Path filename) {
-        Configuration conf = context.getConfiguration();
-        final CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(filename);
-        return (codec == null);
-    }
+public final class SingleFastqInputFormat extends FastqInputFormat {
 
     /**
      * A record reader for the standard FASTQ format.
