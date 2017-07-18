@@ -309,20 +309,14 @@ all are called in a similar way:
 
 | Join call | action | Availability |
 |----------|--------|--------|
-| `leftDataset.shuffleRegionJoin(rightDataset)`
-  `leftDataset.broadcastRegionJoin(rightDataset)`
-  `rightDataset.broadcastRegionJoinAgainst(broadcastedLeftDataset)` | perform an inner join | ShuffleRegionJoin BroadcastRegionJoin |
+| `leftDataset.shuffleRegionJoin(rightDataset)` `leftDataset.broadcastRegionJoin(rightDataset)` `rightDataset.broadcastRegionJoinAgainst(broadcastedLeftDataset)` | perform an inner join | ShuffleRegionJoin BroadcastRegionJoin |
 | `leftDataset.fullOuterShuffleRegionJoin(rightDataset)` | perform an outer join | ShuffleRegionJoin |
 | `leftDataset.leftOuterShuffleRegionJoin(rightDataset)` | perform a left outer join | ShuffleRegionJoin |
-| `leftDataset.rightOuterShuffleRegionJoin(rightDataset)`
-  `leftDataset.rightOuterBroadcastRegionJoin(rightDataset)`
-  `rightDataset.rightOuterBroadcastRegionJoinAgainst(broadcastedLeftDataset)` | perform a right outer join | ShuffleRegionJoin BroadcastRegionJoin |
+| `leftDataset.rightOuterShuffleRegionJoin(rightDataset)` `leftDataset.rightOuterBroadcastRegionJoin(rightDataset)` `rightDataset.rightOuterBroadcastRegionJoinAgainst(broadcastedLeftDataset)` | perform a right outer join | ShuffleRegionJoin BroadcastRegionJoin |
 | `leftDataset.shuffleRegionJoinAndGroupByLeft(rightDataset)` | perform an inner join and group joined values by the records on the left | ShuffleRegionJoin |
-| `leftDataset.broadcastRegionJoinAndGroupByRight(rightDataset)`
-  `rightDataset.broadcastRegionJoinAgainstAndGroupByRight(broadcastedLeftDataset)` | perform an inner join and group joined values by the records on the right | ShuffleRegionJoin |
+| `leftDataset.broadcastRegionJoinAndGroupByRight(rightDataset)` `rightDataset.broadcastRegionJoinAgainstAndGroupByRight(broadcastedLeftDataset)` | perform an inner join and group joined values by the records on the right | ShuffleRegionJoin |
 | `leftDataset.rightOuterShuffleRegionJoinAndGroupByLeft(rightDataset)` | perform a right outer join and group joined values by the records on the left | ShuffleRegionJoin |
-| `leftDataset.rightOuterBroadcastRegionJoinAndGroupByRight(rightDataset)` 
-  `rightDataset.rightOuterBroadcastRegionJoinAgainstAndGroupByRight(broadcastedLeftDataset)` | perform a right outer join and group joined values by the records on the right | BroadcastRegionJoin |
+| `leftDataset.rightOuterBroadcastRegionJoinAndGroupByRight(rightDataset)`  `rightDataset.rightOuterBroadcastRegionJoinAgainstAndGroupByRight(broadcastedLeftDataset)` | perform a right outer join and group joined values by the records on the right | BroadcastRegionJoin |
 
 One common pattern involves joining a single dataset against many datasets. An
 example of this is joining an RDD of features (e.g., gene/exon coordinates)
