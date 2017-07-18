@@ -140,6 +140,7 @@ public final class InterleavedFastqInputFormat extends FastqInputFormat {
         context.setStatus(genericSplit.toString());
 
         // cast as per example in TextInputFormat
-        return new InterleavedFastqRecordReader(context.getConfiguration(), (FileSplit) genericSplit);
+        return new InterleavedFastqRecordReader(context.getConfiguration(),
+                                                (FileSplit) genericSplit);
     }
 }

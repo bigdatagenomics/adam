@@ -27,6 +27,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.SplittableCompressionCodec;
+import org.apache.hadoop.io.compress.SplitCompressionInputStream;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -105,13 +107,34 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
     private static final int MAX_LINE_LENGTH = 10000;
 
     /**
+     * True if the underlying data is splittable.
+     */
+    protected boolean isSplittable = false;
+
+    /**
+     * True if the underlying data is compressed.
+     */
+    protected boolean isCompressed = false;
+
+    /**
+     * True if the last read was &lt; 0 bytes in size.
+     */
+    private boolean lastReadWasZeroBytes = false;
+
+    /**
+     * True if we hit the end of the split in a compressed stream.
+     */
+    private boolean endOfCompressedSplit = false;
+    
+    /**
      * Builds a new record reader given a config file and an input split.
      *
      * @param conf The Hadoop configuration object. Used for gaining access
      *   to the underlying file system.
      * @param split The file split to read.
      */
-    protected FastqRecordReader(final Configuration conf, final FileSplit split) throws IOException {
+    protected FastqRecordReader(final Configuration conf,
+                                final FileSplit split) throws IOException {
         file = split.getPath();
         start = split.getStart();
         end = start + split.getLength();
@@ -122,18 +145,44 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
         CompressionCodecFactory codecFactory = new CompressionCodecFactory(conf);
         CompressionCodec codec = codecFactory.getCodec(file);
 
-        if (codec == null) { // no codec.  Uncompressed file.
-            positionAtFirstRecord(fileIn);
+        // we expect this record reader to be used only with input formats that
+        // extend FastqInputFormat. the behavior of this record reader depends on
+        // whether the input stream is splittable or not. FastqInputFormat maintains
+        // a contract where it will put the file's splittable status into the hadoop
+        // configuration object.
+        isSplittable = conf.getBoolean(FastqInputFormat.FILE_SPLITTABLE, false);
+        
+        if (codec == null) {
+            // no codec.  Uncompressed file.
+            int bytesToSkip = positionAtFirstRecord(fileIn, null);
             inputStream = fileIn;
-        } else { 
-            // compressed file
-            if (start != 0) {
-                throw new RuntimeException("Start position for compressed file is not 0! (found " + start + ")");
-            }
+            inputStream.skip(bytesToSkip);
+            lineReader = new LineReader(inputStream);
+        } else if (isSplittable) {
+            // file is compressed, but uses a splittable codec
+            isCompressed = true;
+            int bytesToSkip = positionAtFirstRecord(fileIn, codec);
+
+            // apparent fun finding: if you don't seek back to 0,
+            // SplittableCompressionCodec.createInputStream will seek in the stream
+            // to a start position, and funny things happen..
+            fileIn.seek(0);
+            inputStream = ((SplittableCompressionCodec)codec).createInputStream(fileIn,
+                                                                                codec.createDecompressor(),
+                                                                                start,
+                                                                                end,
+                                                                                SplittableCompressionCodec.READ_MODE.BYBLOCK);
+
+            inputStream.skip(bytesToSkip);
+            lineReader = new ResettableCompressedSplitLineReader((SplitCompressionInputStream)inputStream, conf);
+        } else {
+            // unsplittable compressed file
+            // expect a single split, first record at offset 0
+            isCompressed = true;
             inputStream = codec.createInputStream(fileIn);
             end = Long.MAX_VALUE; // read until the end of the file
+            lineReader = new LineReader(inputStream);
         }
-        lineReader = new LineReader(inputStream);
     }
 
     /**
@@ -152,15 +201,30 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
      *
      * @param stream The stream to reposition.
      */
-    protected final void positionAtFirstRecord(final FSDataInputStream stream) throws IOException {
+    protected final int positionAtFirstRecord(final FSDataInputStream stream,
+                                              final CompressionCodec codec) throws IOException {
         Text buffer = new Text();
-
+        long originalStart = start;
+        
         if (true) { // (start > 0) // use start>0 to assume that files start with valid data
             // Advance to the start of the first record that ends with /1
             // We use a temporary LineReader to read lines until we find the
             // position of the right one.  We then seek the file to that position.
             stream.seek(start);
-            LineReader reader = new LineReader(stream);
+            LineReader reader;
+            if (codec == null) {
+                reader = new LineReader(stream);
+            } else {
+                // see above note about 
+                // SplittableCompressionCodec.createInputStream needing the stream
+                // to be at offset 0
+                stream.seek(0);
+                reader = new LineReader(((SplittableCompressionCodec)codec).createInputStream(stream,
+                                                                                              codec.createDecompressor(),
+                                                                                              start,
+                                                                                              end,
+                                                                                              SplittableCompressionCodec.READ_MODE.BYBLOCK));
+            }
 
             int bytesRead = 0;
             do {
@@ -186,21 +250,18 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
                     }
                 }
             } while (bytesRead > 0);
-
-            stream.seek(start);
         }
         pos = start;
+        stream.seek(originalStart);
+        return (int)(start - originalStart);
     }
 
-    /**
-     * Method is a no-op.
-     *
-     * @param split The input split that we will parse.
-     * @param context The Hadoop task context.
-     */
     public final void initialize(final InputSplit split, final TaskAttemptContext context)
-            throws IOException, InterruptedException {}
-
+        throws IOException, InterruptedException {
+        // this method does nothing but is required by
+        // org.apache.hadoop.mapreduce.RecordReader
+    }
+    
     /**
      * FASTQ has no keys, so we return null.
      *
@@ -277,6 +338,10 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
     protected final boolean lowLevelFastqRead(final Text readName, final Text value)
             throws IOException {
 
+        if (endOfCompressedSplit) {
+            return false;
+        }
+
         // ID line
         readName.clear();
         long skipped = appendLineInto(readName, true);
@@ -328,13 +393,64 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
         Text buf = new Text();
         int bytesRead = lineReader.readLine(buf, (int) Math.min(MAX_LINE_LENGTH, end - start));
 
-        if (bytesRead < 0 || (bytesRead == 0 && !eofOk)) {
+        // ok, so first, split/unsplit, compressed/uncompressed notwithstanding,
+        // there are three cases we can run into:
+        //
+        // 1. we read data
+        // 2. we are at an acceptable eof/end-of-split and don't read data
+        // 3. we are at an unacceptable eof/end-of-split and don't read data
+        //
+        // cases 1 and 2 are consistent across split/unsplit, compressed/uncompressed.
+        //
+        // case 3 is simple in the unsplit or uncompressed cases; something has
+        // gone wrong, we throw an EOFException, and move on with our lives
+        //
+        // case 3 is where working with split compressed files gets fun.
+        //
+        // with the split compression stream, the first time we read past the
+        // end of the last compression block within a file split, we get no
+        // bytes back. the BZip2Codec and BGZFCodec's actually tell us that
+        // we'll get -2 back in this case, but we'll cast a wider net yet.
+        //
+        // this is important information---if we don't know this, we'll keep reading
+        // past the end of the split to the end of the file---but we still need to
+        // finish reading our multiline record, so we set some state to let us know
+        // that we're reading the last record in the split (endOfCompressedSplit)
+        // and repeat the read. if the read fails again, then that means that
+        // something has actually gone wrong, and we want to fall through and
+        // throw an EOFException or return no bytes read (depending on eofOk).
+        // that's why we have the lastReadWasZeroBytes flag around. we set this
+        // to true on the first read that gets bytesRead <= 0, and clear it on
+        // any read that reads more than 0 bytes.
+        if (isSplittable &&
+            isCompressed &&
+            !lastReadWasZeroBytes &&
+            bytesRead <= 0 &&
+            !eofOk) {
+
+            // we need to clear the reader state so we can continue reading
+            ((ResettableCompressedSplitLineReader)lineReader).reset();
+
+            // set the state to stop us from reading another record and
+            // to catch back-to-back failed reads
+            lastReadWasZeroBytes = true;
+            endOfCompressedSplit = true;
+
+            // recursively call to redo the read
+            return appendLineInto(dest, eofOk);
+        } else if (bytesRead < 0 || (bytesRead == 0 && !eofOk)) {
             throw new EOFException();
+        } else {
+            lastReadWasZeroBytes = false;
         }
 
         dest.append(buf.getBytes(), 0, buf.getLength());
         dest.append(newline, 0, 1);
-        pos += bytesRead;
+        if (isSplittable && isCompressed) {
+            pos = ((SplitCompressionInputStream)inputStream).getPos();
+        } else {
+            pos += bytesRead;
+        }
 
         return bytesRead;
     }

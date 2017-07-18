@@ -81,8 +81,9 @@ public final class SingleFastqInputFormat extends FastqInputFormat {
          *   formatted (missing readname delimiters).
          */
         protected boolean next(final Text value) throws IOException {
-            if (pos >= end)
+            if (pos >= end) {
                 return false; // past end of slice
+            }
             try {
                 Text readName = new Text();
                 value.clear();
@@ -108,6 +109,7 @@ public final class SingleFastqInputFormat extends FastqInputFormat {
         context.setStatus(genericSplit.toString());
 
         // cast as per example in TextInputFormat
-        return new SingleFastqRecordReader(context.getConfiguration(), (FileSplit) genericSplit);
+        return new SingleFastqRecordReader(context.getConfiguration(),
+                                           (FileSplit) genericSplit);
     }
 }
