@@ -309,14 +309,20 @@ all are called in a similar way:
 
 | Join call | action | Availability |
 |----------|--------|--------|
-| ```dataset1.shuffleRegionJoin(dataset2) ``` ```dataset1.broadcastRegionJoin(dataset2)```| perform an inner join | ShuffleRegionJoin BroadcastRegionJoin |
-| ```dataset1.fullOuterShuffleRegionJoin(datset2)```| perform an outer join | ShuffleRegionJoin |
-| ```dataset1.leftOuterShuffleRegionJoin(dataset2)```| perform a left outer join | ShuffleRegionJoin |
-| ```dataset1.rightOuterShuffleRegionJoin(dataset2)``` ```dataset1.rightOuterBroadcastRegionJoin(dataset2)```| perform a right outer join | ShuffleRegionJoin BroadcastRegionJoin |
-| ```dataset1.shuffleRegionJoinAndGroupByLeft(dataset2)``` | perform an inner join and group joined values by the records on the left | ShuffleRegionJoin |
-| ```dataset1.broadcastRegionJoinAndGroupByRight(dataset2)``` | perform an inner join and group joined values by the records on the right | ShuffleRegionJoin |
-| ```dataset1.rightOuterShuffleRegionJoinAndGroupByLeft(dataset2)```| perform a right outer join and group joined values by the records on the left | ShuffleRegionJoin |
-| ```rightOuterBroadcastRegionJoinAndGroupByRight``` | perform a right outer join and group joined values by the records on the right | BroadcastRegionJoin |
+| `leftDataset.shuffleRegionJoin(rightDataset)`
+  `leftDataset.broadcastRegionJoin(rightDataset)`
+  `rightDataset.broadcastRegionJoinAgainst(broadcastedLeftDataset)` | perform an inner join | ShuffleRegionJoin BroadcastRegionJoin |
+| `leftDataset.fullOuterShuffleRegionJoin(rightDataset)` | perform an outer join | ShuffleRegionJoin |
+| `leftDataset.leftOuterShuffleRegionJoin(rightDataset)` | perform a left outer join | ShuffleRegionJoin |
+| `leftDataset.rightOuterShuffleRegionJoin(rightDataset)`
+  `leftDataset.rightOuterBroadcastRegionJoin(rightDataset)`
+  `rightDataset.rightOuterBroadcastRegionJoinAgainst(broadcastedLeftDataset)` | perform a right outer join | ShuffleRegionJoin BroadcastRegionJoin |
+| `leftDataset.shuffleRegionJoinAndGroupByLeft(rightDataset)` | perform an inner join and group joined values by the records on the left | ShuffleRegionJoin |
+| `leftDataset.broadcastRegionJoinAndGroupByRight(rightDataset)`
+  `rightDataset.broadcastRegionJoinAgainstAndGroupByRight(broadcastedLeftDataset)` | perform an inner join and group joined values by the records on the right | ShuffleRegionJoin |
+| `leftDataset.rightOuterShuffleRegionJoinAndGroupByLeft(rightDataset)` | perform a right outer join and group joined values by the records on the left | ShuffleRegionJoin |
+| `leftDataset.rightOuterBroadcastRegionJoinAndGroupByRight(rightDataset)` 
+  `rightDataset.rightOuterBroadcastRegionJoinAgainstAndGroupByRight(broadcastedLeftDataset)` | perform a right outer join and group joined values by the records on the right | BroadcastRegionJoin |
 
 One common pattern involves joining a single dataset against many datasets. An
 example of this is joining an RDD of features (e.g., gene/exon coordinates)
@@ -367,8 +373,8 @@ this query would extract all genotypes that fall in exonic regions.
 
 ```scala
 // Inner join will filter out genotypic data not represented in the feature dataset
-val genotypes = sc.loadGenotypes(“my/genotypes.adam”)
-val features = sc.loadFeatures(“my/features.adam”)
+val genotypes = sc.loadGenotypes("my/genotypes.adam")
+val features = sc.loadFeatures("my/features.adam")
 
 // We can use ShuffleRegionJoin…
 val joinedGenotypesShuffle = genotypes.shuffleRegionJoin(features)
@@ -376,21 +382,21 @@ val joinedGenotypesShuffle = genotypes.shuffleRegionJoin(features)
 // …or BroadcastRegionJoin
 val joinedGenotypesBcast = features.broadcastRegionJoin(genotypes)
 
-// In the case that we only want Genotypes, we can use a simple predicate
+// In the case that we only want Genotypes, we can use a simple projection
 val filteredGenotypesShuffle = joinedGenotypesShuffle.rdd.map(_._1)
 
 val filteredGenotypesBcast = joinedGenotypesBcast.rdd.map(_._2)
 ```
 
-After the join, we can perform a predicate function on the resulting RDD to
-manipulate it into providing the answer to our question. Because we were
-interested in the Genotypes that overlap the features, we used a map function
-to extract them.
+After the join, we can perform a transform function on the resulting RDD to
+manipulate it into providing the answer to our question. Since we were
+interested in the `Genotype`s that overlap a `Feature`, we map over the tuples
+and select just the `Genotype`.
 
-Another important distinction between ShuffleRegionJoin and BroadcastRegionJoin
-is that in a BroadcastRegionJoin, the left dataset is sent to all executors. In
-this case, we chose to send the `features` dataset because feature data is
-usually smaller in size than genotypic data.
+The difference between the ShuffleRegionJoin and BroadcastRegionJoin strategies
+is that a broadcast join sends the left dataset to all executors. In this case,
+we chose to send the `features` dataset because feature data is usually smaller
+in size than genotypic data.
 
 ###### Group overlapping variant data by the gene they overlap
 
@@ -404,8 +410,8 @@ that computes variant density over a set of genomic features.
 
 ```scala
 // Inner join with a group by on the features
-val features = sc.loadFeatures(“my/features.adam”)
-val variants = sc.loadVariants(“my/variants.adam")
+val features = sc.loadFeatures("my/features.adam")
+val variants = sc.loadVariants("my/variants.adam")
 
 // As a ShuffleRegionJoin, it can be implemented as follows:
 val variantsByFeatureShuffle = features.shuffleRegionJoinAndGroupByLeft(variants)
@@ -415,19 +421,15 @@ val variantsByFeatureBcast = variants.broadcastRegionJoinAndGroupByRight(feature
 ```
 
 When we switch join strategies, we need to change the dataset that is on the
-left side of the join.
-
-To perform a `groupBy` after the join, BroadcastRegionJoin only supports
-grouping by the right dataset, and ShuffleRegionJoin supports only grouping by
-the left dataset. Thus, depending on the type of join, the left and right
-dataset may change between BroadcastRegionJoin and ShuffleRegionJoin.
+left side of the join. BroadcastRegionJoin only supports grouping by the right
+dataset, and ShuffleRegionJoin supports only grouping by the left dataset.
 
 The reason BroadcastRegionJoin does not have a `joinAndGroupByLeft`
 implementation is due to the fact that the left dataset is broadcasted to all
-nodes. It would be impossible to perform a group by function on the resulting
-join with predictable performance because, unlike the ShuffleRegionJoin, we do
-not guarantee any sort invariants. Because the ShuffleRegionJoin performs a
-sort-merge join, grouping by the left data does not require a shuffle.
+nodes. Unlike shuffle joins, broadcast joins don't maintain a sort order
+invariant. Because of this, we would need to shuffle all data to a group-by on
+the left side of the dataset, and there is no opportunity to optimize by
+combining the join and group-by.
 
 ###### Separate reads into overlapping and non-overlapping features
 
@@ -442,8 +444,8 @@ to perform distinct analyses on each resulting dataset.
 
 ```scala
 // An outer join provides us with both overlapping and non-overlapping data
-val reads = sc.loadAlignments(“my/reads.adam”)
-val features = sc.loadFeatures(“my/features.adam”)
+val reads = sc.loadAlignments("my/reads.adam")
+val features = sc.loadFeatures("my/features.adam")
 
 // As a ShuffleRegionJoin, we can use a LeftOuterShuffleRegionJoin:
 val readsToFeatures = reads.leftOuterShuffleRegionJoin(features)
@@ -467,8 +469,8 @@ called, the predicate changes between them. It is not possible to call a
 BroadcastRegionJoin broadcasts the left dataset, so a left outer join would
 require an additional shuffle phase. For an outer join, using a
 ShuffleRegionJoin will be cheaper if your reads are already sorted, however if
-the feature dataset is small, the BroadcastRegionJoin call would likely be more
-performant.
+the feature dataset is small and the reads are not sorted, the
+BroadcastRegionJoin call would likely be more performant.
 
 ## Using ADAM's Pipe API {#pipes}
 
