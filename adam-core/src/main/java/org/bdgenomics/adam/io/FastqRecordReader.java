@@ -206,51 +206,50 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
         Text buffer = new Text();
         long originalStart = start;
         
-        if (true) { // (start > 0) // use start>0 to assume that files start with valid data
-            // Advance to the start of the first record that ends with /1
-            // We use a temporary LineReader to read lines until we find the
-            // position of the right one.  We then seek the file to that position.
-            stream.seek(start);
-            LineReader reader;
-            if (codec == null) {
-                reader = new LineReader(stream);
-            } else {
-                // see above note about 
-                // SplittableCompressionCodec.createInputStream needing the stream
-                // to be at offset 0
-                stream.seek(0);
-                reader = new LineReader(((SplittableCompressionCodec)codec).createInputStream(stream,
-                                                                                              codec.createDecompressor(),
-                                                                                              start,
-                                                                                              end,
-                                                                                              SplittableCompressionCodec.READ_MODE.BYBLOCK));
-            }
-
-            int bytesRead = 0;
-            do {
-                bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
-                int bufferLength = buffer.getLength();
-                if (bytesRead > 0 && !checkBuffer(bufferLength, buffer)) {
-                    start += bytesRead;
-                } else {
-                    // line starts with @.  Read two more and verify that it starts with a +
-                    //
-                    // If this isn't the start of a record, we want to backtrack to its end
-                    long backtrackPosition = start + bytesRead;
-
-                    bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
-                    bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
-                    if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
-                        break; // all good!
-                    } else {
-                        // backtrack to the end of the record we thought was the start.
-                        start = backtrackPosition;
-                        stream.seek(start);
-                        reader = new LineReader(stream);
-                    }
-                }
-            } while (bytesRead > 0);
+        // Advance to the start of the first record that ends with /1
+        // We use a temporary LineReader to read lines until we find the
+        // position of the right one.  We then seek the file to that position.
+        stream.seek(start);
+        LineReader reader;
+        if (codec == null) {
+            reader = new LineReader(stream);
+        } else {
+            // see above note about 
+            // SplittableCompressionCodec.createInputStream needing the stream
+            // to be at offset 0
+            stream.seek(0);
+            reader = new LineReader(((SplittableCompressionCodec)codec).createInputStream(stream,
+                                                                                          codec.createDecompressor(),
+                                                                                          start,
+                                                                                          end,
+                                                                                          SplittableCompressionCodec.READ_MODE.BYBLOCK));
         }
+        
+        int bytesRead = 0;
+        do {
+            bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
+            int bufferLength = buffer.getLength();
+            if (bytesRead > 0 && !checkBuffer(bufferLength, buffer)) {
+                start += bytesRead;
+            } else {
+                // line starts with @.  Read two more and verify that it starts with a +
+                //
+                // If this isn't the start of a record, we want to backtrack to its end
+                long backtrackPosition = start + bytesRead;
+                
+                bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
+                bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
+                if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
+                    break; // all good!
+                } else {
+                    // backtrack to the end of the record we thought was the start.
+                    start = backtrackPosition;
+                    stream.seek(start);
+                    reader = new LineReader(stream);
+                }
+            }
+        } while (bytesRead > 0);
+
         pos = start;
         stream.seek(originalStart);
         return (int)(start - originalStart);
