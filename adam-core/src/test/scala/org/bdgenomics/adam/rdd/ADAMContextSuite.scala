@@ -248,6 +248,18 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vcs.rdd.count == 23)
   }
 
+  sparkTest("load block compressed interleaved fastq") {
+    Seq(".gz", ".bgz", ".bz2").foreach(ext => {
+      val inputName = "interleaved_fastq_sample1.ifq%s".format(ext)
+      val path = testFile(inputName)
+      val reads = sc.loadAlignments(path)
+      assert(reads.rdd.count === 6)
+      assert(reads.rdd.filter(_.getReadPaired).count === 6)
+      assert(reads.rdd.filter(_.getReadInFragment == 0).count === 3)
+      assert(reads.rdd.filter(_.getReadInFragment == 1).count === 3)
+    })
+  }
+
   (1 to 4) foreach { testNumber =>
     val inputName = "interleaved_fastq_sample%d.ifq".format(testNumber)
     val path = testFile(inputName)
@@ -270,6 +282,16 @@ class ADAMContextSuite extends ADAMFunSuite {
       assert(reads.rdd.collect.forall(_.getSequence.toString.length === 250))
       assert(reads.rdd.collect.forall(_.getQual.toString.length === 250))
     }
+  }
+
+  sparkTest("import block compressed single fastq") {
+    Seq(".gz", ".bgz", ".bz2").foreach(ext => {
+      val inputName = "fastq_sample1.fq%s".format(ext)
+      val path = testFile(inputName)
+      val reads = sc.loadAlignments(path)
+      assert(reads.rdd.count === 6)
+      assert(reads.rdd.filter(_.getReadPaired).count === 0)
+    })
   }
 
   (1 to 4) foreach { testNumber =>

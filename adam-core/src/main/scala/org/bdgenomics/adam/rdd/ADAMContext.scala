@@ -1804,12 +1804,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String): AlignmentRecordRDD = LoadInterleavedFastq.time {
 
     val job = HadoopUtil.newJob(sc)
+    val conf = ContextUtil.getConfiguration(job)
+    conf.setStrings("io.compression.codecs",
+      classOf[BGZFCodec].getCanonicalName,
+      classOf[BGZFEnhancedGzipCodec].getCanonicalName)
     val records = sc.newAPIHadoopFile(
       pathName,
       classOf[InterleavedFastqInputFormat],
       classOf[Void],
       classOf[Text],
-      ContextUtil.getConfiguration(job)
+      conf
     )
     if (Metrics.isRecording) records.instrument() else records
 
@@ -1927,12 +1931,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadUnpairedFastq.time {
 
     val job = HadoopUtil.newJob(sc)
+    val conf = ContextUtil.getConfiguration(job)
+    conf.setStrings("io.compression.codecs",
+      classOf[BGZFCodec].getCanonicalName,
+      classOf[BGZFEnhancedGzipCodec].getCanonicalName)
+
     val records = sc.newAPIHadoopFile(
       pathName,
       classOf[SingleFastqInputFormat],
       classOf[Void],
       classOf[Text],
-      ContextUtil.getConfiguration(job)
+      conf
     )
     if (Metrics.isRecording) records.instrument() else records
 
@@ -2179,12 +2188,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName: String): FragmentRDD = LoadInterleavedFastqFragments.time {
 
     val job = HadoopUtil.newJob(sc)
+    val conf = ContextUtil.getConfiguration(job)
+    conf.setStrings("io.compression.codecs",
+      classOf[BGZFCodec].getCanonicalName,
+      classOf[BGZFEnhancedGzipCodec].getCanonicalName)
     val records = sc.newAPIHadoopFile(
       pathName,
       classOf[InterleavedFastqInputFormat],
       classOf[Void],
       classOf[Text],
-      ContextUtil.getConfiguration(job)
+      conf
     )
     if (Metrics.isRecording) records.instrument() else records
 
@@ -2814,6 +2827,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optProjection: Option[Schema] = None,
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadAlignments.time {
 
+    // need this to pick up possible .bgz extension
+    sc.hadoopConfiguration.setStrings("io.compression.codecs",
+      classOf[BGZFCodec].getCanonicalName,
+      classOf[BGZFEnhancedGzipCodec].getCanonicalName)
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isBamExt(trimmedPathName)) {
       log.info(s"Loading $pathName as BAM/CRAM/SAM and converting to AlignmentRecords.")
@@ -2864,6 +2881,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): FragmentRDD = LoadFragments.time {
 
+    // need this to pick up possible .bgz extension
+    sc.hadoopConfiguration.setStrings("io.compression.codecs",
+      classOf[BGZFCodec].getCanonicalName,
+      classOf[BGZFEnhancedGzipCodec].getCanonicalName)
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isBamExt(trimmedPathName)) {
       // check to see if the input files are all queryname sorted
