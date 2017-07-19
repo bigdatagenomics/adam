@@ -305,7 +305,7 @@ read a genomic dataset into memory, this condition is met.
 ADAM has a variety of region join types that you can perform on your data, and
 all are called in a similar way:
 
-####[Joins Available](img/join_examples.png)
+#### [Joins Available](img/join_examples.png)
 
 * Joins implemented across both shuffle and broadcast
   * Inner join
@@ -413,7 +413,7 @@ val variantsByFeatureShuffle = features.shuffleRegionJoinAndGroupByLeft(variants
 val variantsByFeatureBcast = variants.broadcastRegionJoinAndGroupByRight(features)
 ```
 
-When we switch join strategies, to swap which dataset is on the left side of
+When we switch join strategies, we swap which dataset is on the left side of
 the join. BroadcastRegionJoin only supports grouping by the right dataset, and
 ShuffleRegionJoin supports only grouping by the left dataset.
 
