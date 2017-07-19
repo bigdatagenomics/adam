@@ -59,7 +59,7 @@ private object TwoBitFile {
 class TwoBitFile(byteAccess: ByteAccess) extends ReferenceFile {
 
   // load file into memory
-  private[util] val bytes = ByteBuffer.wrap(byteAccess.readFully(0, byteAccess.length().toInt))
+  @transient private[util] val bytes = ByteBuffer.wrap(byteAccess.readFully(0, byteAccess.length().toInt))
   private[util] val numSeq = readHeader()
   // hold current byte position of start of current index record
   var indexRecordStart = TwoBitFile.FILE_INDEX_OFFSET
