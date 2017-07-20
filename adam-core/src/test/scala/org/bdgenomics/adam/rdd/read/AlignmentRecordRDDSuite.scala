@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
+import org.apache.spark.api.java.function.Function2
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.bdgenomics.adam.converters.DefaultHeaderLines
@@ -32,7 +33,7 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.TestSaveArgs
+import org.bdgenomics.adam.rdd.{ ADAMContext, TestSaveArgs }
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
@@ -53,6 +54,7 @@ import org.bdgenomics.adam.sql.{
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.{ CRAMInputFormat, SAMFormat }
+import scala.collection.JavaConversions._
 import scala.util.Random
 
 private object SequenceIndexWithReadOrdering extends Ordering[((Int, Long), (AlignmentRecord, Int))] {
@@ -63,6 +65,13 @@ private object SequenceIndexWithReadOrdering extends Ordering[((Int, Long), (Ali
     } else {
       a._1._1.compareTo(b._1._1)
     }
+  }
+}
+
+class SameTypeFunction2 extends Function2[AlignmentRecordRDD, RDD[AlignmentRecord], AlignmentRecordRDD] {
+
+  def call(v1: AlignmentRecordRDD, v2: RDD[AlignmentRecord]): AlignmentRecordRDD = {
+    ADAMContext.sameTypeConversionFn[AlignmentRecord, AlignmentRecordRDD](v1, v2)
   }
 }
 
@@ -793,6 +802,23 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val uFormatter = new AnySAMOutFormatter
 
     val pipedRdd: AlignmentRecordRDD = ardd.pipe("tee /dev/null")
+    val newRecords = pipedRdd.rdd.count
+    assert(records === newRecords)
+  }
+
+  sparkTest("don't lose any reads when piping as SAM using java pipe") {
+    val reads12Path = testFile("reads12.sam")
+    val ardd = sc.loadBam(reads12Path)
+    val records = ardd.rdd.count
+
+    val pipedRdd = ardd.pipe[AlignmentRecord, AlignmentRecordRDD, SAMInFormatter](
+      "tee /dev/null",
+      (List.empty[String]: java.util.List[String]),
+      (Map.empty[String, String]: java.util.Map[String, String]),
+      0,
+      classOf[SAMInFormatter],
+      new AnySAMOutFormatter,
+      new SameTypeFunction2)
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
   }

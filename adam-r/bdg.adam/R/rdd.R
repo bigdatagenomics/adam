@@ -20,8 +20,14 @@ library(SparkR)
 setOldClass("jobj")
 
 #' @export
-setClass("AlignmentRecordRDD",
+setClass("GenomicRDD",
          slots = list(jrdd = "jobj"))
+
+
+#' @export
+setClass("AlignmentRecordRDD",
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicRDD")
 
 AlignmentRecordRDD <- function(jrdd) {
     new("AlignmentRecordRDD", jrdd = jrdd)
@@ -29,7 +35,8 @@ AlignmentRecordRDD <- function(jrdd) {
 
 #' @export
 setClass("CoverageRDD",
-         slots = list(jrdd = "jobj"))
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicRDD")
 
 CoverageRDD <- function(jrdd) {
     new("CoverageRDD", jrdd = jrdd)
@@ -37,7 +44,8 @@ CoverageRDD <- function(jrdd) {
 
 #' @export
 setClass("FeatureRDD",
-         slots = list(jrdd = "jobj"))
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicRDD")
 
 FeatureRDD <- function(jrdd) {
     new("FeatureRDD", jrdd = jrdd)
@@ -45,7 +53,8 @@ FeatureRDD <- function(jrdd) {
 
 #' @export
 setClass("FragmentRDD",
-         slots = list(jrdd = "jobj"))
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicRDD")
 
 FragmentRDD <- function(jrdd) {
     new("FragmentRDD", jrdd = jrdd)
@@ -53,7 +62,8 @@ FragmentRDD <- function(jrdd) {
 
 #' @export
 setClass("GenotypeRDD",
-         slots = list(jrdd = "jobj"))
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicRDD")
 
 GenotypeRDD <- function(jrdd) {
     new("GenotypeRDD", jrdd = jrdd)
@@ -61,7 +71,8 @@ GenotypeRDD <- function(jrdd) {
 
 #' @export
 setClass("NucleotideContigFragmentRDD",
-         slots = list(jrdd = "jobj"))
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicRDD")
 
 NucleotideContigFragmentRDD <- function(jrdd) {
     new("NucleotideContigFragmentRDD", jrdd = jrdd)
@@ -69,11 +80,92 @@ NucleotideContigFragmentRDD <- function(jrdd) {
 
 #' @export
 setClass("VariantRDD",
-         slots = list(jrdd = "jobj"))
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicRDD")
 
 VariantRDD <- function(jrdd) {
     new("VariantRDD", jrdd = jrdd)
 }
+
+#'
+#' Pipes genomic data to a subprocess that runs in parallel using Spark.
+#' 
+#' Files are substituted in to the command with a $x syntax. E.g., to invoke
+#' a command that uses the first file from the files Seq, use $0. To access
+#' the path to the directory where the files are copied, use $root.
+#' 
+#' Pipes require the presence of an InFormatterCompanion and an OutFormatter
+#' as implicit values. The InFormatterCompanion should be a singleton whose
+#' apply method builds an InFormatter given a specific type of GenomicRDD.
+#' The implicit InFormatterCompanion yields an InFormatter which is used to
+#' format the input to the pipe, and the implicit OutFormatter is used to
+#' parse the output from the pipe.
+#'
+#' @param cmd The command to run.
+#' @param tFormatter The name of the ADAM in-formatter class to use.
+#' @param xFormatter The name of the ADAM out-formatter class to use.
+#' @param convFn The name of the ADAM GenomicRDD conversion class to
+#'   use.
+#' @param files The files to copy locally onto all executors. Set to
+#'   None (default) to omit.
+#' @param environment The environment variables to set on the
+#'   executor. Set to None (default) to omit.
+#' @param flankSize The number of bases of flanking sequence to have
+#'   around each partition. Defaults to 0.
+#' @return Returns a new RDD where the input from the original RDD has
+#'   been piped through a command that runs locally on each executor.
+#'
+#' @export
+setMethod("pipe",
+          signature(ardd = "GenomicRDD",
+                    cmd = "character",
+                    tFormatter = "character",
+                    xFormatter = "character",
+                    convFn = "character"),
+          function(ardd,
+                   cmd,
+                   tFormatter,
+                   xFormatter,
+                   convFn,
+                   files = NA,
+                   environment = NA,
+                   flankSize = 0) {
+
+              tFormatterClass = sparkR.callJStatic("java.lang.Class",
+                                                   "forName",
+                                                   tFormatter)
+        
+              xFormatterClass = sparkR.callJStatic("java.lang.Class",
+                                                   "forName",
+                                                   xFormatter)
+              xFormatterInst = sparkR.callJMethod(xFormatterClass,
+                                                  "newInstance")
+              
+              convFnClass = sparkR.callJStatic("java.lang.Class",
+                                               "forName",
+                                               convFn)
+              convFnInst = sparkR.callJMethod(convFnClass,
+                                              "newInstance")
+              
+              if (is.na(files)) {
+                  files = list()
+              }
+              
+              if (is.na(environment)) {
+                  environment = new.env()
+              }
+
+              rdd = sparkR.callJMethod(ardd@jrdd,
+                                       "pipe",
+                                       cmd,
+                                       files,
+                                       environment,
+                                       flankSize,
+                                       tFormatterClass,
+                                       xFormatterInst,
+                                       convFnInst)
+              replaceRdd(ardd, rdd)
+          })
 
 #' Converts this GenomicRDD into a dataframe.
 #'
@@ -86,6 +178,13 @@ setMethod("toDF",
           function(ardd) {
               sdf = sparkR.callJMethod(ardd@jrdd, "toDF")
               new("SparkDataFrame", sdf, FALSE)
+          })
+
+setMethod("replaceRdd",
+          signature(ardd = "AlignmentRecordRDD",
+                    rdd = "jobj"),
+          function(ardd, rdd) {
+              AlignmentRecordRDD(rdd)
           })
 
 #' Convert this set of reads into fragments.
@@ -313,6 +412,13 @@ setMethod("toDF",
               new("SparkDataFrame", sparkR.callJMethod(ardd@jrdd, "toDF"), FALSE)
           })
 
+setMethod("replaceRdd",
+          signature(ardd = "CoverageRDD",
+                    rdd = "jobj"),
+          function(ardd, rdd) {
+              CoverageRDD(rdd)
+          })
+
 #' Saves coverage as a feature file.
 #'
 #' @param filePath The location to write the output.
@@ -392,6 +498,13 @@ setMethod("flatten", signature(ardd = "CoverageRDD"),
               CoverageRDD(sparkR.callJMethod(ardd@jrdd, "flatten"))
           })
 
+setMethod("replaceRdd",
+          signature(ardd = "FeatureRDD",
+                    rdd = "jobj"),
+          function(ardd, rdd) {
+              FeatureRDD(rdd)
+          })
+
 #' Converts this GenomicRDD into a dataframe.
 #'
 #' @param ardd The RDD to convert into a dataframe.
@@ -435,6 +548,13 @@ setMethod("toCoverage", signature(ardd = "FeatureRDD"),
               CoverageRDD(sparkR.callJMethod(ardd@jrdd, "toCoverage"))
           })
 
+setMethod("replaceRdd",
+          signature(ardd = "FragmentRDD",
+                    rdd = "jobj"),
+          function(ardd, rdd) {
+              FragmentRDD(rdd)
+          })
+
 #' Converts this GenomicRDD into a dataframe.
 #'
 #' @param ardd The RDD to convert into a dataframe.
@@ -476,6 +596,13 @@ setMethod("markDuplicates", signature(ardd = "FragmentRDD"),
 setMethod("save", signature(ardd = "FragmentRDD", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath))
+          })
+
+setMethod("replaceRdd",
+          signature(ardd = "GenotypeRDD",
+                    rdd = "jobj"),
+          function(ardd, rdd) {
+              GenotypeRDD(rdd)
           })
 
 #' Converts this GenomicRDD into a dataframe.
@@ -550,6 +677,13 @@ setMethod("saveAsVcf", signature(ardd = "GenotypeRDD", filePath = "character"),
                                            stringency))
           })
 
+setMethod("replaceRdd",
+          signature(ardd = "NucleotideContigFragmentRDD",
+                    rdd = "jobj"),
+          function(ardd, rdd) {
+              NucleotideContigFragmentRDD(rdd)
+          })
+
 #' Converts this GenomicRDD into a dataframe.
 #'
 #' @param ardd The RDD to convert into a dataframe.
@@ -589,6 +723,13 @@ setMethod("flankAdjacentFragments",
               NucleotideContigFragmentRDD(sparkR.callJMethod(ardd@jrdd,
                                                              "flankAdjacentFragments",
                                                              flankLength))
+          })
+
+setMethod("replaceRdd",
+          signature(ardd = "VariantRDD",
+                    rdd = "jobj"),
+          function(ardd, rdd) {
+              VariantRDD(rdd)
           })
 
 #' Converts this GenomicRDD into a dataframe.

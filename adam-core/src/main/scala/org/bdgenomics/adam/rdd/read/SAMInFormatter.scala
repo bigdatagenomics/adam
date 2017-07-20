@@ -45,6 +45,10 @@ case class SAMInFormatter private (
     recordGroups: RecordGroupDictionary,
     converter: AlignmentRecordConverter) extends AnySAMInFormatter[SAMInFormatter] {
 
+  def this() = {
+    this(null, null, null)
+  }
+
   protected val companion = SAMInFormatter
 
   protected def makeWriter(os: OutputStream): SAMFileWriter = {

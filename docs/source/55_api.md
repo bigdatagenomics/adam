@@ -51,14 +51,14 @@ ADAM.
 ADAM's Python API wraps the [ADAMContext](#adam-context) and
 [GenomicRDD](#genomic-rdd) APIs so they can be used from PySpark. The Python API
 is feature complete relative to ADAM's Java API, with the exception of the
-[region join](#join) and [pipe](#pipes) APIs, which are not supported.
+[region join](#join) API, which is not supported.
 
 ## The ADAM R API {#r}
 
 ADAM's R API wraps the [ADAMContext](#adam-context) and
 [GenomicRDD](#genomic-rdd) APIs so they can be used from SparkR. The R API
 is feature complete relative to ADAM's Java API, with the exception of the
-[region join](#join) and [pipe](#pipes) APIs, which are not supported.
+[region join](#join) API, which is not supported.
 
 ## Loading data with the ADAMContext {#adam-context}
 
@@ -540,3 +540,93 @@ machine in our cluster. We suggest several different approaches:
   your cluster.
 * Run the command using a container system such as [Docker](https://docker.io)
   or [Singularity](http://singularity.lbl.gov/).
+
+### Using the Pipe API from Java {#java-pipes}
+
+The pipe API example above uses Scala's implicit system and type inference to make
+it easier to use the pipe API. However, we also provide a Java equivalent. There are
+several changes:
+
+* The out-formatter is provided explicitly.
+* Instead of implicitly providing the companion object for the in-formatter,
+  you provide the class of the in-formatter. This allows us to access the
+  companion object via reflection.
+* For the conversion function, you can provide any function that implements the
+  `org.apache.spark.api.java.Function2` interface. We provide common functions
+  equivalent to those in `ADAMContext` in
+  `org.bdgenomics.adam.api.java.GenomicRDDConverters`.
+
+To run the Scala example code above using Java, we would write:
+
+```java
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.bdgenomics.adam.models.VariantContext
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD;
+import org.bdgenomics.adam.rdd.read.SAMInFormatter;
+import org.bdgenomics.adam.rdd.variant.VariantContextRDD;
+import org.bdgenomics.adam.rdd.variant.VCFOutFormatter;
+import org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter;
+
+class PipeRunner {
+
+  VariantContextRDD runPipe(AlignmentRecordRDD reads) {
+
+    List<String> files = new ArrayList<String>();
+    files.add("hdfs://mynamenode/my/reference/genome.fa")
+
+    Map<String, String> env = new HashMap<String, String>();
+
+    return reads.pipe<VariantContext,
+                      VariantContextRDD,
+                      SAMInFormatter>("my_variant_caller -R $0",
+                                      files,
+                                      env,
+                                      0,
+                                      SAMInFormatter.class,
+                                      new VCFOutFormatter,
+                                      new AlignmentRecordToVariantContextConverter);
+  }
+}
+```
+
+### Using the Pipe API from Python/R {#python-r-pipes}
+
+Python and R follow the same calling style as the [Java pipe API](#java-pipes),
+but the in/out-formatter and conversion functions are passed by name. We then
+use the classnames that are passed to the function to create the objects via
+reflection. To run the example code from above in Python, we would write:
+
+```python
+from bigdatagenomics.adam.adamContext import ADAMContext
+
+ac = ADAMContext(self.sc)
+reads = ac.loadAlignments("hdfs://mynamenode/my/read/file.bam")
+
+variants = reads.pipe("my_variant_caller -R $0",
+                      "org.bdgenomics.adam.rdd.read.SAMInFormatter",
+                      "org.bdgenomics.adam.rdd.variant.VCFOutFormatter",
+                      "org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter",
+                      files=[ "hdfs://mynamenode/my/reference/genome.fa" ])
+```
+
+In R, we would write:
+
+```R
+library(bdg.adam)
+
+ac <- ADAMContext(sc)
+
+reads <- loadAlignments(ac, "hdfs://mynamenode/my/read/file.bam")
+
+files <- list("hdfs://mynamenode/my/reference/genome.fa")
+
+variants <- pipe(reads,
+                 "my_variant_caller -R $0",
+                 "org.bdgenomics.adam.rdd.read.SAMInFormatter",
+                 "org.bdgenomics.adam.rdd.variant.VCFOutFormatter",
+                 "org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter",
+                 files=files)
+```
