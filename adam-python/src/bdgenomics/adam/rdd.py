@@ -74,7 +74,68 @@ class GenomicRDD(object):
         return self._replaceRdd(self._jvmRdd.union(map(lambda x: x._jvmRdd,
                                                        rdds)))
     
+    def pipe(self,
+             cmd,
+             tFormatter,
+             xFormatter,
+             convFn,
+             files=None,
+             environment=None,
+             flankSize=0):
+        """
+        Pipes genomic data to a subprocess that runs in parallel using Spark.
+        
+        Files are substituted in to the command with a $x syntax. E.g., to invoke
+        a command that uses the first file from the files Seq, use $0. To access
+        the path to the directory where the files are copied, use $root.
+        
+        Pipes require the presence of an InFormatterCompanion and an OutFormatter
+        as implicit values. The InFormatterCompanion should be a singleton whose
+        apply method builds an InFormatter given a specific type of GenomicRDD.
+        The implicit InFormatterCompanion yields an InFormatter which is used to
+        format the input to the pipe, and the implicit OutFormatter is used to
+        parse the output from the pipe.
 
+        :param str cmd: The command to run.
+        :param str tFormatter: The name of the ADAM in-formatter class to use.
+        :param str xFormatter: The name of the ADAM out-formatter class to use.
+        :param str convFn: The name of the ADAM GenomicRDD conversion class to
+        use.
+        :param list files: The files to copy locally onto all executors. Set to
+        None (default) to omit.
+        :param dict environment: The environment variables to set on the
+        executor. Set to None (default) to omit.
+        :param int flankSize: The number of bases of flanking sequence to have
+        around each partition. Defaults to 0.
+        :return: Returns a new RDD where the input from the original RDD has
+        been piped through a command that runs locally on each executor.
+        """
+
+        jvm = self.sc._jvm
+
+        tFormatterClass = jvm.java.lang.Class.forName(tFormatter)
+        
+        xFormatterClass = jvm.java.lang.Class.forName(xFormatter)
+        xFormatterInst = xFormatterClass.newInstance()
+
+        convFnClass = jvm.java.lang.Class.forName(convFn)
+        convFnInst = convFnClass.newInstance()
+        
+        if files is None:
+            files = []
+
+        if environment is None:
+            environment = {}
+
+        return self._replaceRdd(self._jvmRdd.pipe(cmd,
+                                                  files,
+                                                  environment,
+                                                  flankSize,
+                                                  tFormatterClass,
+                                                  xFormatterInst,
+                                                  convFnInst))
+
+    
 class AlignmentRecordRDD(GenomicRDD):
 
 

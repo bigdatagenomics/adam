@@ -57,8 +57,16 @@ setGeneric("loadVariants",
 
 # @rdname GenomicRDD
 # @export
+setGeneric("pipe",
+           function(ardd, cmd, tFormatter, xFormatter, convFn, ...) { standardGeneric("pipe") })
+
+# @rdname GenomicRDD
+# @export
 setGeneric("toDF",
            function(ardd) { standardGeneric("toDF") })
+
+setGeneric("replaceRdd",
+           function(ardd, rdd) { standardGeneric("replaceRdd") })
 
 # @rdname GenomicRDD
 # @export

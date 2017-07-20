@@ -25,8 +25,8 @@ import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark.api.java.function.{ Function => JFunction, Function2 }
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ DataFrame, Dataset }
 import org.apache.spark.storage.StorageLevel
@@ -565,6 +565,102 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       // outside of their own partition's region bound
       newRdd.transform(_.mapPartitionsWithIndex(filterPartition))
     }
+  }
+
+  /**
+   * Pipes genomic data to a subprocess that runs in parallel using Spark.
+   *
+   * SparkR friendly variant.
+   *
+   * @param cmd Command to run.
+   * @param files Files to make locally available to the commands being run.
+   *   Default is empty.
+   * @param environment A map containing environment variable/value pairs to set
+   *   in the environment for the newly created process. Default is empty.
+   * @param flankSize Number of bases to flank each command invocation by.
+   * @param tFormatter Class of formatter for data going into pipe command.
+   * @param xFormatter Formatter for data coming out of the pipe command.
+   * @param convFn The conversion function used to build the final RDD.
+   * @return Returns a new GenomicRDD of type Y.
+   *
+   * @tparam X The type of the record created by the piped command.
+   * @tparam Y A GenomicRDD containing X's.
+   * @tparam V The InFormatter to use for formatting the data being piped to the
+   *   command.
+   */
+  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: String,
+                                                                files: Seq[Any],
+                                                                environment: java.util.Map[Any, Any],
+                                                                flankSize: java.lang.Double,
+                                                                tFormatter: Class[V],
+                                                                xFormatter: OutFormatter[X],
+                                                                convFn: Function2[U, RDD[X], Y]): Y = {
+    pipe(cmd,
+      files.asInstanceOf[Seq[String]].toList,
+      environment.asInstanceOf[java.util.Map[String, String]],
+      flankSize.toInt,
+      tFormatter,
+      xFormatter,
+      convFn)
+  }
+
+  /**
+   * Pipes genomic data to a subprocess that runs in parallel using Spark.
+   *
+   * Java/PySpark friendly variant.
+   *
+   * @param cmd Command to run.
+   * @param files Files to make locally available to the commands being run.
+   *   Default is empty.
+   * @param environment A map containing environment variable/value pairs to set
+   *   in the environment for the newly created process. Default is empty.
+   * @param flankSize Number of bases to flank each command invocation by.
+   * @param tFormatter Class of formatter for data going into pipe command.
+   * @param xFormatter Formatter for data coming out of the pipe command.
+   * @param convFn The conversion function used to build the final RDD.
+   * @return Returns a new GenomicRDD of type Y.
+   *
+   * @tparam X The type of the record created by the piped command.
+   * @tparam Y A GenomicRDD containing X's.
+   * @tparam V The InFormatter to use for formatting the data being piped to the
+   *   command.
+   */
+  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: String,
+                                                                files: java.util.List[String],
+                                                                environment: java.util.Map[String, String],
+                                                                flankSize: java.lang.Integer,
+                                                                tFormatter: Class[V],
+                                                                xFormatter: OutFormatter[X],
+                                                                convFn: Function2[U, RDD[X], Y]): Y = {
+
+    // get companion object for in formatter
+    val tFormatterCompanion = {
+      val companionType = try {
+        tFormatter.getMethod("companion")
+          .getReturnType
+      } catch {
+        case e: Throwable => {
+          throw new IllegalArgumentException(
+            "Failed to get companion apply method for user provided InFormatter (%s). Exception was: %s.".format(
+              tFormatter.getName,
+              e))
+        }
+      }
+
+      val tFormatterCompanionConstructors = companionType.getDeclaredConstructors()
+      val tFormatterCompanionConstructor = tFormatterCompanionConstructors.head
+      tFormatterCompanionConstructor.setAccessible(true)
+
+      tFormatterCompanionConstructor.newInstance()
+        .asInstanceOf[InFormatterCompanion[T, U, V]]
+    }
+
+    pipe(cmd, files.toSeq, environment.toMap, flankSize)(
+      tFormatterCompanion,
+      xFormatter,
+      (gRdd: U, rdd: RDD[X]) => convFn.call(gRdd, rdd),
+      ClassTag.AnyRef.asInstanceOf[ClassTag[T]],
+      ClassTag.AnyRef.asInstanceOf[ClassTag[X]])
   }
 
   protected def replaceRdd(

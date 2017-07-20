@@ -506,7 +506,7 @@ object ADAMContext {
     new DatasetBoundFeatureRDD(ds, gRdd.sequences)
   }
 
-  implicit def fragmentsToFragmentsConversionFn(
+  implicit def fragmentsToAlignmentRecordsConversionFn(
     gRdd: FragmentRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
@@ -761,13 +761,13 @@ object ADAMContext {
     new DatasetBoundCoverageRDD(ds, gRdd.sequences)
   }
 
-  implicit def genotypesToFeatureConversionFn(
+  implicit def genotypesToFeaturesConversionFn(
     gRdd: GenotypeRDD,
     rdd: RDD[Feature]): FeatureRDD = {
     new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
   }
 
-  implicit def genotypesToFeatureDatasetConversionFn(
+  implicit def genotypesToFeaturesDatasetConversionFn(
     gRdd: GenotypeRDD,
     ds: Dataset[FeatureProduct]): FeatureRDD = {
     new DatasetBoundFeatureRDD(ds, gRdd.sequences)
@@ -861,13 +861,13 @@ object ADAMContext {
     new DatasetBoundCoverageRDD(ds, gRdd.sequences)
   }
 
-  implicit def variantsToFeatureConversionFn(
+  implicit def variantsToFeaturesConversionFn(
     gRdd: VariantRDD,
     rdd: RDD[Feature]): FeatureRDD = {
     new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
   }
 
-  implicit def variantsToFeatureDatasetConversionFn(
+  implicit def variantsToFeaturesDatasetConversionFn(
     gRdd: VariantRDD,
     ds: Dataset[FeatureProduct]): FeatureRDD = {
     new DatasetBoundFeatureRDD(ds, gRdd.sequences)
@@ -951,7 +951,7 @@ object ADAMContext {
     new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
   }
 
-  implicit def variantContextsToFeatureConversionFn(
+  implicit def variantContextsToFeaturesConversionFn(
     gRdd: VariantContextRDD,
     rdd: RDD[Feature]): FeatureRDD = {
     new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
@@ -987,7 +987,7 @@ object ADAMContext {
       None)
   }
 
-  implicit def variantContextsToVariantConversionFn(
+  implicit def variantContextsToVariantsConversionFn(
     gRdd: VariantContextRDD,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,

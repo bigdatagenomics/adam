@@ -92,3 +92,20 @@ class AlignmentRecordRDDTest(SparkTestCase):
         kmers = reads.countKmers(6)
 
         self.assertEquals(kmers.count(), 1040)
+
+
+    def test_pipe_as_sam(self):
+
+        reads12Path = self.resourceFile("reads12.sam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadAlignments(reads12Path)
+
+        pipedRdd = reads.pipe("tee /dev/null",
+                              "org.bdgenomics.adam.rdd.read.SAMInFormatter",
+                              "org.bdgenomics.adam.rdd.read.AnySAMOutFormatter",
+                              "org.bdgenomics.adam.api.java.AlignmentRecordsToAlignmentRecordsConverter")
+
+        self.assertEquals(reads.toDF().count(), pipedRdd.toDF().count())
+
+        
