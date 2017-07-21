@@ -44,6 +44,7 @@ import org.bdgenomics.utils.interval.array.{
 }
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class VariantArray(
     array: Array[(ReferenceRegion, Variant)],
@@ -194,6 +195,8 @@ case class RDDBoundVariantRDD private[rdd] (
 }
 
 sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct, VariantRDD] {
+
+  @transient val uTag: TypeTag[VariantProduct] = typeTag[VariantProduct]
 
   val headerLines: Seq[VCFHeaderLine]
 

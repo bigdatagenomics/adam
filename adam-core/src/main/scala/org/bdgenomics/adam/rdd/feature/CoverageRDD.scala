@@ -36,6 +36,7 @@ import org.bdgenomics.utils.interval.array.{
 }
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class CoverageArray(
     array: Array[(ReferenceRegion, Coverage)],
@@ -151,6 +152,8 @@ case class RDDBoundCoverageRDD private[rdd] (
 }
 
 abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRDD] {
+
+  @transient val uTag: TypeTag[Coverage] = typeTag[Coverage]
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Coverage)])(
     implicit tTag: ClassTag[Coverage]): IntervalArray[ReferenceRegion, Coverage] = {

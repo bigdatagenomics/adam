@@ -82,3 +82,27 @@ test_that("pipe as sam", {
     expect_equal(count(toDF(reads)),
                  count(toDF(pipedRdd)))
 })
+
+test_that("transform dataframe of reads", {
+
+    readsPath <- resourceFile("unsorted.sam")
+    reads <- loadAlignments(ac, readsPath)
+
+    transformedReads = transform(reads, function(df) {
+        filter(df, df$contigName == "1")
+    })
+
+    expect_equal(count(toDF(transformedReads)), 1)
+})
+
+test_that("transmute to coverage", {
+    readsPath <- resourceFile("unsorted.sam")
+    reads <- loadAlignments(ac, readsPath)
+
+    readsAsCoverage = transmute(reads, function(df) {
+        select(df, df$contigName, df$start, df$end, alias(cast(df$mapq, "double"), "count"))
+    }, "CoverageRDD")
+
+    expect_true(is(readsAsCoverage, "CoverageRDD"))
+    expect_equal(count(toDF(readsAsCoverage)), 5)
+})

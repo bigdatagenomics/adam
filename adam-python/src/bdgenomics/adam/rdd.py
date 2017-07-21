@@ -16,12 +16,14 @@
 # limitations under the License.
 #
 
+import logging
 
 from pyspark.rdd import RDD
 from pyspark.sql import DataFrame, SQLContext
 
 from bdgenomics.adam.stringency import LENIENT, _toJava
 
+_log = logging.getLogger(__name__)
 
 class GenomicRDD(object):
 
@@ -73,7 +75,88 @@ class GenomicRDD(object):
 
         return self._replaceRdd(self._jvmRdd.union(map(lambda x: x._jvmRdd,
                                                        rdds)))
-    
+
+
+    def _wrapTransformation(self,
+                            tFn):
+
+        # apply the lambda
+        newDf = tFn(self.toDF())
+
+        # wrap it in a conversion function
+        jvm = self.sc._jvm
+        return jvm.org.bdgenomics.adam.api.python.DataFrameConversionWrapper(newDf._jdf)
+
+        
+    def transform(self, tFn):
+        """
+        Applies a function that transforms the underlying DataFrame into a new DataFrame
+        using the Spark SQL API.
+
+        :param function tFn: A function that transforms the underlying RDD as a DataFrame.
+        :return: A new RDD where the RDD of genomic data has been replaced, but the
+        metadata (sequence dictionary, and etc) is copied without modification.
+        """
+
+        # apply the lambda to the underlying DF
+        dfFn = self._wrapTransformation(tFn)
+        
+        return self._replaceRdd(self._jvmRdd.transformDataFrame(dfFn))
+
+
+    def transmute(self, tFn, destClass, convFn=None):
+        """
+        Applies a function that transmutes the underlying DataFrame into a new RDD of a
+        different type.
+
+        :param function tFn: A function that transforms the underlying RDD as a DataFrame.
+        :param str convFn: The name of the ADAM GenomicDatasetConversion class to
+        use.
+        :param class destClass: The destination class of this transmutation.
+        :return: A new RDD where the RDD of genomic data has been replaced, but the
+        metadata (sequence dictionary, and etc) is copied without modification.
+        """
+
+        # apply the lambda to the underlying DF
+        dfFn = self._wrapTransformation(tFn)
+
+        # if no conversion function is provided, try to infer
+        if convFn is None:
+            convFn = self._inferConversionFn(destClass)
+
+        # create an instance of the conversion
+        jvm = self.sc._jvm
+        convFnClass = jvm.java.lang.Class.forName(convFn)
+        convFnInst = convFnClass.newInstance()
+
+        return destClass(self._jvmRdd.transmuteDataFrame(dfFn, convFnInst), self.sc)
+
+
+    def _inferConversionFn(self, destClass):
+
+        raise NotImplementedError("This class does not implement conversion function inference.")
+
+
+    def _destClassSuffix(self, destClass):
+
+        if destClass is NucleotideContigFragmentRDD:
+            return "ContigsDatasetConverter"
+        elif destClass is CoverageRDD:
+            return "CoverageDatasetConverter"
+        elif destClass is FeatureRDD:
+            return "FeaturesDatasetConverter"
+        elif destClass is FragmentRDD:
+            return "FragmentDatasetConverter"
+        elif destClass is AlignmentRecordRDD:
+            return "AlignmentRecordDatasetConverter"
+        elif destClass is GenotypeRDD:
+            return "GenotypeDatasetConverter"
+        elif destClass is VariantRDD:
+            return "VariantDatasetConverter"
+        else:
+            raise ValueError("No conversion method known for %s." % destClass)
+
+        
     def pipe(self,
              cmd,
              tFormatter,
@@ -172,7 +255,12 @@ class AlignmentRecordRDD(GenomicDataset):
 
         return AlignmentRecordRDD(newRdd, self.sc)
 
-    
+
+    def _inferConversionFn(self, destClass):
+
+        return "org.bdgenomics.adam.api.java.AlignmentRecordsTo%s" % self._destClassSuffix(destClass)
+        
+            
     def toFragments(self):
         """
         Convert this set of reads into fragments.
@@ -592,6 +680,11 @@ class CoverageRDD(GenomicDataset):
         return CoverageRDD(self._jvmRdd.flatten(), self.sc)
 
 
+    def _inferConversionFn(self, destClass):
+
+        return "org.bdgenomics.adam.api.java.CoverageTo%s" % self._destClassSuffix(destClass)
+
+
 class FeatureRDD(GenomicDataset):
 
 
@@ -637,6 +730,11 @@ class FeatureRDD(GenomicDataset):
         """
 
         return CoverageRDD(self._jvmRdd.toCoverage(), self.sc)
+
+
+    def _inferConversionFn(self, destClass):
+
+        return "org.bdgenomics.adam.api.java.FeaturesTo%s" % self._destClassSuffix(destClass)
 
 
 class FragmentRDD(GenomicDataset):
@@ -693,6 +791,11 @@ class FragmentRDD(GenomicDataset):
         self._jvmRdd.save(filePath)
 
 
+    def _inferConversionFn(self, destClass):
+
+        return "org.bdgenomics.adam.api.java.FragmentsTo%s" % self._destClassSuffix(destClass)
+
+
 class GenotypeRDD(GenomicDataset):
 
 
@@ -731,6 +834,11 @@ class GenotypeRDD(GenomicDataset):
 
         vcs = self._jvmRdd.toVariantContextRDD()
         return VariantContextRDD(vcs, self.sc)
+
+
+    def _inferConversionFn(self, destClass):
+
+        return "org.bdgenomics.adam.api.java.GenotypesTo%s" % self._destClassSuffix(destClass)
 
 
 class NucleotideContigFragmentRDD(GenomicDataset):
@@ -796,6 +904,11 @@ class NucleotideContigFragmentRDD(GenomicDataset):
         return RDD(self._jvmRdd.countKmers(kmerLength), self.sc)
 
 
+    def _inferConversionFn(self, destClass):
+
+        return "org.bdgenomics.adam.api.java.ContigsTo%s" % self._destClassSuffix(destClass)
+
+
 class VariantRDD(GenomicDataset):
 
 
@@ -836,6 +949,11 @@ class VariantRDD(GenomicDataset):
         self._jvmRdd.saveAsParquet(filePath)
 
 
+    def _inferConversionFn(self, destClass):
+
+        return "org.bdgenomics.adam.api.java.VariantsTo%s" % self._destClassSuffix(destClass)
+
+    
 class VariantContextRDD(GenomicRDD):
 
 
