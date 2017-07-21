@@ -3,12 +3,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.bdgenomics.adam</groupId>
-    <artifactId>adam-parent_2.10</artifactId>
+    <artifactId>adam-parent-spark2_2.11</artifactId>
     <version>0.23.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-cli_2.10</artifactId>
+  <artifactId>adam-cli-spark2_2.11</artifactId>
   <packaging>jar</packaging>
   <name>ADAM_${scala.version.prefix}: CLI</name>
   <properties>
@@ -117,28 +117,28 @@
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>
-      <artifactId>utils-misc_${scala.version.prefix}</artifactId>
+      <artifactId>utils-misc-spark2_${scala.version.prefix}</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>
-      <artifactId>utils-misc_${scala.version.prefix}</artifactId>
+      <artifactId>utils-misc-spark2_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>
-      <artifactId>utils-io_${scala.version.prefix}</artifactId>
+      <artifactId>utils-io-spark2_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>
-      <artifactId>utils-cli_${scala.version.prefix}</artifactId>
+      <artifactId>utils-cli-spark2_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>
-      <artifactId>utils-metrics_${scala.version.prefix}</artifactId>
+      <artifactId>utils-metrics-spark2_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -148,23 +148,23 @@
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core_${scala.version.prefix}</artifactId>
+      <artifactId>adam-core-spark2_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core_${scala.version.prefix}</artifactId>
+      <artifactId>adam-core-spark2_${scala.version.prefix}</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-apis_${scala.version.prefix}</artifactId>
+      <artifactId>adam-apis-spark2_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-apis_${scala.version.prefix}</artifactId>
+      <artifactId>adam-apis-spark2_${scala.version.prefix}</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

@@ -1789,6 +1789,40 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  def loadPartitionedParquetAlignments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, partitionSize: Int = 1000000): AlignmentRecordRDD = {
+
+    require(checkPartitionedParquetFlag(pathName),
+      "input Parquet files are not Partitioned")
+
+    // convert avro to sequence dictionary
+    val sd = loadAvroSequenceDictionary(pathName)
+
+    // convert avro to sequence dictionary
+    val rgd = loadAvroRecordGroupDictionary(pathName)
+
+    val pgs = loadAvroPrograms(pathName)
+    val reads = ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd, pgs)
+
+    val datasetBoundAlignmentRecordRDD: AlignmentRecordRDD = regions match {
+      case Some(x) => {
+        var regionQueryString = "(contigName=" + "\'" + x.head.referenceName + "\' and posBin >= \'" +
+          scala.math.floor(x.head.start / partitionSize).toInt + "\')"
+        if (x.size > 1) {
+          x.foreach((i) => {
+            regionQueryString = regionQueryString + " or " + "(contigName=" + "\'" +
+              i.referenceName + "\' and posBin >= \'" + scala.math.floor(i.start / partitionSize).toInt + "\')"
+          })
+        }
+        DatasetBoundAlignmentRecordRDD(reads.dataset.filter(regionQueryString), reads.sequences, reads.recordGroups, reads.processingSteps)
+      }
+
+      case _ => DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
+    }
+
+    datasetBoundAlignmentRecordRDD
+
+  }
+
   /**
    * Load unaligned alignment records from interleaved FASTQ into an AlignmentRecordRDD.
    *
@@ -2105,6 +2139,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  def loadPartitionedParquetGenotypes(pathName: String): GenotypeRDD = {
+    if (!checkPartitionedParquetFlag(pathName)) {
+      throw new IllegalArgumentException("input Parquet files are not Partitioned")
+    }
+    // load header lines
+    val headers = loadHeaderLines(pathName)
+    // load sequence info
+    val sd = loadAvroSequenceDictionary(pathName)
+    // load avro record group dictionary and convert to samples
+    val samples = loadAvroSamples(pathName)
+
+    val genotypes = ParquetUnboundGenotypeRDD(sc, pathName, sd, samples, headers)
+    DatasetBoundGenotypeRDD(genotypes.dataset, genotypes.sequences, genotypes.samples, genotypes.headerLines)
+  }
+
   /**
    * Load a path name in Parquet + Avro format into a VariantRDD.
    *
@@ -2136,6 +2185,19 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
+  }
+
+  def loadPartitionedParquetVariants(pathName: String): VariantRDD = {
+    if (!checkPartitionedParquetFlag(pathName)) {
+      throw new IllegalArgumentException("input Parquet files are not Partitioned")
+    }
+    val sd = loadAvroSequenceDictionary(pathName)
+
+    // load header lines
+    val headers = loadHeaderLines(pathName)
+
+    val variants = ParquetUnboundVariantRDD(sc, pathName, sd, headers)
+    DatasetBoundVariantRDD(variants.dataset, variants.sequences, headers)
   }
 
   /**
@@ -2454,6 +2516,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  def loadPartitionedParquetFeatures(pathName: String): FeatureRDD = {
+    if (!checkPartitionedParquetFlag(pathName)) {
+      throw new IllegalArgumentException("input Parquet files are not Partitioned")
+    }
+    val sd = loadAvroSequenceDictionary(pathName)
+    val features = ParquetUnboundFeatureRDD(sc, pathName, sd)
+    DatasetBoundFeatureRDD(features.dataset, features.sequences)
+  }
+
   /**
    * Load a path name in Parquet + Avro format into a NucleotideContigFragmentRDD.
    *
@@ -2484,6 +2555,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
+  }
+
+  def loadPartitionedParquetFragments(pathName: String): NucleotideContigFragmentRDD = {
+    if (!checkPartitionedParquetFlag(pathName)) {
+      throw new IllegalArgumentException("input Parquet files are not Partitioned")
+    }
+    val sd = loadAvroSequenceDictionary(pathName)
+    val nucleotideContigFragments = ParquetUnboundNucleotideContigFragmentRDD(sc, pathName, sd)
+    DatasetBoundNucleotideContigFragmentRDD(nucleotideContigFragments.dataset, nucleotideContigFragments.sequences)
   }
 
   /**
@@ -2903,5 +2983,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       log.info(s"Loading $pathName as Parquet containing Fragments.")
       loadParquetFragments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
+  }
+
+  def writePartitionedParquetFlag(filePath: String): Boolean = {
+    val path = new Path(filePath, "_isPartitionedByStartPos")
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    fs.createNewFile(path)
+  }
+  def checkPartitionedParquetFlag(filePath: String): Boolean = {
+    val path = new Path(filePath, "_isPartitionedByStartPos")
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    fs.exists(path)
   }
 }

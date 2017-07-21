@@ -925,6 +925,33 @@ class FeatureRDDSuite extends ADAMFunSuite {
     assert(rdd3.dataset.count === 4)
   }
 
+  sparkTest("load paritioned parquet to sql, save, re-read from avro") {
+    def testMetadata(fRdd: FeatureRDD) {
+      val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+    }
+
+    val inputPath = testFile("small.1.bed")
+    val outputPath = tmpLocation()
+    val rrdd = sc.loadFeatures(inputPath)
+    testMetadata(rrdd)
+    val rdd = rrdd.transformDataset(ds => ds) // no-op but force to ds
+    testMetadata(rdd)
+    assert(rdd.dataset.count === 4)
+    assert(rdd.rdd.count === 4)
+    rdd.saveAsPartitionedParquet(outputPath)
+    val rdd2 = sc.loadPartitionedParquetFeatures(outputPath)
+    testMetadata(rdd2)
+    assert(rdd2.rdd.count === 4)
+    assert(rdd2.dataset.count === 4)
+    val outputPath2 = tmpLocation()
+    rdd.transform(rdd => rdd) // no-op but force to rdd
+      .saveAsPartitionedParquet(outputPath2)
+    val rdd3 = sc.loadPartitionedParquetFeatures(outputPath2)
+    assert(rdd3.rdd.count === 4)
+    assert(rdd3.dataset.count === 4)
+  }
+
   sparkTest("transform features to contig rdd") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
