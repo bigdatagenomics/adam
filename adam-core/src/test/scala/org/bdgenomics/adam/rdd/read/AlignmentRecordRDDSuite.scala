@@ -736,15 +736,24 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = testFile("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".fq")
-    reads.saveAsFastq(outputPath, None)
+    reads.saveAsFastq(outputPath, fileName2Opt = None)
     assert(new File(outputPath).exists())
+  }
+
+  sparkTest("saveAsFastq as single file") {
+    val inputPath = testFile("small.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+    val outputPath = tmpLocation(".fq")
+    reads.saveAsFastq(outputPath, fileName2Opt = None, asSingleFile = true)
+    val outputFile = new File(outputPath)
+    assert(outputFile.exists() && !outputFile.isDirectory)
   }
 
   sparkTest("saveAsFastq with original base qualities") {
     val inputPath = testFile("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".fq")
-    reads.saveAsFastq(outputPath, None, true)
+    reads.saveAsFastq(outputPath, fileName2Opt = None, outputOriginalBaseQualities = true)
     assert(new File(outputPath).exists())
   }
 
@@ -752,7 +761,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = testFile("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".fq")
-    reads.saveAsFastq(outputPath, None, false, true)
+    reads.saveAsFastq(outputPath, fileName2Opt = None, outputOriginalBaseQualities = false, sort = true)
     assert(new File(outputPath).exists())
   }
 
@@ -760,7 +769,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = testFile("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     val outputPath = tmpLocation(".fq")
-    reads.saveAsFastq(outputPath, None, true, true)
+    reads.saveAsFastq(outputPath, fileName2Opt = None, outputOriginalBaseQualities = true, sort = true)
     assert(new File(outputPath).exists())
   }
 
@@ -782,6 +791,18 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     reads.saveAsPairedFastq(outputPath1, outputPath2)
     assert(new File(outputPath1).exists())
     assert(new File(outputPath2).exists())
+  }
+
+  sparkTest("saveAsPairedFastq as single files") {
+    val inputPath = testFile("small.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+    val outputPath1 = tmpLocation("_1.fq")
+    val outputPath2 = tmpLocation("_2.fq")
+    reads.saveAsPairedFastq(outputPath1, outputPath2, asSingleFile = true)
+    val outputFile1 = new File(outputPath1)
+    assert(outputFile1.exists() && !outputFile1.isDirectory())
+    val outputFile2 = new File(outputPath2)
+    assert(outputFile2.exists() && !outputFile2.isDirectory())
   }
 
   sparkTest("don't lose any reads when piping as SAM") {
