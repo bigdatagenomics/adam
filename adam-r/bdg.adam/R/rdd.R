@@ -174,7 +174,7 @@ setMethod("pipe",
 #'
 #' @export
 setMethod("toDF",
-          signature(ardd = "AlignmentRecordRDD"),
+          signature(ardd = "GenomicRDD"),
           function(ardd) {
               sdf = sparkR.callJMethod(ardd@jrdd, "toDF")
               new("SparkDataFrame", sdf, FALSE)
@@ -400,18 +400,6 @@ setMethod("realignIndels",
                                                     maxTargetSize))
           })
 
-#' Converts this GenomicRDD into a dataframe.
-#'
-#' @param ardd The RDD to convert into a dataframe.
-#' @return Returns a dataframe representing this RDD.
-#'
-#' @export
-setMethod("toDF",
-          signature(ardd = "CoverageRDD"),
-          function(ardd) {
-              new("SparkDataFrame", sparkR.callJMethod(ardd@jrdd, "toDF"), FALSE)
-          })
-
 setMethod("replaceRdd",
           signature(ardd = "CoverageRDD",
                     rdd = "jobj"),
@@ -505,18 +493,6 @@ setMethod("replaceRdd",
               FeatureRDD(rdd)
           })
 
-#' Converts this GenomicRDD into a dataframe.
-#'
-#' @param ardd The RDD to convert into a dataframe.
-#' @return Returns a dataframe representing this RDD.
-#'
-#' @export
-setMethod("toDF",
-          signature(ardd = "FeatureRDD"),
-          function(ardd) {
-              new("SparkDataFrame", sparkR.callJMethod(ardd@jrdd, "toDF"), FALSE)
-          })
-
 #' Saves coverage, autodetecting the file type from the extension.
 #'
 #' Writes files ending in .bed as BED6/12, .gff3 as GFF3, .gtf/.gff as GTF/GFF2,
@@ -555,18 +531,6 @@ setMethod("replaceRdd",
               FragmentRDD(rdd)
           })
 
-#' Converts this GenomicRDD into a dataframe.
-#'
-#' @param ardd The RDD to convert into a dataframe.
-#' @return Returns a dataframe representing this RDD.
-#'
-#' @export
-setMethod("toDF",
-          signature(ardd = "FragmentRDD"),
-          function(ardd) {
-              new("SparkDataFrame", sparkR.callJMethod(ardd@jrdd, "toDF"), FALSE)
-          })
-
 #' Splits up the reads in a Fragment, and creates a new RDD.
 #'
 #' @return Returns this RDD converted back to reads.
@@ -603,18 +567,6 @@ setMethod("replaceRdd",
                     rdd = "jobj"),
           function(ardd, rdd) {
               GenotypeRDD(rdd)
-          })
-
-#' Converts this GenomicRDD into a dataframe.
-#'
-#' @param ardd The RDD to convert into a dataframe.
-#' @return Returns a dataframe representing this RDD.
-#'
-#' @export
-setMethod("toDF",
-          signature(ardd = "GenotypeRDD"),
-          function(ardd) {
-              new("SparkDataFrame", sparkR.callJMethod(ardd@jrdd, "toDF"), FALSE)
           })
 
 #' Saves this RDD of genotypes to disk.
@@ -684,18 +636,6 @@ setMethod("replaceRdd",
               NucleotideContigFragmentRDD(rdd)
           })
 
-#' Converts this GenomicRDD into a dataframe.
-#'
-#' @param ardd The RDD to convert into a dataframe.
-#' @return Returns a dataframe representing this RDD.
-#'
-#' @export
-setMethod("toDF",
-          signature(ardd = "NucleotideContigFragmentRDD"),
-          function(ardd) {
-              new("SparkDataFrame", sparkR.callJMethod(ardd@jrdd, "toDF"), FALSE)
-          })
-
 #' Save nucleotide contig fragments as Parquet or FASTA.
 #'
 #' If filename ends in .fa or .fasta, saves as Fasta. If not, saves fragments to
@@ -730,18 +670,6 @@ setMethod("replaceRdd",
                     rdd = "jobj"),
           function(ardd, rdd) {
               VariantRDD(rdd)
-          })
-
-#' Converts this GenomicRDD into a dataframe.
-#'
-#' @param ardd The RDD to convert into a dataframe.
-#' @return Returns a dataframe representing this RDD.
-#'
-#' @export
-setMethod("toDF",
-          signature(ardd = "VariantRDD"),
-          function(ardd) {
-              new("SparkDataFrame", sparkR.callJMethod(ardd@jrdd, "toDF"), FALSE)
           })
 
 #' Saves this RDD of variants to disk.
