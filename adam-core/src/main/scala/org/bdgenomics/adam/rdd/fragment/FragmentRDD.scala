@@ -47,6 +47,7 @@ import org.bdgenomics.utils.interval.array.{
 import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class FragmentArray(
     array: Array[(ReferenceRegion, Fragment)],
@@ -256,6 +257,8 @@ case class RDDBoundFragmentRDD private[rdd] (
 }
 
 sealed abstract class FragmentRDD extends AvroRecordGroupGenomicRDD[Fragment, FragmentProduct, FragmentRDD] {
+
+  @transient val uTag: TypeTag[FragmentProduct] = typeTag[FragmentProduct]
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Fragment)])(
     implicit tTag: ClassTag[Fragment]): IntervalArray[ReferenceRegion, Fragment] = {

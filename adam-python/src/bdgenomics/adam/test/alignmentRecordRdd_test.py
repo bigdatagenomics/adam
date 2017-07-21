@@ -18,8 +18,10 @@
 
 
 from bdgenomics.adam.adamContext import ADAMContext
+from bdgenomics.adam.rdd import AlignmentRecordRDD, CoverageRDD
 from bdgenomics.adam.test import SparkTestCase
 
+from pyspark.sql.types import DoubleType
 
 class AlignmentRecordRDDTest(SparkTestCase):
 
@@ -108,4 +110,31 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         self.assertEquals(reads.toDF().count(), pipedRdd.toDF().count())
 
-        
+
+    def test_transform(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadAlignments(readsPath)
+
+        transformedReads = reads.transform(lambda x: x.filter(x.contigName == "1"))
+
+        self.assertEquals(transformedReads.toDF().count(), 1)
+
+
+    def test_transmute_to_coverage(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadAlignments(readsPath)
+
+        readsAsCoverage = reads.transmute(lambda x: x.select(x.contigName,
+                                                             x.start,
+                                                             x.end,
+                                                             x.mapq.cast(DoubleType()).alias("count")),
+                                          CoverageRDD)
+
+        assert(isinstance(readsAsCoverage, CoverageRDD))
+        self.assertEquals(readsAsCoverage.toDF().count(), 5)

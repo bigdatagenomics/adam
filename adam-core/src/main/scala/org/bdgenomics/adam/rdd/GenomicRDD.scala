@@ -28,7 +28,7 @@ import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.function.{ Function => JFunction, Function2 }
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ DataFrame, Dataset }
+import org.apache.spark.sql.{ DataFrame, Dataset, SQLContext }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -53,6 +53,7 @@ import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.math.min
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe.TypeTag
 
 private[rdd] class JavaSaveArgs(var outputPath: String,
                                 var blockSize: Int = 128 * 1024 * 1024,
@@ -189,6 +190,17 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   }
 
   /**
+   * Applies a function that transforms the underlying RDD into a new RDD.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transform(tFn: JFunction[JavaRDD[T], JavaRDD[T]]): U = {
+    replaceRdd(tFn.call(jrdd).rdd)
+  }
+
+  /**
    * Applies a function that transmutes the underlying RDD into a new RDD of a
    * different type.
    *
@@ -199,6 +211,21 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   def transmute[X, Y <: GenomicRDD[X, Y]](tFn: RDD[T] => RDD[X])(
     implicit convFn: (U, RDD[X]) => Y): Y = {
     convFn(this.asInstanceOf[U], tFn(rdd))
+  }
+
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type. Java friendly version.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @param convFn The conversion function used to build the final RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transmute[X, Y <: GenomicRDD[X, Y]](
+    tFn: JFunction[JavaRDD[T], JavaRDD[X]],
+    convFn: Function2[U, RDD[X], Y]): Y = {
+    convFn.call(this.asInstanceOf[U], tFn.call(jrdd).rdd)
   }
 
   // The partition map is structured as follows:
@@ -274,17 +301,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       case _                            =>
     }
     None
-  }
-
-  /**
-   * Applies a function that transforms the underlying RDD into a new RDD.
-   *
-   * @param tFn A function that transforms the underlying RDD.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transform(tFn: JFunction[JavaRDD[T], JavaRDD[T]]): U = {
-    replaceRdd(tFn.call(jrdd).rdd)
   }
 
   /**
@@ -1472,6 +1488,8 @@ trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends Genomic
  */
 trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicRDD[T, V] {
 
+  val uTag: TypeTag[U]
+
   /**
    * This data as a Spark SQL Dataset.
    */
@@ -1495,6 +1513,37 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Geno
   def transformDataset(tFn: Dataset[U] => Dataset[U]): V
 
   /**
+   * Applies a function that transforms the underlying DataFrame into a new DataFrame
+   * using the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a DataFrame.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataFrame(tFn: DataFrame => DataFrame)(
+    implicit uTag: scala.reflect.runtime.universe.TypeTag[U]): V = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    transformDataset((ds: Dataset[U]) => {
+      tFn(ds.toDF()).as[U]
+    })
+  }
+
+  /**
+   * Applies a function that transforms the underlying DataFrame into a new DataFrame
+   * using the Spark SQL API. Java-friendly variant.
+   *
+   * @param tFn A function that transforms the underlying RDD as a DataFrame.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataFrame(tFn: JFunction[DataFrame, DataFrame]): V = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    transformDataFrame(tFn.call(_))(uTag)
+  }
+
+  /**
    * Applies a function that transmutes the underlying RDD into a new RDD of a
    * different type.
    *
@@ -1504,8 +1553,61 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Geno
    */
   def transmuteDataset[X <: Product, Y <: GenomicDataset[_, X, Y]](
     tFn: Dataset[U] => Dataset[X])(
-      implicit convFn: (V, Dataset[X]) => Y): Y = {
+      implicit xTag: scala.reflect.runtime.universe.TypeTag[X],
+      convFn: (V, Dataset[X]) => Y): Y = {
     convFn(this.asInstanceOf[V], tFn(dataset))
+  }
+
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type. Java friendly variant.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transmuteDataset[X <: Product, Y <: GenomicDataset[_, X, Y]](
+    tFn: JFunction[Dataset[U], Dataset[X]],
+    convFn: GenomicDatasetConversion[U, V, X, Y]): Y = {
+    transmuteDataset(tFn.call(_))(convFn.xTag, convFn.call(_, _))
+  }
+
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type. Java friendly variant.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transmuteDataFrame[X <: Product, Y <: GenomicDataset[_, X, Y]](
+    tFn: DataFrame => DataFrame)(
+      implicit xTag: scala.reflect.runtime.universe.TypeTag[X],
+      convFn: (V, Dataset[X]) => Y): Y = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    transmuteDataset((ds: Dataset[U]) => {
+      tFn(ds.toDF()).as[X]
+    })
+  }
+
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type. Java friendly variant.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transmuteDataFrame[X <: Product, Y <: GenomicDataset[_, X, Y]](
+    tFn: JFunction[DataFrame, DataFrame],
+    convFn: GenomicDatasetConversion[U, V, X, Y]): Y = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    transmuteDataFrame(tFn.call(_))(convFn.xTag,
+      (v: V, dsX: Dataset[X]) => {
+        convFn.call(v, dsX)
+      })
   }
 }
 

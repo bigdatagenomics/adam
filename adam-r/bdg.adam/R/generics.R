@@ -68,6 +68,25 @@ setGeneric("toDF",
 setGeneric("replaceRdd",
            function(ardd, rdd) { standardGeneric("replaceRdd") })
 
+setGeneric("wrapTransformation",
+           function(ardd, tFn) { standardGeneric("wrapTransformation") })
+
+# @rdname GenomicRDD
+# @export
+setGeneric("transform",
+           function(ardd, tFn) { standardGeneric("transform") })
+
+setGeneric("inferConversionFn",
+           function(ardd, destClass) { standardGeneric("inferConversionFn") })
+
+setGeneric("destClassSuffix",
+           function(destClass) { standardGeneric("destClassSuffix") })
+
+# @rdname GenomicRDD
+# @export
+setGeneric("transmute",
+           function(ardd, tFn, destClass, ...) { standardGeneric("transmute") })
+
 # @rdname GenomicRDD
 # @export
 setGeneric("save",

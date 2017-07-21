@@ -42,6 +42,7 @@ import org.bdgenomics.utils.interval.array.{
 import scala.collection.JavaConversions._
 import scala.math.max
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class NucleotideContigFragmentArray(
     array: Array[(ReferenceRegion, NucleotideContigFragment)],
@@ -185,6 +186,8 @@ case class RDDBoundNucleotideContigFragmentRDD private[rdd] (
 }
 
 sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD] {
+
+  @transient val uTag: TypeTag[NucleotideContigFragmentProduct] = typeTag[NucleotideContigFragmentProduct]
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, NucleotideContigFragment)])(
     implicit tTag: ClassTag[NucleotideContigFragment]): IntervalArray[ReferenceRegion, NucleotideContigFragment] = {

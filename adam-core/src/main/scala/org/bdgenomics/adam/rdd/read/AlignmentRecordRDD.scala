@@ -70,6 +70,7 @@ import scala.collection.JavaConversions._
 import scala.language.implicitConversions
 import scala.math.{ abs, min }
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class AlignmentRecordArray(
     array: Array[(ReferenceRegion, AlignmentRecord)],
@@ -326,6 +327,8 @@ private case class AlignmentWindow(contigName: String, start: Long, end: Long) {
 }
 
 sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
+
+  @transient val uTag: TypeTag[AlignmentRecordProduct] = typeTag[AlignmentRecordProduct]
 
   /**
    * Applies a function that transforms the underlying RDD into a new RDD using
