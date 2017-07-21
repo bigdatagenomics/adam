@@ -177,7 +177,7 @@ read group that a dataset came from. Specifically, ADAM supports the following
 metadata:
 
 * `GenomicRDD` base: A sequence dictionary, which describes the reference
-  assembly that data is aligned to, if it is aligned. Applies to all types.
+  assembly that data are aligned to, if it is aligned. Applies to all types.
 * `MultisampleGenomicRDD`: Adds metadata about the samples in a dataset.
   Applies to `GenotypeRDD`.
 * `ReadGroupGenomicRDD`: Adds metadata about the read groups attached to a
@@ -268,7 +268,7 @@ is identical to the BroadcastRegionJoin, however they serve different
 purposes depending on the content of the two datasets.
 
 The ShuffleRegionJoin is a distributed sort-merge overlap join. To ensure that
-the data is appropriately colocated, we perform a copartition on the right
+the data are appropriately colocated, we perform a copartition on the right
 dataset before the each node conducts the join locally. ShuffleRegionJoin
 should be used if the right dataset is too large to send to all nodes and both
 datasets have high cardinality.
@@ -276,8 +276,8 @@ datasets have high cardinality.
 The BroadcastRegionJoin performs an overlap join by broadcasting a copy of the
 entire left dataset to each node. The BroadcastRegionJoin should be used when
 the right side of your join is small enough to be collected and broadcast out,
-and the larger side of the join is unsorted and the data is too large to be
-worth shuffling, the data is sufficiently skewed that it is hard to load
+and the larger side of the join is unsorted and the data are too large to be
+worth shuffling, the data are sufficiently skewed that it is hard to load
 balance, or you can tolerate unsorted output.
 
 Another important distinction between ShuffleRegionJoin and
@@ -351,9 +351,9 @@ and features, providing variant data grouped by the feature they overlap.
 Finally, we will separate reads into those that overlap and those that do not
 overlap features from a feature file.
 
-Each of these demonstrations illustrates the difference between calling the
-ShuffleRegionJoin and BroadcastRegionJoin and provides example code that can
-be expanded from.
+These demonstrations illustrate the difference between calling
+ShuffleRegionJoin and BroadcastRegionJoin and provide example code to expand
+from.
 
 ###### Filter Genotypes by Features
 
@@ -388,7 +388,7 @@ interested in the `Genotype`s that overlap a `Feature`, we map over the tuples
 and select just the `Genotype`.
 
 Since a broadcast join sends the left dataset to all executors, we chose to
-send the `features` dataset because feature data is usually smaller in size
+send the `features` dataset because feature data are usually smaller in size
 than genotypic data.
 
 ###### Group overlapping variant data by the gene they overlap
@@ -396,10 +396,12 @@ than genotypic data.
 This query joins an RDD of Variants against an RDD of Features, and immediately
 performs a group-by on the Feature. This produces an RDD whose elements are a
 tuple containing a Feature, and all of the Variants overlapping the Feature.
-This query is useful for trying to identify annotated variants that may
-interact (identifying frameshift mutations within a transcript that may act as
-a pair to shift and then restore the reading frame) or as the start of a query
-that computes variant density over a set of genomic features.
+This produces an RDD whose elements are tuples containing a Feature and all of
+the Variants overlapping the Feature.This query is useful for trying to
+identify annotated variants that may interact (identifying frameshift mutations
+within a transcript that may act as a pair to shift and then restore the
+reading frame) or as the start of a query that computes variant density over a
+set of genomic features.
 
 ```scala
 // Inner join with a group by on the features
@@ -418,7 +420,7 @@ the join. BroadcastRegionJoin only supports grouping by the right dataset, and
 ShuffleRegionJoin supports only grouping by the left dataset.
 
 The reason BroadcastRegionJoin does not have a `joinAndGroupByLeft`
-implementation is due to the fact that the left dataset is broadcasted to all
+implementation is due to the fact that the left dataset is broadcast to all
 nodes. Unlike shuffle joins, broadcast joins don't maintain a sort order
 invariant. Because of this, we would need to shuffle all data to a group-by on
 the left side of the dataset, and there is no opportunity to optimize by
@@ -477,8 +479,8 @@ strings to the pipe. ADAM's pipe API adds several important functions:
   and get variants back from the pipe)
 * It adds the ability to set environment variables and to make local files
   (e.g., a reference genome) available to the run command
-* If the data is aligned, we ensure that each subcommand runs over a contiguous
-  section of the reference genome, and that data is sorted on this chunk. We
+* If the data are aligned, we ensure that each subcommand runs over a contiguous
+  section of the reference genome, and that data are sorted on this chunk. We
   provide control over the size of any flanking region that is desired.
 
 The method signature of a pipe command is below:
