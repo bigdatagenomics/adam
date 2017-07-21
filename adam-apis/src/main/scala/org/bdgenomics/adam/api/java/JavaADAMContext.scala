@@ -207,7 +207,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load reference sequences into a broadcastable ReferenceFile.
+   * Load reference sequences into a broadcastable ReferenceFile (java-friendly method).
    *
    * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
    * to load the reference as an RDD, which is then collected to the driver.
@@ -226,7 +226,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load reference sequences into a broadcastable ReferenceFile.
+   * Load reference sequences into a broadcastable ReferenceFile (java-friendly method).
    *
    * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
    * to load the reference as an RDD, which is then collected to the driver. Uses a

@@ -48,7 +48,7 @@ class ADAMContext(object):
 
     def loadAlignments(self, filePath):
         """
-        Loads in an ADAM read file. This method can load SAM, BAM, and ADAM files.
+        Load alignment records into an AlignmentRecordRDD.
 
         Loads path names ending in:
         * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -75,7 +75,21 @@ class ADAMContext(object):
     def loadCoverage(self, filePath):
         """
         Load features into a FeatureRDD and convert to a CoverageRDD.
-        
+        Coverage is stored in the score field of Feature.
+
+        Loads path names ending in:
+        * .bed as BED6/12 format,
+        * .gff3 as GFF3 format,
+        * .gtf/.gff as GTF/GFF2 format,
+        * .narrow[pP]eak as NarrowPeak format, and
+        * .interval_list as IntervalList format.
+
+        If none of these match, fall back to Parquet + Avro.
+
+        For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+        are supported through compression codecs configured in Hadoop, which by default include
+        .gz and .bz2, but can include more.
+
         :param str filePath: The path to load coverage data from.
         :return: Returns an RDD containing coverage.
         :rtype: bdgenomics.adam.rdd.CoverageRDD
@@ -88,9 +102,13 @@ class ADAMContext(object):
 
     def loadContigFragments(self, filePath):
         """
-        Loads in sequence fragments.
+        Load nucleotide contig fragments into a NucleotideContigFragmentRDD.
 
-        Can load from FASTA or from Parquet encoded NucleotideContigFragments.
+        If the path name has a .fa/.fasta extension, load as FASTA format.
+        Else, fall back to Parquet + Avro.
+
+        For FASTA format, compressed files are supported through compression codecs configured
+        in Hadoop, which by default include .gz and .bz2, but can include more.
 
         :param str filePath: The path to load the file from.
         :return: Returns an RDD containing sequence fragments.
@@ -104,7 +122,15 @@ class ADAMContext(object):
 
     def loadFragments(self, filePath):
         """
-        Loads in read pairs as fragments.
+        Load fragments into a FragmentRDD.
+
+        Loads path names ending in:
+        * .bam/.cram/.sam as BAM/CRAM/SAM format and
+        * .ifq as interleaved FASTQ format.
+
+        If none of these match, fall back to Parquet + Avro.
+        For interleaved FASTQ format, compressed files are supported through compression codecs
+        configured in Hadoop, which by default include .gz and .bz2, but can include more.
 
         :param str filePath: The path to load the file from.
         :return: Returns an RDD containing sequenced fragments.
@@ -118,7 +144,20 @@ class ADAMContext(object):
 
     def loadFeatures(self, filePath):
         """
-        Loads in genomic features.
+        Load features into a FeatureRDD.
+
+        Loads path names ending in:
+        * .bed as BED6/12 format,
+        * .gff3 as GFF3 format,
+        * .gtf/.gff as GTF/GFF2 format,
+        * .narrow[pP]eak as NarrowPeak format, and
+        * .interval_list as IntervalList format.
+
+        If none of these match, fall back to Parquet + Avro.
+
+        For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+        are supported through compression codecs configured in Hadoop, which by default include
+        .gz and .bz2, but can include more.
 
         :param str filePath: The path to load the file from.
         :return: Returns an RDD containing features.
@@ -132,7 +171,10 @@ class ADAMContext(object):
 
     def loadGenotypes(self, filePath):
         """
-        Loads in genotypes.
+        Load genotypes into a GenotypeRDD.
+
+        If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
+        Else, fall back to Parquet + Avro.
 
         :param str filePath: The path to load the file from.
         :return: Returns an RDD containing genotypes.
@@ -146,7 +188,10 @@ class ADAMContext(object):
 
     def loadVariants(self, filePath):
         """
-        Loads in variants.
+        Load variants into a VariantRDD.
+
+        If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
+        Else, fall back to Parquet + Avro.
 
         :param str filePath: The path to load the file from.
         :return: Returns an RDD containing variants.

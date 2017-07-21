@@ -36,7 +36,7 @@ ADAMContext <- function(ss) {
     new("ADAMContext", jac = jac)
 }
 
-#' Loads in an ADAM read file. This method can load SAM, BAM, and ADAM files.
+#' Load alignment records into an AlignmentRecordRDD.
 #'
 #' Loads path names ending in:
 #' * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -62,9 +62,13 @@ setMethod("loadAlignments",
               AlignmentRecordRDD(jrdd)
           })
 
-#' Loads in sequence fragments.
+#' Load nucleotide contig fragments into a NucleotideContigFragmentRDD.
 #'
-#' Can load from FASTA or from Parquet encoded NucleotideContigFragments.
+#' If the path name has a .fa/.fasta extension, load as FASTA format.
+#' Else, fall back to Parquet + Avro.
+#'
+#' For FASTA format, compressed files are supported through compression codecs configured
+#' in Hadoop, which by default include .gz and .bz2, but can include more.
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
@@ -78,7 +82,16 @@ setMethod("loadContigFragments",
               NucleotideContigFragmentRDD(jrdd)
           })
 
-#' Loads in read pairs as fragments.
+#' Load fragments into a FragmentRDD.
+#'
+#' Loads path names ending in:
+#' * .bam/.cram/.sam as BAM/CRAM/SAM format and
+#' * .ifq as interleaved FASTQ format.
+#'
+#' If none of these match, fall back to Parquet + Avro.
+#'
+#' For interleaved FASTQ format, compressed files are supported through compression codecs
+#' configured in Hadoop, which by default include .gz and .bz2, but can include more.
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
@@ -92,7 +105,20 @@ setMethod("loadFragments",
               FragmentRDD(jrdd)
           })
 
-#' Loads in genomic features.
+#' Load features into a FeatureRDD.
+#'
+#' Loads path names ending in:
+#' * .bed as BED6/12 format,
+#' * .gff3 as GFF3 format,
+#' * .gtf/.gff as GTF/GFF2 format,
+#' * .narrow[pP]eak as NarrowPeak format, and
+#' * .interval_list as IntervalList format.
+#'
+#' If none of these match, fall back to Parquet + Avro.
+#'
+#' For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+#' are supported through compression codecs configured in Hadoop, which by default include
+#' .gz and .bz2, but can include more.
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
@@ -106,7 +132,21 @@ setMethod("loadFeatures",
               FeatureRDD(jrdd)
           })
 
-#' Loads in genomic features as coverage counts.
+#' Load features into a FeatureRDD and convert to a CoverageRDD.
+#' Coverage is stored in the score field of Feature.
+#'
+#' Loads path names ending in:
+#' * .bed as BED6/12 format,
+#' * .gff3 as GFF3 format,
+#' * .gtf/.gff as GTF/GFF2 format,
+#' * .narrow[pP]eak as NarrowPeak format, and
+#' * .interval_list as IntervalList format.
+#'
+#' If none of these match, fall back to Parquet + Avro.
+#'
+#' For BED6/12, GFF3, GTF/GFF2, NarrowPeak, and IntervalList formats, compressed files
+#' are supported through compression codecs configured in Hadoop, which by default include
+#' .gz and .bz2, but can include more.
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
@@ -120,7 +160,10 @@ setMethod("loadCoverage",
               CoverageRDD(jrdd)
           })
 
-#' Loads in genotypes.
+#' Load genotypes into a GenotypeRDD.
+#'
+#' If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
+#' Else, fall back to Parquet + Avro.
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
@@ -134,7 +177,10 @@ setMethod("loadGenotypes",
               GenotypeRDD(jrdd)
           })
 
-#' Loads in variants.
+#' Load variants into a VariantRDD.
+#'
+#' If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
+#' Else, fall back to Parquet + Avro.
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
