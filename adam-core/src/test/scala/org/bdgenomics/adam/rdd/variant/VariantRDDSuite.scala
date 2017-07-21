@@ -147,6 +147,15 @@ class VariantRDDSuite extends ADAMFunSuite {
     assert(starts(752790L))
   }
 
+  sparkTest("save and reload from partitioned parquet") {
+    val variants = sc.loadVariants(testFile("sorted-variants.vcf"))
+    val outputPath = tmpLocation()
+    variants.saveAsPartitionedParquet(outputPath, partitionSize = 1000000)
+    val unfilteredVariants = sc.loadPartitionedParquetVariants(outputPath)
+    assert(unfilteredVariants.rdd.count === 6)
+    assert(unfilteredVariants.dataset.count === 6)
+  }
+
   sparkTest("use broadcast join to pull down variants mapped to targets") {
     val variantsPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")

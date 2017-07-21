@@ -165,11 +165,6 @@
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>
-      <artifactId>utils-misc_${scala.version.prefix}</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.bdgenomics.utils</groupId>
       <artifactId>utils-metrics_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
@@ -211,7 +206,7 @@
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>

@@ -638,6 +638,40 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(rdd3.dataset.count === 20)
   }
 
+  sparkTest("load from sam, save as partitioend parquet, and and re-read from partitioned parquet") {
+    def testMetadata(arRdd: AlignmentRecordRDD) {
+      val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+
+      val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
+      assert(rgRdd.recordGroups("aRg").sample === "test")
+    }
+
+    val inputPath = testFile("multi_chr.sam")
+    val outputPath = tmpLocation()
+    val rrdd = sc.loadAlignments(inputPath)
+    testMetadata(rrdd)
+
+    rrdd.saveAsPartitionedParquet(outputPath, partitionSize = 1000000)
+    val rdd2 = sc.loadPartitionedParquetAlignments(outputPath)
+    testMetadata(rdd2)
+    assert(rdd2.rdd.count === 3)
+    assert(rdd2.dataset.count === 3)
+
+    val rdd3 = sc.loadPartitionedParquetAlignments(outputPath, Option(List(ReferenceRegion("1", 240000000L, 241000000L), ReferenceRegion("2", 189000000L, 190000000L))))
+    assert(rdd3.dataset.count === 2)
+
+    //test explicit transform to Alignment Record Product
+    val rdd = rrdd.transformDataset(ds => {
+      import ds.sqlContext.implicits._
+      val df = ds.toDF()
+      df.as[AlignmentRecordProduct]
+    })
+    testMetadata(rdd)
+    assert(rdd.dataset.count === 3)
+    assert(rdd.rdd.count === 3)
+  }
+
   sparkTest("save as SAM format") {
     val inputPath = testFile("small.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
