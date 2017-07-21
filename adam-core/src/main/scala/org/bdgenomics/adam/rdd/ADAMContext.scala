@@ -2714,7 +2714,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load genotypes into a GenotypeRDD.
    *
-   * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
+   * If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
    *
    * @see loadVcf
@@ -2749,7 +2749,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load variants into a VariantRDD.
    *
-   * If the path name has a .vcf/.vcf.gz/.vcf.bgzf/.vcf.bgz extension, load as VCF format.
+   * If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
    *
    * @see loadVcf
