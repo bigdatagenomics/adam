@@ -202,6 +202,16 @@ object ReferenceRegion {
     ReferenceRegion(variant.getContigName, variant.getStart, variant.getEnd)
   }
 
+  /**
+   * Builds a reference region for a sequence.
+   *
+   * @param sequence Sequence to extract region from.
+   * @return The site where this sequence covers.
+   */
+  def apply(sequence: Sequence): ReferenceRegion = {
+    ReferenceRegion(sequence.getName, 0L, sequence.getLength)
+  }
+
   private def checkRead(record: AlignmentRecord) {
     require(record.getReadMapped,
       "Cannot build reference region for unmapped read %s.".format(record))
