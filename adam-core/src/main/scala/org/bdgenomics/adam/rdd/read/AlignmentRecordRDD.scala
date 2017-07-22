@@ -509,7 +509,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
   private[rdd] def maybeSaveFastq(args: ADAMSaveAnyArgs): Boolean = {
     if (args.outputPath.endsWith(".fq") || args.outputPath.endsWith(".fastq") ||
       args.outputPath.endsWith(".ifq")) {
-      saveAsFastq(args.outputPath, sort = args.sortFastqOutput)
+      saveAsFastq(args.outputPath,
+        sort = args.sortFastqOutput,
+        asSingleFile = args.asSingleFile,
+        disableFastConcat = args.disableFastConcat
+      )
       true
     } else
       false
@@ -719,7 +723,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
 
       // create htsjdk specific streams for writing the bam header
       val compressedOut: OutputStream = new BlockCompressedOutputStream(os, null)
-      val binaryCodec = new BinaryCodec(compressedOut);
+      val binaryCodec = new BinaryCodec(compressedOut)
 
       // write a bam header - cribbed from Hadoop-BAM
       binaryCodec.writeBytes("BAM\001".getBytes())
