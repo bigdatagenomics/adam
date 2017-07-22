@@ -509,7 +509,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
   private[rdd] def maybeSaveFastq(args: ADAMSaveAnyArgs): Boolean = {
     if (args.outputPath.endsWith(".fq") || args.outputPath.endsWith(".fastq") ||
       args.outputPath.endsWith(".ifq")) {
-      saveAsFastq(args.outputPath, sort = args.sortFastqOutput)
+      saveAsFastq(args.outputPath,
+        sort = args.sortFastqOutput,
+        asSingleFile = args.asSingleFile,
+        disableFastConcat = args.disableFastConcat
+      )
       true
     } else
       false
@@ -719,7 +723,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
 
       // create htsjdk specific streams for writing the bam header
       val compressedOut: OutputStream = new BlockCompressedOutputStream(os, null)
-      val binaryCodec = new BinaryCodec(compressedOut);
+      val binaryCodec = new BinaryCodec(compressedOut)
 
       // write a bam header - cribbed from Hadoop-BAM
       binaryCodec.writeBytes("BAM\001".getBytes())
@@ -1106,6 +1110,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    * @param outputOriginalBaseQualities If true, writes out reads with the base
    *   qualities from the original qualities (SAM "OQ") field. If false, writes
    *   out reads with the base qualities from the qual field. Default is false.
+   * @param asSingleFile If false, writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    * @param validationStringency Iff strict, throw an exception if any read in
    *   this RDD is not accompanied by its mate.
    * @param persistLevel The persistence level to cache reads at between passes.
@@ -1114,10 +1123,14 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
     fileName1: String,
     fileName2: String,
     outputOriginalBaseQualities: java.lang.Boolean,
+    asSingleFile: java.lang.Boolean,
+    disableFastConcat: java.lang.Boolean,
     validationStringency: ValidationStringency,
     persistLevel: StorageLevel) {
     saveAsPairedFastq(fileName1, fileName2,
       outputOriginalBaseQualities = outputOriginalBaseQualities: Boolean,
+      asSingleFile = asSingleFile: Boolean,
+      disableFastConcat = disableFastConcat: Boolean,
       validationStringency = validationStringency,
       persistLevel = Some(persistLevel))
   }
@@ -1135,6 +1148,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    * @param outputOriginalBaseQualities If true, writes out reads with the base
    *   qualities from the original qualities (SAM "OQ") field. If false, writes
    *   out reads with the base qualities from the qual field. Default is false.
+   * @param asSingleFile By default (false), writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    * @param validationStringency Iff strict, throw an exception if any read in
    *   this RDD is not accompanied by its mate.
    * @param persistLevel An optional persistance level to set. If this level is
@@ -1145,6 +1163,8 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
     fileName1: String,
     fileName2: String,
     outputOriginalBaseQualities: Boolean = false,
+    asSingleFile: Boolean = false,
+    disableFastConcat: Boolean = false,
     validationStringency: ValidationStringency = ValidationStringency.LENIENT,
     persistLevel: Option[StorageLevel] = None) {
 
@@ -1232,15 +1252,25 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
 
     val arc = new AlignmentRecordConverter
 
-    firstInPairRecords
+    val firstToWrite = firstInPairRecords
       .sortBy(_.getReadName)
       .map(record => arc.convertToFastq(record, maybeAddSuffix = true, outputOriginalBaseQualities = outputOriginalBaseQualities))
-      .saveAsTextFile(fileName1)
 
-    secondInPairRecords
+    writeTextRdd(firstToWrite,
+      fileName1,
+      asSingleFile = asSingleFile,
+      disableFastConcat = disableFastConcat,
+      optHeaderPath = None)
+
+    val secondToWrite = secondInPairRecords
       .sortBy(_.getReadName)
       .map(record => arc.convertToFastq(record, maybeAddSuffix = true, outputOriginalBaseQualities = outputOriginalBaseQualities))
-      .saveAsTextFile(fileName2)
+
+    writeTextRdd(secondToWrite,
+      fileName2,
+      asSingleFile = asSingleFile,
+      disableFastConcat = disableFastConcat,
+      optHeaderPath = None)
 
     maybeUnpersist(firstInPairRecords)
     maybeUnpersist(secondInPairRecords)
@@ -1257,6 +1287,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    *   out reads with the base qualities from the qual field. Default is false.
    * @param sort Whether to sort the FASTQ files by read name or not. Defaults
    *   to false. Sorting the output will recover pair order, if desired.
+   * @param asSingleFile If false, writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    * @param validationStringency Iff strict, throw an exception if any read in
    *   this RDD is not accompanied by its mate.
    */
@@ -1264,10 +1299,15 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
     fileName: String,
     outputOriginalBaseQualities: java.lang.Boolean,
     sort: java.lang.Boolean,
+    asSingleFile: java.lang.Boolean,
+    disableFastConcat: java.lang.Boolean,
     validationStringency: ValidationStringency) {
+
     saveAsFastq(fileName, fileName2Opt = None,
       outputOriginalBaseQualities = outputOriginalBaseQualities: Boolean,
       sort = sort: Boolean,
+      asSingleFile = asSingleFile: Boolean,
+      disableFastConcat = disableFastConcat: Boolean,
       validationStringency = validationStringency,
       persistLevel = None)
   }
@@ -1283,6 +1323,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    *   out reads with the base qualities from the qual field. Default is false.
    * @param sort Whether to sort the FASTQ files by read name or not. Defaults
    *   to false. Sorting the output will recover pair order, if desired.
+   * @param asSingleFile By default (false), writes file to disk as shards with
+   *   one shard per partition. If true, we save the file to disk as a single
+   *   file by merging the shards.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    * @param validationStringency Iff strict, throw an exception if any read in
    *   this RDD is not accompanied by its mate.
    * @param persistLevel An optional persistance level to set. If this level is
@@ -1294,8 +1339,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
     fileName2Opt: Option[String] = None,
     outputOriginalBaseQualities: Boolean = false,
     sort: Boolean = false,
+    asSingleFile: Boolean = false,
+    disableFastConcat: Boolean = false,
     validationStringency: ValidationStringency = ValidationStringency.LENIENT,
     persistLevel: Option[StorageLevel] = None) {
+
     log.info("Saving data in FASTQ format.")
     fileName2Opt match {
       case Some(fileName2) =>
@@ -1303,6 +1351,8 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
           fileName,
           fileName2,
           outputOriginalBaseQualities = outputOriginalBaseQualities,
+          asSingleFile = asSingleFile,
+          disableFastConcat = disableFastConcat,
           validationStringency = validationStringency,
           persistLevel = persistLevel
         )
@@ -1317,9 +1367,14 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
         }
 
         // convert the rdd and save as a text file
-        outputRdd
+        val toWrite = outputRdd
           .map(record => arc.convertToFastq(record, outputOriginalBaseQualities = outputOriginalBaseQualities))
-          .saveAsTextFile(fileName)
+
+        writeTextRdd(toWrite,
+          fileName,
+          asSingleFile = asSingleFile,
+          disableFastConcat = disableFastConcat,
+          optHeaderPath = None)
     }
   }
 
