@@ -246,6 +246,7 @@ object FeatureRDD {
   }
 }
 
+<<<<<<< HEAD
 case class ParquetUnboundFeatureRDD private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
@@ -336,6 +337,18 @@ case class RDDBoundFeatureRDD private[rdd] (
 }
 
 sealed abstract class FeatureRDD extends AvroGenomicRDD[Feature, FeatureProduct, FeatureRDD] {
+=======
+/**
+ * A GenomicRDD that wraps Feature data.
+ *
+ * @param rdd An RDD of genomic Features.
+ * @param sequences The reference genome these data are aligned to.
+ * @param optPartitionMap Optional partition map.
+ */
+case class FeatureRDD(rdd: RDD[Feature],
+                      sequences: SequenceDictionary,
+                      optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[Feature, FeatureRDD] with Logging {
+>>>>>>> d7d58178... Doc fixes.
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Feature)])(
     implicit tTag: ClassTag[Feature]): IntervalArray[ReferenceRegion, Feature] = {

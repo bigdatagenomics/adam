@@ -194,6 +194,12 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       new org.bdgenomics.adam.rdd.variant.GenotypeArraySerializer)
     kryo.register(classOf[org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentArray],
       new org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.sequence.ReadArray],
+      new org.bdgenomics.adam.rdd.sequence.ReadArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.sequence.SequenceArray],
+      new org.bdgenomics.adam.rdd.sequence.SequenceArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.sequence.SliceArray],
+      new org.bdgenomics.adam.rdd.sequence.SliceArraySerializer)
     kryo.register(classOf[org.bdgenomics.adam.rdd.variant.VariantArray],
       new org.bdgenomics.adam.rdd.variant.VariantArraySerializer)
     kryo.register(classOf[org.bdgenomics.adam.rdd.variant.VariantContextArray],
