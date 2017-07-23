@@ -17,13 +17,18 @@
  */
 package org.bdgenomics.adam.rdd.sequence
 
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
   JavaSaveArgs
 }
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
+import org.bdgenomics.adam.sql.{ Read => ReadProduct }
 import org.bdgenomics.formats.avro.{
   Read,
   Sequence,
@@ -65,26 +70,111 @@ private[adam] class ReadArraySerializer extends IntervalArraySerializer[Referenc
 object ReadRDD {
 
   /**
-   * Builds a ReadRDD with an empty sequence dictionary and without a partition map.
+   * A GenomicRDD that wraps a dataset of Read data.
+   *
+   * @param ds A Dataset of genomic Reads.
+   * @param sequences The reference genome these data are aligned to.
+   */
+  def apply(ds: Dataset[ReadProduct],
+            sequences: SequenceDictionary): ReadRDD = {
+    new DatasetBoundReadRDD(ds, sequences)
+  }
+
+  /**
+   * Builds a ReadRDD with an empty sequence dictionary.
    *
    * @param rdd The underlying Read RDD to build from.
    * @return Returns a new ReadRDD.
    */
   def apply(rdd: RDD[Read]): ReadRDD = {
-    ReadRDD(rdd, SequenceDictionary.empty, optPartitionMap = None)
+    ReadRDD(rdd, SequenceDictionary.empty)
+  }
+
+  /**
+   * Builds a ReadRDD given a sequence dictionary.
+   *
+   * @param rdd The underlying Read RDD to build from.
+   * @param sd The sequence dictionary for this ReadRDD.
+   * @return Returns a new ReadRDD.
+   */
+  def apply(rdd: RDD[Read], sd: SequenceDictionary): ReadRDD = {
+    new RDDBoundReadRDD(rdd, sd, None)
   }
 }
 
-/**
- * A GenomicRDD that wraps Read data.
- *
- * @param rdd An RDD of genomic Reads.
- * @param sequences The reference genome these data are aligned to, if any.
- * @param optPartitionMap Optional partition map.
- */
-case class ReadRDD(rdd: RDD[Read],
-                   sequences: SequenceDictionary,
-                   optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[Read, ReadRDD] with Logging {
+case class ParquetUnboundReadRDD private[rdd] (
+    @transient private val sc: SparkContext,
+    private val parquetFilename: String,
+    sequences: SequenceDictionary) extends ReadRDD {
+
+  lazy val rdd: RDD[Read] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[ReadProduct]
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): ReadRDD = {
+    copy(sequences = newSequences)
+  }
+}
+
+case class DatasetBoundReadRDD private[rdd] (
+    dataset: Dataset[ReadProduct],
+    sequences: SequenceDictionary) extends ReadRDD {
+
+  lazy val rdd = dataset.rdd.map(_.toAvro)
+  protected lazy val optPartitionMap = None
+
+  override def saveAsParquet(filePath: String,
+                             blockSize: Int = 128 * 1024 * 1024,
+                             pageSize: Int = 1 * 1024 * 1024,
+                             compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                             disableDictionaryEncoding: Boolean = false) {
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    dataset.toDF()
+      .write
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    saveMetadata(filePath)
+  }
+
+  override def transformDataset(
+    tFn: Dataset[ReadProduct] => Dataset[ReadProduct]): ReadRDD = {
+    copy(dataset = tFn(dataset))
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): ReadRDD = {
+    copy(sequences = newSequences)
+  }
+}
+
+case class RDDBoundReadRDD private[rdd] (
+    rdd: RDD[Read],
+    sequences: SequenceDictionary,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends ReadRDD {
+
+  /**
+   * A SQL Dataset of reads.
+   */
+  lazy val dataset: Dataset[ReadProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(ReadProduct.fromAvro))
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): ReadRDD = {
+    copy(sequences = newSequences)
+  }
+}
+
+sealed abstract class ReadRDD extends AvroGenomicRDD[Read, ReadProduct, ReadRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Read)])(
     implicit tTag: ClassTag[Read]): IntervalArray[ReferenceRegion, Read] = {
@@ -94,8 +184,20 @@ case class ReadRDD(rdd: RDD[Read],
   def union(rdds: ReadRDD*): ReadRDD = {
     val iterableRdds = rdds.toSeq
     ReadRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
-      optPartitionMap = None)
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+  }
+
+  /**
+   * Applies a function that transforms the underlying RDD into a new RDD using
+   * the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a Dataset.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataset(
+    tFn: Dataset[ReadProduct] => Dataset[ReadProduct]): ReadRDD = {
+    DatasetBoundReadRDD(tFn(dataset), sequences)
   }
 
   /**
@@ -114,7 +216,7 @@ case class ReadRDD(rdd: RDD[Read],
         .setAttributes(read.getAttributes)
         .build()
     }
-    SequenceRDD(rdd.map(toSequence), sequences, optPartitionMap = None)
+    SequenceRDD(rdd.map(toSequence), sequences)
   }
 
   /**
@@ -137,7 +239,7 @@ case class ReadRDD(rdd: RDD[Read],
         .setAttributes(read.getAttributes)
         .build()
     }
-    SliceRDD(rdd.map(toSlice), sequences, optPartitionMap = None)
+    SliceRDD(rdd.map(toSlice), sequences)
   }
 
   /**
@@ -164,9 +266,13 @@ case class ReadRDD(rdd: RDD[Read],
    * Save reads in FASTQ format.
    *
    * @param filePath Path to save files to.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    * @param asSingleFile If true, saves output as a single file.
    */
-  def saveAsFastq(filePath: String, asSingleFile: Boolean = false) {
+  def saveAsFastq(filePath: String,
+                  asSingleFile: Boolean = false,
+                  disableFastConcat: Boolean = false) {
 
     def toFastq(read: Read): String = {
       val sb = new StringBuilder()
@@ -181,7 +287,10 @@ case class ReadRDD(rdd: RDD[Read],
       sb.toString
     }
 
-    writeTextRdd(rdd.map(toFastq), filePath, asSingleFile)
+    writeTextRdd(rdd.map(toFastq),
+      filePath,
+      asSingleFile = asSingleFile,
+      disableFastConcat = disableFastConcat)
   }
 
   /**
@@ -190,7 +299,7 @@ case class ReadRDD(rdd: RDD[Read],
    */
   protected def replaceRdd(newRdd: RDD[Read],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): ReadRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    new RDDBoundReadRDD(newRdd, sequences, newPartitionMap)
   }
 
   /**

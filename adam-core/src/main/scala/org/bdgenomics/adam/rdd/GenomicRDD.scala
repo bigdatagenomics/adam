@@ -1359,7 +1359,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param rdd RDD to save.
    * @param outputPath Output path to save text files to.
    * @param asSingleFile If true, combines all partition shards.
-<<<<<<< HEAD
    * @param disableFastConcat If asSingleFile is true, disables the use of the
    *   parallel file merging engine.
    * @param optHeaderPath If provided, the header file to include.
@@ -1371,41 +1370,22 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
                                 optHeaderPath: Option[String] = None) {
     if (asSingleFile) {
 
-=======
-   */
-  protected def writeTextRdd[T](
-    rdd: RDD[T],
-    outputPath: String,
-    asSingleFile: Boolean) {
-
-    if (asSingleFile) {
->>>>>>> fc706cc2... Adding read, sequence, and slice RDDs
       // write rdd to disk
       val tailPath = "%s_tail".format(outputPath)
       rdd.saveAsTextFile(tailPath)
 
       // get the filesystem impl
-<<<<<<< HEAD
       val fs = FileSystem.get(rdd.context.hadoopConfiguration)
-=======
-      val path = new Path(outputPath)
-      val fs = path.getFileSystem(rdd.context.hadoopConfiguration)
->>>>>>> fc706cc2... Adding read, sequence, and slice RDDs
 
       // and then merge
       FileMerger.mergeFiles(rdd.context,
         fs,
         new Path(outputPath),
-<<<<<<< HEAD
         new Path(tailPath),
         disableFastConcat = disableFastConcat,
         optHeaderPath = optHeaderPath.map(p => new Path(p)))
     } else {
       assert(optHeaderPath.isEmpty)
-=======
-        new Path(tailPath))
-    } else {
->>>>>>> fc706cc2... Adding read, sequence, and slice RDDs
       rdd.saveAsTextFile(outputPath)
     }
   }

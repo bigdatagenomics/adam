@@ -17,13 +17,18 @@
  */
 package org.bdgenomics.adam.rdd.sequence
 
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
   JavaSaveArgs
 }
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
+import org.bdgenomics.adam.sql.{ Sequence => SequenceProduct }
 import org.bdgenomics.formats.avro.{
   QualityScoreVariant,
   Read,
@@ -67,26 +72,111 @@ private[adam] class SequenceArraySerializer extends IntervalArraySerializer[Refe
 object SequenceRDD {
 
   /**
-   * Builds a SequenceRDD with an empty sequence dictionary and without a partition map.
+   * A GenomicRDD that wraps a dataset of Sequence data.
+   *
+   * @param ds A Dataset of sequences.
+   * @param sequences The reference genome these data are aligned to.
+   */
+  def apply(ds: Dataset[SequenceProduct],
+            sequences: SequenceDictionary): SequenceRDD = {
+    new DatasetBoundSequenceRDD(ds, sequences)
+  }
+
+  /**
+   * Builds a SequenceRDD with an empty sequence dictionary.
    *
    * @param rdd The underlying Sequence RDD to build from.
    * @return Returns a new SequenceRDD.
    */
   def apply(rdd: RDD[Sequence]): SequenceRDD = {
-    SequenceRDD(rdd, SequenceDictionary.empty, optPartitionMap = None)
+    SequenceRDD(rdd, SequenceDictionary.empty)
+  }
+
+  /**
+   * Builds a SequenceRDD given a sequence dictionary.
+   *
+   * @param rdd The underlying Sequence RDD to build from.
+   * @param sd The sequence dictionary for this SequenceRDD.
+   * @return Returns a new SequenceRDD.
+   */
+  def apply(rdd: RDD[Sequence], sd: SequenceDictionary): SequenceRDD = {
+    new RDDBoundSequenceRDD(rdd, sd, None)
   }
 }
 
-/**
- * A GenomicRDD that wraps Sequence data.
- *
- * @param rdd An RDD of genomic Sequences.
- * @param sequences The reference genome these data are aligned to, if any.
- * @param optPartitionMap Optional partition map.
- */
-case class SequenceRDD(rdd: RDD[Sequence],
-                       sequences: SequenceDictionary,
-                       optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[Sequence, SequenceRDD] with Logging {
+case class ParquetUnboundSequenceRDD private[rdd] (
+    @transient private val sc: SparkContext,
+    private val parquetFilename: String,
+    sequences: SequenceDictionary) extends SequenceRDD {
+
+  lazy val rdd: RDD[Sequence] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[SequenceProduct]
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): SequenceRDD = {
+    copy(sequences = newSequences)
+  }
+}
+
+case class DatasetBoundSequenceRDD private[rdd] (
+    dataset: Dataset[SequenceProduct],
+    sequences: SequenceDictionary) extends SequenceRDD {
+
+  lazy val rdd = dataset.rdd.map(_.toAvro)
+  protected lazy val optPartitionMap = None
+
+  override def saveAsParquet(filePath: String,
+                             blockSize: Int = 128 * 1024 * 1024,
+                             pageSize: Int = 1 * 1024 * 1024,
+                             compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                             disableDictionaryEncoding: Boolean = false) {
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    dataset.toDF()
+      .write
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    saveMetadata(filePath)
+  }
+
+  override def transformDataset(
+    tFn: Dataset[SequenceProduct] => Dataset[SequenceProduct]): SequenceRDD = {
+    copy(dataset = tFn(dataset))
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): SequenceRDD = {
+    copy(sequences = newSequences)
+  }
+}
+
+case class RDDBoundSequenceRDD private[rdd] (
+    rdd: RDD[Sequence],
+    sequences: SequenceDictionary,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends SequenceRDD {
+
+  /**
+   * A SQL Dataset of sequences.
+   */
+  lazy val dataset: Dataset[SequenceProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(SequenceProduct.fromAvro))
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): SequenceRDD = {
+    copy(sequences = newSequences)
+  }
+}
+
+sealed abstract class SequenceRDD extends AvroGenomicRDD[Sequence, SequenceProduct, SequenceRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Sequence)])(
     implicit tTag: ClassTag[Sequence]): IntervalArray[ReferenceRegion, Sequence] = {
@@ -96,8 +186,20 @@ case class SequenceRDD(rdd: RDD[Sequence],
   def union(rdds: SequenceRDD*): SequenceRDD = {
     val iterableRdds = rdds.toSeq
     SequenceRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
-      optPartitionMap = None)
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+  }
+
+  /**
+   * Applies a function that transforms the underlying RDD into a new RDD using
+   * the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a Dataset.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataset(
+    tFn: Dataset[SequenceProduct] => Dataset[SequenceProduct]): SequenceRDD = {
+    DatasetBoundSequenceRDD(tFn(dataset), sequences)
   }
 
   /**
@@ -137,7 +239,7 @@ case class SequenceRDD(rdd: RDD[Sequence],
       }
       slices
     }
-    SliceRDD(rdd.flatMap(sliceSequence), sequences, optPartitionMap = None)
+    SliceRDD(rdd.flatMap(sliceSequence), sequences)
   }
 
   /**
@@ -219,7 +321,7 @@ case class SequenceRDD(rdd: RDD[Sequence],
         .setAttributes(sequence.getAttributes)
         .build()
     }
-    ReadRDD(rdd.map(toRead), sequences, optPartitionMap = None)
+    ReadRDD(rdd.map(toRead), sequences)
   }
 
   /**
@@ -242,7 +344,7 @@ case class SequenceRDD(rdd: RDD[Sequence],
         .setAttributes(sequence.getAttributes)
         .build()
     }
-    SliceRDD(rdd.map(toSlice), sequences, optPartitionMap = None)
+    SliceRDD(rdd.map(toSlice), sequences)
   }
 
   /**
@@ -270,9 +372,14 @@ case class SequenceRDD(rdd: RDD[Sequence],
    *
    * @param filePath Path to save files to.
    * @param asSingleFile If true, saves output as a single file.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    * @param lineWidth Hard wrap FASTA formatted sequence at line width, default 60.
    */
-  def saveAsFasta(filePath: String, asSingleFile: Boolean = false, lineWidth: Int = 60) {
+  def saveAsFasta(filePath: String,
+                  asSingleFile: Boolean = false,
+                  disableFastConcat: Boolean = false,
+                  lineWidth: Int = 60) {
 
     def toFasta(sequence: Sequence): String = {
       val sb = new StringBuilder()
@@ -286,7 +393,10 @@ case class SequenceRDD(rdd: RDD[Sequence],
       sb.toString
     }
 
-    writeTextRdd(rdd.map(toFasta), filePath, asSingleFile)
+    writeTextRdd(rdd.map(toFasta),
+      filePath,
+      asSingleFile = asSingleFile,
+      disableFastConcat = disableFastConcat)
   }
 
   /**
@@ -295,7 +405,7 @@ case class SequenceRDD(rdd: RDD[Sequence],
    */
   protected def replaceRdd(newRdd: RDD[Sequence],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): SequenceRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    new RDDBoundSequenceRDD(newRdd, sequences, newPartitionMap)
   }
 
   /**

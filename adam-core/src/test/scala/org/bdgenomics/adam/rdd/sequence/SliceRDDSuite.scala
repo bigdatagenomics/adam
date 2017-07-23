@@ -79,7 +79,7 @@ class SliceRDDSuite extends ADAMFunSuite {
 
   sparkTest("create a new slice rdd with sequence dictionary") {
     val slices: RDD[Slice] = sc.parallelize(Seq(s1, s2, s3))
-    assert(SliceRDD(slices, sd, optPartitionMap = None).rdd.count === 3)
+    assert(SliceRDD(slices, sd).rdd.count === 3)
   }
 
   sparkTest("merge slices into a sequence rdd") {

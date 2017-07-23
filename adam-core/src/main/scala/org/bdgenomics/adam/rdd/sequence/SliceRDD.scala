@@ -17,13 +17,18 @@
  */
 package org.bdgenomics.adam.rdd.sequence
 
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
   JavaSaveArgs
 }
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
+import org.bdgenomics.adam.sql.{ Slice => SliceProduct }
 import org.bdgenomics.formats.avro.{
   QualityScoreVariant,
   Read,
@@ -66,26 +71,111 @@ private[adam] class SliceArraySerializer extends IntervalArraySerializer[Referen
 object SliceRDD {
 
   /**
-   * Builds a SliceRDD with an empty sequence dictionary and without a partition map.
+   * A GenomicRDD that wraps a dataset of Slice data.
+   *
+   * @param ds A Dataset of slices.
+   * @param sequences The reference genome these data are aligned to.
+   */
+  def apply(ds: Dataset[SliceProduct],
+            sequences: SequenceDictionary): SliceRDD = {
+    new DatasetBoundSliceRDD(ds, sequences)
+  }
+
+  /**
+   * Builds a SliceRDD with an empty sequence dictionary.
    *
    * @param rdd The underlying Slice RDD to build from.
    * @return Returns a new SliceRDD.
    */
   def apply(rdd: RDD[Slice]): SliceRDD = {
-    SliceRDD(rdd, SequenceDictionary.empty, optPartitionMap = None)
+    SliceRDD(rdd, SequenceDictionary.empty)
+  }
+
+  /**
+   * Builds a SliceRDD given a sequence dictionary.
+   *
+   * @param rdd The underlying Slice RDD to build from.
+   * @param sd The sequence dictionary for this SliceRDD.
+   * @return Returns a new SliceRDD.
+   */
+  def apply(rdd: RDD[Slice], sd: SequenceDictionary): SliceRDD = {
+    new RDDBoundSliceRDD(rdd, sd, None)
   }
 }
 
-/**
- * A GenomicRDD that wraps Slice data.
- *
- * @param rdd An RDD of genomic Slices.
- * @param sequences The reference genome these data are aligned to, if any.
- * @param optPartitionMap Optional partition map.
- */
-case class SliceRDD(rdd: RDD[Slice],
-                    sequences: SequenceDictionary,
-                    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends AvroGenomicRDD[Slice, SliceRDD] with Logging {
+case class ParquetUnboundSliceRDD private[rdd] (
+    @transient private val sc: SparkContext,
+    private val parquetFilename: String,
+    sequences: SequenceDictionary) extends SliceRDD {
+
+  lazy val rdd: RDD[Slice] = {
+    sc.loadParquet(parquetFilename)
+  }
+
+  protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
+
+  lazy val dataset = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    sqlContext.read.parquet(parquetFilename).as[SliceProduct]
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): SliceRDD = {
+    copy(sequences = newSequences)
+  }
+}
+
+case class DatasetBoundSliceRDD private[rdd] (
+    dataset: Dataset[SliceProduct],
+    sequences: SequenceDictionary) extends SliceRDD {
+
+  lazy val rdd = dataset.rdd.map(_.toAvro)
+  protected lazy val optPartitionMap = None
+
+  override def saveAsParquet(filePath: String,
+                             blockSize: Int = 128 * 1024 * 1024,
+                             pageSize: Int = 1 * 1024 * 1024,
+                             compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                             disableDictionaryEncoding: Boolean = false) {
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    dataset.toDF()
+      .write
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    saveMetadata(filePath)
+  }
+
+  override def transformDataset(
+    tFn: Dataset[SliceProduct] => Dataset[SliceProduct]): SliceRDD = {
+    copy(dataset = tFn(dataset))
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): SliceRDD = {
+    copy(sequences = newSequences)
+  }
+}
+
+case class RDDBoundSliceRDD private[rdd] (
+    rdd: RDD[Slice],
+    sequences: SequenceDictionary,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends SliceRDD {
+
+  /**
+   * A SQL Dataset of slices.
+   */
+  lazy val dataset: Dataset[SliceProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(SliceProduct.fromAvro))
+  }
+
+  def replaceSequences(newSequences: SequenceDictionary): SliceRDD = {
+    copy(sequences = newSequences)
+  }
+}
+
+sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, SliceRDD] {
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Slice)])(
     implicit tTag: ClassTag[Slice]): IntervalArray[ReferenceRegion, Slice] = {
@@ -95,8 +185,20 @@ case class SliceRDD(rdd: RDD[Slice],
   def union(rdds: SliceRDD*): SliceRDD = {
     val iterableRdds = rdds.toSeq
     SliceRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
-      optPartitionMap = None)
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+  }
+
+  /**
+   * Applies a function that transforms the underlying RDD into a new RDD using
+   * the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a Dataset.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) is copied without modification.
+   */
+  def transformDataset(
+    tFn: Dataset[SliceProduct] => Dataset[SliceProduct]): SliceRDD = {
+    DatasetBoundSliceRDD(tFn(dataset), sequences)
   }
 
   /**
@@ -151,7 +253,7 @@ case class SliceRDD(rdd: RDD[Slice],
         .setAttributes(slice.getAttributes)
         .build()
     }
-    ReadRDD(rdd.map(toRead), sequences, optPartitionMap = None)
+    ReadRDD(rdd.map(toRead), sequences)
   }
 
   /**
@@ -170,7 +272,7 @@ case class SliceRDD(rdd: RDD[Slice],
         .setAttributes(slice.getAttributes)
         .build()
     }
-    SequenceRDD(rdd.map(toSequence), sequences, optPartitionMap = None)
+    SequenceRDD(rdd.map(toSequence), sequences)
   }
 
   /**
@@ -204,9 +306,14 @@ case class SliceRDD(rdd: RDD[Slice],
    *
    * @param filePath Path to save files to.
    * @param asSingleFile If true, saves output as a single file.
+   * @param disableFastConcat If asSingleFile is true, disables the use of the
+   *   parallel file merging engine.
    * @param lineWidth Hard wrap FASTA formatted slice at line width, default 60.
    */
-  def saveAsFasta(filePath: String, asSingleFile: Boolean = false, lineWidth: Int = 60) {
+  def saveAsFasta(filePath: String,
+                  asSingleFile: Boolean = false,
+                  disableFastConcat: Boolean = false,
+                  lineWidth: Int = 60) {
 
     def toFasta(slice: Slice): String = {
       val sb = new StringBuilder()
@@ -221,16 +328,19 @@ case class SliceRDD(rdd: RDD[Slice],
       sb.toString
     }
 
-    writeTextRdd(rdd.map(toFasta), filePath, asSingleFile)
+    writeTextRdd(rdd.map(toFasta),
+      filePath,
+      asSingleFile = asSingleFile,
+      disableFastConcat = disableFastConcat)
   }
 
   /**
    * @param newRdd The RDD to replace the underlying RDD with.
-   * @return Returns a new SliceRDD with the underlying RDD replaced.
+   * @return Returns a new ReadRDD with the underlying RDD replaced.
    */
   protected def replaceRdd(newRdd: RDD[Slice],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): SliceRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    new RDDBoundSliceRDD(newRdd, sequences, newPartitionMap)
   }
 
   /**

@@ -74,7 +74,7 @@ class ReadRDDSuite extends ADAMFunSuite {
 
   sparkTest("create a new read rdd with sequence dictionary") {
     val reads: RDD[Read] = sc.parallelize(Seq(r1, r2))
-    assert(ReadRDD(reads, sd, optPartitionMap = None).rdd.count === 2)
+    assert(ReadRDD(reads, sd).rdd.count === 2)
   }
 
   sparkTest("save as parquet") {
@@ -109,7 +109,7 @@ class ReadRDDSuite extends ADAMFunSuite {
       .build
 
     val reads: ReadRDD = ReadRDD(sc.parallelize(Seq(r1, r2)))
-    val features: FeatureRDD = FeatureRDD(sc.parallelize(Seq(feature)), optStorageLevel = None)
+    val features: FeatureRDD = FeatureRDD(sc.parallelize(Seq(feature)))
 
     val kv = reads.broadcastRegionJoin(features).rdd.first
     assert(kv._1 === r2)
@@ -124,7 +124,7 @@ class ReadRDDSuite extends ADAMFunSuite {
       .build
 
     val reads: ReadRDD = ReadRDD(sc.parallelize(Seq(r1, r2)))
-    val features: FeatureRDD = FeatureRDD(sc.parallelize(Seq(feature)), optStorageLevel = None)
+    val features: FeatureRDD = FeatureRDD(sc.parallelize(Seq(feature)))
 
     val kv = reads.broadcastRegionJoin(features).rdd.first
     assert(kv._1 === r1)

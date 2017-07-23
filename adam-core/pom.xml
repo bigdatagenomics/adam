@@ -110,6 +110,10 @@
                 <argument>org.bdgenomics.formats.avro.NucleotideContigFragment</argument>
                 <argument>org.bdgenomics.formats.avro.OntologyTerm</argument>
                 <argument>org.bdgenomics.formats.avro.ProcessingStep</argument>
+                <argument>org.bdgenomics.formats.avro.Read</argument>
+                <argument>org.bdgenomics.formats.avro.RecordGroup</argument>
+                <argument>org.bdgenomics.formats.avro.Sequence</argument>
+                <argument>org.bdgenomics.formats.avro.Slice</argument>
                 <argument>org.bdgenomics.formats.avro.TranscriptEffect</argument>
                 <argument>org.bdgenomics.formats.avro.Variant</argument>
                 <argument>org.bdgenomics.formats.avro.VariantAnnotation</argument>
