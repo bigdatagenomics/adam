@@ -70,7 +70,7 @@ class SequenceRDDSuite extends ADAMFunSuite {
 
   sparkTest("create a new sequence rdd with sequence dictionary") {
     val sequences: RDD[Sequence] = sc.parallelize(Seq(s1, s2))
-    assert(SequenceRDD(sequences, sd, optPartitionMap = None).rdd.count === 2)
+    assert(SequenceRDD(sequences, sd).rdd.count === 2)
   }
 
   sparkTest("save as parquet") {
