@@ -109,6 +109,7 @@
                 <argument>org.bdgenomics.formats.avro.Genotype</argument>
                 <argument>org.bdgenomics.formats.avro.NucleotideContigFragment</argument>
                 <argument>org.bdgenomics.formats.avro.OntologyTerm</argument>
+                <argument>org.bdgenomics.formats.avro.ProcessingStep</argument>
                 <argument>org.bdgenomics.formats.avro.TranscriptEffect</argument>
                 <argument>org.bdgenomics.formats.avro.Variant</argument>
                 <argument>org.bdgenomics.formats.avro.VariantAnnotation</argument>
