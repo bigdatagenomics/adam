@@ -20,6 +20,7 @@ package org.bdgenomics.adam.converters
 import htsjdk.variant.vcf.{
   VCFConstants,
   VCFFormatHeaderLine,
+  VCFHeaderLine,
   VCFHeaderLineCount,
   VCFHeaderLineType,
   VCFInfoHeaderLine,
@@ -91,7 +92,7 @@ object DefaultHeaderLines {
   /**
    * Default set of VCF header lines for INFO fields supported in ADAM.
    */
-  lazy val infoHeaderLines = Seq(
+  lazy val infoHeaderLines: Seq[VCFInfoHeaderLine] = Seq(
     ancestralAllele,
     alleleCount,
     readDepth,
@@ -169,7 +170,7 @@ object DefaultHeaderLines {
   /**
    * Default set of VCF header lines for GT format fields supported in ADAM.
    */
-  lazy val formatHeaderLines = Seq(
+  lazy val formatHeaderLines: Seq[VCFFormatHeaderLine] = Seq(
     genotype,
     genotypeQuality,
     allelicDepth,
@@ -188,5 +189,5 @@ object DefaultHeaderLines {
   /**
    * Default set of VCF header lines for INFO and GT format fields supported in ADAM.
    */
-  lazy val allHeaderLines = infoHeaderLines ++ formatHeaderLines
+  lazy val allHeaderLines: Seq[VCFHeaderLine] = infoHeaderLines ++ formatHeaderLines
 }
