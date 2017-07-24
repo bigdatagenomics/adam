@@ -160,6 +160,11 @@ setGeneric("realignIndels",
 
 # @rdname CoverageRDD
 # @export
+setGeneric("collapse",
+           function(ardd, ...) { standardGeneric("collapse") })
+
+# @rdname CoverageRDD
+# @export
 setGeneric("toFeatureRDD",
            function(ardd) { standardGeneric("toFeatureRDD") })
 
