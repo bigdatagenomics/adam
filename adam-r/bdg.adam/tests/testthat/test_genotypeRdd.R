@@ -26,7 +26,7 @@ test_that("round trip vcf", {
     testFile <- resourceFile("small.vcf")
     genotypes <- loadGenotypes(ac, testFile)
     tmpPath <- tempfile(fileext = ".vcf")
-    save(genotypes, tmpPath)
+    saveAsVcf(toVariantContextRDD(genotypes), tmpPath)
 
     expect_equal(count(toDF(genotypes)), count(toDF(loadGenotypes(ac, tmpPath))))
 })
@@ -36,7 +36,7 @@ test_that("save sorted vcf", {
     testFile <- resourceFile("random.vcf")
     genotypes <- loadGenotypes(ac, testFile)
     tmpPath <- tempfile(fileext = ".vcf")
-    saveAsVcf(genotypes, tmpPath, asSingleFile = TRUE, sortOnSave = TRUE)
+    saveAsVcf(sort(toVariantContextRDD(genotypes)), tmpPath, asSingleFile = TRUE)
 
     truthFile <- resourceFile("sorted.vcf")
     expect_files_match(tmpPath, truthFile)
@@ -47,7 +47,9 @@ test_that("save lex sorted vcf", {
     testFile <- resourceFile("random.vcf")
     genotypes <- loadGenotypes(ac, testFile)
     tmpPath <- tempfile(fileext = ".vcf")
-    saveAsVcf(genotypes, tmpPath, asSingleFile = TRUE, sortOnSave = "lexicographically")
+    saveAsVcf(sortLexicographically(toVariantContextRDD(genotypes)),
+              tmpPath,
+              asSingleFile = TRUE)
 
     truthFile <- resourceFile("sorted.lex.vcf")
     expect_files_match(tmpPath, truthFile)

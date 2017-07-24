@@ -59,7 +59,7 @@ class GenomicRDD(object):
         :return: Returns a new, sorted RDD, of the implementing class type.
         """
 
-        return self._replaceRdd(self._jvmRdd.sort())
+        return self._replaceRdd(self._jvmRdd.sortLexicographically())
 
 
     def union(self, rdds):
@@ -136,7 +136,23 @@ class GenomicRDD(object):
                                                   convFnInst))
 
     
-class AlignmentRecordRDD(GenomicRDD):
+class GenomicDataset(GenomicRDD):
+
+
+    def __init__(self, jvmRdd, sc):
+
+        GenomicRDD.__init__(self, jvmRdd, sc)
+
+        
+    def toDF(self):
+        """
+        :return: Returns a dataframe representing this RDD.
+        """
+        
+        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+
+
+class AlignmentRecordRDD(GenomicDataset):
 
 
     def __init__(self, jvmRdd, sc):
@@ -149,7 +165,7 @@ class AlignmentRecordRDD(GenomicRDD):
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicRDD.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmRdd, sc)
 
 
     def _replaceRdd(self, newRdd):
@@ -157,14 +173,6 @@ class AlignmentRecordRDD(GenomicRDD):
         return AlignmentRecordRDD(newRdd, self.sc)
 
     
-    def toDF(self):
-        """
-        :return: Returns a dataframe representing this RDD.
-        """
-        
-        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
-
-
     def toFragments(self):
         """
         Convert this set of reads into fragments.
@@ -479,7 +487,7 @@ class AlignmentRecordRDD(GenomicRDD):
                                   self.sc)
 
 
-class CoverageRDD(GenomicRDD):
+class CoverageRDD(GenomicDataset):
 
 
     def _replaceRdd(self, newRdd):
@@ -497,15 +505,7 @@ class CoverageRDD(GenomicRDD):
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicRDD.__init__(self, jvmRdd, sc)
-
-
-    def toDF(self):
-        """
-        :return: Returns a dataframe representing this RDD.
-        """
-        
-        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+        GenomicDataset.__init__(self, jvmRdd, sc)
 
 
     def save(self, filePath, asSingleFile = False):
@@ -592,7 +592,7 @@ class CoverageRDD(GenomicRDD):
         return CoverageRDD(self._jvmRdd.flatten(), self.sc)
 
 
-class FeatureRDD(GenomicRDD):
+class FeatureRDD(GenomicDataset):
 
 
     def __init__(self, jvmRdd, sc):
@@ -605,15 +605,7 @@ class FeatureRDD(GenomicRDD):
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicRDD.__init__(self, jvmRdd, sc)
-
-
-    def toDF(self):
-        """
-        :return: Returns a dataframe representing this RDD.
-        """
-        
-        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+        GenomicDataset.__init__(self, jvmRdd, sc)
 
 
     def save(self, filePath, asSingleFile = False, disableFastConcat = False):
@@ -647,7 +639,7 @@ class FeatureRDD(GenomicRDD):
         return CoverageRDD(self._jvmRdd.toCoverage(), self.sc)
 
 
-class FragmentRDD(GenomicRDD):
+class FragmentRDD(GenomicDataset):
 
 
     def _replaceRdd(self, newRdd):
@@ -665,17 +657,9 @@ class FragmentRDD(GenomicRDD):
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicRDD.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmRdd, sc)
 
         
-    def toDF(self):
-        """
-        :return: Returns a dataframe representing this RDD.
-        """
-        
-        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
-
-
     def toReads(self):
         """
         Splits up the reads in a Fragment, and creates a new RDD.
@@ -709,7 +693,7 @@ class FragmentRDD(GenomicRDD):
         self._jvmRdd.save(filePath)
 
 
-class GenotypeRDD(GenomicRDD):
+class GenotypeRDD(GenomicDataset):
 
 
     def _replaceRdd(self, newRdd):
@@ -727,74 +711,29 @@ class GenotypeRDD(GenomicRDD):
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicRDD.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmRdd, sc)
 
 
-    def toDF(self):
+    def saveAsParquet(self, filePath):
         """
-        :return: Returns a dataframe representing this RDD.
-        """
-        
-        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
-
-        
-    def save(self, filePath):
-        """
-        Saves this RDD of genotypes to disk.
-
-        :param str filePath: Path to save file to. If ends in ".vcf", saves as
-        VCF, else saves as Parquet.
-        """
-
-        if (filePath.endswith(".vcf")):
-            self.saveAsVcf(filePath)
-        else:
-            self._jvmRdd.saveAsParquet(filePath)
-
-
-    def saveAsVcf(self,
-                  filePath,
-                  asSingleFile=True,
-                  deferMerging=False,
-                  stringency=LENIENT,
-                  sortOnSave=None,
-                  disableFastConcat=False):
-        """
-        Saves this RDD of genotypes to disk as VCF.
+        Saves this RDD of genotypes to disk as Parquet.
 
         :param str filePath: Path to save file to.
-        :param bool asSingleFile: If true, saves the output as a single file
-        by merging the sharded output after saving.
-        :param bool deferMerging: If true, saves the output as prepped for merging
-        into a single file, but does not merge.
-        :param bdgenomics.adam.stringency stringency: The stringency to use
-        when writing the VCF.
-        :param bool sortOnSave: Whether to sort when saving. If None, does not
-        sort. If True, sorts by contig index. If "lexicographically", sorts by
-        contig name.
-        :param bool disableFastConcat: If asSingleFile is true, disables the use
-        of the fast concatenation engine for saving to HDFS.
+        """
+
+        self._jvmRdd.saveAsParquet(filePath)
+
+
+    def toVariantContextRDD(self):
+        """
+        :return: These genotypes, converted to variant contexts.
         """
 
         vcs = self._jvmRdd.toVariantContextRDD()
-
-        if sortOnSave is None:
-            finalVcs = vcs
-        elif sortOnSave == "lexicographically":
-            finalVcs = vcs.sortLexicographically()
-        elif sortOnSave:
-            finalVcs = vcs.sort()
-        else:
-            raise RuntimeError('sortOnSave = %s. Expected None, "lexicographically", or True.' % sortOnSave)
-
-        finalVcs.saveAsVcf(filePath,
-                           asSingleFile,
-                           deferMerging,
-                           disableFastConcat,
-                           _toJava(stringency, self.sc._jvm))
+        return VariantContextRDD(vcs, self.sc)
 
 
-class NucleotideContigFragmentRDD(GenomicRDD):
+class NucleotideContigFragmentRDD(GenomicDataset):
 
 
     def _replaceRdd(self, newRdd):
@@ -812,15 +751,7 @@ class NucleotideContigFragmentRDD(GenomicRDD):
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicRDD.__init__(self, jvmRdd, sc)
-
-
-    def toDF(self):
-        """
-        :return: Returns a dataframe representing this RDD.
-        """
-        
-        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+        GenomicDataset.__init__(self, jvmRdd, sc)
 
 
     def save(self, fileName):
@@ -865,7 +796,7 @@ class NucleotideContigFragmentRDD(GenomicRDD):
         return RDD(self._jvmRdd.countKmers(kmerLength), self.sc)
 
 
-class VariantRDD(GenomicRDD):
+class VariantRDD(GenomicDataset):
 
 
     def _replaceRdd(self, newRdd):
@@ -883,23 +814,54 @@ class VariantRDD(GenomicRDD):
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicRDD.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmRdd, sc)
 
 
-    def toDF(self):
+    def toVariantContextRDD(self):
         """
-        :return: Returns a dataframe representing this RDD.
+        :return: These variants, converted to variant contexts.
         """
         
-        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+        vcs = self._jvmRdd.toVariantContextRDD()
+        return VariantContextRDD(vcs, self.sc)
+        
 
+    def saveAsParquet(self, filePath):
+        """
+        Saves this RDD of variants to disk as Parquet.
+
+        :param str filePath: Path to save file to.
+        """
+
+        self._jvmRdd.saveAsParquet(filePath)
+
+
+class VariantContextRDD(GenomicRDD):
+
+
+    def _replaceRdd(self, newRdd):
+
+        return VariantContextRDD(newRdd, self.sc)
+
+
+    def __init__(self, jvmRdd, sc):
+        """
+        Constructs a Python VariantContextRDD from a JVM VariantContextRDD.
+        Should not be called from user code; instead, go through
+        bdgenomics.adamContext.ADAMContext.
+
+        :param jvmRdd: Py4j handle to the underlying JVM VariantContextRDD.
+        :param pyspark.context.SparkContext sc: Active Spark Context.
+        """
+
+        GenomicRDD.__init__(self, jvmRdd, sc)
+        
 
     def saveAsVcf(self,
                   filePath,
                   asSingleFile=True,
                   deferMerging=False,
                   stringency=LENIENT,
-                  sortOnSave=None,
                   disableFastConcat=False):
         """
         Saves this RDD of variants to disk as VCF.
@@ -911,40 +873,12 @@ class VariantRDD(GenomicRDD):
         into a single file, but does not merge.
         :param bdgenomics.adam.stringency stringency: The stringency to use
         when writing the VCF.
-        :param bool sortOnSave: Whether to sort when saving. If None, does not
-        sort. If True, sorts by contig index. If "lexicographically", sorts by
-        contig name.
         :param bool disableFastConcat: If asSingleFile is true, disables the use
         of the fast concatenation engine for saving to HDFS.
         """
 
-        vcs = self._jvmRdd.toVariantContextRDD()
-
-        if sortOnSave is None:
-            finalVcs = vcs
-        elif sortOnSave == "lexicographically":
-            finalVcs = vcs.sortLexicographically()
-        elif sortOnSave:
-            finalVcs = vcs.sort()
-        else:
-            raise RuntimeError('sortOnSave = %s. Expected None, "lexicographically", or True.' % sortOnSave)
-
-        finalVcs.saveAsVcf(filePath,
-                           asSingleFile,
-                           deferMerging,
-                           disableFastConcat,
-                           _toJava(stringency, self.sc._jvm))
-
-
-    def save(self, filePath):
-        """
-        Saves this RDD of variants to disk.
-
-        :param str filePath: Path to save file to. If ends in ".vcf", saves as
-        VCF, else saves as Parquet.
-        """
-
-        if (filePath.endswith(".vcf")):
-            self.saveAsVcf(filePath)
-        else:
-            self._jvmRdd.saveAsParquet(filePath)
+        self._jvmRdd.saveAsVcf(filePath,
+                               asSingleFile,
+                               deferMerging,
+                               disableFastConcat,
+                               _toJava(stringency, self.sc._jvm))

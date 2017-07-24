@@ -25,9 +25,15 @@ setClass("GenomicRDD",
 
 
 #' @export
-setClass("AlignmentRecordRDD",
+setClass("GenomicDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicRDD")
+
+
+#' @export
+setClass("AlignmentRecordRDD",
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicDataset")
 
 AlignmentRecordRDD <- function(jrdd) {
     new("AlignmentRecordRDD", jrdd = jrdd)
@@ -36,7 +42,7 @@ AlignmentRecordRDD <- function(jrdd) {
 #' @export
 setClass("CoverageRDD",
          slots = list(jrdd = "jobj"),
-         contains = "GenomicRDD")
+         contains = "GenomicDataset")
 
 CoverageRDD <- function(jrdd) {
     new("CoverageRDD", jrdd = jrdd)
@@ -45,7 +51,7 @@ CoverageRDD <- function(jrdd) {
 #' @export
 setClass("FeatureRDD",
          slots = list(jrdd = "jobj"),
-         contains = "GenomicRDD")
+         contains = "GenomicDataset")
 
 FeatureRDD <- function(jrdd) {
     new("FeatureRDD", jrdd = jrdd)
@@ -54,7 +60,7 @@ FeatureRDD <- function(jrdd) {
 #' @export
 setClass("FragmentRDD",
          slots = list(jrdd = "jobj"),
-         contains = "GenomicRDD")
+         contains = "GenomicDataset")
 
 FragmentRDD <- function(jrdd) {
     new("FragmentRDD", jrdd = jrdd)
@@ -63,7 +69,7 @@ FragmentRDD <- function(jrdd) {
 #' @export
 setClass("GenotypeRDD",
          slots = list(jrdd = "jobj"),
-         contains = "GenomicRDD")
+         contains = "GenomicDataset")
 
 GenotypeRDD <- function(jrdd) {
     new("GenotypeRDD", jrdd = jrdd)
@@ -72,7 +78,7 @@ GenotypeRDD <- function(jrdd) {
 #' @export
 setClass("NucleotideContigFragmentRDD",
          slots = list(jrdd = "jobj"),
-         contains = "GenomicRDD")
+         contains = "GenomicDataset")
 
 NucleotideContigFragmentRDD <- function(jrdd) {
     new("NucleotideContigFragmentRDD", jrdd = jrdd)
@@ -81,10 +87,19 @@ NucleotideContigFragmentRDD <- function(jrdd) {
 #' @export
 setClass("VariantRDD",
          slots = list(jrdd = "jobj"),
-         contains = "GenomicRDD")
+         contains = "GenomicDataset")
 
 VariantRDD <- function(jrdd) {
     new("VariantRDD", jrdd = jrdd)
+}
+
+#' @export
+setClass("VariantContextRDD",
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicRDD")
+
+VariantContextRDD <- function(jrdd) {
+    new("VariantContextRDD", jrdd = jrdd)
 }
 
 #'
@@ -167,6 +182,30 @@ setMethod("pipe",
               replaceRdd(ardd, rdd)
           })
 
+#' Sorts our genome aligned data by reference positions, with contigs ordered
+#' by index.
+#'
+#' @return Returns a new, sorted RDD, of the implementing class type.
+#'
+#' @export
+setMethod("sort",
+          signature(ardd = "GenomicRDD"),
+          function(ardd) {
+              replaceRdd(ardd, sparkR.callJMethod(ardd@jrdd, "sort"))
+          })
+
+#' Sorts our genome aligned data by reference positions, with contigs ordered
+#' lexicographically.
+#'
+#' @return Returns a new, sorted RDD, of the implementing class type.
+#'
+#' @export
+setMethod("sortLexicographically",
+          signature(ardd = "GenomicRDD"),
+          function(ardd) {
+              replaceRdd(ardd, sparkR.callJMethod(ardd@jrdd, "sortLexicographically"))
+          })
+
 #' Converts this GenomicRDD into a dataframe.
 #'
 #' @param ardd The RDD to convert into a dataframe.
@@ -174,7 +213,7 @@ setMethod("pipe",
 #'
 #' @export
 setMethod("toDF",
-          signature(ardd = "GenomicRDD"),
+          signature(ardd = "GenomicDataset"),
           function(ardd) {
               sdf = sparkR.callJMethod(ardd@jrdd, "toDF")
               new("SparkDataFrame", sdf, FALSE)
@@ -569,64 +608,22 @@ setMethod("replaceRdd",
               GenotypeRDD(rdd)
           })
 
-#' Saves this RDD of genotypes to disk.
+#' Saves this RDD of genotypes to disk as Parquet.
 #'
-#' @param filePath Path to save file to. If ends in ".vcf", saves as VCF, else
-#'   saves as Parquet.
+#' @param filePath Path to save file to.
 #'
 #' @export
-setMethod("save", signature(ardd = "GenotypeRDD", filePath = "character"),
+setMethod("saveAsParquet", signature(ardd = "GenotypeRDD", filePath = "character"),
           function(ardd, filePath) {
-              if (grepl("*vcf$", filePath)) {
-                  saveAsVcf(ardd, filePath)
-              } else {
-                  invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
-              }
+              invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
           })
 
-#' Saves this RDD of genotypes to disk as VCF
-#'
-#' @param filePath Path to save VCF to.
-#' @param asSingleFile If true, saves the output as a single file
-#'   by merging the sharded output after saving.
-#' @param deferMerging If true, saves the output as prepped for merging
-#'   into a single file, but does not merge.
-#' @param stringency The stringency to use when writing the VCF.
-#' @param sortOnSave Whether to sort when saving. If NA, does not sort. If True,
-#'   sorts by contig index. If "lexicographically", sorts by contig name.
-#' @param disableFastConcat: If asSingleFile is true, disables the use
-#'   of the fast concatenation engine for saving to HDFS.
+#' @return Returns this RDD of Genotypes as VariantContexts.
 #'
 #' @export
-setMethod("saveAsVcf", signature(ardd = "GenotypeRDD", filePath = "character"),
-          function(ardd,
-                   filePath,
-                   asSingleFile = TRUE,
-                   deferMerging = FALSE,
-                   stringency = "LENIENT",
-                   sortOnSave = NA,
-                   disableFastConcat = FALSE) {
-
-              vcs <- sparkR.callJMethod(ardd@jrdd, "toVariantContextRDD")
-
-              if (is.na(sortOnSave)) {
-                  finalVcs <- vcs
-              } else if (sortOnSave == "lexicographically") {
-                  finalVcs <- sparkR.callJMethod(vcs, "sortLexicographically")
-              } else {
-                  finalVcs <- sparkR.callJMethod(vcs, "sort")
-              }
-
-              stringency <- sparkR.callJStatic("htsjdk.samtools.ValidationStringency",
-                                               "valueOf", stringency)
-              
-              invisible(sparkR.callJMethod(finalVcs,
-                                           "saveAsVcf",
-                                           filePath,
-                                           asSingleFile,
-                                           deferMerging,
-                                           disableFastConcat,
-                                           stringency))
+setMethod("toVariantContextRDD", signature(ardd = "GenotypeRDD"),
+          function(ardd) {
+              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContextRDD"))
           })
 
 setMethod("replaceRdd",
@@ -672,22 +669,32 @@ setMethod("replaceRdd",
               VariantRDD(rdd)
           })
 
-#' Saves this RDD of variants to disk.
+#' Saves this RDD of variants to disk as Parquet.
 #'
-#' @param filePath Path to save file to. If ends in ".vcf", saves as VCF, else
-#'   saves as Parquet.
+#' @param filePath Path to save file to.
 #'
 #' @export
-setMethod("save", signature(ardd = "VariantRDD", filePath = "character"),
+setMethod("saveAsParquet", signature(ardd = "VariantRDD", filePath = "character"),
           function(ardd, filePath) {
-              if (grepl("*vcf$", filePath)) {
-                  saveAsVcf(ardd, filePath)
-              } else {
-                  invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
-              }
+              invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
           })
 
-#' Saves this RDD of variants to disk as VCF
+#' @return Returns this RDD of Variants as VariantContexts.
+#'
+#' @export
+setMethod("toVariantContextRDD", signature(ardd = "VariantRDD"),
+          function(ardd) {
+              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContextRDD"))
+          })
+
+setMethod("replaceRdd",
+          signature(ardd = "VariantContextRDD",
+                    rdd = "jobj"),
+          function(ardd, rdd) {
+              VariantContextRDD(rdd)
+          })
+
+#' Saves this RDD of variant contexts to disk as VCF
 #'
 #' @param filePath Path to save VCF to.
 #' @param asSingleFile If true, saves the output as a single file
@@ -695,35 +702,22 @@ setMethod("save", signature(ardd = "VariantRDD", filePath = "character"),
 #' @param deferMerging If true, saves the output as prepped for merging
 #'   into a single file, but does not merge.
 #' @param stringency The stringency to use when writing the VCF.
-#' @param sortOnSave Whether to sort when saving. If NA, does not sort. If True,
-#'   sorts by contig index. If "lexicographically", sorts by contig name.
 #' @param disableFastConcat: If asSingleFile is true, disables the use
 #'   of the fast concatenation engine for saving to HDFS.
 #'
 #' @export
-setMethod("saveAsVcf", signature(ardd = "VariantRDD", filePath = "character"),
+setMethod("saveAsVcf", signature(ardd = "VariantContextRDD", filePath = "character"),
           function(ardd,
                    filePath,
                    asSingleFile = TRUE,
                    deferMerging = FALSE,
                    stringency = "LENIENT",
-                   sortOnSave = NA,
                    disableFastConcat = FALSE) {
-
-              vcs <- sparkR.callJMethod(ardd@jrdd, "toVariantContextRDD")
-
-              if (is.na(sortOnSave)) {
-                  finalVcs <- vcs
-              } else if (sortOnSave == "lexicographically") {
-                  finalVcs <- sparkR.callJMethod(vcs, "sortLexicographically")
-              } else {
-                  finalVcs <- sparkR.callJMethod(vcs, "sort")
-              }
 
               stringency <- sparkR.callJStatic("htsjdk.samtools.ValidationStringency",
                                                "valueOf", stringency)
               
-              invisible(sparkR.callJMethod(finalVcs,
+              invisible(sparkR.callJMethod(ardd@jrdd,
                                            "saveAsVcf",
                                            filePath,
                                            asSingleFile,
