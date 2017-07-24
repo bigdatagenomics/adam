@@ -574,7 +574,7 @@ setMethod("save",
 #' @return An RDD with merged tuples of adjacent sites with same coverage.
 #'
 #' @export
-setMethod("save", signature(ardd = "CoverageRDD"),
+setMethod("collapse", signature(ardd = "CoverageRDD"),
           function(ardd) {
               CoverageRDD(sparkR.callJMethod(ardd@jrdd, "collapse"))
           })
