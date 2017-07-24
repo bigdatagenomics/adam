@@ -32,7 +32,7 @@ class VariantRDDTest(SparkTestCase):
         variants = ac.loadVariants(testFile)
 
         tmpPath = self.tmpFile() + ".vcf"
-        variants.save(tmpPath)
+        variants.toVariantContextRDD().saveAsVcf(tmpPath)
 
         savedVariants = ac.loadVariants(testFile)
 

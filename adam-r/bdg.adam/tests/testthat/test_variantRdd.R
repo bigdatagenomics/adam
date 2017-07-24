@@ -26,7 +26,7 @@ test_that("round trip vcf", {
     testFile <- resourceFile("small.vcf")
     variants <- loadVariants(ac, testFile)
     tmpPath <- tempfile(fileext = ".vcf")
-    save(variants, tmpPath)
+    saveAsVcf(toVariantContextRDD(variants), tmpPath)
 
     expect_equal(count(toDF(variants)), count(toDF(loadVariants(ac, tmpPath))))
 })

@@ -73,6 +73,16 @@ setGeneric("replaceRdd",
 setGeneric("save",
            function(ardd, filePath, ...) { standardGeneric("save") })
 
+# @rdname GenomicRDD
+# @export
+setGeneric("sort",
+           function(ardd) { standardGeneric("sort") })
+
+# @rdname GenomicRDD
+# @export
+setGeneric("sortLexicographically",
+           function(ardd) { standardGeneric("sortLexicographically") })
+
 #### AlignmentRecord operations ####
 
 # @rdname AlignmentRecordRDD
@@ -160,8 +170,13 @@ setGeneric("toReads",
 
 # @rdname GenotypeRDD
 # @export
-setGeneric("saveAsVcf",
-           function(ardd, filePath, ...) { standardGeneric("saveAsVcf") })
+setGeneric("toVariantContextRDD",
+           function(ardd) { standardGeneric("toVariantContextRDD") })
+
+# @rdname GenotypeRDD
+# @export
+setGeneric("saveAsParquet",
+           function(ardd, filePath) { standardGeneric("saveAsParquet") })
 
 #### NucleotideContigFragment operations ####
 
@@ -175,6 +190,16 @@ setGeneric("flankAdjacentFragments",
 #### Variant operations ####
 
 # @rdname VariantRDD
+# @export
+setGeneric("toVariantContextRDD",
+           function(ardd) { standardGeneric("toVariantContextRDD") })
+
+# @rdname VariantRDD
+# @export
+setGeneric("saveAsParquet",
+           function(ardd, filePath) { standardGeneric("saveAsParquet") })
+
+# @rdname VariantContextRDD
 # @export
 setGeneric("saveAsVcf",
            function(ardd, filePath, ...) { standardGeneric("saveAsVcf") })
