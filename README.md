@@ -186,6 +186,14 @@ Outputs
 You might want to take a peek at the `scripts/jenkins-test` script and give it a run. It will fetch a mouse chromosome, encode it to ADAM
 reads and pileups, run flagstat, etc. We use this script to test that ADAM is working correctly.
 
+### Homebrew
+
+If you have Homebrew installed, you can install adam via:
+
+```bash
+$ brew install adam
+```
+
 ### Installing Spark
 
 You'll need to have a Spark release on your system and the `$SPARK_HOME` environment variable pointing at it; prebuilt binaries can be downloaded from the
