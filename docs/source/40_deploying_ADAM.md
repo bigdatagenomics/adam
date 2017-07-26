@@ -474,7 +474,7 @@ does the following work:
 
 The `call_adam` and `call_conductor` functions are imported from the
 `toil_lib.tools.spark_tools` module. These functions run ADAM and Conductor
-using Docker containers from [cgl-docker-lib](https://github.com/BD2KGenomics/cgl-docker-lib).
+using Docker containers from [cgl-docker-lib](https://github.com/BD2KGenomics/cgl-docker-lib).[^dl]
 These two functions launch the Docker containers using the `call_docker`
 function from the `toil_lib.programs` module, and do some basic configuration of
 the command line. In the ADAM example, all the user needs to pass is the exact
@@ -570,18 +570,20 @@ above which will indicate the address of the Spark master to which your applicat
 should connect such as `spark://somehostname:7077`
 
 ### Start adam-shell
+
 Your sys admin will probably prefer that you launch your `adam-shell` or start an application from a 
-cluster node rather than the head node you log in to so you may want to do so with:
+cluster node rather than the head node you log in to. You may want to do so with:
 ```
 sinteractive
 ```
 
-Start an adam-shell as so:
+Start an adam-shell:
 ```
 $ADAM_HOME/bin/adam-shell --master spark://hostnamefromslurmdotout:7077
 ```
 
 ### or Run a batch job with adam-submit
+
 ```
 $ADAM_HOME/bin/adam-submit --master spark://hostnamefromslurmdotout:7077
 ```
@@ -590,5 +592,6 @@ You should be able to connect to the Spark Web UI at `http://hostnamefromslurmdo
 you may need to ask your local sys admin to open the requried ports.
 
 ### Feedback
-We'd love to hear feedback on your experience running ADAM on HPC/Slurm or other deployment architectures, 
-and let us know of any problems you run into via the mailing list or Gitter.
+
+We'd love to hear feedback on your experience running ADAM on HPC/Slurm or other deployment architectures. 
+Please let us know of any problems you run into via the mailing list or Gitter.
