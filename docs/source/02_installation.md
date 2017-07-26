@@ -1,4 +1,4 @@
-# Building ADAM from Source {#build-from-source}
+# Building ADAM from Source
 
 You will need to have [Apache Maven](http://maven.apache.org/) version 3.1.1 or later
 installed in order to build ADAM.
@@ -49,15 +49,15 @@ to have the Spark binaries on your system; prebuilt binaries can be downloaded f
 https://amplab.cs.berkeley.edu/jenkins/job/ADAM/) builds ADAM against Spark versions 1.6.1 and 2.0.0,
 Scala versions 2.10 and 2.11, and Hadoop versions 2.3.0 and 2.6.0.
 
-Once this alias is in place, you can run ADAM by simply typing `adam-submit` at the commandline, e.g.
+Once this alias is in place, you can run ADAM by simply typing `adam-submit` at the commandline.
 
 ```bash
 $ adam-submit
 ```
 
-## Building for Python {#python-build}
+## Building for Python
 
-To build and test [ADAM's Python bindings](#python), enable the `python`
+To build and test ADAM's Python bindings, enable the `python`
 profile:
 
 ```bash
@@ -100,7 +100,7 @@ ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\.\_-]*\.jar$" | gr
 export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
 ```
 
-This assumes that the [ADAM JARs have already been built](#build-from-source).
+This assumes that the [ADAM JARs have already been built](#building-ADAM-from-source).
 Additionally, we require [pytest](https://docs.pytest.org/en/latest/) to be
 installed. The adam-python makefile can install this dependency. Once you have
 an active virtualenv or Conda environment, run:
@@ -110,10 +110,10 @@ cd adam-python
 make prepare
 ```
 
-## Building for R {#r-build}
+## Building for R
 
-ADAM supports SparkR, for Spark 2.1.0 and onwards. To build and test [ADAM's R
-bindings](#r), enable the `r` profile:
+ADAM supports SparkR, for Spark 2.1.0 and onwards. To build and test ADAM's R
+bindings, enable the `r` profile:
 
 ```bash
 mvn -Pr package
@@ -133,5 +133,5 @@ export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class
 ```
 
 Note that the `ASSEMBLY_DIR` and `ASSEMBLY_JAR` lines are the same as for the
-[Python build](#python-build). As with the Python build, this assumes that the
-[ADAM JARs have already been built](#build-from-source).
+[Python build](#building-for-python). As with the Python build, this assumes that the
+[ADAM JARs have already been built](#building-ADAM-from-source).
