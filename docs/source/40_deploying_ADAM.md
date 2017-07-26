@@ -176,11 +176,11 @@ In the `adam-shell` command, all of the arguments are passed to the
   --deploy-mode client
 ```
 
-All of these commands assume that the Spark assembly that you are using is
+All of these commands assume that the Spark assembly you are using is
 properly configured for your YARN deployment. Typically, if your Spark
-assembly is configured properly to use YARN, there will be symbolic link at
+assembly is properly configured to use YARN, there will be symbolic link at
 `${SPARK_HOME}/conf/yarn-conf/` that points to the core Hadoop/YARN
-configuration. This may vary though by the distribution you are running.
+configuration. Though, this may vary by the distribution you are running.
 
 The full list of configuration options for running Spark-on-YARN can be found
 [online](http://spark.apache.org/docs/latest/running-on-yarn.html#configuration).
@@ -192,7 +192,7 @@ the amount of memory taken up by a single executor (or, theoretically, the
 driver) to exceed the `--driver-memory`/`--executor-memory` parameters. These
 parameters are what Spark provides as a memory resource request to YARN. By
 default, if one of your Spark containers (an executors or the driver) exceeds
-itss memory request, YARN will kill the container by sending a `SIGTERM`. This
+its memory request, YARN will kill the container by sending a `SIGTERM`. This
 can cause jobs to fail. To eliminate this issue, you can set the
 `spark.yarn.<role>.memoryOverhead` parameter, where `<role>` is one of
 `driver` or `executor`. This parameter is used by Spark to increase its
@@ -228,12 +228,11 @@ supports running multi-tool workflows. Unlike traditional workflow managers that
 are limited to supporting jobs that run on a single node, Toil includes support
 for clusters of long lived services through the Service Job abstraction. This
 abstraction enables workflows that mix Spark-based tools like ADAM in with
-traditional, single-node tools. [@vivian16] describes the Toil architecture,
+traditional, single-node tools. [@vivian16] describes the Toil architecture
 and demonstrates the use of Toil at scale in the Amazon Web Services EC2 cloud.
 Toil can be run on various on-premises High Performance Computing schedulers,
 and on the Amazon EC2 and Microsoft Azure clouds. A quick start guide to
-deploying Toil in the cloud or in an on-premises cluster can be found at
-[Read the Docs](https://toil.readthedocs.io).
+deploying Toil in the cloud or in an on-premises cluster can be found [here](https://toil.readthedocs.io).
 
 [toil-lib](https://github.com/BD2KGenomics/toil-lib) is a library downstream
 from Toil that provides common functionality that is useful across varied
@@ -255,9 +254,9 @@ include:
 
 * [adam-kmers](https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_kmers):
   this workflow was demonstrated in [@vivian16] and sets up a Spark cluster
-  which then runs ADAM's [`countKmers` CLI](#countKmers).
+  which then runs ADAM's `countKmers` CLI.
 * [adam-pipeline](https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_pipeline):
-  this workflow runs several stages in the ADAM [`transformAlignments` CLI](#transformAlignments).
+  this workflow runs several stages in the ADAM `transformAlignments` CLI.
   This pipeline is the ADAM equivalent to the GATK's "Best Practice" read
   preprocessing pipeline. We then stitch together this pipeline with
   [BWA-MEM](https://github.com/lh3/bwa) and the GATK in the [adam-gatk-pipeline](
@@ -340,9 +339,9 @@ Then, [we parse the arguments and start Toil](https://github.com/BD2KGenomics/to
 Note that we are passing the parsed arguments to the `Job.Runner.startToil`
 function. The other argument that we are passing is the [Job](https://toil.readthedocs.io/en/latest/developing.html#job-basics)
 that we would like Toil to run. In this example, Toil is wrapping the `kmer_dag`
-function that is discussed in the next section up as a Job. The `Job.wrapJobFn`
+function (discussed in the next section) up as a Job. The `Job.wrapJobFn`
 call takes the `kmer_dag` function and all of the arguments that are being
-passed and serializes them up so they can be run locally or on a remote node.
+passed and serializes them so they can be run locally or on a remote node.
 Additionally, we pass the optional argument `checkpoint=True`. This argument
 indicates that the `kmer_dag` Job function is a "checkpoint" job. If a job is
 a checkpoint job and any of it's children jobs fail, then we are saying that
@@ -376,7 +375,7 @@ This function takes in three parameters:
 * `workers`: The number of Spark workers to allocate.
 * `cores`: The number of cores to request per worker/leader node.
 
-When called, this method does not return a hostname string, rather, it returns a
+When called, this method does not return a hostname string. Rather, it returns a
 [promise](https://toil.readthedocs.io/en/latest/developing.html#promises) for
 the hostname string. This promise is not valid inside of the `kmer_dag` job, but
 will be valid in the child job (`download_count_upload`) that runs Spark. Toil
@@ -402,7 +401,7 @@ the services, we can launch Spark applications from the child job. In our
 example application, our [child job function](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L78-L174)
 does the following work:
 
-1. [We check to see if the input file is already in HDFS.](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L113-L117):
+1. [We check to see if the input file is already in HDFS](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L113-L117):
 
 ```
     if master_ip is not None:
@@ -475,7 +474,7 @@ does the following work:
 
 The `call_adam` and `call_conductor` functions are imported from the
 `toil_lib.tools.spark_tools` module. These functions run ADAM and Conductor
-using Docker containers from [cgl-docker-lib](https://github.com/BD2KGenomics/cgl-docker-lib).[^dl]
+using Docker containers from [cgl-docker-lib](https://github.com/BD2KGenomics/cgl-docker-lib).
 These two functions launch the Docker containers using the `call_docker`
 function from the `toil_lib.programs` module, and do some basic configuration of
 the command line. In the ADAM example, all the user needs to pass is the exact
@@ -522,8 +521,8 @@ For those groups with access to a HPC cluster with [Slurm](https://en.wikipedia.
 managing a number of compute nodes with local and/or network attached storage, it is possible to spin up a 
 temporary Spark cluster for use by ADAM.
 
-While the full IO bandwidth benefits of Spark processing are likely best realized through a set of 
-co-located compute/storage nodes, depending on your network setup you may find Spark deployed on HPC 
+The full IO bandwidth benefits of Spark processing are likely best realized through a set of 
+co-located compute/storage nodes. However, depending on your network setup, you may find Spark deployed on HPC 
 to be a workable solution for testing or even production at scale, especially for those applications 
 which perform multiple in-memory transformations and thus benefit from Spark's in-memory processing model.
 
@@ -560,12 +559,12 @@ start-spark
 echo $MASTER
 sleep infinity
 ```
-submit the job file to Slurm:
+Submit the job file to Slurm:
 ```
 sbatch run.cmd
 ```
 
-This will start a Spark cluster containing 2 nodes that persists for 5 hours, unless you kill it sooner.
+This will start a Spark cluster containing two nodes that persists for five hours, unless you kill it sooner.
 The file `slurm.out` created in the current directory will contain a line produced by `echo $MASTER` 
 above which will indicate the address of the Spark master to which your application or ADAM-shell 
 should connect such as `spark://somehostname:7077`
