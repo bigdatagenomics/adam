@@ -395,6 +395,43 @@ sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicRDD[Nucleot
   }
 
   /**
+   * From a set of contigs, returns a list of sequences based on reference regions provided
+   * @param regions List of Reference regions over which to get sequences
+   * @return RDD[(ReferenceRegion, String)] of region -> sequence pairs.
+   */
+  def extractRegions(regions: Iterable[ReferenceRegion]): RDD[(ReferenceRegion, String)] = {
+
+    def extractSequence(fragmentRegion: ReferenceRegion, fragment: NucleotideContigFragment, region: ReferenceRegion): (ReferenceRegion, String) = {
+      val merged = fragmentRegion.intersection(region)
+      val start = (merged.start - fragmentRegion.start).toInt
+      val end = (merged.end - fragmentRegion.start).toInt
+      val fragmentSequence: String = fragment.getSequence
+      (merged, fragmentSequence.substring(start, end))
+    }
+
+    def reduceRegionSequences(
+      kv1: (ReferenceRegion, String),
+      kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
+      (kv1._1.merge(kv2._1), if (kv1._1.compareTo(kv2._1) <= 0) {
+        kv1._2 + kv2._2
+      } else {
+        kv2._2 + kv1._2
+      })
+    }
+
+    val places = flattenRddByRegions()
+      .flatMap {
+        case (fragmentRegion, fragment) =>
+          regions.collect {
+            case region if fragmentRegion.overlaps(region) =>
+              (region, extractSequence(fragmentRegion, fragment, region))
+          }
+      }.sortByKey()
+
+    places.reduceByKey(reduceRegionSequences).values
+  }
+
+  /**
    * For all adjacent records in the RDD, we extend the records so that the adjacent
    * records now overlap by _n_ bases, where _n_ is the flank length.
    *
