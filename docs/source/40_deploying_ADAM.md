@@ -9,7 +9,7 @@ management and provisioning of VMs and clusters of VMs in Amazon EC2.
 The [CGCloud plugin for Spark](https://github.com/BD2KGenomics/cgcloud/blob/master/spark/README.rst) 
 lets you setup a fully configured Apache Spark cluster in EC2.
 
-Prior to following these instructions, you need to already have setup your AWS 
+Prior to following these instructions, make sure you have set up your AWS 
 account and know your
 AWS access keys.  See https://aws.amazon.com/ for details.
 
@@ -28,10 +28,7 @@ pip install cgcloud-spark==1.6.0
 ```
 which will install the correct version of both cgcloud-core and cgcloud-spark.
 
-
-
-Note, the steps to register your ssh key and create the template boxes below
- need only be done once.
+Note, the steps to register your ssh key and create the template boxes only need to be done once.
 ```
 cgcloud register-key ~/.ssh/id_rsa.pub
 cgcloud create generic-ubuntu-trusty-box
@@ -40,7 +37,7 @@ cgcloud create -IT spark-box
 
 #### Launch a cluster
 
-Spin up a Spark cluster named `cluster1` with one leader and two workers nodes 
+Spin up a Spark cluster named `cluster1` with one leader and two worker nodes 
 of instance type `m3.large` with the command:
 ```
 cgcloud create-cluster spark -c cluster1 -s 2 -t m3.large
@@ -67,7 +64,6 @@ CGCloud supports Spark 1.6.2, not Spark 2.x, so download
 the Spark 1.x Scala2.10 release:
 ```
 wget https://repo1.maven.org/maven2/org/bdgenomics/adam/adam-distribution_2.10/0.20.0/adam-distribution_2.10-0.20.0-bin.tar.gz
-
 tar -xvfz adam-distribution_2.10-0.20.0-bin.tar.gz
 ```
 
@@ -76,7 +72,7 @@ cluster.
 
 #### Input and Output data on HDFS and S3
 
-Spark requires a file system, such a HDFS or a network file mount, that all 
+Spark requires a file system, such as HDFS or a network file mount, that all 
 machines can access.
 The CGCloud EC2 Spark cluster you just created is already running HDFS.
 
@@ -86,46 +82,54 @@ The typical flow of data to and from your ADAM application on EC2 will be:
 - Compute with ADAM, write output to HDFS
 - Copy data you wish to persist for later use to S3
 
-For small test files you may wish to skip S3 by  uploading directly to 
-spark-master using `scp` and then copy to HDFS using 
-`hadoop fs -put sample1.bam /datadir/` 
+For small test files you may wish to skip S3 by uploading directly to 
+spark-master using `scp` and then copying to HDFS using:
+```
+hadoop fs -put sample1.bam /datadir/
+```
 
-From ADAM shell, or as parameter to ADAM submit, you would refer HDFS URLs
-such as:
+From the ADAM shell, or as a parameter to ADAM submit, you would refer to HDFS
+URLs like this:
+
 ```
 adam-submit transformAlignments hdfs://spark-master/work_dir/sample1.bam \
                       hdfs://spark-master/work_dir/sample1.adam
 ```
 
 #### Bulk Transfer between HDFS and S3
+
 To transfer large amounts of data back and forth from S3 to HDFS, we suggest using 
 [Conductor](https://github.com/BD2KGenomics/conductor).
 It is also possible to directly use AWS S3 as a distributed file system, 
 but with some loss of performance.
 
 #### Terminate Cluster
+
 Shutdown the cluster using:
 ```
 cgcloud terminate-cluster -c cluster1 spark
 ```
 
 #### CGCoud options and Spot Instances
-View help docs for all options of the the `cgcloud create-cluster` command:
+
+View help docs for all options of the `cgcloud create-cluster` command:
 ```
 cgcloud create-cluster -h
 ```
 
 In particular, note the `--spot-bid` and related spot options to utilize AWS 
-spot instances inorder to save on costs. Also, it's a good idea to double check 
-in AWS console that your instances have terminated to avoid unintended costs.
+spot instances in order to save on costs. To avoid unintended costs, 
+it is a good idea to use the AWS console to double check that your 
+instances have terminated.
 
+#### Accessing the Spark GUI
 
-#### Access Spark GUI
 In order to view the Spark server or application GUI pages on port 4040 and 
-8080 on `spark-master` go to Security Groups in AWS console
-and open inbound TCP for those ports from your local IP address.  Find the 
-IP address of `spark-master` which is part of  the Linux command prompt, then 
-on your local machine point your web-browser to http://ip_of_spark_master:4040/
+8080 on `spark-master`, go to Security Groups in the AWS console
+and open inbound TCP for those ports from your local IP address. Find the 
+IP address of `spark-master`, which is part of the Linux command prompt. On your
+local machine, you can then open `http://ip_of_spark_master:4040/` in a web
+browser, where `ip_of_spark_master` is replaced with the IP address you found.
 
 ## Running ADAM on CDH 5, HDP, and other YARN based Distros
 
@@ -137,11 +141,11 @@ Distribution (CDH)](http://www.cloudera.com/products/apache-hadoop/key-cdh-compo
 and the [Hortonworks Data Platform (HDP)](http://hortonworks.com/products/data-center/hdp/).
 YARN is supported natively in [Spark](http://spark.apache.org/docs/latest/running-on-yarn.html).
 
-The ADAM CLI and Shell can both be run on YARN. The ADAM CLI can be run in both Spark's
+The ADAM CLI and shell can both be run on YARN. The ADAM CLI can be run in both Spark's
 YARN `cluster` and `client` modes, while the ADAM shell can only be run in `client` mode.
 In the `cluster` mode, the Spark driver runs in the YARN `ApplicationMaster` container. In
 the `client` mode, the Spark driver runs in the submitting process. Since the Spark driver
-for the Spark/ADAM shell takes input on standard in, it cannot run in `cluster` mode.
+for the Spark/ADAM shell takes input on stdin, it cannot run in `cluster` mode.
 
 To run the ADAM CLI in YARN `cluster` mode, run the following command:
 
@@ -174,11 +178,11 @@ In the `adam-shell` command, all of the arguments are passed to the
   --deploy-mode client
 ```
 
-All of these commands assume that the Spark assembly that you are using is
+All of these commands assume that the Spark assembly you are using is
 properly configured for your YARN deployment. Typically, if your Spark
-assembly is configured properly to use YARN, there will be symbolic link at
+assembly is properly configured to use YARN, there will be a symbolic link at
 `${SPARK_HOME}/conf/yarn-conf/` that points to the core Hadoop/YARN
-configuration. This may vary though by the distribution you are running.
+configuration. Though, this may vary by the distribution you are running.
 
 The full list of configuration options for running Spark-on-YARN can be found
 [online](http://spark.apache.org/docs/latest/running-on-yarn.html#configuration).
@@ -190,7 +194,7 @@ the amount of memory taken up by a single executor (or, theoretically, the
 driver) to exceed the `--driver-memory`/`--executor-memory` parameters. These
 parameters are what Spark provides as a memory resource request to YARN. By
 default, if one of your Spark containers (an executors or the driver) exceeds
-itss memory request, YARN will kill the container by sending a `SIGTERM`. This
+its memory request, YARN will kill the container by sending a `SIGTERM`. This
 can cause jobs to fail. To eliminate this issue, you can set the
 `spark.yarn.<role>.memoryOverhead` parameter, where `<role>` is one of
 `driver` or `executor`. This parameter is used by Spark to increase its
@@ -226,12 +230,11 @@ supports running multi-tool workflows. Unlike traditional workflow managers that
 are limited to supporting jobs that run on a single node, Toil includes support
 for clusters of long lived services through the Service Job abstraction. This
 abstraction enables workflows that mix Spark-based tools like ADAM in with
-traditional, single-node tools. [@vivian16] describes the Toil architecture,
+traditional, single-node tools. [@vivian16] describes the Toil architecture
 and demonstrates the use of Toil at scale in the Amazon Web Services EC2 cloud.
 Toil can be run on various on-premises High Performance Computing schedulers,
 and on the Amazon EC2 and Microsoft Azure clouds. A quick start guide to
-deploying Toil in the cloud or in an on-premises cluster can be found at
-[Read the Docs](https://toil.readthedocs.io).
+deploying Toil in the cloud or in an on-premises cluster can be found [here](https://toil.readthedocs.io).
 
 [toil-lib](https://github.com/BD2KGenomics/toil-lib) is a library downstream
 from Toil that provides common functionality that is useful across varied
@@ -263,7 +266,7 @@ include:
 
 ### An example workflow: `toil_scripts.adam_kmers.count_kmers`
 
-For an example of how to use ADAM with Toil, let's look at the
+For an example of how to use ADAM with Toil, let us look at the
 [toil_scripts.adam_kmers.count_kmers](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py)
 module. This module has three parts:
 
@@ -278,7 +281,7 @@ module. This module has three parts:
 
 #### Configuring and launching Toil
 
-Toil takes most of it's configuration from the command line. To make this easy,
+Toil takes most of its configuration from the command line. To make this easy,
 Toil includes a function in the `toil.job.Job` class to register Toil's argument
 parsing code with the [Python standard `argparse`](https://docs.python.org/2/library/argparse.html)
 library. E.g., [in `count_kmers.py`](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L183-L214),
@@ -338,12 +341,12 @@ Then, [we parse the arguments and start Toil](https://github.com/BD2KGenomics/to
 Note that we are passing the parsed arguments to the `Job.Runner.startToil`
 function. The other argument that we are passing is the [Job](https://toil.readthedocs.io/en/latest/developing.html#job-basics)
 that we would like Toil to run. In this example, Toil is wrapping the `kmer_dag`
-function that is discussed in the next section up as a Job. The `Job.wrapJobFn`
+function (discussed in the next section) up as a Job. The `Job.wrapJobFn`
 call takes the `kmer_dag` function and all of the arguments that are being
-passed and serializes them up so they can be run locally or on a remote node.
+passed and serializes them so they can be run locally or on a remote node.
 Additionally, we pass the optional argument `checkpoint=True`. This argument
 indicates that the `kmer_dag` Job function is a "checkpoint" job. If a job is
-a checkpoint job and any of it's children jobs fail, then we are saying that
+a checkpoint job and any of its children jobs fail, then we are saying that
 the workflow can be successfully rerun from this point. In Toil, service jobs
 should always be launched from a checkpointed job in order to allow the
 service jobs to successfully resume after a service job failure.
@@ -374,7 +377,7 @@ This function takes in three parameters:
 * `workers`: The number of Spark workers to allocate.
 * `cores`: The number of cores to request per worker/leader node.
 
-When called, this method does not return a hostname string, rather, it returns a
+When called, this method does not return a hostname string. Rather, it returns a
 [promise](https://toil.readthedocs.io/en/latest/developing.html#promises) for
 the hostname string. This promise is not valid inside of the `kmer_dag` job, but
 will be valid in the child job (`download_count_upload`) that runs Spark. Toil
@@ -395,12 +398,12 @@ Detailed documentation for the `toil_lib.spark` module can be found in the
 
 #### Running ADAM and other Spark applications
 
-Once we've enqueued the Spark service jobs and the child job that interacts with
+Once we have enqueued the Spark service jobs and the child job that interacts with
 the services, we can launch Spark applications from the child job. In our
 example application, our [child job function](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L78-L174)
 does the following work:
 
-1. [We check to see if the input file is already in HDFS.](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L113-L117):
+1. [We check to see if the input file is already in HDFS](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L113-L117):
 
 ```
     if master_ip is not None:
@@ -410,10 +413,10 @@ does the following work:
         hdfs_dir = ""
 ```
 
-2. [If it isn't in HDFS, we copy it in using Conductor](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L119-L129):
+2. [If it is not in HDFS, we copy it in using Conductor](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L119-L129):
 
 ```
-    # if the file isn't already in hdfs, copy it in
+    # if the file is not already in hdfs, copy it in
     hdfs_input_file = hdfs_dir
     if input_file.startswith("s3://"):
 
@@ -426,7 +429,7 @@ does the following work:
                        memory=memory, override_parameters=spark_conf)
 ```
 
-3. [We check to see if the file is a Parquet file, and convert it to Parquet if it isn't](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L143-L159):
+3. [We check to see if the file is a Parquet file, and convert it to Parquet if it is not](https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L143-L159):
 
 ```
     # do we need to convert to adam?
@@ -520,13 +523,17 @@ For those groups with access to a HPC cluster with [Slurm](https://en.wikipedia.
 managing a number of compute nodes with local and/or network attached storage, it is possible to spin up a 
 temporary Spark cluster for use by ADAM.
 
-While the full IO bandwidth benefits of Spark processing are likely best realized through a set of 
-co-located compute/storage nodes, depending on your network setup you may find Spark deployed on HPC 
-to be a workable solution for testing or even production at scale, especially for those applications 
-which perform multiple in-memory transformations and thus benefit from Spark's in-memory processing model.
+The full IO bandwidth benefits of Spark processing are likely best realized
+through a set of co-located compute/storage nodes. However, depending on your
+network setup, you may find Spark deployed on HPC to be a workable solution for
+testing or even production at scale, especially for those applications which
+perform multiple in-memory transformations and thus benefit from Spark's
+in-memory processing model.
 
 Follow the primary [instructions](https://github.com/bigdatagenomics/adam/blob/master/docs/source/02_installation.md) 
-for installing ADAM into `$ADAM_HOME`.  This will most likely be at a location on a shared disk accessible to all nodes, but could be at a consistant location on each machine.
+for installing ADAM into `$ADAM_HOME`.  This will most likely be at a location
+on a shared disk accessible to all nodes, but could be at a consistant location
+on each machine.
 
 ### Start Spark cluster
 
@@ -558,36 +565,35 @@ start-spark
 echo $MASTER
 sleep infinity
 ```
-submit the job file to Slurm:
+Submit the job file to Slurm:
 ```
 sbatch run.cmd
 ```
 
-This will start a Spark cluster containing 2 nodes that persists for 5 hours, unless you kill it sooner.
+This will start a Spark cluster containing two nodes that persists for five hours, unless you kill it sooner.
 The file `slurm.out` created in the current directory will contain a line produced by `echo $MASTER` 
 above which will indicate the address of the Spark master to which your application or ADAM-shell 
 should connect such as `spark://somehostname:7077`
 
 ### Start adam-shell
+
 Your sys admin will probably prefer that you launch your `adam-shell` or start an application from a 
-cluster node rather than the head node you log in to so you may want to do so with:
+cluster node rather than the head node you log in to. You may want to do so with:
 ```
 sinteractive
 ```
 
-Start an adam-shell as so:
+Start an adam-shell:
 ```
 $ADAM_HOME/bin/adam-shell --master spark://hostnamefromslurmdotout:7077
 ```
 
 ### or Run a batch job with adam-submit
+
 ```
 $ADAM_HOME/bin/adam-submit --master spark://hostnamefromslurmdotout:7077
 ```
 
-You should be able to connect to the Spark Web UI at `http://hostnamefromslurmdotout:4040`, however 
-you may need to ask your local sys admin to open the requried ports.
-
-### Feedback
-We'd love to hear feedback on your experience running ADAM on HPC/Slurm or other deployment architectures, 
-and let us know of any problems you run into via the mailing list or Gitter.
+You should be able to connect to the Spark Web UI at
+`http://hostnamefromslurmdotout:4040`, however you may need to ask your system
+administrator to open the required ports.
