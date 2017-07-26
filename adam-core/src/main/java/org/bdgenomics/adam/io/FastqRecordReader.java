@@ -145,12 +145,23 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
         CompressionCodecFactory codecFactory = new CompressionCodecFactory(conf);
         CompressionCodec codec = codecFactory.getCodec(file);
 
-        // we expect this record reader to be used only with input formats that
-        // extend FastqInputFormat. the behavior of this record reader depends on
-        // whether the input stream is splittable or not. FastqInputFormat maintains
-        // a contract where it will put the file's splittable status into the hadoop
-        // configuration object.
-        isSplittable = conf.getBoolean(FastqInputFormat.FILE_SPLITTABLE, false);
+	// if our codec is splittable, we can (tentatively) say that
+	// we too are splittable.
+	//
+	// if we get a bgzfenhancedcodec, the codec might not actually
+	// be splittable. however, if we get a non-splittable gz file,
+	// several things happen:
+	//
+	// 1. the input format will detect this, and will not split the
+	//    file
+	// 2. the bgzfenhancedcodec will check the underlying data type
+	//    (BGZF vs GZIP) at input stream creation time, and will
+	//    apply the appropriate codec.
+	//
+	// if we get an unsplittable codec, really all that we do differently
+	// is skip the positioning check, since we know that we're at the
+	// start of the file and can get to reading immediately
+        isSplittable = (codec instanceof SplittableCompressionCodec);
         
         if (codec == null) {
             // no codec.  Uncompressed file.
@@ -206,20 +217,19 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
         Text buffer = new Text();
         long originalStart = start;
         
-        // Advance to the start of the first record that ends with /1
-        // We use a temporary LineReader to read lines until we find the
-        // position of the right one.  We then seek the file to that position.
-        stream.seek(start);
         LineReader reader;
         if (codec == null) {
+	    // Advance to the start of the first record that ends with /1
+	    // We use a temporary LineReader to read lines until we find the
+	    // position of the right one.  We then seek the file to that position.
+	    stream.seek(start);
             reader = new LineReader(stream);
         } else {
             // see above note about 
             // SplittableCompressionCodec.createInputStream needing the stream
             // to be at offset 0
-            stream.seek(0);
             reader = new LineReader(((SplittableCompressionCodec)codec).createInputStream(stream,
-                                                                                          codec.createDecompressor(),
+                                                                                          null,
                                                                                           start,
                                                                                           end,
                                                                                           SplittableCompressionCodec.READ_MODE.BYBLOCK));
@@ -232,27 +242,45 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
             if (bytesRead > 0 && !checkBuffer(bufferLength, buffer)) {
                 start += bytesRead;
             } else {
-                // line starts with @.  Read two more and verify that it starts with a +
-                //
-                // If this isn't the start of a record, we want to backtrack to its end
-                long backtrackPosition = start + bytesRead;
+		
+                // line starts with @.  Read two more and verify that it starts
+		// with a +:
+		//
+		// @<readname>
+		// <sequence>
+		// +[readname]
+		//
+		// if the second line we read starts with a @, we know that
+		// we've read:
+		//
+		// <qualities> <-- @ is a valid ASCII phred encoding
+		// @<readname>
+		//
+		// and thus, the second read is the delimiter and we can break
+                long trackForwardPosition = start + bytesRead;
                 
                 bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
+		if (buffer.getBytes()[0] == '@') {
+		    start = trackForwardPosition;
+		    break;
+		} else {
+		    trackForwardPosition += bytesRead;
+		}
+
                 bytesRead = reader.readLine(buffer, (int) Math.min(MAX_LINE_LENGTH, end - start));
+		trackForwardPosition += bytesRead;
                 if (bytesRead > 0 && buffer.getLength() > 0 && buffer.getBytes()[0] == '+') {
                     break; // all good!
                 } else {
-                    // backtrack to the end of the record we thought was the start.
-                    start = backtrackPosition;
-                    stream.seek(start);
-                    reader = new LineReader(stream);
+		    start = trackForwardPosition;
                 }
             }
         } while (bytesRead > 0);
 
         pos = start;
-        stream.seek(originalStart);
-        return (int)(start - originalStart);
+	start = originalStart;
+        stream.seek(start);
+        return (int)(pos - originalStart);
     }
 
     public final void initialize(final InputSplit split, final TaskAttemptContext context)

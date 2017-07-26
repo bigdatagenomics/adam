@@ -34,8 +34,6 @@ public abstract class FastqInputFormat extends FileInputFormat<Void, Text> {
 
     protected boolean splittable;
 
-    static final String FILE_SPLITTABLE = "org.bdgenomics.adam.io.FastqInputFormat.fileIsSplittable";
-    
     /**
      * Checks to see if the file we are looking at is splittable.
      *
@@ -84,11 +82,6 @@ public abstract class FastqInputFormat extends FileInputFormat<Void, Text> {
         } else {
             splittable = false;
         }
-
-        // the behavior of the record reader depends on whether the underlying
-        // stream is splittable. the only reliable way to pass this to the
-        // record reader is through the hadoop configuration.
-        conf.setBoolean(FILE_SPLITTABLE, splittable);
 
         return splittable;
     }
