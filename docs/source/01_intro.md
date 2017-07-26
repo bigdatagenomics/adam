@@ -1,13 +1,13 @@
 # Introduction
 
-* Follow our Twitter account at [https://twitter.com/bigdatagenomics/](https://twitter.com/bigdatagenomics/)
-* Chat with ADAM developers at [https://gitter.im/bigdatagenomics/adam](https://gitter.im/bigdatagenomics/adam)
-* Join our mailing list at [http://bdgenomics.org/mail](http://bdgenomics.org/mail)
-* Checkout the current build status at [https://amplab.cs.berkeley.edu/jenkins/](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/)
-* Download official releases at [https://github.com/bigdatagenomics/adam/releases](https://github.com/bigdatagenomics/adam/releases)
-* View our software artifacts on Maven Central at [http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics)
-* See our snapshots at [https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)
-* Look at our CHANGES file at [https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md)
+* [Follow](https://twitter.com/bigdatagenomics/) our Twitter account
+* [Chat](https://gitter.im/bigdatagenomics/adam) with ADAM developers on Gitter
+* [Join](http://bdgenomics.org/mail) our mailing list
+* [Check out](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/) the current build status
+* [Download](https://github.com/bigdatagenomics/adam/releases) official releases
+* [View](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) our software artifacts on Maven Central
+* [See](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics) our snapshots
+* [Look](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md) at our CHANGES file
 
 ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.  
 
