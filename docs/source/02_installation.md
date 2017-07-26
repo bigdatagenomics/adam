@@ -100,7 +100,7 @@ ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\.\_-]*\.jar$" | gr
 export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
 ```
 
-This assumes that the [ADAM JARs have already been built](#building-ADAM-from-source).
+This assumes that the [ADAM JARs have already been built](#).
 Additionally, we require [pytest](https://docs.pytest.org/en/latest/) to be
 installed. The adam-python makefile can install this dependency. Once you have
 an active virtualenv or Conda environment, run:
@@ -134,4 +134,4 @@ export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class
 
 Note that the `ASSEMBLY_DIR` and `ASSEMBLY_JAR` lines are the same as for the
 [Python build](#building-for-python). As with the Python build, this assumes that the
-[ADAM JARs have already been built](#building-ADAM-from-source).
+[ADAM JARs have already been built](#).
