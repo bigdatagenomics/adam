@@ -254,6 +254,52 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     assert(rdd.extract(region1) === "GTACTCTCATG")
   }
 
+  sparkTest("extract sequences based on the list of reference regions") {
+    val test = "test"
+
+    def dnas2fragments(dnas: Seq[String]): List[NucleotideContigFragment] = {
+      val (_, frags) = dnas.foldLeft((0L, List.empty[NucleotideContigFragment])) {
+        case ((start, acc), str) =>
+          val fragment = NucleotideContigFragment.newBuilder()
+            .setContigName("test")
+            .setStart(start)
+            .setLength(str.length: Long)
+            .setSequence(str)
+            .setEnd(start + str.length)
+            .build()
+          (start + str.length, fragment :: acc)
+      }
+      frags.reverse
+    }
+
+    val dnas: Seq[String] = Vector(
+      "ACAGCTGATCTCCAGATATGACCATGGGTT",
+      "CAGCTGATCTCCAGATATGACCATGGGTTT",
+      "CCAGAAGTTTGAGCCACAAACCCATGGTCA"
+    )
+
+    val merged = dnas.reduce(_ + _)
+
+    val record = SequenceRecord("test", merged.length)
+
+    val dic = new SequenceDictionary(Vector(record))
+    val frags = sc.parallelize(dnas2fragments(dnas))
+    val fragments = NucleotideContigFragmentRDD(frags, dic)
+
+    val byRegion = fragments.rdd.keyBy(ReferenceRegion(_))
+
+    val regions = List(
+      new ReferenceRegion(test, 0, 5),
+      new ReferenceRegion(test, 25, 35),
+      new ReferenceRegion(test, 40, 50),
+      new ReferenceRegion(test, 50, 70)
+    )
+
+    val results: Set[(ReferenceRegion, String)] = fragments.extractRegions(regions).collect().toSet
+    val seqs = regions.zip(List("ACAGC", "GGGTTCAGCT", "CCAGATATGA", "CCATGGGTTTCCAGAAGTTT")).toSet
+    assert(seqs === results)
+  }
+
   sparkTest("recover trimmed reference string from multiple contig fragments") {
 
     val sequence = "ACTGTACTC"
