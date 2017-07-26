@@ -9,7 +9,7 @@ management and provisioning of VMs and clusters of VMs in Amazon EC2.
 The [CGCloud plugin for Spark](https://github.com/BD2KGenomics/cgcloud/blob/master/spark/README.rst) 
 lets you setup a fully configured Apache Spark cluster in EC2.
 
-Prior to following these instructions, you need to already have setup your AWS 
+Prior to following these instructions, make sure you have set up your AWS 
 account and know your
 AWS access keys.  See https://aws.amazon.com/ for details.
 
@@ -28,10 +28,7 @@ pip install cgcloud-spark==1.6.0
 ```
 which will install the correct version of both cgcloud-core and cgcloud-spark.
 
-
-
-Note, the steps to register your ssh key and create the template boxes below
- need only be done once.
+Note, the steps to register your ssh key and create the template boxes below only need to be done once.
 ```
 cgcloud register-key ~/.ssh/id_rsa.pub
 cgcloud create generic-ubuntu-trusty-box
@@ -40,7 +37,7 @@ cgcloud create -IT spark-box
 
 #### Launch a cluster
 
-Spin up a Spark cluster named `cluster1` with one leader and two workers nodes 
+Spin up a Spark cluster named `cluster1` with one leader and two worker nodes 
 of instance type `m3.large` with the command:
 ```
 cgcloud create-cluster spark -c cluster1 -s 2 -t m3.large
@@ -67,7 +64,6 @@ CGCloud supports Spark 1.6.2, not Spark 2.x, so download
 the Spark 1.x Scala2.10 release:
 ```
 wget https://repo1.maven.org/maven2/org/bdgenomics/adam/adam-distribution_2.10/0.20.0/adam-distribution_2.10-0.20.0-bin.tar.gz
-
 tar -xvfz adam-distribution_2.10-0.20.0-bin.tar.gz
 ```
 
@@ -76,7 +72,7 @@ cluster.
 
 #### Input and Output data on HDFS and S3
 
-Spark requires a file system, such a HDFS or a network file mount, that all 
+Spark requires a file system, such as HDFS or a network file mount, that all 
 machines can access.
 The CGCloud EC2 Spark cluster you just created is already running HDFS.
 
@@ -86,46 +82,52 @@ The typical flow of data to and from your ADAM application on EC2 will be:
 - Compute with ADAM, write output to HDFS
 - Copy data you wish to persist for later use to S3
 
-For small test files you may wish to skip S3 by  uploading directly to 
-spark-master using `scp` and then copy to HDFS using 
-`hadoop fs -put sample1.bam /datadir/` 
+For small test files you may wish to skip S3 by uploading directly to 
+spark-master using `scp` and then copying to HDFS using:
+```
+hadoop fs -put sample1.bam /datadir/
+```
 
-From ADAM shell, or as parameter to ADAM submit, you would refer HDFS URLs
-such as:
+From the ADAM shell, or as a parameter to ADAM submit, you would refer to HDFS URLs like this:
 ```
 adam-submit transformAlignments hdfs://spark-master/work_dir/sample1.bam \
                       hdfs://spark-master/work_dir/sample1.adam
 ```
 
 #### Bulk Transfer between HDFS and S3
+
 To transfer large amounts of data back and forth from S3 to HDFS, we suggest using 
 [Conductor](https://github.com/BD2KGenomics/conductor).
 It is also possible to directly use AWS S3 as a distributed file system, 
 but with some loss of performance.
 
 #### Terminate Cluster
+
 Shutdown the cluster using:
 ```
 cgcloud terminate-cluster -c cluster1 spark
 ```
 
 #### CGCoud options and Spot Instances
-View help docs for all options of the the `cgcloud create-cluster` command:
+
+View help docs for all options of the `cgcloud create-cluster` command:
 ```
 cgcloud create-cluster -h
 ```
 
 In particular, note the `--spot-bid` and related spot options to utilize AWS 
-spot instances inorder to save on costs. Also, it's a good idea to double check 
-in AWS console that your instances have terminated to avoid unintended costs.
-
+spot instances in order to save on costs. To avoid unintended costs, 
+it's a good idea to use the AWS console to double check that your 
+instances have terminated.
 
 #### Access Spark GUI
+
 In order to view the Spark server or application GUI pages on port 4040 and 
-8080 on `spark-master` go to Security Groups in AWS console
-and open inbound TCP for those ports from your local IP address.  Find the 
-IP address of `spark-master` which is part of  the Linux command prompt, then 
-on your local machine point your web-browser to http://ip_of_spark_master:4040/
+8080 on `spark-master`, go to Security Groups in the AWS console
+and open inbound TCP for those ports from your local IP address. Find the 
+IP address of `spark-master`, which is part of the Linux command prompt. On your local machine, 
+you can then open http://ip_of_spark_master:4040/ in a web browser, where ip_of_spark_master
+is replaced with the IP address you found.
 
 ## Running ADAM on CDH 5, HDP, and other YARN based Distros
 
@@ -137,11 +139,11 @@ Distribution (CDH)](http://www.cloudera.com/products/apache-hadoop/key-cdh-compo
 and the [Hortonworks Data Platform (HDP)](http://hortonworks.com/products/data-center/hdp/).
 YARN is supported natively in [Spark](http://spark.apache.org/docs/latest/running-on-yarn.html).
 
-The ADAM CLI and Shell can both be run on YARN. The ADAM CLI can be run in both Spark's
+The ADAM CLI and shell can both be run on YARN. The ADAM CLI can be run in both Spark's
 YARN `cluster` and `client` modes, while the ADAM shell can only be run in `client` mode.
 In the `cluster` mode, the Spark driver runs in the YARN `ApplicationMaster` container. In
 the `client` mode, the Spark driver runs in the submitting process. Since the Spark driver
-for the Spark/ADAM shell takes input on standard in, it cannot run in `cluster` mode.
+for the Spark/ADAM shell takes input on stdin, it cannot run in `cluster` mode.
 
 To run the ADAM CLI in YARN `cluster` mode, run the following command:
 
