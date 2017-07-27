@@ -254,9 +254,9 @@ include:
 
 * [adam-kmers](https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_kmers):
   this workflow was demonstrated in [@vivian16] and sets up a Spark cluster
-  which then runs ADAM's `countKmers` CLI.
+  which then runs ADAM's [`countKmers` CLI](#countKmers).
 * [adam-pipeline](https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_pipeline):
-  this workflow runs several stages in the ADAM `transformAlignments` CLI.
+  this workflow runs several stages in the ADAM [`transformAlignments` CLI](#transformAlignments).
   This pipeline is the ADAM equivalent to the GATK's "Best Practice" read
   preprocessing pipeline. We then stitch together this pipeline with
   [BWA-MEM](https://github.com/lh3/bwa) and the GATK in the [adam-gatk-pipeline](
