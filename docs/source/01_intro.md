@@ -51,7 +51,7 @@ Executing this Spark job will output the following:
 (32484,CCTCCCAAAGTGCTGGGATTA)
 ```
 
-You don't need to be a Scala developer to use ADAM. You could also run the following ADAM CLI command for the same result:
+You do not need to be a Scala developer to use ADAM. You could also run the following ADAM CLI command for the same result:
 
 ```bash
 adam-submit count_kmers \

@@ -22,11 +22,11 @@ Outputs:
 105812 + 0 with mate mapped to a different chr (mapQ>=5)
 ```
 
-In practice, you'll find that the ADAM `flagstat` command takes orders of magnitude less
+In practice, you will find that the ADAM `flagstat` command takes orders of magnitude less
 time than samtools to compute these statistics. For example, on a MacBook Pro, the command 
 above took 17 seconds to run while `samtools flagstat NA12878_chr20.bam` took 55 seconds.
 On larger files, the difference in speed is even more dramatic. ADAM is faster because
-it's multi-threaded, distributed and uses a columnar storage format (with a projected
+it is multi-threaded, distributed and uses a columnar storage format (with a projected
 schema that only materializes the read flags instead of the whole read). 
 
 ## Running on a cluster

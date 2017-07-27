@@ -43,7 +43,7 @@ alias adam-shell="${ADAM_HOME}/bin/adam-shell"
 
 `$ADAM_HOME` should be the path to where you have checked ADAM out on your local filesystem. 
 The first alias should be used for running ADAM jobs that operate locally. The latter two aliases 
-call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You'll need
+call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You will need
 to have the Spark binaries on your system; prebuilt binaries can be downloaded from the
 [Spark website](http://spark.apache.org/downloads.html). Our [continuous integration setup](
 https://amplab.cs.berkeley.edu/jenkins/job/ADAM/) builds ADAM against Spark versions 1.6.1 and 2.0.0,
