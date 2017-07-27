@@ -1,4 +1,4 @@
-# Building ADAM from Source
+# Building ADAM from Source {#build-from-source}
 
 You will need to have [Apache Maven](http://maven.apache.org/) version 3.1.1 or later
 installed in order to build ADAM.
@@ -55,9 +55,9 @@ Once this alias is in place, you can run ADAM by simply typing `adam-submit` at 
 $ adam-submit
 ```
 
-## Building for Python
+## Building for Python {#python-build}
 
-To build and test ADAM's Python bindings, enable the `python`
+To build and test [ADAM's Python bindings](#python), enable the `python`
 profile:
 
 ```bash
@@ -100,7 +100,7 @@ ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\.\_-]*\.jar$" | gr
 export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
 ```
 
-This assumes that the [ADAM JARs have already been built](#).
+This assumes that the [ADAM JARs have already been built](#build-from-source).
 Additionally, we require [pytest](https://docs.pytest.org/en/latest/) to be
 installed. The adam-python makefile can install this dependency. Once you have
 an active virtualenv or Conda environment, run:
@@ -110,10 +110,10 @@ cd adam-python
 make prepare
 ```
 
-## Building for R
+## Building for R {#r-build}
 
-ADAM supports SparkR, for Spark 2.1.0 and onwards. To build and test ADAM's R
-bindings, enable the `r` profile:
+ADAM supports SparkR, for Spark 2.1.0 and onwards. To build and test [ADAM's R
+ -bindings](#r), enable the `r` profile:
 
 ```bash
 mvn -Pr package
@@ -133,5 +133,5 @@ export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class
 ```
 
 Note that the `ASSEMBLY_DIR` and `ASSEMBLY_JAR` lines are the same as for the
-[Python build](#building-for-python). As with the Python build, this assumes that the
-[ADAM JARs have already been built](#).
+[Python build](#python-build). As with the Python build, this assumes that the
+[ADAM JARs have already been built](#build-from-source).
