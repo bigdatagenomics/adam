@@ -28,7 +28,7 @@ pip install cgcloud-spark==1.6.0
 ```
 which will install the correct version of both cgcloud-core and cgcloud-spark.
 
-Note, the steps to register your ssh key and create the template boxes below only need to be done once.
+Note, the steps to register your ssh key and create the template boxes only need to be done once.
 ```
 cgcloud register-key ~/.ssh/id_rsa.pub
 cgcloud create generic-ubuntu-trusty-box
@@ -120,7 +120,7 @@ spot instances in order to save on costs. To avoid unintended costs,
 it's a good idea to use the AWS console to double check that your 
 instances have terminated.
 
-#### Access Spark GUI
+#### Accessing the Spark GUI
 
 In order to view the Spark server or application GUI pages on port 4040 and 
 8080 on `spark-master`, go to Security Groups in the AWS console
@@ -178,7 +178,7 @@ In the `adam-shell` command, all of the arguments are passed to the
 
 All of these commands assume that the Spark assembly you are using is
 properly configured for your YARN deployment. Typically, if your Spark
-assembly is properly configured to use YARN, there will be symbolic link at
+assembly is properly configured to use YARN, there will be a symbolic link at
 `${SPARK_HOME}/conf/yarn-conf/` that points to the core Hadoop/YARN
 configuration. Though, this may vary by the distribution you are running.
 
