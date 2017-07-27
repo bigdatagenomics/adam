@@ -115,7 +115,6 @@ make prepare
 ADAM supports SparkR, for Spark 2.1.0 and onwards. To build and test [ADAM's R
 bindings](#r), enable the `r` profile:
 
-
 ```bash
 mvn -Pr package
 ```
