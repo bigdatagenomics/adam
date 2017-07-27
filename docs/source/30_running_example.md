@@ -5,7 +5,7 @@ file using [`flagstat`](#flagstat). This command will output stats identically
 to the samtools `flagstat` command.
 
 ```bash
-$ ./bin/adam-submit flagstat NA12878_chr20.adam
+./bin/adam-submit flagstat NA12878_chr20.adam
 ```
 Outputs:
 ```

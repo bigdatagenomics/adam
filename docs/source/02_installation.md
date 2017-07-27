@@ -9,10 +9,10 @@ installed in order to build ADAM.
 > 1.6.3. To build for Spark 2, run the `./scripts/move_to_spark2.sh` script.
 
 ```bash
-$ git clone https://github.com/bigdatagenomics/adam.git
-$ cd adam
-$ export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
-$ mvn clean package -DskipTests
+git clone https://github.com/bigdatagenomics/adam.git
+cd adam
+export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
+mvn clean package -DskipTests
 ```
 Outputs
 ```
@@ -52,7 +52,7 @@ Scala versions 2.10 and 2.11, and Hadoop versions 2.3.0 and 2.6.0.
 Once this alias is in place, you can run ADAM by simply typing `adam-submit` at the command line.
 
 ```bash
-$ adam-submit
+adam-submit
 ```
 
 ## Building for Python {#python-build}
