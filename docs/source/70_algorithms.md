@@ -141,9 +141,9 @@ estimate the observed base quality using the below equation. This represents a
 Bayesian model of the mismatch probability with Binomial likelihood and a
 Beta(1, 1) prior.
 
-`$
+```math
 \mathbf{E}(P_{err}|{cov}) = \frac{\text{\#errors}(cov) + 1}{\text{\#observations}(cov) + 2}
-$`
+```
 
 After these probabilities are estimated, we go back across the input read
 dataset and reconstruct the quality scores of the read by using the covariate
@@ -176,13 +176,13 @@ maximal convex hulls across the set of regions. For a set `$R$` of regions, we
 define a maximal convex hull as the largest region `$\hat{r}$` that satisfies the
 following properties:
 
-`$
+```math
 \begin{align}
 \hat{r} &= \cup_{r_i \in \hat{R}} r_i \\
 \hat{r} \cap r_i &\ne \emptyset, \forall r_i \in \hat{R} \\
 \hat{R} &\subset R
 \end{align}
-$`
+```
 
 In our problem, we seek to find all of the maximal convex hulls, given a set of
 regions. For genomics, the convexity constraint described by equation
@@ -275,14 +275,14 @@ consensus sequence. Given a consensus sequence `$c$`, a reference sequence `$R$`
 and a set of reads `$\mathbf{r}$`, we calculate this score using the equation 
 below.
 
-`$
+```math
 \begin{align}
 q_{i, j} &= \sum_{k = 0}^{l_{r_i}} Q_k I[r_I(k) = c(j + k)] \forall r_i \in \mathbf{R}, j \in \{0, \dots, l_c - l_{r_i}\} \\
 q_{i, R} &= \sum_{k = 0}^{l_{r_i}} Q_k I[r_I(k) = c(j + k)] \forall r_i \in \mathbf{R}, j = \text{pos}(r_i | R) \\
 q_i &= \min(q_{i, R}, \min_{j \in \{0, \dots, l_c - l_{r_i}\}} q_{i, j}) \\
 q_c &= \sum_{r_i \in \mathbf{r}} q_i
 \end{align}
-$` 
+```
 
 In the above equation, `$s(i)$` denotes the base at position `$i$` of sequence `$s$`,
 and `$l_s$` denotes the length of sequence `$s$`. We pick the consensus sequence
