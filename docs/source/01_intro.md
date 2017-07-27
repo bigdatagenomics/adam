@@ -1,5 +1,7 @@
 # Introduction
 
+ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.
+
 * [Follow](https://twitter.com/bigdatagenomics/) our Twitter account
 * [Chat](https://gitter.im/bigdatagenomics/adam) with ADAM developers on Gitter
 * [Join](http://bdgenomics.org/mail) our mailing list
@@ -7,9 +9,7 @@
 * [Download](https://github.com/bigdatagenomics/adam/releases) official releases
 * [View](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) our software artifacts on Maven Central
 * [See](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics) our snapshots
-* [Look](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md) at our CHANGES file
-
-ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.  
+* [Look](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md) at our CHANGES file  
 
 ## Apache Spark
 
