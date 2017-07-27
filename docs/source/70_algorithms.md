@@ -1,4 +1,4 @@
-# Core Algorithms {#algorithms}
+# Core Algorithms
 
 ## Read Preprocessing Algorithms
 
@@ -70,7 +70,7 @@ variants; see DePristo et al [@depristo11].
 In the rest of this section, we discuss the high level implementations of these
 algorithms.
 
-### BQSR Implementation {#bqsr}
+### BQSR Implementation
 
 Base quality score recalibration seeks to identify and correct correlated
 errors in base quality score estimates. At a high level, this is done by 
@@ -149,7 +149,7 @@ After these probabilities are estimated, we go back across the input read
 dataset and reconstruct the quality scores of the read by using the covariate
 assigned to the read to look into the covariate table.
 
-### Indel Realignment Implementation {#realignment}
+### Indel Realignment Implementation
 
 Although global alignment will frequently succeed at aligning reads to the
 proper region of the genome, the local alignment of the read may be incorrect.
@@ -243,7 +243,7 @@ tail-call recursive `mergeTargetSets` function that is described in Algorithm
 The set returned by this function is used as an index for mapping reads
 directly to realignment targets.
 
-#### Candidate Generation and Realignment {#consensus-model}
+#### Candidate Generation and Realignment
 
 Once we have generated the target set, we map across all the reads and check to
 see if the read overlaps a realignment target. We then group together all reads
@@ -292,7 +292,7 @@ reads. This is done by recomputing the CIGAR and MDTag for each new alignment.
 Realigned reads have their mapping quality score increased by 10 in the Phred
 scale.
 
-### Duplicate Marking Implementation {#duplicate-marking}
+### Duplicate Marking Implementation
 
 Reads may be duplicated during sequencing, either due to clonal duplication
 via PCR before sequencing, or due to optical duplication while on the
