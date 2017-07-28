@@ -359,8 +359,6 @@ read a genomic dataset into memory, this condition is met.
 ADAM has a variety of region join types that you can perform on your data, and
 all are called in a similar way:
 
-#### [Joins Available](img/join_examples.png)
-
 * Joins implemented across both shuffle and broadcast
   * Inner join
   * Right outer join
@@ -372,6 +370,10 @@ all are called in a similar way:
 * Broadcast-only joins
   * Inner join and group by right
   * Right outer join and group by right
+
+A subset of these joins are depicted in Figure 2 below.
+
+![Joins Available](source/img/join_examples.png)
 
 One common pattern involves joining a single dataset against many datasets. An
 example of this is joining an RDD of features (e.g., gene/exon coordinates)
