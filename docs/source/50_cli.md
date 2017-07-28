@@ -1,4 +1,4 @@
-# Running ADAM's command line tools
+# Running ADAM's command line tools {#cli}
 
 In addition to being used as an API for [building applications](#apps), ADAM
 provides a command line interface (CLI) for extracting, transforming, and

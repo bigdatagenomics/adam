@@ -5,6 +5,7 @@ git_version=$(git log -1 --pretty=format:%H)
 output_dir="output"
 pdf_output="$output_dir/ADAM_${git_version}.pdf"
 html_output="$output_dir/ADAM_${git_version}.html"
+md_output="$output_dir/ADAM_${git_version}.rst"
 date_str=$(date '+%Y-%m-%d')
 
 mkdir -p ${output_dir}
@@ -19,6 +20,24 @@ if [ $? -ne "0" ]; then
 	echo "WARNING! Pandoc not found on path. Documentation will not be generated!"
 	exit 0
 fi
+
+# Generate a PDF of the docs
+pandoc -N -t rst \
+       --mathjax \
+--filter pandoc-citeproc \
+--highlight-style "$highlight_style" \
+--variable mainfont="Georgia" \
+--variable sansfont="Arial" \
+--variable monofont="Andale Mono" \
+--variable fontsize=10pt \
+--variable version=$git_version \
+--variable listings=true \
+--variable title="$title" \
+--variable date="$date" \
+--variable author="$author" \
+--toc \
+--bibliography=source/bibliography.bib \
+source/*.md -s -S -o $md_output
 
 # Generate a PDF of the docs
 pandoc -N --template=template.tex \
