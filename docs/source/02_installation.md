@@ -9,10 +9,10 @@ installed in order to build ADAM.
 > 1.6.3. To build for Spark 2, run the `./scripts/move_to_spark2.sh` script.
 
 ```bash
-$ git clone https://github.com/bigdatagenomics/adam.git
-$ cd adam
-$ export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
-$ mvn clean package -DskipTests
+git clone https://github.com/bigdatagenomics/adam.git
+cd adam
+export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
+mvn clean package -DskipTests
 ```
 Outputs
 ```
@@ -43,16 +43,16 @@ alias adam-shell="${ADAM_HOME}/bin/adam-shell"
 
 `$ADAM_HOME` should be the path to where you have checked ADAM out on your local filesystem. 
 The first alias should be used for running ADAM jobs that operate locally. The latter two aliases 
-call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You'll need
+call scripts that wrap the `spark-submit` and `spark-shell` commands to set up ADAM. You will need
 to have the Spark binaries on your system; prebuilt binaries can be downloaded from the
 [Spark website](http://spark.apache.org/downloads.html). Our [continuous integration setup](
 https://amplab.cs.berkeley.edu/jenkins/job/ADAM/) builds ADAM against Spark versions 1.6.1 and 2.0.0,
 Scala versions 2.10 and 2.11, and Hadoop versions 2.3.0 and 2.6.0.
 
-Once this alias is in place, you can run ADAM by simply typing `adam-submit` at the commandline, e.g.
+Once this alias is in place, you can run ADAM by simply typing `adam-submit` at the command line.
 
 ```bash
-$ adam-submit
+adam-submit
 ```
 
 ## Building for Python {#python-build}

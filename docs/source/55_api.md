@@ -228,7 +228,7 @@ an `RDD` of the type of the first `GenomicRDD` into a new `RDD` that contains
 records of the type of the second `GenomicRDD`. Additionally, it takes an
 implicit function that maps the metadata in the first `GenomicRDD` into the
 metadata needed by the second `GenomicRDD`. This is akin to the implicit
-function required by the [pipe](#pipes) API. As an example, let's use the
+function required by the [pipe](#pipes) API. As an example, let us use the
 `transmute` function to make features corresponding to reads containing
 INDELs:
 
@@ -336,7 +336,7 @@ balance, or you can tolerate unsorted output.
 
 Another important distinction between ShuffleRegionJoin and
 BroadcastRegionJoin is the join operations available in ADAM. Since the
-broadcast join doesn't co-partition the datasets and instead sends the full
+broadcast join does not co-partition the datasets and instead sends the full
 right table to all nodes, some joins (e.g. left/full outer joins) cannot be
 written as broadcast joins. See the table below for an exact list of what joins
 are available for each type of region join.
@@ -412,7 +412,7 @@ from.
 ###### Filter Genotypes by Features
 
 This query joins an RDD of Genotypes against an RDD of Features using an inner
-join. Because this is an inner join, records from either dataset that don't
+join. Because this is an inner join, records from either dataset that do not
 pair to the other are automatically dropped, providing the filter we are
 interested in. This query is useful for trying to identify genotypes that
 overlap features of interest. For example, if our feature file contains all the
@@ -475,7 +475,7 @@ ShuffleRegionJoin supports only grouping by the left dataset.
 
 The reason BroadcastRegionJoin does not have a `joinAndGroupByLeft`
 implementation is due to the fact that the left dataset is broadcast to all
-nodes. Unlike shuffle joins, broadcast joins don't maintain a sort order
+nodes. Unlike shuffle joins, broadcast joins do not maintain a sort order
 invariant. Because of this, we would need to shuffle all data to a group-by on
 the left side of the dataset, and there is no opportunity to optimize by
 combining the join and group-by.
@@ -529,7 +529,7 @@ Apache Spark's `RDD.pipe` API. However, `RDD.pipe` prints the objects as
 strings to the pipe. ADAM's pipe API adds several important functions:
 
 * It supports on-the-fly conversions to widely used genomic file formats
-* It doesn't require input/output type matching (i.e., you can pipe reads in
+* It does not require input/output type matching (i.e., you can pipe reads in
   and get variants back from the pipe)
 * It adds the ability to set environment variables and to make local files
   (e.g., a reference genome) available to the run command
@@ -619,7 +619,7 @@ We provide four implementations:
 * `ADAMContext.fragmentsToReadsConversionFn`: For piped commands that go from a
   `FragmentRDD` to an `AlignmentRecordRDD`.
 
-To put everything together, here's an example command. Here, we will run a
+To put everything together, here is an example command. Here, we will run a
 command `my_variant_caller`, which accepts one argument `-R <reference>.fa`,
 SAM on standard input, and outputs VCF on standard output:
 

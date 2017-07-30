@@ -5,15 +5,16 @@ ADAM
 
 # Introduction
 
-ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro][Avro], [Apache Spark][Spark] and [Apache Parquet][Parquet]. Apache 2 licensed. Some quick links: 
+ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.
 
-* [Follow our Twitter account](https://twitter.com/bigdatagenomics/).
-* [Chat with ADAM developers in Gitter](https://gitter.im/bigdatagenomics/adam).
-* [Join our mailing list](http://bdgenomics.org/mail/).
-* [Checkout the current build status](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/).
-* [Download official releases][releases].
-* [View our software artifacts on Maven Central](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) ([…including snapshots](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)).
-* [Look at our CHANGES file](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md).
+* [Follow](https://twitter.com/bigdatagenomics/) our Twitter account
+* [Chat](https://gitter.im/bigdatagenomics/adam) with ADAM developers on Gitter
+* [Join](http://bdgenomics.org/mail) our mailing list
+* [Check out](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/) the current build status
+* [Download](https://github.com/bigdatagenomics/adam/releases) official releases
+* [View](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) our software artifacts on Maven Central
+* [See](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics) our snapshots
+* [Look](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md) at our CHANGES file  
 
 ## Why ADAM?
 
@@ -185,6 +186,14 @@ Outputs
 
 You might want to take a peek at the `scripts/jenkins-test` script and give it a run. It will fetch a mouse chromosome, encode it to ADAM
 reads and pileups, run flagstat, etc. We use this script to test that ADAM is working correctly.
+
+### Homebrew
+
+If you have Homebrew installed, you can install adam via:
+
+```bash
+$ brew install adam
+```
 
 ### Installing Spark
 

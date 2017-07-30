@@ -246,7 +246,7 @@ would work for an Apache Maven build.
 Build the new application and run via `spark-submit`.
 
 ```bash
-$ spark-submit \
+spark-submit \
   --class MyCommand \
   target/my-command.jar \
   input.foo

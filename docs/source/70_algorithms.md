@@ -245,7 +245,7 @@ directly to realignment targets.
 
 Once we have generated the target set, we map across all the reads and check to
 see if the read overlaps a realignment target. We then group together all reads
-that map to a given realignment target; reads that don't map to a target are
+that map to a given realignment target; reads that do not map to a target are
 randomly assigned to a ``null'' target. We do not attempt realignment for reads
 mapped to null targets.
 
