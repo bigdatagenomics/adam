@@ -232,6 +232,9 @@ then
     # set the path to the adam submit script
     ADAM=./bin/adam-submit
 
+    # test running adam-shell
+    ./bin/adam-shell -i scripts/jenkins-test-adam-shell.scala
+    
     # add pyspark to the python path
     PY4J_ZIP="$(ls -1 "${SPARK_HOME}/python/lib" | grep py4j)"
     export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/${PY4J_ZIP}:${PYTHONPATH}
@@ -272,12 +275,15 @@ then
             -Dspark.version=${SPARK_VERSION}
     fi
 
-    # copy python targets back
-    cp -r adam-python/target ${PROJECT_ROOT}/adam-python/
+    # run pyadam test
+    ./bin/pyadam < scripts/jenkins-test-pyadam.py
 
     # deactivate and remove the conda env
     source deactivate
     conda remove -n adam-build-${uuid} --all
+
+    # copy python targets back
+    cp -r adam-python/target ${PROJECT_ROOT}/adam-python/
 
     # define filenames
     BAM=mouse_chrM.bam

@@ -19,18 +19,17 @@
 
 set -e
 
-SOURCE_DIR=$(dirname ${BASH_SOURCE[0]})
+SPARK_CMD=${1:-spark-submit}
 
-ADAM_CLI_JAR=$(${SOURCE_DIR}/find-adam-assembly.sh)
+# Find spark-submit script
+if [ -z "$SPARK_HOME" ]; then
+  SPARK_SUBMIT=$(which ${SPARK_CMD} || echo)
+else
+  SPARK_SUBMIT=${SPARK_HOME}/bin/${SPARK_CMD}
+fi
+if [ -z "$SPARK_SUBMIT" ]; then
+  echo "SPARK_HOME not set and ${SPARK_CMD} not on PATH; Aborting." 1>&2
+  exit 1
+fi
 
-SPARKR=$(${SOURCE_DIR}/find-spark.sh sparkR)
-echo "Using SPARKR=$SPARKR" 1>&2
-
-# submit the job to Spark
-"$SPARKR" \
-    --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
-    --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
-    --jars ${ADAM_CLI_JAR} \
-    --driver-class-path ${ADAM_CLI_JAR} \
-    "$@"
-
+echo ${SPARK_SUBMIT}

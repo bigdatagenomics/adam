@@ -20,17 +20,31 @@
 set -e
 
 SOURCE_DIR=$(dirname ${BASH_SOURCE[0]})
+SCRIPT_DIR=$(${SOURCE_DIR}/find-script-dir.sh)
+INSTALL_DIR=$(dirname $SCRIPT_DIR)
 
-ADAM_CLI_JAR=$(${SOURCE_DIR}/find-adam-assembly.sh)
+# Find ADAM cli assembly jar
+ADAM_CLI_JAR=
+if [ -d "$INSTALL_DIR/repo" ]; then
+  ASSEMBLY_DIR="$INSTALL_DIR/repo"
+else
+  ASSEMBLY_DIR="$INSTALL_DIR/adam-assembly/target"
+fi
 
-SPARKR=$(${SOURCE_DIR}/find-spark.sh sparkR)
-echo "Using SPARKR=$SPARKR" 1>&2
+ASSEMBLY_JARS=$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\.\_\-]*\.jar$" | grep -v javadoc | grep -v sources || true)
+num_jars=$(echo ${ASSEMBLY_JARS} | wc -l)
 
-# submit the job to Spark
-"$SPARKR" \
-    --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
-    --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
-    --jars ${ADAM_CLI_JAR} \
-    --driver-class-path ${ADAM_CLI_JAR} \
-    "$@"
+if [ "$num_jars" -eq "0" ]; then
+  echo "Failed to find ADAM cli assembly in $ASSEMBLY_DIR." 1>&2
+  echo "You need to build ADAM before running this program." 1>&2
+  exit 1
+fi
 
+if [ "$num_jars" -gt "1" ]; then
+  echo "Found multiple ADAM cli assembly jars in $ASSEMBLY_DIR:" 1>&2
+  echo "$ASSEMBLY_JARS" 1>&2
+  echo "Please remove all but one jar." 1>&2
+  exit 1
+fi
+
+echo "${ASSEMBLY_DIR}/${ASSEMBLY_JARS}"
