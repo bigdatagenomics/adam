@@ -19,18 +19,14 @@
 
 set -e
 
-SOURCE_DIR=$(dirname ${BASH_SOURCE[0]})
+# Find original directory of this script, resolving symlinks
+# http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in/246128#246128
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+    SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$SCRIPT_DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
 
-ADAM_CLI_JAR=$(${SOURCE_DIR}/find-adam-assembly.sh)
-
-SPARKR=$(${SOURCE_DIR}/find-spark.sh sparkR)
-echo "Using SPARKR=$SPARKR" 1>&2
-
-# submit the job to Spark
-"$SPARKR" \
-    --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
-    --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
-    --jars ${ADAM_CLI_JAR} \
-    --driver-class-path ${ADAM_CLI_JAR} \
-    "$@"
+echo $( cd -P "$( dirname "$SOURCE" )" && pwd )
 
