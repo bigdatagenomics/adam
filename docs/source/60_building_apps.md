@@ -206,7 +206,7 @@ object MyExample {
 
 Create an Apache Spark configuration `SparkConf` and use it to create a new
 `SparkContext`. The following serialization configuration needs to be present
-o register ADAM classes. If any additional
+to register ADAM classes. If any additional
 [Kyro serializers](https://github.com/EsotericSoftware/kryo) need to be
 registered,
 [create a registrator that delegates to the ADAM registrator](#registrator).
