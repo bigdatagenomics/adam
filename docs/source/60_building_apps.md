@@ -17,7 +17,7 @@ ADAM:
 ADAM's CLI is implemented in the adam-cli Apache Maven module of the
 [bdgenomics/adam](https://github.com/bigdatagenomics/adam) repository, one
 .scala source file for each CLI action (e.g.
-[Transform.scala](https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/Transform.scala)
+[TransformAlignments.scala](https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/TransformAlignments.scala)
 for the [transform](#transform) action), and a main class
 ([ADAMMain.scala](https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/ADAMMain.scala))
 that assembles and delegates to the various CLI actions.
@@ -53,9 +53,12 @@ object MyCommand extends BDGCommandCompanion {
 
 Extend `BDGSparkCommand` class and implement the `run(SparkContext)` method.
 The `MyCommandArgs` class defined above is provided in the constructor and
-specifies the generic type for `BDGSparkCommand`. The companion object defined
-above is declared as a field.  For access to an [slf4j](http://www.slf4j.org/)
-Logger via the `log` field, specify `with Logging`.
+specifies the CLI command for `BDGSparkCommand`. We must define a companion
+object because the command cannot run without being added to the list of
+accepted commands described below. For access to an
+[slf4j](http://www.slf4j.org/) Logger via the `log` field, mix in the
+org.bdgenomics.utils.misc.Logging trait by adding `with Logging` to the class
+definition.
 
 ```scala
 class MyCommand(protected val args: MyCommandArgs) extends BDGSparkCommand[MyCommandArgs] with Logging {
@@ -68,9 +71,11 @@ class MyCommand(protected val args: MyCommandArgs) extends BDGSparkCommand[MyCom
 }
 ```
 
-Add the new command to the default list of commands in `ADAMMain`.
+Add the new command to the default list of commands in
+org.bdgenomics.adam.cli.ADAMMain.
 
 ```scala
+...
   val defaultCommandGroups =
     List(
       CommandGroup(
@@ -78,7 +83,8 @@ Add the new command to the default list of commands in `ADAMMain`.
         List(
           MyCommand,
           CountReadKmers,
-          CountContigKmers, ...
+          CountContigKmers,
+...
 ```
 
 Build ADAM and run the new command via `adam-submit`.
@@ -109,14 +115,17 @@ ADAM ACTIONS
 $ ./bin/adam-submit myCommand input.foo
 ```
 
-Then consider making a
-[pull request](https://github.com/bigdatagenomics/adam/pulls) to include the
-new command in ADAM!
+Then consider creating an
+[issue](https://github.com/bigdatagenomics/adam/issues/new) to start the
+process toward including the new command in ADAM! Please see
+[CONTRIBUTING.md](https://github.com/bigdatagenomics/adam/blob/master/CONTRIBUTING.md)
+before opening a new
+[pull request](https://github.com/bigdatagenomics/adam/compare?expand=1).
 
 
 ## Extend the ADAM CLI by adding new commands in an external repository {#external-commands}
 
-To extend the ADAM CLI by adding new commands in an *external* repository,
+To extend the ADAM CLI by adding new commands in an external repository,
 create a new object with a `main(args: Array[String])` method that delegates to
 `ADAMMain` and provides additional command(s) via its constructor.
 
@@ -139,7 +148,7 @@ and providing the jar file in the Apache Spark `--jars` argument.
 Note the `--` argument separator between Apache Spark arguments and
 ADAM arguments.
 
-```bash
+```
 $ ADAM_MAIN=MyCommandsMain \
   adam-submit \
   --jars my-commands.jar \
