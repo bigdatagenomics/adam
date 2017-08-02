@@ -74,12 +74,12 @@ class ADAMMain @Inject() (commandGroups: List[CommandGroup]) extends Logging {
 
   private def printLogo() {
     print("\n")
-    println("""       e         888~-_          e             e    e
-               |      d8b        888   \        d8b           d8b  d8b
-               |     /Y88b       888    |      /Y88b         d888bdY88b
-               |    /  Y88b      888    |     /  Y88b       / Y88Y Y888b
-               |   /____Y88b     888   /     /____Y88b     /   YY   Y888b
-               |  /      Y88b    888_-~     /      Y88b   /          Y888b""".stripMargin('|'))
+    println("""       e        888~-_         e            e    e
+               |      d8b       888   \       d8b          d8b  d8b
+               |     /Y88b      888    |     /Y88b        d888bdY88b
+               |    /  Y88b     888    |    /  Y88b      / Y88Y Y888b
+               |   /____Y88b    888   /    /____Y88b    /   YY   Y888b
+               |  /      Y88b   888_-~    /      Y88b  /          Y888b""".stripMargin('|'))
   }
 
   private def printVersion() {
