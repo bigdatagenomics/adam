@@ -1,6 +1,6 @@
 # Building Downstream Applications {#apps}
 
-ADAM is packaged so that it can be used interatively via the ADAM shell, called
+ADAM is packaged so that it can be used interactively via the ADAM shell, called
 from the command line interface (CLI), or included as a library when building
 downstream applications.
 
@@ -8,7 +8,8 @@ This document covers three patterns for building applications downstream of
 ADAM:
 
 * Extend the ADAM CLI by [adding new commands](#commands)
-* Extend the ADAM CLI by [adding new commands in an external repository](#external-commands)
+* Extend the ADAM CLI by [adding new commands in an external
+repository](#external-commands)
 * Use ADAM as a [library in new applications](#library)
 
 
@@ -18,15 +19,21 @@ ADAM's CLI is implemented in the adam-cli Apache Maven module of the
 [bdgenomics/adam](https://github.com/bigdatagenomics/adam) repository, one
 .scala source file for each CLI action (e.g.
 [TransformAlignments.scala](https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/TransformAlignments.scala)
-for the [transform](#transform) action), and a main class
+for the [transformAlignments](#transform-alignments) action), and a main class
 ([ADAMMain.scala](https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/ADAMMain.scala))
 that assembles and delegates to the various CLI actions.
 
 To add a new command:
 
-Extend `Args4jBase` class to specify arguments to the command. Arguments are
-defined using the [args4j library](http://args4j.kohsuke.org/). If reading from
-or writing to Parquet, consider including Parquet arguments via `with
+1. [Extend Args4jBase to specify arguments](#extend-arguments)
+2. [Extend BDGCommandCompanion](#extend-companion)
+3. [Build ADAM and run the new command](#build-new-command)
+
+#### Extend Args4jBase to specify arguments {#extend-arguments}
+
+Extend `Args4jBase` class to specify arguments to your new command. Arguments
+are defined using the [args4j library](http://args4j.kohsuke.org/). If reading
+from or writing to Parquet, consider including Parquet arguments via `with
 ParquetArgs`.
 
 ```scala
@@ -35,6 +42,7 @@ class MyCommandArgs extends Args4jBase with ParquetArgs {
   var inputPath: String = null
 }
 ```
+#### Extend BDGCommandCompanion {#extend-companion}
 
 Extend `BDGCommandCompanion` object to specify the command name and
 description. The `apply` method associates `MyCommandArgs` defined above with
@@ -86,6 +94,7 @@ org.bdgenomics.adam.cli.ADAMMain.
           CountContigKmers,
 ...
 ```
+#### Build ADAM and run the new command {#build-new-command}
 
 Build ADAM and run the new command via `adam-submit`.
 
@@ -119,8 +128,8 @@ Then consider creating an
 [issue](https://github.com/bigdatagenomics/adam/issues/new) to start the
 process toward including the new command in ADAM! Please see
 [CONTRIBUTING.md](https://github.com/bigdatagenomics/adam/blob/master/CONTRIBUTING.md)
-before opening a new
-[pull request](https://github.com/bigdatagenomics/adam/compare?expand=1).
+before opening a new [pull
+request](https://github.com/bigdatagenomics/adam/compare?expand=1).
 
 
 ## Extend the ADAM CLI by adding new commands in an external repository {#external-commands}
@@ -190,8 +199,8 @@ A complete example of this pattern can be found in the
 To use ADAM as a library in new applications:
 
 Create an object with a `main(args: Array[String])` method and handle
-command line arguments. Feel free to use the [args4j library](http://www.slf4j.org/)
-or any other argument parsing library.
+command line arguments. Feel free to use the [args4j
+library](http://www.slf4j.org/) or any other argument parsing library.
 
 ```scala
 object MyExample {
@@ -206,10 +215,10 @@ object MyExample {
 
 Create an Apache Spark configuration `SparkConf` and use it to create a new
 `SparkContext`. The following serialization configuration needs to be present
-to register ADAM classes. If any additional
-[Kyro serializers](https://github.com/EsotericSoftware/kryo) need to be
-registered,
-[create a registrator that delegates to the ADAM registrator](#registrator).
+to register ADAM classes. If any additional [Kyro
+serializers](https://github.com/EsotericSoftware/kryo) need to be
+registered, [create a registrator that delegates to the ADAM
+registrator](#registrator).
 You might want to provide your own serializer registrator if you need custom
 serializers for a class in your code that either has a complex structure that
 Kryo fails to serialize properly via Kryo's serializer inference, or if you
