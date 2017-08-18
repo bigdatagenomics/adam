@@ -454,11 +454,21 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = new File(testFile("gvcf_dir/gvcf_multiallelic.g.vcf")).getParent()
 
     val variants = sc.loadVcf(path).toVariantRDD
-    assert(variants.rdd.count === 6)
+    assert(variants.rdd.count === 12)
+  }
+
+  sparkTest("load and save gvcf which contains rows without likelihoods") {
+    val vcs = sc.loadVcf(testFile("gvcf_dir/gvcf_multiallelic_noPLs.g.vcf"))
+    assert(vcs.toVariantRDD.rdd.count === 6)
+
+    // can't validate output due to multiallelic sorting issue,
+    // but we can validate that saving doesn't throw an exception, which is
+    // important for #1673
+    vcs.saveAsVcf(tmpLocation(".vcf"), false, false, false, ValidationStringency.STRICT)
   }
 
   sparkTest("parse annotations for multi-allelic rows") {
-    val path = new File(testFile("gvcf_dir/gvcf_multiallelic.g.vcf")).getParent()
+    val path = testFile("gvcf_dir/gvcf_multiallelic.g.vcf")
 
     val variants = sc.loadVcf(path).toVariantRDD
     val multiAllelicVariants = variants.rdd
