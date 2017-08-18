@@ -1006,7 +1006,8 @@ class VariantContextConverter(
 
     if (gls.isEmpty) {
       if (g.getVariant == null ||
-        g.getVariant.getAlternateAllele != null) {
+        g.getVariant.getAlternateAllele != null ||
+        nls.isEmpty) {
         if (nls.nonEmpty) {
           log.warn("Expected empty non-reference likelihoods for genotype with empty likelihoods (%s).".format(g))
         }
