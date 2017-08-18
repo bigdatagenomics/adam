@@ -221,6 +221,17 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(vcs.rdd.count === 7)
   }
 
+  sparkTest("can read a vcf file with a projection") {
+    val path = testFile("test.vcf")
+    val vcs = sc.loadVcfWithProjection(path, Set("NS"), Set())
+    assert(vcs.rdd.count === 7)
+    assert(vcs.rdd.filter(_.variant.variant.getAnnotation().getAttributes().containsKey("NS"))
+      .count === 7)
+    assert(vcs.rdd.flatMap(_.genotypes)
+      .filter(_.getVariantCallingAnnotations().getAttributes().containsKey("HQ"))
+      .count === 0)
+  }
+
   ignore("can read an uncompressed BCFv2.2 file") { // see https://github.com/samtools/htsjdk/issues/507
     val path = testFile("test.uncompressed.bcf")
     val vcs = sc.loadVcf(path)

@@ -2021,6 +2021,73 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Load variant context records from VCF into a VariantContextRDD.
+   *
+   * Only converts the core Genotype/Variant fields, and the fields set in the
+   * requested projection. Core variant fields include:
+   *
+   * * Names (ID)
+   * * Filters (FILTER)
+   *
+   * Core genotype fields include:
+   *
+   * * Allelic depth (AD)
+   * * Read depth (DP)
+   * * Min read depth (MIN_DP)
+   * * Genotype quality (GQ)
+   * * Genotype likelihoods (GL/PL)
+   * * Strand bias components (SB)
+   * * Phase info (PS,PQ)
+   *
+   * @param pathName The path name to load VCF variant context records from.
+   *   Globs/directories are supported.
+   * @param infoFields The info fields to include, in addition to the ID and
+   *   FILTER attributes.
+   * @param formatFields The format fields to include, in addition to the core
+   *   fields listed above.
+   * @param stringency The validation stringency to use when validating VCF format.
+   *   Defaults to ValidationStringency.STRICT.
+   * @return Returns a VariantContextRDD.
+   */
+  def loadVcfWithProjection(
+    pathName: String,
+    infoFields: Set[String],
+    formatFields: Set[String],
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextRDD = LoadVcf.time {
+
+    // load records from VCF
+    val records = readVcfRecords(pathName, None)
+
+    // attach instrumentation
+    if (Metrics.isRecording) records.instrument() else records
+
+    // load vcf metadata
+    val (sd, samples, headers) = loadVcfMetadata(pathName)
+
+    val vcc = new VariantContextConverter(headers.flatMap(hl => hl match {
+      case il: VCFInfoHeaderLine => {
+        if (infoFields(il.getID)) {
+          Some(il)
+        } else {
+          None
+        }
+      }
+      case fl: VCFFormatHeaderLine => {
+        if (formatFields(fl.getID)) {
+          Some(fl)
+        } else {
+          None
+        }
+      }
+      case _ => None
+    }), stringency)
+    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
+      sd,
+      samples,
+      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
+  }
+
+  /**
    * Load variant context records from VCF indexed by tabix (tbi) into a VariantContextRDD.
    *
    * @param pathName The path name to load VCF variant context records from.
