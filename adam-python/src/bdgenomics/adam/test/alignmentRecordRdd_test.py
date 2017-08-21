@@ -138,3 +138,28 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         assert(isinstance(readsAsCoverage, CoverageRDD))
         self.assertEquals(readsAsCoverage.toDF().count(), 5)
+
+
+    def test_to_coverage(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadAlignments(readsPath)
+
+        coverage = reads.toCoverage()
+        self.assertEquals(coverage.toDF().count(), 42)
+
+        coverage = reads.toCoverage(collapse = False)
+        self.assertEquals(coverage.toDF().count(), 46)
+
+
+    def test_to_fragments(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadAlignments(readsPath)
+
+        fragments = reads.toFragments()
+        self.assertEquals(fragments.toDF().count(), 5)
