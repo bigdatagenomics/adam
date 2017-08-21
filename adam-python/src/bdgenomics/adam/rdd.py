@@ -283,7 +283,11 @@ class AlignmentRecordRDD(GenomicDataset):
         :rtype: bdgenomics.adam.rdd.CoverageRDD
         """
 
-        return CoverageRDD(self._jvmRdd.toCoverage(collapse), self.sc)
+        coverageRDD = CoverageRDD(self._jvmRdd.toCoverage(), self.sc)
+        if (collapse):
+            return coverageRDD.collapse()
+        else:
+            return coverageRDD
 
 
     def save(self, filePath, isSorted = False):
@@ -745,7 +749,7 @@ class FragmentRDD(GenomicDataset):
         return FragmentRDD(newRdd, self.sc)
 
 
-    def __init__(self, jvmRdd):
+    def __init__(self, jvmRdd, sc):
         """
         Constructs a Python FragmentRDD from a JVM FragmentRDD.
         Should not be called from user code; instead, go through
