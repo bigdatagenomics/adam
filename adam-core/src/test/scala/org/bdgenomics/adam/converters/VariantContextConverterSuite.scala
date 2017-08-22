@@ -306,7 +306,10 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     val optHtsjdkVC = converter.convert(ADAMVariantContext(variant, Seq(genotype)))
 
-    assert(optHtsjdkVC.isEmpty)
+    assert(optHtsjdkVC.isDefined)
+    optHtsjdkVC.foreach(vc => {
+      assert(!vc.getGenotype("NA12878").hasAnyAttribute("SB"))
+    })
   }
 
   test("Convert htsjdk multi-allelic sites-only SNVs to ADAM") {

@@ -1582,7 +1582,22 @@ class VariantContextConverter(
         .map(fn => {
           fn(vc, _: Variant.Builder)
         })
-      val converted = boundFns.foldLeft(variantBuilder)((vb: Variant.Builder, fn) => fn(vb))
+      val converted = boundFns.foldLeft(variantBuilder)((vb: Variant.Builder, fn) => {
+        try {
+          fn(vb)
+        } catch {
+          case t: Throwable => {
+            if (stringency == ValidationStringency.STRICT) {
+              throw t
+            } else {
+              if (stringency == ValidationStringency.LENIENT) {
+                log.warn("Converting variant field from %s with function %s line %s failed: %s".format(vc, fn, t))
+              }
+              vb
+            }
+          }
+        }
+      })
 
       val variant = variantBuilder.build
       val variantAnnotationBuilder = VariantAnnotation.newBuilder
@@ -1592,7 +1607,22 @@ class VariantContextConverter(
           fn(vc, _: VariantAnnotation.Builder, variant, alleleIdx)
         })
       val convertedAnnotation = boundAnnotationFns.foldLeft(variantAnnotationBuilder)(
-        (vab: VariantAnnotation.Builder, fn) => fn(vab))
+        (vab: VariantAnnotation.Builder, fn) => {
+          try {
+            fn(vab)
+          } catch {
+            case t: Throwable => {
+              if (stringency == ValidationStringency.STRICT) {
+                throw t
+              } else {
+                if (stringency == ValidationStringency.LENIENT) {
+                  log.warn("Generating annotation tag from line %s with function %sfailed: %s".format(vab, fn, t))
+                }
+                vab
+              }
+            }
+          }
+        })
 
       val indices = Array.empty[Int]
 
@@ -1680,7 +1710,23 @@ class VariantContextConverter(
         .map(fn => {
           fn(g, _: Genotype.Builder, alleleIdx, indices)
         })
-      val convertedCore = boundFns.foldLeft(builder)((gb: Genotype.Builder, fn) => fn(gb))
+      val convertedCore = boundFns.foldLeft(builder)((gb: Genotype.Builder, fn) => {
+        try {
+          fn(gb)
+        } catch {
+          case t: Throwable => {
+            if (stringency == ValidationStringency.STRICT) {
+              throw t
+            } else {
+              if (stringency == ValidationStringency.LENIENT) {
+                log.warn("Converting genotype field in %s with function %s failed: %s".format(
+                  g, fn, t))
+              }
+              gb
+            }
+          }
+        }
+      })
 
       // if we have a non-ref allele, fold and build
       val coreWithOptNonRefs = nonRefIndex.fold(convertedCore)(nonRefAllele => {
@@ -1699,7 +1745,23 @@ class VariantContextConverter(
           fn(g, _: VariantCallingAnnotations.Builder, alleleIdx, indices)
         })
       val convertedAnnotations = boundAnnotationFns.foldLeft(vcAnns)(
-        (vcab: VariantCallingAnnotations.Builder, fn) => fn(vcab))
+        (vcab: VariantCallingAnnotations.Builder, fn) => {
+          try {
+            fn(vcab)
+          } catch {
+            case t: Throwable => {
+              if (stringency == ValidationStringency.STRICT) {
+                throw t
+              } else {
+                if (stringency == ValidationStringency.LENIENT) {
+                  log.warn("Converting genotype annotation field in %s with function %s failed: %s".format(
+                    g, fn, t))
+                }
+                vcab
+              }
+            }
+          }
+        })
 
       // pull out the attribute map and process
       val attrMap = attributeFns.flatMap(fn => fn(g, alleleIdx, indices))
@@ -2013,7 +2075,22 @@ class VariantContextConverter(
 
       // bind the conversion functions and fold
       val convertedWithVariants = variantExtractFns.foldLeft(builder)(
-        (vcb: VariantContextBuilder, fn) => fn(v, vcb))
+        (vcb: VariantContextBuilder, fn) => {
+          try {
+            fn(v, vcb)
+          } catch {
+            case t: Throwable => {
+              if (stringency == ValidationStringency.STRICT) {
+                throw t
+              } else {
+                if (stringency == ValidationStringency.LENIENT) {
+                  log.warn("Applying extraction function %s to %s failed with %s.".format(fn, v, t))
+                }
+                vcb
+              }
+            }
+          }
+        })
 
       // extract from annotations, if present
       val convertedWithAttrs = Option(v.getAnnotation)
@@ -2028,7 +2105,20 @@ class VariantContextConverter(
           attributeFns.foldLeft(convertedWithAnnotations)((vcb: VariantContextBuilder, fn) => {
             val optAttrPair = fn(attributes)
             optAttrPair.fold(vcb)(pair => {
-              vcb.attribute(pair._1, pair._2)
+              try {
+                vcb.attribute(pair._1, pair._2)
+              } catch {
+                case t: Throwable => {
+                  if (stringency == ValidationStringency.STRICT) {
+                    throw t
+                  } else {
+                    if (stringency == ValidationStringency.LENIENT) {
+                      log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, v, t))
+                    }
+                    vcb
+                  }
+                }
+              }
             })
           })
         })
@@ -2084,7 +2174,23 @@ class VariantContextConverter(
 
       // bind the conversion functions and fold
       val convertedCore = genotypeExtractFns.foldLeft(builder)(
-        (gb: GenotypeBuilder, fn) => fn(g, gb))
+        (gb: GenotypeBuilder, fn) => {
+          try {
+            fn(g, gb)
+          } catch {
+            case t: Throwable => {
+              if (stringency == ValidationStringency.STRICT) {
+                throw t
+              } else {
+                if (stringency == ValidationStringency.LENIENT) {
+                  log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, g, t))
+                }
+
+                gb
+              }
+            }
+          }
+        })
 
       // convert the annotations if they exist
       val gtWithAnnotations = Option(g.getVariantCallingAnnotations)
@@ -2092,18 +2198,48 @@ class VariantContextConverter(
 
           // bind the annotation conversion functions and fold
           val convertedAnnotations = genotypeAnnotationExtractFns.foldLeft(convertedCore)(
-            (gb: GenotypeBuilder, fn) => fn(vca, gb))
+            (gb: GenotypeBuilder, fn) => {
+              try {
+                fn(vca, gb)
+              } catch {
+                case t: Throwable => {
+                  if (stringency == ValidationStringency.STRICT) {
+                    throw t
+                  } else {
+                    if (stringency == ValidationStringency.LENIENT) {
+                      log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, vca, t))
+                    }
+
+                    gb
+                  }
+                }
+              }
+            })
 
           // get the attribute map
           val attributes: Map[String, String] = vca.getAttributes.toMap
 
           // apply the attribute converters and return
           attributeFns.foldLeft(convertedAnnotations)((gb: GenotypeBuilder, fn) => {
-            val optAttrPair = fn(attributes)
+            try {
+              val optAttrPair = fn(attributes)
 
-            optAttrPair.fold(gb)(pair => {
-              gb.attribute(pair._1, pair._2)
-            })
+              optAttrPair.fold(gb)(pair => {
+                gb.attribute(pair._1, pair._2)
+              })
+            } catch {
+              case t: Throwable => {
+                if (stringency == ValidationStringency.STRICT) {
+                  throw t
+                } else {
+                  if (stringency == ValidationStringency.LENIENT) {
+                    log.warn("Applying attribute extraction function %s to %s failed with %s.".format(fn, vca, t))
+                  }
+
+                  gb
+                }
+              }
+            }
           })
         })
 
