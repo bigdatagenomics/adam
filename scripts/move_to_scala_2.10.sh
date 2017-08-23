@@ -12,7 +12,7 @@ then
 fi
 
 find . -name "pom.xml" -exec sed -e "s/2.11.8/2.10.6/g" \
-    -e "/bdg-utils.version/! s/2.11/2.10/g" -i.2.10.bak \
+    -e "/[bdg-utils,htsjdk].version/! s/2.11/2.10/g" -i.2.10.bak \
     -e "/no Scala/ s/Scala 2.10/Scala 2.11/g" -i.2.10.bak \
     '{}' \;
 find . -name "*.2.10.bak" -exec rm -f {} \;

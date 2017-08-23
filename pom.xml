@@ -28,11 +28,11 @@
     <parquet.version>1.8.2</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.7.3</hadoop.version>
-    <hadoop-bam.version>7.8.0</hadoop-bam.version>
+    <hadoop-bam.version>7.8.1-SNAPSHOT</hadoop-bam.version>
     <slf4j.version>1.7.22</slf4j.version>
     <bdg-formats.version>0.11.1</bdg-formats.version>
     <bdg-utils.version>0.2.13</bdg-utils.version>
-    <htsjdk.version>2.9.1</htsjdk.version>
+    <htsjdk.version>2.11.0</htsjdk.version>
     <scoverage.plugin.version>1.1.1</scoverage.plugin.version>
   </properties>
 
