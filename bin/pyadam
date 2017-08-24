@@ -27,7 +27,7 @@ ADAM_CLI_JAR=
 if [ -d "$SCRIPT_DIR/repo" ]; then
   ASSEMBLY_DIR="$SCRIPT_DIR/repo"
 else
-  ASSEMBLY_DIR="$SCRIPT_DIR/adam-assembly/target"
+  ASSEMBLY_DIR="$SCRIPT_DIR/assembly/target"
 fi
 
 num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam-assembly_[0-9A-Za-z\.-]*\.jar$" | grep -v javadoc | grep -v sources | wc -l)"

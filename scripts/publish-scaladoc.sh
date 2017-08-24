@@ -19,7 +19,7 @@ cd docs
 cd ..
 
 # get current scaladoc dir
-scaladoc=${PWD}/adam-core/target/site/scaladocs/
+scaladoc=${PWD}/core/target/site/scaladocs/
 
 # make directory to copy docs to, if it does not already exist
 mkdir -p adam-docs/${version} adam-docs/${version}/docs

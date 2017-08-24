@@ -43,8 +43,8 @@ if [ $? != 0 ]; then
 fi
 
 # create spark packages zip file
-cp adam-cli/target/adam-cli_2.10-${release}.jar adam-${release}.jar
-cp adam-cli/pom.xml adam-${release}.pom
+cp cli/target/adam-cli_2.10-${release}.jar adam-${release}.jar
+cp cli/pom.xml adam-${release}.pom
 zip -r adam-${release}.zip adam-${release}.jar adam-${release}.pom
 
 # do scala 2.11 release

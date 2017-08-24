@@ -37,11 +37,11 @@
   </properties>
 
   <modules>
-    <module>adam-codegen</module>
-    <module>adam-core</module>
-    <module>adam-apis</module>
-    <module>adam-cli</module>
-    <module>adam-assembly</module>
+    <module>apis</module>
+    <module>assembly</module>
+    <module>cli</module>
+    <module>codegen</module>
+    <module>core</module>
   </modules>
 
   <licenses>
@@ -603,32 +603,32 @@
     <profile>
       <id>python</id>
       <modules>
-        <module>adam-codegen</module>
-        <module>adam-core</module>
-        <module>adam-apis</module>
-        <module>adam-python</module>
-        <module>adam-cli</module>
-        <module>adam-assembly</module>
+        <module>apis</module>
+        <module>assembly</module>
+        <module>cli</module>
+        <module>codegen</module>
+        <module>core</module>
+        <module>python</module>
       </modules>
     </profile>
     <profile>
       <id>r</id>
       <modules>
-        <module>adam-codegen</module>
-        <module>adam-core</module>
-        <module>adam-apis</module>
-        <module>adam-r</module>
-        <module>adam-cli</module>
-        <module>adam-assembly</module>
+        <module>apis</module>
+        <module>assembly</module>
+        <module>cli</module>
+        <module>codegen</module>
+        <module>core</module>
+        <module>r</module>
       </modules>
     </profile>
     <profile>
       <id>distribution</id>
       <modules>
-        <module>adam-core</module>
-        <module>adam-apis</module>
-        <module>adam-cli</module>
-        <module>adam-assembly</module>
+        <module>apis</module>
+        <module>assembly</module>
+        <module>cli</module>
+        <module>core</module>
         <!-- distribution should be last -->
         <module>distribution</module>
       </modules>
@@ -727,10 +727,10 @@
               </coberturaReports>
               <failOnServiceError>false</failOnServiceError>
               <sourceDirectories>
-                <param>adam-core/src/main/scala</param>
-                <param>adam-core/src/main/java</param>
-                <param>adam-apis/src/main/scala</param>
-                <param>adam-cli/src/main/scala</param>
+                <param>apis/src/main/scala</param>
+                <param>cli/src/main/scala</param>
+                <param>core/src/main/scala</param>
+                <param>core/src/main/java</param>
               </sourceDirectories>
             </configuration>
           </plugin>
