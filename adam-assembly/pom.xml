@@ -71,6 +71,10 @@
                   <pattern>org.apache.avro</pattern>
                   <shadedPattern>org.bdgenomics.avro</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>org.apache.parquet</pattern>
+                  <shadedPattern>org.bdgenomics.parquet</shadedPattern>
+                </relocation>
               </relocations>
             </configuration>
           </execution>
@@ -117,6 +121,16 @@
     </plugins>
   </build>
   <dependencies>
+    <dependency>
+      <groupId>org.apache.parquet</groupId>
+      <artifactId>parquet-avro</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.parquet</groupId>
+      <artifactId>parquet-scala_2.10</artifactId>
+      <scope>compile</scope>
+    </dependency>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
       <artifactId>adam-cli_${scala.version.prefix}</artifactId>
