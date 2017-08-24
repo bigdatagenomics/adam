@@ -18,7 +18,7 @@
 
 resourceFile <- function(fileName) {
     file.path(dirname(dirname(dirname(dirname(getwd())))),
-              "adam-core/src/test/resources",
+              "core/src/test/resources",
               fileName)
 }
 
