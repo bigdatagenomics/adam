@@ -192,10 +192,17 @@ object VariantContextConverter {
           .find(_.getID == key)
           .fold(Some(fl).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
             auditLine(fl, defaultLine, (newId, oldLine) => {
-              new VCFFormatHeaderLine(newId,
-                oldLine.getCountType,
-                oldLine.getType,
-                oldLine.getDescription)
+              if (oldLine.getCountType == VCFHeaderLineCount.INTEGER) {
+                new VCFFormatHeaderLine(newId,
+                  oldLine.getCount,
+                  oldLine.getType,
+                  oldLine.getDescription)
+              } else {
+                new VCFFormatHeaderLine(newId,
+                  oldLine.getCountType,
+                  oldLine.getType,
+                  oldLine.getDescription)
+              }
             })
           })
       }
@@ -205,10 +212,17 @@ object VariantContextConverter {
           .find(_.getID == key)
           .fold(Some(il).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
             auditLine(il, defaultLine, (newId, oldLine) => {
-              new VCFInfoHeaderLine(newId,
-                oldLine.getCountType,
-                oldLine.getType,
-                oldLine.getDescription)
+              if (oldLine.getCountType == VCFHeaderLineCount.INTEGER) {
+                new VCFInfoHeaderLine(newId,
+                  oldLine.getCount,
+                  oldLine.getType,
+                  oldLine.getDescription)
+              } else {
+                new VCFInfoHeaderLine(newId,
+                  oldLine.getCountType,
+                  oldLine.getType,
+                  oldLine.getDescription)
+              }
             })
           })
       }
