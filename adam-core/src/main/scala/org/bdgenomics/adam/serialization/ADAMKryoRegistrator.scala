@@ -301,6 +301,13 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.apache.spark.sql.types.StructField])
     kryo.register(classOf[org.apache.spark.sql.types.StructType])
 
+    // org.hammerlab
+    kryo.register(classOf[org.hammerlab.bam.header.ContigLengths])
+    kryo.register(classOf[org.hammerlab.bam.header.Header])
+    kryo.register(classOf[org.hammerlab.bgzf.Pos])
+    kryo.register(classOf[org.hammerlab.genomics.reference.ContigName])
+    kryo.register(Class.forName("org.hammerlab.genomics.reference.package$Locus"))
+
     // scala
     kryo.register(classOf[scala.Array[scala.Array[Byte]]])
     kryo.register(classOf[scala.Array[htsjdk.variant.vcf.VCFHeader]])
@@ -343,6 +350,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[String]])
     kryo.register(classOf[scala.Array[Option[_]]])
     kryo.register(Class.forName("scala.Tuple2$mcCC$sp"))
+    kryo.register(Class.forName("scala.math.Ordering$Int$"))
 
     // scala.collection
     kryo.register(Class.forName("scala.collection.Iterator$$anon$11"))
@@ -354,9 +362,12 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     // scala.collection.immutable
     kryo.register(classOf[scala.collection.immutable.::[_]])
     kryo.register(classOf[scala.collection.immutable.Range])
+    kryo.register(Class.forName("scala.collection.immutable.RedBlackTree$BlackTree"))
+    kryo.register(Class.forName("scala.collection.immutable.RedBlackTree$RedTree"))
     kryo.register(Class.forName("scala.collection.immutable.Stream$Cons"))
     kryo.register(Class.forName("scala.collection.immutable.Stream$Empty$"))
     kryo.register(Class.forName("scala.collection.immutable.Set$EmptySet$"))
+    kryo.register(classOf[scala.collection.immutable.TreeMap[_, _]])
 
     // scala.collection.mutable
     kryo.register(classOf[scala.collection.mutable.ArrayBuffer[_]])

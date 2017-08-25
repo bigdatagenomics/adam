@@ -18,7 +18,12 @@
 package org.bdgenomics.adam.rdd
 
 import java.io.{ File, FileNotFoundException, InputStream }
-import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord, ValidationStringency }
+import htsjdk.samtools.{
+  SAMFileHeader,
+  SAMProgramRecord,
+  SAMRecord,
+  ValidationStringency
+}
 import htsjdk.samtools.util.Locatable
 import htsjdk.variant.vcf.{
   VCFHeader,
@@ -104,6 +109,8 @@ import org.bdgenomics.formats.avro.{
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
+import org.hammerlab.bam.spark._
+import org.hammerlab.paths.{ Path => HLPath }
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods._
 import org.seqdoop.hadoop_bam._
@@ -141,6 +148,8 @@ private case class LocatableReferenceRegion(rr: ReferenceRegion) extends Locatab
  * ADAMContext, as well as implicit functions for the Pipe API.
  */
 object ADAMContext {
+
+  val USE_SPARK_BAM = "org.bdgenomics.adam.rdd.ADAMContext.USE_SPARK_BAM"
 
   // conversion functions for pipes
   implicit def sameTypeConversionFn[T, U <: GenomicRDD[T, U]](gRdd: U,
@@ -1507,19 +1516,37 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // contains bams, hadoop-bam is a-ok! i believe that it is better (perf) to
     // just load from a single newAPIHadoopFile call instead of a union across
     // files, so we do that whenever possible
+    def hadoopBamRead(path: String): RDD[SAMRecord] = {
+      sc.newAPIHadoopFile(path,
+        classOf[AnySAMInputFormat],
+        classOf[LongWritable],
+        classOf[SAMRecordWritable],
+        ContextUtil.getConfiguration(job)).map(_._2.get)
+    }
+    val readerFn = if (sc.hadoopConfiguration.getBoolean(ADAMContext.USE_SPARK_BAM, false)) {
+      def sparkBamRead(path: String): RDD[SAMRecord] = {
+        if (path.endsWith(".bam")) {
+          sc.loadBam(HLPath(path))
+        } else {
+          hadoopBamRead(path)
+        }
+      }
+
+      sparkBamRead(_)
+    } else {
+      hadoopBamRead(_)
+    }
     val records = if (filteredFiles.length != bamFiles.length) {
       sc.union(filteredFiles.map(p => {
-        sc.newAPIHadoopFile(p.toString, classOf[AnySAMInputFormat], classOf[LongWritable],
-          classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+        readerFn(p.toString)
       }))
     } else {
-      sc.newAPIHadoopFile(pathName, classOf[AnySAMInputFormat], classOf[LongWritable],
-        classOf[SAMRecordWritable], ContextUtil.getConfiguration(job))
+      readerFn(pathName)
     }
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
 
-    AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p._2.get)),
+    AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p)),
       seqDict,
       readGroups,
       programs)

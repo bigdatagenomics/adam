@@ -111,10 +111,10 @@ object ReferenceRegion {
       case LociRanges(ranges) => {
         ranges.map(range => range match {
           case LociRange(contigName, start, None) => {
-            ReferencePosition(contigName, start)
+            ReferencePosition(contigName.toString, start)
           }
           case LociRange(contigName, start, Some(end)) => {
-            ReferenceRegion(contigName, start, end)
+            ReferenceRegion(contigName.toString, start, end)
           }
         })
       }

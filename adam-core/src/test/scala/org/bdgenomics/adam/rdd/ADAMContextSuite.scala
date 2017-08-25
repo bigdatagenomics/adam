@@ -88,6 +88,16 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reads.dataset.rdd.count === 20)
   }
 
+  sparkTest("can read a small .SAM file using spark-bam") {
+    val path = testFile("small.sam")
+    sc.hadoopConfiguration.setBoolean(ADAMContext.USE_SPARK_BAM, true)
+    val reads = sc.loadAlignments(path)
+    val loc = tmpLocation(".bam")
+    reads.saveAsSam(loc, asSingleFile = true)
+    assert(sc.loadAlignments(loc).rdd.count() === 20)
+    assert(sc.loadAlignments(loc).dataset.count() === 20)
+  }
+
   sparkTest("loading a sam file with a bad header and strict stringency should fail") {
     val path = testFile("badheader.sam")
     intercept[SAMFormatException] {
@@ -116,6 +126,17 @@ class ADAMContextSuite extends ADAMFunSuite {
       .rdd
       .filter(a => (a.getReadMapped && a.getMapq > 30))
     assert(reads.count() === 18)
+  }
+
+  sparkTest("can filter a .SAM file based on quality with spark-bam") {
+    val path = testFile("small.sam")
+    val loc = tmpLocation(".bam")
+
+    sc.hadoopConfiguration.setBoolean(ADAMContext.USE_SPARK_BAM, true)
+    sc.loadAlignments(path)
+      .transform(_.filter(a => (a.getReadMapped && a.getMapq > 30)))
+      .saveAsSam(loc, asSingleFile = true)
+    assert(sc.loadAlignments(loc).rdd.count() === 18)
   }
 
   test("Can convert to phred") {

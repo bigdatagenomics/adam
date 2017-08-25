@@ -35,6 +35,7 @@
 
   <modules>
     <module>adam-codegen</module>
+    <module>adam-relocations</module>
     <module>adam-core</module>
     <module>adam-apis</module>
     <module>adam-cli</module>
@@ -356,6 +357,11 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
+        <artifactId>adam-relocations_${scala.version.prefix}</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bdgenomics.adam</groupId>
         <artifactId>adam-core_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
         <type>test-jar</type>
@@ -403,13 +409,13 @@
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.hammerlab</groupId>
-        <artifactId>genomic-loci_${scala.version.prefix}</artifactId>
-        <version>1.4.4</version>
+        <groupId>org.hammerlab.genomics</groupId>
+        <artifactId>loci_${scala.version.prefix}</artifactId>
+        <version>2.0.1</version>
         <exclusions>
           <exclusion>
-            <groupId>org.bdgenomics.bdg-formats</groupId>
-            <artifactId>*</artifactId>
+            <groupId>org.hammerlab</groupId>
+            <artifactId>iterator_2.10</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -552,6 +558,11 @@
             <artifactId>htsjdk</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.hammerlab</groupId>
+        <artifactId>spark-bam_2.10</artifactId>
+        <version>${spark-bam.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.samtools</groupId>

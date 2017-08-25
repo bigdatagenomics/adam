@@ -158,6 +158,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.bdgenomics.adam</groupId>
+      <artifactId>adam-relocations_${scala.version.prefix}</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>org.bdgenomics.utils</groupId>
       <artifactId>utils-misc_${scala.version.prefix}</artifactId>
       <type>test-jar</type>
@@ -189,8 +194,8 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.hammerlab</groupId>
-      <artifactId>genomic-loci_${scala.version.prefix}</artifactId>
+      <groupId>org.hammerlab.genomics</groupId>
+      <artifactId>loci_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
