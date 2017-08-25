@@ -129,6 +129,18 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vcRdd.sequences.records(0).name === "chr11")
   }
 
+  sparkTest("transform a vcf file with bad header") {
+    val path = testFile("invalid/truth_small_variants.vcf")
+    val before = sc.loadVcf(path, ValidationStringency.SILENT)
+    assert(before.rdd.count == 1)
+
+    val tempPath = tmpLocation(".adam")
+    before.toVariantRDD().saveAsParquet(tempPath)
+
+    val after = sc.loadVariants(tempPath).toVariantContextRDD()
+    assert(after.rdd.count == 1)
+  }
+
   sparkTest("don't lose any variants when piping as VCF") {
     val smallVcf = testFile("small.vcf")
     val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
