@@ -405,6 +405,17 @@ class VariantContextConverter(
     splitIds(vc).fold(vb)(vb.setNames(_))
   }
 
+  private[converters] def formatQuality(
+    vc: HtsjdkVariantContext,
+    vb: Variant.Builder): Variant.Builder = {
+
+    if (vc.hasLog10PError) {
+      vb.setQuality(vc.getPhredScaledQual)
+    } else {
+      vb
+    }
+  }
+
   private[converters] def formatFilters(
     vc: HtsjdkVariantContext,
     vb: Variant.Builder): Variant.Builder = {
@@ -421,6 +432,7 @@ class VariantContextConverter(
 
   private val variantFormatFns: Iterable[(HtsjdkVariantContext, Variant.Builder) => Variant.Builder] = Iterable(
     formatNames(_, _),
+    formatQuality(_, _),
     formatFilters(_, _)
   )
 
@@ -431,6 +443,17 @@ class VariantContextConverter(
     vcb: VariantContextBuilder): VariantContextBuilder = {
 
     joinNames(v).fold(vcb.noID())(vcb.id(_))
+  }
+
+  private[converters] def extractQuality(
+    v: Variant,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    if (v.getQuality != null) {
+      vcb.log10PError(-v.getQuality / 10.0)
+    } else {
+      vcb
+    }
   }
 
   private[converters] def extractFilters(
@@ -457,6 +480,7 @@ class VariantContextConverter(
 
   private val variantExtractFns: Iterable[(Variant, VariantContextBuilder) => VariantContextBuilder] = Iterable(
     extractNames(_, _),
+    extractQuality(_, _),
     extractFilters(_, _)
   )
 
