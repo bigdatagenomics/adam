@@ -1206,6 +1206,22 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(v.getNames.get(1) === "secondName")
   }
 
+  test("no quality going htsjdk->adam") {
+    val v = buildVariant(Map.empty,
+      converter.formatQuality)
+    assert(v.getQuality === null)
+  }
+
+  test("quality set going htsjdk->adam") {
+    val v = buildVariant(Map.empty,
+      converter.formatQuality,
+      fns = Iterable((vcb: VariantContextBuilder) => {
+        vcb.log10PError(-10.0)
+      }))
+    assert(v.getQuality > 99.9)
+    assert(v.getQuality < 100.1)
+  }
+
   test("no filters applied going htsjdk->adam") {
     val v = buildVariant(Map.empty,
       converter.formatFilters,
@@ -1281,6 +1297,24 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     assert(vc.hasID)
     assert(vc.getID === "name1;name2")
+  }
+
+  test("no qual set adam->htsjdk") {
+    val vc = converter.extractQuality(emptyV, htsjdkSNVBuilder)
+      .make
+
+    assert(!vc.hasLog10PError)
+  }
+
+  test("qual is set adam->htsjdk") {
+    val vc = converter.extractQuality(Variant.newBuilder
+      .setQuality(100.0)
+      .build, htsjdkSNVBuilder)
+      .make
+
+    assert(vc.hasLog10PError)
+    assert(vc.getPhredScaledQual > 99.9)
+    assert(vc.getPhredScaledQual < 100.1)
   }
 
   test("no filters applied adam->htsjdk") {
