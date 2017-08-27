@@ -1380,4 +1380,23 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(htsjdkPg.getProgramVersion === "1")
     assert(htsjdkPg.getPreviousProgramGroupId === "ppg")
   }
+
+  sparkTest("GenomicRDD.sort does not fail on unmapped reads") {
+    val inputPath = testFile("unmapped.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+    assert(reads.rdd.count === 200)
+
+    val sorted = reads.sort(stringency = ValidationStringency.SILENT)
+    assert(sorted.rdd.count === 102)
+  }
+
+  sparkTest("GenomicRDD.sortLexicographically does not fail on unmapped reads") {
+    val inputPath = testFile("unmapped.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+    assert(reads.rdd.count === 200)
+
+    val sorted = reads.sortLexicographically(
+      stringency = ValidationStringency.SILENT)
+    assert(sorted.rdd.count === 102)
+  }
 }
