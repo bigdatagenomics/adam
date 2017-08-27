@@ -340,7 +340,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
       // We don't use ValidationStringency here because multimapped elements
       // break downstream methods.
-      require(coveredRegions.size == 1,
+      require(coveredRegions.size <= 1,
         "Cannot sort RDD containing a multimapped element. %s covers %s.".format(
           elem, coveredRegions.mkString(",")))
 
@@ -403,7 +403,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
       // We don't use ValidationStringency here because multimapped elements
       // break downstream methods.
-      require(coveredRegions.size == 1,
+      require(coveredRegions.size <= 1,
         "Cannot sort RDD containing a multimapped element. %s covers %s.".format(
           elem, coveredRegions.mkString(",")))
 
