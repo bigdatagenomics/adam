@@ -112,11 +112,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.bdgenomics.bdg-formats</groupId>
-      <artifactId>bdg-formats</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>org.bdgenomics.adam</groupId>
       <artifactId>adam-core-spark2_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
@@ -126,6 +121,11 @@
       <artifactId>adam-core-spark2_${scala.version.prefix}</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bdgenomics.adam</groupId>
+      <artifactId>adam-formats-spark2_${scala.version.prefix}</artifactId>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

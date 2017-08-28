@@ -27,13 +27,13 @@
     <hadoop.version>2.7.3</hadoop.version>
     <hadoop-bam.version>7.9.2</hadoop-bam.version>
     <slf4j.version>1.7.25</slf4j.version>
-    <bdg-formats.version>0.11.3</bdg-formats.version>
     <bdg-utils.version>0.2.13</bdg-utils.version>
     <htsjdk.version>2.13.2</htsjdk.version>
     <scoverage.plugin.version>1.1.1</scoverage.plugin.version>
   </properties>
 
   <modules>
+    <module>adam-formats</module>
     <module>adam-codegen</module>
     <module>adam-core</module>
     <module>adam-apis</module>
@@ -329,11 +329,6 @@
         <version>2.24.0</version>
       </dependency>
       <dependency>
-        <groupId>org.bdgenomics.bdg-formats</groupId>
-        <artifactId>bdg-formats</artifactId>
-        <version>${bdg-formats.version}</version>
-      </dependency>
-      <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>2.5</version>
@@ -377,6 +372,11 @@
         <version>${project.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.bdgenomics.adam</groupId>
+        <artifactId>adam-formats-spark2_${scala.version.prefix}</artifactId>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
@@ -622,6 +622,7 @@
     <profile>
       <id>python</id>
       <modules>
+        <module>adam-formats</module>
         <module>adam-codegen</module>
         <module>adam-core</module>
         <module>adam-apis</module>
@@ -633,6 +634,7 @@
     <profile>
       <id>r</id>
       <modules>
+        <module>adam-formats</module>
         <module>adam-codegen</module>
         <module>adam-core</module>
         <module>adam-apis</module>

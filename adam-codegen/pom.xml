@@ -10,7 +10,7 @@
 
   <artifactId>adam-codegen-spark2_2.11</artifactId>
   <packaging>jar</packaging>
-  <name>ADAM_${scala.version.prefix}: Avro-to-Dataset codegen utils</name>
+  <name>ADAM_${scala.version.prefix}: Codegen</name>
   <properties>
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
