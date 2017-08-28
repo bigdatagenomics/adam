@@ -408,6 +408,12 @@
         <groupId>org.hammerlab</groupId>
         <artifactId>genomic-loci_${scala.version.prefix}</artifactId>
         <version>1.4.4</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.bdgenomics.bdg-formats</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
