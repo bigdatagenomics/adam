@@ -628,7 +628,7 @@ class CoverageRDD(GenomicDataset):
         return CoverageRDD(self._jvmRdd.collapse(), self.sc)
 
     
-    def toFeatureRDD(self):
+    def toFeatures(self):
         """
         Converts CoverageRDD to FeatureRDD.
 
@@ -636,7 +636,7 @@ class CoverageRDD(GenomicDataset):
         :rtype: bdgenomics.adam.rdd.FeatureRDD
         """
         
-        return FeatureRDD(self._jvmRdd.toFeatureRDD(), self.sc)
+        return FeatureRDD(self._jvmRdd.toFeatures(), self.sc)
 
 
     def coverage(self, bpPerBin = 1):
@@ -831,12 +831,12 @@ class GenotypeRDD(GenomicDataset):
         self._jvmRdd.saveAsParquet(filePath)
 
 
-    def toVariantContextRDD(self):
+    def toVariantContexts(self):
         """
         :return: These genotypes, converted to variant contexts.
         """
 
-        vcs = self._jvmRdd.toVariantContextRDD()
+        vcs = self._jvmRdd.toVariantContexts()
         return VariantContextRDD(vcs, self.sc)
 
 
@@ -934,12 +934,12 @@ class VariantRDD(GenomicDataset):
         GenomicDataset.__init__(self, jvmRdd, sc)
 
 
-    def toVariantContextRDD(self):
+    def toVariantContexts(self):
         """
         :return: These variants, converted to variant contexts.
         """
         
-        vcs = self._jvmRdd.toVariantContextRDD()
+        vcs = self._jvmRdd.toVariantContexts()
         return VariantContextRDD(vcs, self.sc)
         
 

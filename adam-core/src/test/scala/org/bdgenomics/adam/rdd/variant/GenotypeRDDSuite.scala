@@ -322,7 +322,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
   sparkTest("convert back to variant contexts") {
     val genotypesPath = testFile("small.vcf")
     val genotypes = sc.loadGenotypes(genotypesPath)
-    val variantContexts = genotypes.toVariantContextRDD
+    val variantContexts = genotypes.toVariantContexts
 
     assert(variantContexts.sequences.containsRefName("1"))
     assert(variantContexts.samples.nonEmpty)

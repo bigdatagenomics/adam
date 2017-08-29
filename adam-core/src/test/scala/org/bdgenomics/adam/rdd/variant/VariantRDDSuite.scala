@@ -341,7 +341,7 @@ class VariantRDDSuite extends ADAMFunSuite {
   sparkTest("convert back to variant contexts") {
     val variantsPath = testFile("small.vcf")
     val variants = sc.loadVariants(variantsPath)
-    val variantContexts = variants.toVariantContextRDD
+    val variantContexts = variants.toVariantContexts
 
     assert(variantContexts.sequences.containsRefName("1"))
     assert(variantContexts.samples.isEmpty)

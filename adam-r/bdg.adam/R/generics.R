@@ -165,8 +165,8 @@ setGeneric("collapse",
 
 # @rdname CoverageRDD
 # @export
-setGeneric("toFeatureRDD",
-           function(ardd) { standardGeneric("toFeatureRDD") })
+setGeneric("toFeatures",
+           function(ardd) { standardGeneric("toFeatures") })
 
 # @rdname CoverageRDD
 # @export
@@ -194,8 +194,8 @@ setGeneric("toReads",
 
 # @rdname GenotypeRDD
 # @export
-setGeneric("toVariantContextRDD",
-           function(ardd) { standardGeneric("toVariantContextRDD") })
+setGeneric("toVariantContexts",
+           function(ardd) { standardGeneric("toVariantContexts") })
 
 # @rdname GenotypeRDD
 # @export
@@ -215,8 +215,8 @@ setGeneric("flankAdjacentFragments",
 
 # @rdname VariantRDD
 # @export
-setGeneric("toVariantContextRDD",
-           function(ardd) { standardGeneric("toVariantContextRDD") })
+setGeneric("toVariantContexts",
+           function(ardd) { standardGeneric("toVariantContexts") })
 
 # @rdname VariantRDD
 # @export

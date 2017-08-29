@@ -584,9 +584,9 @@ setMethod("collapse", signature(ardd = "CoverageRDD"),
 #' @return Returns a FeatureRDD from a CoverageRDD.
 #'
 #' @export
-setMethod("toFeatureRDD", signature(ardd = "CoverageRDD"),
+setMethod("toFeatures", signature(ardd = "CoverageRDD"),
           function(ardd) {
-              FeatureRDD(sparkR.callJMethod(ardd@jrdd, "toFeatureRDD"))
+              FeatureRDD(sparkR.callJMethod(ardd@jrdd, "toFeatures"))
           })
 
 #' Gets coverage overlapping specified ReferenceRegion.
@@ -748,12 +748,14 @@ setMethod("saveAsParquet", signature(ardd = "GenotypeRDD", filePath = "character
               invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
           })
 
+#' Converts this RDD of Genotypes to VariantContexts.
+#'
 #' @return Returns this RDD of Genotypes as VariantContexts.
 #'
 #' @export
-setMethod("toVariantContextRDD", signature(ardd = "GenotypeRDD"),
+setMethod("toVariantContexts", signature(ardd = "GenotypeRDD"),
           function(ardd) {
-              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContextRDD"))
+              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
           })
 
 setMethod("inferConversionFn",
@@ -825,12 +827,14 @@ setMethod("saveAsParquet", signature(ardd = "VariantRDD", filePath = "character"
               invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
           })
 
+#' Converts this RDD of Variants to VariantContexts.
+#'
 #' @return Returns this RDD of Variants as VariantContexts.
 #'
 #' @export
-setMethod("toVariantContextRDD", signature(ardd = "VariantRDD"),
+setMethod("toVariantContexts", signature(ardd = "VariantRDD"),
           function(ardd) {
-              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContextRDD"))
+              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
           })
 
 setMethod("replaceRdd",
