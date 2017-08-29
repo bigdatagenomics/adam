@@ -133,12 +133,12 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val path = testFile("invalid/truth_small_variants.vcf")
     val before = sc.loadVcf(path, ValidationStringency.SILENT)
     assert(before.rdd.count === 7)
-    assert(before.toGenotypeRDD().rdd.filter(_.getPhaseSetId == null).count === 7)
+    assert(before.toGenotypes().rdd.filter(_.getPhaseSetId == null).count === 7)
 
     val tempPath = tmpLocation(".adam")
-    before.toVariantRDD().saveAsParquet(tempPath)
+    before.toVariants().saveAsParquet(tempPath)
 
-    val after = sc.loadVariants(tempPath).toVariantContextRDD()
+    val after = sc.loadVariants(tempPath).toVariantContexts()
     assert(after.rdd.count === 7)
   }
 
@@ -167,13 +167,13 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
 
     // check for freebayes-specific VCF INFO keys
-    val variant = pipedRdd.toVariantRDD.rdd.first
+    val variant = pipedRdd.toVariants.rdd.first
     for (freebayesInfoKey <- Seq("NS", "DPB", "RO", "AO", "PRO", "PAO", "QR", "QA")) {
       assert(variant.getAnnotation.getAttributes.containsKey(freebayesInfoKey))
     }
 
     // check for freebayes-specific VCF FORMAT keys
-    val genotype = pipedRdd.toGenotypeRDD.rdd.first
+    val genotype = pipedRdd.toGenotypes.rdd.first
     for (freebayesFormatKey <- Seq("RO", "QR", "AO", "QA")) {
       assert(genotype.getVariantCallingAnnotations.getAttributes.containsKey(freebayesFormatKey))
     }

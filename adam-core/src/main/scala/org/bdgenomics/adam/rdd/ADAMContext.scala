@@ -2739,7 +2739,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (isVcfExt(pathName)) {
       log.info(s"Loading $pathName as VCF and converting to Genotypes.")
-      loadVcf(pathName, stringency).toGenotypeRDD
+      loadVcf(pathName, stringency).toGenotypes
     } else {
       log.info(s"Loading $pathName as Parquet containing Genotypes. Sequence dictionary for translation is ignored.")
       loadParquetGenotypes(pathName, optPredicate = optPredicate, optProjection = optProjection)
@@ -2773,7 +2773,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (isVcfExt(pathName)) {
       log.info(s"Loading $pathName as VCF and converting to Variants.")
-      loadVcf(pathName, stringency).toVariantRDD
+      loadVcf(pathName, stringency).toVariants
     } else {
       log.info(s"Loading $pathName as Parquet containing Variants. Sequence dictionary for translation is ignored.")
       loadParquetVariants(pathName, optPredicate = optPredicate, optProjection = optProjection)

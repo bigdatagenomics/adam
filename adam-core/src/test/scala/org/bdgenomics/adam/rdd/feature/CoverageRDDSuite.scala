@@ -159,7 +159,7 @@ class CoverageRDDSuite extends ADAMFunSuite {
     assert(coverage2Ds.dataset.count == 3)
 
     // translate to features and count
-    val features2 = coverage2.toFeatureRDD
+    val features2 = coverage2.toFeatures
     assert(features2.rdd.count == 3)
     assert(features2.dataset.count == 3)
 

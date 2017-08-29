@@ -32,7 +32,7 @@ class GenotypeRDDTest(SparkTestCase):
         genotypes = ac.loadGenotypes(testFile)
 
         tmpPath = self.tmpFile() + ".vcf"
-        genotypes.toVariantContextRDD().saveAsVcf(tmpPath)
+        genotypes.toVariantContexts().saveAsVcf(tmpPath)
 
         savedGenotypes = ac.loadGenotypes(testFile)
 
@@ -48,8 +48,8 @@ class GenotypeRDDTest(SparkTestCase):
         genotypes = ac.loadGenotypes(testFile)
 
         tmpPath = self.tmpFile() + ".vcf"
-        genotypes.toVariantContextRDD().sort().saveAsVcf(tmpPath,
-                                                         asSingleFile=True)
+        genotypes.toVariantContexts().sort().saveAsVcf(tmpPath,
+                                                       asSingleFile=True)
 
         self.checkFiles(tmpPath, self.resourceFile("sorted.vcf"))
 
@@ -62,7 +62,7 @@ class GenotypeRDDTest(SparkTestCase):
         genotypes = ac.loadGenotypes(testFile)
 
         tmpPath = self.tmpFile() + ".vcf"
-        genotypes.toVariantContextRDD().sortLexicographically().saveAsVcf(tmpPath,
-                                                                          asSingleFile=True)
+        genotypes.toVariantContexts().sortLexicographically().saveAsVcf(tmpPath,
+                                                                        asSingleFile=True)
 
         self.checkFiles(tmpPath, self.resourceFile("sorted.lex.vcf"))

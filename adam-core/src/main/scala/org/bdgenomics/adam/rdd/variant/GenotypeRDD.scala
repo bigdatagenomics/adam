@@ -294,7 +294,7 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicRDD[Genotype, Ge
   /**
    * @return Returns this GenotypeRDD squared off as a VariantContextRDD.
    */
-  def toVariantContextRDD(): VariantContextRDD = {
+  def toVariantContexts(): VariantContextRDD = {
     val vcIntRdd: RDD[(RichVariant, Genotype)] = rdd.keyBy(g => {
       RichVariant.genotypeToRichVariant(g)
     })

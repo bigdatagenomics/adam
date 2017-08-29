@@ -11,5 +11,7 @@ build
 *.log
 .*.swp
 .DS_Store
-
 *#*
+.Rproj.user
+.Rhistory
+.RData

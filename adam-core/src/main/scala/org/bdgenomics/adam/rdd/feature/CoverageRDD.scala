@@ -84,7 +84,7 @@ case class ParquetUnboundCoverageRDD private[rdd] (
       .as[Coverage]
   }
 
-  def toFeatureRDD(): FeatureRDD = {
+  def toFeatures(): FeatureRDD = {
     ParquetUnboundFeatureRDD(sc, parquetFilename, sequences)
   }
 
@@ -111,7 +111,7 @@ case class DatasetBoundCoverageRDD private[rdd] (
     dataset.rdd
   }
 
-  def toFeatureRDD(): FeatureRDD = {
+  def toFeatures(): FeatureRDD = {
     import dataset.sqlContext.implicits._
     DatasetBoundFeatureRDD(dataset.map(_.toSqlFeature), sequences)
   }
@@ -140,7 +140,7 @@ case class RDDBoundCoverageRDD private[rdd] (
     sqlContext.createDataset(rdd)
   }
 
-  def toFeatureRDD(): FeatureRDD = {
+  def toFeatures(): FeatureRDD = {
     val featureRdd = rdd.map(_.toFeature)
     new RDDBoundFeatureRDD(featureRdd, sequences, optPartitionMap = optPartitionMap)
   }
@@ -206,7 +206,7 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
   def save(filePath: java.lang.String,
            asSingleFile: java.lang.Boolean,
            disableFastConcat: java.lang.Boolean) = {
-    toFeatureRDD.save(filePath,
+    toFeatures.save(filePath,
       asSingleFile,
       disableFastConcat)
   }
@@ -272,7 +272,7 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
    *
    * @return Returns a FeatureRDD from CoverageRDD.
    */
-  def toFeatureRDD(): FeatureRDD
+  def toFeatures(): FeatureRDD
 
   /**
    * Gets coverage overlapping specified ReferenceRegion.
