@@ -114,6 +114,7 @@ object Timers extends Metrics {
   val ConvertToSAM = timer("Convert To SAM")
   val ConvertToSAMRecord = timer("Convert To SAM Record")
   val SaveAsADAM = timer("Save File In ADAM Format")
+  val SaveAsVcf = timer("Save File In VCF Format")
   val WriteADAMRecord = timer("Write ADAM Record")
   val WriteBAMRecord = timer("Write BAM Record")
   val WriteSAMRecord = timer("Write SAM Record")
