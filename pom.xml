@@ -405,11 +405,6 @@
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.hammerlab</groupId>
-        <artifactId>genomic-loci_${scala.version.prefix}</artifactId>
-        <version>1.4.4</version>
-      </dependency>
-      <dependency>
         <groupId>org.bdgenomics.utils</groupId>
         <artifactId>utils-cli_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
