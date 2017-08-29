@@ -23,12 +23,6 @@ import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.interval.array.Interval
-import org.hammerlab.genomics.loci.parsing.{
-  All,
-  LociRange,
-  LociRanges,
-  ParsedLoci
-}
 import scala.math.{ max, min }
 
 trait ReferenceOrdering[T <: ReferenceRegion] extends Ordering[T] {
@@ -103,22 +97,31 @@ object ReferenceRegion {
    * @return Returns an iterable collection of reference regions.
    */
   def fromString(loci: String): Iterable[ReferenceRegion] = {
-
-    ParsedLoci(loci) match {
-      case All => {
-        throw new IllegalArgumentException("Unsupported value 'all'")
-      }
-      case LociRanges(ranges) => {
-        ranges.map(range => range match {
-          case LociRange(contigName, start, None) => {
-            ReferencePosition(contigName, start)
+    loci
+      .split(",")
+      .map(_.trim)
+      .map(token => {
+        require(!token.isEmpty, "reference region must not be empty")
+        val colonIdx = token.lastIndexOf(":")
+        if (colonIdx == -1) {
+          all(token)
+        } else {
+          val contigName = token.substring(0, colonIdx)
+          val dashIdx = token.lastIndexOf("-")
+          if (dashIdx == -1) {
+            if (token.endsWith("+")) {
+              toEnd(contigName, token.substring(colonIdx + 1, token.length() - 1).toLong)
+            } else {
+              val position = token.substring(colonIdx + 1).toLong
+              apply(contigName, position, position + 1L)
+            }
+          } else {
+            val start = token.substring(colonIdx + 1, dashIdx).toLong
+            val end = token.substring(dashIdx + 1).toLong
+            apply(contigName, start, end)
           }
-          case LociRange(contigName, start, Some(end)) => {
-            ReferenceRegion(contigName, start, end)
-          }
-        })
-      }
-    }
+        }
+      })
   }
 
   /**
