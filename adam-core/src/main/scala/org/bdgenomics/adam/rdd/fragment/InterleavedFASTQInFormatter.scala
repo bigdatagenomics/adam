@@ -80,8 +80,18 @@ class InterleavedFASTQInFormatter private (
         outputOriginalBaseQualities = writeOriginalQualities) + "\n"
 
       // write both to the output stream
-      os.write(fastq1.getBytes)
-      os.write(fastq2.getBytes)
+      // ensure that reads are ordered properly if ordering is known (see #1702)
+      if (read1.getReadInFragment == 0 &&
+        read2.getReadInFragment == 1) {
+        os.write(fastq1.getBytes)
+        os.write(fastq2.getBytes)
+      } else if (read1.getReadInFragment == 1 &&
+        read2.getReadInFragment == 0) {
+        os.write(fastq2.getBytes)
+        os.write(fastq1.getBytes)
+      } else {
+        log.warn("Improper pair of reads in fragment %s. Dropping...".format(p))
+      }
     })
   }
 }
