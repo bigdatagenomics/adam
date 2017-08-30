@@ -21,7 +21,7 @@ import logging
 from pyspark.rdd import RDD
 from pyspark.sql import DataFrame, SQLContext
 
-from bdgenomics.adam.stringency import LENIENT, _toJava
+from bdgenomics_adam.stringency import LENIENT, _toJava
 
 _log = logging.getLogger(__name__)
 

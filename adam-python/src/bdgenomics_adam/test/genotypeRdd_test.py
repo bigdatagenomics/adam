@@ -17,8 +17,8 @@
 #
 
 
-from bdgenomics.adam.adamContext import ADAMContext
-from bdgenomics.adam.test import SparkTestCase
+from bdgenomics_adam.adamContext import ADAMContext
+from bdgenomics_adam.test import SparkTestCase
 
 
 class GenotypeRDDTest(SparkTestCase):

@@ -20,7 +20,7 @@ from setuptools import find_packages, setup
 from version import version as adam_version
 
 setup(
-    name='bdgenomics.adam',
+    name='bdgenomics_adam',
     version=adam_version,
     description='A fast, scalable genome analysis system',
     author='Frank Austin Nothaft',
