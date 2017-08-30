@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-from bdgenomics.adam.rdd import AlignmentRecordRDD, \
+from bdgenomics_adam.rdd import AlignmentRecordRDD, \
     CoverageRDD, \
     FeatureRDD, \
     FragmentRDD, \

@@ -32,7 +32,7 @@ The 'clean' target undoes the effect of 'develop'.
 
 The 'test' target runs ADAM's unit tests. Set the 'tests' variable to run a particular test, e.g.
 
-	make test tests=src/adam/test/sort/sortTest.py::SortTest::testSort
+	make test tests=src/bdgenomics_adam/test/sort/sortTest.py::SortTest::testSort
 
 The 'pypi' target publishes the current commit of ADAM to PyPI after enforcing that the working
 copy and the index are clean, and tagging it as an unstable .dev build.
