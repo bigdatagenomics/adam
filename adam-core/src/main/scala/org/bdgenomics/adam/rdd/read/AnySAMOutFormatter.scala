@@ -29,7 +29,9 @@ import scala.collection.mutable.ListBuffer
  * An OutFormatter that automatically infers whether the piped input is SAM or
  * BAM. Autodetecting streamed CRAM is not currently supported.
  */
-class AnySAMOutFormatter extends OutFormatter[AlignmentRecord] {
+case class AnySAMOutFormatter(stringency: ValidationStringency) extends OutFormatter[AlignmentRecord] {
+
+  def this() = this(ValidationStringency.STRICT)
 
   /**
    * Reads alignment records from an input stream. Autodetects SAM/BAM format.
@@ -41,6 +43,7 @@ class AnySAMOutFormatter extends OutFormatter[AlignmentRecord] {
 
     // make reader
     val reader = SamReaderFactory.makeDefault()
+      .validationStringency(stringency)
       .open(SamInputResource.of(is))
 
     SAMIteratorConverter(reader)
