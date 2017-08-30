@@ -39,13 +39,38 @@ class ReferenceRegionSuite extends FunSuite {
     }
   }
 
-  test("can't parse all locus") {
+  test("parse empty string throws IllegalArgumentException") {
     intercept[IllegalArgumentException] {
-      ReferenceRegion.fromString("all")
+      ReferenceRegion.fromString("")
     }
     intercept[IllegalArgumentException] {
-      ReferenceRegion.fromString("1:100-200,all")
+      ReferenceRegion.fromString(" \t")
     }
+    intercept[IllegalArgumentException] {
+      ReferenceRegion.fromString(",, ")
+    }
+  }
+
+  test("parse contigName only string into reference regions") {
+    val loci = ReferenceRegion.fromString("1")
+    assert(loci.size === 1)
+    val ctg1 = loci.filter(_.referenceName == "1")
+    assert(ctg1.size === 1)
+    assert(ctg1.head.start === 0L)
+    assert(ctg1.head.end === Long.MaxValue)
+  }
+
+  test("parse to end strings into reference regions") {
+    val loci = ReferenceRegion.fromString("1:100+,2:101+")
+    assert(loci.size === 2)
+    val ctg1 = loci.filter(_.referenceName == "1")
+    assert(ctg1.size === 1)
+    assert(ctg1.head.start === 100L)
+    assert(ctg1.head.end === Long.MaxValue)
+    val ctg2 = loci.filter(_.referenceName == "2")
+    assert(ctg2.size === 1)
+    assert(ctg2.head.start === 101L)
+    assert(ctg2.head.end === Long.MaxValue)
   }
 
   test("parse string into reference regions") {
