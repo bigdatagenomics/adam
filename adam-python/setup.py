@@ -27,6 +27,4 @@ setup(
     author_email='fnothaft@berkeley.edu',
     url="https://github.com/bdgenomics/adam",
     install_requires=[],
-    package_dir={'': 'src'},
-    packages=find_packages(where='src',
-                           exclude=['*.test.*']))
+    packages=find_packages(exclude=['*.test.*']))
