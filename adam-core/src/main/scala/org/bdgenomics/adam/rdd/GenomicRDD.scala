@@ -115,6 +115,9 @@ private[rdd] object GenomicRDD {
  */
 trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
+  override def toString = "%s with %d reference sequences"
+    .format(getClass.getSimpleName, sequences.size)
+
   /**
    * The RDD of genomic data that we are wrapping.
    */
@@ -1449,6 +1452,9 @@ case class GenericGenomicRDD[T] private[rdd] (
  */
 trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends GenomicRDD[T, U] {
 
+  override def toString = "%s with %d reference sequences and %d samples"
+    .format(getClass.getSimpleName, sequences.size, samples.size)
+
   /**
    * The samples who have data contained in this GenomicRDD.
    */
@@ -1645,6 +1651,9 @@ trait GenomicRDDWithLineage[T, U <: GenomicRDDWithLineage[T, U]] extends Genomic
  */
 abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: AvroRecordGroupGenomicRDD[T, U, V]] extends AvroGenomicRDD[T, U, V]
     with GenomicRDDWithLineage[T, V] {
+
+  override def toString = "%s with %d reference sequences, %d read groups, and %d processing steps"
+    .format(getClass.getSimpleName, sequences.size, recordGroups.size, processingSteps.size)
 
   /**
    * A dictionary describing the record groups attached to this GenomicRDD.
