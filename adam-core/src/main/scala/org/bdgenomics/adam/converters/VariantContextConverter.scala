@@ -286,8 +286,6 @@ class VariantContextConverter(
   def convert(
     vc: HtsjdkVariantContext): Seq[ADAMVariantContext] = {
 
-    log.info("Processing %s with alt alleles %s.".format(vc, vc.getAlternateAlleles.toList.mkString(",")))
-
     try {
       vc.getAlternateAlleles.toList match {
         case List(NON_REF_ALLELE) | List() => {
