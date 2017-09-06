@@ -1399,4 +1399,46 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       stringency = ValidationStringency.SILENT)
     assert(sorted.rdd.count === 102)
   }
+
+  sparkTest("left normalize indels") {
+    val reads = Seq(
+      AlignmentRecord.newBuilder()
+        .setReadMapped(false)
+        .build(),
+      AlignmentRecord.newBuilder()
+        .setReadMapped(true)
+        .setSequence("AAAAACCCCCGGGGGTTTTT")
+        .setStart(0)
+        .setCigar("10M2D10M")
+        .setMismatchingPositions("10^CC10")
+        .build(),
+      AlignmentRecord.newBuilder()
+        .setReadMapped(true)
+        .setSequence("AAAAACCCCCGGGGGTTTTT")
+        .setStart(0)
+        .setCigar("10M10D10M")
+        .setMismatchingPositions("10^ATATATATAT10")
+        .build(),
+      AlignmentRecord.newBuilder()
+        .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        .setReadMapped(true)
+        .setCigar("29M10D31M")
+        .setStart(5)
+        .setMismatchingPositions("29^GGGGGGGGGG10G0G0G0G0G0G0G0G0G0G11")
+        .build())
+
+    // obviously, this isn't unaligned, but, we don't use the metadata here
+    val rdd = AlignmentRecordRDD.unaligned(sc.parallelize(reads))
+      .leftNormalizeIndels()
+
+    val normalized = rdd.rdd.collect
+
+    assert(normalized.size === 4)
+    val cigars = normalized.flatMap(r => {
+      Option(r.getCigar)
+    }).toSet
+    assert(cigars("5M2D15M"))
+    assert(cigars("10M10D10M"))
+    assert(cigars("29M10D31M"))
+  }
 }
