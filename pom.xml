@@ -16,9 +16,6 @@
   <description>A fast, scalable genome analysis system</description>
   <url>http://bdgenomics.org/</url>
 
-  <prerequisites>
-    <maven>3.1.1</maven>
-  </prerequisites>
   <properties>
     <java.version>1.8</java.version>
     <avro.version>1.8.1</avro.version>
@@ -28,7 +25,7 @@
     <parquet.version>1.8.2</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.7.3</hadoop.version>
-    <hadoop-bam.version>7.8.1-SNAPSHOT</hadoop-bam.version>
+    <hadoop-bam.version>7.9.0</hadoop-bam.version>
     <slf4j.version>1.7.25</slf4j.version>
     <bdg-formats.version>0.11.1</bdg-formats.version>
     <bdg-utils.version>0.2.13</bdg-utils.version>
