@@ -27,7 +27,7 @@ import scala.collection.JavaConversions._
 /**
  * Utility for left normalizing INDELs in alignments.
  */
-private[consensus] object NormalizationUtils {
+private[adam] object NormalizationUtils {
 
   /**
    * Given a cigar, returns the cigar with the position of the cigar shifted left.

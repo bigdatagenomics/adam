@@ -35,7 +35,8 @@ import org.apache.spark.sql.{ Dataset, Row, SQLContext }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus.{
   ConsensusGenerator,
-  ConsensusGeneratorFromReads
+  ConsensusGeneratorFromReads,
+  NormalizationUtils
 }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -1477,5 +1478,33 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
   def binQualityScores(bins: Seq[QualityScoreBin]): AlignmentRecordRDD = {
     AlignmentRecordRDD.validateBins(bins)
     BinQualities(this, bins)
+  }
+
+  /**
+   * Left normalizes the INDELs in reads containing INDELs.
+   *
+   * @return Returns a new RDD where the reads that contained INDELs have their
+   *   INDELs left normalized.
+   */
+  def leftNormalizeIndels(): AlignmentRecordRDD = {
+    transform(rdd => {
+      rdd.map(r => {
+        if (!r.getReadMapped || r.getCigar == null) {
+          r
+        } else {
+          val origCigar = r.getCigar
+          val newCigar = NormalizationUtils.leftAlignIndel(r).toString
+
+          // update cigar if changed
+          if (origCigar != newCigar) {
+            AlignmentRecord.newBuilder(r)
+              .setCigar(newCigar)
+              .build
+          } else {
+            r
+          }
+        }
+      })
+    })
   }
 }
