@@ -1484,6 +1484,20 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(va.getAlleleFrequency > 0.09f && va.getAlleleFrequency < 0.11f)
   }
 
+  test("single allele frequency is +Inf going htsjdk->adam") {
+    val acList: java.util.List[String] = List("+Inf")
+    val va = buildVariantAnnotation(Map(("AF", acList)),
+      converter.formatAlleleFrequency)
+    assert(va.getAlleleFrequency == Float.PositiveInfinity)
+  }
+
+  test("single allele frequency is -Inf going htsjdk->adam") {
+    val acList: java.util.List[String] = List("-Inf")
+    val va = buildVariantAnnotation(Map(("AF", acList)),
+      converter.formatAlleleFrequency)
+    assert(va.getAlleleFrequency == Float.NegativeInfinity)
+  }
+
   test("multiple allele frequencies going htsjdk->adam") {
     val acList: java.util.List[java.lang.Float] = List(
       0.1f, 0.01f, 0.001f).map(i => i: java.lang.Float)

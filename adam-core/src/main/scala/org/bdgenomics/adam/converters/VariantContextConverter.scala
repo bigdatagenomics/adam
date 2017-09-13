@@ -1226,7 +1226,15 @@ class VariantContextConverter(
   private def toFloat(obj: java.lang.Object): Float = {
     tryAndCatchStringCast(obj, o => {
       o.asInstanceOf[java.lang.Float]
-    }, o => o.toFloat)
+    }, o => {
+      if (o == "+Inf") {
+        Float.PositiveInfinity
+      } else if (o == "-Inf") {
+        Float.NegativeInfinity
+      } else {
+        o.toFloat
+      }
+    })
   }
 
   // don't shadow toString
