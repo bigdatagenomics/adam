@@ -57,8 +57,8 @@ fi
 
 set -e
 
-# are we testing for spark 2.1.0? if so, we need to rewrite our poms first
-if [ ${SPARK_VERSION} == 2.1.0 ];
+# are we testing for spark 2.2.0? if so, we need to rewrite our poms first
+if [ ${SPARK_VERSION} == 2.2.0 ];
 then
     
     echo "Rewriting POM.xml files for Spark 2."
@@ -146,7 +146,7 @@ rm -rf ${ADAM_MVN_TMP_DIR}
 
 # and move our poms back to their original values
 # this will allow us to pass our porcelain test at the end
-if [ ${SPARK_VERSION} == 2.1.0 ];
+if [ ${SPARK_VERSION} == 2.2.0 ];
 then
     
     echo "Rewriting POM.xml files back to Spark 1."
@@ -173,12 +173,12 @@ fi
 
 # run integration tests
 # prebuilt spark distributions are scala 2.10 for spark 1.x, scala 2.11 for spark 2.x
-if [[ ( ${SPARK_VERSION} != 2.1.0 && ${SCALAVER} == 2.10 ) || ( ${SPARK_VERSION} == 2.1.0 && ${SCALAVER} == 2.11 ) ]];
+if [[ ( ${SPARK_VERSION} != 2.2.0 && ${SCALAVER} == 2.10 && ${HADOOP_VERSION} == 2.6.2) || ( ${SPARK_VERSION} == 2.2.0 && ${SCALAVER} == 2.11 ) ]];
 then
 
     # we moved away from spark 2/scala 2.11 in our poms earlier,
     # so rewrite poms
-    if [ ${SPARK_VERSION} == 2.1.0 ];
+    if [ ${SPARK_VERSION} == 2.2.0 ];
     then
         
         echo "Rewriting POM.xml files for Spark 2."
@@ -214,8 +214,8 @@ then
     # what hadoop version are we on? format string for downloading spark assembly
     if [[ $HADOOP_VERSION =~ ^2\.6 ]]; then
         HADOOP=hadoop2.6
-    elif [[ $HADOOP_VERSION =~ ^2\.3 ]]; then
-        HADOOP=hadoop2.3
+    elif [[ $HADOOP_VERSION =~ ^2\.7 ]]; then
+        HADOOP=hadoop2.7
     else
         echo "Unknown Hadoop version."
         exit 1
@@ -242,7 +242,7 @@ then
     export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
 
     # we only support SparkR on Spark 2.x
-    if [ ${SPARK_VERSION} == 2.1.0 ];
+    if [ ${SPARK_VERSION} == 2.2.0 ];
     then
 
 	# make a directory to install SparkR into, and set the R user libs path
@@ -317,7 +317,7 @@ then
     popd
 
     # we rewrote our poms to spark 2/scala 2.11 earlier, so rewrite now
-    if [ ${SPARK_VERSION} == 2.1.0 ];
+    if [ ${SPARK_VERSION} == 2.2.0 ];
     then
         
         echo "Reverting POM.xml file changes for Spark 2."
