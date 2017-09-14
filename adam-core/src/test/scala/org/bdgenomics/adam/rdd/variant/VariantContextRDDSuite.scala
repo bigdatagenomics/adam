@@ -142,6 +142,25 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(after.rdd.count === 7)
   }
 
+  sparkTest("read a vcf file with multi-allelic variants to split") {
+    val path = testFile("HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_all.fixed-phase-set.excerpt.vcf")
+    val vcs = sc.loadVcf(path, ValidationStringency.SILENT)
+    assert(vcs.rdd.count === 17)
+
+    // AD should be zero or null after splitting ref=GAAGAAAGAAAGA alt=GAAGAAAGA,GAAGA,G AD 0,0,0
+    val filtered = vcs.toGenotypeRDD().rdd.filter(_.start == 66631043)
+    val referenceReadDepths = filtered.map(_.getAlternateReadDepth).collect()
+    val alternateReadDepths = filtered.map(_.getAlternateReadDepth).collect()
+
+    assert(referenceReadDepths.forall(rd => (rd == 0 || rd == null)))
+    assert(alternateReadDepths.forall(rd => (rd == 0 || rd == null)))
+
+    // ADALL should be zeros or null after splitting ref=GAAGAAAGAAAGA alt=GAAGAAAGA,GAAGA,G ADALL 0,0,0
+    val netAlleleDepths = filtered.map(_.getVariantCallingAnnotations.getAttributes.get("ADALL")).collect()
+
+    assert(netAlleleDepths.forall(adall => (adall == "0,0" || adall == "")))
+  }
+
   sparkTest("don't lose any variants when piping as VCF") {
     val smallVcf = testFile("small.vcf")
     val rdd: VariantContextRDD = sc.loadVcf(smallVcf)

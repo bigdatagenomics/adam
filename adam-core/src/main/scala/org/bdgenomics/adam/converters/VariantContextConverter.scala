@@ -787,7 +787,7 @@ class VariantContextConverter(
                                              gIndices: Array[Int]): Genotype.Builder = {
 
     // AD is an array type field
-    if (g.hasAD) {
+    if (g.hasAD && gIdx < g.getAD.size) {
       val ad = g.getAD
       gb.setReferenceReadDepth(ad(0))
         .setAlternateReadDepth(ad(gIdx))
@@ -1286,8 +1286,10 @@ class VariantContextConverter(
                              indices: List[Int]): List[T] = {
     if (indices.isEmpty) {
       array.toList
-    } else {
+    } else if (indices.max < array.size) {
       indices.map(idx => array(idx))
+    } else {
+      List.empty
     }
   }
 

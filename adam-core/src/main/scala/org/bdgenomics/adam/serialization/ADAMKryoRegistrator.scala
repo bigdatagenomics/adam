@@ -304,6 +304,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     // scala
     kryo.register(classOf[scala.Array[scala.Array[Byte]]])
     kryo.register(classOf[scala.Array[htsjdk.variant.vcf.VCFHeader]])
+    kryo.register(classOf[scala.Array[java.lang.Integer]])
     kryo.register(classOf[scala.Array[java.lang.Long]])
     kryo.register(classOf[scala.Array[java.lang.Object]])
     kryo.register(classOf[scala.Array[org.apache.spark.sql.catalyst.InternalRow]])
