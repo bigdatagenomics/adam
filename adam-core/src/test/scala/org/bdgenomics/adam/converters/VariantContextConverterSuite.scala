@@ -336,6 +336,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
 
     for (adamVC <- adamVCs) {
       assert(adamVC.genotypes.size === 1)
+      assert(adamVC.variant.variant.getSplitFromMultiAllelic)
       val adamGT = adamVC.genotypes.head
       assert(adamGT.getSplitFromMultiAllelic)
       assert(adamGT.getReferenceReadDepth === 4)
