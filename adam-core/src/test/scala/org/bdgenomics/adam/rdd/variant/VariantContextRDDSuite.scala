@@ -20,9 +20,14 @@ package org.bdgenomics.adam.rdd.variant
 import com.google.common.collect.ImmutableList
 import com.google.common.io.Files
 import htsjdk.samtools.ValidationStringency
-import htsjdk.variant.vcf.VCFHeaderLine
+import htsjdk.variant.vcf.{
+  VCFFormatHeaderLine,
+  VCFHeaderLine,
+  VCFInfoHeaderLine
+}
 import java.io.File
 import org.apache.spark.rdd.RDD
+import org.apache.spark.util.CollectionAccumulator
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
   Coverage,
@@ -209,8 +214,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val freebayesVcf = testFile("NA12878.chr22.tiny.freebayes.vcf")
     val rdd: VariantContextRDD = sc.loadVcf(freebayesVcf)
 
+    val accumulator: CollectionAccumulator[VCFHeaderLine] = sc.collectionAccumulator("headerLines")
+
     implicit val tFormatter = VCFInFormatter
-    implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
+    implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration, Some(accumulator))
 
     val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
 
@@ -225,6 +232,22 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     for (freebayesFormatKey <- Seq("RO", "QR", "AO", "QA")) {
       assert(genotype.getVariantCallingAnnotations.getAttributes.containsKey(freebayesFormatKey))
     }
+
+    // retrieve accumulated VCF header lines
+    val headerLines = accumulator.value.distinct
+    val updatedHeaders = pipedRdd.replaceHeaderLines(headerLines)
+
+    // check for freebayes-specific VCF INFO header lines
+    assert(updatedHeaders.headerLines.exists(line => line match {
+      case info: VCFInfoHeaderLine => info.getID == "NS"
+      case _                       => false
+    }))
+
+    // check for freebayes-specific VCF FORMAT header lines
+    assert(updatedHeaders.headerLines.exists(line => line match {
+      case format: VCFFormatHeaderLine => format.getID == "QR"
+      case _                           => false
+    }))
   }
 
   sparkTest("save a file sorted by contig index") {

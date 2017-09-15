@@ -29,6 +29,7 @@ import htsjdk.tribble.readers.{
 }
 import java.io.InputStream
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.util.CollectionAccumulator
 import org.bdgenomics.adam.converters.VariantContextConverter._
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.VariantContext
@@ -39,11 +40,30 @@ import scala.collection.mutable.ListBuffer
 
 /**
  * OutFormatter that reads streaming VCF.
+ *
+ * @param conf Hadoop configuration.
+ * @param optHeaderLines Optional accumulator for VCF header lines.
  */
 case class VCFOutFormatter(
-    @transient conf: Configuration) extends OutFormatter[VariantContext] with Logging {
+    @transient conf: Configuration,
+    val optHeaderLines: Option[CollectionAccumulator[VCFHeaderLine]]) extends OutFormatter[VariantContext] with Logging {
 
   private val nestAnn = VariantContextConverter.getNestAnnotationInGenotypesProperty(conf)
+
+  /**
+   * OutFormatter that reads streaming VCF. Java-friendly no-arg constructor.
+   *
+   * @param conf Hadoop configuration.
+   */
+  def this(conf: Configuration) = this(conf, None)
+
+  /**
+   * OutFormatter that reads streaming VCF. Java-friendly constructor.
+   *
+   * @param conf Hadoop configuration.
+   * @param acc Accumulator for VCF header lines.
+   */
+  def this(conf: Configuration, acc: CollectionAccumulator[VCFHeaderLine]) = this(conf, Some(acc))
 
   /**
    * Reads VariantContexts from an input stream. Autodetects VCF format.
@@ -64,6 +84,9 @@ case class VCFOutFormatter(
 
     // merge header lines with our supported header lines
     val lines = cleanAndMixInSupportedLines(headerLines(header), ValidationStringency.LENIENT, log)
+
+    // accumulate header lines if desired
+    optHeaderLines.map(accumulator => lines.foreach(line => accumulator.add(line)))
 
     // make converter
     val converter = new VariantContextConverter(lines,
