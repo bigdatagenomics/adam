@@ -1410,7 +1410,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   }
 }
 
-case class GenericGenomicRDD[T] private[rdd] (
+case class GenericGenomicRDD[T](
     rdd: RDD[T],
     sequences: SequenceDictionary,
     regionFn: T => Seq[ReferenceRegion],
