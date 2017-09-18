@@ -760,7 +760,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     genomicRdd: GenomicRDD[X, Y])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      txTag: ClassTag[(T, X)]): GenomicRDD[(T, X), Z] = InnerBroadcastJoin.time {
+      txTag: ClassTag[(T, X)]): GenericGenomicRDD[(T, X)] = InnerBroadcastJoin.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(T, X)](InnerTreeRegionJoin[T, X]().broadcastAndJoin(
@@ -768,7 +768,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
       kv => { getReferenceRegions(kv._1) ++ genomicRdd.getReferenceRegions(kv._2) })
-      .asInstanceOf[GenomicRDD[(T, X), Z]]
   }
 
   /**
@@ -792,7 +791,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    */
   def broadcastRegionJoinAgainst[X, Z <: GenomicRDD[(X, T), Z]](
     broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(X, T), Z] = InnerBroadcastJoin.time {
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(X, T)] = InnerBroadcastJoin.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(X, T)](InnerTreeRegionJoin[X, T]().join(
@@ -800,7 +799,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       flattenRddByRegions()),
       sequences,
       kv => { getReferenceRegions(kv._2) }) // FIXME
-      .asInstanceOf[GenomicRDD[(X, T), Z]]
   }
 
   /**
@@ -825,7 +823,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     genomicRdd: GenomicRDD[X, Y])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otxTag: ClassTag[(Option[T], X)]): GenomicRDD[(Option[T], X), Z] = RightOuterBroadcastJoin.time {
+      otxTag: ClassTag[(Option[T], X)]): GenericGenomicRDD[(Option[T], X)] = RightOuterBroadcastJoin.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(Option[T], X)](RightOuterTreeRegionJoin[T, X]().broadcastAndJoin(
@@ -836,7 +834,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
         Seq(kv._1.map(v => getReferenceRegions(v))).flatten.flatten ++
           genomicRdd.getReferenceRegions(kv._2)
       })
-      .asInstanceOf[GenomicRDD[(Option[T], X), Z]]
   }
 
   /**
@@ -862,7 +859,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    */
   def rightOuterBroadcastRegionJoinAgainst[X, Z <: GenomicRDD[(Option[X], T), Z]](
     broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Option[X], T), Z] = RightOuterBroadcastJoin.time {
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(Option[X], T)] = RightOuterBroadcastJoin.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(Option[X], T)](RightOuterTreeRegionJoin[X, T]().join(
@@ -872,7 +869,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       kv => {
         getReferenceRegions(kv._2) // FIXME
       })
-      .asInstanceOf[GenomicRDD[(Option[X], T), Z]]
   }
 
   /**
@@ -893,7 +889,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
     implicit tTag: ClassTag[T],
     xTag: ClassTag[X],
-    itxTag: ClassTag[(Iterable[T], X)]): GenomicRDD[(Iterable[T], X), Z] = BroadcastJoinAndGroupByRight.time {
+    itxTag: ClassTag[(Iterable[T], X)]): GenericGenomicRDD[(Iterable[T], X)] = BroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(Iterable[T], X)](InnerTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
@@ -901,7 +897,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
       kv => { (kv._1.flatMap(getReferenceRegions) ++ genomicRdd.getReferenceRegions(kv._2)).toSeq })
-      .asInstanceOf[GenomicRDD[(Iterable[T], X), Z]]
   }
 
   /**
@@ -925,7 +920,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    */
   def broadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[X], T), Z]](
     broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[X], T), Z] = BroadcastJoinAndGroupByRight.time {
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(Iterable[X], T)] = BroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(Iterable[X], T)](InnerTreeRegionJoinAndGroupByRight[X, T]().join(
@@ -933,7 +928,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       flattenRddByRegions()),
       sequences,
       kv => { getReferenceRegions(kv._2).toSeq })
-      .asInstanceOf[GenomicRDD[(Iterable[X], T), Z]]
   }
 
   /**
@@ -957,7 +951,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
     implicit tTag: ClassTag[T],
     xTag: ClassTag[X],
-    itxTag: ClassTag[(Iterable[T], X)]): GenomicRDD[(Iterable[T], X), Z] = RightOuterBroadcastJoinAndGroupByRight.time {
+    itxTag: ClassTag[(Iterable[T], X)]): GenericGenomicRDD[(Iterable[T], X)] = RightOuterBroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(Iterable[T], X)](RightOuterTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
@@ -968,7 +962,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
         Seq(kv._1.map(v => getReferenceRegions(v))).flatten.flatten ++
           genomicRdd.getReferenceRegions(kv._2)
       })
-      .asInstanceOf[GenomicRDD[(Iterable[T], X), Z]]
   }
 
   /**
@@ -994,7 +987,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    */
   def rightOuterBroadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[X], T), Z]](
     broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenomicRDD[(Iterable[X], T), Z] = RightOuterBroadcastJoinAndGroupByRight.time {
+      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(Iterable[X], T)] = RightOuterBroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
     GenericGenomicRDD[(Iterable[X], T)](RightOuterTreeRegionJoinAndGroupByRight[X, T]().join(
@@ -1002,7 +995,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       flattenRddByRegions()),
       sequences,
       kv => getReferenceRegions(kv._2).toSeq)
-      .asInstanceOf[GenomicRDD[(Iterable[X], T), Z]]
   }
 
   /**
@@ -1090,7 +1082,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otxTag: ClassTag[(Option[T], X)]): GenomicRDD[(Option[T], X), Z] = RightOuterShuffleJoin.time {
+      otxTag: ClassTag[(Option[T], X)]): GenericGenomicRDD[(Option[T], X)] = RightOuterShuffleJoin.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions)
@@ -1105,7 +1097,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       kv => {
         Seq(kv._1.map(v => getReferenceRegions(v))).flatten.flatten ++
           genomicRdd.getReferenceRegions(kv._2)
-      }).asInstanceOf[GenomicRDD[(Option[T], X), Z]]
+      })
   }
 
   /**
@@ -1129,7 +1121,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      toxTag: ClassTag[(T, Option[X])]): GenomicRDD[(T, Option[X]), Z] = LeftOuterShuffleJoin.time {
+      toxTag: ClassTag[(T, Option[X])]): GenericGenomicRDD[(T, Option[X])] = LeftOuterShuffleJoin.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions)
@@ -1144,7 +1136,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       kv => {
         Seq(kv._2.map(v => genomicRdd.getReferenceRegions(v))).flatten.flatten ++
           getReferenceRegions(kv._1)
-      }).asInstanceOf[GenomicRDD[(T, Option[X]), Z]]
+      })
   }
 
   /**
@@ -1167,7 +1159,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otoxTag: ClassTag[(Option[T], Option[X])]): GenomicRDD[(Option[T], Option[X]), Z] = FullOuterShuffleJoin.time {
+      otoxTag: ClassTag[(Option[T], Option[X])]): GenericGenomicRDD[(Option[T], Option[X])] = FullOuterShuffleJoin.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions)
@@ -1182,7 +1174,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       kv => {
         Seq(kv._2.map(v => genomicRdd.getReferenceRegions(v)),
           kv._1.map(v => getReferenceRegions(v))).flatten.flatten
-      }).asInstanceOf[GenomicRDD[(Option[T], Option[X]), Z]]
+      })
   }
 
   /**
@@ -1206,7 +1198,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      tixTag: ClassTag[(T, Iterable[X])]): GenomicRDD[(T, Iterable[X]), Z] = ShuffleJoinAndGroupByLeft.time {
+      tixTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = ShuffleJoinAndGroupByLeft.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions)
@@ -1221,7 +1213,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       kv => {
         (kv._2.flatMap(v => genomicRdd.getReferenceRegions(v)) ++
           getReferenceRegions(kv._1)).toSeq
-      }).asInstanceOf[GenomicRDD[(T, Iterable[X]), Z]]
+      })
   }
 
   /**
@@ -1249,7 +1241,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otixTag: ClassTag[(Option[T], Iterable[X])]): GenomicRDD[(Option[T], Iterable[X]), Z] = RightOuterShuffleJoinAndGroupByLeft.time {
+      otixTag: ClassTag[(Option[T], Iterable[X])]): GenericGenomicRDD[(Option[T], Iterable[X])] = RightOuterShuffleJoinAndGroupByLeft.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions)
@@ -1264,7 +1256,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       kv => {
         (kv._2.flatMap(v => genomicRdd.getReferenceRegions(v)) ++
           kv._1.toSeq.flatMap(v => getReferenceRegions(v))).toSeq
-      }).asInstanceOf[GenomicRDD[(Option[T], Iterable[X]), Z]]
+      })
   }
 
   /**
