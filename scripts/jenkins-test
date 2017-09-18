@@ -135,7 +135,7 @@ mvn -U \
 
 # make sure that the distribution package contains an assembly jar
 # if no assembly jar is found, this will exit with code 1 and fail the build
-tar tzvf distribution/target/adam-distribution*-bin.tar.gz | \
+tar tzvf adam-distribution/target/adam-distribution*-bin.tar.gz | \
     grep adam-assembly | \
     grep jar | \
     grep -v -e sources -e javadoc 

@@ -650,8 +650,8 @@
         <module>adam-apis</module>
         <module>adam-cli</module>
         <module>adam-assembly</module>
-        <!-- distribution should be last -->
-        <module>distribution</module>
+        <!-- adam-distribution should be last -->
+        <module>adam-distribution</module>
       </modules>
       <build>
         <plugins>
