@@ -756,7 +756,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see broadcastRegionJoinAgainst
    */
-  def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](
+  def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
@@ -789,7 +789,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see broadcastRegionJoin
    */
-  def broadcastRegionJoinAgainst[X, Z <: GenomicRDD[(X, T), Z]](
+  def broadcastRegionJoinAgainst[X](
     broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(X, T)] = InnerBroadcastJoin.time {
 
@@ -819,7 +819,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see rightOuterBroadcastRegionJoin
    */
-  def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](
+  def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
@@ -857,7 +857,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see rightOuterBroadcastRegionJoin
    */
-  def rightOuterBroadcastRegionJoinAgainst[X, Z <: GenomicRDD[(Option[X], T), Z]](
+  def rightOuterBroadcastRegionJoinAgainst[X](
     broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(Option[X], T)] = RightOuterBroadcastJoin.time {
 
@@ -886,7 +886,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see broadcastRegionJoinAgainstAndGroupByRight
    */
-  def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
+  def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](genomicRdd: GenomicRDD[X, Y])(
     implicit tTag: ClassTag[T],
     xTag: ClassTag[X],
     itxTag: ClassTag[(Iterable[T], X)]): GenericGenomicRDD[(Iterable[T], X)] = BroadcastJoinAndGroupByRight.time {
@@ -918,7 +918,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see broadcastRegionJoinAndGroupByRight
    */
-  def broadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[X], T), Z]](
+  def broadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
     broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(Iterable[X], T)] = BroadcastJoinAndGroupByRight.time {
 
@@ -948,7 +948,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see rightOuterBroadcastRegionJoinAgainstAndGroupByRight
    */
-  def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[T], X), Z]](genomicRdd: GenomicRDD[X, Y])(
+  def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](genomicRdd: GenomicRDD[X, Y])(
     implicit tTag: ClassTag[T],
     xTag: ClassTag[X],
     itxTag: ClassTag[(Iterable[T], X)]): GenericGenomicRDD[(Iterable[T], X)] = RightOuterBroadcastJoinAndGroupByRight.time {
@@ -985,7 +985,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see rightOuterBroadcastRegionJoinAndGroupByRight
    */
-  def rightOuterBroadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Iterable[X], T), Z]](
+  def rightOuterBroadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
     broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(Iterable[X], T)] = RightOuterBroadcastJoinAndGroupByRight.time {
 
@@ -1006,7 +1006,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   None, the number of partitions on the resulting RDD does not change.
    * @return a case class containing all the prepared data for ShuffleRegionJoins
    */
-  private def prepareForShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, X), Z]](
+  private def prepareForShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
@@ -1077,7 +1077,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
    */
-  def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], X), Z]](
+  def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
@@ -1116,7 +1116,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   left RDD that did not overlap a key in the right RDD.
    */
-  def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Option[X]), Z]](
+  def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
@@ -1154,7 +1154,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and values that did not
    *   overlap will be paired with a `None`.
    */
-  def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Option[X]), Z]](
+  def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
@@ -1193,7 +1193,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, grouped together by
    *   the value they overlapped in the left RDD..
    */
-  def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(T, Iterable[X]), Z]](
+  def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
@@ -1236,7 +1236,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   the value they overlapped in the left RDD, and all values from the
    *   right RDD that did not overlap an item in the left RDD.
    */
-  def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y], Z <: GenomicRDD[(Option[T], Iterable[X]), Z]](
+  def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
     genomicRdd: GenomicRDD[X, Y],
     optPartitions: Option[Int] = None)(
       implicit tTag: ClassTag[T],
