@@ -959,8 +959,6 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val jRdd = reads.shuffleRegionJoin(targets)
     val jRdd0 = reads.shuffleRegionJoin(targets, optPartitions = Some(4))
 
-    // we can't guarantee that we get exactly the number of partitions requested,
-    // we get close though
     assert(jRdd.rdd.partitions.length === 1)
     assert(jRdd0.rdd.partitions.length === 4)
 
@@ -974,6 +972,26 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val tempPath = tmpLocation(".sam")
     joinedReads.saveAsSam(tempPath)
     assert(sc.loadAlignments(tempPath).rdd.count === 5)
+  }
+
+  sparkTest("use shuffle join with threshold to pull down reads mapped close to targets") {
+    val readsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val reads = sc.loadAlignments(readsPath)
+      .transform(_.repartition(1))
+
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = reads.shuffleRegionJoin(targets, threshold = 20000000L)
+    val jRdd0 = reads.shuffleRegionJoin(targets, optPartitions = Some(4), threshold = 20000000L)
+
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 4)
+
+    assert(jRdd.rdd.count === 17)
+    assert(jRdd0.rdd.count === 17)
   }
 
   sparkTest("use right outer shuffle join to pull down reads mapped to targets") {

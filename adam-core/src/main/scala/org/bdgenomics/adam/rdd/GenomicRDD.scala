@@ -1142,13 +1142,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     val partitions = optPartitions.getOrElse(this.rdd.partitions.length)
 
     val (leftRdd, rightRdd) = (isSorted, genomicRdd.isSorted) match {
-      case (true, _)     => (this, genomicRdd.copartitionByReferenceRegion(this))
-      case (false, true) => (copartitionByReferenceRegion(genomicRdd), genomicRdd)
+      case (true, _)     => (this, genomicRdd.copartitionByReferenceRegion(this, threshold))
+      case (false, true) => (copartitionByReferenceRegion(genomicRdd, threshold), genomicRdd)
       case (false, false) => {
         val repartitionedRdd =
           sortLexicographically(storePartitionMap = true, partitions = partitions)
 
-        (repartitionedRdd, genomicRdd.copartitionByReferenceRegion(repartitionedRdd))
+        (repartitionedRdd, genomicRdd.copartitionByReferenceRegion(repartitionedRdd, threshold))
       }
     }
     (leftRdd.flattenRddByRegions().map(f => (f._1.pad(threshold), f._2)),
@@ -1913,7 +1913,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return The newly repartitioned rdd.
    */
   private[rdd] def copartitionByReferenceRegion[X, Y <: GenomicRDD[X, Y]](
-    rddToCoPartitionWith: GenomicRDD[X, Y])(implicit tTag: ClassTag[T], xTag: ClassTag[X]): U = {
+    rddToCoPartitionWith: GenomicRDD[X, Y],
+    threshold: Long = 0L)(implicit tTag: ClassTag[T], xTag: ClassTag[X]): U = {
 
     // if the other RDD is not sorted, we can't guarantee proper copartition
     assert(rddToCoPartitionWith.isSorted,
@@ -1966,7 +1967,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
       referenceRegionKeyedGenomicRDD.mapPartitions(iter => {
         iter.flatMap(f => {
-          val intervals = partitionMapIntervals.get(f._1, requireOverlap = false)
+          val intervals = partitionMapIntervals.get(f._1.pad(threshold), requireOverlap = false)
           intervals.map(g => ((f._1, g._2), f._2))
         })
       }, preservesPartitioning = true)
