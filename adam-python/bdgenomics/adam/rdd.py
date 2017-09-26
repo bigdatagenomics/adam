@@ -692,6 +692,11 @@ class CoverageRDD(GenomicDataset):
 class FeatureRDD(GenomicDataset):
 
 
+    def _replaceRdd(self, newRdd):
+
+        return FeatureRDD(newRdd, self.sc)
+
+
     def __init__(self, jvmRdd, sc):
         """
         Constructs a Python FeatureRDD from a JVM FeatureRDD.
