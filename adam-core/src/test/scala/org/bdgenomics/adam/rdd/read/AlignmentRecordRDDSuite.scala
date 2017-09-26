@@ -957,7 +957,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.shuffleRegionJoin(targets)
-    val jRdd0 = reads.shuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = reads.shuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     assert(jRdd.rdd.partitions.length === 1)
     assert(jRdd0.rdd.partitions.length === 4)
@@ -1004,7 +1004,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.rightOuterShuffleRegionJoin(targets)
-    val jRdd0 = reads.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = reads.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -1029,7 +1029,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.leftOuterShuffleRegionJoin(targets)
-    val jRdd0 = reads.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = reads.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -1054,7 +1054,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.fullOuterShuffleRegionJoin(targets)
-    val jRdd0 = reads.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = reads.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -1083,7 +1083,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.shuffleRegionJoinAndGroupByLeft(targets)
-    val jRdd0 = reads.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+    val jRdd0 = reads.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -1108,7 +1108,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
-    val jRdd0 = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+    val jRdd0 = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
