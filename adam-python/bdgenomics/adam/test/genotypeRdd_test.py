@@ -66,3 +66,14 @@ class GenotypeRDDTest(SparkTestCase):
                                                                         asSingleFile=True)
 
         self.checkFiles(tmpPath, self.resourceFile("sorted.lex.vcf"))
+
+
+    def test_transform(self):
+        testFile = self.resourceFile("random.vcf")
+        ac = ADAMContext(self.sc)
+
+        genotypes = ac.loadGenotypes(testFile)
+
+        transformedGenotypes = genotypes.transform(lambda x: x.filter(x.contigName == '1'))
+
+        self.assertEquals(transformedGenotypes.toDF().count(), 9)

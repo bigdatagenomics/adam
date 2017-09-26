@@ -86,3 +86,15 @@ class FeatureRDDTest(SparkTestCase):
 
         self.assertEquals(features._jvmRdd.jrdd().count(),
                           savedFeatures._jvmRdd.jrdd().count())
+
+
+    def test_transform(self):
+
+        featurePath = self.resourceFile("gencode.v7.annotation.trunc10.bed")
+        ac = ADAMContext(self.sc)
+
+        features = ac.loadFeatures(featurePath)
+
+        transformedFeatures = features.transform(lambda x: x.filter(x.start < 12613))
+
+        self.assertEquals(transformedFeatures.toDF().count(), 6)
