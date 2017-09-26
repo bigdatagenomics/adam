@@ -698,15 +698,10 @@ case class ReferenceRegion(
         start,
         other.start,
         newRegionStrand))
-    } else if (end > other.end) {
-      Iterable(ReferenceRegion(referenceName,
-        start,
-        other.end,
-        newRegionStrand))
     } else {
       Iterable.empty[ReferenceRegion]
     }
-    val second = if (other.start > start && end > other.end) {
+    val second = if (end > other.end) {
       Iterable(ReferenceRegion(referenceName,
         other.end,
         end,
