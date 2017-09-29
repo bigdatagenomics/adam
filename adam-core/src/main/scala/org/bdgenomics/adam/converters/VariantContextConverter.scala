@@ -1110,7 +1110,7 @@ class VariantContextConverter(
         tryAndCatchStringCast(attr, attribute => {
           vcab.setFisherStrandBiasPValue(attribute.asInstanceOf[java.lang.Float])
         }, attribute => {
-          vcab.setFisherStrandBiasPValue(attribute.toFloat)
+          vcab.setFisherStrandBiasPValue(toFloat(attribute))
         })
       }).getOrElse(vcab)
   }
@@ -1124,7 +1124,7 @@ class VariantContextConverter(
         tryAndCatchStringCast(attr, attribute => {
           vcab.setRmsMapQ(attribute.asInstanceOf[java.lang.Float])
         }, attribute => {
-          vcab.setRmsMapQ(attribute.toFloat)
+          vcab.setRmsMapQ(toFloat(attribute))
         })
       }).getOrElse(vcab)
   }
@@ -1279,7 +1279,7 @@ class VariantContextConverter(
       o.asInstanceOf[Array[java.lang.Float]]
         .map(f => f: Float)
     }, o => {
-      splitAndCheckForEmptyArray(o).map(_.toFloat)
+      splitAndCheckForEmptyArray(o).map(toFloat(_))
     })
   }
 

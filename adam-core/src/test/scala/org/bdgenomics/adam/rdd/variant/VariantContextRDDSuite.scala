@@ -161,6 +161,20 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(netAlleleDepths.forall(adall => (adall == "0,0" || adall == "")))
   }
 
+  sparkTest("support VCFs with +Inf/-Inf float values") {
+    val path = testFile("inf_float_values.vcf")
+    val vcs = sc.loadVcf(path, ValidationStringency.LENIENT)
+    val variant = vcs.toVariants().rdd.filter(_.getStart == 14396L).first()
+    assert(variant.getAnnotation.getAlleleFrequency === Float.PositiveInfinity)
+    // -Inf INFO value --> -Infinity after conversion
+    assert(variant.getAnnotation.getAttributes.get("BaseQRankSum") === "-Infinity")
+
+    val genotype = vcs.toGenotypes().rdd.filter(_.getVariant == variant).first()
+    assert(genotype.getVariantCallingAnnotations.getRmsMapQ === Float.NegativeInfinity)
+    // +Inf FORMAT value --> Infinity after conversion
+    assert(genotype.getVariantCallingAnnotations.getAttributes.get("float") === "Infinity")
+  }
+
   sparkTest("don't lose any variants when piping as VCF") {
     val smallVcf = testFile("small.vcf")
     val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
