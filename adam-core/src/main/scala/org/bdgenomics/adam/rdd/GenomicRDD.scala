@@ -1446,6 +1446,107 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   }
 
   /**
+   * Performs a sort-merge left outer join between this RDD and another RDD,
+   * followed by a groupBy on the left value.
+   *
+   * In a sort-merge join, both RDDs are co-partitioned and sorted. The
+   * partitions are then zipped, and we do a merge join on each partition.
+   * The key equality function used for this join is the reference region
+   * overlap function. Since this is a left outer join, all values in the
+   * right RDD that do not overlap a value from the left RDD are dropped.
+   * If a value from the left RDD does not overlap any values in the right
+   * RDD, it will be paired with an empty Iterable in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @param optPartitions Optionally sets the number of output partitions. If
+   *   None, the number of partitions on the resulting RDD does not change.
+   * @param flankSize Sets a flankSize for the distance between elements to be
+   *   joined. If set to 0, an overlap is required to join two elements.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and all keys from the
+   *   left RDD that did not overlap a key in the right RDD.
+   */
+  private[rdd] def leftOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
+    genomicRdd: GenomicRDD[X, Y],
+    optPartitions: Option[Int],
+    flankSize: Long)(
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      toxTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = LeftOuterShuffleJoin.time {
+
+    val (leftRddToJoin, rightRddToJoin) =
+      prepareForShuffleRegionJoin(genomicRdd, optPartitions, flankSize)
+
+    // what sequences do we wind up with at the end?
+    val combinedSequences = sequences ++ genomicRdd.sequences
+
+    GenericGenomicRDD[(T, Iterable[X])](
+      LeftOuterShuffleRegionJoinAndGroupByLeft[T, X](leftRddToJoin, rightRddToJoin)
+        .compute(),
+      combinedSequences,
+      kv => {
+        // pad by -1 * flankSize to undo flank from preprocessing
+        getReferenceRegions(kv._1).map(_.pad(-1 * flankSize)) ++
+          Seq(kv._2.map(v => genomicRdd.getReferenceRegions(v))).flatten.flatten
+      })
+  }
+
+  /**
+   * Performs a sort-merge left outer join between this RDD and another RDD,
+   * followed by a groupBy on the left value.
+   *
+   * In a sort-merge join, both RDDs are co-partitioned and sorted. The
+   * partitions are then zipped, and we do a merge join on each partition.
+   * The key equality function used for this join is the reference region
+   * overlap function. Since this is a left outer join, all values in the
+   * right RDD that do not overlap a value from the left RDD are dropped.
+   * If a value from the left RDD does not overlap any values in the right
+   * RDD, it will be paired with an empty Iterable in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @param flankSize Sets a flankSize for the distance between elements to be
+   *   joined. If set to 0, an overlap is required to join two elements.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and all keys from the
+   *   left RDD that did not overlap a key in the right RDD.
+   */
+  def leftOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
+    genomicRdd: GenomicRDD[X, Y],
+    flankSize: Long)(
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      toxTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = {
+
+    leftOuterShuffleRegionJoinAndGroupByLeft(genomicRdd, None, flankSize)
+  }
+
+  /**
+   * Performs a sort-merge left outer join between this RDD and another RDD,
+   * followed by a groupBy on the left value.
+   *
+   * In a sort-merge join, both RDDs are co-partitioned and sorted. The
+   * partitions are then zipped, and we do a merge join on each partition.
+   * The key equality function used for this join is the reference region
+   * overlap function. Since this is a left outer join, all values in the
+   * right RDD that do not overlap a value from the left RDD are dropped.
+   * If a value from the left RDD does not overlap any values in the right
+   * RDD, it will be paired with an empty Iterable in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and all keys from the
+   *   left RDD that did not overlap a key in the right RDD.
+   */
+  def leftOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
+    genomicRdd: GenomicRDD[X, Y])(
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      toxTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = {
+
+    leftOuterShuffleRegionJoinAndGroupByLeft(genomicRdd, None, 0L)
+  }
+
+  /**
    * Performs a sort-merge full outer join between this RDD and another RDD.
    *
    * In a sort-merge join, both RDDs are co-partitioned and sorted. The

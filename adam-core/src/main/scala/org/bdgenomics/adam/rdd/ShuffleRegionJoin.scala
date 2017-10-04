@@ -212,6 +212,42 @@ case class LeftOuterShuffleRegionJoin[T: ClassTag, U: ClassTag](leftRdd: RDD[(Re
   }
 }
 
+case class LeftOuterShuffleRegionJoinAndGroupByLeft[T: ClassTag, U: ClassTag](leftRdd: RDD[(ReferenceRegion, T)],
+                                                                              rightRdd: RDD[(ReferenceRegion, U)])
+    extends VictimlessSortedIntervalPartitionJoin[T, U, T, Iterable[U]] {
+
+  /**
+   * Handles the case where the left or the right iterator were empty.
+   *
+   * @param left The left iterator.
+   * @param right The right iterator.
+   * @return The iterator containing properly formatted tuples.
+   */
+  protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
+                        right: Iterator[(ReferenceRegion, U)]): Iterator[(T, Iterable[U])] = {
+    left.map(t => (t._2, Iterable.empty[U]))
+  }
+
+  /**
+   * Computes post processing required to complete the join and properly format
+   * hits.
+   *
+   * @param iter The iterator of hits.
+   * @param currentLeft The current left value.
+   * @return the post processed iterator.
+   */
+  protected def postProcessHits(iter: Iterable[U],
+                                currentLeft: T): Iterable[(T, Iterable[U])] = {
+    if (iter.nonEmpty) {
+      // left has some hits
+      Iterable((currentLeft, iter))
+    } else {
+      // left has no hits
+      Iterable((currentLeft, Iterable.empty[U]))
+    }
+  }
+}
+
 case class RightOuterShuffleRegionJoin[T: ClassTag, U: ClassTag](leftRdd: RDD[(ReferenceRegion, T)],
                                                                  rightRdd: RDD[(ReferenceRegion, U)])
     extends SortedIntervalPartitionJoinWithVictims[T, U, Option[T], U] {
