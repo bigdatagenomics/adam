@@ -34,7 +34,7 @@ class LeftOuterShuffleRegionJoinSuite(partitionMap: Seq[Option[(ReferenceRegion,
   before {
     seqDict = SequenceDictionary(
       SequenceRecord("chr1", 15, url = "test://chrom1"),
-      SequenceRecord("chr2", 15, url = "tes=t://chrom2"))
+      SequenceRecord("chr2", 15, url = "test://chrom2"))
   }
 
   def runJoin(leftRdd: RDD[(ReferenceRegion, AlignmentRecord)],

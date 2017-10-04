@@ -532,12 +532,28 @@ class ReferenceRegionSuite extends FunSuite {
     assert(padded.end === 5L)
   }
 
+  test("uniformly pad a reference region into negative coordinate space, ensure non negative start") {
+    val rr = ReferenceRegion("1", 2L, 3L)
+    val padded = rr.pad(3)
+    assert(padded.referenceName == "1")
+    assert(padded.start === 0L)
+    assert(padded.end === 6L)
+  }
+
   test("unevenly pad a reference region") {
     val rr = ReferenceRegion("1", 2L, 4L)
     val padded = rr.pad(2, 1)
     assert(padded.referenceName == "1")
     assert(padded.start === 0L)
     assert(padded.end === 5L)
+  }
+
+  test("unevenly pad a reference region into negative coordinate space, ensure non negative start") {
+    val rr = ReferenceRegion("1", 2L, 3L)
+    val padded = rr.pad(6, 4)
+    assert(padded.referenceName == "1")
+    assert(padded.start === 0L)
+    assert(padded.end === 7L)
   }
 
   test("can build an open ended reference region") {

@@ -265,8 +265,8 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     // perform join using 1600 partitions
     // 1600 is much more than the amount of data in the GenomicRDD
     // so we also test our ability to handle this extreme request
-    val b = z.shuffleRegionJoin(x, Some(1600))
-    val c = x.shuffleRegionJoin(z, Some(1600))
+    val b = z.shuffleRegionJoin(x, Some(1600), 0L)
+    val c = x.shuffleRegionJoin(z, Some(1600), 0L)
     val d = c.rdd.map(f => (f._1.getStart, f._2.getEnd)).collect.toSet
     val e = b.rdd.map(f => (f._1.getStart, f._2.getEnd)).collect.toSet
 
@@ -279,8 +279,8 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
   sparkTest("testing that sorted fullOuterShuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
     val z = x.sortLexicographically(storePartitionMap = true, partitions = 16)
-    val d = x.fullOuterShuffleRegionJoin(z, Some(1))
-    val e = z.fullOuterShuffleRegionJoin(x, Some(1))
+    val d = x.fullOuterShuffleRegionJoin(z, Some(1), 0L)
+    val e = z.fullOuterShuffleRegionJoin(x, Some(1), 0L)
 
     val setDiff = d.rdd.collect.toSet -- e.rdd.collect.toSet
     assert(setDiff.isEmpty)
@@ -290,7 +290,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
   sparkTest("testing that sorted rightOuterShuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
     val z = x.sortLexicographically(storePartitionMap = true, partitions = 1)
-    val f = z.rightOuterShuffleRegionJoin(x, Some(1)).rdd.collect
+    val f = z.rightOuterShuffleRegionJoin(x, Some(1), 0L).rdd.collect
     val g = x.rightOuterShuffleRegionJoin(x).rdd.collect
 
     val setDiff = f.toSet -- g.toSet
@@ -301,7 +301,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
   sparkTest("testing that sorted leftOuterShuffleRegionJoin matches unsorted") {
     val x = sc.loadBam(resourceUrl("reads12.sam").getFile)
     val z = x.sortLexicographically(storePartitionMap = true, partitions = 1)
-    val h = z.leftOuterShuffleRegionJoin(x, Some(1)).rdd
+    val h = z.leftOuterShuffleRegionJoin(x, Some(1), 0L).rdd
     val i = z.leftOuterShuffleRegionJoin(x).rdd
 
     val setDiff = h.collect.toSet -- i.collect.toSet

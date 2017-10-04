@@ -667,7 +667,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = features.shuffleRegionJoin(targets)
-    val jRdd0 = features.shuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = features.shuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -697,7 +697,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = features.rightOuterShuffleRegionJoin(targets)
-    val jRdd0 = features.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = features.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -723,7 +723,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = features.leftOuterShuffleRegionJoin(targets)
-    val jRdd0 = features.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = features.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -749,7 +749,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = features.fullOuterShuffleRegionJoin(targets)
-    val jRdd0 = features.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = features.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -779,7 +779,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = features.shuffleRegionJoinAndGroupByLeft(targets)
-    val jRdd0 = features.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+    val jRdd0 = features.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -805,7 +805,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = features.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
-    val jRdd0 = features.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+    val jRdd0 = features.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though

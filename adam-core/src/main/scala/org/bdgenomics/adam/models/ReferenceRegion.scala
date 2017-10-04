@@ -577,7 +577,7 @@ case class ReferenceRegion(
    *   moved.
    */
   def pad(byStart: Long, byEnd: Long): ReferenceRegion = {
-    new ReferenceRegion(referenceName, start - byStart, end + byEnd, strand)
+    new ReferenceRegion(referenceName, max(0, start - byStart), end + byEnd, strand)
   }
 
   /**
