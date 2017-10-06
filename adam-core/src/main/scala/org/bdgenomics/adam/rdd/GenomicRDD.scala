@@ -1870,51 +1870,106 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // number of partitions we will have after repartition
     val numPartitions = destinationPartitionMap.length
 
-    // here we create a partition map with a single ReferenceRegion that spans
-    // the entire range, however we have to handle the case where the partition
-    // spans multiple referenceNames because of load balancing.
-    val adjustedPartitionMapWithIndex =
+    val partitionRegionsAndIndices: Map[String, Seq[(ReferenceRegion, Int)]] = {
 
       // the zipWithIndex gives us the destination partition ID
-      destinationPartitionMap.flatten.zipWithIndex.map(g => {
-        val (firstRegion, secondRegion, index) = (g._1._1, g._1._2, g._2)
+      val pMap: Map[String, Seq[(ReferenceRegion, Int)]] =
+        destinationPartitionMap.zipWithIndex.flatMap(g => {
+          val (optRegions, index) = (g._1, g._2)
 
-        // in the case where we span multiple referenceNames using
-        // IntervalArray.get with requireOverlap set to false will assign all
-        // the remaining regions to this partition, in addition to all the
-        // regions up to the start of the next partition.
-        if (firstRegion.referenceName != secondRegion.referenceName) {
+          optRegions.map(rp => {
+            val (firstRegion, secondRegion) = rp
 
-          // the first region is enough to represent the partition for
-          // IntervalArray.get.
-          (firstRegion, index)
-        } else {
-          // otherwise we just have the ReferenceRegion span from partition
-          // lower bound to upper bound.
-          // We cannot use the firstRegion bounds here because we may end up
-          // dropping data if it doesn't map anywhere.
-          (ReferenceRegion(
-            firstRegion.referenceName,
-            firstRegion.start,
-            secondRegion.end),
-            index)
-        }
-      })
+            // in the case where we span multiple referenceNames using
+            // IntervalArray.get with requireOverlap set to false will assign all
+            // the remaining regions to this partition, in addition to all the
+            // regions up to the start of the next partition.
+            if (firstRegion.referenceName != secondRegion.referenceName) {
 
-    // convert to an IntervalArray for fast range query
-    val partitionMapIntervals = IntervalArray(
-      adjustedPartitionMapWithIndex,
-      adjustedPartitionMapWithIndex.maxBy(_._1.width)._1.width,
-      sorted = true)
+              // this partition covers the end of one contig and the
+              // start of another
+              Iterable((ReferenceRegion.toEnd(firstRegion.referenceName,
+                firstRegion.start), index),
+                (ReferenceRegion.fromStart(secondRegion.referenceName,
+                  secondRegion.end), index))
+            } else {
+              // otherwise we just have the ReferenceRegion span from partition
+              // lower bound to upper bound.
+              // We cannot use the firstRegion bounds here because we may end up
+              // dropping data if it doesn't map anywhere.
+              Iterable((ReferenceRegion(
+                firstRegion.referenceName,
+                firstRegion.start,
+                secondRegion.end),
+                index))
+            }
+          })
+        }).flatten
+          .groupBy(_._1.referenceName)
+          .map(p => {
+            val (referenceName, indexedRegions) = p
+
+            val regions: Seq[(ReferenceRegion, Int)] = if (indexedRegions.size == 1) {
+              // if we only have a single partition for this contig, extend the
+              // region to cover the whole contig
+              Seq((ReferenceRegion.all(indexedRegions.head._1.referenceName),
+                indexedRegions.head._2))
+            } else {
+              val sortedRegions = indexedRegions.sortBy(_._2)
+
+              // if we have multiple partitions for this contig, extend the
+              // first region to the start of the contig, and the last region to
+              // the end of the contig
+              sortedRegions.take(1).map(rp => {
+                (ReferenceRegion.fromStart(rp._1.referenceName,
+                  rp._1.end), rp._2)
+              }) ++ sortedRegions.tail.dropRight(1) ++ sortedRegions.takeRight(1)
+                .map(rp => {
+                  (ReferenceRegion.toEnd(rp._1.referenceName,
+                    rp._1.start), rp._2)
+                })
+            }
+
+            (referenceName, regions)
+          })
+
+      // the above map does not contain sequences who exist in the sequence
+      // dictionary but who are not seen in a record at the start/end of a
+      // partition
+      //
+      // here, we loop over the sequence records, check if they are in the map,
+      // and create a record if the sequence is not in the map
+      var lastIdx = 0
+      val missingSequences: Map[String, Seq[(ReferenceRegion, Int)]] =
+        sequences.records
+          .sortBy(_.name)
+          .flatMap(sr => {
+            pMap.get(sr.name)
+              .fold(
+                Some((sr.name -> Seq((ReferenceRegion.all(sr.name), lastIdx))))
+                  .asInstanceOf[Option[(String, Seq[(ReferenceRegion, Int)])]]
+              )(s => {
+                  lastIdx = s.maxBy(_._2)._2
+                  None.asInstanceOf[Option[(String, Seq[(ReferenceRegion, Int)])]]
+                })
+          }).toMap
+
+      pMap ++ missingSequences
+    }
 
     val finalPartitionedRDD = {
       val referenceRegionKeyedGenomicRDD = flattenRddByRegions()
 
       referenceRegionKeyedGenomicRDD.mapPartitions(iter => {
         iter.flatMap(f => {
-          val intervals = partitionMapIntervals.get(f._1.pad(flankSize), requireOverlap = false)
-          intervals.map(g => ((f._1, g._2), f._2))
-        })
+          val paddedRegion = f._1.pad(flankSize)
+          partitionRegionsAndIndices.get(paddedRegion.referenceName)
+            .map(regionsWithIndices => {
+              regionsWithIndices.dropWhile(!_._1.overlaps(paddedRegion))
+                .takeWhile(_._1.overlaps(paddedRegion))
+                .map(g => ((f._1, g._2), f._2))
+            })
+        }).flatten
       }, preservesPartitioning = true)
         .repartitionAndSortWithinPartitions(
           ManualRegionPartitioner(numPartitions))

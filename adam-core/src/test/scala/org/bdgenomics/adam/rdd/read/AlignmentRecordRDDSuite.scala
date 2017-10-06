@@ -33,7 +33,11 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ ADAMContext, TestSaveArgs }
+import org.bdgenomics.adam.rdd.{
+  ADAMContext,
+  ManualRegionPartitioner,
+  TestSaveArgs
+}
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
@@ -945,6 +949,52 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val c = jRdd.rdd.collect
     assert(c.count(_._1.isEmpty) === 1)
     assert(c.count(_._1.isDefined) === 5)
+  }
+
+  sparkTest("use shuffle join with feature spanning partitions") {
+    def makeReadAndRegion(partition: Int,
+                          contigName: String,
+                          start: Long,
+                          end: Long): ((ReferenceRegion, Int), AlignmentRecord) = {
+      ((ReferenceRegion(contigName, start, end),
+        partition),
+        AlignmentRecord.newBuilder
+        .setReadMapped(true)
+        .setContigName(contigName)
+        .setStart(start)
+        .setEnd(end)
+        .build)
+    }
+
+    val sd = SequenceDictionary(SequenceRecord("chr1", 51L),
+      SequenceRecord("chr2", 51L))
+
+    val reads = RDDBoundAlignmentRecordRDD(sc.parallelize(Seq(makeReadAndRegion(0, "chr1", 10L, 20L),
+      makeReadAndRegion(1, "chr1", 40L, 50L),
+      makeReadAndRegion(1, "chr2", 10L, 20L),
+      makeReadAndRegion(1, "chr2", 20L, 30L),
+      makeReadAndRegion(2, "chr2", 40L, 50L)))
+      .repartitionAndSortWithinPartitions(ManualRegionPartitioner(3))
+      .map(_._2),
+      sd,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      Some(Array(
+        Some(ReferenceRegion("chr1", 10L, 20L), ReferenceRegion("chr1", 10L, 20L)),
+        Some(ReferenceRegion("chr1", 40L, 50L), ReferenceRegion("chr2", 20L, 30L)),
+        Some(ReferenceRegion("chr2", 40L, 50L), ReferenceRegion("chr2", 40L, 50L)))))
+
+    val features = FeatureRDD(sc.parallelize(Seq(Feature.newBuilder
+      .setContigName("chr2")
+      .setStart(20L)
+      .setEnd(50L)
+      .build)), sd)
+
+    val joined = reads.shuffleRegionJoin(features).rdd.collect
+    println(joined.mkString("\n"))
+    assert(joined.size === 2)
+    assert(joined.exists(_._1.getStart == 20L))
+    assert(joined.exists(_._1.getStart == 40L))
   }
 
   sparkTest("use shuffle join to pull down reads mapped to targets") {

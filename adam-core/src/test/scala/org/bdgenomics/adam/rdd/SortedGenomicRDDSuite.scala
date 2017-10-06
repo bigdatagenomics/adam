@@ -242,7 +242,7 @@ class SortedGenomicRDDSuite extends SparkFunSuite {
     val z = x.rdd.mapPartitionsWithIndex((idx, iter) => {
       if (idx == 0 && iter.size != 6) {
         Iterator(true)
-      } else if (idx == 1 && iter.size != 2) {
+      } else if (idx == 1 && iter.size != 4) {
         Iterator(true)
       } else {
         Iterator()
