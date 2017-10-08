@@ -36,6 +36,13 @@ ADAMContext <- function(ss) {
     new("ADAMContext", jac = jac)
 }
 
+javaStringency <- function(stringency) {
+    stringency <- sparkR.callJStatic("htsjdk.samtools.ValidationStringency",
+                                     "valueOf",
+                                     stringency)
+}
+
+
 #' Load alignment records into an AlignmentRecordRDD.
 #'
 #' Loads path names ending in:
@@ -52,13 +59,17 @@ ADAMContext <- function(ss) {
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
+#' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing reads.
 #'
 #' @export
 setMethod("loadAlignments",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath) {
-              jrdd <- sparkR.callJMethod(ac@jac, "loadAlignments", filePath)
+          function(ac, filePath, stringency = "STRICT") {
+              jStringency <- javaStringency(stringency)
+              jrdd <- sparkR.callJMethod(ac@jac,
+                                         "loadAlignments",
+                                         filePath, jStringency)
               AlignmentRecordRDD(jrdd)
           })
 
@@ -95,13 +106,18 @@ setMethod("loadContigFragments",
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
+#' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing sequence fragments.
 #'
 #' @export
 setMethod("loadFragments",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath) {
-              jrdd <- sparkR.callJMethod(ac@jac, "loadFragments", filePath)
+          function(ac, filePath, stringency) {
+              jStringency <- javaStringency(stringency)
+              jrdd <- sparkR.callJMethod(ac@jac,
+                                         "loadFragments",
+                                         filePath,
+                                         jStringency)
               FragmentRDD(jrdd)
           })
 
@@ -122,13 +138,18 @@ setMethod("loadFragments",
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
+#' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing features.
 #'
 #' @export
 setMethod("loadFeatures",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath) {
-              jrdd <- sparkR.callJMethod(ac@jac, "loadFeatures", filePath)
+          function(ac, filePath, stringency = "STRICT") {
+              jStringency <- javaStringency(stringency)
+              jrdd <- sparkR.callJMethod(ac@jac,
+                                         "loadFeatures",
+                                         filePath,
+                                         jStringency)
               FeatureRDD(jrdd)
           })
 
@@ -150,13 +171,18 @@ setMethod("loadFeatures",
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
+#' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing coverage.
 #'
 #' @export
 setMethod("loadCoverage",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath) {
-              jrdd <- sparkR.callJMethod(ac@jac, "loadCoverage", filePath)
+          function(ac, filePath, stringency = "STRICT") {
+              jStringency <- javaStringency(stringency)
+              jrdd <- sparkR.callJMethod(ac@jac,
+                                         "loadCoverage",
+                                         filePath,
+                                         jStringency)
               CoverageRDD(jrdd)
           })
 
@@ -167,13 +193,18 @@ setMethod("loadCoverage",
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
+#' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing genotypes.
 #'
 #' @export
 setMethod("loadGenotypes",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath) {
-              jrdd <- sparkR.callJMethod(ac@jac, "loadGenotypes", filePath)
+          function(ac, filePath, stringency = "STRICT") {
+              jStringency <- javaStringency(stringency)
+              jrdd <- sparkR.callJMethod(ac@jac,
+                                         "loadGenotypes",
+                                         filePath,
+                                         jStringency)
               GenotypeRDD(jrdd)
           })
 
@@ -184,12 +215,17 @@ setMethod("loadGenotypes",
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
+#' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing variants.
 #'
 #' @export
 setMethod("loadVariants",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath) {
-              jrdd <- sparkR.callJMethod(ac@jac, "loadVariants", filePath)
+          function(ac, filePath, stringency = "STRICT") {
+              jStringency <- javaStringency(stringency)
+              jrdd <- sparkR.callJMethod(ac@jac,
+                                         "loadVariants",
+                                         filePath,
+                                         jStringency)
               VariantRDD(jrdd)
           })

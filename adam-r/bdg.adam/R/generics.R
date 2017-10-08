@@ -21,7 +21,7 @@
 # @rdname ADAMContext
 # @export
 setGeneric("loadAlignments",
-           function(ac, filePath) { standardGeneric("loadAlignments") })
+           function(ac, filePath, ...) { standardGeneric("loadAlignments") })
 
 # @rdname ADAMContext
 # @export
@@ -31,27 +31,27 @@ setGeneric("loadContigFragments",
 # @rdname ADAMContext
 # @export
 setGeneric("loadFragments",
-           function(ac, filePath) { standardGeneric("loadFragments") })
+           function(ac, filePath, ...) { standardGeneric("loadFragments") })
 
 # @rdname ADAMContext
 # @export
 setGeneric("loadFeatures",
-           function(ac, filePath) { standardGeneric("loadFeatures") })
+           function(ac, filePath, ...) { standardGeneric("loadFeatures") })
 
 # @rdname ADAMContext
 # @export
 setGeneric("loadCoverage",
-           function(ac, filePath) { standardGeneric("loadCoverage") })
+           function(ac, filePath, ...) { standardGeneric("loadCoverage") })
 
 # @rdname ADAMContext
 # @export
 setGeneric("loadGenotypes",
-           function(ac, filePath) { standardGeneric("loadGenotypes") })
+           function(ac, filePath, ...) { standardGeneric("loadGenotypes") })
 
 # @rdname ADAMContext
 # @export
 setGeneric("loadVariants",
-           function(ac, filePath) { standardGeneric("loadVariants") })
+           function(ac, filePath, ...) { standardGeneric("loadVariants") })
 
 #### RDD operations ####
 

@@ -23,7 +23,8 @@ from bdgenomics.adam.rdd import AlignmentRecordRDD, \
     GenotypeRDD, \
     NucleotideContigFragmentRDD, \
     VariantRDD
-    
+from bdgenomics.adam.stringency import STRICT, _toJava
+
 
 class ADAMContext(object):
     """
@@ -46,7 +47,7 @@ class ADAMContext(object):
         self.__jac = self._jvm.org.bdgenomics.adam.api.java.JavaADAMContext(c)
 
 
-    def loadAlignments(self, filePath):
+    def loadAlignments(self, filePath, stringency=STRICT):
         """
         Load alignment records into an AlignmentRecordRDD.
 
@@ -63,16 +64,19 @@ class ADAMContext(object):
         but can include more.
 
         :param str filePath: The path to load the file from.
+        :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns an RDD containing reads.
         :rtype: bdgenomics.adam.rdd.AlignmentRecordRDD
         """
 
-        adamRdd = self.__jac.loadAlignments(filePath)
+        adamRdd = self.__jac.loadAlignments(filePath,
+                                            _toJava(stringency, self._jvm))
 
         return AlignmentRecordRDD(adamRdd, self._sc)
 
 
-    def loadCoverage(self, filePath):
+    def loadCoverage(self, filePath,
+                     stringency=STRICT):
         """
         Load features into a FeatureRDD and convert to a CoverageRDD.
         Coverage is stored in the score field of Feature.
@@ -91,11 +95,13 @@ class ADAMContext(object):
         .gz and .bz2, but can include more.
 
         :param str filePath: The path to load coverage data from.
+        :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns an RDD containing coverage.
         :rtype: bdgenomics.adam.rdd.CoverageRDD
         """
 
-        adamRdd = self.__jac.loadCoverage(filePath)
+        adamRdd = self.__jac.loadCoverage(filePath,
+                                          _toJava(stringency, self._jvm))
 
         return CoverageRDD(adamRdd, self._sc)
         
@@ -120,7 +126,7 @@ class ADAMContext(object):
         return NucleotideContigFragmentRDD(adamRdd, self._sc)
 
 
-    def loadFragments(self, filePath):
+    def loadFragments(self, filePath, stringency=STRICT):
         """
         Load fragments into a FragmentRDD.
 
@@ -133,16 +139,17 @@ class ADAMContext(object):
         configured in Hadoop, which by default include .gz and .bz2, but can include more.
 
         :param str filePath: The path to load the file from.
+        :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns an RDD containing sequenced fragments.
         :rtype: bdgenomics.adam.rdd.FragmentRDD
         """
 
-        adamRdd = self.__jac.loadFragments(filePath)
+        adamRdd = self.__jac.loadFragments(filePath, stringency)
 
         return FragmentRDD(adamRdd, self._sc)
 
 
-    def loadFeatures(self, filePath):
+    def loadFeatures(self, filePath, stringency=STRICT):
         """
         Load features into a FeatureRDD.
 
@@ -160,16 +167,18 @@ class ADAMContext(object):
         .gz and .bz2, but can include more.
 
         :param str filePath: The path to load the file from.
+        :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns an RDD containing features.
         :rtype: bdgenomics.adam.rdd.FeatureRDD
         """
 
-        adamRdd = self.__jac.loadFeatures(filePath)
+        adamRdd = self.__jac.loadFeatures(filePath,
+                                          _toJava(stringency, self._jvm))
 
         return FeatureRDD(adamRdd, self._sc)
 
 
-    def loadGenotypes(self, filePath):
+    def loadGenotypes(self, filePath, stringency=STRICT):
         """
         Load genotypes into a GenotypeRDD.
 
@@ -177,16 +186,18 @@ class ADAMContext(object):
         Else, fall back to Parquet + Avro.
 
         :param str filePath: The path to load the file from.
+        :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns an RDD containing genotypes.
         :rtype: bdgenomics.adam.rdd.GenotypeRDD
         """
 
-        adamRdd = self.__jac.loadGenotypes(filePath)
+        adamRdd = self.__jac.loadGenotypes(filePath,
+                                           _toJava(stringency, self._jvm))
 
         return GenotypeRDD(adamRdd, self._sc)
 
 
-    def loadVariants(self, filePath):
+    def loadVariants(self, filePath, stringency=STRICT):
         """
         Load variants into a VariantRDD.
 
@@ -194,10 +205,12 @@ class ADAMContext(object):
         Else, fall back to Parquet + Avro.
 
         :param str filePath: The path to load the file from.
+        :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns an RDD containing variants.
         :rtype: bdgenomics.adam.rdd.VariantRDD
         """
 
-        adamRdd = self.__jac.loadVariants(filePath)
+        adamRdd = self.__jac.loadVariants(filePath,
+                                          _toJava(stringency, self._jvm))
 
         return VariantRDD(adamRdd, self._sc)
