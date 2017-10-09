@@ -440,7 +440,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = testFile("bqsr1.vcf").replace("bqsr1", "*")
 
     val variants = sc.loadVcf(path).toVariants
-    assert(variants.rdd.count === 770)
+    assert(variants.rdd.count === 776)
   }
 
   sparkTest("load vcf from a directory") {
