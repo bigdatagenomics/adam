@@ -113,7 +113,7 @@ private[realignment] object IndelRealignmentTarget {
       })
 
     // if we have indels, emit those targets, else emit a target for this read
-    if (pos.isEmpty) {
+    if (pos.size != 1) {
       Seq(new IndelRealignmentTarget(None, region))
     } else {
       pos.map(ir => new IndelRealignmentTarget(Some(ir), region))
