@@ -154,6 +154,10 @@ class VariantRDDSuite extends ADAMFunSuite {
     val unfilteredVariants = sc.loadPartitionedParquetVariants(outputPath)
     assert(unfilteredVariants.rdd.count === 6)
     assert(unfilteredVariants.dataset.count === 6)
+
+    val regionsVariants = sc.loadPartitionedParquetVariants(outputPath, Option(List(ReferenceRegion("2", 19000L, 21000L), ReferenceRegion("13", 752700L, 752750L))))
+    assert(regionsVariants.rdd.count === 2)
+    assert(regionsVariants.dataset.count === 2)
   }
 
   sparkTest("use broadcast join to pull down variants mapped to targets") {
