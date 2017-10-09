@@ -1806,11 +1806,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val datasetBoundAlignmentRecordRDD: AlignmentRecordRDD = regions match {
       case Some(x) => {
         var regionQueryString = "(contigName=" + "\'" + x.head.referenceName + "\' and posBin >= \'" +
-          scala.math.floor(x.head.start / partitionSize).toInt + "\')"
+          scala.math.floor(x.head.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(x.head.end / partitionSize).toInt + 1) + "\' and start >= " + x.head.start + " and end <= " + x.head.end + ")"
         if (x.size > 1) {
           x.foreach((i) => {
             regionQueryString = regionQueryString + " or " + "(contigName=" + "\'" +
-              i.referenceName + "\' and posBin >= \'" + scala.math.floor(i.start / partitionSize).toInt + "\')"
+              i.referenceName + "\' and posBin >= \'" + scala.math.floor(i.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(i.end / partitionSize).toInt + 1) + "\' and  start >= " + i.start + " and end <= " + i.end + ")"
           })
         }
         DatasetBoundAlignmentRecordRDD(reads.dataset.filter(regionQueryString), reads.sequences, reads.recordGroups, reads.processingSteps)
@@ -2187,7 +2187,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  def loadPartitionedParquetVariants(pathName: String): VariantRDD = {
+  def loadPartitionedParquetVariants(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, partitionSize: Int = 1000000): VariantRDD = {
     if (!checkPartitionedParquetFlag(pathName)) {
       throw new IllegalArgumentException("input Parquet files are not Partitioned")
     }
@@ -2197,7 +2197,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val headers = loadHeaderLines(pathName)
 
     val variants = ParquetUnboundVariantRDD(sc, pathName, sd, headers)
-    DatasetBoundVariantRDD(variants.dataset, variants.sequences, headers)
+
+    val datasetBoundVariantRDD: VariantRDD = regions match {
+      case Some(x) => {
+        var regionQueryString = "(contigName=" + "\'" + x.head.referenceName + "\' and posBin >= \'" +
+          scala.math.floor(x.head.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(x.head.end / partitionSize).toInt + 1) + "\' and start >= " + x.head.start + " and end <= " + x.head.end + ")"
+        if (x.size > 1) {
+          x.foreach((i) => {
+            regionQueryString = regionQueryString + " or " + "(contigName=" + "\'" +
+              i.referenceName + "\' and posBin >= \'" + scala.math.floor(i.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(i.end / partitionSize).toInt + 1) + "\' and  start >= " + i.start + " and end <= " + i.end + ")"
+          })
+        }
+        DatasetBoundVariantRDD(variants.dataset.filter(regionQueryString), variants.sequences, headers)
+      }
+
+      case _ => DatasetBoundVariantRDD(variants.dataset, variants.sequences, headers)
+    }
+    datasetBoundVariantRDD
   }
 
   /**
@@ -2522,7 +2538,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
     val sd = loadAvroSequenceDictionary(pathName)
     val features = ParquetUnboundFeatureRDD(sc, pathName, sd)
+
     DatasetBoundFeatureRDD(features.dataset, features.sequences)
+
   }
 
   /**
