@@ -467,10 +467,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
                                                                 flankSize: Int = 0,
                                                                 repartitionInput: Boolean = true,
                                                                 filterOutput: Boolean = true)(implicit tFormatterCompanion: InFormatterCompanion[T, U, V],
-                                                                                               xFormatter: OutFormatter[X],
-                                                                                               convFn: (U, RDD[X]) => Y,
-                                                                                               tManifest: ClassTag[T],
-                                                                                               xManifest: ClassTag[X]): Y = {
+                                                                                              xFormatter: OutFormatter[X],
+                                                                                              convFn: (U, RDD[X]) => Y,
+                                                                                              tManifest: ClassTag[T],
+                                                                                              xManifest: ClassTag[X]): Y = {
 
     // TODO: support broadcasting files
     files.foreach(f => {
