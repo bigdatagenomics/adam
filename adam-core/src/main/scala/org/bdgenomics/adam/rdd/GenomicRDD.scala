@@ -486,8 +486,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     val bins = GenomeBins(totalLength / rdd.partitions.size, seqLengths)
 
     // if the input rdd is mapped, then we need to repartition
-    val partitionedRdd = if (sequences.records.size == 0 ||
-      repartitionInput == false) {
+    val partitionedRdd = if (sequences.records.isEmpty ||
+      !repartitionInput) {
       rdd
     } else {
       // get region covered, expand region by flank size, and tag with bins
@@ -565,7 +565,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // if the original rdd was aligned and the final rdd is aligned, then we must filter
     if (newRdd.sequences.isEmpty ||
       sequences.isEmpty ||
-      filterOutput == false) {
+      !filterOutput) {
       newRdd
     } else {
       def filterPartition(idx: Int, iter: Iterator[X]): Iterator[X] = {
