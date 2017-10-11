@@ -466,7 +466,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
                                                                 environment: Map[String, String] = Map.empty,
                                                                 flankSize: Int = 0,
                                                                 repartitionInput: Boolean = true,
-                                                                filterOutput: Boolean = false)(implicit tFormatterCompanion: InFormatterCompanion[T, U, V],
+                                                                filterOutput: Boolean = true)(implicit tFormatterCompanion: InFormatterCompanion[T, U, V],
                                                                                                xFormatter: OutFormatter[X],
                                                                                                convFn: (U, RDD[X]) => Y,
                                                                                                tManifest: ClassTag[T],
