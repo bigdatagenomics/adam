@@ -286,12 +286,10 @@ class VariantContextConverter(
   def convert(
     vc: HtsjdkVariantContext): Seq[ADAMVariantContext] = {
 
-    log.info("Processing %s with alt alleles %s.".format(vc, vc.getAlternateAlleles.toList.mkString(",")))
-
     try {
       vc.getAlternateAlleles.toList match {
         case List(NON_REF_ALLELE) | List() => {
-          val variant = variantFormatFn(vc, None, 0)
+          val variant = variantFormatFn(vc, None, 0, false)
           val genotypes = vc.getGenotypes.map(g => {
             genotypeFormatFn(g, variant, NON_REF_ALLELE, 0, Some(1), false)
           })
@@ -302,7 +300,7 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0)
+          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
           val genotypes = vc.getGenotypes.map(g => {
             genotypeFormatFn(g, variant, allele, 1, None, false)
           })
@@ -313,7 +311,7 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0)
+          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
           val genotypes = vc.getGenotypes.map(g => {
             genotypeFormatFn(g, variant, allele, 1, Some(2), false)
           })
@@ -344,7 +342,8 @@ class VariantContextConverter(
             val variantIdx = idx - 1
             val variant = variantFormatFn(vc,
               Some(allele.getDisplayString),
-              variantIdx)
+              variantIdx,
+              true)
             val genotypes = vc.getGenotypes.map(g => {
               genotypeFormatFn(g, variant, allele, idx, referenceModelIndex, true)
             })
@@ -405,6 +404,17 @@ class VariantContextConverter(
     splitIds(vc).fold(vb)(vb.setNames(_))
   }
 
+  private[converters] def formatQuality(
+    vc: HtsjdkVariantContext,
+    vb: Variant.Builder): Variant.Builder = {
+
+    if (vc.hasLog10PError) {
+      vb.setQuality(vc.getPhredScaledQual)
+    } else {
+      vb
+    }
+  }
+
   private[converters] def formatFilters(
     vc: HtsjdkVariantContext,
     vb: Variant.Builder): Variant.Builder = {
@@ -421,6 +431,7 @@ class VariantContextConverter(
 
   private val variantFormatFns: Iterable[(HtsjdkVariantContext, Variant.Builder) => Variant.Builder] = Iterable(
     formatNames(_, _),
+    formatQuality(_, _),
     formatFilters(_, _)
   )
 
@@ -431,6 +442,17 @@ class VariantContextConverter(
     vcb: VariantContextBuilder): VariantContextBuilder = {
 
     joinNames(v).fold(vcb.noID())(vcb.id(_))
+  }
+
+  private[converters] def extractQuality(
+    v: Variant,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    if (v.getQuality != null) {
+      vcb.log10PError(-v.getQuality / 10.0)
+    } else {
+      vcb
+    }
   }
 
   private[converters] def extractFilters(
@@ -457,6 +479,7 @@ class VariantContextConverter(
 
   private val variantExtractFns: Iterable[(Variant, VariantContextBuilder) => VariantContextBuilder] = Iterable(
     extractNames(_, _),
+    extractQuality(_, _),
     extractFilters(_, _)
   )
 
@@ -1553,7 +1576,7 @@ class VariantContextConverter(
   }
 
   private def makeVariantFormatFn(
-    headerLines: Seq[VCFHeaderLine]): (HtsjdkVariantContext, Option[String], Int) => Variant = {
+    headerLines: Seq[VCFHeaderLine]): (HtsjdkVariantContext, Option[String], Int, Boolean) => Variant = {
 
     val attributeFns: Iterable[(HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]] = headerLines
       .flatMap(hl => hl match {
@@ -1576,7 +1599,8 @@ class VariantContextConverter(
 
     def convert(vc: HtsjdkVariantContext,
                 alt: Option[String],
-                alleleIdx: Int): Variant = {
+                alleleIdx: Int,
+                wasSplit: Boolean): Variant = {
 
       // create the builder
       val variantBuilder = Variant.newBuilder
@@ -1584,6 +1608,11 @@ class VariantContextConverter(
         .setStart(vc.getStart - 1)
         .setEnd(vc.getEnd)
         .setReferenceAllele(vc.getReference.getBaseString)
+
+      // was this split?
+      if (wasSplit) {
+        variantBuilder.setSplitFromMultiAllelic(true)
+      }
 
       alt.foreach(variantBuilder.setAlternateAllele(_))
 
@@ -1651,7 +1680,7 @@ class VariantContextConverter(
       variantBuilder.build
     }
 
-    convert(_, _, _)
+    convert(_, _, _, _)
   }
 
   private def makeGenotypeFormatFn(
