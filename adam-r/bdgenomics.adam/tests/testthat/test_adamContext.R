@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-library(bdg.adam)
+library(bdgenomics.adam)
 
 context("basic ADAM context functions")
 
