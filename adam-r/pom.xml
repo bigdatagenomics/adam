@@ -33,7 +33,7 @@
               <arguments>
                 <argument>CMD</argument>
                 <argument>build</argument>
-                <argument>bdg.adam/</argument>
+                <argument>bdgenomics.adam/</argument>
               </arguments>
             </configuration>
           </execution>
@@ -48,7 +48,7 @@
               <arguments>
                 <argument>CMD</argument>
                 <argument>check</argument>
-                <argument>bdg.adam/</argument>
+                <argument>bdgenomics.adam/</argument>
               </arguments>
             </configuration>
           </execution>

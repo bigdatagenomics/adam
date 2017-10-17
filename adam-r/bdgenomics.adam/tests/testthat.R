@@ -15,18 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-library(bdg.adam)
+library(testthat)
+library(bdgenomics.adam)
 
-context("manipulating variants")
-
-sc <- sparkR.session()
-ac <- ADAMContext(sc)
-
-test_that("round trip vcf", {
-    testFile <- resourceFile("small.vcf")
-    variants <- loadVariants(ac, testFile)
-    tmpPath <- tempfile(fileext = ".vcf")
-    saveAsVcf(toVariantContexts(variants), tmpPath)
-
-    expect_equal(count(toDF(variants)), count(toDF(loadVariants(ac, tmpPath))))
-})
+test_check("bdgenomics.adam")

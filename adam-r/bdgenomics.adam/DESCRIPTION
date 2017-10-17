@@ -1,4 +1,4 @@
-Package: bdg.adam
+Package: bdgenomics.adam
 Type: Package
 Version: 0.23.0
 Title: R Frontend for Big Data Genomics/ADAM
