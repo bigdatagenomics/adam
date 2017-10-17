@@ -2,7 +2,7 @@ Package: bdgenomics.adam
 Type: Package
 Version: 0.23.0
 Title: R Frontend for Big Data Genomics/ADAM
-Description: The SparkR package provides an R Frontend for Apache Spark.
+Description: ADAM is a genomics analysis platform with specialized file formats built using Apache Avro, Apache Spark and Parquet.
 Author: Big Data Genomics
 Maintainer: Frank Austin Nothaft <fnothaft@alumni.stanford.edu>
 Authors@R: c(person("Frank", "Nothaft", role = c("aut", "cre"),

@@ -23,6 +23,20 @@
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
           <execution>
+            <id>doc-r</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>R</executable>
+              <arguments>
+                <argument>-e</argument>
+                <argument>"library(devtools);devtools::document()"</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
             <id>dev-r</id>
             <phase>process-resources</phase>
             <goals>

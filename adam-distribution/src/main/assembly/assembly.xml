@@ -54,6 +54,13 @@
       <fileMode>0644</fileMode>
     </fileSet>
     <fileSet>
+      <directory>../adam-r</directory>
+      <includes>
+        <include>bdgenomics.adam*.tar.gz</include>
+      </includes>
+      <outputDirectory>r</outputDirectory>
+    </fileSet>
+    <fileSet>
       <directory>../bin</directory>
       <outputDirectory>bin</outputDirectory>
       <directoryMode>0755</directoryMode>
