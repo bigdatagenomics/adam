@@ -121,9 +121,17 @@ mvn -Pr package
 
 This will enable the `adam-r` module as part of the ADAM build. This module
 uses Maven to invoke the `R` executable to build the `bdg.adam` package and run
-tests. Beyond having `R` installed, we require you to have the `SparkR` package
-installed, and the ADAM JARs must be built and provided to `SparkR`. This can be
-done with the following bash commands:
+tests. The build requires the `testthat`, `devtools` and `roxygen` packages
+
+```bash
+R -e "install.packages('testthat', repos='http://cran.rstudio.com/')"
+R -e "install.packages('roxygen2', repos='http://cran.rstudio.com/')"
+R -e "install.packages('devtools', repos='http://cran.rstudio.com/')"
+```
+
+The build also requires you to have the `SparkR` package installed, and the
+ADAM JARs must be built and provided to `SparkR`. This can be done with the
+following bash commands:
 
 ```bash
 # put adam jar on the SparkR path
