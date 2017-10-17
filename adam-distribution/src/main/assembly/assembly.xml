@@ -61,6 +61,13 @@
       <outputDirectory>r</outputDirectory>
     </fileSet>
     <fileSet>
+      <directory>../adam-python</directory>
+      <includes>
+        <include>bdgenomics.adam.egg-info</include>
+      </includes>
+      <outputDirectory>r</outputDirectory>
+    </fileSet>
+    <fileSet>
       <directory>../bin</directory>
       <outputDirectory>bin</outputDirectory>
       <directoryMode>0755</directoryMode>
