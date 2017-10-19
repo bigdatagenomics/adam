@@ -861,6 +861,29 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(records === newRecords)
   }
 
+  sparkTest("don't lose any reads when piping fastq to sam") {
+    // write suffixes at end of reads
+    sc.hadoopConfiguration.setBoolean(AlignmentRecordRDD.WRITE_SUFFIXES, true)
+
+    val fragmentsPath = testFile("interleaved_fastq_sample1.ifq")
+    val ardd = sc.loadFragments(fragmentsPath).toReads
+    val records = ardd.rdd.count
+    assert(records === 6)
+    assert(ardd.dataset.count === 6)
+    assert(ardd.dataset.rdd.count === 6)
+
+    implicit val tFormatter = FASTQInFormatter
+    implicit val uFormatter = new AnySAMOutFormatter
+
+    // this script converts interleaved fastq to unaligned sam
+    val scriptPath = testFile("fastq_to_usam.py")
+
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe("python $0",
+      files = Seq(scriptPath))
+    val newRecords = pipedRdd.rdd.count
+    assert(records === newRecords)
+  }
+
   sparkTest("can properly set environment variables inside of a pipe") {
     val reads12Path = testFile("reads12.sam")
     val smallPath = testFile("small.sam")
@@ -991,7 +1014,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .build)), sd)
 
     val joined = reads.shuffleRegionJoin(features).rdd.collect
-    println(joined.mkString("\n"))
+
     assert(joined.size === 2)
     assert(joined.exists(_._1.getStart == 20L))
     assert(joined.exists(_._1.getStart == 40L))
