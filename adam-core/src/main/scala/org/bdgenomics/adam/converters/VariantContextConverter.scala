@@ -289,9 +289,9 @@ class VariantContextConverter(
     try {
       vc.getAlternateAlleles.toList match {
         case List(NON_REF_ALLELE) | List() => {
-          val variant = variantFormatFn(vc, None, 0, false)
+          val (coreVariant, variant) = variantFormatFn(vc, None, 0, false)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, variant, NON_REF_ALLELE, 0, Some(1), false)
+            genotypeFormatFn(g, coreVariant, NON_REF_ALLELE, 0, Some(1), false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -300,9 +300,9 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
+          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, variant, allele, 1, None, false)
+            genotypeFormatFn(g, coreVariant, allele, 1, None, false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -311,9 +311,9 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
+          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, variant, allele, 1, Some(2), false)
+            genotypeFormatFn(g, coreVariant, allele, 1, Some(2), false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -340,12 +340,12 @@ class VariantContextConverter(
             // variant annotations only contain values for alternate alleles so
             // we need to subtract one from real index
             val variantIdx = idx - 1
-            val variant = variantFormatFn(vc,
+            val (coreVariant, variant) = variantFormatFn(vc,
               Some(allele.getDisplayString),
               variantIdx,
               true)
             val genotypes = vc.getGenotypes.map(g => {
-              genotypeFormatFn(g, variant, allele, idx, referenceModelIndex, true)
+              genotypeFormatFn(g, coreVariant, allele, idx, referenceModelIndex, true)
             })
             ADAMVariantContext(variant, genotypes)
           })
@@ -1576,7 +1576,7 @@ class VariantContextConverter(
   }
 
   private def makeVariantFormatFn(
-    headerLines: Seq[VCFHeaderLine]): (HtsjdkVariantContext, Option[String], Int, Boolean) => Variant = {
+    headerLines: Seq[VCFHeaderLine]): (HtsjdkVariantContext, Option[String], Int, Boolean) => (Variant, Variant) = {
 
     val attributeFns: Iterable[(HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]] = headerLines
       .flatMap(hl => hl match {
@@ -1600,7 +1600,7 @@ class VariantContextConverter(
     def convert(vc: HtsjdkVariantContext,
                 alt: Option[String],
                 alleleIdx: Int,
-                wasSplit: Boolean): Variant = {
+                wasSplit: Boolean): (Variant, Variant) = {
 
       // create the builder
       val variantBuilder = Variant.newBuilder
@@ -1677,7 +1677,7 @@ class VariantContextConverter(
       }
 
       variantBuilder.setAnnotation(convertedAnnotationWithAttrs.build)
-      variantBuilder.build
+      (variant, variantBuilder.build)
     }
 
     convert(_, _, _, _)
