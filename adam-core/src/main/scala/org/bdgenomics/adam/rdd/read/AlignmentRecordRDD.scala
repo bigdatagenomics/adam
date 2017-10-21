@@ -203,7 +203,7 @@ case class ParquetUnboundAlignmentRecordRDD private[rdd] (
     sc.loadParquet(parquetFilename)
   }
 
-  lazy val dataset = {
+  lazy val dataset: Dataset[AlignmentRecordProduct] = {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename).as[AlignmentRecordProduct]
