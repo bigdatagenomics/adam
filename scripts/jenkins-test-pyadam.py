@@ -18,10 +18,10 @@
 
 from bdgenomics.adam.adamContext import ADAMContext
 
-from pyspark.context import SparkContext
+from pyspark.sql import SparkSession
 
-sc = SparkContext('local')
-ac = ADAMContext(sc)
+ss = SparkSession.builder.master('local').getOrCreate()
+ac = ADAMContext(ss)
 
 reads = ac.loadAlignments("adam-core/src/test/resources/small.sam").toDF().count()
 

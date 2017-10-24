@@ -27,7 +27,7 @@ class FeatureRDDTest(SparkTestCase):
     def test_round_trip_gtf(self):
 
         testFile = self.resourceFile("Homo_sapiens.GRCh37.75.trun20.gtf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         features = ac.loadFeatures(testFile)
         tmpPath = self.tmpFile() + ".gtf"
@@ -43,7 +43,7 @@ class FeatureRDDTest(SparkTestCase):
     def test_round_trip_bed(self):
 
         testFile = self.resourceFile("gencode.v7.annotation.trunc10.bed")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         features = ac.loadFeatures(testFile)
         tmpPath = self.tmpFile() + ".bed"
@@ -59,7 +59,7 @@ class FeatureRDDTest(SparkTestCase):
     def test_round_trip_narrowPeak(self):
 
         testFile = self.resourceFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         features = ac.loadFeatures(testFile)
         tmpPath = self.tmpFile() + ".narrowPeak"
@@ -75,7 +75,7 @@ class FeatureRDDTest(SparkTestCase):
     def test_round_trip_interval_list(self):
 
         testFile = self.resourceFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         features = ac.loadFeatures(testFile)
         tmpPath = self.tmpFile() + ".interval_list"
@@ -91,7 +91,7 @@ class FeatureRDDTest(SparkTestCase):
     def test_transform(self):
 
         featurePath = self.resourceFile("gencode.v7.annotation.trunc10.bed")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         features = ac.loadFeatures(featurePath)
 
