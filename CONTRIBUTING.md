@@ -1,21 +1,31 @@
 How to contribute to ADAM
 =========================
 
-Thank you for sharing your code with the ADAM project. We appreciate your contribution!
+Thank you in advance for contributing to ADAM!
 
-## Join the mailing list and our IRC channel
+It would be great if you could introduce yourself to the community on one of the following
+channels but it is not required. You can just let your code do the talking for you if you like.
 
-If you're not already on the ADAM developers list, [take a minute to join](http://bigdatagenomics.github.io/mail/).
-It would be great if you'd introduce yourself to the group but it's not required. You can just
-let your code do the talking for you if you like.
+### Join the ADAM Gitter channel
 
-You can find us on Freenode IRC in the #adamdev room.
+The primary mechanism for communication between ADAM developers and users is the [ADAM Gitter channel](https://gitter.im/bigdatagenomics/adam).
 
-## Check the issue tracker and pull requests
+
+### Join the ADAM IRC channel
+
+If you prefer IRC, you can often find ADAM developers and users on [Freenode IRC](https://freenode.net/) in the #adamdev room.
+
+
+### Join the ADAM developers mailing list
+
+The ADAM project also hosts a developers mailing list, see http://bdgenomics.org/mail/ for details.
+
+
+### Search the Github issue tracker and pull requests
 
 Before you write too much code, check the [open issues in the ADAM issue tracker](https://github.com/bigdatagenomics/adam/issues?state=open)
-or [open pull requests](https://github.com/bigdatagenomics/adam/pulls) to see if someone else is already working on it. If the issue is
-a new one, and you've already written the code to address the issue, simply [submit a pull request](https://help.github.com/articles/creating-a-pull-request).
+and [ADAM open pull requests](https://github.com/bigdatagenomics/adam/pulls) to see if someone else is already working on it. If the issue is
+a new one, and you have already written the code to address the issue, simply [submit a pull request](https://help.github.com/articles/creating-a-pull-request).
 If you haven't written any code but plan to, go ahead and [open a new issue](https://github.com/bigdatagenomics/adam/issues/new) and assign
 it to yourself to socialize your work. When you submit your PR, please reference this pull request so that it will be automatically closed
 when the PR is merged.
@@ -24,20 +34,8 @@ The issue tracker has a list of ["pick me up!"](https://github.com/bigdatagenomi
 that are good tasks to help you get familiar with ADAM; they don't require an understanding of genomics and are fairly
 limited in scope.
 
-## Announce your work on the mailing list
 
-Shoot us a quick email on the mailing list letting us know what you're working on. There
-will likely be people on the list who can give you tips about where to find relevant 
-source or alert you to other planned changes that might effect your work.
-
-If the work you're proposing makes substantive changes to ADAM, you may be asked to attach a design document
-to your issue in the issue tracker. This document should provide a high-level explanation of your design, clearly define the goal
-of the new design and explain the expected effects on performance, APIs, etc. This document is meant to save you time
-as it allows the team a chance to provide feedback on the proposes changes. It's likely we can help you find a way
-to achieve your goals with less work. The document also allows the team to prepare for large changes to the code
-base. We welcome change but also want to ensure that code quality is kept high.
-
-## Submit your pull request
+### Submit your pull request
 
 Github provides a nice [overview on how to create a pull request](https://help.github.com/articles/creating-a-pull-request).
 
@@ -70,3 +68,5 @@ optionally, any details that you want to share about the commit.
 to check every pull request and commit. Just look for files in the ADAM repo that end in "*Suite.scala", 
 e.g. ADAMContextSuite.scala, to see examples of how to write tests. You might also want to glance at the 
 `./scripts/jenkins-test` script for more end-to-end tests.
+
+We appreciate your contribution!
