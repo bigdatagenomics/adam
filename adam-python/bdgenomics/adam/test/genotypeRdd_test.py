@@ -27,7 +27,7 @@ class GenotypeRDDTest(SparkTestCase):
     def test_vcf_round_trip(self):
         
         testFile = self.resourceFile("small.vcf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         genotypes = ac.loadGenotypes(testFile)
 
@@ -43,7 +43,7 @@ class GenotypeRDDTest(SparkTestCase):
     def test_vcf_sort(self):
     
         testFile = self.resourceFile("random.vcf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         genotypes = ac.loadGenotypes(testFile)
 
@@ -57,7 +57,7 @@ class GenotypeRDDTest(SparkTestCase):
     def test_vcf_sort_lex(self):
     
         testFile = self.resourceFile("random.vcf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         genotypes = ac.loadGenotypes(testFile)
 
@@ -70,7 +70,7 @@ class GenotypeRDDTest(SparkTestCase):
 
     def test_transform(self):
         testFile = self.resourceFile("random.vcf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         genotypes = ac.loadGenotypes(testFile)
 

@@ -30,7 +30,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_save_sorted_sam(self):
 
         testFile = self.resourceFile("sorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".sam"
@@ -45,7 +45,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_save_unordered_sam(self):
 
         testFile = self.resourceFile("unordered.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".sam"
@@ -59,7 +59,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         testFile1 = self.resourceFile("sorted.sam")
         testFile2 = self.resourceFile("unordered.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads1 = ac.loadAlignments(testFile1)
         reads2 = ac.loadAlignments(testFile2)
@@ -72,7 +72,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_save_as_bam(self):
 
         testFile = self.resourceFile("sorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".bam"
@@ -89,7 +89,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_count_kmers(self):
 
         testFile = self.resourceFile("small.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadAlignments(testFile)
         kmers = reads.countKmers(6)
@@ -100,7 +100,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_pipe_as_sam(self):
 
         reads12Path = self.resourceFile("reads12.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(reads12Path)
 
@@ -115,7 +115,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_transform(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
@@ -127,7 +127,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_transmute_to_coverage(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
@@ -144,7 +144,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_to_coverage(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
@@ -158,7 +158,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_to_fragments(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
