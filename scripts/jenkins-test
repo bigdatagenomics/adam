@@ -24,7 +24,7 @@ if ! [[ ${HADOOP_VERSION} ]];
 then
     echo "HADOOP_VERSION environment variable is not set."
     echo "Please set this variable before running."
-    
+
     exit 1
 fi
 
@@ -33,7 +33,7 @@ if ! [[ ${SPARK_VERSION} ]];
 then
     echo "SPARK_VERSION environment variable is not set."
     echo "Please set this variable before running."
-    
+
     exit 1
 fi
 
@@ -41,6 +41,13 @@ set -e
 
 if [ ${SPARK_VERSION} == 2.2.1 ];
 then
+<<<<<<< HEAD
+=======
+
+    echo "Rewriting POM.xml files for Spark 2."
+    ./scripts/move_to_spark_2.sh
+
+>>>>>>> 9ef0778... added tests
     # shouldn't be able to move to spark 2 twice
     set +e
     ./scripts/move_to_spark_2.sh
@@ -71,8 +78,8 @@ echo "Testing ADAM version ${VERSION} on Spark ${SPARK_VERSION} and Hadoop ${HAD
 # first, build the sources, run the unit tests, and generate a coverage report
 mvn clean \
     -Dhadoop.version=${HADOOP_VERSION} \
-    -Dspark.version=${SPARK_VERSION} 
-    
+    -Dspark.version=${SPARK_VERSION}
+
 # if this is a pull request, we need to set the coveralls pr id
 if [[ ! -z $ghprbPullId ]];
 then
@@ -111,12 +118,29 @@ mvn -U \
 tar tzvf adam-distribution/target/adam-distribution*-bin.tar.gz | \
     grep adam-assembly | \
     grep jar | \
-    grep -v -e sources -e javadoc 
+    grep -v -e sources -e javadoc
 
 # we are done with maven, so clean up the maven temp dir
 find ${ADAM_MVN_TMP_DIR}
 rm -rf ${ADAM_MVN_TMP_DIR}
 
+<<<<<<< HEAD
+=======
+# and move our poms back to their original values
+# this will allow us to pass our porcelain test at the end
+if [ ${SPARK_VERSION} == 2.2.0 ];
+then
+
+    echo "Rewriting POM.xml files back to Spark 1."
+    ./scripts/move_to_spark_1.sh
+fi
+if [ ${SCALAVER} == 2.11 ];
+then
+    echo "Rewriting POM.xml files back to Scala 2.10."
+    ./scripts/move_to_scala_2.10.sh
+fi
+
+>>>>>>> 9ef0778... added tests
 find . -name pom.xml \
     -exec sed -i.bak \
     -e "s:sun.io.serialization.extendedDebugInfo=true -Djava.io.tmpdir=${ADAM_MVN_TMP_DIR}:sun.io.serialization.extendedDebugInfo=true:g" \
@@ -155,7 +179,7 @@ then
 
     # create a conda environment for python build, if necessary
     uuid=$(uuidgen)
-    conda create -q -n adam-build-${uuid} python=2.7 anaconda
+    conda create -q -n adam-build-${uuid} python=2.7 anaconda jupyter
     source activate adam-build-${uuid}
 
     # what hadoop version are we on? format string for downloading spark assembly
@@ -170,7 +194,7 @@ then
 
     # set spark artifact string for downloading assembly
     SPARK=spark-${SPARK_VERSION}
-    
+
     # download prepackaged spark assembly
     curl \
         -L "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=spark/${SPARK}/${SPARK}-bin-${HADOOP}.tgz" \
@@ -178,13 +202,13 @@ then
 
     tar xzvf ${SPARK}-bin-${HADOOP}.tgz
     export SPARK_HOME=${ADAM_TMP_DIR}/${SPARK}-bin-${HADOOP}
-    
+
     # set the path to the adam submit script
     ADAM=./bin/adam-submit
 
     # test running adam-shell
     ./bin/adam-shell -i scripts/jenkins-test-adam-shell.scala
-    
+
     # add pyspark to the python path
     PY4J_ZIP="$(ls -1 "${SPARK_HOME}/python/lib" | grep py4j)"
     export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/${PY4J_ZIP}:${PYTHONPATH}
@@ -198,26 +222,49 @@ then
     if [ ${SPARK_VERSION} == 2.2.1 ];
     then
 
-	# make a directory to install SparkR into, and set the R user libs path
-	export R_LIBS_USER=${SPARK_HOME}/local_R_libs
-	mkdir -p ${R_LIBS_USER}
-	R CMD INSTALL \
-	    -l ${R_LIBS_USER} \
-	    ${SPARK_HOME}/R/lib/SparkR/
+        # make a directory to install SparkR into, and set the R user libs path
+        export R_LIBS_USER=${SPARK_HOME}/local_R_libs
+        mkdir -p ${R_LIBS_USER}
+        R CMD INSTALL \
+          -l ${R_LIBS_USER} \
+          ${SPARK_HOME}/R/lib/SparkR/
 
-	export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
-    
+        export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
+
         # we can run the python build, now that we have a spark executable
+<<<<<<< HEAD
 	mvn -U \
             -P python,r \
             package \
             -DskipTests \
             -Dhadoop.version=${HADOOP_VERSION} \
             -Dspark.version=${SPARK_VERSION}
+=======
+        mvn -U \
+                -P python,r \
+                package \
+                -DskipTests \
+                -Dhadoop.version=${HADOOP_VERSION} \
+                -Dspark.version=${SPARK_VERSION}
+
+    else
+        # we can run the python build, now that we have a spark executable
+        mvn -U \
+                -P python \
+                package \
+                -DskipTests \
+                -Dhadoop.version=${HADOOP_VERSION} \
+                -Dspark.version=${SPARK_VERSION}
+>>>>>>> 9ef0778... added tests
     fi
 
     # run pyadam test
     ./bin/pyadam < scripts/jenkins-test-pyadam.py
+
+    # regression tests for python notebook examples
+    jupyter nbconvert --to python ${PROJECT_ROOT}/scripts/examples/countKmers.ipynb
+    ./bin/pyadam < ${PROJECT_ROOT}/scripts/examples/countKmers.py
+    rm ${PROJECT_ROOT}/scripts/examples/countKmers.py
 
     # deactivate and remove the conda env
     source deactivate
@@ -231,7 +278,7 @@ then
     READS=${BAM}.reads.adam
     SORTED_READS=${BAM}.reads.sorted.adam
     FRAGMENTS=${BAM}.fragments.adam
-    
+
     # fetch our input dataset
     echo "Fetching BAM file"
     rm -rf ${BAM}
@@ -262,7 +309,22 @@ then
     ${ADAM} flagstat -print_metrics ${READS}
     rm -rf ${ADAM_TMP_DIR}
     popd
+<<<<<<< HEAD
     
+=======
+
+    # we rewrote our poms to spark 2/scala 2.11 earlier, so rewrite now
+    if [ ${SPARK_VERSION} == 2.2.0 ];
+    then
+
+        echo "Reverting POM.xml file changes for Spark 2."
+        ./scripts/move_to_spark_1.sh
+
+        echo "Reverting POM.xml file changes for Scala 2.11."
+        ./scripts/move_to_scala_2.10.sh
+    fi
+
+>>>>>>> 9ef0778... added tests
     # test that the source is formatted correctly
     # we had modified the poms to add a temp dir, so back out that modification first
     pushd ${PROJECT_ROOT}
@@ -272,7 +334,7 @@ then
         echo "Please run './scripts/format-source'"
         exit 1
     fi
-    popd    
+    popd
 fi
 
 echo

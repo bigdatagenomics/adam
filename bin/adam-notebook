@@ -43,7 +43,7 @@ else
 fi
 
 # Figure out where ADAM is installed
-SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
+export SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
 
 # Find ADAM cli assembly jar
 if [ -d "$SCRIPT_DIR/repo" ]; then
