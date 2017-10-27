@@ -1571,10 +1571,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val conf = ContextUtil.getConfiguration(job)
     BAMInputFormat.setIntervals(conf, viewRegions.toList.map(r => LocatableReferenceRegion(r)))
 
-    val records = sc.union(bamFiles.map(p => {
-      sc.newAPIHadoopFile(p.toString, classOf[BAMInputFormat], classOf[LongWritable],
-        classOf[SAMRecordWritable], conf)
-    }))
+    val records = sc.newAPIHadoopFile(pathName,
+      classOf[BAMInputFormat],
+      classOf[LongWritable],
+      classOf[SAMRecordWritable],
+      conf)
+
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
     AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p._2.get)),
