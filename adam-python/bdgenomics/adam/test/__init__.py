@@ -28,10 +28,12 @@ from pyspark.context import SparkContext
 class SparkTestCase(unittest.TestCase):
 
 
-    def resourceFile(self, file):
+    def resourceFile(self, filename, module='adam-core'):
 
         adamRoot = os.path.dirname(os.getcwd())
-        return os.path.join(os.path.join(adamRoot, "adam-core/src/test/resources"), file)
+        return os.path.join(os.path.join(adamRoot,
+                                         "%s/src/test/resources" % module),
+                            filename)
 
 
     def tmpFile(self):

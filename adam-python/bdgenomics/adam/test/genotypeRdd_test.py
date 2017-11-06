@@ -51,7 +51,7 @@ class GenotypeRDDTest(SparkTestCase):
         genotypes.toVariantContexts().sort().saveAsVcf(tmpPath,
                                                        asSingleFile=True)
 
-        self.checkFiles(tmpPath, self.resourceFile("sorted.vcf"))
+        self.checkFiles(tmpPath, self.resourceFile("sorted.vcf", module='adam-cli'))
 
 
     def test_vcf_sort_lex(self):
@@ -65,7 +65,7 @@ class GenotypeRDDTest(SparkTestCase):
         genotypes.toVariantContexts().sortLexicographically().saveAsVcf(tmpPath,
                                                                         asSingleFile=True)
 
-        self.checkFiles(tmpPath, self.resourceFile("sorted.lex.vcf"))
+        self.checkFiles(tmpPath, self.resourceFile("sorted.lex.vcf", module='adam-cli'))
 
 
     def test_transform(self):

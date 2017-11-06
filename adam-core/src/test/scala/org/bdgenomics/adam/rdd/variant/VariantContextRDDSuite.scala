@@ -169,7 +169,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     // -Inf INFO value --> -Infinity after conversion
     assert(variant.getAnnotation.getAttributes.get("BaseQRankSum") === "-Infinity")
 
-    val genotype = vcs.toGenotypes().rdd.filter(_.getVariant == variant).first()
+    val genotype = vcs.toGenotypes().rdd.filter(_.getStart == 14396L).first()
     assert(genotype.getVariantCallingAnnotations.getRmsMapQ === Float.NegativeInfinity)
     // +Inf FORMAT value --> Infinity after conversion
     assert(genotype.getVariantCallingAnnotations.getAttributes.get("float") === "Infinity")

@@ -16,10 +16,10 @@
 # limitations under the License.
 #
 
-resourceFile <- function(fileName) {
+resourceFile <- function(fileName, submodule="adam-core") {
     file.path(dirname(dirname(dirname(dirname(getwd())))),
-              "adam-core/src/test/resources",
-              fileName)
+              paste(submodule, "src/test/resources", sep = "/",
+                    fileName))
 }
 
 expect_files_match <- function(newFile, originalFile) {
