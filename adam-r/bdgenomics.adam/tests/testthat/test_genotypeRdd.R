@@ -38,7 +38,7 @@ test_that("save sorted vcf", {
     tmpPath <- tempfile(fileext = ".vcf")
     saveAsVcf(sort(toVariantContexts(genotypes)), tmpPath, asSingleFile = TRUE)
 
-    truthFile <- resourceFile("sorted.vcf")
+    truthFile <- resourceFile("sorted.vcf", submodule="adam-cli")
     expect_files_match(tmpPath, truthFile)
 })
 
@@ -51,6 +51,6 @@ test_that("save lex sorted vcf", {
               tmpPath,
               asSingleFile = TRUE)
 
-    truthFile <- resourceFile("sorted.lex.vcf")
+    truthFile <- resourceFile("sorted.lex.vcf", submodule="adam-cli")
     expect_files_match(tmpPath, truthFile)
 })
