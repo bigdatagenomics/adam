@@ -135,22 +135,10 @@ There are a number of tools built using ADAM's core APIs:
 
 # Connecting with the ADAM team
 
-* Follow our Twitter account at
-  [https://twitter.com/bigdatagenomics/](https://twitter.com/bigdatagenomics/)
-* Chat with ADAM developers at
-  [https://gitter.im/bigdatagenomics/adam](https://gitter.im/bigdatagenomics/adam)
-* Join our mailing list at
-  [http://bdgenomics.org/mail](http://bdgenomics.org/mail)
-* Checkout the current build status at
-  [https://amplab.cs.berkeley.edu/jenkins/](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/)
-* Download official releases at
-  [https://github.com/bigdatagenomics/adam/releases](https://github.com/bigdatagenomics/adam/releases)
-* View our software artifacts on Maven Central at
-  [http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics)
-* See our snapshots at
-  [https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)
-* Look at our CHANGES file at
-  [https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md)
+The best way to reach the ADAM team is to post in our [Gitter
+channel](https://gitter.im/bigdatagenomics/adam) or to open an issue on our
+[Github repository](https://github.com/bigdatagenomics/adam/issues). For more
+contact methods, please see [our support page](https://github.com/bigdatagenomics/adam/blob/master/SUPPORT.md).
 
 
 # License
