@@ -30,9 +30,10 @@
             </goals>
             <configuration>
               <executable>R</executable>
+              <workingDirectory>bdgenomics.adam</workingDirectory>
               <arguments>
                 <argument>-e</argument>
-                <argument>"library(devtools);devtools::document()"</argument>
+                <argument>library(devtools);devtools::document()</argument>
               </arguments>
             </configuration>
           </execution>
