@@ -46,6 +46,7 @@
               <arguments>
                 <argument>test</argument>
               </arguments>
+              <skip>${skipTests}</skip>
             </configuration>
           </execution>
         </executions>

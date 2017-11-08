@@ -65,6 +65,7 @@
                 <argument>check</argument>
                 <argument>bdgenomics.adam/</argument>
               </arguments>
+              <skip>${skipTests}</skip>
             </configuration>
           </execution>
         </executions>
