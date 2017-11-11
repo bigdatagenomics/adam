@@ -32,7 +32,7 @@ else
 fi
 
 ASSEMBLY_JARS=$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\.\_\-]*\.jar$" | grep -v javadoc | grep -v sources || true)
-num_jars=$(echo ${ASSEMBLY_JARS} | wc -l)
+num_jars=$(echo ${ASSEMBLY_JARS} | wc -w)
 
 if [ "$num_jars" -eq "0" ]; then
   echo "Failed to find ADAM cli assembly in $ASSEMBLY_DIR." 1>&2
