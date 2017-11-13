@@ -39,7 +39,7 @@ import org.bdgenomics.adam.sql.{
   AlignmentRecord => AlignmentRecordProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-Slice => SliceProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct
 }
 import org.bdgenomics.adam.util.ADAMFunSuite

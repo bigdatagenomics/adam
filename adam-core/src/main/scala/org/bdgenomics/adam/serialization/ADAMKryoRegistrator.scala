@@ -29,7 +29,7 @@ import org.apache.avro.io.{ BinaryDecoder, BinaryEncoder, DecoderFactory, Encode
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificDatumWriter, SpecificRecord }
 import org.apache.hadoop.io.Writable
 import org.apache.spark.serializer.KryoRegistrator
-import org.bdgenomics.adam.rdd.read.{ReadArraySerializer, ReadArray}
+import org.bdgenomics.adam.rdd.read.{ ReadArraySerializer, ReadArray }
 import org.bdgenomics.utils.misc.Logging
 import scala.reflect.ClassTag
 

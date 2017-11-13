@@ -23,8 +23,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.sequence.{SequenceRDD, SliceRDD}
-import org.bdgenomics.adam.rdd.{AvroGenomicRDD, JavaSaveArgs}
+import org.bdgenomics.adam.rdd.sequence.{ SequenceRDD, SliceRDD }
+import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Read => ReadProduct }
 import org.bdgenomics.formats.avro.{
@@ -33,7 +33,7 @@ import org.bdgenomics.formats.avro.{
   Slice,
   Strand
 }
-import org.bdgenomics.utils.interval.array.{IntervalArray, IntervalArraySerializer}
+import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySerializer }
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 

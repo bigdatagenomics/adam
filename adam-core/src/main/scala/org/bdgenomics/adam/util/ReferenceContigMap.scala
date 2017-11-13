@@ -30,9 +30,9 @@ import org.bdgenomics.formats.avro.Slice
 
 /**
  * A broadcastable ReferenceFile backed by a map containing contig name ->
-  * Seq[Slice] pairs.
+ * Seq[Slice] pairs.
  *
-  * @param contigMap a map containing a Seq of slices per contig.
+ * @param contigMap a map containing a Seq of slices per contig.
  */
 case class ReferenceContigMap(contigMap: Map[String, Seq[Slice]]) extends ReferenceFile {
 
@@ -90,16 +90,16 @@ case class ReferenceContigMap(contigMap: Map[String, Seq[Slice]]) extends Refere
 }
 
 /**
-  * Companion object for creating a ReferenceContigMap from an RDD of slices.
+ * Companion object for creating a ReferenceContigMap from an RDD of slices.
  */
 object ReferenceContigMap {
 
   /**
-    * Builds a ReferenceContigMap from an RDD of slices.
+   * Builds a ReferenceContigMap from an RDD of slices.
    *
-    * @param slices RDD of slices describing a genome
+   * @param slices RDD of slices describing a genome
    *                reference.
-    * @return Returns a serializable wrapper around these slices that enables
+   * @return Returns a serializable wrapper around these slices that enables
    *          random access into the reference genome.
    */
   def apply(slices: RDD[Slice]): ReferenceContigMap = {

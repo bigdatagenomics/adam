@@ -21,7 +21,7 @@ import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
-import org.kohsuke.args4j.{Option => Args4JOption, Argument}
+import org.kohsuke.args4j.{ Option => Args4JOption, Argument }
 
 class ADAM2FastaArgs extends Args4jBase {
   @Argument(required = true, metaVar = "ADAM", usage = "The Parquet file to convert", index = 0)

@@ -35,8 +35,8 @@ import org.apache.spark.sql.{ Dataset, Row, SQLContext }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus.{
   ConsensusGenerator,
-ConsensusGeneratorFromReads,
-NormalizationUtils
+  ConsensusGeneratorFromReads,
+  NormalizationUtils
 }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -101,17 +101,17 @@ private[adam] class AlignmentRecordArraySerializer extends IntervalArraySerializ
 object AlignmentRecordRDD extends Serializable {
 
   /**
-    * Hadoop configuration path to check for a boolean value indicating whether
-    * the current or original read qualities should be written. True indicates
-    * to write the original qualities. The default is false.
-    */
+   * Hadoop configuration path to check for a boolean value indicating whether
+   * the current or original read qualities should be written. True indicates
+   * to write the original qualities. The default is false.
+   */
   val WRITE_ORIGINAL_QUALITIES = "org.bdgenomics.adam.rdd.read.AlignmentRecordRDD.writeOriginalQualities"
 
   /**
-    * Hadoop configuration path to check for a boolean value indicating whether
-    * to write the "/1" "/2" suffixes to the read name that indicate whether a
-    * read is first or second in a pair. Default is false (no suffixes).
-    */
+   * Hadoop configuration path to check for a boolean value indicating whether
+   * to write the "/1" "/2" suffixes to the read name that indicate whether a
+   * read is first or second in a pair. Default is false (no suffixes).
+   */
   val WRITE_SUFFIXES = "org.bdgenomics.adam.rdd.read.AlignmentRecordRDD.writeSuffixes"
 
   /**
@@ -150,7 +150,7 @@ object AlignmentRecordRDD extends Serializable {
    * Validates that there are no gaps in a set of quality score bins.
    *
    * @param bins Bins to validate.
-    * @throws IllegalArgumentException Throws exception if the bins are empty,
+   * @throws IllegalArgumentException Throws exception if the bins are empty,
    *   there is a gap between bins, or two bins overlap.
    */
   private[rdd] def validateBins(bins: Seq[QualityScoreBin]) {
@@ -886,7 +886,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    * lexicographically.
    *
    * @return Returns a new RDD containing sorted reads.
-    * @see sortReadsByReferencePositionAndIndex
+   * @see sortReadsByReferencePositionAndIndex
    */
   def sortReadsByReferencePosition(): AlignmentRecordRDD = SortReads.time {
     log.info("Sorting reads by reference position")
@@ -912,7 +912,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    * that they are ordered in the SequenceDictionary.
    *
    * @return Returns a new RDD containing sorted reads.
-    * @see sortReadsByReferencePosition
+   * @see sortReadsByReferencePosition
    */
   def sortReadsByReferencePositionAndIndex(): AlignmentRecordRDD = SortByIndex.time {
     log.info("Sorting reads by reference index, using %s.".format(sequences))
@@ -1492,11 +1492,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
   }
 
   /**
-    * Left normalizes the INDELs in reads containing INDELs.
-    *
-    * @return Returns a new RDD where the reads that contained INDELs have their
-    *         INDELs left normalized.
-    */
+   * Left normalizes the INDELs in reads containing INDELs.
+   *
+   * @return Returns a new RDD where the reads that contained INDELs have their
+   *         INDELs left normalized.
+   */
   def leftNormalizeIndels(): AlignmentRecordRDD = {
     transform(rdd => {
       rdd.map(r => {

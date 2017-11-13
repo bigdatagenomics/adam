@@ -30,7 +30,7 @@ private object FragmentCollector extends Serializable {
   /**
    * Apply method to create a fragment collector that is keyed by the contig.
    *
-    * @param slice Slice of a reference/assembled sequence to wrap.
+   * @param slice Slice of a reference/assembled sequence to wrap.
    * @return Returns key value pair where the key is the contig metadata and the
    *   value is a Fragment Collector object.
    */
@@ -142,10 +142,10 @@ private[adam] object FragmentConverter extends Serializable {
   }
 
   /**
-    * Converts an RDD of Slices into AlignmentRecords.
+   * Converts an RDD of Slices into AlignmentRecords.
    *
    * Produces one alignment record per contiguous sequence contained in the
-    * input RDD. Slices are merged down to the longest contiguous chunks
+   * input RDD. Slices are merged down to the longest contiguous chunks
    * possible.
    *
    * @param rdd RDD of assembled sequences.

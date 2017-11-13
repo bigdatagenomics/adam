@@ -34,9 +34,9 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
-ADAMContext,
-ManualRegionPartitioner,
-TestSaveArgs
+  ADAMContext,
+  ManualRegionPartitioner,
+  TestSaveArgs
 }
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
@@ -52,7 +52,7 @@ import org.bdgenomics.adam.sql.{
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-Slice => SliceProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -982,11 +982,11 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       ((ReferenceRegion(contigName, start, end),
         partition),
         AlignmentRecord.newBuilder
-          .setReadMapped(true)
-          .setContigName(contigName)
-          .setStart(start)
-          .setEnd(end)
-          .build)
+        .setReadMapped(true)
+        .setContigName(contigName)
+        .setStart(start)
+        .setEnd(end)
+        .build)
     }
 
     val sd = SequenceDictionary(SequenceRecord("chr1", 51L),

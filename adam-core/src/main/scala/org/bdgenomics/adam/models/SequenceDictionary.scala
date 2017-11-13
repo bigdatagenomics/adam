@@ -79,7 +79,7 @@ object SequenceDictionary {
    * ADAM sequence dictionary.
    *
    * @see fromSAMHeader
-    * @param header VCF file header.
+   * @param header VCF file header.
    * @return Returns an ADAM style sequence dictionary.
    */
   def fromVCFHeader(header: VCFHeader): SequenceDictionary = {
@@ -94,7 +94,7 @@ object SequenceDictionary {
    *
    * @see fromSAMHeader
    * @see fromVCFHeader
-    * @param samDict SAM style sequence dictionary.
+   * @param samDict SAM style sequence dictionary.
    * @return Returns an ADAM style sequence dictionary.
    */
   def fromSAMSequenceDictionary(samDict: SAMSequenceDictionary): SequenceDictionary = {
@@ -108,7 +108,7 @@ object SequenceDictionary {
  * is aligned against.
  *
  * @see SequenceRecord
-  * @param records The individual reference contigs.
+ * @param records The individual reference contigs.
  */
 class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializable {
   def this() = this(Vector.empty[SequenceRecord])
@@ -195,7 +195,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    *   the indices are not stripped before a file is saved back to SAM/BAM, the
    *   SAM/BAM header sequence ordering will not match the sort order of the
    *   records in the file.
-    * @see sorted
+   * @see sorted
    */
   def stripIndices: SequenceDictionary = {
     new SequenceDictionary(records.map(_.stripIndex))
@@ -208,7 +208,7 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    *   sorted. If the sequence records have indices, the records will be sorted
    *   by their indices. If not, the sequence records will be sorted lexically
    *   by contig name.
-    * @see stripIndices
+   * @see stripIndices
    */
   def sorted: SequenceDictionary = {
     implicit val ordering: Ordering[SequenceRecord] =
@@ -451,10 +451,10 @@ object SequenceRecord {
 
   /**
    * Extracts the contig metadata from a slice.
-    *
-    * @param slice The slice to extract a SequenceRecord from.
-    * @return The sequence record metadata from a slice.
-    */
+   *
+   * @param slice The slice to extract a SequenceRecord from.
+   * @return The sequence record metadata from a slice.
+   */
   def fromSlice(slice: Slice): SequenceRecord = {
     SequenceRecord(slice.getName, slice.getTotalLength)
   }

@@ -216,9 +216,9 @@ object ReferenceRegion {
    *
    * @throws IllegalArgumentException If this read is not aligned or alignment
    *   data is null.
-    * @param record The read to extract the reference region from.
+   * @param record The read to extract the reference region from.
    * @return Returns the reference region covered by this read's alignment.
-    * @see stranded
+   * @see stranded
    */
   def unstranded(record: AlignmentRecord): ReferenceRegion = {
     checkRead(record)
@@ -230,9 +230,9 @@ object ReferenceRegion {
    *
    * @throws IllegalArgumentException If this read is not aligned, alignment
    *   data is null, or strand is not set.
-    * @param record The read to extract the reference region from.
+   * @param record The read to extract the reference region from.
    * @return Returns the reference region covered by this read's alignment.
-    * @see unstranded
+   * @see unstranded
    */
   def stranded(record: AlignmentRecord): ReferenceRegion = {
     checkRead(record)
@@ -252,8 +252,8 @@ object ReferenceRegion {
 
   /**
    * Generates a region from a given position -- the region will have a length of 1.
-    *
-    * @param pos The position to convert
+   *
+   * @param pos The position to convert
    * @return A 1-wide region at the same location as pos
    */
   def apply(pos: ReferencePosition): ReferenceRegion = {
@@ -268,7 +268,7 @@ object ReferenceRegion {
    * have an ID or a start position.
    *
    * @param sequence Sequence from which to generate data.
-    * @return Region corresponding to inclusive region of sequence.
+   * @return Region corresponding to inclusive region of sequence.
    */
   def apply(sequence: Sequence): Option[ReferenceRegion] = {
     if (sequence.getName != null &&
@@ -283,11 +283,11 @@ object ReferenceRegion {
 
   /**
    * Generates a reference region from assembly data. Returns None if the assembly does not
-    * have an ID or a start position.
-    *
-    * @param slice Slice from which to generate data.
-    * @return Region corresponding to inclusive region of slice.
-    */
+   * have an ID or a start position.
+   *
+   * @param slice Slice from which to generate data.
+   * @return Region corresponding to inclusive region of slice.
+   */
   def apply(slice: Slice): Option[ReferenceRegion] = {
     if (slice.getName != null &&
       slice.getStart != null &&
@@ -312,7 +312,7 @@ object ReferenceRegion {
    *
    * @param feature Feature to extract ReferenceRegion from.
    * @return Extracted ReferenceRegion
-    * @see stranded
+   * @see stranded
    */
   def unstranded(feature: Feature): ReferenceRegion = {
     checkFeature(feature)
@@ -324,9 +324,9 @@ object ReferenceRegion {
    *
    * @param feature Feature to extract ReferenceRegion from.
    * @return Extracted ReferenceRegion
-    * @throws IllegalArgumentException Throws an exception if the strand is null
+   * @throws IllegalArgumentException Throws an exception if the strand is null
    *   in the provided feature.
-    * @see unstranded
+   * @see unstranded
    */
   def stranded(feature: Feature): ReferenceRegion = {
     checkFeature(feature)
@@ -396,9 +396,9 @@ case class ReferenceRegion(
    * Merges two reference regions that are contiguous.
    *
    * @throws IllegalArgumentException Thrown if regions are not overlapping or adjacent.
-    * @param other Other region to merge with this region.
+   * @param other Other region to merge with this region.
    * @return The merger of both unions.
-    * @see hull
+   * @see hull
    */
   def merge(other: ReferenceRegion): ReferenceRegion = {
     require(overlaps(other) || isAdjacent(other), "Cannot merge two regions that do not overlap or are not adjacent")
@@ -410,9 +410,9 @@ case class ReferenceRegion(
    *
    * @throws IllegalArgumentException Thrown if regions are not within the
    *         distance threshold.
-    * @param other Other region to merge with this region.
+   * @param other Other region to merge with this region.
    * @return The merger of both unions.
-    * @see hull
+   * @see hull
    */
   def merge(other: ReferenceRegion, distanceThreshold: Long): ReferenceRegion = {
     require(isNearby(other, distanceThreshold), "Cannot merge two regions that do not meet the distance threshold")
@@ -438,9 +438,9 @@ case class ReferenceRegion(
    * overlap of two regions. However, regions must be in the same reference space.
    *
    * @throws IllegalArgumentException Thrown if regions are in different reference spaces.
-    * @param other Other region to compute hull of with this region.
+   * @param other Other region to compute hull of with this region.
    * @return The convex hull of both unions.
-    * @see merge
+   * @see merge
    */
   def hull(other: ReferenceRegion): ReferenceRegion = {
     require(sameStrand(other), "Cannot compute convex hull of differently oriented regions.")
@@ -486,7 +486,7 @@ case class ReferenceRegion(
    *       within this region, and any point within the other region we are measuring
    *       against. If the two sets overlap, the distance will be 0. If the sets abut,
    *       the distance will be 1. Else, the distance will be greater.
-    * @param other Region to compare against.
+   * @param other Region to compare against.
    * @return Returns an option containing the distance between two points. If
    *   the point is not in our reference space, we return an empty option.
    */
@@ -509,7 +509,7 @@ case class ReferenceRegion(
    *       within this region, and any point within the other region we are measuring
    *       against. If the two sets overlap, the distance will be 0. If the sets abut,
    *       the distance will be 1. Else, the distance will be greater.
-    * @param other Region to compare against.
+   * @param other Region to compare against.
    * @return Returns an option containing the distance between two points. If
    *   the point is not in our reference space, we return an empty option.
    */
@@ -585,8 +585,8 @@ case class ReferenceRegion(
   }
 
   /**
-    * Checks if another region is wholly within our region.
-    *
+   * Checks if another region is wholly within our region.
+   *
    * @param other The region to compare against.
    * @return True if the region is wholly contained within our region.
    */
@@ -684,8 +684,8 @@ case class ReferenceRegion(
    *
    * Subtracting in this case removes the entire region and returns up to two
    * new regions.
-    *
-    * @param other The region to subtract.
+   *
+   * @param other The region to subtract.
    * @param requireStranded Whether or not to require other be on same strand.
    * @return A list containing the regions resulting from the subtraction.
    */

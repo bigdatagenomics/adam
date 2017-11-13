@@ -405,8 +405,8 @@ class VariantContextConverter(
   }
 
   private[converters] def formatQuality(
-                                         vc: HtsjdkVariantContext,
-                                         vb: Variant.Builder): Variant.Builder = {
+    vc: HtsjdkVariantContext,
+    vb: Variant.Builder): Variant.Builder = {
 
     if (vc.hasLog10PError) {
       vb.setQuality(vc.getPhredScaledQual)
@@ -445,8 +445,8 @@ class VariantContextConverter(
   }
 
   private[converters] def extractQuality(
-                                          v: Variant,
-                                          vcb: VariantContextBuilder): VariantContextBuilder = {
+    v: Variant,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
 
     if (v.getQuality != null) {
       vcb.log10PError(-v.getQuality / 10.0)
@@ -1576,7 +1576,7 @@ class VariantContextConverter(
   }
 
   private def makeVariantFormatFn(
-                                   headerLines: Seq[VCFHeaderLine]): (HtsjdkVariantContext, Option[String], Int, Boolean) => (Variant, Variant) = {
+    headerLines: Seq[VCFHeaderLine]): (HtsjdkVariantContext, Option[String], Int, Boolean) => (Variant, Variant) = {
 
     val attributeFns: Iterable[(HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]] = headerLines
       .flatMap(hl => hl match {

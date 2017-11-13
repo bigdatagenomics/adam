@@ -298,7 +298,7 @@ sealed abstract class SequenceRDD extends AvroGenomicRDD[Sequence, SequenceProdu
   /**
    * Slice the sequences in this RDD overlapping the specified regions.
    *
-    * @param regions Regions to overlap.
+   * @param regions Regions to overlap.
    * @return Returns a new SliceRDD from the sequences in this RDD sliced
    *    to overlap the specified regions.
    */

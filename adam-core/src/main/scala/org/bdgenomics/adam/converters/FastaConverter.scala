@@ -55,7 +55,7 @@ private[adam] object FastaConverter {
      * @throws IllegalArgumentException if there is no name in the line and the
      *   line is not the only record in a file (i.e., the file contains multiple
      *   contigs).
-      * @param descriptionLine The optional string describing the contig. If this
+     * @param descriptionLine The optional string describing the contig. If this
      *   is not set and this isn't the only line in the file, we throw.
      * @param id The index of this contig in the file.
      * @return Returns a tuple containing (the optional contig name, and the
@@ -90,16 +90,16 @@ private[adam] object FastaConverter {
 
   /**
    * Converts an RDD containing ints and strings into an RDD containing ADAM slices.
-    *
-    * @note Input dataset is assumed to have come in from a Hadoop TextInputFormat reader. This sets
+   *
+   * @note Input dataset is assumed to have come in from a Hadoop TextInputFormat reader. This sets
    *   a specific format for the RDD's Key-Value pairs.
-    * @throws AssertionError Thrown if there appear to be multiple sequences in a single file
+   * @throws AssertionError Thrown if there appear to be multiple sequences in a single file
    *   that do not have descriptions.
    * @throws IllegalArgumentException Thrown if a sequence does not have sequence data.
-    * @param rdd          RDD containing Long,String tuples, where the Long corresponds to the number
+   * @param rdd          RDD containing Long,String tuples, where the Long corresponds to the number
    *                      of the file line, and the String is the line of the file.
    * @param maximumLength Maximum slice length. Defaults to 10000L. Values greater
-    *                     than 1e9 should be avoided.
+   *                     than 1e9 should be avoided.
    * @return An RDD of ADAM FASTA data.
    */
   def apply(
@@ -205,11 +205,11 @@ private[adam] object FastaConverter {
 private[converters] class FastaConverter(sliceLength: Long) extends Serializable {
 
   /**
-    * Remaps the sequences that we get coming in into our expected slice size.
-    *
-    * @param sequences Sequences coming in.
-    * @return A sequence of strings "recut" to the proper slice size.
-    */
+   * Remaps the sequences that we get coming in into our expected slice size.
+   *
+   * @param sequences Sequences coming in.
+   * @return A sequence of strings "recut" to the proper slice size.
+   */
   def mapSlices(sequences: Seq[String]): Seq[String] = {
     // internal "fsm" variables
     var sequence: StringBuilder = new StringBuilder
@@ -217,11 +217,11 @@ private[converters] class FastaConverter(sliceLength: Long) extends Serializable
 
     /**
      * Adds a string slice to our accumulator. If this string slice causes the accumulator
-      * to grow longer than our max slice size, we split the accumulator and add it to the end
-      * of our list of slice.
-      *
-      * @param seq Slice string to add.
-      */
+     * to grow longer than our max slice size, we split the accumulator and add it to the end
+     * of our list of slice.
+     *
+     * @param seq Slice string to add.
+     */
     def addSlice(seq: String) {
       sequence.append(seq)
 
@@ -245,16 +245,16 @@ private[converters] class FastaConverter(sliceLength: Long) extends Serializable
 
   /**
    * Converts a single FASTA sequence into an ADAM slice.
-    *
-    * @throws IllegalArgumentException Thrown if sequence contains an illegal character.
-    * @param name String option for the sequence name.
+   *
+   * @throws IllegalArgumentException Thrown if sequence contains an illegal character.
+   * @param name String option for the sequence name.
    * @param id Numerical identifier for the sequence.
    * @param sequence Nucleotide sequence.
    * @param description Optional description of the sequence.
    * @return The converted ADAM FASTA slice.
-    */
+   */
   def convert(
-               name: Option[String],
+    name: Option[String],
     id: Int,
     sequence: Seq[String],
     description: Option[String]): Seq[Slice] = {

@@ -24,8 +24,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.read.{
-AlignmentRecordRDD,
-ReadRDD
+  AlignmentRecordRDD,
+  ReadRDD
 }
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
@@ -35,7 +35,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Slice => SliceProduct }
 import org.bdgenomics.formats.avro.{
-AlignmentRecord,
+  AlignmentRecord,
   QualityScoreVariant,
   Read,
   Sequence,
@@ -285,10 +285,10 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
   }
 
   /**
-    * Convert this RDD of slices into alignments.
-    *
-    * @return Returns a new AlignmentRecordRDD converted from this RDD of slices.
-    */
+   * Convert this RDD of slices into alignments.
+   *
+   * @return Returns a new AlignmentRecordRDD converted from this RDD of slices.
+   */
   def toAlignments: AlignmentRecordRDD = {
     def toAlignments(slice: Slice): AlignmentRecord = {
       AlignmentRecord.newBuilder()
@@ -360,13 +360,13 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
   }
 
   /**
-    * Extract the specified region from this RDD of slices as a string, merging
-    * slices if necessary.
-    *
-    * @param region Region to extract.
-    * @return Return the specified region from this RDD of slices as a string, merging
-    *         slices if necessary.
-    */
+   * Extract the specified region from this RDD of slices as a string, merging
+   * slices if necessary.
+   *
+   * @param region Region to extract.
+   * @return Return the specified region from this RDD of slices as a string, merging
+   *         slices if necessary.
+   */
   def extract(region: ReferenceRegion): String = {
     def getString(slice: (ReferenceRegion, Slice)): (ReferenceRegion, String) = {
       val trimStart = max(0, region.start - slice._1.start).toInt
@@ -385,8 +385,8 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
     }
 
     def reducePairs(
-                     kv1: (ReferenceRegion, String),
-                     kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
+      kv1: (ReferenceRegion, String),
+      kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
       assert(kv1._1.isAdjacent(kv2._1), "Regions being joined must be adjacent. For: " +
         kv1 + ", " + kv2)
 
@@ -419,13 +419,13 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
   }
 
   /**
-    * Extract the specified regions from this RDD of slices as an RDD of (ReferenceRegion,
-    * String) tuples, merging slices if necessary.
-    *
-    * @param regions Zero or more regions to extract.
-    * @return Return the specified regions from this RDD of slices as an RDD of (ReferenceRegion,
-    *         String) tuples, merging slices if necessary.
-    */
+   * Extract the specified regions from this RDD of slices as an RDD of (ReferenceRegion,
+   * String) tuples, merging slices if necessary.
+   *
+   * @param regions Zero or more regions to extract.
+   * @return Return the specified regions from this RDD of slices as an RDD of (ReferenceRegion,
+   *         String) tuples, merging slices if necessary.
+   */
   def extractRegions(regions: Iterable[ReferenceRegion]): RDD[(ReferenceRegion, String)] = {
     def extractSequence(sliceRegion: ReferenceRegion, slice: Slice, region: ReferenceRegion): (ReferenceRegion, String) = {
       val merged = sliceRegion.intersection(region)
@@ -436,8 +436,8 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
     }
 
     def reduceRegionSequences(
-                               kv1: (ReferenceRegion, String),
-                               kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
+      kv1: (ReferenceRegion, String),
+      kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
       (kv1._1.merge(kv2._1), if (kv1._1.compareTo(kv2._1) <= 0) {
         kv1._2 + kv2._2
       } else {
@@ -458,26 +458,26 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
   }
 
   /**
-    * For all adjacent slices in this RDD, we extend the slices so that the adjacent
-    * slices now overlap by _n_ bases, where _n_ is the flank length.
-    *
-    * Java friendly variant.
-    *
-    * @param flankLength The length to extend adjacent slices by.
-    * @return Returns this RDD, with all adjacent slices extended with flanking sequence.
-    */
+   * For all adjacent slices in this RDD, we extend the slices so that the adjacent
+   * slices now overlap by _n_ bases, where _n_ is the flank length.
+   *
+   * Java friendly variant.
+   *
+   * @param flankLength The length to extend adjacent slices by.
+   * @return Returns this RDD, with all adjacent slices extended with flanking sequence.
+   */
   def flankAdjacent(flankLength: java.lang.Integer): SliceRDD = {
     val flank: Int = flankLength
     flankAdjacent(flank)
   }
 
   /**
-    * For all adjacent slices in this RDD, we extend the slices so that the adjacent
-    * slices now overlap by _n_ bases, where _n_ is the flank length.
-    *
-    * @param flankLength The length to extend adjacent slices by.
-    * @return Returns this RDD, with all adjacent slices extended with flanking sequence.
-    */
+   * For all adjacent slices in this RDD, we extend the slices so that the adjacent
+   * slices now overlap by _n_ bases, where _n_ is the flank length.
+   *
+   * @param flankLength The length to extend adjacent slices by.
+   * @return Returns this RDD, with all adjacent slices extended with flanking sequence.
+   */
   def flankAdjacent(flankLength: Int): SliceRDD = {
     replaceRdd(FlankSlices(rdd,
       sequences,
@@ -485,11 +485,11 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
   }
 
   /**
-    * Counts the k-mers contained in this RDD of slices.
-    *
-    * @param kmerLength The length of k-mers to count.
-    * @return Returns an RDD containing k-mer/count pairs.
-    */
+   * Counts the k-mers contained in this RDD of slices.
+   *
+   * @param kmerLength The length of k-mers to count.
+   * @return Returns an RDD containing k-mer/count pairs.
+   */
   def countKmers(kmerLength: Int): RDD[(String, Long)] = {
     flankAdjacent(kmerLength).rdd.flatMap(r => {
       // cut each read into k-mers, and attach a count of 1L
@@ -500,15 +500,15 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
   }
 
   /**
-    * Counts the k-mers contained in this RDD of slices.
-    *
-    * Java friendly variant.
-    *
-    * @param kmerLength The length of k-mers to count.
-    * @return Returns an RDD containing k-mer/count pairs.
-    */
+   * Counts the k-mers contained in this RDD of slices.
+   *
+   * Java friendly variant.
+   *
+   * @param kmerLength The length of k-mers to count.
+   * @return Returns an RDD containing k-mer/count pairs.
+   */
   def countKmers(
-                  kmerLength: java.lang.Integer): JavaRDD[(String, java.lang.Long)] = {
+    kmerLength: java.lang.Integer): JavaRDD[(String, java.lang.Long)] = {
     val k: Int = kmerLength
     countKmers(k).map(p => {
       (p._1, p._2: java.lang.Long)
