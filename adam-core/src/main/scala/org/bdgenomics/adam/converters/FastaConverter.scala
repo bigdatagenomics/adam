@@ -96,10 +96,10 @@ private[adam] object FastaConverter {
    * @throws AssertionError Thrown if there appear to be multiple sequences in a single file
    *   that do not have descriptions.
    * @throws IllegalArgumentException Thrown if a sequence does not have sequence data.
-   * @param rdd          RDD containing Long,String tuples, where the Long corresponds to the number
-   *                      of the file line, and the String is the line of the file.
+   * @param rdd RDD containing Long,String tuples, where the Long corresponds to the number
+   *   of the file line, and the String is the line of the file.
    * @param maximumLength Maximum slice length. Defaults to 10000L. Values greater
-   *                     than 1e9 should be avoided.
+   *   than 1e9 should be avoided.
    * @return An RDD of ADAM FASTA data.
    */
   def apply(

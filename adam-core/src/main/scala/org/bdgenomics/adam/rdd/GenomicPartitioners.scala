@@ -30,11 +30,11 @@ import scala.math._
  * "scatter-and-gather" for locus-parallelizable walkers).
  *
  * @param numParts The number of equally-sized regions into which the total genomic space is partitioned;
- *                 the total number of partitions is numParts + 1, with the "+1" resulting from one
- *                 extra partition that is used to capture null or UNMAPPED values of the ReferencePosition
- *                 type.
+ *   the total number of partitions is numParts + 1, with the "+1" resulting from one
+ *   extra partition that is used to capture null or UNMAPPED values of the ReferencePosition
+ *   type.
  * @param seqLengths a map relating sequence-name to length and indicating the set and length of all extant
- *                   sequences in the genome.
+ *   sequences in the genome.
  */
 case class GenomicPositionPartitioner(numParts: Int, seqLengths: Map[String, Long]) extends Partitioner with Logging {
 

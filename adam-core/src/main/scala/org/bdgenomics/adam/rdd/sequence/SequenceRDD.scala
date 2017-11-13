@@ -210,7 +210,7 @@ sealed abstract class SequenceRDD extends AvroGenomicRDD[Sequence, SequenceProdu
    *
    * @param maximumLength Maximum length.
    * @return Returns a new SliceRDD from the sequences in this RDD sliced
-   *    to the specified maximum length.
+   *   to the specified maximum length.
    */
   def slice(maximumLength: Long): SliceRDD = {
     def sliceSequence(sequence: Sequence): Seq[Slice] = {
@@ -273,7 +273,7 @@ sealed abstract class SequenceRDD extends AvroGenomicRDD[Sequence, SequenceProdu
    *
    * @param region Region to overlap.
    * @return Returns a new SliceRDD from the sequences in this RDD sliced
-   *    to overlap the specified region.
+   *   to overlap the specified region.
    */
   def slice(region: ReferenceRegion): SliceRDD = {
     SliceRDD(filterByOverlappingRegion(region).rdd.map(sequence => slice(sequence, region)))
@@ -300,7 +300,7 @@ sealed abstract class SequenceRDD extends AvroGenomicRDD[Sequence, SequenceProdu
    *
    * @param regions Regions to overlap.
    * @return Returns a new SliceRDD from the sequences in this RDD sliced
-   *    to overlap the specified regions.
+   *   to overlap the specified regions.
    */
   def slice(regions: Iterable[ReferenceRegion]): SliceRDD = {
     SliceRDD(filterByOverlappingRegions(regions).rdd.flatMap(sequence => slice(sequence, regions)))

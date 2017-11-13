@@ -154,7 +154,7 @@ private[adam] class NonoverlappingRegions(regions: Iterable[ReferenceRegion]) ex
    * @param regionable The input, which corresponds to a region
    * @tparam U The type of the input
    * @return An Iterable[ReferenceRegion], where each element of the Iterable is a nonoverlapping-region
-   *         defined by 1 or more input-set regions.
+   *   defined by 1 or more input-set regions.
    */
   def regionsFor[U](regionable: (ReferenceRegion, U)): Iterable[ReferenceRegion] =
     findOverlappingRegions(regionable._1)
@@ -200,11 +200,11 @@ private[adam] object NonoverlappingRegions {
  * the scaladocs to NonoverlappingRegions.
  *
  * @param regions A Seq of ReferencRegions, pre-partitioned by their
- *                referenceNames.  So, for a given pair (x, regs) in
- *                this Seq, all regions R in regs must satisfy
- *                R.referenceName == x.  Furthermore, all the x's must
- *                be valid reference names with respect to the sequence
- *                dictionary.
+ *   referenceNames.  So, for a given pair (x, regs) in
+ *   this Seq, all regions R in regs must satisfy
+ *   R.referenceName == x.  Furthermore, all the x's must
+ *   be valid reference names with respect to the sequence
+ *   dictionary.
  */
 private[adam] class MultiContigNonoverlappingRegions(
     regions: Seq[(String, Iterable[ReferenceRegion])]) extends Serializable {
@@ -225,7 +225,7 @@ private[adam] class MultiContigNonoverlappingRegions(
    * @param regionable The input, which corresponds to a region
    * @tparam U The type of the input
    * @return An Iterable[ReferenceRegion], where each element of the Iterable is a nonoverlapping-region
-   *         defined by 1 or more input-set regions.
+   *   defined by 1 or more input-set regions.
    */
   def regionsFor[U](regionable: (ReferenceRegion, U)): Iterable[ReferenceRegion] =
     regionMap.get(regionable._1.referenceName).fold(Iterable[ReferenceRegion]())(_.regionsFor(regionable))
@@ -238,7 +238,7 @@ private[adam] class MultiContigNonoverlappingRegions(
    * @param value The input value
    * @tparam U
    * @return a boolean -- the input value should only participate in the regionJoin if the return value
-   *         here is 'true'.
+   *   here is 'true'.
    */
   def filter[U](value: (ReferenceRegion, U)): Boolean =
     regionMap.get(value._1.referenceName).fold(false)(_.hasRegionsFor(value))

@@ -365,7 +365,7 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
    *
    * @param region Region to extract.
    * @return Return the specified region from this RDD of slices as a string, merging
-   *         slices if necessary.
+   *   slices if necessary.
    */
   def extract(region: ReferenceRegion): String = {
     def getString(slice: (ReferenceRegion, Slice)): (ReferenceRegion, String) = {
@@ -424,7 +424,7 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
    *
    * @param regions Zero or more regions to extract.
    * @return Return the specified regions from this RDD of slices as an RDD of (ReferenceRegion,
-   *         String) tuples, merging slices if necessary.
+   *   String) tuples, merging slices if necessary.
    */
   def extractRegions(regions: Iterable[ReferenceRegion]): RDD[(ReferenceRegion, String)] = {
     def extractSequence(sliceRegion: ReferenceRegion, slice: Slice, region: ReferenceRegion): (ReferenceRegion, String) = {

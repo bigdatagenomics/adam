@@ -2235,14 +2235,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * * Strand bias components (SB)
    * * Phase info (PS,PQ)
    *
-   * @param pathName     The path name to load VCF variant context records from.
-   *                     Globs/directories are supported.
-   * @param infoFields   The info fields to include, in addition to the ID and
-   *                     FILTER attributes.
+   * @param pathName The path name to load VCF variant context records from.
+   *   Globs/directories are supported.
+   * @param infoFields The info fields to include, in addition to the ID and
+   *   FILTER attributes.
    * @param formatFields The format fields to include, in addition to the core
-   *                     fields listed above.
-   * @param stringency   The validation stringency to use when validating VCF format.
-   *                     Defaults to ValidationStringency.STRICT.
+   *   fields listed above.
+   * @param stringency The validation stringency to use when validating VCF format.
+   *   Defaults to ValidationStringency.STRICT.
    * @return Returns a VariantContextRDD.
    */
   def loadVcfWithProjection(
@@ -2402,39 +2402,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load sequences from FASTA into a SequenceRDD.
-   *
-   * @param pathName The path name to load sequences from.
-   *                 Globs/directories are supported.
-   * @return Returns a SequenceRDD.
-   */
-  /*
-  def loadFasta(pathName: String): SequenceRDD = LoadFasta.time {
-
-    val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
-      pathName,
-      classOf[TextInputFormat],
-      classOf[LongWritable],
-      classOf[Text]
-    )
-    if (Metrics.isRecording) fastaData.instrument() else fastaData
-
-    val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
-
-    // convert rdd and cache
-    val fragmentRdd = FastaConverter(remapData).cache()
-
-    SequenceRDD(fragmentRdd)
-  }
-  */
-
-  /**
    * Load slices from FASTA into a SliceRDD.
    *
-   * @param pathName      The path name to load slices from.
-   *                      Globs/directories are supported.
+   * @param pathName The path name to load slices from.
+   *   Globs/directories are supported.
    * @param maximumLength Maximum fragment length. Values greater
-   *                      than 1e9 should be avoided.
+   *   than 1e9 should be avoided.
    * @return Returns a SliceRDD.
    */
   def loadFasta(
@@ -2456,7 +2429,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       .cache()
 
     // build sequence dictionary
-    // get sequence dictionary
     val sd = new SequenceDictionary(slices.flatMap(slice => {
       if (slice.getName != null) {
         Some(SequenceRecord.fromSlice(slice))
@@ -2758,8 +2730,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into a ReadRDD.
    *
-   * @param pathName     The path name to load sequences from.
-   *                     Globs/directories are supported.
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported.
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
@@ -2790,12 +2762,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into a SequenceRDD.
    *
-   * @param pathName      The path name to load sequences from.
-   *                      Globs/directories are supported.
-   * @param optPredicate  An optional pushdown predicate to use when reading Parquet + Avro.
-   *                      Defaults to None.
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
-   *                      Defaults to None.
+   *   Defaults to None.
    * @return Returns a SequenceRDD.
    */
   def loadParquetSequences(
@@ -2822,12 +2794,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name in Parquet + Avro format into a SliceRDD.
    *
-   * @param pathName      The path name to load sequences from.
-   *                      Globs/directories are supported.
-   * @param optPredicate  An optional pushdown predicate to use when reading Parquet + Avro.
-   *                      Defaults to None.
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
-   *                      Defaults to None.
+   *   Defaults to None.
    * @return Returns a SequenceRDD.
    */
   def loadParquetSlices(
@@ -3044,13 +3016,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @see loadFasta
    * @see loadParquetSequences
-   * @param pathName      The path name to load sequences from.
-   *                      Globs/directories are supported, although file extension must be present
-   *                       for FASTA format.
-   * @param optPredicate   An optional pushdown predicate to use when reading Parquet + Avro.
-   *                      Defaults to None.
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
-   *                      Defaults to None.
+   *   Defaults to None.
    * @return Returns a SequenceRDD.
    */
   def loadSequences(
@@ -3079,11 +3051,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @see loadFasta
    * @see loadParquetSlices
-   * @param pathName      The path name to load slices from.
-   *                      Globs/directories are supported, although file extension must be present
-   *                      for FASTA format.
+   * @param pathName The path name to load slices from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
    * @param maximumLength Maximum slice length. Defaults to 10000L. Values greater
-   *                      than 1e9 should be avoided.
+   *   than 1e9 should be avoided.
    * @param optPredicate  An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.

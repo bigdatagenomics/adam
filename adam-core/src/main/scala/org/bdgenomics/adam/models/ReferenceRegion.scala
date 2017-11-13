@@ -370,8 +370,8 @@ object ReferenceRegion {
  * @param referenceName The name of the sequence (chromosome) in the reference genome
  * @param start The 0-based residue-coordinate for the start of the region
  * @param end The 0-based residue-coordinate for the first residue <i>after</i> the start
- *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
- *            half-open interval.
+ *   which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
+ *   half-open interval.
  * @param strand The strand of the genome that this region exists on.
  */
 case class ReferenceRegion(
@@ -409,7 +409,7 @@ case class ReferenceRegion(
    * Merges two reference regions that are within a threshold of each other.
    *
    * @throws IllegalArgumentException Thrown if regions are not within the
-   *         distance threshold.
+   *   distance threshold.
    * @param other Other region to merge with this region.
    * @return The merger of both unions.
    * @see hull
@@ -530,8 +530,8 @@ case class ReferenceRegion(
    *
    * @param other Region to compare against.
    * @return Returns an option containing the number of positions of overlap
-   *         between two points. If the two regions do not overlap, we return
-   *         an empty option.
+   *   between two points. If the two regions do not overlap, we return
+   *   an empty option.
    */
   def overlapsBy(other: ReferenceRegion): Option[Long] = {
     if (overlaps(other)) {
@@ -548,8 +548,8 @@ case class ReferenceRegion(
    *
    * @param other Region to compare against.
    * @return Returns an option containing the number of positions of coverage
-   *         between two points. If the two regions do not cover each other,
-   *         we return an empty option.
+   *   between two points. If the two regions do not cover each other,
+   *   we return an empty option.
    */
   def coversBy(other: ReferenceRegion): Option[Long] = {
     if (covers(other)) {
