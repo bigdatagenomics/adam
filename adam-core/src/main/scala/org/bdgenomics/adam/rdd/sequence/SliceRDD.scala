@@ -19,9 +19,14 @@ package org.bdgenomics.adam.rdd.sequence
 
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
+import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
+import org.bdgenomics.adam.rdd.read.{
+AlignmentRecordRDD,
+ReadRDD
+}
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
   JavaSaveArgs
@@ -30,6 +35,7 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Slice => SliceProduct }
 import org.bdgenomics.formats.avro.{
+AlignmentRecord,
   QualityScoreVariant,
   Read,
   Sequence,
@@ -39,9 +45,10 @@ import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
 }
-import org.bdgenomics.utils.misc.Logging
 import scala.collection.JavaConversions._
+import scala.math._
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class SliceArray(
     array: Array[(ReferenceRegion, Slice)],
@@ -177,6 +184,8 @@ case class RDDBoundSliceRDD private[rdd] (
 
 sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, SliceRDD] {
 
+  @transient val uTag: TypeTag[SliceProduct] = typeTag[SliceProduct]
+
   protected def buildTree(rdd: RDD[(ReferenceRegion, Slice)])(
     implicit tTag: ClassTag[Slice]): IntervalArray[ReferenceRegion, Slice] = {
     IntervalArray(rdd, SliceArray.apply(_, _))
@@ -276,6 +285,22 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
   }
 
   /**
+    * Convert this RDD of slices into alignments.
+    *
+    * @return Returns a new AlignmentRecordRDD converted from this RDD of slices.
+    */
+  def toAlignments: AlignmentRecordRDD = {
+    def toAlignments(slice: Slice): AlignmentRecord = {
+      AlignmentRecord.newBuilder()
+        .setContigName(slice.getName)
+        .setStart(slice.getStart)
+        .setEnd(slice.getEnd)
+        .build()
+    }
+    AlignmentRecordRDD(rdd.map(toAlignments), sequences, RecordGroupDictionary.empty, Seq.empty)
+  }
+
+  /**
    * Save slices as Parquet or FASTA.
    *
    * If filename ends in .fa or .fasta, saves as FASTA. If not, saves slices
@@ -332,6 +357,162 @@ sealed abstract class SliceRDD extends AvroGenomicRDD[Slice, SliceProduct, Slice
       filePath,
       asSingleFile = asSingleFile,
       disableFastConcat = disableFastConcat)
+  }
+
+  /**
+    * Extract the specified region from this RDD of slices as a string, merging
+    * slices if necessary.
+    *
+    * @param region Region to extract.
+    * @return Return the specified region from this RDD of slices as a string, merging
+    *         slices if necessary.
+    */
+  def extract(region: ReferenceRegion): String = {
+    def getString(slice: (ReferenceRegion, Slice)): (ReferenceRegion, String) = {
+      val trimStart = max(0, region.start - slice._1.start).toInt
+      val trimEnd = max(0, slice._1.end - region.end).toInt
+
+      val fragmentSequence: String = slice._2.getSequence
+
+      val str = fragmentSequence.drop(trimStart)
+        .dropRight(trimEnd)
+      val reg = new ReferenceRegion(
+        slice._1.referenceName,
+        slice._1.start + trimStart,
+        slice._1.end - trimEnd
+      )
+      (reg, str)
+    }
+
+    def reducePairs(
+                     kv1: (ReferenceRegion, String),
+                     kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
+      assert(kv1._1.isAdjacent(kv2._1), "Regions being joined must be adjacent. For: " +
+        kv1 + ", " + kv2)
+
+      (kv1._1.merge(kv2._1), if (kv1._1.compareTo(kv2._1) <= 0) {
+        kv1._2 + kv2._2
+      } else {
+        kv2._2 + kv1._2
+      })
+    }
+
+    try {
+      val refPairRDD: RDD[(ReferenceRegion, String)] = rdd.keyBy(ReferenceRegion(_))
+        .filter(kv => kv._1.isDefined)
+        .map(kv => (kv._1.get, kv._2))
+        .filter(kv => kv._1.overlaps(region))
+        .sortByKey()
+        .map(kv => getString(kv))
+
+      val pair: (ReferenceRegion, String) = refPairRDD.collect.reduceLeft(reducePairs)
+      assert(
+        pair._1.compareTo(region) == 0,
+        "Merging slices returned a different region than requested."
+      )
+
+      pair._2
+    } catch {
+      case (uoe: UnsupportedOperationException) =>
+        throw new UnsupportedOperationException("Could not find " + region + "in reference RDD.")
+    }
+  }
+
+  /**
+    * Extract the specified regions from this RDD of slices as an RDD of (ReferenceRegion,
+    * String) tuples, merging slices if necessary.
+    *
+    * @param regions Zero or more regions to extract.
+    * @return Return the specified regions from this RDD of slices as an RDD of (ReferenceRegion,
+    *         String) tuples, merging slices if necessary.
+    */
+  def extractRegions(regions: Iterable[ReferenceRegion]): RDD[(ReferenceRegion, String)] = {
+    def extractSequence(sliceRegion: ReferenceRegion, slice: Slice, region: ReferenceRegion): (ReferenceRegion, String) = {
+      val merged = sliceRegion.intersection(region)
+      val start = (merged.start - sliceRegion.start).toInt
+      val end = (merged.end - sliceRegion.start).toInt
+      val fragmentSequence: String = slice.getSequence
+      (merged, fragmentSequence.substring(start, end))
+    }
+
+    def reduceRegionSequences(
+                               kv1: (ReferenceRegion, String),
+                               kv2: (ReferenceRegion, String)): (ReferenceRegion, String) = {
+      (kv1._1.merge(kv2._1), if (kv1._1.compareTo(kv2._1) <= 0) {
+        kv1._2 + kv2._2
+      } else {
+        kv2._2 + kv1._2
+      })
+    }
+
+    val places = flattenRddByRegions()
+      .flatMap {
+        case (sliceRegion, slice) =>
+          regions.collect {
+            case region if sliceRegion.overlaps(region) =>
+              (region, extractSequence(sliceRegion, slice, region))
+          }
+      }.sortByKey()
+
+    places.reduceByKey(reduceRegionSequences).values
+  }
+
+  /**
+    * For all adjacent slices in this RDD, we extend the slices so that the adjacent
+    * slices now overlap by _n_ bases, where _n_ is the flank length.
+    *
+    * Java friendly variant.
+    *
+    * @param flankLength The length to extend adjacent slices by.
+    * @return Returns this RDD, with all adjacent slices extended with flanking sequence.
+    */
+  def flankAdjacent(flankLength: java.lang.Integer): SliceRDD = {
+    val flank: Int = flankLength
+    flankAdjacent(flank)
+  }
+
+  /**
+    * For all adjacent slices in this RDD, we extend the slices so that the adjacent
+    * slices now overlap by _n_ bases, where _n_ is the flank length.
+    *
+    * @param flankLength The length to extend adjacent slices by.
+    * @return Returns this RDD, with all adjacent slices extended with flanking sequence.
+    */
+  def flankAdjacent(flankLength: Int): SliceRDD = {
+    replaceRdd(FlankSlices(rdd,
+      sequences,
+      flankLength))
+  }
+
+  /**
+    * Counts the k-mers contained in this RDD of slices.
+    *
+    * @param kmerLength The length of k-mers to count.
+    * @return Returns an RDD containing k-mer/count pairs.
+    */
+  def countKmers(kmerLength: Int): RDD[(String, Long)] = {
+    flankAdjacent(kmerLength).rdd.flatMap(r => {
+      // cut each read into k-mers, and attach a count of 1L
+      r.getSequence
+        .sliding(kmerLength)
+        .map(k => (k, 1L))
+    }).reduceByKey((k1: Long, k2: Long) => k1 + k2)
+  }
+
+  /**
+    * Counts the k-mers contained in this RDD of slices.
+    *
+    * Java friendly variant.
+    *
+    * @param kmerLength The length of k-mers to count.
+    * @return Returns an RDD containing k-mer/count pairs.
+    */
+  def countKmers(
+                  kmerLength: java.lang.Integer): JavaRDD[(String, java.lang.Long)] = {
+    val k: Int = kmerLength
+    countKmers(k).map(p => {
+      (p._1, p._2: java.lang.Long)
+    }).toJavaRDD()
   }
 
   /**

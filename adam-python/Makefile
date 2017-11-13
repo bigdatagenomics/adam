@@ -26,13 +26,13 @@ The 'prepare' target installs ADAM's build requirements into the current virtual
 
 The 'develop' target creates an editable install of ADAM and its runtime requirements in the 
 current virtualenv. The install is called 'editable' because changes to the source code 
-immediately affect the virtualenv.
+immediately affect the virtualenv. This target also builds a .egg.
 
 The 'clean' target undoes the effect of 'develop'.
 
 The 'test' target runs ADAM's unit tests. Set the 'tests' variable to run a particular test, e.g.
 
-	make test tests=src/adam/test/sort/sortTest.py::SortTest::testSort
+	make test tests=bdgenomics/adam/test/sort/sortTest.py::SortTest::testSort
 
 The 'pypi' target publishes the current commit of ADAM to PyPI after enforcing that the working
 copy and the index are clean, and tagging it as an unstable .dev build.
@@ -46,7 +46,7 @@ help:
 SHELL=bash
 python=python2.7
 pip=pip
-tests=src
+tests=bdgenomics
 extras=
 adam_version:=$(shell $(python) version.py)
 sdist_name:=adam-$(adam_version).tar.gz
@@ -60,9 +60,10 @@ red=\033[0;31m
 
 develop:
 	$(pip) install -e .$(extras)
+	$(python) setup.py bdist_egg
 clean_develop:
 	- $(pip) uninstall -y adam
-	- rm -rf src/*.egg-info
+	- rm -rf bdgenomics/*.egg*
 
 sdist: dist/$(sdist_name)
 dist/$(sdist_name):

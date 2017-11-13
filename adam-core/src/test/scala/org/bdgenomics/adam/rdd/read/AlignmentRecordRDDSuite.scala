@@ -33,7 +33,11 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ ADAMContext, TestSaveArgs }
+import org.bdgenomics.adam.rdd.{
+  ADAMContext,
+  ManualRegionPartitioner,
+  TestSaveArgs
+}
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
@@ -857,6 +861,29 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(records === newRecords)
   }
 
+  sparkTest("don't lose any reads when piping fastq to sam") {
+    // write suffixes at end of reads
+    sc.hadoopConfiguration.setBoolean(AlignmentRecordRDD.WRITE_SUFFIXES, true)
+
+    val fragmentsPath = testFile("interleaved_fastq_sample1.ifq")
+    val ardd = sc.loadFragments(fragmentsPath).toReads
+    val records = ardd.rdd.count
+    assert(records === 6)
+    assert(ardd.dataset.count === 6)
+    assert(ardd.dataset.rdd.count === 6)
+
+    implicit val tFormatter = FASTQInFormatter
+    implicit val uFormatter = new AnySAMOutFormatter
+
+    // this script converts interleaved fastq to unaligned sam
+    val scriptPath = testFile("fastq_to_usam.py")
+
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe("python $0",
+      files = Seq(scriptPath))
+    val newRecords = pipedRdd.rdd.count
+    assert(records === newRecords)
+  }
+
   sparkTest("can properly set environment variables inside of a pipe") {
     val reads12Path = testFile("reads12.sam")
     val smallPath = testFile("small.sam")
@@ -947,6 +974,52 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(c.count(_._1.isDefined) === 5)
   }
 
+  sparkTest("use shuffle join with feature spanning partitions") {
+    def makeReadAndRegion(partition: Int,
+                          contigName: String,
+                          start: Long,
+                          end: Long): ((ReferenceRegion, Int), AlignmentRecord) = {
+      ((ReferenceRegion(contigName, start, end),
+        partition),
+        AlignmentRecord.newBuilder
+        .setReadMapped(true)
+        .setContigName(contigName)
+        .setStart(start)
+        .setEnd(end)
+        .build)
+    }
+
+    val sd = SequenceDictionary(SequenceRecord("chr1", 51L),
+      SequenceRecord("chr2", 51L))
+
+    val reads = RDDBoundAlignmentRecordRDD(sc.parallelize(Seq(makeReadAndRegion(0, "chr1", 10L, 20L),
+      makeReadAndRegion(1, "chr1", 40L, 50L),
+      makeReadAndRegion(1, "chr2", 10L, 20L),
+      makeReadAndRegion(1, "chr2", 20L, 30L),
+      makeReadAndRegion(2, "chr2", 40L, 50L)))
+      .repartitionAndSortWithinPartitions(ManualRegionPartitioner(3))
+      .map(_._2),
+      sd,
+      RecordGroupDictionary.empty,
+      Seq.empty,
+      Some(Array(
+        Some(ReferenceRegion("chr1", 10L, 20L), ReferenceRegion("chr1", 10L, 20L)),
+        Some(ReferenceRegion("chr1", 40L, 50L), ReferenceRegion("chr2", 20L, 30L)),
+        Some(ReferenceRegion("chr2", 40L, 50L), ReferenceRegion("chr2", 40L, 50L)))))
+
+    val features = FeatureRDD(sc.parallelize(Seq(Feature.newBuilder
+      .setContigName("chr2")
+      .setStart(20L)
+      .setEnd(50L)
+      .build)), sd)
+
+    val joined = reads.shuffleRegionJoin(features).rdd.collect
+
+    assert(joined.size === 2)
+    assert(joined.exists(_._1.getStart == 20L))
+    assert(joined.exists(_._1.getStart == 40L))
+  }
+
   sparkTest("use shuffle join to pull down reads mapped to targets") {
     val readsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
@@ -957,10 +1030,8 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.shuffleRegionJoin(targets)
-    val jRdd0 = reads.shuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = reads.shuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
-    // we can't guarantee that we get exactly the number of partitions requested,
-    // we get close though
     assert(jRdd.rdd.partitions.length === 1)
     assert(jRdd0.rdd.partitions.length === 4)
 
@@ -976,6 +1047,26 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(sc.loadAlignments(tempPath).rdd.count === 5)
   }
 
+  sparkTest("use shuffle join with flankSize to pull down reads mapped close to targets") {
+    val readsPath = testFile("small.1.sam")
+    val targetsPath = testFile("small.1.bed")
+
+    val reads = sc.loadAlignments(readsPath)
+      .transform(_.repartition(1))
+
+    val targets = sc.loadFeatures(targetsPath)
+      .transform(_.repartition(1))
+
+    val jRdd = reads.shuffleRegionJoin(targets, flankSize = 20000000L)
+    val jRdd0 = reads.shuffleRegionJoin(targets, optPartitions = Some(4), flankSize = 20000000L)
+
+    assert(jRdd.rdd.partitions.length === 1)
+    assert(jRdd0.rdd.partitions.length === 4)
+
+    assert(jRdd.rdd.count === 17)
+    assert(jRdd0.rdd.count === 17)
+  }
+
   sparkTest("use right outer shuffle join to pull down reads mapped to targets") {
     val readsPath = testFile("small.1.sam")
     val targetsPath = testFile("small.1.bed")
@@ -986,7 +1077,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.rightOuterShuffleRegionJoin(targets)
-    val jRdd0 = reads.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = reads.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -1011,7 +1102,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.leftOuterShuffleRegionJoin(targets)
-    val jRdd0 = reads.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = reads.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -1036,7 +1127,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.fullOuterShuffleRegionJoin(targets)
-    val jRdd0 = reads.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = reads.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -1065,7 +1156,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.shuffleRegionJoinAndGroupByLeft(targets)
-    val jRdd0 = reads.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+    val jRdd0 = reads.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -1090,7 +1181,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
-    val jRdd0 = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+    val jRdd0 = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -1379,5 +1470,66 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(htsjdkPg.getProgramName === "myProgram")
     assert(htsjdkPg.getProgramVersion === "1")
     assert(htsjdkPg.getPreviousProgramGroupId === "ppg")
+  }
+
+  sparkTest("GenomicRDD.sort does not fail on unmapped reads") {
+    val inputPath = testFile("unmapped.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+    assert(reads.rdd.count === 200)
+
+    val sorted = reads.sort(stringency = ValidationStringency.SILENT)
+    assert(sorted.rdd.count === 102)
+  }
+
+  sparkTest("GenomicRDD.sortLexicographically does not fail on unmapped reads") {
+    val inputPath = testFile("unmapped.sam")
+    val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
+    assert(reads.rdd.count === 200)
+
+    val sorted = reads.sortLexicographically(
+      stringency = ValidationStringency.SILENT)
+    assert(sorted.rdd.count === 102)
+  }
+
+  sparkTest("left normalize indels") {
+    val reads = Seq(
+      AlignmentRecord.newBuilder()
+        .setReadMapped(false)
+        .build(),
+      AlignmentRecord.newBuilder()
+        .setReadMapped(true)
+        .setSequence("AAAAACCCCCGGGGGTTTTT")
+        .setStart(0)
+        .setCigar("10M2D10M")
+        .setMismatchingPositions("10^CC10")
+        .build(),
+      AlignmentRecord.newBuilder()
+        .setReadMapped(true)
+        .setSequence("AAAAACCCCCGGGGGTTTTT")
+        .setStart(0)
+        .setCigar("10M10D10M")
+        .setMismatchingPositions("10^ATATATATAT10")
+        .build(),
+      AlignmentRecord.newBuilder()
+        .setSequence("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        .setReadMapped(true)
+        .setCigar("29M10D31M")
+        .setStart(5)
+        .setMismatchingPositions("29^GGGGGGGGGG10G0G0G0G0G0G0G0G0G0G11")
+        .build())
+
+    // obviously, this isn't unaligned, but, we don't use the metadata here
+    val rdd = AlignmentRecordRDD.unaligned(sc.parallelize(reads))
+      .leftNormalizeIndels()
+
+    val normalized = rdd.rdd.collect
+
+    assert(normalized.size === 4)
+    val cigars = normalized.flatMap(r => {
+      Option(r.getCigar)
+    }).toSet
+    assert(cigars("5M2D15M"))
+    assert(cigars("10M10D10M"))
+    assert(cigars("29M10D31M"))
   }
 }

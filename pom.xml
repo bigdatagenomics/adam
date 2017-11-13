@@ -16,23 +16,20 @@
   <description>A fast, scalable genome analysis system</description>
   <url>http://bdgenomics.org/</url>
 
-  <prerequisites>
-    <maven>3.1.1</maven>
-  </prerequisites>
   <properties>
     <java.version>1.8</java.version>
     <avro.version>1.8.1</avro.version>
     <scala.version>2.10.6</scala.version>
     <scala.version.prefix>2.10</scala.version.prefix>
     <spark.version>1.6.3</spark.version>
-    <parquet.version>1.8.1</parquet.version>
+    <parquet.version>1.8.2</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.7.3</hadoop.version>
-    <hadoop-bam.version>7.8.0</hadoop-bam.version>
-    <slf4j.version>1.7.22</slf4j.version>
-    <bdg-formats.version>0.11.1</bdg-formats.version>
+    <hadoop-bam.version>7.9.0</hadoop-bam.version>
+    <slf4j.version>1.7.25</slf4j.version>
+    <bdg-formats.version>0.11.3</bdg-formats.version>
     <bdg-utils.version>0.2.13</bdg-utils.version>
-    <htsjdk.version>2.9.1</htsjdk.version>
+    <htsjdk.version>2.11.0</htsjdk.version>
     <scoverage.plugin.version>1.1.1</scoverage.plugin.version>
   </properties>
 
@@ -350,6 +347,7 @@
         <groupId>org.scala-lang</groupId>
         <artifactId>scala-library</artifactId>
         <version>${scala.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
@@ -408,6 +406,12 @@
         <groupId>org.hammerlab</groupId>
         <artifactId>genomic-loci_${scala.version.prefix}</artifactId>
         <version>1.4.4</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.bdgenomics.bdg-formats</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
@@ -509,7 +513,22 @@
       <dependency>
         <groupId>org.apache.parquet</groupId>
         <artifactId>parquet-avro</artifactId>
-        <version>${parquet.version}</version>
+        <!--
+            IMPORTANT NOTE
+            ==============
+            Spark 2.2.0 bumps to Parquet 1.8.2, but keeps Avro at 1.7.3. This
+            causes an issue when using parquet-avro 1.8.2, which relies on a
+            method that is new in Avro 1.8.x. The recommended workaround is to
+            pin parquet-avro to 1.8.1, instead of 1.8.2, as described in the
+            Spark 2.2.0 release notes.
+        -->
+        <version>1.8.1</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.parquet</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.parquet</groupId>
@@ -629,8 +648,8 @@
         <module>adam-apis</module>
         <module>adam-cli</module>
         <module>adam-assembly</module>
-        <!-- distribution should be last -->
-        <module>distribution</module>
+        <!-- adam-distribution should be last -->
+        <module>adam-distribution</module>
       </modules>
       <build>
         <plugins>

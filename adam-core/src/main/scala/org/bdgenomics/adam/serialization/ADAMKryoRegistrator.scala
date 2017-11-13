@@ -287,8 +287,8 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
 
     // org.apache.spark
     try {
-      val cls = Class.forName("org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage")
-      kryo.register(cls)
+      kryo.register(Class.forName("org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"))
+      kryo.register(Class.forName("org.apache.spark.sql.execution.datasources.FileFormatWriter$WriteTaskResult"))
     } catch {
       case cnfe: java.lang.ClassNotFoundException => {
         log.info("Did not find Spark internal class. This is expected for Spark 1.")
@@ -310,6 +310,7 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     // scala
     kryo.register(classOf[scala.Array[scala.Array[Byte]]])
     kryo.register(classOf[scala.Array[htsjdk.variant.vcf.VCFHeader]])
+    kryo.register(classOf[scala.Array[java.lang.Integer]])
     kryo.register(classOf[scala.Array[java.lang.Long]])
     kryo.register(classOf[scala.Array[java.lang.Object]])
     kryo.register(classOf[scala.Array[org.apache.spark.sql.catalyst.InternalRow]])

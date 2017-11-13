@@ -23,6 +23,21 @@
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
           <execution>
+            <id>doc-r</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>R</executable>
+              <workingDirectory>bdgenomics.adam</workingDirectory>
+              <arguments>
+                <argument>-e</argument>
+                <argument>library(devtools);devtools::document()</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
             <id>dev-r</id>
             <phase>process-resources</phase>
             <goals>
@@ -33,7 +48,7 @@
               <arguments>
                 <argument>CMD</argument>
                 <argument>build</argument>
-                <argument>bdg.adam/</argument>
+                <argument>bdgenomics.adam/</argument>
               </arguments>
             </configuration>
           </execution>
@@ -48,8 +63,9 @@
               <arguments>
                 <argument>CMD</argument>
                 <argument>check</argument>
-                <argument>bdg.adam/</argument>
+                <argument>bdgenomics.adam/</argument>
               </arguments>
+              <skip>${skipTests}</skip>
             </configuration>
           </execution>
         </executions>

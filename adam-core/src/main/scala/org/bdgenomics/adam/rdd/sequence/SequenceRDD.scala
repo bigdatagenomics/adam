@@ -22,6 +22,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
+import org.bdgenomics.adam.rdd.read.ReadRDD
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
   JavaSaveArgs
@@ -40,9 +41,9 @@ import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
 }
-import org.bdgenomics.utils.misc.Logging
 import scala.collection.mutable.MutableList
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class SequenceArray(
     array: Array[(ReferenceRegion, Sequence)],
@@ -178,6 +179,8 @@ case class RDDBoundSequenceRDD private[rdd] (
 
 sealed abstract class SequenceRDD extends AvroGenomicRDD[Sequence, SequenceProduct, SequenceRDD] {
 
+  @transient val uTag: TypeTag[SequenceProduct] = typeTag[SequenceProduct]
+
   protected def buildTree(rdd: RDD[(ReferenceRegion, Sequence)])(
     implicit tTag: ClassTag[Sequence]): IntervalArray[ReferenceRegion, Sequence] = {
     IntervalArray(rdd, SequenceArray.apply(_, _))
@@ -283,7 +286,7 @@ sealed abstract class SequenceRDD extends AvroGenomicRDD[Sequence, SequenceProdu
    * @return Returns one or more slices from the sequence overlapping the specified regions.
    */
   private def slice(sequence: Sequence, regions: Iterable[ReferenceRegion]): Iterable[Slice] = {
-    val sequenceRegion = ReferenceRegion(sequence)
+    val sequenceRegion = ReferenceRegion(sequence).get
     regions.map(region =>
       if (region.covers(sequenceRegion)) {
         Some(slice(sequence, region))
@@ -295,7 +298,7 @@ sealed abstract class SequenceRDD extends AvroGenomicRDD[Sequence, SequenceProdu
   /**
    * Slice the sequences in this RDD overlapping the specified regions.
    *
-   * @param region Regions to overlap.
+    * @param regions Regions to overlap.
    * @return Returns a new SliceRDD from the sequences in this RDD sliced
    *    to overlap the specified regions.
    */
@@ -413,6 +416,6 @@ sealed abstract class SequenceRDD extends AvroGenomicRDD[Sequence, SequenceProdu
    * @return Returns a reference region that covers the entirety of the sequence.
    */
   protected def getReferenceRegions(sequence: Sequence): Seq[ReferenceRegion] = {
-    Seq(ReferenceRegion(sequence))
+    Seq(ReferenceRegion(sequence).get)
   }
 }

@@ -264,13 +264,13 @@ class ReferenceRegionSuite extends FunSuite {
     // right end unstranded
     assert(ReferenceRegion("chr0", 10, 100, Strand.FORWARD).subtract(ReferenceRegion("chr0", 90, 150, Strand.REVERSE), false) === List(ReferenceRegion("chr0", 10, 90)))
     // left end unstranded
-    assert(ReferenceRegion("chr0", 90, 150, Strand.REVERSE).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), false) === List(ReferenceRegion("chr0", 90, 100)))
+    assert(ReferenceRegion("chr0", 90, 150, Strand.REVERSE).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), false) === List(ReferenceRegion("chr0", 100, 150)))
     // contained unstranded
     assert(ReferenceRegion("chr0", 2, 150, Strand.REVERSE).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), false) === List(ReferenceRegion("chr0", 2, 10), ReferenceRegion("chr0", 100, 150)))
     // right end stranded
     assert(ReferenceRegion("chr0", 10, 100, Strand.FORWARD).subtract(ReferenceRegion("chr0", 90, 150, Strand.FORWARD), true) === List(ReferenceRegion("chr0", 10, 90, Strand.FORWARD)))
     // left end stranded
-    assert(ReferenceRegion("chr0", 90, 150, Strand.FORWARD).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), true) === List(ReferenceRegion("chr0", 90, 100, Strand.FORWARD)))
+    assert(ReferenceRegion("chr0", 90, 150, Strand.FORWARD).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), true) === List(ReferenceRegion("chr0", 100, 150, Strand.FORWARD)))
     // contained stranded
     assert(ReferenceRegion("chr0", 2, 150, Strand.FORWARD).subtract(ReferenceRegion("chr0", 10, 100, Strand.FORWARD), true) === List(ReferenceRegion("chr0", 2, 10, Strand.FORWARD), ReferenceRegion("chr0", 100, 150, Strand.FORWARD)))
 
@@ -532,12 +532,28 @@ class ReferenceRegionSuite extends FunSuite {
     assert(padded.end === 5L)
   }
 
+  test("uniformly pad a reference region into negative coordinate space, ensure non negative start") {
+    val rr = ReferenceRegion("1", 2L, 3L)
+    val padded = rr.pad(3)
+    assert(padded.referenceName == "1")
+    assert(padded.start === 0L)
+    assert(padded.end === 6L)
+  }
+
   test("unevenly pad a reference region") {
     val rr = ReferenceRegion("1", 2L, 4L)
     val padded = rr.pad(2, 1)
     assert(padded.referenceName == "1")
     assert(padded.start === 0L)
     assert(padded.end === 5L)
+  }
+
+  test("unevenly pad a reference region into negative coordinate space, ensure non negative start") {
+    val rr = ReferenceRegion("1", 2L, 3L)
+    val padded = rr.pad(6, 4)
+    assert(padded.referenceName == "1")
+    assert(padded.start === 0L)
+    assert(padded.end === 7L)
   }
 
   test("can build an open ended reference region") {

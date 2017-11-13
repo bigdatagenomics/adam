@@ -212,11 +212,11 @@ class IndelRealignmentTargetSuite extends ADAMFunSuite {
 
     // the first read has no indels
     // the second read has a one-base deletion and a one-base insertion
-    assert(targets_collected(0).variation.get.start == 702289 && targets_collected(0).variation.get.end == 702324)
+    // we do not generate targets for reads with multiple indels
     // the third read has a one base deletion
-    assert(targets_collected(1).variation.get.start == 807755 && targets_collected(1).variation.get.end == 807756)
+    assert(targets_collected(0).variation.get.start == 807755 && targets_collected(0).variation.get.end == 807756)
     // read 7 has a single 4 bp deletion
-    assert(targets_collected(5).variation.get.length === 4)
-    assert(targets_collected(5).variation.get.start == 869644 && targets_collected(5).variation.get.end == 869648)
+    assert(targets_collected(4).variation.get.length === 4)
+    assert(targets_collected(4).variation.get.start == 869644 && targets_collected(4).variation.get.end == 869648)
   }
 }

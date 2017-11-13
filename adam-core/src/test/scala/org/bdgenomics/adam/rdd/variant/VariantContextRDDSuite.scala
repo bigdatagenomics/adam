@@ -105,7 +105,17 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vcRdd.sequences.records(0).name === "chr11")
   }
 
-  sparkTest("can write as a single file, then read in .vcf file") {
+  sparkTest("can write as a single file via simple saveAsVcf method, then read in .vcf file") {
+    val path = new File(tempDir, "test_single.vcf")
+    variants.saveAsVcf(path.getAbsolutePath)
+    assert(path.exists)
+    val vcRdd = sc.loadVcf("%s/test_single.vcf".format(tempDir))
+    assert(vcRdd.rdd.count === 1)
+    assert(vcRdd.sequences.records.size === 1)
+    assert(vcRdd.sequences.records(0).name === "chr11")
+  }
+
+  sparkTest("can write as a single file via full saveAsVcf method, then read in .vcf file") {
     val path = new File(tempDir, "test_single.vcf")
     variants.saveAsVcf(path.getAbsolutePath,
       asSingleFile = true,
@@ -117,6 +127,52 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vcRdd.rdd.count === 1)
     assert(vcRdd.sequences.records.size === 1)
     assert(vcRdd.sequences.records(0).name === "chr11")
+  }
+
+  sparkTest("transform a vcf file with bad header") {
+    val path = testFile("invalid/truth_small_variants.vcf")
+    val before = sc.loadVcf(path, ValidationStringency.SILENT)
+    assert(before.rdd.count === 7)
+    assert(before.toGenotypes().rdd.filter(_.getPhaseSetId == null).count === 7)
+
+    val tempPath = tmpLocation(".adam")
+    before.toVariants().saveAsParquet(tempPath)
+
+    val after = sc.loadVariants(tempPath).toVariantContexts()
+    assert(after.rdd.count === 7)
+  }
+
+  sparkTest("read a vcf file with multi-allelic variants to split") {
+    val path = testFile("HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_all.fixed-phase-set.excerpt.vcf")
+    val vcs = sc.loadVcf(path, ValidationStringency.SILENT)
+    assert(vcs.rdd.count === 17)
+
+    // AD should be zero or null after splitting ref=GAAGAAAGAAAGA alt=GAAGAAAGA,GAAGA,G AD 0,0,0
+    val filtered = vcs.toGenotypes().rdd.filter(_.start == 66631043)
+    val referenceReadDepths = filtered.map(_.getAlternateReadDepth).collect()
+    val alternateReadDepths = filtered.map(_.getAlternateReadDepth).collect()
+
+    assert(referenceReadDepths.forall(rd => (rd == 0 || rd == null)))
+    assert(alternateReadDepths.forall(rd => (rd == 0 || rd == null)))
+
+    // ADALL should be zeros or null after splitting ref=GAAGAAAGAAAGA alt=GAAGAAAGA,GAAGA,G ADALL 0,0,0
+    val netAlleleDepths = filtered.map(_.getVariantCallingAnnotations.getAttributes.get("ADALL")).collect()
+
+    assert(netAlleleDepths.forall(adall => (adall == "0,0" || adall == "")))
+  }
+
+  sparkTest("support VCFs with +Inf/-Inf float values") {
+    val path = testFile("inf_float_values.vcf")
+    val vcs = sc.loadVcf(path, ValidationStringency.LENIENT)
+    val variant = vcs.toVariants().rdd.filter(_.getStart == 14396L).first()
+    assert(variant.getAnnotation.getAlleleFrequency === Float.PositiveInfinity)
+    // -Inf INFO value --> -Infinity after conversion
+    assert(variant.getAnnotation.getAttributes.get("BaseQRankSum") === "-Infinity")
+
+    val genotype = vcs.toGenotypes().rdd.filter(_.getStart == 14396L).first()
+    assert(genotype.getVariantCallingAnnotations.getRmsMapQ === Float.NegativeInfinity)
+    // +Inf FORMAT value --> Infinity after conversion
+    assert(genotype.getVariantCallingAnnotations.getAttributes.get("float") === "Infinity")
   }
 
   sparkTest("don't lose any variants when piping as VCF") {
@@ -144,13 +200,13 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
 
     // check for freebayes-specific VCF INFO keys
-    val variant = pipedRdd.toVariantRDD.rdd.first
+    val variant = pipedRdd.toVariants.rdd.first
     for (freebayesInfoKey <- Seq("NS", "DPB", "RO", "AO", "PRO", "PAO", "QR", "QA")) {
       assert(variant.getAnnotation.getAttributes.containsKey(freebayesInfoKey))
     }
 
     // check for freebayes-specific VCF FORMAT keys
-    val genotype = pipedRdd.toGenotypeRDD.rdd.first
+    val genotype = pipedRdd.toGenotypes.rdd.first
     for (freebayesFormatKey <- Seq("RO", "QR", "AO", "QA")) {
       assert(genotype.getVariantCallingAnnotations.getAttributes.containsKey(freebayesFormatKey))
     }

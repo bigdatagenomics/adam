@@ -1571,10 +1571,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val conf = ContextUtil.getConfiguration(job)
     BAMInputFormat.setIntervals(conf, viewRegions.toList.map(r => LocatableReferenceRegion(r)))
 
-    val records = sc.union(bamFiles.map(p => {
-      sc.newAPIHadoopFile(p.toString, classOf[BAMInputFormat], classOf[LongWritable],
-        classOf[SAMRecordWritable], conf)
-    }))
+    val records = sc.newAPIHadoopFile(pathName,
+      classOf[BAMInputFormat],
+      classOf[LongWritable],
+      classOf[SAMRecordWritable],
+      conf)
+
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
     AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p._2.get)),
@@ -2014,6 +2016,73 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val (sd, samples, headers) = loadVcfMetadata(pathName)
 
     val vcc = new VariantContextConverter(headers, stringency)
+    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
+      sd,
+      samples,
+      VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
+  }
+
+  /**
+   * Load variant context records from VCF into a VariantContextRDD.
+   *
+   * Only converts the core Genotype/Variant fields, and the fields set in the
+   * requested projection. Core variant fields include:
+   *
+   * * Names (ID)
+   * * Filters (FILTER)
+   *
+   * Core genotype fields include:
+   *
+   * * Allelic depth (AD)
+   * * Read depth (DP)
+   * * Min read depth (MIN_DP)
+   * * Genotype quality (GQ)
+   * * Genotype likelihoods (GL/PL)
+   * * Strand bias components (SB)
+   * * Phase info (PS,PQ)
+   *
+   * @param pathName The path name to load VCF variant context records from.
+   *   Globs/directories are supported.
+   * @param infoFields The info fields to include, in addition to the ID and
+   *   FILTER attributes.
+   * @param formatFields The format fields to include, in addition to the core
+   *   fields listed above.
+   * @param stringency The validation stringency to use when validating VCF format.
+   *   Defaults to ValidationStringency.STRICT.
+   * @return Returns a VariantContextRDD.
+   */
+  def loadVcfWithProjection(
+    pathName: String,
+    infoFields: Set[String],
+    formatFields: Set[String],
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextRDD = LoadVcf.time {
+
+    // load records from VCF
+    val records = readVcfRecords(pathName, None)
+
+    // attach instrumentation
+    if (Metrics.isRecording) records.instrument() else records
+
+    // load vcf metadata
+    val (sd, samples, headers) = loadVcfMetadata(pathName)
+
+    val vcc = new VariantContextConverter(headers.flatMap(hl => hl match {
+      case il: VCFInfoHeaderLine => {
+        if (infoFields(il.getID)) {
+          Some(il)
+        } else {
+          None
+        }
+      }
+      case fl: VCFFormatHeaderLine => {
+        if (formatFields(fl.getID)) {
+          Some(fl)
+        } else {
+          None
+        }
+      }
+      case _ => None
+    }), stringency)
     VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
@@ -2739,7 +2808,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (isVcfExt(pathName)) {
       log.info(s"Loading $pathName as VCF and converting to Genotypes.")
-      loadVcf(pathName, stringency).toGenotypeRDD
+      loadVcf(pathName, stringency).toGenotypes
     } else {
       log.info(s"Loading $pathName as Parquet containing Genotypes. Sequence dictionary for translation is ignored.")
       loadParquetGenotypes(pathName, optPredicate = optPredicate, optProjection = optProjection)
@@ -2773,7 +2842,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (isVcfExt(pathName)) {
       log.info(s"Loading $pathName as VCF and converting to Variants.")
-      loadVcf(pathName, stringency).toVariantRDD
+      loadVcf(pathName, stringency).toVariants
     } else {
       log.info(s"Loading $pathName as Parquet containing Variants. Sequence dictionary for translation is ignored.")
       loadParquetVariants(pathName, optPredicate = optPredicate, optProjection = optProjection)
@@ -2874,12 +2943,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
+   * @param stringency The validation stringency to use when validating BAM/CRAM/SAM or FASTQ formats.
+   *   Defaults to ValidationStringency.STRICT.
    * @return Returns a FragmentRDD.
    */
   def loadFragments(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): FragmentRDD = LoadFragments.time {
+    optProjection: Option[Schema] = None,
+    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentRDD = LoadFragments.time {
 
     // need this to pick up possible .bgz extension
     sc.hadoopConfiguration.setStrings("io.compression.codecs",
@@ -2890,11 +2962,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       // check to see if the input files are all queryname sorted
       if (filesAreQueryGrouped(pathName)) {
         log.info(s"Loading $pathName as queryname sorted BAM/CRAM/SAM and converting to Fragments.")
-        loadBam(pathName).transform(RepairPartitions(_))
+        loadBam(pathName, stringency).transform(RepairPartitions(_))
           .querynameSortedToFragments
       } else {
         log.info(s"Loading $pathName as BAM/CRAM/SAM and converting to Fragments.")
-        loadBam(pathName).toFragments
+        loadBam(pathName, stringency).toFragments
       }
     } else if (isInterleavedFastqExt(trimmedPathName)) {
       log.info(s"Loading $pathName as interleaved FASTQ and converting to Fragments.")

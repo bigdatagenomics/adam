@@ -183,7 +183,7 @@ class VariantRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = variants.shuffleRegionJoin(targets)
-    val jRdd0 = variants.shuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = variants.shuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -212,7 +212,7 @@ class VariantRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = variants.rightOuterShuffleRegionJoin(targets)
-    val jRdd0 = variants.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = variants.rightOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -237,7 +237,7 @@ class VariantRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = variants.leftOuterShuffleRegionJoin(targets)
-    val jRdd0 = variants.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = variants.leftOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -262,7 +262,7 @@ class VariantRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = variants.fullOuterShuffleRegionJoin(targets)
-    val jRdd0 = variants.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4))
+    val jRdd0 = variants.fullOuterShuffleRegionJoin(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -291,7 +291,7 @@ class VariantRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = variants.shuffleRegionJoinAndGroupByLeft(targets)
-    val jRdd0 = variants.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+    val jRdd0 = variants.shuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -316,7 +316,7 @@ class VariantRDDSuite extends ADAMFunSuite {
       .transform(_.repartition(1))
 
     val jRdd = variants.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
-    val jRdd0 = variants.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4))
+    val jRdd0 = variants.rightOuterShuffleRegionJoinAndGroupByLeft(targets, optPartitions = Some(4), 0L)
 
     // we can't guarantee that we get exactly the number of partitions requested,
     // we get close though
@@ -341,7 +341,7 @@ class VariantRDDSuite extends ADAMFunSuite {
   sparkTest("convert back to variant contexts") {
     val variantsPath = testFile("small.vcf")
     val variants = sc.loadVariants(variantsPath)
-    val variantContexts = variants.toVariantContextRDD
+    val variantContexts = variants.toVariantContexts
 
     assert(variantContexts.sequences.containsRefName("1"))
     assert(variantContexts.samples.isEmpty)

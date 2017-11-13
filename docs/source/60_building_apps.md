@@ -1,13 +1,15 @@
 # Building Downstream Applications {#apps}
 
-ADAM is packaged so that it can be used interatively via the ADAM shell, called from
-the command line interface (CLI), or included as a library when building downstream
-applications.
+ADAM is packaged so that it can be used interactively via the ADAM shell, called
+from the command line interface (CLI), or included as a library when building
+downstream applications.
 
-This document covers three patterns for building applications downstream of ADAM:
+This document covers three patterns for building applications downstream of
+ADAM:
 
 * Extend the ADAM CLI by [adding new commands](#commands)
-* Extend the ADAM CLI by [adding new commands in an external repository](#external-commands)
+* Extend the ADAM CLI by [adding new commands in an external
+repository](#external-commands)
 * Use ADAM as a [library in new applications](#library)
 
 
@@ -15,15 +17,24 @@ This document covers three patterns for building applications downstream of ADAM
 
 ADAM's CLI is implemented in the adam-cli Apache Maven module of the
 [bdgenomics/adam](https://github.com/bigdatagenomics/adam) repository, one
-.scala source file for each CLI action (e.g. [Transform.scala](https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/Transform.scala)
-for the [transform](#transform) action), and a main class ([ADAMMain.scala](https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/ADAMMain.scala))
+.scala source file for each CLI action (e.g.
+[TransformAlignments.scala](https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/TransformAlignments.scala)
+for the [transformAlignments](#transform-alignments) action), and a main class
+([ADAMMain.scala](https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/ADAMMain.scala))
 that assembles and delegates to the various CLI actions.
 
 To add a new command:
 
-Extend `Args4jBase` class to specify arguments to the command. Arguments are defined using
-the [args4j library](http://args4j.kohsuke.org/). If reading from or writing to Parquet,
-consider including Parquet arguments via `with ParquetArgs`.
+1. [Extend Args4jBase to specify arguments](#extend-arguments)
+2. [Extend BDGCommandCompanion](#extend-companion)
+3. [Build ADAM and run the new command](#build-new-command)
+
+#### Extend Args4jBase to specify arguments {#extend-arguments}
+
+Extend `Args4jBase` class to specify arguments to your new command. Arguments
+are defined using the [args4j library](http://args4j.kohsuke.org/). If reading
+from or writing to Parquet, consider including Parquet arguments via `with
+ParquetArgs`.
 
 ```scala
 class MyCommandArgs extends Args4jBase with ParquetArgs {
@@ -31,9 +42,11 @@ class MyCommandArgs extends Args4jBase with ParquetArgs {
   var inputPath: String = null
 }
 ```
+#### Extend BDGCommandCompanion {#extend-companion}
 
-Extend `BDGCommandCompanion` object to specify the command name and description. The `apply`
-method associates `MyCommandArgs` defined above with `MyCommand`.
+Extend `BDGCommandCompanion` object to specify the command name and
+description. The `apply` method associates `MyCommandArgs` defined above with
+`MyCommand`.
 
 ```scala
 object MyCommand extends BDGCommandCompanion {
@@ -46,10 +59,14 @@ object MyCommand extends BDGCommandCompanion {
 }
 ```
 
-Extend `BDGSparkCommand` class and implement the `run(SparkContext)` method. The `MyCommandArgs`
-class defined above is provided in the constructor and specifies the generic type for `BDGSparkCommand`.
-The companion object defined above is declared as a field.  For access to an
-[slf4j](http://www.slf4j.org/) Logger via the `log` field, specify `with Logging`.
+Extend `BDGSparkCommand` class and implement the `run(SparkContext)` method.
+The `MyCommandArgs` class defined above is provided in the constructor and
+specifies the CLI command for `BDGSparkCommand`. We must define a companion
+object because the command cannot run without being added to the list of
+accepted commands described below. For access to an
+[slf4j](http://www.slf4j.org/) Logger via the `log` field, mix in the
+org.bdgenomics.utils.misc.Logging trait by adding `with Logging` to the class
+definition.
 
 ```scala
 class MyCommand(protected val args: MyCommandArgs) extends BDGSparkCommand[MyCommandArgs] with Logging {
@@ -62,9 +79,11 @@ class MyCommand(protected val args: MyCommandArgs) extends BDGSparkCommand[MyCom
 }
 ```
 
-Add the new command to the default list of commands in `ADAMMain`.
+Add the new command to the default list of commands in
+org.bdgenomics.adam.cli.ADAMMain.
 
 ```scala
+...
   val defaultCommandGroups =
     List(
       CommandGroup(
@@ -72,12 +91,14 @@ Add the new command to the default list of commands in `ADAMMain`.
         List(
           MyCommand,
           CountReadKmers,
-          CountContigKmers, ...
+          CountContigKmers,
+...
 ```
+#### Build ADAM and run the new command {#build-new-command}
 
 Build ADAM and run the new command via `adam-submit`.
 
-```bash
+```
 $ mvn install
 $ ./bin/adam-submit --help
 Using ADAM_MAIN=org.bdgenomics.adam.cli.ADAMMain
@@ -103,15 +124,19 @@ ADAM ACTIONS
 $ ./bin/adam-submit myCommand input.foo
 ```
 
-Then consider making a pull request to include the new command in ADAM!
+Then consider creating an
+[issue](https://github.com/bigdatagenomics/adam/issues/new) to start the
+process toward including the new command in ADAM! Please see
+[CONTRIBUTING.md](https://github.com/bigdatagenomics/adam/blob/master/CONTRIBUTING.md)
+before opening a new [pull
+request](https://github.com/bigdatagenomics/adam/compare?expand=1).
 
 
 ## Extend the ADAM CLI by adding new commands in an external repository {#external-commands}
 
 To extend the ADAM CLI by adding new commands in an external repository,
-instead of editing `ADAMMain` to add new commands as above, create a new
-object with a `main(args: Array[String])` method that delegates to `ADAMMain`
-and provides additional command(s) via its constructor.
+create a new object with a `main(args: Array[String])` method that delegates to
+`ADAMMain` and provides additional command(s) via its constructor.
 
 ```scala
 import org.bdgenomics.adam.cli.{ ADAMMain, CommandGroup }
@@ -132,7 +157,7 @@ and providing the jar file in the Apache Spark `--jars` argument.
 Note the `--` argument separator between Apache Spark arguments and
 ADAM arguments.
 
-```bash
+```
 $ ADAM_MAIN=MyCommandsMain \
   adam-submit \
   --jars my-commands.jar \
@@ -174,8 +199,8 @@ A complete example of this pattern can be found in the
 To use ADAM as a library in new applications:
 
 Create an object with a `main(args: Array[String])` method and handle
-command line arguments. Feel free to use the [args4j library](http://www.slf4j.org/)
-or any other argument parsing library.
+command line arguments. Feel free to use the [args4j
+library](http://www.slf4j.org/) or any other argument parsing library.
 
 ```scala
 object MyExample {
@@ -184,16 +209,21 @@ object MyExample {
       System.err.println("at least one argument required, e.g. input.foo")
       System.exit(1)
     }
+  }
+}
 ```
 
-Create an Apache Spark configuration `SparkConf` and use it to create a new `SparkContext`.
-The following serialization configuration needs to be present to register ADAM classes. If
-any additional [Kyro serializers](https://github.com/EsotericSoftware/kryo) need to be
-registered, [create a registrator that delegates to the ADAM registrator](#registrator).
-You might want to provide your own serializer registrator if you need custom serializers for
-a class in your code that either has a complex structure that Kryo fails to serialize properly
-via Kryo's serializer inference, or if you want to require registration of all classes in your
-application to improve performance.
+Create an Apache Spark configuration `SparkConf` and use it to create a new
+`SparkContext`. The following serialization configuration needs to be present
+to register ADAM classes. If any additional [Kyro
+serializers](https://github.com/EsotericSoftware/kryo) need to be
+registered, [create a registrator that delegates to the ADAM
+registrator](#registrator).
+You might want to provide your own serializer registrator if you need custom
+serializers for a class in your code that either has a complex structure that
+Kryo fails to serialize properly via Kryo's serializer inference, or if you
+want to require registration of all classes in your application to improve
+performance.
 
 ```scala
     val conf = new SparkConf()
@@ -206,9 +236,9 @@ application to improve performance.
     // do something
 ```
 
-Configure the new application build to create a fat jar artifact with ADAM and its
-transitive dependencies included. For example, this `maven-shade-plugin` configuration
-would work for an Apache Maven build.
+Configure the new application build to create a fat jar artifact with ADAM and
+its transitive dependencies included. For example, this `maven-shade-plugin`
+configuration would work for an Apache Maven build.
 
 ```xml
 <plugin>
@@ -246,7 +276,7 @@ would work for an Apache Maven build.
 Build the new application and run via `spark-submit`.
 
 ```bash
-$ spark-submit \
+spark-submit \
   --class MyCommand \
   target/my-command.jar \
   input.foo
@@ -260,11 +290,11 @@ A complete example of this pattern can be found in the
 
 As we do in ADAM, an application may want to provide its own Kryo serializer
 registrator. The custom registrator may be needed in order to register custom
-serializers, or because the application's configuration requires all serializers
-to be registered. In either case, the application will need to provide its own
-Kryo registrator. While this registrator can manually register ADAM's serializers,
-it is simpler to call to the ADAM registrator from within the registrator. As an
-example, this pattern looks like the following code:
+serializers, or because the application's configuration requires all
+serializers to be registered. In either case, the application will need to
+provide its own Kryo registrator. While this registrator can manually register
+ADAM's serializers, it is simpler to call to the ADAM registrator from within
+the registrator. As an example, this pattern looks like the following code:
 
 ```scala
 import com.esotericsoftware.kryo.Kryo

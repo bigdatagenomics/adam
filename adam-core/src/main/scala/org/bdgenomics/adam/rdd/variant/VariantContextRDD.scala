@@ -29,6 +29,7 @@ import org.bdgenomics.adam.converters.{
   DefaultHeaderLines,
   VariantContextConverter
 }
+import org.bdgenomics.adam.instrumentation.Timers.SaveAsVcf
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
   ReferenceRegionSerializer,
@@ -179,7 +180,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   /**
    * @return Returns a GenotypeRDD containing the Genotypes in this RDD.
    */
-  def toGenotypeRDD(): GenotypeRDD = {
+  def toGenotypes(): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd.flatMap(_.genotypes),
       sequences,
       samples,
@@ -190,7 +191,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   /**
    * @return Returns the Variants in this RDD.
    */
-  def toVariantRDD(): VariantRDD = {
+  def toVariants(): VariantRDD = {
     new RDDBoundVariantRDD(rdd.map(_.variant.variant),
       sequences,
       headerLines,
@@ -200,6 +201,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   /**
    * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
    * and saves to disk as VCF.
+   *
+   * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
    *
    * @param args Arguments defining where to save the file.
    * @param stringency The validation stringency to use when writing the VCF.
@@ -217,15 +220,33 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
 
   /**
    * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
+   * and saves as a single file to disk as VCF. Uses lenient validation
+   * stringency.
+   *
+   * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
+   *
+   * @param filePath The file path to save to.
+   */
+  def saveAsVcf(filePath: String): Unit = {
+    saveAsVcf(
+      filePath,
+      asSingleFile = true,
+      deferMerging = false,
+      disableFastConcat = false,
+      stringency = ValidationStringency.LENIENT)
+  }
+
+  /**
+   * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
    * and saves to disk as VCF.
    *
-   * Files that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
+   * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
    *
-   * @param filePath The filepath to save to.
+   * @param filePath The file path to save to.
    * @param asSingleFile If true, saves the output as a single file by merging
    *   the sharded output after completing the write to HDFS. If false, the
    *   output of this call will be written as shards, where each shard has a
-   *   valid VCF header. Default is false.
+   *   valid VCF header.
    * @param deferMerging If true and asSingleFile is true, we will save the
    *   output shards as a headerless file, but we will not merge the shards.
    * @param disableFastConcat If asSingleFile is true and deferMerging is false,
@@ -236,7 +257,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
                 asSingleFile: Boolean,
                 deferMerging: Boolean,
                 disableFastConcat: Boolean,
-                stringency: ValidationStringency) {
+                stringency: ValidationStringency): Unit = SaveAsVcf.time {
 
     // TODO: Add BCF support
     val vcfFormat = VCFFormat.VCF

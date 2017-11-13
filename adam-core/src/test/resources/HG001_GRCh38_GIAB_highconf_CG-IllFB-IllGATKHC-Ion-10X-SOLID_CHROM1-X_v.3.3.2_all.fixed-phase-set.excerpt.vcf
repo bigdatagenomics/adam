@@ -1,0 +1,67 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=GQlessthan70,Description="Sum of GQ for datasets with this genotype less than 70">
+##FILTER=<ID=allfilteredanddisagree,Description="All callsets have this call filtered or outside the callable regions and they have discordant genotypes or variant calls">
+##FILTER=<ID=allfilteredbutagree,Description="All callsets have this call filtered or outside the callable regions but they have the same genotype">
+##FILTER=<ID=discordantunfiltered,Description="Callsets with unfiltered calls have discordant genotypes or variant calls">
+##FILTER=<ID=discordanthet,Description="Filtered calls where a passing call is het and a high GQ but filtered call is hom var, since often the het is wrong">
+##FILTER=<ID=questionableindel,Description="Filtered calls where some callsets have a filtered indel larger than 10bp and another dataset has an implied homozygous reference call">
+##FILTER=<ID=cgonly,Description="Filtered calls where only Complete Genomics had this call and it was completely missing from any other callset">
+##FILTER=<ID=alleleimbalance,Description="Filtered calls where the net allele balance for unfiltered datasets is <0.2 or >0.8">
+##FILTER=<ID=overlappingcall,Description="Filtered sites that are within 50bp of another passing call but none of the callsets that support the 2 calls match">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total read depth summed across all datasets, excluding MQ0 reads">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Net Genotype quality across all datasets, calculated from GQ scores of callsets supporting the consensus GT, using only one callset from each dataset">
+##FORMAT=<ID=ADALL,Number=R,Type=Integer,Description="Net allele depths across all datasets">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Net allele depths across all unfiltered datasets with called genotype">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Consensus Genotype across all datasets with called genotype">
+##FORMAT=<ID=PS,Number=1,Type=Integer,Description="Phase set in which this variant falls (converted from Type=String to Type=Integer)">
+##INFO=<ID=DPSum,Number=1,Type=Integer,Description="Total read depth summed across all datasets, excluding MQ0 reads">
+##INFO=<ID=platforms,Number=1,Type=Integer,Description="Number of different platforms for which at least one callset called this genotype, whether filtered or not">
+##INFO=<ID=platformnames,Number=.,Type=String,Description="Names of platforms for which at least one callset called this genotype, whether filtered or not">
+##INFO=<ID=platformbias,Number=.,Type=String,Description="Names of platforms that have reads containing a variant at this location, but the high-confidence call is homozygous reference, indicating that there is a potential bias.">
+##INFO=<ID=datasets,Number=1,Type=Integer,Description="Number of different datasets for which at least one callset called this genotype, whether filtered or not">
+##INFO=<ID=datasetnames,Number=.,Type=String,Description="Names of datasets for which at least one callset called this genotype, whether filtered or not">
+##INFO=<ID=datasetsmissingcall,Number=.,Type=Integer,Description="Names of datasets that are missing a call or have an incorrect call at this location, and the high-confidence call is a variant">
+##INFO=<ID=callsets,Number=1,Type=Integer,Description="Number of different callsets that called this genotype, whether filtered or not">
+##INFO=<ID=callsetnames,Number=.,Type=String,Description="Names of callsets that called this genotype, whether filtered or not">
+##INFO=<ID=varType,Number=1,Type=String,Description="Type of variant">
+##INFO=<ID=filt,Number=.,Type=String,Description="List of callsets that had this call filtered.">
+##INFO=<ID=callable,Number=.,Type=String,Description="List of callsets that had this call in a region with low coverage of high MQ reads.">
+##INFO=<ID=difficultregion,Number=.,Type=String,Description="List of difficult region bed files containing this call.">
+##INFO=<ID=arbitrated,Number=1,Type=String,Description="TRUE if callsets had discordant calls so that arbitration was needed.">
+##INFO=<ID=callsetwiththisuniqgenopassing,Number=.,Type=String,Description="Callset that uniquely calls the PASSing genotype in GT when 2+ PASSing callsets support a different genotype.">
+##INFO=<ID=callsetwithotheruniqgenopassing,Number=.,Type=String,Description="Callset that uniquely calls a PASSing genotype different from GT when 2+ PASSing callsets support the genotype in GT.">
+##contig=<ID=chr1,length=248956422>
+##contig=<ID=chr2,length=242193529>
+##contig=<ID=chr3,length=198295559>
+##contig=<ID=chr4,length=190214555>
+##contig=<ID=chr5,length=181538259>
+##contig=<ID=chr6,length=170805979>
+##contig=<ID=chr7,length=159345973>
+##contig=<ID=chr8,length=145138636>
+##contig=<ID=chr9,length=138394717>
+##contig=<ID=chr10,length=133797422>
+##contig=<ID=chr11,length=135086622>
+##contig=<ID=chr12,length=133275309>
+##contig=<ID=chr13,length=114364328>
+##contig=<ID=chr14,length=107043718>
+##contig=<ID=chr15,length=101991189>
+##contig=<ID=chr16,length=90338345>
+##contig=<ID=chr17,length=83257441>
+##contig=<ID=chr18,length=80373285>
+##contig=<ID=chr19,length=58617616>
+##contig=<ID=chr20,length=64444167>
+##contig=<ID=chr21,length=46709983>
+##contig=<ID=chr22,length=50818468>
+##contig=<ID=chrX,length=156040895>
+##contig=<ID=chrY,length=57227415>
+##contig=<ID=chrM,length=16569>
+##fileDate=20160824
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	INTEGRATION
+chr1	66631044	.	GAAGAAAGAAAGA	GAAGAAAGA,GAAGA,G	5	allfilteredanddisagree	filt=CS_HiSeqPE300xGATK_filt;platformnames=10X;datasets=1;callsetnames=,10XGATKhaplo;datasetnames=10XChromium;callsets=1;difficultregion=AllRepeats_51to200bp_gt95identity_merged,AllRepeats_lt51bp_gt95identity_merged,remapped_PacBio_MetaSV_svclassify_mergedSVs;platforms=1	GT:PS:DP:ADALL:AD:GQ	1/2:.:0:0,0,0:0,0,0:99
+chr1	80121547	.	G	GAAGAAAGAAAGAA,GAAGAAAGAAAGAAAGAAAGA	5	allfilteredanddisagree	filt=CS_HiSeqPE300xfreebayes_filt;platformnames=Illumina,10X;datasets=2;callsetnames=,10XGATKhaplo,HiSeqPE300xGATK;datasetnames=HiSeqPE300x,10XChromium;callsets=2;difficultregion=AllRepeats_lt51bp_gt95identity_merged;platforms=2	GT:PS:DP:ADALL:AD:GQ	1|2:.:238:0,121,117:0,0,0:198
+chr1	119569943	.	G	GAAGGAAGGAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGA,GAAGGAAGGAAGGAAGAAAGAAAGAAAGAAAGAAAGA	5	allfilteredanddisagree	filt=CS_10XGATKhaplo_filt,CS_SolidSE75GATKHC_filt;platformnames=Illumina;datasets=1;callsetnames=,HiSeqPE300xfreebayes,HiSeqPE300xGATK;datasetnames=HiSeqPE300x;callsets=2;difficultregion=AllRepeats_lt51bp_gt95identity_merged,hg38_self_chain_withalts_gt10k,remapped_PacBio_MetaSV_svclassify_mergedSVs,remapped_superdupsmerged_all_sort;platforms=1	GT:PS:DP:ADALL:AD:GQ	2|1:.:354:0,69,134:0,0,0:99
+chr1	182924935	.	G	GAAGA,GAAGAAAGAAAGA	50	PASS	callable=CS_HiSeqPE300xGATK_callable;datasetsmissingcall=CGnormal,10XChromium,IonExome,SolidPE50x50bp,SolidSE75bp;platformnames=Illumina;datasets=1;callsetnames=HiSeqPE300xGATK,HiSeqPE300xfreebayes;datasetnames=HiSeqPE300x;callsets=2;difficultregion=AllRepeats_lt51bp_gt95identity_merged;platforms=1	GT:PS:DP:ADALL:AD:GQ	1|2:.:225:0,50,50:0,50,50:99
+chr1	203754114	.	AAAGAAAGAAAGAAAGA	GAAGAAAGAAAGAAAGA,A	5	allfilteredanddisagree	filt=CS_HiSeqPE300xGATK_filt,CS_HiSeqPE300xfreebayes_filt;platformnames=Illumina;datasets=1;callsetnames=,HiSeqPE300xfreebayes;datasetnames=HiSeqPE300x;callsets=1;difficultregion=AllRepeats_51to200bp_gt95identity_merged,AllRepeats_lt51bp_gt95identity_merged;platforms=1	GT:PS:DP:ADALL:AD:GQ	1/2:.:103:0,0,0:0,0,0:160
+chr1	230800231	.	GAAGAAAGAAAGAAAGA	GAAGA,G	50	PASS	callable=CS_HiSeqPE300xGATK_callable;platformnames=Illumina,10X;datasets=2;callsets=3;difficultregion=AllRepeats_51to200bp_gt95identity_merged,AllRepeats_lt51bp_gt95identity_merged;platforms=2;datasetsmissingcall=CGnormal,IonExome,SolidPE50x50bp,SolidSE75bp;callsetnames=HiSeqPE300xGATK,HiSeqPE300xfreebayes,10XGATKhaplo;datasetnames=HiSeqPE300x,10XChromium	GT:PS:DP:ADALL:AD:GQ	2|1:.:331:0,119,84:0,119,84:198
+chr1	239984585	.	G	GAAGAAAGA,GAAGAAAGAAAGAAAGAAAGA	50	PASS	callable=CS_HiSeqPE300xGATK_callable;datasetsmissingcall=CGnormal,IonExome,SolidPE50x50bp,SolidSE75bp;platformnames=Illumina,10X;datasets=2;callsetnames=HiSeqPE300xGATK,HiSeqPE300xfreebayes,10XGATKhaplo;datasetnames=HiSeqPE300x,10XChromium;callsets=3;difficultregion=AllRepeats_lt51bp_gt95identity_merged;platforms=2	GT:PS:DP:ADALL:AD:GQ	1|2:.:248:3,64,55:3,64,55:198
+chr1	242300451	.	GAAGAAAGAAAGAAAGA	GAAGAAAGAAAGA,G	5	allfilteredanddisagree	platformnames=Illumina,10X;datasets=2;callsetnames=,HiSeqPE300xfreebayes,10XGATKhaplo,HiSeqPE300xGATK;datasetnames=HiSeqPE300x,10XChromium;callsets=3;difficultregion=AllRepeats_lt51bp_gt95identity_merged,remapped_superdupsmerged_all_sort;platforms=2	GT:PS:DP:ADALL:AD:GQ	2|1:.:254:0,64,77:0,0,0:198

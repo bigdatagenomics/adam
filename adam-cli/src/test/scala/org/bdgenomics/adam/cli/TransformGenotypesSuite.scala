@@ -25,7 +25,7 @@ class TransformGenotypesSuite extends ADAMFunSuite {
     val inputPath = copyResource("random.vcf")
     val intermediatePath = tmpFile("genotypes.adam")
     val actualPath = tmpFile("sorted.vcf")
-    val expectedPath = copyResource("sorted.vcf")
+    val expectedPath = testFile("sorted.vcf")
 
     TransformGenotypes(
       Array(inputPath, intermediatePath)
@@ -42,7 +42,7 @@ class TransformGenotypesSuite extends ADAMFunSuite {
     val inputPath = copyResource("random.vcf")
     val intermediatePath = tmpFile("genotypes.lex.adam")
     val actualPath = tmpFile("sorted.lex.vcf")
-    val expectedPath = copyResource("sorted.lex.vcf")
+    val expectedPath = testFile("sorted.lex.vcf")
 
     TransformGenotypes(
       Array(inputPath, intermediatePath)

@@ -40,6 +40,7 @@ import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySeriali
 import org.bdgenomics.formats.avro.{ Genotype, Sample }
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class GenotypeArray(
     array: Array[(ReferenceRegion, Genotype)],
@@ -211,6 +212,8 @@ case class RDDBoundGenotypeRDD private[rdd] (
 
 sealed abstract class GenotypeRDD extends MultisampleAvroGenomicRDD[Genotype, GenotypeProduct, GenotypeRDD] {
 
+  @transient val uTag: TypeTag[GenotypeProduct] = typeTag[GenotypeProduct]
+
   val headerLines: Seq[VCFHeaderLine]
 
   /**
@@ -291,7 +294,7 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicRDD[Genotype, Ge
   /**
    * @return Returns this GenotypeRDD squared off as a VariantContextRDD.
    */
-  def toVariantContextRDD(): VariantContextRDD = {
+  def toVariantContexts(): VariantContextRDD = {
     val vcIntRdd: RDD[(RichVariant, Genotype)] = rdd.keyBy(g => {
       RichVariant.genotypeToRichVariant(g)
     })

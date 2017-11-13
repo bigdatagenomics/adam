@@ -84,4 +84,11 @@ class RecordGroupDictionarySuite extends FunSuite {
     assert(emptyRgd.isEmpty)
     assert(emptyRgd.recordGroups.size === 0)
   }
+
+  test("merging a dictionary with itself should work") {
+    val rgd = RecordGroupDictionary(Seq(RecordGroup("sample1", "rg1")))
+
+    val mergedRgd = rgd ++ rgd
+    assert(rgd === mergedRgd)
+  }
 }

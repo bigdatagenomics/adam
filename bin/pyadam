@@ -19,44 +19,13 @@
 
 set -e
 
-# Figure out where ADAM is installed
-SCRIPT_DIR="$(cd `dirname $0`/..; pwd)"
+SOURCE_DIR=$(dirname ${BASH_SOURCE[0]})
 
-# Find ADAM cli assembly jar
-ADAM_CLI_JAR=
-if [ -d "$SCRIPT_DIR/repo" ]; then
-  ASSEMBLY_DIR="$SCRIPT_DIR/repo"
-else
-  ASSEMBLY_DIR="$SCRIPT_DIR/adam-assembly/target"
-fi
+ADAM_CLI_JAR=$(${SOURCE_DIR}/find-adam-assembly.sh)
+ADAM_EGG=$(${SOURCE_DIR}/find-adam-egg.sh)
 
-num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam_[0-9A-Za-z\.-]*\.jar$" | grep -v javadoc | grep -v sources | wc -l)"
-if [ "$num_jars" -eq "0" ]; then
-  echo "Failed to find ADAM assembly in $ASSEMBLY_DIR." 1>&2
-  echo "You need to build ADAM before running this program." 1>&2
-  exit 1
-fi
-
-ASSEMBLY_JARS="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam_[0-9A-Za-z\.-]*\.jar$" | grep -v javadoc | grep -v sources || true)"
-if [ "$num_jars" -gt "1" ]; then
-  echo "Found multiple ADAM cli assembly jars in $ASSEMBLY_DIR:" 1>&2
-  echo "$ASSEMBLY_JARS" 1>&2
-  echo "Please remove all but one jar." 1>&2
-  exit 1
-fi
-
-ADAM_CLI_JAR="${ASSEMBLY_DIR}/${ASSEMBLY_JARS}"
-
-if [ -z "$SPARK_HOME" ]; then
-  PYSPARK=$(which pyspark || echo)
-else
-  PYSPARK="$SPARK_HOME"/bin/pyspark
-fi
-if [ -z "$PYSPARK" ]; then
-  echo "SPARK_HOME not set and spark-shell not on PATH; Aborting."
-  exit 1
-fi
-echo "Using PYSPARK=$PYSPARK"
+PYSPARK=$(${SOURCE_DIR}/find-spark.sh pyspark)
+echo "Using PYSPARK=$PYSPARK" 1>&2
 
 # submit the job to Spark
 "$PYSPARK" \
@@ -64,4 +33,5 @@ echo "Using PYSPARK=$PYSPARK"
     --conf spark.kryo.registrator=org.bdgenomics.adam.serialization.ADAMKryoRegistrator \
     --jars ${ADAM_CLI_JAR} \
     --driver-class-path ${ADAM_CLI_JAR} \
+    --py-files ${ADAM_EGG} \
     "$@"

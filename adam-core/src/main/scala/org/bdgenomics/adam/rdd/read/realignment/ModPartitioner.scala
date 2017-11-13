@@ -23,7 +23,7 @@ private[realignment] case class ModPartitioner(numPartitions: Int) extends Parti
 
   def getPartition(key: Any): Int = key match {
     case i: Int => {
-      i.abs % numPartitions
+      (i.abs % numPartitions).abs
     }
     case _ => {
       throw new IllegalArgumentException("Key %s is not an Int.".format(key))

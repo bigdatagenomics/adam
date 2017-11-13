@@ -43,6 +43,7 @@ import org.bdgenomics.utils.interval.array.{
 import scala.collection.JavaConversions._
 import scala.math.max
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class FeatureArray(
     array: Array[(ReferenceRegion, Feature)],
@@ -336,6 +337,8 @@ case class RDDBoundFeatureRDD private[rdd] (
 }
 
 sealed abstract class FeatureRDD extends AvroGenomicRDD[Feature, FeatureProduct, FeatureRDD] {
+
+  @transient val uTag: TypeTag[FeatureProduct] = typeTag[FeatureProduct]
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Feature)])(
     implicit tTag: ClassTag[Feature]): IntervalArray[ReferenceRegion, Feature] = {

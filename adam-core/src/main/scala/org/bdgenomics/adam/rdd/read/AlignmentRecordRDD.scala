@@ -35,7 +35,8 @@ import org.apache.spark.sql.{ Dataset, Row, SQLContext }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus.{
   ConsensusGenerator,
-  ConsensusGeneratorFromReads
+  ConsensusGeneratorFromReads,
+  NormalizationUtils
 }
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
@@ -70,6 +71,7 @@ import scala.collection.JavaConversions._
 import scala.language.implicitConversions
 import scala.math.{ abs, min }
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class AlignmentRecordArray(
     array: Array[(ReferenceRegion, AlignmentRecord)],
@@ -97,6 +99,20 @@ private[adam] class AlignmentRecordArraySerializer extends IntervalArraySerializ
 }
 
 object AlignmentRecordRDD extends Serializable {
+
+  /**
+   * Hadoop configuration path to check for a boolean value indicating whether
+   * the current or original read qualities should be written. True indicates
+   * to write the original qualities. The default is false.
+   */
+  val WRITE_ORIGINAL_QUALITIES = "org.bdgenomics.adam.rdd.read.AlignmentRecordRDD.writeOriginalQualities"
+
+  /**
+   * Hadoop configuration path to check for a boolean value indicating whether
+   * to write the "/1" "/2" suffixes to the read name that indicate whether a
+   * read is first or second in a pair. Default is false (no suffixes).
+   */
+  val WRITE_SUFFIXES = "org.bdgenomics.adam.rdd.read.AlignmentRecordRDD.writeSuffixes"
 
   /**
    * Converts a processing step back to the SAM representation.
@@ -326,6 +342,8 @@ private case class AlignmentWindow(contigName: String, start: Long, end: Long) {
 }
 
 sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
+
+  @transient val uTag: TypeTag[AlignmentRecordProduct] = typeTag[AlignmentRecordProduct]
 
   /**
    * Applies a function that transforms the underlying RDD into a new RDD using
@@ -1474,5 +1492,33 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
   def binQualityScores(bins: Seq[QualityScoreBin]): AlignmentRecordRDD = {
     AlignmentRecordRDD.validateBins(bins)
     BinQualities(this, bins)
+  }
+
+  /**
+   * Left normalizes the INDELs in reads containing INDELs.
+   *
+   * @return Returns a new RDD where the reads that contained INDELs have their
+   *   INDELs left normalized.
+   */
+  def leftNormalizeIndels(): AlignmentRecordRDD = {
+    transform(rdd => {
+      rdd.map(r => {
+        if (!r.getReadMapped || r.getCigar == null) {
+          r
+        } else {
+          val origCigar = r.getCigar
+          val newCigar = NormalizationUtils.leftAlignIndel(r).toString
+
+          // update cigar if changed
+          if (origCigar != newCigar) {
+            AlignmentRecord.newBuilder(r)
+              .setCigar(newCigar)
+              .build
+          } else {
+            r
+          }
+        }
+      })
+    })
   }
 }

@@ -94,7 +94,7 @@ case class RecordGroupDictionary(recordGroups: Seq[RecordGroup]) {
    * @return The merged record group dictionary.
    */
   def ++(that: RecordGroupDictionary): RecordGroupDictionary = {
-    new RecordGroupDictionary(recordGroups ++ that.recordGroups)
+    new RecordGroupDictionary((recordGroups ++ that.recordGroups).distinct)
   }
 
   /**

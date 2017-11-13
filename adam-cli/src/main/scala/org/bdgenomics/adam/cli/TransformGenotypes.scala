@@ -124,7 +124,7 @@ class TransformGenotypes(val args: TransformGenotypesArgs)
       stringency = stringency)
 
     if (args.outputPath.endsWith(".vcf")) {
-      maybeSort(maybeCoalesce(genotypes.toVariantContextRDD)).saveAsVcf(args)
+      maybeSort(maybeCoalesce(genotypes.toVariantContexts)).saveAsVcf(args)
     } else {
       maybeSort(maybeCoalesce(genotypes)).saveAsParquet(args)
     }

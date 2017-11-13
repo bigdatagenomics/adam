@@ -1,21 +1,21 @@
 # Introduction
 
-* Follow our Twitter account at [https://twitter.com/bigdatagenomics/](https://twitter.com/bigdatagenomics/)
-* Chat with ADAM developers at [https://gitter.im/bigdatagenomics/adam](https://gitter.im/bigdatagenomics/adam)
-* Join our mailing list at [http://bdgenomics.org/mail](http://bdgenomics.org/mail)
-* Checkout the current build status at [https://amplab.cs.berkeley.edu/jenkins/](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/)
-* Download official releases at [https://github.com/bigdatagenomics/adam/releases](https://github.com/bigdatagenomics/adam/releases)
-* View our software artifacts on Maven Central at [http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics)
-* See our snapshots at [https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics)
-* Look at our CHANGES file at [https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md)
+ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.
 
-ADAM is a genomics analysis platform with specialized file formats built using [Apache Avro](http://avro.apache.org), [Apache Spark](http://spark.apache.org/) and [Parquet](http://parquet.io/). Apache 2 licensed.  
+* [Follow](https://twitter.com/bigdatagenomics/) our Twitter account
+* [Chat](https://gitter.im/bigdatagenomics/adam) with ADAM developers on Gitter
+* [Join](http://bdgenomics.org/mail) our mailing list
+* [Check out](https://amplab.cs.berkeley.edu/jenkins/view/Big%20Data%20Genomics/) the current build status
+* [Download](https://github.com/bigdatagenomics/adam/releases) official releases
+* [View](http://search.maven.org/#search%7Cga%7C1%7Corg.bdgenomics) our software artifacts on Maven Central
+* [See](https://oss.sonatype.org/index.html#nexus-search;quick~bdgenomics) our snapshots
+* [Look](https://github.com/bigdatagenomics/adam/blob/master/CHANGES.md) at our CHANGES file  
 
 ## Apache Spark
 
 [Apache Spark](http://spark.apache.org/) allows developers to write algorithms in succinct code that can run fast locally, on an in-house cluster or on Amazon, Google or Microsoft clouds. 
 
-For example, the following code snippet will print the top 10 21-mers in `NA2114` from 1000 Genomes.
+For example, the following code snippet will print the top ten 21-mers in `NA2114` from 1000 Genomes:
 
 ```scala
 val ac = new ADAMContext(sc)
@@ -51,10 +51,10 @@ Executing this Spark job will output the following:
 (32484,CCTCCCAAAGTGCTGGGATTA)
 ```
 
-You don't need to be Scala developer to use ADAM. You could also run the following ADAM CLI command for the same result:
+You do not need to be a Scala developer to use ADAM. You could also run the following ADAM CLI command for the same result:
 
 ```bash
-$ adam-submit count_kmers \
+adam-submit count_kmers \
        /data/NA21144.chrom11.ILLUMINA.adam \
        /data/results.txt 21
 ```
@@ -71,7 +71,7 @@ $ adam-submit count_kmers \
 - Parquet is simply a file format which makes it easy to sync and share data using tools like `distcp`, `rsync`, etc
 - Parquet provides a command-line tool, `parquet.hadoop.PrintFooter`, which reports useful compression statistics 
 
-In the counting k-mers example above, you can see there is a defined *predicate* and *projection*. The *predicate* allows rapid filtering of rows while a *projection* allows you to efficiently materialize only specific columns for analysis. For this k-mer counting example, we filter out any records that are not mapped or have a `MAPQ` less than 20 using a `predicate` and only materialize the `Sequence`, `ReadMapped` flag and `MAPQ` columns and skip over all other fields like `Reference` or `Start` position, e.g.
+In the counting k-mers example above, you can see that there is a defined *predicate* and *projection*. The *predicate* allows rapid filtering of rows while a *projection* allows you to efficiently materialize only specific columns for analysis. For this k-mer counting example, we filter out any records that are not mapped or have a `MAPQ` less than 20 using a `predicate` and only materialize the `Sequence`, `ReadMapped` flag and `MAPQ` columns and skip over all other fields like `Reference` or `Start` position, e.g.
 
 Sequence| ReadMapped | MAPQ | ~~Reference~~ | ~~Start~~ | ...
 --------|------------|------|-----------|-------|-------
@@ -81,21 +81,20 @@ TACTGAA | true | 30 | ~~chrom1~~ | ~~34232~~ | ...
 
 ## Apache Avro
 
-
 - Apache Avro is a data serialization system ([http://avro.apache.org](http://avro.apache.org))
 - All Big Data Genomics schemas are published at [https://github.com/bigdatagenomics/bdg-formats](https://github.com/bigdatagenomics/bdg-formats)
 - Having explicit schemas and self-describing data makes integrating, sharing and evolving formats easier
 
 Our Avro schemas are directly converted into source code using Avro tools. Avro supports a number of computer languages. ADAM uses Java; you could 
-just as easily use this Avro IDL description as the basis for a Python project. Avro currently supports c, c++, csharp, java, javascript, php, python and ruby. 
+just as easily use this Avro IDL description as the basis for a Python project. Avro currently supports C, C++, C#, Java, JavaScript, PHP, Python and Ruby. 
 
 ## More than k-mer counting
 
-ADAM does much more than just k-mer counting. Running the ADAM CLI without arguments or with `--help` will display available commands, e.g.
+ADAM does much more than just k-mer counting. Running the ADAM CLI without arguments or with `--help` will display available commands.
 
+```bash
 $ adam-submit
 
-```
        e         888~-_          e             e    e
       d8b        888   \        d8b           d8b  d8b
      /Y88b       888    |      /Y88b         d888bdY88b
@@ -130,9 +129,9 @@ PRINT
                 view : View certain reads from an alignment-record file.
 ```
 
-You can learn more about a command, by calling it without arguments or with `--help`, e.g.
+You can learn more about a command, by calling it without arguments or with `--help`.
 
-```
+```bash
 $ adam-submit transformAlignments
 Argument "INPUT" is required
  INPUT                                                           : The ADAM, BAM or SAM file to apply the transforms to
@@ -186,9 +185,7 @@ Argument "INPUT" is required
 
 The ADAM transformAlignments command allows you to mark duplicates, run base quality score recalibration (BQSR) and other pre-processing steps on your data.
 
-There are also a number of projects built on ADAM, e.g.
+There are also a number of projects built on ADAM:
 
 - [Avocado](https://github.com/bigdatagenomics/avocado) is a variant caller built on top of ADAM for germline and somatic calling
-- [Mango](https://github.com/bigdatagenomics/mango) a library for visualizing large scale genomics data with interactive latencies
-
-
+- [Mango](https://github.com/bigdatagenomics/mango) is a library for visualizing large scale genomics data with interactive latencies

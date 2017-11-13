@@ -124,7 +124,7 @@ class TransformVariants(val args: TransformVariantsArgs)
       stringency = stringency)
 
     if (args.outputPath.endsWith(".vcf")) {
-      maybeSort(maybeCoalesce(variants.toVariantContextRDD)).saveAsVcf(args, stringency)
+      maybeSort(maybeCoalesce(variants.toVariantContexts)).saveAsVcf(args, stringency)
     } else {
       maybeSort(maybeCoalesce(variants)).saveAsParquet(args)
     }

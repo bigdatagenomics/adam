@@ -192,10 +192,17 @@ object VariantContextConverter {
           .find(_.getID == key)
           .fold(Some(fl).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
             auditLine(fl, defaultLine, (newId, oldLine) => {
-              new VCFFormatHeaderLine(newId,
-                oldLine.getCountType,
-                oldLine.getType,
-                oldLine.getDescription)
+              if (oldLine.getCountType == VCFHeaderLineCount.INTEGER) {
+                new VCFFormatHeaderLine(newId,
+                  oldLine.getCount,
+                  oldLine.getType,
+                  oldLine.getDescription)
+              } else {
+                new VCFFormatHeaderLine(newId,
+                  oldLine.getCountType,
+                  oldLine.getType,
+                  oldLine.getDescription)
+              }
             })
           })
       }
@@ -205,10 +212,17 @@ object VariantContextConverter {
           .find(_.getID == key)
           .fold(Some(il).asInstanceOf[Option[VCFCompoundHeaderLine]])(defaultLine => {
             auditLine(il, defaultLine, (newId, oldLine) => {
-              new VCFInfoHeaderLine(newId,
-                oldLine.getCountType,
-                oldLine.getType,
-                oldLine.getDescription)
+              if (oldLine.getCountType == VCFHeaderLineCount.INTEGER) {
+                new VCFInfoHeaderLine(newId,
+                  oldLine.getCount,
+                  oldLine.getType,
+                  oldLine.getDescription)
+              } else {
+                new VCFInfoHeaderLine(newId,
+                  oldLine.getCountType,
+                  oldLine.getType,
+                  oldLine.getDescription)
+              }
             })
           })
       }
@@ -272,14 +286,12 @@ class VariantContextConverter(
   def convert(
     vc: HtsjdkVariantContext): Seq[ADAMVariantContext] = {
 
-    log.info("Processing %s with alt alleles %s.".format(vc, vc.getAlternateAlleles.toList.mkString(",")))
-
     try {
       vc.getAlternateAlleles.toList match {
         case List(NON_REF_ALLELE) | List() => {
-          val variant = variantFormatFn(vc, None, 0)
+          val (coreVariant, variant) = variantFormatFn(vc, None, 0, false)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, variant, NON_REF_ALLELE, 0, Some(1), false)
+            genotypeFormatFn(g, coreVariant, NON_REF_ALLELE, 0, Some(1), false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -288,9 +300,9 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0)
+          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, variant, allele, 1, None, false)
+            genotypeFormatFn(g, coreVariant, allele, 1, None, false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -299,9 +311,9 @@ class VariantContextConverter(
             allele.isNonReference,
             "Assertion failed when converting: " + vc.toString
           )
-          val variant = variantFormatFn(vc, Some(allele.getDisplayString), 0)
+          val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, variant, allele, 1, Some(2), false)
+            genotypeFormatFn(g, coreVariant, allele, 1, Some(2), false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -328,11 +340,12 @@ class VariantContextConverter(
             // variant annotations only contain values for alternate alleles so
             // we need to subtract one from real index
             val variantIdx = idx - 1
-            val variant = variantFormatFn(vc,
+            val (coreVariant, variant) = variantFormatFn(vc,
               Some(allele.getDisplayString),
-              variantIdx)
+              variantIdx,
+              true)
             val genotypes = vc.getGenotypes.map(g => {
-              genotypeFormatFn(g, variant, allele, idx, referenceModelIndex, true)
+              genotypeFormatFn(g, coreVariant, allele, idx, referenceModelIndex, true)
             })
             ADAMVariantContext(variant, genotypes)
           })
@@ -391,6 +404,17 @@ class VariantContextConverter(
     splitIds(vc).fold(vb)(vb.setNames(_))
   }
 
+  private[converters] def formatQuality(
+    vc: HtsjdkVariantContext,
+    vb: Variant.Builder): Variant.Builder = {
+
+    if (vc.hasLog10PError) {
+      vb.setQuality(vc.getPhredScaledQual)
+    } else {
+      vb
+    }
+  }
+
   private[converters] def formatFilters(
     vc: HtsjdkVariantContext,
     vb: Variant.Builder): Variant.Builder = {
@@ -407,6 +431,7 @@ class VariantContextConverter(
 
   private val variantFormatFns: Iterable[(HtsjdkVariantContext, Variant.Builder) => Variant.Builder] = Iterable(
     formatNames(_, _),
+    formatQuality(_, _),
     formatFilters(_, _)
   )
 
@@ -417,6 +442,17 @@ class VariantContextConverter(
     vcb: VariantContextBuilder): VariantContextBuilder = {
 
     joinNames(v).fold(vcb.noID())(vcb.id(_))
+  }
+
+  private[converters] def extractQuality(
+    v: Variant,
+    vcb: VariantContextBuilder): VariantContextBuilder = {
+
+    if (v.getQuality != null) {
+      vcb.log10PError(-v.getQuality / 10.0)
+    } else {
+      vcb
+    }
   }
 
   private[converters] def extractFilters(
@@ -443,6 +479,7 @@ class VariantContextConverter(
 
   private val variantExtractFns: Iterable[(Variant, VariantContextBuilder) => VariantContextBuilder] = Iterable(
     extractNames(_, _),
+    extractQuality(_, _),
     extractFilters(_, _)
   )
 
@@ -773,7 +810,7 @@ class VariantContextConverter(
                                              gIndices: Array[Int]): Genotype.Builder = {
 
     // AD is an array type field
-    if (g.hasAD) {
+    if (g.hasAD && gIdx < g.getAD.size) {
       val ad = g.getAD
       gb.setReferenceReadDepth(ad(0))
         .setAlternateReadDepth(ad(gIdx))
@@ -1006,7 +1043,8 @@ class VariantContextConverter(
 
     if (gls.isEmpty) {
       if (g.getVariant == null ||
-        g.getVariant.getAlternateAllele != null) {
+        g.getVariant.getAlternateAllele != null ||
+        nls.isEmpty) {
         if (nls.nonEmpty) {
           log.warn("Expected empty non-reference likelihoods for genotype with empty likelihoods (%s).".format(g))
         }
@@ -1095,7 +1133,7 @@ class VariantContextConverter(
         tryAndCatchStringCast(attr, attribute => {
           vcab.setFisherStrandBiasPValue(attribute.asInstanceOf[java.lang.Float])
         }, attribute => {
-          vcab.setFisherStrandBiasPValue(attribute.toFloat)
+          vcab.setFisherStrandBiasPValue(toFloat(attribute))
         })
       }).getOrElse(vcab)
   }
@@ -1109,7 +1147,7 @@ class VariantContextConverter(
         tryAndCatchStringCast(attr, attribute => {
           vcab.setRmsMapQ(attribute.asInstanceOf[java.lang.Float])
         }, attribute => {
-          vcab.setRmsMapQ(attribute.toFloat)
+          vcab.setRmsMapQ(toFloat(attribute))
         })
       }).getOrElse(vcab)
   }
@@ -1211,7 +1249,15 @@ class VariantContextConverter(
   private def toFloat(obj: java.lang.Object): Float = {
     tryAndCatchStringCast(obj, o => {
       o.asInstanceOf[java.lang.Float]
-    }, o => o.toFloat)
+    }, o => {
+      if (o == "+Inf") {
+        Float.PositiveInfinity
+      } else if (o == "-Inf") {
+        Float.NegativeInfinity
+      } else {
+        o.toFloat
+      }
+    })
   }
 
   // don't shadow toString
@@ -1256,7 +1302,7 @@ class VariantContextConverter(
       o.asInstanceOf[Array[java.lang.Float]]
         .map(f => f: Float)
     }, o => {
-      splitAndCheckForEmptyArray(o).map(_.toFloat)
+      splitAndCheckForEmptyArray(o).map(toFloat(_))
     })
   }
 
@@ -1271,8 +1317,10 @@ class VariantContextConverter(
                              indices: List[Int]): List[T] = {
     if (indices.isEmpty) {
       array.toList
-    } else {
+    } else if (indices.max < array.size) {
       indices.map(idx => array(idx))
+    } else {
+      List.empty
     }
   }
 
@@ -1528,7 +1576,7 @@ class VariantContextConverter(
   }
 
   private def makeVariantFormatFn(
-    headerLines: Seq[VCFHeaderLine]): (HtsjdkVariantContext, Option[String], Int) => Variant = {
+    headerLines: Seq[VCFHeaderLine]): (HtsjdkVariantContext, Option[String], Int, Boolean) => (Variant, Variant) = {
 
     val attributeFns: Iterable[(HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]] = headerLines
       .flatMap(hl => hl match {
@@ -1551,7 +1599,8 @@ class VariantContextConverter(
 
     def convert(vc: HtsjdkVariantContext,
                 alt: Option[String],
-                alleleIdx: Int): Variant = {
+                alleleIdx: Int,
+                wasSplit: Boolean): (Variant, Variant) = {
 
       // create the builder
       val variantBuilder = Variant.newBuilder
@@ -1560,6 +1609,11 @@ class VariantContextConverter(
         .setEnd(vc.getEnd)
         .setReferenceAllele(vc.getReference.getBaseString)
 
+      // was this split?
+      if (wasSplit) {
+        variantBuilder.setSplitFromMultiAllelic(true)
+      }
+
       alt.foreach(variantBuilder.setAlternateAllele(_))
 
       // bind the conversion functions and fold
@@ -1567,7 +1621,22 @@ class VariantContextConverter(
         .map(fn => {
           fn(vc, _: Variant.Builder)
         })
-      val converted = boundFns.foldLeft(variantBuilder)((vb: Variant.Builder, fn) => fn(vb))
+      val converted = boundFns.foldLeft(variantBuilder)((vb: Variant.Builder, fn) => {
+        try {
+          fn(vb)
+        } catch {
+          case t: Throwable => {
+            if (stringency == ValidationStringency.STRICT) {
+              throw t
+            } else {
+              if (stringency == ValidationStringency.LENIENT) {
+                log.warn("Converting variant field from %s with function %s line %s failed: %s".format(vc, fn, t))
+              }
+              vb
+            }
+          }
+        }
+      })
 
       val variant = variantBuilder.build
       val variantAnnotationBuilder = VariantAnnotation.newBuilder
@@ -1577,7 +1646,22 @@ class VariantContextConverter(
           fn(vc, _: VariantAnnotation.Builder, variant, alleleIdx)
         })
       val convertedAnnotation = boundAnnotationFns.foldLeft(variantAnnotationBuilder)(
-        (vab: VariantAnnotation.Builder, fn) => fn(vab))
+        (vab: VariantAnnotation.Builder, fn) => {
+          try {
+            fn(vab)
+          } catch {
+            case t: Throwable => {
+              if (stringency == ValidationStringency.STRICT) {
+                throw t
+              } else {
+                if (stringency == ValidationStringency.LENIENT) {
+                  log.warn("Generating annotation tag from line %s with function %sfailed: %s".format(vab, fn, t))
+                }
+                vab
+              }
+            }
+          }
+        })
 
       val indices = Array.empty[Int]
 
@@ -1593,10 +1677,10 @@ class VariantContextConverter(
       }
 
       variantBuilder.setAnnotation(convertedAnnotationWithAttrs.build)
-      variantBuilder.build
+      (variant, variantBuilder.build)
     }
 
-    convert(_, _, _)
+    convert(_, _, _, _)
   }
 
   private def makeGenotypeFormatFn(
@@ -1665,7 +1749,23 @@ class VariantContextConverter(
         .map(fn => {
           fn(g, _: Genotype.Builder, alleleIdx, indices)
         })
-      val convertedCore = boundFns.foldLeft(builder)((gb: Genotype.Builder, fn) => fn(gb))
+      val convertedCore = boundFns.foldLeft(builder)((gb: Genotype.Builder, fn) => {
+        try {
+          fn(gb)
+        } catch {
+          case t: Throwable => {
+            if (stringency == ValidationStringency.STRICT) {
+              throw t
+            } else {
+              if (stringency == ValidationStringency.LENIENT) {
+                log.warn("Converting genotype field in %s with function %s failed: %s".format(
+                  g, fn, t))
+              }
+              gb
+            }
+          }
+        }
+      })
 
       // if we have a non-ref allele, fold and build
       val coreWithOptNonRefs = nonRefIndex.fold(convertedCore)(nonRefAllele => {
@@ -1684,7 +1784,23 @@ class VariantContextConverter(
           fn(g, _: VariantCallingAnnotations.Builder, alleleIdx, indices)
         })
       val convertedAnnotations = boundAnnotationFns.foldLeft(vcAnns)(
-        (vcab: VariantCallingAnnotations.Builder, fn) => fn(vcab))
+        (vcab: VariantCallingAnnotations.Builder, fn) => {
+          try {
+            fn(vcab)
+          } catch {
+            case t: Throwable => {
+              if (stringency == ValidationStringency.STRICT) {
+                throw t
+              } else {
+                if (stringency == ValidationStringency.LENIENT) {
+                  log.warn("Converting genotype annotation field in %s with function %s failed: %s".format(
+                    g, fn, t))
+                }
+                vcab
+              }
+            }
+          }
+        })
 
       // pull out the attribute map and process
       val attrMap = attributeFns.flatMap(fn => fn(g, alleleIdx, indices))
@@ -1998,7 +2114,22 @@ class VariantContextConverter(
 
       // bind the conversion functions and fold
       val convertedWithVariants = variantExtractFns.foldLeft(builder)(
-        (vcb: VariantContextBuilder, fn) => fn(v, vcb))
+        (vcb: VariantContextBuilder, fn) => {
+          try {
+            fn(v, vcb)
+          } catch {
+            case t: Throwable => {
+              if (stringency == ValidationStringency.STRICT) {
+                throw t
+              } else {
+                if (stringency == ValidationStringency.LENIENT) {
+                  log.warn("Applying extraction function %s to %s failed with %s.".format(fn, v, t))
+                }
+                vcb
+              }
+            }
+          }
+        })
 
       // extract from annotations, if present
       val convertedWithAttrs = Option(v.getAnnotation)
@@ -2013,7 +2144,20 @@ class VariantContextConverter(
           attributeFns.foldLeft(convertedWithAnnotations)((vcb: VariantContextBuilder, fn) => {
             val optAttrPair = fn(attributes)
             optAttrPair.fold(vcb)(pair => {
-              vcb.attribute(pair._1, pair._2)
+              try {
+                vcb.attribute(pair._1, pair._2)
+              } catch {
+                case t: Throwable => {
+                  if (stringency == ValidationStringency.STRICT) {
+                    throw t
+                  } else {
+                    if (stringency == ValidationStringency.LENIENT) {
+                      log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, v, t))
+                    }
+                    vcb
+                  }
+                }
+              }
             })
           })
         })
@@ -2069,7 +2213,23 @@ class VariantContextConverter(
 
       // bind the conversion functions and fold
       val convertedCore = genotypeExtractFns.foldLeft(builder)(
-        (gb: GenotypeBuilder, fn) => fn(g, gb))
+        (gb: GenotypeBuilder, fn) => {
+          try {
+            fn(g, gb)
+          } catch {
+            case t: Throwable => {
+              if (stringency == ValidationStringency.STRICT) {
+                throw t
+              } else {
+                if (stringency == ValidationStringency.LENIENT) {
+                  log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, g, t))
+                }
+
+                gb
+              }
+            }
+          }
+        })
 
       // convert the annotations if they exist
       val gtWithAnnotations = Option(g.getVariantCallingAnnotations)
@@ -2077,18 +2237,48 @@ class VariantContextConverter(
 
           // bind the annotation conversion functions and fold
           val convertedAnnotations = genotypeAnnotationExtractFns.foldLeft(convertedCore)(
-            (gb: GenotypeBuilder, fn) => fn(vca, gb))
+            (gb: GenotypeBuilder, fn) => {
+              try {
+                fn(vca, gb)
+              } catch {
+                case t: Throwable => {
+                  if (stringency == ValidationStringency.STRICT) {
+                    throw t
+                  } else {
+                    if (stringency == ValidationStringency.LENIENT) {
+                      log.warn("Applying annotation extraction function %s to %s failed with %s.".format(fn, vca, t))
+                    }
+
+                    gb
+                  }
+                }
+              }
+            })
 
           // get the attribute map
           val attributes: Map[String, String] = vca.getAttributes.toMap
 
           // apply the attribute converters and return
           attributeFns.foldLeft(convertedAnnotations)((gb: GenotypeBuilder, fn) => {
-            val optAttrPair = fn(attributes)
+            try {
+              val optAttrPair = fn(attributes)
 
-            optAttrPair.fold(gb)(pair => {
-              gb.attribute(pair._1, pair._2)
-            })
+              optAttrPair.fold(gb)(pair => {
+                gb.attribute(pair._1, pair._2)
+              })
+            } catch {
+              case t: Throwable => {
+                if (stringency == ValidationStringency.STRICT) {
+                  throw t
+                } else {
+                  if (stringency == ValidationStringency.LENIENT) {
+                    log.warn("Applying attribute extraction function %s to %s failed with %s.".format(fn, vca, t))
+                  }
+
+                  gb
+                }
+              }
+            }
           })
         })
 
