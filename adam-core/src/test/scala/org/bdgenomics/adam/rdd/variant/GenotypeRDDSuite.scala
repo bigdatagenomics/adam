@@ -27,16 +27,16 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.sequence.SliceRDD
 import org.bdgenomics.adam.sql.{
   AlignmentRecord => AlignmentRecordProduct,
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+Slice => SliceProduct,
   Variant => VariantProduct
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -65,9 +65,9 @@ object GenotypeRDDSuite extends Serializable {
       .build
   }
 
-  def ncfFn(g: Genotype): NucleotideContigFragment = {
-    NucleotideContigFragment.newBuilder
-      .setContigName(g.getContigName)
+  def sliceFn(g: Genotype): Slice = {
+    Slice.newBuilder
+      .setName(g.getContigName)
       .build
   }
 
@@ -374,30 +374,30 @@ class GenotypeRDDSuite extends ADAMFunSuite {
   sparkTest("transform genotypes to contig rdd") {
     val genotypes = sc.loadGenotypes(testFile("small.vcf"))
 
-    def checkSave(contigs: NucleotideContigFragmentRDD) {
+    def checkSave(slices: SliceRDD) {
       val tempPath = tmpLocation(".adam")
-      contigs.saveAsParquet(tempPath)
+      slices.saveAsParquet(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count === 18)
+      assert(sc.loadSlices(tempPath).rdd.count === 18)
     }
 
-    val contigs: NucleotideContigFragmentRDD = genotypes.transmute(rdd => {
-      rdd.map(GenotypeRDDSuite.ncfFn)
+    val slices: SliceRDD = genotypes.transmute(rdd => {
+      rdd.map(GenotypeRDDSuite.sliceFn)
     })
 
-    checkSave(contigs)
+    checkSave(slices)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val contigsDs: NucleotideContigFragmentRDD = genotypes.transmuteDataset(ds => {
+    val slicesDs: SliceRDD = genotypes.transmuteDataset(ds => {
       ds.map(r => {
-        NucleotideContigFragmentProduct.fromAvro(
-          GenotypeRDDSuite.ncfFn(r.toAvro))
+        SliceProduct.fromAvro(
+          GenotypeRDDSuite.sliceFn(r.toAvro))
       })
     })
 
-    checkSave(contigsDs)
+    checkSave(slicesDs)
   }
 
   sparkTest("transform genotypes to coverage rdd") {

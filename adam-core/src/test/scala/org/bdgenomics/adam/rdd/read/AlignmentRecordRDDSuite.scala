@@ -34,13 +34,13 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
-  ADAMContext,
-  ManualRegionPartitioner,
-  TestSaveArgs
+ADAMContext,
+ManualRegionPartitioner,
+TestSaveArgs
 }
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.sequence.SliceRDD
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
   VariantRDD,
@@ -52,7 +52,7 @@ import org.bdgenomics.adam.sql.{
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+Slice => SliceProduct,
   Variant => VariantProduct
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -85,15 +85,15 @@ object AlignmentRecordRDDSuite extends Serializable {
     f.getAlignments().get(0)
   }
 
-  def ncfFn(r: AlignmentRecord): NucleotideContigFragment = {
-    NucleotideContigFragment.newBuilder
-      .setContigName(r.getContigName)
+  def sliceFn(r: AlignmentRecord): Slice = {
+    Slice.newBuilder
+      .setName(r.getContigName)
       .setSequence(r.getSequence)
       .build
   }
 
-  def ncfFn(f: Fragment): NucleotideContigFragment = {
-    ncfFn(fragToRead(f))
+  def sliceFn(f: Fragment): Slice = {
+    sliceFn(fragToRead(f))
   }
 
   def covFn(r: AlignmentRecord): Coverage = {
@@ -982,11 +982,11 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       ((ReferenceRegion(contigName, start, end),
         partition),
         AlignmentRecord.newBuilder
-        .setReadMapped(true)
-        .setContigName(contigName)
-        .setStart(start)
-        .setEnd(end)
-        .build)
+          .setReadMapped(true)
+          .setContigName(contigName)
+          .setStart(start)
+          .setEnd(end)
+          .build)
     }
 
     val sd = SequenceDictionary(SequenceRecord("chr1", 51L),
@@ -1282,30 +1282,30 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("transform reads to contig rdd") {
     val reads = sc.loadAlignments(testFile("small.sam"))
 
-    def checkSave(ncRdd: NucleotideContigFragmentRDD) {
+    def checkSave(slices: SliceRDD) {
       val tempPath = tmpLocation(".fa")
-      ncRdd.saveAsFasta(tempPath)
+      slices.saveAsFasta(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count.toInt === 20)
+      assert(sc.loadSlices(tempPath).rdd.count.toInt === 20)
     }
 
-    val features: NucleotideContigFragmentRDD = reads.transmute(rdd => {
-      rdd.map(AlignmentRecordRDDSuite.ncfFn)
+    val slices: SliceRDD = reads.transmute(rdd => {
+      rdd.map(AlignmentRecordRDDSuite.sliceFn)
     })
 
-    checkSave(features)
+    checkSave(slices)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: NucleotideContigFragmentRDD = reads.transmuteDataset(ds => {
+    val slicesDs: SliceRDD = reads.transmuteDataset(ds => {
       ds.map(r => {
-        NucleotideContigFragmentProduct.fromAvro(
-          AlignmentRecordRDDSuite.ncfFn(r.toAvro))
+        SliceProduct.fromAvro(
+          AlignmentRecordRDDSuite.sliceFn(r.toAvro))
       })
     })
 
-    checkSave(featuresDs)
+    checkSave(slicesDs)
   }
 
   sparkTest("transform reads to coverage rdd") {

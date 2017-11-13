@@ -107,7 +107,6 @@
                 <argument>org.bdgenomics.formats.avro.Feature</argument>
                 <argument>org.bdgenomics.formats.avro.Fragment</argument>
                 <argument>org.bdgenomics.formats.avro.Genotype</argument>
-                <argument>org.bdgenomics.formats.avro.NucleotideContigFragment</argument>
                 <argument>org.bdgenomics.formats.avro.OntologyTerm</argument>
                 <argument>org.bdgenomics.formats.avro.ProcessingStep</argument>
                 <argument>org.bdgenomics.formats.avro.Read</argument>
@@ -139,7 +138,6 @@
                 <argument>org.bdgenomics.formats.avro.Feature</argument>
                 <argument>org.bdgenomics.formats.avro.Fragment</argument>
                 <argument>org.bdgenomics.formats.avro.Genotype</argument>
-                <argument>org.bdgenomics.formats.avro.NucleotideContigFragment</argument>
                 <argument>org.bdgenomics.formats.avro.OntologyTerm</argument>
                 <argument>org.bdgenomics.formats.avro.Read</argument>
                 <argument>org.bdgenomics.formats.avro.RecordGroup</argument>

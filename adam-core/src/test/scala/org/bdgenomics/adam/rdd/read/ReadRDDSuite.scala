@@ -20,10 +20,20 @@ package org.bdgenomics.adam.rdd.read
 import java.io.File
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.adam.models.{ReferenceRegion, SequenceDictionary, SequenceRecord}
+import org.bdgenomics.adam.models.{
+  ReferenceRegion,
+  SequenceDictionary,
+  SequenceRecord
+}
 import org.bdgenomics.adam.rdd.feature.FeatureRDD
 import org.bdgenomics.adam.util.ADAMFunSuite
-import org.bdgenomics.formats.avro.{Alphabet, Feature, QualityScoreVariant, Read, Strand}
+import org.bdgenomics.formats.avro.{
+  Alphabet,
+  Feature,
+  QualityScoreVariant,
+  Read,
+  Strand
+}
 
 class ReadRDDSuite extends ADAMFunSuite {
 

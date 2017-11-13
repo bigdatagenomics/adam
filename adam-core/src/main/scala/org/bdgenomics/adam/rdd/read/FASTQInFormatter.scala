@@ -1,48 +1,48 @@
 /**
- * Licensed to Big Data Genomics (BDG) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The BDG licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+  * Licensed to Big Data Genomics (BDG) under one
+  * or more contributor license agreements.  See the NOTICE file
+  * distributed with this work for additional information
+  * regarding copyright ownership.  The BDG licenses this file
+  * to you under the Apache License, Version 2.0 (the
+  * "License"); you may not use this file except in compliance
+  * with the License.  You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
 package org.bdgenomics.adam.rdd.read
 
 import java.io.OutputStream
 import org.apache.hadoop.conf.Configuration
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
-import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
+import org.bdgenomics.adam.rdd.{InFormatter, InFormatterCompanion}
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.misc.Logging
 
 /**
- * InFormatter companion that creates an InFormatter that writes FASTQ.
- */
+  * InFormatter companion that creates an InFormatter that writes FASTQ.
+  */
 object FASTQInFormatter extends InFormatterCompanion[AlignmentRecord, AlignmentRecordRDD, FASTQInFormatter] {
 
   /**
-   * Builds an FASTQInFormatter to write FASTQ.
-   *
-   * @param gRdd GenomicRDD of AlignmentRecords. Used to get HadoopConfiguration.
-   * @return Returns a new Single FASTQ InFormatter.
-   */
+    * Builds an FASTQInFormatter to write FASTQ.
+    *
+    * @param gRdd GenomicRDD of AlignmentRecords. Used to get HadoopConfiguration.
+    * @return Returns a new Single FASTQ InFormatter.
+    */
   def apply(gRdd: AlignmentRecordRDD): FASTQInFormatter = {
     new FASTQInFormatter(gRdd.rdd.context.hadoopConfiguration)
   }
 }
 
-class FASTQInFormatter private (
-    conf: Configuration) extends InFormatter[AlignmentRecord, AlignmentRecordRDD, FASTQInFormatter] with Logging {
+class FASTQInFormatter private(
+                                conf: Configuration) extends InFormatter[AlignmentRecord, AlignmentRecordRDD, FASTQInFormatter] with Logging {
 
   protected val companion = FASTQInFormatter
   private val converter = new AlignmentRecordConverter
@@ -50,11 +50,11 @@ class FASTQInFormatter private (
   private val writeOriginalQualities = conf.getBoolean(AlignmentRecordRDD.WRITE_ORIGINAL_QUALITIES, false)
 
   /**
-   * Writes alignment records to an output stream in FASTQ format.
-   *
-   * @param os An OutputStream connected to a process we are piping to.
-   * @param iter An iterator of records to write.
-   */
+    * Writes alignment records to an output stream in FASTQ format.
+    *
+    * @param os   An OutputStream connected to a process we are piping to.
+    * @param iter An iterator of records to write.
+    */
   def write(os: OutputStream, iter: Iterator[AlignmentRecord]) {
     iter.foreach(read => {
       val fastqRead = converter.convertToFastq(read,

@@ -20,21 +20,22 @@ package org.bdgenomics.adam.rdd.read
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{Dataset, SQLContext}
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.sequence.{SequenceRDD, SliceRDD}
 import org.bdgenomics.adam.rdd.{AvroGenomicRDD, JavaSaveArgs}
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.adam.sql.{Read => ReadProduct}
-import org.bdgenomics.formats.avro.{Read, Sequence, Slice, Strand}
+import org.bdgenomics.adam.sql.{ Read => ReadProduct }
+import org.bdgenomics.formats.avro.{
+  Read,
+  Sequence,
+  Slice,
+  Strand
+}
 import org.bdgenomics.utils.interval.array.{IntervalArray, IntervalArraySerializer}
-
 import scala.reflect.ClassTag
-<<<<<<< HEAD
-=======
 import scala.reflect.runtime.universe._
->>>>>>> 7b5d2fc485e89a6744f4423c5a1f1145e561c09d
 
 private[adam] case class ReadArray(
     array: Array[(ReferenceRegion, Read)],
@@ -109,6 +110,7 @@ case class ParquetUnboundReadRDD private[rdd] (
 
   lazy val dataset = {
     val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
     sqlContext.read.parquet(parquetFilename).as[ReadProduct]
   }
 
@@ -169,11 +171,8 @@ case class RDDBoundReadRDD private[rdd] (
 
 sealed abstract class ReadRDD extends AvroGenomicRDD[Read, ReadProduct, ReadRDD] {
 
-<<<<<<< HEAD
-=======
   @transient val uTag: TypeTag[ReadProduct] = typeTag[ReadProduct]
 
->>>>>>> 7b5d2fc485e89a6744f4423c5a1f1145e561c09d
   protected def buildTree(rdd: RDD[(ReferenceRegion, Read)])(
     implicit tTag: ClassTag[Read]): IntervalArray[ReferenceRegion, Read] = {
     IntervalArray(rdd, ReadArray.apply(_, _))

@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd.read
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceContigMap }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, NucleotideContigFragment }
+import org.bdgenomics.formats.avro.{AlignmentRecord, Contig, Slice}
 
 class MDTaggingSuite extends ADAMFunSuite {
   val chr1 =
@@ -36,14 +36,14 @@ class MDTaggingSuite extends ADAMFunSuite {
       .setContigLength(100L)
       .build()
 
-  def makeFrags(frags: (Contig, Int, String)*): RDD[NucleotideContigFragment] =
+  def makeFrags(frags: (Contig, Int, String)*): RDD[Slice] =
     sc.parallelize(
       for {
         (contig, start, seq) <- frags
       } yield (
-        NucleotideContigFragment.newBuilder()
-        .setContigLength(contig.getContigLength)
-        .setContigName(contig.getContigName)
+        Slice.newBuilder()
+          .setTotalLength(contig.getContigLength)
+          .setName(contig.getContigName)
         .setStart(start.toLong)
         .setEnd(start.toLong + seq.length)
         .setSequence(seq).build()

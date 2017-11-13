@@ -38,8 +38,8 @@ ADAMContext <- function(ss) {
 
 javaStringency <- function(stringency) {
     stringency <- sparkR.callJStatic("htsjdk.samtools.ValidationStringency",
-                                     "valueOf",
-                                     stringency)
+    "valueOf",
+    stringency)
 }
 
 
@@ -65,11 +65,11 @@ javaStringency <- function(stringency) {
 #' @export
 setMethod("loadAlignments",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath, stringency = "STRICT") {
-              jStringency <- javaStringency(stringency)
-              jrdd <- sparkR.callJMethod(ac@jac,
-                                         "loadAlignments",
-                                         filePath, jStringency)
+function(ac, filePath, stringency = "STRICT") {
+    jStringency <- javaStringency(stringency)
+    jrdd <- sparkR.callJMethod(ac@jac,
+    "loadAlignments",
+    filePath, jStringency)
               AlignmentRecordRDD(jrdd)
           })
 
@@ -112,12 +112,12 @@ setMethod("loadContigFragments",
 #' @export
 setMethod("loadFragments",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath, stringency) {
-              jStringency <- javaStringency(stringency)
-              jrdd <- sparkR.callJMethod(ac@jac,
-                                         "loadFragments",
-                                         filePath,
-                                         jStringency)
+function(ac, filePath, stringency) {
+    jStringency <- javaStringency(stringency)
+    jrdd <- sparkR.callJMethod(ac@jac,
+    "loadFragments",
+    filePath,
+    jStringency)
               FragmentRDD(jrdd)
           })
 
@@ -144,12 +144,12 @@ setMethod("loadFragments",
 #' @export
 setMethod("loadFeatures",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath, stringency = "STRICT") {
-              jStringency <- javaStringency(stringency)
-              jrdd <- sparkR.callJMethod(ac@jac,
-                                         "loadFeatures",
-                                         filePath,
-                                         jStringency)
+function(ac, filePath, stringency = "STRICT") {
+    jStringency <- javaStringency(stringency)
+    jrdd <- sparkR.callJMethod(ac@jac,
+    "loadFeatures",
+    filePath,
+    jStringency)
               FeatureRDD(jrdd)
           })
 
@@ -177,12 +177,12 @@ setMethod("loadFeatures",
 #' @export
 setMethod("loadCoverage",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath, stringency = "STRICT") {
-              jStringency <- javaStringency(stringency)
-              jrdd <- sparkR.callJMethod(ac@jac,
-                                         "loadCoverage",
-                                         filePath,
-                                         jStringency)
+function(ac, filePath, stringency = "STRICT") {
+    jStringency <- javaStringency(stringency)
+    jrdd <- sparkR.callJMethod(ac@jac,
+    "loadCoverage",
+    filePath,
+    jStringency)
               CoverageRDD(jrdd)
           })
 
@@ -199,12 +199,12 @@ setMethod("loadCoverage",
 #' @export
 setMethod("loadGenotypes",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath, stringency = "STRICT") {
-              jStringency <- javaStringency(stringency)
-              jrdd <- sparkR.callJMethod(ac@jac,
-                                         "loadGenotypes",
-                                         filePath,
-                                         jStringency)
+function(ac, filePath, stringency = "STRICT") {
+    jStringency <- javaStringency(stringency)
+    jrdd <- sparkR.callJMethod(ac@jac,
+    "loadGenotypes",
+    filePath,
+    jStringency)
               GenotypeRDD(jrdd)
           })
 
@@ -221,11 +221,11 @@ setMethod("loadGenotypes",
 #' @export
 setMethod("loadVariants",
           signature(ac = "ADAMContext", filePath = "character"),
-          function(ac, filePath, stringency = "STRICT") {
-              jStringency <- javaStringency(stringency)
-              jrdd <- sparkR.callJMethod(ac@jac,
-                                         "loadVariants",
-                                         filePath,
-                                         jStringency)
+function(ac, filePath, stringency = "STRICT") {
+    jStringency <- javaStringency(stringency)
+    jrdd <- sparkR.callJMethod(ac@jac,
+    "loadVariants",
+    filePath,
+    jStringency)
               VariantRDD(jrdd)
           })

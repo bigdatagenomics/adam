@@ -22,7 +22,6 @@ import com.google.common.io.Files
 import htsjdk.samtools.ValidationStringency
 import htsjdk.variant.vcf.VCFHeaderLine
 import java.io.File
-import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
   Coverage,
@@ -32,10 +31,10 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.sequence.SliceRDD
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
@@ -321,18 +320,18 @@ class VariantContextRDDSuite extends ADAMFunSuite {
   sparkTest("transform variant contexts to contig rdd") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
-    def checkSave(contigs: NucleotideContigFragmentRDD) {
+    def checkSave(slices: SliceRDD) {
       val tempPath = tmpLocation(".adam")
-      contigs.saveAsParquet(tempPath)
+      slices.saveAsParquet(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count === 6)
+      assert(sc.loadSlices(tempPath).rdd.count === 6)
     }
 
-    val contigs: NucleotideContigFragmentRDD = variantContexts.transmute(rdd => {
-      rdd.map(VariantRDDSuite.ncfFn)
+    val slices: SliceRDD = variantContexts.transmute(rdd => {
+      rdd.map(VariantRDDSuite.sliceFn)
     })
 
-    checkSave(contigs)
+    checkSave(slices)
   }
 
   sparkTest("transform variant contexts to coverage rdd") {

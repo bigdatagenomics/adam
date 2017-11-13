@@ -110,9 +110,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         self.assertEquals(reads.toDF().count(), pipedRdd.toDF().count())
 
-
     def test_transform(self):
-
         readsPath = self.resourceFile("unsorted.sam")
         ac = ADAMContext(self.sc)
 
@@ -122,9 +120,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         self.assertEquals(transformedReads.toDF().count(), 1)
 
-
     def test_transmute_to_coverage(self):
-
         readsPath = self.resourceFile("unsorted.sam")
         ac = ADAMContext(self.sc)
 
@@ -136,12 +132,10 @@ class AlignmentRecordRDDTest(SparkTestCase):
                                                              x.mapq.cast(DoubleType()).alias("count")),
                                           CoverageRDD)
 
-        assert(isinstance(readsAsCoverage, CoverageRDD))
+        assert (isinstance(readsAsCoverage, CoverageRDD))
         self.assertEquals(readsAsCoverage.toDF().count(), 5)
 
-
     def test_to_coverage(self):
-
         readsPath = self.resourceFile("unsorted.sam")
         ac = ADAMContext(self.sc)
 
@@ -150,12 +144,10 @@ class AlignmentRecordRDDTest(SparkTestCase):
         coverage = reads.toCoverage()
         self.assertEquals(coverage.toDF().count(), 42)
 
-        coverage = reads.toCoverage(collapse = False)
+        coverage = reads.toCoverage(collapse=False)
         self.assertEquals(coverage.toDF().count(), 46)
 
-
     def test_to_fragments(self):
-
         readsPath = self.resourceFile("unsorted.sam")
         ac = ADAMContext(self.sc)
 

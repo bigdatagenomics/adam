@@ -202,8 +202,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
    * and saves to disk as VCF.
    *
-   * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
-   *
+    * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
+    *
    * @param args Arguments defining where to save the file.
    * @param stringency The validation stringency to use when writing the VCF.
    *   Defaults to LENIENT.
@@ -220,13 +220,13 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
 
   /**
    * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
-   * and saves as a single file to disk as VCF. Uses lenient validation
-   * stringency.
-   *
-   * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
-   *
-   * @param filePath The file path to save to.
-   */
+    * and saves as a single file to disk as VCF. Uses lenient validation
+    * stringency.
+    *
+    * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
+    *
+    * @param filePath The file path to save to.
+    */
   def saveAsVcf(filePath: String): Unit = {
     saveAsVcf(
       filePath,
@@ -237,21 +237,21 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   }
 
   /**
-   * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
+    * Converts an RDD of ADAM VariantContexts to HTSJDK VariantContexts
    * and saves to disk as VCF.
    *
-   * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
+    * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
    *
-   * @param filePath The file path to save to.
-   * @param asSingleFile If true, saves the output as a single file by merging
-   *   the sharded output after completing the write to HDFS. If false, the
-   *   output of this call will be written as shards, where each shard has a
-   *   valid VCF header.
-   * @param deferMerging If true and asSingleFile is true, we will save the
-   *   output shards as a headerless file, but we will not merge the shards.
+    * @param filePath         The file path to save to.
+   * @param asSingleFile      If true, saves the output as a single file by merging
+   *                          the sharded output after completing the write to HDFS. If false, the
+   *                          output of this call will be written as shards, where each shard has a
+    *                         valid VCF header.
+   * @param deferMerging      If true and asSingleFile is true, we will save the
+   *                          output shards as a headerless file, but we will not merge the shards.
    * @param disableFastConcat If asSingleFile is true and deferMerging is false,
-   *   disables the use of the parallel file merging engine.
-   * @param stringency The validation stringency to use when writing the VCF.
+   *                          disables the use of the parallel file merging engine.
+   * @param stringency        The validation stringency to use when writing the VCF.
    */
   def saveAsVcf(filePath: String,
                 asSingleFile: Boolean,

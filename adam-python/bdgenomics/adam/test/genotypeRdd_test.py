@@ -67,7 +67,6 @@ class GenotypeRDDTest(SparkTestCase):
 
         self.checkFiles(tmpPath, self.resourceFile("sorted.lex.vcf", module='adam-cli'))
 
-
     def test_transform(self):
         testFile = self.resourceFile("random.vcf")
         ac = ADAMContext(self.sc)
