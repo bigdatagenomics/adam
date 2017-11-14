@@ -47,12 +47,13 @@ import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.projections.{FeatureField, Projection }
+import org.bdgenomics.adam.projections.{ FeatureField, Projection }
 import org.bdgenomics.adam.rdd.contig.{
   DatasetBoundNucleotideContigFragmentRDD,
   NucleotideContigFragmentRDD,
   ParquetUnboundNucleotideContigFragmentRDD,
-  RDDBoundNucleotideContigFragmentRDD }
+  RDDBoundNucleotideContigFragmentRDD
+}
 import org.bdgenomics.adam.rdd.feature._
 import org.bdgenomics.adam.rdd.fragment.{
   DatasetBoundFragmentRDD,
@@ -1786,7 +1787,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in range binned partitioned Parquet + Avro format into an AlignmentRecordRDD.
+   * Load a path name with range binned partitioned Parquet + Avro format into an AlignmentRecordRDD.
    *
    * @note The sequence dictionary is read from an Avro file stored at
    *   pathName/_seqdict.avro and the record group dictionary is read from an
@@ -1801,7 +1802,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadPartitionedParquetAlignments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): AlignmentRecordRDD = {
 
     require(checkPartitionedParquetFlag(pathName),
-      "input Parquet files are not Partitioned")
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
 
     // convert avro to sequence dictionary
     val sd = loadAvroSequenceDictionary(pathName)
@@ -2135,8 +2136,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  /**
+   * Load a path name with range binned partitioned Parquet + Avro format into GenotypeRDD
+   *
+   * @param pathName
+   * @param regions
+   * @return
+   */
   def loadPartitionedParquetGenotypes(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): GenotypeRDD = {
-    require(!checkPartitionedParquetFlag(pathName),
+    require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
     // load header lines
     val headers = loadHeaderLines(pathName)
@@ -2188,8 +2196,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  /**
+   * Load a path name with range binned partitioned Parquet + Avro format into an VariantRDD.
+   *
+   * @param pathName
+   * @param regions
+   * @return
+   */
   def loadPartitionedParquetVariants(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): VariantRDD = {
-    require(!checkPartitionedParquetFlag(pathName),
+    require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
 
@@ -2522,13 +2537,26 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  def loadPartitionedParquetFeatures(pathName: String): FeatureRDD = {
-    require(!checkPartitionedParquetFlag(pathName),
+  /**
+   * Load a path name with range binned partitioned Parquet + Avro format into a FeatureRDD.
+   *
+   * @param pathName
+   * @return
+   */
+
+  def loadPartitionedParquetFeatures(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): FeatureRDD = {
+    require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
     val features = ParquetUnboundFeatureRDD(sc, pathName, sd)
 
-    DatasetBoundFeatureRDD(features.dataset, features.sequences)
+    val datasetBoundFeatureRDD: FeatureRDD = regions match {
+      case Some(x) => DatasetBoundFeatureRDD(features.dataset
+        .filter(referenceRegionsToDatasetQueryString(x)), features.sequences)
+      case _ => DatasetBoundFeatureRDD(features.dataset, features.sequences)
+    }
+
+    datasetBoundFeatureRDD
 
   }
 
@@ -2564,8 +2592,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  /**
+   * Load a path name with range binned partitioned Parquet + Avro format into a NucleotideContigFragmentRDD.
+   *
+   * @param pathName
+   * @return
+   */
   def loadPartitionedParquetFragments(pathName: String): NucleotideContigFragmentRDD = {
-    require(!checkPartitionedParquetFlag(pathName),
+    require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
     val nucleotideContigFragments = ParquetUnboundNucleotideContigFragmentRDD(sc, pathName, sd)
@@ -3003,13 +3037,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     fs.exists(path)
   }
 
-  def referenceRegionsToDatasetQueryString(x: Iterable[ReferenceRegion], partitionSize: Int = 1000000): String = {
-    var regionQueryString = "(contigName=" + "\'" + x.head.referenceName.replaceAll("chr", "") + "\' and posBin >= \'" +
+  private def referenceRegionsToDatasetQueryString(x: Iterable[ReferenceRegion], partitionSize: Int = 1000000): String = {
+    var regionQueryString = "(contigName=" + "\'" + x.head.referenceName + "\' and posBin >= \'" +
       scala.math.floor(x.head.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(x.head.end / partitionSize).toInt + 1) + "\' and start >= " + x.head.start + " and end <= " + x.head.end + ")"
     if (x.size > 1) {
       x.foreach((i) => {
         regionQueryString = regionQueryString + " or " + "(contigName=" + "\'" +
-          i.referenceName.replaceAll("chr", "") + "\' and posBin >= \'" + scala.math.floor(i.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(i.end / partitionSize).toInt + 1) + "\' and  start >= " + i.start + " and end <= " + i.end + ")"
+          i.referenceName + "\' and posBin >= \'" + scala.math.floor(i.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(i.end / partitionSize).toInt + 1) + "\' and  start >= " + i.start + " and end <= " + i.end + ")"
       })
     }
     regionQueryString
