@@ -18,10 +18,15 @@
 package org.bdgenomics.adam.rdd
 
 import java.io.{ File, FileNotFoundException, InputStream }
-
 import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord, ValidationStringency }
 import htsjdk.samtools.util.Locatable
-import htsjdk.variant.vcf.{ VCFCompoundHeaderLine, VCFFormatHeaderLine, VCFHeader, VCFHeaderLine, VCFInfoHeaderLine }
+import htsjdk.variant.vcf.{
+  VCFCompoundHeaderLine,
+  VCFFormatHeaderLine,
+  VCFHeader,
+  VCFHeaderLine,
+  VCFInfoHeaderLine
+}
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
 import org.apache.avro.generic.{ GenericDatumReader, GenericRecord, IndexedRecord }
@@ -42,17 +47,56 @@ import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.projections.{ FeatureField, Projection }
-import org.bdgenomics.adam.rdd.contig.{ DatasetBoundNucleotideContigFragmentRDD, NucleotideContigFragmentRDD, ParquetUnboundNucleotideContigFragmentRDD, RDDBoundNucleotideContigFragmentRDD }
+import org.bdgenomics.adam.projections.{FeatureField, Projection }
+import org.bdgenomics.adam.rdd.contig.{
+  DatasetBoundNucleotideContigFragmentRDD,
+  NucleotideContigFragmentRDD,
+  ParquetUnboundNucleotideContigFragmentRDD,
+  RDDBoundNucleotideContigFragmentRDD }
 import org.bdgenomics.adam.rdd.feature._
-import org.bdgenomics.adam.rdd.fragment.{ DatasetBoundFragmentRDD, FragmentRDD, ParquetUnboundFragmentRDD, RDDBoundFragmentRDD }
-import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, DatasetBoundAlignmentRecordRDD, ParquetUnboundAlignmentRecordRDD, RDDBoundAlignmentRecordRDD, RepairPartitions }
+import org.bdgenomics.adam.rdd.fragment.{
+  DatasetBoundFragmentRDD,
+  FragmentRDD,
+  ParquetUnboundFragmentRDD,
+  RDDBoundFragmentRDD
+}
+import org.bdgenomics.adam.rdd.read.{
+  AlignmentRecordRDD,
+  DatasetBoundAlignmentRecordRDD,
+  ParquetUnboundAlignmentRecordRDD,
+  RDDBoundAlignmentRecordRDD,
+  RepairPartitions
+}
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct, Feature => FeatureProduct, Fragment => FragmentProduct, Genotype => GenotypeProduct, NucleotideContigFragment => NucleotideContigFragmentProduct, Variant => VariantProduct }
+import org.bdgenomics.adam.sql.{
+  AlignmentRecord => AlignmentRecordProduct,
+  Feature => FeatureProduct,
+  Fragment => FragmentProduct,
+  Genotype => GenotypeProduct,
+  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Variant => VariantProduct
+}
 import org.bdgenomics.adam.util.FileExtensions._
-import org.bdgenomics.adam.util.{ GenomeFileReader, ReferenceContigMap, ReferenceFile, SequenceDictionaryReader, TwoBitFile }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Feature, Fragment, Genotype, NucleotideContigFragment, ProcessingStep, Sample, Variant, RecordGroup => RecordGroupMetadata }
+import org.bdgenomics.adam.util.{
+  GenomeFileReader,
+  ReferenceContigMap,
+  ReferenceFile,
+  SequenceDictionaryReader,
+  TwoBitFile
+}
+import org.bdgenomics.formats.avro.{
+  AlignmentRecord,
+  Contig,
+  Feature,
+  Fragment,
+  Genotype,
+  NucleotideContigFragment,
+  ProcessingStep,
+  Sample,
+  Variant,
+  RecordGroup => RecordGroupMetadata
+}
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
@@ -60,7 +104,6 @@ import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods._
 import org.seqdoop.hadoop_bam._
 import org.seqdoop.hadoop_bam.util._
-
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -1775,7 +1818,20 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  def loadPartitionedParquetAlignments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, partitionSize: Int = 1000000): AlignmentRecordRDD = {
+  /**
+   * Load a path name in range binned partitioned Parquet + Avro format into an AlignmentRecordRDD.
+   *
+   * @note The sequence dictionary is read from an Avro file stored at
+   *   pathName/_seqdict.avro and the record group dictionary is read from an
+   *   Avro file stored at pathName/_rgdict.avro. These files are pure Avro,
+   *   not Parquet + Avro.
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions
+   * @return
+   */
+  def loadPartitionedParquetAlignments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): AlignmentRecordRDD = {
 
     require(checkPartitionedParquetFlag(pathName),
       "input Parquet files are not Partitioned")
@@ -2179,10 +2235,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  def loadPartitionedParquetGenotypes(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, partitionSize: Int = 1000000): GenotypeRDD = {
-    if (!checkPartitionedParquetFlag(pathName)) {
-      throw new IllegalArgumentException("input Parquet files are not Partitioned")
-    }
+  def loadPartitionedParquetGenotypes(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): GenotypeRDD = {
+    require(!checkPartitionedParquetFlag(pathName),
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
     // load header lines
     val headers = loadHeaderLines(pathName)
     // load sequence info
@@ -2198,7 +2253,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       case _ => DatasetBoundGenotypeRDD(genotypes.dataset, genotypes.sequences, genotypes.samples, genotypes.headerLines)
     }
     datasetBoundGenotypeRDD
-
   }
 
   /**
@@ -2234,10 +2288,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
-  def loadPartitionedParquetVariants(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, partitionSize: Int = 1000000): VariantRDD = {
-    if (!checkPartitionedParquetFlag(pathName)) {
-      throw new IllegalArgumentException("input Parquet files are not Partitioned")
-    }
+  def loadPartitionedParquetVariants(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): VariantRDD = {
+    require(!checkPartitionedParquetFlag(pathName),
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
 
     // load header lines
@@ -2570,9 +2623,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   def loadPartitionedParquetFeatures(pathName: String): FeatureRDD = {
-    if (!checkPartitionedParquetFlag(pathName)) {
-      throw new IllegalArgumentException("input Parquet files are not Partitioned")
-    }
+    require(!checkPartitionedParquetFlag(pathName),
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
     val features = ParquetUnboundFeatureRDD(sc, pathName, sd)
 
@@ -2613,9 +2665,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   def loadPartitionedParquetFragments(pathName: String): NucleotideContigFragmentRDD = {
-    if (!checkPartitionedParquetFlag(pathName)) {
-      throw new IllegalArgumentException("input Parquet files are not Partitioned")
-    }
+    require(!checkPartitionedParquetFlag(pathName),
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
     val nucleotideContigFragments = ParquetUnboundNucleotideContigFragmentRDD(sc, pathName, sd)
     DatasetBoundNucleotideContigFragmentRDD(nucleotideContigFragments.dataset, nucleotideContigFragments.sequences)
