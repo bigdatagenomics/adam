@@ -2540,8 +2540,8 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
       .format("parquet")
       .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
       .save(filePath)
-    //writePartitionedParquetFlag(filePath)
-    rdd.context.writePartitionedParquetFlag(filePath)
+    writePartitionedParquetFlag(filePath)
+    //rdd.context.writePartitionedParquetFlag(filePath)
     saveMetadata(filePath)
   }
 
