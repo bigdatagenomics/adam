@@ -2598,12 +2598,19 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName
    * @return
    */
-  def loadPartitionedParquetFragments(pathName: String): NucleotideContigFragmentRDD = {
+  def loadPartitionedParquetFragments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): NucleotideContigFragmentRDD = {
     require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
     val nucleotideContigFragments = ParquetUnboundNucleotideContigFragmentRDD(sc, pathName, sd)
-    DatasetBoundNucleotideContigFragmentRDD(nucleotideContigFragments.dataset, nucleotideContigFragments.sequences)
+
+    val datasetBoundNucleotideContigFragmentRDD: NucleotideContigFragmentRDD = regions match {
+      case Some(x) => DatasetBoundNucleotideContigFragmentRDD(nucleotideContigFragments.dataset
+        .filter(referenceRegionsToDatasetQueryString(x)), nucleotideContigFragments.sequences)
+      case _ => DatasetBoundNucleotideContigFragmentRDD(nucleotideContigFragments.dataset, nucleotideContigFragments.sequences)
+    }
+
+    datasetBoundNucleotideContigFragmentRDD
   }
 
   /**
@@ -3023,12 +3030,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       log.info(s"Loading $pathName as Parquet containing Fragments.")
       loadParquetFragments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
-  }
-
-  def writePartitionedParquetFlag(filePath: String): Boolean = {
-    val path = new Path(filePath, "_isPartitionedByStartPos")
-    val fs = path.getFileSystem(sc.hadoopConfiguration)
-    fs.createNewFile(path)
   }
 
   def checkPartitionedParquetFlag(filePath: String): Boolean = {
