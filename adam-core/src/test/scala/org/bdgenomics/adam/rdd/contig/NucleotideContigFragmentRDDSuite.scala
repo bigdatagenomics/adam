@@ -140,6 +140,37 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     assert(fragments3.dataset.count === 8L)
   }
 
+  sparkTest("round trip a ncf to partitioned parquet") {
+    def testMetadata(fRdd: NucleotideContigFragmentRDD) {
+      val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
+      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+    }
+
+    val fragments1 = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
+    assert(fragments1.rdd.count === 8L)
+    assert(fragments1.dataset.count === 8L)
+    testMetadata(fragments1)
+
+    // save using dataset path
+    val output1 = tmpFile("ctg.adam")
+    val dsBound = fragments1.transformDataset(ds => ds)
+    testMetadata(dsBound)
+    dsBound.saveAsPartitionedParquet(output1)
+    val fragments2 = sc.loadPartitionedParquetFragments(output1)
+    testMetadata(fragments2)
+    assert(fragments2.rdd.count === 8L)
+    assert(fragments2.dataset.count === 8L)
+
+    // save using rdd path
+    val output2 = tmpFile("ctg.adam")
+    val rddBound = fragments2.transform(rdd => rdd)
+    testMetadata(rddBound)
+    rddBound.saveAsPartitionedParquet(output2)
+    val fragments3 = sc.loadPartitionedParquetFragments(output2)
+    assert(fragments3.rdd.count === 8L)
+    assert(fragments3.dataset.count === 8L)
+  }
+
   sparkTest("save fasta back as a single file") {
     val origFasta = testFile("artificial.fa")
     val tmpFasta = tmpFile("test.fa")
@@ -857,4 +888,5 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     checkSave(variantContexts)
   }
+
 }
