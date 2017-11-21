@@ -15,10 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.util
 
 import org.apache.hadoop.fs.{ FileSystem, Path }
-import org.bdgenomics.adam.util.ADAMFunSuite
 
 class FileMergerSuite extends ADAMFunSuite {
 

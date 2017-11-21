@@ -15,16 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.util
 
-import htsjdk.samtools.util.BlockCompressedStreamConstants
+import java.io.{ InputStream, OutputStream }
+
 import htsjdk.samtools.cram.build.CramIO
 import htsjdk.samtools.cram.common.CramVersions
-import java.io.{ InputStream, OutputStream }
+import htsjdk.samtools.util.BlockCompressedStreamConstants
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
 import org.bdgenomics.utils.misc.Logging
+
 import scala.annotation.tailrec
 
 /**
@@ -45,6 +47,7 @@ private[adam] object FileMerger extends Logging {
    * Automatically checks to see if the filesystem is HDFS, and if so, uses the
    * parallel file merging implementation to concatenate files.
    *
+   * @param sc Spark context.
    * @param fs The file system implementation to use.
    * @param outputPath The location to write the merged file at.
    * @param tailPath The location where the sharded files have been written.
@@ -61,7 +64,6 @@ private[adam] object FileMerger extends Logging {
    *   the fast file merger can fail if the underlying file system is encrypted,
    *   or any number of undocumented invariants are not met. In that case, we
    *   provide this switch to disable fast merging.
-   *
    * @see mergeFilesAcrossFilesystems
    */
   def mergeFiles(sc: SparkContext,
@@ -100,6 +102,7 @@ private[adam] object FileMerger extends Logging {
    *
    * Can read files from a different filesystem then they are written to.
    *
+   * @param conf Hadoop configuration.
    * @param fsIn The file system implementation to use for the tail/head paths.
    * @param fsOut The file system implementation to use for the output path.
    * @param outputPath The location to write the merged file at.

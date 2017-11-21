@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.util
 
 import org.apache.spark.Partitioner
 
-private[rdd] case class ManualRegionPartitioner[V](partitions: Int) extends Partitioner {
+private[adam] case class ManualRegionPartitioner[V](partitions: Int) extends Partitioner {
 
   override def numPartitions: Int = partitions
 

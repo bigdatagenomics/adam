@@ -17,11 +17,10 @@
  */
 package org.bdgenomics.adam.rdd
 
-import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.nio.file.Paths
 import htsjdk.samtools.ValidationStringency
 import org.apache.avro.generic.IndexedRecord
-import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
@@ -38,6 +37,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   SequenceRecord
 }
+import org.bdgenomics.adam.util.{ ManualRegionPartitioner, TextRddWriter }
 import org.bdgenomics.formats.avro.{
   Contig,
   ProcessingStep,
@@ -2020,27 +2020,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
                                 outputPath: String,
                                 asSingleFile: Boolean,
                                 disableFastConcat: Boolean,
-                                optHeaderPath: Option[String] = None) {
-    if (asSingleFile) {
-
-      // write rdd to disk
-      val tailPath = "%s_tail".format(outputPath)
-      rdd.saveAsTextFile(tailPath)
-
-      // get the filesystem impl
-      val fs = FileSystem.get(rdd.context.hadoopConfiguration)
-
-      // and then merge
-      FileMerger.mergeFiles(rdd.context,
-        fs,
-        new Path(outputPath),
-        new Path(tailPath),
-        disableFastConcat = disableFastConcat,
-        optHeaderPath = optHeaderPath.map(p => new Path(p)))
-    } else {
-      assert(optHeaderPath.isEmpty)
-      rdd.saveAsTextFile(outputPath)
-    }
+                                optHeaderPath: Option[String] = None): Unit = {
+    TextRddWriter.writeTextRdd(rdd, outputPath, asSingleFile, disableFastConcat, optHeaderPath)
   }
 }
 

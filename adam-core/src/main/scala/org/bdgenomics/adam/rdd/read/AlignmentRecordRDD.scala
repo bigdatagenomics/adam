@@ -45,7 +45,6 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   AvroRecordGroupGenomicRDD,
   ADAMSaveAnyArgs,
-  FileMerger,
   JavaSaveArgs,
   SAMHeaderWriter
 }
@@ -60,7 +59,7 @@ import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.variant.VariantRDD
 import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.adam.util.ReferenceFile
+import org.bdgenomics.adam.util.{ FileMerger, ReferenceFile }
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
