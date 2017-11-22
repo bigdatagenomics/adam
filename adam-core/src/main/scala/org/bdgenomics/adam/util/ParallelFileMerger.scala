@@ -15,12 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.util
 
-import htsjdk.samtools.util.BlockCompressedStreamConstants
 import htsjdk.samtools.cram.build.CramIO
 import htsjdk.samtools.cram.common.CramVersions
-import java.io.{ InputStream, OutputStream }
+import htsjdk.samtools.util.BlockCompressedStreamConstants
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
@@ -32,7 +31,7 @@ import scala.math.min
 /**
  * @see FileMerger
  */
-private[rdd] object ParallelFileMerger extends Logging {
+private[adam] object ParallelFileMerger extends Logging {
 
   /**
    * Merges ranges from several files into a single file.
@@ -236,7 +235,7 @@ private[rdd] object ParallelFileMerger extends Logging {
   /**
    * Merges together sharded files, while preserving partition ordering.
    *
-   * @param fs The file system implementation to use.
+   * @param sc Spark context.
    * @param outputPath The location to write the merged file at.
    * @param tailPath The location where the sharded files have been written.
    * @param optHeaderPath Optionally, the location where a header file has

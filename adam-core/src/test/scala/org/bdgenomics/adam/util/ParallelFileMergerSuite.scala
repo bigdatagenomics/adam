@@ -15,11 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.adam.rdd
+package org.bdgenomics.adam.util
 
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.util.ADAMFunSuite
 import org.seqdoop.hadoop_bam.CRAMInputFormat
 
 class ParallelFileMergerSuite extends ADAMFunSuite {
@@ -63,7 +62,7 @@ class ParallelFileMergerSuite extends ADAMFunSuite {
 
   sparkTest("block size must be positive and non-zero when trying to merge files") {
     intercept[AssertionError] {
-      ParallelFileMerger.generateMerges(0, Seq((new Path(testFile("small.sam")), 3093)))
+      ParallelFileMerger.generateMerges(0, Seq((new Path(testFile("small.sam")), 3093L)))
     }
   }
 

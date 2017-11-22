@@ -29,12 +29,12 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   AvroGenomicRDD,
-  FileMerger,
   JavaSaveArgs,
   SAMHeaderWriter
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Feature => FeatureProduct }
+import org.bdgenomics.adam.util.FileMerger
 import org.bdgenomics.formats.avro.{ Feature, Strand }
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,

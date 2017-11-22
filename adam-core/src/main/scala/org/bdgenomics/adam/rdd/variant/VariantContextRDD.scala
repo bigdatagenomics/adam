@@ -39,11 +39,10 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.{
   ADAMSaveAnyArgs,
-  FileMerger,
   MultisampleGenomicRDD,
   VCFHeaderUtils
 }
-import org.bdgenomics.adam.util.FileExtensions
+import org.bdgenomics.adam.util.{ FileMerger, FileExtensions }
 import org.bdgenomics.formats.avro.Sample
 import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.interval.array.{
