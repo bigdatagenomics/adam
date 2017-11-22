@@ -25,7 +25,6 @@ import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.bdgenomics.utils.misc.Logging
-
 import scala.annotation.tailrec
 import scala.math.min
 

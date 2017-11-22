@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.util
 
-import org.apache.hadoop.fs.{ Path, FileSystem }
+import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.rdd.RDD
 
 /**

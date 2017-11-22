@@ -54,7 +54,7 @@ import org.bdgenomics.adam.sql.{
   NucleotideContigFragment => NucleotideContigFragmentProduct,
   Variant => VariantProduct
 }
-import org.bdgenomics.adam.util.{ ManualRegionPartitioner, ADAMFunSuite }
+import org.bdgenomics.adam.util.{ ADAMFunSuite, ManualRegionPartitioner }
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.{ CRAMInputFormat, SAMFormat }
 import scala.collection.JavaConversions._

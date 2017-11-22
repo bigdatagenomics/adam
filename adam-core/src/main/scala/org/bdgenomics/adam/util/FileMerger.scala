@@ -18,7 +18,6 @@
 package org.bdgenomics.adam.util
 
 import java.io.{ InputStream, OutputStream }
-
 import htsjdk.samtools.cram.build.CramIO
 import htsjdk.samtools.cram.common.CramVersions
 import htsjdk.samtools.util.BlockCompressedStreamConstants
@@ -26,7 +25,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
 import org.bdgenomics.utils.misc.Logging
-
 import scala.annotation.tailrec
 
 /**
