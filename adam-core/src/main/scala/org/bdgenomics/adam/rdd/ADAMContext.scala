@@ -1847,7 +1847,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val reads: AlignmentRecordRDD = ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd, pgs)
 
     val datasetBoundAlignmentRecordRDD: AlignmentRecordRDD = regions match {
-      case Some(x) => DatasetBoundAlignmentRecordRDD(reads.dataset.filter(referenceRegionsToDatasetQueryString(x)), reads.sequences, reads.recordGroups, reads.processingSteps)
+      case Some(x) => DatasetBoundAlignmentRecordRDD(reads.dataset.filter(referenceRegionsToDatasetQueryString(x, chr_prefix = true)), reads.sequences, reads.recordGroups, reads.processingSteps)
       case _       => DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
     }
     datasetBoundAlignmentRecordRDD
@@ -3141,13 +3141,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     fs.exists(path)
   }
 
-  private def referenceRegionsToDatasetQueryString(x: Iterable[ReferenceRegion], partitionSize: Int = 1000000): String = {
-    var regionQueryString = "(contigName=" + "\'" + x.head.referenceName + "\' and posBin >= \'" +
+  private def referenceRegionsToDatasetQueryString(x: Iterable[ReferenceRegion], partitionSize: Int = 1000000, chr_prefix: Boolean = false): String = {
+
+    def maybeAddChrPrefix(contig: String): String = {
+      val chromosomes = List("1", "2", "3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT")
+      if (chromosomes.contains(contig) && chr_prefix) {
+        "chr" + contig
+      } else {
+        contig
+      }
+    }
+
+    var regionQueryString = "(contigName=" + "\'" + maybeAddChrPrefix(x.head.referenceName) + "\' and posBin >= \'" +
       scala.math.floor(x.head.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(x.head.end / partitionSize).toInt + 1) + "\' and start >= " + x.head.start + " and end <= " + x.head.end + ")"
     if (x.size > 1) {
       x.foreach((i) => {
         regionQueryString = regionQueryString + " or " + "(contigName=" + "\'" +
-          i.referenceName + "\' and posBin >= \'" + scala.math.floor(i.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(i.end / partitionSize).toInt + 1) + "\' and  start >= " + i.start + " and end <= " + i.end + ")"
+          maybeAddChrPrefix(i.referenceName) + "\' and posBin >= \'" + scala.math.floor(i.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(i.end / partitionSize).toInt + 1) + "\' and  start >= " + i.start + " and end <= " + i.end + ")"
       })
     }
     regionQueryString
