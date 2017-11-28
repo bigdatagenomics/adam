@@ -9,7 +9,7 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.bdgenomics.adam</groupId>
-  <artifactId>adam-parent_2.10</artifactId>
+  <artifactId>adam-parent-spark2_2.11</artifactId>
   <version>0.23.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>ADAM_${scala.version.prefix}</name>
@@ -19,9 +19,9 @@
   <properties>
     <java.version>1.8</java.version>
     <avro.version>1.8.1</avro.version>
-    <scala.version>2.10.6</scala.version>
-    <scala.version.prefix>2.10</scala.version.prefix>
-    <spark.version>1.6.3</spark.version>
+    <scala.version>2.11.8</scala.version>
+    <scala.version.prefix>2.11</scala.version.prefix>
+    <spark.version>2.2.0</spark.version>
     <parquet.version>1.8.2</parquet.version>
     <!-- Edit the following line to configure the Hadoop (HDFS) version. -->
     <hadoop.version>2.7.3</hadoop.version>
@@ -351,36 +351,36 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-core_${scala.version.prefix}</artifactId>
+        <artifactId>adam-core-spark2_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-core_${scala.version.prefix}</artifactId>
+        <artifactId>adam-core-spark2_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-cli_${scala.version.prefix}</artifactId>
+        <artifactId>adam-cli-spark2_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-apis_${scala.version.prefix}</artifactId>
+        <artifactId>adam-apis-spark2_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-apis_${scala.version.prefix}</artifactId>
+        <artifactId>adam-apis-spark2_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-misc_${scala.version.prefix}</artifactId>
+        <artifactId>utils-misc-spark2_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
         <type>test-jar</type>
         <scope>test</scope>
@@ -393,7 +393,7 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-misc_${scala.version.prefix}</artifactId>
+        <artifactId>utils-misc-spark2_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
          <exclusions>
           <exclusion>
@@ -415,17 +415,17 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-cli_${scala.version.prefix}</artifactId>
+        <artifactId>utils-cli-spark2_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-intervalrdd_${scala.version.prefix}</artifactId>
+        <artifactId>utils-intervalrdd-spark2_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-io_${scala.version.prefix}</artifactId>
+        <artifactId>utils-io-spark2_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
         <exclusions>
           <exclusion>
@@ -436,7 +436,7 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.utils</groupId>
-        <artifactId>utils-metrics_${scala.version.prefix}</artifactId>
+        <artifactId>utils-metrics-spark2_${scala.version.prefix}</artifactId>
         <version>${bdg-utils.version}</version>
       </dependency>
       <dependency>
@@ -612,7 +612,7 @@
       </dependency>
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-codegen_${scala.version.prefix}</artifactId>
+        <artifactId>adam-codegen-spark2_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>

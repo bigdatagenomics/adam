@@ -1832,7 +1832,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param regions
    * @return
    */
-  def loadPartitionedParquetAlignments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): AlignmentRecordRDD = {
+  def loadPartitionedParquetAlignments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, use_chr_prefix: Boolean = false): AlignmentRecordRDD = {
 
     require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
@@ -1847,7 +1847,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val reads: AlignmentRecordRDD = ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd, pgs)
 
     val datasetBoundAlignmentRecordRDD: AlignmentRecordRDD = regions match {
-      case Some(x) => DatasetBoundAlignmentRecordRDD(reads.dataset.filter(referenceRegionsToDatasetQueryString(x, chr_prefix = true)), reads.sequences, reads.recordGroups, reads.processingSteps)
+      case Some(x) => DatasetBoundAlignmentRecordRDD(reads.dataset.filter(referenceRegionsToDatasetQueryString(x, use_chr_prefix = use_chr_prefix)), reads.sequences, reads.recordGroups, reads.processingSteps)
       case _       => DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
     }
     datasetBoundAlignmentRecordRDD
@@ -3141,11 +3141,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     fs.exists(path)
   }
 
-  private def referenceRegionsToDatasetQueryString(x: Iterable[ReferenceRegion], partitionSize: Int = 1000000, chr_prefix: Boolean = false): String = {
+  private def referenceRegionsToDatasetQueryString(x: Iterable[ReferenceRegion], partitionSize: Int = 1000000, use_chr_prefix: Boolean = false): String = {
 
     def maybeAddChrPrefix(contig: String): String = {
-      val chromosomes = List("1", "2", "3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT")
-      if (chromosomes.contains(contig) && chr_prefix) {
+      val chromosomes = List("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "X", "Y", "MT")
+      if (chromosomes.contains(contig) && use_chr_prefix) {
         "chr" + contig
       } else {
         contig
