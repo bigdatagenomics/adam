@@ -1283,8 +1283,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     val combinedSequences = sequences ++ genomicRdd.sequences
 
     GenericGenomicRDD[(Option[T], X)](
-      RightOuterShuffleRegionJoin[T, X](leftRddToJoin, rightRddToJoin)
-        .compute(),
+      LeftOuterShuffleRegionJoin[X, T](rightRddToJoin, leftRddToJoin)
+        .compute()
+        .map(_.swap),
       combinedSequences,
       kv => {
         // pad by -1 * flankSize to undo pad from preprocessing

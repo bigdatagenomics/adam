@@ -248,51 +248,6 @@ case class LeftOuterShuffleRegionJoinAndGroupByLeft[T: ClassTag, U: ClassTag](le
   }
 }
 
-case class RightOuterShuffleRegionJoin[T: ClassTag, U: ClassTag](leftRdd: RDD[(ReferenceRegion, T)],
-                                                                 rightRdd: RDD[(ReferenceRegion, U)])
-    extends SortedIntervalPartitionJoinWithVictims[T, U, Option[T], U] {
-
-  /**
-   * Handles the case where the left or the right iterator were empty.
-   *
-   * @param left The left iterator.
-   * @param right The right iterator.
-   * @return The iterator containing properly formatted tuples.
-   */
-  protected def emptyFn(left: Iterator[(ReferenceRegion, T)],
-                        right: Iterator[(ReferenceRegion, U)]): Iterator[(Option[T], U)] = {
-    right.map(u => (None, u._2))
-  }
-
-  /**
-   * Computes post processing required to complete the join and properly format
-   * hits.
-   *
-   * @param iter The iterator of hits.
-   * @param currentLeft The current left value.
-   * @return the post processed iterator.
-   */
-  protected def postProcessHits(iter: Iterable[U],
-                                currentLeft: T): Iterable[(Option[T], U)] = {
-    if (iter.nonEmpty) {
-      // group all hits for currentLeft into an iterable
-      iter.map(f => (Some(currentLeft), f))
-    } else {
-      Iterable.empty
-    }
-  }
-
-  /**
-   * Properly formats right values that did not join with a left.
-   *
-   * @param pruned A record on the right.
-   * @return The formatted tuple containing the pruned value.
-   */
-  protected def postProcessPruned(pruned: U): (Option[T], U) = {
-    (None, pruned)
-  }
-}
-
 case class FullOuterShuffleRegionJoin[T: ClassTag, U: ClassTag](leftRdd: RDD[(ReferenceRegion, T)],
                                                                 rightRdd: RDD[(ReferenceRegion, U)])
     extends SortedIntervalPartitionJoinWithVictims[T, U, Option[T], Option[U]] {
