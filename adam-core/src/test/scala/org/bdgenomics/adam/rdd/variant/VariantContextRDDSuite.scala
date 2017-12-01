@@ -190,6 +190,21 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(pipedRdd.rdd.flatMap(_.genotypes).count === 18)
   }
 
+  sparkTest("pipe works with empty partitions") {
+    val smallVcf = testFile("small.addctg.vcf")
+    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+    val records = rdd.rdd.count
+
+    implicit val tFormatter = VCFInFormatter
+    implicit val uFormatter = new VCFOutFormatter
+
+    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
+      .transform(_.cache())
+    val newRecords = pipedRdd.rdd.count
+    assert(records === newRecords)
+    assert(pipedRdd.rdd.flatMap(_.genotypes).count === 18)
+  }
+
   sparkTest("don't lose any non-default VCF header lines or attributes when piping as VCF") {
     val freebayesVcf = testFile("NA12878.chr22.tiny.freebayes.vcf")
     val rdd: VariantContextRDD = sc.loadVcf(freebayesVcf)

@@ -19,7 +19,11 @@ package org.bdgenomics.adam.rdd.variant
 
 import htsjdk.samtools.ValidationStringency
 import htsjdk.samtools.util.BlockCompressedOutputStream
-import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
+import htsjdk.variant.vcf.{
+  VCFFormatHeaderLine,
+  VCFHeader,
+  VCFHeaderLine
+}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.io.compress.CompressionCodec
@@ -193,7 +197,10 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
   def toVariants(): VariantRDD = {
     new RDDBoundVariantRDD(rdd.map(_.variant.variant),
       sequences,
-      headerLines,
+      headerLines.filter(hl => hl match {
+        case fl: VCFFormatHeaderLine => false
+        case _                       => true
+      }),
       optPartitionMap = optPartitionMap)
   }
 

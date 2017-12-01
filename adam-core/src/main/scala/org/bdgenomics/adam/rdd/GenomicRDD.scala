@@ -515,45 +515,49 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
 
     // call map partitions and pipe
     val pipedRdd = partitionedRdd.mapPartitions(iter => {
+      if (iter.hasNext) {
 
-      // get files
-      // from SPARK-3311, SparkFiles doesn't work in local mode.
-      // so... we'll bypass that by checking if we're running in local mode.
-      // sigh!
-      val locs = if (isLocal) {
-        files
-      } else {
-        files.map(f => {
-          SparkFiles.get(new Path(f).getName())
+        // get files
+        // from SPARK-3311, SparkFiles doesn't work in local mode.
+        // so... we'll bypass that by checking if we're running in local mode.
+        // sigh!
+        val locs = if (isLocal) {
+          files
+        } else {
+          files.map(f => {
+            SparkFiles.get(new Path(f).getName())
+          })
+        }
+
+        // split command and create process builder
+        val finalCmd = GenomicRDD.processCommand(cmd, locs)
+        val pb = new ProcessBuilder(finalCmd)
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT)
+
+        // add environment variables to the process builder
+        val pEnv = pb.environment()
+        environment.foreach(kv => {
+          val (k, v) = kv
+          pEnv.put(k, v)
         })
+
+        // start underlying piped command
+        val process = pb.start()
+        val os = process.getOutputStream()
+        val is = process.getInputStream()
+
+        // wrap in formatter and run as a thread
+        val ifr = new InFormatterRunner[T, U, V](iter, tFormatter, os)
+        new Thread(ifr).start()
+
+        // wrap out formatter
+        new OutFormatterRunner[X, OutFormatter[X]](xFormatter,
+          is,
+          process,
+          finalCmd)
+      } else {
+        Iterator[X]()
       }
-
-      // split command and create process builder
-      val finalCmd = GenomicRDD.processCommand(cmd, locs)
-      val pb = new ProcessBuilder(finalCmd)
-      pb.redirectError(ProcessBuilder.Redirect.INHERIT)
-
-      // add environment variables to the process builder
-      val pEnv = pb.environment()
-      environment.foreach(kv => {
-        val (k, v) = kv
-        pEnv.put(k, v)
-      })
-
-      // start underlying piped command
-      val process = pb.start()
-      val os = process.getOutputStream()
-      val is = process.getInputStream()
-
-      // wrap in formatter and run as a thread
-      val ifr = new InFormatterRunner[T, U, V](iter, tFormatter, os)
-      new Thread(ifr).start()
-
-      // wrap out formatter
-      new OutFormatterRunner[X, OutFormatter[X]](xFormatter,
-        is,
-        process,
-        finalCmd)
     })
 
     // build the new GenomicRDD
