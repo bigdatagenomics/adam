@@ -148,10 +148,14 @@ With an `ADAMContext`, you can load:
   * From IntervalList using `loadIntervalList` (Scala only)
   * From Parquet using `loadParquetFeatures` (Scala only)
   * Autodetected from any of the above using `loadFeatures` (Scala, Java, Python, and R)
-* Fragmented contig sequence as a `NucleotideContigFragmentRDD`:
+* Sequences as a `SequenceRDD`:
   * From FASTA with `loadFasta` (Scala only)
-  * From Parquet with `loadParquetContigFragments` (Scala only)
+  * From Parquet with `loadParquetSlices` (Scala only)
   * Autodetected from either of the above using `loadSequences` (Scala, Java, Python, and R)
+* Slice views on sequences as a `SliceRDD`:
+  * From FASTA with `loadFasta` (Scala only)
+  * From Parquet with `loadParquetSlices` (Scala only)
+  * Autodetected from either of the above using `loadSlices` (Scala, Java, Python, and R)
 * Coverage data as a `CoverageRDD`:
   * From Parquet using `loadParquetCoverage` (Scala only)
   * From Parquet or any of the feature file formats using `loadCoverage` (Scala

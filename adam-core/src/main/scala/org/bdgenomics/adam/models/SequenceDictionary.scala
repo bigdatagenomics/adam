@@ -19,7 +19,10 @@ package org.bdgenomics.adam.models
 
 import htsjdk.samtools.{ SAMFileHeader, SAMSequenceDictionary, SAMSequenceRecord }
 import htsjdk.variant.vcf.VCFHeader
-import org.bdgenomics.formats.avro.{ Contig, NucleotideContigFragment }
+import org.bdgenomics.formats.avro.{
+  Contig,
+  Slice
+}
 import scala.collection.JavaConversions.{ asScalaIterator, seqAsJavaList }
 import scala.collection._
 
@@ -76,7 +79,6 @@ object SequenceDictionary {
    * ADAM sequence dictionary.
    *
    * @see fromSAMHeader
-   *
    * @param header VCF file header.
    * @return Returns an ADAM style sequence dictionary.
    */
@@ -92,7 +94,6 @@ object SequenceDictionary {
    *
    * @see fromSAMHeader
    * @see fromVCFHeader
-   *
    * @param samDict SAM style sequence dictionary.
    * @return Returns an ADAM style sequence dictionary.
    */
@@ -107,7 +108,6 @@ object SequenceDictionary {
  * is aligned against.
  *
  * @see SequenceRecord
- *
  * @param records The individual reference contigs.
  */
 class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializable {
@@ -195,7 +195,6 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    *   the indices are not stripped before a file is saved back to SAM/BAM, the
    *   SAM/BAM header sequence ordering will not match the sort order of the
    *   records in the file.
-   *
    * @see sorted
    */
   def stripIndices: SequenceDictionary = {
@@ -209,7 +208,6 @@ class SequenceDictionary(val records: Vector[SequenceRecord]) extends Serializab
    *   sorted. If the sequence records have indices, the records will be sorted
    *   by their indices. If not, the sequence records will be sorted lexically
    *   by contig name.
-   *
    * @see stripIndices
    */
   def sorted: SequenceDictionary = {
@@ -452,14 +450,12 @@ object SequenceRecord {
   }
 
   /**
-   * Extracts the contig metadata from a nucleotide fragment.
+   * Extracts the contig metadata from a slice.
    *
-   * @param fragment The assembly fragment to extract a SequenceRecord from.
-   * @return The sequence record metadata from a single assembly fragment.
+   * @param slice The slice to extract a SequenceRecord from.
+   * @return The sequence record metadata from a slice.
    */
-  def fromADAMContigFragment(fragment: NucleotideContigFragment): SequenceRecord = {
-    SequenceRecord(fragment.getContigName,
-      fragment.getContigLength)
+  def fromSlice(slice: Slice): SequenceRecord = {
+    SequenceRecord(slice.getName, slice.getTotalLength)
   }
 }
-

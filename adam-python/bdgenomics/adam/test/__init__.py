@@ -26,8 +26,6 @@ import unittest
 from pyspark.context import SparkContext
 
 class SparkTestCase(unittest.TestCase):
-
-
     def resourceFile(self, filename, module='adam-core'):
 
         adamRoot = os.path.dirname(os.getcwd())

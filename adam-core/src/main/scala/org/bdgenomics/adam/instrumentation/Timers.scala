@@ -32,6 +32,8 @@ object Timers extends Metrics {
   val LoadFragments = timer("Load Fragments")
   val LoadGenotypes = timer("Load Genotypes")
   val LoadReferenceFile = timer("Load ReferenceFile")
+  val LoadSequences = timer("Load Sequences")
+  val LoadSlices = timer("Load Slices")
   val LoadSequenceDictionary = timer("Load SequenceDictionary")
   val LoadVariants = timer("Load Variants")
 

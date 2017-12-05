@@ -206,7 +206,7 @@ These options fall into several general categories:
 * `mismatchingPositions` tagging options: We can recompute the
   `mismatchingPositions` field of an AlignmentRecord (SAM "MD" tag) with the
   `-add_md_tags` flag. This flag takes a path to a reference file in either
-  FASTA or Parquet `NucleotideContigFragment` format. Additionally, this engine
+  FASTA or Parquet `Slice` format. Additionally, this engine
   takes the following options:
     * `-md_tag_fragment_size`: If loading from FASTA, sets the size of each
       fragment to load. Defaults to 10,000bp.
@@ -393,12 +393,12 @@ schemas to store data in Parquet.
 ### fasta2adam and adam2fasta
 
 These commands convert between FASTA and Parquet files storing assemblies using
-the NucleotideContigFragment schema.
+the Slice schema.
 
 `fasta2adam` takes two required arguments:
 
 1. `FASTA`: The input FASTA file to convert.
-2. `ADAM`: The path to save the Parquet formatted NucleotideContigFragments to.
+2. `ADAM`: The path to save the Parquet formatted Slice to.
 
 `fasta2adam` supports the full set of [default options](#default-args), as well
 as the following options:
@@ -415,7 +415,7 @@ as the following options:
 
 `adam2fasta` takes two required arguments:
 
-1. `ADAM`: The path to a Parquet file containing NucleotideContigFragments.
+1. `ADAM`: The path to a Parquet file containing Slices.
 2. `FASTA`: The path to save the FASTA file to.
 
 `adam2fasta` only supports the `-print_metrics` option from the [default

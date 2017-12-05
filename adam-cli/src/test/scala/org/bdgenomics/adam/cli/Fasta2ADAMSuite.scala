@@ -26,15 +26,15 @@ class Fasta2ADAMSuite extends ADAMFunSuite {
     val convertPath = tmpFile("chr20.contig.adam")
     val cmd = Fasta2ADAM(Array(inputPath, convertPath)).run(sc)
 
-    val contigFragments = sc.loadParquetContigFragments(convertPath)
-    assert(contigFragments.rdd.count() === 26)
-    val first = contigFragments.rdd.first()
-    assert(first.getContigName === null)
+    val slices = sc.loadParquetSlices(convertPath)
+    assert(slices.rdd.count() === 26)
+    val first = slices.rdd.first()
+    assert(first.getName === null)
     assert(first.getDescription === "gi|224384749|gb|CM000682.1| Homo sapiens chromosome 20, GRCh37 primary reference assembly")
     assert(first.getIndex === 0)
     assert(first.getSequence.length === 10000)
     assert(first.getStart === 0L)
     assert(first.getEnd === 10000L)
-    assert(first.getFragments === 26)
+    assert(first.getSlices === 26)
   }
 }

@@ -47,7 +47,7 @@ trait Alphabet {
    * Fails if a residue has no complement.
    *
    * @param s Each char in this string represents a symbol on the alphabet.
-   *          If the char is not in the alphabet then a NoSuchElementException is thrown
+   *   If the char is not in the alphabet then a NoSuchElementException is thrown
    * @return the reversed complement of the given string.
    * @throws IllegalArgumentException if the string contains a symbol which is not in the alphabet
    *
@@ -68,8 +68,8 @@ trait Alphabet {
    *
    * @param s Each char in this string represents a symbol on the alphabet.
    * @param notFound If the char is not in the alphabet then this function is called.
-   *                 default behavior is to return a new Symbol representing the unknown character,
-   *                 so that the unknown char is treated as the complement
+   *   default behavior is to return a new Symbol representing the unknown character,
+   *   so that the unknown char is treated as the complement
    * @return the reversed complement of the given string.
    *
    * @see reverseComplementExact

@@ -149,7 +149,6 @@ object AlignmentRecordRDD extends Serializable {
    * Validates that there are no gaps in a set of quality score bins.
    *
    * @param bins Bins to validate.
-   *
    * @throws IllegalArgumentException Throws exception if the bins are empty,
    *   there is a gap between bins, or two bins overlap.
    */
@@ -886,7 +885,6 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    * lexicographically.
    *
    * @return Returns a new RDD containing sorted reads.
-   *
    * @see sortReadsByReferencePositionAndIndex
    */
   def sortReadsByReferencePosition(): AlignmentRecordRDD = SortReads.time {
@@ -913,7 +911,6 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    * that they are ordered in the SequenceDictionary.
    *
    * @return Returns a new RDD containing sorted reads.
-   *
    * @see sortReadsByReferencePosition
    */
   def sortReadsByReferencePositionAndIndex(): AlignmentRecordRDD = SortByIndex.time {
@@ -1497,7 +1494,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[Align
    * Left normalizes the INDELs in reads containing INDELs.
    *
    * @return Returns a new RDD where the reads that contained INDELs have their
-   *   INDELs left normalized.
+   *         INDELs left normalized.
    */
   def leftNormalizeIndels(): AlignmentRecordRDD = {
     transform(rdd => {

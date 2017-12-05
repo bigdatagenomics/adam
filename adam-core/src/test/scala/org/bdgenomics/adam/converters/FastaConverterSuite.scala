@@ -44,8 +44,8 @@ class FastaConverterSuite extends ADAMFunSuite {
     val contig = converter.convert(None, 0, Seq("AAATTTGCGC"), None)
 
     assert(contig.head.getSequence.map(_.toString).reduce(_ + _) === "AAATTTGCGC")
-    assert(contig.head.getContigLength === 10)
-    assert(contig.head.getContigName === null)
+    assert(contig.head.getLength === 10)
+    assert(contig.head.getName === null)
     assert(contig.head.getDescription === null)
   }
 
@@ -53,8 +53,8 @@ class FastaConverterSuite extends ADAMFunSuite {
     val contig = converter.convert(Some("chr2"), 1, Seq("NNNN"), Some("hg19"))
 
     assert(contig.head.getSequence.map(_.toString).reduce(_ + _) === "NNNN")
-    assert(contig.head.getContigLength === 4)
-    assert(contig.head.getContigName === "chr2")
+    assert(contig.head.getLength === 4)
+    assert(contig.head.getName === "chr2")
     assert(contig.head.getDescription === "hg19")
   }
 
@@ -85,8 +85,8 @@ class FastaConverterSuite extends ADAMFunSuite {
     val convertedSequence = fastaElement.getSequence.map(_.toString).reduce(_ + _)
 
     assert(convertedSequence === fastaSequence)
-    assert(fastaElement.getContigLength() == fastaSequence.length)
-    assert(fastaElement.getContigName === null)
+    assert(fastaElement.getLength == fastaSequence.length)
+    assert(fastaElement.getName === null)
     assert(fastaElement.getDescription === null)
   }
 
@@ -131,22 +131,22 @@ class FastaConverterSuite extends ADAMFunSuite {
     val adamFasta = FastaConverter(rdd)
     assert(adamFasta.count === 2)
 
-    val fastaElement1 = adamFasta.filter(_.getContigName == "chr1").first()
+    val fastaElement1 = adamFasta.filter(_.getName == "chr1").first()
     val fastaSequence1 = fasta1.drop(1).map(_._2).reduce(_ + _)
     val convertedSequence1 = fastaElement1.getSequence.map(_.toString).reduce(_ + _)
 
     assert(convertedSequence1 === fastaSequence1)
-    assert(fastaElement1.getContigLength() == fastaSequence1.length)
-    assert(fastaElement1.getContigName().toString === "chr1")
+    assert(fastaElement1.getLength() == fastaSequence1.length)
+    assert(fastaElement1.getName().toString === "chr1")
     assert(fastaElement1.getDescription === null)
 
-    val fastaElement2 = adamFasta.filter(_.getContigName == "chr2").first()
+    val fastaElement2 = adamFasta.filter(_.getName == "chr2").first()
     val fastaSequence2 = fasta2.drop(1).map(_._2).reduce(_ + _)
     val convertedSequence2 = fastaElement2.getSequence.map(_.toString).reduce(_ + _)
 
     assert(convertedSequence2 === fastaSequence2)
-    assert(fastaElement2.getContigLength() == fastaSequence2.length)
-    assert(fastaElement2.getContigName().toString === "chr2")
+    assert(fastaElement2.getLength() == fastaSequence2.length)
+    assert(fastaElement2.getName().toString === "chr2")
     assert(fastaElement2.getDescription === null)
   }
 
@@ -191,14 +191,14 @@ class FastaConverterSuite extends ADAMFunSuite {
     val adamFasta = FastaConverter(rdd, maximumLength = 35)
     assert(adamFasta.count === 64)
 
-    val fastaElement1 = adamFasta.filter(_.getContigName == "chr1").collect()
+    val fastaElement1 = adamFasta.filter(_.getName == "chr1").collect()
     val fastaSequence1 = fasta1.drop(1).map(_._2).mkString
     val seqs = fastaElement1.sortBy(_.getIndex)
     val convertedSequence1 = fastaElement1.sortBy(_.getIndex).map(_.getSequence.toString).mkString
     assert(seqs != null)
     assert(convertedSequence1 === fastaSequence1)
 
-    val fastaElement2 = adamFasta.filter(_.getContigName == "chr2").collect()
+    val fastaElement2 = adamFasta.filter(_.getName == "chr2").collect()
     val fastaSequence2 = fasta2.drop(1).map(_._2).mkString
     val convertedSequence2 = fastaElement2.sortBy(_.getIndex).map(_.getSequence.toString).mkString
 
@@ -209,8 +209,8 @@ class FastaConverterSuite extends ADAMFunSuite {
 
   sparkTest("convert reference fasta file") {
     //Loading "human_g1k_v37_chr1_59kb.fasta"
-    val referenceSequences = sc.loadContigFragments(chr1File, maximumLength = 10).rdd.collect()
-    assert(referenceSequences.forall(_.getContigName.toString == "1"))
+    val referenceSequences = sc.loadFasta(chr1File, maximumLength = 10).rdd.collect()
+    assert(referenceSequences.forall(_.getName == "1"))
     assert(referenceSequences.slice(0, referenceSequences.length - 2).forall(_.getSequence.length == 10))
 
     val reassembledSequence = referenceSequences.sortBy(_.getIndex).map(_.getSequence).mkString

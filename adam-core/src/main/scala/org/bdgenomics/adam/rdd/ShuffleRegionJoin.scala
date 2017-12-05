@@ -219,7 +219,7 @@ case class LeftOuterShuffleRegionJoinAndGroupByLeft[T: ClassTag, U: ClassTag](le
   /**
    * Handles the case where the left or the right iterator were empty.
    *
-   * @param left The left iterator.
+   * @param left  The left iterator.
    * @param right The right iterator.
    * @return The iterator containing properly formatted tuples.
    */
@@ -232,7 +232,7 @@ case class LeftOuterShuffleRegionJoinAndGroupByLeft[T: ClassTag, U: ClassTag](le
    * Computes post processing required to complete the join and properly format
    * hits.
    *
-   * @param iter The iterator of hits.
+   * @param iter        The iterator of hits.
    * @param currentLeft The current left value.
    * @return the post processed iterator.
    */

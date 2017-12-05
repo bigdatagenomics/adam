@@ -26,9 +26,9 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.sequence.SliceRDD
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
   VariantRDD,
@@ -39,7 +39,7 @@ import org.bdgenomics.adam.sql.{
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -47,9 +47,9 @@ import org.bdgenomics.formats.avro._
 
 object CoverageRDDSuite extends Serializable {
 
-  def ncfFn(cov: Coverage): NucleotideContigFragment = {
-    NucleotideContigFragment.newBuilder
-      .setContigName(cov.contigName)
+  def sliceFn(cov: Coverage): Slice = {
+    Slice.newBuilder
+      .setName(cov.contigName)
       .setStart(cov.start)
       .setEnd(cov.end)
       .build
@@ -245,33 +245,33 @@ class CoverageRDDSuite extends ADAMFunSuite {
     assert(collapsed.rdd.count == 8)
   }
 
-  sparkTest("transform coverage to contig rdd") {
+  sparkTest("transform coverage to slice rdd") {
     val coverage = sc.loadCoverage(testFile("sample_coverage.bed"))
 
-    def checkSave(contigs: NucleotideContigFragmentRDD) {
+    def checkSave(slices: SliceRDD) {
       val tempPath = tmpLocation(".adam")
-      contigs.saveAsParquet(tempPath)
+      slices.saveAsParquet(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count === 3)
+      assert(sc.loadSlices(tempPath).rdd.count === 3)
     }
 
-    val contigs: NucleotideContigFragmentRDD = coverage.transmute(rdd => {
-      rdd.map(CoverageRDDSuite.ncfFn)
+    val slices: SliceRDD = coverage.transmute(rdd => {
+      rdd.map(CoverageRDDSuite.sliceFn)
     })
 
-    checkSave(contigs)
+    checkSave(slices)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val contigsDs: NucleotideContigFragmentRDD = coverage.transmuteDataset(ds => {
+    val slicesDs: SliceRDD = coverage.transmuteDataset(ds => {
       ds.map(r => {
-        NucleotideContigFragmentProduct.fromAvro(
-          CoverageRDDSuite.ncfFn(r))
+        SliceProduct.fromAvro(
+          CoverageRDDSuite.sliceFn(r))
       })
     })
 
-    checkSave(contigsDs)
+    checkSave(slicesDs)
   }
 
   sparkTest("transform coverage to feature rdd") {

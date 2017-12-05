@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -52,7 +52,7 @@ class FASTQInFormatter private (
   /**
    * Writes alignment records to an output stream in FASTQ format.
    *
-   * @param os An OutputStream connected to a process we are piping to.
+   * @param os   An OutputStream connected to a process we are piping to.
    * @param iter An iterator of records to write.
    */
   def write(os: OutputStream, iter: Iterator[AlignmentRecord]) {

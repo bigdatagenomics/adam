@@ -216,10 +216,8 @@ object ReferenceRegion {
    *
    * @throws IllegalArgumentException If this read is not aligned or alignment
    *   data is null.
-   *
    * @param record The read to extract the reference region from.
    * @return Returns the reference region covered by this read's alignment.
-   *
    * @see stranded
    */
   def unstranded(record: AlignmentRecord): ReferenceRegion = {
@@ -232,10 +230,8 @@ object ReferenceRegion {
    *
    * @throws IllegalArgumentException If this read is not aligned, alignment
    *   data is null, or strand is not set.
-   *
    * @param record The read to extract the reference region from.
    * @return Returns the reference region covered by this read's alignment.
-   *
    * @see unstranded
    */
   def stranded(record: AlignmentRecord): ReferenceRegion = {
@@ -256,6 +252,7 @@ object ReferenceRegion {
 
   /**
    * Generates a region from a given position -- the region will have a length of 1.
+   *
    * @param pos The position to convert
    * @return A 1-wide region at the same location as pos
    */
@@ -270,16 +267,34 @@ object ReferenceRegion {
    * Generates a reference region from assembly data. Returns None if the assembly does not
    * have an ID or a start position.
    *
-   * @param fragment Assembly fragment from which to generate data.
-   * @return Region corresponding to inclusive region of contig fragment.
+   * @param sequence Sequence from which to generate data.
+   * @return Region corresponding to inclusive region of sequence.
    */
-  def apply(fragment: NucleotideContigFragment): Option[ReferenceRegion] = {
-    if (fragment.getContigName != null &&
-      fragment.getStart != null &&
-      fragment.getEnd != null) {
-      Some(ReferenceRegion(fragment.getContigName,
-        fragment.getStart,
-        fragment.getEnd))
+  def apply(sequence: Sequence): Option[ReferenceRegion] = {
+    if (sequence.getName != null &&
+      sequence.getLength != null) {
+      Some(ReferenceRegion(sequence.getName,
+        0L,
+        sequence.getLength))
+    } else {
+      None
+    }
+  }
+
+  /**
+   * Generates a reference region from assembly data. Returns None if the assembly does not
+   * have an ID or a start position.
+   *
+   * @param slice Slice from which to generate data.
+   * @return Region corresponding to inclusive region of slice.
+   */
+  def apply(slice: Slice): Option[ReferenceRegion] = {
+    if (slice.getName != null &&
+      slice.getStart != null &&
+      slice.getEnd != null) {
+      Some(ReferenceRegion(slice.getName,
+        slice.getStart,
+        slice.getEnd))
     } else {
       None
     }
@@ -297,7 +312,6 @@ object ReferenceRegion {
    *
    * @param feature Feature to extract ReferenceRegion from.
    * @return Extracted ReferenceRegion
-   *
    * @see stranded
    */
   def unstranded(feature: Feature): ReferenceRegion = {
@@ -310,10 +324,8 @@ object ReferenceRegion {
    *
    * @param feature Feature to extract ReferenceRegion from.
    * @return Extracted ReferenceRegion
-   *
    * @throws IllegalArgumentException Throws an exception if the strand is null
    *   in the provided feature.
-   *
    * @see unstranded
    */
   def stranded(feature: Feature): ReferenceRegion = {
@@ -358,8 +370,8 @@ object ReferenceRegion {
  * @param referenceName The name of the sequence (chromosome) in the reference genome
  * @param start The 0-based residue-coordinate for the start of the region
  * @param end The 0-based residue-coordinate for the first residue <i>after</i> the start
- *            which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
- *            half-open interval.
+ *   which is <i>not</i> in the region -- i.e. [start, end) define a 0-based
+ *   half-open interval.
  * @param strand The strand of the genome that this region exists on.
  */
 case class ReferenceRegion(
@@ -384,10 +396,8 @@ case class ReferenceRegion(
    * Merges two reference regions that are contiguous.
    *
    * @throws IllegalArgumentException Thrown if regions are not overlapping or adjacent.
-   *
    * @param other Other region to merge with this region.
    * @return The merger of both unions.
-   *
    * @see hull
    */
   def merge(other: ReferenceRegion): ReferenceRegion = {
@@ -399,11 +409,9 @@ case class ReferenceRegion(
    * Merges two reference regions that are within a threshold of each other.
    *
    * @throws IllegalArgumentException Thrown if regions are not within the
-   *         distance threshold.
-   *
+   *   distance threshold.
    * @param other Other region to merge with this region.
    * @return The merger of both unions.
-   *
    * @see hull
    */
   def merge(other: ReferenceRegion, distanceThreshold: Long): ReferenceRegion = {
@@ -430,10 +438,8 @@ case class ReferenceRegion(
    * overlap of two regions. However, regions must be in the same reference space.
    *
    * @throws IllegalArgumentException Thrown if regions are in different reference spaces.
-   *
    * @param other Other region to compute hull of with this region.
    * @return The convex hull of both unions.
-   *
    * @see merge
    */
   def hull(other: ReferenceRegion): ReferenceRegion = {
@@ -480,7 +486,6 @@ case class ReferenceRegion(
    *       within this region, and any point within the other region we are measuring
    *       against. If the two sets overlap, the distance will be 0. If the sets abut,
    *       the distance will be 1. Else, the distance will be greater.
-   *
    * @param other Region to compare against.
    * @return Returns an option containing the distance between two points. If
    *   the point is not in our reference space, we return an empty option.
@@ -504,7 +509,6 @@ case class ReferenceRegion(
    *       within this region, and any point within the other region we are measuring
    *       against. If the two sets overlap, the distance will be 0. If the sets abut,
    *       the distance will be 1. Else, the distance will be greater.
-   *
    * @param other Region to compare against.
    * @return Returns an option containing the distance between two points. If
    *   the point is not in our reference space, we return an empty option.
@@ -526,8 +530,8 @@ case class ReferenceRegion(
    *
    * @param other Region to compare against.
    * @return Returns an option containing the number of positions of overlap
-   *         between two points. If the two regions do not overlap, we return
-   *         an empty option.
+   *   between two points. If the two regions do not overlap, we return
+   *   an empty option.
    */
   def overlapsBy(other: ReferenceRegion): Option[Long] = {
     if (overlaps(other)) {
@@ -544,8 +548,8 @@ case class ReferenceRegion(
    *
    * @param other Region to compare against.
    * @return Returns an option containing the number of positions of coverage
-   *         between two points. If the two regions do not cover each other,
-   *         we return an empty option.
+   *   between two points. If the two regions do not cover each other,
+   *   we return an empty option.
    */
   def coversBy(other: ReferenceRegion): Option[Long] = {
     if (covers(other)) {
@@ -680,6 +684,7 @@ case class ReferenceRegion(
    *
    * Subtracting in this case removes the entire region and returns up to two
    * new regions.
+   *
    * @param other The region to subtract.
    * @param requireStranded Whether or not to require other be on same strand.
    * @return A list containing the regions resulting from the subtraction.

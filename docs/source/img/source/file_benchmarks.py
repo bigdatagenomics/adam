@@ -20,23 +20,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # sizes in MB
-gff_sizes  = [  29.9,       36, 392.2]
+gff_sizes = [29.9, 36, 392.2]
 gff_labels = ['ADAM', 'GFF3.GZ', 'GFF3']
 
 # sizes in GB
-bed_sizes  = [   9.1,       16, 118.9]
+bed_sizes = [9.1, 16, 118.9]
 bed_labels = ['ADAM', 'BED.GZ', 'BED']
 
 # sizes in GB
-bam_sizes  = [    69,   95.1, 119.1]
+bam_sizes = [69, 95.1, 119.1]
 bam_labels = ['CRAM', 'ADAM', 'BAM']
 
 # sizes in GB
-vcf_sizes  = [      19,     21,   807]
+vcf_sizes = [19, 21, 807]
 vcf_labels = ['VCF.GZ', 'ADAM', 'VCF']
 
-def plot(sizes, labels, filename, title, unit='GB'):
 
+def plot(sizes, labels, filename, title, unit='GB'):
     ind = np.arange(len(sizes))
     width = 0.35
 
@@ -55,8 +55,9 @@ def plot(sizes, labels, filename, title, unit='GB'):
         ax.text(rect.get_x() + rect.get_width() / 2.0, 1.01 * height,
                 '%d %s' % (size, unit),
                 ha='center', va='bottom')
-    
+
     fig.savefig(filename)
+
 
 plot(gff_sizes, gff_labels, 'gff.pdf', 'File sizes for ENSEMBL GRCh38 GTF', unit='MB')
 plot(bed_sizes, bed_labels, 'bed.pdf', 'File sizes for WGS Coverage BED')

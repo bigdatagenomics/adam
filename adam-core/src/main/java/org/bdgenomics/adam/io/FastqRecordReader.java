@@ -233,7 +233,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
             // as noted above, we need to be at pos 0 in the stream before
             // calling this
             reader = new LineReader(((SplittableCompressionCodec)codec).createInputStream(stream,
-                                                                                          null,
+                    null,
                                                                                           start,
                                                                                           end,
                                                                                           SplittableCompressionCodec.READ_MODE.BYBLOCK));
@@ -246,7 +246,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
             if (bytesRead > 0 && !checkBuffer(bufferLength, buffer)) {
                 start += bytesRead;
             } else {
-                
+
                 // line starts with @.  Read two more and verify that it starts
                 // with a +:
                 //
@@ -284,7 +284,7 @@ abstract class FastqRecordReader extends RecordReader<Void, Text> {
         pos = start;
         start = originalStart;
         stream.seek(start);
-        return (int)(pos - originalStart);
+        return (int) (pos - originalStart);
     }
 
     public final void initialize(final InputSplit split, final TaskAttemptContext context)

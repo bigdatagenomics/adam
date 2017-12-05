@@ -29,6 +29,7 @@ import org.apache.avro.io.{ BinaryDecoder, BinaryEncoder, DecoderFactory, Encode
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificDatumWriter, SpecificRecord }
 import org.apache.hadoop.io.Writable
 import org.apache.spark.serializer.KryoRegistrator
+import org.bdgenomics.adam.rdd.read.{ ReadArraySerializer, ReadArray }
 import org.bdgenomics.utils.misc.Logging
 import scala.reflect.ClassTag
 
@@ -182,8 +183,6 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[org.bdgenomics.adam.rdd.GenomeBins])
 
     // IntervalArray registrations for org.bdgenomics.adam.rdd
-    kryo.register(classOf[org.bdgenomics.adam.rdd.read.AlignmentRecordArray],
-      new org.bdgenomics.adam.rdd.read.AlignmentRecordArraySerializer)
     kryo.register(classOf[org.bdgenomics.adam.rdd.feature.CoverageArray],
       new org.bdgenomics.adam.rdd.feature.CoverageArraySerializer(kryo))
     kryo.register(classOf[org.bdgenomics.adam.rdd.feature.FeatureArray],
@@ -192,8 +191,16 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       new org.bdgenomics.adam.rdd.fragment.FragmentArraySerializer)
     kryo.register(classOf[org.bdgenomics.adam.rdd.variant.GenotypeArray],
       new org.bdgenomics.adam.rdd.variant.GenotypeArraySerializer)
-    kryo.register(classOf[org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentArray],
-      new org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentArraySerializer)
+    kryo.register(classOf[ReadArray],
+      new ReadArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.AlignmentRecordArray],
+      new org.bdgenomics.adam.rdd.read.AlignmentRecordArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.read.ReadArray],
+      new org.bdgenomics.adam.rdd.read.ReadArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.sequence.SequenceArray],
+      new org.bdgenomics.adam.rdd.sequence.SequenceArraySerializer)
+    kryo.register(classOf[org.bdgenomics.adam.rdd.sequence.SliceArray],
+      new org.bdgenomics.adam.rdd.sequence.SliceArraySerializer)
     kryo.register(classOf[org.bdgenomics.adam.rdd.variant.VariantArray],
       new org.bdgenomics.adam.rdd.variant.VariantArraySerializer)
     kryo.register(classOf[org.bdgenomics.adam.rdd.variant.VariantContextArray],
@@ -247,8 +254,6 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
       new AvroSerializer[org.bdgenomics.formats.avro.Genotype])
     kryo.register(classOf[org.bdgenomics.formats.avro.GenotypeAllele])
     kryo.register(classOf[org.bdgenomics.formats.avro.GenotypeType])
-    kryo.register(classOf[org.bdgenomics.formats.avro.NucleotideContigFragment],
-      new AvroSerializer[org.bdgenomics.formats.avro.NucleotideContigFragment])
     kryo.register(classOf[org.bdgenomics.formats.avro.OntologyTerm],
       new AvroSerializer[org.bdgenomics.formats.avro.OntologyTerm])
     kryo.register(classOf[org.bdgenomics.formats.avro.ProcessingStep],
@@ -318,7 +323,6 @@ class ADAMKryoRegistrator extends KryoRegistrator with Logging {
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Genotype]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.GenotypeAllele]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.OntologyTerm]])
-    kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.NucleotideContigFragment]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Read]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.RecordGroup]])
     kryo.register(classOf[scala.Array[org.bdgenomics.formats.avro.Sample]])

@@ -20,10 +20,10 @@ package org.bdgenomics.adam.api.java
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.api.java.JavaSparkContext
 import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.sequence.SliceRDD
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
   VariantRDD
@@ -64,7 +64,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * but can include more.
    *
    * @see ADAMContext#loadAlignments
-   *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
@@ -92,15 +91,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * but can include more.
    *
    * @see ADAMContext#loadAlignments
-   *
-   * @param pathName The path name to load alignment records from.
-   *   Globs/directories are supported, although file extension must be present
-   *   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
+   * @param pathName   The path name to load alignment records from.
+   *                   Globs/directories are supported, although file extension must be present
+   *                   for BAM/CRAM/SAM, FASTA, and FASTQ formats.
    * @param stringency The validation stringency to use when validating
-   *   BAM/CRAM/SAM or FASTQ formats.
+   *                   BAM/CRAM/SAM or FASTQ formats.
    * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
-   *   sequence dictionary representing contigs the alignment records may be aligned to,
-   *   and the record group dictionary for the alignment records if one is available.
+   *         sequence dictionary representing contigs the alignment records may be aligned to,
+   *         and the record group dictionary for the alignment records if one is available.
    */
   def loadAlignments(pathName: java.lang.String,
                      stringency: ValidationStringency): AlignmentRecordRDD = {
@@ -109,7 +107,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load nucleotide contig fragments into a NucleotideContigFragmentRDD (java-friendly method).
+   * Load slices into a SliceRDD (java-friendly method).
    *
    * If the path name has a .fa/.fasta extension, load as FASTA format.
    * Else, fall back to Parquet + Avro.
@@ -117,15 +115,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * For FASTA format, compressed files are supported through compression codecs configured
    * in Hadoop, which by default include .gz and .bz2, but can include more.
    *
-   * @see ADAMContext#loadContigFragments
-   *
-   * @param pathName The path name to load nucleotide contig fragments from.
-   *   Globs/directories are supported, although file extension must be present
-   *   for FASTA format.
-   * @return Returns a NucleotideContigFragmentRDD.
+   * @see ADAMContext#loadSlices
+   * @param pathName The path name to load slices from.
+   *                 Globs/directories are supported, although file extension must be present
+   *                  for FASTA format.
+   * @return Returns a SliceRDD.
    */
-  def loadContigFragments(pathName: java.lang.String): NucleotideContigFragmentRDD = {
-    ac.loadContigFragments(pathName)
+  def loadSlices(pathName: java.lang.String): SliceRDD = {
+    ac.loadSlices(pathName)
   }
 
   /**
@@ -141,7 +138,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * configured in Hadoop, which by default include .gz and .bz2, but can include more.
    *
    * @see ADAMContext#loadFragments
-   *
    * @param pathName The path name to load fragments from.
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM and FASTQ formats.
@@ -164,10 +160,9 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * configured in Hadoop, which by default include .gz and .bz2, but can include more.
    *
    * @see ADAMContext#loadFragments
-   *
-   * @param pathName The path name to load fragments from.
-   *   Globs/directories are supported, although file extension must be present
-   *   for BAM/CRAM/SAM and FASTQ formats.
+   * @param pathName   The path name to load fragments from.
+   *                   Globs/directories are supported, although file extension must be present
+   *                   for BAM/CRAM/SAM and FASTQ formats.
    * @param stringency The validation stringency to use when validating BAM/CRAM/SAM or FASTQ formats.
    * @return Returns a FragmentRDD.
    */
@@ -193,7 +188,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * .gz and .bz2, but can include more.
    *
    * @see ADAMContext#loadFeatures
-   *
    * @param pathName The path name to load features from.
    *   Globs/directories are supported, although file extension must be present
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
@@ -220,12 +214,11 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * .gz and .bz2, but can include more.
    *
    * @see ADAMContext#loadFeatures
-   *
-   * @param pathName The path name to load features from.
-   *   Globs/directories are supported, although file extension must be present
-   *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
+   * @param pathName   The path name to load features from.
+   *                   Globs/directories are supported, although file extension must be present
+   *                   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param stringency The validation stringency to use when validating BED6/12, GFF3,
-   *   GTF/GFF2, NarrowPeak, or IntervalList formats.
+   *                   GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @return Returns a FeatureRDD.
    */
   def loadFeatures(pathName: java.lang.String,
@@ -251,7 +244,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * .gz and .bz2, but can include more.
    *
    * @see ADAMContext#loadCoverage
-   *
    * @param pathName The path name to load features from.
    *   Globs/directories are supported, although file extension must be present
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
@@ -279,12 +271,11 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * .gz and .bz2, but can include more.
    *
    * @see ADAMContext#loadCoverage
-   *
-   * @param pathName The path name to load features from.
-   *   Globs/directories are supported, although file extension must be present
-   *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
+   * @param pathName   The path name to load features from.
+   *                   Globs/directories are supported, although file extension must be present
+   *                   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param stringency The validation stringency to use when validating BED6/12, GFF3,
-   *   GTF/GFF2, NarrowPeak, or IntervalList formats.
+   *                   GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @return Returns a FeatureRDD converted to a CoverageRDD.
    */
   def loadCoverage(pathName: java.lang.String,
@@ -300,7 +291,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * Else, fall back to Parquet + Avro.
    *
    * @see ADAMContext#loadGenotypes
-   *
    * @param pathName The path name to load genotypes from.
    *   Globs/directories are supported, although file extension must be present
    *   for VCF format.
@@ -317,10 +307,9 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * Else, fall back to Parquet + Avro.
    *
    * @see ADAMContext#loadGenotypes
-   *
-   * @param pathName The path name to load genotypes from.
-   *   Globs/directories are supported, although file extension must be present
-   *   for VCF format.
+   * @param pathName   The path name to load genotypes from.
+   *                   Globs/directories are supported, although file extension must be present
+   *                   for VCF format.
    * @param stringency The validation stringency to use when validating VCF format.
    * @return Returns a GenotypeRDD.
    */
@@ -337,7 +326,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * Else, fall back to Parquet + Avro.
    *
    * @see ADAMContext#loadVariants
-   *
    * @param pathName The path name to load variants from.
    *   Globs/directories are supported, although file extension must be present for VCF format.
    * @return Returns a VariantRDD.
@@ -353,9 +341,8 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * Else, fall back to Parquet + Avro.
    *
    * @see ADAMContext#loadVariants
-   *
-   * @param pathName The path name to load variants from.
-   *   Globs/directories are supported, although file extension must be present for VCF format.
+   * @param pathName   The path name to load variants from.
+   *                   Globs/directories are supported, although file extension must be present for VCF format.
    * @param stringency The validation stringency to use when validating VCF format.
    * @return Returns a VariantRDD.
    */
@@ -371,7 +358,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * to load the reference as an RDD, which is then collected to the driver.
    *
    * @see loadContigFragments
-   *
    * @param pathName The path name to load reference sequences from.
    *   Globs/directories for 2bit format are not supported.
    * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
@@ -391,7 +377,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * maximum fragment length of 10kbp.
    *
    * @see loadContigFragments
-   *
    * @param pathName The path name to load reference sequences from.
    *   Globs/directories for 2bit format are not supported.
    * @return Returns a broadcastable ReferenceFile.

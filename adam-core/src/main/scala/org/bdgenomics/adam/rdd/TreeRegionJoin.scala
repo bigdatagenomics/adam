@@ -120,7 +120,7 @@ case class InnerTreeRegionJoin[T: ClassTag, U: ClassTag]() extends TreeRegionJoi
    * @param baseRDD The 'left' side of the join
    * @param joinedRDD The 'right' side of the join
    * @return An RDD of pairs (x, y), where x is from baseRDD, y is from joinedRDD, and the region
-   *         corresponding to x overlaps the region corresponding to y.
+   *   corresponding to x overlaps the region corresponding to y.
    */
   def partitionAndJoin(
     baseRDD: RDD[(ReferenceRegion, T)],

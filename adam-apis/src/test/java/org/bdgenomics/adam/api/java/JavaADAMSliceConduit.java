@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,24 +20,25 @@ package org.bdgenomics.adam.api.java;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD;
+import org.bdgenomics.adam.rdd.sequence.SliceRDD;
 
 /**
- * A simple test class for the JavaADAMRDD/Context. Writes an RDD of nucleotide
- * contig fragments to disk and reads it back.
+ * A simple test class for the JavaADAMRDD/Context. Writes an RDD of slices
+ * to disk and reads it back.
  */
-final class JavaADAMContigConduit {
-    public static NucleotideContigFragmentRDD conduit(final NucleotideContigFragmentRDD recordRdd,
-                                                      final ADAMContext ac) throws IOException {
+final class JavaADAMSliceConduit {
+    public static SliceRDD conduit(final SliceRDD sliceRdd,
+                                   final ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
-        String fileName = tempDir.toString() + "/testRdd.contig.adam";
-        recordRdd.save(fileName, true);
+        String fileName = tempDir.toString() + "/testRdd.slices.adam";
+        sliceRdd.save(fileName, true);
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(ac);
-        return jac.loadContigFragments(fileName);
+        return jac.loadSlices(fileName);
     }
 }

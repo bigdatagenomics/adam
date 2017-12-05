@@ -21,7 +21,7 @@ import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
-import org.kohsuke.args4j.{ Argument, Option => Args4JOption }
+import org.kohsuke.args4j.{ Option => Args4JOption, Argument }
 
 class ADAM2FastaArgs extends Args4jBase {
   @Argument(required = true, metaVar = "ADAM", usage = "The Parquet file to convert", index = 0)
@@ -32,6 +32,10 @@ class ADAM2FastaArgs extends Args4jBase {
   var coalesce: Int = -1
   @Args4JOption(required = false, name = "-force_shuffle_coalesce", usage = "Force shuffle while partitioning, default false.")
   var forceShuffle: Boolean = false
+  @Args4JOption(required = false, name = "-single", usage = "Save as a single VCF file.")
+  var asSingleFile: Boolean = false
+  @Args4JOption(required = false, name = "-disable_fast_concat", usage = "Disables the parallel file concatenation engine.")
+  var disableFastConcat: Boolean = false
   @Args4JOption(required = false, name = "-line_width", usage = "Hard wrap FASTA formatted sequence at line width, default 60")
   var lineWidth: Int = 60
 }
@@ -49,21 +53,26 @@ class ADAM2Fasta(val args: ADAM2FastaArgs) extends BDGSparkCommand[ADAM2FastaArg
 
   override def run(sc: SparkContext): Unit = {
 
-    log.info("Loading ADAM nucleotide contig fragments from disk.")
-    val contigFragments = sc.loadContigFragments(args.inputPath)
+    log.info("Loading ADAM slices from disk.")
+    val slices = sc.loadSlices(args.inputPath)
 
     log.info("Merging fragments and writing FASTA to disk.")
-    val contigs = contigFragments.mergeFragments()
+    val sequences = slices.merge()
 
-    val cc = if (args.coalesce > 0) {
-      if (args.coalesce > contigs.rdd.partitions.length || args.forceShuffle) {
-        contigs.transform(_.coalesce(args.coalesce, shuffle = true))
+    val s = if (args.coalesce > 0) {
+      if (args.coalesce > sequences.rdd.partitions.length || args.forceShuffle) {
+        sequences.transform(_.coalesce(args.coalesce, shuffle = true))
       } else {
-        contigs.transform(_.coalesce(args.coalesce, shuffle = false))
+        sequences.transform(_.coalesce(args.coalesce, shuffle = false))
       }
     } else {
-      contigs
+      sequences
     }
-    cc.saveAsFasta(args.outputPath, args.lineWidth)
+    s.saveAsFasta(
+      args.outputPath,
+      args.asSingleFile,
+      args.disableFastConcat,
+      args.lineWidth
+    )
   }
 }

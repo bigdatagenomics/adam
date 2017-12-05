@@ -379,26 +379,26 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(gRdd.sequences.records.head.name === "HLA-DQB1*05:01:01:02")
     val fragments = gRdd.rdd.collect
     assert(fragments.size === 1)
-    assert(fragments.head.getContigName === "HLA-DQB1*05:01:01:02")
+    assert(fragments.head.getName === "HLA-DQB1*05:01:01:02")
   }
 
   sparkTest("read a gzipped fasta file") {
     val inputPath = testFile("chr20.250k.fa.gz")
-    val contigFragments: RDD[NucleotideContigFragment] = sc.loadFasta(inputPath, 10000L)
+    val contigFragments: RDD[Slice] = sc.loadFasta(inputPath, 10000L)
       .rdd
       .sortBy(_.getIndex.toInt)
     assert(contigFragments.rdd.count() === 26)
-    val first: NucleotideContigFragment = contigFragments.first()
-    assert(first.getContigName === null)
+    val first: Slice = contigFragments.first()
+    assert(first.getName === null)
     assert(first.getDescription === "gi|224384749|gb|CM000682.1| Homo sapiens chromosome 20, GRCh37 primary reference assembly")
     assert(first.getIndex === 0)
     assert(first.getSequence.length === 10000)
     assert(first.getStart === 0L)
     assert(first.getEnd === 10000L)
-    assert(first.getFragments === 26)
+    assert(first.getSlices === 26)
 
     // 250k file actually has 251930 bases
-    val last: NucleotideContigFragment = contigFragments.rdd.collect().last
+    val last: Slice = contigFragments.rdd.collect().last
     assert(last.getIndex === 25)
     assert(last.getStart === 250000L)
     assert(last.getEnd === 251930L)

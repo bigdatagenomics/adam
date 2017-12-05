@@ -30,14 +30,14 @@ private object FragmentCollector extends Serializable {
   /**
    * Apply method to create a fragment collector that is keyed by the contig.
    *
-   * @param fragment Fragment of a reference/assembled sequence to wrap.
+   * @param slice Slice of a reference/assembled sequence to wrap.
    * @return Returns key value pair where the key is the contig metadata and the
    *   value is a Fragment Collector object.
    */
-  def apply(fragment: NucleotideContigFragment): Option[(String, FragmentCollector)] = {
-    ReferenceRegion(fragment).map(rr => {
-      (fragment.getContigName,
-        FragmentCollector(Seq((rr, fragment.getSequence))))
+  def apply(slice: Slice): Option[(String, FragmentCollector)] = {
+    ReferenceRegion(slice).map(rr => {
+      (slice.getName,
+        FragmentCollector(Seq((rr, slice.getSequence))))
     })
   }
 }
@@ -142,16 +142,16 @@ private[adam] object FragmentConverter extends Serializable {
   }
 
   /**
-   * Converts an RDD of NucleotideContigFragments into AlignmentRecords.
+   * Converts an RDD of Slices into AlignmentRecords.
    *
    * Produces one alignment record per contiguous sequence contained in the
-   * input RDD. Fragments are merged down to the longest contiguous chunks
+   * input RDD. Slices are merged down to the longest contiguous chunks
    * possible.
    *
    * @param rdd RDD of assembled sequences.
    * @return Returns an RDD of reads that represent aligned contigs.
    */
-  def convertRdd(rdd: RDD[NucleotideContigFragment]): RDD[AlignmentRecord] = {
+  def convertRdd(rdd: RDD[Slice]): RDD[AlignmentRecord] = {
     rdd.flatMap(FragmentCollector(_))
       .reduceByKey(mergeFragments)
       .flatMap(convertFragment)

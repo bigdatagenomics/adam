@@ -27,9 +27,9 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.sequence.SliceRDD
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
   VariantRDD,
@@ -37,10 +37,9 @@ import org.bdgenomics.adam.rdd.variant.{
 }
 import org.bdgenomics.adam.sql.{
   AlignmentRecord => AlignmentRecordProduct,
-  Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -70,9 +69,9 @@ object FeatureRDDSuite extends Serializable {
       .build
   }
 
-  def ncfFn(f: Feature): NucleotideContigFragment = {
-    NucleotideContigFragment.newBuilder
-      .setContigName(f.getContigName)
+  def sliceFn(f: Feature): Slice = {
+    Slice.newBuilder
+      .setName(f.getContigName)
       .build
   }
 
@@ -928,26 +927,26 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("transform features to contig rdd") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
-    def checkSave(contigs: NucleotideContigFragmentRDD) {
+    def checkSave(slices: SliceRDD) {
       val tempPath = tmpLocation(".adam")
-      contigs.saveAsParquet(tempPath)
+      slices.saveAsParquet(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count === 3)
+      assert(sc.loadSlices(tempPath).rdd.count === 3)
     }
 
-    val contigs: NucleotideContigFragmentRDD = features.transmute(rdd => {
-      rdd.map(FeatureRDDSuite.ncfFn)
+    val slices: SliceRDD = features.transmute(rdd => {
+      rdd.map(FeatureRDDSuite.sliceFn)
     })
 
-    checkSave(contigs)
+    checkSave(slices)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val contigsDs: NucleotideContigFragmentRDD = features.transmuteDataset(ds => {
+    val contigsDs: SliceRDD = features.transmuteDataset(ds => {
       ds.map(r => {
-        NucleotideContigFragmentProduct.fromAvro(
-          FeatureRDDSuite.ncfFn(r.toAvro))
+        SliceProduct.fromAvro(
+          FeatureRDDSuite.sliceFn(r.toAvro))
       })
     })
 

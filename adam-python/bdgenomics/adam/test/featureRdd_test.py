@@ -87,9 +87,7 @@ class FeatureRDDTest(SparkTestCase):
         self.assertEquals(features._jvmRdd.jrdd().count(),
                           savedFeatures._jvmRdd.jrdd().count())
 
-
     def test_transform(self):
-
         featurePath = self.resourceFile("gencode.v7.annotation.trunc10.bed")
         ac = ADAMContext(self.sc)
 

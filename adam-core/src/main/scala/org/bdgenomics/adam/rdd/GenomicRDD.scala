@@ -72,7 +72,6 @@ private[rdd] object GenomicRDD {
    * Replaces file references in a command.
    *
    * @see pipe
-   *
    * @param cmd Command to split and replace references in.
    * @param files List of paths to files.
    * @return Returns a split up command string, with file paths subbed in.
@@ -290,7 +289,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * if LENIENT, log a warning, otherwise does nothing.
    *
    * @throws IllegalArgumentException If stringency is STRICT.
-   *
    * @param message The error or warning message.
    * @param stringency The validation stringency.
    */
@@ -311,7 +309,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * by index.
    *
    * @return Returns a new RDD containing sorted data.
-   *
    * @see sortLexicographically
    */
   def sort(): U = {
@@ -326,7 +323,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param partitions The number of partitions for the new RDD.
    * @param stringency The level of ValidationStringency to enforce.
    * @return Returns a new RDD containing sorted data.
-   *
    * @note Uses ValidationStringency to handle unaligned or where objects align
    *   to multiple positions.
    * @see sortLexicographically
@@ -373,7 +369,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * lexicographically.
    *
    * @return Returns a new RDD containing sorted data.
-   *
    * @see sort
    */
   def sortLexicographically(): U = {
@@ -386,11 +381,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @param partitions The number of partitions for the new RDD.
    * @param storePartitionMap A Boolean flag to determine whether to store the
-   *                          partition bounds from the resulting RDD.
+   *   partition bounds from the resulting RDD.
    * @param storageLevel The level at which to persist the resulting RDD.
    * @param stringency The level of ValidationStringency to enforce.
    * @return Returns a new RDD containing sorted data.
-   *
    * @note Uses ValidationStringency to handle data that is unaligned or where objects
    *   align to multiple positions.
    * @see sort
@@ -455,7 +449,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   in the environment for the newly created process. Default is empty.
    * @param flankSize Number of bases to flank each command invocation by.
    * @return Returns a new GenomicRDD of type Y.
-   *
    * @tparam X The type of the record created by the piped command.
    * @tparam Y A GenomicRDD containing X's.
    * @tparam V The InFormatter to use for formatting the data being piped to the
@@ -605,7 +598,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param xFormatter Formatter for data coming out of the pipe command.
    * @param convFn The conversion function used to build the final RDD.
    * @return Returns a new GenomicRDD of type Y.
-   *
    * @tparam X The type of the record created by the piped command.
    * @tparam Y A GenomicRDD containing X's.
    * @tparam V The InFormatter to use for formatting the data being piped to the
@@ -642,7 +634,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param xFormatter Formatter for data coming out of the pipe command.
    * @param convFn The conversion function used to build the final RDD.
    * @return Returns a new GenomicRDD of type Y.
-   *
    * @tparam X The type of the record created by the piped command.
    * @tparam Y A GenomicRDD containing X's.
    * @tparam V The InFormatter to use for formatting the data being piped to the
@@ -759,7 +750,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
-   *
    * @see broadcastRegionJoinAgainst
    */
   def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
@@ -793,7 +783,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param genomicRdd The right RDD in the join.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
-   *
    * @see broadcastRegionJoinAgainst
    */
   def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
@@ -817,11 +806,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @note This function differs from other region joins as it treats the calling RDD
    *   as the right side of the join, and not the left.
-   *
    * @param broadcastTree The data on the left side of the join.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
-   *
    * @see broadcastRegionJoin
    */
   def broadcastRegionJoinAgainst[X](
@@ -853,7 +840,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
-   *
    * @see rightOuterBroadcastRegionJoin
    */
   def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
@@ -891,7 +877,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
-   *
    * @see rightOuterBroadcastRegionJoin
    */
   def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
@@ -917,11 +902,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @note This function differs from other region joins as it treats the calling RDD
    *   as the right side of the join, and not the left.
-   *
    * @param broadcastTree The data on the left side of the join.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
-   *
    * @see rightOuterBroadcastRegionJoin
    */
   def rightOuterBroadcastRegionJoinAgainst[X](
@@ -948,11 +931,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * RDD are dropped.
    *
    * @param genomicRdd The right RDD in the join.
-   * @param flankSize Sets a flankSize for the distance between elements to be
+   * @param flankSize  Sets a flankSize for the distance between elements to be
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
-   *
    * @see broadcastRegionJoinAgainstAndGroupByRight
    */
   def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
@@ -987,7 +969,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param genomicRdd The right RDD in the join.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
-   *
    * @see broadcastRegionJoinAgainstAndGroupByRight
    */
   def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
@@ -1011,11 +992,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @note This function differs from other region joins as it treats the calling RDD
    *   as the right side of the join, and not the left.
-   *
    * @param broadcastTree The data on the left side of the join.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
-   *
    * @see broadcastRegionJoinAndGroupByRight
    */
   def broadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
@@ -1047,7 +1026,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
-   *
    * @see rightOuterBroadcastRegionJoinAgainstAndGroupByRight
    */
   def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
@@ -1085,7 +1063,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
-   *
    * @see rightOuterBroadcastRegionJoinAgainstAndGroupByRight
    */
   def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
@@ -1111,11 +1088,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @note This function differs from other region joins as it treats the calling RDD
    *   as the right side of the join, and not the left.
-   *
    * @param broadcastTree The data on the left side of the join.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
-   *
    * @see rightOuterBroadcastRegionJoinAndGroupByRight
    */
   def rightOuterBroadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
@@ -1176,7 +1151,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param optPartitions Optionally sets the number of output partitions. If
    *   None, the number of partitions on the resulting RDD does not change.
    * @param flankSize Sets a flankSize for the distance between elements to be
-   *   joined. If set to 0, an overlap is required to join two elements.
+   * joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
    */
@@ -1215,7 +1190,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * overlap a value from the other RDD are dropped.
    *
    * @param genomicRdd The right RDD in the join.
-   * @param flankSize Sets a flankSize for the distance between elements to be
+   * @param flankSize  Sets a flankSize for the distance between elements to be
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
@@ -1267,7 +1242,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param optPartitions Optionally sets the number of output partitions. If
    *   None, the number of partitions on the resulting RDD does not change.
    * @param flankSize Sets a flankSize for the distance between elements to be
-   *   joined. If set to 0, an overlap is required to join two elements.
+   * joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
@@ -1311,7 +1286,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * RDD, it will be paired with a `None` in the product of the join.
    *
    * @param genomicRdd The right RDD in the join.
-   * @param flankSize Sets a flankSize for the distance between elements to be
+   * @param flankSize  Sets a flankSize for the distance between elements to be
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
@@ -1367,7 +1342,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param optPartitions Optionally sets the number of output partitions. If
    *   None, the number of partitions on the resulting RDD does not change.
    * @param flankSize Sets a flankSize for the distance between elements to be
-   *   joined. If set to 0, an overlap is required to join two elements.
+   * joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
    *   left RDD that did not overlap a key in the right RDD.
@@ -1409,7 +1384,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * RDD, it will be paired with a `None` in the product of the join.
    *
    * @param genomicRdd The right RDD in the join.
-   * @param flankSize Sets a flankSize for the distance between elements to be
+   * @param flankSize  Sets a flankSize for the distance between elements to be
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
@@ -1509,7 +1484,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * RDD, it will be paired with an empty Iterable in the product of the join.
    *
    * @param genomicRdd The right RDD in the join.
-   * @param flankSize Sets a flankSize for the distance between elements to be
+   * @param flankSize  Sets a flankSize for the distance between elements to be
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and all keys from the
@@ -1606,7 +1581,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * a `None` in the product of the join.
    *
    * @param genomicRdd The right RDD in the join.
-   * @param flankSize Sets a flankSize for the distance between elements to be
+   * @param flankSize  Sets a flankSize for the distance between elements to be
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, and values that did not
@@ -1661,7 +1636,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param optPartitions Optionally sets the number of output partitions. If
    *   None, the number of partitions on the resulting RDD does not change.
    * @param flankSize Sets a flankSize for the distance between elements to be
-   *   joined. If set to 0, an overlap is required to join two elements.
+   * joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, grouped together by
    *   the value they overlapped in the left RDD..
@@ -1704,7 +1679,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * we group all values by the left item in the RDD.
    *
    * @param genomicRdd The right RDD in the join.
-   * @param flankSize Sets a flankSize for the distance between elements to be
+   * @param flankSize  Sets a flankSize for the distance between elements to be
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, grouped together by
@@ -1806,7 +1781,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * a length-1 Iterable with a `None` key.
    *
    * @param genomicRdd The right RDD in the join.
-   * @param flankSize Sets a flankSize for the distance between elements to be
+   * @param flankSize  Sets a flankSize for the distance between elements to be
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space, grouped together by
@@ -1858,7 +1833,6 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   of the records of this.rdd. It requires a pass through the co-located
    *   RDD to get the correct partition(s) for each record. It will assign a
    *   record to multiple partitions if necessary.
-   *
    * @param rddToCoPartitionWith The rdd to copartition to.
    * @return The newly repartitioned rdd.
    */
@@ -2331,7 +2305,7 @@ abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
    * Save the processing steps to disk.
    *
    * @param filePath The filepath to the directory within which we will save the
-   *   processing step descriptions..
+   *   processing step descriptions.
    */
   protected def saveProcessingSteps(filePath: String) {
     // save processing metadata

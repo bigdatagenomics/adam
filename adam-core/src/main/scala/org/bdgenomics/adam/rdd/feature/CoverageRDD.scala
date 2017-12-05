@@ -195,7 +195,6 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
    *   val end      = feature.getEnd
    *   val name     = Features.nameOf(feature)
    *   val coverage = feature.getScore
-   *
    * @param filePath The location to write the output.
    * @param asSingleFile If false, writes file to disk as shards with
    *   one shard per partition. If true, we save the file to disk as a single
@@ -218,7 +217,6 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
    * would be merged into one record Coverage("chr1", 1, 20, 3.0).
    *
    * @note Data must be sorted before collapse is called.
-   *
    * @return merged tuples of adjacent ReferenceRegions and coverage.
    */
   def collapse(): CoverageRDD = {

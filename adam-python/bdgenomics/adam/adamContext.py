@@ -46,7 +46,6 @@ class ADAMContext(object):
         c = self._jvm.org.bdgenomics.adam.rdd.ADAMContext(sc._jsc.sc())
         self.__jac = self._jvm.org.bdgenomics.adam.api.java.JavaADAMContext(c)
 
-
     def loadAlignments(self, filePath, stringency=STRICT):
         """
         Load alignment records into an AlignmentRecordRDD.
@@ -73,7 +72,6 @@ class ADAMContext(object):
                                             _toJava(stringency, self._jvm))
 
         return AlignmentRecordRDD(adamRdd, self._sc)
-
 
     def loadCoverage(self, filePath,
                      stringency=STRICT):
@@ -125,7 +123,6 @@ class ADAMContext(object):
 
         return NucleotideContigFragmentRDD(adamRdd, self._sc)
 
-
     def loadFragments(self, filePath, stringency=STRICT):
         """
         Load fragments into a FragmentRDD.
@@ -147,7 +144,6 @@ class ADAMContext(object):
         adamRdd = self.__jac.loadFragments(filePath, stringency)
 
         return FragmentRDD(adamRdd, self._sc)
-
 
     def loadFeatures(self, filePath, stringency=STRICT):
         """
@@ -177,7 +173,6 @@ class ADAMContext(object):
 
         return FeatureRDD(adamRdd, self._sc)
 
-
     def loadGenotypes(self, filePath, stringency=STRICT):
         """
         Load genotypes into a GenotypeRDD.
@@ -195,7 +190,6 @@ class ADAMContext(object):
                                            _toJava(stringency, self._jvm))
 
         return GenotypeRDD(adamRdd, self._sc)
-
 
     def loadVariants(self, filePath, stringency=STRICT):
         """

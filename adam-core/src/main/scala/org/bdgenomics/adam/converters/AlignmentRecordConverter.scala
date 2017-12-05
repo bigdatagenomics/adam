@@ -363,8 +363,8 @@ class AlignmentRecordConverter extends Serializable {
    *
    * @param fragment Fragment to convert.
    * @return The collection of alignments described by the fragment. If the fragment
-   *         doesn't contain any alignments, this method will return one unaligned
-   *         AlignmentRecord per sequence in the Fragment.
+   *   doesn't contain any alignments, this method will return one unaligned
+   *   AlignmentRecord per sequence in the Fragment.
    */
   def convertFragment(fragment: Fragment): Iterable[AlignmentRecord] = {
     asScalaBuffer(fragment.getAlignments).toIterable

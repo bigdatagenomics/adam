@@ -24,10 +24,10 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.{ ADAMContext, GenomicRDD }
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.sequence.SliceRDD
 import org.bdgenomics.adam.rdd.variant.{
   VariantRDD,
   GenotypeRDD,
@@ -42,62 +42,62 @@ sealed trait SameTypeConversion[T, U <: GenomicRDD[T, U]] extends Function2[U, R
   }
 }
 
-final class ContigsToContigsConverter extends SameTypeConversion[NucleotideContigFragment, NucleotideContigFragmentRDD] {
+final class SlicesToSlicesConverter extends SameTypeConversion[Slice, SliceRDD] {
 }
 
-final class ContigsToCoverageConverter extends Function2[NucleotideContigFragmentRDD, RDD[Coverage], CoverageRDD] {
+final class SlicesToCoverageConverter extends Function2[SliceRDD, RDD[Coverage], CoverageRDD] {
 
-  def call(v1: NucleotideContigFragmentRDD, v2: RDD[Coverage]): CoverageRDD = {
-    ADAMContext.contigsToCoverageConversionFn(v1, v2)
+  def call(v1: SliceRDD, v2: RDD[Coverage]): CoverageRDD = {
+    ADAMContext.slicesToCoverageConversionFn(v1, v2)
   }
 }
 
-final class ContigsToFeaturesConverter extends Function2[NucleotideContigFragmentRDD, RDD[Feature], FeatureRDD] {
+final class SlicesToFeaturesConverter extends Function2[SliceRDD, RDD[Feature], FeatureRDD] {
 
-  def call(v1: NucleotideContigFragmentRDD, v2: RDD[Feature]): FeatureRDD = {
-    ADAMContext.contigsToFeaturesConversionFn(v1, v2)
+  def call(v1: SliceRDD, v2: RDD[Feature]): FeatureRDD = {
+    ADAMContext.slicesToFeaturesConversionFn(v1, v2)
   }
 }
 
-final class ContigsToFragmentsConverter extends Function2[NucleotideContigFragmentRDD, RDD[Fragment], FragmentRDD] {
+final class SlicesToFragmentsConverter extends Function2[SliceRDD, RDD[Fragment], FragmentRDD] {
 
-  def call(v1: NucleotideContigFragmentRDD, v2: RDD[Fragment]): FragmentRDD = {
-    ADAMContext.contigsToFragmentsConversionFn(v1, v2)
+  def call(v1: SliceRDD, v2: RDD[Fragment]): FragmentRDD = {
+    ADAMContext.slicesToFragmentsConversionFn(v1, v2)
   }
 }
 
-final class ContigsToAlignmentRecordsConverter extends Function2[NucleotideContigFragmentRDD, RDD[AlignmentRecord], AlignmentRecordRDD] {
+final class SlicesToAlignmentRecordsConverter extends Function2[SliceRDD, RDD[AlignmentRecord], AlignmentRecordRDD] {
 
-  def call(v1: NucleotideContigFragmentRDD, v2: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    ADAMContext.contigsToAlignmentRecordsConversionFn(v1, v2)
+  def call(v1: SliceRDD, v2: RDD[AlignmentRecord]): AlignmentRecordRDD = {
+    ADAMContext.slicesToAlignmentRecordsConversionFn(v1, v2)
   }
 }
 
-final class ContigsToGenotypesConverter extends Function2[NucleotideContigFragmentRDD, RDD[Genotype], GenotypeRDD] {
+final class SlicesToGenotypesConverter extends Function2[SliceRDD, RDD[Genotype], GenotypeRDD] {
 
-  def call(v1: NucleotideContigFragmentRDD, v2: RDD[Genotype]): GenotypeRDD = {
-    ADAMContext.contigsToGenotypesConversionFn(v1, v2)
+  def call(v1: SliceRDD, v2: RDD[Genotype]): GenotypeRDD = {
+    ADAMContext.slicesToGenotypesConversionFn(v1, v2)
   }
 }
 
-final class ContigsToVariantsConverter extends Function2[NucleotideContigFragmentRDD, RDD[Variant], VariantRDD] {
+final class SlicesToVariantsConverter extends Function2[SliceRDD, RDD[Variant], VariantRDD] {
 
-  def call(v1: NucleotideContigFragmentRDD, v2: RDD[Variant]): VariantRDD = {
-    ADAMContext.contigsToVariantsConversionFn(v1, v2)
+  def call(v1: SliceRDD, v2: RDD[Variant]): VariantRDD = {
+    ADAMContext.slicesToVariantsConversionFn(v1, v2)
   }
 }
 
-final class ContigsToVariantContextsConverter extends Function2[NucleotideContigFragmentRDD, RDD[VariantContext], VariantContextRDD] {
+final class SlicesToVariantContextsConverter extends Function2[SliceRDD, RDD[VariantContext], VariantContextRDD] {
 
-  def call(v1: NucleotideContigFragmentRDD, v2: RDD[VariantContext]): VariantContextRDD = {
-    ADAMContext.contigsToVariantContextConversionFn(v1, v2)
+  def call(v1: SliceRDD, v2: RDD[VariantContext]): VariantContextRDD = {
+    ADAMContext.slicesToVariantContextConversionFn(v1, v2)
   }
 }
 
-final class CoverageToContigsConverter extends Function2[CoverageRDD, RDD[NucleotideContigFragment], NucleotideContigFragmentRDD] {
+final class CoverageToSlicesConverter extends Function2[CoverageRDD, RDD[Slice], SliceRDD] {
 
-  def call(v1: CoverageRDD, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    ADAMContext.coverageToContigsConversionFn(v1, v2)
+  def call(v1: CoverageRDD, v2: RDD[Slice]): SliceRDD = {
+    ADAMContext.coverageToSlicesConversionFn(v1, v2)
   }
 }
 
@@ -146,10 +146,10 @@ final class CoverageToVariantContextConverter extends Function2[CoverageRDD, RDD
   }
 }
 
-final class FeaturesToContigsConverter extends Function2[FeatureRDD, RDD[NucleotideContigFragment], NucleotideContigFragmentRDD] {
+final class FeaturesToSlicesConverter extends Function2[FeatureRDD, RDD[Slice], SliceRDD] {
 
-  def call(v1: FeatureRDD, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    ADAMContext.featuresToContigsConversionFn(v1, v2)
+  def call(v1: FeatureRDD, v2: RDD[Slice]): SliceRDD = {
+    ADAMContext.featuresToSlicesConversionFn(v1, v2)
   }
 }
 
@@ -198,10 +198,10 @@ final class FeaturesToVariantContextConverter extends Function2[FeatureRDD, RDD[
   }
 }
 
-final class FragmentsToContigsConverter extends Function2[FragmentRDD, RDD[NucleotideContigFragment], NucleotideContigFragmentRDD] {
+final class FragmentsToSlicesConverter extends Function2[FragmentRDD, RDD[Slice], SliceRDD] {
 
-  def call(v1: FragmentRDD, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    ADAMContext.fragmentsToContigsConversionFn(v1, v2)
+  def call(v1: FragmentRDD, v2: RDD[Slice]): SliceRDD = {
+    ADAMContext.fragmentsToSlicesConversionFn(v1, v2)
   }
 }
 
@@ -250,10 +250,10 @@ final class FragmentsToVariantContextConverter extends Function2[FragmentRDD, RD
   }
 }
 
-final class AlignmentRecordsToContigsConverter extends Function2[AlignmentRecordRDD, RDD[NucleotideContigFragment], NucleotideContigFragmentRDD] {
+final class AlignmentRecordsToSlicesConverter extends Function2[AlignmentRecordRDD, RDD[Slice], SliceRDD] {
 
-  def call(v1: AlignmentRecordRDD, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    ADAMContext.alignmentRecordsToContigsConversionFn(v1, v2)
+  def call(v1: AlignmentRecordRDD, v2: RDD[Slice]): SliceRDD = {
+    ADAMContext.alignmentRecordsToSlicesConversionFn(v1, v2)
   }
 }
 
@@ -302,10 +302,10 @@ final class AlignmentRecordsToVariantContextConverter extends Function2[Alignmen
   }
 }
 
-final class GenotypesToContigsConverter extends Function2[GenotypeRDD, RDD[NucleotideContigFragment], NucleotideContigFragmentRDD] {
+final class GenotypesToSlicesConverter extends Function2[GenotypeRDD, RDD[Slice], SliceRDD] {
 
-  def call(v1: GenotypeRDD, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    ADAMContext.genotypesToContigsConversionFn(v1, v2)
+  def call(v1: GenotypeRDD, v2: RDD[Slice]): SliceRDD = {
+    ADAMContext.genotypesToSlicesConversionFn(v1, v2)
   }
 }
 
@@ -354,10 +354,10 @@ final class GenotypesToVariantContextConverter extends Function2[GenotypeRDD, RD
   }
 }
 
-final class VariantsToContigsConverter extends Function2[VariantRDD, RDD[NucleotideContigFragment], NucleotideContigFragmentRDD] {
+final class VariantsToSlicesConverter extends Function2[VariantRDD, RDD[Slice], SliceRDD] {
 
-  def call(v1: VariantRDD, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    ADAMContext.variantsToContigsConversionFn(v1, v2)
+  def call(v1: VariantRDD, v2: RDD[Slice]): SliceRDD = {
+    ADAMContext.variantsToSlicesConversionFn(v1, v2)
   }
 }
 
@@ -406,10 +406,10 @@ final class VariantsToVariantContextConverter extends Function2[VariantRDD, RDD[
   }
 }
 
-final class VariantContextsToContigsConverter extends Function2[VariantContextRDD, RDD[NucleotideContigFragment], NucleotideContigFragmentRDD] {
+final class VariantContextsToSlicesConverter extends Function2[VariantContextRDD, RDD[Slice], SliceRDD] {
 
-  def call(v1: VariantContextRDD, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    ADAMContext.variantContextsToContigsConversionFn(v1, v2)
+  def call(v1: VariantContextRDD, v2: RDD[Slice]): SliceRDD = {
+    ADAMContext.variantContextsToSlicesConversionFn(v1, v2)
   }
 }
 

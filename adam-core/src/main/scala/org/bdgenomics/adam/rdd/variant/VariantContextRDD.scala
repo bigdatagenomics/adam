@@ -248,16 +248,16 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    *
    * File paths that end in .gz or .bgz will be saved as block GZIP compressed VCFs.
    *
-   * @param filePath The file path to save to.
-   * @param asSingleFile If true, saves the output as a single file by merging
-   *   the sharded output after completing the write to HDFS. If false, the
-   *   output of this call will be written as shards, where each shard has a
-   *   valid VCF header.
-   * @param deferMerging If true and asSingleFile is true, we will save the
-   *   output shards as a headerless file, but we will not merge the shards.
+   * @param filePath         The file path to save to.
+   * @param asSingleFile      If true, saves the output as a single file by merging
+   *                          the sharded output after completing the write to HDFS. If false, the
+   *                          output of this call will be written as shards, where each shard has a
+   *                         valid VCF header.
+   * @param deferMerging      If true and asSingleFile is true, we will save the
+   *                          output shards as a headerless file, but we will not merge the shards.
    * @param disableFastConcat If asSingleFile is true and deferMerging is false,
-   *   disables the use of the parallel file merging engine.
-   * @param stringency The validation stringency to use when writing the VCF.
+   *                          disables the use of the parallel file merging engine.
+   * @param stringency        The validation stringency to use when writing the VCF.
    */
   def saveAsVcf(filePath: String,
                 asSingleFile: Boolean,

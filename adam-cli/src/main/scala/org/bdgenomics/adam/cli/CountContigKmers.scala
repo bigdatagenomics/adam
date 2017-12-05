@@ -25,7 +25,7 @@ import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 object CountContigKmers extends BDGCommandCompanion {
   val commandName = "countContigKmers"
-  val commandDescription = "Counts the k-mers/q-mers from a read dataset."
+  val commandDescription = "Counts the k-mers/q-mers from a slice dataset."
 
   def apply(cmdLine: Array[String]) = {
     new CountContigKmers(Args4j[CountContigKmersArgs](cmdLine))
@@ -49,10 +49,10 @@ class CountContigKmers(protected val args: CountContigKmersArgs) extends BDGSpar
   def run(sc: SparkContext) {
 
     // read from disk
-    val fragments = sc.loadContigFragments(args.inputPath)
+    val slices = sc.loadSlices(args.inputPath)
 
     // count kmers
-    val countedKmers = fragments.countKmers(args.kmerLength)
+    val countedKmers = slices.countKmers(args.kmerLength)
 
     // print histogram, if requested
     if (args.printHistogram) {

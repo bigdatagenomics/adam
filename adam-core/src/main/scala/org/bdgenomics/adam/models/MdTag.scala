@@ -358,7 +358,7 @@ object MdTag {
  *
  * @param start Start position of the alignment.
  * @param matches A list of the ranges over which the read has a perfect
- *                sequence match.
+ *   sequence match.
  * @param mismatches A map of all the locations where a base mismatched.
  * @param deletions A map of all locations where a base was deleted.
  */
@@ -588,7 +588,7 @@ case class MdTag(
    *
    * @param other An object to compare to.
    * @return True if the object is an MD tag at the same position and with the
-   *         same string value. Else, false.
+   *   same string value. Else, false.
    */
   override def equals(other: Any): Boolean = other match {
     case that: MdTag => toString == that.toString && start == that.start
@@ -605,7 +605,7 @@ case class MdTag(
 
   /**
    * @return We implement hashing by hashing the string representation of the
-   *         MD tag.
+   *   MD tag.
    */
   override def hashCode: Int = toString().hashCode
 }

@@ -18,8 +18,8 @@
 
 resourceFile <- function(fileName, submodule="adam-core") {
     file.path(dirname(dirname(dirname(dirname(getwd())))),
-              paste(submodule, "src/test/resources", sep = "/",
-                    fileName))
+    paste(submodule, "src/test/resources", sep = "/",
+    fileName))
 }
 
 expect_files_match <- function(newFile, originalFile) {

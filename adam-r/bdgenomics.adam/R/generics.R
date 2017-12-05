@@ -21,7 +21,7 @@
 # @rdname ADAMContext
 # @export
 setGeneric("loadAlignments",
-           function(ac, filePath, ...) { standardGeneric("loadAlignments") })
+function(ac, filePath, ...) { standardGeneric("loadAlignments") })
 
 # @rdname ADAMContext
 # @export
@@ -31,27 +31,27 @@ setGeneric("loadContigFragments",
 # @rdname ADAMContext
 # @export
 setGeneric("loadFragments",
-           function(ac, filePath, ...) { standardGeneric("loadFragments") })
+function(ac, filePath, ...) { standardGeneric("loadFragments") })
 
 # @rdname ADAMContext
 # @export
 setGeneric("loadFeatures",
-           function(ac, filePath, ...) { standardGeneric("loadFeatures") })
+function(ac, filePath, ...) { standardGeneric("loadFeatures") })
 
 # @rdname ADAMContext
 # @export
 setGeneric("loadCoverage",
-           function(ac, filePath, ...) { standardGeneric("loadCoverage") })
+function(ac, filePath, ...) { standardGeneric("loadCoverage") })
 
 # @rdname ADAMContext
 # @export
 setGeneric("loadGenotypes",
-           function(ac, filePath, ...) { standardGeneric("loadGenotypes") })
+function(ac, filePath, ...) { standardGeneric("loadGenotypes") })
 
 # @rdname ADAMContext
 # @export
 setGeneric("loadVariants",
-           function(ac, filePath, ...) { standardGeneric("loadVariants") })
+function(ac, filePath, ...) { standardGeneric("loadVariants") })
 
 #### RDD operations ####
 
@@ -69,23 +69,23 @@ setGeneric("replaceRdd",
            function(ardd, rdd) { standardGeneric("replaceRdd") })
 
 setGeneric("wrapTransformation",
-           function(ardd, tFn) { standardGeneric("wrapTransformation") })
+function(ardd, tFn) { standardGeneric("wrapTransformation") })
 
 # @rdname GenomicRDD
 # @export
 setGeneric("transform",
-           function(ardd, tFn) { standardGeneric("transform") })
+function(ardd, tFn) { standardGeneric("transform") })
 
 setGeneric("inferConversionFn",
-           function(ardd, destClass) { standardGeneric("inferConversionFn") })
+function(ardd, destClass) { standardGeneric("inferConversionFn") })
 
 setGeneric("destClassSuffix",
-           function(destClass) { standardGeneric("destClassSuffix") })
+function(destClass) { standardGeneric("destClassSuffix") })
 
 # @rdname GenomicRDD
 # @export
 setGeneric("transmute",
-           function(ardd, tFn, destClass, ...) { standardGeneric("transmute") })
+function(ardd, tFn, destClass, ...) { standardGeneric("transmute") })
 
 # @rdname GenomicRDD
 # @export
@@ -161,12 +161,12 @@ setGeneric("realignIndels",
 # @rdname CoverageRDD
 # @export
 setGeneric("collapse",
-           function(ardd, ...) { standardGeneric("collapse") })
+function(ardd, ...) { standardGeneric("collapse") })
 
 # @rdname CoverageRDD
 # @export
 setGeneric("toFeatures",
-           function(ardd) { standardGeneric("toFeatures") })
+function(ardd) { standardGeneric("toFeatures") })
 
 # @rdname CoverageRDD
 # @export
@@ -195,7 +195,7 @@ setGeneric("toReads",
 # @rdname GenotypeRDD
 # @export
 setGeneric("toVariantContexts",
-           function(ardd) { standardGeneric("toVariantContexts") })
+function(ardd) { standardGeneric("toVariantContexts") })
 
 # @rdname GenotypeRDD
 # @export
@@ -216,7 +216,7 @@ setGeneric("flankAdjacentFragments",
 # @rdname VariantRDD
 # @export
 setGeneric("toVariantContexts",
-           function(ardd) { standardGeneric("toVariantContexts") })
+function(ardd) { standardGeneric("toVariantContexts") })
 
 # @rdname VariantRDD
 # @export

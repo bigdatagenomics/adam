@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.converters
 
 import org.apache.spark.rdd.RDD
-import org.bdgenomics.formats.avro.{ Contig, NucleotideContigFragment }
+import org.bdgenomics.formats.avro.Slice
 import scala.collection.mutable
 
 /**
@@ -55,7 +55,6 @@ private[adam] object FastaConverter {
      * @throws IllegalArgumentException if there is no name in the line and the
      *   line is not the only record in a file (i.e., the file contains multiple
      *   contigs).
-     *
      * @param descriptionLine The optional string describing the contig. If this
      *   is not set and this isn't the only line in the file, we throw.
      * @param id The index of this contig in the file.
@@ -65,7 +64,7 @@ private[adam] object FastaConverter {
     private def parseDescriptionLine(descriptionLine: Option[String],
                                      id: Long): (Option[String], Option[String]) = {
       descriptionLine.fold {
-        require(id == -1L, "Cannot have a headerless line in a file with more than one fragment.")
+        require(id == -1L, "Cannot have a headerless line in a file with more than one sequence.")
         (None: Option[String], None: Option[String])
       } { (dL) =>
         // fasta description line splits on whitespace
@@ -90,25 +89,22 @@ private[adam] object FastaConverter {
   }
 
   /**
-   * Converts an RDD containing ints and strings into an RDD containing ADAM nucleotide
-   * contig fragments.
+   * Converts an RDD containing ints and strings into an RDD containing ADAM slices.
    *
    * @note Input dataset is assumed to have come in from a Hadoop TextInputFormat reader. This sets
    *   a specific format for the RDD's Key-Value pairs.
-   *
    * @throws AssertionError Thrown if there appear to be multiple sequences in a single file
    *   that do not have descriptions.
    * @throws IllegalArgumentException Thrown if a sequence does not have sequence data.
-   *
    * @param rdd RDD containing Long,String tuples, where the Long corresponds to the number
    *   of the file line, and the String is the line of the file.
-   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
+   * @param maximumLength Maximum slice length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
    * @return An RDD of ADAM FASTA data.
    */
   def apply(
     rdd: RDD[(Long, String)],
-    maximumLength: Long = 10000L): RDD[NucleotideContigFragment] = {
+    maximumLength: Long = 10000L): RDD[Slice] = {
     val filtered = rdd.map(kv => (kv._1, kv._2.trim()))
       .filter((kv: (Long, String)) => !kv._2.startsWith(";"))
 
@@ -206,95 +202,94 @@ private[adam] object FastaConverter {
 /**
  * Conversion methods for single FASTA sequences into ADAM FASTA data.
  */
-private[converters] class FastaConverter(fragmentLength: Long) extends Serializable {
+private[converters] class FastaConverter(sliceLength: Long) extends Serializable {
 
   /**
-   * Remaps the fragments that we get coming in into our expected fragment size.
+   * Remaps the sequences that we get coming in into our expected slice size.
    *
-   * @param sequences Fragments coming in.
-   * @return A sequence of strings "recut" to the proper fragment size.
+   * @param sequences Sequences coming in.
+   * @return A sequence of strings "recut" to the proper slice size.
    */
-  def mapFragments(sequences: Seq[String]): Seq[String] = {
+  def mapSlices(sequences: Seq[String]): Seq[String] = {
     // internal "fsm" variables
     var sequence: StringBuilder = new StringBuilder
     var sequenceSeq: mutable.MutableList[String] = mutable.MutableList()
 
     /**
-     * Adds a string fragment to our accumulator. If this string fragment causes the accumulator
-     * to grow longer than our max fragment size, we split the accumulator and add it to the end
-     * of our list of fragments.
+     * Adds a string slice to our accumulator. If this string slice causes the accumulator
+     * to grow longer than our max slice size, we split the accumulator and add it to the end
+     * of our list of slice.
      *
-     * @param seq Fragment string to add.
+     * @param seq Slice string to add.
      */
-    def addFragment(seq: String) {
+    def addSlice(seq: String) {
       sequence.append(seq)
 
-      while (sequence.length > fragmentLength) {
-        sequenceSeq += sequence.take(fragmentLength.toInt).toString()
-        sequence = sequence.drop(fragmentLength.toInt)
+      while (sequence.length > sliceLength) {
+        sequenceSeq += sequence.take(sliceLength.toInt).toString()
+        sequence = sequence.drop(sliceLength.toInt)
       }
     }
 
-    // run addFragment on all fragments
-    sequences.foreach(addFragment)
+    // run addFragment on all slices
+    sequences.foreach(addSlice)
 
-    // if we still have a remaining sequence that is not part of a fragment, add it
+    // if we still have a remaining sequence that is not part of a slice, add it
     if (sequence.nonEmpty) {
       sequenceSeq += sequence.toString()
     }
 
-    // return our fragments
+    // return our slices
     sequenceSeq.toSeq
   }
 
   /**
-   * Converts a single FASTA sequence into an ADAM FASTA contig.
+   * Converts a single FASTA sequence into an ADAM slice.
    *
    * @throws IllegalArgumentException Thrown if sequence contains an illegal character.
-   *
    * @param name String option for the sequence name.
    * @param id Numerical identifier for the sequence.
    * @param sequence Nucleotide sequence.
    * @param description Optional description of the sequence.
-   * @return The converted ADAM FASTA contig.
+   * @return The converted ADAM FASTA slice.
    */
   def convert(
     name: Option[String],
     id: Int,
     sequence: Seq[String],
-    description: Option[String]): Seq[NucleotideContigFragment] = {
+    description: Option[String]): Seq[Slice] = {
 
     // get sequence length
     val sequenceLength = sequence.map(_.length).sum
 
-    // map sequences into fragments
-    val sequencesAsFragments = mapFragments(sequence)
+    // map sequences into slices
+    val sequencesAsFragments = mapSlices(sequence)
 
-    // get number of fragments
-    val fragmentCount = sequencesAsFragments.length
+    // get number of slices
+    val sliceCount = sequencesAsFragments.length
 
     // make new builder and set up non-optional fields
-    val fragments = sequencesAsFragments.zipWithIndex
+    val slices = sequencesAsFragments.zipWithIndex
       .map(si => {
         val (bases, index) = si
 
-        val builder = NucleotideContigFragment.newBuilder()
+        val builder = Slice.newBuilder()
           .setSequence(bases)
           .setIndex(index)
-          .setStart(index * fragmentLength)
-          .setEnd(index * fragmentLength + bases.length)
-          .setFragments(fragmentCount)
-          .setLength(bases.length)
-          .setContigLength(sequenceLength)
+          .setStart(index * sliceLength)
+          .setEnd(index * sliceLength + bases.length)
+          .setSlices(sliceCount)
+          .setLength(bases.length.toLong)
+          .setTotalLength(sequenceLength.toLong)
 
         // map over optional fields
-        name.foreach(builder.setContigName(_))
+        name.foreach(builder.setName(_))
         description.foreach(builder.setDescription(_))
 
         // build and return
         builder.build()
       })
 
-    fragments
+    slices
   }
 }

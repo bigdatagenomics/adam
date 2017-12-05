@@ -76,7 +76,6 @@ class GenomicRDD(object):
         return self._replaceRdd(self._jvmRdd.union(map(lambda x: x._jvmRdd,
                                                        rdds)))
 
-
     def _wrapTransformation(self,
                             tFn):
 
@@ -87,7 +86,6 @@ class GenomicRDD(object):
         jvm = self.sc._jvm
         return jvm.org.bdgenomics.adam.api.python.DataFrameConversionWrapper(newDf._jdf)
 
-        
     def transform(self, tFn):
         """
         Applies a function that transforms the underlying DataFrame into a new DataFrame
@@ -100,9 +98,8 @@ class GenomicRDD(object):
 
         # apply the lambda to the underlying DF
         dfFn = self._wrapTransformation(tFn)
-        
-        return self._replaceRdd(self._jvmRdd.transformDataFrame(dfFn))
 
+        return self._replaceRdd(self._jvmRdd.transformDataFrame(dfFn))
 
     def transmute(self, tFn, destClass, convFn=None):
         """
@@ -131,11 +128,9 @@ class GenomicRDD(object):
 
         return destClass(self._jvmRdd.transmuteDataFrame(dfFn, convFnInst), self.sc)
 
-
     def _inferConversionFn(self, destClass):
 
         raise NotImplementedError("This class does not implement conversion function inference.")
-
 
     def _destClassSuffix(self, destClass):
 
@@ -254,7 +249,6 @@ class AlignmentRecordRDD(GenomicDataset):
     def _replaceRdd(self, newRdd):
 
         return AlignmentRecordRDD(newRdd, self.sc)
-
 
     def _inferConversionFn(self, destClass):
 
@@ -627,7 +621,6 @@ class CoverageRDD(GenomicDataset):
 
         return CoverageRDD(self._jvmRdd.collapse(), self.sc)
 
-    
     def toFeatures(self):
         """
         Converts CoverageRDD to FeatureRDD.
@@ -635,7 +628,7 @@ class CoverageRDD(GenomicDataset):
         :return: Returns a FeatureRDD from CoverageRDD.
         :rtype: bdgenomics.adam.rdd.FeatureRDD
         """
-        
+
         return FeatureRDD(self._jvmRdd.toFeatures(), self.sc)
 
 
@@ -683,17 +676,12 @@ class CoverageRDD(GenomicDataset):
 
         return CoverageRDD(self._jvmRdd.flatten(), self.sc)
 
-
     def _inferConversionFn(self, destClass):
-
         return "org.bdgenomics.adam.api.java.CoverageTo%s" % self._destClassSuffix(destClass)
 
 
 class FeatureRDD(GenomicDataset):
-
-
     def _replaceRdd(self, newRdd):
-
         return FeatureRDD(newRdd, self.sc)
 
 
@@ -740,9 +728,7 @@ class FeatureRDD(GenomicDataset):
 
         return CoverageRDD(self._jvmRdd.toCoverage(), self.sc)
 
-
     def _inferConversionFn(self, destClass):
-
         return "org.bdgenomics.adam.api.java.FeaturesTo%s" % self._destClassSuffix(destClass)
 
 
@@ -752,7 +738,6 @@ class FragmentRDD(GenomicDataset):
     def _replaceRdd(self, newRdd):
 
         return FragmentRDD(newRdd, self.sc)
-
 
     def __init__(self, jvmRdd, sc):
         """
@@ -799,9 +784,7 @@ class FragmentRDD(GenomicDataset):
 
         self._jvmRdd.save(filePath)
 
-
     def _inferConversionFn(self, destClass):
-
         return "org.bdgenomics.adam.api.java.FragmentsTo%s" % self._destClassSuffix(destClass)
 
 
@@ -835,7 +818,6 @@ class GenotypeRDD(GenomicDataset):
 
         self._jvmRdd.saveAsParquet(filePath)
 
-
     def toVariantContexts(self):
         """
         :return: These genotypes, converted to variant contexts.
@@ -844,9 +826,7 @@ class GenotypeRDD(GenomicDataset):
         vcs = self._jvmRdd.toVariantContexts()
         return VariantContextRDD(vcs, self.sc)
 
-
     def _inferConversionFn(self, destClass):
-
         return "org.bdgenomics.adam.api.java.GenotypesTo%s" % self._destClassSuffix(destClass)
 
 
@@ -912,9 +892,7 @@ class NucleotideContigFragmentRDD(GenomicDataset):
 
         return RDD(self._jvmRdd.countKmers(kmerLength), self.sc)
 
-
     def _inferConversionFn(self, destClass):
-
         return "org.bdgenomics.adam.api.java.ContigsTo%s" % self._destClassSuffix(destClass)
 
 
@@ -938,12 +916,11 @@ class VariantRDD(GenomicDataset):
 
         GenomicDataset.__init__(self, jvmRdd, sc)
 
-
     def toVariantContexts(self):
         """
         :return: These variants, converted to variant contexts.
         """
-        
+
         vcs = self._jvmRdd.toVariantContexts()
         return VariantContextRDD(vcs, self.sc)
         
@@ -957,9 +934,7 @@ class VariantRDD(GenomicDataset):
 
         self._jvmRdd.saveAsParquet(filePath)
 
-
     def _inferConversionFn(self, destClass):
-
         return "org.bdgenomics.adam.api.java.VariantsTo%s" % self._destClassSuffix(destClass)
 
     

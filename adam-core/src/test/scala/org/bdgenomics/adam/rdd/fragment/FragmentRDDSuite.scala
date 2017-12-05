@@ -26,7 +26,6 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
@@ -34,6 +33,7 @@ import org.bdgenomics.adam.rdd.read.{
   AnySAMOutFormatter,
   QualityScoreBin
 }
+import org.bdgenomics.adam.rdd.sequence.SliceRDD
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
   VariantRDD,
@@ -44,7 +44,7 @@ import org.bdgenomics.adam.sql.{
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
@@ -381,30 +381,30 @@ class FragmentRDDSuite extends ADAMFunSuite {
   sparkTest("transform fragments to contig rdd") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
-    def checkSave(ncRdd: NucleotideContigFragmentRDD) {
+    def checkSave(slices: SliceRDD) {
       val tempPath = tmpLocation(".fa")
-      ncRdd.saveAsFasta(tempPath)
+      slices.saveAsFasta(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count.toInt === 20)
+      assert(sc.loadSlices(tempPath).rdd.count.toInt === 20)
     }
 
-    val features: NucleotideContigFragmentRDD = fragments.transmute(rdd => {
-      rdd.map(AlignmentRecordRDDSuite.ncfFn)
+    val slices: SliceRDD = fragments.transmute(rdd => {
+      rdd.map(AlignmentRecordRDDSuite.sliceFn)
     })
 
-    checkSave(features)
+    checkSave(slices)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: NucleotideContigFragmentRDD = fragments.transmuteDataset(ds => {
+    val slicesDs: SliceRDD = fragments.transmuteDataset(ds => {
       ds.map(r => {
-        NucleotideContigFragmentProduct.fromAvro(
-          AlignmentRecordRDDSuite.ncfFn(r.toAvro))
+        SliceProduct.fromAvro(
+          AlignmentRecordRDDSuite.sliceFn(r.toAvro))
       })
     })
 
-    checkSave(featuresDs)
+    checkSave(slicesDs)
   }
 
   sparkTest("transform fragments to coverage rdd") {
