@@ -102,7 +102,7 @@ You'll need to have a Spark release on your system and the `$SPARK_HOME` environ
 
 # Documentation
 
-ADAM's documentation is hosted at [readthedocs](adam.readthedocs.io).
+ADAM's documentation is hosted at [readthedocs](http://adam.readthedocs.io).
 
 # The ADAM/Big Data Genomics Ecosystem
 
