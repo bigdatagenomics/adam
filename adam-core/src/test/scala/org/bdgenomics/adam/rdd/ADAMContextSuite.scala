@@ -91,7 +91,7 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("loading a sam file with a bad header and strict stringency should fail") {
     val path = testFile("badheader.sam")
     intercept[SAMFormatException] {
-      sc.loadBam(path, validationStringency = ValidationStringency.STRICT)
+      sc.loadBam(path, stringency = ValidationStringency.STRICT)
     }
   }
 
