@@ -600,7 +600,7 @@ class CoverageRDD(GenomicDataset):
         GenomicDataset.__init__(self, jvmRdd, sc)
 
 
-    def save(self, filePath, asSingleFile = False):
+    def save(self, filePath, asSingleFile = False, disableFastConcat = False):
         """
         Saves coverage as feature file.
 
@@ -609,7 +609,7 @@ class CoverageRDD(GenomicDataset):
         single file.
         """
 
-        self._jvmRdd.save(filePath, asSingleFile)
+        self._jvmRdd.save(filePath, asSingleFile, disableFastConcat)
 
 
     def collapse(self):
