@@ -5,7 +5,7 @@ flagstat
 --------
 
 Once you have data converted to ADAM, you can gather statistics from the
-ADAM file using ```flagstat`` <#flagstat>`__. This command will output
+ADAM file using flagstat_. This command will output
 stats identically to the samtools ``flagstat`` command.
 
 .. code:: bash
