@@ -56,57 +56,57 @@ From Python, instantiate an ADAMContext, which wraps a SparkContext:
 With an ``ADAMContext``, you can load:
 
 -  Single reads as an ``AlignmentRecordRDD``:
--  From SAM/BAM/CRAM using ``loadBam`` (Scala only)
--  Selected regions from an indexed BAM/CRAM using ``loadIndexedBam``
-   (Scala only)
--  From FASTQ using ``loadFastq``, ``loadPairedFastq``, and
-   ``loadUnpairedFastq`` (Scala only)
--  From Parquet using ``loadParquetAlignments`` (Scala only)
--  The ``loadAlignments`` method will load from any of the above
-   formats, and will autodetect the underlying format (Scala, Java,
-   Python, and R, also supports loading reads from FASTA)
+   -  From SAM/BAM/CRAM using ``loadBam`` (Scala only)
+   -  Selected regions from an indexed BAM/CRAM using ``loadIndexedBam``
+      (Scala only)
+   -  From FASTQ using ``loadFastq``, ``loadPairedFastq``, and
+      ``loadUnpairedFastq`` (Scala only)
+   -  From Parquet using ``loadParquetAlignments`` (Scala only)
+   -  The ``loadAlignments`` method will load from any of the above
+      formats, and will autodetect the underlying format (Scala, Java,
+      Python, and R, also supports loading reads from FASTA)
 -  Paired reads as a ``FragmentRDD``:
--  From interleaved FASTQ using ``loadInterleavedFastqAsFragments``
-   (Scala only)
--  From Parquet using ``loadParquetFragments`` (Scala only)
--  The ``loadFragments`` method will load from either of the above
-   formats, as well as SAM/BAM/CRAM, and will autodetect the underlying
-   file format. If the file is a SAM/BAM/CRAM file and the file is
-   queryname sorted, the data will be converted to fragments without
-   performing a shuffle. (Scala, Java, Python, and R)
+   -  From interleaved FASTQ using ``loadInterleavedFastqAsFragments``
+      (Scala only)
+   -  From Parquet using ``loadParquetFragments`` (Scala only)
+   -  The ``loadFragments`` method will load from either of the above
+      formats, as well as SAM/BAM/CRAM, and will autodetect the underlying
+      file format. If the file is a SAM/BAM/CRAM file and the file is
+      queryname sorted, the data will be converted to fragments without
+      performing a shuffle. (Scala, Java, Python, and R)
 -  VCF lines as a ``VariantContextRDD`` from VCF/BCF1 using ``loadVcf``
    (Scala only)
 -  Selected lines from a tabix indexed VCF using ``loadIndexedVcf``
    (Scala only)
 -  Genotypes as a ``GenotypeRDD``:
--  From Parquet using ``loadParquetGenotypes`` (Scala only)
--  From either Parquet or VCF/BCF1 using ``loadGenotypes`` (Scala, Java,
-   Python, and R)
+   -  From Parquet using ``loadParquetGenotypes`` (Scala only)
+   -  From either Parquet or VCF/BCF1 using ``loadGenotypes`` (Scala, Java,
+      Python, and R)
 -  Variants as a ``VariantRDD``:
--  From Parquet using ``loadParquetVariants`` (Scala only)
--  From either Parquet or VCF/BCF1 using ``loadVariants`` (Scala, Java,
-   Python, and R)
+   -  From Parquet using ``loadParquetVariants`` (Scala only)
+   -  From either Parquet or VCF/BCF1 using ``loadVariants`` (Scala, Java,
+      Python, and R)
 -  Genomic features as a ``FeatureRDD``:
--  From BED using ``loadBed`` (Scala only)
--  From GFF3 using ``loadGff3`` (Scala only)
--  From GFF2/GTF using ``loadGtf`` (Scala only)
--  From NarrowPeak using ``loadNarrowPeak`` (Scala only)
--  From IntervalList using ``loadIntervalList`` (Scala only)
--  From Parquet using ``loadParquetFeatures`` (Scala only)
--  Autodetected from any of the above using ``loadFeatures`` (Scala,
-   Java, Python, and R)
+   -  From BED using ``loadBed`` (Scala only)
+   -  From GFF3 using ``loadGff3`` (Scala only)
+   -  From GFF2/GTF using ``loadGtf`` (Scala only)
+   -  From NarrowPeak using ``loadNarrowPeak`` (Scala only)
+   -  From IntervalList using ``loadIntervalList`` (Scala only)
+   -  From Parquet using ``loadParquetFeatures`` (Scala only)
+   -  Autodetected from any of the above using ``loadFeatures`` (Scala,
+      Java, Python, and R)
 -  Fragmented contig sequence as a ``NucleotideContigFragmentRDD``:
--  From FASTA with ``loadFasta`` (Scala only)
--  From Parquet with ``loadParquetContigFragments`` (Scala only)
--  Autodetected from either of the above using ``loadSequences`` (Scala,
-   Java, Python, and R)
+   -  From FASTA with ``loadFasta`` (Scala only)
+   -  From Parquet with ``loadParquetContigFragments`` (Scala only)
+   -  Autodetected from either of the above using ``loadSequences`` (Scala,
+      Java, Python, and R)
 -  Coverage data as a ``CoverageRDD``:
--  From Parquet using ``loadParquetCoverage`` (Scala only)
--  From Parquet or any of the feature file formats using
-   ``loadCoverage`` (Scala only)
--  Contig sequence as a broadcastable ``ReferenceFile`` using
-   ``loadReferenceFile``, which supports 2bit files, FASTA, and Parquet
-   (Scala only)
+   -  From Parquet using ``loadParquetCoverage`` (Scala only)
+   -  From Parquet or any of the feature file formats using
+      ``loadCoverage`` (Scala only)
+   -  Contig sequence as a broadcastable ``ReferenceFile`` using
+      ``loadReferenceFile``, which supports 2bit files, FASTA, and Parquet
+      (Scala only)
 
 The methods labeled “Scala only” may be usable from Java, but may not be
 convenient to use.
