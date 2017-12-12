@@ -2307,22 +2307,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-    * Load paired unaligned alignment records grouped by sequencing fragment
-    * from paired FASTQ files into an FragmentRDD.
-    *
-    * In paired FASTQ, the two reads from a paired sequencing protocol in separated files.
-    *
-    * Fragments represent all of the reads from a single sequenced fragment as
-    * a single object, which is a useful representation for some tasks.
-    *
-    * @param pathNameR1 The path name to load unaligned alignment records from.
-    *   Globs/directories are supported.
-    * @param pathNameR2 The path name to load unaligned alignment records from.
-    *   Globs/directories are supported.
-    * @return Returns a FragmentRDD containing the paired reads grouped by
-    *   sequencing fragment.
-    */
-  def loadPairedFastqAsFragments(pathNameR1: String, pathNameR2: String): FragmentRDD = LoadPairedFastqFragments.time {
+   * Load paired unaligned alignment records grouped by sequencing fragment
+   * from paired FASTQ files into an FragmentRDD.
+   *
+   * In paired FASTQ, the two reads from a paired sequencing protocol in separated files.
+   *
+   * Fragments represent all of the reads from a single sequenced fragment as
+   * a single object, which is a useful representation for some tasks.
+   *
+   * @param pathNameR1 The path name to load unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @param pathNameR2 The path name to load unaligned alignment records from.
+   *   Globs/directories are supported.
+   * @return Returns a FragmentRDD containing the paired reads grouped by
+   *   sequencing fragment.
+   */
+  def loadPairedFastqAsFragments(pathNameR1: String,
+                                 pathNameR2: String,
+                                 stringency: ValidationStringency = ValidationStringency.STRICT): FragmentRDD = LoadPairedFastqFragments.time {
 
     val job = HadoopUtil.newJob(sc)
     val conf = ContextUtil.getConfiguration(job)
@@ -2349,9 +2351,22 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
     val rdd = recordsR1.zip(recordsR2)
-      .flatMap { case (r1, r2) =>
-        //TODO: check read ID's
-        List(fastqRecordConverter.convertFragment(r1), fastqRecordConverter.convertFragment(r2))
+      .flatMap {
+        case (r1, r2) =>
+          val r1Fragment = fastqRecordConverter.convertFragment(r1)
+          val r2Fragment = fastqRecordConverter.convertFragment(r2)
+          stringency match {
+            case ValidationStringency.STRICT | ValidationStringency.LENIENT =>
+              val r1Name = r1Fragment.getReadName.split(" ").head.stripSuffix("/1")
+              val r2Name = r2Fragment.getReadName.split(" ").head.stripSuffix("/2")
+              if (r1Name != r2Name) {
+                val msg = s"Fastq 1 ($pathNameR1) and fastq 2 ($pathNameR2) are not in sync, order of the reads should be the same"
+                if (stringency == ValidationStringency.STRICT)
+                  throw new IllegalArgumentException(msg)
+                else logError(msg)
+              }
+          }
+          List(r1Fragment, r2Fragment)
       }
     FragmentRDD.fromRdd(rdd)
   }
