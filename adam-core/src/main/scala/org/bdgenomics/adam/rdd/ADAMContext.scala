@@ -2307,6 +2307,56 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+    * Load paired unaligned alignment records grouped by sequencing fragment
+    * from paired FASTQ files into an FragmentRDD.
+    *
+    * In paired FASTQ, the two reads from a paired sequencing protocol in separated files.
+    *
+    * Fragments represent all of the reads from a single sequenced fragment as
+    * a single object, which is a useful representation for some tasks.
+    *
+    * @param pathNameR1 The path name to load unaligned alignment records from.
+    *   Globs/directories are supported.
+    * @param pathNameR2 The path name to load unaligned alignment records from.
+    *   Globs/directories are supported.
+    * @return Returns a FragmentRDD containing the paired reads grouped by
+    *   sequencing fragment.
+    */
+  def loadPairedFastqAsFragments(pathNameR1: String, pathNameR2: String): FragmentRDD = LoadPairedFastqFragments.time {
+
+    val job = HadoopUtil.newJob(sc)
+    val conf = ContextUtil.getConfiguration(job)
+    conf.setStrings("io.compression.codecs",
+      classOf[BGZFCodec].getCanonicalName,
+      classOf[BGZFEnhancedGzipCodec].getCanonicalName)
+    val recordsR1 = sc.newAPIHadoopFile(
+      pathNameR1,
+      classOf[InterleavedFastqInputFormat],
+      classOf[Void],
+      classOf[Text],
+      conf
+    )
+    if (Metrics.isRecording) recordsR1.instrument() else recordsR1
+    val recordsR2 = sc.newAPIHadoopFile(
+      pathNameR2,
+      classOf[InterleavedFastqInputFormat],
+      classOf[Void],
+      classOf[Text],
+      conf
+    )
+    if (Metrics.isRecording) recordsR2.instrument() else recordsR2
+
+    // convert records
+    val fastqRecordConverter = new FastqRecordConverter
+    val rdd = recordsR1.zip(recordsR2)
+      .flatMap { case (r1, r2) =>
+        //TODO: check read ID's
+        List(fastqRecordConverter.convertFragment(r1), fastqRecordConverter.convertFragment(r2))
+      }
+    FragmentRDD.fromRdd(rdd)
+  }
+
+  /**
    * Load features into a FeatureRDD and convert to a CoverageRDD.
    * Coverage is stored in the score field of Feature.
    *
