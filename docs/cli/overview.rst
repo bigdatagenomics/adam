@@ -1,4 +1,4 @@
-Running ADAM’s command line tools
+Running ADAM's command line tools
 =================================
 
 In addition to being used as an API for `building
@@ -12,7 +12,7 @@ CLI is roughly divided into three sections:
 -  `Printers <#printers>`__ that provide detailed or summarized views of
    genomic data
 
-ADAM’s various CLI actions can be run from the command line using the
+ADAM's various CLI actions can be run from the command line using the
 ``scripts/adam-submit`` script. This script uses the ``spark-submit``
 script to run an ADAM application on a Spark cluster. To use this
 script, either ``spark-submit`` must be on the ``$PATH``, or the
@@ -46,7 +46,7 @@ commands. These include:
    Parquet, and enables delta encoding.
 -  ``-parquet_logging_level VAL``: The
    `Log4j <http://logging.apache.org/log4j/>`__ logging level to set for
-   Parquet’s loggers. Defaults to ``severe``.
+   Parquet's loggers. Defaults to ``severe``.
 -  ``-parquet_page_size N``: The page size in bytes to use when writing
    Parquet files. Defaults to 1MB (1024 \* 1024).
 -  ``-print_metrics``: If provided, prints the

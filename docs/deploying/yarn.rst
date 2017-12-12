@@ -3,8 +3,8 @@ Running ADAM on CDH 5, HDP, and other YARN based Distros
 
 `Apache Hadoop
 YARN <http://hadoop.apache.org/docs/stable2/hadoop-yarn/hadoop-yarn-site/YARN.html>`__
-is a widely used scheduler in the Hadoop ecosystem. YARN stands for “Yet
-Another Resource Negotiator”, and the YARN architecture is described in
+is a widely used scheduler in the Hadoop ecosystem. YARN stands for "Yet
+Another Resource Negotiator", and the YARN architecture is described in
 (Vavilapalli et al. 2013). YARN is used in several common Hadoop
 distributions, including the `Cloudera Hadoop Distribution
 (CDH) <http://www.cloudera.com/products/apache-hadoop/key-cdh-components.html>`__
@@ -14,7 +14,7 @@ supported natively in
 `Spark <http://spark.apache.org/docs/latest/running-on-yarn.html>`__.
 
 The ADAM CLI and shell can both be run on YARN. The ADAM CLI can be run
-in both Spark’s YARN ``cluster`` and ``client`` modes, while the ADAM
+in both Spark's YARN ``cluster`` and ``client`` modes, while the ADAM
 shell can only be run in ``client`` mode. In the ``cluster`` mode, the
 Spark driver runs in the YARN ``ApplicationMaster`` container. In the
 ``client`` mode, the Spark driver runs in the submitting process. Since

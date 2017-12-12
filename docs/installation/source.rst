@@ -73,7 +73,7 @@ Once this alias is in place, you can run ADAM by simply typing
 Building for Python
 -------------------
 
-To build and test `ADAM’s Python bindings <#python>`__, enable the
+To build and test `ADAM's Python bindings <#python>`__, enable the
 ``python`` profile:
 
 .. code:: bash
@@ -133,7 +133,7 @@ Building for R
 --------------
 
 ADAM supports SparkR, for Spark 2.1.0 and onwards. To build and test
-`ADAM’s R bindings <#r>`__, enable the ``r`` profile:
+`ADAM's R bindings <#r>`__, enable the ``r`` profile:
 
 .. code:: bash
 

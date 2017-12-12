@@ -1,7 +1,7 @@
 Extend the ADAM CLI by adding new commands
 ------------------------------------------
 
-ADAM’s CLI is implemented in the adam-cli Apache Maven module of the
+ADAM's CLI is implemented in the adam-cli Apache Maven module of the
 `bdgenomics/adam <https://github.com/bigdatagenomics/adam>`__
 repository, one .scala source file for each CLI action (e.g.
 `TransformAlignments.scala <https://github.com/bigdatagenomics/adam/blob/master/adam-cli/src/main/scala/org/bdgenomics/adam/cli/TransformAlignments.scala>`__

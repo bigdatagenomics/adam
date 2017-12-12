@@ -15,7 +15,7 @@ Dumps a Parquet file to either the console or a text file as
 
 This command has several options:
 
--  ``-pretty``: Pretty print’s the JSON output.
+-  ``-pretty``: Pretty prints the JSON output.
 -  ``-o``: Provides a path to save the output dump to, instead of
    writing the output to the console.
 

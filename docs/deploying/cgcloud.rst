@@ -100,9 +100,12 @@ all machines can access. The CGCloud EC2 Spark cluster you just created
 is already running HDFS.
 
 The typical flow of data to and from your ADAM application on EC2 will
-be: - Upload data to AWS S3 - Transfer from S3 to the HDFS on your
-cluster - Compute with ADAM, write output to HDFS - Copy data you wish
-to persist for later use to S3
+be:
+
+-  Upload data to AWS S3
+-  Transfer from S3 to the HDFS on your cluster
+-  Compute with ADAM, write output to HDFS
+-  Copy data you wish to persist for later use to S3
 
 For small test files you may wish to skip S3 by uploading directly to
 spark-master using ``scp`` and then copying to HDFS using:
@@ -116,8 +119,10 @@ to HDFS URLs like this:
 
 ::
 
-    adam-submit transformAlignments hdfs://spark-master/work_dir/sample1.bam \
-                          hdfs://spark-master/work_dir/sample1.adam
+    adam-submit \
+      transformAlignments \
+      hdfs://spark-master/work_dir/sample1.bam \
+      hdfs://spark-master/work_dir/sample1.adam
 
 Bulk Transfer between HDFS and S3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -153,16 +158,18 @@ the S3a file system, your file paths will need to begin with the
 
 ::
 
-    ./bin/adam-submit --packages com.amazonaws:aws-java-sdk-pom:1.10.34,org.apache.hadoop:hadoop-aws:2.7.4 \
-      -- transformAlignments \
+    adam-submit \
+      --packages com.amazonaws:aws-java-sdk-pom:1.10.34,org.apache.hadoop:hadoop-aws:2.7.4 \
+      -- \
+      transformAlignments \
       s3a://my_bucket/my_reads.adam \
       s3a://my_bucket/my_new_reads.adam
 
 If you are loading a BAM, CRAM, or VCF file, you will need to add an
 additional JAR. This is because the code that loads data stored in these
-file formats uses Java’s ``nio`` package to read index files. Java’s
-``nio`` system allows users to specify a “file system provider,” which
-implements ``nio``\ ’s file system operations on non-POSIX file systems
+file formats uses Java's ``nio`` package to read index files. Java's
+``nio`` system allows users to specify a "file system provider," which
+implements ``nio``\ 's file system operations on non-POSIX file systems
 like `HDFS <https://github.com/damiencarol/jsr203-hadoop>`__ or S3. To
 use these file formats with the ``s3a://`` scheme, you should include
 the following dependency:
@@ -181,7 +188,7 @@ Shutdown the cluster using:
 
     cgcloud terminate-cluster -c cluster1 spark
 
-CGCoud options and Spot Instances
+CGCloud options and Spot Instances
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 View help docs for all options of the ``cgcloud create-cluster``

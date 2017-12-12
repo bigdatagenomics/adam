@@ -1,13 +1,13 @@
-Interacting with data through ADAM’s evidence access layer
+Interacting with data through ADAM's evidence access layer
 ----------------------------------------------------------
 
 ADAM exposes access to distributed datasets of genomic data through the
 `ADAMContext <#adam-context>`__ entrypoint. The ADAMContext wraps Apache
-Spark’s SparkContext, which tracks the configuration and state of the
+Spark's SparkContext, which tracks the configuration and state of the
 current running Spark application. On top of the SparkContext, the
 ADAMContext provides data loading functions which yield
 `GenomicRDD <#genomic-rdd>`__\ s. The GenomicRDD classes provide a
-wrapper around Apache Spark’s two APIs for manipulating distributed
+wrapper around Apache Spark's two APIs for manipulating distributed
 datasets: the legacy Resilient Distributed Dataset (Zaharia et al. 2012)
 and the new Spark SQL Dataset/DataFrame API (Armbrust et al. 2015).
 Additionally, the GenomicRDD is enriched with genomics-specific metadata

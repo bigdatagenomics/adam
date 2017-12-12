@@ -22,7 +22,7 @@ distributed system. These pre-processing stages include:
    2014), which is used by the GATK for Marking Duplicates. Our
    implementation is fully concordant with the Picard/GATK duplicate
    removal engine, except we are able to perform duplicate marking for
-   chimeric read pairs. [2]_ Specifically, because Picard’s traversal
+   chimeric read pairs. [2]_ Specifically, because Picard's traversal
    engine is restricted to processing linearly sorted alignments, Picard
    mishandles these alignments. Since our engine is not constrained by
    the underlying layout of data on disk, we are able to properly handle
@@ -60,7 +60,7 @@ distributed system. These pre-processing stages include:
    distribution of regions in mapped reads, joining two genomic datasets
    can be difficult or impossible when neither dataset fits completely
    on a single node. To reduce the impact of data skew on the runtime of
-   joins, we implemented a load balancing engine in ADAM’s
+   joins, we implemented a load balancing engine in ADAM's
    ShuffleRegionJoin core. This load balancing is a preprocessing step
    to the ShuffleRegionJoin and improves performance by 10–100x. The
    first phase of the load balancer is to sort and repartition the left

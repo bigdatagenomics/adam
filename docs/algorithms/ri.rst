@@ -40,7 +40,7 @@ set of regions. For genomics, the convexity constraint is trivial to
 check: specifically, the genome is assembled out of reference contigs
 that define disparate 1-D coordinate spaces. If two regions exist on
 different contigs, they are known not to overlap. If two regions are on
-a single contig, we simply check to see if they overlap on that contig’s
+a single contig, we simply check to see if they overlap on that contig's
 1-D coordinate plane.
 
 Given this realization, we can define the convex hull Algorithm, which is a data parallel
@@ -88,7 +88,7 @@ Candidate Generation and Realignment
 Once we have generated the target set, we map across all the reads and
 check to see if the read overlaps a realignment target. We then group
 together all reads that map to a given realignment target; reads that do
-not map to a target are randomly assigned to a \`\`null’’ target. We do
+not map to a target are randomly assigned to a "null" target. We do
 not attempt realignment for reads mapped to null targets.
 
 To process non-null targets, we must first generate candidate haplotypes
