@@ -2,7 +2,7 @@ Conversion tools
 ----------------
 
 These tools convert data between a legacy genomic file format and using
-ADAM’s schemas to store data in Parquet.
+ADAM's schemas to store data in Parquet.
 
 fasta2adam and adam2fasta
 ~~~~~~~~~~~~~~~~~~~~~~~~~

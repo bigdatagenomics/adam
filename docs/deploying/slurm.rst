@@ -12,7 +12,7 @@ realized through a set of co-located compute/storage nodes. However,
 depending on your network setup, you may find Spark deployed on HPC to
 be a workable solution for testing or even production at scale,
 especially for those applications which perform multiple in-memory
-transformations and thus benefit from Spark’s in-memory processing
+transformations and thus benefit from Spark's in-memory processing
 model.
 
 Follow the primary

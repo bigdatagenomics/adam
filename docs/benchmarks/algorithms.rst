@@ -4,7 +4,7 @@ Benchmarks
 Algorithm Performance
 ---------------------
 
-To test the efficiency of ADAM’s implementations of the various
+To test the efficiency of ADAM's implementations of the various
 algorithms that are used in our variant calling pipeline, we ran strong
 scaling experiments. In this experiment, we used the high coverage
 genome NA12878 from the 1000 Genomes project. We held the executor
@@ -36,7 +36,7 @@ the latest implementation of these algorithms in the GATK4.
 
    Strong scaling characteristics of INDEL Realignment
 
-As our benchmarks demonstrate, ADAM’s implementations of the various
+As our benchmarks demonstrate, ADAM's implementations of the various
 algorithms in the standard germline reads-to-variants pipeline are more
 performant than the same algorithms implemented in the GATK. ADAM
 outperforms the GATK when running equivalent implementations of

@@ -108,11 +108,11 @@ With an ``ADAMContext``, you can load:
       ``loadReferenceFile``, which supports 2bit files, FASTA, and Parquet
       (Scala only)
 
-The methods labeled “Scala only” may be usable from Java, but may not be
+The methods labeled "Scala only" may be usable from Java, but may not be
 convenient to use.
 
 The ``JavaADAMContext`` class provides Java-friendly methods that are
 equivalent to the ``ADAMContext`` methods. Specifically, these methods
 use Java types, and do not make use of default parameters. In addition
 to the load/save methods described above, the ``ADAMContext`` adds the
-implicit methods needed for using ADAM’s pipe_ API.
+implicit methods needed for using ADAM's pipe_ API.

@@ -25,7 +25,7 @@ to set up an Apache Spark cluster, and to run an ADAM job:
 -  ``toil_lib.tools.spark_tools``: This module contains functions that
    run ADAM in Toil using `Docker <https://www.docker.com>`__, as well
    as `Conductor <https://github.com/BD2KGenomics/conductor>`__, a tool
-   for running transfers between HDFS and `Amazon’s
+   for running transfers between HDFS and `Amazon's
    S3 <https://aws.amazon.com/s3>`__ storage service.
 
 Several example workflows that run ADAM in Toil can be found in
@@ -34,12 +34,12 @@ workflows include:
 
 -  `adam-kmers <https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_kmers>`__:
    this workflow was demonstrated in (Vivian et al. 2016) and sets up a
-   Spark cluster which then runs ADAM’s ```countKmers``
+   Spark cluster which then runs ADAM's ```countKmers``
    CLI <#countKmers>`__.
 -  `adam-pipeline <https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_pipeline>`__:
    this workflow runs several stages in the ADAM
    ```transformAlignments`` CLI <#transformAlignments>`__. This pipeline
-   is the ADAM equivalent to the GATK’s “Best Practice” read
+   is the ADAM equivalent to the GATK's "Best Practice" read
    preprocessing pipeline. We then stitch together this pipeline with
    `BWA-MEM <https://github.com/lh3/bwa>`__ and the GATK in the
    `adam-gatk-pipeline <https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_gatk_pipeline>`__.
@@ -69,7 +69,7 @@ Configuring and launching Toil
 
 Toil takes most of its configuration from the command line. To make this
 easy, Toil includes a function in the ``toil.job.Job`` class to register
-Toil’s argument parsing code with the `Python standard
+Toil's argument parsing code with the `Python standard
 ``argparse`` <https://docs.python.org/2/library/argparse.html>`__
 library. E.g., `in
 ``count_kmers.py`` <https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L183-L214>`__,
@@ -137,7 +137,7 @@ that we would like Toil to run. In this example, Toil is wrapping the
 arguments that are being passed and serializes them so they can be run
 locally or on a remote node. Additionally, we pass the optional argument
 ``checkpoint=True``. This argument indicates that the ``kmer_dag`` Job
-function is a “checkpoint” job. If a job is a checkpoint job and any of
+function is a "checkpoint" job. If a job is a checkpoint job and any of
 its children jobs fail, then we are saying that the workflow can be
 successfully rerun from this point. In Toil, service jobs should always
 be launched from a checkpointed job in order to allow the service jobs
@@ -153,7 +153,7 @@ Launching a Spark Service
 In the ``toil_scripts.adam_kmers.count_kmers`` example, we wrap the
 ``kmer_dag`` function as a job, and then use this function to launch a
 Spark cluster as a set of service jobs using the ``toil_lib.spark``
-module. Once we’ve done that, we also launch a job to run ADAM by
+module. Once we've done that, we also launch a job to run ADAM by
 starting the ``download_count_upload`` child job function. `We launch
 the Spark service
 cluster <https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L66-L69>`__

@@ -1,10 +1,10 @@
-Using ADAM’s Pipe API
+Using ADAM's Pipe API
 ---------------------
 
-ADAM’s ``GenomicRDD`` API provides support for piping the underlying
+ADAM's ``GenomicRDD`` API provides support for piping the underlying
 genomic data out to a single node process through the use of a ``pipe``
-API. This builds off of Apache Spark’s ``RDD.pipe`` API. However,
-``RDD.pipe`` prints the objects as strings to the pipe. ADAM’s pipe API
+API. This builds off of Apache Spark's ``RDD.pipe`` API. However,
+``RDD.pipe`` prints the objects as strings to the pipe. ADAM's pipe API
 adds several important functions:
 
 -  It supports on-the-fly conversions to widely used genomic file
@@ -75,7 +75,7 @@ is being read into or out of the pipe. We support the following:
 -  We do not support piping CRAM due to complexities around the
    reference-based compression.
 -  ``FeatureRDD``:
--  ``InForamtter``\ s: ``BEDInFormatter``, ``GFF3InFormatter``,
+-  ``InFormatter``\ s: ``BEDInFormatter``, ``GFF3InFormatter``,
    ``GTFInFormatter``, and ``NarrowPeakInFormatter`` for writing
    features out to a pipe in BED, GFF3, GTF/GFF2, or NarrowPeak format,
    respectively.
@@ -163,7 +163,7 @@ each machine in our cluster. We suggest several different approaches:
 Using the Pipe API from Java
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The pipe API example above uses Scala’s implicit system and type
+The pipe API example above uses Scala's implicit system and type
 inference to make it easier to use the pipe API. However, we also
 provide a Java equivalent. There are several changes:
 

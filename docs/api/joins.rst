@@ -1,4 +1,4 @@
-Using ADAM’s RegionJoin API
+Using ADAM's RegionJoin API
 ---------------------------
 
 Another useful API implemented in ADAM is the RegionJoin API, which
@@ -75,7 +75,7 @@ A subset of these joins are depicted in Figure 2 below.
 
 One common pattern involves joining a single dataset against many
 datasets. An example of this is joining an RDD of features (e.g.,
-gene/exon coordinates) against many different RDD’s of reads. If the
+gene/exon coordinates) against many different RDDs of reads. If the
 object that is being used many times (gene/exon coordinates, in this
 case), we can force that object to be broadcast once and reused many
 times with the ``broadcast()`` function. This pairs with the

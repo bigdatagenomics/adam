@@ -1,7 +1,7 @@
 Action tools
 ------------
 
-Roughly speaking, “action” tools apply some form of non-trivial
+Roughly speaking, "action" tools apply some form of non-trivial
 transformation to data using the ADAM APIs.
 
 countKmers and countContigKmers
@@ -26,17 +26,17 @@ Beyond the `default options <#default-args>`__, both ``countKmers`` and
 transformAlignments
 ~~~~~~~~~~~~~~~~~~~
 
-The ``transformAlignments`` CLI is the entrypoint to ADAM’s read
+The ``transformAlignments`` CLI is the entrypoint to ADAM's read
 preprocessing tools. This command provides drop-in replacement commands
 for several commands in the `Genome Analysis
-Toolkit <https://software.broadinstitute.org/gatk/>`__ “Best Practices”
+Toolkit <https://software.broadinstitute.org/gatk/>`__ "Best Practices"
 read preprocessing pipeline and more (DePristo et al. 2011). This CLI
 tool takes two required arguments:
 
 1. ``INPUT``: The input path. A file containing reads in any of the
    supported ADAM read input formats.
 2. ``OUTPUT``: The path to save the transformed reads to. Supports any
-   of ADAM’s read output formats.
+   of ADAM's read output formats.
 
 Beyond the `default options <#default-args>`__ and the `legacy output
 options <#legacy-output>`__, ``transformAlignments`` supports a vast
@@ -103,7 +103,6 @@ range of options. These options fall into several general categories:
       observations. If BQSR is run, this option should be passed, along
       with a path to a known variation database (e.g.,
       `dbSNP <https://www.ncbi.nlm.nih.gov/projects/SNP/>`__).
-      {#known-snps}
 
 -  Indel realignment options: Indel realignment is run with the
    ``-realign_indels`` flag. Additionally, the Indel realignment engine
@@ -113,7 +112,7 @@ range of options. These options fall into several general categories:
       containing known Indel variants to realign against. If provided,
       forces the ``KNOWNS_ONLY`` consensus model. If not provided,
       forces the ``CONSENSUS_FROM_READS`` model. See `candidate
-      generation and realignment <#consensus-model>`__. {#known-indels}
+      generation and realignment <#consensus-model>`__.
    -  ``-max_consensus_number``: The maximum number of consensus
       sequences to realign a single target against. If more consensus
       sequences are seen at a single target, we randomly downsample.
@@ -151,7 +150,7 @@ range of options. These options fall into several general categories:
    rewritten to 10, and all quality scores between 20–49 will be
    rewritten to 30.
 -  ``mismatchingPositions`` tagging options: We can recompute the
-   ``mismatchingPositions`` field of an AlignmentRecord (SAM “MD” tag)
+   ``mismatchingPositions`` field of an AlignmentRecord (SAM "MD" tag)
    with the ``-add_md_tags`` flag. This flag takes a path to a reference
    file in either FASTA or Parquet ``NucleotideContigFragment`` format.
    Additionally, this engine takes the following options:
@@ -195,10 +194,10 @@ arguments:
 1. ``INPUT``: The input path. A file containing features in any of the
    supported ADAM feature input formats.
 2. ``OUTPUT``: The path to save the transformed features to. Supports
-   any of ADAM’s feature output formats.
+   any of ADAM's feature output formats.
 
 Beyond the `default options <#default-args>`__ and the `legacy output
-options <#legacy-output>`__\ {#legacy-output}, ``transformFeatures`` has
+options <#legacy-output>`__, ``transformFeatures`` has
 one optional argument:
 
 -  ``-num_partitions``: If loading from a textual feature format (i.e.,
@@ -215,10 +214,10 @@ arguments:
 1. ``INPUT``: The input path. A file containing genotypes in any of the
    supported ADAM genotype input formats.
 2. ``OUTPUT``: The path to save the transformed genotypes to. Supports
-   any of ADAM’s genotype output formats.
+   any of ADAM's genotype output formats.
 
 Beyond the `default options <#default-args>`__ and the `legacy output
-options <#legacy-output>`__\ {#legacy-output}, ``transformGenotypes``
+options <#legacy-output>`__, ``transformGenotypes``
 has additional arguments:
 
 -  ``-coalesce``: Sets the number of partitions to coalesce the output
@@ -266,10 +265,10 @@ arguments:
 1. ``INPUT``: The input path. A file containing variants in any of the
    supported ADAM variant input formats.
 2. ``OUTPUT``: The path to save the transformed variants to. Supports
-   any of ADAM’s variant output formats.
+   any of ADAM's variant output formats.
 
 Beyond the `default options <#default-args>`__ and the `legacy output
-options <#legacy-output>`__\ {#legacy-output}, ``transformVariants`` has
+options <#legacy-output>`__, ``transformVariants`` has
 additional arguments:
 
 -  ``-coalesce``: Sets the number of partitions to coalesce the output

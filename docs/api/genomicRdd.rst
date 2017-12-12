@@ -4,7 +4,7 @@ Working with genomic data using GenomicRDDs
 As described in the section on using the
 `ADAMContext <#adam-context>`__, ADAM loads genomic data into a
 ``GenomicRDD`` which is specialized for each datatype. This
-``GenomicRDD`` wraps Apache Spark’s Resilient Distributed Dataset (RDD,
+``GenomicRDD`` wraps Apache Spark's Resilient Distributed Dataset (RDD,
 (Zaharia et al. 2012)) API with genomic metadata. The ``RDD``
 abstraction presents an array of data which is distributed across a
 cluster. ``RDD``\ s are backed by a computational lineage, which allows
@@ -49,7 +49,7 @@ round trip between Parquet and VCF.
 Transforming GenomicRDDs
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Although ``GenomicRDD``\ s do not extend Apache Spark’s ``RDD`` class,
+Although ``GenomicRDD``\ s do not extend Apache Spark's ``RDD`` class,
 ``RDD`` operations can be performed on them using the ``transform``
 method. Currently, we only support ``RDD`` to ``RDD`` transformations
 that keep the same type as the base type of the ``GenomicRDD``. To apply
@@ -132,8 +132,8 @@ to load the data directly using the Spark SQL APIs, instead of loading
 the data as an RDD, and then transforming that RDD into a SQL Dataset.
 
 The functionality of the ``adam-codegen`` package is simple. The goal of
-this package is to take ADAM’s Avro schemas and to remap them into
-classes that implement Scala’s ``Product`` interface, and which have a
+this package is to take ADAM's Avro schemas and to remap them into
+classes that implement Scala's ``Product`` interface, and which have a
 specific style of constructor that is expected by Spark SQL.
 Additionally, we define functions that translate between these Product
 classes and the bdg-formats Avro models. Parquet files written with

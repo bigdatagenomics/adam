@@ -1,7 +1,7 @@
 The bdg-formats schemas
 -----------------------
 
-The schemas that comprise ADAM’s narrow waist are defined in the
+The schemas that comprise ADAM's narrow waist are defined in the
 `bdg-formats <https://github.com/bigdatagenomics/bdg-formats>`__
 project, using the `Apache Avro <https://avro.apache.org>`__ schema
 description language. This schema definition language automatically
@@ -10,7 +10,7 @@ including Java, C, C++, and Python. bdg-formats contains several core
 schemas:
 
 -  The *AlignmentRecord* schema represents a genomic read, along with
-   that read’s alignment to a reference genome, if available.
+   that read's alignment to a reference genome, if available.
 -  The *Feature* schema represents a generic genomic feature. This
    record can be used to tag a region of the genome with an annotation,
    such as coverage observed over that region, or the coordinates of an
@@ -20,9 +20,9 @@ schemas:
 -  The *Genotype* schema represents a genotype call, along with
    annotations about the quality/read support of the called genotype.
 -  The *NucleotideContigFragment* schema represents a section of a
-   contig’s sequence.
+   contig's sequence.
 -  The *Variant* schema represents a sequence variant, along with
-   statistics about that variant’s support across a group of samples,
+   statistics about that variant's support across a group of samples,
    and annotations about the effect of the variant.
 
 The bdg-formats schemas are designed so that common fields are easy to

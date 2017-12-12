@@ -27,7 +27,7 @@ registered, `create a registrator that delegates to the ADAM
 registrator <#registrator>`__. You might want to provide your own
 serializer registrator if you need custom serializers for a class in
 your code that either has a complex structure that Kryo fails to
-serialize properly via Kryo’s serializer inference, or if you want to
+serialize properly via Kryo's serializer inference, or if you want to
 require registration of all classes in your application to improve
 performance.
 
@@ -98,10 +98,10 @@ Writing your own registrator that calls the ADAM registrator
 
 As we do in ADAM, an application may want to provide its own Kryo
 serializer registrator. The custom registrator may be needed in order to
-register custom serializers, or because the application’s configuration
+register custom serializers, or because the application's configuration
 requires all serializers to be registered. In either case, the
 application will need to provide its own Kryo registrator. While this
-registrator can manually register ADAM’s serializers, it is simpler to
+registrator can manually register ADAM's serializers, it is simpler to
 call to the ADAM registrator from within the registrator. As an example,
 this pattern looks like the following code:
 
