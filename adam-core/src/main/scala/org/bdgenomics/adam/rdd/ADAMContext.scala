@@ -2357,8 +2357,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           val r2Fragment = fastqRecordConverter.convertFragment(r2)
           stringency match {
             case ValidationStringency.STRICT | ValidationStringency.LENIENT =>
-              val r1Name = r1Fragment.getReadName.split(" ").head.stripSuffix("/1")
-              val r2Name = r2Fragment.getReadName.split(" ").head.stripSuffix("/2")
+              val r1Name = r1Fragment.getReadName.takeWhile(_ != ' ').stripSuffix("/1")
+              val r2Name = r2Fragment.getReadName.takeWhile(_ != ' ').stripSuffix("/2")
               if (r1Name != r2Name) {
                 val msg = s"Fastq 1 ($pathNameR1) and fastq 2 ($pathNameR2) are not in sync, order of the reads should be the same"
                 if (stringency == ValidationStringency.STRICT)
