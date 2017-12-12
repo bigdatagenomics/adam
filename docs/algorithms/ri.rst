@@ -76,7 +76,7 @@ described in the hull set merging algorithm.
    \text{else}& \\
    &mergeItem \leftarrow (\text{last}(first) \cup \text{head}(second)) \\
    &mergeSet \leftarrow \text{allButLast}(first) \cup mergeItem \\
-   &trimSecond \leftarrow$ \text{allButFirst}($second$) \\
+   &trimSecond \leftarrow \text{allButFirst}(second) \\
    &\text{return mergeTargetSets}(mergeSet, trimSecond)
 
 The set returned by this function is used as an index for mapping reads
