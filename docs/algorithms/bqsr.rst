@@ -63,7 +63,7 @@ with Binomial likelihood and a Beta(1, 1) prior.
 .. math::
 
 
-   \mathbf{E}(P_{err}|{cov}) = \frac{\text{\#errors}(cov) + 1}{\text{\#observations}(cov) + 2}
+   \mathbf{E}(P_{err}|{cov}) = \frac{\text{errors}(cov) + 1}{\text{observations}(cov) + 2}
 
 After these probabilities are estimated, we go back across the input
 read dataset and reconstruct the quality scores of the read by using the
