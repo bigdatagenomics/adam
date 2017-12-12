@@ -1448,13 +1448,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param pathName The path name to load BAM/CRAM/SAM formatted alignment records from.
    *   Globs/directories are supported.
+   * @param stringency The validation stringency to use when validating the
+   *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadBam(
     pathName: String,
-    validationStringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadBam.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadBam.time {
 
     val path = new Path(pathName)
     val bamFiles = getFsAndFiles(path)
@@ -1473,7 +1475,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             // We need to separately read the header, so that we can inject the sequence dictionary
             // data into each individual Read (see the argument to samRecordConverter.convert,
             // below).
-            sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, validationStringency.toString)
+            sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, stringency.toString)
             val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
             log.info("Loaded header from " + fp)
             val sd = loadBamDictionary(samHeader)
@@ -1482,9 +1484,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
             Some((sd, rg, pgs))
           } catch {
             case e: Throwable => {
-              if (validationStringency == ValidationStringency.STRICT) {
+              if (stringency == ValidationStringency.STRICT) {
                 throw e
-              } else if (validationStringency == ValidationStringency.LENIENT) {
+              } else if (stringency == ValidationStringency.LENIENT) {
                 log.error(
                   s"Loading failed for $fp:\n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
                 )
@@ -1534,6 +1536,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
+  // todo: add stringency with default if possible
   def loadIndexedBam(
     pathName: String,
     viewRegion: ReferenceRegion): AlignmentRecordRDD = {
@@ -1547,13 +1550,16 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load indexed BAM formatted alignment records from.
    *   Globs/directories are supported.
    * @param viewRegions Iterable of ReferenceRegion we are filtering on.
+   * @param stringency The validation stringency to use when validating the
+   *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
    * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadIndexedBam(
     pathName: String,
-    viewRegions: Iterable[ReferenceRegion])(implicit s: DummyImplicit): AlignmentRecordRDD = LoadIndexedBam.time {
+    viewRegions: Iterable[ReferenceRegion],
+    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): AlignmentRecordRDD = LoadIndexedBam.time {
 
     val path = new Path(pathName)
     // todo: can this method handle SAM and CRAM, or just BAM?
@@ -1562,18 +1568,32 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     require(bamFiles.nonEmpty,
       "Did not find any BAM files at %s.".format(path))
     val (seqDict, readGroups, programs) = bamFiles
-      .map(fp => {
-        // We need to separately read the header, so that we can inject the sequence dictionary
-        // data into each individual Read (see the argument to samRecordConverter.convert,
-        // below).
-        val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
+      .flatMap(fp => {
+        try {
+          // We need to separately read the header, so that we can inject the sequence dictionary
+          // data into each individual Read (see the argument to samRecordConverter.convert,
+          // below).
+          sc.hadoopConfiguration.set(SAMHeaderReader.VALIDATION_STRINGENCY_PROPERTY, stringency.toString)
+          val samHeader = SAMHeaderReader.readSAMHeaderFrom(fp, sc.hadoopConfiguration)
 
-        log.info("Loaded header from " + fp)
-        val sd = loadBamDictionary(samHeader)
-        val rg = loadBamReadGroups(samHeader)
-        val pgs = loadBamPrograms(samHeader)
+          log.info("Loaded header from " + fp)
+          val sd = loadBamDictionary(samHeader)
+          val rg = loadBamReadGroups(samHeader)
+          val pgs = loadBamPrograms(samHeader)
 
-        (sd, rg, pgs)
+          Some((sd, rg, pgs))
+        } catch {
+          case e: Throwable => {
+            if (stringency == ValidationStringency.STRICT) {
+              throw e
+            } else if (stringency == ValidationStringency.LENIENT) {
+              log.error(
+                s"Loading failed for $fp:\n${e.getMessage}\n\t${e.getStackTrace.take(25).map(_.toString).mkString("\n\t")}"
+              )
+            }
+            None
+          }
+        }
       }).reduce((kv1, kv2) => {
         (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2, kv1._3 ++ kv2._3)
       })
