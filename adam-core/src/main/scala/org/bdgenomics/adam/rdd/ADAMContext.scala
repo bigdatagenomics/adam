@@ -1562,11 +1562,33 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): AlignmentRecordRDD = LoadIndexedBam.time {
 
     val path = new Path(pathName)
-    // todo: can this method handle SAM and CRAM, or just BAM?
+
+    // If pathName is a single file or *.bam, append .bai to find all bam indices.
+    // Otherwise, pathName is a directory and the entire path must be searched
+    // for indices.
+    val indexPath = if (pathName.endsWith(".bam")) {
+      new Path(pathName + ".bai")
+    } else {
+      path
+    }
+
+    // currently only supports BAM files, see https://github.com/bigdatagenomics/adam/issues/1833
     val bamFiles = getFsAndFiles(path).filter(p => p.toString.endsWith(".bam"))
+
+    val indexFiles = getFsAndFiles(indexPath).filter(p => p.toString.endsWith(".bai"))
+      .map(r => r.toString)
 
     require(bamFiles.nonEmpty,
       "Did not find any BAM files at %s.".format(path))
+
+    val missingIndices = bamFiles.filterNot(f => {
+      indexFiles.contains(f.toString + ".bai")
+    })
+
+    if (!missingIndices.isEmpty) {
+      throw new FileNotFoundException("Missing indices for BAMs:\n%s".format(missingIndices.mkString("\n")))
+    }
+
     val (seqDict, readGroups, programs) = bamFiles
       .flatMap(fp => {
         try {
