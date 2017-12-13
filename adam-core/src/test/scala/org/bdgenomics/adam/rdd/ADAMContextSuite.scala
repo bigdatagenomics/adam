@@ -275,7 +275,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val pathR1 = testFile("proper_pairs_1.fq")
     val pathR2 = testFile("proper_pairs_2.fq")
     val fragments = sc.loadPairedFastqAsFragments(pathR1, pathR2)
-    assert(fragments.rdd.count === 6)
+    assert(fragments.rdd.count === 3)
   }
 
   (1 to 4) foreach { testNumber =>
