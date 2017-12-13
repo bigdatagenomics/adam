@@ -271,6 +271,13 @@ class ADAMContextSuite extends ADAMFunSuite {
     })
   }
 
+  sparkTest("load paired fastq as fragments") {
+    val pathR1 = testFile("proper_pairs_1.fq")
+    val pathR2 = testFile("proper_pairs_2.fq")
+    val fragments = sc.loadPairedFastqAsFragments(pathR1, pathR2)
+    assert(fragments.rdd.count === 6)
+  }
+
   (1 to 4) foreach { testNumber =>
     val inputName = "interleaved_fastq_sample%d.ifq".format(testNumber)
     val path = testFile(inputName)
