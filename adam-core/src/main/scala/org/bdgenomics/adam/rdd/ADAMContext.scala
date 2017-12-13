@@ -2353,22 +2353,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
     val rdd = recordsR1.zip(recordsR2)
-      .flatMap {
+      .map {
         case (r1, r2) =>
-          val r1Fragment = fastqRecordConverter.convertFragment(r1)
-          val r2Fragment = fastqRecordConverter.convertFragment(r2)
-          stringency match {
-            case ValidationStringency.STRICT | ValidationStringency.LENIENT =>
-              val r1Name = r1Fragment.getReadName.takeWhile(_ != ' ').stripSuffix("/1")
-              val r2Name = r2Fragment.getReadName.takeWhile(_ != ' ').stripSuffix("/2")
-              if (r1Name != r2Name) {
-                val msg = s"Fastq 1 ($pathNameR1) and fastq 2 ($pathNameR2) are not in sync, order of the reads should be the same"
-                if (stringency == ValidationStringency.STRICT)
-                  throw new IllegalArgumentException(msg)
-                else logError(msg)
-              }
-          }
-          List(r1Fragment, r2Fragment)
+          val pairText = new Text(r1._2.toString + r2._2.toString)
+          fastqRecordConverter.convertFragment((null, pairText))
       }
     FragmentRDD.fromRdd(rdd)
   }
