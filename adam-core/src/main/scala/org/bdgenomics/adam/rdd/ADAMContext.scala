@@ -2319,6 +2319,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param pathNameR2 The path name to load unaligned alignment records from.
    *   Globs/directories are supported.
+   * @param stringency The validation stringency to use when validating paired FASTQ format.
+   *   Defaults to ValidationStringency.STRICT.
    * @return Returns a FragmentRDD containing the paired reads grouped by
    *   sequencing fragment.
    */
