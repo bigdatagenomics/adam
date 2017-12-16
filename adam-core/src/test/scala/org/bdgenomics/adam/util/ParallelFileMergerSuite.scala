@@ -155,7 +155,7 @@ class ParallelFileMergerSuite extends ADAMFunSuite {
 
     val fs = FileSystem.get(sc.hadoopConfiguration)
     val filesToMerge = (Seq(outPath + "_head") ++ (0 until 4).map(i => {
-      outPath + "_tail/part-r-0000%d".format(i)
+      outPath + "_tail/part-r-0000%d.sam".format(i)
     })).map(new Path(_))
       .map(p => (p.toString, 0L, fs.getFileStatus(p).getLen().toLong - 1L))
 
@@ -179,7 +179,7 @@ class ParallelFileMergerSuite extends ADAMFunSuite {
 
     val fs = FileSystem.get(sc.hadoopConfiguration)
     val filesToMerge = (Seq(outPath + "_head") ++ (0 until 4).map(i => {
-      outPath + "_tail/part-r-0000%d".format(i)
+      outPath + "_tail/part-r-0000%d.bam".format(i)
     })).map(new Path(_))
       .map(p => (p.toString, 0L, fs.getFileStatus(p).getLen().toLong - 1L))
 
@@ -206,7 +206,7 @@ class ParallelFileMergerSuite extends ADAMFunSuite {
 
     val fs = FileSystem.get(sc.hadoopConfiguration)
     val filesToMerge = (Seq(outPath + "_head") ++ (0 until 4).map(i => {
-      outPath + "_tail/part-r-0000%d".format(i)
+      outPath + "_tail/part-r-0000%d.cram".format(i)
     })).map(new Path(_))
       .map(p => (p.toString, 0L, fs.getFileStatus(p).getLen().toLong - 1L))
 

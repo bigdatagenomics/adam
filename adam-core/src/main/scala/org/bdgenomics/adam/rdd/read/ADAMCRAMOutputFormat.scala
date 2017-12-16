@@ -47,7 +47,7 @@ class ADAMCRAMOutputFormat[K]
     readSAMHeaderFrom(path, conf)
 
     // now that we have the header set, we need to make a record reader
-    return new KeyIgnoringCRAMRecordWriter[K](getDefaultWorkFile(context, ""),
+    return new KeyIgnoringCRAMRecordWriter[K](getDefaultWorkFile(context, ".cram"),
       header,
       true,
       context)
@@ -84,7 +84,7 @@ class ADAMCRAMOutputFormatHeaderLess[K]
     readSAMHeaderFrom(path, conf)
 
     // now that we have the header set, we need to make a record reader
-    return new KeyIgnoringCRAMRecordWriter[K](getDefaultWorkFile(context, ""),
+    return new KeyIgnoringCRAMRecordWriter[K](getDefaultWorkFile(context, ".cram"),
       header,
       false,
       context)

@@ -44,7 +44,7 @@ class ADAMSAMOutputFormat[K]
     readSAMHeaderFrom(path, conf)
 
     // now that we have the header set, we need to make a record reader
-    return new KeyIgnoringSAMRecordWriter(getDefaultWorkFile(context, ""),
+    return new KeyIgnoringSAMRecordWriter(getDefaultWorkFile(context, ".sam"),
       header,
       true,
       context)
@@ -71,7 +71,7 @@ class ADAMSAMOutputFormatHeaderLess[K]
     readSAMHeaderFrom(path, conf)
 
     // now that we have the header set, we need to make a record reader
-    return new KeyIgnoringSAMRecordWriter(getDefaultWorkFile(context, ""),
+    return new KeyIgnoringSAMRecordWriter(getDefaultWorkFile(context, ".sam"),
       header,
       false,
       context)
