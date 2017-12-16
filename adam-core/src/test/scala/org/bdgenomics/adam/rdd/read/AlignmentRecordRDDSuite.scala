@@ -296,7 +296,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     ardd.saveAsSam(tempFile.toAbsolutePath.toString + "/reads12.sam",
       asType = Some(SAMFormat.SAM))
 
-    val rdd12B = sc.loadBam(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000")
+    val rdd12B = sc.loadBam(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000.sam")
 
     assert(rdd12B.rdd.count() === rdd12A.rdd.count())
 
@@ -358,7 +358,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       asSingleFile = false,
       isSorted = true)
 
-    val rddB = sc.loadBam(tempFile + "/part-r-00000")
+    val rddB = sc.loadBam(tempFile + "/part-r-00000.cram")
 
     assert(rddB.rdd.count() === rddA.rdd.count())
 
