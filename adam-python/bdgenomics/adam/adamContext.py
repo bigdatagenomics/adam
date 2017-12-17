@@ -75,6 +75,39 @@ class ADAMContext(object):
         return AlignmentRecordRDD(adamRdd, self._sc)
 
 
+    def loadIndexedBam(self,
+                       filePath,
+                       viewRegions,
+                       stringency=STRICT):
+        """
+        Functions like loadAlignments, but uses BAM index files to look at fewer
+        blocks, and only returns records within the specified ReferenceRegions.
+        BAM index file required.
+
+        :param str pathName: The path name to load indexed BAM formatted
+        alignment records from. Globs/directories are supported.
+        :param list<ReferenceRegion> viewRegions: List of ReferenceRegion to
+        filter on.
+        :param int stringency: The validation stringency to use when validating
+        the BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
+
+        :return Returns an AlignmentRecordRDD which wraps the RDD of alignment
+        records, sequence dictionary representing contigs the alignment records
+        may be aligned to, and the record group dictionary for the alignment
+        records if one is available.
+        :rtype: bdgenomics.adam.rdd.AlignmentRecordRDD
+        """
+
+        # translate reference regions into jvm types
+        javaRrs = [rr._toJava(self._jvm) for rr in viewRegions]
+        
+        adamRdd = self.__jac.loadIndexedBam(filePath,
+                                            javaRrs,
+                                            _toJava(stringency, self._jvm))
+
+        return AlignmentRecordRDD(adamRdd, self._sc)
+    
+
     def loadCoverage(self, filePath,
                      stringency=STRICT):
         """
