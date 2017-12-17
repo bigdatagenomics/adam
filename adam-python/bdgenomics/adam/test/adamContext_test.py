@@ -18,6 +18,7 @@
 
 
 from bdgenomics.adam.adamContext import ADAMContext
+from bdgenomics.adam.models import ReferenceRegion
 from bdgenomics.adam.test import SparkTestCase
 
 
@@ -34,6 +35,18 @@ class ADAMContextTest(SparkTestCase):
         self.assertEqual(reads.toDF().count(), 20)
         self.assertEqual(reads._jvmRdd.jrdd().count(), 20)
 
+
+    def test_load_indexed_bam(self):
+
+        testFile = self.resourceFile("indexed_bams/sorted.bam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadIndexedBam(testFile,
+                                  [ReferenceRegion("chr2", 100L, 101L),
+                                   ReferenceRegion("3", 10L, 17L)])
+
+        self.assertEqual(reads.toDF().count(), 2)
+        
 
     def test_load_gtf(self):
 

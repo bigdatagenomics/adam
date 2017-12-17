@@ -19,6 +19,7 @@ package org.bdgenomics.adam.api.java
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.api.java.JavaSparkContext
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
@@ -29,6 +30,7 @@ import org.bdgenomics.adam.rdd.variant.{
   VariantRDD
 }
 import org.bdgenomics.adam.util.ReferenceFile
+import scala.collection.JavaConversions._
 
 object JavaADAMContext {
   // convert to and from java/scala implementations
@@ -106,6 +108,27 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
                      stringency: ValidationStringency): AlignmentRecordRDD = {
     ac.loadAlignments(pathName,
       stringency = stringency)
+  }
+
+  /**
+   * Functions like loadBam, but uses BAM index files to look at fewer blocks,
+   * and only returns records within the specified ReferenceRegions. BAM index file required.
+   *
+   * @param pathName The path name to load indexed BAM formatted alignment records from.
+   *   Globs/directories are supported.
+   * @param viewRegions Iterable of ReferenceRegion we are filtering on.
+   * @param stringency The validation stringency to use when validating the
+   *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
+   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   *   sequence dictionary representing contigs the alignment records may be aligned to,
+   *   and the record group dictionary for the alignment records if one is available.
+   */
+  def loadIndexedBam(
+    pathName: String,
+    viewRegions: java.util.List[ReferenceRegion],
+    stringency: ValidationStringency): AlignmentRecordRDD = {
+
+    ac.loadIndexedBam(pathName, viewRegions.toIterable, stringency = stringency)
   }
 
   /**
