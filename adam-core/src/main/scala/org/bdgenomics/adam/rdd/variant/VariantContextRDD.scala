@@ -44,7 +44,8 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.{
   ADAMSaveAnyArgs,
   MultisampleGenomicRDD,
-  VCFHeaderUtils
+  VCFHeaderUtils,
+  VCFSupportingGenomicRDD
 }
 import org.bdgenomics.adam.util.{ FileMerger, FileExtensions }
 import org.bdgenomics.formats.avro.Sample
@@ -125,7 +126,8 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
                              @transient samples: Seq[Sample],
                              @transient headerLines: Seq[VCFHeaderLine],
                              optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
-    with Logging {
+    with Logging
+    with VCFSupportingGenomicRDD[VariantContext, VariantContextRDD] {
 
   def replaceSequences(
     newSequences: SequenceDictionary): VariantContextRDD = {
@@ -140,26 +142,6 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    */
   def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantContextRDD = {
     copy(headerLines = newHeaderLines)
-  }
-
-  /**
-   * Appends new header lines to the existing lines.
-   *
-   * @param headerLinesToAdd Zero or more header lines to add.
-   * @return A new RDD with the new header lines added.
-   */
-  def addHeaderLines(headerLinesToAdd: Seq[VCFHeaderLine]): VariantContextRDD = {
-    replaceHeaderLines(headerLines ++ headerLinesToAdd)
-  }
-
-  /**
-   * Appends a new header line to the existing lines.
-   *
-   * @param headerLineToAdd A header line to add.
-   * @return A new RDD with the new header line added.
-   */
-  def addHeaderLine(headerLineToAdd: VCFHeaderLine): VariantContextRDD = {
-    addHeaderLines(Seq(headerLineToAdd))
   }
 
   def replaceSamples(newSamples: Iterable[Sample]): VariantContextRDD = {

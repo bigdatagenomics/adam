@@ -19,6 +19,14 @@ package org.bdgenomics.adam.rdd
 
 import java.nio.file.Paths
 import htsjdk.samtools.ValidationStringency
+import htsjdk.variant.vcf.{
+  VCFFilterHeaderLine,
+  VCFFormatHeaderLine,
+  VCFHeaderLine,
+  VCFInfoHeaderLine,
+  VCFHeaderLineCount,
+  VCFHeaderLineType
+}
 import org.apache.avro.generic.IndexedRecord
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
@@ -2435,6 +2443,267 @@ abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
     saveProcessingSteps(filePath)
     saveSequences(filePath)
     saveRecordGroups(filePath)
+  }
+}
+
+private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]] extends GenomicRDD[T, U] {
+
+  val headerLines: Seq[VCFHeaderLine]
+
+  /**
+   * Replaces the header lines attached to this RDD.
+   *
+   * @param newHeaderLines The new header lines to attach to this RDD.
+   * @return A new RDD with the header lines replaced.
+   */
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): U
+
+  /**
+   * Appends new header lines to the existing lines.
+   *
+   * @param headerLinesToAdd Zero or more header lines to add.
+   * @return A new RDD with the new header lines added.
+   */
+  def addHeaderLines(headerLinesToAdd: Seq[VCFHeaderLine]): U = {
+    replaceHeaderLines(headerLines ++ headerLinesToAdd)
+  }
+
+  /**
+   * Appends a new header line to the existing lines.
+   *
+   * @param headerLineToAdd A header line to add.
+   * @return A new RDD with the new header line added.
+   */
+  def addHeaderLine(headerLineToAdd: VCFHeaderLine): U = {
+    addHeaderLines(Seq(headerLineToAdd))
+  }
+
+  /**
+   * Adds a VCF header line describing an array format field, with fixed count.
+   *
+   * @param id The identifier for the field.
+   * @param count The number of elements in the array.
+   * @param description A description of the data stored in this format field.
+   * @param lineType The type of the data stored in this format field.
+   * @return A new RDD with the new header line added.
+   */
+  def addFixedArrayFormatHeaderLine(id: String,
+                                    count: Int,
+                                    description: String,
+                                    lineType: VCFHeaderLineType): U = {
+    addHeaderLine(new VCFFormatHeaderLine(id, count, lineType, description))
+  }
+
+  /**
+   * Adds a VCF header line describing an array format field, with fixed count.
+   *
+   * Java friendly variant.
+   *
+   * @param id The identifier for the field.
+   * @param count The number of elements in the array.
+   * @param description A description of the data stored in this format field.
+   * @param lineType The type of the data stored in this format field.
+   * @return A new RDD with the new header line added.
+   */
+  def addFixedArrayFormatHeaderLine(id: java.lang.String,
+                                    count: java.lang.Integer,
+                                    lineType: VCFHeaderLineType,
+                                    description: java.lang.String): U = {
+    addFixedArrayFormatHeaderLine(id, count, description, lineType)
+  }
+
+  /**
+   * Adds a VCF header line describing a scalar format field.
+   *
+   * @param id The identifier for the field.
+   * @param description A description of the data stored in this format field.
+   * @param lineType The type of the data stored in this format field.
+   * @return A new RDD with the new header line added.
+   */
+  def addScalarFormatHeaderLine(id: String,
+                                description: String,
+                                lineType: VCFHeaderLineType): U = {
+    addFixedArrayFormatHeaderLine(id, 1, description, lineType)
+  }
+
+  // this is a private helper function, all user code should use one of the
+  // add[a-zA-Z]+ArrayFormatHeaderLine functions
+  private def addArrayFormatHeaderLine(id: String,
+                                       description: String,
+                                       count: VCFHeaderLineCount,
+                                       lineType: VCFHeaderLineType): U = {
+    addHeaderLine(new VCFFormatHeaderLine(id, count, lineType, description))
+  }
+
+  /**
+   * Adds a VCF header line describing an 'G' array format field.
+   *
+   * This adds a format field that is an array whose length is equal to the
+   * number of genotypes for the genotype we are annotating.
+   *
+   * @param id The identifier for the field.
+   * @param description A description of the data stored in this format field.
+   * @param lineType The type of the data stored in this format field.
+   * @return A new RDD with the new header line added.
+   */
+  def addGenotypeArrayFormatHeaderLine(id: String,
+                                       description: String,
+                                       lineType: VCFHeaderLineType): U = {
+    addArrayFormatHeaderLine(id,
+      description,
+      VCFHeaderLineCount.G,
+      lineType)
+  }
+
+  /**
+   * Adds a VCF header line describing an 'A' array format field.
+   *
+   * This adds a format field that is an array whose length is equal to the
+   * number of alternate alleles for the genotype we are annotating.
+   *
+   * @param id The identifier for the field.
+   * @param description A description of the data stored in this format field.
+   * @param lineType The type of the data stored in this format field.
+   * @return A new RDD with the new header line added.
+   */
+  def addAlternateAlleleArrayFormatHeaderLine(id: String,
+                                              description: String,
+                                              lineType: VCFHeaderLineType): U = {
+    addArrayFormatHeaderLine(id,
+      description,
+      VCFHeaderLineCount.A,
+      lineType)
+  }
+
+  /**
+   * Adds a VCF header line describing an 'R' array format field.
+   *
+   * This adds a format field that is an array whose length is equal to the
+   * total number of alleles (including the reference allele) for the genotype
+   * we are annotating.
+   *
+   * @param id The identifier for the field.
+   * @param description A description of the data stored in this format field.
+   * @param lineType The type of the data stored in this format field.
+   * @return A new RDD with the new header line added.
+   */
+  def addAllAlleleArrayFormatHeaderLine(id: String,
+                                        description: String,
+                                        lineType: VCFHeaderLineType): U = {
+    addArrayFormatHeaderLine(id,
+      description,
+      VCFHeaderLineCount.R,
+      lineType)
+  }
+
+  /**
+   * Adds a VCF header line describing an array info field, with fixed count.
+   *
+   * @param id The identifier for the field.
+   * @param count The number of elements in the array.
+   * @param description A description of the data stored in this info field.
+   * @param lineType The type of the data stored in this info field.
+   * @return A new RDD with the new header line added.
+   */
+  def addFixedArrayInfoHeaderLine(id: String,
+                                  count: Int,
+                                  description: String,
+                                  lineType: VCFHeaderLineType): U = {
+    addHeaderLine(new VCFInfoHeaderLine(id, count, lineType, description))
+  }
+
+  /**
+   * Adds a VCF header line describing an array info field, with fixed count.
+   *
+   * Java friendly variant.
+   *
+   * @param id The identifier for the field.
+   * @param count The number of elements in the array.
+   * @param description A description of the data stored in this info field.
+   * @param lineType The type of the data stored in this info field.
+   * @return A new RDD with the new header line added.
+   */
+  def addFixedArrayInfoHeaderLine(id: java.lang.String,
+                                  count: java.lang.Integer,
+                                  lineType: VCFHeaderLineType,
+                                  description: java.lang.String): U = {
+    addFixedArrayInfoHeaderLine(id, count, description, lineType)
+  }
+
+  /**
+   * Adds a VCF header line describing a scalar info field.
+   *
+   * @param id The identifier for the field.
+   * @param description A description of the data stored in this info field.
+   * @param lineType The type of the data stored in this info field.
+   * @return A new RDD with the new header line added.
+   */
+  def addScalarInfoHeaderLine(id: String,
+                              description: String,
+                              lineType: VCFHeaderLineType): U = {
+    addFixedArrayInfoHeaderLine(id, 1, description, lineType)
+  }
+
+  // this is a private helper function, all user code should use one of the
+  // add[a-zA-Z]+ArrayInfoHeaderLine functions
+  private def addArrayInfoHeaderLine(id: String,
+                                     description: String,
+                                     count: VCFHeaderLineCount,
+                                     lineType: VCFHeaderLineType): U = {
+    addHeaderLine(new VCFInfoHeaderLine(id, count, lineType, description))
+  }
+
+  /**
+   * Adds a VCF header line describing an 'A' array info field.
+   *
+   * This adds a info field that is an array whose length is equal to the
+   * number of alternate alleles for the genotype we are annotating.
+   *
+   * @param id The identifier for the field.
+   * @param description A description of the data stored in this info field.
+   * @param lineType The type of the data stored in this info field.
+   * @return A new RDD with the new header line added.
+   */
+  def addAlternateAlleleArrayInfoHeaderLine(id: String,
+                                            description: String,
+                                            lineType: VCFHeaderLineType): U = {
+    addArrayInfoHeaderLine(id,
+      description,
+      VCFHeaderLineCount.A,
+      lineType)
+  }
+
+  /**
+   * Adds a VCF header line describing an 'R' array info field.
+   *
+   * This adds a info field that is an array whose length is equal to the
+   * total number of alleles (including the reference allele) for the genotype
+   * we are annotating.
+   *
+   * @param id The identifier for the field.
+   * @param description A description of the data stored in this info field.
+   * @param lineType The type of the data stored in this info field.
+   * @return A new RDD with the new header line added.
+   */
+  def addAllAlleleArrayInfoHeaderLine(id: String,
+                                      description: String,
+                                      lineType: VCFHeaderLineType): U = {
+    addArrayInfoHeaderLine(id,
+      description,
+      VCFHeaderLineCount.R,
+      lineType)
+  }
+
+  /**
+   * Adds a VCF header line describing a variant/genotype filter.
+   *
+   * @param id The identifier for the filter.
+   * @param description A description of the filter.
+   * @return A new RDD with the new header line added.
+   */
+  def addFilterHeaderLine(id: String,
+                          description: String): U = {
+    addHeaderLine(new VCFFilterHeaderLine(id, description))
   }
 }
 
