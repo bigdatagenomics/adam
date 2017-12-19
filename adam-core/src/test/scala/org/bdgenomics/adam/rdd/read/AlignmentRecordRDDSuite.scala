@@ -910,7 +910,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val ardd = sc.loadBam(readsPath)
 
     implicit val tFormatter = SAMInFormatter
-    implicit val uFormatter = new VCFOutFormatter
+    implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
     val pipedRdd: VariantContextRDD = ardd.pipe("/bin/bash $0 %s $1".format(tempPath),
       files = Seq(scriptPath, vcfPath))

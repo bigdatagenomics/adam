@@ -280,7 +280,9 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
     val sampleIds = samples.map(_.getSampleId)
 
     // convert the variants to htsjdk VCs
-    val converter = new VariantContextConverter(headerLines, stringency)
+    val converter = VariantContextConverter(headerLines,
+      stringency,
+      rdd.context.hadoopConfiguration)
     val writableVCs: RDD[(LongWritable, VariantContextWritable)] = rdd.flatMap(vc => {
       converter.convert(vc)
         .map(htsjdkVc => {

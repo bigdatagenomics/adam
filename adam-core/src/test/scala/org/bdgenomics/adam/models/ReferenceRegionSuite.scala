@@ -626,7 +626,8 @@ class ReferenceRegionSuite extends FunSuite {
 
   test("convert a genotype and then get the reference region") {
     val converter = new VariantContextConverter(DefaultHeaderLines.allHeaderLines,
-      ValidationStringency.LENIENT)
+      ValidationStringency.LENIENT,
+      false)
     val vcb = new VariantContextBuilder()
       .alleles(List(Allele.create("A", true), Allele.create("T")))
       .start(1L)

@@ -40,6 +40,7 @@ import htsjdk.variant.vcf.{
   VCFInfoHeaderLine
 }
 import java.util.Collections
+import org.apache.hadoop.conf.Configuration
 import org.bdgenomics.utils.misc.{ Logging, MathUtils }
 import org.bdgenomics.adam.models.{
   SequenceDictionary,
@@ -61,6 +62,36 @@ import scala.collection.mutable.{ Buffer, HashMap }
  * contained in the VCF INFO field.
  */
 object VariantContextConverter {
+
+  /**
+   * If set to true, this property will ensure that the variant.annotation field
+   * in the Genotype record is populated after conversion from an htsjdk
+   * VariantContext. By default, this property is false.
+   */
+  val nestAnnotationInGenotypesProperty = "org.bdgenomics.adam.converters.VariantContextConverter.NEST_ANN_IN_GENOTYPES"
+
+  /**
+   * Sets the value of the nest annotation in genotypes property.
+   *
+   * @param conf Hadoop configuration to set the property in.
+   * @param populateNestedAnn If true, the nested field is populated.
+   */
+  def setNestAnnotationInGenotypesProperty(conf: Configuration,
+                                           populateNestedAnn: Boolean) {
+    conf.setBoolean(nestAnnotationInGenotypesProperty, populateNestedAnn)
+  }
+
+  /**
+   * Gets the value of the nest annotation in genotypes property.
+   *
+   * @param conf Hadoop configuration to set the property in.
+   * @return Returns whether or not to nest the variant annotation under each
+   *   genotype record.
+   */
+  private[adam] def getNestAnnotationInGenotypesProperty(
+    conf: Configuration): Boolean = {
+    conf.getBoolean(nestAnnotationInGenotypesProperty, false)
+  }
 
   /**
    * Representation for an unknown non-ref/symbolic allele in VCF.
@@ -238,6 +269,14 @@ object VariantContextConverter {
       header.getInfoHeaderLines ++
       header.getOtherHeaderLines).toSeq
   }
+
+  def apply(headerLines: Seq[VCFHeaderLine],
+            stringency: ValidationStringency,
+            conf: Configuration): VariantContextConverter = {
+    new VariantContextConverter(headerLines,
+      stringency,
+      getNestAnnotationInGenotypesProperty(conf))
+  }
 }
 
 /**
@@ -252,7 +291,8 @@ object VariantContextConverter {
  */
 class VariantContextConverter(
     headerLines: Seq[VCFHeaderLine],
-    stringency: ValidationStringency) extends Serializable with Logging {
+    stringency: ValidationStringency,
+    setNestedAnnotationInGenotype: Boolean) extends Serializable with Logging {
   import VariantContextConverter._
 
   // format fns gatk --> bdg, extract fns bdg --> gatk
@@ -277,6 +317,15 @@ class VariantContextConverter(
    */
   private def jDouble(f: Double): java.lang.Double = f
 
+  private def genotypeVariant(coreVariant: Variant,
+                              fullVariant: Variant): Variant = {
+    if (setNestedAnnotationInGenotype) {
+      fullVariant
+    } else {
+      coreVariant
+    }
+  }
+
   /**
    * Converts a GATK variant context into one or more ADAM variant context(s).
    *
@@ -290,8 +339,9 @@ class VariantContextConverter(
       vc.getAlternateAlleles.toList match {
         case List(NON_REF_ALLELE) | List() => {
           val (coreVariant, variant) = variantFormatFn(vc, None, 0, false)
+          val v = genotypeVariant(coreVariant, variant)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, coreVariant, NON_REF_ALLELE, 0, Some(1), false)
+            genotypeFormatFn(g, v, NON_REF_ALLELE, 0, Some(1), false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -301,8 +351,9 @@ class VariantContextConverter(
             "Assertion failed when converting: " + vc.toString
           )
           val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
+          val v = genotypeVariant(coreVariant, variant)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, coreVariant, allele, 1, None, false)
+            genotypeFormatFn(g, v, allele, 1, None, false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -312,8 +363,9 @@ class VariantContextConverter(
             "Assertion failed when converting: " + vc.toString
           )
           val (coreVariant, variant) = variantFormatFn(vc, Some(allele.getDisplayString), 0, false)
+          val v = genotypeVariant(coreVariant, variant)
           val genotypes = vc.getGenotypes.map(g => {
-            genotypeFormatFn(g, coreVariant, allele, 1, Some(2), false)
+            genotypeFormatFn(g, v, allele, 1, Some(2), false)
           })
           return Seq(ADAMVariantContext(variant, genotypes))
         }
@@ -344,8 +396,9 @@ class VariantContextConverter(
               Some(allele.getDisplayString),
               variantIdx,
               true)
+            val v = genotypeVariant(coreVariant, variant)
             val genotypes = vc.getGenotypes.map(g => {
-              genotypeFormatFn(g, coreVariant, allele, idx, referenceModelIndex, true)
+              genotypeFormatFn(g, v, allele, idx, referenceModelIndex, true)
             })
             ADAMVariantContext(variant, genotypes)
           })
