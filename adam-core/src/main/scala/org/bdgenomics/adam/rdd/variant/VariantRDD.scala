@@ -34,7 +34,8 @@ import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   DatasetBoundGenomicDataset,
   AvroGenomicRDD,
-  VCFHeaderUtils
+  VCFHeaderUtils,
+  VCFSupportingGenomicRDD
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Variant => VariantProduct }
@@ -196,39 +197,9 @@ case class RDDBoundVariantRDD private[rdd] (
   }
 }
 
-sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct, VariantRDD] {
+sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct, VariantRDD] with VCFSupportingGenomicRDD[Variant, VariantRDD] {
 
   @transient val uTag: TypeTag[VariantProduct] = typeTag[VariantProduct]
-
-  val headerLines: Seq[VCFHeaderLine]
-
-  /**
-   * Replaces the header lines attached to this RDD.
-   *
-   * @param newHeaderLines The new header lines to attach to this RDD.
-   * @return A new RDD with the header lines replaced.
-   */
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantRDD
-
-  /**
-   * Appends new header lines to the existing lines.
-   *
-   * @param headerLinesToAdd Zero or more header lines to add.
-   * @return A new RDD with the new header lines added.
-   */
-  def addHeaderLines(headerLinesToAdd: Seq[VCFHeaderLine]): VariantRDD = {
-    replaceHeaderLines(headerLines ++ headerLinesToAdd)
-  }
-
-  /**
-   * Appends a new header line to the existing lines.
-   *
-   * @param headerLineToAdd A header line to add.
-   * @return A new RDD with the new header line added.
-   */
-  def addHeaderLine(headerLineToAdd: VCFHeaderLine): VariantRDD = {
-    addHeaderLines(Seq(headerLineToAdd))
-  }
 
   /**
    * Save the VCF headers to disk.

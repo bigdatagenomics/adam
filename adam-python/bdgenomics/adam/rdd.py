@@ -284,6 +284,266 @@ class GenomicRDD(object):
                                                   xFormatterInst,
                                                   convFnInst))
 
+class VCFSupportingGenomicRDD(GenomicRDD):
+
+
+    def __init__(self, jvmRdd, sc):
+        """
+        Constructs a Python GenomicRDD from a JVM GenomicRDD.
+        Should not be called from user code; should only be called from
+        implementing classes.
+
+        :param jvmRdd: Py4j handle to the underlying JVM GenomicRDD.
+        :param pyspark.context.SparkContext sc: Active Spark Context.
+        """
+
+        GenomicRDD.__init__(self, jvmRdd, sc)
+
+
+    def _javaType(self, lineType):
+        """
+        Converts a python type into a VCFHeaderLineType enum.
+
+        :param lineType: A Python type.
+        """
+        
+        jvm = self.sc._jvm
+
+        if lineType == str:
+            return jvm.htsjdk.variant.vcf.VCFHeaderLineType.String
+
+        elif lineType == int:
+            return jvm.htsjdk.variant.vcf.VCFHeaderLineType.Integer
+
+        elif lineType == float:
+            return jvm.htsjdk.variant.vcf.VCFHeaderLineType.Float
+
+        elif lineType == chr:
+            return jvm.htsjdk.variant.vcf.VCFHeaderLineType.Character
+
+        elif lineType == bool:
+            return jvm.htsjdk.variant.vcf.VCFHeaderLineType.Flag
+
+        else:
+            raise ValueError('Invalid type {}. Supported types are str, int, float, chr, bool'.format(lineType))
+        
+
+    def addFixedArrayFormatHeaderLine(self,
+                                      name,
+                                      count,
+                                      description,
+                                      lineType):
+        """
+        Adds a VCF header line describing an array format field, with fixed count.
+
+        :param str name: The identifier for the field.
+        :param int count: The number of elements in the array.
+        :param str description: A description of the data stored in this format
+        field.
+        :param lineType: A Python primitive type corresponding to the type of
+        data stored in the array. Supported types include str, int, float, and chr.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addFixedArrayFormatHeaderLine(name,
+                                                                           count,
+                                                                           self._javaType(lineType),
+                                                                           description))
+
+
+    def addScalarFormatHeaderLine(self,
+                                  name,
+                                  description,
+                                  lineType):
+        """
+        Adds a VCF header line describing a scalar format field.
+
+        :param str name: The identifier for the field.
+        :param str description: A description of the data stored in this format
+        field.
+        :param lineType: A Python primitive type corresponding to the type of
+        data stored in the array. Supported types include str, int, float, and chr.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addScalarFormatHeaderLine(name,
+                                                                       description,
+                                                                       self._javaType(lineType)))
+
+
+    def addGenotypeArrayFormatHeaderLine(self,
+                                         name,
+                                         description,
+                                         lineType):
+        """
+        Adds a VCF header line describing an 'G' array format field.
+
+        This adds a format field that is an array whose length is equal to the
+        number of genotypes for the genotype we are annotating.
+
+        :param str name: The identifier for the field.
+        :param str description: A description of the data stored in this format
+        field.
+        :param lineType: A Python primitive type corresponding to the type of
+        data stored in the array. Supported types include str, int, float, and chr.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addGenotypeArrayFormatHeaderLine(name,
+                                                                              description,
+                                                                              self._javaType(lineType)))
+
+
+    def addAlternateAlleleArrayFormatHeaderLine(self,
+                                                name,
+                                                description,
+                                                lineType):
+        """
+        Adds a VCF header line describing an 'A' array format field.
+
+        This adds a format field that is an array whose length is equal to the
+        number of alternate alleles for the genotype we are annotating.
+
+        :param str name: The identifier for the field.
+        :param str description: A description of the data stored in this format
+        field.
+        :param lineType: A Python primitive type corresponding to the type of
+        data stored in the array. Supported types include str, int, float, and chr.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addAlternateAlleleArrayFormatHeaderLine(name,
+                                                                                     description,
+                                                                                     self._javaType(lineType)))
+
+
+    def addAllAlleleArrayFormatHeaderLine(self,
+                                          name,
+                                          description,
+                                          lineType):
+        """
+        Adds a VCF header line describing an 'R' array format field.
+
+        This adds a format field that is an array whose length is equal to the
+        total number of alleles (including the reference allele) for the
+        genotype we are annotating.
+
+        :param str name: The identifier for the field.
+        :param str description: A description of the data stored in this format
+        field.
+        :param lineType: A Python primitive type corresponding to the type of
+        data stored in the array. Supported types include str, int, float, and chr.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addAllAlleleArrayFormatHeaderLine(name,
+                                                                               description,
+                                                                               self._javaType(lineType)))
+        
+
+    def addFixedArrayInfoHeaderLine(self,
+                                      name,
+                                      count,
+                                      description,
+                                      lineType):
+        """
+        Adds a VCF header line describing an array info field, with fixed count.
+
+        :param str name: The identifier for the field.
+        :param int count: The number of elements in the array.
+        :param str description: A description of the data stored in this info
+        field.
+        :param lineType: A Python primitive type corresponding to the type of
+        data stored in the array. Supported types include str, int, float, and chr.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addFixedArrayInfoHeaderLine(name,
+                                                                         count,
+                                                                         self._javaType(lineType),
+                                                                         description))
+
+
+    def addScalarInfoHeaderLine(self,
+                                  name,
+                                  description,
+                                  lineType):
+        """
+        Adds a VCF header line describing a scalar info field.
+
+        :param str name: The identifier for the field.
+        :param str description: A description of the data stored in this info
+        field.
+        :param lineType: A Python primitive type corresponding to the type of
+        data stored in the array. Supported types include str, int, float, and chr.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addScalarInfoHeaderLine(name,
+                                                                     description,
+                                                                     self._javaType(lineType)))
+
+
+    def addAlternateAlleleArrayInfoHeaderLine(self,
+                                                name,
+                                                description,
+                                                lineType):
+        """
+        Adds a VCF header line describing an 'A' array info field.
+
+        This adds a info field that is an array whose length is equal to the
+        number of alternate alleles for the genotype we are annotating.
+
+        :param str name: The identifier for the field.
+        :param str description: A description of the data stored in this info
+        field.
+        :param lineType: A Python primitive type corresponding to the type of
+        data stored in the array. Supported types include str, int, float, and chr.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addAlternateAlleleArrayInfoHeaderLine(name,
+                                                                                   description,
+                                                                                   self._javaType(lineType)))
+
+
+    def addAllAlleleArrayInfoHeaderLine(self,
+                                          name,
+                                          description,
+                                          lineType):
+        """
+        Adds a VCF header line describing an 'R' array info field.
+
+        This adds a info field that is an array whose length is equal to the
+        total number of alleles (including the reference allele) for the
+        genotype we are annotating.
+
+        :param str name: The identifier for the field.
+        :param str description: A description of the data stored in this info
+        field.
+        :param lineType: A Python primitive type corresponding to the type of
+        data stored in the array. Supported types include str, int, float, and chr.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addAllAlleleArrayInfoHeaderLine(name,
+                                                                             description,
+                                                                             self._javaType(lineType)))
+
+
+    def addFilterHeaderLine(self,
+                            name,
+                            description):
+        """
+        Adds a VCF header line describing a variant/genotype filter.
+
+        :param str id: The identifier for the filter.
+        :param str description: A description of the filter.
+        :return: A new RDD with the new header line added.
+        """
+
+        return self._replaceRdd(self._jvmRdd.addFilterHeaderLine(name, description))
+        
     
 class GenomicDataset(GenomicRDD):
 
@@ -871,7 +1131,7 @@ class FragmentRDD(GenomicDataset):
         return "org.bdgenomics.adam.api.java.FragmentsTo%s" % self._destClassSuffix(destClass)
 
 
-class GenotypeRDD(GenomicDataset):
+class GenotypeRDD(GenomicDataset, VCFSupportingGenomicRDD):
 
 
     def _replaceRdd(self, newRdd):
@@ -984,7 +1244,7 @@ class NucleotideContigFragmentRDD(GenomicDataset):
         return "org.bdgenomics.adam.api.java.ContigsTo%s" % self._destClassSuffix(destClass)
 
 
-class VariantRDD(GenomicDataset):
+class VariantRDD(GenomicDataset, VCFSupportingGenomicRDD):
 
 
     def _replaceRdd(self, newRdd):
@@ -1029,7 +1289,7 @@ class VariantRDD(GenomicDataset):
         return "org.bdgenomics.adam.api.java.VariantsTo%s" % self._destClassSuffix(destClass)
 
     
-class VariantContextRDD(GenomicRDD):
+class VariantContextRDD(VCFSupportingGenomicRDD):
 
 
     def _replaceRdd(self, newRdd):
