@@ -2046,7 +2046,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load vcf metadata
     val (sd, samples, headers) = loadVcfMetadata(pathName)
 
-    val vcc = new VariantContextConverter(headers, stringency)
+    val vcc = VariantContextConverter(headers, stringency, sc.hadoopConfiguration)
     VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
@@ -2097,7 +2097,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load vcf metadata
     val (sd, samples, headers) = loadVcfMetadata(pathName)
 
-    val vcc = new VariantContextConverter(headers.flatMap(hl => hl match {
+    val vcc = VariantContextConverter(headers.flatMap(hl => hl match {
       case il: VCFInfoHeaderLine => {
         if (infoFields(il.getID)) {
           Some(il)
@@ -2113,7 +2113,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         }
       }
       case _ => None
-    }), stringency)
+    }), stringency, sc.hadoopConfiguration)
     VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
@@ -2159,7 +2159,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // load vcf metadata
     val (sd, samples, headers) = loadVcfMetadata(pathName)
 
-    val vcc = new VariantContextConverter(headers, stringency)
+    val vcc = VariantContextConverter(headers, stringency, sc.hadoopConfiguration)
     VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,

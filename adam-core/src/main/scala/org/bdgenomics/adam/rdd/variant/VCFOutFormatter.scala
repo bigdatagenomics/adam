@@ -28,6 +28,7 @@ import htsjdk.tribble.readers.{
   AsciiLineReaderIterator
 }
 import java.io.InputStream
+import org.apache.hadoop.conf.Configuration
 import org.bdgenomics.adam.converters.VariantContextConverter._
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.VariantContext
@@ -39,7 +40,10 @@ import scala.collection.mutable.ListBuffer
 /**
  * OutFormatter that reads streaming VCF.
  */
-case class VCFOutFormatter() extends OutFormatter[VariantContext] with Logging {
+case class VCFOutFormatter(
+    @transient conf: Configuration) extends OutFormatter[VariantContext] with Logging {
+
+  private val nestAnn = VariantContextConverter.getNestAnnotationInGenotypesProperty(conf)
 
   /**
    * Reads VariantContexts from an input stream. Autodetects VCF format.
@@ -62,7 +66,9 @@ case class VCFOutFormatter() extends OutFormatter[VariantContext] with Logging {
     val lines = cleanAndMixInSupportedLines(headerLines(header), ValidationStringency.LENIENT, log)
 
     // make converter
-    val converter = new VariantContextConverter(lines, ValidationStringency.LENIENT)
+    val converter = new VariantContextConverter(lines,
+      ValidationStringency.LENIENT,
+      nestAnn)
 
     @tailrec def convertIterator(iter: AsciiLineReaderIterator,
                                  records: ListBuffer[VariantContext] = ListBuffer.empty): Iterator[VariantContext] = {

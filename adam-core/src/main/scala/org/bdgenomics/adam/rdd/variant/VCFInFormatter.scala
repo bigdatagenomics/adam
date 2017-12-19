@@ -24,6 +24,7 @@ import htsjdk.variant.variantcontext.writer.{
 }
 import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.io.OutputStream
+import org.apache.hadoop.conf.Configuration
 import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.{
   SequenceDictionary,
@@ -47,20 +48,23 @@ object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContex
   def apply(gRdd: VariantContextRDD): VCFInFormatter = {
     VCFInFormatter(gRdd.sequences,
       gRdd.samples.map(_.getSampleId),
-      gRdd.headerLines)
+      gRdd.headerLines,
+      gRdd.rdd.context.hadoopConfiguration)
   }
 }
 
 case class VCFInFormatter private (
     sequences: SequenceDictionary,
     samples: Seq[String],
-    headerLines: Seq[VCFHeaderLine]) extends InFormatter[VariantContext, VariantContextRDD, VCFInFormatter] {
+    headerLines: Seq[VCFHeaderLine],
+    @transient val conf: Configuration) extends InFormatter[VariantContext, VariantContextRDD, VCFInFormatter] {
 
   protected val companion = VCFInFormatter
 
   // make a converter
-  val converter = new VariantContextConverter(headerLines,
-    ValidationStringency.LENIENT)
+  val converter = VariantContextConverter(headerLines,
+    ValidationStringency.LENIENT,
+    conf)
 
   /**
    * Writes variant contexts to an output stream in VCF format.

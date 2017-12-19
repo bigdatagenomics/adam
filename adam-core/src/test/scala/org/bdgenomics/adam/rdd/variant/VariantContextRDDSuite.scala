@@ -181,7 +181,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val records = rdd.rdd.count
 
     implicit val tFormatter = VCFInFormatter
-    implicit val uFormatter = new VCFOutFormatter
+    implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
     val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
       .transform(_.cache())
@@ -196,7 +196,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val records = rdd.rdd.count
 
     implicit val tFormatter = VCFInFormatter
-    implicit val uFormatter = new VCFOutFormatter
+    implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
     val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
       .transform(_.cache())
@@ -210,7 +210,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     val rdd: VariantContextRDD = sc.loadVcf(freebayesVcf)
 
     implicit val tFormatter = VCFInFormatter
-    implicit val uFormatter = new VCFOutFormatter
+    implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
     val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter]("tee /dev/null")
 
