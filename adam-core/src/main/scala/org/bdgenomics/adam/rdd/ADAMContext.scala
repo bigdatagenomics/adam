@@ -109,7 +109,7 @@ import org.bdgenomics.formats.avro.{
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
-import org.hammerlab.bam.spark._
+import spark_bam._
 import org.hammerlab.paths.{ Path => HLPath }
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods._
@@ -1526,7 +1526,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val readerFn = if (sc.hadoopConfiguration.getBoolean(ADAMContext.USE_SPARK_BAM, false)) {
       def sparkBamRead(path: String): RDD[SAMRecord] = {
         if (path.endsWith(".bam")) {
-          sc.loadBam(HLPath(path))
+          System.err.println("Using Spark-BAM")
+          sc.loadReads(HLPath(path))
         } else {
           hadoopBamRead(path)
         }
