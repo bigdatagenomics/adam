@@ -27,7 +27,7 @@ git push origin ${branch}
 # do scala 2.10 release
 git checkout -b maint_2.10-${release} ${branch}
 mvn --batch-mode \
-  -P distribution,python,r \
+  -P distribution,python \
   -Dresume=false \
   -Dtag=adam-parent_2.10-${release} \
   -DreleaseVersion=${release} \
@@ -52,7 +52,7 @@ git checkout -b maint_2.11-${release} ${branch}
 ./scripts/move_to_scala_2.11.sh
 git commit -a -m "Modifying pom.xml files for Spark 1, Scala 2.11 release."
 mvn --batch-mode \
-  -P distribution,python,r \
+  -P distribution,python \
   -Dresume=false \
   -Dtag=adam-parent_2.11-${release} \
   -DreleaseVersion=${release} \
