@@ -35,7 +35,6 @@
 
   <modules>
     <module>adam-codegen</module>
-    <module>adam-relocations</module>
     <module>adam-core</module>
     <module>adam-apis</module>
     <module>adam-cli</module>
@@ -353,11 +352,6 @@
       <dependency>
         <groupId>org.bdgenomics.adam</groupId>
         <artifactId>adam-core_${scala.version.prefix}</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.bdgenomics.adam</groupId>
-        <artifactId>adam-relocations_${scala.version.prefix}</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
