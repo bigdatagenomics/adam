@@ -1567,7 +1567,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // Otherwise, pathName is a directory and the entire path must be searched
     // for indices.
     val indexPath = if (pathName.endsWith(".bam")) {
-      new Path(pathName + ".bai")
+      new Path(pathName.toString.replace(".bam", "*.bai"))
     } else {
       path
     }
@@ -1581,8 +1581,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     require(bamFiles.nonEmpty,
       "Did not find any BAM files at %s.".format(path))
 
+    // look for index files named <pathname>.bam.bai and <pathname>.bai
     val missingIndices = bamFiles.filterNot(f => {
-      indexFiles.contains(f.toString + ".bai")
+      indexFiles.contains(f.toString + ".bai") || indexFiles.contains(f.toString.dropRight(3) + "bai")
     })
 
     if (!missingIndices.isEmpty) {
