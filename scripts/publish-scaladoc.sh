@@ -13,20 +13,14 @@ sha1=$(git log -1 --pretty=format:%H)
 # generate scaladoc
 mvn generate-sources scala:doc
 
-# generate markdown docs
-cd docs
-./build.sh
-cd ..
-
 # get current scaladoc dir
 scaladoc=${PWD}/adam-core/target/site/scaladocs/
 
 # make directory to copy docs to, if it does not already exist
-mkdir -p adam-docs/${version} adam-docs/${version}/docs
+mkdir -p adam-docs/${version}
 
 # copy docs over
 cp -rvf ${scaladoc} adam-docs/${version}/scaladocs
-cp -f docs/output/ADAM_${sha1}.html adam-docs/${version}/docs/index.html
 
 # step into repo
 cd adam-docs
@@ -43,7 +37,6 @@ else
     head -n 17 index.old > index.html
     echo "      <li>${version}:" >> index.html
     echo "        <a href=\"${version}/scaladocs/index.html\">Scaladoc</a>" >> index.html
-    echo "        <a href=\"${version}/docs/index.html\">Project docs</a>" >> index.html
     echo "      </li>" >> index.html
     tail -n +18 index.old >> index.html
     rm index.old
