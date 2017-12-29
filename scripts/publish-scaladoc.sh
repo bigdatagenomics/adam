@@ -11,7 +11,7 @@ git clone -b gh-pages git@github.com:bigdatagenomics/adam.git adam-docs
 sha1=$(git log -1 --pretty=format:%H)
 
 # generate scaladoc
-mvn scala:doc
+mvn generate-sources scala:doc
 
 # generate markdown docs
 cd docs
