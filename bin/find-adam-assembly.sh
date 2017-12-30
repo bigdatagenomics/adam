@@ -20,15 +20,16 @@
 set -e
 
 SOURCE_DIR=$(dirname ${BASH_SOURCE[0]})
-SCRIPT_DIR=$(${SOURCE_DIR}/find-script-dir.sh)
-INSTALL_DIR=$(dirname $SCRIPT_DIR)
+. ${SOURCE_DIR}/find-adam-home
 
 # Find ADAM cli assembly jar
 ADAM_CLI_JAR=
-if [ -d "$INSTALL_DIR/repo" ]; then
-  ASSEMBLY_DIR="$INSTALL_DIR/repo"
+if [ -d "$ADAM_HOME/repo" ]; then
+  ASSEMBLY_DIR="$ADAM_HOME/repo"
+elif [ -d "$ADAM_HOME/jars" ]; then
+  ASSEMBLY_DIR="$ADAM_HOME/jars"
 else
-  ASSEMBLY_DIR="$INSTALL_DIR/adam-assembly/target"
+  ASSEMBLY_DIR="$ADAM_HOME/adam-assembly/target"
 fi
 
 ASSEMBLY_JARS=$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\.\_\-]*\.jar$" | grep -v javadoc | grep -v sources || true)

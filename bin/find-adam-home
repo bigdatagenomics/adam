@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+#
+# Licensed to Big Data Genomics (BDG) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The BDG licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+set -e
+
+# Attempts to find a proper value for ADAM_HOME. Should be included using "source" directive.
+
+FIND_ADAM_HOME_PYTHON_SCRIPT="$(cd "$(dirname "$0")"; pwd)/find_adam_home.py"
+
+# Short cirtuit if the user already has this set.
+if [ ! -z "${ADAM_HOME}" ]; then
+   exit 0
+elif [ ! -f "$FIND_ADAM_HOME_PYTHON_SCRIPT" ]; then
+  # If we are not in the same directory as find_adam_home.py we are not pip installed so we don't
+  # need to search the different Python directories for a ADAM installation.
+  # Note only that, if the user has pip installed adam but is directly calling pyadam or
+  # adam-submit in another directory we want to use that version of adam rather than the
+  # pip installed version of adam.
+  export ADAM_HOME="$(cd "$(dirname "$0")"/..; pwd)"
+else
+  # We are pip installed, use the Python script to resolve a reasonable ADAM_HOME
+  # Default to standard python interpreter unless told otherwise
+  if [[ -z "$PYSPARK_DRIVER_PYTHON" ]]; then
+     PYSPARK_DRIVER_PYTHON="${PYSPARK_PYTHON:-"python"}"
+  fi
+  export ADAM_HOME=$($PYSPARK_DRIVER_PYTHON "$FIND_ADAM_HOME_PYTHON_SCRIPT")
+fi

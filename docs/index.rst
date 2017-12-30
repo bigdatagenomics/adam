@@ -71,6 +71,7 @@ of tools built using ADAM's core APIs:
    :maxdepth: 2
 
    installation/source
+   installation/pip
    installation/example
 
 .. toctree::
