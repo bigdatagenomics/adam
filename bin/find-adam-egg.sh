@@ -20,14 +20,13 @@
 set -e
 
 SOURCE_DIR=$(dirname ${BASH_SOURCE[0]})
-SCRIPT_DIR=$(${SOURCE_DIR}/find-script-dir.sh)
-INSTALL_DIR=$(dirname $SCRIPT_DIR)
+. ${SOURCE_DIR}/find-adam-home
 
 # Find ADAM python egg
-if [ -d "$INSTALL_DIR/repo" ]; then
-  DIST_DIR="$INSTALL_DIR/repo"
+if [ -d "$ADAM_HOME/repo" ]; then
+  DIST_DIR="$ADAM_HOME/repo"
 else
-  DIST_DIR="$INSTALL_DIR/adam-python/dist"
+  DIST_DIR="$ADAM_HOME/adam-python/dist"
 fi
 
 DIST_EGG=$(ls -1 "$DIST_DIR" | grep "^bdgenomics\.adam[0-9A-Za-z\.\_\-]*.egg$" || true)
