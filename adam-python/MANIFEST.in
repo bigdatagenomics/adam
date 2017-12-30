@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Licensed to Big Data Genomics (BDG) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,16 +16,6 @@
 # limitations under the License.
 #
 
-set -e
-
-# Find original directory of this script, resolving symlinks
-# http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in/246128#246128
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-    SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="$SCRIPT_DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-
-echo $( cd -P "$( dirname "$SOURCE" )" && pwd )
-
+global-exclude *.py[cod] __pycache__ .DS_Store
+recursive-include deps/jars *.jar
+include version.py
