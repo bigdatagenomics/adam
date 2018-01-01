@@ -109,6 +109,31 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
+# set up python environment for releasing to pypi
+pushd adam-python
+rm -rf release-venv
+virtualenv release-venv
+. release-venv/bin/activate
+pip install pyspark
+
+# clean any possible extant sdists
+rm -rf dist
+
+# build sdist and push to pypi
+make sdist
+twine upload dist/*.tar.gz
+
+# deactivate the python virtualenv
+deactivate
+rm -rf release-venv
+
+popd
+
+if [ $? != 0 ]; then
+  echo "Releasing bdgenomics.adam to PyPi failed."
+  exit 1
+fi
+
 # publish docs
 ./scripts/publish-scaladoc.sh ${release}
 
