@@ -28,7 +28,7 @@ if [ ! -z "${ADAM_HOME}" ]; then
    exit 0
 elif [ ! -f "$FIND_ADAM_HOME_PYTHON_SCRIPT" ]; then
   # If we are not in the same directory as find_adam_home.py we are not pip installed so we don't
-  # need to search the different Python directories for a Adam installation.
+  # need to search the different Python directories for a ADAM installation.
   # Note only that, if the user has pip installed adam but is directly calling pyadam or
   # adam-submit in another directory we want to use that version of adam rather than the
   # pip installed version of adam.

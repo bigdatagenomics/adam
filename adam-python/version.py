@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-version = '0.23.0rc18'
+version = '0.23.0-SNAPSHOT'
 
 if __name__ == '__main__':
     print version

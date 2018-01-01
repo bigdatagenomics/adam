@@ -31,7 +31,7 @@ if sys.version_info < (2, 7):
 
 # Provide guidance about how to use setup.py
 incorrect_invocation_message = """
-If you are installing PyADAM from ADAM's source, you must first build ADAM and
+If you are installing bdgenomics.adam from ADAM's source, you must first build ADAM and
 run make develop.
 
     To build ADAM with maven you can run:
@@ -54,7 +54,7 @@ SCRIPTS_TARGET = os.path.join(TEMP_PATH, "bin")
 if len(JARS_PATH) == 1:
     JARS_PATH = JARS_PATH[0]
 elif len(JARS_PATH) > 1:
-    print("Assembly jars exist for multiple scalas ({0}), please cleanup assembly/target".format(
+    print("Assembly jars exist for multiple Scala versions ({0}), please cleanup assembly/target".format(
         JARS_PATH), file=sys.stderr)
     sys.exit(-1)
 elif len(JARS_PATH) == 0 and not os.path.exists(TEMP_PATH):
@@ -85,8 +85,8 @@ try:
     script_names = os.listdir(SCRIPTS_TARGET)
     scripts = list(map(lambda script: os.path.join(SCRIPTS_TARGET, script), script_names))
 
-    # We add find_adam_home.py to the bin directory we install so that pip installed PySpark
-    # will search for ADAM_HOME with Python.
+    # We add find_adam_home.py to the bin directory we install so that pip installed
+    # bdgenomics.adam will search for ADAM_HOME with Python.
     scripts.append("bdgenomics/adam/find_adam_home.py")
 
     long_description = "!!!!! missing pandoc do not upload to PyPI !!!!"
@@ -94,7 +94,7 @@ try:
         import pypandoc
         long_description = pypandoc.convert('README.md', 'rst')
     except ImportError:
-        print("Could not import pypandoc - required to package PySpark", file=sys.stderr)
+        print("Could not import pypandoc - required to package bdgenomics.adam", file=sys.stderr)
     except OSError:
         print("Could not convert - pandoc is not installed", file=sys.stderr)
 
