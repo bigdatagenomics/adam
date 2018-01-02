@@ -45,7 +45,9 @@ run make develop.
 ADAM_HOME = os.path.abspath("../")
 TEMP_PATH = "deps"
 
-JARS_PATH = glob.glob(os.path.join(ADAM_HOME, "adam-assembly/target/adam-assembly*.jar"))
+ALL_JARS_PATH = glob.glob(os.path.join(ADAM_HOME, "adam-assembly/target/adam-assembly*.jar"))
+JARS_PATH = filter(lambda x: (("sources" not in x) and ("javadoc" not in x)),
+                   ALL_JARS_PATH)
 JARS_TARGET = os.path.join(TEMP_PATH, "jars")
 
 SCRIPTS_PATH = os.path.join(ADAM_HOME, "bin")
