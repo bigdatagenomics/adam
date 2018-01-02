@@ -19,44 +19,75 @@ library(SparkR)
 
 setOldClass("jobj")
 
+#' A class that wraps an RDD of genomic data with helpful metadata.
+#'
+#' @rdname GenomicRDD
+#' @slot jrdd The Java RDD that this class wraps.
+#' 
 #' @export
 setClass("GenomicRDD",
          slots = list(jrdd = "jobj"))
 
-
+#' A class that wraps a DataFrame of genomic data with helpful metadata.
+#'
+#' @rdname GenomicDataset
+#' @slot jrdd The Java RDD that this class wraps.
+#' 
 #' @export
 setClass("GenomicDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicRDD")
 
-
+#' A class that wraps an RDD of genomic reads with helpful metadata.
+#'
+#' @rdname AlignmentRecordRDD
+#' @slot jrdd The Java RDD of AlignmentRecords that this class wraps.
+#' 
 #' @export
 setClass("AlignmentRecordRDD",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
+#' @importFrom methods new
 AlignmentRecordRDD <- function(jrdd) {
     new("AlignmentRecordRDD", jrdd = jrdd)
 }
 
+#' A class that wraps an RDD of genomic coverage data with helpful metadata.
+#'
+#' @rdname CoverageRDD
+#' @slot jrdd The Java RDD of Coverage that this class wraps.
+#' 
 #' @export
 setClass("CoverageRDD",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
+#' @importFrom methods new
 CoverageRDD <- function(jrdd) {
     new("CoverageRDD", jrdd = jrdd)
 }
 
+#' A class that wraps an RDD of genomic features with helpful metadata.
+#'
+#' @rdname FeatureRDD
+#' @slot jrdd The Java RDD of Features that this class wraps.
+#' 
 #' @export
 setClass("FeatureRDD",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
+#' @importFrom methods new
 FeatureRDD <- function(jrdd) {
     new("FeatureRDD", jrdd = jrdd)
 }
 
+#' A class that wraps an RDD of read pairs grouped by sequencing fragment with helpful metadata.
+#'
+#' @rdname FragmentRDD
+#' @slot jrdd The Java RDD of Fragments that this class wraps.
+#' 
 #' @export
 setClass("FragmentRDD",
          slots = list(jrdd = "jobj"),
@@ -66,38 +97,62 @@ FragmentRDD <- function(jrdd) {
     new("FragmentRDD", jrdd = jrdd)
 }
 
+#' A class that wraps an RDD of genotypes with helpful metadata.
+#'
+#' @rdname GenotypeRDD
+#' @slot jrdd The Java RDD of Genotypes that this class wraps.
+#' 
 #' @export
 setClass("GenotypeRDD",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
+#' @importFrom methods new
 GenotypeRDD <- function(jrdd) {
     new("GenotypeRDD", jrdd = jrdd)
 }
 
+#' A class that wraps an RDD of contigs with helpful metadata.
+#'
+#' @rdname NucleotideContigFragmentRDD
+#' @slot jrdd The Java RDD of contigs that this class wraps.
+#' 
 #' @export
 setClass("NucleotideContigFragmentRDD",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
+#' @importFrom methods new
 NucleotideContigFragmentRDD <- function(jrdd) {
     new("NucleotideContigFragmentRDD", jrdd = jrdd)
 }
 
+#' A class that wraps an RDD of variants with helpful metadata.
+#'
+#' @rdname VariantRDD
+#' @slot jrdd The Java RDD of Variants that this class wraps.
+#' 
 #' @export
 setClass("VariantRDD",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
+#' @importFrom methods new
 VariantRDD <- function(jrdd) {
     new("VariantRDD", jrdd = jrdd)
 }
 
+#' A class that wraps an RDD of both variants and genotypes with helpful metadata.
+#'
+#' @rdname VariantContextRDD
+#' @slot jrdd The Java RDD of VariantContexts that this class wraps.
+#' 
 #' @export
 setClass("VariantContextRDD",
          slots = list(jrdd = "jobj"),
          contains = "GenomicRDD")
 
+#' @importFrom methods new
 VariantContextRDD <- function(jrdd) {
     new("VariantContextRDD", jrdd = jrdd)
 }
@@ -116,6 +171,7 @@ VariantContextRDD <- function(jrdd) {
 #' format the input to the pipe, and the implicit OutFormatter is used to
 #' parse the output from the pipe.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param cmd The command to run.
 #' @param tFormatter The name of the ADAM in-formatter class to use.
 #' @param xFormatter The name of the ADAM out-formatter class to use.
@@ -129,6 +185,8 @@ VariantContextRDD <- function(jrdd) {
 #'   around each partition. Defaults to 0.
 #' @return Returns a new RDD where the input from the original RDD has
 #'   been piped through a command that runs locally on each executor.
+#'
+#' @importFrom SparkR sparkR.callJStatic sparkR.callJMethod
 #'
 #' @export
 setMethod("pipe",
@@ -185,7 +243,10 @@ setMethod("pipe",
 #' Sorts our genome aligned data by reference positions, with contigs ordered
 #' by index.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return Returns a new, sorted RDD, of the implementing class type.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("sort",
@@ -197,7 +258,10 @@ setMethod("sort",
 #' Sorts our genome aligned data by reference positions, with contigs ordered
 #' lexicographically.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return Returns a new, sorted RDD, of the implementing class type.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("sortLexicographically",
@@ -211,6 +275,8 @@ setMethod("sortLexicographically",
 #' @param ardd The RDD to convert into a dataframe.
 #' @return Returns a dataframe representing this RDD.
 #'
+#' @importFrom SparkR sparkR.callJMethod
+#'
 #' @export
 setMethod("toDF",
           signature(ardd = "GenomicDataset"),
@@ -219,6 +285,7 @@ setMethod("toDF",
               new("SparkDataFrame", sdf, FALSE)
           })
 
+#' @importFrom SparkR sparkR.callJStatic
 setMethod("wrapTransformation",
           signature(ardd = "GenomicRDD",
                     tFn = "function"),
@@ -235,9 +302,12 @@ setMethod("wrapTransformation",
 #' Applies a function that transforms the underlying DataFrame into a new DataFrame
 #' using the Spark SQL API.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param tFn A function that transforms the underlying RDD as a DataFrame.
 #' @return A new RDD where the RDD of genomic data has been replaced, but the
 #'    metadata (sequence dictionary, and etc) is copied without modification.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("transform",
@@ -283,11 +353,14 @@ setMethod("destClassSuffix",
 #' Applies a function that transmutes the underlying DataFrame into a new RDD of a
 #' different type.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param tFn A function that transforms the underlying RDD as a DataFrame.
-#' @param convFn The name of the ADAM GenomicDatasetConversion class to use.
 #' @param destClass The destination class of this transmutation.
+#' @param convFn The name of the ADAM GenomicDatasetConversion class to use.
 #' @return A new RDD where the RDD of genomic data has been replaced, but the
 #'   metadata (sequence dictionary, and etc) is copied without modification.
+#'
+#' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
 #' @export
 setMethod("transmute",
@@ -326,8 +399,11 @@ setMethod("inferConversionFn",
 
 #' Convert this set of reads into fragments.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return Returns a FragmentRDD where all reads have been grouped together by
 #' the original sequence fragment they come from.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("toFragments",
@@ -338,12 +414,15 @@ setMethod("toFragments",
 
 #' Saves this RDD to disk as a SAM/BAM/CRAM file.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param filePath The path to save the file to.
 #' @param asType The type of file to save. Valid choices are SAM, BAM,
 #'   CRAM, and NA. If None, the file type is inferred from the extension.
 #' @param isSorted Whether the file is sorted or not.
 #' @param asSingleFile Whether to save the file as a single merged
 #'   file or as shards.
+#'
+#' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
 #' @export
 setMethod("saveAsSam",
@@ -374,9 +453,12 @@ setMethod("saveAsSam",
 
 #' Converts this set of reads into a corresponding CoverageRDD.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param collapse Determines whether to merge adjacent coverage elements with
 #'                 the same score to a single coverage observation.
 #' @return Returns an RDD with observed coverage.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("toCoverage",
@@ -387,8 +469,11 @@ setMethod("toCoverage",
 
 #' Saves this RDD to disk, with the type identified by the extension.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param filePath The path to save the file to.
 #' @param isSorted Whether the file is sorted or not.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("save",
@@ -399,8 +484,11 @@ setMethod("save",
 
 #' Cuts reads into _k_-mers, and then counts the occurrences of each _k_-mer.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param kmerLength The value of _k_ to use for cutting _k_-mers.
 #' @return Returns a DataFrame containing k-mer/count pairs.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("countKmers",
@@ -421,7 +509,10 @@ setMethod("countKmers",
 #' put at the end and sorted by read name. Contigs are ordered lexicographically
 #' by name.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return A new, sorted AlignmentRecordRDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("sortReadsByReferencePosition",
@@ -436,7 +527,10 @@ setMethod("sortReadsByReferencePosition",
 #' put at the end and sorted by read name. Contigs are ordered by index that
 #' they are ordered in the sequence metadata.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return A new, sorted AlignmentRecordRDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("sortReadsByReferencePositionAndIndex",
@@ -447,8 +541,11 @@ setMethod("sortReadsByReferencePositionAndIndex",
 
 #' Marks reads as possible fragment duplicates.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return A new RDD where reads have the duplicate read flag set. Duplicate
 #'          reads are NOT filtered out.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("markDuplicates",
@@ -461,8 +558,12 @@ setMethod("markDuplicates",
 #'
 #' Uses a table of known SNPs to mask true variation during the recalibration
 #' process.
+#'
+#' @param ardd The RDD to apply this to.
 #' @param knownSnps A table of known SNPs to mask valid variants.
 #' @param validationStringency The stringency to apply towards validating BQSR.
+#'
+#' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
 #' @export
 setMethod("recalibrateBaseQualities",
@@ -472,90 +573,65 @@ setMethod("recalibrateBaseQualities",
               AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "recalibrateBaseQualities", knownSnps@jrdd, stringency))
           })
 
-#' Realigns indels using a concensus-based heuristic.
+#' Realigns indels using a consensus-based heuristic.
 #'
-#' Generates consensuses from reads.
-#'
+#' If no known indels are provided, generates consensuses from reads. Else,
+#' generates consensuses from previously seen variants.
+#' 
+#' @param ardd The RDD to apply this to.
 #' @param isSorted If the input data is sorted, setting this parameter to true
 #'   avoids a second sort.
-#' @param int maxIndelSize The size of the largest indel to use for realignment.
+#' @param maxIndelSize The size of the largest indel to use for realignment.
 #' @param maxConsensusNumber The maximum number of consensus sequences to
 #'   realign against per target region.
 #' @param lodThreshold Log-odds threshold to use when realigning; realignments
 #'   are only finalized if the log-odds threshold is exceeded.
 #' @param maxTargetSize The maximum width of a single target region for
 #'   realignment.
+#' @param knownIndels An RDD of previously called INDEL variants.
 #' @return Returns an RDD of mapped reads which have been realigned.
+#'
+#' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
 #' @export
 setMethod("realignIndels",
           signature(ardd = "AlignmentRecordRDD"),
           function(ardd, isSorted = FALSE, maxIndelSize = 500,
                    maxConsensusNumber = 30, lodThreshold = 5.0,
-                   maxTargetSize = 3000) {
-              consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
-                                                   "fromReads")
-              AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "realignIndels",
-                                                    consensusModel,
-                                                    isSorted,
-                                                    maxIndelSize,
-                                                    maxConsensusNumber,
-                                                    lodThreshold,
-                                                    maxTargetSize))
-          })
+                   maxTargetSize = 3000,
+                   knownIndels = NA) {
 
-#' Realigns indels using a concensus-based heuristic.
-#'
-#' Generates consensuses from previously seen variants.
-#'
-#' @param knownIndels An RDD of previously called INDEL variants.
-#' @param isSorted If the input data is sorted, setting this parameter to true
-#'   avoids a second sort.
-#' @param int maxIndelSize The size of the largest indel to use for realignment.
-#' @param maxConsensusNumber The maximum number of consensus sequences to
-#'   realign against per target region.
-#' @param lodThreshold Log-odds threshold to use when realigning; realignments
-#'   are only finalized if the log-odds threshold is exceeded.
-#' @param maxTargetSize The maximum width of a single target region for
-#'   realignment.
-#' @return Returns an RDD of mapped reads which have been realigned.
-#'
-#' @export
-setMethod("realignIndels",
-          signature(ardd = "AlignmentRecordRDD", knownIndels = "VariantRDD"),
-          function(ardd, knownIndels, isSorted = FALSE, maxIndelSize = 500,
-                   maxConsensusNumber = 30, lodThreshold = 5.0,
-                   maxTargetSize = 3000) {
-              consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
-                                                   "fromKnowns", knownIndels@jrdd)
-              AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "realignIndels",
-                                                    consensusModel,
-                                                    isSorted,
-                                                    maxIndelSize,
-                                                    maxConsensusNumber,
-                                                    lodThreshold,
-                                                    maxTargetSize))
-          })
+              if (is.na(knownIndels)) {
+                  consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
+                                                       "fromKnowns", knownIndels@jrdd)
+                  AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "realignIndels",
+                                                        consensusModel,
+                                                        isSorted,
+                                                        maxIndelSize,
+                                                        maxConsensusNumber,
+                                                        lodThreshold,
+                                                        maxTargetSize))
 
-setMethod("replaceRdd",
-          signature(ardd = "CoverageRDD",
-                    rdd = "jobj"),
-          function(ardd, rdd) {
-              CoverageRDD(rdd)
-          })
-
-setMethod("inferConversionFn",
-          signature(ardd = "CoverageRDD",
-                    destClass = "character"),
-          function(ardd, destClass) {
-              paste0("org.bdgenomics.adam.api.java.CoverageTo",
-                     destClassSuffix(destClass))
+              } else {
+                  consensusModel <- sparkR.callJStatic("org.bdgenomics.adam.algorithms.consensus.ConsensusGenerator",
+                                                       "fromReads")
+                  AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "realignIndels",
+                                                        consensusModel,
+                                                        isSorted,
+                                                        maxIndelSize,
+                                                        maxConsensusNumber,
+                                                        lodThreshold,
+                                                        maxTargetSize))
+              }
           })
 
 #' Saves coverage as a feature file.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param filePath The location to write the output.
 #' @param asSingleFile If true, merges the sharded output into a single file.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("save",
@@ -571,7 +647,10 @@ setMethod("save",
 #' 3.0) and Coverage("chr1", 10, 20, 3.0) would be merged into one record
 #' Coverage("chr1", 1, 20, 3.0).
 #'
+#' @param ardd The RDD to apply this to.
 #' @return An RDD with merged tuples of adjacent sites with same coverage.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("collapse", signature(ardd = "CoverageRDD"),
@@ -581,7 +660,10 @@ setMethod("collapse", signature(ardd = "CoverageRDD"),
 
 #' Converts CoverageRDD to FeatureRDD.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return Returns a FeatureRDD from a CoverageRDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("toFeatures", signature(ardd = "CoverageRDD"),
@@ -595,8 +677,11 @@ setMethod("toFeatures", signature(ardd = "CoverageRDD"),
 #' bin together ReferenceRegions of equal size. The coverage of each bin is the
 #' coverage of the first base pair in that bin.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param bpPerBin Number of bases to combine to one bin.
 #' @return Returns a sparsified CoverageRDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("coverage", signature(ardd = "CoverageRDD"),
@@ -610,8 +695,13 @@ setMethod("coverage", signature(ardd = "CoverageRDD"),
 #' bin together ReferenceRegions of equal size. The coverage of each bin is the
 #' average coverage of the bases in that bin.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param bpPerBin Number of bases to combine to one bin.
 #' @return Returns a sparsified CoverageRDD.
+#'
+#' @rdname CoverageRDD
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("aggregatedCoverage", signature(ardd = "CoverageRDD"),
@@ -623,7 +713,10 @@ setMethod("aggregatedCoverage", signature(ardd = "CoverageRDD"),
 #'
 #' The opposite operation of collapse.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return New CoverageRDD of flattened coverage.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("flatten", signature(ardd = "CoverageRDD"),
@@ -653,10 +746,13 @@ setMethod("replaceRdd",
 #' these match, we fall back to Parquet. These files are written as sharded text
 #' files, which can be merged by passing asSingleFile = True.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param filePath The location to write the output.
 #' @param asSingleFile If true, merges the sharded output into a single file.
 #' @param disableFastConcat If asSingleFile is true, disables the use of the
 #'  fast concatenation engine for saving to HDFS.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("save",
@@ -669,7 +765,10 @@ setMethod("save",
 
 #' Converts the FeatureRDD to a CoverageRDD.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return Returns a new CoverageRDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("toCoverage", signature(ardd = "FeatureRDD"),
@@ -694,7 +793,10 @@ setMethod("replaceRdd",
 
 #' Splits up the reads in a Fragment, and creates a new RDD.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return Returns this RDD converted back to reads.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("toReads", signature(ardd = "FragmentRDD"),
@@ -704,8 +806,11 @@ setMethod("toReads", signature(ardd = "FragmentRDD"),
 
 #' Marks reads as possible fragment duplicates.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return A new RDD where reads have the duplicate read flag set. Duplicate
 #'   reads are NOT filtered out.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("markDuplicates", signature(ardd = "FragmentRDD"),
@@ -715,7 +820,10 @@ setMethod("markDuplicates", signature(ardd = "FragmentRDD"),
 
 #' Saves fragments to Parquet.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param filePath Path to save fragments to.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("save", signature(ardd = "FragmentRDD", filePath = "character"),
@@ -740,7 +848,10 @@ setMethod("replaceRdd",
 
 #' Saves this RDD of genotypes to disk as Parquet.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param filePath Path to save file to.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("saveAsParquet", signature(ardd = "GenotypeRDD", filePath = "character"),
@@ -750,7 +861,10 @@ setMethod("saveAsParquet", signature(ardd = "GenotypeRDD", filePath = "character
 
 #' Converts this RDD of Genotypes to VariantContexts.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return Returns this RDD of Genotypes as VariantContexts.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("toVariantContexts", signature(ardd = "GenotypeRDD"),
@@ -778,7 +892,10 @@ setMethod("replaceRdd",
 #' If filename ends in .fa or .fasta, saves as Fasta. If not, saves fragments to
 #' Parquet. Defaults to 60 character line length, if saving as FASTA.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param filePath Path to save to.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("save", signature(ardd = "NucleotideContigFragmentRDD", filePath = "character"),
@@ -789,9 +906,12 @@ setMethod("save", signature(ardd = "NucleotideContigFragmentRDD", filePath = "ch
 #' For all adjacent records in the RDD, we extend the records so that the
 #' adjacent records now overlap by _n_ bases, where _n_ is the flank length.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param flankLength The length to extend adjacent records by.
 #' @return Returns the RDD, with all adjacent fragments extended with flanking
 #'   sequence.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("flankAdjacentFragments",
@@ -819,7 +939,10 @@ setMethod("replaceRdd",
 
 #' Saves this RDD of variants to disk as Parquet.
 #'
+#' @param ardd The RDD to apply this to.
 #' @param filePath Path to save file to.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("saveAsParquet", signature(ardd = "VariantRDD", filePath = "character"),
@@ -829,7 +952,10 @@ setMethod("saveAsParquet", signature(ardd = "VariantRDD", filePath = "character"
 
 #' Converts this RDD of Variants to VariantContexts.
 #'
+#' @param ardd The RDD to apply this to.
 #' @return Returns this RDD of Variants as VariantContexts.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("toVariantContexts", signature(ardd = "VariantRDD"),
@@ -846,14 +972,17 @@ setMethod("replaceRdd",
 
 #' Saves this RDD of variant contexts to disk as VCF
 #'
+#' @param ardd The RDD to apply this to.
 #' @param filePath Path to save VCF to.
 #' @param asSingleFile If true, saves the output as a single file
 #'   by merging the sharded output after saving.
 #' @param deferMerging If true, saves the output as prepped for merging
 #'   into a single file, but does not merge.
 #' @param stringency The stringency to use when writing the VCF.
-#' @param disableFastConcat: If asSingleFile is true, disables the use
+#' @param disableFastConcat If asSingleFile is true, disables the use
 #'   of the fast concatenation engine for saving to HDFS.
+#'
+#' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
 #' @export
 setMethod("saveAsVcf", signature(ardd = "VariantContextRDD", filePath = "character"),

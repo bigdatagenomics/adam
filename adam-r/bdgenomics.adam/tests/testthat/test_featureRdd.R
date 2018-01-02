@@ -19,8 +19,7 @@ library(bdgenomics.adam)
 
 context("manipulating features")
 
-sc <- sparkR.session()
-ac <- ADAMContext(sc)
+ac <- createADAMContext()
 
 test_that("round trip gtf", {
     testFile <- resourceFile("Homo_sapiens.GRCh37.75.trun20.gtf")

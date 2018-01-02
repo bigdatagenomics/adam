@@ -18,50 +18,71 @@
 
 #### ADAM Context operations ####
 
-# @rdname ADAMContext
-# @export
+#' The ADAMContext provides functions on top of a SparkContext for loading genomic data.
+#' 
+#' @name ADAMContext
+NULL
+
+#' @rdname ADAMContext
+#' @param ac The ADAMContext.
+#' @param filePath The path to load the file from.
+#' @param ... additional argument(s).
+#' @export
 setGeneric("loadAlignments",
            function(ac, filePath, ...) { standardGeneric("loadAlignments") })
 
-# @rdname ADAMContext
-# @export
+#' @rdname ADAMContext
+#' @export
 setGeneric("loadContigFragments",
            function(ac, filePath) { standardGeneric("loadContigFragments") })
 
-# @rdname ADAMContext
-# @export
+#' @rdname ADAMContext
+#' @export
 setGeneric("loadFragments",
            function(ac, filePath, ...) { standardGeneric("loadFragments") })
 
-# @rdname ADAMContext
-# @export
+#' @rdname ADAMContext
+#' @export
 setGeneric("loadFeatures",
            function(ac, filePath, ...) { standardGeneric("loadFeatures") })
 
-# @rdname ADAMContext
-# @export
+#' @rdname ADAMContext
+#' @export
 setGeneric("loadCoverage",
            function(ac, filePath, ...) { standardGeneric("loadCoverage") })
 
-# @rdname ADAMContext
-# @export
+#' @rdname ADAMContext
+#' @export
 setGeneric("loadGenotypes",
            function(ac, filePath, ...) { standardGeneric("loadGenotypes") })
 
-# @rdname ADAMContext
-# @export
+#' @rdname ADAMContext
+#' @export
 setGeneric("loadVariants",
            function(ac, filePath, ...) { standardGeneric("loadVariants") })
 
 #### RDD operations ####
 
-# @rdname GenomicRDD
-# @export
+#' The GenomicRDD is the base class that all genomic datatypes extend from in ADAM.
+#' 
+#' @name GenomicRDD
+NULL
+
+#' @rdname GenomicRDD
+#' @param cmd The command to run.
+#' @param tFormatter The name of the ADAM in-formatter class to use.
+#' @param xFormatter The name of the ADAM out-formatter class to use.
+#' @param convFn The name of the ADAM GenomicRDD conversion class to
+#'   use.
+#' @param ... additional argument(s).
+#' @return Returns a new RDD where the input from the original RDD has
+#'   been piped through a command that runs locally on each executor.
+#' @export
 setGeneric("pipe",
            function(ardd, cmd, tFormatter, xFormatter, convFn, ...) { standardGeneric("pipe") })
 
-# @rdname GenomicRDD
-# @export
+#' @rdname GenomicRDD
+#' @export
 setGeneric("toDF",
            function(ardd) { standardGeneric("toDF") })
 
@@ -71,8 +92,8 @@ setGeneric("replaceRdd",
 setGeneric("wrapTransformation",
            function(ardd, tFn) { standardGeneric("wrapTransformation") })
 
-# @rdname GenomicRDD
-# @export
+#' @rdname GenomicRDD
+#' @export
 setGeneric("transform",
            function(ardd, tFn) { standardGeneric("transform") })
 
@@ -82,130 +103,167 @@ setGeneric("inferConversionFn",
 setGeneric("destClassSuffix",
            function(destClass) { standardGeneric("destClassSuffix") })
 
-# @rdname GenomicRDD
-# @export
+#' @rdname GenomicRDD
+#' @param tFn A function that transforms the underlying RDD as a DataFrame.
+#' @param destClass The destination class of this transmutation.
+#' @export
 setGeneric("transmute",
            function(ardd, tFn, destClass, ...) { standardGeneric("transmute") })
 
-# @rdname GenomicRDD
-# @export
+#' @rdname GenomicRDD
+#' @export
 setGeneric("save",
            function(ardd, filePath, ...) { standardGeneric("save") })
 
-# @rdname GenomicRDD
-# @export
+#' @rdname GenomicRDD
+#' @export
 setGeneric("sort",
            function(ardd) { standardGeneric("sort") })
 
-# @rdname GenomicRDD
-# @export
+#' @rdname GenomicRDD
+#' @export
 setGeneric("sortLexicographically",
            function(ardd) { standardGeneric("sortLexicographically") })
 
+#' Saves this RDD to disk as Parquet.
+#'
+#' @param ardd The RDD to apply this to.
+#' @param filePath Path to save file to.
+#'
+#' @rdname GenomicRDD
+#'
+#' @export
+setGeneric("saveAsParquet",
+           function(ardd, filePath) { standardGeneric("saveAsParquet") })
+
 #### AlignmentRecord operations ####
 
-# @rdname AlignmentRecordRDD
-# @export
+#' The AlignmentRecordRDD is the class used to manipulate genomic read data.
+#' 
+#' @name AlignmentRecordRDD
+NULL
+
+#' @rdname AlignmentRecordRDD
+#' @export
 setGeneric("toFragments",
            function(ardd) { standardGeneric("toFragments") })
 
-# @rdname AlignmentRecordRDD
-# @export
+#' @rdname AlignmentRecordRDD
+#' @param ardd The RDD to apply this to.
+#' @param ... additional argument(s).
+#' @export
 setGeneric("toCoverage",
            function(ardd, ...) { standardGeneric("toCoverage") })
 
-# @rdname AlignmentRecordRDD
-# @export
+#' @rdname AlignmentRecordRDD
+#' @param kmerLength The value of _k_ to use for cutting _k_-mers.
+#' @export
 setGeneric("countKmers",
            function(ardd, kmerLength) { standardGeneric("countKmers") })
 
-# @rdname AlignmentRecordRDD
-# @export
+#' @rdname AlignmentRecordRDD
+#' @param filePath The path to save the file to.
+#' @export
 setGeneric("saveAsSam",
            function(ardd, filePath, ...) { standardGeneric("saveAsSam") })
 
-# @rdname AlignmentRecordRDD-transforms
-# @export
+#' @rdname AlignmentRecordRDD
+#' @export
 setGeneric("sortReadsByReferencePosition",
            function(ardd) { standardGeneric("sortReadsByReferencePosition") })
 
-# @rdname AlignmentRecordRDD-transforms
-# @export
+#' @rdname AlignmentRecordRDD
+#' @export
 setGeneric("sortReadsByReferencePositionAndIndex",
            function(ardd) { standardGeneric("sortReadsByReferencePositionAndIndex") })
 
-# @rdname AlignmentRecordRDD-transforms
-# @export
+#' @rdname AlignmentRecordRDD
+#' @export
 setGeneric("markDuplicates",
            function(ardd) { standardGeneric("markDuplicates") })
 
-# @rdname AlignmentRecordRDD-transforms
-# @export
+#' @rdname AlignmentRecordRDD
+#' @param knownSnps A table of known SNPs to mask valid variants.
+#' @param validationStringency The stringency to apply towards validating BQSR.
+#' @export
 setGeneric("recalibrateBaseQualities",
            function(ardd, knownSnps, validationStringency) {
              standardGeneric("recalibrateBaseQualities")
            })
 
-# @rdname AlignmentRecordRDD-transforms
-# @export
+#' @rdname AlignmentRecordRDD
+#' @export
 setGeneric("realignIndels",
            function(ardd, ...) { standardGeneric("realignIndels") })
 
-# @rdname AlignmentRecordRDD-transforms
-# @export
-setGeneric("realignIndels",
-           function(ardd, knownIndels, ...) { standardGeneric("realignIndels") })
-
 #### Coverage operations ####
 
-# @rdname CoverageRDD
-# @export
+#' The CoverageRDD class is used to manipulate read coverage counts.
+#' 
+#' @name CoverageRDD
+NULL
+
+#' @rdname CoverageRDD
+#' @param ... additional argument(s).
+#' @export
 setGeneric("collapse",
            function(ardd, ...) { standardGeneric("collapse") })
 
-# @rdname CoverageRDD
-# @export
+#' @rdname CoverageRDD
+#' @export
 setGeneric("toFeatures",
            function(ardd) { standardGeneric("toFeatures") })
 
-# @rdname CoverageRDD
-# @export
+#' @rdname CoverageRDD
+#' @export
 setGeneric("coverage",
            function(ardd, ...) { standardGeneric("coverage") })
 
-# @rdname CoverageRDD
-# @export
+#' @rdname CoverageRDD
+#' @export
+#' @aliases aggregatedCoverage,CoverageRDD-method
 setGeneric("aggregatedCoverage",
            function(ardd, ...) { standardGeneric("aggregatedCoverage") })
 
-# @rdname CoverageRDD
-# @export
+#' @rdname CoverageRDD
+#' @export
 setGeneric("flatten",
            function(ardd) { standardGeneric("flatten") })
 
 #### Fragment operations ####
 
-# @rdname FragmentRDD
-# @export
+#' The FragmentRDD class is used to manipulate paired reads.
+#' 
+#' @name FragmentRDD
+NULL
+
+#' @rdname FragmentRDD
+#' @param ardd The RDD to apply this to.
+#' @export
 setGeneric("toReads",
            function(ardd) { standardGeneric("toReads") })
 
-#### Genotype operations ####
+#### Genotype and Variant operations ####
 
-# @rdname GenotypeRDD
-# @export
+#' Converts this RDD to VariantContexts.
+#'
+#' @param ardd The RDD to apply this to.
+#' @return Returns this RDD of Variants as VariantContexts.
+#' @export
 setGeneric("toVariantContexts",
            function(ardd) { standardGeneric("toVariantContexts") })
 
-# @rdname GenotypeRDD
-# @export
-setGeneric("saveAsParquet",
-           function(ardd, filePath) { standardGeneric("saveAsParquet") })
-
 #### NucleotideContigFragment operations ####
 
-# @rdname NucleotideContigFragmentRDD
-# @export
+#' The NucleotideContigFragmentRDD class is used to manipulate contigs.
+#' 
+#' @name NucleotideContigFragmentRDD
+NULL
+
+#' @rdname NucleotideContigFragmentRDD
+#' @param ardd The RDD to apply this to.
+#' @param flankLength The length to extend adjacent records by.
+#' @export
 setGeneric("flankAdjacentFragments",
            function(ardd, flankLength) {
              standardGeneric("flankAdjacentFragments")
@@ -213,17 +271,20 @@ setGeneric("flankAdjacentFragments",
 
 #### Variant operations ####
 
-# @rdname VariantRDD
-# @export
-setGeneric("toVariantContexts",
-           function(ardd) { standardGeneric("toVariantContexts") })
+#' The VariantContextRDD class is used to manipulate VCF-styled data.
+#'
+#' Each element in a VariantContext RDD corresponds to a VCF line. This
+#' differs from the GenotypeRDD, where each element represents the genotype
+#' of a single sample at a single site, or a VariantRDD, which represents
+#' just the variant of interest.
+#' 
+#' @name VariantContextRDD
+NULL
 
-# @rdname VariantRDD
-# @export
-setGeneric("saveAsParquet",
-           function(ardd, filePath) { standardGeneric("saveAsParquet") })
-
-# @rdname VariantContextRDD
-# @export
+#' @rdname VariantContextRDD
+#' @param ardd The RDD to apply this to.
+#' @param filePath Path to save VCF to.
+#' @param ... additional argument(s).
+#' @export
 setGeneric("saveAsVcf",
            function(ardd, filePath, ...) { standardGeneric("saveAsVcf") })

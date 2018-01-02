@@ -23,10 +23,32 @@ setOldClass("jobj")
 #' @description The ADAMContext provides helper methods for loading in genomic
 #'              data into a Spark RDD/Dataframe.
 #' @slot jac Java object reference to the backing JavaADAMContext.
+#'
+#' @rdname ADAMContext
+#' 
 #' @export
 setClass("ADAMContext",
          slots = list(jac = "jobj"))
 
+#' Creates an ADAMContext by creating a SparkSession.
+#'
+#' @return Returns an ADAMContext.
+#' 
+#' @importFrom SparkR sparkR.session
+#'
+#' @export
+createADAMContext <- function() {
+    ADAMContext(sparkR.session())
+}
+
+#' Creates an ADAMContext from an existing SparkSession.
+#'
+#' @param ss The Spark Session to use to create the ADAMContext.
+#' @return Returns an ADAMContext.
+#'
+#' @importFrom SparkR sparkR.callJMethod sparkR.newJObject
+#' @importFrom methods new
+#'
 #' @export
 ADAMContext <- function(ss) {
     ssc = sparkR.callJMethod(ss, "sparkContext")
@@ -36,6 +58,7 @@ ADAMContext <- function(ss) {
     new("ADAMContext", jac = jac)
 }
 
+#' @importFrom SparkR sparkR.callJStatic
 javaStringency <- function(stringency) {
     stringency <- sparkR.callJStatic("htsjdk.samtools.ValidationStringency",
                                      "valueOf",
@@ -62,6 +85,8 @@ javaStringency <- function(stringency) {
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing reads.
 #'
+#' @importFrom SparkR sparkR.callJMethod
+#'
 #' @export
 setMethod("loadAlignments",
           signature(ac = "ADAMContext", filePath = "character"),
@@ -84,6 +109,8 @@ setMethod("loadAlignments",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @return Returns an RDD containing sequence fragments.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("loadContigFragments",
@@ -108,6 +135,8 @@ setMethod("loadContigFragments",
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing sequence fragments.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("loadFragments",
@@ -140,6 +169,8 @@ setMethod("loadFragments",
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing features.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("loadFeatures",
@@ -174,6 +205,8 @@ setMethod("loadFeatures",
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing coverage.
 #'
+#' @importFrom SparkR sparkR.callJMethod
+#'
 #' @export
 setMethod("loadCoverage",
           signature(ac = "ADAMContext", filePath = "character"),
@@ -196,6 +229,8 @@ setMethod("loadCoverage",
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing genotypes.
 #'
+#' @importFrom SparkR sparkR.callJMethod
+#'
 #' @export
 setMethod("loadGenotypes",
           signature(ac = "ADAMContext", filePath = "character"),
@@ -217,6 +252,8 @@ setMethod("loadGenotypes",
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
 #' @return Returns an RDD containing variants.
+#'
+#' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
 setMethod("loadVariants",
