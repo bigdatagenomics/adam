@@ -73,6 +73,7 @@ Once this alias is in place, you can run ADAM by simply typing
 Building for Python
 -------------------
 
+ADAM can be installed using the Pip package manager, or from source.
 To build and test `ADAM's Python bindings <#python>`__, enable the
 ``python`` profile:
 
