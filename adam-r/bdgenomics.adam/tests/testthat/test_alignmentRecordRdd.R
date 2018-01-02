@@ -19,8 +19,7 @@ library(bdgenomics.adam)
 
 context("manipulating alignmentrecords")
 
-sc <- sparkR.session()
-ac <- ADAMContext(sc)
+ac <- createADAMContext()
 
 test_that("save sorted sam", {
 

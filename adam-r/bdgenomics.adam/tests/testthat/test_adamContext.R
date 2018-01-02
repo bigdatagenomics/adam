@@ -16,11 +16,11 @@
 # limitations under the License.
 #
 library(bdgenomics.adam)
+library(SparkR)
 
 context("basic ADAM context functions")
 
-sc <- sparkR.session()
-ac <- ADAMContext(sc)
+ac <- createADAMContext()
 
 test_that("load reads", {
     reads <- loadAlignments(ac, resourceFile("small.sam"))

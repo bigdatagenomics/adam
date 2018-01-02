@@ -129,6 +129,18 @@ rm -rf release-venv
 
 popd
 
+# build R tarball
+#
+# !!!!!
+# NOTE:
+# !!!!!
+#
+# We will not be pushing to CRAN until SparkR is reinstated in CRAN. Until then,
+# this tarball will need to be manually attached to the github releases page
+pushd adam-r
+R CMD build bdgenomics.adam
+popd
+
 if [ $? != 0 ]; then
   echo "Releasing bdgenomics.adam to PyPi failed."
   exit 1

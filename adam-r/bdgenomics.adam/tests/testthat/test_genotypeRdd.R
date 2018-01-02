@@ -19,8 +19,7 @@ library(bdgenomics.adam)
 
 context("manipulating genotypes")
 
-sc <- sparkR.session()
-ac <- ADAMContext(sc)
+ac <- createADAMContext()
 
 test_that("round trip vcf", {
     testFile <- resourceFile("small.vcf")
