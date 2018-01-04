@@ -3,12 +3,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.bdgenomics.adam</groupId>
-    <artifactId>adam-parent_2.10</artifactId>
+    <artifactId>adam-parent-spark2_2.10</artifactId>
     <version>0.23.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-assembly_2.10</artifactId>
+  <artifactId>adam-assembly-spark2_2.10</artifactId>
   <packaging>jar</packaging>
   <name>ADAM_${scala.version.prefix}: Assembly</name>
   <properties>
@@ -113,7 +113,7 @@
   <dependencies>
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-cli_${scala.version.prefix}</artifactId>
+      <artifactId>adam-cli-spark2_${scala.version.prefix}</artifactId>
       <scope>compile</scope>
     </dependency>
   </dependencies>

@@ -3,12 +3,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.bdgenomics.adam</groupId>
-    <artifactId>adam-parent_2.10</artifactId>
+    <artifactId>adam-parent-spark2_2.10</artifactId>
     <version>0.23.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>adam-r_2.10</artifactId>
+  <artifactId>adam-r-spark2_2.10</artifactId>
   <packaging>jar</packaging>
   <name>ADAM_${scala.version.prefix}: R APIs</name>
   <properties>
