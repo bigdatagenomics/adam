@@ -115,6 +115,8 @@ rm -rf release-venv
 virtualenv release-venv
 . release-venv/bin/activate
 pip install pyspark
+pip install twine
+pip install pypandoc
 
 # clean any possible extant sdists
 rm -rf dist
