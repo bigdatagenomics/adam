@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.bdgenomics.adam</groupId>
   <artifactId>adam-parent-spark2_2.11</artifactId>
-  <version>0.23.0</version>
+  <version>0.24.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>ADAM_${scala.version.prefix}</name>
   <description>A fast, scalable genome analysis system</description>
@@ -52,7 +52,7 @@
     <connection>scm:git:git@github.com:bigdatagenomics/adam.git</connection>
     <developerConnection>scm:git:git@github.com:bigdatagenomics/adam.git</developerConnection>
     <url>scm:git:git@github.com:bigdatagenomics/adam.git</url>
-    <tag>adam-parent-spark2_2.11-0.23.0</tag>
+    <tag>master</tag>
   </scm>
   <developers>
     <developer>
