@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-version = '0.23.0'
+version = '0.24.0a0'
 
 if __name__ == '__main__':
     print version

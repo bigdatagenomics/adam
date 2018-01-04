@@ -1,6 +1,6 @@
 Package: bdgenomics.adam
 Type: Package
-Version: 0.23.0
+Version: 0.24.0
 Title: R Frontend for Big Data Genomics/ADAM
 Description: ADAM is a genomics analysis platform with specialized file formats built using Apache Avro, Apache Spark and Parquet.
 Author: Big Data Genomics
