@@ -3135,11 +3135,27 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  /**
+   * Test if Parquet files are partitioned
+   *
+   * @param filePath
+   * @return
+   */
+
   def checkPartitionedParquetFlag(filePath: String): Boolean = {
     val path = new Path(filePath, "_isPartitionedByStartPos")
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     fs.exists(path)
   }
+
+  /**
+   * Returns a query string used to filter a dataset based on an input list of ReferenceRegion
+   *
+   * @param x
+   * @param partitionSize
+   * @param use_chr_prefix
+   * @return
+   */
 
   def referenceRegionsToDatasetQueryString(x: Iterable[ReferenceRegion], partitionSize: Int = 1000000, use_chr_prefix: Boolean = false): String = {
 
