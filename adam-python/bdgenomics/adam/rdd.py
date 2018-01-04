@@ -18,6 +18,7 @@
 
 import logging
 
+from py4j.java_gateway import get_java_class
 from pyspark.rdd import RDD
 from pyspark.sql import DataFrame, SQLContext
 
@@ -126,8 +127,7 @@ class GenomicRDD(object):
 
         # create an instance of the conversion
         jvm = self.sc._jvm
-        convFnClass = jvm.java.lang.Class.forName(convFn)
-        convFnInst = convFnClass.newInstance()
+        convFnInst = getattr(jvm, convFn)()
 
         return destClass(self._jvmRdd.transmuteDataFrame(dfFn, convFnInst), self.sc)
 
@@ -196,13 +196,11 @@ class GenomicRDD(object):
 
         jvm = self.sc._jvm
 
-        tFormatterClass = jvm.java.lang.Class.forName(tFormatter)
+        tFormatterClass = get_java_class(getattr(jvm, tFormatter))
         
-        xFormatterClass = jvm.java.lang.Class.forName(xFormatter)
-        xFormatterInst = xFormatterClass.newInstance()
+        xFormatterInst = getattr(jvm, xFormatter)()
 
-        convFnClass = jvm.java.lang.Class.forName(convFn)
-        convFnInst = convFnClass.newInstance()
+        convFnInst = getattr(jvm, convFn)()
         
         if files is None:
             files = []
