@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.adam.cli
 
+import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.ADAMFunSuite
 
 class TransformGenotypesSuite extends ADAMFunSuite {
@@ -53,5 +54,32 @@ class TransformGenotypesSuite extends ADAMFunSuite {
     ).run(sc)
 
     checkFiles(expectedPath, actualPath)
+  }
+
+  sparkTest("transform VCF without nested annotations") {
+    val inputPath = copyResource("random.vcf")
+    val intermediatePath = tmpFile("genotypes.adam")
+
+    TransformGenotypes(
+      Array(inputPath, intermediatePath)
+    ).run(sc)
+
+    val genotypes = sc.loadGenotypes(intermediatePath)
+    val genotype = genotypes.sort().rdd.first()
+    assert(genotype.getVariant().getAnnotation() == null)
+  }
+
+  sparkTest("transform VCF with nested annotations") {
+    val inputPath = copyResource("random.vcf")
+    val intermediatePath = tmpFile("genotypes.nested-annotations.adam")
+
+    TransformGenotypes(
+      Array(inputPath, intermediatePath, "-nested_annotations")
+    ).run(sc)
+
+    val genotypes = sc.loadGenotypes(intermediatePath)
+    val genotype = genotypes.sort().rdd.first()
+    assert(genotype.getVariant().getAnnotation() != null)
+    assert(genotype.getVariant().getAnnotation().get("alleleCount") === 2)
   }
 }
