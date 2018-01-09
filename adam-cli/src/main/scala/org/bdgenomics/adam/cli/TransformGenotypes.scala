@@ -19,6 +19,7 @@ package org.bdgenomics.adam.cli
 
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext
+import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, GenomicRDD }
 import org.bdgenomics.utils.cli._
@@ -45,6 +46,9 @@ class TransformGenotypesArgs extends Args4jBase with ADAMSaveAnyArgs with Parque
 
   @Args4jOption(required = false, name = "-force_shuffle_coalesce", usage = "Even if the repartitioned RDD has fewer partitions, force a shuffle.")
   var forceShuffle: Boolean = false
+
+  @Args4jOption(required = false, name = "-nested_annotations", usage = "Populate the variant.annotation field in the Genotype records. Disabled by default.")
+  var nestedAnnotations: Boolean = false
 
   @Args4jOption(required = false, name = "-sort_on_save", usage = "Sort VCF output by contig index.")
   var sort: Boolean = false
@@ -116,6 +120,11 @@ class TransformGenotypes(val args: TransformGenotypesArgs)
   def run(sc: SparkContext) {
     require(!(args.sort && args.sortLexicographically),
       "Cannot set both -sort_on_save and -sort_lexicographically_on_save.")
+
+    if (args.nestedAnnotations) {
+      log.info("Populating the variant.annotation field in the Genotype records")
+      sc.hadoopConfiguration.setBoolean(VariantContextConverter.nestAnnotationInGenotypesProperty, true)
+    }
 
     val genotypes = sc.loadGenotypes(
       args.inputPath,
