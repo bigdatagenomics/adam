@@ -69,36 +69,18 @@ later installed in order to build ADAM.
 
 > **Note:** The default configuration is for Hadoop 2.7.3. If building against
 > a different version of Hadoop, please pass `-Dhadoop.version=<HADOOP_VERSION>`
-> to the Maven command. ADAM will cross-build for both Spark 1.x and 2.x, but
-> builds by default against Spark 1.6.3 and Scala 2.10. To build for Spark 2,
-> run the `./scripts/move_to_spark_2.sh` script. To build for Scala 2.11, run
-> the `./scripts/move_to_scala_2.11.sh` script.
+> to the Maven command.
 
 ```bash
 $ git clone https://github.com/bigdatagenomics/adam.git
 $ cd adam
-$ mvn clean package -DskipTests
+$ mvn install
 ```
-Outputs
-```
-...
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time: 9.647s
-[INFO] Finished at: Thu May 23 15:50:42 PDT 2013
-[INFO] Final Memory: 19M/81M
-[INFO] ------------------------------------------------------------------------
-```
-
-You might want to take a peek at the `scripts/jenkins-test` script and give it a run. It will fetch a mouse chromosome, encode it to ADAM
-reads and pileups, run flagstat, etc. We use this script to test that ADAM is working correctly.
 
 ### Installing Spark
 
-You'll need to have a Spark release on your system and the `$SPARK_HOME` environment variable pointing at it; prebuilt binaries can be downloaded from the
-[Spark website](http://spark.apache.org/downloads.html). Currently, our continuous builds default to
-[Spark 1.6.1 built against Hadoop 2.6](http://d3kbcqa49mib13.cloudfront.net/spark-1.6.1-bin-hadoop2.6.tgz), but any more recent Spark distribution should also work.
+You'll need to have a Spark release on your system and the `$SPARK_HOME` environment variable pointing at it;
+prebuilt binaries can be downloaded from the [Spark website](http://spark.apache.org/downloads.html).
 
 # Documentation
 
