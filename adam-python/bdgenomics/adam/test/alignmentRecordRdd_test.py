@@ -18,6 +18,7 @@
 
 
 from bdgenomics.adam.adamContext import ADAMContext
+from bdgenomics.adam.models import ReferenceRegion
 from bdgenomics.adam.rdd import AlignmentRecordRDD, CoverageRDD
 from bdgenomics.adam.test import SparkTestCase
 
@@ -163,3 +164,28 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         fragments = reads.toFragments()
         self.assertEquals(fragments.toDF().count(), 5)
+
+    def test_filterByOverlappingRegion(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadAlignments(readsPath)
+
+        query = ReferenceRegion("1", 20000000L, 27000000L)
+
+        filtered = reads.filterByOverlappingRegion(query)
+        self.assertEquals(filtered.toDF().count(), 2)
+
+    def test_filterByOverlappingRegions(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadAlignments(readsPath)
+
+        querys = [ReferenceRegion("1", 20000000L, 27000000L),
+                    ReferenceRegion("1", 230000000L,270000000L)]
+
+        filtered = reads.filterByOverlappingRegion(querys)
+        self.assertEquals(filtered.toDF().count(), 6)
