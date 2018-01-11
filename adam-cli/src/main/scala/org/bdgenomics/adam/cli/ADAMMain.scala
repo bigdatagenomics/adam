@@ -48,7 +48,9 @@ object ADAMMain {
           Fasta2ADAM,
           ADAM2Fasta,
           ADAM2Fastq,
-          TransformFragments
+          Adam2Vcf,
+          TransformFragments,
+          Vcf2Adam
         )
       ),
       CommandGroup(
