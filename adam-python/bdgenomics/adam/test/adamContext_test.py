@@ -28,7 +28,7 @@ class ADAMContextTest(SparkTestCase):
     def test_load_alignments(self):
         
         testFile = self.resourceFile("small.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadAlignments(testFile)
 
@@ -51,7 +51,7 @@ class ADAMContextTest(SparkTestCase):
     def test_load_gtf(self):
 
         testFile = self.resourceFile("Homo_sapiens.GRCh37.75.trun20.gtf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadFeatures(testFile)
 
@@ -62,7 +62,7 @@ class ADAMContextTest(SparkTestCase):
     def test_load_bed(self):
 
         testFile = self.resourceFile("gencode.v7.annotation.trunc10.bed")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadFeatures(testFile)
 
@@ -74,7 +74,7 @@ class ADAMContextTest(SparkTestCase):
 
         
         testFile = self.resourceFile("wgEncodeOpenChromDnaseGm19238Pk.trunc10.narrowPeak")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadFeatures(testFile)
 
@@ -84,9 +84,8 @@ class ADAMContextTest(SparkTestCase):
 
     def test_load_interval_list(self):
 
-
         testFile = self.resourceFile("SeqCap_EZ_Exome_v3.hg19.interval_list")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadFeatures(testFile)
 
@@ -98,7 +97,7 @@ class ADAMContextTest(SparkTestCase):
 
 
         testFile = self.resourceFile("sample_coverage.bed")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         coverage = ac.loadCoverage(testFile)
 
@@ -109,7 +108,7 @@ class ADAMContextTest(SparkTestCase):
 
         
         testFile = self.resourceFile("small.vcf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadGenotypes(testFile)
 
@@ -121,7 +120,7 @@ class ADAMContextTest(SparkTestCase):
 
         
         testFile = self.resourceFile("small.vcf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadVariants(testFile)
 
@@ -133,7 +132,7 @@ class ADAMContextTest(SparkTestCase):
 
 
         testFile = self.resourceFile("HLA_DQB1_05_01_01_02.fa")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadContigFragments(testFile)
 

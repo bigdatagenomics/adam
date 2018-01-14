@@ -42,7 +42,7 @@ import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.{ SparkSession, Dataset }
 import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
@@ -998,6 +998,17 @@ object ADAMContext {
 
   // Add ADAM Spark context methods
   implicit def sparkContextToADAMContext(sc: SparkContext): ADAMContext = new ADAMContext(sc)
+
+  /**
+   * Creates an ADAMContext from a SparkSession. Sets active session, including SQLContext, to input session.
+   *
+   * @param ss SparkSession
+   * @return ADAMContext
+   */
+  def ADAMContextFromSession(ss: SparkSession): ADAMContext = {
+    SparkSession.setActiveSession(ss)
+    new ADAMContext(ss.sparkContext)
+  }
 
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => IndexedRecord, ev2: Manifest[T]): ConcreteADAMRDDFunctions[T] = new ConcreteADAMRDDFunctions(rdd)

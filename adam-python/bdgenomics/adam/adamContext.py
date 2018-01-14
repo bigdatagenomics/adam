@@ -33,7 +33,7 @@ class ADAMContext(object):
     """
 
 
-    def __init__(self, sc):
+    def __init__(self, ss):
         """
         Initializes an ADAMContext using a SparkContext.
 
@@ -41,9 +41,9 @@ class ADAMContext(object):
         SparkContext.
         """
 
-        self._sc = sc
-        self._jvm = sc._jvm
-        c = self._jvm.org.bdgenomics.adam.rdd.ADAMContext(sc._jsc.sc())
+        self._sc = ss.sparkContext
+        self._jvm = self._sc._jvm
+        c = self._jvm.org.bdgenomics.adam.rdd.ADAMContext.ADAMContextFromSession(ss._jsparkSession)
         self.__jac = self._jvm.org.bdgenomics.adam.api.java.JavaADAMContext(c)
 
 
