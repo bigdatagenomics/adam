@@ -155,7 +155,7 @@ then
 
     # create a conda environment for python build, if necessary
     uuid=$(uuidgen)
-    conda create -q -n adam-build-${uuid} python=2.7 anaconda
+    conda create -q -n adam-build-${uuid} python=2.7 anaconda jupyter
     source activate adam-build-${uuid}
 
     # what hadoop version are we on? format string for downloading spark assembly
@@ -218,6 +218,11 @@ then
 
     # run pyadam test
     ./bin/pyadam < scripts/jenkins-test-pyadam.py
+
+    # regression tests for python notebook examples
+    jupyter nbconvert --to python ${PROJECT_ROOT}/scripts/examples/countKmers.ipynb
+    ./bin/pyadam < ${PROJECT_ROOT}/scripts/examples/countKmers.py
+    rm ${PROJECT_ROOT}/scripts/examples/countKmers.py
 
     # deactivate and remove the conda env
     source deactivate
