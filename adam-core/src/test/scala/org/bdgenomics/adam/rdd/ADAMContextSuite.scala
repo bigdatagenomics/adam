@@ -473,7 +473,13 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("load vcf with a glob") {
     val path = testFile("bqsr1.vcf").replace("bqsr1", "*")
 
-    val variants = sc.loadVcf(path).toVariants
+    val vcs = sc.loadVcf(path)
+
+    assert(vcs.samples.size === 8)
+    assert(vcs.headerLines.size === 154)
+    assert(vcs.sequences.size === 31)
+
+    val variants = vcs.toVariants
     assert(variants.rdd.count === 782)
   }
 
