@@ -1119,9 +1119,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val files = getFsAndFilesWithFilter(pathName, new NoPrefixFileFilter("_"))
 
     // load yonder the metadata
-    files.map(p => loadSingleVcfMetadata(p.toString)).reduce((p1, p2) => {
+    val (sequences, samples, headerLines) = files.map(p => loadSingleVcfMetadata(p.toString)).reduce((p1, p2) => {
       (p1._1 ++ p2._1, p1._2 ++ p2._2, p1._3 ++ p2._3)
     })
+
+    (sequences, samples.distinct, headerLines)
   }
 
   /**
