@@ -435,6 +435,29 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reads.rdd.count == 4)
   }
 
+  sparkTest("loadIndexedBam should throw exception without an index file") {
+    val refRegion = ReferenceRegion("1", 26472780, 26472790)
+    val path = testFile("bams/small.bam")
+    intercept[FileNotFoundException] {
+      sc.loadIndexedBam(path, Iterable(refRegion))
+    }
+  }
+
+  sparkTest("loadIndexedBam should work with indexed file with index naming format <filename>.bai") {
+    val refRegion = ReferenceRegion("1", 1, 100)
+    val path = testFile("indexed_bams/sorted.2.bam")
+    val reads = sc.loadIndexedBam(path, refRegion)
+    assert(reads.rdd.count == 1)
+  }
+
+  sparkTest("loadIndexedBam glob should throw exception without an index file") {
+    val refRegion = ReferenceRegion("1", 26472780, 26472790)
+    val path = new File(testFile("bams/small.bam")).getParent()
+    intercept[FileNotFoundException] {
+      sc.loadIndexedBam(path, Iterable(refRegion))
+    }
+  }
+
   sparkTest("loadBam with a glob") {
     val path = testFile("indexed_bams/sorted.bam").replace(".bam", "*.bam")
     val reads = sc.loadBam(path)

@@ -17,6 +17,8 @@
  */
 package org.bdgenomics.adam.api.java
 
+import htsjdk.samtools.ValidationStringency
+import java.util.ArrayList
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -34,6 +36,17 @@ class JavaADAMContextSuite extends ADAMFunSuite {
     val newRdd = JavaADAMReadConduit.conduit(aRdd, sc)
 
     assert(newRdd.jrdd.count() === 20)
+  }
+
+  sparkTest("loadIndexedBam with multiple ReferenceRegions") {
+    val refRegion1 = ReferenceRegion("chr2", 100, 101)
+    val refRegion2 = ReferenceRegion("3", 10, 17)
+    val path = testFile("indexed_bams/sorted.bam")
+    val rrList = new ArrayList[ReferenceRegion](2)
+    rrList.add(refRegion1)
+    rrList.add(refRegion2)
+    val reads = jac.loadIndexedBam(path, rrList, ValidationStringency.STRICT)
+    assert(reads.rdd.count == 2)
   }
 
   sparkTest("can read and write a small FASTA file") {

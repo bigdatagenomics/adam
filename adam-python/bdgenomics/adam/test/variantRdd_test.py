@@ -27,7 +27,7 @@ class VariantRDDTest(SparkTestCase):
     def test_vcf_round_trip(self):
         
         testFile = self.resourceFile("small.vcf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         variants = ac.loadVariants(testFile)
 
@@ -43,7 +43,7 @@ class VariantRDDTest(SparkTestCase):
     def test_transform(self):
 
         variantPath = self.resourceFile("small.vcf")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         variants = ac.loadVariants(variantPath)
 

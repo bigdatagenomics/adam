@@ -22,8 +22,7 @@ import sys
 import tempfile
 import unittest
 
-
-from pyspark.context import SparkContext
+from pyspark.sql import SparkSession
 
 class SparkTestCase(unittest.TestCase):
 
@@ -58,7 +57,8 @@ class SparkTestCase(unittest.TestCase):
     def setUp(self):
         self._old_sys_path = list(sys.path)
         class_name = self.__class__.__name__
-        self.sc = SparkContext('local[4]', class_name)
+        self.ss = SparkSession.builder.master('local[4]').appName(class_name).getOrCreate()
+        self.sc = self.ss.sparkContext
 
         
     def tearDown(self):

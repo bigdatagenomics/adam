@@ -42,7 +42,7 @@ import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ DataFrame, Dataset }
+import org.apache.spark.sql.{ SparkSession, Dataset }
 import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
@@ -996,6 +996,22 @@ object ADAMContext {
   // Add ADAM Spark context methods
   implicit def sparkContextToADAMContext(sc: SparkContext): ADAMContext = new ADAMContext(sc)
 
+  /**
+   * Creates an ADAMContext from a SparkSession. Sets active session, including SQLContext, to input session.
+   *
+   * @param ss SparkSession
+   * @return ADAMContext
+   */
+  def ADAMContextFromSession(ss: SparkSession): ADAMContext = {
+    // this resets the sparkContext to read the session passed in.
+    // 
+    // this fixes the issue where if one sparkContext has already been started
+    // in the scala backend, by replacing the started session with the provided
+    // session
+    SparkSession.setActiveSession(ss)
+    new ADAMContext(ss.sparkContext)
+  }
+
   // Add generic RDD methods for all types of ADAM RDDs
   implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => IndexedRecord, ev2: Manifest[T]): ConcreteADAMRDDFunctions[T] = new ConcreteADAMRDDFunctions(rdd)
 
@@ -1559,11 +1575,34 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): AlignmentRecordRDD = LoadIndexedBam.time {
 
     val path = new Path(pathName)
-    // todo: can this method handle SAM and CRAM, or just BAM?
+
+    // If pathName is a single file or *.bam, append .bai to find all bam indices.
+    // Otherwise, pathName is a directory and the entire path must be searched
+    // for indices.
+    val indexPath = if (pathName.endsWith(".bam")) {
+      new Path(pathName.toString.replace(".bam", "*.bai"))
+    } else {
+      path
+    }
+
+    // currently only supports BAM files, see https://github.com/bigdatagenomics/adam/issues/1833
     val bamFiles = getFsAndFiles(path).filter(p => p.toString.endsWith(".bam"))
+
+    val indexFiles = getFsAndFiles(indexPath).filter(p => p.toString.endsWith(".bai"))
+      .map(r => r.toString)
 
     require(bamFiles.nonEmpty,
       "Did not find any BAM files at %s.".format(path))
+
+    // look for index files named <pathname>.bam.bai and <pathname>.bai
+    val missingIndices = bamFiles.filterNot(f => {
+      indexFiles.contains(f.toString + ".bai") || indexFiles.contains(f.toString.dropRight(3) + "bai")
+    })
+
+    if (!missingIndices.isEmpty) {
+      throw new FileNotFoundException("Missing indices for BAMs:\n%s".format(missingIndices.mkString("\n")))
+    }
+
     val (seqDict, readGroups, programs) = bamFiles
       .flatMap(fp => {
         try {

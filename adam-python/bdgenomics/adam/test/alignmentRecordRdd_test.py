@@ -18,6 +18,7 @@
 
 
 from bdgenomics.adam.adamContext import ADAMContext
+from bdgenomics.adam.models import ReferenceRegion
 from bdgenomics.adam.rdd import AlignmentRecordRDD, CoverageRDD
 from bdgenomics.adam.test import SparkTestCase
 
@@ -29,7 +30,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_save_sorted_sam(self):
 
         testFile = self.resourceFile("sorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".sam"
@@ -44,7 +45,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_save_unordered_sam(self):
 
         testFile = self.resourceFile("unordered.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".sam"
@@ -58,7 +59,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         testFile1 = self.resourceFile("sorted.sam")
         testFile2 = self.resourceFile("unordered.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads1 = ac.loadAlignments(testFile1)
         reads2 = ac.loadAlignments(testFile2)
@@ -71,7 +72,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_save_as_bam(self):
 
         testFile = self.resourceFile("sorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".bam"
@@ -88,7 +89,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_count_kmers(self):
 
         testFile = self.resourceFile("small.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
         
         reads = ac.loadAlignments(testFile)
         kmers = reads.countKmers(6)
@@ -99,7 +100,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_pipe_as_sam(self):
 
         reads12Path = self.resourceFile("reads12.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(reads12Path)
 
@@ -114,7 +115,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_transform(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
@@ -126,7 +127,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_transmute_to_coverage(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
@@ -143,7 +144,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_to_coverage(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
@@ -157,9 +158,34 @@ class AlignmentRecordRDDTest(SparkTestCase):
     def test_to_fragments(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
         fragments = reads.toFragments()
         self.assertEquals(fragments.toDF().count(), 5)
+
+    def test_filterByOverlappingRegion(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadAlignments(readsPath)
+
+        query = ReferenceRegion("1", 20000000L, 27000000L)
+
+        filtered = reads.filterByOverlappingRegion(query)
+        self.assertEquals(filtered.toDF().count(), 2)
+
+    def test_filterByOverlappingRegions(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.sc)
+
+        reads = ac.loadAlignments(readsPath)
+
+        querys = [ReferenceRegion("1", 20000000L, 27000000L),
+                    ReferenceRegion("1", 230000000L,270000000L)]
+
+        filtered = reads.filterByOverlappingRegion(querys)
+        self.assertEquals(filtered.toDF().count(), 6)

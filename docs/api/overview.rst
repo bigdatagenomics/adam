@@ -23,7 +23,7 @@ Central <http://search.maven.org>`__ under the groupId
 
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-core${binary.version}</artifactId>
+      <artifactId>adam-core-spark2_2.11</artifactId>
       <version>${adam.version}</version>
     </dependency>
 
@@ -34,16 +34,9 @@ should also depend on ``adam-apis``:
 
     <dependency>
       <groupId>org.bdgenomics.adam</groupId>
-      <artifactId>adam-apis${binary.version}</artifactId>
+      <artifactId>adam-apis-spark2_2.11</artifactId>
       <version>${adam.version}</version>
     </dependency>
-
-For each release, we support four ``${binary.version}``\ s:
-
--  ``_2.10``: Spark 1.6.x on Scala 2.10
--  ``_2.11``: Spark 1.6.x on Scala 2.11
--  ``-spark2_2.10``: Spark 2.x on Scala 2.10
--  ``-spark2_2.11``: Spark 2.x on Scala 2.11
 
 Additionally, we push nightly SNAPSHOT releases of ADAM to the `Sonatype
 snapshot

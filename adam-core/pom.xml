@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.bdgenomics.adam</groupId>
     <artifactId>adam-parent-spark2_2.11</artifactId>
-    <version>0.23.0-SNAPSHOT</version>
+    <version>0.24.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -162,6 +162,11 @@
       <artifactId>utils-misc-spark2_${scala.version.prefix}</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bdgenomics.utils</groupId>
+      <artifactId>utils-misc-spark2_${scala.version.prefix}</artifactId>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.bdgenomics.utils</groupId>

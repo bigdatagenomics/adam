@@ -58,7 +58,7 @@ With an ``ADAMContext``, you can load:
 -  Single reads as an ``AlignmentRecordRDD``:
    -  From SAM/BAM/CRAM using ``loadBam`` (Scala only)
    -  Selected regions from an indexed BAM/CRAM using ``loadIndexedBam``
-      (Scala only)
+      (Scala, Java, and Python)
    -  From FASTQ using ``loadFastq``, ``loadPairedFastq``, and
       ``loadUnpairedFastq`` (Scala only)
    -  From Parquet using ``loadParquetAlignments`` (Scala only)
