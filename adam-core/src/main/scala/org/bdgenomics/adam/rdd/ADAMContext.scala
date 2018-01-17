@@ -1871,10 +1871,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
-   * @param regions
-   * @return
+   * @param regions Optional list of genomic regions to load.
+   * @param addChrPrefix Flag to add "chr" prefix to contigs
+   * @return Returns an AlignmentRecordRDD.
    */
-  def loadPartitionedParquetAlignments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, use_chr_prefix: Boolean = false): AlignmentRecordRDD = {
+  def loadPartitionedParquetAlignments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, addChrPrefix: Boolean = false): AlignmentRecordRDD = {
 
     require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
@@ -1889,7 +1890,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val reads: AlignmentRecordRDD = ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd, pgs)
 
     val datasetBoundAlignmentRecordRDD: AlignmentRecordRDD = regions match {
-      case Some(x) => DatasetBoundAlignmentRecordRDD(reads.dataset.filter(referenceRegionsToDatasetQueryString(x, use_chr_prefix = use_chr_prefix)), reads.sequences, reads.recordGroups, reads.processingSteps)
+      case Some(x) => DatasetBoundAlignmentRecordRDD(reads.dataset.filter(referenceRegionsToDatasetQueryString(x, addChrPrefix = addChrPrefix)), reads.sequences, reads.recordGroups, reads.processingSteps)
       case _       => DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
     }
     datasetBoundAlignmentRecordRDD
@@ -2281,11 +2282,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name with range binned partitioned Parquet + Avro format into GenotypeRDD
    *
-   * @param pathName
-   * @param regions
-   * @return
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param addChrPrefix Flag to add "chr" prefix to contigs
+   * @return Returns a GenotypeRDD.
    */
-  def loadPartitionedParquetGenotypes(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): GenotypeRDD = {
+  def loadPartitionedParquetGenotypes(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, addChrPrefix: Boolean = false): GenotypeRDD = {
     require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
     // load header lines
@@ -2299,7 +2302,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     val datasetBoundGenotypeRDD: GenotypeRDD = regions match {
       case Some(x) => DatasetBoundGenotypeRDD(genotypes.dataset
-        .filter(referenceRegionsToDatasetQueryString(x)), genotypes.sequences, genotypes.samples, genotypes.headerLines)
+        .filter(referenceRegionsToDatasetQueryString(x, addChrPrefix = addChrPrefix)), genotypes.sequences, genotypes.samples, genotypes.headerLines)
       case _ => DatasetBoundGenotypeRDD(genotypes.dataset, genotypes.sequences, genotypes.samples, genotypes.headerLines)
     }
     datasetBoundGenotypeRDD
@@ -2341,11 +2344,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name with range binned partitioned Parquet + Avro format into an VariantRDD.
    *
-   * @param pathName
-   * @param regions
-   * @return
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param addChrPrefix Flag to add "chr" prefix to contigs
+   * @return Returns a VariantRDD
    */
-  def loadPartitionedParquetVariants(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): VariantRDD = {
+
+  def loadPartitionedParquetVariants(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, addChrPrefix: Boolean = false): VariantRDD = {
     require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
@@ -2357,7 +2363,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     val datasetBoundVariantRDD: VariantRDD = regions match {
       case Some(x) => DatasetBoundVariantRDD(variants.dataset
-        .filter(referenceRegionsToDatasetQueryString(x)), variants.sequences, headers)
+        .filter(referenceRegionsToDatasetQueryString(x, addChrPrefix = addChrPrefix)), variants.sequences, headers)
       case _ => DatasetBoundVariantRDD(variants.dataset, variants.sequences, headers)
     }
     datasetBoundVariantRDD
@@ -2682,11 +2688,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name with range binned partitioned Parquet + Avro format into a FeatureRDD.
    *
-   * @param pathName
-   * @return
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param addChrPrefix Flag to add "chr" prefix to contigs
+   * @return Returns a FeatureRDD.
    */
 
-  def loadPartitionedParquetFeatures(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): FeatureRDD = {
+  def loadPartitionedParquetFeatures(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, addChrPrefix: Boolean = false): FeatureRDD = {
     require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
@@ -2694,7 +2703,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     val datasetBoundFeatureRDD: FeatureRDD = regions match {
       case Some(x) => DatasetBoundFeatureRDD(features.dataset
-        .filter(referenceRegionsToDatasetQueryString(x)), features.sequences)
+        .filter(referenceRegionsToDatasetQueryString(x, addChrPrefix = addChrPrefix)), features.sequences)
       case _ => DatasetBoundFeatureRDD(features.dataset, features.sequences)
     }
 
@@ -2737,10 +2746,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load a path name with range binned partitioned Parquet + Avro format into a NucleotideContigFragmentRDD.
    *
-   * @param pathName
-   * @return
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param addChrPrefix Flag to add "chr" prefix to contigs
+   * @return Returns a NucleotideContigFragmentRDD
    */
-  def loadPartitionedParquetFragments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None): NucleotideContigFragmentRDD = {
+  def loadPartitionedParquetFragments(pathName: String, regions: Option[Iterable[ReferenceRegion]] = None, addChrPrefix: Boolean = false): NucleotideContigFragmentRDD = {
     require(checkPartitionedParquetFlag(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
     val sd = loadAvroSequenceDictionary(pathName)
@@ -2748,7 +2760,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     val datasetBoundNucleotideContigFragmentRDD: NucleotideContigFragmentRDD = regions match {
       case Some(x) => DatasetBoundNucleotideContigFragmentRDD(nucleotideContigFragments.dataset
-        .filter(referenceRegionsToDatasetQueryString(x)), nucleotideContigFragments.sequences)
+        .filter(referenceRegionsToDatasetQueryString(x, addChrPrefix = addChrPrefix)), nucleotideContigFragments.sequences)
       case _ => DatasetBoundNucleotideContigFragmentRDD(nucleotideContigFragments.dataset, nucleotideContigFragments.sequences)
     }
 
@@ -3193,27 +3205,28 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Returns a query string used to filter a dataset based on an input list of ReferenceRegion
    *
-   * @param x
-   * @param partitionSize
-   * @param use_chr_prefix
+   * @param regions list of regions to include in query
+   * @param partitionSize size of genomic range partitions used when writing parquet
+   * @param addChrPrefix add the prefix "chr" to the contig names - use if the original loaded data and sequence
+   *                     dictionary used  "chr" prefix
    * @return
    */
 
-  def referenceRegionsToDatasetQueryString(x: Iterable[ReferenceRegion], partitionSize: Int = 1000000, use_chr_prefix: Boolean = false): String = {
+  def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion], partitionSize: Int = 1000000, addChrPrefix: Boolean = false): String = {
 
     def maybeAddChrPrefix(contig: String): String = {
       val chromosomes = List("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "X", "Y", "MT")
-      if (chromosomes.contains(contig) && use_chr_prefix) {
+      if (chromosomes.contains(contig) && addChrPrefix) {
         "chr" + contig
       } else {
         contig
       }
     }
 
-    var regionQueryString = "(contigName=" + "\'" + maybeAddChrPrefix(x.head.referenceName) + "\' and posBin >= \'" +
-      scala.math.floor(x.head.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(x.head.end / partitionSize).toInt + 1) + "\' and start >= " + x.head.start + " and end <= " + x.head.end + ")"
-    if (x.size > 1) {
-      x.foreach((i) => {
+    var regionQueryString = "(contigName=" + "\'" + maybeAddChrPrefix(regions.head.referenceName) + "\' and posBin >= \'" +
+      scala.math.floor(regions.head.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(regions.head.end / partitionSize).toInt + 1) + "\' and start >= " + regions.head.start + " and end <= " + regions.head.end + ")"
+    if (regions.size > 1) {
+      regions.foreach((i) => {
         regionQueryString = regionQueryString + " or " + "(contigName=" + "\'" +
           maybeAddChrPrefix(i.referenceName) + "\' and posBin >= \'" + scala.math.floor(i.start / partitionSize).toInt + "\' and posBin < \'" + (scala.math.floor(i.end / partitionSize).toInt + 1) + "\' and  start >= " + i.start + " and end <= " + i.end + ")"
       })
