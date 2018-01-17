@@ -21,9 +21,9 @@ import java.io.{ File, FileNotFoundException, InputStream }
 import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord, ValidationStringency }
 import htsjdk.samtools.util.Locatable
 import htsjdk.variant.vcf.{
+  VCFHeader,
   VCFCompoundHeaderLine,
   VCFFormatHeaderLine,
-  VCFHeader,
   VCFHeaderLine,
   VCFInfoHeaderLine
 }
@@ -47,7 +47,10 @@ import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.projections.{ FeatureField, Projection }
+import org.bdgenomics.adam.projections.{
+  FeatureField,
+  Projection
+}
 import org.bdgenomics.adam.rdd.contig.{
   DatasetBoundNucleotideContigFragmentRDD,
   NucleotideContigFragmentRDD,
@@ -64,9 +67,9 @@ import org.bdgenomics.adam.rdd.fragment.{
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
   DatasetBoundAlignmentRecordRDD,
+  RepairPartitions,
   ParquetUnboundAlignmentRecordRDD,
-  RDDBoundAlignmentRecordRDD,
-  RepairPartitions
+  RDDBoundAlignmentRecordRDD
 }
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -94,9 +97,9 @@ import org.bdgenomics.formats.avro.{
   Genotype,
   NucleotideContigFragment,
   ProcessingStep,
+  RecordGroup => RecordGroupMetadata,
   Sample,
-  Variant,
-  RecordGroup => RecordGroupMetadata
+  Variant
 }
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess

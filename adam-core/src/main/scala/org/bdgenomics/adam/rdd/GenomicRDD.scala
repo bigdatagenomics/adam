@@ -17,11 +17,10 @@
  */
 package org.bdgenomics.adam.rdd
 
-import htsjdk.variant.vcf.{ VCFHeader, VCFHeaderLine }
 import java.nio.file.Paths
 import htsjdk.samtools.ValidationStringency
 import org.apache.avro.generic.IndexedRecord
-import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
@@ -29,7 +28,6 @@ import org.apache.spark.api.java.function.{ Function => JFunction, Function2 }
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ DataFrame, Dataset, SQLContext }
-import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -39,7 +37,6 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary,
   SequenceRecord
 }
-import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.{ ManualRegionPartitioner, TextRddWriter }
 import org.bdgenomics.formats.avro.{
   Contig,
