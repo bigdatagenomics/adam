@@ -128,6 +128,14 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     assert(starts(752790L))
   }
 
+  sparkTest("round trip to partitioned parquet") {
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val outputPath = tmpLocation()
+    genotypes.saveAsPartitionedParquet(outputPath)
+    val unfilteredGenotypes = sc.loadPartitionedParquetGenotypes(outputPath)
+    assert(unfilteredGenotypes.rdd.count === 18)
+  }
+
   sparkTest("use broadcast join to pull down genotypes mapped to targets") {
     val genotypesPath = testFile("small.vcf")
     val targetsPath = testFile("small.1.bed")
