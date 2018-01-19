@@ -96,23 +96,25 @@ platforms.
 
 There are a number of tools built using ADAM's core APIs:
 
-- [Avocado](https://github.com/bigdatagenomics/avocado) is a variant caller built
-  on top of ADAM for germline and somatic calling
-- [Cannoli](https://github.com/bigdatagenomics/cannoli) uses ADAM's [pipe](#pipes)
-  API to parallelize common single-node genomics tools (e.g.,
+* [Avocado](https://github.com/bigdatagenomics/avocado) - Avocado is a distributed
+  variant caller built on top of ADAM for germline and somatic calling.
+* [Cannoli](https://github.com/bigdatagenomics/cannoli) - ADAM
+  [Pipe](http://adam.readthedocs.io/en/latest/api/pipes/) API wrappers for bioinformatics
+  tools, (e.g.,
   [BWA](https://github.com/lh3/bwa),
   [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml),
   [FreeBayes](https://github.com/ekg/freebayes))
-- [DECA](https://github.com/bigdatagenomics/deca) is a reimplementation of the
-  XHMM copy number variant caller on top of ADAM/Apache Spark
-- [Gnocchi](https://github.com/bigdatagenomics/gnocchi) provides primitives for
-  running GWAS/eQTL tests on large genotype/phenotype datasets using ADAM
-- [Lime](https://github.com/bigdatagenomics/lime) provides a parallel
-  implementation of genomic set theoretic primitives using the [region join
-  API](#join)
-- [Mango](https://github.com/bigdatagenomics/mango) is a library for visualizing
-  large scale genomics data with interactive latencies and serving data using the
-  [GA4GH schemas](https://github.com/ga4gh/schemas)
+* [DECA](https://github.com/bigdatagenomics/deca) - DECA is a reimplementation of the
+  XHMM copy number variant caller on top of ADAM.
+* [Gnocchi](https://github.com/bigdatagenomics/gnocchi) - Gnocchi provides primitives
+  for running GWAS/eQTL tests on large genotype/phenotype datasets using ADAM.
+* [Lime](https://github.com/bigdatagenomics/lime) - Lime provides a
+  parallel implementation of genomic set theoretic primitives using the ADAM
+  [region join](http://adam.readthedocs.io/en/latest/api/joins/) API.
+* [Mango](https://github.com/bigdatagenomics/mango) - Mango is a library for
+  visualizing large scale genomics data with interactive latencies.
+
+For more, please see our [awesome list of applications](https://github.com/bigdatagenomics/awesome-adam) that extend ADAM.
 
 
 # Connecting with the ADAM team
