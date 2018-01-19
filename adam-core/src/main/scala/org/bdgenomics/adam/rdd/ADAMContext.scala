@@ -3192,8 +3192,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Test if Parquet files are partitioned
    *
-   * @param filePath
-   * @return
+   * @param filePath Path in which to look for partitioned flag.
+   * @return Return True if partitioned flag found, False otherwise.
    */
 
   def checkPartitionedParquetFlag(filePath: String): Boolean = {
