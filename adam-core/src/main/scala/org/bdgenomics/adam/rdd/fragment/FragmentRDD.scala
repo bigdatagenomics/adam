@@ -222,6 +222,19 @@ case class DatasetBoundFragmentRDD private[rdd] (
     newProcessingSteps: Seq[ProcessingStep]): FragmentRDD = {
     copy(processingSteps = newProcessingSteps)
   }
+
+  /**
+   * Filters and replaces the underlying dataset based on overlap with any of a Seq of ReferenceRegions.
+   *
+   * @param querys ReferencesRegions to filter against
+   * @param optPartitionSize  Optional partitionSize used for partitioned Parquet, defaults to 1000000.
+   * @param optPartitionedLookBackNum Optional number of parquet position bins to look back to find start of a
+   *                                  ReferenceRegion, defaults to 1
+   * @return Returns a new DatasetBoundFragmentRDD with ReferenceRegions filter applied.
+   */
+  override def filterByOverlappingRegions(querys: Iterable[ReferenceRegion], optPartitionSize: Option[Int] = Some(1000000), optPartitionedLookBackNum: Option[Int] = Some(1)): FragmentRDD = {
+    transformDataset(((d: Dataset[org.bdgenomics.adam.sql.Fragment]) => d.filter(referenceRegionsToDatasetQueryString(querys, optPartitionSize.get, optPartitionedLookBackNum.get))))
+  }
 }
 
 case class RDDBoundFragmentRDD private[rdd] (
