@@ -153,11 +153,6 @@ then
 
     pushd $ADAM_TMP_DIR
 
-    # create a conda environment for python build, if necessary
-    uuid=$(uuidgen)
-    conda create -q -n adam-build-${uuid} python=2.7 anaconda
-    source activate adam-build-${uuid}
-
     # what hadoop version are we on? format string for downloading spark assembly
     if [[ $HADOOP_VERSION =~ ^2\.6 ]]; then
         HADOOP=hadoop2.6
@@ -194,38 +189,49 @@ then
     ASSEMBLY_JAR="$(ls -1 "$ASSEMBLY_DIR" | grep "^adam[0-9A-Za-z\_\.-]*\.jar$" | grep -v javadoc | grep -v sources || true)"
     export PYSPARK_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} pyspark-shell"
 
-    # we only support SparkR on Spark 2.x
-    if [ ${SPARK_VERSION} == 2.2.1 ];
-    then
+    # create a conda environment for python build, if necessary
+    pythons=( 2.7 3.6 )
 
-	# make a directory to install SparkR into, and set the R user libs path
-	export R_LIBS_USER=${SPARK_HOME}/local_R_libs
-	mkdir -p ${R_LIBS_USER}
-	R CMD INSTALL \
-	    -l ${R_LIBS_USER} \
-	    ${SPARK_HOME}/R/lib/SparkR/
+    for python in ${pythons[*]}
+    do
+	uuid=$(uuidgen)
+	conda create -q -n adam-build-${uuid} python=2.7 anaconda
+	source activate adam-build-${uuid}
+	
+	
+	# we only support SparkR on Spark 2.x
+	if [ ${SPARK_VERSION} == 2.2.1 ];
+	then
+	    
+	    # make a directory to install SparkR into, and set the R user libs path
+	    export R_LIBS_USER=${SPARK_HOME}/local_R_libs
+	    mkdir -p ${R_LIBS_USER}
+	    R CMD INSTALL \
+	      -l ${R_LIBS_USER} \
+	      ${SPARK_HOME}/R/lib/SparkR/
+	    
+	    export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
+	    
+            # we can run the python build, now that we have a spark executable
+	    mvn -U \
+		-P python,r \
+		package \
+		-DskipTests \
+		-Dhadoop.version=${HADOOP_VERSION} \
+		-Dspark.version=${SPARK_VERSION}
+	fi
+	
+	# run pyadam test
+	./bin/pyadam < scripts/jenkins-test-pyadam.py
+	
+	# deactivate and remove the conda env
+	source deactivate
+	conda remove -n adam-build-${uuid} --all
 
-	export SPARKR_SUBMIT_ARGS="--jars ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} --driver-class-path ${ASSEMBLY_DIR}/${ASSEMBLY_JAR} sparkr-shell"
-    
-        # we can run the python build, now that we have a spark executable
-	mvn -U \
-            -P python,r \
-            package \
-            -DskipTests \
-            -Dhadoop.version=${HADOOP_VERSION} \
-            -Dspark.version=${SPARK_VERSION}
-    fi
-
-    # run pyadam test
-    ./bin/pyadam < scripts/jenkins-test-pyadam.py
-
-    # deactivate and remove the conda env
-    source deactivate
-    conda remove -n adam-build-${uuid} --all
-
-    # copy python targets back
-    cp -r adam-python/target ${PROJECT_ROOT}/adam-python/
-
+	# copy python targets back
+	cp -r adam-python/target ${PROJECT_ROOT}/adam-python/
+    done
+	
     # define filenames
     BAM=mouse_chrM.bam
     READS=${BAM}.reads.adam

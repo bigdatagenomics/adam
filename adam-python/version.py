@@ -16,7 +16,9 @@
 # limitations under the License.
 #
 
+from __future__ import print_function
+
 version = '0.24.0a0'
 
 if __name__ == '__main__':
-    print version
+    print(version)
