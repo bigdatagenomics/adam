@@ -19,20 +19,50 @@ package org.bdgenomics.adam.rdd
 
 import java.io.InputStream
 import java.lang.Process
-import java.util.concurrent.Callable
+import java.util.concurrent.{ Callable, TimeUnit }
+import org.bdgenomics.utils.misc.Logging
 
 private[rdd] class OutFormatterRunner[T, U <: OutFormatter[T]](formatter: U,
                                                                is: InputStream,
                                                                process: Process,
-                                                               finalCmd: List[String]) extends Iterator[T] {
+                                                               finalCmd: List[String],
+                                                               optTimeout: Option[Int]) extends Iterator[T] with Logging {
 
+  private val startTime = System.currentTimeMillis()
   private val iter = formatter.read(is)
 
+  private def hasTimedOut(): Boolean = {
+    optTimeout.map(timeoutSec => {
+      val currTime = System.currentTimeMillis()
+      (currTime - startTime) >= (timeoutSec * 1000L)
+    }).getOrElse(false)
+  }
+
+  private def timeLeft(timeout: Int): Long = {
+    val currTime = System.currentTimeMillis()
+    (timeout * 1000L) - currTime
+  }
+
   def hasNext: Boolean = {
-    if (iter.hasNext) {
+    if (hasTimedOut()) {
+      log.warn("Piped command %s timed out after %d seconds.".format(
+        finalCmd, optTimeout.get))
+      process.destroy()
+      false
+    } else if (iter.hasNext) {
       true
     } else {
-      val exitCode = process.waitFor()
+      val exitCode = optTimeout.fold(process.waitFor())(timeout => {
+        val exited = process.waitFor(timeLeft(timeout), TimeUnit.MILLISECONDS)
+        if (exited) {
+          process.exitValue()
+        } else {
+          log.warn("Piped command %s timed out after %d seconds.".format(
+            finalCmd, timeout))
+          process.destroy()
+          0
+        }
+      })
       if (exitCode != 0) {
         throw new RuntimeException("Piped command %s exited with error code %d.".format(
           finalCmd, exitCode))
