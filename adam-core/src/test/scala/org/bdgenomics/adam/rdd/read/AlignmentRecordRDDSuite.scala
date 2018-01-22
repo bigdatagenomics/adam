@@ -830,6 +830,51 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(records === newRecords)
   }
 
+  sparkTest("lose all records when a command times out") {
+    val reads12Path = testFile("reads12.sam")
+    val ardd = sc.loadBam(reads12Path)
+
+    implicit val tFormatter = SAMInFormatter
+    implicit val uFormatter = new AnySAMOutFormatter
+
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe("sleep 10", optTimeout = Some(5))
+    val newRecords = pipedRdd.rdd.count
+    assert(newRecords === 0)
+  }
+
+  sparkTest("lose no records without a timeout") {
+    val reads12Path = testFile("reads12.sam")
+    val ardd = sc.loadBam(reads12Path)
+
+    implicit val tFormatter = SAMInFormatter
+    implicit val uFormatter = new AnySAMOutFormatter
+
+    // this script reads the reads into a temp file, which is then read to
+    // stdout, then we sleep for 10 sec, then we read to stdout again
+    val scriptPath = testFile("timeout.py")
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe("python $0",
+      files = Seq(scriptPath))
+    val newRecords = pipedRdd.rdd.count
+    assert(newRecords === (2 * ardd.rdd.count))
+  }
+
+  sparkTest("lose some records when a command times out") {
+    val reads12Path = testFile("reads12.sam")
+    val ardd = sc.loadBam(reads12Path)
+
+    implicit val tFormatter = SAMInFormatter
+    implicit val uFormatter = new AnySAMOutFormatter
+
+    // this script reads the reads into a temp file, which is then read to
+    // stdout, then we sleep for 10 sec, then we read to stdout again
+    val scriptPath = testFile("timeout.py")
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe("python $0",
+      optTimeout = Some(5),
+      files = Seq(scriptPath))
+    val newRecords = pipedRdd.rdd.count
+    assert(newRecords === ardd.rdd.count)
+  }
+
   sparkTest("don't lose any reads when piping as SAM using java pipe") {
     val reads12Path = testFile("reads12.sam")
     val ardd = sc.loadBam(reads12Path)

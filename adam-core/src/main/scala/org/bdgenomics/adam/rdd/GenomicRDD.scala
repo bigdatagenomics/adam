@@ -454,6 +454,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param environment A map containing environment variable/value pairs to set
    *   in the environment for the newly created process. Default is empty.
    * @param flankSize Number of bases to flank each command invocation by.
+   * @param optTimeout An optional parameter specifying how long to let a single
+   *   partition run for, in seconds. If the partition times out, the partial
+   *   results will be returned, and no exception will be logged. The partition
+   *   will log that the command timed out.
    * @return Returns a new GenomicRDD of type Y.
    *
    * @tparam X The type of the record created by the piped command.
@@ -461,14 +465,16 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @tparam V The InFormatter to use for formatting the data being piped to the
    *   command.
    */
-  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: String,
-                                                                files: Seq[String] = Seq.empty,
-                                                                environment: Map[String, String] = Map.empty,
-                                                                flankSize: Int = 0)(implicit tFormatterCompanion: InFormatterCompanion[T, U, V],
-                                                                                    xFormatter: OutFormatter[X],
-                                                                                    convFn: (U, RDD[X]) => Y,
-                                                                                    tManifest: ClassTag[T],
-                                                                                    xManifest: ClassTag[X]): Y = {
+  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](
+    cmd: String,
+    files: Seq[String] = Seq.empty,
+    environment: Map[String, String] = Map.empty,
+    flankSize: Int = 0,
+    optTimeout: Option[Int] = None)(implicit tFormatterCompanion: InFormatterCompanion[T, U, V],
+                                    xFormatter: OutFormatter[X],
+                                    convFn: (U, RDD[X]) => Y,
+                                    tManifest: ClassTag[T],
+                                    xManifest: ClassTag[X]): Y = {
 
     // TODO: support broadcasting files
     files.foreach(f => {
@@ -554,7 +560,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
         new OutFormatterRunner[X, OutFormatter[X]](xFormatter,
           is,
           process,
-          finalCmd)
+          finalCmd,
+          optTimeout)
       } else {
         Iterator[X]()
       }
