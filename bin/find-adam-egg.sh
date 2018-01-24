@@ -30,7 +30,7 @@ else
 fi
 
 DIST_EGG=$(ls -1 "$DIST_DIR" | grep "^bdgenomics\.adam[0-9A-Za-z\.\_\-]*.egg$" || true)
-num_egg=$(echo ${DIST_EGG} | wc -l)
+num_egg=$(echo ${DIST_EGG} | wc -w)
 
 if [ "$num_egg" -eq "0" ]; then
   echo "Failed to find ADAM egg in $DIST_DIR." 1>&2
