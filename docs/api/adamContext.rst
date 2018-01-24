@@ -73,6 +73,8 @@ With an ``ADAMContext``, you can load:
       and will autodetect the underlying file format. If the file is a SAM/BAM/CRAM file and the file is
       queryname sorted, the data will be converted to fragments without performing a shuffle. (Scala, Java, Python, and R)
 
+-  All of the genotypes associated with a variant as a ``VariantContextRDD`` from Parquet
+   using ``loadParquetVariantContexts`` (Scala only)
 -  VCF lines as a ``VariantContextRDD`` from VCF/BCF1 using ``loadVcf`` (Scala only)
 -  Selected lines from a tabix indexed VCF using ``loadIndexedVcf`` (Scala only)
 -  Genotypes as a ``GenotypeRDD``:

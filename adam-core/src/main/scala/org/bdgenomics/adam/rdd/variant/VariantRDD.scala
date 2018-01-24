@@ -253,7 +253,7 @@ sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct,
    * @return Returns this VariantRDD as a VariantContextRDD.
    */
   def toVariantContexts(): VariantContextRDD = {
-    VariantContextRDD(rdd.map(VariantContext(_)),
+    new RDDBoundVariantContextRDD(rdd.map(VariantContext(_)),
       sequences,
       Seq.empty[Sample],
       headerLines,
