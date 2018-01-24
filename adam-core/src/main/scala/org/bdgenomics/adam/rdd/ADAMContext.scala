@@ -42,7 +42,7 @@ import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ SparkSession, Dataset }
+import org.apache.spark.sql.{ Dataset, SparkSession, SQLContext }
 import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
@@ -79,7 +79,8 @@ import org.bdgenomics.adam.sql.{
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
   NucleotideContigFragment => NucleotideContigFragmentProduct,
-  Variant => VariantProduct
+  Variant => VariantProduct,
+  VariantContext => VariantContextProduct
 }
 import org.bdgenomics.adam.util.FileExtensions._
 import org.bdgenomics.adam.util.{
@@ -630,7 +631,7 @@ object ADAMContext {
   implicit def genericToVariantContextsConversionFn[Y <: GenericGenomicRDD[_]](
     gRdd: Y,
     rdd: RDD[VariantContext]): VariantContextRDD = {
-    new VariantContextRDD(rdd,
+    new RDDBoundVariantContextRDD(rdd,
       gRdd.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
@@ -2311,6 +2312,49 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     )
 
     if (regions.nonEmpty) genotypesDatasetBound.filterByOverlappingRegions(regions) else genotypesDatasetBound
+  }
+
+  /**
+   * Load a path name in Parquet + Avro format into a VariantContextRDD.
+   *
+   * @param pathName The path name to load genotypes from.
+   *   Globs/directories are supported.
+   * @return Returns a VariantContextRDD.
+   */
+  def loadVariantContexts(
+    pathName: String): VariantContextRDD = {
+
+    if (isVcfExt(pathName)) {
+      loadVcf(pathName)
+    } else {
+      loadParquetVariantContexts(pathName)
+    }
+  }
+
+  /**
+   * Load a path name in Parquet + Avro format into a VariantContextRDD.
+   *
+   * @param pathName The path name to load genotypes from.
+   *   Globs/directories are supported.
+   * @return Returns a VariantContextRDD.
+   */
+  def loadParquetVariantContexts(
+    pathName: String): VariantContextRDD = {
+
+    // load header lines
+    val headers = loadHeaderLines(pathName)
+
+    // load sequence info
+    val sd = loadAvroSequenceDictionary(pathName)
+
+    // load avro record group dictionary and convert to samples
+    val samples = loadAvroSamples(pathName)
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
+    val ds = sqlContext.read.parquet(pathName).as[VariantContextProduct]
+
+    new DatasetBoundVariantContextRDD(ds, sd, samples, headers)
   }
 
   /**

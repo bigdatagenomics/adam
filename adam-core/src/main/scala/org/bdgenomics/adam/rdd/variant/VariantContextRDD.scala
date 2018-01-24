@@ -24,11 +24,18 @@ import htsjdk.variant.vcf.{
   VCFHeader,
   VCFHeaderLine
 }
+import org.apache.avro.Schema
+import org.apache.avro.file.DataFileWriter
+import org.apache.avro.generic.IndexedRecord
+import org.apache.avro.specific.{ SpecificDatumWriter, SpecificRecordBase }
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.io.compress.CompressionCodec
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.{
   DefaultHeaderLines,
   VariantContextConverter
@@ -43,12 +50,14 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.{
   ADAMSaveAnyArgs,
+  GenomicDataset,
   MultisampleGenomicRDD,
   VCFHeaderUtils,
   VCFSupportingGenomicRDD
 }
+import org.bdgenomics.adam.sql.{ VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.{ FileMerger, FileExtensions }
-import org.bdgenomics.formats.avro.Sample
+import org.bdgenomics.formats.avro.{ Contig, Sample }
 import org.bdgenomics.utils.misc.Logging
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
@@ -61,6 +70,7 @@ import org.seqdoop.hadoop_bam.util.{
 }
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 private[adam] case class VariantContextArray(
     array: Array[(ReferenceRegion, VariantContext)],
@@ -102,36 +112,159 @@ object VariantContextRDD extends Serializable {
             sequences: SequenceDictionary,
             samples: Iterable[Sample],
             headerLines: Seq[VCFHeaderLine]): VariantContextRDD = {
-    VariantContextRDD(rdd, sequences, samples.toSeq, headerLines, None)
+    RDDBoundVariantContextRDD(rdd, sequences, samples.toSeq, headerLines, None)
   }
 
   def apply(rdd: RDD[VariantContext],
             sequences: SequenceDictionary,
             samples: Iterable[Sample]): VariantContextRDD = {
-    VariantContextRDD(rdd, sequences, samples.toSeq, null)
+    RDDBoundVariantContextRDD(rdd, sequences, samples.toSeq, null)
+  }
+}
+
+case class DatasetBoundVariantContextRDD private[rdd] (
+    dataset: Dataset[VariantContextProduct],
+    sequences: SequenceDictionary,
+    @transient samples: Seq[Sample],
+    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantContextRDD {
+
+  protected lazy val optPartitionMap = None
+
+  lazy val rdd = dataset.rdd.map(_.toModel)
+
+  override def transformDataset(
+    tFn: Dataset[VariantContextProduct] => Dataset[VariantContextProduct]): VariantContextRDD = {
+    copy(dataset = tFn(dataset))
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): VariantContextRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantContextRDD = {
+    copy(headerLines = newHeaderLines)
+  }
+
+  def replaceSamples(newSamples: Iterable[Sample]): VariantContextRDD = {
+    copy(samples = newSamples.toSeq)
+  }
+}
+
+case class RDDBoundVariantContextRDD private[rdd] (
+    rdd: RDD[VariantContext],
+    sequences: SequenceDictionary,
+    @transient samples: Seq[Sample],
+    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends VariantContextRDD {
+
+  /**
+   * A SQL Dataset of variant contexts.
+   */
+  lazy val dataset: Dataset[VariantContextProduct] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    sqlContext.createDataset(rdd.map(VariantContextProduct.fromModel))
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): VariantContextRDD = {
+    copy(sequences = newSequences)
+  }
+
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantContextRDD = {
+    copy(headerLines = newHeaderLines)
+  }
+
+  def replaceSamples(newSamples: Iterable[Sample]): VariantContextRDD = {
+    copy(samples = newSamples.toSeq)
   }
 }
 
 /**
  * An RDD containing VariantContexts attached to a reference and samples.
- *
- * @param rdd The underlying RDD of VariantContexts.
- * @param sequences The genome sequence these variants were called against.
- * @param samples The genotyped samples in this RDD of VariantContexts.
- * @param headerLines The VCF header lines that cover all INFO/FORMAT fields
- *   needed to represent this RDD of VariantContexts.
  */
-case class VariantContextRDD(rdd: RDD[VariantContext],
-                             sequences: SequenceDictionary,
-                             @transient samples: Seq[Sample],
-                             @transient headerLines: Seq[VCFHeaderLine],
-                             optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends MultisampleGenomicRDD[VariantContext, VariantContextRDD]
-    with Logging
-    with VCFSupportingGenomicRDD[VariantContext, VariantContextRDD] {
+sealed abstract class VariantContextRDD extends MultisampleGenomicRDD[VariantContext, VariantContextRDD] with GenomicDataset[VariantContext, VariantContextProduct, VariantContextRDD] with Logging with VCFSupportingGenomicRDD[VariantContext, VariantContextRDD] {
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): VariantContextRDD = {
-    copy(sequences = newSequences)
+  @transient val uTag: TypeTag[VariantContextProduct] = typeTag[VariantContextProduct]
+
+  val headerLines: Seq[VCFHeaderLine]
+
+  protected def saveAvro[U <: SpecificRecordBase](pathName: String,
+                                                  sc: SparkContext,
+                                                  schema: Schema,
+                                                  avro: Seq[U])(implicit tUag: ClassTag[U]) {
+
+    // get our current file system
+    val path = new Path(pathName)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+
+    // get an output stream
+    val os = fs.create(path)
+
+    // set up avro for writing
+    val dw = new SpecificDatumWriter[U](schema)
+    val fw = new DataFileWriter[U](dw)
+    fw.create(schema, os)
+
+    // write all our records
+    avro.foreach(r => fw.append(r))
+
+    // close the file
+    fw.close()
+    os.close()
+  }
+
+  protected def saveSequences(filePath: String): Unit = {
+    // convert sequence dictionary to avro form and save
+    val contigs = sequences.toAvro
+
+    saveAvro("%s/_seqdict.avro".format(filePath),
+      rdd.context,
+      Contig.SCHEMA$,
+      contigs)
+  }
+
+  protected def saveSamples(filePath: String): Unit = {
+    // get file to write to
+    saveAvro("%s/_samples.avro".format(filePath),
+      rdd.context,
+      Sample.SCHEMA$,
+      samples)
+  }
+
+  def saveVcfHeaders(filePath: String): Unit = {
+    // write vcf headers to file
+    VCFHeaderUtils.write(new VCFHeader(headerLines.toSet),
+      new Path("%s/_header".format(filePath)),
+      rdd.context.hadoopConfiguration,
+      false,
+      false)
+  }
+
+  protected def saveMetadata(filePath: String): Unit = {
+    saveSequences(filePath)
+    saveSamples(filePath)
+    saveVcfHeaders(filePath)
+  }
+
+  def saveAsParquet(filePath: String,
+                    blockSize: Int = 128 * 1024 * 1024,
+                    pageSize: Int = 1 * 1024 * 1024,
+                    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                    disableDictionaryEncoding: Boolean = false) {
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    dataset.toDF()
+      .write
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    saveMetadata(filePath)
+  }
+
+  def transformDataset(
+    tFn: Dataset[VariantContextProduct] => Dataset[VariantContextProduct]): VariantContextRDD = {
+    DatasetBoundVariantContextRDD(tFn(dataset), sequences, samples, headerLines)
   }
 
   /**
@@ -140,13 +273,7 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    * @param newHeaderLines The new header lines to attach to this RDD.
    * @return A new RDD with the header lines replaced.
    */
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantContextRDD = {
-    copy(headerLines = newHeaderLines)
-  }
-
-  def replaceSamples(newSamples: Iterable[Sample]): VariantContextRDD = {
-    copy(samples = newSamples.toSeq)
-  }
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantContextRDD
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, VariantContext)])(
     implicit tTag: ClassTag[VariantContext]): IntervalArray[ReferenceRegion, VariantContext] = {
@@ -356,7 +483,11 @@ case class VariantContextRDD(rdd: RDD[VariantContext],
    */
   protected def replaceRdd(newRdd: RDD[VariantContext],
                            newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantContextRDD = {
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    RDDBoundVariantContextRDD(newRdd,
+      sequences,
+      samples,
+      headerLines,
+      newPartitionMap)
   }
 
   /**
