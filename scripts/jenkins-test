@@ -214,7 +214,7 @@ then
 	    
             # we can run the python build, now that we have a spark executable
 	    mvn -U \
-		-P python \
+		-P python,r \
 		test \
 		-Dhadoop.version=${HADOOP_VERSION} \
 		-Dspark.version=${SPARK_VERSION}

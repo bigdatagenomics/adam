@@ -31,7 +31,11 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ AvroGenomicRDD, JavaSaveArgs }
+import org.bdgenomics.adam.rdd.{
+  DatasetBoundGenomicDataset,
+  AvroGenomicRDD,
+  JavaSaveArgs
+}
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ NucleotideContigFragment => NucleotideContigFragmentProduct }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, NucleotideContigFragment }
@@ -132,8 +136,9 @@ case class ParquetUnboundNucleotideContigFragmentRDD private[rdd] (
 }
 
 case class DatasetBoundNucleotideContigFragmentRDD private[rdd] (
-    dataset: Dataset[NucleotideContigFragmentProduct],
-    sequences: SequenceDictionary) extends NucleotideContigFragmentRDD {
+  dataset: Dataset[NucleotideContigFragmentProduct],
+  sequences: SequenceDictionary) extends NucleotideContigFragmentRDD
+    with DatasetBoundGenomicDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD] {
 
   lazy val rdd: RDD[NucleotideContigFragment] = dataset.rdd.map(_.toAvro)
 

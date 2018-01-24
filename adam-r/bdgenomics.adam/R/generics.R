@@ -136,6 +136,23 @@ setGeneric("sortLexicographically",
 setGeneric("saveAsParquet",
            function(ardd, filePath) { standardGeneric("saveAsParquet") })
 
+#### Caching operations ####
+#' @rdname GenomicRDD
+#' @export
+setGeneric("cache",
+          function(ardd) { standardGeneric("cache") })
+
+#' @rdname GenomicRDD
+#' @export
+setGeneric("persist",
+          function(ardd, sl) { standardGeneric("persist") })
+
+#' @rdname GenomicRDD
+#' @param sl the StorageLevel to persist in.
+#' @export
+setGeneric("unpersist",
+          function(ardd, sl) { standardGeneric("unpersist") })
+
 #### AlignmentRecord operations ####
 
 #' The AlignmentRecordRDD is the class used to manipulate genomic read data.

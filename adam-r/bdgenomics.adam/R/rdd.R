@@ -240,6 +240,55 @@ setMethod("pipe",
               replaceRdd(ardd, rdd)
           })
 
+
+#' Caches the existing ardd
+#'
+#' @param ardd The RDD to apply this to.
+#' @return A new RDD where the RDD of genomic data has been replaced, but the
+#'    metadata (sequence dictionary, and etc) is copied without modification.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("cache",
+          signature(ardd = "GenomicRDD"),
+          function(ardd) {
+            replaceRdd(ardd, sparkR.callJMethod(ardd@jrdd, "cache"))
+          })
+
+#' Persists the existing ardd
+#'
+#' @param ardd The RDD to apply this to.
+#' @param sl the StorageLevel to persist in.
+#' @return A new RDD where the RDD of genomic data has been replaced, but the
+#'    metadata (sequence dictionary, and etc) is copied without modification.
+#'
+#' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
+#'
+#' @export
+setMethod("persist",
+          signature(ardd = "GenomicRDD",
+                    sl = "character"),
+          function(ardd, sl) {
+              storageLevel <- sparkR.callJStatic("org.apache.spark.storage.StorageLevel", "fromString", sl)
+              replaceRdd(ardd, sparkR.callJMethod(ardd@jrdd, "persist", storageLevel))
+          })
+
+#' Unpersists the existing ardd
+#'
+#' @param ardd The RDD to apply this to.
+#' @return A new RDD where the RDD of genomic data has been replaced, but the
+#'    metadata (sequence dictionary, and etc) is copied without modification.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("unpersist",
+          signature(ardd = "GenomicRDD"),
+          function(ardd) {
+              replaceRdd(ardd, sparkR.callJMethod(ardd@jrdd, "unpersist"))
+          })
+
 #' Sorts our genome aligned data by reference positions, with contigs ordered
 #' by index.
 #'
