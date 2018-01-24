@@ -28,6 +28,7 @@ import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
+  DatasetBoundGenomicDataset,
   AvroGenomicRDD,
   JavaSaveArgs,
   SAMHeaderWriter
@@ -274,8 +275,9 @@ case class ParquetUnboundFeatureRDD private[rdd] (
 }
 
 case class DatasetBoundFeatureRDD private[rdd] (
-    dataset: Dataset[FeatureProduct],
-    sequences: SequenceDictionary) extends FeatureRDD {
+  dataset: Dataset[FeatureProduct],
+  sequences: SequenceDictionary) extends FeatureRDD
+    with DatasetBoundGenomicDataset[Feature, FeatureProduct, FeatureRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
   protected lazy val optPartitionMap = None

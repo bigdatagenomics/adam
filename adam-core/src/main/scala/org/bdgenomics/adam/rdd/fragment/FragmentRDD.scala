@@ -30,7 +30,11 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ AvroRecordGroupGenomicRDD, JavaSaveArgs }
+import org.bdgenomics.adam.rdd.{
+  DatasetBoundGenomicDataset,
+  AvroRecordGroupGenomicRDD,
+  JavaSaveArgs
+}
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
   BinQualities,
@@ -180,10 +184,11 @@ case class ParquetUnboundFragmentRDD private[rdd] (
 }
 
 case class DatasetBoundFragmentRDD private[rdd] (
-    dataset: Dataset[FragmentProduct],
-    sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary,
-    @transient val processingSteps: Seq[ProcessingStep]) extends FragmentRDD {
+  dataset: Dataset[FragmentProduct],
+  sequences: SequenceDictionary,
+  recordGroups: RecordGroupDictionary,
+  @transient val processingSteps: Seq[ProcessingStep]) extends FragmentRDD
+    with DatasetBoundGenomicDataset[Fragment, FragmentProduct, FragmentRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
 

@@ -43,6 +43,43 @@ class GenomicRDD(object):
         self.sc = sc
 
 
+    def cache(self):
+        """
+        Caches underlying RDD in memory.
+
+        :return: Returns a new, cached RDD.
+        """
+
+        return self._replaceRdd(self._jvmRdd.cache())
+
+
+    def persist(self, sl):
+        """
+        Persists underlying RDD in memory or disk.
+
+        :param sl new StorageLevel
+        :return: Returns a new, persisted RDD.
+        """
+
+        jsl = self.sc._jvm.org.apache.spark.api.java.StorageLevels.create(sl.useDisk,
+                                                                          sl.useMemory,
+                                                                          sl.useOffHeap,
+                                                                          sl.deserialized,
+                                                                          sl.replication)
+
+        return self._replaceRdd(self._jvmRdd.persist(jsl))
+
+
+    def unpersist(self):
+        """
+        Unpersists underlying RDD from memory or disk.
+
+        :return: Returns a new, unpersisted RDD.
+        """
+
+        return self._replaceRdd(self._jvmRdd.unpersist())
+
+
     def sort(self):
         """
         Sorts our genome aligned data by reference positions, with contigs ordered
