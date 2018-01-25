@@ -190,49 +190,6 @@ sealed abstract class VariantContextRDD extends MultisampleGenomicRDD[VariantCon
 
   val headerLines: Seq[VCFHeaderLine]
 
-  protected def saveAvro[U <: SpecificRecordBase](pathName: String,
-                                                  sc: SparkContext,
-                                                  schema: Schema,
-                                                  avro: Seq[U])(implicit tUag: ClassTag[U]) {
-
-    // get our current file system
-    val path = new Path(pathName)
-    val fs = path.getFileSystem(sc.hadoopConfiguration)
-
-    // get an output stream
-    val os = fs.create(path)
-
-    // set up avro for writing
-    val dw = new SpecificDatumWriter[U](schema)
-    val fw = new DataFileWriter[U](dw)
-    fw.create(schema, os)
-
-    // write all our records
-    avro.foreach(r => fw.append(r))
-
-    // close the file
-    fw.close()
-    os.close()
-  }
-
-  protected def saveSequences(filePath: String): Unit = {
-    // convert sequence dictionary to avro form and save
-    val contigs = sequences.toAvro
-
-    saveAvro("%s/_seqdict.avro".format(filePath),
-      rdd.context,
-      Contig.SCHEMA$,
-      contigs)
-  }
-
-  protected def saveSamples(filePath: String): Unit = {
-    // get file to write to
-    saveAvro("%s/_samples.avro".format(filePath),
-      rdd.context,
-      Sample.SCHEMA$,
-      samples)
-  }
-
   def saveVcfHeaders(filePath: String): Unit = {
     // write vcf headers to file
     VCFHeaderUtils.write(new VCFHeader(headerLines.toSet),

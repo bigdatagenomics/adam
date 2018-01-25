@@ -300,21 +300,20 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
 
   override def toCoverage(): CoverageRDD = {
     val covCounts =
-      rdd.rdd
-        .filter(r => {
-          val readMapped = r.getReadMapped
+      rdd.filter(r => {
+        val readMapped = r.getReadMapped
 
-          // validate alignment fields
-          if (readMapped) {
-            require(r.getStart != null && r.getEnd != null && r.getContigName != null,
-              "Read was mapped but was missing alignment start/end/contig (%s).".format(r))
-          }
+        // validate alignment fields
+        if (readMapped) {
+          require(r.getStart != null && r.getEnd != null && r.getContigName != null,
+            "Read was mapped but was missing alignment start/end/contig (%s).".format(r))
+        }
 
-          readMapped
-        }).flatMap(r => {
-          val positions: List[Long] = List.range(r.getStart, r.getEnd)
-          positions.map(n => (ReferencePosition(r.getContigName, n), 1))
-        }).reduceByKey(_ + _)
+        readMapped
+      }).flatMap(r => {
+        val positions: List[Long] = List.range(r.getStart, r.getEnd)
+        positions.map(n => (ReferencePosition(r.getContigName, n), 1))
+      }).reduceByKey(_ + _)
         .map(r => Coverage(r._1, r._2.toDouble))
 
     RDDBoundCoverageRDD(covCounts, sequences, None)

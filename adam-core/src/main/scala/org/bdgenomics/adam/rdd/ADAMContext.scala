@@ -1016,9 +1016,6 @@ object ADAMContext {
     new ADAMContext(ss.sparkContext)
   }
 
-  // Add generic RDD methods for all types of ADAM RDDs
-  implicit def rddToADAMRDD[T](rdd: RDD[T])(implicit ev1: T => IndexedRecord, ev2: Manifest[T]): ConcreteADAMRDDFunctions[T] = new ConcreteADAMRDDFunctions(rdd)
-
   // Add implicits for the rich adam objects
   implicit def recordToRichRecord(record: AlignmentRecord): RichAlignmentRecord = new RichAlignmentRecord(record)
 
