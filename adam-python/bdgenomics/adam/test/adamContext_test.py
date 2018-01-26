@@ -39,7 +39,7 @@ class ADAMContextTest(SparkTestCase):
     def test_load_indexed_bam(self):
 
         testFile = self.resourceFile("indexed_bams/sorted.bam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadIndexedBam(testFile,
                                   [ReferenceRegion("chr2", 100L, 101L),

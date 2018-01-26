@@ -20,26 +20,27 @@
 from bdgenomics.adam.adamContext import ADAMContext
 from bdgenomics.adam.rdd import CoverageRDD, FeatureRDD
 from bdgenomics.adam.test import SparkTestCase
+import os
 
 class CoverageRDDTest(SparkTestCase):
 
     def test_save(self):
 
         testFile = self.resourceFile("sorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(testFile)
         coverage = reads.toCoverage()
         tmpPath = self.tmpFile() + ".coverage.adam"
         coverage.save(tmpPath,
-                              isSingleFile=True,
+                              asSingleFile=True,
                             disableFastConcat=True)
+    	assert(os.listdir(tmpPath) != [])
 
-        self.checkFiles(testFile, tmpPath)
 
     def test_collapse(self):
         testFile = self.resourceFile("sorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(testFile)
         coverage = reads.toCoverage()
@@ -48,7 +49,7 @@ class CoverageRDDTest(SparkTestCase):
 
     def test_toFeatures(self):
         testFile = self.resourceFile("sorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(testFile)
         coverage = reads.toCoverage()
@@ -59,7 +60,7 @@ class CoverageRDDTest(SparkTestCase):
 
     def test_aggregatedCoverage(self):
         testFile = self.resourceFile("small.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(testFile)
         coverage = reads.toCoverage()
@@ -68,7 +69,7 @@ class CoverageRDDTest(SparkTestCase):
 
     def test_flatten(self):
         testFile = self.resourceFile("small.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(testFile)
         coverage = reads.toCoverage()

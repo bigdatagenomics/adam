@@ -76,7 +76,7 @@ class GenomicRDD(object):
         """
 
         # translate reference regions into jvm types
-        javaRr = query._toJava(self._jvm)
+        javaRr = query._toJava(self.sc._jvm)
 
         return self._replaceRdd(self._jvmRdd.filterByOverlappingRegion(javaRr))
 
@@ -91,8 +91,8 @@ class GenomicRDD(object):
            query regions.
         """
 
-        # translate reference regions into jvm types
-        javaRrs = [q._toJava(self._jvm) for q in querys]
+        # translate reference regions into iterator of jvm types
+        javaRrs = iter([q._toJava(self.sc._jvm) for q in querys])
 
         return self._replaceRdd(self._jvmRdd.filterByOverlappingRegions(javaRrs))
 

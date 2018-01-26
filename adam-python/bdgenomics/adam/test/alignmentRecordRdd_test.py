@@ -165,27 +165,39 @@ class AlignmentRecordRDDTest(SparkTestCase):
         fragments = reads.toFragments()
         self.assertEquals(fragments.toDF().count(), 5)
 
+
+    def test_load_indexed_bam(self):
+
+        readsPath = self.resourceFile("indexed_bams/sorted.bam")
+        ac = ADAMContext(self.ss)
+
+        querys = [ReferenceRegion("chr2", 100L, 101L), ReferenceRegion("3", 10L, 17L)]
+
+        reads = ac.loadIndexedBam(readsPath, querys)
+
+        self.assertEquals(reads.toDF().count(), 2)
+
     def test_filterByOverlappingRegion(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
-        query = ReferenceRegion("1", 20000000L, 27000000L)
+        query = ReferenceRegion("chr2", 1L, 400L)
 
         filtered = reads.filterByOverlappingRegion(query)
-        self.assertEquals(filtered.toDF().count(), 2)
+        self.assertEquals(filtered.toDF().count(), 1)
 
     def test_filterByOverlappingRegions(self):
 
         readsPath = self.resourceFile("unsorted.sam")
-        ac = ADAMContext(self.sc)
+        ac = ADAMContext(self.ss)
 
         reads = ac.loadAlignments(readsPath)
 
-        querys = [ReferenceRegion("1", 20000000L, 27000000L),
-                    ReferenceRegion("1", 230000000L,270000000L)]
+        querys = [ReferenceRegion("chr2", 1L, 400L),
+                    ReferenceRegion("3", 1L, 100L)]
 
-        filtered = reads.filterByOverlappingRegion(querys)
-        self.assertEquals(filtered.toDF().count(), 6)
+        filtered = reads.filterByOverlappingRegions(querys)
+        self.assertEquals(filtered.toDF().count(), 2)
