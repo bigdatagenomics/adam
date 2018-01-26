@@ -202,6 +202,18 @@ object ReferenceRegion {
     ReferenceRegion(variant.getContigName, variant.getStart, variant.getEnd)
   }
 
+  /**
+   * Builds a referenceRegion from genomic coordinates.
+   *
+   * @param referenceName reference name
+   * @param start start position
+   * @param end end position
+   * @return Reference Region for these genomic coordinates
+   */
+  def fromGenomicRange(referenceName: String, start: Long, end: Long): ReferenceRegion = {
+    ReferenceRegion(referenceName, start, end)
+  }
+
   private def checkRead(record: AlignmentRecord) {
     require(record.getReadMapped,
       "Cannot build reference region for unmapped read %s.".format(record))
