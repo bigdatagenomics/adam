@@ -12,9 +12,9 @@ that assembles and delegates to the various CLI actions.
 
 To add a new command:
 
-1. `Extend Args4jBase to specify arguments <#extend-arguments>`__
-2. `Extend BDGCommandCompanion <#extend-companion>`__
-3. `Build ADAM and run the new command <#build-new-command>`__
+1. `Extend Args4jBase to specify arguments <#extend-args4jbase-to-specify-arguments>`__
+2. `Extend BDGCommandCompanion <#extend-bdgcommandcompanion>`__
+3. `Build ADAM and run the new command <#extend-the-adam-cli-by-adding-new-commands-in-an-external-repository>`__
 
 Extend Args4jBase to specify arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

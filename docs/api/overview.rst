@@ -1,16 +1,16 @@
 API Overview
 ============
 
-The main entrypoint to ADAM is the `ADAMContext <#adam-context>`__,
+The main entrypoint to ADAM is the `ADAMContext <adamContext.html>`__,
 which allows genomic data to be loaded in to Spark as
-`GenomicRDD <#genomic-rdd>`__. GenomicRDDs can be transformed using
-ADAM's built in `pre-processing algorithms <#algorithms>`__, `Spark's
-RDD primitives <#transforming>`__, the `region join <#join>`__
-primitive, and ADAM's `pipe <#pipes>`__ APIs. GenomicRDDs can also be
-interacted with as `Spark SQL tables <#sql>`__.
+`GenomicRDD <genomicRdd.html>`__. GenomicRDDs can be transformed using
+ADAM's built in `pre-processing algorithms <../algorithms/reads.html>`__, `Spark's
+RDD primitives <genomicRdd.html#transforming-genomicrdds>`__, the `region join <joins.html>`__
+primitive, and ADAM's `pipe <pipes.html>`__ APIs. GenomicRDDs can also be
+interacted with as `Spark SQL tables <genomicRdd.html#transforming-genomicrdds-via-spark-sql>`__.
 
 In addition to the Scala/Java API, ADAM can be used from
-`Python <#python>`__ and `R <#r>`__.
+`Python <#the-adam-python-api>`__ and `R <#the-adam-r-api>`__.
 
 Adding dependencies on ADAM libraries
 -------------------------------------
@@ -47,16 +47,16 @@ changes in ADAM.
 The ADAM Python API
 -------------------
 
-ADAM's Python API wraps the `ADAMContext <#adam-context>`__ and
-`GenomicRDD <#genomic-rdd>`__ APIs so they can be used from PySpark. The
+ADAM's Python API wraps the `ADAMContext <adamContext.html>`__ and
+`GenomicRDD <genomicRdd.html>`__ APIs so they can be used from PySpark. The
 Python API is feature complete relative to ADAM's Java API, with the
-exception of the `region join <#join>`__ API, which is not supported.
+exception of the `region join <joins.html>`__ API, which is not supported.
 
 The ADAM R API
 --------------
 
-ADAM's R API wraps the `ADAMContext <#adam-context>`__ and
-`GenomicRDD <#genomic-rdd>`__ APIs so they can be used from SparkR. The
+ADAM's R API wraps the `ADAMContext <adamContext.html>`__ and
+`GenomicRDD <genomicRdd.html>`__ APIs so they can be used from SparkR. The
 R API is feature complete relative to ADAM's Java API, with the
-exception of the `region join <#join>`__ API, which is not supported.
+exception of the `region join <joins.html>`__ API, which is not supported.
 

@@ -46,12 +46,12 @@ these are:
    Spark SQL (Armbrust et al. 2015) for evidence access and query.
 6. The *presentation* layer provides high level abstractions for
    interacting with a parallel collection of genomic data. In ADAM, we
-   implement this layer through the `GenomicRDD <#genomic-rdd>`__
+   implement this layer through the `GenomicRDD <../api/genomicRdd.html>`__
    classes. This layer presents users with a view of the metadata
    associated with a collection of genomic data, and APIs for
-   `transforming <#transforming>`__ and `joining <#join>`__ genomic
-   data. Additionally, this is the layer where we provide cross-language
-   support.
+   `transforming <../api/genomicRdd.html#transforming-genomicrdds>`__ and
+   `joining <../api/joins.html>`__ genomic data. Additionally, this is the
+   layer where we provide cross-language support.
 7. The *application* layer is the layer where a user writes their
    application on top of the provided APIs.
 

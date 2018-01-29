@@ -2,7 +2,7 @@ Working with genomic data using GenomicRDDs
 -------------------------------------------
 
 As described in the section on using the
-`ADAMContext <#adam-context>`__, ADAM loads genomic data into a
+`ADAMContext <adamContext.html>`__, ADAM loads genomic data into a
 ``GenomicRDD`` which is specialized for each datatype. This
 ``GenomicRDD`` wraps Apache Spark's Resilient Distributed Dataset (RDD,
 (Zaharia et al. 2012)) API with genomic metadata. The ``RDD``
@@ -10,7 +10,7 @@ abstraction presents an array of data which is distributed across a
 cluster. ``RDD``\ s are backed by a computational lineage, which allows
 them to be recomputed if a node fails and the results of a computation
 are lost. ``RDD``\ s are processed by running functional
-[transformations]{#transforming} across the whole dataset.
+`transformations <#transforming-genomicrdds>`__ across the whole dataset.
 
 Around an ``RDD``, ADAM adds metadata which describes the genome,
 samples, or read group that a dataset came from. Specifically, ADAM
@@ -30,21 +30,21 @@ round trip between Parquet and VCF.
 
 ``GenomicRDD``\ s can be transformed several ways. These include:
 
--  The `core preprocessing <#algorithms>`__ algorithms in ADAM:
+-  The `core preprocessing <../algorithms/reads.html>`__ algorithms in ADAM:
 -  Reads:
 
    -  Reads to coverage
-   -  `Recalibrate base qualities <#bqsr>`__
-   -  `INDEL realignment <#realignment>`__
-   -  `Mark duplicate reads <#duplicate-marking>`__
+   -  `Recalibrate base qualities <../algorithms/bqsr.html>`__
+   -  `INDEL realignment <../algorithms/ri.html>`__
+   -  `Mark duplicate reads <../algorithms/dm.html>`__
 
 -  Fragments:
 
-   -  `Mark duplicate fragments <#duplicate-marking>`__
+   -  `Mark duplicate fragments <../algorithms/dm.html>`__
 
--  `RDD transformations <#transforming>`__
--  `Spark SQL transformations <#sql>`__
--  `By using ADAM to pipe out to another tool <#pipes>`__
+-  `RDD transformations <#transforming-genomicrdds>`__
+-  `Spark SQL transformations <#transforming-genomicrdds-via-spark-sql>`__
+-  `By using ADAM to pipe out to another tool <pipes.html>`__
 
 Transforming GenomicRDDs
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,7 +68,7 @@ function that transforms an ``RDD`` of the type of the first
 the second ``GenomicRDD``. Additionally, it takes an implicit function
 that maps the metadata in the first ``GenomicRDD`` into the metadata
 needed by the second ``GenomicRDD``. This is akin to the implicit
-function required by the `pipe <#pipes>`__ API. As an example, let us
+function required by the `pipe <#pipes.html>`__ API. As an example, let us
 use the ``transmute`` function to make features corresponding to reads
 containing INDELs:
 
@@ -107,8 +107,8 @@ function.
 Transforming GenomicRDDs via Spark SQL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Spark SQL introduced the strongly-typed ```Dataset`` API in Spark
-1.6.0 <https://spark.apache.org/docs/1.6.0/sql-programming-guide.html#datasets>`__.
+Spark SQL introduced the strongly-typed
+`Dataset API in Spark 1.6.0 <https://spark.apache.org/docs/1.6.0/sql-programming-guide.html#datasets>`__.
 This API supports seamless translation between the RDD API and a
 strongly typed DataFrame style API. While Spark SQL supports many types
 of encoders for translating data from an RDD into a Dataset, no encoders
@@ -145,7 +145,7 @@ path. This is because Spark SQL writes a Parquet schema that is
 equivalent but not strictly identical to the Parquet schema that the
 Avro/RDD write path writes. If the schema is not set, then schema
 validation on read fails. If reading data using the
-`ADAMContext <#adam-context>`__ APIs, this is handled properly; this is
+`ADAMContext <adamContext.html>`__ APIs, this is handled properly; this is
 an implementation note necessary only for those bypassing the ADAM APIs.
 
 Similar to ``transform``/``transformDataset``, there exists a

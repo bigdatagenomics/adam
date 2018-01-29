@@ -68,31 +68,30 @@ reads can be saved to or read from BAM, CRAM, FASTQ, and SAM). The
 is being read into or out of the pipe. We support the following:
 
 -  ``AlignmentRecordRDD``:
--  ``InFormatter``\ s: ``SAMInFormatter`` and ``BAMInFormatter`` write
-   SAM or BAM out to a pipe.
--  ``OutFormatter``: ``AnySAMOutFormatter`` supports reading SAM and BAM
-   from a pipe, with the exact format autodetected from the stream.
--  We do not support piping CRAM due to complexities around the
-   reference-based compression.
+
+   -  ``InFormatter``\ s: ``SAMInFormatter`` and ``BAMInFormatter`` write SAM or BAM out to a pipe.
+   -  ``OutFormatter``: ``AnySAMOutFormatter`` supports reading SAM and BAM from a pipe, with the exact
+      format autodetected from the stream.
+   -  We do not support piping CRAM due to complexities around the reference-based compression.
+
 -  ``FeatureRDD``:
--  ``InFormatter``\ s: ``BEDInFormatter``, ``GFF3InFormatter``,
-   ``GTFInFormatter``, and ``NarrowPeakInFormatter`` for writing
-   features out to a pipe in BED, GFF3, GTF/GFF2, or NarrowPeak format,
-   respectively.
--  ``OutFormatter``\ s: ``BEDOutFormatter``, ``GFF3OutFormatter``,
-   ``GTFOutFormatter``, and ``NarrowPeakInFormatter`` for reading
-   features in BED, GFF3, GTF/GFF2, or NarrowPeak format in from a pipe,
-   respectively.
+
+   -  ``InFormatter``\ s: ``BEDInFormatter``, ``GFF3InFormatter``, ``GTFInFormatter``, and ``NarrowPeakInFormatter``
+      for writing features out to a pipe in BED, GFF3, GTF/GFF2, or NarrowPeak format, respectively.
+   -  ``OutFormatter``\ s: ``BEDOutFormatter``, ``GFF3OutFormatter``, ``GTFOutFormatter``, and ``NarrowPeakInFormatter``
+      for reading features in BED, GFF3, GTF/GFF2, or NarrowPeak format in from a pipe, respectively.
+
 -  ``FragmentRDD``:
--  ``InFormatter``: ``InterleavedFASTQInFormatter`` writes FASTQ with
-   the reads from a paired sequencing protocol interleaved in the FASTQ
-   stream to a pipe.
+
+   -  ``InFormatter``: ``InterleavedFASTQInFormatter`` writes FASTQ with the reads from a paired sequencing protocol
+      interleaved in the FASTQ stream to a pipe.
+
 -  ``VariantContextRDD``:
--  ``InFormatter``: ``VCFInFormatter`` writes VCF to a pipe.
--  ``OutFormatter``: ``VCFOutFormatter`` reads VCF from a pipe.
+   -  ``InFormatter``: ``VCFInFormatter`` writes VCF to a pipe.
+   -  ``OutFormatter``: ``VCFOutFormatter`` reads VCF from a pipe.
 
 The ``convFn`` implementations are provided as implicit values in the
-`ADAMContext <#adam-context>`__. These conversion functions are needed
+`ADAMContext <adamContext.html>`__. These conversion functions are needed
 to adapt the metadata stored in a single ``GenomicRDD`` to the type of a
 different ``GenomicRDD`` (e.g., if piping an ``AlignmentRecordRDD``
 through a command that returns a ``VariantContextRDD``, we will need to

@@ -25,7 +25,7 @@ To run the ADAM CLI in YARN ``cluster`` mode, run the following command:
 
 ::
 
-    ./bin/adam-submit \
+    adam-submit \
       --master yarn \
       --deploy-mode cluster \
       -- \
@@ -37,7 +37,7 @@ to the ``spark-submit`` script, which launches the Spark job. To run in
 
 ::
 
-    ./bin/adam-submit \
+    adam-submit \
       --master yarn \
       --deploy-mode client \
       -- \
@@ -49,7 +49,7 @@ run:
 
 ::
 
-    ./bin/adam-shell \
+    adam-shell \
       --master yarn \
       --deploy-mode client
 
@@ -86,7 +86,7 @@ executor overhead, we would run:
 
 ::
 
-    ./bin/adam-submit \
+    adam-submit \
       --master yarn \
       --deploy-mode cluster \
       --driver-memory 200g \
