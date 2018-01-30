@@ -28,9 +28,9 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.sequence.SliceDataset
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeDataset,
   VariantDataset,
@@ -41,7 +41,7 @@ import org.bdgenomics.adam.sql.{
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct,
   VariantContext => VariantContextProduct
 }
@@ -72,9 +72,9 @@ object FeatureDatasetSuite extends Serializable {
       .build
   }
 
-  def ncfFn(f: Feature): NucleotideContigFragment = {
-    NucleotideContigFragment.newBuilder
-      .setContigName(f.getReferenceName)
+  def sliceFn(f: Feature): Slice = {
+    Slice.newBuilder
+      .setName(f.getReferenceName)
       .build
   }
 
@@ -1002,38 +1002,38 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     assert(rdd3.dataset.count === 4)
   }
 
-  sparkTest("transform features to contig rdd") {
+  sparkTest("transform features to slice genomic dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
-    def checkSave(contigs: NucleotideContigFragmentDataset) {
+    def checkSave(slices: SliceDataset) {
       val tempPath = tmpLocation(".adam")
-      contigs.saveAsParquet(tempPath)
+      slices.saveAsParquet(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count === 3)
+      assert(sc.loadSlices(tempPath).rdd.count === 3)
     }
 
-    val contigs: NucleotideContigFragmentDataset = features.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
+    val slices: SliceDataset = features.transmute[Slice, SliceProduct, SliceDataset](
       (rdd: RDD[Feature]) => {
-        rdd.map(FeatureDatasetSuite.ncfFn)
+        rdd.map(FeatureDatasetSuite.sliceFn)
       })
 
-    checkSave(contigs)
+    checkSave(slices)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val contigsDs: NucleotideContigFragmentDataset = features.transmuteDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
+    val slicesDs: SliceDataset = features.transmuteDataset[Slice, SliceProduct, SliceDataset](
       (ds: Dataset[FeatureProduct]) => {
         ds.map(r => {
-          NucleotideContigFragmentProduct.fromAvro(
-            FeatureDatasetSuite.ncfFn(r.toAvro))
+          SliceProduct.fromAvro(
+            FeatureDatasetSuite.sliceFn(r.toAvro))
         })
       })
 
-    checkSave(contigsDs)
+    checkSave(slicesDs)
   }
 
-  sparkTest("transform features to coverage rdd") {
+  sparkTest("transform features to coverage genomic dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(coverage: CoverageDataset) {
@@ -1061,7 +1061,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(coverageDs)
   }
 
-  sparkTest("transform features to fragment rdd") {
+  sparkTest("transform features to fragment genomic dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(fragments: FragmentDataset) {
@@ -1092,7 +1092,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(fragmentsDs)
   }
 
-  sparkTest("transform features to read rdd") {
+  sparkTest("transform features to read genomic dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(reads: AlignmentRecordDataset) {
@@ -1123,7 +1123,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(readsDs)
   }
 
-  sparkTest("transform features to genotype rdd") {
+  sparkTest("transform features to genotype genomic dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(genotypes: GenotypeDataset) {
@@ -1154,7 +1154,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(genotypesDs)
   }
 
-  sparkTest("transform features to variant rdd") {
+  sparkTest("transform features to variant genomic dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(variants: VariantDataset) {
@@ -1185,7 +1185,7 @@ class FeatureDatasetSuite extends ADAMFunSuite {
     checkSave(variantsDs)
   }
 
-  sparkTest("transform features to variant context rdd") {
+  sparkTest("transform features to variant context genomic dataset") {
     val features = sc.loadFeatures(testFile("sample_coverage.bed"))
 
     def checkSave(variantContexts: VariantContextDataset) {

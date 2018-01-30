@@ -24,10 +24,10 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.read.{ AlignmentRecordDataset, ReadDataset }
+import org.bdgenomics.adam.rdd.sequence.{ SequenceDataset, SliceDataset }
 import org.bdgenomics.adam.rdd.variant.{
   VariantDataset,
   GenotypeDataset,
@@ -35,68 +35,7 @@ import org.bdgenomics.adam.rdd.variant.{
 }
 import org.bdgenomics.formats.avro._
 
-final class ContigsToContigsConverter extends Function2[NucleotideContigFragmentDataset, RDD[NucleotideContigFragment], NucleotideContigFragmentDataset] {
-
-  def call(v1: NucleotideContigFragmentDataset, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    ADAMContext.contigsToContigsConversionFn(v1, v2)
-  }
-}
-
-final class ContigsToCoverageConverter extends Function2[NucleotideContigFragmentDataset, RDD[Coverage], CoverageDataset] {
-
-  def call(v1: NucleotideContigFragmentDataset, v2: RDD[Coverage]): CoverageDataset = {
-    ADAMContext.contigsToCoverageConversionFn(v1, v2)
-  }
-}
-
-final class ContigsToFeaturesConverter extends Function2[NucleotideContigFragmentDataset, RDD[Feature], FeatureDataset] {
-
-  def call(v1: NucleotideContigFragmentDataset, v2: RDD[Feature]): FeatureDataset = {
-    ADAMContext.contigsToFeaturesConversionFn(v1, v2)
-  }
-}
-
-final class ContigsToFragmentsConverter extends Function2[NucleotideContigFragmentDataset, RDD[Fragment], FragmentDataset] {
-
-  def call(v1: NucleotideContigFragmentDataset, v2: RDD[Fragment]): FragmentDataset = {
-    ADAMContext.contigsToFragmentsConversionFn(v1, v2)
-  }
-}
-
-final class ContigsToAlignmentRecordsConverter extends Function2[NucleotideContigFragmentDataset, RDD[AlignmentRecord], AlignmentRecordDataset] {
-
-  def call(v1: NucleotideContigFragmentDataset, v2: RDD[AlignmentRecord]): AlignmentRecordDataset = {
-    ADAMContext.contigsToAlignmentRecordsConversionFn(v1, v2)
-  }
-}
-
-final class ContigsToGenotypesConverter extends Function2[NucleotideContigFragmentDataset, RDD[Genotype], GenotypeDataset] {
-
-  def call(v1: NucleotideContigFragmentDataset, v2: RDD[Genotype]): GenotypeDataset = {
-    ADAMContext.contigsToGenotypesConversionFn(v1, v2)
-  }
-}
-
-final class ContigsToVariantsConverter extends Function2[NucleotideContigFragmentDataset, RDD[Variant], VariantDataset] {
-
-  def call(v1: NucleotideContigFragmentDataset, v2: RDD[Variant]): VariantDataset = {
-    ADAMContext.contigsToVariantsConversionFn(v1, v2)
-  }
-}
-
-final class ContigsToVariantContextsConverter extends Function2[NucleotideContigFragmentDataset, RDD[VariantContext], VariantContextDataset] {
-
-  def call(v1: NucleotideContigFragmentDataset, v2: RDD[VariantContext]): VariantContextDataset = {
-    ADAMContext.contigsToVariantContextConversionFn(v1, v2)
-  }
-}
-
-final class CoverageToContigsConverter extends Function2[CoverageDataset, RDD[NucleotideContigFragment], NucleotideContigFragmentDataset] {
-
-  def call(v1: CoverageDataset, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    ADAMContext.coverageToContigsConversionFn(v1, v2)
-  }
-}
+// coverage conversion functions
 
 final class CoverageToCoverageConverter extends Function2[CoverageDataset, RDD[Coverage], CoverageDataset] {
 
@@ -133,6 +72,27 @@ final class CoverageToGenotypesConverter extends Function2[CoverageDataset, RDD[
   }
 }
 
+final class CoverageToReadsConverter extends Function2[CoverageDataset, RDD[Read], ReadDataset] {
+
+  def call(v1: CoverageDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.coverageToReadsConversionFn(v1, v2)
+  }
+}
+
+final class CoverageToSequencesConverter extends Function2[CoverageDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: CoverageDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.coverageToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class CoverageToSlicesConverter extends Function2[CoverageDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: CoverageDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.coverageToSlicesConversionFn(v1, v2)
+  }
+}
+
 final class CoverageToVariantsConverter extends Function2[CoverageDataset, RDD[Variant], VariantDataset] {
 
   def call(v1: CoverageDataset, v2: RDD[Variant]): VariantDataset = {
@@ -147,12 +107,7 @@ final class CoverageToVariantContextConverter extends Function2[CoverageDataset,
   }
 }
 
-final class FeaturesToContigsConverter extends Function2[FeatureDataset, RDD[NucleotideContigFragment], NucleotideContigFragmentDataset] {
-
-  def call(v1: FeatureDataset, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    ADAMContext.featuresToContigsConversionFn(v1, v2)
-  }
-}
+// features conversion functions
 
 final class FeaturesToCoverageConverter extends Function2[FeatureDataset, RDD[Coverage], CoverageDataset] {
 
@@ -189,6 +144,27 @@ final class FeaturesToGenotypesConverter extends Function2[FeatureDataset, RDD[G
   }
 }
 
+final class FeaturesToReadsConverter extends Function2[FeatureDataset, RDD[Read], ReadDataset] {
+
+  def call(v1: FeatureDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.featuresToReadsConversionFn(v1, v2)
+  }
+}
+
+final class FeaturesToSequencesConverter extends Function2[FeatureDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: FeatureDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.featuresToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class FeaturesToSlicesConverter extends Function2[FeatureDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: FeatureDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.featuresToSlicesConversionFn(v1, v2)
+  }
+}
+
 final class FeaturesToVariantsConverter extends Function2[FeatureDataset, RDD[Variant], VariantDataset] {
 
   def call(v1: FeatureDataset, v2: RDD[Variant]): VariantDataset = {
@@ -203,12 +179,7 @@ final class FeaturesToVariantContextConverter extends Function2[FeatureDataset, 
   }
 }
 
-final class FragmentsToContigsConverter extends Function2[FragmentDataset, RDD[NucleotideContigFragment], NucleotideContigFragmentDataset] {
-
-  def call(v1: FragmentDataset, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    ADAMContext.fragmentsToContigsConversionFn(v1, v2)
-  }
-}
+// fragments conversion functions
 
 final class FragmentsToCoverageConverter extends Function2[FragmentDataset, RDD[Coverage], CoverageDataset] {
 
@@ -245,8 +216,28 @@ final class FragmentsToGenotypesConverter extends Function2[FragmentDataset, RDD
   }
 }
 
-final class FragmentsToVariantsConverter extends Function2[FragmentDataset, RDD[Variant], VariantDataset] {
+final class FragmentsToReadsConverter extends Function2[FragmentDataset, RDD[Read], ReadDataset] {
 
+  def call(v1: FragmentDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.fragmentsToReadsConversionFn(v1, v2)
+  }
+}
+
+final class FragmentsToSequencesConverter extends Function2[FragmentDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: FragmentDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.fragmentsToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class FragmentsToSlicesConverter extends Function2[FragmentDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: FragmentDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.fragmentsToSlicesConversionFn(v1, v2)
+  }
+}
+
+final class FragmentsToVariantsConverter extends Function2[FragmentDataset, RDD[Variant], VariantDataset] {
   def call(v1: FragmentDataset, v2: RDD[Variant]): VariantDataset = {
     ADAMContext.fragmentsToVariantsConversionFn(v1, v2)
   }
@@ -259,12 +250,7 @@ final class FragmentsToVariantContextConverter extends Function2[FragmentDataset
   }
 }
 
-final class AlignmentRecordsToContigsConverter extends Function2[AlignmentRecordDataset, RDD[NucleotideContigFragment], NucleotideContigFragmentDataset] {
-
-  def call(v1: AlignmentRecordDataset, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    ADAMContext.alignmentRecordsToContigsConversionFn(v1, v2)
-  }
-}
+// alignment records conversion functions
 
 final class AlignmentRecordsToCoverageConverter extends Function2[AlignmentRecordDataset, RDD[Coverage], CoverageDataset] {
 
@@ -301,8 +287,28 @@ final class AlignmentRecordsToGenotypesConverter extends Function2[AlignmentReco
   }
 }
 
-final class AlignmentRecordsToVariantsConverter extends Function2[AlignmentRecordDataset, RDD[Variant], VariantDataset] {
+final class AlignmentRecordsToReadsConverter extends Function2[AlignmentRecordDataset, RDD[Read], ReadDataset] {
 
+  def call(v1: AlignmentRecordDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.alignmentRecordsToReadsConversionFn(v1, v2)
+  }
+}
+
+final class AlignmentRecordsToSequencesConverter extends Function2[AlignmentRecordDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: AlignmentRecordDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.alignmentRecordsToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class AlignmentRecordsToSlicesConverter extends Function2[AlignmentRecordDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: AlignmentRecordDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.alignmentRecordsToSlicesConversionFn(v1, v2)
+  }
+}
+
+final class AlignmentRecordsToVariantsConverter extends Function2[AlignmentRecordDataset, RDD[Variant], VariantDataset] {
   def call(v1: AlignmentRecordDataset, v2: RDD[Variant]): VariantDataset = {
     ADAMContext.alignmentRecordsToVariantsConversionFn(v1, v2)
   }
@@ -315,12 +321,7 @@ final class AlignmentRecordsToVariantContextConverter extends Function2[Alignmen
   }
 }
 
-final class GenotypesToContigsConverter extends Function2[GenotypeDataset, RDD[NucleotideContigFragment], NucleotideContigFragmentDataset] {
-
-  def call(v1: GenotypeDataset, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    ADAMContext.genotypesToContigsConversionFn(v1, v2)
-  }
-}
+// genotypes conversion functions
 
 final class GenotypesToCoverageConverter extends Function2[GenotypeDataset, RDD[Coverage], CoverageDataset] {
 
@@ -357,8 +358,28 @@ final class GenotypesToGenotypesConverter extends Function2[GenotypeDataset, RDD
   }
 }
 
-final class GenotypesToVariantsConverter extends Function2[GenotypeDataset, RDD[Variant], VariantDataset] {
+final class GenotypesToReadsConverter extends Function2[GenotypeDataset, RDD[Read], ReadDataset] {
 
+  def call(v1: GenotypeDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.genotypesToReadsConversionFn(v1, v2)
+  }
+}
+
+final class GenotypesToSequencesConverter extends Function2[GenotypeDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: GenotypeDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.genotypesToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class GenotypesToSlicesConverter extends Function2[GenotypeDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: GenotypeDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.genotypesToSlicesConversionFn(v1, v2)
+  }
+}
+
+final class GenotypesToVariantsConverter extends Function2[GenotypeDataset, RDD[Variant], VariantDataset] {
   def call(v1: GenotypeDataset, v2: RDD[Variant]): VariantDataset = {
     ADAMContext.genotypesToVariantsConversionFn(v1, v2)
   }
@@ -371,12 +392,223 @@ final class GenotypesToVariantContextConverter extends Function2[GenotypeDataset
   }
 }
 
-final class VariantsToContigsConverter extends Function2[VariantDataset, RDD[NucleotideContigFragment], NucleotideContigFragmentDataset] {
+// reads conversion functions
 
-  def call(v1: VariantDataset, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    ADAMContext.variantsToContigsConversionFn(v1, v2)
+final class ReadsToCoverageConverter extends Function2[ReadDataset, RDD[Coverage], CoverageDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[Coverage]): CoverageDataset = {
+    ADAMContext.readsToCoverageConversionFn(v1, v2)
   }
 }
+
+final class ReadsToFeaturesConverter extends Function2[ReadDataset, RDD[Feature], FeatureDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[Feature]): FeatureDataset = {
+    ADAMContext.readsToFeaturesConversionFn(v1, v2)
+  }
+}
+
+final class ReadsToFragmentsConverter extends Function2[ReadDataset, RDD[Fragment], FragmentDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[Fragment]): FragmentDataset = {
+    ADAMContext.readsToFragmentsConversionFn(v1, v2)
+  }
+}
+
+final class ReadsToAlignmentRecordsConverter extends Function2[ReadDataset, RDD[AlignmentRecord], AlignmentRecordDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    ADAMContext.readsToAlignmentRecordsConversionFn(v1, v2)
+  }
+}
+
+final class ReadsToGenotypesConverter extends Function2[ReadDataset, RDD[Genotype], GenotypeDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[Genotype]): GenotypeDataset = {
+    ADAMContext.readsToGenotypesConversionFn(v1, v2)
+  }
+}
+
+final class ReadsToReadsConverter extends Function2[ReadDataset, RDD[Read], ReadDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.readsToReadsConversionFn(v1, v2)
+  }
+}
+
+final class ReadsToSequencesConverter extends Function2[ReadDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.readsToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class ReadsToSlicesConverter extends Function2[ReadDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.readsToSlicesConversionFn(v1, v2)
+  }
+}
+
+final class ReadsToVariantsConverter extends Function2[ReadDataset, RDD[Variant], VariantDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[Variant]): VariantDataset = {
+    ADAMContext.readsToVariantsConversionFn(v1, v2)
+  }
+}
+
+final class ReadsToVariantContextsConverter extends Function2[ReadDataset, RDD[VariantContext], VariantContextDataset] {
+
+  def call(v1: ReadDataset, v2: RDD[VariantContext]): VariantContextDataset = {
+    ADAMContext.readsToVariantContextsConversionFn(v1, v2)
+  }
+}
+
+// sequence conversion functions
+
+final class SequencesToCoverageConverter extends Function2[SequenceDataset, RDD[Coverage], CoverageDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[Coverage]): CoverageDataset = {
+    ADAMContext.sequencesToCoverageConversionFn(v1, v2)
+  }
+}
+
+final class SequencesToFeaturesConverter extends Function2[SequenceDataset, RDD[Feature], FeatureDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[Feature]): FeatureDataset = {
+    ADAMContext.sequencesToFeaturesConversionFn(v1, v2)
+  }
+}
+
+final class SequencesToFragmentsConverter extends Function2[SequenceDataset, RDD[Fragment], FragmentDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[Fragment]): FragmentDataset = {
+    ADAMContext.sequencesToFragmentsConversionFn(v1, v2)
+  }
+}
+
+final class SequencesToAlignmentRecordsConverter extends Function2[SequenceDataset, RDD[AlignmentRecord], AlignmentRecordDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    ADAMContext.sequencesToAlignmentRecordsConversionFn(v1, v2)
+  }
+}
+
+final class SequencesToGenotypesConverter extends Function2[SequenceDataset, RDD[Genotype], GenotypeDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[Genotype]): GenotypeDataset = {
+    ADAMContext.sequencesToGenotypesConversionFn(v1, v2)
+  }
+}
+
+final class SequencesToReadsConverter extends Function2[SequenceDataset, RDD[Read], ReadDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.sequencesToReadsConversionFn(v1, v2)
+  }
+}
+
+final class SequencesToSequencesConverter extends Function2[SequenceDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.sequencesToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class SequencesToSlicesConverter extends Function2[SequenceDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.sequencesToSlicesConversionFn(v1, v2)
+  }
+}
+
+final class SequencesToVariantsConverter extends Function2[SequenceDataset, RDD[Variant], VariantDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[Variant]): VariantDataset = {
+    ADAMContext.sequencesToVariantsConversionFn(v1, v2)
+  }
+}
+
+final class SequencesToVariantContextsConverter extends Function2[SequenceDataset, RDD[VariantContext], VariantContextDataset] {
+
+  def call(v1: SequenceDataset, v2: RDD[VariantContext]): VariantContextDataset = {
+    ADAMContext.sequencesToVariantContextsConversionFn(v1, v2)
+  }
+}
+
+// slice conversion functions
+
+final class SlicesToCoverageConverter extends Function2[SliceDataset, RDD[Coverage], CoverageDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[Coverage]): CoverageDataset = {
+    ADAMContext.slicesToCoverageConversionFn(v1, v2)
+  }
+}
+
+final class SlicesToFeaturesConverter extends Function2[SliceDataset, RDD[Feature], FeatureDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[Feature]): FeatureDataset = {
+    ADAMContext.slicesToFeaturesConversionFn(v1, v2)
+  }
+}
+
+final class SlicesToFragmentsConverter extends Function2[SliceDataset, RDD[Fragment], FragmentDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[Fragment]): FragmentDataset = {
+    ADAMContext.slicesToFragmentsConversionFn(v1, v2)
+  }
+}
+
+final class SlicesToAlignmentRecordsConverter extends Function2[SliceDataset, RDD[AlignmentRecord], AlignmentRecordDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    ADAMContext.slicesToAlignmentRecordsConversionFn(v1, v2)
+  }
+}
+
+final class SlicesToGenotypesConverter extends Function2[SliceDataset, RDD[Genotype], GenotypeDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[Genotype]): GenotypeDataset = {
+    ADAMContext.slicesToGenotypesConversionFn(v1, v2)
+  }
+}
+
+final class SlicesToReadsConverter extends Function2[SliceDataset, RDD[Read], ReadDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.slicesToReadsConversionFn(v1, v2)
+  }
+}
+
+final class SlicesToSequencesConverter extends Function2[SliceDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.slicesToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class SlicesToSlicesConverter extends Function2[SliceDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.slicesToSlicesConversionFn(v1, v2)
+  }
+}
+
+final class SlicesToVariantsConverter extends Function2[SliceDataset, RDD[Variant], VariantDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[Variant]): VariantDataset = {
+    ADAMContext.slicesToVariantsConversionFn(v1, v2)
+  }
+}
+
+final class SlicesToVariantContextsConverter extends Function2[SliceDataset, RDD[VariantContext], VariantContextDataset] {
+
+  def call(v1: SliceDataset, v2: RDD[VariantContext]): VariantContextDataset = {
+    ADAMContext.slicesToVariantContextsConversionFn(v1, v2)
+  }
+}
+
+// variants conversion functions
 
 final class VariantsToCoverageConverter extends Function2[VariantDataset, RDD[Coverage], CoverageDataset] {
 
@@ -413,8 +645,28 @@ final class VariantsToGenotypesConverter extends Function2[VariantDataset, RDD[G
   }
 }
 
-final class VariantsToVariantsConverter extends Function2[VariantDataset, RDD[Variant], VariantDataset] {
+final class VariantsToReadsConverter extends Function2[VariantDataset, RDD[Read], ReadDataset] {
 
+  def call(v1: VariantDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.variantsToReadsConversionFn(v1, v2)
+  }
+}
+
+final class VariantsToSequencesConverter extends Function2[VariantDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: VariantDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.variantsToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class VariantsToSlicesConverter extends Function2[VariantDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: VariantDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.variantsToSlicesConversionFn(v1, v2)
+  }
+}
+
+final class VariantsToVariantsConverter extends Function2[VariantDataset, RDD[Variant], VariantDataset] {
   def call(v1: VariantDataset, v2: RDD[Variant]): VariantDataset = {
     ADAMContext.variantsToVariantsConversionFn(v1, v2)
   }
@@ -427,12 +679,7 @@ final class VariantsToVariantContextConverter extends Function2[VariantDataset, 
   }
 }
 
-final class VariantContextsToContigsConverter extends Function2[VariantContextDataset, RDD[NucleotideContigFragment], NucleotideContigFragmentDataset] {
-
-  def call(v1: VariantContextDataset, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    ADAMContext.variantContextsToContigsConversionFn(v1, v2)
-  }
-}
+// variant contexts conversion functions
 
 final class VariantContextsToCoverageConverter extends Function2[VariantContextDataset, RDD[Coverage], CoverageDataset] {
 
@@ -469,8 +716,28 @@ final class VariantContextsToGenotypesConverter extends Function2[VariantContext
   }
 }
 
-final class VariantContextsToVariantsConverter extends Function2[VariantContextDataset, RDD[Variant], VariantDataset] {
+final class VariantContextsToReadsConverter extends Function2[VariantContextDataset, RDD[Read], ReadDataset] {
 
+  def call(v1: VariantContextDataset, v2: RDD[Read]): ReadDataset = {
+    ADAMContext.variantContextsToReadsConversionFn(v1, v2)
+  }
+}
+
+final class VariantContextsToSequencesConverter extends Function2[VariantContextDataset, RDD[Sequence], SequenceDataset] {
+
+  def call(v1: VariantContextDataset, v2: RDD[Sequence]): SequenceDataset = {
+    ADAMContext.variantContextsToSequencesConversionFn(v1, v2)
+  }
+}
+
+final class VariantContextsToSlicesConverter extends Function2[VariantContextDataset, RDD[Slice], SliceDataset] {
+
+  def call(v1: VariantContextDataset, v2: RDD[Slice]): SliceDataset = {
+    ADAMContext.variantContextsToSlicesConversionFn(v1, v2)
+  }
+}
+
+final class VariantContextsToVariantsConverter extends Function2[VariantContextDataset, RDD[Variant], VariantDataset] {
   def call(v1: VariantContextDataset, v2: RDD[Variant]): VariantDataset = {
     ADAMContext.variantContextsToVariantsConversionFn(v1, v2)
   }

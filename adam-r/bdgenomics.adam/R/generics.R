@@ -33,8 +33,23 @@ setGeneric("loadAlignments",
 
 #' @rdname ADAMContext
 #' @export
-setGeneric("loadContigFragments",
-           function(ac, filePath) { standardGeneric("loadContigFragments") })
+setGeneric("loadDnaSequences",
+           function(ac, filePath) { standardGeneric("loadDnaSequences") })
+
+#' @rdname ADAMContext
+#' @export
+setGeneric("loadProteinSequences",
+           function(ac, filePath) { standardGeneric("loadProteinSequences") })
+
+#' @rdname ADAMContext
+#' @export
+setGeneric("loadRnaSequences",
+           function(ac, filePath) { standardGeneric("loadRnaSequences") })
+
+#' @rdname ADAMContext
+#' @export
+setGeneric("loadSlices",
+           function(ac, filePath, ...) { standardGeneric("loadSlices") })
 
 #' @rdname ADAMContext
 #' @export
@@ -380,15 +395,15 @@ setGeneric("toVariantContexts",
 setGeneric("toVariants",
            function(ardd, ...) { standardGeneric("toVariants") })
 
-#### NucleotideContigFragment operations ####
+#### Slice operations ####
 
-#' The NucleotideContigFragmentDataset class is used to manipulate contigs.
+#' The SliceDataset class is used to manipulate slices.
 #' 
-#' @name NucleotideContigFragmentDataset
+#' @name SliceDataset
 NULL
 
-#' @rdname NucleotideContigFragmentDataset
-#' @param ardd The genomic dataset to apply this to.
+#' @rdname SliceDataset
+#' @param ardd The RDD to apply this to.
 #' @param flankLength The length to extend adjacent records by.
 #' @export
 setGeneric("flankAdjacentFragments",

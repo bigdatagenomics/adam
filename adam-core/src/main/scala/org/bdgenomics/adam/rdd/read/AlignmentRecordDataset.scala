@@ -32,7 +32,7 @@ import org.apache.spark.api.java.function.{ Function => JFunction }
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, Row, SQLContext }
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.algorithms.consensus.{
   ConsensusGenerator,
@@ -175,6 +175,7 @@ object AlignmentRecordDataset extends Serializable {
    * @param rdd The underlying AlignmentRecord RDD.
    * @param sequences The sequence dictionary for the genomic dataset.
    * @param readGroups The read group dictionary for the genomic dataset.
+   * @param processingSteps The processing steps for the genomic dataset.
    * @return A new AlignmentRecordDataset.
    */
   def apply(rdd: RDD[AlignmentRecord],
@@ -207,6 +208,7 @@ object AlignmentRecordDataset extends Serializable {
    * @param ds The underlying AlignmentRecord Dataset.
    * @param sequences The sequence dictionary for the genomic dataset.
    * @param readGroups The read group dictionary for the genomic dataset.
+   * @param processingSteps The processing steps for the genomic dataset.
    * @return A new AlignmentRecordDataset.
    */
   def apply(ds: Dataset[AlignmentRecordProduct],
@@ -473,6 +475,25 @@ sealed abstract class AlignmentRecordDataset extends AvroReadGroupGenomicDataset
       sequences,
       readGroups,
       processingSteps)
+  }
+
+  /**
+   * Convert this genomic dataset of alignment records to reads.
+   *
+   * @return Return this genomic dataset of alignment records converted to a ReadDataset.
+   */
+  def toReads(): ReadDataset = {
+    def toRead(alignmentRecord: AlignmentRecord): Read = {
+      val builder = Read.newBuilder()
+        .setAlphabet(org.bdgenomics.formats.avro.Alphabet.DNA)
+        .setName(alignmentRecord.getReadName)
+        .setSequence(alignmentRecord.getSequence)
+        .setQualityScores(alignmentRecord.getQuality)
+
+      Option(alignmentRecord.getSequence).foreach(sequence => builder.setLength(sequence.length().toLong))
+      builder.build()
+    }
+    ReadDataset(rdd.map(toRead), sequences)
   }
 
   /**

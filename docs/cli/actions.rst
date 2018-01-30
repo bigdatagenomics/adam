@@ -162,7 +162,7 @@ fall into several general categories:
 -  ``mismatchingPositions`` tagging options: We can recompute the
    ``mismatchingPositions`` field of an AlignmentRecord (SAM "MD" tag)
    with the ``-add_md_tags`` flag. This flag takes a path to a reference
-   file in either FASTA or Parquet ``NucleotideContigFragment`` format.
+   file in either FASTA or Parquet ``Sequence`` format.
    Additionally, this engine takes the following options:
 
    -  ``-md_tag_fragment_size``: If loading from FASTA, sets the size of
