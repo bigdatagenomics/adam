@@ -24,16 +24,16 @@ import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
-object CountContigKmers extends BDGCommandCompanion {
-  val commandName = "countContigKmers"
-  val commandDescription = "Counts the k-mers/q-mers from a read dataset."
+object CountSliceKmers extends BDGCommandCompanion {
+  val commandName = "countSliceKmers"
+  val commandDescription = "Counts the k-mers/q-mers from a slice dataset."
 
   def apply(cmdLine: Array[String]) = {
-    new CountContigKmers(Args4j[CountContigKmersArgs](cmdLine))
+    new CountSliceKmers(Args4j[CountSliceKmersArgs](cmdLine))
   }
 }
 
-class CountContigKmersArgs extends Args4jBase with ParquetArgs {
+class CountSliceKmersArgs extends Args4jBase with ParquetArgs {
   @Argument(required = true, metaVar = "INPUT", usage = "The ADAM or FASTA file to count kmers from", index = 0)
   var inputPath: String = null
   @Argument(required = true, metaVar = "OUTPUT", usage = "Location for storing k-mer counts", index = 1)
@@ -44,17 +44,17 @@ class CountContigKmersArgs extends Args4jBase with ParquetArgs {
   var printHistogram: Boolean = false
 }
 
-class CountContigKmers(protected val args: CountContigKmersArgs) extends BDGSparkCommand[CountContigKmersArgs] with Logging {
-  val companion = CountContigKmers
+class CountSliceKmers(protected val args: CountSliceKmersArgs) extends BDGSparkCommand[CountSliceKmersArgs] with Logging {
+  val companion = CountSliceKmers
 
   def run(sc: SparkContext) {
     checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
 
     // read from disk
-    val fragments = sc.loadContigFragments(args.inputPath)
+    val slices = sc.loadSlices(args.inputPath)
 
     // count kmers
-    val countedKmers = fragments.countKmers(args.kmerLength)
+    val countedKmers = slices.countKmers(args.kmerLength)
 
     // print histogram, if requested
     if (args.printHistogram) {

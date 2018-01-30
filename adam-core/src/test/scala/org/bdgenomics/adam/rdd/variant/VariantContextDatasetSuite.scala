@@ -40,16 +40,16 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.sequence.SliceDataset
 import org.bdgenomics.adam.sql.{
   AlignmentRecord => AlignmentRecordProduct,
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct,
   VariantContext => VariantContextProduct
 }
@@ -395,22 +395,22 @@ class VariantContextDatasetSuite extends ADAMFunSuite {
     }
   }
 
-  sparkTest("transform variant contexts to contig genomic dataset") {
+  sparkTest("transform variant contexts to slice genomic dataset") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
-    def checkSave(contigs: NucleotideContigFragmentDataset) {
+    def checkSave(slices: SliceDataset) {
       val tempPath = tmpLocation(".adam")
-      contigs.saveAsParquet(tempPath)
+      slices.saveAsParquet(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count === 6)
+      assert(sc.loadSlices(tempPath).rdd.count === 6)
     }
 
-    val contigs: NucleotideContigFragmentDataset = variantContexts.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
+    val slices: SliceDataset = variantContexts.transmute[Slice, SliceProduct, SliceDataset](
       (rdd: RDD[VariantContext]) => {
-        rdd.map(VariantDatasetSuite.ncfFn)
+        rdd.map(VariantDatasetSuite.sliceFn)
       })
 
-    checkSave(contigs)
+    checkSave(slices)
   }
 
   sparkTest("transform variant contexts to coverage genomic dataset") {

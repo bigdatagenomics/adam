@@ -33,10 +33,12 @@ object ADAMMain {
         "ADAM ACTIONS",
         List(
           CountReadKmers,
-          CountContigKmers,
+          CountSliceKmers,
           TransformAlignments,
           TransformFeatures,
           TransformGenotypes,
+          TransformSequences,
+          TransformSlices,
           TransformVariants,
           MergeShards,
           Reads2Coverage
@@ -45,8 +47,6 @@ object ADAMMain {
       CommandGroup(
         "CONVERSION OPERATIONS",
         List(
-          Fasta2ADAM,
-          ADAM2Fasta,
           ADAM2Fastq,
           TransformFragments
         )

@@ -18,32 +18,31 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
-import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
 
-object TransformFeatures extends BDGCommandCompanion {
-  val commandName = "transformFeatures"
-  val commandDescription = "Convert a file with sequence features into corresponding ADAM format and vice versa"
+object TransformSlices extends BDGCommandCompanion {
+  val commandName = "transformSlices"
+  val commandDescription = "Convert a FASTA file as slices into corresponding ADAM format and vice versa"
 
   def apply(cmdLine: Array[String]) = {
-    new TransformFeatures(Args4j[TransformFeaturesArgs](cmdLine))
+    new TransformSlices(Args4j[TransformSlicesArgs](cmdLine))
   }
 }
 
-class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
+class TransformSlicesArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(required = true, metaVar = "INPUT",
-    usage = "The feature file to convert (e.g., .bed, .gff/.gtf, .gff3, .interval_list, .narrowPeak). If extension is not detected, Parquet is assumed.", index = 0)
-  var featuresFile: String = _
+    usage = "The slice file to convert (e.g., .fa, .fasta). If extension is not detected, Parquet is assumed.", index = 0)
+  var slicesFile: String = _
 
   @Argument(required = true, metaVar = "OUTPUT",
-    usage = "Location to write ADAM feature data. If extension is not detected, Parquet is assumed.", index = 1)
+    usage = "Location to write ADAM slice data. If extension is not detected, Parquet is assumed.", index = 1)
   var outputPath: String = null
 
-  @Args4jOption(required = false, name = "-num_partitions",
-    usage = "Number of partitions to load a text file using.")
-  var numPartitions: Int = _
+  @Args4jOption(required = false, name = "-maximum_length",
+    usage = "Maximum slice length. Defaults to 10000L.")
+  var maximumLength: Long = 10000L
 
   @Args4jOption(required = false, name = "-single",
     usage = "Save as a single file, for the text formats.")
@@ -54,17 +53,16 @@ class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
   var disableFastConcat: Boolean = false
 }
 
-class TransformFeatures(val args: TransformFeaturesArgs)
-    extends BDGSparkCommand[TransformFeaturesArgs] {
+class TransformSlices(val args: TransformSlicesArgs)
+    extends BDGSparkCommand[TransformSlicesArgs] {
 
-  val companion = TransformFeatures
+  val companion = TransformSlices
 
   def run(sc: SparkContext) {
-    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
-
-    sc.loadFeatures(
-      args.featuresFile,
-      optMinPartitions = Option(args.numPartitions),
+    sc.loadSlices(
+      args.slicesFile,
+      maximumLength = args.maximumLength,
+      optPredicate = None,
       optProjection = None
     ).save(args.outputPath, args.single, args.disableFastConcat)
   }

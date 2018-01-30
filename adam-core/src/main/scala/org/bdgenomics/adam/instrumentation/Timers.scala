@@ -33,12 +33,16 @@ object Timers extends Metrics {
   val LoadGenotypes = timer("Load Genotypes")
   val LoadReferenceFile = timer("Load ReferenceFile")
   val LoadSequenceDictionary = timer("Load SequenceDictionary")
+  val LoadSequences = timer("Load Sequences")
+  val LoadSlices = timer("Load Slices")
   val LoadVariants = timer("Load Variants")
 
   // Format specific load methods
   val LoadBam = timer("Load BAM/CRAM/SAM format")
   val LoadBed = timer("Load BED6/12 format")
   val LoadFasta = timer("Load FASTA format")
+  val LoadFastaSequences = timer("Load FASTA format as Sequences")
+  val LoadFastaSlices = timer("Load FASTA format as Slices")
   val LoadFastq = timer("Load FASTQ format")
   val LoadGff3 = timer("Load GFF3 format")
   val LoadGtf = timer("Load GTF/GFF2 format")
@@ -139,4 +143,6 @@ object Timers extends Metrics {
   val FullOuterShuffleJoin = timer("Full outer shuffle region join")
   val ShuffleJoinAndGroupByLeft = timer("Shuffle join followed by group-by on left")
   val RightOuterShuffleJoinAndGroupByLeft = timer("Right outer shuffle join followed by group-by on left")
+
+  val CreateSequenceDictionary = timer("Create sequence dictionary")
 }

@@ -23,14 +23,13 @@ import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord, ValidationStringency }
 import htsjdk.samtools.util.Locatable
 import htsjdk.variant.vcf.{
   VCFHeader,
-  VCFCompoundHeaderLine,
   VCFFormatHeaderLine,
   VCFHeaderLine,
   VCFInfoHeaderLine
 }
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
-import org.apache.avro.generic.{ GenericDatumReader, GenericRecord, IndexedRecord }
+import org.apache.avro.generic.{ GenericDatumReader, GenericRecord }
 import org.apache.avro.specific.{ SpecificDatumReader, SpecificRecord, SpecificRecordBase }
 import org.apache.hadoop.fs.{ FileSystem, Path, PathFilter }
 import org.apache.hadoop.io.{ LongWritable, Text }
@@ -58,26 +57,10 @@ import org.bdgenomics.adam.projections.{
   FeatureField,
   Projection
 }
-import org.bdgenomics.adam.rdd.contig.{
-  DatasetBoundNucleotideContigFragmentDataset,
-  NucleotideContigFragmentDataset,
-  ParquetUnboundNucleotideContigFragmentDataset,
-  RDDBoundNucleotideContigFragmentDataset
-}
 import org.bdgenomics.adam.rdd.feature._
-import org.bdgenomics.adam.rdd.fragment.{
-  DatasetBoundFragmentDataset,
-  FragmentDataset,
-  ParquetUnboundFragmentDataset,
-  RDDBoundFragmentDataset
-}
-import org.bdgenomics.adam.rdd.read.{
-  AlignmentRecordDataset,
-  DatasetBoundAlignmentRecordDataset,
-  RepairPartitions,
-  ParquetUnboundAlignmentRecordDataset,
-  RDDBoundAlignmentRecordDataset
-}
+import org.bdgenomics.adam.rdd.fragment._
+import org.bdgenomics.adam.rdd.read._
+import org.bdgenomics.adam.rdd.sequence._
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.sql.{
@@ -85,7 +68,9 @@ import org.bdgenomics.adam.sql.{
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Read => ReadProduct,
+  Sequence => SequenceProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct,
   VariantContext => VariantContextProduct
 }
@@ -99,14 +84,17 @@ import org.bdgenomics.adam.util.{
 }
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,
+  Alphabet,
   Feature,
   Fragment,
   Genotype,
-  NucleotideContigFragment,
   ProcessingStep,
+  Read,
   ReadGroup => ReadGroupMetadata,
   Reference,
   Sample,
+  Sequence,
+  Slice,
   Variant
 }
 import org.bdgenomics.utils.instrumentation.Metrics
@@ -150,131 +138,7 @@ private case class LocatableReferenceRegion(rr: ReferenceRegion) extends Locatab
  */
 object ADAMContext {
 
-  // conversion functions for pipes
-  implicit def contigsToContigsConversionFn(gDataset: NucleotideContigFragmentDataset,
-                                            rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    // hijack the transform function to discard the old RDD
-    gDataset.transform(oldRdd => rdd)
-  }
-
-  implicit def contigsToCoverageConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[Coverage]): CoverageDataset = {
-    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
-  }
-
-  implicit def contigsToCoverageDatasetConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[Coverage]): CoverageDataset = {
-    new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
-  }
-
-  implicit def contigsToFeaturesConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[Feature]): FeatureDataset = {
-    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
-  }
-
-  implicit def contigsToFeaturesDatasetConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[FeatureProduct]): FeatureDataset = {
-    new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
-  }
-
-  implicit def contigsToFragmentsConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[Fragment]): FragmentDataset = {
-    new RDDBoundFragmentDataset(rdd,
-      gDataset.sequences,
-      ReadGroupDictionary.empty,
-      Seq.empty,
-      None)
-  }
-
-  implicit def contigsToFragmentsDatasetConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[FragmentProduct]): FragmentDataset = {
-    new DatasetBoundFragmentDataset(ds,
-      gDataset.sequences,
-      ReadGroupDictionary.empty,
-      Seq.empty)
-  }
-
-  implicit def contigsToAlignmentRecordsConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
-    new RDDBoundAlignmentRecordDataset(rdd,
-      gDataset.sequences,
-      ReadGroupDictionary.empty,
-      Seq.empty,
-      None)
-  }
-
-  implicit def contigsToAlignmentRecordsDatasetConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    new DatasetBoundAlignmentRecordDataset(ds,
-      gDataset.sequences,
-      ReadGroupDictionary.empty,
-      Seq.empty)
-  }
-
-  implicit def contigsToGenotypesConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[Genotype]): GenotypeDataset = {
-    new RDDBoundGenotypeDataset(rdd,
-      gDataset.sequences,
-      Seq.empty,
-      DefaultHeaderLines.allHeaderLines,
-      None)
-  }
-
-  implicit def contigsToGenotypesDatasetConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
-    new DatasetBoundGenotypeDataset(ds,
-      gDataset.sequences,
-      Seq.empty,
-      DefaultHeaderLines.allHeaderLines)
-  }
-
-  implicit def contigsToVariantsConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[Variant]): VariantDataset = {
-    new RDDBoundVariantDataset(rdd,
-      gDataset.sequences,
-      DefaultHeaderLines.allHeaderLines,
-      None)
-  }
-
-  implicit def contigsToVariantsDatasetConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[VariantProduct]): VariantDataset = {
-    new DatasetBoundVariantDataset(ds,
-      gDataset.sequences,
-      DefaultHeaderLines.allHeaderLines)
-  }
-
-  implicit def contigsToVariantContextConversionFn(
-    gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[VariantContext]): VariantContextDataset = {
-    VariantContextDataset(rdd,
-      gDataset.sequences,
-      Seq.empty,
-      DefaultHeaderLines.allHeaderLines)
-  }
-
-  implicit def coverageToContigsConversionFn(
-    gDataset: CoverageDataset,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
-  }
-
-  implicit def coverageToContigsDatasetConversionFn(
-    gDataset: CoverageDataset,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
-    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
-  }
+  // coverage conversion functions
 
   implicit def coverageToCoverageConversionFn(gDataset: CoverageDataset,
                                               rdd: RDD[Coverage]): CoverageDataset = {
@@ -351,6 +215,42 @@ object ADAMContext {
       DefaultHeaderLines.allHeaderLines)
   }
 
+  implicit def coverageToReadsConversionFn(
+    gDataset: CoverageDataset,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def coverageToReadsDatasetConversionFn(
+    gDataset: CoverageDataset,
+    ds: Dataset[ReadProduct]): ReadDataset = {
+    new DatasetBoundReadDataset(ds, gDataset.sequences)
+  }
+
+  implicit def coverageToSequencesConversionFn(
+    gDataset: CoverageDataset,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def coverageToSequencesDatasetConversionFn(
+    gDataset: CoverageDataset,
+    ds: Dataset[SequenceProduct]): SequenceDataset = {
+    new DatasetBoundSequenceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def coverageToSlicesConversionFn(
+    gDataset: CoverageDataset,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def coverageToSlicesDatasetConversionFn(
+    gDataset: CoverageDataset,
+    ds: Dataset[SliceProduct]): SliceDataset = {
+    new DatasetBoundSliceDataset(ds, gDataset.sequences)
+  }
+
   implicit def coverageToVariantsConversionFn(
     gDataset: CoverageDataset,
     rdd: RDD[Variant]): VariantDataset = {
@@ -377,17 +277,7 @@ object ADAMContext {
       DefaultHeaderLines.allHeaderLines)
   }
 
-  implicit def featuresToContigsConversionFn(
-    gDataset: FeatureDataset,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
-  }
-
-  implicit def featuresToContigsDatasetConversionFn(
-    gDataset: FeatureDataset,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
-    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
-  }
+  // features conversion functions
 
   implicit def featuresToCoverageConversionFn(
     gDataset: FeatureDataset,
@@ -464,6 +354,42 @@ object ADAMContext {
       DefaultHeaderLines.allHeaderLines)
   }
 
+  implicit def featuresToReadsConversionFn(
+    gDataset: FeatureDataset,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def featuresToReadsDatasetConversionFn(
+    gDataset: FeatureDataset,
+    ds: Dataset[ReadProduct]): ReadDataset = {
+    new DatasetBoundReadDataset(ds, gDataset.sequences)
+  }
+
+  implicit def featuresToSequencesConversionFn(
+    gDataset: FeatureDataset,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def featuresToSequencesDatasetConversionFn(
+    gDataset: FeatureDataset,
+    ds: Dataset[SequenceProduct]): SequenceDataset = {
+    new DatasetBoundSequenceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def featuresToSlicesConversionFn(
+    gDataset: FeatureDataset,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def featuresToSlicesDatasetConversionFn(
+    gDataset: FeatureDataset,
+    ds: Dataset[SliceProduct]): SliceDataset = {
+    new DatasetBoundSliceDataset(ds, gDataset.sequences)
+  }
+
   implicit def featuresToVariantsConversionFn(
     gDataset: FeatureDataset,
     rdd: RDD[Variant]): VariantDataset = {
@@ -490,17 +416,7 @@ object ADAMContext {
       DefaultHeaderLines.allHeaderLines)
   }
 
-  implicit def fragmentsToContigsConversionFn(
-    gDataset: FragmentDataset,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
-  }
-
-  implicit def fragmentsToContigsDatasetConversionFn(
-    gDataset: FragmentDataset,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
-    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
-  }
+  // fragments conversion functions
 
   implicit def fragmentsToCoverageConversionFn(
     gDataset: FragmentDataset,
@@ -570,6 +486,42 @@ object ADAMContext {
       DefaultHeaderLines.allHeaderLines)
   }
 
+  implicit def fragmentsToReadsConversionFn(
+    gDataset: FragmentDataset,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def fragmentsToReadsDatasetConversionFn(
+    gDataset: FragmentDataset,
+    ds: Dataset[ReadProduct]): ReadDataset = {
+    new DatasetBoundReadDataset(ds, gDataset.sequences)
+  }
+
+  implicit def fragmentsToSequencesConversionFn(
+    gDataset: FragmentDataset,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def fragmentsToSequencesDatasetConversionFn(
+    gDataset: FragmentDataset,
+    ds: Dataset[SequenceProduct]): SequenceDataset = {
+    new DatasetBoundSequenceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def fragmentsToSlicesConversionFn(
+    gDataset: FragmentDataset,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def fragmentsToSlicesDatasetConversionFn(
+    gDataset: FragmentDataset,
+    ds: Dataset[SliceProduct]): SliceDataset = {
+    new DatasetBoundSliceDataset(ds, gDataset.sequences)
+  }
+
   implicit def fragmentsToVariantsConversionFn(
     gDataset: FragmentDataset,
     rdd: RDD[Variant]): VariantDataset = {
@@ -596,11 +548,7 @@ object ADAMContext {
       DefaultHeaderLines.allHeaderLines)
   }
 
-  implicit def genericToContigsConversionFn[Y <: GenericGenomicDataset[_, _]](
-    gDataset: Y,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
-  }
+  // generic conversion functions
 
   implicit def genericToCoverageConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
@@ -644,6 +592,24 @@ object ADAMContext {
       None)
   }
 
+  implicit def genericToReadsConversionFn[Y <: GenericGenomicDataset[_, _]](
+    gDataset: Y,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def genericToSequencesConversionFn[Y <: GenericGenomicDataset[_, _]](
+    gDataset: Y,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def genericToSlicesConversionFn[Y <: GenericGenomicDataset[_, _]](
+    gDataset: Y,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
+  }
+
   implicit def genericToVariantsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
     rdd: RDD[Variant]): VariantDataset = {
@@ -663,17 +629,7 @@ object ADAMContext {
       None)
   }
 
-  implicit def alignmentRecordsToContigsConversionFn(
-    gDataset: AlignmentRecordDataset,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
-  }
-
-  implicit def alignmentRecordsToContigsDatasetConversionFn(
-    gDataset: AlignmentRecordDataset,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
-    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
-  }
+  // alignment records conversion functions
 
   implicit def alignmentRecordsToCoverageConversionFn(
     gDataset: AlignmentRecordDataset,
@@ -743,6 +699,42 @@ object ADAMContext {
       DefaultHeaderLines.allHeaderLines)
   }
 
+  implicit def alignmentRecordsToReadsConversionFn(
+    gDataset: AlignmentRecordDataset,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def alignmentRecordsToReadsDatasetConversionFn(
+    gDataset: AlignmentRecordDataset,
+    ds: Dataset[ReadProduct]): ReadDataset = {
+    new DatasetBoundReadDataset(ds, gDataset.sequences)
+  }
+
+  implicit def alignmentRecordsToSequencesConversionFn(
+    gDataset: AlignmentRecordDataset,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def alignmentRecordsToSequencesDatasetConversionFn(
+    gDataset: AlignmentRecordDataset,
+    ds: Dataset[SequenceProduct]): SequenceDataset = {
+    new DatasetBoundSequenceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def alignmentRecordsToSlicesConversionFn(
+    gDataset: AlignmentRecordDataset,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def alignmentRecordsToSlicesDatasetConversionFn(
+    gDataset: AlignmentRecordDataset,
+    ds: Dataset[SliceProduct]): SliceDataset = {
+    new DatasetBoundSliceDataset(ds, gDataset.sequences)
+  }
+
   implicit def alignmentRecordsToVariantsConversionFn(
     gDataset: AlignmentRecordDataset,
     rdd: RDD[Variant]): VariantDataset = {
@@ -769,16 +761,23 @@ object ADAMContext {
       DefaultHeaderLines.allHeaderLines)
   }
 
-  implicit def genotypesToContigsConversionFn(
+  implicit def genotypesToAlignmentRecordsConversionFn(
     gDataset: GenotypeDataset,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty,
+      None)
   }
 
-  implicit def genotypesToContigsDatasetConversionFn(
+  implicit def genotypesToAlignmentRecordsDatasetConversionFn(
     gDataset: GenotypeDataset,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
-    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty)
   }
 
   implicit def genotypesToCoverageConversionFn(
@@ -824,46 +823,59 @@ object ADAMContext {
       Seq.empty)
   }
 
-  implicit def genotypesToAlignmentRecordsConversionFn(
+  implicit def genotypesToGenotypesConversionFn(
     gDataset: GenotypeDataset,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
-    new RDDBoundAlignmentRecordDataset(rdd,
-      gDataset.sequences,
-      ReadGroupDictionary.empty,
-      Seq.empty,
-      None)
-  }
-
-  implicit def genotypesToAlignmentRecordsDatasetConversionFn(
-    gDataset: GenotypeDataset,
-    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
-    new DatasetBoundAlignmentRecordDataset(ds,
-      gDataset.sequences,
-      ReadGroupDictionary.empty,
-      Seq.empty)
-  }
-
-  implicit def genotypesToGenotypesConversionFn(gDataset: GenotypeDataset,
-                                                rdd: RDD[Genotype]): GenotypeDataset = {
+    rdd: RDD[Genotype]): GenotypeDataset = {
     // hijack the transform function to discard the old RDD
     gDataset.transform(oldRdd => rdd)
+  }
+
+  implicit def genotypesToReadsConversionFn(
+    gDataset: GenotypeDataset,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def genotypesToReadsDatasetConversionFn(
+    gDataset: GenotypeDataset,
+    ds: Dataset[ReadProduct]): ReadDataset = {
+    new DatasetBoundReadDataset(ds, gDataset.sequences)
+  }
+
+  implicit def genotypesToSequencesConversionFn(
+    gDataset: GenotypeDataset,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def genotypesToSequencesDatasetConversionFn(
+    gDataset: GenotypeDataset,
+    ds: Dataset[SequenceProduct]): SequenceDataset = {
+    new DatasetBoundSequenceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def genotypesToSlicesConversionFn(
+    gDataset: GenotypeDataset,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def genotypesToSlicesDatasetConversionFn(
+    gDataset: GenotypeDataset,
+    ds: Dataset[SliceProduct]): SliceDataset = {
+    new DatasetBoundSliceDataset(ds, gDataset.sequences)
   }
 
   implicit def genotypesToVariantsConversionFn(
     gDataset: GenotypeDataset,
     rdd: RDD[Variant]): VariantDataset = {
-    new RDDBoundVariantDataset(rdd,
-      gDataset.sequences,
-      gDataset.headerLines,
-      None)
+    new RDDBoundVariantDataset(rdd, gDataset.sequences, gDataset.headerLines, None)
   }
 
   implicit def genotypesToVariantsDatasetConversionFn(
     gDataset: GenotypeDataset,
     ds: Dataset[VariantProduct]): VariantDataset = {
-    new DatasetBoundVariantDataset(ds,
-      gDataset.sequences,
-      gDataset.headerLines)
+    new DatasetBoundVariantDataset(ds, gDataset.sequences, gDataset.headerLines)
   }
 
   implicit def genotypesToVariantContextConversionFn(
@@ -875,17 +887,424 @@ object ADAMContext {
       gDataset.headerLines)
   }
 
-  implicit def variantsToContigsConversionFn(
-    gDataset: VariantDataset,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
+  // reads conversion functions
+
+  implicit def readsToCoverageConversionFn(
+    gDataset: ReadDataset,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty, None)
   }
 
-  implicit def variantsToContigsDatasetConversionFn(
-    gDataset: VariantDataset,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
-    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
+  implicit def readsToCoverageDatasetConversionFn(
+    gDataset: ReadDataset,
+    ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty)
   }
+
+  implicit def readsToFeaturesConversionFn(
+    gDataset: ReadDataset,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty, None)
+  }
+
+  implicit def readsToFeaturesDatasetConversionFn(
+    gDataset: ReadDataset,
+    ds: Dataset[FeatureProduct]): FeatureDataset = {
+    new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty)
+  }
+
+  implicit def readsToFragmentsConversionFn(
+    gDataset: ReadDataset,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty,
+      None)
+  }
+
+  implicit def readsToFragmentsDatasetConversionFn(
+    gDataset: ReadDataset,
+    ds: Dataset[FragmentProduct]): FragmentDataset = {
+    new DatasetBoundFragmentDataset(ds,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty)
+  }
+
+  implicit def readsToAlignmentRecordsConversionFn(
+    gDataset: ReadDataset,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty,
+      None)
+  }
+
+  implicit def readsToAlignmentRecordsDatasetConversionFn(
+    gDataset: ReadDataset,
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty)
+  }
+
+  implicit def readsToGenotypesConversionFn(
+    gDataset: ReadDataset,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
+      gDataset.sequences,
+      Seq.empty,
+      DefaultHeaderLines.allHeaderLines,
+      None)
+  }
+
+  implicit def readsToGenotypesDatasetConversionFn(
+    gDataset: ReadDataset,
+    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    new DatasetBoundGenotypeDataset(ds,
+      gDataset.sequences,
+      Seq.empty,
+      DefaultHeaderLines.allHeaderLines)
+  }
+
+  implicit def readsToReadsConversionFn(gDataset: ReadDataset,
+                                        rdd: RDD[Read]): ReadDataset = {
+    // hijack the transform function to discard the old RDD
+    gDataset.transform(oldRdd => rdd)
+  }
+
+  implicit def readsToSequencesConversionFn(
+    gDataset: ReadDataset,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def readsToSequencesDatasetConversionFn(
+    gDataset: ReadDataset,
+    ds: Dataset[SequenceProduct]): SequenceDataset = {
+    new DatasetBoundSequenceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def readsToSlicesConversionFn(
+    gDataset: ReadDataset,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def readsToSlicesDatasetConversionFn(
+    gDataset: ReadDataset,
+    ds: Dataset[SliceProduct]): SliceDataset = {
+    new DatasetBoundSliceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def readsToVariantsConversionFn(
+    gDataset: ReadDataset,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
+      gDataset.sequences,
+      DefaultHeaderLines.allHeaderLines,
+      None)
+  }
+
+  implicit def readsToVariantsDatasetConversionFn(
+    gDataset: ReadDataset,
+    ds: Dataset[VariantProduct]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds,
+      gDataset.sequences,
+      DefaultHeaderLines.allHeaderLines)
+  }
+
+  implicit def readsToVariantContextsConversionFn(
+    gDataset: ReadDataset,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
+      gDataset.sequences,
+      Seq.empty,
+      DefaultHeaderLines.allHeaderLines)
+  }
+
+  // sequences conversion functions
+
+  implicit def sequencesToCoverageConversionFn(
+    gDataset: SequenceDataset,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty, None)
+  }
+
+  implicit def sequencesToCoverageDatasetConversionFn(
+    gDataset: SequenceDataset,
+    ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty)
+  }
+
+  implicit def sequencesToFeaturesConversionFn(
+    gDataset: SequenceDataset,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty, None)
+  }
+
+  implicit def sequencesToFeaturesDatasetConversionFn(
+    gDataset: SequenceDataset,
+    ds: Dataset[FeatureProduct]): FeatureDataset = {
+    new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty)
+  }
+
+  implicit def sequencesToFragmentsConversionFn(
+    gDataset: SequenceDataset,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty,
+      None)
+  }
+
+  implicit def sequencesToFragmentsDatasetConversionFn(
+    gDataset: SequenceDataset,
+    ds: Dataset[FragmentProduct]): FragmentDataset = {
+    new DatasetBoundFragmentDataset(ds,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty)
+  }
+
+  implicit def sequencesToAlignmentRecordsConversionFn(
+    gDataset: SequenceDataset,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty,
+      None)
+  }
+
+  implicit def sequencesToAlignmentRecordsDatasetConversionFn(
+    gDataset: SequenceDataset,
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty)
+  }
+
+  implicit def sequencesToGenotypesConversionFn(
+    gDataset: SequenceDataset,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
+      gDataset.sequences,
+      Seq.empty,
+      DefaultHeaderLines.allHeaderLines,
+      None)
+  }
+
+  implicit def sequencesToGenotypesDatasetConversionFn(
+    gDataset: SequenceDataset,
+    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    new DatasetBoundGenotypeDataset(ds,
+      gDataset.sequences,
+      Seq.empty,
+      DefaultHeaderLines.allHeaderLines)
+  }
+
+  implicit def sequencesToReadsConversionFn(
+    gDataset: SequenceDataset,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def sequencesToReadsDatasetConversionFn(
+    gDataset: SequenceDataset,
+    ds: Dataset[ReadProduct]): ReadDataset = {
+    new DatasetBoundReadDataset(ds, gDataset.sequences)
+  }
+
+  implicit def sequencesToSequencesConversionFn(gDataset: SequenceDataset,
+                                                rdd: RDD[Sequence]): SequenceDataset = {
+    // hijack the transform function to discard the old RDD
+    gDataset.transform(oldRdd => rdd)
+  }
+
+  implicit def sequencesToSlicesConversionFn(
+    gDataset: SequenceDataset,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def sequencesToSlicesDatasetConversionFn(
+    gDataset: SequenceDataset,
+    ds: Dataset[SliceProduct]): SliceDataset = {
+    new DatasetBoundSliceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def sequencesToVariantsConversionFn(
+    gDataset: SequenceDataset,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
+      gDataset.sequences,
+      DefaultHeaderLines.allHeaderLines,
+      None)
+  }
+
+  implicit def sequencesToVariantsDatasetConversionFn(
+    gDataset: SequenceDataset,
+    ds: Dataset[VariantProduct]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds,
+      gDataset.sequences,
+      DefaultHeaderLines.allHeaderLines)
+  }
+
+  implicit def sequencesToVariantContextsConversionFn(
+    gDataset: SequenceDataset,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
+      gDataset.sequences,
+      Seq.empty,
+      DefaultHeaderLines.allHeaderLines)
+  }
+
+  // slices conversion functions
+
+  implicit def slicesToCoverageConversionFn(
+    gDataset: SliceDataset,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty, None)
+  }
+
+  implicit def slicesToCoverageDatasetConversionFn(
+    gDataset: SliceDataset,
+    ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty)
+  }
+
+  implicit def slicesToFeaturesConversionFn(
+    gDataset: SliceDataset,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty, None)
+  }
+
+  implicit def slicesToFeaturesDatasetConversionFn(
+    gDataset: SliceDataset,
+    ds: Dataset[FeatureProduct]): FeatureDataset = {
+    new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty)
+  }
+
+  implicit def slicesToFragmentsConversionFn(
+    gDataset: SliceDataset,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty,
+      None)
+  }
+
+  implicit def slicesToFragmentsDatasetConversionFn(
+    gDataset: SliceDataset,
+    ds: Dataset[FragmentProduct]): FragmentDataset = {
+    new DatasetBoundFragmentDataset(ds,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty)
+  }
+
+  implicit def slicesToAlignmentRecordsConversionFn(
+    gDataset: SliceDataset,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty,
+      None)
+  }
+
+  implicit def slicesToAlignmentRecordsDatasetConversionFn(
+    gDataset: SliceDataset,
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
+      gDataset.sequences,
+      ReadGroupDictionary.empty,
+      Seq.empty)
+  }
+
+  implicit def slicesToGenotypesConversionFn(
+    gDataset: SliceDataset,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
+      gDataset.sequences,
+      Seq.empty,
+      DefaultHeaderLines.allHeaderLines,
+      None)
+  }
+
+  implicit def slicesToGenotypesDatasetConversionFn(
+    gDataset: SliceDataset,
+    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    new DatasetBoundGenotypeDataset(ds,
+      gDataset.sequences,
+      Seq.empty,
+      DefaultHeaderLines.allHeaderLines)
+  }
+
+  implicit def slicesToReadsConversionFn(
+    gDataset: SliceDataset,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def slicesToReadsDatasetConversionFn(
+    gDataset: SliceDataset,
+    ds: Dataset[ReadProduct]): ReadDataset = {
+    new DatasetBoundReadDataset(ds, gDataset.sequences)
+  }
+
+  implicit def slicesToSequencesConversionFn(
+    gDataset: SliceDataset,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def slicesToSequencesDatasetConversionFn(
+    gDataset: SliceDataset,
+    ds: Dataset[SequenceProduct]): SequenceDataset = {
+    new DatasetBoundSequenceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def slicesToSlicesConversionFn(gDataset: SliceDataset,
+                                          rdd: RDD[Slice]): SliceDataset = {
+    // hijack the transform function to discard the old RDD
+    gDataset.transform(oldRdd => rdd)
+  }
+
+  implicit def slicesToVariantsConversionFn(
+    gDataset: SliceDataset,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
+      gDataset.sequences,
+      DefaultHeaderLines.allHeaderLines,
+      None)
+  }
+
+  implicit def slicesToVariantsDatasetConversionFn(
+    gDataset: SliceDataset,
+    ds: Dataset[VariantProduct]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds,
+      gDataset.sequences,
+      DefaultHeaderLines.allHeaderLines)
+  }
+
+  implicit def slicesToVariantContextsConversionFn(
+    gDataset: SliceDataset,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
+      gDataset.sequences,
+      Seq.empty,
+      DefaultHeaderLines.allHeaderLines)
+  }
+
+  // variants conversion functions
 
   implicit def variantsToCoverageConversionFn(
     gDataset: VariantDataset,
@@ -968,6 +1387,42 @@ object ADAMContext {
       gDataset.headerLines)
   }
 
+  implicit def variantsToReadsConversionFn(
+    gDataset: VariantDataset,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def variantsToReadsDatasetConversionFn(
+    gDataset: VariantDataset,
+    ds: Dataset[ReadProduct]): ReadDataset = {
+    new DatasetBoundReadDataset(ds, gDataset.sequences)
+  }
+
+  implicit def variantsToSequencesConversionFn(
+    gDataset: VariantDataset,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def variantsToSequencesDatasetConversionFn(
+    gDataset: VariantDataset,
+    ds: Dataset[SequenceProduct]): SequenceDataset = {
+    new DatasetBoundSequenceDataset(ds, gDataset.sequences)
+  }
+
+  implicit def variantsToSlicesConversionFn(
+    gDataset: VariantDataset,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def variantsToSlicesDatasetConversionFn(
+    gDataset: VariantDataset,
+    ds: Dataset[SliceProduct]): SliceDataset = {
+    new DatasetBoundSliceDataset(ds, gDataset.sequences)
+  }
+
   implicit def variantsToVariantsConversionFn(gDataset: VariantDataset,
                                               rdd: RDD[Variant]): VariantDataset = {
     // hijack the transform function to discard the old RDD
@@ -983,11 +1438,7 @@ object ADAMContext {
       gDataset.headerLines)
   }
 
-  implicit def variantContextsToContigsConversionFn(
-    gDataset: VariantContextDataset,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
-    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
-  }
+  // variant contexts conversion functions
 
   implicit def variantContextsToCoverageConversionFn(
     gDataset: VariantContextDataset,
@@ -1029,6 +1480,24 @@ object ADAMContext {
       gDataset.samples,
       gDataset.headerLines,
       None)
+  }
+
+  implicit def variantContextsToReadsConversionFn(
+    gDataset: VariantContextDataset,
+    rdd: RDD[Read]): ReadDataset = {
+    new RDDBoundReadDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def variantContextsToSequencesConversionFn(
+    gDataset: VariantContextDataset,
+    rdd: RDD[Sequence]): SequenceDataset = {
+    new RDDBoundSequenceDataset(rdd, gDataset.sequences, None)
+  }
+
+  implicit def variantContextsToSlicesConversionFn(
+    gDataset: VariantContextDataset,
+    rdd: RDD[Slice]): SliceDataset = {
+    new RDDBoundSliceDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def variantContextsToVariantsConversionFn(
@@ -2503,36 +2972,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load nucleotide contig fragments from FASTA into a NucleotideContigFragmentDataset.
-   *
-   * @param pathName The path name to load nucleotide contig fragments from.
-   *   Globs/directories are supported.
-   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
-   *   than 1e9 should be avoided.
-   * @return Returns a NucleotideContigFragmentDataset.
-   */
-  def loadFasta(
-    pathName: String,
-    maximumLength: Long = 10000L): NucleotideContigFragmentDataset = LoadFasta.time {
-
-    val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
-      pathName,
-      classOf[TextInputFormat],
-      classOf[LongWritable],
-      classOf[Text]
-    )
-    if (Metrics.isRecording) fastaData.instrument() else fastaData
-
-    val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
-
-    // convert rdd and cache
-    val fragmentRdd = FastaConverter(remapData, maximumLength)
-      .cache()
-
-    NucleotideContigFragmentDataset(fragmentRdd)
-  }
-
-  /**
    * Load paired unaligned alignment records grouped by sequencing fragment
    * from interleaved FASTQ into an FragmentDataset.
    *
@@ -2880,65 +3319,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in Parquet + Avro format into a NucleotideContigFragmentDataset.
-   *
-   * @param pathName The path name to load nucleotide contig fragments from.
-   *   Globs/directories are supported.
-   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
-   *   Defaults to None.
-   * @param optProjection An option projection schema to use when reading Parquet + Avro.
-   *   Defaults to None.
-   * @return Returns a NucleotideContigFragmentDataset.
-   */
-  def loadParquetContigFragments(
-    pathName: String,
-    optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): NucleotideContigFragmentDataset = {
-
-    val sd = loadAvroSequenceDictionary(pathName)
-
-    (optPredicate, optProjection) match {
-      case (None, None) => {
-        ParquetUnboundNucleotideContigFragmentDataset(
-          sc, pathName, sd)
-      }
-      case (_, _) => {
-        val rdd = loadParquet[NucleotideContigFragment](pathName, optPredicate, optProjection)
-        new RDDBoundNucleotideContigFragmentDataset(rdd,
-          sd,
-          optPartitionMap = extractPartitionMap(pathName))
-      }
-    }
-  }
-
-  /**
-   * Load a path name with range binned partitioned Parquet format into a NucleotideContigFragmentDataset.
-   *
-   * @param pathName The path name to load alignment records from.
-   *   Globs/directories are supported.
-   * @param regions Optional list of genomic regions to load.
-   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
-   *   region when using the filterByOverlappingRegions function on the returned dataset.
-   *   Defaults to one partition.
-   * @return Returns a NucleotideContigFragmentDataset.
-   */
-  def loadPartitionedParquetContigFragments(pathName: String,
-                                            regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                            optLookbackPartitions: Option[Int] = Some(1)): NucleotideContigFragmentDataset = {
-
-    val partitionedBinSize = getPartitionBinSize(pathName)
-    val contigs = loadParquetContigFragments(pathName)
-    val contigsDatasetBound = DatasetBoundNucleotideContigFragmentDataset(contigs.dataset,
-      contigs.sequences,
-      isPartitioned = true,
-      Some(partitionedBinSize),
-      optLookbackPartitions
-    )
-
-    if (regions.nonEmpty) contigsDatasetBound.filterByOverlappingRegions(regions) else contigsDatasetBound
-  }
-
-  /**
    * Load a path name in Parquet + Avro format into a FragmentDataset.
    *
    * @param pathName The path name to load fragments from.
@@ -3067,10 +3447,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Load reference sequences into a broadcastable ReferenceFile.
    *
-   * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
+   * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadSlices
    * to load the reference as an RDD, which is then collected to the driver.
    *
-   * @see loadContigFragments
+   * @see loadSlices
    *
    * @param pathName The path name to load reference sequences from.
    *   Globs/directories for 2bit format are not supported.
@@ -3085,7 +3465,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (is2BitExt(pathName)) {
       new TwoBitFile(new LocalFileByteAccess(new File(pathName)))
     } else {
-      ReferenceContigMap(loadContigFragments(pathName, maximumLength = maximumLength).rdd)
+      ReferenceContigMap(loadSlices(pathName, maximumLength = maximumLength).rdd)
     }
   }
 
@@ -3118,48 +3498,6 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       GenomeFileReader(pathName, sc)
     } else {
       throw new IllegalArgumentException("Path name file extension must be one of .dict, .genome, or .txt")
-    }
-  }
-
-  /**
-   * Load nucleotide contig fragments into a NucleotideContigFragmentDataset.
-   *
-   * If the path name has a .fa/.fasta extension, load as FASTA format.
-   * Else, fall back to Parquet + Avro.
-   *
-   * For FASTA format, compressed files are supported through compression codecs configured
-   * in Hadoop, which by default include .gz and .bz2, but can include more.
-   *
-   * @see loadFasta
-   * @see loadParquetContigFragments
-   *
-   * @param pathName The path name to load nucleotide contig fragments from.
-   *   Globs/directories are supported, although file extension must be present
-   *   for FASTA format.
-   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
-   *   than 1e9 should be avoided.
-   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
-   *   Defaults to None.
-   * @param optProjection An option projection schema to use when reading Parquet + Avro.
-   *   Defaults to None.
-   * @return Returns a NucleotideContigFragmentDataset.
-   */
-  def loadContigFragments(
-    pathName: String,
-    maximumLength: Long = 10000L,
-    optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): NucleotideContigFragmentDataset = LoadContigFragments.time {
-
-    val trimmedPathName = trimExtensionIfCompressed(pathName)
-    if (isFastaExt(trimmedPathName)) {
-      info(s"Loading $pathName as FASTA and converting to NucleotideContigFragment.")
-      loadFasta(
-        pathName,
-        maximumLength
-      )
-    } else {
-      info(s"Loading $pathName as Parquet containing NucleotideContigFragments.")
-      loadParquetContigFragments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
   }
 
@@ -3249,7 +3587,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @see loadBam
    * @see loadFastq
-   * @see loadFasta
+   * @see loadFastaDna(String, Long)
    * @see loadInterleavedFastq
    * @see loadParquetAlignments
    *
@@ -3294,8 +3632,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       info(s"Loading $pathName as unpaired FASTQ and converting to AlignmentRecords.")
       loadFastq(pathName, optPathName2, optReadGroup, stringency)
     } else if (isFastaExt(trimmedPathName)) {
-      info(s"Loading $pathName as FASTA and converting to AlignmentRecords.")
-      AlignmentRecordDataset.unaligned(loadFasta(pathName, maximumLength = 10000L).toReads)
+      info(s"Loading $pathName as FASTA DNA and converting to AlignmentRecords.")
+      AlignmentRecordDataset.unaligned(FragmentConverter.convertRdd(loadFastaDna(pathName, maximumLength = 10000L).rdd))
     } else {
       info(s"Loading $pathName as Parquet of AlignmentRecords.")
       loadParquetAlignments(pathName, optPredicate = optPredicate, optProjection = optProjection)
@@ -3397,6 +3735,354 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       true
     } catch {
       case e: FileNotFoundException => false
+    }
+  }
+
+  /**
+   * Load a path name in Parquet + Avro format into a ReadDataset.
+   *
+   * @param pathName The path name to load reads from.
+   *   Globs/directories are supported.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @param optProjection An optional projection schema to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @return Returns a ReadDataset.
+   */
+  def loadParquetReads(
+    pathName: String,
+    optPredicate: Option[FilterPredicate] = None,
+    optProjection: Option[Schema] = None): ReadDataset = {
+
+    val sd = loadAvroSequenceDictionary(pathName)
+
+    (optPredicate, optProjection) match {
+      case (None, None) => {
+        ParquetUnboundReadDataset(
+          sc, pathName, sd)
+      }
+      case (_, _) => {
+        val rdd = loadParquet[Read](pathName, optPredicate, optProjection)
+        RDDBoundReadDataset(rdd,
+          sd,
+          optPartitionMap = extractPartitionMap(pathName))
+      }
+    }
+  }
+
+  /**
+   * Load a path name in Parquet + Avro format into a SequenceDataset.
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @param optProjection An optional projection schema to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @return Returns a SequenceDataset.
+   */
+  def loadParquetSequences(
+    pathName: String,
+    optPredicate: Option[FilterPredicate] = None,
+    optProjection: Option[Schema] = None): SequenceDataset = {
+
+    val sd = loadAvroSequenceDictionary(pathName)
+
+    (optPredicate, optProjection) match {
+      case (None, None) => {
+        ParquetUnboundSequenceDataset(
+          sc, pathName, sd)
+      }
+      case (_, _) => {
+        val rdd = loadParquet[Sequence](pathName, optPredicate, optProjection)
+        RDDBoundSequenceDataset(rdd,
+          sd,
+          optPartitionMap = extractPartitionMap(pathName))
+      }
+    }
+  }
+
+  /**
+   * Load a path name in Parquet + Avro format into a SliceDataset.
+   *
+   * @param pathName The path name to load slices from.
+   *   Globs/directories are supported.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @param optProjection An optional projection schema to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @return Returns a SliceDataset.
+   */
+  def loadParquetSlices(
+    pathName: String,
+    optPredicate: Option[FilterPredicate] = None,
+    optProjection: Option[Schema] = None): SliceDataset = {
+
+    val sd = loadAvroSequenceDictionary(pathName)
+
+    (optPredicate, optProjection) match {
+      case (None, None) => {
+        ParquetUnboundSliceDataset(
+          sc, pathName, sd)
+      }
+      case (_, _) => {
+        val rdd = loadParquet[Slice](pathName, optPredicate, optProjection)
+        RDDBoundSliceDataset(rdd,
+          sd,
+          optPartitionMap = extractPartitionMap(pathName))
+      }
+    }
+  }
+
+  /**
+   * Load sequences from a specified alphabet from FASTA into a SequenceDataset.
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported.
+   * @param alphabet Alphabet in which to interpret the loaded sequences.
+   * @return Returns a SequenceDataset.
+   */
+  private def loadFastaSequences(
+    pathName: String,
+    alphabet: Alphabet): SequenceDataset = LoadFastaSequences.time {
+
+    val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
+      pathName,
+      classOf[TextInputFormat],
+      classOf[LongWritable],
+      classOf[Text]
+    )
+    if (Metrics.isRecording) fastaData.instrument() else fastaData
+
+    val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
+    SequenceDataset(FastaSequenceConverter(alphabet, remapData))
+  }
+
+  /**
+   * Load DNA sequences from FASTA into a SequenceDataset.
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported.
+   * @return Returns a SequenceDataset containing DNA sequences.
+   */
+  def loadFastaDna(pathName: String): SequenceDataset = {
+    loadFastaSequences(pathName, Alphabet.DNA)
+  }
+
+  /**
+   * Load protein sequences from FASTA into a SequenceDataset.
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported.
+   * @return Returns a SequenceDataset containing protein sequences.
+   */
+  def loadFastaProtein(pathName: String): SequenceDataset = {
+    loadFastaSequences(pathName, Alphabet.PROTEIN)
+  }
+
+  /**
+   * Load RNA sequences from FASTA into a SequenceDataset.
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported.
+   * @return Returns a SequenceDataset containing RNA sequences.
+   */
+  def loadFastaRna(pathName: String): SequenceDataset = {
+    loadFastaSequences(pathName, Alphabet.RNA)
+  }
+
+  /**
+   * Load sequences from a specified alphabet into a SequenceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see loadFastaDna
+   * @see loadFastaProtein
+   * @see loadFastaRna
+   * @see loadParquetSequences
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @param alphabet Alphabet in which to interpret the loaded sequences.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @param optProjection An optional projection schema to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @return Returns a SequenceDataset.
+   */
+  private def loadSequences(
+    pathName: String,
+    alphabet: Alphabet,
+    optPredicate: Option[FilterPredicate] = None,
+    optProjection: Option[Schema] = None): SequenceDataset = LoadSequences.time {
+
+    val trimmedPathName = trimExtensionIfCompressed(pathName)
+    if (isFastaExt(trimmedPathName)) {
+      info(s"Loading $pathName as FASTA $alphabet and converting to Sequences.")
+      loadFastaSequences(pathName, alphabet)
+    } else {
+      info(s"Loading $pathName as Parquet containing $alphabet Sequences.")
+      loadParquetSequences(pathName, optPredicate = optPredicate, optProjection = optProjection)
+    }
+  }
+
+  /**
+   * Load DNA sequences into a SequenceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see loadFastaDna
+   * @see loadParquetSequences
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @param optProjection An optional projection schema to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @return Returns a SequenceDataset containing DNA sequences.
+   */
+  def loadDnaSequences(
+    pathName: String,
+    optPredicate: Option[FilterPredicate] = None,
+    optProjection: Option[Schema] = None): SequenceDataset = {
+
+    loadSequences(pathName, Alphabet.DNA, optPredicate, optProjection)
+  }
+
+  /**
+   * Load protein sequences into a SequenceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see loadFastaProtein
+   * @see loadParquetSequences
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @param optProjection An optional projection schema to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @return Returns a SequenceRDD containing protein sequences.
+   */
+  def loadProteinSequences(
+    pathName: String,
+    optPredicate: Option[FilterPredicate] = None,
+    optProjection: Option[Schema] = None): SequenceDataset = {
+
+    loadSequences(pathName, Alphabet.PROTEIN, optPredicate, optProjection)
+  }
+
+  /**
+   * Load RNA sequences into a SequenceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see loadFastaRna
+   * @see loadParquetSequences
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @param optProjection An optional projection schema to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @return Returns a SequenceDataset containing RNA sequences.
+   */
+  def loadRnaSequences(
+    pathName: String,
+    optPredicate: Option[FilterPredicate] = None,
+    optProjection: Option[Schema] = None): SequenceDataset = {
+
+    loadSequences(pathName, Alphabet.RNA, optPredicate, optProjection)
+  }
+
+  /**
+   * Load DNA slices from FASTA into a SliceDataset.
+   *
+   * @param pathName The path name to load slices from.
+   *   Globs/directories are supported.
+   * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
+   *   than 1e9 should be avoided.
+   * @return Returns a SliceDataset containing DNA slices.
+   */
+  def loadFastaDna(
+    pathName: String,
+    maximumLength: Long = 10000L): SliceDataset = LoadFastaSlices.time {
+
+    val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
+      pathName,
+      classOf[TextInputFormat],
+      classOf[LongWritable],
+      classOf[Text]
+    )
+    if (Metrics.isRecording) fastaData.instrument() else fastaData
+
+    val remapData = fastaData.map(kv => (kv._1.get, kv._2.toString))
+
+    SliceDataset(FastaSliceConverter(remapData, maximumLength))
+  }
+
+  /**
+   * Load slices into a SliceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as DNA in FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see loadFastaDna(String, Long)
+   * @see loadParquetSlices
+   *
+   * @param pathName The path name to load DNA slices from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @param maximumLength Maximum slice length. Defaults to 10000L. Values greater
+   *   than 1e9 should be avoided.
+   * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @param optProjection An optional projection schema to use when reading Parquet + Avro.
+   *   Defaults to None.
+   * @return Returns a SliceDataset.
+   */
+  def loadSlices(
+    pathName: String,
+    maximumLength: Long = 10000L,
+    optPredicate: Option[FilterPredicate] = None,
+    optProjection: Option[Schema] = None): SliceDataset = LoadSlices.time {
+
+    val trimmedPathName = trimExtensionIfCompressed(pathName)
+    if (isFastaExt(trimmedPathName)) {
+      info(s"Loading $pathName as FASTA and converting to Slices.")
+      loadFastaDna(
+        pathName,
+        maximumLength
+      )
+    } else {
+      info(s"Loading $pathName as Parquet containing Slices.")
+      loadParquetSlices(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
   }
 
@@ -3598,6 +4284,126 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     samples: Seq[Sample],
     headerLines: Seq[VCFHeaderLine]): GenotypeDataset = {
     GenotypeDataset(df.as[GenotypeProduct], references, samples, headerLines)
+  }
+
+  // reads
+
+  /**
+   * Load the specified data frame into a ReadDataset, with empty metadata.
+   *
+   * @param df Data frame to load from.
+   * @return Returns a new ReadDataset loaded from the specified data frame, with empty metadata.
+   */
+  def loadReads(df: DataFrame): ReadDataset = {
+    ReadDataset(df.as[ReadProduct])
+  }
+
+  /**
+   * Load the specified data frame into a ReadDataset, with metadata loaded from the specified
+   * metadata path name.
+   *
+   * @param df Data frame to load from.
+   * @param metadataPathName Path name to load metadata from.
+   * @return Returns a new ReadDataset loaded from the specified data frame, with metadata loaded
+   *    from the specified metadata path name.
+   */
+  def loadReads(df: DataFrame, metadataPathName: String): ReadDataset = {
+    info(s"Loading metadata from path name $metadataPathName")
+    val references = loadAvroSequenceDictionary(metadataPathName)
+    loadReads(df, references)
+  }
+
+  /**
+   * Load the specified data frame and references into a ReadDataset.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the ReadDataset, may be empty.
+   * @return Returns a new ReadDataset loaded from the specified data frame and references.
+   */
+  def loadReads(
+    df: DataFrame,
+    references: SequenceDictionary): ReadDataset = {
+    ReadDataset(df.as[ReadProduct], references)
+  }
+
+  // sequences
+
+  /**
+   * Load the specified data frame into a SequenceDataset, with empty metadata.
+   *
+   * @param df Data frame to load from.
+   * @return Returns a new SequenceDataset loaded from the specified data frame, with empty metadata.
+   */
+  def loadSequences(df: DataFrame): SequenceDataset = {
+    SequenceDataset(df.as[SequenceProduct])
+  }
+
+  /**
+   * Load the specified data frame into a SequenceDataset, with metadata loaded from the specified
+   * metadata path name.
+   *
+   * @param df Data frame to load from.
+   * @param metadataPathName Path name to load metadata from.
+   * @return Returns a new SequenceDataset loaded from the specified data frame, with metadata loaded
+   *    from the specified metadata path name.
+   */
+  def loadSequences(df: DataFrame, metadataPathName: String): SequenceDataset = {
+    info(s"Loading metadata from path name $metadataPathName")
+    val references = loadAvroSequenceDictionary(metadataPathName)
+    loadSequences(df, references)
+  }
+
+  /**
+   * Load the specified data frame and references into a SequenceDataset.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the SequenceDataset, may be empty.
+   * @return Returns a new SequenceDataset loaded from the specified data frame and references.
+   */
+  def loadSequences(
+    df: DataFrame,
+    references: SequenceDictionary): SequenceDataset = {
+    SequenceDataset(df.as[SequenceProduct], references)
+  }
+
+  // slices
+
+  /**
+   * Load the specified data frame into a SliceDataset, with empty metadata.
+   *
+   * @param df Data frame to load from.
+   * @return Returns a new SliceDataset loaded from the specified data frame, with empty metadata.
+   */
+  def loadSlices(df: DataFrame): SliceDataset = {
+    SliceDataset(df.as[SliceProduct])
+  }
+
+  /**
+   * Load the specified data frame into a SliceDataset, with metadata loaded from the specified
+   * metadata path name.
+   *
+   * @param df Data frame to load from.
+   * @param metadataPathName Path name to load metadata from.
+   * @return Returns a new SliceDataset loaded from the specified data frame, with metadata loaded
+   *    from the specified metadata path name.
+   */
+  def loadSlices(df: DataFrame, metadataPathName: String): SliceDataset = {
+    info(s"Loading metadata from path name $metadataPathName")
+    val references = loadAvroSequenceDictionary(metadataPathName)
+    loadSlices(df, references)
+  }
+
+  /**
+   * Load the specified data frame and references into a SliceDataset.
+   *
+   * @param df Data frame to load from.
+   * @param references References for the SliceDataset, may be empty.
+   * @return Returns a new SliceDataset loaded from the specified data frame and references.
+   */
+  def loadSlices(
+    df: DataFrame,
+    references: SequenceDictionary): SliceDataset = {
+    SliceDataset(df.as[SliceProduct], references)
   }
 
   // variant contexts

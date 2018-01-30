@@ -100,12 +100,17 @@ With an ``ADAMContext``, you can load:
    -  From partitioned Parquet using ``loadPartitionedParquetFeatures`` (Scala only)
    -  Autodetected from any of the above using ``loadFeatures`` (Scala, Java, Python, and R)
 
--  Fragmented contig sequence as a ``NucleotideContigFragmentDataset``:
+-  Sequences as a ``SequenceDataset``:
 
-   -  From FASTA with ``loadFasta`` (Scala only)
-   -  From Parquet with ``loadParquetContigFragments`` (Scala only)
-   -  From partitioned Parquet with ``loadPartitionedParquetContigFragments`` (Scala only)
-   -  Autodetected from either of the above using ``loadSequences`` (Scala, Java, Python, and R)
+   -  From FASTA with ``loadFastaDna``, ``loadFastaProtein``, ``loadFastaRna`` (Scala only)
+   -  From Parquet with ``loadParquetSequences`` (Scala only)
+   -  Autodetected from either of the above using ``loadDnaSequences``, ``loadProteinSequences``, ``loadRnaSequences`` (Scala, Java, Python, and R)
+
+-  Sequence slices as a ``SliceDataset``:
+
+   -  From FASTA with ``loadFastaDna`` (Scala only)
+   -  From Parquet with ``loadParquetSlices`` (Scala only)
+   -  Autodetected from either of the above using ``loadSlices`` (Scala, Java, Python, and R)
 
 -  Coverage data as a ``CoverageDataset``:
 

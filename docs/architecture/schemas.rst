@@ -19,8 +19,8 @@ schemas:
    from a single sequenced fragment.
 -  The *Genotype* schema represents a genotype call, along with
    annotations about the quality/read support of the called genotype.
--  The *NucleotideContigFragment* schema represents a section of a
-   contig's sequence.
+-  The *Sequence* and *Slice* schema represents sequences and slices of
+   sequences, respectfully.
 -  The *Variant* schema represents a sequence variant, along with
    statistics about that variant's support across a group of samples,
    and annotations about the effect of the variant.

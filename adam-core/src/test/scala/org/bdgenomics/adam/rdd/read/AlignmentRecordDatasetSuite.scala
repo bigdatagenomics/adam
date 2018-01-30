@@ -41,9 +41,9 @@ import org.bdgenomics.adam.rdd.{
   ADAMContext,
   TestSaveArgs
 }
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
+import org.bdgenomics.adam.rdd.sequence.SliceDataset
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeDataset,
   VariantDataset,
@@ -55,7 +55,7 @@ import org.bdgenomics.adam.sql.{
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct,
   VariantContext => VariantContextProduct
 }
@@ -89,15 +89,15 @@ object AlignmentRecordDatasetSuite extends Serializable {
     f.getAlignments().get(0)
   }
 
-  def ncfFn(r: AlignmentRecord): NucleotideContigFragment = {
-    NucleotideContigFragment.newBuilder
-      .setContigName(r.getReferenceName)
+  def sliceFn(r: AlignmentRecord): Slice = {
+    Slice.newBuilder
+      .setName(r.getReferenceName)
       .setSequence(r.getSequence)
       .build
   }
 
-  def ncfFn(f: Fragment): NucleotideContigFragment = {
-    ncfFn(fragToRead(f))
+  def sliceFn(f: Fragment): Slice = {
+    sliceFn(fragToRead(f))
   }
 
   def covFn(r: AlignmentRecord): Coverage = {
@@ -1440,35 +1440,35 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     assert(kmerCounts.toDF().where($"kmer" === "CCAAGA" && $"count" === 3).count === 1)
   }
 
-  sparkTest("transform reads to contig genomic dataset") {
+  sparkTest("transform reads to slice genomic dataset") {
     val reads = sc.loadAlignments(testFile("small.sam"))
 
-    def checkSave(ncRdd: NucleotideContigFragmentDataset) {
+    def checkSave(sliceRdd: SliceDataset) {
       val tempPath = tmpLocation(".fa")
-      ncRdd.saveAsFasta(tempPath)
+      sliceRdd.saveAsFasta(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count.toInt === 20)
+      assert(sc.loadSlices(tempPath).rdd.count.toInt === 20)
     }
 
-    val features: NucleotideContigFragmentDataset = reads.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
+    val slices: SliceDataset = reads.transmute[Slice, SliceProduct, SliceDataset](
       (rdd: RDD[AlignmentRecord]) => {
-        rdd.map(AlignmentRecordDatasetSuite.ncfFn)
+        rdd.map(AlignmentRecordDatasetSuite.sliceFn)
       })
 
-    checkSave(features)
+    checkSave(slices)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: NucleotideContigFragmentDataset = reads.transmuteDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
+    val slicesDs: SliceDataset = reads.transmuteDataset[Slice, SliceProduct, SliceDataset](
       (ds: Dataset[AlignmentRecordProduct]) => {
         ds.map(r => {
-          NucleotideContigFragmentProduct.fromAvro(
-            AlignmentRecordDatasetSuite.ncfFn(r.toAvro))
+          SliceProduct.fromAvro(
+            AlignmentRecordDatasetSuite.sliceFn(r.toAvro))
         })
       })
 
-    checkSave(featuresDs)
+    checkSave(slicesDs)
   }
 
   sparkTest("transform reads to coverage genomic dataset") {
@@ -1859,5 +1859,18 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     })
 
     assert(reads.dataset.first().start.get === transformed.dataset.first().start.get)
+  }
+
+  sparkTest("convert alignments to reads") {
+    val alignments = sc.loadAlignments(testFile("small.sam"))
+    val reads = alignments.toReads()
+    assert(alignments.sequences === reads.sequences)
+    assert(alignments.rdd.count === reads.rdd.count)
+
+    val first = reads.rdd.sortBy(_.getName).first()
+    assert(first.getName() === "simread:1:101556378:false")
+    assert(first.getSequence() === "TTTATTTTTTGAGCATGAAAGTAATATATGCTCAGTGTAAACAATTAGGTCATTATAAATATATTTAACAGGAAT")
+    assert(first.getLength() === 75L)
+    assert(first.getAlphabet() === org.bdgenomics.formats.avro.Alphabet.DNA)
   }
 }

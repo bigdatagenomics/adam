@@ -295,19 +295,37 @@ object ReferenceRegion {
   }
 
   /**
-   * Generates a reference region from assembly data. Returns None if the assembly does not
-   * have an ID or a start position.
+   * Generates a reference region from a sequence. Returns None if the sequence does not
+   * have a name or a length.
    *
-   * @param fragment Assembly fragment from which to generate data.
-   * @return Region corresponding to inclusive region of contig fragment.
+   * @param sequence Sequence from which to generate data.
+   * @return Region corresponding to inclusive region of the specified sequence.
    */
-  def apply(fragment: NucleotideContigFragment): Option[ReferenceRegion] = {
-    if (fragment.getContigName != null &&
-      fragment.getStart != null &&
-      fragment.getEnd != null) {
-      Some(ReferenceRegion(fragment.getContigName,
-        fragment.getStart,
-        fragment.getEnd))
+  def apply(sequence: Sequence): Option[ReferenceRegion] = {
+    if (sequence.getName != null &&
+      sequence.getLength != null) {
+      Some(ReferenceRegion(sequence.getName,
+        0L,
+        sequence.getLength))
+    } else {
+      None
+    }
+  }
+
+  /**
+   * Generates a reference region from a slice. Returns None if the slice does not
+   * have a name, a start position, or an end position.
+   *
+   * @param slice Slice from which to generate data.
+   * @return Region corresponding to inclusive region of the specified slice.
+   */
+  def apply(slice: Slice): Option[ReferenceRegion] = {
+    if (slice.getName != null &&
+      slice.getStart != null &&
+      slice.getEnd != null) {
+      Some(ReferenceRegion(slice.getName,
+        slice.getStart,
+        slice.getEnd))
     } else {
       None
     }

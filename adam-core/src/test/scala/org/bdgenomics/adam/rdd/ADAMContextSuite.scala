@@ -34,7 +34,6 @@ import org.apache.spark.sql.SQLContext
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.sql.{ VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
@@ -204,7 +203,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val gts = sc.loadGenotypes(path)
     val vcRdd = gts.toVariantContexts
     val vcs = vcRdd.rdd.collect.sortBy(_.position)
-    assert(vcs.size === 6)
+    assert(vcs.length === 6)
 
     val vc = vcs.head
     val variant = vc.variant.variant
@@ -318,8 +317,8 @@ class ADAMContextSuite extends ADAMFunSuite {
         assert(reads.rdd.filter(_.getReadInFragment == 1).count === 2)
       }
 
-      assert(reads.rdd.collect.forall(_.getSequence.toString.length === 250))
-      assert(reads.rdd.collect.forall(_.getQuality.toString.length === 250))
+      assert(reads.rdd.collect.forall(_.getSequence.length === 250))
+      assert(reads.rdd.collect.forall(_.getQuality.length === 250))
     }
   }
 
@@ -403,32 +402,36 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("read a HLA fasta from GRCh38") {
     val inputPath = testFile("HLA_DQB1_05_01_01_02.fa")
-    val gDataset = sc.loadFasta(inputPath, 10000L)
-    assert(gDataset.sequences.records.size === 1)
-    assert(gDataset.sequences.records.head.name === "HLA-DQB1*05:01:01:02")
-    val fragments = gDataset.rdd.collect
-    assert(fragments.size === 1)
-    assert(fragments.head.getContigName === "HLA-DQB1*05:01:01:02")
+    val gRdd = sc.loadFastaDna(inputPath)
+
+    // see https://github.com/bigdatagenomics/adam/issues/1894
+    val withSequenceDictionary = gRdd.createSequenceDictionary()
+    assert(withSequenceDictionary.sequences.records.size === 1)
+    assert(withSequenceDictionary.sequences.records.head.name === "HLA-DQB1*05:01:01:02")
+
+    val sequences = gRdd.rdd.collect
+    assert(sequences.length === 1)
+    assert(sequences.head.getName === "HLA-DQB1*05:01:01:02")
   }
 
   sparkTest("read a gzipped fasta file") {
     val inputPath = testFile("chr20.250k.fa.gz")
-    val contigFragments = sc.loadFasta(inputPath, 10000L)
-      .transform((rdd: RDD[NucleotideContigFragment]) => {
-        rdd.sortBy(_.getIndex.toInt)
-      })
-    assert(contigFragments.rdd.count() === 26)
-    val first: NucleotideContigFragment = contigFragments.rdd.first()
-    assert(first.getContigName === null)
+    val slices = sc.loadFastaDna(inputPath, 10000L)
+      .rdd
+      .sortBy(_.getIndex.toInt)
+
+    assert(slices.count() === 26)
+    val first = slices.first()
+    assert(first.getName === null)
     assert(first.getDescription === "gi|224384749|gb|CM000682.1| Homo sapiens chromosome 20, GRCh37 primary reference assembly")
     assert(first.getIndex === 0)
     assert(first.getSequence.length === 10000)
     assert(first.getStart === 0L)
     assert(first.getEnd === 10000L)
-    assert(first.getFragments === 26)
+    assert(first.getSlices === 26)
 
     // 250k file actually has 251930 bases
-    val last: NucleotideContigFragment = contigFragments.rdd.collect().last
+    val last = slices.collect().last
     assert(last.getIndex === 25)
     assert(last.getStart === 250000L)
     assert(last.getEnd === 251930L)
@@ -866,6 +869,39 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reloaded.rdd.collect().deep == genotypes.rdd.collect().deep)
   }
 
+  sparkTest("load reads from data frame") {
+    val path = testFile("bqsr1-r1.fq")
+    val reads = sc.loadAlignments(path).toReads()
+    val outputDir = tmpLocation()
+    reads.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadReads(df)
+    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.rdd.collect().deep == reads.rdd.collect().deep)
+  }
+
+  sparkTest("load sequences from data frame") {
+    val path = testFile("gencode.v19.pc_transcripts.250k.fa.gz")
+    val sequences = sc.loadDnaSequences(path)
+    val outputDir = tmpLocation()
+    sequences.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadSequences(df)
+    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.rdd.collect().deep == sequences.rdd.collect().deep)
+  }
+
+  sparkTest("load slices from data frame") {
+    val path = testFile("chr20.250k.fa.gz")
+    val slices = sc.loadSlices(path, maximumLength = 100L)
+    val outputDir = tmpLocation()
+    slices.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadSlices(df)
+    assert(reloaded.sequences.isEmpty)
+    assert(reloaded.rdd.collect().deep == slices.rdd.collect().deep)
+  }
+
   sparkTest("load variant contexts from data frame with default header lines") {
     val path = testFile("small.vcf")
     val vcs = sc.loadVcf(path)
@@ -877,7 +913,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reloaded.samples.isEmpty)
     assert(reloaded.headerLines == DefaultHeaderLines.allHeaderLines)
     // note: weaker assertion than other types, vc models don't equal each other
-    assert(reloaded.rdd.collect().size == vcs.rdd.collect().size)
+    assert(reloaded.rdd.collect().length == vcs.rdd.collect().length)
   }
 
   sparkTest("load variant contexts from data frame with empty header lines") {
@@ -890,7 +926,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reloaded.sequences == vcs.sequences)
     assert(reloaded.samples == vcs.samples)
     assert(reloaded.headerLines.isEmpty)
-    assert(reloaded.rdd.collect().size == vcs.rdd.collect().size)
+    assert(reloaded.rdd.collect().length == vcs.rdd.collect().length)
   }
 
   sparkTest("load variants from data frame with default header lines") {
@@ -978,7 +1014,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reloaded.sequences == vcs.sequences)
     assert(reloaded.headerLines.toSet == vcs.headerLines.toSet)
     assert(reloaded.samples == vcs.samples)
-    assert(reloaded.rdd.collect().size == vcs.rdd.collect().size)
+    assert(reloaded.rdd.collect().length == vcs.rdd.collect().length)
   }
 
   sparkTest("load variants with metadata from data frame") {
@@ -991,5 +1027,61 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reloaded.sequences == variants.sequences)
     assert(reloaded.headerLines.toSet == variants.headerLines.toSet)
     assert(reloaded.rdd.collect().deep == variants.rdd.collect().deep)
+  }
+
+  sparkTest("read a fasta file with short sequences as sequences") {
+    val inputPath = testFile("trinity.fa")
+    val sequences = sc.loadFastaDna(inputPath)
+    assert(sequences.rdd.count === 5)
+  }
+
+  sparkTest("read a fasta file with long sequences as sequences") {
+    val inputPath = testFile("chr20.250k.fa.gz")
+    val sequences = sc.loadFastaDna(inputPath)
+    assert(sequences.rdd.count === 1)
+    val sequence = sequences.rdd.first()
+    assert(sequence.getName === null)
+    assert(sequence.getDescription === "gi|224384749|gb|CM000682.1| Homo sapiens chromosome 20, GRCh37 primary reference assembly")
+    assert(sequence.getAlphabet === org.bdgenomics.formats.avro.Alphabet.DNA)
+    assert(sequence.getSequence.length === 251930)
+    assert(sequence.getLength === 251930L)
+  }
+
+  sparkTest("read a fasta file with short sequences as slices") {
+    val inputPath = testFile("trinity.fa")
+    val slices = sc.loadFastaDna(inputPath, 10000L)
+    assert(slices.rdd.count === 5)
+  }
+
+  sparkTest("read a fasta file with long sequences as slices") {
+    val inputPath = testFile("chr20.250k.fa.gz")
+    val slices = sc.loadFastaDna(inputPath, 10000L)
+    slices.transform((rdd: RDD[Slice]) => rdd.sortBy(_.getIndex.toInt))
+    assert(slices.rdd.count() === 26)
+
+    val first = slices.rdd.first()
+    assert(first.getName === null)
+    assert(first.getDescription === "gi|224384749|gb|CM000682.1| Homo sapiens chromosome 20, GRCh37 primary reference assembly")
+    assert(first.getAlphabet === org.bdgenomics.formats.avro.Alphabet.DNA)
+    assert(first.getSequence.length === 10000)
+    assert(first.getLength === 10000L)
+    assert(first.getStart === 0L)
+    assert(first.getEnd === 10000L)
+    assert(first.getIndex === 0)
+    assert(first.getSlices === 26)
+    assert(first.getTotalLength === 251930L)
+
+    // 250k file actually has 251930 bases
+    val last = slices.rdd.collect().last
+    assert(last.getName === null)
+    assert(last.getDescription === "gi|224384749|gb|CM000682.1| Homo sapiens chromosome 20, GRCh37 primary reference assembly")
+    assert(last.getAlphabet === org.bdgenomics.formats.avro.Alphabet.DNA)
+    assert(last.getSequence.length === 1930)
+    assert(last.getLength === 1930L)
+    assert(last.getStart === 250000L)
+    assert(last.getEnd === 251930L)
+    assert(last.getIndex === 25)
+    assert(last.getSlices === 26)
+    assert(last.getTotalLength === 251930L)
   }
 }

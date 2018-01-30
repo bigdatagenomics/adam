@@ -4,53 +4,6 @@ Conversion tools
 These tools convert data between a legacy genomic file format and using
 ADAM's schemas to store data in Parquet.
 
-fasta2adam and adam2fasta
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-These commands convert between FASTA and Parquet files storing
-assemblies using the NucleotideContigFragment schema.
-
-``fasta2adam`` takes two required arguments:
-
-1. ``FASTA``: The input FASTA file to convert.
-2. ``ADAM``: The path to save the Parquet formatted
-   NucleotideContigFragments to.
-
-``fasta2adam`` supports the full set of `default
-options <#default-args>`__, as well as the following options:
-
--  ``-fragment_length``: The fragment length to shard a given contig
-   into. Defaults to 10,000bp.
--  ``-reads``: Path to a set of reads that includes sequence info. This
-   read path is used to obtain the sequence indices for ordering the
-   contigs from the FASTA file.
--  ``-repartition``: The number of partitions to save the data to. If
-   provided, forces a shuffle.
--  ``-verbose``: If given, enables additional logging where the sequence
-   dictionary is printed.
-
-``adam2fasta`` takes two required arguments:
-
-1. ``ADAM``: The path to a Parquet file containing
-   NucleotideContigFragments.
-2. ``FASTA``: The path to save the FASTA file to.
-
-``adam2fasta`` only supports the ``-print_metrics`` option from the
-`default options <#default-args>`__. Additionally, ``adam2fasta`` takes
-the following options:
-
--  ``-line_width``: The line width in characters to use for breaking
-   FASTA lines. Defaults to 60 characters.
--  ``-coalesce``: Sets the number of partitions to coalesce the output
-   to. If ``-force_shuffle_coalesce`` is not provided, the Spark engine
-   may ignore the coalesce directive.
--  ``-force_shuffle_coalesce``: Forces a shuffle that leads to the
-   output being saved with the number of partitions requested by
-   ``-coalesce``. This is necessary if the ``-coalesce`` would increase
-   the number of partitions, or if it would reduce the number of
-   partitions to fewer than the number of Spark executors. This may have
-   a substantial performance cost, and will invalidate any sort order.
-
 adam2fastq
 ~~~~~~~~~~
 
@@ -125,4 +78,3 @@ Additionally, ``transformFragments`` takes the following options:
 -  ``-sort_lexicographically``: Sorts reads by alignment position.
    Unmapped reads are placed at the end of all reads. Contigs are
    ordered lexicographically.
-

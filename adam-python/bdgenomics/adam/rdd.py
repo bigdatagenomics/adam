@@ -30,7 +30,8 @@ rdd
    FeatureDataset
    FragmentDataset
    GenotypeDataset
-   NucleotideContigFragmentDataset
+   SequenceDataset
+   SliceDataset
    VariantDataset
    VariantContextDataset
 """
@@ -228,9 +229,7 @@ class GenomicDataset(object):
 
     def _destClassSuffix(self, destClass):
 
-        if destClass is NucleotideContigFragmentDataset:
-            return "ContigsDatasetConverter"
-        elif destClass is CoverageDataset:
+        if destClass is CoverageDataset:
             return "CoverageDatasetConverter"
         elif destClass is FeatureDataset:
             return "FeaturesDatasetConverter"
@@ -242,6 +241,12 @@ class GenomicDataset(object):
             return "GenotypeDatasetConverter"
         elif destClass is VariantDataset:
             return "VariantDatasetConverter"
+        elif destClass is ReadRDD:
+            return "ReadDatasetConverter"
+        elif destClass is SequenceRDD:
+            return "SequenceDatasetConverter"
+        elif destClass is SliceRDD:
+            return "SliceDatasetConverter"
         else:
             raise ValueError("No conversion method known for %s." % destClass)
 
@@ -1484,23 +1489,21 @@ class GenotypeDataset(VCFSupportingGenomicDataset):
         return "org.bdgenomics.adam.api.java.GenotypesTo%s" % self._destClassSuffix(destClass)
 
 
-class NucleotideContigFragmentDataset(GenomicDataset):
-    """
-    Wraps an GenomicDataset with Nucleotide Contig Fragment metadata and functions.
-    """
+class SliceDataset(GenomicDataset):
+
 
     def _replaceRdd(self, newRdd):
 
-        return NucleotideContigFragmentDataset(newRdd, self.sc)
+        return SliceDataset(newRdd, self.sc)
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python NucleotideContigFragmentDataset from a JVM
-        NucleotideContigFragmentDataset. Should not be called from user code;
+        Constructs a Python SliceDataset from a JVM
+        SliceDataset. Should not be called from user code;
         instead, go through bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM NucleotideContigFragmentDataset.
+        :param jvmRdd: Py4j handle to the underlying JVM SliceDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
@@ -1509,9 +1512,9 @@ class NucleotideContigFragmentDataset(GenomicDataset):
 
     def save(self, fileName):
         """
-        Save nucleotide contig fragments as Parquet or FASTA.
+        Save slices as Parquet or FASTA.
 
-        If filename ends in .fa or .fasta, saves as Fasta. If not, saves
+        If filename ends in .fa or .fasta, saves as FASTA. If not, saves
         fragments to Parquet. Defaults to 60 character line length, if saving to
         FASTA.
 
@@ -1528,17 +1531,18 @@ class NucleotideContigFragmentDataset(GenomicDataset):
         length.
 
         :param int flankLength: The length to extend adjacent records by.
-        :return: Returns the genomic dataset, with all adjacent fragments extended with
+        :return: Returns the genomic dataset, with all adjacent slices extended with
         flanking sequence.
-        :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentDataset
+        :rtype: bdgenomics.adam.rdd.SliceDataset
         """
 
-        return NucleotideContigFragmentDataset(self._jvmRdd.flankAdjacentFragments(flankLength), self.sc)
+        return SliceDataset(self._jvmRdd.flankAdjacentFragments(flankLength),
+                        self.sc)
 
 
     def countKmers(self, kmerLength):
         """
-        Counts the k-mers contained in a FASTA contig.
+        Counts the k-mers contained in a slice.
 
         :param int kmerLength: The value of _k_ to use for cutting _k_-mers.
         :return: Returns an RDD containing k-mer/count pairs.
@@ -1550,7 +1554,7 @@ class NucleotideContigFragmentDataset(GenomicDataset):
 
     def _inferConversionFn(self, destClass):
 
-        return "org.bdgenomics.adam.api.java.ContigsTo%s" % self._destClassSuffix(destClass)
+        return "org.bdgenomics.adam.api.java.SlicesTo%s" % self._destClassSuffix(destClass)
 
 
 class VariantDataset(VCFSupportingGenomicDataset):
@@ -1648,3 +1652,85 @@ class VariantContextDataset(VCFSupportingGenomicDataset):
                                deferMerging,
                                disableFastConcat,
                                _toJava(stringency, self.sc._jvm))
+
+
+class ReadRDD(GenomicDataset):
+
+
+    def _replaceRdd(self, newRdd):
+
+        return ReadRDD(newRdd, self.sc)
+
+
+    def __init__(self, jvmRdd, sc):
+        """
+        Constructs a Python ReadRDD from a JVM
+        ReadRDD. Should not be called from user code;
+        instead, go through bdgenomics.adamContext.ADAMContext.
+
+        :param jvmRdd: Py4j handle to the underlying JVM ReadRDD.
+        :param pyspark.context.SparkContext sc: Active Spark Context.
+        """
+
+        GenomicDataset.__init__(self, jvmRdd, sc)
+
+
+    def save(self, fileName):
+        """
+        Save reads as Parquet or FASTQ.
+
+        If filename ends in .fq or .fastq, saves as FASTQ. If not, saves
+        reads to Parquet.
+
+        :param str fileName: Path to save to.
+        """
+
+        self._jvmRdd.save(fileName)
+
+
+    def _inferConversionFn(self, destClass):
+
+        return "org.bdgenomics.adam.api.java.ReadsTo%s" % self._destClassSuffix(destClass)
+
+
+class SequenceDataset(GenomicDataset):
+
+
+    def _replaceRdd(self, newRdd):
+
+        return SequenceDataset(newRdd, self.sc)
+
+
+    def __init__(self, jvmRdd, sc):
+        """
+        Constructs a Python SequenceDataset from a JVM
+        SequenceDataset. Should not be called from user code;
+        instead, go through bdgenomics.adamContext.ADAMContext.
+
+        :param jvmRdd: Py4j handle to the underlying JVM SequenceDataset.
+        :param pyspark.context.SparkContext sc: Active Spark Context.
+        """
+
+        GenomicDataset.__init__(self, jvmRdd, sc)
+
+# slice(maximumLength)
+# slice(region)
+# slice(regions)
+
+    def save(self, fileName):
+        """
+        Save slices as Parquet or FASTA.
+
+        If filename ends in .fa or .fasta, saves as Fasta. If not, saves
+        sequences to Parquet. Defaults to 60 character line length, if saving to
+        FASTA.
+
+        :param str fileName: Path to save to.
+        """
+
+        self._jvmRdd.save(fileName)
+
+
+    def _inferConversionFn(self, destClass):
+
+        return "org.bdgenomics.adam.api.java.SequencesTo%s" % self._destClassSuffix(destClass)

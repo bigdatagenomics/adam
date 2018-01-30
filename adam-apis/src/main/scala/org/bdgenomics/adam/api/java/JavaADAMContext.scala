@@ -21,10 +21,10 @@ import htsjdk.samtools.ValidationStringency
 import org.apache.spark.api.java.JavaSparkContext
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
+import org.bdgenomics.adam.rdd.sequence.{ SequenceDataset, SliceDataset }
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeDataset,
   VariantDataset
@@ -129,26 +129,6 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
     stringency: ValidationStringency): AlignmentRecordDataset = {
 
     ac.loadIndexedBam(pathName, viewRegions.toIterable, stringency = stringency)
-  }
-
-  /**
-   * (Java-specific) Load nucleotide contig fragments into a NucleotideContigFragmentDataset.
-   *
-   * If the path name has a .fa/.fasta extension, load as FASTA format.
-   * Else, fall back to Parquet + Avro.
-   *
-   * For FASTA format, compressed files are supported through compression codecs configured
-   * in Hadoop, which by default include .gz and .bz2, but can include more.
-   *
-   * @see ADAMContext#loadContigFragments
-   *
-   * @param pathName The path name to load nucleotide contig fragments from.
-   *   Globs/directories are supported, although file extension must be present
-   *   for FASTA format.
-   * @return Returns a NucleotideContigFragmentDataset.
-   */
-  def loadContigFragments(pathName: java.lang.String): NucleotideContigFragmentDataset = {
-    ac.loadContigFragments(pathName)
   }
 
   /**
@@ -390,10 +370,10 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   /**
    * (Java-specific) Load reference sequences into a broadcastable ReferenceFile.
    *
-   * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
+   * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadSlices
    * to load the reference as an RDD, which is then collected to the driver.
    *
-   * @see loadContigFragments
+   * @see ADAMContext#loadSlices
    *
    * @param pathName The path name to load reference sequences from.
    *   Globs/directories for 2bit format are not supported.
@@ -409,11 +389,11 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   /**
    * (Java-specific) Load reference sequences into a broadcastable ReferenceFile.
    *
-   * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadContigFragments
+   * If the path name has a .2bit extension, loads a 2bit file. Else, uses loadSlices
    * to load the reference as an RDD, which is then collected to the driver. Uses a
    * maximum fragment length of 10kbp.
    *
-   * @see loadContigFragments
+   * @see ADAMContext#loadSlices
    *
    * @param pathName The path name to load reference sequences from.
    *   Globs/directories for 2bit format are not supported.
@@ -421,5 +401,114 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    */
   def loadReferenceFile(pathName: java.lang.String): ReferenceFile = {
     loadReferenceFile(pathName, 10000L)
+  }
+
+  /**
+   * (Java-specific) Load DNA sequences into a SequenceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see ADAMContext#loadFastaDna
+   * @see ADAMContext#loadParquetSequences
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @return Returns a SequenceDataset containing DNA sequences.
+   */
+  def loadDnaSequences(pathName: java.lang.String): SequenceDataset = {
+    ac.loadDnaSequences(pathName)
+  }
+
+  /**
+   * (Java-specific) Load protein sequences into a SequenceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see ADAMContext#loadFastaProtein
+   * @see ADAMContext#loadParquetSequences
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @return Returns a SequenceDataset containing protein sequences.
+   */
+  def loadProteinSequences(pathName: java.lang.String): SequenceDataset = {
+    ac.loadProteinSequences(pathName)
+  }
+
+  /**
+   * (Java-specific) Load RNA sequences into a SequenceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @see ADAMContext#loadFastaRna
+   * @see ADAMContext#loadParquetSequences
+   *
+   * @param pathName The path name to load sequences from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @return Returns a SequenceDataset containing RNA sequences.
+   */
+  def loadRnaSequences(pathName: java.lang.String): SequenceDataset = {
+    ac.loadRnaSequences(pathName)
+  }
+
+  /**
+   * (Java/Python-specific) Load slices into a SliceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as DNA in FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @param pathName The path name to load DNA slices from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @param maximumLength Maximum slice length, reduced to Integer data type to support
+   *   dispatch from Python.
+   * @return Returns a SliceDataset.
+   */
+  def loadSlices(
+    pathName: java.lang.String,
+    maximumLength: java.lang.Integer): SliceDataset = {
+
+    ac.loadSlices(pathName, maximumLength.toLong)
+  }
+
+  /**
+   * (R-specific) Load slices into a SliceDataset.
+   *
+   * If the path name has a .fa/.fasta extension, load as DNA in FASTA format.
+   * Else, fall back to Parquet + Avro.
+   *
+   * For FASTA format, compressed files are supported through compression codecs configured
+   * in Hadoop, which by default include .gz and .bz2, but can include more.
+   *
+   * @param pathName The path name to load DNA slices from.
+   *   Globs/directories are supported, although file extension must be present
+   *   for FASTA format.
+   * @param maximumLength Maximum fragment length, in Double data type to support
+   *   dispatch from SparkR.
+   * @return Returns a SliceDataset.
+   */
+  def loadSlices(
+    pathName: java.lang.String,
+    maximumLength: java.lang.Double): SliceDataset = {
+
+    ac.loadSlices(pathName, maximumLength.toLong)
   }
 }

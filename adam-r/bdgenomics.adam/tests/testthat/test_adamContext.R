@@ -71,8 +71,14 @@ test_that("load variants from vcf", {
     expect_equal(count(variantDf), 6)
 })
 
-test_that("load fasta", {
-    ncfs <- loadContigFragments(ac, resourceFile("HLA_DQB1_05_01_01_02.fa"))
-    ncfDf <- toDF(ncfs)
-    expect_equal(count(ncfDf), 1)
+test_that("load fasta sequences", {
+    sequences <- loadDnaSequences(ac, resourceFile("HLA_DQB1_05_01_01_02.fa"))
+    sequencesDf <- toDF(sequences)
+    expect_equal(count(sequencesDf), 1)
+})
+
+test_that("load fasta slices", {
+    slices <- loadSlices(ac, resourceFile("HLA_DQB1_05_01_01_02.fa"), 10000L)
+    slicesDf <- toDF(slices)
+    expect_equal(count(slicesDf), 1)
 })

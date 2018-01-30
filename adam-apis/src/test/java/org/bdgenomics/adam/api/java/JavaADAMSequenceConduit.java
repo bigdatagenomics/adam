@@ -20,24 +20,25 @@ package org.bdgenomics.adam.api.java;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 import org.bdgenomics.adam.rdd.ADAMContext;
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset;
+import org.bdgenomics.adam.rdd.sequence.SequenceDataset;
 
 /**
- * A simple test class for the JavaADAMRDD/Context. Writes an RDD of nucleotide
- * contig fragments to disk and reads it back.
+ * A simple test class for the JavaADAMRDD/Context. Writes an RDD of sequences
+ * to disk and reads it back.
  */
-final class JavaADAMContigConduit {
-    public static NucleotideContigFragmentDataset conduit(final NucleotideContigFragmentDataset recordRdd,
-                                                          final ADAMContext ac) throws IOException {
+final class JavaADAMSequenceConduit {
+    public static SequenceDataset conduit(final SequenceDataset sequenceDataset,
+                                      final ADAMContext ac) throws IOException {
 
         // make temp directory and save file
         Path tempDir = Files.createTempDirectory("javaAC");
-        String fileName = tempDir.toString() + "/testRdd.contig.adam";
-        recordRdd.save(fileName, true);
+        String fileName = tempDir.toString() + "/testRdd.sequences.adam";
+        sequenceDataset.save(fileName, true, true);
 
         // create a new adam context and load the file
         JavaADAMContext jac = new JavaADAMContext(ac);
-        return jac.loadContigFragments(fileName);
+        return jac.loadDnaSequences(fileName);
     }
 }

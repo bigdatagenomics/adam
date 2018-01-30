@@ -19,7 +19,7 @@ package org.bdgenomics.adam.models
 
 import htsjdk.samtools.{ SAMFileHeader, SAMSequenceDictionary, SAMSequenceRecord }
 import htsjdk.variant.vcf.VCFHeader
-import org.bdgenomics.formats.avro.{ NucleotideContigFragment, Reference }
+import org.bdgenomics.formats.avro.{ Reference, Sequence, Slice }
 import scala.collection.JavaConversions.{ asScalaIterator, seqAsJavaList }
 import scala.collection.JavaConverters._
 import scala.collection._
@@ -496,14 +496,28 @@ object SequenceRecord {
   }
 
   /**
-   * Extracts the contig metadata from a nucleotide fragment.
+   * Builds a sequence record from a sequence.
    *
-   * @param fragment The assembly fragment to extract a SequenceRecord from.
-   * @return The sequence record metadata from a single assembly fragment.
+   * @param sequence Sequence to build from.
+   * @return The specified sequence as a SequenceRecord.
    */
-  def fromADAMContigFragment(fragment: NucleotideContigFragment): SequenceRecord = {
-    SequenceRecord(fragment.getContigName,
-      fragment.getContigLength)
+  def fromSequence(sequence: Sequence): SequenceRecord = {
+    SequenceRecord(
+      sequence.getName,
+      Option(sequence.getLength).map(l => l: Long).getOrElse(Long.MaxValue)
+    )
+  }
+
+  /**
+   * Builds a sequence record from a slice.
+   *
+   * @param slice Slice to build from.
+   * @return The specified slice as a SequenceRecord.
+   */
+  def fromSlice(slice: Slice): SequenceRecord = {
+    SequenceRecord(
+      slice.getName,
+      Option(slice.getTotalLength).map(l => l: Long).getOrElse(Long.MaxValue)
+    )
   }
 }
-

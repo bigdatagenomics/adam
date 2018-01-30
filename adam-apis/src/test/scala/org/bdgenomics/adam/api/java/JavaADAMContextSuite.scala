@@ -49,16 +49,6 @@ class JavaADAMContextSuite extends ADAMFunSuite {
     assert(reads.rdd.count == 2)
   }
 
-  sparkTest("can read and write a small FASTA file") {
-    val path = copyResource("chr20.250k.fa.gz")
-    val aRdd = jac.loadContigFragments(path)
-    assert(aRdd.jrdd.count() === 26)
-
-    val newRdd = JavaADAMContigConduit.conduit(aRdd, sc)
-
-    assert(newRdd.jrdd.count() === 26)
-  }
-
   sparkTest("can read and write a small .SAM file as fragments") {
     val path = copyResource("small.sam")
     val aRdd = jac.loadFragments(path)
@@ -113,5 +103,25 @@ class JavaADAMContextSuite extends ADAMFunSuite {
     val path = copyResource("hg19.chrM.2bit")
     val refFile = jac.loadReferenceFile(path)
     assert(refFile.extract(ReferenceRegion("hg19_chrM", 16561, 16571)) === "CATCACGATG")
+  }
+
+  sparkTest("can read and write .fa as sequences") {
+    val path = copyResource("trinity.fa")
+    val sequences = jac.loadDnaSequences(path)
+    assert(sequences.jrdd.count() === 5)
+
+    val newRdd = JavaADAMSequenceConduit.conduit(sequences, sc)
+
+    assert(newRdd.jrdd.count() === 5)
+  }
+
+  sparkTest("can read and write .fa as slices") {
+    val path = copyResource("trinity.fa")
+    val slices = jac.loadSlices(path, 10000L)
+    assert(slices.jrdd.count() === 5)
+
+    val newRdd = JavaADAMSliceConduit.conduit(slices, sc)
+
+    assert(newRdd.jrdd.count() === 5)
   }
 }

@@ -27,7 +27,6 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordDataset,
@@ -35,6 +34,7 @@ import org.bdgenomics.adam.rdd.read.{
   AnySAMOutFormatter,
   QualityScoreBin
 }
+import org.bdgenomics.adam.rdd.sequence.SliceDataset
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeDataset,
   VariantDataset,
@@ -45,7 +45,7 @@ import org.bdgenomics.adam.sql.{
   Feature => FeatureProduct,
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Slice => SliceProduct,
   Variant => VariantProduct,
   VariantContext => VariantContextProduct
 }
@@ -380,35 +380,35 @@ class FragmentDatasetSuite extends ADAMFunSuite {
     assert(rdd4.dataset.count === 20)
   }
 
-  sparkTest("transform fragments to contig genomic dataset") {
+  sparkTest("transform fragments to slice genomic dataset") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
-    def checkSave(ncRdd: NucleotideContigFragmentDataset) {
+    def checkSave(sliceRdd: SliceDataset) {
       val tempPath = tmpLocation(".fa")
-      ncRdd.saveAsFasta(tempPath)
+      sliceRdd.saveAsFasta(tempPath)
 
-      assert(sc.loadContigFragments(tempPath).rdd.count.toInt === 20)
+      assert(sc.loadSlices(tempPath).rdd.count.toInt === 20)
     }
 
-    val features: NucleotideContigFragmentDataset = fragments.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
+    val slices: SliceDataset = fragments.transmute[Slice, SliceProduct, SliceDataset](
       (rdd: RDD[Fragment]) => {
-        rdd.map(AlignmentRecordDatasetSuite.ncfFn)
+        rdd.map(AlignmentRecordDatasetSuite.sliceFn)
       })
 
-    checkSave(features)
+    checkSave(slices)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: NucleotideContigFragmentDataset = fragments.transmuteDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
+    val slicesDs: SliceDataset = fragments.transmuteDataset[Slice, SliceProduct, SliceDataset](
       (ds: Dataset[FragmentProduct]) => {
         ds.map(r => {
-          NucleotideContigFragmentProduct.fromAvro(
-            AlignmentRecordDatasetSuite.ncfFn(r.toAvro))
+          SliceProduct.fromAvro(
+            AlignmentRecordDatasetSuite.sliceFn(r.toAvro))
         })
       })
 
-    checkSave(featuresDs)
+    checkSave(slicesDs)
   }
 
   sparkTest("transform fragments to coverage genomic dataset") {

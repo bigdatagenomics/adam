@@ -107,19 +107,34 @@ GenotypeDataset <- function(jrdd) {
     new("GenotypeDataset", jrdd = jrdd)
 }
 
-#' A class that wraps an RDD of contigs with helpful metadata.
+#' A class that wraps an RDD of sequences with helpful metadata.
 #'
-#' @rdname NucleotideContigFragmentDataset
-#' @slot jrdd The Java RDD of contigs that this class wraps.
+#' @rdname SequenceDataset
+#' @slot jrdd The Java RDD of sequences that this class wraps.
 #' 
 #' @export
-setClass("NucleotideContigFragmentDataset",
+setClass("SequenceDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-NucleotideContigFragmentDataset <- function(jrdd) {
-    new("NucleotideContigFragmentDataset", jrdd = jrdd)
+SequenceDataset <- function(jrdd) {
+    new("SequenceDataset", jrdd = jrdd)
+}
+
+#' A class that wraps an RDD of slices with helpful metadata.
+#'
+#' @rdname SliceDataset
+#' @slot jrdd The Java RDD of slices that this class wraps.
+#' 
+#' @export
+setClass("SliceDataset",
+         slots = list(jrdd = "jobj"),
+         contains = "GenomicDataset")
+
+#' @importFrom methods new
+SliceDataset <- function(jrdd) {
+    new("SliceDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of variants with helpful metadata.
@@ -373,9 +388,7 @@ setMethod("inferConversionFn",
 setMethod("destClassSuffix",
           signature(destClass = "character"),
           function(destClass) {
-              if (destClass == "NucleotideContigFragmentDataset") {
-                  "ContigsDatasetConverter"
-              } else if (destClass == "CoverageDataset") {
+              if (destClass == "CoverageDataset") {
                   "CoverageDatasetConverter"
               } else if (destClass == "FeatureDataset") {
                   "FeaturesDatasetConverter"
@@ -387,6 +400,12 @@ setMethod("destClassSuffix",
                   "GenotypeDatasetConverter"
               } else if (destClass == "VariantDataset") {
                   "VariantDatasetConverter"
+              } else if (destClass == "ReadDataset") {
+                  "ReadDatasetConverter"
+              } else if (destClass == "SequenceDataset") {
+                  "SequenceDatasetConverter"
+              } else if (destClass == "SliceDataset") {
+                  "SliceDatasetConverter"
               } else {
                   stop(paste("No conversion method known for",
                              destClass))
@@ -1272,23 +1291,39 @@ setMethod("toVariantContexts", signature(ardd = "GenotypeDataset"),
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "NucleotideContigFragmentDataset",
+          signature(ardd = "SliceDataset",
                     destClass = "character"),
           function(ardd, destClass) {
-              paste0("org.bdgenomics.adam.api.java.ContigsTo",
+              paste0("org.bdgenomics.adam.api.java.SlicesTo",
                      destClassSuffix(destClass))
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "NucleotideContigFragmentDataset",
+          signature(ardd = "SliceDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              NucleotideContigFragmentDataset(rdd)
+              SliceDataset(rdd)
           })
 
-#' Save nucleotide contig fragments as Parquet or FASTA.
+#' Save sequences as Parquet or FASTA.
 #'
-#' If filename ends in .fa or .fasta, saves as Fasta. If not, saves fragments to
+#' If filename ends in .fa or .fasta, saves as FASTA. If not, saves slices to
+#' Parquet. Defaults to 60 character line length, if saving as FASTA.
+#'
+#' @param ardd The RDD to apply this to.
+#' @param filePath Path to save to.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("save", signature(ardd = "SequenceDataset", filePath = "character"),
+          function(ardd, filePath) {
+              invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath))
+          })
+
+#' Save slices as Parquet or FASTA.
+#'
+#' If filename ends in .fa or .fasta, saves as FASTA. If not, saves slices to
 #' Parquet. Defaults to 60 character line length, if saving as FASTA.
 #'
 #' @param ardd The genomic dataset to apply this to.
@@ -1297,7 +1332,7 @@ setMethod("replaceRdd",
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("save", signature(ardd = "NucleotideContigFragmentDataset", filePath = "character"),
+setMethod("save", signature(ardd = "SliceDataset", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath))
           })
@@ -1314,11 +1349,11 @@ setMethod("save", signature(ardd = "NucleotideContigFragmentDataset", filePath =
 #'
 #' @export
 setMethod("flankAdjacentFragments",
-          signature(ardd = "NucleotideContigFragmentDataset", flankLength = "numeric"),
+          signature(ardd = "SliceDataset", flankLength = "numeric"),
           function(ardd, flankLength) {
-              NucleotideContigFragmentDataset(sparkR.callJMethod(ardd@jrdd,
-                                                             "flankAdjacentFragments",
-                                                             flankLength))
+              SliceDataset(sparkR.callJMethod(ardd@jrdd,
+                                          "flankAdjacentFragments",
+                                          flankLength))
           })
 
 setMethod("inferConversionFn",

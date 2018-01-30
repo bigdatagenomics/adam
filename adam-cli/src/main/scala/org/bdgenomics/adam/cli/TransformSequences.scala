@@ -18,54 +18,54 @@
 package org.bdgenomics.adam.cli
 
 import org.apache.spark.SparkContext
-import org.bdgenomics.adam.cli.FileSystemUtils._
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.formats.avro.Alphabet
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
 
-object TransformFeatures extends BDGCommandCompanion {
-  val commandName = "transformFeatures"
-  val commandDescription = "Convert a file with sequence features into corresponding ADAM format and vice versa"
+object TransformSequences extends BDGCommandCompanion {
+  val commandName = "transformSequences"
+  val commandDescription = "Convert a FASTA file as sequences into corresponding ADAM format and vice versa"
 
   def apply(cmdLine: Array[String]) = {
-    new TransformFeatures(Args4j[TransformFeaturesArgs](cmdLine))
+    new TransformSequences(Args4j[TransformSequencesArgs](cmdLine))
   }
 }
 
-class TransformFeaturesArgs extends Args4jBase with ParquetSaveArgs {
+class TransformSequencesArgs extends Args4jBase with ParquetSaveArgs {
   @Argument(required = true, metaVar = "INPUT",
-    usage = "The feature file to convert (e.g., .bed, .gff/.gtf, .gff3, .interval_list, .narrowPeak). If extension is not detected, Parquet is assumed.", index = 0)
-  var featuresFile: String = _
+    usage = "The sequence file to convert (e.g., .fa, .fasta). If extension is not detected, Parquet is assumed.", index = 0)
+  var sequencesFile: String = _
 
   @Argument(required = true, metaVar = "OUTPUT",
-    usage = "Location to write ADAM feature data. If extension is not detected, Parquet is assumed.", index = 1)
+    usage = "Location to write ADAM sequence data. If extension is not detected, Parquet is assumed.", index = 1)
   var outputPath: String = null
-
-  @Args4jOption(required = false, name = "-num_partitions",
-    usage = "Number of partitions to load a text file using.")
-  var numPartitions: Int = _
 
   @Args4jOption(required = false, name = "-single",
     usage = "Save as a single file, for the text formats.")
   var single: Boolean = false
+
+  @Args4jOption(required = false, name = "-alphabet",
+    usage = "Alphabet in which to interpret the loaded sequences { DNA, PROTEIN, RNA }. Defaults to Alphabet.DNA.")
+  var alphabet: String = "DNA"
 
   @Args4jOption(required = false, name = "-disable_fast_concat",
     usage = "Disables the parallel file concatenation engine.")
   var disableFastConcat: Boolean = false
 }
 
-class TransformFeatures(val args: TransformFeaturesArgs)
-    extends BDGSparkCommand[TransformFeaturesArgs] {
+class TransformSequences(val args: TransformSequencesArgs)
+    extends BDGSparkCommand[TransformSequencesArgs] {
 
-  val companion = TransformFeatures
+  val companion = TransformSequences
+  val alphabet = Alphabet.valueOf(args.alphabet)
 
   def run(sc: SparkContext) {
-    checkWriteablePath(args.outputPath, sc.hadoopConfiguration)
-
-    sc.loadFeatures(
-      args.featuresFile,
-      optMinPartitions = Option(args.numPartitions),
-      optProjection = None
-    ).save(args.outputPath, args.single, args.disableFastConcat)
+    val sequences = alphabet match {
+      case Alphabet.DNA     => sc.loadDnaSequences(args.sequencesFile, optPredicate = None, optProjection = None)
+      case Alphabet.PROTEIN => sc.loadProteinSequences(args.sequencesFile, optPredicate = None, optProjection = None)
+      case Alphabet.RNA     => sc.loadRnaSequences(args.sequencesFile, optPredicate = None, optProjection = None)
+    }
+    sequences.save(args.outputPath, args.single, args.disableFastConcat)
   }
 }
