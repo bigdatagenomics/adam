@@ -3205,7 +3205,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Return true if the specified path of Parquet + Avro files is partitioned.
    *
-   * @param filePath Path in which to look for partitioned flag.
+   * @param pathName Path in which to look for partitioned flag.
    * @return Return true if the specified path of Parquet + Avro files is partitioned.
    * Behavior is undefined if some paths in glob are contain paritioned flag and some do not.
    */
@@ -3214,9 +3214,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     try {
       getFsAndFilesWithFilter(pathName, new FileFilter("_isPartitionedByStartPos"))
     } catch {
-      case e: Exception => return false
+      case e: FileNotFoundException => false
     }
-    return true
+    true
   }
 
   /**
