@@ -125,9 +125,9 @@ below.
    q_i &= \min(q_{i, R}, \min_{j \in \{0, \dots, l_c - l_{r_i}\}} q_{i, j}) \\
    q_c &= \sum_{r_i \in \mathbf{r}} q_i
 
-In the above equation, `s(i)` denotes the base at position
-`i` of sequence `s`, and :math:`l_s` denotes the length of
-sequence `s`. We pick the consensus sequence that minimizes the
+In the above equation, `r(i)` denotes the base at position
+`i` of sequence `r`, and :math:`l_r` denotes the length of
+sequence `r`. We pick the consensus sequence that minimizes the
 :math:`q_c` value. If the chosen consensus has a log-odds ratio (LOD)
 that is greater than `5.0` with respect to the reference, we
 realign the reads. This is done by recomputing the CIGAR and MDTag for
