@@ -64,7 +64,9 @@ object PhredUtils extends Serializable {
    * @return The input phred score as a success probability. If the phred score
    *   is above 255, we clip to 255.
    */
-  def phredToSuccessProbability(phred: Int): Double = if (phred < 255) {
+  def phredToSuccessProbability(phred: Int): Double = if (phred <= 0) {
+    phredToSuccessProbabilityCache(0)
+  } else if (phred < 255) {
     phredToSuccessProbabilityCache(phred)
   } else {
     phredToSuccessProbabilityCache(255)
@@ -75,7 +77,9 @@ object PhredUtils extends Serializable {
    * @return The input phred score as an error probability. If the phred score
    *   is above 255, we clip to 255.
    */
-  def phredToErrorProbability(phred: Int): Double = if (phred < 255) {
+  def phredToErrorProbability(phred: Int): Double = if (phred <= 0) {
+    phredToErrorProbabilityCache(0)
+  } else if (phred < 255) {
     phredToErrorProbabilityCache(phred)
   } else {
     phredToErrorProbabilityCache(255)
