@@ -2531,7 +2531,7 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
    *
    * @param filePath Path to save the file at.
    */
-  def writePartitionedParquetFlag(filePath: String): Boolean = {
+  private def writePartitionedParquetFlag(filePath: String): Boolean = {
     val path = new Path(filePath, "_isPartitionedByStartPos")
     val fs = path.getFileSystem(rdd.context.hadoopConfiguration)
     fs.createNewFile(path)
