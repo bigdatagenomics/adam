@@ -77,6 +77,18 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       DefaultHeaderLines.allHeaderLines)
   }
 
+  sparkTest("load a gvcf with a missing info field set to .") {
+    val vc1 = sc.loadVcf(testFile("gvcf_multiallelic/multiallelic.vcf"))
+
+    assert(vc1.toVariants.rdd.filter(v => {
+      v.getAnnotation.getAttributes().containsKey("MQA")
+    }).count === 1)
+    assert(vc1.toGenotypes.rdd.filter(gt => {
+      gt.getVariantCallingAnnotations().getAttributes().containsKey("MQA")
+    }).count === 1)
+    assert(vc1.rdd.count === 6)
+  }
+
   sparkTest("union two variant context rdds together") {
     val vc1 = sc.loadVcf(testFile("gvcf_dir/gvcf_multiallelic.g.vcf"))
     val vc2 = sc.loadVcf(testFile("small.vcf"))

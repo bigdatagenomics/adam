@@ -1431,7 +1431,10 @@ class VariantContextConverter(
                                            id: String,
                                            toFn: (java.lang.Object => Any)): Option[(String, Any)] = {
     Option(vc.getAttribute(id))
-      .map(toFn)
+      .filter(attr => attr match {
+        case s: String => s != "."
+        case _         => true
+      }).map(toFn)
       .map(attr => (id, attr))
   }
 
