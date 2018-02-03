@@ -61,6 +61,8 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var sortReads: Boolean = false
   @Args4jOption(required = false, name = "-sort_lexicographically", usage = "Sort the reads lexicographically by contig name, instead of by index.")
   var sortLexicographically: Boolean = false
+  @Args4jOption(required = false, name = "-store_partition_map", usage = "Stores the partition map. Only valid if -sort_lexicographically is used.")
+  var storePartitionMap: Boolean = false
   @Args4jOption(required = false, name = "-mark_duplicate_reads", usage = "Mark duplicate reads")
   var markDuplicates: Boolean = false
   @Args4jOption(required = false, name = "-recalibrate_base_qualities", usage = "Recalibrate the base quality scores (ILLUMINA only)")
@@ -328,7 +330,12 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
 
       // are we sorting lexicographically or using legacy SAM sort order?
       val sortedRdd = if (args.sortLexicographically) {
-        rdd.sortReadsByReferencePosition()
+        if (args.storePartitionMap) {
+          rdd.transform(_.filter(_.getReadMapped))
+            .sortLexicographically(storePartitionMap = args.storePartitionMap)
+        } else {
+          rdd.sortReadsByReferencePosition()
+        }
       } else {
         rdd.sortReadsByReferencePositionAndIndex()
       }
