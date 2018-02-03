@@ -1150,8 +1150,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   private def readVcfHeader(pathName: String): VCFHeader = {
-    VCFHeaderReader.readHeaderFrom(WrapSeekable.openPath(sc.hadoopConfiguration,
-      new Path(pathName)))
+    val is = WrapSeekable.openPath(sc.hadoopConfiguration,
+      new Path(pathName))
+    val header = VCFHeaderReader.readHeaderFrom(is)
+    is.close()
+    header
   }
 
   private def loadHeaderLines(pathName: String): Seq[VCFHeaderLine] = {
