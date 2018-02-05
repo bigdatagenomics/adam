@@ -907,6 +907,24 @@ setMethod("saveAsParquet", signature(ardd = "GenotypeRDD", filePath = "character
               invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
           })
 
+
+#' Extracts the variants contained in this RDD of genotypes.
+#'
+#' Does not perform any filtering looking at whether the variant was called or
+#' not. By default, does not deduplicate variants.
+#'
+#' @param dedupe If true, drops variants described in more than one genotype
+#'   record.
+#' @return Returns the variants described by this GenotypeRDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("toVariants", signature(ardd = "GenotypeRDD"),
+          function(ardd, dedupe=FALSE) {
+              VariantRDD(sparkR.callJMethod(ardd@jrdd, "toVariants", dedupe))
+          })
+
 #' Converts this RDD of Genotypes to VariantContexts.
 #'
 #' @param ardd The RDD to apply this to.

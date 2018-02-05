@@ -270,6 +270,15 @@ setGeneric("toReads",
 setGeneric("toVariantContexts",
            function(ardd) { standardGeneric("toVariantContexts") })
 
+
+#' Converts this RDD to Variants.
+#'
+#' @param ardd The RDD to apply this to.
+#' @return Returns this RDD of Genotypes as Variants.
+#' @export
+setGeneric("toVariants",
+           function(ardd, ...) { standardGeneric("toVariants") })
+
 #### NucleotideContigFragment operations ####
 
 #' The NucleotideContigFragmentRDD class is used to manipulate contigs.

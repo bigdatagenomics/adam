@@ -20,6 +20,7 @@ package org.bdgenomics.adam.rdd.variant
 import htsjdk.variant.vcf.VCFHeaderLine
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
+import org.bdgenomics.adam.converters.VariantContextConverter
 import org.bdgenomics.adam.models.{
   Coverage,
   ReferenceRegion,
@@ -553,5 +554,24 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     })
 
     checkSave(variantContexts)
+  }
+
+  sparkTest("loading genotypes then converting to variants yields same output as loading variants") {
+    VariantContextConverter.setNestAnnotationInGenotypesProperty(sc.hadoopConfiguration,
+      true)
+
+    val genotypes = sc.loadGenotypes(testFile("small.vcf"))
+    val variants = sc.loadVariants(testFile("small.vcf"))
+
+    assert(genotypes.toVariants().dataset.count() === genotypes.dataset.count())
+
+    val g2v = genotypes.toVariants(dedupe = true)
+    val variantsFromGenotypes = g2v.rdd.collect
+    assert(variantsFromGenotypes.size === variants.rdd.count())
+
+    val directlyLoadedVariants = variants.rdd.collect().toSet
+
+    assert(variantsFromGenotypes.size === directlyLoadedVariants.size)
+    variantsFromGenotypes.foreach(v => assert(directlyLoadedVariants(v)))
   }
 }

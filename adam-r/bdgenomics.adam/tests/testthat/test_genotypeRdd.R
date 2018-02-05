@@ -53,3 +53,15 @@ test_that("save lex sorted vcf", {
     truthFile <- resourceFile("sorted.lex.vcf", submodule="adam-cli")
     expect_files_match(tmpPath, truthFile)
 })
+
+test_that("convert genotypes to variants", {
+
+    testFile <- resourceFile("small.vcf")
+    genotypes <- loadGenotypes(ac, testFile)
+
+    variants <- toVariants(genotypes)
+    expect_equal(count(toDF(variants)), 18)
+
+    variants <- toVariants(genotypes, dedupe=TRUE)
+    expect_equal(count(toDF(variants)), 6)
+})

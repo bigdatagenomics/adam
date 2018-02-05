@@ -911,6 +911,21 @@ class GenotypeRDD(GenomicDataset):
         return VariantContextRDD(vcs, self.sc)
 
 
+    def toVariants(self, dedupe=False):
+        """
+        Extracts the variants contained in this RDD of genotypes.
+
+        Does not perform any filtering looking at whether the variant was called
+        or not. By default, does not deduplicate variants.
+
+        :param bool dedupe: If true, drops variants described in more than one
+        genotype record.
+        :return: Returns the variants described by this GenotypeRDD.
+        """
+
+        return VariantRDD(self._jvmRdd.toVariants(dedupe), self.sc)
+        
+    
     def _inferConversionFn(self, destClass):
 
         return "org.bdgenomics.adam.api.java.GenotypesTo%s" % self._destClassSuffix(destClass)

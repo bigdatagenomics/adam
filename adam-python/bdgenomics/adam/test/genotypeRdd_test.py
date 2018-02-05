@@ -77,3 +77,19 @@ class GenotypeRDDTest(SparkTestCase):
         transformedGenotypes = genotypes.transform(lambda x: x.filter(x.contigName == '1'))
 
         self.assertEquals(transformedGenotypes.toDF().count(), 9)
+
+        
+    def test_to_variants(self):
+        testFile = self.resourceFile("small.vcf")
+        ac = ADAMContext(self.ss)
+
+        genotypes = ac.loadGenotypes(testFile)
+
+        variants = genotypes.toVariants()
+
+        self.assertEquals(variants.toDF().count(), 18)
+
+        variants = genotypes.toVariants(dedupe=True)
+
+        self.assertEquals(variants.toDF().count(), 6)
+        
