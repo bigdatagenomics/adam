@@ -39,7 +39,10 @@ import org.bdgenomics.adam.rdd.{
 }
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.serialization.AvroSerializer
-import org.bdgenomics.adam.sql.{ Genotype => GenotypeProduct }
+import org.bdgenomics.adam.sql.{
+  Genotype => GenotypeProduct,
+  Variant => VariantProduct
+}
 import org.bdgenomics.utils.interval.array.{ IntervalArray, IntervalArraySerializer }
 import org.bdgenomics.formats.avro.{ Genotype, Sample }
 import scala.collection.JavaConversions._
@@ -311,6 +314,51 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicRDD[Genotype, Ge
       }
 
     VariantContextRDD(vcRdd, sequences, samples, headerLines)
+  }
+
+  /**
+   * Extracts the variants contained in this RDD of genotypes.
+   *
+   * Does not perform any filtering looking at whether the variant was called or
+   * not. Does not dedupe the variants.
+   *
+   * @return Returns the variants described by this GenotypeRDD.
+   */
+  def toVariants(): VariantRDD = {
+    toVariants(dedupe = false)
+  }
+
+  /**
+   * Extracts the variants contained in this RDD of genotypes.
+   *
+   * Does not perform any filtering looking at whether the variant was called or
+   * not.
+   *
+   * @param dedupe If true, drops variants described in more than one genotype
+   *   record.
+   * @return Returns the variants described by this GenotypeRDD.
+   */
+  def toVariants(dedupe: java.lang.Boolean): VariantRDD = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+
+    val notDedupedVariants = dataset.select($"variant.*")
+      .as[VariantProduct]
+
+    val maybeDedupedVariants = if (dedupe) {
+      // we can't call dropDuplicates without specifying fields,
+      // because you can't call a set operation on a schema that includes
+      // map/array types
+      notDedupedVariants.dropDuplicates("contigName",
+        "start",
+        "end",
+        "referenceAllele",
+        "alternateAllele")
+    } else {
+      notDedupedVariants
+    }
+
+    VariantRDD(maybeDedupedVariants, sequences, headerLines)
   }
 
   /**
