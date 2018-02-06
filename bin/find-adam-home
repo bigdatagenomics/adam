@@ -23,7 +23,7 @@ set -e
 
 FIND_ADAM_HOME_PYTHON_SCRIPT="$(cd "$(dirname "$0")"; pwd)/find_adam_home.py"
 
-# Short cirtuit if the user already has this set.
+# Short circuit if the user already has this set.
 if [ ! -z "${ADAM_HOME}" ]; then
    true
 elif [ ! -f "$FIND_ADAM_HOME_PYTHON_SCRIPT" ]; then
