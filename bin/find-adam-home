@@ -25,7 +25,7 @@ FIND_ADAM_HOME_PYTHON_SCRIPT="$(cd "$(dirname "$0")"; pwd)/find_adam_home.py"
 
 # Short cirtuit if the user already has this set.
 if [ ! -z "${ADAM_HOME}" ]; then
-   exit 0
+   true
 elif [ ! -f "$FIND_ADAM_HOME_PYTHON_SCRIPT" ]; then
   # If we are not in the same directory as find_adam_home.py we are not pip installed so we don't
   # need to search the different Python directories for a ADAM installation.
