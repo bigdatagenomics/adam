@@ -37,8 +37,8 @@ below demonstrate this process.
    &observation \leftarrow Observation(1, 1) \\
    &\text{else} \\
    &observation \leftarrow Observation(1, 0) \\
-   observations.\text{append}((covariate, observation)) \\
-   \text{return} observations \\
+   &observations.\text{append}((covariate, observation)) \\
+   &\text{return} observations \\
 
 .. math::
 

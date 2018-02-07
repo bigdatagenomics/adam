@@ -66,12 +66,17 @@ data, and all are called in a similar way:
 -  Inner join and group by right
 -  Right outer join and group by right
 
-A subset of these joins are depicted in Figure 2 below.
+
+Given two RDDs
+
+.. figure:: img/join_rdds.png
+   :alt: RDDs for Joins
+
+A subset of these joins are depicted below.
 
 .. figure:: img/join_examples.png
    :alt: Joins Available
 
-   Joins Available
 
 One common pattern involves joining a single dataset against many
 datasets. An example of this is joining an RDD of features (e.g.,

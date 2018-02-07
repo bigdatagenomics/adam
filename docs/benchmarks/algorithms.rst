@@ -38,7 +38,7 @@ the latest implementation of these algorithms in the GATK4.
 
 As our benchmarks demonstrate, ADAM's implementations of the various
 algorithms in the standard germline reads-to-variants pipeline are more
-performant than the same algorithms implemented in the GATK. ADAM
+performant than the same algorithms implemented in the GATK4. ADAM
 outperforms the GATK when running equivalent implementations of
 BQSR (1.4x speedup) and duplicate
 marking (1.1x speedup). To improve the performance of

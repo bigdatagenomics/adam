@@ -10,7 +10,7 @@ stats identically to the samtools ``flagstat`` command.
 
 .. code:: bash
 
-    ./bin/adam-submit flagstat NA12878_chr20.adam
+    adam-submit flagstat NA12878_chr20.adam
 
 Outputs:
 

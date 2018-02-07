@@ -8,8 +8,6 @@ library when building downstream applications.
 This document covers three patterns for building applications downstream
 of ADAM:
 
--  Extend the ADAM CLI by `adding new commands <#commands>`__
--  Extend the ADAM CLI by `adding new commands in an external
-   repository <#external-commands>`__
--  Use ADAM as a `library in new applications <#library>`__
-
+-  Extend the ADAM CLI by `adding new commands <cli.html#extend-the-adam-cli-by-adding-new-commands>`__
+-  Extend the ADAM CLI by `adding new commands in an external repository <cli.html#extend-the-adam-cli-by-adding-new-commands-in-an-external-repository>`__
+-  Use ADAM as a `library in new applications <library.html#use-adam-as-a-library-in-new-applications>`__

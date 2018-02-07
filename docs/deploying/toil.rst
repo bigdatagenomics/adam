@@ -34,18 +34,17 @@ workflows include:
 
 -  `adam-kmers <https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_kmers>`__:
    this workflow was demonstrated in (Vivian et al. 2016) and sets up a
-   Spark cluster which then runs ADAM's ```countKmers``
-   CLI <#countKmers>`__.
+   Spark cluster which then runs ADAM's `countKmers CLI <#countKmers>`__.
 -  `adam-pipeline <https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_pipeline>`__:
    this workflow runs several stages in the ADAM
-   ```transformAlignments`` CLI <#transformAlignments>`__. This pipeline
+   `transformAlignments CLI <#transformAlignments>`__. This pipeline
    is the ADAM equivalent to the GATK's "Best Practice" read
    preprocessing pipeline. We then stitch together this pipeline with
    `BWA-MEM <https://github.com/lh3/bwa>`__ and the GATK in the
    `adam-gatk-pipeline <https://github.com/BD2KGenomics/toil-scripts/tree/master/src/toil_scripts/adam_gatk_pipeline>`__.
 
-An example workflow: ``toil_scripts.adam_kmers.count_kmers``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+An example workflow: count_kmers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For an example of how to use ADAM with Toil, let us look at the
 `toil\_scripts.adam\_kmers.count\_kmers <https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py>`__
@@ -69,10 +68,10 @@ Configuring and launching Toil
 
 Toil takes most of its configuration from the command line. To make this
 easy, Toil includes a function in the ``toil.job.Job`` class to register
-Toil's argument parsing code with the `Python standard
-``argparse`` <https://docs.python.org/2/library/argparse.html>`__
-library. E.g., `in
-``count_kmers.py`` <https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L183-L214>`__,
+Toil's argument parsing code with the Python standard
+`argparse <https://docs.python.org/2/library/argparse.html>`__
+library. E.g., in
+`count_kmers.py <https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L183-L214>`__,
 we set up our arguments and then add the Toil specific arguments by:
 
 ::
@@ -257,7 +256,7 @@ does the following work:
                        hdfs_tmp_file, hdfs_input_file],
                       memory=memory, override_parameters=spark_conf)
 
-4. `We use the ADAM CLI to count the *k*-mers in the
+4. `We use the ADAM CLI to count the k-mers in the
    file <https://github.com/BD2KGenomics/toil-scripts/blob/master/src/toil_scripts/adam_kmers/count_kmers.py#L161-L168>`__:
 
 ::
