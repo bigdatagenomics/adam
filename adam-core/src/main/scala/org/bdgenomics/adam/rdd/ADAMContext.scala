@@ -1878,7 +1878,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns an AlignmentRecordRDD.
    */
   def loadPartitionedParquetAlignments(pathName: String,
-                                       regions: Iterable[ReferenceRegion] = Iterable.empty /*, existingARRDD: Option[AlignmentRecordRDD] = None */ ): DatasetBoundAlignmentRecordRDD = {
+                                       regions: Iterable[ReferenceRegion] = Iterable.empty /*, existingARRDD: Option[AlignmentRecordRDD] = None */ ): AlignmentRecordRDD = {
 
     require(isPartitioned(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
@@ -1886,9 +1886,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     //val reads = existingARRDD.getOrElse(loadParquetAlignments(pathName,optPredicate = None, optProjection = None))
     val reads = loadParquetAlignments(pathName, optPredicate = None, optProjection = None)
 
-    val datasetBoundAlignmentRecordRDD: DatasetBoundAlignmentRecordRDD = if (regions.nonEmpty) {
+    val datasetBoundAlignmentRecordRDD = if (regions.nonEmpty) {
       DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
-        .filterByOverlappingRegions(regions).asInstanceOf[DatasetBoundAlignmentRecordRDD]
+        .filterByOverlappingRegions(regions)
     } else {
       DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
     }

@@ -281,6 +281,31 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
     newProcessingSteps: Seq[ProcessingStep]): AlignmentRecordRDD = {
     copy(processingSteps = newProcessingSteps)
   }
+  /*
+  def filterByOverlappingRegions(querys: Iterable[ReferenceRegion], partitionSize: Int = 1000000, partitionedLookBackNum: Int = 1): DatasetBoundAlignmentRecordRDD = {
+    import scala.util.Try
+
+    def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion]): String = {
+
+      //test if this dataset is bound to Partitioned Parquet having field positionBin
+      if (Try(dataset("positionBin")).isSuccess) {
+        regions.map(r => "(contigName=" + "\'" + r.referenceName +
+          "\' and positionBin >= \'" + ((scala.math.floor(r.start / partitionSize).toInt) - partitionedLookBackNum) +
+          "\' and positionBin < \'" + (scala.math.floor(r.end / partitionSize).toInt + 1) +
+          "\' and (end > " + r.start + " and start < " + r.end + "))")
+          .mkString(" or ")
+      } else {
+        // if the dataset was not written with field positionBin then exclude it in query
+        regions.map(r => "(contigName=" + "\'" + r.referenceName +
+          "\' and (end > " + r.start + " and start < " + r.end + "))")
+          .mkString(" or ")
+      }
+    }
+    tr
+
+    transformDataset((ds: Dataset[AlignmentRecordProduct] => { ds.filter(referenceRegionsToDatasetQueryString(querys)) }))
+  }*/
+
 }
 
 case class RDDBoundAlignmentRecordRDD private[rdd] (
