@@ -1338,6 +1338,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       ))
 
     getFiles(path, fs)
+
   }
 
   /**
@@ -1877,29 +1878,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns an AlignmentRecordRDD.
    */
   def loadPartitionedParquetAlignments(pathName: String,
-                                       regions: Iterable[ReferenceRegion] = Iterable.empty): AlignmentRecordRDD = {
+                                       regions: Iterable[ReferenceRegion] = Iterable.empty /*, existingARRDD: Option[AlignmentRecordRDD] = None */ ): DatasetBoundAlignmentRecordRDD = {
 
     require(isPartitioned(pathName),
       "Input Parquet files (%s) are not partitioned.".format(pathName))
 
-    // convert avro to sequence dictionary
-    val sd = loadAvroSequenceDictionary(pathName)
+    //val reads = existingARRDD.getOrElse(loadParquetAlignments(pathName,optPredicate = None, optProjection = None))
+    val reads = loadParquetAlignments(pathName, optPredicate = None, optProjection = None)
 
-    // convert avro to sequence dictionary
-    val rgd = loadAvroRecordGroupDictionary(pathName)
+    val datasetBoundAlignmentRecordRDD: DatasetBoundAlignmentRecordRDD = if (regions.nonEmpty) {
+      DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
+        .filterByOverlappingRegions(regions).asInstanceOf[DatasetBoundAlignmentRecordRDD]
+    } else {
+      DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
+    }
 
-    val pgs = loadAvroPrograms(pathName)
-    val reads: AlignmentRecordRDD = ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd, pgs)
-
-    val datasetBoundAlignmentRecordRDD =
-      if (regions.nonEmpty) {
-        DatasetBoundAlignmentRecordRDD(reads.dataset.filter(referenceRegionsToDatasetQueryString(regions)),
-          reads.sequences,
-          reads.recordGroups,
-          reads.processingSteps)
-      } else {
-        DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
-      }
     datasetBoundAlignmentRecordRDD
   }
 
@@ -3227,12 +3220,22 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @return Returns a query string used to filter a dataset based on zero or more ReferenceRegions
    */
 
-  def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion], partitionSize: Int = 1000000): String = {
+  def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion],
+                                           partitionSize: Int = 1000000,
+                                           lookBackNum: Int = 1): String = {
 
-    regions.map(r => "(contigName=" + "\'" + r.referenceName + "\' and positionBin >= \'" +
-      scala.math.floor(r.start / partitionSize).toInt + "\' and positionBin < \'" +
-      (scala.math.floor(r.end / partitionSize).toInt + 1) +
-      "\' and start >= " + r.start + " and end <= " + r.end + ")")
+    regions.map(r => "(contigName=" + "\'" + r.referenceName +
+      "\' and positionBin >= \'" + ((scala.math.floor(r.start / partitionSize).toInt) - lookBackNum) +
+      "\' and positionBin < \'" + (scala.math.floor(r.end / partitionSize).toInt + 1) +
+      "\' and (end > " + r.start + " and start < " + r.end + "))")
       .mkString(" or ")
+
+    /*       regions.map(r => "(contigName=" + "\'" + r.referenceName +
+                       "\' and positionBin >= \'" +  ((scala.math.floor(r.start / partitionSize).toInt) - lookBackNum) +
+                       "\' and positionBin < \'" + (scala.math.floor(r.end / partitionSize).toInt + 1) +
+                       "\' and ((start >= " + r.start + " and start <= " + r.end + ")" +
+                       " or (end >= " + r.start + " and end <= " + r.end + ")" +
+                       " or (start < " + r.start + " and end > " + r.end + "))")
+                      .mkString(" or ") */
   }
 }
