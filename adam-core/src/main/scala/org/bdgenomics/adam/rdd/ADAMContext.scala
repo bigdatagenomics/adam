@@ -1341,6 +1341,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       ))
 
     getFiles(path, fs)
+
   }
 
   /**
@@ -1867,6 +1868,38 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Load a path name with range binned partitioned Parquet + Avro format into an AlignmentRecordRDD.
+   *
+   * @note The sequence dictionary is read from an Avro file stored at
+   *   pathName/_seqdict.avro and the record group dictionary is read from an
+   *   Avro file stored at pathName/_rgdict.avro. These files are pure Avro,
+   *   not Parquet + Avro.
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @return Returns an AlignmentRecordRDD.
+   */
+  def loadPartitionedParquetAlignments(pathName: String,
+                                       regions: Iterable[ReferenceRegion] = Iterable.empty /*, existingARRDD: Option[AlignmentRecordRDD] = None */ ): AlignmentRecordRDD = {
+
+    require(isPartitioned(pathName),
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
+
+    //val reads = existingARRDD.getOrElse(loadParquetAlignments(pathName,optPredicate = None, optProjection = None))
+    val reads = loadParquetAlignments(pathName, optPredicate = None, optProjection = None)
+
+    val datasetBoundAlignmentRecordRDD = if (regions.nonEmpty) {
+      DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
+        .filterByOverlappingRegions(regions)
+    } else {
+      DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
+    }
+
+    datasetBoundAlignmentRecordRDD
+  }
+
+  /**
    * Load unaligned alignment records from interleaved FASTQ into an AlignmentRecordRDD.
    *
    * In interleaved FASTQ, the two reads from a paired sequencing protocol are
@@ -2250,6 +2283,38 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Load a path name with range binned partitioned Parquet + Avro format into GenotypeRDD
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @return Returns a GenotypeRDD.
+   */
+  def loadPartitionedParquetGenotypes(pathName: String, regions: Iterable[ReferenceRegion] = Iterable.empty): GenotypeRDD = {
+    require(isPartitioned(pathName),
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
+    // load header lines
+    val headers = loadHeaderLines(pathName)
+    // load sequence info
+    val sd = loadAvroSequenceDictionary(pathName)
+    // load avro record group dictionary and convert to samples
+    val samples = loadAvroSamples(pathName)
+
+    val genotypes = ParquetUnboundGenotypeRDD(sc, pathName, sd, samples, headers)
+
+    val datasetBoundGenotypeRDD =
+      if (regions.nonEmpty) {
+        DatasetBoundGenotypeRDD(genotypes.dataset.filter(referenceRegionsToDatasetQueryString(regions)),
+          genotypes.sequences,
+          genotypes.samples,
+          genotypes.headerLines)
+      } else {
+        DatasetBoundGenotypeRDD(genotypes.dataset, genotypes.sequences, genotypes.samples, genotypes.headerLines)
+      }
+    datasetBoundGenotypeRDD
+  }
+
+  /**
    * Load a path name in Parquet + Avro format into a VariantRDD.
    *
    * @param pathName The path name to load variants from.
@@ -2280,6 +2345,37 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
+  }
+
+  /**
+   * Load a path name with range binned partitioned Parquet + Avro format into an VariantRDD.
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @return Returns a VariantRDD
+   */
+  def loadPartitionedParquetVariants(pathName: String,
+                                     regions: Iterable[ReferenceRegion] = Iterable.empty): VariantRDD = {
+
+    require(isPartitioned(pathName),
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
+    val sd = loadAvroSequenceDictionary(pathName)
+
+    // load header lines
+    val headers = loadHeaderLines(pathName)
+
+    val variants = ParquetUnboundVariantRDD(sc, pathName, sd, headers)
+
+    val datasetBoundVariantRDD =
+      if (regions.nonEmpty) {
+        DatasetBoundVariantRDD(variants.dataset.filter(referenceRegionsToDatasetQueryString(regions)),
+          variants.sequences,
+          headers)
+      } else {
+        DatasetBoundVariantRDD(variants.dataset, variants.sequences, headers)
+      }
+    datasetBoundVariantRDD
   }
 
   /**
@@ -2599,6 +2695,30 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Load a path name with range binned partitioned Parquet + Avro format into a FeatureRDD.
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @return Returns a FeatureRDD.
+   */
+  def loadPartitionedParquetFeatures(pathName: String, regions: Iterable[ReferenceRegion] = Iterable.empty): FeatureRDD = {
+    require(isPartitioned(pathName),
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
+    val sd = loadAvroSequenceDictionary(pathName)
+    val features = ParquetUnboundFeatureRDD(sc, pathName, sd)
+
+    val datasetBoundFeatureRDD =
+      if (!regions.isEmpty) {
+        DatasetBoundFeatureRDD(features.dataset.filter(referenceRegionsToDatasetQueryString(regions)),
+          features.sequences)
+      } else {
+        DatasetBoundFeatureRDD(features.dataset, features.sequences)
+      }
+    datasetBoundFeatureRDD
+  }
+
+  /**
    * Load a path name in Parquet + Avro format into a NucleotideContigFragmentRDD.
    *
    * @param pathName The path name to load nucleotide contig fragments from.
@@ -2628,6 +2748,32 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
+  }
+
+  /**
+   * Load a path name with range binned partitioned Parquet + Avro format into a NucleotideContigFragmentRDD.
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @return Returns a NucleotideContigFragmentRDD
+   */
+  def loadPartitionedParquetContigFragments(pathName: String, regions: Iterable[ReferenceRegion] = Iterable.empty): NucleotideContigFragmentRDD = {
+    require(isPartitioned(pathName),
+      "Input Parquet files (%s) are not partitioned.".format(pathName))
+    val sd = loadAvroSequenceDictionary(pathName)
+    val nucleotideContigFragments = ParquetUnboundNucleotideContigFragmentRDD(sc, pathName, sd)
+
+    val datasetBoundNucleotideContigFragmentRDD =
+      if (regions.nonEmpty) {
+        DatasetBoundNucleotideContigFragmentRDD(nucleotideContigFragments
+          .dataset.filter(referenceRegionsToDatasetQueryString(regions)),
+          nucleotideContigFragments.sequences)
+      } else {
+        DatasetBoundNucleotideContigFragmentRDD(nucleotideContigFragments.dataset,
+          nucleotideContigFragments.sequences)
+      }
+    datasetBoundNucleotideContigFragmentRDD
   }
 
   /**
@@ -3050,5 +3196,49 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       log.info(s"Loading $pathName as Parquet containing Fragments.")
       loadParquetFragments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
+  }
+
+  /**
+   * Return true if the specified path of Parquet + Avro files is partitioned.
+   *
+   * @param pathName Path in which to look for partitioned flag.
+   * @return Return true if the specified path of Parquet + Avro files is partitioned.
+   * Behavior is undefined if some paths in glob are contain paritioned flag and some do not.
+   */
+  def isPartitioned(pathName: String): Boolean = {
+
+    try {
+      getFsAndFilesWithFilter(pathName, new FileFilter("_isPartitionedByStartPos"))
+    } catch {
+      case e: FileNotFoundException => false
+    }
+    true
+  }
+
+  /**
+   * Returns a query string used to filter a dataset based on zero or more ReferenceRegions
+   *
+   * @param regions Zero or more regions to include in a query.
+   * @param partitionSize size of of partitions used when writing parquet, in base pairs.  Defaults to 1000000.
+   * @return Returns a query string used to filter a dataset based on zero or more ReferenceRegions
+   */
+
+  def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion],
+                                           partitionSize: Int = 1000000,
+                                           lookBackNum: Int = 1): String = {
+
+    regions.map(r => "(contigName=" + "\'" + r.referenceName +
+      "\' and positionBin >= \'" + ((scala.math.floor(r.start / partitionSize).toInt) - lookBackNum) +
+      "\' and positionBin < \'" + (scala.math.floor(r.end / partitionSize).toInt + 1) +
+      "\' and (end > " + r.start + " and start < " + r.end + "))")
+      .mkString(" or ")
+
+    /*       regions.map(r => "(contigName=" + "\'" + r.referenceName +
+                       "\' and positionBin >= \'" +  ((scala.math.floor(r.start / partitionSize).toInt) - lookBackNum) +
+                       "\' and positionBin < \'" + (scala.math.floor(r.end / partitionSize).toInt + 1) +
+                       "\' and ((start >= " + r.start + " and start <= " + r.end + ")" +
+                       " or (end >= " + r.start + " and end <= " + r.end + ")" +
+                       " or (start < " + r.start + " and end > " + r.end + "))")
+                      .mkString(" or ") */
   }
 }
