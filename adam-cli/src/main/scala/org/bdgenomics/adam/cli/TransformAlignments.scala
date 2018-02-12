@@ -352,9 +352,9 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
    *   these tags are recomputed or not. If MD tagging isn't requested, we
    *   return the input RDD.
    */
-  def maybeMdTag(sc: SparkContext,
-                 rdd: AlignmentRecordRDD,
-                 stringencyOpt: Option[ValidationStringency]): AlignmentRecordRDD = {
+  private def maybeMdTag(sc: SparkContext,
+                         rdd: AlignmentRecordRDD,
+                         stringencyOpt: Option[ValidationStringency]): AlignmentRecordRDD = {
     if (args.mdTagsReferenceFile != null) {
       log.info(s"Adding MDTags to reads based on reference file ${args.mdTagsReferenceFile}")
       val referenceFile = sc.loadReferenceFile(args.mdTagsReferenceFile,
