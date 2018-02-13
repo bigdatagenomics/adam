@@ -21,18 +21,22 @@ import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.misc.Logging
-import org.kohsuke.args4j.{ Argument, Option => Args4JOption }
+import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 
 class ADAM2FastaArgs extends Args4jBase {
   @Argument(required = true, metaVar = "ADAM", usage = "The Parquet file to convert", index = 0)
   var inputPath: String = null
   @Argument(required = true, metaVar = "FASTA", usage = "Location to write the FASTA to", index = 1)
   var outputPath: String = null
-  @Args4JOption(required = false, name = "-coalesce", usage = "Choose the number of partitions to coalesce down to.")
+  @Args4jOption(required = false, name = "-single", usage = "Saves FASTA as single file")
+  var asSingleFile: Boolean = false
+  @Args4jOption(required = false, name = "-defer_merging", usage = "Defers merging single file output")
+  var disableFastConcat: Boolean = false
+  @Args4jOption(required = false, name = "-coalesce", usage = "Choose the number of partitions to coalesce down to.")
   var coalesce: Int = -1
-  @Args4JOption(required = false, name = "-force_shuffle_coalesce", usage = "Force shuffle while partitioning, default false.")
+  @Args4jOption(required = false, name = "-force_shuffle_coalesce", usage = "Force shuffle while partitioning, default false.")
   var forceShuffle: Boolean = false
-  @Args4JOption(required = false, name = "-line_width", usage = "Hard wrap FASTA formatted sequence at line width, default 60")
+  @Args4jOption(required = false, name = "-line_width", usage = "Hard wrap FASTA formatted sequence at line width, default 60")
   var lineWidth: Int = 60
 }
 
@@ -64,6 +68,11 @@ class ADAM2Fasta(val args: ADAM2FastaArgs) extends BDGSparkCommand[ADAM2FastaArg
     } else {
       contigs
     }
-    cc.saveAsFasta(args.outputPath, args.lineWidth)
+    cc.saveAsFasta(
+      args.outputPath,
+      args.lineWidth,
+      asSingleFile = args.asSingleFile,
+      disableFastConcat = args.disableFastConcat
+    )
   }
 }
