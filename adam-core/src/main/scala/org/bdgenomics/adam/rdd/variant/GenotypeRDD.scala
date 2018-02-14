@@ -32,7 +32,11 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ MultisampleAvroGenomicRDD, VCFHeaderUtils }
+import org.bdgenomics.adam.rdd.{
+  DatasetBoundGenomicDataset,
+  MultisampleAvroGenomicRDD,
+  VCFHeaderUtils
+}
 import org.bdgenomics.adam.rich.RichVariant
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Genotype => GenotypeProduct }
@@ -138,10 +142,11 @@ case class ParquetUnboundGenotypeRDD private[rdd] (
 }
 
 case class DatasetBoundGenotypeRDD private[rdd] (
-    dataset: Dataset[GenotypeProduct],
-    sequences: SequenceDictionary,
-    @transient samples: Seq[Sample],
-    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends GenotypeRDD {
+  dataset: Dataset[GenotypeProduct],
+  sequences: SequenceDictionary,
+  @transient samples: Seq[Sample],
+  @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends GenotypeRDD
+    with DatasetBoundGenomicDataset[Genotype, GenotypeProduct, GenotypeRDD] {
 
   protected lazy val optPartitionMap = None
 

@@ -23,22 +23,23 @@ from bdgenomics.adam.rdd import AlignmentRecordRDD, CoverageRDD
 from bdgenomics.adam.test import SparkTestCase
 
 from pyspark.sql.types import DoubleType
+from  pyspark.storagelevel import StorageLevel
 
 class AlignmentRecordRDDTest(SparkTestCase):
 
-    
+
     def test_save_sorted_sam(self):
 
         testFile = self.resourceFile("sorted.sam")
         ac = ADAMContext(self.ss)
-        
+
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".sam"
         sortedReads = reads.sortReadsByReferencePosition()
         sortedReads.saveAsSam(tmpPath,
                               isSorted=True,
                               asSingleFile=True)
-        
+
         self.checkFiles(testFile, tmpPath)
 
 
@@ -46,12 +47,12 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         testFile = self.resourceFile("unordered.sam")
         ac = ADAMContext(self.ss)
-        
+
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".sam"
         reads.saveAsSam(tmpPath,
                         asSingleFile=True)
-        
+
         self.checkFiles(testFile, tmpPath)
 
 
@@ -67,13 +68,13 @@ class AlignmentRecordRDDTest(SparkTestCase):
         unionReads = reads1.union([reads2])
 
         self.assertEqual(unionReads.toDF().count(), 13)
-        
+
 
     def test_save_as_bam(self):
 
         testFile = self.resourceFile("sorted.sam")
         ac = ADAMContext(self.ss)
-        
+
         reads = ac.loadAlignments(testFile)
         tmpPath = self.tmpFile() + ".bam"
         reads.saveAsSam(tmpPath,
@@ -81,7 +82,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
                         asSingleFile=True)
 
         bamReads = ac.loadAlignments(tmpPath)
-        
+
         self.assertEquals(bamReads._jvmRdd.jrdd().count(),
                           reads._jvmRdd.jrdd().count())
 
@@ -90,7 +91,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         testFile = self.resourceFile("small.sam")
         ac = ADAMContext(self.ss)
-        
+
         reads = ac.loadAlignments(testFile)
         kmers = reads.countKmers(6)
 
@@ -177,6 +178,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         self.assertEquals(reads.toDF().count(), 2)
 
+
     def test_filterByOverlappingRegion(self):
 
         readsPath = self.resourceFile("unsorted.sam")
@@ -188,6 +190,7 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         filtered = reads.filterByOverlappingRegion(query)
         self.assertEquals(filtered.toDF().count(), 1)
+
 
     def test_filterByOverlappingRegions(self):
 
@@ -201,3 +204,35 @@ class AlignmentRecordRDDTest(SparkTestCase):
 
         filtered = reads.filterByOverlappingRegions(querys)
         self.assertEquals(filtered.toDF().count(), 2)
+
+
+    def test_caching(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+
+        cachedReads = reads.cache()
+        cached = self.sc._jsc.getPersistentRDDs()
+        self.assertEquals(cached.isEmpty(), False)
+
+        cachedReads.unpersist()
+        cached = self.sc._jsc.getPersistentRDDs()
+        self.assertEquals(cached.isEmpty(), True)
+
+
+    def test_persisting(self):
+
+        readsPath = self.resourceFile("unsorted.sam")
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+
+        persistedReads = reads.persist(StorageLevel.DISK_ONLY)
+        cached = self.sc._jsc.getPersistentRDDs()
+        self.assertEquals(cached.isEmpty(), False)
+
+        persistedReads.unpersist()
+        cached = self.sc._jsc.getPersistentRDDs()
+        self.assertEquals(cached.isEmpty(), True)

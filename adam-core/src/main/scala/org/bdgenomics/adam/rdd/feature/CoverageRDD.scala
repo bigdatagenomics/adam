@@ -29,7 +29,7 @@ import org.bdgenomics.adam.models.{
   SequenceDictionary
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.GenomicDataset
+import org.bdgenomics.adam.rdd.{ DatasetBoundGenomicDataset, GenomicDataset }
 import org.bdgenomics.utils.interval.array.{
   IntervalArray,
   IntervalArraySerializer
@@ -102,8 +102,9 @@ case class ParquetUnboundCoverageRDD private[rdd] (
  * @param sequences A dictionary describing the reference genome.
  */
 case class DatasetBoundCoverageRDD private[rdd] (
-    dataset: Dataset[Coverage],
-    sequences: SequenceDictionary) extends CoverageRDD {
+  dataset: Dataset[Coverage],
+  sequences: SequenceDictionary) extends CoverageRDD
+    with DatasetBoundGenomicDataset[Coverage, Coverage, CoverageRDD] {
 
   protected lazy val optPartitionMap = None
 

@@ -32,6 +32,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
+  DatasetBoundGenomicDataset,
   AvroGenomicRDD,
   VCFHeaderUtils
 }
@@ -132,9 +133,10 @@ case class ParquetUnboundVariantRDD private[rdd] (
 }
 
 case class DatasetBoundVariantRDD private[rdd] (
-    dataset: Dataset[VariantProduct],
-    sequences: SequenceDictionary,
-    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantRDD {
+  dataset: Dataset[VariantProduct],
+  sequences: SequenceDictionary,
+  @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantRDD
+    with DatasetBoundGenomicDataset[Variant, VariantProduct, VariantRDD] {
 
   protected lazy val optPartitionMap = None
 
