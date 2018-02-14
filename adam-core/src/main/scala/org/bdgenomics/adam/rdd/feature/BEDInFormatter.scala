@@ -23,13 +23,14 @@ import java.io.{
   OutputStreamWriter
 }
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
+import org.bdgenomics.adam.sql.{ Feature => FeatureProduct }
 import org.bdgenomics.formats.avro.Feature
 import org.bdgenomics.utils.misc.Logging
 
 /**
  * InFormatter companion that builds a BEDInFormatter to write features in BED format to a pipe.
  */
-object BEDInFormatter extends InFormatterCompanion[Feature, FeatureRDD, BEDInFormatter] {
+object BEDInFormatter extends InFormatterCompanion[Feature, FeatureProduct, FeatureRDD, BEDInFormatter] {
 
   /**
    * Apply method for building the BEDInFormatter from a FeatureRDD.
@@ -41,7 +42,7 @@ object BEDInFormatter extends InFormatterCompanion[Feature, FeatureRDD, BEDInFor
   }
 }
 
-case class BEDInFormatter private () extends InFormatter[Feature, FeatureRDD, BEDInFormatter] {
+case class BEDInFormatter private () extends InFormatter[Feature, FeatureProduct, FeatureRDD, BEDInFormatter] {
   protected val companion = BEDInFormatter
 
   /**

@@ -21,6 +21,7 @@ import java.io.OutputStream
 import org.apache.hadoop.conf.Configuration
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
+import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct }
 import org.bdgenomics.formats.avro.Fragment
 import org.bdgenomics.utils.misc.Logging
 
@@ -28,7 +29,7 @@ import org.bdgenomics.utils.misc.Logging
  * InFormatter companion that creates an InFormatter that writes interleaved
  * FASTQ.
  */
-object InterleavedFASTQInFormatter extends InFormatterCompanion[Fragment, FragmentRDD, InterleavedFASTQInFormatter] {
+object InterleavedFASTQInFormatter extends InFormatterCompanion[Fragment, FragmentProduct, FragmentRDD, InterleavedFASTQInFormatter] {
 
   /**
    * Builds an InterleavedFASTQInFormatter to write Interleaved FASTQ.
@@ -42,7 +43,7 @@ object InterleavedFASTQInFormatter extends InFormatterCompanion[Fragment, Fragme
 }
 
 class InterleavedFASTQInFormatter private (
-    conf: Configuration) extends InFormatter[Fragment, FragmentRDD, InterleavedFASTQInFormatter] with Logging {
+    conf: Configuration) extends InFormatter[Fragment, FragmentProduct, FragmentRDD, InterleavedFASTQInFormatter] with Logging {
 
   protected val companion = InterleavedFASTQInFormatter
   private val converter = new AlignmentRecordConverter

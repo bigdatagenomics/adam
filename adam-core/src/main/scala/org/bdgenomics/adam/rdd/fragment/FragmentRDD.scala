@@ -32,7 +32,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   DatasetBoundGenomicDataset,
-  AvroRecordGroupGenomicRDD,
+  AvroRecordGroupGenomicDataset,
   JavaSaveArgs
 }
 import org.bdgenomics.adam.rdd.read.{
@@ -103,7 +103,7 @@ object FragmentRDD {
    * @param rdd RDD of fragments.
    * @return Returns a FragmentRDD with an empty record group dictionary and sequence dictionary.
    */
-  private[rdd] def fromRdd(rdd: RDD[Fragment]): FragmentRDD = {
+  private[adam] def fromRdd(rdd: RDD[Fragment]): FragmentRDD = {
     FragmentRDD(rdd,
       SequenceDictionary.empty,
       RecordGroupDictionary.empty,
@@ -264,7 +264,10 @@ case class RDDBoundFragmentRDD private[rdd] (
   }
 }
 
-sealed abstract class FragmentRDD extends AvroRecordGroupGenomicRDD[Fragment, FragmentProduct, FragmentRDD] {
+sealed abstract class FragmentRDD extends AvroRecordGroupGenomicDataset[Fragment, FragmentProduct, FragmentRDD] {
+
+  protected val productFn = FragmentProduct.fromAvro(_)
+  protected val unproductFn = (f: FragmentProduct) => f.toAvro
 
   @transient val uTag: TypeTag[FragmentProduct] = typeTag[FragmentProduct]
 

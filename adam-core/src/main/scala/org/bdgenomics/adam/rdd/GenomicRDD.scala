@@ -69,7 +69,7 @@ import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.math.min
 import scala.reflect.ClassTag
-import scala.reflect.runtime.universe.TypeTag
+import scala.reflect.runtime.universe._
 import scala.util.Try
 
 private[rdd] class JavaSaveArgs(var outputPath: String,
@@ -83,7 +83,7 @@ private[rdd] class JavaSaveArgs(var outputPath: String,
   var deferMerging = false
 }
 
-private[rdd] object GenomicRDD {
+private[rdd] object GenomicDataset {
 
   /**
    * Replaces file references in a command.
@@ -127,9 +127,136 @@ private[rdd] object GenomicRDD {
  * A trait that wraps an RDD of genomic data with helpful metadata.
  *
  * @tparam T The type of the data in the wrapped RDD.
- * @tparam U The type of this GenomicRDD.
+ * @tparam U The type of this GenomicDataset.
  */
-trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
+trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Logging {
+
+  val uTag: TypeTag[U]
+
+  /**
+   * These data as a Spark SQL Dataset.
+   */
+  val dataset: Dataset[U]
+
+  protected val productFn: T => U
+  protected val unproductFn: U => T
+
+  /**
+   * @return This data as a Spark SQL DataFrame.
+   */
+  def toDF(): DataFrame = {
+    dataset.toDF()
+  }
+
+  /**
+   * Applies a function that transforms the underlying Dataset into a new Dataset
+   * using the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a Dataset.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) are copied without modification.
+   */
+  def transformDataset(tFn: Dataset[U] => Dataset[U]): V
+
+  /**
+   * Applies a function that transforms the underlying DataFrame into a new DataFrame
+   * using the Spark SQL API.
+   *
+   * @param tFn A function that transforms the underlying RDD as a DataFrame.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) are copied without modification.
+   */
+  def transformDataFrame(tFn: DataFrame => DataFrame)(
+    implicit uTag: TypeTag[U]): V = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    transformDataset((ds: Dataset[U]) => {
+      tFn(ds.toDF()).as[U]
+    })
+  }
+
+  /**
+   * Applies a function that transforms the underlying DataFrame into a new DataFrame
+   * using the Spark SQL API. Java-friendly variant.
+   *
+   * @param tFn A function that transforms the underlying RDD as a DataFrame.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) are copied without modification.
+   */
+  def transformDataFrame(tFn: JFunction[DataFrame, DataFrame]): V = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    transformDataFrame(tFn.call(_))(uTag)
+  }
+
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) are copied without modification.
+   */
+  def transmuteDataset[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    tFn: Dataset[U] => Dataset[Y])(
+      implicit yTag: TypeTag[Y],
+      convFn: (V, Dataset[Y]) => Z): Z = {
+    convFn(this.asInstanceOf[V], tFn(dataset))
+  }
+
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type. Java friendly variant.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) are copied without modification.
+   */
+  def transmuteDataset[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    tFn: JFunction[Dataset[U], Dataset[Y]],
+    convFn: GenomicDatasetConversion[T, U, V, X, Y, Z]): Z = {
+    val tfn: Dataset[U] => Dataset[Y] = tFn.call(_)
+    val cfn: (V, Dataset[Y]) => Z = convFn.call(_, _)
+    transmuteDataset[X, Y, Z](tfn)(convFn.yTag, cfn)
+  }
+
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type. Java friendly variant.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) are copied without modification.
+   */
+  def transmuteDataFrame[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    tFn: DataFrame => DataFrame)(
+      implicit yTag: TypeTag[Y],
+      convFn: (V, Dataset[Y]) => Z): Z = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    transmuteDataset[X, Y, Z]((ds: Dataset[U]) => {
+      tFn(ds.toDF()).as[Y]
+    })
+  }
+
+  /**
+   * Applies a function that transmutes the underlying RDD into a new RDD of a
+   * different type. Java friendly variant.
+   *
+   * @param tFn A function that transforms the underlying RDD.
+   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   *   metadata (sequence dictionary, and etc) are copied without modification.
+   */
+  def transmuteDataFrame[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    tFn: JFunction[DataFrame, DataFrame],
+    convFn: GenomicDatasetConversion[T, U, V, X, Y, Z]): Z = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    transmuteDataFrame[X, Y, Z](tFn.call(_))(convFn.yTag,
+      (v: V, dsY: Dataset[Y]) => {
+        convFn.call(v, dsY)
+      })
+  }
 
   override def toString = "%s with %d reference sequences"
     .format(getClass.getSimpleName, sequences.size)
@@ -218,19 +345,19 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   val sequences: SequenceDictionary
 
   /**
-   * Replaces the sequence dictionary attached to a GenomicRDD.
+   * Replaces the sequence dictionary attached to a GenomicDataset.
    *
    * @param newSequences The new sequence dictionary to attach.
-   * @return Returns a new GenomicRDD with the sequences replaced.
+   * @return Returns a new GenomicDataset with the sequences replaced.
    */
-  def replaceSequences(newSequences: SequenceDictionary): U
+  def replaceSequences(newSequences: SequenceDictionary): V
 
   /**
    * Caches underlying RDD in memory.
    *
-   * @return U cached GenomicRDD
+   * @return Cached GenomicDataset.
    */
-  def cache(): U = {
+  def cache(): V = {
     replaceRdd(rdd.cache())
   }
 
@@ -238,18 +365,18 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * Persists underlying RDD in memory or disk.
    *
    * @param sl new StorageLevel
-   * @return U persisted GenomicRDD
+   * @return Persisted GenomicDataset.
    */
-  def persist(sl: StorageLevel): U = {
+  def persist(sl: StorageLevel): V = {
     replaceRdd(rdd.persist(sl))
   }
 
   /**
    * Unpersists underlying RDD from memory or disk.
    *
-   * @return U uncached RDD
+   * @return Uncached GenomicDataset.
    */
-  def unpersist(): U = {
+  def unpersist(): V = {
     replaceRdd(rdd.unpersist())
   }
 
@@ -257,9 +384,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * Appends sequence metadata to the current RDD.
    *
    * @param sequencesToAdd The new sequences to append.
-   * @return Returns a new GenomicRDD with the sequences appended.
+   * @return Returns a new GenomicDataset with the sequences appended.
    */
-  def addSequences(sequencesToAdd: SequenceDictionary): U = {
+  def addSequences(sequencesToAdd: SequenceDictionary): V = {
     replaceSequences(sequences ++ sequencesToAdd)
   }
 
@@ -267,9 +394,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * Appends metadata for a single sequence to the current RDD.
    *
    * @param sequenceToAdd The sequence to add.
-   * @return Returns a new GenomicRDD with this sequence appended.
+   * @return Returns a new GenomicDataset with this sequence appended.
    */
-  def addSequence(sequenceToAdd: SequenceRecord): U = {
+  def addSequence(sequenceToAdd: SequenceRecord): V = {
     addSequences(SequenceDictionary(sequenceToAdd))
   }
 
@@ -300,15 +427,15 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @param rdds RDDs to union with this RDD.
    */
-  def union(rdds: U*): U
+  def union(rdds: V*): V
 
   /**
    * Unions together multiple genomic RDDs.
    *
    * @param rdds RDDs to union with this RDD.
    */
-  def union(rdds: java.util.List[U]): U = {
-    val rddSeq: Seq[U] = rdds.toSeq
+  def union(rdds: java.util.List[V]): V = {
+    val rddSeq: Seq[V] = rdds.toSeq
     union(rddSeq: _*)
   }
 
@@ -317,9 +444,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @param tFn A function that transforms the underlying RDD.
    * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
+   *   metadata (sequence dictionary, and etc) are copied without modification.
    */
-  def transform(tFn: RDD[T] => RDD[T]): U = {
+  def transform(tFn: RDD[T] => RDD[T]): V = {
     replaceRdd(tFn(rdd))
   }
 
@@ -328,9 +455,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @param tFn A function that transforms the underlying RDD.
    * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
+   *   metadata (sequence dictionary, and etc) are copied without modification.
    */
-  def transform(tFn: JFunction[JavaRDD[T], JavaRDD[T]]): U = {
+  def transform(tFn: JFunction[JavaRDD[T], JavaRDD[T]]): V = {
     replaceRdd(tFn.call(jrdd).rdd)
   }
 
@@ -340,11 +467,11 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @param tFn A function that transforms the underlying RDD.
    * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
+   *   metadata (sequence dictionary, and etc) are copied without modification.
    */
-  def transmute[X, Y <: GenomicRDD[X, Y]](tFn: RDD[T] => RDD[X])(
-    implicit convFn: (U, RDD[X]) => Y): Y = {
-    convFn(this.asInstanceOf[U], tFn(rdd))
+  def transmute[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](tFn: RDD[T] => RDD[X])(
+    implicit convFn: (V, RDD[X]) => Z): Z = {
+    convFn(this.asInstanceOf[V], tFn(rdd))
   }
 
   /**
@@ -354,12 +481,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param tFn A function that transforms the underlying RDD.
    * @param convFn The conversion function used to build the final RDD.
    * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
+   *   metadata (sequence dictionary, and etc) are copied without modification.
    */
-  def transmute[X, Y <: GenomicRDD[X, Y]](
+  def transmute[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
     tFn: JFunction[JavaRDD[T], JavaRDD[X]],
-    convFn: Function2[U, RDD[X], Y]): Y = {
-    convFn.call(this.asInstanceOf[U], tFn.call(jrdd).rdd)
+    convFn: Function2[V, RDD[X], Z]): Z = {
+    convFn.call(this.asInstanceOf[V], tFn.call(jrdd).rdd)
   }
 
   // The partition map is structured as follows:
@@ -385,9 +512,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * into the number of partitions provided.
    *
    * @param partitions the number of partitions to repartition this rdd into
-   * @return a new repartitioned GenomicRDD
+   * @return a new repartitioned GenomicDataset
    */
-  private[rdd] def evenlyRepartition(partitions: Int)(implicit tTag: ClassTag[T]): U = {
+  private[rdd] def evenlyRepartition(partitions: Int)(implicit tTag: ClassTag[T]): V = {
     require(isSorted, "Cannot evenly repartition an unsorted RDD.")
     val count = rdd.count
     // we don't want a bunch of empty partitions, so we will just use count in
@@ -445,7 +572,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see sortLexicographically
    */
-  def sort(): U = {
+  def sort(): V = {
     sort(partitions = rdd.partitions.length,
       stringency = ValidationStringency.STRICT)(ClassTag.AnyRef.asInstanceOf[ClassTag[T]])
   }
@@ -464,7 +591,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    */
   def sort(partitions: Int = rdd.partitions.length,
            stringency: ValidationStringency = ValidationStringency.STRICT)(
-             implicit tTag: ClassTag[T]): U = {
+             implicit tTag: ClassTag[T]): V = {
 
     require(sequences.hasSequenceOrdering,
       "Sequence Dictionary does not have ordering defined.")
@@ -507,7 +634,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see sort
    */
-  def sortLexicographically(): U = {
+  def sortLexicographically(): V = {
     sortLexicographically(storePartitionMap = false)(ClassTag.AnyRef.asInstanceOf[ClassTag[T]])
   }
 
@@ -530,7 +657,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
                             storePartitionMap: Boolean = false,
                             storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
                             stringency: ValidationStringency = ValidationStringency.STRICT)(
-                              implicit tTag: ClassTag[T]): U = {
+                              implicit tTag: ClassTag[T]): V = {
 
     val partitionedRdd = rdd.flatMap(elem => {
       val coveredRegions = getReferenceRegions(elem)
@@ -574,7 +701,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * Pipes require the presence of an InFormatterCompanion and an OutFormatter
    * as implicit values. The InFormatterCompanion should be a singleton whose
-   * apply method builds an InFormatter given a specific type of GenomicRDD.
+   * apply method builds an InFormatter given a specific type of GenomicDataset.
    * The implicit InFormatterCompanion yields an InFormatter which is used to
    * format the input to the pipe, and the implicit OutFormatter is used to
    * parse the output from the pipe.
@@ -589,23 +716,23 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   partition run for, in seconds. If the partition times out, the partial
    *   results will be returned, and no exception will be logged. The partition
    *   will log that the command timed out.
-   * @return Returns a new GenomicRDD of type Y.
+   * @return Returns a new GenomicDataset of type Y.
    *
    * @tparam X The type of the record created by the piped command.
-   * @tparam Y A GenomicRDD containing X's.
+   * @tparam Y A GenomicDataset containing X's.
    * @tparam V The InFormatter to use for formatting the data being piped to the
    *   command.
    */
-  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](
+  def pipe[X, Y <: Product, Z <: GenomicDataset[X, Y, Z], W <: InFormatter[T, U, V, W]](
     cmd: Seq[String],
     files: Seq[String] = Seq.empty,
     environment: Map[String, String] = Map.empty,
     flankSize: Int = 0,
-    optTimeout: Option[Int] = None)(implicit tFormatterCompanion: InFormatterCompanion[T, U, V],
+    optTimeout: Option[Int] = None)(implicit tFormatterCompanion: InFormatterCompanion[T, U, V, W],
                                     xFormatter: OutFormatter[X],
-                                    convFn: (U, RDD[X]) => Y,
+                                    convFn: (V, RDD[X]) => Z,
                                     tManifest: ClassTag[T],
-                                    xManifest: ClassTag[X]): Y = {
+                                    xManifest: ClassTag[X]): Z = {
 
     // TODO: support broadcasting files
     files.foreach(f => {
@@ -613,7 +740,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     })
 
     // make formatter
-    val tFormatter: V = tFormatterCompanion.apply(this.asInstanceOf[U])
+    val tFormatter: W = tFormatterCompanion.apply(this.asInstanceOf[V])
 
     // make bins
     val seqLengths = sequences.records.toSeq.map(rec => (rec.name, rec.length)).toMap
@@ -668,7 +795,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
         }
 
         // replace file references in command and create process builder
-        val finalCmd = GenomicRDD.processCommand(cmd, locs)
+        val finalCmd = GenomicDataset.processCommand(cmd, locs)
         val pb = new ProcessBuilder(finalCmd)
         pb.redirectError(ProcessBuilder.Redirect.INHERIT)
 
@@ -685,7 +812,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
         val is = process.getInputStream()
 
         // wrap in formatter and run as a thread
-        val ifr = new InFormatterRunner[T, U, V](iter, tFormatter, os)
+        val ifr = new InFormatterRunner[T, U, V, W](iter, tFormatter, os)
         new Thread(ifr).start()
 
         // wrap out formatter
@@ -699,8 +826,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       }
     })
 
-    // build the new GenomicRDD
-    val newRdd = convFn(this.asInstanceOf[U], pipedRdd)
+    // build the new GenomicDataset
+    val newRdd = convFn(this.asInstanceOf[V], pipedRdd)
 
     // if the original rdd was aligned and the final rdd is aligned, then we must filter
     if (newRdd.sequences.isEmpty ||
@@ -743,24 +870,26 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param tFormatter Class of formatter for data going into pipe command.
    * @param xFormatter Formatter for data coming out of the pipe command.
    * @param convFn The conversion function used to build the final RDD.
-   * @return Returns a new GenomicRDD of type Y.
+   * @return Returns a new GenomicDataset of type Y.
    *
    * @tparam X The type of the record created by the piped command.
-   * @tparam Y A GenomicRDD containing X's.
+   * @tparam Y A GenomicDataset containing X's.
    * @tparam V The InFormatter to use for formatting the data being piped to the
    *   command.
    */
-  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: Seq[Any],
-                                                                files: Seq[Any],
-                                                                environment: java.util.Map[Any, Any],
-                                                                flankSize: java.lang.Double,
-                                                                tFormatter: Class[V],
-                                                                xFormatter: OutFormatter[X],
-                                                                convFn: Function2[U, RDD[X], Y]): Y = {
-    pipe(cmd.asInstanceOf[Seq[String]].toList,
+  def pipe[X, Y <: Product, Z <: GenomicDataset[X, Y, Z], W <: InFormatter[T, U, V, W]](
+    cmd: Seq[Any],
+    files: Seq[Any],
+    environment: java.util.Map[Any, Any],
+    flankSize: java.lang.Double,
+    tFormatter: Class[W],
+    xFormatter: OutFormatter[X],
+    convFn: Function2[V, RDD[X], Z]): Z = {
+    val jInt: java.lang.Integer = flankSize.toInt
+    pipe[X, Y, Z, W](cmd.asInstanceOf[Seq[String]].toList,
       files.asInstanceOf[Seq[String]].toList,
       environment.asInstanceOf[java.util.Map[String, String]],
-      flankSize.toInt,
+      jInt,
       tFormatter,
       xFormatter,
       convFn)
@@ -780,20 +909,21 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param tFormatter Class of formatter for data going into pipe command.
    * @param xFormatter Formatter for data coming out of the pipe command.
    * @param convFn The conversion function used to build the final RDD.
-   * @return Returns a new GenomicRDD of type Y.
+   * @return Returns a new GenomicDataset of type Y.
    *
    * @tparam X The type of the record created by the piped command.
-   * @tparam Y A GenomicRDD containing X's.
+   * @tparam Y A GenomicDataset containing X's.
    * @tparam V The InFormatter to use for formatting the data being piped to the
    *   command.
    */
-  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: java.util.List[String],
-                                                                files: java.util.List[String],
-                                                                environment: java.util.Map[String, String],
-                                                                flankSize: java.lang.Integer,
-                                                                tFormatter: Class[V],
-                                                                xFormatter: OutFormatter[X],
-                                                                convFn: Function2[U, RDD[X], Y]): Y = {
+  def pipe[X, Y <: Product, Z <: GenomicDataset[X, Y, Z], W <: InFormatter[T, U, V, W]](
+    cmd: java.util.List[String],
+    files: java.util.List[String],
+    environment: java.util.Map[String, String],
+    flankSize: java.lang.Integer,
+    tFormatter: Class[W],
+    xFormatter: OutFormatter[X],
+    convFn: Function2[V, RDD[X], Z]): Z = {
 
     // get companion object for in formatter
     val tFormatterCompanion = {
@@ -814,20 +944,20 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       tFormatterCompanionConstructor.setAccessible(true)
 
       tFormatterCompanionConstructor.newInstance()
-        .asInstanceOf[InFormatterCompanion[T, U, V]]
+        .asInstanceOf[InFormatterCompanion[T, U, V, W]]
     }
 
-    pipe(cmd, files.toSeq, environment.toMap, flankSize)(
+    pipe[X, Y, Z, W](cmd, files.toSeq, environment.toMap, flankSize)(
       tFormatterCompanion,
       xFormatter,
-      (gRdd: U, rdd: RDD[X]) => convFn.call(gRdd, rdd),
+      (gRdd: V, rdd: RDD[X]) => convFn.call(gRdd, rdd),
       ClassTag.AnyRef.asInstanceOf[ClassTag[T]],
       ClassTag.AnyRef.asInstanceOf[ClassTag[X]])
   }
 
   protected def replaceRdd(
     newRdd: RDD[T],
-    newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): U
+    newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): V
 
   protected def getReferenceRegions(elem: T): Seq[ReferenceRegion]
 
@@ -842,10 +972,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * single genomic region.
    *
    * @param query The region to query for.
-   * @return Returns a new GenomicRDD containing only data that overlaps the
+   * @return Returns a new GenomicDataset containing only data that overlaps the
    *   query region.
    */
-  def filterByOverlappingRegion(query: ReferenceRegion): U = {
+  def filterByOverlappingRegion(query: ReferenceRegion): V = {
     replaceRdd(rdd.filter(elem => {
 
       // where can this item sit?
@@ -861,10 +991,10 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * several genomic regions.
    *
    * @param querys The regions to query for.
-   * @return Returns a new GenomicRDD containing only data that overlaps the
+   * @return Returns a new GenomicDataset containing only data that overlaps the
    *   querys region.
    */
-  def filterByOverlappingRegions(querys: Iterable[ReferenceRegion]): U = {
+  def filterByOverlappingRegions(querys: Iterable[ReferenceRegion]): V = {
     replaceRdd(rdd.filter(elem => {
 
       val regions = getReferenceRegions(elem)
@@ -883,7 +1013,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return Returns a new GenomicRDD containing only data that overlaps the
    *   querys region.
    */
-  def filterByOverlappingRegions(querys: java.lang.Iterable[ReferenceRegion]): U = {
+  def filterByOverlappingRegions(querys: java.lang.Iterable[ReferenceRegion]): V = {
     replaceRdd(rdd.filter(elem => {
 
       val regions = getReferenceRegions(elem)
@@ -899,8 +1029,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
       implicit tTag: ClassTag[T]): IntervalArray[ReferenceRegion, T]
 
   def broadcast()(
-    implicit tTag: ClassTag[T]): Broadcast[IntervalArray[ReferenceRegion, T]] = {
-    rdd.context.broadcast(buildTree(flattenRddByRegions()))
+    implicit tTag: ClassTag[T]): GenomicBroadcast[T, U, V] = {
+    GenomicBroadcast[T, U, V](this.asInstanceOf[V],
+      rdd.context.broadcast(buildTree(flattenRddByRegions())))
   }
 
   /**
@@ -920,23 +1051,27 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see broadcastRegionJoinAgainst
    */
-  def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def broadcastRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      txTag: ClassTag[(T, X)]): GenericGenomicRDD[(T, X)] = InnerBroadcastJoin.time {
+      txTag: ClassTag[(T, X)],
+      uyTag: TypeTag[(U, Y)]): GenericGenomicDataset[(T, X), (U, Y)] = InnerBroadcastJoin.time {
 
     // key the RDDs and join
-    GenericGenomicRDD[(T, X)](InnerTreeRegionJoin[T, X]().broadcastAndJoin(
+    RDDBoundGenericGenomicDataset[(T, X), (U, Y)](InnerTreeRegionJoin[T, X]().broadcastAndJoin(
       buildTree(flattenRddByRegions().map(f => (f._1.pad(flankSize), f._2))),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
-      kv => {
+      GenericConverter[(T, X), (U, Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         getReferenceRegions(kv._1).map(_.pad(-1 * flankSize)) ++
           genomicRdd.getReferenceRegions(kv._2)
-      })
+      },
+        kv => (productFn(kv._1), genomicRdd.productFn(kv._2)),
+        kv => (unproductFn(kv._1), genomicRdd.unproductFn(kv._2))),
+      TagHolder[(T, X), (U, Y)]())
   }
 
   /**
@@ -954,11 +1089,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see broadcastRegionJoinAgainst
    */
-  def broadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
+  def broadcastRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      txTag: ClassTag[(T, X)]): GenericGenomicRDD[(T, X)] = {
+      txTag: ClassTag[(T, X)],
+      uyTag: TypeTag[(U, Y)]): GenericGenomicDataset[(T, X), (U, Y)] = {
 
     broadcastRegionJoin(genomicRdd, 0L)
   }
@@ -982,16 +1118,23 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see broadcastRegionJoin
    */
-  def broadcastRegionJoinAgainst[X](
-    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(X, T)] = InnerBroadcastJoin.time {
+  def broadcastRegionJoinAgainst[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    broadcast: GenomicBroadcast[X, Y, Z])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X],
+      uyTag: TypeTag[(Y, U)]): GenericGenomicDataset[(X, T), (Y, U)] = InnerBroadcastJoin.time {
 
     // key the RDDs and join
-    GenericGenomicRDD[(X, T)](InnerTreeRegionJoin[X, T]().join(
-      broadcastTree,
+    RDDBoundGenericGenomicDataset[(X, T), (Y, U)](InnerTreeRegionJoin[X, T]().join(
+      broadcast.broadcastTree,
       flattenRddByRegions()),
-      sequences,
-      kv => { getReferenceRegions(kv._2) }) // FIXME
+      sequences ++ broadcast.backingDataset.sequences,
+      GenericConverter[(X, T), (Y, U)](kv => {
+        broadcast.backingDataset.getReferenceRegions(kv._1) ++
+          getReferenceRegions(kv._2)
+      },
+        kv => (broadcast.backingDataset.productFn(kv._1), productFn(kv._2)),
+        kv => (broadcast.backingDataset.unproductFn(kv._1), unproductFn(kv._2))),
+      TagHolder[(X, T), (Y, U)]())
   }
 
   /**
@@ -1014,51 +1157,28 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see rightOuterBroadcastRegionJoin
    */
-  def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def rightOuterBroadcastRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otxTag: ClassTag[(Option[T], X)]): GenericGenomicRDD[(Option[T], X)] = RightOuterBroadcastJoin.time {
+      otxTag: ClassTag[(Option[T], X)],
+      ouyTag: TypeTag[(Option[U], Y)]): GenericGenomicDataset[(Option[T], X), (Option[U], Y)] = RightOuterBroadcastJoin.time {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Option[T], X)](RightOuterTreeRegionJoin[T, X]().broadcastAndJoin(
+    RDDBoundGenericGenomicDataset[(Option[T], X), (Option[U], Y)](RightOuterTreeRegionJoin[T, X]().broadcastAndJoin(
       buildTree(flattenRddByRegions().map(f => (f._1.pad(flankSize), f._2))),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
-      kv => {
+      GenericConverter[(Option[T], X), (Option[U], Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         Seq(kv._1.map(v => getReferenceRegions(v)
           .map(_.pad(-1 * flankSize)))).flatten.flatten ++
           genomicRdd.getReferenceRegions(kv._2)
-      })
-  }
-
-  /**
-   * Performs a broadcast right outer join between this RDD and another RDD.
-   *
-   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
-   * and broadcast to all the nodes in the cluster. The key equality function
-   * used for this join is the reference region overlap function. Since this
-   * is a right outer join, all values in the left RDD that do not overlap a
-   * value from the right RDD are dropped. If a value from the right RDD does
-   * not overlap any values in the left RDD, it will be paired with a `None`
-   * in the product of the join.
-   *
-   * @param genomicRdd The right RDD in the join.
-   * @return Returns a new genomic RDD containing all pairs of keys that
-   *   overlapped in the genomic coordinate space, and all keys from the
-   *   right RDD that did not overlap a key in the left RDD.
-   *
-   * @see rightOuterBroadcastRegionJoin
-   */
-  def rightOuterBroadcastRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
-      implicit tTag: ClassTag[T],
-      xTag: ClassTag[X],
-      otxTag: ClassTag[(Option[T], X)]): GenericGenomicRDD[(Option[T], X)] = {
-
-    rightOuterBroadcastRegionJoin(genomicRdd, 0L)
+      },
+        kv => (kv._1.map(productFn), genomicRdd.productFn(kv._2)),
+        kv => (kv._1.map(unproductFn), genomicRdd.unproductFn(kv._2))),
+      TagHolder[(Option[T], X), (Option[U], Y)]())
   }
 
   /**
@@ -1082,18 +1202,51 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see rightOuterBroadcastRegionJoin
    */
-  def rightOuterBroadcastRegionJoinAgainst[X](
-    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(Option[X], T)] = RightOuterBroadcastJoin.time {
+  def rightOuterBroadcastRegionJoinAgainst[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    broadcast: GenomicBroadcast[X, Y, Z])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X],
+      oyuTag: TypeTag[(Option[Y], U)]): GenericGenomicDataset[(Option[X], T), (Option[Y], U)] = RightOuterBroadcastJoin.time {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Option[X], T)](RightOuterTreeRegionJoin[X, T]().join(
-      broadcastTree,
+    RDDBoundGenericGenomicDataset[(Option[X], T), (Option[Y], U)](RightOuterTreeRegionJoin[X, T]().join(
+      broadcast.broadcastTree,
       flattenRddByRegions()),
-      sequences,
-      kv => {
-        getReferenceRegions(kv._2) // FIXME
-      })
+      sequences ++ broadcast.backingDataset.sequences,
+      GenericConverter[(Option[X], T), (Option[Y], U)](kv => {
+        Seq(kv._1.map(v => broadcast.backingDataset.getReferenceRegions(v))).flatten.flatten ++
+          getReferenceRegions(kv._2)
+      },
+        kv => (kv._1.map(broadcast.backingDataset.productFn), productFn(kv._2)),
+        kv => (kv._1.map(broadcast.backingDataset.unproductFn), unproductFn(kv._2))),
+      TagHolder[(Option[X], T), (Option[Y], U)]())
+  }
+
+  /**
+   * Performs a broadcast right outer join between this RDD and another RDD.
+   *
+   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
+   * and broadcast to all the nodes in the cluster. The key equality function
+   * used for this join is the reference region overlap function. Since this
+   * is a right outer join, all values in the left RDD that do not overlap a
+   * value from the right RDD are dropped. If a value from the right RDD does
+   * not overlap any values in the left RDD, it will be paired with a `None`
+   * in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and all keys from the
+   *   right RDD that did not overlap a key in the left RDD.
+   *
+   * @see rightOuterBroadcastRegionJoin
+   */
+  def rightOuterBroadcastRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      otxTag: ClassTag[(Option[T], X)],
+      ouyTag: TypeTag[(Option[U], Y)]): GenericGenomicDataset[(Option[T], X), (Option[U], Y)] = {
+
+    rightOuterBroadcastRegionJoin(genomicRdd, 0L)
   }
 
   /**
@@ -1113,48 +1266,28 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see broadcastRegionJoinAgainstAndGroupByRight
    */
-  def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def broadcastRegionJoinAndGroupByRight[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      itxTag: ClassTag[(Iterable[T], X)]): GenericGenomicRDD[(Iterable[T], X)] = BroadcastJoinAndGroupByRight.time {
+      itxTag: ClassTag[(Iterable[T], X)],
+      iuyTag: TypeTag[(Seq[U], Y)]): GenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)] = BroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Iterable[T], X)](InnerTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
+    RDDBoundGenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)](InnerTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
       buildTree(flattenRddByRegions().map(f => (f._1.pad(flankSize), f._2))),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
-      kv => {
+      GenericConverter[(Iterable[T], X), (Seq[U], Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
-        (kv._1.flatMap(getReferenceRegions).map(_.pad(-1 * flankSize)) ++
+        (kv._1.flatMap(getReferenceRegions) ++
           genomicRdd.getReferenceRegions(kv._2))
           .toSeq
-      })
-  }
-
-  /**
-   * Performs a broadcast inner join between this RDD and another RDD.
-   *
-   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
-   * and broadcast to all the nodes in the cluster. The key equality function
-   * used for this join is the reference region overlap function. Since this
-   * is an inner join, all values who do not overlap a value from the other
-   * RDD are dropped.
-   *
-   * @param genomicRdd The right RDD in the join.
-   * @return Returns a new genomic RDD containing all pairs of keys that
-   *   overlapped in the genomic coordinate space.
-   *
-   * @see broadcastRegionJoinAgainstAndGroupByRight
-   */
-  def broadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
-      implicit tTag: ClassTag[T],
-      xTag: ClassTag[X],
-      itxTag: ClassTag[(Iterable[T], X)]): GenericGenomicRDD[(Iterable[T], X)] = {
-
-    broadcastRegionJoinAndGroupByRight(genomicRdd, 0L)
+      },
+        kv => (kv._1.map(productFn).toSeq, genomicRdd.productFn(kv._2)),
+        kv => (kv._1.map(unproductFn), genomicRdd.unproductFn(kv._2))),
+      TagHolder[(Iterable[T], X), (Seq[U], Y)]())
   }
 
   /**
@@ -1176,16 +1309,50 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see broadcastRegionJoinAndGroupByRight
    */
-  def broadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
-    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(Iterable[X], T)] = BroadcastJoinAndGroupByRight.time {
+  def broadcastRegionJoinAgainstAndGroupByRight[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    broadcast: GenomicBroadcast[X, Y, Z])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X],
+      syuTag: TypeTag[(Seq[Y], U)]): GenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)] = BroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Iterable[X], T)](InnerTreeRegionJoinAndGroupByRight[X, T]().join(
-      broadcastTree,
+    RDDBoundGenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)](InnerTreeRegionJoinAndGroupByRight[X, T]().join(
+      broadcast.broadcastTree,
       flattenRddByRegions()),
-      sequences,
-      kv => { getReferenceRegions(kv._2) })
+      sequences ++ broadcast.backingDataset.sequences,
+      GenericConverter[(Iterable[X], T), (Seq[Y], U)](kv => {
+        // pad by -1 * flankSize to undo pad from preprocessing
+        (kv._1.flatMap(broadcast.backingDataset.getReferenceRegions) ++
+          getReferenceRegions(kv._2))
+          .toSeq
+      },
+        kv => (kv._1.map(broadcast.backingDataset.productFn).toSeq, productFn(kv._2)),
+        kv => (kv._1.map(broadcast.backingDataset.unproductFn), unproductFn(kv._2))),
+      TagHolder[(Iterable[X], T), (Seq[Y], U)]())
+  }
+
+  /**
+   * Performs a broadcast inner join between this RDD and another RDD.
+   *
+   * In a broadcast join, the left RDD (this RDD) is collected to the driver,
+   * and broadcast to all the nodes in the cluster. The key equality function
+   * used for this join is the reference region overlap function. Since this
+   * is an inner join, all values who do not overlap a value from the other
+   * RDD are dropped.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space.
+   *
+   * @see broadcastRegionJoinAgainstAndGroupByRight
+   */
+  def broadcastRegionJoinAndGroupByRight[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      itxTag: ClassTag[(Iterable[T], X)],
+      iuyTag: TypeTag[(Seq[U], Y)]): GenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)] = {
+
+    broadcastRegionJoinAndGroupByRight(genomicRdd, 0L)
   }
 
   /**
@@ -1208,51 +1375,28 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see rightOuterBroadcastRegionJoinAgainstAndGroupByRight
    */
-  def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      itxTag: ClassTag[(Iterable[T], X)]): GenericGenomicRDD[(Iterable[T], X)] = RightOuterBroadcastJoinAndGroupByRight.time {
+      itxTag: ClassTag[(Iterable[T], X)],
+      iuyTag: TypeTag[(Seq[U], Y)]): GenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)] = RightOuterBroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Iterable[T], X)](RightOuterTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
+    RDDBoundGenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)](RightOuterTreeRegionJoinAndGroupByRight[T, X]().broadcastAndJoin(
       buildTree(flattenRddByRegions().map(f => (f._1.pad(flankSize), f._2))),
       genomicRdd.flattenRddByRegions()),
       sequences ++ genomicRdd.sequences,
-      kv => {
+      GenericConverter[(Iterable[T], X), (Seq[U], Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         Seq(kv._1.map(v => getReferenceRegions(v)
           .map(_.pad(-1 * flankSize)))).flatten.flatten ++
           genomicRdd.getReferenceRegions(kv._2)
-      })
-  }
-
-  /**
-   * Performs a broadcast right outer join between this RDD and another RDD.
-   *
-   * In a broadcast join, the left side of the join (broadcastTree) is broadcast to
-   * to all the nodes in the cluster. The key equality function
-   * used for this join is the reference region overlap function. Since this
-   * is a right outer join, all values in the left RDD that do not overlap a
-   * value from the right RDD are dropped. If a value from the right RDD does
-   * not overlap any values in the left RDD, it will be paired with a `None`
-   * in the product of the join.
-   *
-   * @param genomicRdd The right RDD in the join.
-   * @return Returns a new genomic RDD containing all pairs of keys that
-   *   overlapped in the genomic coordinate space, and all keys from the
-   *   right RDD that did not overlap a key in the left RDD.
-   *
-   * @see rightOuterBroadcastRegionJoinAgainstAndGroupByRight
-   */
-  def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
-      implicit tTag: ClassTag[T],
-      xTag: ClassTag[X],
-      itxTag: ClassTag[(Iterable[T], X)]): GenericGenomicRDD[(Iterable[T], X)] = {
-
-    rightOuterBroadcastRegionJoinAndGroupByRight(genomicRdd, 0L)
+      },
+        kv => (kv._1.map(productFn).toSeq, genomicRdd.productFn(kv._2)),
+        kv => (kv._1.map(unproductFn), genomicRdd.unproductFn(kv._2))),
+      TagHolder[(Iterable[T], X), (Seq[U], Y)]())
   }
 
   /**
@@ -1276,16 +1420,52 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *
    * @see rightOuterBroadcastRegionJoinAndGroupByRight
    */
-  def rightOuterBroadcastRegionJoinAgainstAndGroupByRight[X, Y <: GenomicRDD[X, Y]](
-    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, X]])(
-      implicit tTag: ClassTag[T], xTag: ClassTag[X]): GenericGenomicRDD[(Iterable[X], T)] = RightOuterBroadcastJoinAndGroupByRight.time {
+  def rightOuterBroadcastRegionJoinAgainstAndGroupByRight[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    broadcast: GenomicBroadcast[X, Y, Z])(
+      implicit tTag: ClassTag[T], xTag: ClassTag[X],
+      syuTag: TypeTag[(Seq[Y], U)]): GenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)] = RightOuterBroadcastJoinAndGroupByRight.time {
 
     // key the RDDs and join
-    GenericGenomicRDD[(Iterable[X], T)](RightOuterTreeRegionJoinAndGroupByRight[X, T]().join(
-      broadcastTree,
+    RDDBoundGenericGenomicDataset[(Iterable[X], T), (Seq[Y], U)](RightOuterTreeRegionJoinAndGroupByRight[X, T]().join(
+      broadcast.broadcastTree,
       flattenRddByRegions()),
-      sequences,
-      kv => getReferenceRegions(kv._2).toSeq)
+      sequences ++ broadcast.backingDataset.sequences,
+      GenericConverter[(Iterable[X], T), (Seq[Y], U)](kv => {
+        // pad by -1 * flankSize to undo pad from preprocessing
+        Seq(kv._1.map(v => broadcast.backingDataset.getReferenceRegions(v))).flatten.flatten ++
+          getReferenceRegions(kv._2)
+      },
+        kv => (kv._1.map(broadcast.backingDataset.productFn).toSeq, productFn(kv._2)),
+        kv => (kv._1.map(broadcast.backingDataset.unproductFn), unproductFn(kv._2))),
+      TagHolder[(Iterable[X], T), (Seq[Y], U)]())
+  }
+
+  /**
+   * Performs a broadcast right outer join between this RDD and another RDD.
+   *
+   * In a broadcast join, the left side of the join (broadcastTree) is broadcast to
+   * to all the nodes in the cluster. The key equality function
+   * used for this join is the reference region overlap function. Since this
+   * is a right outer join, all values in the left RDD that do not overlap a
+   * value from the right RDD are dropped. If a value from the right RDD does
+   * not overlap any values in the left RDD, it will be paired with a `None`
+   * in the product of the join.
+   *
+   * @param genomicRdd The right RDD in the join.
+   * @return Returns a new genomic RDD containing all pairs of keys that
+   *   overlapped in the genomic coordinate space, and all keys from the
+   *   right RDD that did not overlap a key in the left RDD.
+   *
+   * @see rightOuterBroadcastRegionJoinAgainstAndGroupByRight
+   */
+  def rightOuterBroadcastRegionJoinAndGroupByRight[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
+      implicit tTag: ClassTag[T],
+      xTag: ClassTag[X],
+      itxTag: ClassTag[(Iterable[T], X)],
+      iuyTag: TypeTag[(Seq[U], Y)]): GenericGenomicDataset[(Iterable[T], X), (Seq[U], Y)] = {
+
+    rightOuterBroadcastRegionJoinAndGroupByRight(genomicRdd, 0L)
   }
 
   /**
@@ -1299,8 +1479,8 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   joined. If set to 0, an overlap is required to join two elements.
    * @return a case class containing all the prepared data for ShuffleRegionJoins
    */
-  private def prepareForShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  private def prepareForShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     optPartitions: Option[Int] = None,
     flankSize: Long)(
       implicit tTag: ClassTag[T], xTag: ClassTag[X]): (RDD[(ReferenceRegion, T)], RDD[(ReferenceRegion, X)]) = {
@@ -1338,13 +1518,14 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
    */
-  private[rdd] def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  private[rdd] def shuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     optPartitions: Option[Int],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      txTag: ClassTag[(T, X)]): GenericGenomicRDD[(T, X)] = InnerShuffleJoin.time {
+      txTag: ClassTag[(T, X)],
+      uyTag: TypeTag[(U, Y)]): GenericGenomicDataset[(T, X), (U, Y)] = InnerShuffleJoin.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions, flankSize)
@@ -1352,15 +1533,18 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
-    GenericGenomicRDD[(T, X)](
+    RDDBoundGenericGenomicDataset[(T, X), (U, Y)](
       InnerShuffleRegionJoin[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
       combinedSequences,
-      kv => {
+      GenericConverter[(T, X), (U, Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         getReferenceRegions(kv._1).map(_.pad(-1 * flankSize)) ++
           genomicRdd.getReferenceRegions(kv._2)
-      })
+      },
+        kv => (productFn(kv._1), genomicRdd.productFn(kv._2)),
+        kv => (unproductFn(kv._1), genomicRdd.unproductFn(kv._2))),
+      TagHolder[(T, X), (U, Y)]())
   }
 
   /**
@@ -1378,12 +1562,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
    */
-  def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def shuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      txTag: ClassTag[(T, X)]): GenericGenomicRDD[(T, X)] = {
+      txTag: ClassTag[(T, X)],
+      uyTag: TypeTag[(U, Y)]): GenericGenomicDataset[(T, X), (U, Y)] = {
 
     shuffleRegionJoin(genomicRdd, None, flankSize)
   }
@@ -1401,11 +1586,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @return Returns a new genomic RDD containing all pairs of keys that
    *   overlapped in the genomic coordinate space.
    */
-  def shuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
+  def shuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      txTag: ClassTag[(T, X)]): GenericGenomicRDD[(T, X)] = {
+      txTag: ClassTag[(T, X)],
+      uyTag: TypeTag[(U, Y)]): GenericGenomicDataset[(T, X), (U, Y)] = {
 
     shuffleRegionJoin(genomicRdd, None, 0L)
   }
@@ -1430,13 +1616,14 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
    */
-  private[rdd] def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  private[rdd] def rightOuterShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     optPartitions: Option[Int],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otxTag: ClassTag[(Option[T], X)]): GenericGenomicRDD[(Option[T], X)] = RightOuterShuffleJoin.time {
+      otxTag: ClassTag[(Option[T], X)],
+      ouyTag: TypeTag[(Option[U], Y)]): GenericGenomicDataset[(Option[T], X), (Option[U], Y)] = RightOuterShuffleJoin.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions, flankSize)
@@ -1444,17 +1631,20 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
-    GenericGenomicRDD[(Option[T], X)](
+    RDDBoundGenericGenomicDataset[(Option[T], X), (Option[U], Y)](
       LeftOuterShuffleRegionJoin[X, T](rightRddToJoin, leftRddToJoin)
         .compute()
         .map(_.swap),
       combinedSequences,
-      kv => {
+      GenericConverter[(Option[T], X), (Option[U], Y)](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         Seq(kv._1.map(v => getReferenceRegions(v)
           .map(_.pad(-1 * flankSize)))).flatten.flatten ++
           genomicRdd.getReferenceRegions(kv._2)
-      })
+      },
+        kv => (kv._1.map(productFn), genomicRdd.productFn(kv._2)),
+        kv => (kv._1.map(unproductFn), genomicRdd.unproductFn(kv._2))),
+      TagHolder[(Option[T], X), (Option[U], Y)]())
   }
 
   /**
@@ -1475,12 +1665,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
    */
-  def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def rightOuterShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otxTag: ClassTag[(Option[T], X)]): GenericGenomicRDD[(Option[T], X)] = {
+      otxTag: ClassTag[(Option[T], X)],
+      ouyTag: TypeTag[(Option[U], Y)]): GenericGenomicDataset[(Option[T], X), (Option[U], Y)] = {
 
     rightOuterShuffleRegionJoin(genomicRdd, None, flankSize)
   }
@@ -1501,11 +1692,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   right RDD that did not overlap a key in the left RDD.
    */
-  def rightOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
+  def rightOuterShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otxTag: ClassTag[(Option[T], X)]): GenericGenomicRDD[(Option[T], X)] = {
+      otxTag: ClassTag[(Option[T], X)],
+      ouyTag: TypeTag[(Option[U], Y)]): GenericGenomicDataset[(Option[T], X), (Option[U], Y)] = {
 
     rightOuterShuffleRegionJoin(genomicRdd, None, 0L)
   }
@@ -1530,13 +1722,14 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   left RDD that did not overlap a key in the right RDD.
    */
-  private[rdd] def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  private[rdd] def leftOuterShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     optPartitions: Option[Int],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      toxTag: ClassTag[(T, Option[X])]): GenericGenomicRDD[(T, Option[X])] = LeftOuterShuffleJoin.time {
+      toxTag: ClassTag[(T, Option[X])],
+      uoyTag: TypeTag[(U, Option[Y])]): GenericGenomicDataset[(T, Option[X]), (U, Option[Y])] = LeftOuterShuffleJoin.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions, flankSize)
@@ -1544,15 +1737,18 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
-    GenericGenomicRDD[(T, Option[X])](
+    RDDBoundGenericGenomicDataset[(T, Option[X]), (U, Option[Y])](
       LeftOuterShuffleRegionJoin[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
       combinedSequences,
-      kv => {
+      GenericConverter[(T, Option[X]), (U, Option[Y])](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         getReferenceRegions(kv._1).map(_.pad(-1 * flankSize)) ++
           Seq(kv._2.map(v => genomicRdd.getReferenceRegions(v))).flatten.flatten
-      })
+      },
+        kv => (productFn(kv._1), kv._2.map(genomicRdd.productFn)),
+        kv => (unproductFn(kv._1), kv._2.map(genomicRdd.unproductFn))),
+      TagHolder[(T, Option[X]), (U, Option[Y])]())
   }
 
   /**
@@ -1573,12 +1769,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   left RDD that did not overlap a key in the right RDD.
    */
-  def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def leftOuterShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      toxTag: ClassTag[(T, Option[X])]): GenericGenomicRDD[(T, Option[X])] = {
+      toxTag: ClassTag[(T, Option[X])],
+      uoyTag: TypeTag[(U, Option[Y])]): GenericGenomicDataset[(T, Option[X]), (U, Option[Y])] = {
 
     leftOuterShuffleRegionJoin(genomicRdd, None, flankSize)
   }
@@ -1599,11 +1796,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   left RDD that did not overlap a key in the right RDD.
    */
-  def leftOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
+  def leftOuterShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      toxTag: ClassTag[(T, Option[X])]): GenericGenomicRDD[(T, Option[X])] = {
+      toxTag: ClassTag[(T, Option[X])],
+      uoyTag: TypeTag[(U, Option[Y])]): GenericGenomicDataset[(T, Option[X]), (U, Option[Y])] = {
 
     leftOuterShuffleRegionJoin(genomicRdd, None, 0L)
   }
@@ -1629,13 +1827,14 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   left RDD that did not overlap a key in the right RDD.
    */
-  private[rdd] def leftOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  private[rdd] def leftOuterShuffleRegionJoinAndGroupByLeft[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     optPartitions: Option[Int],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      toxTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = LeftOuterShuffleJoin.time {
+      toxTag: ClassTag[(T, Iterable[X])],
+      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = LeftOuterShuffleJoin.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions, flankSize)
@@ -1643,15 +1842,18 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
-    GenericGenomicRDD[(T, Iterable[X])](
+    RDDBoundGenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])](
       LeftOuterShuffleRegionJoinAndGroupByLeft[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
       combinedSequences,
-      kv => {
+      GenericConverter[(T, Iterable[X]), (U, Seq[Y])](kv => {
         // pad by -1 * flankSize to undo flank from preprocessing
         getReferenceRegions(kv._1).map(_.pad(-1 * flankSize)) ++
           Seq(kv._2.map(v => genomicRdd.getReferenceRegions(v))).flatten.flatten
-      })
+      },
+        kv => (productFn(kv._1), kv._2.map(genomicRdd.productFn).toSeq),
+        kv => (unproductFn(kv._1), kv._2.map(genomicRdd.unproductFn))),
+      TagHolder[(T, Iterable[X]), (U, Seq[Y])]())
   }
 
   /**
@@ -1673,12 +1875,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   left RDD that did not overlap a key in the right RDD.
    */
-  def leftOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def leftOuterShuffleRegionJoinAndGroupByLeft[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      toxTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = {
+      toxTag: ClassTag[(T, Iterable[X])],
+      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = {
 
     leftOuterShuffleRegionJoinAndGroupByLeft(genomicRdd, None, flankSize)
   }
@@ -1700,11 +1903,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and all keys from the
    *   left RDD that did not overlap a key in the right RDD.
    */
-  def leftOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
+  def leftOuterShuffleRegionJoinAndGroupByLeft[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      toxTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = {
+      toxTag: ClassTag[(T, Iterable[X])],
+      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = {
 
     leftOuterShuffleRegionJoinAndGroupByLeft(genomicRdd, None, 0L)
   }
@@ -1728,13 +1932,14 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and values that did not
    *   overlap will be paired with a `None`.
    */
-  private[rdd] def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  private[rdd] def fullOuterShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     optPartitions: Option[Int],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otoxTag: ClassTag[(Option[T], Option[X])]): GenericGenomicRDD[(Option[T], Option[X])] = FullOuterShuffleJoin.time {
+      otoxTag: ClassTag[(Option[T], Option[X])],
+      ouoyTag: TypeTag[(Option[U], Option[Y])]): GenericGenomicDataset[(Option[T], Option[X]), (Option[U], Option[Y])] = FullOuterShuffleJoin.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions, flankSize)
@@ -1742,15 +1947,18 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
-    GenericGenomicRDD[(Option[T], Option[X])](
+    RDDBoundGenericGenomicDataset[(Option[T], Option[X]), (Option[U], Option[Y])](
       FullOuterShuffleRegionJoin[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
       combinedSequences,
-      kv => {
+      GenericConverter[(Option[T], Option[X]), (Option[U], Option[Y])](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         Seq(kv._1.map(v => getReferenceRegions(v).map(_.pad(-1 * flankSize))),
           kv._2.map(v => genomicRdd.getReferenceRegions(v))).flatten.flatten
-      })
+      },
+        kv => (kv._1.map(productFn), kv._2.map(genomicRdd.productFn)),
+        kv => (kv._1.map(unproductFn), kv._2.map(genomicRdd.unproductFn))),
+      TagHolder[(Option[T], Option[X]), (Option[U], Option[Y])]())
   }
 
   /**
@@ -1770,12 +1978,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and values that did not
    *   overlap will be paired with a `None`.
    */
-  def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def fullOuterShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otoxTag: ClassTag[(Option[T], Option[X])]): GenericGenomicRDD[(Option[T], Option[X])] = {
+      otoxTag: ClassTag[(Option[T], Option[X])],
+      ouoyTag: TypeTag[(Option[U], Option[Y])]): GenericGenomicDataset[(Option[T], Option[X]), (Option[U], Option[Y])] = {
 
     fullOuterShuffleRegionJoin(genomicRdd, None, flankSize)
   }
@@ -1795,11 +2004,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, and values that did not
    *   overlap will be paired with a `None`.
    */
-  def fullOuterShuffleRegionJoin[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
+  def fullOuterShuffleRegionJoin[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otoxTag: ClassTag[(Option[T], Option[X])]): GenericGenomicRDD[(Option[T], Option[X])] = {
+      otoxTag: ClassTag[(Option[T], Option[X])],
+      ouoyTag: TypeTag[(Option[U], Option[Y])]): GenericGenomicDataset[(Option[T], Option[X]), (Option[U], Option[Y])] = {
 
     fullOuterShuffleRegionJoin(genomicRdd, None, 0L)
   }
@@ -1824,13 +2034,14 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, grouped together by
    *   the value they overlapped in the left RDD..
    */
-  private[rdd] def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  private[rdd] def shuffleRegionJoinAndGroupByLeft[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     optPartitions: Option[Int],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      tixTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = ShuffleJoinAndGroupByLeft.time {
+      tixTag: ClassTag[(T, Iterable[X])],
+      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = ShuffleJoinAndGroupByLeft.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions, flankSize)
@@ -1838,16 +2049,19 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
-    GenericGenomicRDD[(T, Iterable[X])](
+    RDDBoundGenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])](
       InnerShuffleRegionJoinAndGroupByLeft[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
       combinedSequences,
-      kv => {
+      GenericConverter[(T, Iterable[X]), (U, Seq[Y])](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         getReferenceRegions(kv._1)
           .map(_.pad(-1 * flankSize)) ++
           kv._2.flatMap(v => genomicRdd.getReferenceRegions(v))
-      })
+      },
+        kv => (productFn(kv._1), kv._2.map(genomicRdd.productFn).toSeq),
+        kv => (unproductFn(kv._1), kv._2.map(genomicRdd.unproductFn))),
+      TagHolder[(T, Iterable[X]), (U, Seq[Y])]())
   }
 
   /**
@@ -1868,12 +2082,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, grouped together by
    *   the value they overlapped in the left RDD..
    */
-  def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def shuffleRegionJoinAndGroupByLeft[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      tixTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = {
+      tixTag: ClassTag[(T, Iterable[X])],
+      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = {
 
     shuffleRegionJoinAndGroupByLeft(genomicRdd, None, flankSize)
   }
@@ -1894,11 +2109,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   overlapped in the genomic coordinate space, grouped together by
    *   the value they overlapped in the left RDD..
    */
-  def shuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
+  def shuffleRegionJoinAndGroupByLeft[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      tixTag: ClassTag[(T, Iterable[X])]): GenericGenomicRDD[(T, Iterable[X])] = {
+      tixTag: ClassTag[(T, Iterable[X])],
+      uiyTag: TypeTag[(U, Seq[Y])]): GenericGenomicDataset[(T, Iterable[X]), (U, Seq[Y])] = {
 
     shuffleRegionJoinAndGroupByLeft(genomicRdd, None, 0L)
   }
@@ -1925,13 +2141,14 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   the value they overlapped in the left RDD, and all values from the
    *   right RDD that did not overlap an item in the left RDD.
    */
-  private[rdd] def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  private[rdd] def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     optPartitions: Option[Int],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otixTag: ClassTag[(Option[T], Iterable[X])]): GenericGenomicRDD[(Option[T], Iterable[X])] = RightOuterShuffleJoinAndGroupByLeft.time {
+      otixTag: ClassTag[(Option[T], Iterable[X])],
+      ouiyTag: TypeTag[(Option[U], Seq[Y])]): GenericGenomicDataset[(Option[T], Iterable[X]), (Option[U], Seq[Y])] = RightOuterShuffleJoinAndGroupByLeft.time {
 
     val (leftRddToJoin, rightRddToJoin) =
       prepareForShuffleRegionJoin(genomicRdd, optPartitions, flankSize)
@@ -1939,16 +2156,19 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     // what sequences do we wind up with at the end?
     val combinedSequences = sequences ++ genomicRdd.sequences
 
-    GenericGenomicRDD[(Option[T], Iterable[X])](
+    RDDBoundGenericGenomicDataset[(Option[T], Iterable[X]), (Option[U], Seq[Y])](
       RightOuterShuffleRegionJoinAndGroupByLeft[T, X](leftRddToJoin, rightRddToJoin)
         .compute(),
       combinedSequences,
-      kv => {
+      GenericConverter[(Option[T], Iterable[X]), (Option[U], Seq[Y])](kv => {
         // pad by -1 * flankSize to undo pad from preprocessing
         kv._1.toSeq.flatMap(v => getReferenceRegions(v)
           .map(_.pad(-1 * flankSize))) ++
           kv._2.flatMap(v => genomicRdd.getReferenceRegions(v))
-      })
+      },
+        kv => (kv._1.map(productFn), kv._2.map(genomicRdd.productFn).toSeq),
+        kv => (kv._1.map(unproductFn), kv._2.map(genomicRdd.unproductFn))),
+      TagHolder[(Option[T], Iterable[X]), (Option[U], Seq[Y])]())
   }
 
   /**
@@ -1971,12 +2191,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   the value they overlapped in the left RDD, and all values from the
    *   right RDD that did not overlap an item in the left RDD.
    */
-  def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y],
+  def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z],
     flankSize: Long)(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otixTag: ClassTag[(Option[T], Iterable[X])]): GenericGenomicRDD[(Option[T], Iterable[X])] = {
+      otixTag: ClassTag[(Option[T], Iterable[X])],
+      ousyTag: TypeTag[(Option[U], Seq[Y])]): GenericGenomicDataset[(Option[T], Iterable[X]), (Option[U], Seq[Y])] = {
 
     rightOuterShuffleRegionJoinAndGroupByLeft(genomicRdd, None, flankSize)
   }
@@ -1999,11 +2220,12 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   the value they overlapped in the left RDD, and all values from the
    *   right RDD that did not overlap an item in the left RDD.
    */
-  def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: GenomicRDD[X, Y]](
-    genomicRdd: GenomicRDD[X, Y])(
+  def rightOuterShuffleRegionJoinAndGroupByLeft[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    genomicRdd: GenomicDataset[X, Y, Z])(
       implicit tTag: ClassTag[T],
       xTag: ClassTag[X],
-      otixTag: ClassTag[(Option[T], Iterable[X])]): GenericGenomicRDD[(Option[T], Iterable[X])] = {
+      otixTag: ClassTag[(Option[T], Iterable[X])],
+      otsyTag: TypeTag[(Option[U], Seq[Y])]): GenericGenomicDataset[(Option[T], Iterable[X]), (Option[U], Seq[Y])] = {
 
     rightOuterShuffleRegionJoinAndGroupByLeft(genomicRdd, None, 0L)
   }
@@ -2020,9 +2242,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @param rddToCoPartitionWith The rdd to copartition to.
    * @return The newly repartitioned rdd.
    */
-  private[rdd] def copartitionByReferenceRegion[X, Y <: GenomicRDD[X, Y]](
-    rddToCoPartitionWith: GenomicRDD[X, Y],
-    flankSize: Long = 0L)(implicit tTag: ClassTag[T], xTag: ClassTag[X]): U = {
+  private[rdd] def copartitionByReferenceRegion[X, Y <: Product, Z <: GenomicDataset[X, Y, Z]](
+    rddToCoPartitionWith: GenomicDataset[X, Y, Z],
+    flankSize: Long = 0L)(implicit tTag: ClassTag[T], xTag: ClassTag[X]): V = {
 
     // if the other RDD is not sorted, we can't guarantee proper copartition
     assert(rddToCoPartitionWith.isSorted,
@@ -2121,9 +2343,9 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     }
 
     val finalPartitionedRDD = {
-      val referenceRegionKeyedGenomicRDD = flattenRddByRegions()
+      val referenceRegionKeyedGenomicDataset = flattenRddByRegions()
 
-      referenceRegionKeyedGenomicRDD.mapPartitions(iter => {
+      referenceRegionKeyedGenomicDataset.mapPartitions(iter => {
         iter.flatMap(f => {
           val paddedRegion = f._1.pad(flankSize)
           partitionRegionsAndIndices.get(paddedRegion.referenceName)
@@ -2188,23 +2410,34 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   }
 }
 
-case class GenericGenomicRDD[T](
-    rdd: RDD[T],
-    sequences: SequenceDictionary,
-    regionFn: T => Seq[ReferenceRegion],
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None)(
-        implicit tTag: ClassTag[T]) extends GenomicRDD[T, GenericGenomicRDD[T]] {
+// we pass these conversion functions back and forth between the various
+// generic genomic datset implementations, so it makes sense to bundle
+// them up in a case class
+case class GenericConverter[T, U] private (regionFn: T => Seq[ReferenceRegion],
+                                           productFn: T => U,
+                                           unproductFn: U => T) {
+}
 
-  def replaceSequences(
-    newSequences: SequenceDictionary): GenericGenomicRDD[T] = {
-    copy(sequences = newSequences)
-  }
+sealed abstract class GenericGenomicDataset[T, U <: Product] extends GenomicDataset[T, U, GenericGenomicDataset[T, U]] {
 
-  def union(rdds: GenericGenomicRDD[T]*): GenericGenomicRDD[T] = {
-    val iterableRdds = rdds.toSeq
-    GenericGenomicRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
-      regionFn)
+  protected val converter: GenericConverter[T, U]
+  lazy val regionFn = converter.regionFn
+  @transient lazy val productFn = converter.productFn
+  @transient lazy val unproductFn = converter.unproductFn
+
+  @transient val uTag: TypeTag[U]
+
+  def saveAsParquet(filePath: String,
+                    blockSize: Int = 128 * 1024 * 1024,
+                    pageSize: Int = 1 * 1024 * 1024,
+                    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                    disableDictionaryEncoding: Boolean = false) {
+    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    dataset.toDF()
+      .write
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
   }
 
   protected def buildTree(
@@ -2216,19 +2449,150 @@ case class GenericGenomicRDD[T](
   protected def getReferenceRegions(elem: T): Seq[ReferenceRegion] = {
     regionFn(elem)
   }
+}
 
+// this class is needed as a workaround to allow the generic genomic dataset
+// classes to have no-arg constructors
+//
+// during conversion to dataset, the generic genomic dataset classes get
+// swept up and serialized as part of serializing the task. this uses java
+// serialization, which requires a no arg constructor. however, the generic
+// genomic dataset classes also require classtags and typetags. this is
+// problematic, as the way that the scala compiler supplies these is through
+// arguments that are added to the constructor. there doesn't seem to be an
+// obvious way to eliminate adding these to the constuctor, unless you remove
+// the TypeTag view bound and find a way to supply the typetags and classtags
+// through some other means.
+//
+// by making each generic genomic dataset instance have a instance of the
+// tagholder class, we can work around this problem. what we do is remove the
+// view bound on the generic genomic dataset classes, and provide a view bound
+// on the tagholder class. wherever we need a classtag or typetag, we rely
+// lazily on the tags available from the tagholder.
+private[rdd] case class TagHolder[T, U <: Product: TypeTag]()(
+    implicit val tTag: ClassTag[T],
+    val uTag: ClassTag[U]) {
+  @transient val uTTag: TypeTag[U] = typeTag[U]
+}
+
+case class DatasetBoundGenericGenomicDataset[T, U <: Product](
+    dataset: Dataset[U],
+    sequences: SequenceDictionary,
+    converter: GenericConverter[T, U],
+    tagHolder: TagHolder[T, U]) extends GenericGenomicDataset[T, U] {
+
+  implicit val tTag: ClassTag[T] = tagHolder.tTag
+  implicit val uCTag: ClassTag[U] = tagHolder.uTag
+  @transient val uTag: TypeTag[U] = tagHolder.uTTag
+
+  val optPartitionMap = None
+
+  lazy val rdd: RDD[T] = {
+    dataset.rdd.map(converter.unproductFn(_))
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): GenericGenomicDataset[T, U] = {
+    copy(sequences = newSequences)
+  }
+
+  // this cannot be in the GenericGenomicDataset trait due to need for the
+  // implicit classtag
+  def union(rdds: GenericGenomicDataset[T, U]*): GenericGenomicDataset[T, U] = {
+    val iterableRdds = rdds.toSeq
+    RDDBoundGenericGenomicDataset(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      converter,
+      tagHolder)
+  }
+
+  // this cannot be in the GenericGenomicDataset trait due to need for the
+  // implicit classtag
   protected def replaceRdd(
     newRdd: RDD[T],
-    newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenericGenomicRDD[T] = {
+    newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenericGenomicDataset[T, U] = {
 
-    copy(rdd = newRdd, optPartitionMap = newPartitionMap)
+    RDDBoundGenericGenomicDataset(newRdd,
+      sequences,
+      converter,
+      tagHolder,
+      optPartitionMap = newPartitionMap)
+  }
+
+  // this cannot be in the GenericGenomicDataset trait due to need for the
+  // implicit classtag
+  def transformDataset(tFn: Dataset[U] => Dataset[U]): GenericGenomicDataset[T, U] = {
+    DatasetBoundGenericGenomicDataset(tFn(dataset),
+      sequences,
+      converter,
+      tagHolder)
+  }
+}
+
+case class RDDBoundGenericGenomicDataset[T, U <: Product](
+    rdd: RDD[T],
+    sequences: SequenceDictionary,
+    converter: GenericConverter[T, U],
+    @transient tagHolder: TagHolder[T, U],
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends GenericGenomicDataset[T, U] {
+
+  implicit val tTag: ClassTag[T] = tagHolder.tTag
+  implicit val uCTag: ClassTag[U] = tagHolder.uTag
+  @transient implicit val uTag: TypeTag[U] = tagHolder.uTTag
+
+  def this() = {
+    this(null, SequenceDictionary.empty, null, null, None)
+  }
+
+  lazy val dataset: Dataset[U] = {
+    val sqlContext = SQLContext.getOrCreate(rdd.context)
+    import sqlContext.implicits._
+    val productRdd: RDD[U] = rdd.map(converter.productFn(_))
+    sqlContext.createDataset(productRdd)
+  }
+
+  def replaceSequences(
+    newSequences: SequenceDictionary): GenericGenomicDataset[T, U] = {
+    copy(sequences = newSequences)
+  }
+
+  // this cannot be in the GenericGenomicDataset trait due to need for the
+  // implicit classtag
+  def union(rdds: GenericGenomicDataset[T, U]*): GenericGenomicDataset[T, U] = {
+    val iterableRdds = rdds.toSeq
+    RDDBoundGenericGenomicDataset(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
+      converter,
+      tagHolder)
+  }
+
+  // this cannot be in the GenericGenomicDataset trait due to need for the
+  // implicit classtag
+  protected def replaceRdd(
+    newRdd: RDD[T],
+    newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): GenericGenomicDataset[T, U] = {
+
+    RDDBoundGenericGenomicDataset(newRdd,
+      sequences,
+      converter,
+      tagHolder,
+      optPartitionMap = newPartitionMap)
+  }
+
+  // this cannot be in the GenericGenomicDataset trait due to need for the
+  // implicit classtag
+  def transformDataset(tFn: Dataset[U] => Dataset[U]): GenericGenomicDataset[T, U] = {
+    DatasetBoundGenericGenomicDataset(tFn(dataset),
+      sequences,
+      converter,
+      tagHolder)
   }
 }
 
 /**
- * A trait describing a GenomicRDD with data from multiple samples.
+ * A trait describing a GenomicDataset with data from multiple samples.
  */
-trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends GenomicRDD[T, U] {
+trait MultisampleGenomicDataset[T, U <: Product, V <: MultisampleGenomicDataset[T, U, V]] extends GenomicDataset[T, U, V] {
 
   /**
    * Save the samples to disk.
@@ -2247,7 +2611,7 @@ trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends Genomic
     .format(getClass.getSimpleName, sequences.size, samples.size)
 
   /**
-   * The samples who have data contained in this GenomicRDD.
+   * The samples who have data contained in this GenomicDataset.
    */
   val samples: Seq[Sample]
 
@@ -2255,9 +2619,9 @@ trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends Genomic
    * Replaces the sample metadata attached to the RDD.
    *
    * @param newSamples The new sample metadata to attach.
-   * @return A GenomicRDD with new sample metadata.
+   * @return A GenomicDataset with new sample metadata.
    */
-  def replaceSamples(newSamples: Iterable[Sample]): U
+  def replaceSamples(newSamples: Iterable[Sample]): V
 
   /**
    * Adds samples to the current RDD.
@@ -2265,7 +2629,7 @@ trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends Genomic
    * @param samplesToAdd Zero or more samples to add.
    * @return Returns a new RDD with samples added.
    */
-  def addSamples(samplesToAdd: Iterable[Sample]): U = {
+  def addSamples(samplesToAdd: Iterable[Sample]): V = {
     replaceSamples(samples ++ samplesToAdd)
   }
 
@@ -2275,7 +2639,7 @@ trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends Genomic
    * @param sampleToAdd A single sample to add.
    * @return Returns a new RDD with this sample added.
    */
-  def addSample(sampleToAdd: Sample): U = {
+  def addSample(sampleToAdd: Sample): V = {
     addSamples(Seq(sampleToAdd))
   }
 }
@@ -2285,37 +2649,21 @@ trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends Genomic
  */
 trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDataset[T, U, V] {
 
-  /**
-   * Caches underlying dataset in memory.
-   *
-   * @return V cached GenomicDataset
-   */
+  val isPartitioned: Boolean
+  val optPartitionBinSize: Option[Int]
+  val optLookbackPartitions: Option[Int]
+
   override def cache(): V = {
     transformDataset(_.cache())
   }
 
-  /**
-   * Persists underlying dataset in memory or disk.
-   *
-   * @param sl new StorageLevel
-   * @return V persisted GenomicDataset
-   */
   override def persist(sl: StorageLevel): V = {
     transformDataset(_.persist(sl))
   }
 
-  /**
-   * Unpersists underlying dataset from memory or disk.
-   *
-   * @return V unpersisted GenomicDataset
-   */
   override def unpersist(): V = {
     transformDataset(_.unpersist())
   }
-
-  val isPartitioned: Boolean
-  val optPartitionBinSize: Option[Int]
-  val optLookbackPartitions: Option[Int]
 
   private def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion]): String = {
 
@@ -2344,138 +2692,10 @@ trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] 
   }
 }
 
-/**
- * A trait describing a GenomicRDD that also supports the Spark SQL APIs.
- */
-trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicRDD[T, V] {
-
-  val uTag: TypeTag[U]
+trait GenomicDatasetWithLineage[T, U <: Product, V <: GenomicDatasetWithLineage[T, U, V]] extends GenomicDataset[T, U, V] {
 
   /**
-   * This data as a Spark SQL Dataset.
-   */
-  val dataset: Dataset[U]
-
-  /**
-   * @return This data as a Spark SQL DataFrame.
-   */
-  def toDF(): DataFrame = {
-    dataset.toDF()
-  }
-
-  /**
-   * Applies a function that transforms the underlying Dataset into a new Dataset
-   * using the Spark SQL API.
-   *
-   * @param tFn A function that transforms the underlying RDD as a Dataset.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transformDataset(tFn: Dataset[U] => Dataset[U]): V
-
-  /**
-   * Applies a function that transforms the underlying DataFrame into a new DataFrame
-   * using the Spark SQL API.
-   *
-   * @param tFn A function that transforms the underlying RDD as a DataFrame.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transformDataFrame(tFn: DataFrame => DataFrame)(
-    implicit uTag: scala.reflect.runtime.universe.TypeTag[U]): V = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    transformDataset((ds: Dataset[U]) => {
-      tFn(ds.toDF()).as[U]
-    })
-  }
-
-  /**
-   * Applies a function that transforms the underlying DataFrame into a new DataFrame
-   * using the Spark SQL API. Java-friendly variant.
-   *
-   * @param tFn A function that transforms the underlying RDD as a DataFrame.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transformDataFrame(tFn: JFunction[DataFrame, DataFrame]): V = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    transformDataFrame(tFn.call(_))(uTag)
-  }
-
-  /**
-   * Applies a function that transmutes the underlying RDD into a new RDD of a
-   * different type.
-   *
-   * @param tFn A function that transforms the underlying RDD.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transmuteDataset[X <: Product, Y <: GenomicDataset[_, X, Y]](
-    tFn: Dataset[U] => Dataset[X])(
-      implicit xTag: scala.reflect.runtime.universe.TypeTag[X],
-      convFn: (V, Dataset[X]) => Y): Y = {
-    convFn(this.asInstanceOf[V], tFn(dataset))
-  }
-
-  /**
-   * Applies a function that transmutes the underlying RDD into a new RDD of a
-   * different type. Java friendly variant.
-   *
-   * @param tFn A function that transforms the underlying RDD.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transmuteDataset[X <: Product, Y <: GenomicDataset[_, X, Y]](
-    tFn: JFunction[Dataset[U], Dataset[X]],
-    convFn: GenomicDatasetConversion[U, V, X, Y]): Y = {
-    transmuteDataset(tFn.call(_))(convFn.xTag, convFn.call(_, _))
-  }
-
-  /**
-   * Applies a function that transmutes the underlying RDD into a new RDD of a
-   * different type. Java friendly variant.
-   *
-   * @param tFn A function that transforms the underlying RDD.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transmuteDataFrame[X <: Product, Y <: GenomicDataset[_, X, Y]](
-    tFn: DataFrame => DataFrame)(
-      implicit xTag: scala.reflect.runtime.universe.TypeTag[X],
-      convFn: (V, Dataset[X]) => Y): Y = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    transmuteDataset((ds: Dataset[U]) => {
-      tFn(ds.toDF()).as[X]
-    })
-  }
-
-  /**
-   * Applies a function that transmutes the underlying RDD into a new RDD of a
-   * different type. Java friendly variant.
-   *
-   * @param tFn A function that transforms the underlying RDD.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
-   *   metadata (sequence dictionary, and etc) is copied without modification.
-   */
-  def transmuteDataFrame[X <: Product, Y <: GenomicDataset[_, X, Y]](
-    tFn: JFunction[DataFrame, DataFrame],
-    convFn: GenomicDatasetConversion[U, V, X, Y]): Y = {
-    val sqlContext = SQLContext.getOrCreate(rdd.context)
-    import sqlContext.implicits._
-    transmuteDataFrame(tFn.call(_))(convFn.xTag,
-      (v: V, dsX: Dataset[X]) => {
-        convFn.call(v, dsX)
-      })
-  }
-}
-
-trait GenomicRDDWithLineage[T, U <: GenomicRDDWithLineage[T, U]] extends GenomicRDD[T, U] {
-
-  /**
-   * The processing steps that have been applied to this GenomicRDD.
+   * The processing steps that have been applied to this GenomicDataset.
    */
   val processingSteps: Seq[ProcessingStep]
 
@@ -2483,35 +2703,35 @@ trait GenomicRDDWithLineage[T, U <: GenomicRDDWithLineage[T, U]] extends Genomic
    * Replaces the processing steps attached to this RDD.
    *
    * @param newProcessingSteps The new processing steps to attach to this RDD.
-   * @return Returns a new GenomicRDD with new processing lineage attached.
+   * @return Returns a new GenomicDataset with new processing lineage attached.
    */
-  def replaceProcessingSteps(newProcessingSteps: Seq[ProcessingStep]): U
+  def replaceProcessingSteps(newProcessingSteps: Seq[ProcessingStep]): V
 
   /**
    * Merges a new processing record with the extant computational lineage.
    *
    * @param newProcessingStep
-   * @return Returns a new GenomicRDD with new record groups merged in.
+   * @return Returns a new GenomicDataset with new record groups merged in.
    */
-  def addProcessingStep(newProcessingStep: ProcessingStep): U = {
+  def addProcessingStep(newProcessingStep: ProcessingStep): V = {
     replaceProcessingSteps(processingSteps :+ newProcessingStep)
   }
 }
 
 /**
- * An abstract class describing a GenomicRDD where:
+ * An abstract class describing a GenomicDataset where:
  *
  * * The data are Avro IndexedRecords.
  * * The data are associated to record groups (i.e., they are reads or fragments).
  */
-abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: AvroRecordGroupGenomicRDD[T, U, V]] extends AvroGenomicRDD[T, U, V]
-    with GenomicRDDWithLineage[T, V] {
+abstract class AvroRecordGroupGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V <: AvroRecordGroupGenomicDataset[T, U, V]] extends AvroGenomicDataset[T, U, V]
+    with GenomicDatasetWithLineage[T, U, V] {
 
   override def toString = "%s with %d reference sequences, %d read groups, and %d processing steps"
     .format(getClass.getSimpleName, sequences.size, recordGroups.size, processingSteps.size)
 
   /**
-   * A dictionary describing the record groups attached to this GenomicRDD.
+   * A dictionary describing the record groups attached to this GenomicDataset.
    */
   val recordGroups: RecordGroupDictionary
 
@@ -2519,7 +2739,7 @@ abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
    * Replaces the record groups attached to this RDD.
    *
    * @param newRecordGroups The new record group dictionary to attach.
-   * @return Returns a new GenomicRDD with new record groups attached.
+   * @return Returns a new GenomicDataset with new record groups attached.
    */
   def replaceRecordGroups(newRecordGroups: RecordGroupDictionary): V
 
@@ -2528,7 +2748,7 @@ abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
    *
    * @param recordGroupsToAdd The record group dictionary to append to the
    *   extant record groups.
-   * @return Returns a new GenomicRDD with new record groups merged in.
+   * @return Returns a new GenomicDataset with new record groups merged in.
    */
   def addRecordGroups(recordGroupsToAdd: RecordGroupDictionary): V = {
     replaceRecordGroups(recordGroups ++ recordGroupsToAdd)
@@ -2539,7 +2759,7 @@ abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
    *
    * @param recordGroupToAdd The record group to append to the extant record
    *   groups.
-   * @return Returns a new GenomicRDD with the new record group added.
+   * @return Returns a new GenomicDataset with the new record group added.
    */
   def addRecordGroup(recordGroupToAdd: RecordGroup): V = {
     addRecordGroups(RecordGroupDictionary(Seq(recordGroupToAdd)))
@@ -2584,7 +2804,7 @@ abstract class AvroRecordGroupGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
   }
 }
 
-private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]] extends GenomicRDD[T, U] {
+private[rdd] trait VCFSupportingGenomicDataset[T, U <: Product, V <: VCFSupportingGenomicDataset[T, U, V]] extends GenomicDataset[T, U, V] {
 
   val headerLines: Seq[VCFHeaderLine]
 
@@ -2594,7 +2814,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    * @param newHeaderLines The new header lines to attach to this RDD.
    * @return A new RDD with the header lines replaced.
    */
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): U
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): V
 
   /**
    * Appends new header lines to the existing lines.
@@ -2602,7 +2822,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    * @param headerLinesToAdd Zero or more header lines to add.
    * @return A new RDD with the new header lines added.
    */
-  def addHeaderLines(headerLinesToAdd: Seq[VCFHeaderLine]): U = {
+  def addHeaderLines(headerLinesToAdd: Seq[VCFHeaderLine]): V = {
     replaceHeaderLines(headerLines ++ headerLinesToAdd)
   }
 
@@ -2612,7 +2832,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    * @param headerLineToAdd A header line to add.
    * @return A new RDD with the new header line added.
    */
-  def addHeaderLine(headerLineToAdd: VCFHeaderLine): U = {
+  def addHeaderLine(headerLineToAdd: VCFHeaderLine): V = {
     addHeaderLines(Seq(headerLineToAdd))
   }
 
@@ -2628,7 +2848,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
   def addFixedArrayFormatHeaderLine(id: String,
                                     count: Int,
                                     description: String,
-                                    lineType: VCFHeaderLineType): U = {
+                                    lineType: VCFHeaderLineType): V = {
     addHeaderLine(new VCFFormatHeaderLine(id, count, lineType, description))
   }
 
@@ -2646,7 +2866,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
   def addFixedArrayFormatHeaderLine(id: java.lang.String,
                                     count: java.lang.Integer,
                                     lineType: VCFHeaderLineType,
-                                    description: java.lang.String): U = {
+                                    description: java.lang.String): V = {
     addFixedArrayFormatHeaderLine(id, count, description, lineType)
   }
 
@@ -2660,7 +2880,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    */
   def addScalarFormatHeaderLine(id: String,
                                 description: String,
-                                lineType: VCFHeaderLineType): U = {
+                                lineType: VCFHeaderLineType): V = {
     addFixedArrayFormatHeaderLine(id, 1, description, lineType)
   }
 
@@ -2669,7 +2889,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
   private def addArrayFormatHeaderLine(id: String,
                                        description: String,
                                        count: VCFHeaderLineCount,
-                                       lineType: VCFHeaderLineType): U = {
+                                       lineType: VCFHeaderLineType): V = {
     addHeaderLine(new VCFFormatHeaderLine(id, count, lineType, description))
   }
 
@@ -2686,7 +2906,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    */
   def addGenotypeArrayFormatHeaderLine(id: String,
                                        description: String,
-                                       lineType: VCFHeaderLineType): U = {
+                                       lineType: VCFHeaderLineType): V = {
     addArrayFormatHeaderLine(id,
       description,
       VCFHeaderLineCount.G,
@@ -2706,7 +2926,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    */
   def addAlternateAlleleArrayFormatHeaderLine(id: String,
                                               description: String,
-                                              lineType: VCFHeaderLineType): U = {
+                                              lineType: VCFHeaderLineType): V = {
     addArrayFormatHeaderLine(id,
       description,
       VCFHeaderLineCount.A,
@@ -2727,7 +2947,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    */
   def addAllAlleleArrayFormatHeaderLine(id: String,
                                         description: String,
-                                        lineType: VCFHeaderLineType): U = {
+                                        lineType: VCFHeaderLineType): V = {
     addArrayFormatHeaderLine(id,
       description,
       VCFHeaderLineCount.R,
@@ -2746,7 +2966,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
   def addFixedArrayInfoHeaderLine(id: String,
                                   count: Int,
                                   description: String,
-                                  lineType: VCFHeaderLineType): U = {
+                                  lineType: VCFHeaderLineType): V = {
     addHeaderLine(new VCFInfoHeaderLine(id, count, lineType, description))
   }
 
@@ -2764,7 +2984,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
   def addFixedArrayInfoHeaderLine(id: java.lang.String,
                                   count: java.lang.Integer,
                                   lineType: VCFHeaderLineType,
-                                  description: java.lang.String): U = {
+                                  description: java.lang.String): V = {
     addFixedArrayInfoHeaderLine(id, count, description, lineType)
   }
 
@@ -2778,7 +2998,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    */
   def addScalarInfoHeaderLine(id: String,
                               description: String,
-                              lineType: VCFHeaderLineType): U = {
+                              lineType: VCFHeaderLineType): V = {
     addFixedArrayInfoHeaderLine(id, 1, description, lineType)
   }
 
@@ -2787,7 +3007,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
   private def addArrayInfoHeaderLine(id: String,
                                      description: String,
                                      count: VCFHeaderLineCount,
-                                     lineType: VCFHeaderLineType): U = {
+                                     lineType: VCFHeaderLineType): V = {
     addHeaderLine(new VCFInfoHeaderLine(id, count, lineType, description))
   }
 
@@ -2804,7 +3024,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    */
   def addAlternateAlleleArrayInfoHeaderLine(id: String,
                                             description: String,
-                                            lineType: VCFHeaderLineType): U = {
+                                            lineType: VCFHeaderLineType): V = {
     addArrayInfoHeaderLine(id,
       description,
       VCFHeaderLineCount.A,
@@ -2825,7 +3045,7 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    */
   def addAllAlleleArrayInfoHeaderLine(id: String,
                                       description: String,
-                                      lineType: VCFHeaderLineType): U = {
+                                      lineType: VCFHeaderLineType): V = {
     addArrayInfoHeaderLine(id,
       description,
       VCFHeaderLineCount.R,
@@ -2840,17 +3060,17 @@ private[rdd] trait VCFSupportingGenomicRDD[T, U <: VCFSupportingGenomicRDD[T, U]
    * @return A new RDD with the new header line added.
    */
   def addFilterHeaderLine(id: String,
-                          description: String): U = {
+                          description: String): V = {
     addHeaderLine(new VCFFilterHeaderLine(id, description))
   }
 }
 
 /**
- * An abstract class that extends the MultisampleGenomicRDD trait, where the data
+ * An abstract class that extends the MultisampleGenomicDataset trait, where the data
  * are Avro IndexedRecords.
  */
-abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: MultisampleAvroGenomicRDD[T, U, V]] extends AvroGenomicRDD[T, U, V]
-    with MultisampleGenomicRDD[T, V] {
+abstract class MultisampleAvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V <: MultisampleAvroGenomicDataset[T, U, V]] extends AvroGenomicDataset[T, U, V]
+    with MultisampleGenomicDataset[T, U, V] {
 
   override protected def saveMetadata(filePath: String): Unit = {
     savePartitionMap(filePath)
@@ -2860,11 +3080,11 @@ abstract class MultisampleAvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Prod
 }
 
 /**
- * An abstract class that extends GenomicRDD and where the underlying data are
+ * An abstract class that extends GenomicDataset and where the underlying data are
  * Avro IndexedRecords. This abstract class provides methods for saving to
  * Parquet, and provides hooks for writing the metadata.
  */
-abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: AvroGenomicRDD[T, U, V]] extends GenomicDataset[T, U, V] {
+abstract class AvroGenomicDataset[T <% IndexedRecord: Manifest, U <: Product, V <: AvroGenomicDataset[T, U, V]] extends GenomicDataset[T, U, V] {
 
   protected def saveRddAsParquet(args: SaveArgs): Unit = {
     saveRddAsParquet(

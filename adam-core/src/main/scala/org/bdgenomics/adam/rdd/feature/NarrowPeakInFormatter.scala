@@ -23,13 +23,14 @@ import java.io.{
   OutputStreamWriter
 }
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
+import org.bdgenomics.adam.sql.{ Feature => FeatureProduct }
 import org.bdgenomics.formats.avro.Feature
 import org.bdgenomics.utils.misc.Logging
 
 /**
  * InFormatter companion that builds a NarrowPeakInFormatter to write features in NarrowPeak format to a pipe.
  */
-object NarrowPeakInFormatter extends InFormatterCompanion[Feature, FeatureRDD, NarrowPeakInFormatter] {
+object NarrowPeakInFormatter extends InFormatterCompanion[Feature, FeatureProduct, FeatureRDD, NarrowPeakInFormatter] {
 
   /**
    * Apply method for building the NarrowPeakInFormatter from a FeatureRDD.
@@ -41,7 +42,7 @@ object NarrowPeakInFormatter extends InFormatterCompanion[Feature, FeatureRDD, N
   }
 }
 
-case class NarrowPeakInFormatter private () extends InFormatter[Feature, FeatureRDD, NarrowPeakInFormatter] {
+case class NarrowPeakInFormatter private () extends InFormatter[Feature, FeatureProduct, FeatureRDD, NarrowPeakInFormatter] {
   protected val companion = NarrowPeakInFormatter
 
   /**

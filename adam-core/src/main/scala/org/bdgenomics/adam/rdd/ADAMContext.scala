@@ -144,8 +144,8 @@ private case class LocatableReferenceRegion(rr: ReferenceRegion) extends Locatab
 object ADAMContext {
 
   // conversion functions for pipes
-  implicit def sameTypeConversionFn[T, U <: GenomicRDD[T, U]](gRdd: U,
-                                                              rdd: RDD[T]): U = {
+  implicit def contigsToContigsConversionFn(gRdd: NucleotideContigFragmentRDD,
+                                            rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
     // hijack the transform function to discard the old RDD
     gRdd.transform(oldRdd => rdd)
   }
@@ -269,6 +269,12 @@ object ADAMContext {
     new DatasetBoundNucleotideContigFragmentRDD(ds, gRdd.sequences)
   }
 
+  implicit def coverageToCoverageConversionFn(gRdd: CoverageRDD,
+                                              rdd: RDD[Coverage]): CoverageRDD = {
+    // hijack the transform function to discard the old RDD
+    gRdd.transform(oldRdd => rdd)
+  }
+
   implicit def coverageToFeaturesConversionFn(
     gRdd: CoverageRDD,
     rdd: RDD[Feature]): FeatureRDD = {
@@ -386,6 +392,12 @@ object ADAMContext {
     gRdd: FeatureRDD,
     ds: Dataset[Coverage]): CoverageRDD = {
     new DatasetBoundCoverageRDD(ds, gRdd.sequences)
+  }
+
+  implicit def featuresToFeaturesConversionFn(gRdd: FeatureRDD,
+                                              rdd: RDD[Feature]): FeatureRDD = {
+    // hijack the transform function to discard the old RDD
+    gRdd.transform(oldRdd => rdd)
   }
 
   implicit def featuresToFragmentsConversionFn(
@@ -507,6 +519,12 @@ object ADAMContext {
     new DatasetBoundFeatureRDD(ds, gRdd.sequences)
   }
 
+  implicit def fragmentsToFragmentsConversionFn(gRdd: FragmentRDD,
+                                                rdd: RDD[Fragment]): FragmentRDD = {
+    // hijack the transform function to discard the old RDD
+    gRdd.transform(oldRdd => rdd)
+  }
+
   implicit def fragmentsToAlignmentRecordsConversionFn(
     gRdd: FragmentRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
@@ -571,25 +589,25 @@ object ADAMContext {
       DefaultHeaderLines.allHeaderLines)
   }
 
-  implicit def genericToContigsConversionFn[Y <: GenericGenomicRDD[_]](
+  implicit def genericToContigsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
     new RDDBoundNucleotideContigFragmentRDD(rdd, gRdd.sequences, None)
   }
 
-  implicit def genericToCoverageConversionFn[Y <: GenericGenomicRDD[_]](
+  implicit def genericToCoverageConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[Coverage]): CoverageRDD = {
     new RDDBoundCoverageRDD(rdd, gRdd.sequences, None)
   }
 
-  implicit def genericToFeatureConversionFn[Y <: GenericGenomicRDD[_]](
+  implicit def genericToFeatureConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[Feature]): FeatureRDD = {
     new RDDBoundFeatureRDD(rdd, gRdd.sequences, None)
   }
 
-  implicit def genericToFragmentsConversionFn[Y <: GenericGenomicRDD[_]](
+  implicit def genericToFragmentsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
@@ -599,7 +617,7 @@ object ADAMContext {
       None)
   }
 
-  implicit def genericToAlignmentRecordsConversionFn[Y <: GenericGenomicRDD[_]](
+  implicit def genericToAlignmentRecordsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
@@ -609,7 +627,7 @@ object ADAMContext {
       None)
   }
 
-  implicit def genericToGenotypesConversionFn[Y <: GenericGenomicRDD[_]](
+  implicit def genericToGenotypesConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
@@ -619,7 +637,7 @@ object ADAMContext {
       None)
   }
 
-  implicit def genericToVariantsConversionFn[Y <: GenericGenomicRDD[_]](
+  implicit def genericToVariantsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
@@ -628,7 +646,7 @@ object ADAMContext {
       None)
   }
 
-  implicit def genericToVariantContextsConversionFn[Y <: GenericGenomicRDD[_]](
+  implicit def genericToVariantContextsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gRdd: Y,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     new RDDBoundVariantContextRDD(rdd,
@@ -691,6 +709,12 @@ object ADAMContext {
       gRdd.sequences,
       gRdd.recordGroups,
       gRdd.processingSteps)
+  }
+
+  implicit def alignmentRecordsToAlignmentRecordsConversionFn(gRdd: AlignmentRecordRDD,
+                                                              rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
+    // hijack the transform function to discard the old RDD
+    gRdd.transform(oldRdd => rdd)
   }
 
   implicit def alignmentRecordsToGenotypesConversionFn(
@@ -812,6 +836,12 @@ object ADAMContext {
       Seq.empty)
   }
 
+  implicit def genotypesToGenotypesConversionFn(gRdd: GenotypeRDD,
+                                                rdd: RDD[Genotype]): GenotypeRDD = {
+    // hijack the transform function to discard the old RDD
+    gRdd.transform(oldRdd => rdd)
+  }
+
   implicit def genotypesToVariantsConversionFn(
     gRdd: GenotypeRDD,
     rdd: RDD[Variant]): VariantRDD = {
@@ -931,6 +961,12 @@ object ADAMContext {
       gRdd.headerLines)
   }
 
+  implicit def variantsToVariantsConversionFn(gRdd: VariantRDD,
+                                              rdd: RDD[Variant]): VariantRDD = {
+    // hijack the transform function to discard the old RDD
+    gRdd.transform(oldRdd => rdd)
+  }
+
   implicit def variantsToVariantContextConversionFn(
     gRdd: VariantRDD,
     rdd: RDD[VariantContext]): VariantContextRDD = {
@@ -995,6 +1031,12 @@ object ADAMContext {
       gRdd.sequences,
       gRdd.headerLines,
       None)
+  }
+
+  implicit def variantContextsToVariantContextsConversionFn(gRdd: VariantContextRDD,
+                                                            rdd: RDD[VariantContext]): VariantContextRDD = {
+    // hijack the transform function to discard the old RDD
+    gRdd.transform(oldRdd => rdd)
   }
 
   // Add ADAM Spark context methods
@@ -1746,10 +1788,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   private[rdd] def extractPartitionMap(
     filename: String): Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = {
 
-    val path = new Path(filename + "/_partitionMap.avro")
-    val fs = path.getFileSystem(sc.hadoopConfiguration)
-
     try {
+      val path = new Path(filename + "/_partitionMap.avro")
+      val fs = path.getFileSystem(sc.hadoopConfiguration)
+
       // get an input stream
       val is = fs.open(path)
 
@@ -1814,8 +1856,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
       Some(partitionMapBuilder.toArray)
     } catch {
-      case e: FileNotFoundException => None
-      case e: Throwable             => throw e
+      case npe: NullPointerException => None
+      case e: FileNotFoundException  => None
+      case e: Throwable              => throw e
     }
   }
 

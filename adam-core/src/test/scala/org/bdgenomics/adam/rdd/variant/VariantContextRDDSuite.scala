@@ -41,6 +41,15 @@ import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.sql.{
+  AlignmentRecord => AlignmentRecordProduct,
+  Feature => FeatureProduct,
+  Fragment => FragmentProduct,
+  Genotype => GenotypeProduct,
+  NucleotideContigFragment => NucleotideContigFragmentProduct,
+  Variant => VariantProduct,
+  VariantContext => VariantContextProduct
+}
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
@@ -200,7 +209,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = VCFInFormatter
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
-    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter](Seq("tee", "/dev/null"))
+    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter](Seq("tee", "/dev/null"))
       .transform(_.cache())
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
@@ -215,7 +224,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = VCFInFormatter
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
-    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter](Seq("tee", "/dev/null"))
+    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter](Seq("tee", "/dev/null"))
       .transform(_.cache())
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
@@ -231,7 +240,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = VCFInFormatter
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration, Some(accumulator))
 
-    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextRDD, VCFInFormatter](Seq("tee", "/dev/null"))
+    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter](Seq("tee", "/dev/null"))
 
     // check for freebayes-specific VCF INFO keys
     val variant = pipedRdd.toVariants.rdd.first
@@ -378,9 +387,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       assert(sc.loadContigFragments(tempPath).rdd.count === 6)
     }
 
-    val contigs: NucleotideContigFragmentRDD = variantContexts.transmute(rdd => {
-      rdd.map(VariantRDDSuite.ncfFn)
-    })
+    val contigs: NucleotideContigFragmentRDD = variantContexts.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD](
+      (rdd: RDD[VariantContext]) => {
+        rdd.map(VariantRDDSuite.ncfFn)
+      })
 
     checkSave(contigs)
   }
@@ -395,9 +405,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       assert(sc.loadCoverage(tempPath).rdd.count === 6)
     }
 
-    val coverage: CoverageRDD = variantContexts.transmute(rdd => {
-      rdd.map(VariantRDDSuite.covFn)
-    })
+    val coverage: CoverageRDD = variantContexts.transmute[Coverage, Coverage, CoverageRDD](
+      (rdd: RDD[VariantContext]) => {
+        rdd.map(VariantRDDSuite.covFn)
+      })
 
     checkSave(coverage)
   }
@@ -412,9 +423,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       assert(sc.loadFeatures(tempPath).rdd.count === 6)
     }
 
-    val features: FeatureRDD = variantContexts.transmute(rdd => {
-      rdd.map(VariantRDDSuite.featFn)
-    })
+    val features: FeatureRDD = variantContexts.transmute[Feature, FeatureProduct, FeatureRDD](
+      (rdd: RDD[VariantContext]) => {
+        rdd.map(VariantRDDSuite.featFn)
+      })
 
     checkSave(features)
   }
@@ -429,9 +441,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       assert(sc.loadFragments(tempPath).rdd.count === 6)
     }
 
-    val fragments: FragmentRDD = variantContexts.transmute(rdd => {
-      rdd.map(VariantRDDSuite.fragFn)
-    })
+    val fragments: FragmentRDD = variantContexts.transmute[Fragment, FragmentProduct, FragmentRDD](
+      (rdd: RDD[VariantContext]) => {
+        rdd.map(VariantRDDSuite.fragFn)
+      })
 
     checkSave(fragments)
   }
@@ -446,9 +459,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       assert(sc.loadAlignments(tempPath).rdd.count === 6)
     }
 
-    val reads: AlignmentRecordRDD = variantContexts.transmute(rdd => {
-      rdd.map(VariantRDDSuite.readFn)
-    })
+    val reads: AlignmentRecordRDD = variantContexts.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD](
+      (rdd: RDD[VariantContext]) => {
+        rdd.map(VariantRDDSuite.readFn)
+      })
 
     checkSave(reads)
   }
@@ -463,9 +477,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       assert(sc.loadGenotypes(tempPath).rdd.count === 6)
     }
 
-    val genotypes: GenotypeRDD = variantContexts.transmute(rdd => {
-      rdd.map(VariantRDDSuite.genFn)
-    })
+    val genotypes: GenotypeRDD = variantContexts.transmute[Genotype, GenotypeProduct, GenotypeRDD](
+      (rdd: RDD[VariantContext]) => {
+        rdd.map(VariantRDDSuite.genFn)
+      })
 
     checkSave(genotypes)
   }
@@ -480,9 +495,10 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       assert(sc.loadVariants(tempPath).rdd.count === 6)
     }
 
-    val variants: VariantRDD = variantContexts.transmute(rdd => {
-      rdd.map(_.variant.variant)
-    })
+    val variants: VariantRDD = variantContexts.transmute[Variant, VariantProduct, VariantRDD](
+      (rdd: RDD[VariantContext]) => {
+        rdd.map(_.variant.variant)
+      })
 
     checkSave(variants)
   }

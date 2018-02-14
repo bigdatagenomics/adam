@@ -33,7 +33,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   DatasetBoundGenomicDataset,
-  AvroGenomicRDD,
+  AvroGenomicDataset,
   JavaSaveArgs
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
@@ -193,7 +193,10 @@ case class RDDBoundNucleotideContigFragmentRDD private[rdd] (
   }
 }
 
-sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicRDD[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD] {
+sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD] {
+
+  protected val productFn = NucleotideContigFragmentProduct.fromAvro(_)
+  protected val unproductFn = (c: NucleotideContigFragmentProduct) => c.toAvro
 
   @transient val uTag: TypeTag[NucleotideContigFragmentProduct] = typeTag[NucleotideContigFragmentProduct]
 

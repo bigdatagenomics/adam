@@ -51,9 +51,9 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.{
   ADAMSaveAnyArgs,
   GenomicDataset,
-  MultisampleGenomicRDD,
+  MultisampleGenomicDataset,
   VCFHeaderUtils,
-  VCFSupportingGenomicRDD
+  VCFSupportingGenomicDataset
 }
 import org.bdgenomics.adam.sql.{ VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.{ FileMerger, FileExtensions }
@@ -184,7 +184,10 @@ case class RDDBoundVariantContextRDD private[rdd] (
 /**
  * An RDD containing VariantContexts attached to a reference and samples.
  */
-sealed abstract class VariantContextRDD extends MultisampleGenomicRDD[VariantContext, VariantContextRDD] with GenomicDataset[VariantContext, VariantContextProduct, VariantContextRDD] with Logging with VCFSupportingGenomicRDD[VariantContext, VariantContextRDD] {
+sealed abstract class VariantContextRDD extends MultisampleGenomicDataset[VariantContext, VariantContextProduct, VariantContextRDD] with GenomicDataset[VariantContext, VariantContextProduct, VariantContextRDD] with Logging with VCFSupportingGenomicDataset[VariantContext, VariantContextProduct, VariantContextRDD] {
+
+  protected val productFn = VariantContextProduct.fromModel(_)
+  protected val unproductFn = (vc: VariantContextProduct) => vc.toModel
 
   @transient val uTag: TypeTag[VariantContextProduct] = typeTag[VariantContextProduct]
 

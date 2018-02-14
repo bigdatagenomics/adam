@@ -68,7 +68,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val readsFilepath = testFile("unmapped.sam")
 
     // Convert the reads12.sam file into a parquet file
-    val bamReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath).rdd
+    val bamReads = sc.loadAlignments(readsFilepath)
     assert(bamReads.rdd.count === 200)
   }
 
@@ -400,11 +400,12 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("read a gzipped fasta file") {
     val inputPath = testFile("chr20.250k.fa.gz")
-    val contigFragments: RDD[NucleotideContigFragment] = sc.loadFasta(inputPath, 10000L)
-      .rdd
-      .sortBy(_.getIndex.toInt)
+    val contigFragments = sc.loadFasta(inputPath, 10000L)
+      .transform((rdd: RDD[NucleotideContigFragment]) => {
+        rdd.sortBy(_.getIndex.toInt)
+      })
     assert(contigFragments.rdd.count() === 26)
-    val first: NucleotideContigFragment = contigFragments.first()
+    val first: NucleotideContigFragment = contigFragments.rdd.first()
     assert(first.getContigName === null)
     assert(first.getDescription === "gi|224384749|gb|CM000682.1| Homo sapiens chromosome 20, GRCh37 primary reference assembly")
     assert(first.getIndex === 0)
@@ -612,9 +613,9 @@ class ADAMContextSuite extends ADAMFunSuite {
   sparkTest("loadAlignments should not fail on single-end and paired-end fastq reads") {
     val readsFilepath1 = testFile("bqsr1-r1.fq")
     val readsFilepath2 = testFile("bqsr1-r2.fq")
-    val fastqReads1: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath1).rdd
-    val fastqReads2: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath2).rdd
-    val pairedReads: RDD[AlignmentRecord] = sc.loadAlignments(readsFilepath1, optPathName2 = Option(readsFilepath2)).rdd
+    val fastqReads1 = sc.loadAlignments(readsFilepath1)
+    val fastqReads2 = sc.loadAlignments(readsFilepath2)
+    val pairedReads = sc.loadAlignments(readsFilepath1, optPathName2 = Option(readsFilepath2))
     assert(fastqReads1.rdd.count === 488)
     assert(fastqReads2.rdd.count === 488)
     assert(pairedReads.rdd.count === 976)

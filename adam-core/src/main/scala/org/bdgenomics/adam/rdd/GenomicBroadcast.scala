@@ -17,13 +17,11 @@
  */
 package org.bdgenomics.adam.rdd
 
-import org.apache.spark.api.java.function.Function2
-import org.apache.spark.sql.Dataset
-import scala.reflect.runtime.universe.TypeTag
+import org.apache.spark.broadcast.Broadcast
+import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.utils.interval.array.IntervalArray
 
-trait GenomicDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V], X, Y <: Product, Z <: GenomicDataset[X, Y, Z]] extends Function2[V, Dataset[Y], Z] {
-
-  val yTag: TypeTag[Y]
-
-  def call(v1: V, v2: Dataset[Y]): Z
+case class GenomicBroadcast[T, U <: Product, V <: GenomicDataset[T, U, V]] private[rdd] (
+    backingDataset: V,
+    broadcastTree: Broadcast[IntervalArray[ReferenceRegion, T]]) {
 }

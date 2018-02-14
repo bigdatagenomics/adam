@@ -21,13 +21,14 @@ import java.io.OutputStream
 import org.apache.hadoop.conf.Configuration
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
+import org.bdgenomics.adam.sql.{ Fragment => FragmentProduct }
 import org.bdgenomics.formats.avro.Fragment
 import org.bdgenomics.utils.misc.Logging
 
 /**
  * InFormatter companion that creates an InFormatter that writes Bowtie tab6 format.
  */
-object Tab6InFormatter extends InFormatterCompanion[Fragment, FragmentRDD, Tab6InFormatter] {
+object Tab6InFormatter extends InFormatterCompanion[Fragment, FragmentProduct, FragmentRDD, Tab6InFormatter] {
 
   /**
    * Builds an Tab6InFormatter to write Bowtie tab6 format.
@@ -41,7 +42,7 @@ object Tab6InFormatter extends InFormatterCompanion[Fragment, FragmentRDD, Tab6I
 }
 
 class Tab6InFormatter private (
-    conf: Configuration) extends InFormatter[Fragment, FragmentRDD, Tab6InFormatter] with Logging {
+    conf: Configuration) extends InFormatter[Fragment, FragmentProduct, FragmentRDD, Tab6InFormatter] with Logging {
 
   protected val companion = Tab6InFormatter
   private val newLine = "\n".getBytes

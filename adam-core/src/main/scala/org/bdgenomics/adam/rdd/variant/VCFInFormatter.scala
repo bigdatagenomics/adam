@@ -31,12 +31,13 @@ import org.bdgenomics.adam.models.{
   VariantContext
 }
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
+import org.bdgenomics.adam.sql.{ VariantContext => VariantContextProduct }
 import scala.collection.JavaConversions._
 
 /**
  * InFormatter companion that builds a VCFInFormatter to write VCF to a pipe.
  */
-object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContextRDD, VCFInFormatter] {
+object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter] {
 
   /**
    * Apply method for building the VCFInFormatter from a VariantContextRDD.
@@ -57,7 +58,7 @@ case class VCFInFormatter private (
     sequences: SequenceDictionary,
     samples: Seq[String],
     headerLines: Seq[VCFHeaderLine],
-    @transient val conf: Configuration) extends InFormatter[VariantContext, VariantContextRDD, VCFInFormatter] {
+    @transient val conf: Configuration) extends InFormatter[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter] {
 
   protected val companion = VCFInFormatter
 
