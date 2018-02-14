@@ -20,10 +20,10 @@ package org.bdgenomics.adam.rdd
 import java.nio.file.Paths
 import org.bdgenomics.adam.util.ADAMFunSuite
 
-class GenomicRDDSuite extends ADAMFunSuite {
+class GenomicDatasetSuite extends ADAMFunSuite {
 
   sparkTest("processing a command that is the spark root directory should return an absolute path") {
-    val cmd = GenomicRDD.processCommand(Seq("$root"), Seq.empty)
+    val cmd = GenomicDataset.processCommand(Seq("$root"), Seq.empty)
 
     assert(cmd.size === 1)
     val path = Paths.get(cmd.head)
@@ -31,14 +31,14 @@ class GenomicRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("processing a command that is just a single word should do nothing") {
-    val cmd = GenomicRDD.processCommand(Seq("ls"), Seq.empty)
+    val cmd = GenomicDataset.processCommand(Seq("ls"), Seq.empty)
 
     assert(cmd.size === 1)
     assert(cmd.head === "ls")
   }
 
   sparkTest("processing a command should handle arguments that include spaces") {
-    val cmd = GenomicRDD.processCommand(Seq("foo",
+    val cmd = GenomicDataset.processCommand(Seq("foo",
       "--arg", "value-with-no-spaces",
       "--arg-with-space", "value includes spaces"), Seq.empty)
 
@@ -49,14 +49,14 @@ class GenomicRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("processing a command that is a single substitution should succeed") {
-    val cmd = GenomicRDD.processCommand(Seq("$0"), Seq("/bin/bash"))
+    val cmd = GenomicDataset.processCommand(Seq("$0"), Seq("/bin/bash"))
 
     assert(cmd.size === 1)
     assert(cmd.head === "/bin/bash")
   }
 
   sparkTest("processing a command that is multiple words should split the string") {
-    val cmd = GenomicRDD.processCommand(Seq("tee", "/dev/null"), Seq.empty)
+    val cmd = GenomicDataset.processCommand(Seq("tee", "/dev/null"), Seq.empty)
 
     assert(cmd.size === 2)
     assert(cmd(0) === "tee")
@@ -64,7 +64,7 @@ class GenomicRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("process a command that is multiple words with a replacement") {
-    val cmd = GenomicRDD.processCommand(Seq("echo", "$0"), Seq("/path/to/my/file"))
+    val cmd = GenomicDataset.processCommand(Seq("echo", "$0"), Seq("/path/to/my/file"))
 
     assert(cmd.size === 2)
     assert(cmd(0) === "echo")
@@ -72,7 +72,7 @@ class GenomicRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("process a command that is multiple words with multiple replacements") {
-    val cmd = GenomicRDD.processCommand(Seq("aCommand", "$0", "hello", "$1"), Seq("/path/to/my/file",
+    val cmd = GenomicDataset.processCommand(Seq("aCommand", "$0", "hello", "$1"), Seq("/path/to/my/file",
       "/path/to/another/file"))
 
     assert(cmd.size === 4)

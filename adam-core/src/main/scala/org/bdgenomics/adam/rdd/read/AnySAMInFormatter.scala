@@ -25,6 +25,7 @@ import org.bdgenomics.adam.models.{
   SAMFileHeaderWritable
 }
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
+import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 /**
@@ -33,7 +34,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  *
  * @tparam T The type of the underlying InFormatter.
  */
-trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordRDD, T] {
+trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, T] {
   protected def makeFormatter(header: SAMFileHeaderWritable,
                               recordGroups: RecordGroupDictionary,
                               converter: AlignmentRecordConverter): T
@@ -63,7 +64,7 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
  *
  * @tparam T The recursive type of the class that implements this trait.
  */
-trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[AlignmentRecord, AlignmentRecordRDD, T] {
+trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, T] {
 
   /**
    * A serializable form of the SAM File Header.

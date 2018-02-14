@@ -23,7 +23,7 @@ import org.bdgenomics.adam.models.{
   Coverage,
   VariantContext
 }
-import org.bdgenomics.adam.rdd.{ ADAMContext, GenomicRDD }
+import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
 import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
@@ -35,14 +35,11 @@ import org.bdgenomics.adam.rdd.variant.{
 }
 import org.bdgenomics.formats.avro._
 
-sealed trait SameTypeConversion[T, U <: GenomicRDD[T, U]] extends Function2[U, RDD[T], U] {
+final class ContigsToContigsConverter extends Function2[NucleotideContigFragmentRDD, RDD[NucleotideContigFragment], NucleotideContigFragmentRDD] {
 
-  def call(v1: U, v2: RDD[T]): U = {
-    ADAMContext.sameTypeConversionFn(v1, v2)
+  def call(v1: NucleotideContigFragmentRDD, v2: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
+    ADAMContext.contigsToContigsConversionFn(v1, v2)
   }
-}
-
-final class ContigsToContigsConverter extends SameTypeConversion[NucleotideContigFragment, NucleotideContigFragmentRDD] {
 }
 
 final class ContigsToCoverageConverter extends Function2[NucleotideContigFragmentRDD, RDD[Coverage], CoverageRDD] {
@@ -101,7 +98,11 @@ final class CoverageToContigsConverter extends Function2[CoverageRDD, RDD[Nucleo
   }
 }
 
-final class CoverageToCoverageConverter extends SameTypeConversion[Coverage, CoverageRDD] {
+final class CoverageToCoverageConverter extends Function2[CoverageRDD, RDD[Coverage], CoverageRDD] {
+
+  def call(v1: CoverageRDD, v2: RDD[Coverage]): CoverageRDD = {
+    ADAMContext.coverageToCoverageConversionFn(v1, v2)
+  }
 }
 
 final class CoverageToFeaturesConverter extends Function2[CoverageRDD, RDD[Feature], FeatureRDD] {
@@ -160,7 +161,11 @@ final class FeaturesToCoverageConverter extends Function2[FeatureRDD, RDD[Covera
   }
 }
 
-final class FeaturesToFeatureConverter extends SameTypeConversion[Feature, FeatureRDD] {
+final class FeaturesToFeatureConverter extends Function2[FeatureRDD, RDD[Feature], FeatureRDD] {
+
+  def call(v1: FeatureRDD, v2: RDD[Feature]): FeatureRDD = {
+    ADAMContext.featuresToFeaturesConversionFn(v1, v2)
+  }
 }
 
 final class FeaturesToFragmentsConverter extends Function2[FeatureRDD, RDD[Fragment], FragmentRDD] {
@@ -219,7 +224,11 @@ final class FragmentsToFeaturesConverter extends Function2[FragmentRDD, RDD[Feat
   }
 }
 
-final class FragmentsToFragmentConverter extends SameTypeConversion[Fragment, FragmentRDD] {
+final class FragmentsToFragmentsConverter extends Function2[FragmentRDD, RDD[Fragment], FragmentRDD] {
+
+  def call(v1: FragmentRDD, v2: RDD[Fragment]): FragmentRDD = {
+    ADAMContext.fragmentsToFragmentsConversionFn(v1, v2)
+  }
 }
 
 final class FragmentsToAlignmentRecordsConverter extends Function2[FragmentRDD, RDD[AlignmentRecord], AlignmentRecordRDD] {
@@ -278,7 +287,11 @@ final class AlignmentRecordsToFragmentsConverter extends Function2[AlignmentReco
   }
 }
 
-final class AlignmentRecordsToAlignmentRecordsConverter extends SameTypeConversion[AlignmentRecord, AlignmentRecordRDD] {
+final class AlignmentRecordsToAlignmentRecordsConverter extends Function2[AlignmentRecordRDD, RDD[AlignmentRecord], AlignmentRecordRDD] {
+
+  def call(v1: AlignmentRecordRDD, v2: RDD[AlignmentRecord]): AlignmentRecordRDD = {
+    ADAMContext.alignmentRecordsToAlignmentRecordsConversionFn(v1, v2)
+  }
 }
 
 final class AlignmentRecordsToGenotypesConverter extends Function2[AlignmentRecordRDD, RDD[Genotype], GenotypeRDD] {
@@ -337,7 +350,11 @@ final class GenotypesToAlignmentRecordsConverter extends Function2[GenotypeRDD, 
   }
 }
 
-final class GenotypesToGenotypesConverter extends SameTypeConversion[Genotype, GenotypeRDD] {
+final class GenotypesToGenotypesConverter extends Function2[GenotypeRDD, RDD[Genotype], GenotypeRDD] {
+
+  def call(v1: GenotypeRDD, v2: RDD[Genotype]): GenotypeRDD = {
+    ADAMContext.genotypesToGenotypesConversionFn(v1, v2)
+  }
 }
 
 final class GenotypesToVariantsConverter extends Function2[GenotypeRDD, RDD[Variant], VariantRDD] {
@@ -396,7 +413,11 @@ final class VariantsToGenotypesConverter extends Function2[VariantRDD, RDD[Genot
   }
 }
 
-final class VariantsToVariantsConverter extends SameTypeConversion[Variant, VariantRDD] {
+final class VariantsToVariantsConverter extends Function2[VariantRDD, RDD[Variant], VariantRDD] {
+
+  def call(v1: VariantRDD, v2: RDD[Variant]): VariantRDD = {
+    ADAMContext.variantsToVariantsConversionFn(v1, v2)
+  }
 }
 
 final class VariantsToVariantContextConverter extends Function2[VariantRDD, RDD[VariantContext], VariantContextRDD] {
@@ -455,5 +476,9 @@ final class VariantContextsToVariantsConverter extends Function2[VariantContextR
   }
 }
 
-final class VariantContextsToVariantContextConverter extends SameTypeConversion[VariantContext, VariantContextRDD] {
+final class VariantContextsToVariantContextConverter extends Function2[VariantContextRDD, RDD[VariantContext], VariantContextRDD] {
+
+  def call(v1: VariantContextRDD, v2: RDD[VariantContext]): VariantContextRDD = {
+    ADAMContext.variantContextsToVariantContextsConversionFn(v1, v2)
+  }
 }

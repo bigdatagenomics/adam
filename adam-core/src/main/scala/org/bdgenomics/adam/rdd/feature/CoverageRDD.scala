@@ -19,6 +19,7 @@ package org.bdgenomics.adam.rdd.feature
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.serializers.FieldSerializer
+import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Dataset, SQLContext }
@@ -157,6 +158,9 @@ case class RDDBoundCoverageRDD private[rdd] (
 
 abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRDD] {
 
+  protected val productFn = (c: Coverage) => c
+  protected val unproductFn = (c: Coverage) => c
+
   @transient val uTag: TypeTag[Coverage] = typeTag[Coverage]
 
   protected def buildTree(rdd: RDD[(ReferenceRegion, Coverage)])(
@@ -180,6 +184,19 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
         mergedSequences,
         None)
     }
+  }
+
+  def saveAsParquet(filePath: String,
+                    blockSize: Int = 128 * 1024 * 1024,
+                    pageSize: Int = 1 * 1024 * 1024,
+                    compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                    disableDictionaryEncoding: Boolean = false) {
+
+    toFeatures().saveAsParquet(filePath,
+      blockSize,
+      pageSize,
+      compressCodec,
+      disableDictionaryEncoding)
   }
 
   def transformDataset(

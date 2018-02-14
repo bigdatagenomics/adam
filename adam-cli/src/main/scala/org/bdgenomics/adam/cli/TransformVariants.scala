@@ -20,7 +20,7 @@ package org.bdgenomics.adam.cli
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, GenomicRDD }
+import org.bdgenomics.adam.rdd.{ ADAMSaveAnyArgs, GenomicDataset }
 import org.bdgenomics.utils.cli._
 import org.kohsuke.args4j.{ Argument, Option ⇒ Args4jOption }
 
@@ -77,12 +77,12 @@ class TransformVariants(val args: TransformVariantsArgs)
   val stringency = ValidationStringency.valueOf(args.stringency)
 
   /**
-   * Coalesce the specified GenomicRDD if requested.
+   * Coalesce the specified GenomicDataset if requested.
    *
-   * @param rdd GenomicRDD to coalesce.
-   * @return The specified GenomicRDD coalesced if requested.
+   * @param rdd GenomicDataset to coalesce.
+   * @return The specified GenomicDataset coalesced if requested.
    */
-  private def maybeCoalesce[U <: GenomicRDD[_, U]](rdd: U): U = {
+  private def maybeCoalesce[U <: GenomicDataset[_, _, U]](rdd: U): U = {
     if (args.coalesce != -1) {
       log.info("Coalescing the number of partitions to '%d'".format(args.coalesce))
       if (args.coalesce > rdd.rdd.partitions.length || args.forceShuffle) {
@@ -96,12 +96,12 @@ class TransformVariants(val args: TransformVariantsArgs)
   }
 
   /**
-   * Sort the specified GenomicRDD if requested.
+   * Sort the specified GenomicDataset if requested.
    *
-   * @param rdd GenomicRDD to sort.
-   * @return The specified GenomicRDD sorted if requested.
+   * @param rdd GenomicDataset to sort.
+   * @return The specified GenomicDataset sorted if requested.
    */
-  private def maybeSort[U <: GenomicRDD[_, U]](rdd: U): U = {
+  private def maybeSort[U <: GenomicDataset[_, _, U]](rdd: U): U = {
     if (args.sort) {
       log.info("Sorting before saving")
       rdd.sort()

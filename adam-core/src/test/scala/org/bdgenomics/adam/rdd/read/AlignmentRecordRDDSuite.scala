@@ -22,7 +22,7 @@ import java.nio.file.Files
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.api.java.function.Function2
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.converters.DefaultHeaderLines
 import org.bdgenomics.adam.models.{
   Coverage,
@@ -30,7 +30,8 @@ import org.bdgenomics.adam.models.{
   RecordGroupDictionary,
   ReferenceRegion,
   SequenceDictionary,
-  SequenceRecord
+  SequenceRecord,
+  VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
@@ -52,7 +53,8 @@ import org.bdgenomics.adam.sql.{
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
   NucleotideContigFragment => NucleotideContigFragmentProduct,
-  Variant => VariantProduct
+  Variant => VariantProduct,
+  VariantContext => VariantContextProduct
 }
 import org.bdgenomics.adam.util.{ ADAMFunSuite, ManualRegionPartitioner }
 import org.bdgenomics.formats.avro._
@@ -74,7 +76,7 @@ private object SequenceIndexWithReadOrdering extends Ordering[((Int, Long), (Ali
 class SameTypeFunction2 extends Function2[AlignmentRecordRDD, RDD[AlignmentRecord], AlignmentRecordRDD] {
 
   def call(v1: AlignmentRecordRDD, v2: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    ADAMContext.sameTypeConversionFn[AlignmentRecord, AlignmentRecordRDD](v1, v2)
+    ADAMContext.alignmentRecordsToAlignmentRecordsConversionFn(v1, v2)
   }
 }
 
@@ -289,11 +291,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
   sparkTest("round trip from ADAM to SAM and back to ADAM produces equivalent Read values") {
     val reads12Path = Thread.currentThread().getContextClassLoader.getResource("reads12.sam").getFile
-    val ardd = sc.loadBam(reads12Path)
-    val rdd12A = ardd.rdd
+    val rdd12A = sc.loadBam(reads12Path)
 
     val tempFile = Files.createTempDirectory("reads12")
-    ardd.saveAsSam(tempFile.toAbsolutePath.toString + "/reads12.sam",
+    rdd12A.saveAsSam(tempFile.toAbsolutePath.toString + "/reads12.sam",
       asType = Some(SAMFormat.SAM))
 
     val rdd12B = sc.loadBam(tempFile.toAbsolutePath.toString + "/reads12.sam/part-r-00000.sam")
@@ -318,11 +319,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     sc.hadoopConfiguration.set(CRAMInputFormat.REFERENCE_SOURCE_PATH_PROPERTY,
       referencePath)
 
-    val ardd = sc.loadBam(readsPath)
-    val rddA = ardd.rdd
+    val rddA = sc.loadBam(readsPath)
 
     val tempFile = tmpFile("artificial.cram")
-    ardd.saveAsSam(tempFile,
+    rddA.saveAsSam(tempFile,
       asType = Some(SAMFormat.CRAM),
       asSingleFile = true,
       isSorted = true)
@@ -360,9 +360,9 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val rddB = sc.loadBam(tempFile + "/part-r-00000.cram")
 
-    assert(rddB.rdd.count() === rddA.rdd.count())
+    assert(rddB.rdd.count() === rddA.count())
 
-    val readsA = rddA.rdd.collect()
+    val readsA = rddA.collect()
     val readsB = rddB.rdd.collect()
 
     readsA.indices.foreach {
@@ -860,7 +860,8 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = SAMInFormatter
     implicit val uFormatter = new AnySAMOutFormatter
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("tee", "/dev/null"))
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, SAMInFormatter](Seq("tee", "/dev/null"))
+
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
   }
@@ -872,7 +873,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = SAMInFormatter
     implicit val uFormatter = new AnySAMOutFormatter
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("sleep", "10"), optTimeout = Some(5))
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, SAMInFormatter](Seq("sleep", "10"), optTimeout = Some(5))
     val newRecords = pipedRdd.rdd.count
     assert(newRecords === 0)
   }
@@ -887,7 +888,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     // this script reads the reads into a temp file, which is then read to
     // stdout, then we sleep for 10 sec, then we read to stdout again
     val scriptPath = testFile("timeout.py")
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("python", "$0"),
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, SAMInFormatter](Seq("python", "$0"),
       files = Seq(scriptPath))
     val newRecords = pipedRdd.rdd.count
     assert(newRecords === (2 * ardd.rdd.count))
@@ -903,7 +904,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     // this script reads the reads into a temp file, which is then read to
     // stdout, then we sleep for 10 sec, then we read to stdout again
     val scriptPath = testFile("timeout.py")
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("python", "$0"),
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, SAMInFormatter](Seq("python", "$0"),
       optTimeout = Some(5),
       files = Seq(scriptPath))
     val newRecords = pipedRdd.rdd.count
@@ -915,7 +916,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val ardd = sc.loadBam(reads12Path)
     val records = ardd.rdd.count
 
-    val pipedRdd = ardd.pipe[AlignmentRecord, AlignmentRecordRDD, SAMInFormatter](
+    val pipedRdd = ardd.pipe[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, SAMInFormatter](
       Seq("tee", "/dev/null"),
       (List.empty[String]: java.util.List[String]),
       (Map.empty[String, String]: java.util.Map[String, String]),
@@ -935,7 +936,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = BAMInFormatter
     implicit val uFormatter = new AnySAMOutFormatter
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("tee", "/dev/null"))
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, BAMInFormatter](Seq("tee", "/dev/null"))
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
   }
@@ -957,7 +958,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     // this script converts interleaved fastq to unaligned sam
     val scriptPath = testFile("fastq_to_usam.py")
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("python", "$0"),
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, FASTQInFormatter](Seq("python", "$0"),
       files = Seq(scriptPath))
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
@@ -975,7 +976,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = SAMInFormatter
     implicit val uFormatter = new AnySAMOutFormatter
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("/bin/bash", scriptPath),
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, SAMInFormatter](Seq("/bin/bash", scriptPath),
       environment = Map(("INPUT_PATH" -> smallPath),
         ("OUTPUT_PATH" -> writePath)))
     val newRecords = pipedRdd.rdd.count
@@ -992,7 +993,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = SAMInFormatter
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
-    val pipedRdd: VariantContextRDD = ardd.pipe(Seq("/bin/bash", "$0", tempPath, "$1"),
+    val pipedRdd: VariantContextRDD = ardd.pipe[VariantContext, VariantContextProduct, VariantContextRDD, SAMInFormatter](Seq("/bin/bash", "$0", tempPath, "$1"),
       files = Seq(scriptPath, vcfPath))
     val newRecords = pipedRdd.rdd.count
     assert(newRecords === 6)
@@ -1011,6 +1012,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val jRdd = reads.broadcastRegionJoin(targets)
 
     assert(jRdd.rdd.count === 5)
+    assert(jRdd.dataset.count === 5)
   }
 
   sparkTest("use broadcast join against to pull down reads mapped to targets") {
@@ -1023,6 +1025,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val jRdd = reads.broadcastRegionJoinAgainst(bcastTargets)
 
     assert(jRdd.rdd.count === 5)
+    assert(jRdd.dataset.count === 5)
   }
 
   sparkTest("use right outer broadcast join to pull down reads mapped to targets") {
@@ -1035,6 +1038,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val jRdd = reads.rightOuterBroadcastRegionJoin(targets)
 
     val c = jRdd.rdd.collect
+    assert(jRdd.dataset.count === 6)
     assert(c.count(_._1.isEmpty) === 1)
     assert(c.count(_._1.isDefined) === 5)
   }
@@ -1049,6 +1053,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val jRdd = targets.rightOuterBroadcastRegionJoinAgainst(bcastReads)
 
     val c = jRdd.rdd.collect
+    assert(jRdd.dataset.count === 6)
     assert(c.count(_._1.isEmpty) === 1)
     assert(c.count(_._1.isDefined) === 5)
   }
@@ -1092,8 +1097,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       .setEnd(50L)
       .build)), sd)
 
-    val joined = reads.shuffleRegionJoin(features).rdd.collect
+    val jRdd = reads.shuffleRegionJoin(features)
+    val joined = jRdd.rdd.collect
 
+    assert(jRdd.dataset.count === 2)
     assert(joined.size === 2)
     assert(joined.exists(_._1.getStart == 20L))
     assert(joined.exists(_._1.getStart == 40L))
@@ -1115,10 +1122,11 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(jRdd0.rdd.partitions.length === 4)
 
     assert(jRdd.rdd.count === 5)
+    assert(jRdd.dataset.count === 5)
     assert(jRdd0.rdd.count === 5)
 
     val joinedReads: AlignmentRecordRDD = jRdd
-      .transmute((rdd: RDD[(AlignmentRecord, Feature)]) => {
+      .transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD]((rdd: RDD[(AlignmentRecord, Feature)]) => {
         rdd.map(_._1)
       })
     val tempPath = tmpLocation(".sam")
@@ -1143,6 +1151,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(jRdd0.rdd.partitions.length === 4)
 
     assert(jRdd.rdd.count === 17)
+    assert(jRdd.dataset.count === 17)
     assert(jRdd0.rdd.count === 17)
   }
 
@@ -1165,6 +1174,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val c = jRdd.rdd.collect
     val c0 = jRdd0.rdd.collect
+    assert(jRdd.dataset.count === 6)
     assert(c.count(_._1.isEmpty) === 1)
     assert(c0.count(_._1.isEmpty) === 1)
     assert(c.count(_._1.isDefined) === 5)
@@ -1190,6 +1200,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val c = jRdd.rdd.collect
     val c0 = jRdd0.rdd.collect
+    assert(jRdd.dataset.count === 20)
     assert(c.count(_._2.isEmpty) === 15)
     assert(c0.count(_._2.isEmpty) === 15)
     assert(c.count(_._2.isDefined) === 5)
@@ -1215,6 +1226,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val c = jRdd.rdd.collect
     val c0 = jRdd0.rdd.collect
+    assert(jRdd.dataset.count === 21)
     assert(c.count(t => t._1.isEmpty && t._2.isEmpty) === 0)
     assert(c0.count(t => t._1.isEmpty && t._2.isEmpty) === 0)
     assert(c.count(t => t._1.isDefined && t._2.isEmpty) === 15)
@@ -1244,6 +1256,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     val c = jRdd.rdd.collect
     val c0 = jRdd0.rdd.collect
+    assert(jRdd.dataset.count === 5)
     assert(c.size === 5)
     assert(c0.size === 5)
     assert(c.forall(_._2.size == 1))
@@ -1270,6 +1283,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val c = jRdd.rdd.collect
     val c0 = jRdd0.rdd.collect
 
+    assert(jRdd.dataset.count === 21)
     assert(c.count(_._1.isDefined) === 20)
     assert(c0.count(_._1.isDefined) === 20)
     assert(c.filter(_._1.isDefined).count(_._2.size == 1) === 5)
@@ -1368,21 +1382,23 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       assert(sc.loadContigFragments(tempPath).rdd.count.toInt === 20)
     }
 
-    val features: NucleotideContigFragmentRDD = reads.transmute(rdd => {
-      rdd.map(AlignmentRecordRDDSuite.ncfFn)
-    })
+    val features: NucleotideContigFragmentRDD = reads.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD](
+      (rdd: RDD[AlignmentRecord]) => {
+        rdd.map(AlignmentRecordRDDSuite.ncfFn)
+      })
 
     checkSave(features)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: NucleotideContigFragmentRDD = reads.transmuteDataset(ds => {
-      ds.map(r => {
-        NucleotideContigFragmentProduct.fromAvro(
-          AlignmentRecordRDDSuite.ncfFn(r.toAvro))
+    val featuresDs: NucleotideContigFragmentRDD = reads.transmuteDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD](
+      (ds: Dataset[AlignmentRecordProduct]) => {
+        ds.map(r => {
+          NucleotideContigFragmentProduct.fromAvro(
+            AlignmentRecordRDDSuite.ncfFn(r.toAvro))
+        })
       })
-    })
 
     checkSave(featuresDs)
   }
@@ -1397,18 +1413,20 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       assert(sc.loadCoverage(tempPath).rdd.count === 20)
     }
 
-    val coverage: CoverageRDD = reads.transmute(rdd => {
-      rdd.map(AlignmentRecordRDDSuite.covFn)
-    })
+    val coverage: CoverageRDD = reads.transmute[Coverage, Coverage, CoverageRDD](
+      (rdd: RDD[AlignmentRecord]) => {
+        rdd.map(AlignmentRecordRDDSuite.covFn)
+      })
 
     checkSave(coverage)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val coverageDs: CoverageRDD = reads.transmuteDataset(ds => {
-      ds.map(r => AlignmentRecordRDDSuite.covFn(r.toAvro))
-    })
+    val coverageDs: CoverageRDD = reads.transmuteDataset[Coverage, Coverage, CoverageRDD](
+      (ds: Dataset[AlignmentRecordProduct]) => {
+        ds.map(r => AlignmentRecordRDDSuite.covFn(r.toAvro))
+      })
 
     checkSave(coverageDs)
   }
@@ -1423,21 +1441,23 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       assert(sc.loadFeatures(tempPath).rdd.count === 20)
     }
 
-    val features: FeatureRDD = reads.transmute(rdd => {
-      rdd.map(AlignmentRecordRDDSuite.featFn)
-    })
+    val features: FeatureRDD = reads.transmute[Feature, FeatureProduct, FeatureRDD](
+      (rdd: RDD[AlignmentRecord]) => {
+        rdd.map(AlignmentRecordRDDSuite.featFn)
+      })
 
     checkSave(features)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: FeatureRDD = reads.transmuteDataset(ds => {
-      ds.map(r => {
-        FeatureProduct.fromAvro(
-          AlignmentRecordRDDSuite.featFn(r.toAvro))
+    val featuresDs: FeatureRDD = reads.transmuteDataset[Feature, FeatureProduct, FeatureRDD](
+      (ds: Dataset[AlignmentRecordProduct]) => {
+        ds.map(r => {
+          FeatureProduct.fromAvro(
+            AlignmentRecordRDDSuite.featFn(r.toAvro))
+        })
       })
-    })
 
     checkSave(featuresDs)
   }
@@ -1452,21 +1472,23 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       assert(sc.loadFragments(tempPath).rdd.count === 20)
     }
 
-    val fragments: FragmentRDD = reads.transmute(rdd => {
-      rdd.map(AlignmentRecordRDDSuite.fragFn)
-    })
+    val fragments: FragmentRDD = reads.transmute[Fragment, FragmentProduct, FragmentRDD](
+      (rdd: RDD[AlignmentRecord]) => {
+        rdd.map(AlignmentRecordRDDSuite.fragFn)
+      })
 
     checkSave(fragments)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val fragmentsDs: FragmentRDD = reads.transmuteDataset(ds => {
-      ds.map(r => {
-        FragmentProduct.fromAvro(
-          AlignmentRecordRDDSuite.fragFn(r.toAvro))
+    val fragmentsDs: FragmentRDD = reads.transmuteDataset[Fragment, FragmentProduct, FragmentRDD](
+      (ds: Dataset[AlignmentRecordProduct]) => {
+        ds.map(r => {
+          FragmentProduct.fromAvro(
+            AlignmentRecordRDDSuite.fragFn(r.toAvro))
+        })
       })
-    })
 
     checkSave(fragmentsDs)
   }
@@ -1481,21 +1503,23 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       assert(sc.loadGenotypes(tempPath).rdd.count === 20)
     }
 
-    val genotypes: GenotypeRDD = reads.transmute(rdd => {
-      rdd.map(AlignmentRecordRDDSuite.genFn)
-    })
+    val genotypes: GenotypeRDD = reads.transmute[Genotype, GenotypeProduct, GenotypeRDD](
+      (rdd: RDD[AlignmentRecord]) => {
+        rdd.map(AlignmentRecordRDDSuite.genFn)
+      })
 
     checkSave(genotypes)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val genotypesDs: GenotypeRDD = reads.transmuteDataset(ds => {
-      ds.map(r => {
-        GenotypeProduct.fromAvro(
-          AlignmentRecordRDDSuite.genFn(r.toAvro))
+    val genotypesDs: GenotypeRDD = reads.transmuteDataset[Genotype, GenotypeProduct, GenotypeRDD](
+      (ds: Dataset[AlignmentRecordProduct]) => {
+        ds.map(r => {
+          GenotypeProduct.fromAvro(
+            AlignmentRecordRDDSuite.genFn(r.toAvro))
+        })
       })
-    })
 
     checkSave(genotypesDs)
   }
@@ -1510,21 +1534,23 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       assert(sc.loadVariants(tempPath).rdd.count === 20)
     }
 
-    val variants: VariantRDD = reads.transmute(rdd => {
-      rdd.map(AlignmentRecordRDDSuite.varFn)
-    })
+    val variants: VariantRDD = reads.transmute[Variant, VariantProduct, VariantRDD](
+      (rdd: RDD[AlignmentRecord]) => {
+        rdd.map(AlignmentRecordRDDSuite.varFn)
+      })
 
     checkSave(variants)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val variantsDs: VariantRDD = reads.transmuteDataset(ds => {
-      ds.map(r => {
-        VariantProduct.fromAvro(
-          AlignmentRecordRDDSuite.varFn(r.toAvro))
+    val variantsDs: VariantRDD = reads.transmuteDataset[Variant, VariantProduct, VariantRDD](
+      (ds: Dataset[AlignmentRecordProduct]) => {
+        ds.map(r => {
+          VariantProduct.fromAvro(
+            AlignmentRecordRDDSuite.varFn(r.toAvro))
+        })
       })
-    })
 
     checkSave(variantsDs)
   }

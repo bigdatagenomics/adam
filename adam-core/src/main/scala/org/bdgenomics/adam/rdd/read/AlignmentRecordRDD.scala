@@ -338,7 +338,10 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
 private case class AlignmentWindow(contigName: String, start: Long, end: Long) {
 }
 
-sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicRDD[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
+sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
+
+  protected val productFn = AlignmentRecordProduct.fromAvro(_)
+  protected val unproductFn = (a: AlignmentRecordProduct) => a.toAvro
 
   @transient val uTag: TypeTag[AlignmentRecordProduct] = typeTag[AlignmentRecordProduct]
 

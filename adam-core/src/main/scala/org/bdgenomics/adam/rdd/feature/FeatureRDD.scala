@@ -29,7 +29,7 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   DatasetBoundGenomicDataset,
-  AvroGenomicRDD,
+  AvroGenomicDataset,
   JavaSaveArgs,
   SAMHeaderWriter
 }
@@ -341,7 +341,10 @@ case class RDDBoundFeatureRDD private[rdd] (
   }
 }
 
-sealed abstract class FeatureRDD extends AvroGenomicRDD[Feature, FeatureProduct, FeatureRDD] {
+sealed abstract class FeatureRDD extends AvroGenomicDataset[Feature, FeatureProduct, FeatureRDD] {
+
+  protected val productFn = FeatureProduct.fromAvro(_)
+  protected val unproductFn = (f: FeatureProduct) => f.toAvro
 
   @transient val uTag: TypeTag[FeatureProduct] = typeTag[FeatureProduct]
 

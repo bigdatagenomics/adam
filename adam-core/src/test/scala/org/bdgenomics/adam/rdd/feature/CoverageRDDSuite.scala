@@ -17,7 +17,8 @@
  */
 package org.bdgenomics.adam.rdd.feature
 
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ Dataset, SQLContext }
 import org.bdgenomics.adam.models.{
   ReferenceRegion,
   Coverage,
@@ -40,7 +41,8 @@ import org.bdgenomics.adam.sql.{
   Fragment => FragmentProduct,
   Genotype => GenotypeProduct,
   NucleotideContigFragment => NucleotideContigFragmentProduct,
-  Variant => VariantProduct
+  Variant => VariantProduct,
+  VariantContext => VariantContextProduct
 }
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
@@ -255,21 +257,23 @@ class CoverageRDDSuite extends ADAMFunSuite {
       assert(sc.loadContigFragments(tempPath).rdd.count === 3)
     }
 
-    val contigs: NucleotideContigFragmentRDD = coverage.transmute(rdd => {
-      rdd.map(CoverageRDDSuite.ncfFn)
-    })
+    val contigs: NucleotideContigFragmentRDD = coverage.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD](
+      (rdd: RDD[Coverage]) => {
+        rdd.map(CoverageRDDSuite.ncfFn)
+      })
 
     checkSave(contigs)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val contigsDs: NucleotideContigFragmentRDD = coverage.transmuteDataset(ds => {
-      ds.map(r => {
-        NucleotideContigFragmentProduct.fromAvro(
-          CoverageRDDSuite.ncfFn(r))
+    val contigsDs: NucleotideContigFragmentRDD = coverage.transmuteDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD](
+      (ds: Dataset[Coverage]) => {
+        ds.map(r => {
+          NucleotideContigFragmentProduct.fromAvro(
+            CoverageRDDSuite.ncfFn(r))
+        })
       })
-    })
 
     checkSave(contigsDs)
   }
@@ -284,21 +288,23 @@ class CoverageRDDSuite extends ADAMFunSuite {
       assert(sc.loadFeatures(tempPath).rdd.count === 3)
     }
 
-    val features: FeatureRDD = coverage.transmute(rdd => {
-      rdd.map(CoverageRDDSuite.featFn)
-    })
+    val features: FeatureRDD = coverage.transmute[Feature, FeatureProduct, FeatureRDD](
+      (rdd: RDD[Coverage]) => {
+        rdd.map(CoverageRDDSuite.featFn)
+      })
 
     checkSave(features)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: FeatureRDD = coverage.transmuteDataset(ds => {
-      ds.map(r => {
-        FeatureProduct.fromAvro(
-          CoverageRDDSuite.featFn(r))
+    val featuresDs: FeatureRDD = coverage.transmuteDataset[Feature, FeatureProduct, FeatureRDD](
+      (ds: Dataset[Coverage]) => {
+        ds.map(r => {
+          FeatureProduct.fromAvro(
+            CoverageRDDSuite.featFn(r))
+        })
       })
-    })
 
     checkSave(featuresDs)
   }
@@ -313,21 +319,23 @@ class CoverageRDDSuite extends ADAMFunSuite {
       assert(sc.loadFragments(tempPath).rdd.count === 3)
     }
 
-    val fragments: FragmentRDD = coverage.transmute(rdd => {
-      rdd.map(CoverageRDDSuite.fragFn)
-    })
+    val fragments: FragmentRDD = coverage.transmute[Fragment, FragmentProduct, FragmentRDD](
+      (rdd: RDD[Coverage]) => {
+        rdd.map(CoverageRDDSuite.fragFn)
+      })
 
     checkSave(fragments)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val fragmentsDs: FragmentRDD = coverage.transmuteDataset(ds => {
-      ds.map(r => {
-        FragmentProduct.fromAvro(
-          CoverageRDDSuite.fragFn(r))
+    val fragmentsDs: FragmentRDD = coverage.transmuteDataset[Fragment, FragmentProduct, FragmentRDD](
+      (ds: Dataset[Coverage]) => {
+        ds.map(r => {
+          FragmentProduct.fromAvro(
+            CoverageRDDSuite.fragFn(r))
+        })
       })
-    })
 
     checkSave(fragmentsDs)
   }
@@ -342,21 +350,23 @@ class CoverageRDDSuite extends ADAMFunSuite {
       assert(sc.loadAlignments(tempPath).rdd.count === 3)
     }
 
-    val reads: AlignmentRecordRDD = coverage.transmute(rdd => {
-      rdd.map(CoverageRDDSuite.readFn)
-    })
+    val reads: AlignmentRecordRDD = coverage.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD](
+      (rdd: RDD[Coverage]) => {
+        rdd.map(CoverageRDDSuite.readFn)
+      })
 
     checkSave(reads)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val readsDs: AlignmentRecordRDD = coverage.transmuteDataset(ds => {
-      ds.map(r => {
-        AlignmentRecordProduct.fromAvro(
-          CoverageRDDSuite.readFn(r))
+    val readsDs: AlignmentRecordRDD = coverage.transmuteDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD](
+      (ds: Dataset[Coverage]) => {
+        ds.map(r => {
+          AlignmentRecordProduct.fromAvro(
+            CoverageRDDSuite.readFn(r))
+        })
       })
-    })
 
     checkSave(readsDs)
   }
@@ -371,21 +381,23 @@ class CoverageRDDSuite extends ADAMFunSuite {
       assert(sc.loadGenotypes(tempPath).rdd.count === 3)
     }
 
-    val genotypes: GenotypeRDD = coverage.transmute(rdd => {
-      rdd.map(CoverageRDDSuite.genFn)
-    })
+    val genotypes: GenotypeRDD = coverage.transmute[Genotype, GenotypeProduct, GenotypeRDD](
+      (rdd: RDD[Coverage]) => {
+        rdd.map(CoverageRDDSuite.genFn)
+      })
 
     checkSave(genotypes)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val genotypesDs: GenotypeRDD = coverage.transmuteDataset(ds => {
-      ds.map(r => {
-        GenotypeProduct.fromAvro(
-          CoverageRDDSuite.genFn(r))
+    val genotypesDs: GenotypeRDD = coverage.transmuteDataset[Genotype, GenotypeProduct, GenotypeRDD](
+      (ds: Dataset[Coverage]) => {
+        ds.map(r => {
+          GenotypeProduct.fromAvro(
+            CoverageRDDSuite.genFn(r))
+        })
       })
-    })
 
     checkSave(genotypesDs)
   }
@@ -400,21 +412,23 @@ class CoverageRDDSuite extends ADAMFunSuite {
       assert(sc.loadVariants(tempPath).rdd.count === 3)
     }
 
-    val variants: VariantRDD = coverage.transmute(rdd => {
-      rdd.map(CoverageRDDSuite.varFn)
-    })
+    val variants: VariantRDD = coverage.transmute[Variant, VariantProduct, VariantRDD](
+      (rdd: RDD[Coverage]) => {
+        rdd.map(CoverageRDDSuite.varFn)
+      })
 
     checkSave(variants)
 
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val variantsDs: VariantRDD = coverage.transmuteDataset(ds => {
-      ds.map(r => {
-        VariantProduct.fromAvro(
-          CoverageRDDSuite.varFn(r))
+    val variantsDs: VariantRDD = coverage.transmuteDataset[Variant, VariantProduct, VariantRDD](
+      (ds: Dataset[Coverage]) => {
+        ds.map(r => {
+          VariantProduct.fromAvro(
+            CoverageRDDSuite.varFn(r))
+        })
       })
-    })
 
     checkSave(variantsDs)
   }
@@ -426,9 +440,10 @@ class CoverageRDDSuite extends ADAMFunSuite {
       assert(variantContexts.rdd.count === 3)
     }
 
-    val variantContexts: VariantContextRDD = coverage.transmute(rdd => {
-      rdd.map(CoverageRDDSuite.vcFn)
-    })
+    val variantContexts: VariantContextRDD = coverage.transmute[VariantContext, VariantContextProduct, VariantContextRDD](
+      (rdd: RDD[Coverage]) => {
+        rdd.map(CoverageRDDSuite.vcFn)
+      })
 
     checkSave(variantContexts)
   }

@@ -33,9 +33,9 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.{
   DatasetBoundGenomicDataset,
-  AvroGenomicRDD,
+  AvroGenomicDataset,
   VCFHeaderUtils,
-  VCFSupportingGenomicRDD
+  VCFSupportingGenomicDataset
 }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.sql.{ Variant => VariantProduct }
@@ -200,7 +200,10 @@ case class RDDBoundVariantRDD private[rdd] (
   }
 }
 
-sealed abstract class VariantRDD extends AvroGenomicRDD[Variant, VariantProduct, VariantRDD] with VCFSupportingGenomicRDD[Variant, VariantRDD] {
+sealed abstract class VariantRDD extends AvroGenomicDataset[Variant, VariantProduct, VariantRDD] with VCFSupportingGenomicDataset[Variant, VariantProduct, VariantRDD] {
+
+  protected val productFn = VariantProduct.fromAvro(_)
+  protected val unproductFn = (v: VariantProduct) => v.toAvro
 
   @transient val uTag: TypeTag[VariantProduct] = typeTag[VariantProduct]
 

@@ -23,13 +23,14 @@ import java.io.{
   OutputStreamWriter
 }
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
+import org.bdgenomics.adam.sql.{ Feature => FeatureProduct }
 import org.bdgenomics.formats.avro.Feature
 import org.bdgenomics.utils.misc.Logging
 
 /**
  * InFormatter companion that builds a GFF3InFormatter to write features in GFF3 format to a pipe.
  */
-object GFF3InFormatter extends InFormatterCompanion[Feature, FeatureRDD, GFF3InFormatter] {
+object GFF3InFormatter extends InFormatterCompanion[Feature, FeatureProduct, FeatureRDD, GFF3InFormatter] {
 
   /**
    * Apply method for building the GFF3InFormatter from a FeatureRDD.
@@ -41,7 +42,7 @@ object GFF3InFormatter extends InFormatterCompanion[Feature, FeatureRDD, GFF3InF
   }
 }
 
-case class GFF3InFormatter private () extends InFormatter[Feature, FeatureRDD, GFF3InFormatter] {
+case class GFF3InFormatter private () extends InFormatter[Feature, FeatureProduct, FeatureRDD, GFF3InFormatter] {
   protected val companion = GFF3InFormatter
 
   /**
