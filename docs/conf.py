@@ -15,6 +15,7 @@ import sys
 import os
 import inspect
 import re
+import imp
 from datetime import datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -23,9 +24,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.abspath('../src'))
 
 # This makes the modules located in docs/vendor available to import
-sys.path.insert(0, os.path.abspath('./vendor'))
-import sphinxcontrib.fulltoc
-
+fulltoc = imp.load_source('sphinxcontrib.fulltoc', './vendor/sphinxcontrib/fulltoc.py')
 
 def real_dir_name(p, n=1):
     p = os.path.realpath(p)
