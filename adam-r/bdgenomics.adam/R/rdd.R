@@ -191,7 +191,6 @@ VariantContextRDD <- function(jrdd) {
 #' @export
 setMethod("pipe",
           signature(ardd = "GenomicRDD",
-                    cmd = "character",
                     tFormatter = "character",
                     xFormatter = "character",
                     convFn = "character"),

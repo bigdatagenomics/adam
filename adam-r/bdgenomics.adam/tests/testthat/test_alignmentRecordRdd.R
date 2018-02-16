@@ -73,7 +73,7 @@ test_that("pipe as sam", {
     reads <- loadAlignments(ac, reads12Path)
 
     pipedRdd <- pipe(reads,
-                     "tee /dev/null",
+                     list("tee", "/dev/null"),
                      "org.bdgenomics.adam.rdd.read.SAMInFormatter",
                      "org.bdgenomics.adam.rdd.read.AnySAMOutFormatter",
                      "org.bdgenomics.adam.api.java.AlignmentRecordsToAlignmentRecordsConverter")

@@ -73,11 +73,11 @@ private[rdd] object GenomicRDD {
    *
    * @see pipe
    *
-   * @param cmd Command to split and replace references in.
+   * @param cmd Command to replace references in.
    * @param files List of paths to files.
-   * @return Returns a split up command string, with file paths subbed in.
+   * @return Returns a command, with file paths subbed in.
    */
-  def processCommand(cmd: String,
+  def processCommand(cmd: Seq[String],
                      files: Seq[String]): List[String] = {
     val filesWithIndex: Seq[(String, String)] = files.zipWithIndex
       .map(p => {
@@ -100,10 +100,9 @@ private[rdd] object GenomicRDD {
       }
     }
 
-    cmd.split(" ")
-      .map(s => {
-        replaceEscapes(s, filesAndPath.toIterator)
-      }).toList
+    cmd.map(s => {
+      replaceEscapes(s, filesAndPath.toIterator)
+    }).toList
   }
 }
 
@@ -494,7 +493,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    *   command.
    */
   def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](
-    cmd: String,
+    cmd: Seq[String],
     files: Seq[String] = Seq.empty,
     environment: Map[String, String] = Map.empty,
     flankSize: Int = 0,
@@ -563,7 +562,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
           })
         }
 
-        // split command and create process builder
+        // replace file references in command and create process builder
         val finalCmd = GenomicRDD.processCommand(cmd, locs)
         val pb = new ProcessBuilder(finalCmd)
         pb.redirectError(ProcessBuilder.Redirect.INHERIT)
@@ -646,7 +645,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @tparam V The InFormatter to use for formatting the data being piped to the
    *   command.
    */
-  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: String,
+  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: java.util.List[String],
                                                                 files: Seq[Any],
                                                                 environment: java.util.Map[Any, Any],
                                                                 flankSize: java.lang.Double,
@@ -683,7 +682,7 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @tparam V The InFormatter to use for formatting the data being piped to the
    *   command.
    */
-  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: String,
+  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: java.util.List[String],
                                                                 files: java.util.List[String],
                                                                 environment: java.util.Map[String, String],
                                                                 flankSize: java.lang.Integer,

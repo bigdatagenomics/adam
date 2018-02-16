@@ -857,7 +857,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = BEDInFormatter
     implicit val uFormatter = new BEDOutFormatter
 
-    val pipedRdd: FeatureRDD = frdd.pipe("tee /dev/null")
+    val pipedRdd: FeatureRDD = frdd.pipe(Seq("tee", "/dev/null"))
     assert(pipedRdd.rdd.count >= frdd.rdd.count)
     assert(pipedRdd.rdd.distinct.count === frdd.rdd.distinct.count)
   }
@@ -869,7 +869,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = GTFInFormatter
     implicit val uFormatter = new GTFOutFormatter
 
-    val pipedRdd: FeatureRDD = frdd.pipe("tee /dev/null")
+    val pipedRdd: FeatureRDD = frdd.pipe(Seq("tee", "/dev/null"))
     assert(pipedRdd.rdd.count >= frdd.rdd.count)
     assert(pipedRdd.rdd.distinct.count === frdd.rdd.distinct.count)
   }
@@ -881,7 +881,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = GFF3InFormatter
     implicit val uFormatter = new GFF3OutFormatter
 
-    val pipedRdd: FeatureRDD = frdd.pipe("tee /dev/null")
+    val pipedRdd: FeatureRDD = frdd.pipe(Seq("tee", "/dev/null"))
     assert(pipedRdd.rdd.count >= frdd.rdd.count)
     assert(pipedRdd.rdd.distinct.count === frdd.rdd.distinct.count)
   }
@@ -893,7 +893,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = NarrowPeakInFormatter
     implicit val uFormatter = new NarrowPeakOutFormatter
 
-    val pipedRdd: FeatureRDD = frdd.pipe("tee /dev/null")
+    val pipedRdd: FeatureRDD = frdd.pipe(Seq("tee", "/dev/null"))
     assert(pipedRdd.rdd.count >= frdd.rdd.count)
     assert(pipedRdd.rdd.distinct.count === frdd.rdd.distinct.count)
   }

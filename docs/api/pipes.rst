@@ -22,7 +22,7 @@ The method signature of a pipe command is below:
 
 .. code:: scala
 
-    def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: String,
+    def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: Seq[String],
                                                                   files: Seq[String] = Seq.empty,
                                                                   environment: Map[String, String] = Map.empty,
                                                                   flankSize: Int = 0)(implicit tFormatterCompanion: InFormatterCompanion[T, U, V],
@@ -140,7 +140,8 @@ standard output:
     // run the piped command
     // providing the explicit return type (VariantContextRDD) will ensure that
     // the correct implicit convFn is selected
-    val variantContexts: VariantContextRDD = reads.pipe("my_variant_caller -R $0",
+    val variantContexts: VariantContextRDD = reads.pipe(
+      cmd = Seq("my_variant_caller", "-R", "$0"),
       files = Seq("hdfs://mynamenode/my/reference/genome.fa"))
 
     // save to vcf
@@ -194,14 +195,19 @@ To run the Scala example code above using Java, we would write:
 
       VariantContextRDD runPipe(AlignmentRecordRDD reads) {
 
+        List<String> cmd = new ArrayList<String>();
+        cmd.add("my_variant_caller");
+        cmd.add("-R");
+        cmd.add("$0");
+
         List<String> files = new ArrayList<String>();
-        files.add("hdfs://mynamenode/my/reference/genome.fa")
+        files.add("hdfs://mynamenode/my/reference/genome.fa");
 
         Map<String, String> env = new HashMap<String, String>();
 
         return reads.pipe<VariantContext,
                           VariantContextRDD,
-                          SAMInFormatter>("my_variant_caller -R $0",
+                          SAMInFormatter>(cmd,
                                           files,
                                           env,
                                           0,
@@ -227,7 +233,7 @@ from above in Python, we would write:
     ac = ADAMContext(self.sc)
     reads = ac.loadAlignments("hdfs://mynamenode/my/read/file.bam")
 
-    variants = reads.pipe("my_variant_caller -R $0",
+    variants = reads.pipe(["my_variant_caller", "-R", "$0"],
                           "org.bdgenomics.adam.rdd.read.SAMInFormatter",
                           "org.bdgenomics.adam.rdd.variant.VCFOutFormatter",
                           "org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter",
@@ -243,10 +249,11 @@ In R, we would write:
 
     reads <- loadAlignments(ac, "hdfs://mynamenode/my/read/file.bam")
 
+    cmd <- list("my_variant_caller", "-R", "$0")
     files <- list("hdfs://mynamenode/my/reference/genome.fa")
 
     variants <- pipe(reads,
-                     "my_variant_caller -R $0",
+                     cmd=cmd,
                      "org.bdgenomics.adam.rdd.read.SAMInFormatter",
                      "org.bdgenomics.adam.rdd.variant.VCFOutFormatter",
                      "org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter",
