@@ -26,7 +26,7 @@ import java.nio.file.Paths
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
-import org.apache.spark.{ SparkContext }
+import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.MetricsContext._
