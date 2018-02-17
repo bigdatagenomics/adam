@@ -234,12 +234,12 @@ case class ParquetUnboundAlignmentRecordRDD private[rdd] (
 }
 
 case class DatasetBoundAlignmentRecordRDD private[rdd] (
-    dataset: Dataset[AlignmentRecordProduct],
-    sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary,
-    @transient val processingSteps: Seq[ProcessingStep],
-    partitionedBinSize: Option[Int] = None) extends 
-      with DatasetBoundGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
+  dataset: Dataset[AlignmentRecordProduct],
+  sequences: SequenceDictionary,
+  recordGroups: RecordGroupDictionary,
+  @transient val processingSteps: Seq[ProcessingStep],
+  partitionedBinSize: Option[Int] = None) extends AlignmentRecordRDD
+    with DatasetBoundGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
 

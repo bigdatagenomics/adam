@@ -184,12 +184,12 @@ case class ParquetUnboundFragmentRDD private[rdd] (
 }
 
 case class DatasetBoundFragmentRDD private[rdd] (
-    dataset: Dataset[FragmentProduct],
-    sequences: SequenceDictionary,
-    recordGroups: RecordGroupDictionary,
-    @transient val processingSteps: Seq[ProcessingStep],
-    partitionedBinSize: Option[Int] = None) extends FragmentRDD 
-      with DatasetBoundGenomicDataset[Fragment, FragmentProduct, FragmentRDD] {
+  dataset: Dataset[FragmentProduct],
+  sequences: SequenceDictionary,
+  recordGroups: RecordGroupDictionary,
+  @transient val processingSteps: Seq[ProcessingStep],
+  partitionedBinSize: Option[Int] = None) extends FragmentRDD
+    with DatasetBoundGenomicDataset[Fragment, FragmentProduct, FragmentRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
 

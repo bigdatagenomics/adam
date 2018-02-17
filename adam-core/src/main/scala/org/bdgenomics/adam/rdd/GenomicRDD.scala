@@ -2560,6 +2560,7 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
         "\' and (end > " + r.start + " and start < " + r.end + "))")
         .mkString(" or ")
     }
+
   }
 
   /**
