@@ -89,7 +89,7 @@ class JavaADAMContextSuite extends ADAMFunSuite {
     assert(newRdd.jrdd.count() === 3)
   }
 
-  ignore("can read and write a small .vcf as genotypes") {
+  sparkTest("can read and write a small .vcf as genotypes") {
     val path = copyResource("small.vcf")
     val aRdd = jac.loadGenotypes(path)
     assert(aRdd.jrdd.count() === 18)
@@ -99,7 +99,7 @@ class JavaADAMContextSuite extends ADAMFunSuite {
     assert(newRdd.jrdd.count() === 18)
   }
 
-  ignore("can read and write a small .vcf as variants") {
+  sparkTest("can read and write a small .vcf as variants") {
     val path = copyResource("small.vcf")
     val aRdd = jac.loadVariants(path)
     assert(aRdd.jrdd.count() === 6)

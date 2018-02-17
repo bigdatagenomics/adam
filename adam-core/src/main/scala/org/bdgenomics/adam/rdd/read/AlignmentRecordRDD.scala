@@ -42,12 +42,7 @@ import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.{
-  AvroRecordGroupGenomicRDD,
-  ADAMSaveAnyArgs,
-  JavaSaveArgs,
-  SAMHeaderWriter
-}
+import org.bdgenomics.adam.rdd._
 import org.bdgenomics.adam.rdd.feature.{
   CoverageRDD,
   DatasetBoundCoverageRDD,
@@ -243,7 +238,8 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
     sequences: SequenceDictionary,
     recordGroups: RecordGroupDictionary,
     @transient val processingSteps: Seq[ProcessingStep],
-    partitionedBinSize: Option[Int] = None) extends AlignmentRecordRDD {
+    partitionedBinSize: Option[Int] = None) extends 
+      with DatasetBoundGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
 

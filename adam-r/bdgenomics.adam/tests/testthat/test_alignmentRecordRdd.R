@@ -105,3 +105,23 @@ test_that("transmute to coverage", {
     expect_true(is(readsAsCoverage, "CoverageRDD"))
     expect_equal(count(toDF(readsAsCoverage)), 5)
 })
+
+test_that("reads can cache", {
+
+    readsPath <- resourceFile("unsorted.sam")
+    reads <- loadAlignments(ac, readsPath)
+
+    cache(reads)
+    unpersist(reads)
+})
+
+test_that("reads can persist with storage level", {
+
+    readsPath <- resourceFile("unsorted.sam")
+    reads <- loadAlignments(ac, readsPath)
+    storageLevel <- "MEMORY_AND_DISK"
+
+    persist(reads, storageLevel)
+    unpersist(reads)
+})
+

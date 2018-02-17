@@ -119,7 +119,6 @@ class GenotypeRDDSuite extends ADAMFunSuite {
       ReferenceRegion("1", 752790L, 752793L))
     val filteredGenotypes = sc.loadParquetGenotypes(outputPath,
       optPredicate = Some(predicate))
-    filteredGenotypes.rdd.foreach(println)
     assert(filteredGenotypes.rdd.count === 9)
     val starts = filteredGenotypes.rdd.map(_.getStart).distinct.collect.toSet
     assert(starts.size === 3)

@@ -10,7 +10,7 @@
 
   <artifactId>adam-apis-spark2_2.11</artifactId>
   <packaging>jar</packaging>
-  <name>ADAM_${scala.version.prefix}: APIs for Java</name>
+  <name>ADAM_${scala.version.prefix}: APIs for Java, Python</name>
   <build>
     <plugins>
       <!-- disable surefire -->

@@ -140,6 +140,34 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
   def replaceSequences(newSequences: SequenceDictionary): U
 
   /**
+   * Caches underlying RDD in memory.
+   *
+   * @return U cached GenomicRDD
+   */
+  def cache(): U = {
+    replaceRdd(rdd.cache())
+  }
+
+  /**
+   * Persists underlying RDD in memory or disk.
+   *
+   * @param sl new StorageLevel
+   * @return U persisted GenomicRDD
+   */
+  def persist(sl: StorageLevel): U = {
+    replaceRdd(rdd.persist(sl))
+  }
+
+  /**
+   * Unpersists underlying RDD from memory or disk.
+   *
+   * @return U uncached RDD
+   */
+  def unpersist(): U = {
+    replaceRdd(rdd.unpersist())
+  }
+
+  /**
    * Appends sequence metadata to the current RDD.
    *
    * @param sequencesToAdd The new sequences to append.
@@ -2135,6 +2163,41 @@ trait MultisampleGenomicRDD[T, U <: MultisampleGenomicRDD[T, U]] extends Genomic
   def addSample(sampleToAdd: Sample): U = {
     addSamples(Seq(sampleToAdd))
   }
+}
+
+/**
+ * A trait describing a GenomicDataset that is physically backed by a Dataset.
+ */
+trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDataset[T, U, V] {
+
+  /**
+   * Caches underlying dataset in memory.
+   *
+   * @return V cached GenomicDataset
+   */
+  override def cache(): V = {
+    transformDataset(_.cache())
+  }
+
+  /**
+   * Persists underlying dataset in memory or disk.
+   *
+   * @param sl new StorageLevel
+   * @return V persisted GenomicDataset
+   */
+  override def persist(sl: StorageLevel): V = {
+    transformDataset(_.persist(sl))
+  }
+
+  /**
+   * Unpersists underlying dataset from memory or disk.
+   *
+   * @return V unpersisted GenomicDataset
+   */
+  override def unpersist(): V = {
+    transformDataset(_.unpersist())
+  }
+
 }
 
 /**
