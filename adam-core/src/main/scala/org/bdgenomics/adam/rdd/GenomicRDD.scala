@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd
 import java.nio.file.Paths
 import htsjdk.samtools.ValidationStringency
 import org.apache.avro.generic.IndexedRecord
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{ FSDataOutputStream, FileSystem, Path }
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
@@ -2268,14 +2268,12 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Geno
    * Filters and replaces the underlying dataset based on overlap with any of a Seq of ReferenceRegions.
    *
    * @param querys ReferencesRegions to filter against
-   * @param optPartitionSize  Optional partitionSize used for partitioned Parquet, defaults to 1000000.
    * @param optPartitionedLookBackNum Optional number of parquet position bins to look back to find start of a
    *                                  ReferenceRegion, defaults to 1
    * @return Returns a new DatasetBoundGenomicRDD with ReferenceRegions filter applied.
    */
-  def filterByOverlappingRegions(querys: Iterable[ReferenceRegion],
-                                 optPartitionSize: Option[Int] = Some(1000000),
-                                 optPartitionedLookBackNum: Option[Int] = Some(1)): V = {
+  def filterDatasetByOverlappingRegions(querys: Iterable[ReferenceRegion],
+                                        optPartitionedLookBackNum: Option[Int] = Some(1)): V = {
     filterByOverlappingRegions(querys)
   }
 }
@@ -2582,10 +2580,12 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
    *
    * @param filePath Path to save the file at.
    */
-  private def writePartitionedParquetFlag(filePath: String): Boolean = {
+  private def writePartitionedParquetFlag(filePath: String, partitionSize: Int): Unit = {
     val path = new Path(filePath, "_isPartitionedByStartPos")
-    val fs = path.getFileSystem(rdd.context.hadoopConfiguration)
-    fs.createNewFile(path)
+    val fs: FileSystem = path.getFileSystem(rdd.context.hadoopConfiguration)
+    val f = fs.create(path)
+    f.writeInt(partitionSize)
+    f.close()
   }
 
   /**
@@ -2607,7 +2607,7 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
       .format("parquet")
       .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
       .save(filePath)
-    writePartitionedParquetFlag(filePath)
+    writePartitionedParquetFlag(filePath, partitionSize)
     saveMetadata(filePath)
   }
 

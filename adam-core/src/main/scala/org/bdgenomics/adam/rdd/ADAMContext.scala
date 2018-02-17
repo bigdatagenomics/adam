@@ -1882,13 +1882,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadPartitionedParquetAlignments(pathName: String,
                                        regions: Iterable[ReferenceRegion] = Iterable.empty): AlignmentRecordRDD = {
 
-    require(isPartitioned(pathName),
-      "Input Parquet files (%s) are not partitioned.".format(pathName))
-
+    val partitionedBinSize = getPartitionedBinSize(pathName)
     val reads = loadParquetAlignments(pathName)
 
     val datasetBoundAlignmentRecordRDD = if (regions.nonEmpty) {
-      DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
+      DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps, Some(partitionedBinSize))
         .filterByOverlappingRegions(regions)
     } else {
       DatasetBoundAlignmentRecordRDD(reads.dataset, reads.sequences, reads.recordGroups, reads.processingSteps)
@@ -2291,16 +2289,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadPartitionedParquetGenotypes(pathName: String,
                                       regions: Iterable[ReferenceRegion] = Iterable.empty): GenotypeRDD = {
 
-    require(isPartitioned(pathName),
-      "Input Parquet files (%s) are not partitioned.".format(pathName))
-
+    val partitionedBinSize = getPartitionedBinSize(pathName)
     val genotypes = loadParquetGenotypes(pathName)
 
     val datasetBoundGenotypeRDD = if (regions.nonEmpty) {
-      DatasetBoundGenotypeRDD(genotypes.dataset, genotypes.sequences, genotypes.samples, genotypes.headerLines)
+      DatasetBoundGenotypeRDD(genotypes.dataset, genotypes.sequences, genotypes.samples, genotypes.headerLines, Some(partitionedBinSize))
         .filterByOverlappingRegions(regions)
     } else {
-      DatasetBoundGenotypeRDD(genotypes.dataset, genotypes.sequences, genotypes.samples, genotypes.headerLines)
+      DatasetBoundGenotypeRDD(genotypes.dataset, genotypes.sequences, genotypes.samples, genotypes.headerLines, Some(partitionedBinSize))
     }
 
     datasetBoundGenotypeRDD
@@ -2350,16 +2346,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadPartitionedParquetVariants(pathName: String,
                                      regions: Iterable[ReferenceRegion] = Iterable.empty): VariantRDD = {
 
-    require(isPartitioned(pathName),
-      "Input Parquet files (%s) are not partitioned.".format(pathName))
-
+    val partitionedBinSize = getPartitionedBinSize(pathName)
     val variants = loadParquetVariants(pathName)
 
     val datasetBoundVariantRDD = if (regions.nonEmpty) {
-      DatasetBoundVariantRDD(variants.dataset, variants.sequences, variants.headerLines)
+      DatasetBoundVariantRDD(variants.dataset, variants.sequences, variants.headerLines, Some(partitionedBinSize))
         .filterByOverlappingRegions(regions)
     } else {
-      DatasetBoundVariantRDD(variants.dataset, variants.sequences, variants.headerLines)
+      DatasetBoundVariantRDD(variants.dataset, variants.sequences, variants.headerLines, Some(partitionedBinSize))
     }
 
     datasetBoundVariantRDD
@@ -2692,16 +2686,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadPartitionedParquetFeatures(pathName: String,
                                      regions: Iterable[ReferenceRegion] = Iterable.empty): FeatureRDD = {
 
-    require(isPartitioned(pathName),
-      "Input Parquet files (%s) are not partitioned.".format(pathName))
-
+    val partitionedBinSize = getPartitionedBinSize(pathName)
     val features = loadParquetFeatures(pathName)
 
     val datasetBoundFeatureRDD = if (regions.nonEmpty) {
-      DatasetBoundFeatureRDD(features.dataset, features.sequences)
+      DatasetBoundFeatureRDD(features.dataset, features.sequences, Some(partitionedBinSize))
         .filterByOverlappingRegions(regions)
     } else {
-      DatasetBoundFeatureRDD(features.dataset, features.sequences)
+      DatasetBoundFeatureRDD(features.dataset, features.sequences, Some(partitionedBinSize))
     }
 
     datasetBoundFeatureRDD
@@ -2750,16 +2742,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   def loadPartitionedParquetContigFragments(pathName: String,
                                             regions: Iterable[ReferenceRegion] = Iterable.empty): NucleotideContigFragmentRDD = {
 
-    require(isPartitioned(pathName),
-      "Input Parquet files (%s) are not partitioned.".format(pathName))
-
+    val partitionedBinSize = getPartitionedBinSize(pathName)
     val contigs = loadParquetContigFragments(pathName)
 
     val datasetBoundNucleotideContigFragmentRDD = if (regions.nonEmpty) {
-      DatasetBoundNucleotideContigFragmentRDD(contigs.dataset, contigs.sequences)
+      DatasetBoundNucleotideContigFragmentRDD(contigs.dataset, contigs.sequences, Some(partitionedBinSize))
         .filterByOverlappingRegions(regions)
     } else {
-      DatasetBoundNucleotideContigFragmentRDD(contigs.dataset, contigs.sequences)
+      DatasetBoundNucleotideContigFragmentRDD(contigs.dataset, contigs.sequences, Some(partitionedBinSize))
     }
 
     datasetBoundNucleotideContigFragmentRDD
@@ -3192,16 +3182,21 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param pathName Path in which to look for partitioned flag.
    * @return Return true if the specified path of Parquet + Avro files is partitioned.
-   * Behavior is undefined if some paths in glob are contain paritioned flag and some do not.
+   *
+   * If a glob is used, all directories within the blog must be partitioned, and must have been saved
+   * using the same partitioned bin size.  Behavior is undefined if this requirement is not met.
    */
-  def isPartitioned(pathName: String): Boolean = {
+  def getPartitionedBinSize(pathName: String): Int = {
 
-    try {
-      getFsAndFilesWithFilter(pathName, new FileFilter("_isPartitionedByStartPos"))
+    val partitionSize = try {
+      val f = getFsAndFilesWithFilter(pathName, new FileFilter("_isPartitionedByStartPos")).head
+      f.getFileSystem(sc.hadoopConfiguration).open(f).readInt()
     } catch {
-      case e: FileNotFoundException => false
+      case e: FileNotFoundException => {
+        throw new FileNotFoundException("Input Parquet files (%s) are not partitioned.".format(pathName))
+      }
     }
-    true
+    partitionSize
   }
 
 }

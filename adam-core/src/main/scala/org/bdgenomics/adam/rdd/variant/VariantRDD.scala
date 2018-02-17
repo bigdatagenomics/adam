@@ -134,7 +134,8 @@ case class ParquetUnboundVariantRDD private[rdd] (
 case class DatasetBoundVariantRDD private[rdd] (
     dataset: Dataset[VariantProduct],
     sequences: SequenceDictionary,
-    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantRDD {
+    @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
+    partitionedBinSize: Option[Int] = None) extends VariantRDD {
 
   protected lazy val optPartitionMap = None
 
@@ -172,13 +173,14 @@ case class DatasetBoundVariantRDD private[rdd] (
    * Filters and replaces the underlying dataset based on overlap with any of a Seq of ReferenceRegions.
    *
    * @param querys ReferencesRegions to filter against
-   * @param optPartitionSize  Optional partitionSize used for partitioned Parquet, defaults to 1000000.
    * @param optPartitionedLookBackNum Optional number of parquet position bins to look back to find start of a
    *                                  ReferenceRegion, defaults to 1
    * @return Returns a new DatasetBoundVariantRDD with ReferenceRegions filter applied.
    */
-  override def filterByOverlappingRegions(querys: Iterable[ReferenceRegion], optPartitionSize: Option[Int] = Some(1000000), optPartitionedLookBackNum: Option[Int] = Some(1)): VariantRDD = {
-    transformDataset((d: Dataset[org.bdgenomics.adam.sql.Variant]) => d.filter(referenceRegionsToDatasetQueryString(querys, optPartitionSize.get, optPartitionedLookBackNum.get)))
+  override def filterDatasetByOverlappingRegions(querys: Iterable[ReferenceRegion],
+                                                 optPartitionedLookBackNum: Option[Int] = Some(1)): VariantRDD = {
+    transformDataset((d: Dataset[org.bdgenomics.adam.sql.Variant]) =>
+      d.filter(referenceRegionsToDatasetQueryString(querys, partitionedBinSize.get, optPartitionedLookBackNum.get)))
   }
 }
 
