@@ -825,7 +825,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = SAMInFormatter
     implicit val uFormatter = new AnySAMOutFormatter
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe("tee /dev/null")
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("tee", "/dev/null"))
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
   }
@@ -837,7 +837,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = SAMInFormatter
     implicit val uFormatter = new AnySAMOutFormatter
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe("sleep 10", optTimeout = Some(5))
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("sleep", "10"), optTimeout = Some(5))
     val newRecords = pipedRdd.rdd.count
     assert(newRecords === 0)
   }
@@ -852,7 +852,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     // this script reads the reads into a temp file, which is then read to
     // stdout, then we sleep for 10 sec, then we read to stdout again
     val scriptPath = testFile("timeout.py")
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe("python $0",
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("python", "$0"),
       files = Seq(scriptPath))
     val newRecords = pipedRdd.rdd.count
     assert(newRecords === (2 * ardd.rdd.count))
@@ -868,7 +868,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     // this script reads the reads into a temp file, which is then read to
     // stdout, then we sleep for 10 sec, then we read to stdout again
     val scriptPath = testFile("timeout.py")
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe("python $0",
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("python", "$0"),
       optTimeout = Some(5),
       files = Seq(scriptPath))
     val newRecords = pipedRdd.rdd.count
@@ -881,7 +881,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val records = ardd.rdd.count
 
     val pipedRdd = ardd.pipe[AlignmentRecord, AlignmentRecordRDD, SAMInFormatter](
-      "tee /dev/null",
+      Seq("tee", "/dev/null"),
       (List.empty[String]: java.util.List[String]),
       (Map.empty[String, String]: java.util.Map[String, String]),
       0,
@@ -900,7 +900,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = BAMInFormatter
     implicit val uFormatter = new AnySAMOutFormatter
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe("tee /dev/null")
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("tee", "/dev/null"))
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
   }
@@ -922,7 +922,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     // this script converts interleaved fastq to unaligned sam
     val scriptPath = testFile("fastq_to_usam.py")
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe("python $0",
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("python", "$0"),
       files = Seq(scriptPath))
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
@@ -940,7 +940,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = SAMInFormatter
     implicit val uFormatter = new AnySAMOutFormatter
 
-    val pipedRdd: AlignmentRecordRDD = ardd.pipe("/bin/bash %s".format(scriptPath),
+    val pipedRdd: AlignmentRecordRDD = ardd.pipe(Seq("/bin/bash", scriptPath),
       environment = Map(("INPUT_PATH" -> smallPath),
         ("OUTPUT_PATH" -> writePath)))
     val newRecords = pipedRdd.rdd.count
@@ -957,7 +957,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     implicit val tFormatter = SAMInFormatter
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
-    val pipedRdd: VariantContextRDD = ardd.pipe("/bin/bash $0 %s $1".format(tempPath),
+    val pipedRdd: VariantContextRDD = ardd.pipe(Seq("/bin/bash", "$0", tempPath, "$1"),
       files = Seq(scriptPath, vcfPath))
     val newRecords = pipedRdd.rdd.count
     assert(newRecords === 6)

@@ -247,7 +247,7 @@ class GenomicRDD(object):
         format the input to the pipe, and the implicit OutFormatter is used to
         parse the output from the pipe.
 
-        :param str cmd: The command to run.
+        :param list cmd: The command to run.
         :param str tFormatter: The name of the ADAM in-formatter class to use.
         :param str xFormatter: The name of the ADAM out-formatter class to use.
         :param str convFn: The name of the ADAM GenomicRDD conversion class to
