@@ -645,14 +645,14 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
    * @tparam V The InFormatter to use for formatting the data being piped to the
    *   command.
    */
-  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: java.util.List[String],
+  def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: Seq[Any],
                                                                 files: Seq[Any],
                                                                 environment: java.util.Map[Any, Any],
                                                                 flankSize: java.lang.Double,
                                                                 tFormatter: Class[V],
                                                                 xFormatter: OutFormatter[X],
                                                                 convFn: Function2[U, RDD[X], Y]): Y = {
-    pipe(cmd,
+    pipe(cmd.asInstanceOf[Seq[String]].toList,
       files.asInstanceOf[Seq[String]].toList,
       environment.asInstanceOf[java.util.Map[String, String]],
       flankSize.toInt,

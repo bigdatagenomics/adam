@@ -37,6 +37,17 @@ class GenomicRDDSuite extends ADAMFunSuite {
     assert(cmd.head === "ls")
   }
 
+  sparkTest("processing a command should handle arguments that include spaces") {
+    val cmd = GenomicRDD.processCommand(Seq("foo",
+      "--arg", "value-with-no-spaces",
+      "--arg-with-space", "value includes spaces"), Seq.empty)
+
+    assert(cmd.size === 5)
+    assert(cmd.head === "foo")
+    assert(cmd(2) == "value-with-no-spaces")
+    assert(cmd(4) === "value includes spaces")
+  }
+
   sparkTest("processing a command that is a single substitution should succeed") {
     val cmd = GenomicRDD.processCommand(Seq("$0"), Seq("/bin/bash"))
 
