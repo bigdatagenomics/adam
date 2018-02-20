@@ -237,7 +237,8 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
   dataset: Dataset[AlignmentRecordProduct],
   sequences: SequenceDictionary,
   recordGroups: RecordGroupDictionary,
-  @transient val processingSteps: Seq[ProcessingStep]) extends AlignmentRecordRDD
+  @transient val processingSteps: Seq[ProcessingStep],
+  partitionedBinSize: Option[Int] = None) extends AlignmentRecordRDD
     with DatasetBoundGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
@@ -276,6 +277,20 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
   def replaceProcessingSteps(
     newProcessingSteps: Seq[ProcessingStep]): AlignmentRecordRDD = {
     copy(processingSteps = newProcessingSteps)
+  }
+
+  /**
+   * Filters and replaces the underlying dataset based on overlap with any of a Seq of ReferenceRegions.
+   *
+   * @param querys ReferencesRegions to filter against
+   * @param optPartitionedLookBackNum Optional number of parquet position bins to look back to find start of a
+   *                                  ReferenceRegion, defaults to 1
+   * @return Returns a new DatasetBoundAlignmentRecordRDD with ReferenceRegions filter applied.
+   */
+  override def filterDatasetByOverlappingRegions(querys: Iterable[ReferenceRegion],
+                                                 optPartitionedLookBackNum: Option[Int] = Some(1)): AlignmentRecordRDD = {
+    transformDataset((d: Dataset[org.bdgenomics.adam.sql.AlignmentRecord]) =>
+      d.filter(referenceRegionsToDatasetQueryString(querys, partitionedBinSize.get, optPartitionedLookBackNum.get)))
   }
 }
 

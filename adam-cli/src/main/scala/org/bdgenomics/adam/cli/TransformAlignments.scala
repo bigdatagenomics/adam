@@ -131,6 +131,8 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var storageLevel: String = "MEMORY_ONLY"
   @Args4jOption(required = false, name = "-disable_pg", usage = "Disable writing a new @PG line.")
   var disableProcessingStep = false
+  @Args4jOption(required = false, name = "-save_as_dataset", usage = "EXPERIMENTAL: Save as a Parquet format Spark-SQL dataset")
+  var saveAsDataset = false
 
   var command: String = null
 }
@@ -562,8 +564,12 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       mergedSd
     }
 
-    outputRdd.save(args,
-      isSorted = args.sortReads || args.sortLexicographically)
+    if (args.saveAsDataset) {
+      outputRdd.saveAsPartitionedParquet(args.outputPath)
+    } else {
+      outputRdd.save(args,
+        isSorted = args.sortReads || args.sortLexicographically)
+    }
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = {

@@ -137,9 +137,9 @@ case class ParquetUnboundNucleotideContigFragmentRDD private[rdd] (
 
 case class DatasetBoundNucleotideContigFragmentRDD private[rdd] (
   dataset: Dataset[NucleotideContigFragmentProduct],
-  sequences: SequenceDictionary) extends NucleotideContigFragmentRDD
+  sequences: SequenceDictionary,
+  partitionedBinSize: Option[Int] = None) extends NucleotideContigFragmentRDD
     with DatasetBoundGenomicDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD] {
-
   lazy val rdd: RDD[NucleotideContigFragment] = dataset.rdd.map(_.toAvro)
 
   protected lazy val optPartitionMap = None
@@ -161,6 +161,24 @@ case class DatasetBoundNucleotideContigFragmentRDD private[rdd] (
   def replaceSequences(
     newSequences: SequenceDictionary): NucleotideContigFragmentRDD = {
     copy(sequences = newSequences)
+  }
+
+  override def transformDataset(tFn: Dataset[NucleotideContigFragmentProduct] => Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
+    copy(dataset = tFn(dataset))
+  }
+
+  /**
+   * Filters and replaces the underlying dataset based on overlap with any of a Seq of ReferenceRegions.
+   *
+   * @param querys ReferencesRegions to filter against
+   * @param optPartitionedLookBackNum Optional number of parquet position bins to look back to find start of a
+   *                                  ReferenceRegion, defaults to 1
+   * @return Returns a new DatasetBoundNucleotideContigFragmentRDD with ReferenceRegions filter applied.
+   */
+  override def filterDatasetByOverlappingRegions(querys: Iterable[ReferenceRegion],
+                                                 optPartitionedLookBackNum: Option[Int] = Some(1)): NucleotideContigFragmentRDD = {
+    transformDataset((d: Dataset[org.bdgenomics.adam.sql.NucleotideContigFragment]) =>
+      d.filter(referenceRegionsToDatasetQueryString(querys, partitionedBinSize.get, optPartitionedLookBackNum.get)))
   }
 }
 

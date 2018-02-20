@@ -187,7 +187,8 @@ case class DatasetBoundFragmentRDD private[rdd] (
   dataset: Dataset[FragmentProduct],
   sequences: SequenceDictionary,
   recordGroups: RecordGroupDictionary,
-  @transient val processingSteps: Seq[ProcessingStep]) extends FragmentRDD
+  @transient val processingSteps: Seq[ProcessingStep],
+  partitionedBinSize: Option[Int] = None) extends FragmentRDD
     with DatasetBoundGenomicDataset[Fragment, FragmentProduct, FragmentRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
@@ -226,6 +227,20 @@ case class DatasetBoundFragmentRDD private[rdd] (
   def replaceProcessingSteps(
     newProcessingSteps: Seq[ProcessingStep]): FragmentRDD = {
     copy(processingSteps = newProcessingSteps)
+  }
+
+  /**
+   * Filters and replaces the underlying dataset based on overlap with any of a Seq of ReferenceRegions.
+   *
+   * @param querys ReferencesRegions to filter against
+   * @param optPartitionedLookBackNum Optional number of parquet position bins to look back to find start of a
+   *                                  ReferenceRegion, defaults to 1
+   * @return Returns a new DatasetBoundFragmentRDD with ReferenceRegions filter applied.
+   */
+  override def filterDatasetByOverlappingRegions(querys: Iterable[ReferenceRegion],
+                                                 optPartitionedLookBackNum: Option[Int] = Some(1)): FragmentRDD = {
+    transformDataset((d: Dataset[org.bdgenomics.adam.sql.Fragment]) =>
+      d.filter(referenceRegionsToDatasetQueryString(querys, partitionedBinSize.get, optPartitionedLookBackNum.get)))
   }
 }
 

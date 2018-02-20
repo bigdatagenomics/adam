@@ -276,7 +276,8 @@ case class ParquetUnboundFeatureRDD private[rdd] (
 
 case class DatasetBoundFeatureRDD private[rdd] (
   dataset: Dataset[FeatureProduct],
-  sequences: SequenceDictionary) extends FeatureRDD
+  sequences: SequenceDictionary,
+  partitionedBinSize: Option[Int] = None) extends FeatureRDD
     with DatasetBoundGenomicDataset[Feature, FeatureProduct, FeatureRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
@@ -312,6 +313,22 @@ case class DatasetBoundFeatureRDD private[rdd] (
       .withColumnRenamed("score", "count")
       .as[Coverage], sequences)
   }
+
+  /**
+   * Filters and replaces the underlying dataset based on overlap with any of a Seq of ReferenceRegions.
+   *
+   * @param querys ReferencesRegions to filter against
+   * @param optPartitionedLookBackNum Optional number of parquet position bins to look back to find start of a
+   *                                  ReferenceRegion, defaults to 1
+   * @return Returns a new DatasetBoundFeatureRDD with ReferenceRegions filter applied.
+   */
+  override def filterDatasetByOverlappingRegions(querys: Iterable[ReferenceRegion],
+                                                 optPartitionedLookBackNum: Option[Int] = Some(1)): FeatureRDD = {
+
+    transformDataset((d: Dataset[org.bdgenomics.adam.sql.Feature]) =>
+      d.filter(referenceRegionsToDatasetQueryString(querys, partitionedBinSize.get, optPartitionedLookBackNum.get)))
+  }
+
 }
 
 case class RDDBoundFeatureRDD private[rdd] (

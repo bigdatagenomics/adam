@@ -20,7 +20,7 @@ package org.bdgenomics.adam.rdd
 import java.nio.file.Paths
 import htsjdk.samtools.ValidationStringency
 import org.apache.avro.generic.IndexedRecord
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{ FSDataOutputStream, FileSystem, Path }
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
@@ -28,6 +28,7 @@ import org.apache.spark.api.java.function.{ Function => JFunction, Function2 }
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ DataFrame, Dataset, SQLContext }
+import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -54,6 +55,7 @@ import scala.collection.JavaConversions._
 import scala.math.min
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
+import scala.util.Try
 
 private[rdd] class JavaSaveArgs(var outputPath: String,
                                 var blockSize: Int = 128 * 1024 * 1024,
@@ -2323,6 +2325,19 @@ trait GenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] extends Geno
         convFn.call(v, dsX)
       })
   }
+
+  /**
+   * Filters and replaces the underlying dataset based on overlap with any of a Seq of ReferenceRegions.
+   *
+   * @param querys ReferencesRegions to filter against
+   * @param optPartitionedLookBackNum Optional number of parquet position bins to look back to find start of a
+   *                                  ReferenceRegion, defaults to 1
+   * @return Returns a new DatasetBoundGenomicRDD with ReferenceRegions filter applied.
+   */
+  def filterDatasetByOverlappingRegions(querys: Iterable[ReferenceRegion],
+                                        optPartitionedLookBackNum: Option[Int] = Some(1)): V = {
+    filterByOverlappingRegions(querys)
+  }
 }
 
 trait GenomicRDDWithLineage[T, U <: GenomicRDDWithLineage[T, U]] extends GenomicRDD[T, U] {
@@ -2530,6 +2545,23 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
     saveSequences(filePath)
   }
 
+  protected def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion], partitionSize: Int = 1000000, partitionedLookBackNum: Int = 1): String = {
+
+    //test if this dataset is bound to Partitioned Parquet having field positionBin
+    if (Try(dataset("positionBin")).isSuccess) {
+      regions.map(r => "(contigName=" + "\'" + r.referenceName +
+        "\' and positionBin >= \'" + ((scala.math.floor(r.start / partitionSize).toInt) - partitionedLookBackNum) +
+        "\' and positionBin < \'" + (scala.math.floor(r.end / partitionSize).toInt + 1) +
+        "\' and (end > " + r.start + " and start < " + r.end + "))")
+        .mkString(" or ")
+    } else { // if no positionBin field is found then construct query without bin optimization
+      regions.map(r => "(contigName=" + "\'" + r.referenceName +
+        "\' and (end > " + r.start + " and start < " + r.end + "))")
+        .mkString(" or ")
+    }
+
+  }
+
   /**
    * Saves RDD as a directory of Parquet files.
    *
@@ -2605,4 +2637,41 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
   def saveAsParquet(filePath: java.lang.String) {
     saveAsParquet(new JavaSaveArgs(filePath))
   }
+
+  /**
+   * Saves this RDD to disk in range binned partitioned Parquet + Avro format
+   *
+   * @param filePath Path to save the file at.
+   */
+  private def writePartitionedParquetFlag(filePath: String, partitionSize: Int): Unit = {
+    val path = new Path(filePath, "_isPartitionedByStartPos")
+    val fs: FileSystem = path.getFileSystem(rdd.context.hadoopConfiguration)
+    val f = fs.create(path)
+    f.writeInt(partitionSize)
+    f.close()
+  }
+
+  /**
+   *  Saves this RDD to disk in range binned partitioned Parquet + Avro format
+   *
+   * @param filePath Path to save the file at.
+   * @param compressCodec Name of the compression codec to use.
+   * @param partitionSize size of partitions used when writing parquet, in base pairs.  Defaults to 1000000.
+   */
+  def saveAsPartitionedParquet(filePath: String,
+                               compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                               partitionSize: Int = 1000000) {
+    log.warn("Saving directly as Hive-partitioned Parquet from SQL. " +
+      "Options other than compression codec are ignored.")
+    val df = toDF()
+    df.withColumn("positionBin", floor(df("start") / partitionSize))
+      .write
+      .partitionBy("contigName", "positionBin")
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    writePartitionedParquetFlag(filePath, partitionSize)
+    saveMetadata(filePath)
+  }
+
 }
