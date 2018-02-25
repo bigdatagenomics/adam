@@ -68,6 +68,12 @@ class TransformGenotypesArgs extends Args4jBase with ADAMSaveAnyArgs with Parque
   @Args4jOption(required = false, name = "-stringency", usage = "Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults to STRICT.")
   var stringency: String = "STRICT"
 
+  @Args4jOption(required = false, name = "-partition_by_start_pos", usage = "Save the data partitioned by genomic range bins based on start pos using Hive-style partitioning.")
+  var partitionByStartPos: Boolean = false
+
+  @Args4jOption(required = false, name = "-partition_bin_size", usage = "Partition bin size used in Hive-style partitioning. Defaults to 1Mbp (1,000,000) base pairs).")
+  var partitionedBinSize = 1000000
+
   // must be defined due to ADAMSaveAnyArgs, but unused here
   var sortFastqOutput: Boolean = false
 }
@@ -135,7 +141,12 @@ class TransformGenotypes(val args: TransformGenotypesArgs)
     if (args.outputPath.endsWith(".vcf")) {
       maybeSort(maybeCoalesce(genotypes.toVariantContexts)).saveAsVcf(args)
     } else {
-      maybeSort(maybeCoalesce(genotypes)).saveAsParquet(args)
+      if (args.partitionByStartPos) {
+        maybeSort(maybeCoalesce(genotypes)).saveAsPartitionedParquet(args.outputPath, partitionSize = args.partitionedBinSize)
+      } else {
+        maybeSort(maybeCoalesce(genotypes)).saveAsParquet(args)
+      }
+
     }
   }
 }

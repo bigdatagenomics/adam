@@ -237,7 +237,10 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
   dataset: Dataset[AlignmentRecordProduct],
   sequences: SequenceDictionary,
   recordGroups: RecordGroupDictionary,
-  @transient val processingSteps: Seq[ProcessingStep]) extends AlignmentRecordRDD
+  @transient val processingSteps: Seq[ProcessingStep],
+  override val isPartitioned: Boolean = true,
+  override val optPartitionBinSize: Option[Int] = Some(1000000),
+  override val optLookbackPartitions: Option[Int] = Some(1)) extends AlignmentRecordRDD
     with DatasetBoundGenomicDataset[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)

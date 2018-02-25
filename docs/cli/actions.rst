@@ -38,9 +38,11 @@ tool takes two required arguments:
 2. ``OUTPUT``: The path to save the transformed reads to. Supports any
    of ADAM's read output formats.
 
-Beyond the `default options <#default-args>`__ and the `legacy output
-options <#legacy-output>`__, ``transformAlignments`` supports a vast
-range of options. These options fall into several general categories:
+Beyond the `default options <#default-args>`__, the `legacy output
+options <#legacy-output>`__, and the
+`partitioned output options <#partitioned-output>`__,
+``transformAlignments`` supports a vast range of options. These options
+fall into several general categories:
 
 -  General options:
 
@@ -216,8 +218,9 @@ arguments:
 2. ``OUTPUT``: The path to save the transformed genotypes to. Supports
    any of ADAM's genotype output formats.
 
-Beyond the `default options <#default-args>`__ and the `legacy output
-options <#legacy-output>`__, ``transformGenotypes``
+Beyond the `default options <#default-args>`__, the `legacy output
+options <#legacy-output>`__, and the
+`partitioned output options <#partitioned-output>`__, ``transformGenotypes``
 has additional arguments:
 
 -  ``-coalesce``: Sets the number of partitions to coalesce the output

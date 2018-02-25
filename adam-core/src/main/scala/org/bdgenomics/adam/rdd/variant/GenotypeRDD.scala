@@ -149,7 +149,10 @@ case class DatasetBoundGenotypeRDD private[rdd] (
   dataset: Dataset[GenotypeProduct],
   sequences: SequenceDictionary,
   @transient samples: Seq[Sample],
-  @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends GenotypeRDD
+  @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
+  override val isPartitioned: Boolean = true,
+  override val optPartitionBinSize: Option[Int] = Some(1000000),
+  override val optLookbackPartitions: Option[Int] = Some(1)) extends GenotypeRDD
     with DatasetBoundGenomicDataset[Genotype, GenotypeProduct, GenotypeRDD] {
 
   protected lazy val optPartitionMap = None
