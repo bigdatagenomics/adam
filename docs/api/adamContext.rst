@@ -61,6 +61,7 @@ With an ``ADAMContext``, you can load:
    -  Selected regions from an indexed BAM/CRAM using ``loadIndexedBam`` (Scala, Java, and Python)
    -  From FASTQ using ``loadFastq``, ``loadPairedFastq``, and ``loadUnpairedFastq`` (Scala only)
    -  From Parquet using ``loadParquetAlignments`` (Scala only)
+   -  From partitioned Parquet using ``loadPartitionedParquetAlignments`` (Scala only)
    -  The ``loadAlignments`` method will load from any of the above formats, and will autodetect the
       underlying format (Scala, Java, Python, and R, also supports loading reads from FASTA)
 
@@ -77,11 +78,13 @@ With an ``ADAMContext``, you can load:
 -  Genotypes as a ``GenotypeRDD``:
 
    -  From Parquet using ``loadParquetGenotypes`` (Scala only)
+   -  From partitioned Parquet using ``loadPartitionedParquetGenotypes`` (Scala only)
    -  From either Parquet or VCF/BCF1 using ``loadGenotypes`` (Scala, Java, Python, and R)
 
 -  Variants as a ``VariantRDD``:
 
    -  From Parquet using ``loadParquetVariants`` (Scala only)
+   -  From partitioned Parquet using ``loadPartitionedParquetVariants`` (Scala only)
    -  From either Parquet or VCF/BCF1 using ``loadVariants`` (Scala, Java, Python, and R)
 
 -  Genomic features as a ``FeatureRDD``:
@@ -92,12 +95,14 @@ With an ``ADAMContext``, you can load:
    -  From NarrowPeak using ``loadNarrowPeak`` (Scala only)
    -  From IntervalList using ``loadIntervalList`` (Scala only)
    -  From Parquet using ``loadParquetFeatures`` (Scala only)
+   -  From partitioned Parquet using ``loadPartitionedParquetFeatures`` (Scala only)
    -  Autodetected from any of the above using ``loadFeatures`` (Scala, Java, Python, and R)
 
 -  Fragmented contig sequence as a ``NucleotideContigFragmentRDD``:
 
    -  From FASTA with ``loadFasta`` (Scala only)
    -  From Parquet with ``loadParquetContigFragments`` (Scala only)
+   -  From partitioned Parquet with ``loadPartitionedParquetContigFragments`` (Scala only)
    -  Autodetected from either of the above using ``loadSequences`` (Scala, Java, Python, and R)
 
 -  Coverage data as a ``CoverageRDD``:

@@ -28,7 +28,7 @@ import htsjdk.variant.vcf.{
   VCFHeaderLineType
 }
 import org.apache.avro.generic.IndexedRecord
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{ FSDataOutputStream, FileSystem, Path }
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.java.JavaRDD
@@ -36,6 +36,7 @@ import org.apache.spark.api.java.function.{ Function => JFunction, Function2 }
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ DataFrame, Dataset, SQLContext }
+import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.models.{
@@ -62,6 +63,7 @@ import scala.collection.JavaConversions._
 import scala.math.min
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
+import scala.util.Try
 
 private[rdd] class JavaSaveArgs(var outputPath: String,
                                 var blockSize: Int = 128 * 1024 * 1024,
@@ -2204,6 +2206,35 @@ trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] 
     transformDataset(_.unpersist())
   }
 
+  val isPartitioned: Boolean
+  val optPartitionBinSize: Option[Int]
+  val optLookbackPartitions: Option[Int]
+
+  private def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion]): String = {
+
+    if (Try(dataset("positionBin")).isSuccess) {
+      regions.map(r =>
+        s"(contigName=\'${r.referenceName}\' and positionBin >= " +
+          s"\'${(scala.math.floor(r.start / optPartitionBinSize.get).toInt) - optLookbackPartitions.get}\'" +
+          s" and positionBin < \'${(scala.math.floor(r.end / optPartitionBinSize.get).toInt + 1)}\'" +
+          s" and (end > ${r.start} and start < ${r.end}))"
+      ).mkString(" or ")
+    } else { // if no positionBin field is found then construct query without bin optimization
+      regions.map(r =>
+        s"(contigName=\'${r.referenceName} \' " +
+          s"and (end > ${r.start} and start < ${r.end}))")
+        .mkString(" or ")
+    }
+  }
+
+  override def filterByOverlappingRegions(querys: Iterable[ReferenceRegion]): V = {
+    if (isPartitioned) {
+      transformDataset((d: Dataset[U]) =>
+        d.filter(referenceRegionsToDatasetQueryString(querys)))
+    } else {
+      super[GenomicDataset].filterByOverlappingRegions(querys)
+    }
+  }
 }
 
 /**
@@ -2875,4 +2906,43 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
   def saveAsParquet(filePath: java.lang.String) {
     saveAsParquet(new JavaSaveArgs(filePath))
   }
+
+  /**
+   * Save partition size into the partitioned Parquet flag file.
+   *
+   * @param filePath Path to save the file at.
+   * @param partitionSize Partition bin size, in base pairs, used in Hive-style partitioning.
+   *
+   */
+  private def writePartitionedParquetFlag(filePath: String, partitionSize: Int): Unit = {
+    val path = new Path(filePath, "_partitionedByStartPos")
+    val fs: FileSystem = path.getFileSystem(rdd.context.hadoopConfiguration)
+    val f = fs.create(path)
+    f.writeInt(partitionSize)
+    f.close()
+  }
+
+  /**
+   *  Saves this RDD to disk in range binned partitioned Parquet + Avro format
+   *
+   * @param filePath Path to save the file at.
+   * @param compressCodec Name of the compression codec to use.
+   * @param partitionSize size of partitions used when writing parquet, in base pairs.  Defaults to 1000000.
+   */
+  def saveAsPartitionedParquet(filePath: String,
+                               compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
+                               partitionSize: Int = 1000000) {
+    log.warn("Saving directly as Hive-partitioned Parquet from SQL. " +
+      "Options other than compression codec are ignored.")
+    val df = toDF()
+    df.withColumn("positionBin", floor(df("start") / partitionSize))
+      .write
+      .partitionBy("contigName", "positionBin")
+      .format("parquet")
+      .option("spark.sql.parquet.compression.codec", compressCodec.toString.toLowerCase())
+      .save(filePath)
+    writePartitionedParquetFlag(filePath, partitionSize)
+    saveMetadata(filePath)
+  }
+
 }

@@ -136,7 +136,10 @@ case class ParquetUnboundVariantRDD private[rdd] (
 case class DatasetBoundVariantRDD private[rdd] (
   dataset: Dataset[VariantProduct],
   sequences: SequenceDictionary,
-  @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines) extends VariantRDD
+  @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
+  override val isPartitioned: Boolean = true,
+  override val optPartitionBinSize: Option[Int] = Some(1000000),
+  override val optLookbackPartitions: Option[Int] = Some(1)) extends VariantRDD
     with DatasetBoundGenomicDataset[Variant, VariantProduct, VariantRDD] {
 
   protected lazy val optPartitionMap = None

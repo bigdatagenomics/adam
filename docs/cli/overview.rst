@@ -92,3 +92,12 @@ level. This is a three level scale:
    to the log.
 -  ``SILENT``: If validation fails, ignore the data silently.
 
+Partitioned output
+------------------
+
+Various commands in ADAM support saving partitioned Parquet output. These
+commands take the following parameters, which control the output:
+
+-  ``-partition_by_start_pos``: If true, enables saving a partitioned dataset.
+-  ``-partition_bin_size``: The size of each partition bin in base pairs.
+   Defaults to 1Mbp (1,000,000 base pairs).
