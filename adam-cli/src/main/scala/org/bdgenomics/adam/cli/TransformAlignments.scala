@@ -131,6 +131,8 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var storageLevel: String = "MEMORY_ONLY"
   @Args4jOption(required = false, name = "-disable_pg", usage = "Disable writing a new @PG line.")
   var disableProcessingStep = false
+  @Args4jOption(required = false, name = "-save_as_dataset", usage = "EXPERIMENTAL: Use the provided bin size in base pairs to save the data partitioned by genomic range bins using Hive-style partitioning.")
+  var partitionedBinSize = 0
 
   var command: String = null
 }
@@ -562,8 +564,15 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       mergedSd
     }
 
-    outputRdd.save(args,
-      isSorted = args.sortReads || args.sortLexicographically)
+    if (args.partitionedBinSize > 0) {
+      if (outputRdd.sequences.isEmpty) {
+        log.warn("This dataset is not aligned and therefore will not benefit from being saved as a partitioned dataset")
+      }
+      outputRdd.saveAsPartitionedParquet(args.outputPath, partitionSize = args.partitionedBinSize)
+    } else {
+      outputRdd.save(args,
+        isSorted = args.sortReads || args.sortLexicographically)
+    }
   }
 
   private def createKnownSnpsTable(sc: SparkContext): SnpTable = {

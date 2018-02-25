@@ -103,7 +103,10 @@ case class ParquetUnboundCoverageRDD private[rdd] (
  */
 case class DatasetBoundCoverageRDD private[rdd] (
   dataset: Dataset[Coverage],
-  sequences: SequenceDictionary) extends CoverageRDD
+  sequences: SequenceDictionary,
+  override val isPartitioned: Boolean = false,
+  override val optPartitionedBinSize: Option[Int] = None,
+  override val optQueryLookbackNum: Option[Int] = None) extends CoverageRDD
     with DatasetBoundGenomicDataset[Coverage, Coverage, CoverageRDD] {
 
   protected lazy val optPartitionMap = None
@@ -167,8 +170,8 @@ abstract class CoverageRDD extends GenomicDataset[Coverage, Coverage, CoverageRD
     val mergedSequences = iterableRdds.map(_.sequences).fold(sequences)(_ ++ _)
 
     if (iterableRdds.forall(rdd => rdd match {
-      case DatasetBoundCoverageRDD(_, _) => true
-      case _                             => false
+      case DatasetBoundCoverageRDD(_, _, _, _, _) => true
+      case _                                      => false
     })) {
       DatasetBoundCoverageRDD(iterableRdds.map(_.dataset)
         .fold(dataset)(_.union(_)), mergedSequences)
