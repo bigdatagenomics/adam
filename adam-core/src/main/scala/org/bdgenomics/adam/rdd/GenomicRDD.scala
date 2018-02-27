@@ -550,12 +550,13 @@ trait GenomicRDD[T, U <: GenomicRDD[T, U]] extends Logging {
     val pipedRdd = partitionedRdd.mapPartitions(iter => {
       if (iter.hasNext) {
 
-        // get files
-        // from SPARK-3311, SparkFiles doesn't work in local mode.
-        // so... we'll bypass that by checking if we're running in local mode.
-        // sigh!
         val locs = if (isLocal) {
-          files
+          files.map(f => {
+            // SparkFiles.getRootDirectory is set in local mode even if driverTmpDir is not
+            val root = Paths.get(SparkFiles.getRootDirectory()).toAbsolutePath.toString
+            val fileName = new Path(f).getName()
+            Paths.get(root, fileName).toString
+          })
         } else {
           files.map(f => {
             SparkFiles.get(new Path(f).getName())
