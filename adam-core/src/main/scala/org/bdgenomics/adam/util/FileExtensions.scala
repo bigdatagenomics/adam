@@ -20,7 +20,7 @@ package org.bdgenomics.adam.util
 /**
  * Match path names to file extensions.
  */
-private[adam] object FileExtensions {
+object FileExtensions {
 
   /**
    * @param pathName The path name to match.
