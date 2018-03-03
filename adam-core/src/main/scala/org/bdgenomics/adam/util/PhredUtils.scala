@@ -105,8 +105,9 @@ object PhredUtils extends Serializable {
    * @return Returns this probability as a Phred score. If the log value is 0.0,
    *   we clip the phred score to Int.MaxValue.
    */
-  def logProbabilityToPhred(p: Double): Int = if (p == 0.0) {
-    Int.MaxValue
+  def logProbabilityToPhred(p: Double): Int = if (p == 0.0 || p == -0.0) {
+    // doubles in log space underflow at the probability equivalent to Phred 3233
+    3233
   } else {
     round(M10_DIV_LOG10 * log(-expm1(p))).toInt
   }

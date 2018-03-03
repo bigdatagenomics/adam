@@ -29,9 +29,18 @@ class PhredUtilsSuite extends FunSuite {
 
   test("convert high phred score to log and back") {
     val logP = PhredUtils.phredToLogProbability(1000)
-    println(logP)
     val phred = PhredUtils.logProbabilityToPhred(logP)
-    println(phred)
     assert(phred === 1000)
+  }
+
+  test("convert overflowing phred score to log and back and clip") {
+    val logP = PhredUtils.phredToLogProbability(10000)
+    val phred = PhredUtils.logProbabilityToPhred(logP)
+    assert(phred === 3233)
+  }
+
+  test("convert negative zero log probability to phred and clip") {
+    val phred = PhredUtils.logProbabilityToPhred(-0.0)
+    assert(phred === 3233)
   }
 }
