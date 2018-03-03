@@ -2093,7 +2093,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       "Number=G Type=String")
 
     intercept[IllegalArgumentException] {
-      val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ gStringHeader, lenient, false)
+      val vc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ gStringHeader, ValidationStringency.STRICT, false)
         .convert(adamVc).orNull
     }
   }
@@ -2244,7 +2244,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
       "Number=G Type=String")
 
     intercept[IllegalArgumentException] {
-      val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ gStringHeader, lenient, false)
+      val adamVc = new VariantContextConverter(DefaultHeaderLines.allHeaderLines :+ gStringHeader, ValidationStringency.STRICT, false)
         .convert(vc)
     }
   }

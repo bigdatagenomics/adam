@@ -1439,46 +1439,46 @@ class VariantContextConverter(
   }
 
   private def lineToVariantContextExtractor(
-    headerLine: VCFInfoHeaderLine): ((HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]) = {
+    headerLine: VCFInfoHeaderLine): Option[(HtsjdkVariantContext, Int, Array[Int]) => Option[(String, String)]] = {
     val id = headerLine.getID
 
     if (headerLine.isFixedCount && headerLine.getCount == 0 && headerLine.getType == VCFHeaderLineType.Flag) {
-      (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+      Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
         {
           variantContextFieldExtractor(vc, id, toBoolean).map(kv => (kv._1, kv._2.toString))
-        }
+        })
     } else if (headerLine.isFixedCount && headerLine.getCount == 1) {
       headerLine.getType match {
         // Flag header line types should be Number=0, but we'll allow Number=1
         case VCFHeaderLineType.Flag => {
-          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, toBoolean).map(kv => (kv._1, kv._2.toString))
-            }
+            })
         }
         case VCFHeaderLineType.Character => {
-          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, toChar).map(kv => (kv._1, kv._2.toString))
-            }
+            })
         }
         case VCFHeaderLineType.Float => {
-          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, toFloat).map(kv => (kv._1, kv._2.toString))
-            }
+            })
         }
         case VCFHeaderLineType.Integer => {
-          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, toInt).map(kv => (kv._1, kv._2.toString))
-            }
+            })
         }
         case VCFHeaderLineType.String => {
-          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
             {
               variantContextFieldExtractor(vc, id, asString).map(kv => (kv._1, kv._2.toString))
-            }
+            })
         }
       }
     } else {
@@ -1515,29 +1515,33 @@ class VariantContextConverter(
 
       (headerLine.isFixedCount, headerLine.getCountType) match {
         case (false, VCFHeaderLineCount.A) => {
-          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
             {
               fromArrayExtractor(vc, id, toFn, idx)
                 .map(kv => (kv._1, kv._2.toString))
-            }
+            })
         }
         case (false, VCFHeaderLineCount.R) => {
-          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
             {
               arrayFieldExtractor(vc, id, toFn, List(0, idx + 1))
                 .map(kv => (kv._1, kv._2.mkString(",")))
-            }
+            })
         }
         case (false, VCFHeaderLineCount.G) => {
-          throw new IllegalArgumentException("Number=G INFO lines are not supported in split-allelic model: %s".format(
-            headerLine))
+          if (stringency == ValidationStringency.LENIENT) {
+            log.warn("Ignoring INFO field with Number=G described in header row: %s".format(headerLine))
+            None
+          } else
+            throw new IllegalArgumentException("Number=G INFO lines are not supported in split-allelic model: %s".format(
+              headerLine))
         }
         case _ => {
-          (vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
+          Some((vc: HtsjdkVariantContext, idx: Int, indices: Array[Int]) =>
             {
               arrayFieldExtractor(vc, id, toFn, List.empty)
                 .map(kv => (kv._1, kv._2.mkString(",")))
-            }
+            })
         }
       }
     }
@@ -1644,8 +1648,7 @@ class VariantContextConverter(
           if (DefaultHeaderLines.infoHeaderLines
             .find(_.getID == key)
             .isEmpty) {
-
-            Some(lineToVariantContextExtractor(il))
+            lineToVariantContextExtractor(il)
           } else {
             None
           }
