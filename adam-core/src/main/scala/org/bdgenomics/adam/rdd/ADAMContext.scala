@@ -1366,9 +1366,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     // elaborate out the path; this returns FileStatuses
     val paths = if (fs.isDirectory(path)) {
       val paths = fs.listStatus(path)
-
-      if (paths == null || paths.isEmpty) {
-        s"Couldn't find any files matching ${path.toUri}"
+      if (paths.isEmpty) {
+        throw new FileNotFoundException(
+          s"Couldn't find any files matching ${path.toUri}, directory is empty"
+        )
       }
       fs.listStatus(path, filter)
     } else {

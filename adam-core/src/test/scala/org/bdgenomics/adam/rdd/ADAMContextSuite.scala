@@ -55,6 +55,15 @@ class ADAMContextSuite extends ADAMFunSuite {
     new ADAMContext(sc)
   }
 
+  sparkTest("load from an empty directory") {
+    val emptyDirectory = java.nio.file.Files.createTempDirectory("").toAbsolutePath.toString
+
+    val e = intercept[FileNotFoundException] {
+      sc.loadAlignments(emptyDirectory)
+    }
+    assert(e.getMessage.contains("directory is empty"))
+  }
+
   sparkTest("sc.loadParquet should not fail on unmapped reads") {
     val readsFilepath = testFile("unmapped.sam")
 
