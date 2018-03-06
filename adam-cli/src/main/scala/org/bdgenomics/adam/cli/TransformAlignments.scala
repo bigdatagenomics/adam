@@ -131,7 +131,9 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var storageLevel: String = "MEMORY_ONLY"
   @Args4jOption(required = false, name = "-disable_pg", usage = "Disable writing a new @PG line.")
   var disableProcessingStep = false
-  @Args4jOption(required = false, name = "-save_as_dataset", usage = "EXPERIMENTAL: Use the provided bin size in base pairs to save the data partitioned by genomic range bins using Hive-style partitioning.")
+  @Args4jOption(required = false, name = "-partition_by_start_pos", usage = "EXPERIMENTAL: Save the data partitioned by genomic range bins based on start pos using Hive-style partitioning.")
+  var partitionByStartPos: Boolean = false
+  @Args4jOption(required = false, name = "-partition_bin_size", usage = "EXPERIMENTAL: Partition bin sized used in Hive-style partitioning.")
   var partitionedBinSize = 0
 
   var command: String = null
@@ -564,7 +566,7 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       mergedSd
     }
 
-    if (args.partitionedBinSize > 0) {
+    if (args.partitionByStartPos) {
       if (outputRdd.sequences.isEmpty) {
         log.warn("This dataset is not aligned and therefore will not benefit from being saved as a partitioned dataset")
       }

@@ -105,8 +105,8 @@ case class DatasetBoundCoverageRDD private[rdd] (
   dataset: Dataset[Coverage],
   sequences: SequenceDictionary,
   override val isPartitioned: Boolean = false,
-  override val optPartitionedBinSize: Option[Int] = None,
-  override val optQueryLookbackNum: Option[Int] = None) extends CoverageRDD
+  override val optPartitionBinSize: Option[Int] = None,
+  override val optLookbackPartitions: Option[Int] = None) extends CoverageRDD
     with DatasetBoundGenomicDataset[Coverage, Coverage, CoverageRDD] {
 
   protected lazy val optPartitionMap = None

@@ -76,7 +76,7 @@ private[rdd] object GenomicRDD {
    * @see pipe
    *
    * @param cmd Command to replace references in.
-   * @param files List of paths to files.
+   * @param files List of paths to files.f
    * @return Returns a command, with file paths subbed in.
    */
   def processCommand(cmd: Seq[String],
@@ -2198,8 +2198,8 @@ trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] 
   }
 
   val isPartitioned: Boolean
-  val optPartitionedBinSize: Option[Int]
-  val optQueryLookbackNum: Option[Int]
+  val optPartitionBinSize: Option[Int]
+  val optLookbackPartitions: Option[Int]
 
   private def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion], partitionSize: Int = 1000000, partitionedLookBackNum: Int = 1): String = {
 
@@ -2220,7 +2220,7 @@ trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] 
   override def filterByOverlappingRegions(querys: Iterable[ReferenceRegion]): V = {
     if (isPartitioned) {
       transformDataset((d: Dataset[U]) =>
-        d.filter(referenceRegionsToDatasetQueryString(querys, optPartitionedBinSize.get, optQueryLookbackNum.get)))
+        d.filter(referenceRegionsToDatasetQueryString(querys, optPartitionBinSize.get, optLookbackPartitions.get)))
     } else {
       super[GenomicDataset].filterByOverlappingRegions(querys)
     }
@@ -2642,7 +2642,7 @@ abstract class AvroGenomicRDD[T <% IndexedRecord: Manifest, U <: Product, V <: A
    * @param filePath Path to save the file at.
    */
   private def writePartitionedParquetFlag(filePath: String, partitionSize: Int): Unit = {
-    val path = new Path(filePath, "_isPartitionedByStartPos")
+    val path = new Path(filePath, "_partitionedByStartPos")
     val fs: FileSystem = path.getFileSystem(rdd.context.hadoopConfiguration)
     val f = fs.create(path)
     f.writeInt(partitionSize)

@@ -137,8 +137,8 @@ case class DatasetBoundVariantRDD private[rdd] (
   sequences: SequenceDictionary,
   @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
   override val isPartitioned: Boolean = true,
-  override val optPartitionedBinSize: Option[Int] = Some(1000000),
-  override val optQueryLookbackNum: Option[Int] = Some(1)) extends VariantRDD
+  override val optPartitionBinSize: Option[Int] = Some(1000000),
+  override val optLookbackPartitions: Option[Int] = Some(1)) extends VariantRDD
     with DatasetBoundGenomicDataset[Variant, VariantProduct, VariantRDD] {
 
   protected lazy val optPartitionMap = None

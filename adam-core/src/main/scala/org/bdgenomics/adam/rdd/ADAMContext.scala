@@ -1877,38 +1877,26 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
-   * @param optQueryBinNumLookback Number of partitions to lookback to find beginning of an overlapping
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *         region when using the filterByOverlappingRegions function on the returned dataset.
    * @return Returns an AlignmentRecordRDD.
    */
   def loadPartitionedParquetAlignments(pathName: String,
                                        regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                       optQueryBinNumLookback: Option[Int] = Some(1)): AlignmentRecordRDD = {
+                                       optLookbackPartitions: Option[Int] = Some(1)): AlignmentRecordRDD = {
 
-    val partitionedBinSize = getPartitionedBinSize(pathName)
+    val partitionBinSize = getPartitionBinSize(pathName)
     val reads = loadParquetAlignments(pathName)
+    val alignmentsDatasetBound = DatasetBoundAlignmentRecordRDD(reads.dataset,
+      reads.sequences,
+      reads.recordGroups,
+      reads.processingSteps,
+      true,
+      Some(partitionBinSize),
+      optLookbackPartitions
+    )
 
-    val datasetBoundAlignmentRecordRDD = if (regions.nonEmpty) {
-      DatasetBoundAlignmentRecordRDD(reads.dataset,
-        reads.sequences,
-        reads.recordGroups,
-        reads.processingSteps,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback
-      ).filterByOverlappingRegions(regions)
-
-    } else {
-      DatasetBoundAlignmentRecordRDD(reads.dataset,
-        reads.sequences,
-        reads.recordGroups,
-        reads.processingSteps,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback)
-    }
-
-    datasetBoundAlignmentRecordRDD
+    if (regions.nonEmpty) alignmentsDatasetBound.filterByOverlappingRegions(regions) else alignmentsDatasetBound
   }
 
   /**
@@ -2300,38 +2288,26 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
-   * @param optQueryBinNumLookback Number of partitions to lookback to find beginning of an overlapping
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *         region when using the filterByOverlappingRegions function on the returned dataset.
    * @return Returns a GenotypeRDD.
    */
   def loadPartitionedParquetGenotypes(pathName: String,
                                       regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                      optQueryBinNumLookback: Option[Int] = Some(1)): GenotypeRDD = {
+                                      optLookbackPartitions: Option[Int] = Some(1)): GenotypeRDD = {
 
-    val partitionedBinSize = getPartitionedBinSize(pathName)
+    val partitionedBinSize = getPartitionBinSize(pathName)
     val genotypes = loadParquetGenotypes(pathName)
+    val genotypesDatasetBound = DatasetBoundGenotypeRDD(genotypes.dataset,
+      genotypes.sequences,
+      genotypes.samples,
+      genotypes.headerLines,
+      true,
+      Some(partitionedBinSize),
+      optLookbackPartitions
+    )
 
-    val datasetBoundGenotypeRDD = if (regions.nonEmpty) {
-      DatasetBoundGenotypeRDD(genotypes.dataset,
-        genotypes.sequences,
-        genotypes.samples,
-        genotypes.headerLines,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback
-      ).filterByOverlappingRegions(regions)
-
-    } else {
-      DatasetBoundGenotypeRDD(genotypes.dataset,
-        genotypes.sequences,
-        genotypes.samples,
-        genotypes.headerLines,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback)
-    }
-
-    datasetBoundGenotypeRDD
+    if (regions.nonEmpty) genotypesDatasetBound.filterByOverlappingRegions(regions) else genotypesDatasetBound
   }
 
   /**
@@ -2373,35 +2349,25 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
-   * @param optQueryBinNumLookback Number of partitions to lookback to find beginning of an overlapping
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *         region when using the filterByOverlappingRegions function on the returned dataset.
    * @return Returns a VariantRDD
    */
   def loadPartitionedParquetVariants(pathName: String,
                                      regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                     optQueryBinNumLookback: Option[Int] = Some(1)): VariantRDD = {
+                                     optLookbackPartitions: Option[Int] = Some(1)): VariantRDD = {
 
-    val partitionedBinSize = getPartitionedBinSize(pathName)
+    val partitionedBinSize = getPartitionBinSize(pathName)
     val variants = loadParquetVariants(pathName)
+    val variantsDatsetBound = DatasetBoundVariantRDD(variants.dataset,
+      variants.sequences,
+      variants.headerLines,
+      true,
+      Some(partitionedBinSize),
+      optLookbackPartitions
+    )
 
-    val datasetBoundVariantRDD = if (regions.nonEmpty) {
-      DatasetBoundVariantRDD(variants.dataset,
-        variants.sequences,
-        variants.headerLines,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback
-      ).filterByOverlappingRegions(regions)
-    } else {
-      DatasetBoundVariantRDD(variants.dataset,
-        variants.sequences,
-        variants.headerLines,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback)
-    }
-
-    datasetBoundVariantRDD
+    if (regions.nonEmpty) variantsDatsetBound.filterByOverlappingRegions(regions) else variantsDatsetBound
   }
 
   /**
@@ -2726,33 +2692,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
-   * @param optQueryBinNumLookback Number of partitions to lookback to find beginning of an overlapping
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *         region when using the filterByOverlappingRegions function on the returned dataset.
    * @return Returns a FeatureRDD.
    */
   def loadPartitionedParquetFeatures(pathName: String,
                                      regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                     optQueryBinNumLookback: Option[Int] = Some(1)): FeatureRDD = {
+                                     optLookbackPartitions: Option[Int] = Some(1)): FeatureRDD = {
 
-    val partitionedBinSize = getPartitionedBinSize(pathName)
+    val partitionedBinSize = getPartitionBinSize(pathName)
     val features = loadParquetFeatures(pathName)
+    val featureDatasetBound = DatasetBoundFeatureRDD(features.dataset,
+      features.sequences,
+      true,
+      Some(partitionedBinSize),
+      optLookbackPartitions
+    )
 
-    val datasetBoundFeatureRDD = if (regions.nonEmpty) {
-      DatasetBoundFeatureRDD(features.dataset,
-        features.sequences,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback)
-        .filterByOverlappingRegions(regions)
-    } else {
-      DatasetBoundFeatureRDD(features.dataset,
-        features.sequences,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback)
-    }
-
-    datasetBoundFeatureRDD
+    if (regions.nonEmpty) featureDatasetBound.filterByOverlappingRegions(regions) else featureDatasetBound
   }
 
   /**
@@ -2793,32 +2750,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
-   * @param optQueryBinNumLookback Number of partitions to lookback to find beginning of an overlapping
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *         region when using the filterByOverlappingRegions function on the returned dataset.
    * @return Returns a NucleotideContigFragmentRDD
    */
   def loadPartitionedParquetContigFragments(pathName: String,
                                             regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                            optQueryBinNumLookback: Option[Int] = Some(1)): NucleotideContigFragmentRDD = {
+                                            optLookbackPartitions: Option[Int] = Some(1)): NucleotideContigFragmentRDD = {
 
-    val partitionedBinSize = getPartitionedBinSize(pathName)
+    val partitionedBinSize = getPartitionBinSize(pathName)
     val contigs = loadParquetContigFragments(pathName)
+    val contigsDatasetBound = DatasetBoundNucleotideContigFragmentRDD(contigs.dataset,
+      contigs.sequences,
+      true,
+      Some(partitionedBinSize),
+      optLookbackPartitions
+    )
 
-    val datasetBoundNucleotideContigFragmentRDD = if (regions.nonEmpty) {
-      DatasetBoundNucleotideContigFragmentRDD(contigs.dataset,
-        contigs.sequences,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback
-      ).filterByOverlappingRegions(regions)
-    } else {
-      DatasetBoundNucleotideContigFragmentRDD(contigs.dataset,
-        contigs.sequences,
-        true,
-        Some(partitionedBinSize),
-        optQueryBinNumLookback)
-    }
-    datasetBoundNucleotideContigFragmentRDD
+    if (regions.nonEmpty) contigsDatasetBound.filterByOverlappingRegions(regions) else contigsDatasetBound
   }
 
   /**
@@ -3247,14 +3196,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * Return integer size of partitions if the specified path of Parquet + Avro files is partitioned.
    *
    * @param pathName Path in which to look for partitioned flag.
-   * @return Return integer genomic base pair size of partitions
+   * @return Return length of partitions in base pairs if file is partitioned
    *
    * If a glob is used, all directories within the blog must be partitioned, and must have been saved
    * using the same partitioned bin size.  Behavior is undefined if this requirement is not met.
    */
-  private def getPartitionedBinSize(pathName: String): Int = {
+  private def getPartitionBinSize(pathName: String): Int = {
 
-    val partitionSizes = getFsAndFilesWithFilter(pathName, new FileFilter("_isPartitionedByStartPos")).map(f => {
+    val partitionSizes = getFsAndFilesWithFilter(pathName, new FileFilter("_partitionedByStartPos")).map(f => {
       val is = f.getFileSystem(sc.hadoopConfiguration).open(f)
       val partitionSize = is.readInt
       is.close()
@@ -3269,13 +3218,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   /**
    * Return true if the specified path of Parquet + Avro files is partitioned.
    *
-   * @param filePath Path in which to look for partitioned flag.
+   * @param pathName Path in which to look for partitioned flag.
    * @return Return true if the specified path of Parquet + Avro files is partitioned.
    * Behavior is undefined if some paths in glob are contain paritioned flag and some do not.
    */
   def isPartitioned(pathName: String): Boolean = {
     try {
-      getPartitionedBinSize(pathName)
+      getPartitionBinSize(pathName)
       true
     } catch {
       case e: FileNotFoundException => false

@@ -278,8 +278,8 @@ case class DatasetBoundFeatureRDD private[rdd] (
   dataset: Dataset[FeatureProduct],
   sequences: SequenceDictionary,
   override val isPartitioned: Boolean = true,
-  override val optPartitionedBinSize: Option[Int] = Some(1000000),
-  override val optQueryLookbackNum: Option[Int] = Some(1)) extends FeatureRDD
+  override val optPartitionBinSize: Option[Int] = Some(1000000),
+  override val optLookbackPartitions: Option[Int] = Some(1)) extends FeatureRDD
     with DatasetBoundGenomicDataset[Feature, FeatureProduct, FeatureRDD] {
 
   lazy val rdd = dataset.rdd.map(_.toAvro)
