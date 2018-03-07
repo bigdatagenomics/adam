@@ -27,9 +27,18 @@ git push origin ${branch}
 
 # do spark 2, scala 2.11 release
 git checkout -b maint_spark2_2.11-${release} ${branch}
+
+cd adam-python
+virtualenv adam-release
+. adam-release/bin/activate
+make develop
+deactivate
+rm -rf adam-release
+cd ..
+
 git commit -a -m "Modifying pom.xml files for Spark 2, Scala 2.11 release."
 mvn --batch-mode \
-  -P python,r,distribution \
+  -P distribution \
   -Dresume=false \
   -Dtag=adam-parent-spark2_2.11-${release} \
   -DreleaseVersion=${release} \
