@@ -1868,6 +1868,39 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Load a path name with range binned partitioned Parquet + Avro format into an AlignmentRecordRDD.
+   *
+   * @note The sequence dictionary is read from an Avro file stored at
+   *   pathName/_seqdict.avro and the record group dictionary is read from an
+   *   Avro file stored at pathName/_rgdict.avro. These files are pure Avro,
+   *   not Parquet + Avro.
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
+   *         region when using the filterByOverlappingRegions function on the returned dataset.
+   * @return Returns an AlignmentRecordRDD.
+   */
+  def loadPartitionedParquetAlignments(pathName: String,
+                                       regions: Iterable[ReferenceRegion] = Iterable.empty,
+                                       optLookbackPartitions: Option[Int] = Some(1)): AlignmentRecordRDD = {
+
+    val partitionBinSize = getPartitionBinSize(pathName)
+    val reads = loadParquetAlignments(pathName)
+    val alignmentsDatasetBound = DatasetBoundAlignmentRecordRDD(reads.dataset,
+      reads.sequences,
+      reads.recordGroups,
+      reads.processingSteps,
+      true,
+      Some(partitionBinSize),
+      optLookbackPartitions
+    )
+
+    if (regions.nonEmpty) alignmentsDatasetBound.filterByOverlappingRegions(regions) else alignmentsDatasetBound
+  }
+
+  /**
    * Load unaligned alignment records from interleaved FASTQ into an AlignmentRecordRDD.
    *
    * In interleaved FASTQ, the two reads from a paired sequencing protocol are
@@ -2251,6 +2284,34 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Load a path name with range binned partitioned Parquet + Avro format into GenotypeRDD
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
+   *         region when using the filterByOverlappingRegions function on the returned dataset.
+   * @return Returns a GenotypeRDD.
+   */
+  def loadPartitionedParquetGenotypes(pathName: String,
+                                      regions: Iterable[ReferenceRegion] = Iterable.empty,
+                                      optLookbackPartitions: Option[Int] = Some(1)): GenotypeRDD = {
+
+    val partitionedBinSize = getPartitionBinSize(pathName)
+    val genotypes = loadParquetGenotypes(pathName)
+    val genotypesDatasetBound = DatasetBoundGenotypeRDD(genotypes.dataset,
+      genotypes.sequences,
+      genotypes.samples,
+      genotypes.headerLines,
+      true,
+      Some(partitionedBinSize),
+      optLookbackPartitions
+    )
+
+    if (regions.nonEmpty) genotypesDatasetBound.filterByOverlappingRegions(regions) else genotypesDatasetBound
+  }
+
+  /**
    * Load a path name in Parquet + Avro format into a VariantRDD.
    *
    * @param pathName The path name to load variants from.
@@ -2281,6 +2342,33 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
+  }
+
+  /**
+   * Load a path name with range binned partitioned Parquet + Avro format into an VariantRDD.
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
+   *         region when using the filterByOverlappingRegions function on the returned dataset.
+   * @return Returns a VariantRDD
+   */
+  def loadPartitionedParquetVariants(pathName: String,
+                                     regions: Iterable[ReferenceRegion] = Iterable.empty,
+                                     optLookbackPartitions: Option[Int] = Some(1)): VariantRDD = {
+
+    val partitionedBinSize = getPartitionBinSize(pathName)
+    val variants = loadParquetVariants(pathName)
+    val variantsDatsetBound = DatasetBoundVariantRDD(variants.dataset,
+      variants.sequences,
+      variants.headerLines,
+      true,
+      Some(partitionedBinSize),
+      optLookbackPartitions
+    )
+
+    if (regions.nonEmpty) variantsDatsetBound.filterByOverlappingRegions(regions) else variantsDatsetBound
   }
 
   /**
@@ -2600,6 +2688,32 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
+   * Load a path name with range binned partitioned Parquet + Avro format into a FeatureRDD.
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
+   *         region when using the filterByOverlappingRegions function on the returned dataset.
+   * @return Returns a FeatureRDD.
+   */
+  def loadPartitionedParquetFeatures(pathName: String,
+                                     regions: Iterable[ReferenceRegion] = Iterable.empty,
+                                     optLookbackPartitions: Option[Int] = Some(1)): FeatureRDD = {
+
+    val partitionedBinSize = getPartitionBinSize(pathName)
+    val features = loadParquetFeatures(pathName)
+    val featureDatasetBound = DatasetBoundFeatureRDD(features.dataset,
+      features.sequences,
+      true,
+      Some(partitionedBinSize),
+      optLookbackPartitions
+    )
+
+    if (regions.nonEmpty) featureDatasetBound.filterByOverlappingRegions(regions) else featureDatasetBound
+  }
+
+  /**
    * Load a path name in Parquet + Avro format into a NucleotideContigFragmentRDD.
    *
    * @param pathName The path name to load nucleotide contig fragments from.
@@ -2629,6 +2743,32 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
+  }
+
+  /**
+   * Load a path name with range binned partitioned Parquet + Avro format into a NucleotideContigFragmentRDD.
+   *
+   * @param pathName The path name to load alignment records from.
+   *   Globs/directories are supported.
+   * @param regions Optional list of genomic regions to load.
+   * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
+   *         region when using the filterByOverlappingRegions function on the returned dataset.
+   * @return Returns a NucleotideContigFragmentRDD
+   */
+  def loadPartitionedParquetContigFragments(pathName: String,
+                                            regions: Iterable[ReferenceRegion] = Iterable.empty,
+                                            optLookbackPartitions: Option[Int] = Some(1)): NucleotideContigFragmentRDD = {
+
+    val partitionedBinSize = getPartitionBinSize(pathName)
+    val contigs = loadParquetContigFragments(pathName)
+    val contigsDatasetBound = DatasetBoundNucleotideContigFragmentRDD(contigs.dataset,
+      contigs.sequences,
+      true,
+      Some(partitionedBinSize),
+      optLookbackPartitions
+    )
+
+    if (regions.nonEmpty) contigsDatasetBound.filterByOverlappingRegions(regions) else contigsDatasetBound
   }
 
   /**
@@ -3052,4 +3192,44 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       loadParquetFragments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
   }
+
+  /**
+   * Return integer size of partitions if the specified path of Parquet + Avro files is partitioned.
+   *
+   * @param pathName Path in which to look for partitioned flag.
+   * @return Return length of partitions in base pairs if file is partitioned
+   *
+   * If a glob is used, all directories within the blog must be partitioned, and must have been saved
+   * using the same partitioned bin size.  Behavior is undefined if this requirement is not met.
+   */
+  private def getPartitionBinSize(pathName: String): Int = {
+
+    val partitionSizes = getFsAndFilesWithFilter(pathName, new FileFilter("_partitionedByStartPos")).map(f => {
+      val is = f.getFileSystem(sc.hadoopConfiguration).open(f)
+      val partitionSize = is.readInt
+      is.close()
+      partitionSize
+    }).toSet
+
+    require(partitionSizes.nonEmpty, "Input Parquet files (%s) are not partitioned.".format(pathName))
+    require(partitionSizes.size == 1, "Found multiple partition sizes (%s).".format(partitionSizes.mkString(", ")))
+    partitionSizes.head
+  }
+
+  /**
+   * Return true if the specified path of Parquet + Avro files is partitioned.
+   *
+   * @param pathName Path in which to look for partitioned flag.
+   * @return Return true if the specified path of Parquet + Avro files is partitioned.
+   * Behavior is undefined if some paths in glob are contain paritioned flag and some do not.
+   */
+  def isPartitioned(pathName: String): Boolean = {
+    try {
+      getPartitionBinSize(pathName)
+      true
+    } catch {
+      case e: FileNotFoundException => false
+    }
+  }
+
 }
