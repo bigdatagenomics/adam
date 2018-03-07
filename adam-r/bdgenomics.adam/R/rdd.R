@@ -19,15 +19,6 @@ library(SparkR)
 
 setOldClass("jobj")
 
-#' A class that wraps an RDD of genomic data with helpful metadata.
-#'
-#' @rdname GenomicRDD
-#' @slot jrdd The Java RDD that this class wraps.
-#' 
-#' @export
-setClass("GenomicRDD",
-         slots = list(jrdd = "jobj"))
-
 #' A class that wraps a DataFrame of genomic data with helpful metadata.
 #'
 #' @rdname GenomicDataset
@@ -35,8 +26,7 @@ setClass("GenomicRDD",
 #' 
 #' @export
 setClass("GenomicDataset",
-         slots = list(jrdd = "jobj"),
-         contains = "GenomicRDD")
+         slots = list(jrdd = "jobj"))
 
 #' A class that wraps an RDD of genomic reads with helpful metadata.
 #'
@@ -47,6 +37,11 @@ setClass("GenomicDataset",
 setClass("AlignmentRecordRDD",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
+
+#' @importFrom methods new
+GenomicDataset <- function(jrdd) {
+    new("GenomicDataset", jrdd = jrdd)
+}
 
 #' @importFrom methods new
 AlignmentRecordRDD <- function(jrdd) {
@@ -150,7 +145,7 @@ VariantRDD <- function(jrdd) {
 #' @export
 setClass("VariantContextRDD",
          slots = list(jrdd = "jobj"),
-         contains = "GenomicRDD")
+         contains = "GenomicDataset")
 
 #' @importFrom methods new
 VariantContextRDD <- function(jrdd) {
@@ -190,7 +185,7 @@ VariantContextRDD <- function(jrdd) {
 #'
 #' @export
 setMethod("pipe",
-          signature(ardd = "GenomicRDD",
+          signature(ardd = "GenomicDataset",
                     tFormatter = "character",
                     xFormatter = "character",
                     convFn = "character"),
@@ -250,7 +245,7 @@ setMethod("pipe",
 #'
 #' @export
 setMethod("cache",
-          signature(ardd = "GenomicRDD"),
+          signature(ardd = "GenomicDataset"),
           function(ardd) {
             replaceRdd(ardd, sparkR.callJMethod(ardd@jrdd, "cache"))
           })
@@ -266,7 +261,7 @@ setMethod("cache",
 #'
 #' @export
 setMethod("persist",
-          signature(ardd = "GenomicRDD",
+          signature(ardd = "GenomicDataset",
                     sl = "character"),
           function(ardd, sl) {
               storageLevel <- sparkR.callJStatic("org.apache.spark.storage.StorageLevel", "fromString", sl)
@@ -283,7 +278,7 @@ setMethod("persist",
 #'
 #' @export
 setMethod("unpersist",
-          signature(ardd = "GenomicRDD"),
+          signature(ardd = "GenomicDataset"),
           function(ardd) {
               replaceRdd(ardd, sparkR.callJMethod(ardd@jrdd, "unpersist"))
           })
@@ -298,7 +293,7 @@ setMethod("unpersist",
 #'
 #' @export
 setMethod("sort",
-          signature(ardd = "GenomicRDD"),
+          signature(ardd = "GenomicDataset"),
           function(ardd) {
               replaceRdd(ardd, sparkR.callJMethod(ardd@jrdd, "sort"))
           })
@@ -313,12 +308,12 @@ setMethod("sort",
 #'
 #' @export
 setMethod("sortLexicographically",
-          signature(ardd = "GenomicRDD"),
+          signature(ardd = "GenomicDataset"),
           function(ardd) {
               replaceRdd(ardd, sparkR.callJMethod(ardd@jrdd, "sortLexicographically"))
           })
 
-#' Converts this GenomicRDD into a dataframe.
+#' Converts this GenomicDataset into a dataframe.
 #'
 #' @param ardd The RDD to convert into a dataframe.
 #' @return Returns a dataframe representing this RDD.
@@ -335,7 +330,7 @@ setMethod("toDF",
 
 #' @importFrom SparkR sparkR.callJStatic
 setMethod("wrapTransformation",
-          signature(ardd = "GenomicRDD",
+          signature(ardd = "GenomicDataset",
                     tFn = "function"),
           function(ardd, tFn) {
               df = toDF(ardd)
@@ -359,7 +354,7 @@ setMethod("wrapTransformation",
 #'
 #' @export
 setMethod("transform",
-          signature(ardd = "GenomicRDD",
+          signature(ardd = "GenomicDataset",
                     tFn = "function"),
           function(ardd, tFn) {
               dfFn = wrapTransformation(ardd, tFn)
@@ -369,7 +364,7 @@ setMethod("transform",
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "GenomicRDD",
+          signature(ardd = "GenomicDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               stop("This class does not implement conversion function inference.")
@@ -412,7 +407,7 @@ setMethod("destClassSuffix",
 #'
 #' @export
 setMethod("transmute",
-          signature(ardd = "GenomicRDD",
+          signature(ardd = "GenomicDataset",
                     tFn = "function",
                     destClass = "character"),
           function(ardd, tFn, destClass, convFn = NA) {
@@ -428,6 +423,337 @@ setMethod("transmute",
               
               new(destClass,
                   jrdd = sparkR.callJMethod(ardd@jrdd, "transmuteDataFrame", dfFn, convFnInst))
+          })
+
+#' Performs a broadcast inner join between this RDD and another RDD.
+#'
+#' In a broadcast join, the left RDD (this RDD) is collected to the driver,
+#' and broadcast to all the nodes in the cluster. The key equality function
+#' used for this join is the reference region overlap function. Since this
+#' is an inner join, all values who do not overlap a value from the other
+#' RDD are dropped.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("broadcastRegionJoin",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "broadcastRegionJoin",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a broadcast right outer join between this RDD and another RDD.
+#'
+#' In a broadcast join, the left RDD (this RDD) is collected to the driver,
+#' and broadcast to all the nodes in the cluster. The key equality function
+#' used for this join is the reference region overlap function. Since this
+#' is a right outer join, all values in the left RDD that do not overlap a
+#' value from the right RDD are dropped. If a value from the right RDD does
+#' not overlap any values in the left RDD, it will be paired with a `None`
+#' in the product of the join.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space, and all keys from the
+#'   right RDD that did not overlap a key in the left RDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("rightOuterBroadcastRegionJoin",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "rightOuterBroadcastRegionJoin",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a broadcast inner join between this RDD and another RDD.
+#'
+#' In a broadcast join, the left RDD (this RDD) is collected to the driver,
+#' and broadcast to all the nodes in the cluster. The key equality function
+#' used for this join is the reference region overlap function. Since this
+#' is an inner join, all values who do not overlap a value from the other
+#' RDD are dropped.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("broadcastRegionJoinAndGroupByRight",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "broadcastRegionJoinAndGroupByRight",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a broadcast right outer join between this RDD and another RDD.
+#'
+#' In a broadcast join, the left RDD (this RDD) is collected to the driver,
+#' and broadcast to all the nodes in the cluster. The key equality function
+#' used for this join is the reference region overlap function. Since this
+#' is a right outer join, all values in the left RDD that do not overlap a
+#' value from the right RDD are dropped. If a value from the right RDD does
+#' not overlap any values in the left RDD, it will be paired with a `None`
+#' in the product of the join.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space, and all keys from the
+#'   right RDD that did not overlap a key in the left RDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("rightOuterBroadcastRegionJoinAndGroupByRight",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "rightOuterBroadcastRegionJoinAndGroupByRight",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a sort-merge inner join between this RDD and another RDD.
+#'
+#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' partitions are then zipped, and we do a merge join on each partition.
+#' The key equality function used for this join is the reference region
+#' overlap function. Since this is an inner join, all values who do not
+#' overlap a value from the other RDD are dropped.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("shuffleRegionJoin",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "shuffleRegionJoin",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a sort-merge right outer join between this RDD and another RDD.
+#'
+#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' partitions are then zipped, and we do a merge join on each partition.
+#' The key equality function used for this join is the reference region
+#' overlap function. Since this is a right outer join, all values in the
+#' left RDD that do not overlap a value from the right RDD are dropped.
+#' If a value from the right RDD does not overlap any values in the left
+#' RDD, it will be paired with a `None` in the product of the join.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space, and all keys from the
+#'   right RDD that did not overlap a key in the left RDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("rightOuterShuffleRegionJoin",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "rightOuterShuffleRegionJoin",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a sort-merge left outer join between this RDD and another RDD.
+#'
+#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' partitions are then zipped, and we do a merge join on each partition.
+#' The key equality function used for this join is the reference region
+#' overlap function. Since this is a left outer join, all values in the
+#' right RDD that do not overlap a value from the left RDD are dropped.
+#' If a value from the left RDD does not overlap any values in the right
+#' RDD, it will be paired with a `None` in the product of the join.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space, and all keys from the
+#'    left RDD that did not overlap a key in the left RDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("leftOuterShuffleRegionJoin",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "leftOuterShuffleRegionJoin",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a sort-merge left outer join between this RDD and another RDD,
+#' followed by a groupBy on the left value.
+#'
+#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' partitions are then zipped, and we do a merge join on each partition.
+#' The key equality function used for this join is the reference region
+#' overlap function. Since this is a left outer join, all values in the
+#' right RDD that do not overlap a value from the left RDD are dropped.
+#' If a value from the left RDD does not overlap any values in the right
+#' RDD, it will be paired with an empty Iterable in the product of the join.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space, and all keys from the
+#'    left RDD that did not overlap a key in the left RDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("leftOuterShuffleRegionJoinAndGroupByLeft",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "leftOuterShuffleRegionJoinAndGroupByLeft",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a sort-merge full outer join between this RDD and another RDD.
+#'
+#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' partitions are then zipped, and we do a merge join on each partition.
+#' The key equality function used for this join is the reference region
+#' overlap function. Since this is a full outer join, if a value from either
+#' RDD does not overlap any values in the other RDD, it will be paired with
+#' a `None` in the product of the join.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space, and values that did not
+#'   overlap will be paired with a `None`.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("fullOuterShuffleRegionJoin",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "fullOuterShuffleRegionJoin",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a sort-merge right outer join between this RDD and another RDD,
+#' followed by a groupBy on the left value.
+#'
+#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' partitions are then zipped, and we do a merge join on each partition.
+#' The key equality function used for this join is the reference region
+#' overlap function. Since this is a right outer join, all values from the
+#' right RDD who did not overlap a value from the left RDD are placed into
+#' a length-1 Iterable with a `None` key.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space, and all values from the
+#'   right RDD that did not overlap an item in the left RDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("rightOuterShuffleRegionJoinAndGroupByLeft",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "rightOuterShuffleRegionJoinAndGroupByLeft",
+                                                genomicRdd@jrdd,
+                                                flankSize))
+          })
+
+#' Performs a sort-merge inner join between this RDD and another RDD,
+#' followed by a groupBy on the left value.
+#'
+#' In a sort-merge join, both RDDs are co-partitioned and sorted. The
+#' partitions are then zipped, and we do a merge join on each partition.
+#' The key equality function used for this join is the reference region
+#' overlap function. In the same operation, we group all values by the left
+#' item in the RDD.
+#'
+#' @param ardd The left RDD in the join.
+#' @param genomicRdd The right RDD in the join.
+#' @param flankSize Sets a flankSize for the distance between elements to be
+#'   joined. If set to 0, an overlap is required to join two elements.
+#' @return Returns a new genomic RDD containing all pairs of keys that
+#'   overlapped in the genomic coordinate space, grouped together by
+#'   the value they overlapped in the left RDD.
+#'
+#' @importFrom SparkR sparkR.callJMethod
+#'
+#' @export
+setMethod("shuffleRegionJoinAndGroupByLeft",
+          signature(ardd = "GenomicDataset",
+                    genomicRdd = "GenomicDataset"),
+          function(ardd, genomicRdd, flankSize=0) {
+              GenomicDataset(sparkR.callJMethod(ardd@jrdd,
+                                                "shuffleRegionJoinAndGroupByLeft",
+                                                genomicRdd@jrdd,
+                                                flankSize))
           })
 
 setMethod("replaceRdd",

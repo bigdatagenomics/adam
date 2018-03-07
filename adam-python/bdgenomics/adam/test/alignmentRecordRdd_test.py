@@ -236,3 +236,123 @@ class AlignmentRecordRDDTest(SparkTestCase):
         persistedReads.unpersist()
         cached = self.sc._jsc.getPersistentRDDs()
         self.assertEquals(cached.isEmpty(), True)
+
+
+    def test_broadcast_inner_join(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+        targetsPath = self.resourceFile("small.1.bed")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        targets = ac.loadFeatures(targetsPath)
+
+        jRdd = reads.broadcastRegionJoin(targets)
+
+        self.assertEquals(jRdd.toDF().count(), 5)
+
+
+    def test_broadcast_right_outer_join(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+        targetsPath = self.resourceFile("small.1.bed")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        targets = ac.loadFeatures(targetsPath)
+
+        jRdd = reads.rightOuterBroadcastRegionJoin(targets)
+
+        self.assertEquals(jRdd.toDF().count(), 6)
+
+
+    def test_shuffle_inner_join(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+        targetsPath = self.resourceFile("small.1.bed")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        targets = ac.loadFeatures(targetsPath)
+
+        jRdd = reads.shuffleRegionJoin(targets)
+
+        self.assertEquals(jRdd.toDF().count(), 5)
+
+
+    def test_shuffle_right_outer_join(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+        targetsPath = self.resourceFile("small.1.bed")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        targets = ac.loadFeatures(targetsPath)
+
+        jRdd = reads.rightOuterShuffleRegionJoin(targets)
+
+        self.assertEquals(jRdd.toDF().count(), 6)
+
+
+    def test_shuffle_left_outer_join(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+        targetsPath = self.resourceFile("small.1.bed")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        targets = ac.loadFeatures(targetsPath)
+
+        jRdd = reads.leftOuterShuffleRegionJoin(targets)
+
+        self.assertEquals(jRdd.toDF().count(), 20)
+
+
+    def test_shuffle_full_outer_join(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+        targetsPath = self.resourceFile("small.1.bed")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        targets = ac.loadFeatures(targetsPath)
+
+        jRdd = reads.fullOuterShuffleRegionJoin(targets)
+
+        self.assertEquals(jRdd.toDF().count(), 21)
+
+
+    def test_shuffle_inner_join_groupBy_left(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+        targetsPath = self.resourceFile("small.1.bed")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        targets = ac.loadFeatures(targetsPath)
+
+        jRdd = reads.shuffleRegionJoinAndGroupByLeft(targets)
+
+        self.assertEquals(jRdd.toDF().count(), 5)
+
+
+    def test_shuffle_right_outer_join_groupBy_left(self):
+
+        readsPath = self.resourceFile("small.1.sam")
+        targetsPath = self.resourceFile("small.1.bed")
+
+        ac = ADAMContext(self.ss)
+
+        reads = ac.loadAlignments(readsPath)
+        targets = ac.loadFeatures(targetsPath)
+
+        jRdd = reads.rightOuterShuffleRegionJoinAndGroupByLeft(targets)
+
+        self.assertEquals(jRdd.toDF().count(), 21)

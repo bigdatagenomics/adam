@@ -26,16 +26,16 @@ from bdgenomics.adam.stringency import LENIENT, _toJava
 
 _log = logging.getLogger(__name__)
 
-class GenomicRDD(object):
+class GenomicDataset(object):
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python GenomicRDD from a JVM GenomicRDD.
+        Constructs a Python GenomicDataset from a JVM GenomicDataset.
         Should not be called from user code; should only be called from
         implementing classes.
 
-        :param jvmRdd: Py4j handle to the underlying JVM GenomicRDD.
+        :param jvmRdd: Py4j handle to the underlying JVM GenomicDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
@@ -108,7 +108,7 @@ class GenomicRDD(object):
         single genomic region.
 
         :param query The region to query for.
-        :return Returns a new GenomicRDD containing only data that overlaps the
+        :return Returns a new GenomicDataset containing only data that overlaps the
            query region.
         """
 
@@ -124,7 +124,7 @@ class GenomicRDD(object):
 
         :param list<ReferenceRegion> querys: List of ReferenceRegion to
         filter on.
-        :return Returns a new GenomicRDD containing only data that overlaps the
+        :return Returns a new GenomicDataset containing only data that overlaps the
            query regions.
         """
 
@@ -242,7 +242,7 @@ class GenomicRDD(object):
         
         Pipes require the presence of an InFormatterCompanion and an OutFormatter
         as implicit values. The InFormatterCompanion should be a singleton whose
-        apply method builds an InFormatter given a specific type of GenomicRDD.
+        apply method builds an InFormatter given a specific type of GenomicDataset.
         The implicit InFormatterCompanion yields an InFormatter which is used to
         format the input to the pipe, and the implicit OutFormatter is used to
         parse the output from the pipe.
@@ -250,7 +250,7 @@ class GenomicRDD(object):
         :param list cmd: The command to run.
         :param str tFormatter: The name of the ADAM in-formatter class to use.
         :param str xFormatter: The name of the ADAM out-formatter class to use.
-        :param str convFn: The name of the ADAM GenomicRDD conversion class to
+        :param str convFn: The name of the ADAM GenomicDataset conversion class to
         use.
         :param list files: The files to copy locally onto all executors. Set to
         None (default) to omit.
@@ -284,20 +284,289 @@ class GenomicRDD(object):
                                                   xFormatterInst,
                                                   convFnInst))
 
-class VCFSupportingGenomicRDD(GenomicRDD):
+
+    def broadcastRegionJoin(self, genomicRdd, flankSize=0):
+        """
+        Performs a broadcast inner join between this RDD and another RDD.
+
+        In a broadcast join, the left RDD (this RDD) is collected to the driver,
+        and broadcast to all the nodes in the cluster. The key equality function
+        used for this join is the reference region overlap function. Since this
+        is an inner join, all values who do not overlap a value from the other
+        RDD are dropped.
+    
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space.
+        """
+
+        return GenomicDataset(self._jvmRdd.broadcastRegionJoin(genomicRdd._jvmRdd,
+                                                               flankSize),
+                              self.sc)
+
+
+    def rightOuterBroadcastRegionJoin(self, genomicRdd, flankSize=0):
+        """
+        Performs a broadcast right outer join between this RDD and another RDD.
+        
+        In a broadcast join, the left RDD (this RDD) is collected to the driver,
+        and broadcast to all the nodes in the cluster. The key equality function
+        used for this join is the reference region overlap function. Since this
+        is a right outer join, all values in the left RDD that do not overlap a
+        value from the right RDD are dropped. If a value from the right RDD does
+        not overlap any values in the left RDD, it will be paired with a `None`
+        in the product of the join.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space, and all keys from the
+          right RDD that did not overlap a key in the left RDD.
+        """
+
+        return GenomicDataset(self._jvmRdd.rightOuterBroadcastRegionJoin(genomicRdd._jvmRdd,
+                                                                         flankSize),
+                              self.sc)
+
+
+    def broadcastRegionJoinAndGroupByRight(self, genomicRdd, flankSize=0):
+        """
+        Performs a broadcast inner join between this RDD and another RDD.
+
+        In a broadcast join, the left RDD (this RDD) is collected to the driver,
+        and broadcast to all the nodes in the cluster. The key equality function
+        used for this join is the reference region overlap function. Since this
+        is an inner join, all values who do not overlap a value from the other
+        RDD are dropped.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space.
+        """
+
+        return GenomicDataset(self._jvmRdd.broadcastRegionJoinAndGroupByRight(genomicRdd._jvmRdd,
+                                                                              flankSize),
+                              self.sc)
+
+
+    def rightOuterBroadcastRegionJoinAndGroupByRight(self, genomicRdd, flankSize=0):
+        """
+        Performs a broadcast right outer join between this RDD and another RDD.
+        
+        In a broadcast join, the left side of the join (broadcastTree) is broadcast to
+        to all the nodes in the cluster. The key equality function
+        used for this join is the reference region overlap function. Since this
+        is a right outer join, all values in the left RDD that do not overlap a
+        value from the right RDD are dropped. If a value from the right RDD does
+        not overlap any values in the left RDD, it will be paired with a `None`
+        in the product of the join.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space, and all keys from the
+          right RDD that did not overlap a key in the left RDD.
+        """
+        
+        return GenomicDataset(self._jvmRdd.rightOuterBroadcastRegionJoinAndGroupByRight(genomicRdd._jvmRdd,
+                                                                                        flankSize),
+                              self.sc)
+
+
+    def shuffleRegionJoin(self, genomicRdd, flankSize=0):
+        """
+        Performs a sort-merge inner join between this RDD and another RDD.
+
+        In a sort-merge join, both RDDs are co-partitioned and sorted. The
+        partitions are then zipped, and we do a merge join on each partition.
+        The key equality function used for this join is the reference region
+        overlap function. Since this is an inner join, all values who do not
+        overlap a value from the other RDD are dropped.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space.
+        """
+
+        return GenomicDataset(self._jvmRdd.shuffleRegionJoin(genomicRdd._jvmRdd, flankSize),
+                              self.sc)
+
+
+    def rightOuterShuffleRegionJoin(self, genomicRdd, flankSize=0):
+        """
+        Performs a sort-merge right outer join between this RDD and another RDD.
+
+        In a sort-merge join, both RDDs are co-partitioned and sorted. The
+        partitions are then zipped, and we do a merge join on each partition.
+        The key equality function used for this join is the reference region
+        overlap function. Since this is a right outer join, all values in the
+        left RDD that do not overlap a value from the right RDD are dropped.
+        If a value from the right RDD does not overlap any values in the left
+        RDD, it will be paired with a `None` in the product of the join.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space, and all keys from the
+          right RDD that did not overlap a key in the left RDD.
+        """
+
+        return GenomicDataset(self._jvmRdd.rightOuterShuffleRegionJoin(genomicRdd._jvmRdd, flankSize),
+                              self.sc)
+
+
+    def leftOuterShuffleRegionJoin(self, genomicRdd, flankSize=0):
+        """
+        Performs a sort-merge left outer join between this RDD and another RDD.
+
+        In a sort-merge join, both RDDs are co-partitioned and sorted. The
+        partitions are then zipped, and we do a merge join on each partition.
+        The key equality function used for this join is the reference region
+        overlap function. Since this is a left outer join, all values in the
+        right RDD that do not overlap a value from the left RDD are dropped.
+        If a value from the left RDD does not overlap any values in the right
+        RDD, it will be paired with a `None` in the product of the join.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space, and all keys from the
+          left RDD that did not overlap a key in the left RDD.
+        """
+
+        return GenomicDataset(self._jvmRdd.leftOuterShuffleRegionJoin(genomicRdd._jvmRdd, flankSize),
+                              self.sc)
+
+
+    def leftOuterShuffleRegionJoinAndGroupByLeft(self, genomicRdd, flankSize=0):
+        """
+        Performs a sort-merge left outer join between this RDD and another RDD,
+        followed by a groupBy on the left value.
+
+        In a sort-merge join, both RDDs are co-partitioned and sorted. The
+        partitions are then zipped, and we do a merge join on each partition.
+        The key equality function used for this join is the reference region
+        overlap function. Since this is a left outer join, all values in the
+        right RDD that do not overlap a value from the left RDD are dropped.
+        If a value from the left RDD does not overlap any values in the right
+        RDD, it will be paired with an empty Iterable in the product of the join.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space, and all keys from the
+          left RDD that did not overlap a key in the left RDD.
+        """
+
+        return GenomicDataset(self._jvmRdd.leftOuterShuffleRegionJoinAndGroupByLeft(genomicRdd._jvmRdd, flankSize),
+                              self.sc)
+
+
+    def fullOuterShuffleRegionJoin(self, genomicRdd, flankSize=0):
+        """
+        Performs a sort-merge full outer join between this RDD and another RDD.
+
+        In a sort-merge join, both RDDs are co-partitioned and sorted. The
+        partitions are then zipped, and we do a merge join on each partition.
+        The key equality function used for this join is the reference region
+        overlap function. Since this is a full outer join, if a value from either
+        RDD does not overlap any values in the other RDD, it will be paired with
+        a `None` in the product of the join.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space, and values that did not
+          overlap will be paired with a `None`.
+        """
+
+        return GenomicDataset(self._jvmRdd.fullOuterShuffleRegionJoin(genomicRdd._jvmRdd, flankSize),
+                              self.sc)
+
+
+    def rightOuterShuffleRegionJoinAndGroupByLeft(self, genomicRdd, flankSize=0):
+        """
+        Performs a sort-merge right outer join between this RDD and another RDD,
+        followed by a groupBy on the left value, if not null.
+
+        In a sort-merge join, both RDDs are co-partitioned and sorted. The
+        partitions are then zipped, and we do a merge join on each partition.
+        The key equality function used for this join is the reference region
+        overlap function. In the same operation, we group all values by the left
+        item in the RDD. Since this is a right outer join, all values from the
+        right RDD who did not overlap a value from the left RDD are placed into
+        a length-1 Iterable with a `None` key.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space, grouped together by
+          the value they overlapped in the left RDD, and all values from the
+          right RDD that did not overlap an item in the left RDD.
+        """
+
+        return GenomicDataset(self._jvmRdd.rightOuterShuffleRegionJoinAndGroupByLeft(genomicRdd._jvmRdd, flankSize),
+                              self.sc)
+
+
+    def shuffleRegionJoinAndGroupByLeft(self, genomicRdd, flankSize=0):
+        """
+        Performs a sort-merge inner join between this RDD and another RDD,
+        followed by a groupBy on the left value.
+
+        In a sort-merge join, both RDDs are co-partitioned and sorted. The
+        partitions are then zipped, and we do a merge join on each partition.
+        The key equality function used for this join is the reference region
+        overlap function. In the same operation, we group all values by the left
+        item in the RDD.
+
+        :param GenomicDataset genomicRdd: The right RDD in the join.
+        :param int flankSize: Sets a flankSize for the distance between elements to be
+          joined. If set to 0, an overlap is required to join two elements.
+        :return: Returns a new genomic RDD containing all pairs of keys that
+          overlapped in the genomic coordinate space, grouped together by
+          the value they overlapped in the left RDD.
+        """
+
+        return GenomicDataset(self._jvmRdd.shuffleRegionJoinAndGroupByLeft(genomicRdd._jvmRdd, flankSize),
+                              self.sc)
+
+    
+    def toDF(self):
+        """
+        :return: Returns a dataframe representing this RDD.
+        """
+        
+        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
+    
+    
+class VCFSupportingGenomicDataset(GenomicDataset):
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python GenomicRDD from a JVM GenomicRDD.
+        Constructs a Python GenomicDataset from a JVM GenomicDataset.
         Should not be called from user code; should only be called from
         implementing classes.
 
-        :param jvmRdd: Py4j handle to the underlying JVM GenomicRDD.
+        :param jvmRdd: Py4j handle to the underlying JVM GenomicDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicRDD.__init__(self, jvmRdd, sc)
+        GenomicDataset.__init__(self, jvmRdd, sc)
 
 
     def _javaType(self, lineType):
@@ -543,24 +812,8 @@ class VCFSupportingGenomicRDD(GenomicRDD):
         """
 
         return self._replaceRdd(self._jvmRdd.addFilterHeaderLine(name, description))
-        
-    
-class GenomicDataset(GenomicRDD):
-
-
-    def __init__(self, jvmRdd, sc):
-
-        GenomicRDD.__init__(self, jvmRdd, sc)
 
         
-    def toDF(self):
-        """
-        :return: Returns a dataframe representing this RDD.
-        """
-        
-        return DataFrame(self._jvmRdd.toDF(), SQLContext(self.sc))
-
-
 class AlignmentRecordRDD(GenomicDataset):
 
 
@@ -1131,7 +1384,7 @@ class FragmentRDD(GenomicDataset):
         return "org.bdgenomics.adam.api.java.FragmentsTo%s" % self._destClassSuffix(destClass)
 
 
-class GenotypeRDD(GenomicDataset, VCFSupportingGenomicRDD):
+class GenotypeRDD(VCFSupportingGenomicDataset):
 
 
     def _replaceRdd(self, newRdd):
@@ -1259,7 +1512,7 @@ class NucleotideContigFragmentRDD(GenomicDataset):
         return "org.bdgenomics.adam.api.java.ContigsTo%s" % self._destClassSuffix(destClass)
 
 
-class VariantRDD(GenomicDataset, VCFSupportingGenomicRDD):
+class VariantRDD(VCFSupportingGenomicDataset):
 
 
     def _replaceRdd(self, newRdd):
@@ -1304,7 +1557,7 @@ class VariantRDD(GenomicDataset, VCFSupportingGenomicRDD):
         return "org.bdgenomics.adam.api.java.VariantsTo%s" % self._destClassSuffix(destClass)
 
     
-class VariantContextRDD(VCFSupportingGenomicRDD):
+class VariantContextRDD(VCFSupportingGenomicDataset):
 
 
     def _replaceRdd(self, newRdd):
@@ -1322,7 +1575,7 @@ class VariantContextRDD(VCFSupportingGenomicRDD):
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
-        GenomicRDD.__init__(self, jvmRdd, sc)
+        VCFSupportingGenomicDataset.__init__(self, jvmRdd, sc)
         
 
     def saveAsVcf(self,

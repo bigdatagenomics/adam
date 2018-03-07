@@ -63,16 +63,16 @@ setGeneric("loadVariants",
 
 #### RDD operations ####
 
-#' The GenomicRDD is the base class that all genomic datatypes extend from in ADAM.
+#' The GenomicDataset is the base class that all genomic datatypes extend from in ADAM.
 #' 
-#' @name GenomicRDD
+#' @name GenomicDataset
 NULL
 
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @param cmd The command to run.
 #' @param tFormatter The name of the ADAM in-formatter class to use.
 #' @param xFormatter The name of the ADAM out-formatter class to use.
-#' @param convFn The name of the ADAM GenomicRDD conversion class to
+#' @param convFn The name of the ADAM GenomicDataset conversion class to
 #'   use.
 #' @param ... additional argument(s).
 #' @return Returns a new RDD where the input from the original RDD has
@@ -81,7 +81,7 @@ NULL
 setGeneric("pipe",
            function(ardd, cmd, tFormatter, xFormatter, convFn, ...) { standardGeneric("pipe") })
 
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @export
 setGeneric("toDF",
            function(ardd) { standardGeneric("toDF") })
@@ -92,7 +92,7 @@ setGeneric("replaceRdd",
 setGeneric("wrapTransformation",
            function(ardd, tFn) { standardGeneric("wrapTransformation") })
 
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @export
 setGeneric("transform",
            function(ardd, tFn) { standardGeneric("transform") })
@@ -103,24 +103,24 @@ setGeneric("inferConversionFn",
 setGeneric("destClassSuffix",
            function(destClass) { standardGeneric("destClassSuffix") })
 
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @param tFn A function that transforms the underlying RDD as a DataFrame.
 #' @param destClass The destination class of this transmutation.
 #' @export
 setGeneric("transmute",
            function(ardd, tFn, destClass, ...) { standardGeneric("transmute") })
 
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @export
 setGeneric("save",
            function(ardd, filePath, ...) { standardGeneric("save") })
 
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @export
 setGeneric("sort",
            function(ardd) { standardGeneric("sort") })
 
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @export
 setGeneric("sortLexicographically",
            function(ardd) { standardGeneric("sortLexicographically") })
@@ -130,28 +130,129 @@ setGeneric("sortLexicographically",
 #' @param ardd The RDD to apply this to.
 #' @param filePath Path to save file to.
 #'
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #'
 #' @export
 setGeneric("saveAsParquet",
            function(ardd, filePath) { standardGeneric("saveAsParquet") })
 
 #### Caching operations ####
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @export
 setGeneric("cache",
-          function(ardd) { standardGeneric("cache") })
+           function(ardd) { standardGeneric("cache") })
 
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @export
 setGeneric("persist",
           function(ardd, sl) { standardGeneric("persist") })
 
-#' @rdname GenomicRDD
+#' @rdname GenomicDataset
 #' @param sl the StorageLevel to persist in.
 #' @export
 setGeneric("unpersist",
-          function(ardd, sl) { standardGeneric("unpersist") })
+           function(ardd, sl) { standardGeneric("unpersist") })
+
+#### Region joins ####
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("broadcastRegionJoin",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("broadcastRegionJoin")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("rightOuterBroadcastRegionJoin",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("rightOuterBroadcastRegionJoin")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("broadcastRegionJoinAndGroupByRight",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("broadcastRegionJoinAndGroupByRight")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("rightOuterBroadcastRegionJoinAndGroupByRight",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("rightOuterBroadcastRegionJoinAndGroupByRight")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("shuffleRegionJoin",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("shuffleRegionJoin")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("rightOuterShuffleRegionJoin",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("rightOuterShuffleRegionJoin")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("leftOuterShuffleRegionJoin",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("leftOuterShuffleRegionJoin")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("leftOuterShuffleRegionJoinAndGroupByLeft",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("leftOuterShuffleRegionJoinAndGroupByLeft")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("fullOuterShuffleRegionJoin",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("fullOuterShuffleRegionJoin")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("rightOuterShuffleRegionJoinAndGroupByLeft",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("rightOuterShuffleRegionJoinAndGroupByLeft")
+           })
+
+#' @rdname GenomicDataset
+#' @param genomicRdd The dataset to join against.
+#' @param ... additional argument(s).
+#' @export
+setGeneric("shuffleRegionJoinAndGroupByLeft",
+           function(ardd, genomicRdd, ...) { 
+               standardGeneric("shuffleRegionJoinAndGroupByLeft")
+           })
 
 #### AlignmentRecord operations ####
 
