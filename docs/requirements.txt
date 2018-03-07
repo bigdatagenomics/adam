@@ -1,1 +1,2 @@
 sphinxcontrib-fulltoc
+sphinx==1.5.6
