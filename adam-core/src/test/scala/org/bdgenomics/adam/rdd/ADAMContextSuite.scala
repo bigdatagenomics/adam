@@ -179,6 +179,13 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(last.getName === "gn|BPY2C;ccds|CCDS44030;ens|ENSG00000185894;vega|OTTHUMG00000045199")
   }
 
+  sparkTest("can read a small .vcf file with a validation issue") {
+    val path = testFile("invalid/small.INFO_flag.vcf")
+
+    val vcs = sc.loadVcf(path, stringency = ValidationStringency.LENIENT)
+    assert(vcs.rdd.count === 1)
+  }
+
   sparkTest("can read a small .vcf file") {
     val path = testFile("small.vcf")
 
