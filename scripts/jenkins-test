@@ -214,10 +214,16 @@ then
 	    
             # we can run the python build, now that we have a spark executable
 	    mvn -U \
-		-P python,r \
-		test \
+		-P python,r,distribution \
+		package \
 		-Dhadoop.version=${HADOOP_VERSION} \
 		-Dspark.version=${SPARK_VERSION}
+
+	    # make sure that the distribution package contains an egg
+	    # if no assembly jar is found, this will exit with code 1 and fail the build
+	    tar tzvf adam-distribution/target/adam-distribution*-bin.tar.gz | \
+		grep bdgenomics.adam | \
+		grep egg
 	fi
 	
 	# run pyadam test
