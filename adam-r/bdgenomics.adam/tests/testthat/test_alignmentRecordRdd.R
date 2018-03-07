@@ -126,3 +126,106 @@ test_that("reads can persist with storage level", {
     unpersist(reads)
 })
 
+test_that("broadcast inner join against targets", {
+
+    readsPath <- resourceFile("small.1.sam")
+    targetsPath <- resourceFile("small.1.bed")
+
+    reads <- loadAlignments(ac, readsPath)
+    targets <- loadFeatures(ac, targetsPath)
+
+    jRdd <- broadcastRegionJoin(reads, targets)
+
+    expect_equal(count(toDF(jRdd)), 5)
+})
+
+test_that("broadcast right outer join against targets", {
+
+    readsPath <- resourceFile("small.1.sam")
+    targetsPath <- resourceFile("small.1.bed")
+
+    reads <- loadAlignments(ac, readsPath)
+    targets <- loadFeatures(ac, targetsPath)
+
+    jRdd <- rightOuterBroadcastRegionJoin(reads, targets)
+
+    expect_equal(count(toDF(jRdd)), 6)
+})
+
+test_that("shuffle inner join against targets", {
+
+    readsPath <- resourceFile("small.1.sam")
+    targetsPath <- resourceFile("small.1.bed")
+
+    reads <- loadAlignments(ac, readsPath)
+    targets <- loadFeatures(ac, targetsPath)
+
+    jRdd <- shuffleRegionJoin(reads, targets)
+
+    expect_equal(count(toDF(jRdd)), 5)
+})
+
+test_that("shuffle right outer join against targets", {
+
+    readsPath <- resourceFile("small.1.sam")
+    targetsPath <- resourceFile("small.1.bed")
+
+    reads <- loadAlignments(ac, readsPath)
+    targets <- loadFeatures(ac, targetsPath)
+
+    jRdd <- rightOuterShuffleRegionJoin(reads, targets)
+
+    expect_equal(count(toDF(jRdd)), 6)
+})
+
+test_that("shuffle left outer join against targets", {
+
+    readsPath <- resourceFile("small.1.sam")
+    targetsPath <- resourceFile("small.1.bed")
+
+    reads <- loadAlignments(ac, readsPath)
+    targets <- loadFeatures(ac, targetsPath)
+
+    jRdd <- leftOuterShuffleRegionJoin(reads, targets)
+
+    expect_equal(count(toDF(jRdd)), 20)
+})
+
+test_that("shuffle full outer join against targets", {
+
+    readsPath <- resourceFile("small.1.sam")
+    targetsPath <- resourceFile("small.1.bed")
+
+    reads <- loadAlignments(ac, readsPath)
+    targets <- loadFeatures(ac, targetsPath)
+
+    jRdd <- fullOuterShuffleRegionJoin(reads, targets)
+
+    expect_equal(count(toDF(jRdd)), 21)
+})
+
+test_that("shuffle inner join and groupBy against targets", {
+
+    readsPath <- resourceFile("small.1.sam")
+    targetsPath <- resourceFile("small.1.bed")
+
+    reads <- loadAlignments(ac, readsPath)
+    targets <- loadFeatures(ac, targetsPath)
+
+    jRdd <- shuffleRegionJoinAndGroupByLeft(reads, targets)
+
+    expect_equal(count(toDF(jRdd)), 5)
+})
+
+test_that("shuffle right outer join and groupBy against targets", {
+
+    readsPath <- resourceFile("small.1.sam")
+    targetsPath <- resourceFile("small.1.bed")
+
+    reads <- loadAlignments(ac, readsPath)
+    targets <- loadFeatures(ac, targetsPath)
+
+    jRdd <- rightOuterShuffleRegionJoinAndGroupByLeft(reads, targets)
+
+    expect_equal(count(toDF(jRdd)), 21)
+})
