@@ -152,3 +152,96 @@ Similar to ``transform``/``transformDataset``, there exists a
 ``transmuteDataset`` function that enables transformations between
 ``GenomicRDD``\ s of different types.
 
+Using partitioned parquet to speed up range based queries  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+genomicRDDs of types ``AlignmentRecordRDD``, ``GenotypeRDD``, 
+``VariantRDD``, and ``NucleotideFragmentContigRDD`` can be written as Parquet 
+using a "Hive-style" hierarchical directory scheme based on contig and 
+genomic position.  This paritioning reduces the latency of genomic range based
+filters against these datasets, particularly important for interactive applications
+such as a genomic browser backed by an ADAM dataset.
+The genomicRDD function 
+``GenomicRDD.filterByOverlappingRegions(queryRegionsList)`` builds a Spark SQL 
+query which uses this paritioning scheme to reduce latencies more 
+the than 20x when repeatedly querying a datset with genomic range overlap filters.   
+On a high coverage alignemnt data we've seen this partitioning strategy improve 
+latency from 1-2 minutes to a 1-3 seconds for lookup of genomics ranges.
+
+**Saving partitioned parquet files to disk**  
+
+A ``genomicRDD`` can be written to disk as a 
+paritioned parquet dataset with the ``genomicRDD`` function 
+``saveAsParitionedParquet``.  The optional ``partitionSize`` parameter 
+defines the width in base pairs of the partitions within each contig.
+.. code::
+ data.saveAsPartitionedParquet("dataset1.adam", partitionSize = 2000000)
+A partitioned dataset can also be created from an input ADAM, BAM or VCF files using 
+the ADAM transform CLI functions.
+
+**Loading partitioned parquet files**
+
+An genomicRDD can be loaded from a paritioned parquet dataset using the ADAMContext functions 
+``loadPartitionedParquetDataset`` or by using the the --isBinned options in the CLI
+
+**Layout of Partitioned Parquet directory**
+
+An ADAM partitioned parquet dataset is written as a three level directory hierarchy.  
+The outermost directory is the name of the dataset and contains metadata files as is 
+found in unparitioned ADAM parquet datasets.   Wthin the outer dataset directory, 
+subdirectories are created with names based on the each of the genomic contigs found 
+in the dataset, for example a subdir will be named `contig=\22' for chromosome 22.  
+Within each contig directory, there are subdirectories named using a computed value 
+``positionBin``, for example a subdirectoy named `positionBin=22'.   Records from the 
+dataset are written into  parquet files within each postionBin directory, computed 
+based on startPos of the record using the calculation ``floor( start / partitionSize)``.  
+For example, when using the default ``partitionSize`` of 1,000,000 base pairs, an 
+alignment record with start position 20,100,000 on chromoome 22 would be found in a 
+parquet file at the path `mydataset.adam/contig=\22/positionbin=20".   The splitting 
+of data into one or more parquet fields in these leaf directories is automatic based on 
+parquet block size settings.
+
+.. code:: 
+
+  mySavedAdamDataset.adam
+  |
+  |-- _partitionedByStartPos
+  L-- contig=\1  
+      L-- positionBin=\0
+          |-- part-r-00001.parquet
+          +-- part-r-00002.parquet
+      L-- positionBin=\1
+          |-- part-r-00003.parquet
+          |-- part-r-00004.parquet 
+      L-- positionBin= ( N bins ...)              
+  L--  contig= ( N contigs ... )
+      |-- (N bins ... )
+  
+  
+The existence of the file ``_paritionedByStartPos`` can be tested with the public function ``ADAMContext.isPartitioned(path)`` and can be used to determine explicitly if an ADAM parquet dataset is partitioned using this scheme.  The parition size used when the dataset was written to disk as stored in ``_paritionedByStartPos`` and read as a property of the dataset by the loadPartitionedParquet functions.
+
+The Spark dataset API recognizes that the field `postionBin` is defined implicitly by the parquet files paritioning scheme, and makes 'postionBin' available as a field that can be queried through the Spark SQL API.  `positionBin` is used interally by the public function ``GenomicRDD.filterByOverlappinRegions``.  User code in ADAM-shell or a user applcations could similarly utilize the  `positionBin` field when creating SPAK SQL queries on a ``genomicRDD.dataset`` backed by partitioned parquet.
+
+
+**Re-using a previously loaded partitioned dataset:**
+
+When a partitioned dataset is first created within an ADAM session a partition discovery/initialization step is performed that can take several minutes for large datasets. 
+The original genomicdRDD object can then be re-used multiple times as the parent 
+of different filtration and processing transformations and actions, without incurring this initializiation cost again.
+Thus, re-use of a parent partitioned ``genomeRDD`` is key to realizing the latency advantages of 
+partitioned datasets described above.
+
+.. code:: scala
+
+    val mydata = loadPartitionedParquetAlingments("alignmets.adam")
+    val filteredCount1 = mydata.filtermyOverlappingRegions(regions1).dataset.count
+    val filteredCount2 = mydata.filtreByOverlappingRegions(regions2).dataset.count
+
+
+
+
+
+
+
+
+
+
