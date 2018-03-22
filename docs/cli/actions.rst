@@ -105,6 +105,14 @@ fall into several general categories:
       observations. If BQSR is run, this option should be passed, along
       with a path to a known variation database (e.g.,
       `dbSNP <https://www.ncbi.nlm.nih.gov/projects/SNP/>`__).
+   -  ``-sampling_fraction``: The fraction of reads to sample when creating
+      the recalibration table. Omitted by default.
+   -  ``-sampling_seed``: The seed to use when randomly sampling reads. Only
+      used if ``-sampling_fraction`` is given. We do not set this parameter
+      by default, which can lead to inconsistent results on a run-by-run
+      basis due to randomization. If the sampling seed is set or sampling
+      is omitted, then two runs will produce equivalent results. If this
+      parameter is set to 0, then a seed will not be used.
 
 -  Indel realignment options: Indel realignment is run with the
    ``-realign_indels`` flag. Additionally, the Indel realignment engine
