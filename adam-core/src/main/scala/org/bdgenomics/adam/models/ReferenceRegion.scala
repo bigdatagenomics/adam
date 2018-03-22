@@ -187,9 +187,15 @@ object ReferenceRegion {
    * @return The site where this genotype lives.
    */
   def apply(genotype: Genotype): ReferenceRegion = {
-    ReferenceRegion(genotype.getContigName,
-      genotype.getStart,
-      genotype.getEnd)
+    if (genotype.getStart != -1) {
+      ReferenceRegion(genotype.getContigName,
+        genotype.getStart,
+        genotype.getEnd)
+    } else {
+      ReferenceRegion(genotype.getContigName,
+        0L,
+        1L)
+    }
   }
 
   /**
@@ -199,7 +205,11 @@ object ReferenceRegion {
    * @return The site where this variant covers.
    */
   def apply(variant: Variant): ReferenceRegion = {
-    ReferenceRegion(variant.getContigName, variant.getStart, variant.getEnd)
+    if (variant.getStart != -1L) {
+      ReferenceRegion(variant.getContigName, variant.getStart, variant.getEnd)
+    } else {
+      ReferenceRegion(variant.getContigName, 0L, 1L)
+    }
   }
 
   /**

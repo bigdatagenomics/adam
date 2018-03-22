@@ -504,7 +504,7 @@ class ADAMContextSuite extends ADAMFunSuite {
     val path = new File(testFile("vcf_dir/1.vcf")).getParent()
 
     val variants = sc.loadVcf(path).toVariants
-    assert(variants.rdd.count === 681)
+    assert(variants.rdd.count === 682)
   }
 
   sparkTest("load gvcf which contains a multi-allelic row from a directory") {

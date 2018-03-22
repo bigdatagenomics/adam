@@ -73,4 +73,33 @@ class ReferencePositionSuite extends FunSuite {
     assert(refPos.referenceName === "chr10")
     assert(refPos.pos === 100L)
   }
+
+  test("create reference position from variant starting at vcf 0") {
+    val variant = Variant.newBuilder()
+      .setContigName("chr10")
+      .setStart(0L)
+      .build()
+
+    val refPos = ReferencePosition(variant)
+
+    assert(refPos.referenceName === "chr10")
+    assert(refPos.pos === 0L)
+  }
+
+  test("create reference position from genotype starting at vcf 0") {
+    val variant = Variant.newBuilder()
+      .setStart(0L)
+      .setContigName("chr10")
+      .build()
+    val genotype = Genotype.newBuilder()
+      .setVariant(variant)
+      .setStart(0L)
+      .setContigName("chr10")
+      .build()
+
+    val refPos = ReferencePosition(genotype)
+
+    assert(refPos.referenceName === "chr10")
+    assert(refPos.pos === 0L)
+  }
 }

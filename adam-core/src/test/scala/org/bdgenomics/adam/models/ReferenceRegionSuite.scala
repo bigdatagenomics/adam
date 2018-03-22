@@ -524,6 +524,27 @@ class ReferenceRegionSuite extends FunSuite {
     assert(rrV === rrG)
   }
 
+  test("make a reference region for a variant or genotype starting at VCF 0") {
+    val v = Variant.newBuilder()
+      .setContigName("chr")
+      .setStart(-1L)
+      .setEnd(0L)
+      .build()
+    val g = Genotype.newBuilder()
+      .setVariant(v)
+      .setContigName("chr")
+      .setStart(-1L)
+      .setEnd(0L)
+      .build()
+    val rrV = ReferenceRegion(v)
+    val rrG = ReferenceRegion(g)
+
+    assert(rrV.referenceName === "chr")
+    assert(rrV.start === 0L)
+    assert(rrV.end === 1L)
+    assert(rrV === rrG)
+  }
+
   test("uniformly pad a reference region") {
     val rr = ReferenceRegion("1", 2L, 3L)
     val padded = rr.pad(2)
