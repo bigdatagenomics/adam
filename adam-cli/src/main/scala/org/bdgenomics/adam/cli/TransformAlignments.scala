@@ -67,6 +67,10 @@ class TransformAlignmentsArgs extends Args4jBase with ADAMSaveAnyArgs with Parqu
   var recalibrateBaseQualities: Boolean = false
   @Args4jOption(required = false, name = "-min_acceptable_quality", usage = "Minimum acceptable quality for recalibrating a base in a read. Default is 5.")
   var minAcceptableQuality: Int = 5
+  @Args4jOption(required = false, name = "-sampling_fraction", usage = "Fraction of reads to sample during recalibration; omitted by default.")
+  var samplingFraction: Double = 0.0
+  @Args4jOption(required = false, name = "-sampling_seed", usage = "Seed to use when sampling during recalibration; omitted by default by setting to 0 (thus, 0 is an invalid seed).")
+  var samplingSeed: Long = 0L
   @Args4jOption(required = false, name = "-stringency", usage = "Stringency level for various checks; can be SILENT, LENIENT, or STRICT. Defaults to LENIENT")
   var stringency: String = "LENIENT"
   @Args4jOption(required = false, name = "-known_snps", usage = "Sites-only VCF giving location of known SNPs")
@@ -280,7 +284,9 @@ class TransformAlignments(protected val args: TransformAlignmentsArgs) extends B
       val bqsredRdd = rdd.recalibrateBaseQualities(
         broadcastedSnps,
         args.minAcceptableQuality,
-        optSl
+        optSl,
+        optSamplingFraction = Option(args.samplingFraction).filter(_ > 0.0),
+        optSamplingSeed = Option(args.samplingSeed).filter(_ != 0L)
       )
 
       bqsredRdd

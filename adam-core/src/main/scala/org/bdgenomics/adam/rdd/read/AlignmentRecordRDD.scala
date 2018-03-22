@@ -985,17 +985,24 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
    * @param minAcceptableQuality The minimum quality score to recalibrate.
    * @param optStorageLevel An optional storage level to set for the output
    *   of the first stage of BQSR. Defaults to StorageLevel.MEMORY_ONLY.
+   * @param optSamplingFraction An optional fraction of reads to sample when
+   *   generating the covariate table.
+   * @param optSamplingSeed An optional seed to provide if downsampling reads.
    * @return Returns an RDD of recalibrated reads.
    */
   def recalibrateBaseQualities(
     knownSnps: Broadcast[SnpTable],
     minAcceptableQuality: Int = 5,
-    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY)): AlignmentRecordRDD = BQSRInDriver.time {
+    optStorageLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
+    optSamplingFraction: Option[Double] = None,
+    optSamplingSeed: Option[Long] = None): AlignmentRecordRDD = BQSRInDriver.time {
     replaceRdd(BaseQualityRecalibration(rdd,
       knownSnps,
       recordGroups,
       minAcceptableQuality,
-      optStorageLevel))
+      optStorageLevel = optStorageLevel,
+      optSamplingFraction = optSamplingFraction,
+      optSamplingSeed = optSamplingSeed))
   }
 
   /**

@@ -31,6 +31,7 @@ import org.bdgenomics.adam.models.{
   ReferenceRegion,
   SequenceDictionary,
   SequenceRecord,
+  SnpTable,
   VariantContext
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -1636,5 +1637,20 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(cigars("5M2D15M"))
     assert(cigars("10M10D10M"))
     assert(cigars("29M10D31M"))
+  }
+
+  sparkTest("running base recalibration with downsampling doesn't drop reads") {
+    val readsFilepath = testFile("bqsr1.sam")
+    val snpsFilepath = testFile("bqsr1.vcf")
+
+    val rdd = sc.loadAlignments(readsFilepath)
+    val variants = sc.loadVariants(snpsFilepath)
+    val snps = sc.broadcast(SnpTable(variants))
+
+    val recalReadsNoSampling = rdd.recalibrateBaseQualities(snps)
+    val recalReadsWithSampling = rdd.recalibrateBaseQualities(snps,
+      optSamplingFraction = Some(0.1))
+
+    assert(recalReadsNoSampling.rdd.count === recalReadsWithSampling.rdd.count)
   }
 }

@@ -52,13 +52,18 @@ import scala.annotation.tailrec
  *   Defaults to '&' (Phred 5).
  * @param optStorageLevel An optional storage level to apply if caching the
  *   output of the first stage of BQSR.
+ * @param optSamplingFraction An optional fraction of reads to sample when
+ *   generating the covariate table.
+ * @param optSamplingSeed An optional seed to provide if downsampling reads.
  */
 private class BaseQualityRecalibration(
   val input: RDD[AlignmentRecord],
   val knownSnps: Broadcast[SnpTable],
   val recordGroups: RecordGroupDictionary,
   val minAcceptableAsciiPhred: Char = (5 + 33).toChar,
-  val optStorageLevel: Option[StorageLevel] = None)
+  val optStorageLevel: Option[StorageLevel] = None,
+  val optSamplingFraction: Option[Double] = None,
+  val optSamplingSeed: Option[Long] = None)
     extends Serializable with Logging {
 
   /**
@@ -85,7 +90,13 @@ private class BaseQualityRecalibration(
    * A table containing the error frequency observations for the given reads.
    */
   val observed: ObservationTable = {
-    val observations = dataset.flatMap(p => p._2).flatMap(cov => {
+    val maybeSampledDataset = optSamplingFraction.fold(dataset)(samplingFraction => {
+      optSamplingSeed.fold(dataset.sample(false, samplingFraction))(samplingSeed => {
+        dataset.sample(false, samplingFraction, seed = samplingSeed)
+      })
+    })
+
+    val observations = maybeSampledDataset.flatMap(p => p._2).flatMap(cov => {
       if (cov.shouldInclude) {
         Some((cov.toDefault, Observation(cov.isMismatch)))
       } else {
@@ -333,20 +344,31 @@ private[read] object BaseQualityRecalibration {
    * @param minAcceptableQuality The minimum quality score to attempt to
    *   recalibrate.
    * @param optStorageLevel An optional storage level to apply if caching the
-   *   output of the first stage of BQSR.
+   *   output of the first stage of BQSR
+   * @param optSamplingFraction An optional fraction of reads to sample when
+   *   generating the covariate table.
+   * @param optSamplingSeed An optional seed to provide if downsampling reads.
    */
   def apply(
     rdd: RDD[AlignmentRecord],
     knownSnps: Broadcast[SnpTable],
     recordGroups: RecordGroupDictionary,
     minAcceptableQuality: Int,
-    optStorageLevel: Option[StorageLevel]): RDD[AlignmentRecord] = {
+    optStorageLevel: Option[StorageLevel],
+    optSamplingFraction: Option[Double] = None,
+    optSamplingSeed: Option[Long] = None): RDD[AlignmentRecord] = {
     require(minAcceptableQuality >= 0 && minAcceptableQuality < 93,
       "MinAcceptableQuality (%d) must be positive and less than 93.")
+    optSamplingFraction.foreach(samplingFraction => {
+      require(samplingFraction > 0.0 && samplingFraction <= 1.0,
+        "Sampling fraction (%d) must be greater than 0.0 and less than or equal to 1.0.")
+    })
     new BaseQualityRecalibration(rdd,
       knownSnps,
       recordGroups,
       (minAcceptableQuality + 33).toChar,
-      optStorageLevel).result
+      optStorageLevel,
+      optSamplingFraction,
+      optSamplingSeed).result
   }
 }
