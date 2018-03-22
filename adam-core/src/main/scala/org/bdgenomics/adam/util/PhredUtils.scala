@@ -36,6 +36,9 @@ import scala.math.{
  */
 object PhredUtils extends Serializable {
 
+  // doubles in log space underflow at the probability equivalent to Phred 3233
+  val minValue = 3233
+
   private lazy val phredToErrorProbabilityCache: Array[Double] = {
     (0 until 256).map { p => pow(10.0, -p / 10.0) }.toArray
   }
@@ -106,8 +109,7 @@ object PhredUtils extends Serializable {
    *   we clip the phred score to Int.MaxValue.
    */
   def logProbabilityToPhred(p: Double): Int = if (p == 0.0 || p == -0.0) {
-    // doubles in log space underflow at the probability equivalent to Phred 3233
-    3233
+    minValue
   } else {
     round(M10_DIV_LOG10 * log(-expm1(p))).toInt
   }

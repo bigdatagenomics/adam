@@ -1074,7 +1074,7 @@ class VariantContextConverter(
     val copyNumber = gls.length - 1
     val elements = numPls(copyNumber)
 
-    val array = Array.fill(elements) { Int.MinValue }
+    val array = Array.fill(elements) { PhredUtils.minValue }
 
     (0 to copyNumber).foreach(idx => {
       array(idx) = PhredUtils.logProbabilityToPhred(gls.get(idx))
