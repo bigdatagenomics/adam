@@ -75,7 +75,12 @@ object ReferencePosition extends Serializable {
    * @return The reference position of this variant.
    */
   def apply(variant: Variant): ReferencePosition = {
-    new ReferencePosition(variant.getContigName, variant.getStart)
+    // see ADAM-1959, VCF 0 = telomere
+    if (variant.getStart != -1) {
+      new ReferencePosition(variant.getContigName, variant.getStart)
+    } else {
+      new ReferencePosition(variant.getContigName, 0L)
+    }
   }
 
   /**
@@ -98,7 +103,12 @@ object ReferencePosition extends Serializable {
     require(startSet.size == 1, "Genotype has multiple starts: %s, %s".format(
       startSet, genotype))
 
-    new ReferencePosition(contigNameSet.head, startSet.head)
+    // see ADAM-1959, VCF 0 = telomere
+    if (startSet.head != -1) {
+      new ReferencePosition(contigNameSet.head, startSet.head)
+    } else {
+      new ReferencePosition(contigNameSet.head, 0L)
+    }
   }
 
   /**
