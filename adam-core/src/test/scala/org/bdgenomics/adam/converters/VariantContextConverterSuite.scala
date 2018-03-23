@@ -349,7 +349,7 @@ class VariantContextConverterSuite extends ADAMFunSuite {
     assert(adamGT1.getGenotypeLikelihoods
       .map(d => d: scala.Double)
       .map(PhredUtils.logProbabilityToPhred)
-      .sameElements(List(59, 0, 3233)))
+      .sameElements(List(59, 0, 181)))
 
     assert(adamGT2.getAlleles.sameElements(List(GenotypeAllele.OTHER_ALT, GenotypeAllele.ALT)))
     assert(adamGT2.getAlternateReadDepth === 3)

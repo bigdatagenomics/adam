@@ -43,4 +43,21 @@ class PhredUtilsSuite extends FunSuite {
     val phred = PhredUtils.logProbabilityToPhred(-0.0)
     assert(phred === 3233)
   }
+
+  test("round trip log probabilities") {
+    def roundTrip(i: Int): Int = {
+      PhredUtils.logProbabilityToPhred(PhredUtils.phredToLogProbability(i))
+    }
+
+    (0 to 3228).foreach(i => {
+      assert(i === roundTrip(i))
+    })
+
+    // there is roundoff above 3228 due to floating point underflow
+    assert(3228 === roundTrip(3229))
+    assert(3230 === roundTrip(3230))
+    assert(3230 === roundTrip(3231))
+    assert(3233 === roundTrip(3232))
+    assert(3233 === roundTrip(3233))
+  }
 }
