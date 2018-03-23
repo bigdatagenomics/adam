@@ -4,6 +4,7 @@
 
 **Closed issues:**
 
+ - Phred values from 156–254 do not round trip properly between log space [\#1964](https://github.com/bigdatagenomics/adam/issues/1964)
  - Support VCF lines with positions at 0 [\#1959](https://github.com/bigdatagenomics/adam/issues/1959)
  - Don't initialize non-ref values to Int.MinValue [\#1957](https://github.com/bigdatagenomics/adam/issues/1957)
  - Support downsampling in recalibration [\#1955](https://github.com/bigdatagenomics/adam/issues/1955)
@@ -75,6 +76,7 @@
 
 **Merged and closed pull requests:**
 
+ - [ADAM-1964] Lower point where phred conversions are done using log code. [\#1965](https://github.com/bigdatagenomics/adam/pull/1965) ([fnothaft](https://github.com/fnothaft))
  - Add utility methods for adam-shell. [\#1958](https://github.com/bigdatagenomics/adam/pull/1958) ([heuermh](https://github.com/heuermh))
  - [ADAM-1955] Add support for downsampling during recalibration table generation [\#1963](https://github.com/bigdatagenomics/adam/pull/1963) ([fnothaft](https://github.com/fnothaft))
  - [ADAM-1957] Don't initialize missing likelihoods to MinValue. [\#1961](https://github.com/bigdatagenomics/adam/pull/1961) ([fnothaft](https://github.com/fnothaft))
