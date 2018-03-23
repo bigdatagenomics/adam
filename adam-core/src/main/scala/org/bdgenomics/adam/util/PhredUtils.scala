@@ -55,7 +55,7 @@ object PhredUtils extends Serializable {
    * @return The input phred score as a log success probability.
    */
   def phredToLogProbability(phred: Int): Double = {
-    if (phred < 255) {
+    if (phred < 156) {
       log(phredToSuccessProbability(phred)).toFloat
     } else {
       log1p(-exp(phred * MLOG10_DIV10))
