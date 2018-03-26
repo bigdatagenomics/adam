@@ -3295,8 +3295,8 @@ trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] 
     if (Try(dataset("positionBin")).isSuccess) {
       regions.map(r =>
         s"(contigName=\'${r.referenceName}\' and positionBin >= " +
-          s"\'${(scala.math.floor(r.start / optPartitionBinSize.get).toInt) - optLookbackPartitions.get}\'" +
-          s" and positionBin < \'${(scala.math.floor(r.end / optPartitionBinSize.get).toInt + 1)}\'" +
+          s"\'${(scala.math.floor(r.start / optPartitionBinSize.get).toLong) - optLookbackPartitions.get}\'" +
+          s" and positionBin < \'${(scala.math.floor(r.end / optPartitionBinSize.get).toLong + 1)}\'" +
           s" and (end > ${r.start} and start < ${r.end}))"
       ).mkString(" or ")
     } else { // if no positionBin field is found then construct query without bin optimization
