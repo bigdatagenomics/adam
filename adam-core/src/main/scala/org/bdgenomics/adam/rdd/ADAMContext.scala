@@ -1501,9 +1501,31 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  /**
+    * Returns an [[BamLoader]] what can call .loadAll, .loadRegion and .loadRegions
+    *         This give the same result as loadBam and loadIndexedBam only now the header is saved and is not parsed again at a next load.
+    * @see loadBam
+    * @see loadIndexedBam
+    * @param pathName The path name to load BAM/CRAM/SAM formatted alignment records from.
+    *   Globs/directories are supported.
+    * @param stringency The validation stringency to use when validating the
+    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
+    * @return Returns an [[BamLoader]] what can call .loadAll, .loadRegion and .loadRegions
+    *         This give the same result as loadBam and loadIndexedBam only now the header is saved and not reparsed at a next load.
+    */
   def bamLoader(pathName: String,
                 stringency: ValidationStringency = ValidationStringency.STRICT) = new BamLoader(pathName, stringency)
 
+  /**
+    * This has methods .loadAll, .loadRegion and .loadRegions
+    * This give the same result as loadBam and loadIndexedBam only now the header is saved and is not parsed again at a next load.
+    * @see loadBam
+    * @see loadIndexedBam
+    * @param pathName The path name to load BAM/CRAM/SAM formatted alignment records from.
+    *   Globs/directories are supported.
+    * @param stringency The validation stringency to use when validating the
+    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
+    */
   private class BamLoader(pathName: String,
                           stringency: ValidationStringency = ValidationStringency.STRICT) {
     private val path = new Path(pathName)
@@ -1545,6 +1567,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         (kv1._1 ++ kv2._1, kv1._2 ++ kv2._2, kv1._3 ++ kv2._3)
       })
 
+    /**
+      * @see loadBam
+      * @return
+      */
     def loadAll: AlignmentRecordRDD = {
       val job = HadoopUtil.newJob(sc)
 
@@ -1573,6 +1599,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         programs)
     }
 
+    /** This method checks the indexes if they exist */
     private def checkIndexes(): Unit = {
       // If pathName is a single file or *.bam, append .bai to find all bam indices.
       // Otherwise, pathName is a directory and the entire path must be searched
@@ -1596,8 +1623,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       }
     }
 
+    /**
+      * @see loadIndexedBam
+      * @param viewRegion The ReferenceRegion we are reading.
+      * @return
+      */
     def loadRegion(viewRegion: ReferenceRegion): AlignmentRecordRDD = loadRegions(List(viewRegion))
 
+    /**
+      * @see loadIndexedBam
+      * @param viewRegions The ReferenceRegion's we are reading.
+      * @return
+      */
     def loadRegions(viewRegions: Iterable[ReferenceRegion]): AlignmentRecordRDD = {
       checkIndexes
       val job = HadoopUtil.newJob(sc)
