@@ -80,7 +80,7 @@ class DumpSchemasToProduct extends Generator {
           }
         }
         (name, fieldType)
-      }).toSeq
+      })
   }
 
   private def conversion(schema: Schema, mapFn: String): String = schema.getType match {
