@@ -30,10 +30,13 @@ import scala.collection.mutable.ListBuffer
 
 /**
  * OutFormatter that reads streaming BED format.
+ *
+ * @param stringency Validation stringency. Defaults to ValidationStringency.STRICT.
  */
-case class BEDOutFormatter() extends OutFormatter[Feature] {
+case class BEDOutFormatter(
+    val stringency: ValidationStringency = ValidationStringency.STRICT) extends OutFormatter[Feature] {
+
   val bedParser = new BEDParser
-  val stringency = ValidationStringency.STRICT
 
   /**
    * Reads features from an input stream in BED format.
