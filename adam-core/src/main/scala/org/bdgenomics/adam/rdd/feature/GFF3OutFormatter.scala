@@ -30,10 +30,13 @@ import scala.collection.mutable.ListBuffer
 
 /**
  * OutFormatter that reads streaming GFF3 format.
+ *
+ * @param stringency Validation stringency. Defaults to ValidationStringency.STRICT.
  */
-case class GFF3OutFormatter() extends OutFormatter[Feature] {
+case class GFF3OutFormatter(
+    val stringency: ValidationStringency = ValidationStringency.STRICT) extends OutFormatter[Feature] {
+
   val gff3Parser = new GFF3Parser
-  val stringency = ValidationStringency.STRICT
 
   /**
    * Reads features from an input stream in GFF3 format.

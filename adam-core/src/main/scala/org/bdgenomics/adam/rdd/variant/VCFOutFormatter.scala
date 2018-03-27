@@ -42,20 +42,23 @@ import scala.collection.mutable.ListBuffer
  * OutFormatter that reads streaming VCF.
  *
  * @param conf Hadoop configuration.
+ * @param stringency Validation stringency.
  * @param optHeaderLines Optional accumulator for VCF header lines.
  */
 case class VCFOutFormatter(
     @transient conf: Configuration,
+    val stringency: ValidationStringency,
     val optHeaderLines: Option[CollectionAccumulator[VCFHeaderLine]]) extends OutFormatter[VariantContext] with Logging {
 
   private val nestAnn = VariantContextConverter.getNestAnnotationInGenotypesProperty(conf)
 
   /**
-   * OutFormatter that reads streaming VCF. Java-friendly no-arg constructor.
+   * OutFormatter that reads streaming VCF. Defaults to ValidationStringency.LENIENT.
+   * Java-friendly no-arg constructor.
    *
    * @param conf Hadoop configuration.
    */
-  def this(conf: Configuration) = this(conf, None)
+  def this(conf: Configuration) = this(conf, ValidationStringency.LENIENT, None)
 
   /**
    * OutFormatter that reads streaming VCF. Java-friendly constructor.
@@ -63,7 +66,25 @@ case class VCFOutFormatter(
    * @param conf Hadoop configuration.
    * @param acc Accumulator for VCF header lines.
    */
-  def this(conf: Configuration, acc: CollectionAccumulator[VCFHeaderLine]) = this(conf, Some(acc))
+  def this(conf: Configuration, stringency: ValidationStringency) = this(conf, stringency, None)
+
+  /**
+   * OutFormatter that reads streaming VCF. Defaults to ValidationStringency.LENIENT.
+   * Java-friendly constructor.
+   *
+   * @param conf Hadoop configuration.
+   * @param acc Accumulator for VCF header lines.
+   */
+  def this(conf: Configuration, acc: CollectionAccumulator[VCFHeaderLine]) = this(conf, ValidationStringency.LENIENT, Some(acc))
+
+  /**
+   * OutFormatter that reads streaming VCF. Defaults to ValidationStringency.LENIENT.
+   * Java-friendly constructor.
+   *
+   * @param conf Hadoop configuration.
+   * @param optHeaderLines Optional accumulator for VCF header lines.
+   */
+  def this(conf: Configuration, optHeaderLines: Option[CollectionAccumulator[VCFHeaderLine]]) = this(conf, ValidationStringency.LENIENT, optHeaderLines)
 
   /**
    * Reads VariantContexts from an input stream. Autodetects VCF format.
@@ -83,14 +104,14 @@ case class VCFOutFormatter(
     val header = codec.readActualHeader(lri).asInstanceOf[VCFHeader]
 
     // merge header lines with our supported header lines
-    val lines = cleanAndMixInSupportedLines(headerLines(header), ValidationStringency.LENIENT, log)
+    val lines = cleanAndMixInSupportedLines(headerLines(header), stringency, log)
 
     // accumulate header lines if desired
     optHeaderLines.map(accumulator => lines.foreach(line => accumulator.add(line)))
 
     // make converter
     val converter = new VariantContextConverter(lines,
-      ValidationStringency.LENIENT,
+      stringency,
       nestAnn)
 
     @tailrec def convertIterator(iter: AsciiLineReaderIterator,

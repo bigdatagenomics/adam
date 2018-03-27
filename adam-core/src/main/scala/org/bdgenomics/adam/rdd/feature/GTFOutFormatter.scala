@@ -30,10 +30,13 @@ import scala.collection.mutable.ListBuffer
 
 /**
  * OutFormatter that reads streaming GTF format.
+ *
+ * @param stringency Validation stringency. Defaults to ValidationStringency.STRICT.
  */
-case class GTFOutFormatter() extends OutFormatter[Feature] {
+case class GTFOutFormatter(
+    val stringency: ValidationStringency = ValidationStringency.STRICT) extends OutFormatter[Feature] {
+
   val gtfParser = new GTFParser
-  val stringency = ValidationStringency.STRICT
 
   /**
    * Reads features from an input stream in GTF format.
