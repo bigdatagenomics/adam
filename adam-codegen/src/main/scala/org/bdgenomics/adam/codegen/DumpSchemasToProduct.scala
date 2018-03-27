@@ -67,13 +67,13 @@ class DumpSchemasToProduct extends Generator {
         val fieldSchema = field.schema
         val fieldType = fieldSchema.getType match {
           case Schema.Type.ARRAY => {
-            "Seq[%s]".format(getType(fieldSchema.getElementType()))
+            "Seq[%s] = Seq()".format(getType(fieldSchema.getElementType()))
           }
           case Schema.Type.MAP => {
-            "scala.collection.Map[String,%s]".format(getType(fieldSchema.getValueType()))
+            "scala.collection.Map[String,%s] = Map()".format(getType(fieldSchema.getValueType()))
           }
           case Schema.Type.UNION => {
-            "Option[%s]".format(getType(getUnionType(fieldSchema)))
+            "Option[%s] = None".format(getType(getUnionType(fieldSchema)))
           }
           case other => {
             throw new IllegalStateException("Unsupported type %s in field %s.".format(other, name))
