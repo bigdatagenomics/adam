@@ -66,17 +66,15 @@ public abstract class FastqInputFormat extends FileInputFormat<Void, Text> {
             // so we must actually look at the stream to determine if the file
             // is BGZF and splittable or GZIP and not-splittable
             
-            try {
-                InputStream is = filename.getFileSystem(conf).open(filename);
-
-                // htsjdk can only test a buffered input stream
-                // throws an exception if the stream is unbuffered
-                // why htsjdk doesn't make the function take a buffered input stream instead of
-                // an input stream, i do not know
-                splittable = BlockCompressedInputStream.isValidFile(new BufferedInputStream(is));
-            } catch (Exception e) {
+	    try(InputStream is = filename.getFileSystem(conf).open(filename)) {
+		// htsjdk can only test a buffered input stream
+		// throws an exception if the stream is unbuffered
+		// why htsjdk doesn't make the function take a buffered input stream instead of
+		// an input stream, i do not know
+		splittable = BlockCompressedInputStream.isValidFile(new BufferedInputStream(is));
+	    } catch (Exception e) {
                 splittable = false;
-            }
+	    }
         } else if (codec instanceof SplittableCompressionCodec) {
             splittable = true;
         } else {
