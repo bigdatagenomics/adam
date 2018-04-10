@@ -26,13 +26,18 @@ import htsjdk.variant.vcf.{
 }
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.models.VariantContext
+import org.bdgenomics.adam.rdd.feature.FeatureRDD
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
   VariantRDD,
   VariantContextRDD
 }
 import org.bdgenomics.formats.avro.{
+  AlignmentRecord,
+  Feature,
   Genotype,
+  Sample,
   Variant
 }
 import org.bdgenomics.utils.instrumentation.MetricsListener
@@ -42,6 +47,208 @@ import org.bdgenomics.utils.instrumentation._
  * Utility methods for use in adam-shell.
  */
 object ADAMShell {
+
+  /** Alignment record headers. */
+  val alignmentHeaders = Array(
+    new ASCIITableHeader("Contig Name"),
+    new ASCIITableHeader("Start"),
+    new ASCIITableHeader("End"),
+    new ASCIITableHeader("Read Name"),
+    new ASCIITableHeader("Sample"),
+    new ASCIITableHeader("Read Group")
+  )
+
+  /**
+   * Print attribute values for alignment records in the specified rdd up to the limit.
+   *
+   * @param rdd AlignmentRecordRDD.
+   * @param keys Sequence of attribute keys.
+   * @param limit Number of alignment records to print attribute values for. Defaults to 10.
+   */
+  def printAlignmentAttributes(rdd: AlignmentRecordRDD, keys: Seq[String], limit: Int = 10): Unit = {
+    printAlignmentAttributes(rdd.rdd.take(limit), keys)
+  }
+
+  private def findMatchingAttribute(key: String, attributes: String): String = {
+    AttributeUtils.parseAttributes(attributes).find(_.tag == key).fold("")(_.value.toString)
+  }
+
+  /**
+   * Print attribute values for the specified alignment records.
+   *
+   * @param alignments Sequence of alignments.
+   * @param keys Sequence of attribute keys.
+   */
+  def printAlignmentAttributes(alignments: Seq[AlignmentRecord], keys: Seq[String]): Unit = {
+    val header = alignmentHeaders ++ keys.map(key => new ASCIITableHeader(key))
+
+    val rows: Array[Array[String]] = alignments.map(a => Array[String](
+      a.getContigName(),
+      a.getStart().toString,
+      a.getEnd().toString,
+      Option(a.getReadName()).getOrElse(""),
+      Option(a.getRecordGroupSample()).getOrElse(""),
+      Option(a.getRecordGroupName()).getOrElse("")
+    ) ++ keys.map(key => findMatchingAttribute(key, a.getAttributes()))).toArray
+
+    println("\nAlignment Attributes\n" + new ASCIITable(header, rows).toString)
+  }
+
+  /** Feature headers. */
+  val featureHeaders = Array(
+    new ASCIITableHeader("Contig Name"),
+    new ASCIITableHeader("Start"),
+    new ASCIITableHeader("End"),
+    new ASCIITableHeader("Strand"),
+    new ASCIITableHeader("Name"),
+    new ASCIITableHeader("Identifier"),
+    new ASCIITableHeader("Type"),
+    new ASCIITableHeader("Score")
+  )
+
+  /**
+   * Print attribute values for features in the specified rdd up to the limit.
+   *
+   * @param rdd FeatureRDD.
+   * @param keys Sequence of attribute keys.
+   * @param limit Number of features to print attribute values for. Defaults to 10.
+   */
+  def printFeatureAttributes(rdd: FeatureRDD, keys: Seq[String], limit: Int = 10): Unit = {
+    printFeatureAttributes(rdd.rdd.take(limit), keys)
+  }
+
+  /**
+   * Print attribute values for the specified features.
+   *
+   * @param alignments Sequence of features.
+   * @param keys Sequence of attribute keys.
+   */
+  def printFeatureAttributes(features: Seq[Feature], keys: Seq[String]): Unit = {
+    val header = featureHeaders ++ keys.map(key => new ASCIITableHeader(key))
+
+    val rows: Array[Array[String]] = features.map(f => Array[String](
+      f.getContigName(),
+      f.getStart().toString,
+      f.getEnd().toString,
+      f.getStrand().toString,
+      Option(f.getName()).getOrElse(""),
+      Option(f.getFeatureId()).getOrElse(""),
+      Option(f.getFeatureType()).getOrElse(""),
+      Option(f.getScore()).fold("")(_.toString)
+    ) ++ keys.map(key => Option(f.getAttributes().get(key)).getOrElse(""))).toArray
+
+    println("\nFeature Attributes\n" + new ASCIITable(header, rows).toString)
+  }
+
+  /**
+   * Print VCF FORMAT field attributes for genotypes in the specified rdd up to the limit.
+   *
+   * @param rdd GenotypeRDD.
+   * @param keys Sequence of VCF FORMAT field attribute keys.
+   * @param limit Number of genotypes to print VCF FORMAT field attribute values for. Defaults to 10.
+   */
+  def printFormatFields(rdd: GenotypeRDD, keys: Seq[String], limit: Int = 10): Unit = {
+    printFormatFields(rdd.rdd.take(limit), keys, rdd.headerLines)
+  }
+
+  /** Genotype headers. */
+  val genotypeHeaders = Array(
+    new ASCIITableHeader("Contig Name"),
+    new ASCIITableHeader("Start"),
+    new ASCIITableHeader("End"),
+    new ASCIITableHeader("Ref", Alignment.Left),
+    new ASCIITableHeader("Alt", Alignment.Left),
+    new ASCIITableHeader("Alleles", Alignment.Center),
+    new ASCIITableHeader("Sample")
+  )
+
+  /**
+   * Print VCF FORMAT field attributes for the specified genotypes.
+   *
+   * @param genotypes Sequence of genotypes.
+   * @param keys Sequence of VCF FORMAT field attribute keys.
+   * @param headerLines Sequence of VCF header lines.
+   */
+  def printFormatFields(genotypes: Seq[Genotype], keys: Seq[String], headerLines: Seq[VCFHeaderLine]): Unit = {
+    println("Format Header Lines")
+    headerLines.filter(line => (line.isInstanceOf[VCFFormatHeaderLine] && keys.contains(line.asInstanceOf[VCFFormatHeaderLine].getID()))).foreach(println)
+
+    val header = genotypeHeaders ++ keys.map(key => new ASCIITableHeader(key))
+
+    val rows: Array[Array[String]] = genotypes.map(g => Array[String](
+      g.getContigName(),
+      g.getStart().toString,
+      g.getEnd().toString,
+      g.getVariant().getReferenceAllele(),
+      g.getVariant().getAlternateAllele(),
+      g.getAlleles().toString,
+      g.getSampleId()
+    ) ++ keys.map(key => Option(g.getVariantCallingAnnotations().getAttributes().get(key)).getOrElse(""))).toArray
+
+    println("\nGenotype Format Fields\n" + new ASCIITable(header, rows).toString)
+  }
+
+  /**
+   * Print genotype filter values for genotypes in the specified rdd up to the limit.
+   *
+   * @param rdd GenotypeRDD.
+   * @param limit Number of genotypes to print genotype filter values for. Defaults to 10.
+   */
+  def printGenotypeFilters(rdd: GenotypeRDD, limit: Int = 10): Unit = {
+    printGenotypeFilters(rdd.rdd.take(limit), rdd.headerLines)
+  }
+
+  /**
+   * Print genotype filter values for the specified genotypes.
+   *
+   * @param rdd GenotypeRDD.
+   * @param headerLines Sequence of VCF header lines.
+   */
+  def printGenotypeFilters(genotypes: Seq[Genotype], headerLines: Seq[VCFHeaderLine]): Unit = {
+    println("Filter Header Lines")
+    headerLines.filter(line => line.isInstanceOf[VCFFilterHeaderLine]).foreach(println)
+
+    val header = genotypeHeaders ++ Array(
+      new ASCIITableHeader("Genotype Filters Applied"),
+      new ASCIITableHeader("Genotype Filters Passed"),
+      new ASCIITableHeader("Genotype Filters Failed")
+    )
+
+    val rows: Array[Array[String]] = genotypes.map(g => Array[String](
+      g.getContigName(),
+      g.getStart().toString,
+      g.getEnd().toString,
+      g.getVariant().getReferenceAllele(),
+      g.getVariant().getAlternateAllele(),
+      g.getAlleles().toString,
+      g.getSampleId(),
+      g.getVariantCallingAnnotations().getFiltersApplied().toString,
+      g.getVariantCallingAnnotations().getFiltersPassed().toString,
+      g.getVariantCallingAnnotations().getFiltersFailed().toString
+    )).toArray
+
+    println("\nGenotype Filters\n" + new ASCIITable(header, rows).toString)
+  }
+
+  /**
+   * Print attribute values for the specified features.
+   *
+   * @param alignments Sequence of features.
+   * @param keys Sequence of attribute keys.
+   */
+  def printSampleAttributes(samples: Seq[Sample], keys: Seq[String]): Unit = {
+    val header = Array(
+      new ASCIITableHeader("Identifier"),
+      new ASCIITableHeader("Name")
+    ) ++ keys.map(key => new ASCIITableHeader(key)) ++ Array(new ASCIITableHeader("Processing Steps"))
+
+    val rows: Array[Array[String]] = samples.map(s => Array[String](
+      s.getSampleId(),
+      s.getName()
+    ) ++ keys.map(key => Option(s.getAttributes().get(key)).getOrElse("")) ++ Array(Option(s.getProcessingSteps().toString).getOrElse(""))).toArray
+
+    println("\nSample Attributes\n" + new ASCIITable(header, rows).toString)
+  }
 
   /**
    * Print filter values for variants in the specified rdd up to the limit.
@@ -125,91 +332,6 @@ object ADAMShell {
     ) ++ keys.map(key => Option(v.getAnnotation().getAttributes().get(key)).getOrElse(""))).toArray
 
     println("\nVariant Info Fields\n" + new ASCIITable(header, rows).toString)
-  }
-
-  /**
-   * Print VCF FORMAT field attributes for genotypes in the specified rdd up to the limit.
-   *
-   * @param rdd GenotypeRDD.
-   * @param keys Sequence of VCF FORMAT field attribute keys.
-   * @param limit Number of genotypes to print VCF FORMAT field attribute values for. Defaults to 10.
-   */
-  def printFormatFields(rdd: GenotypeRDD, keys: Seq[String], limit: Int = 10): Unit = {
-    printFormatFields(rdd.rdd.take(limit), keys, rdd.headerLines)
-  }
-
-  /** Genotype headers. */
-  val genotypeHeaders = variantHeaders ++ Array(
-    new ASCIITableHeader("Alleles", Alignment.Center),
-    new ASCIITableHeader("Sample")
-  )
-
-  /**
-   * Print VCF FORMAT field attributes for the specified genotypes.
-   *
-   * @param genotypes Sequence of genotypes.
-   * @param keys Sequence of VCF FORMAT field attribute keys.
-   * @param headerLines Sequence of VCF header lines.
-   */
-  def printFormatFields(genotypes: Seq[Genotype], keys: Seq[String], headerLines: Seq[VCFHeaderLine]): Unit = {
-    println("Format Header Lines")
-    headerLines.filter(line => (line.isInstanceOf[VCFFormatHeaderLine] && keys.contains(line.asInstanceOf[VCFFormatHeaderLine].getID()))).foreach(println)
-
-    val header = genotypeHeaders ++ keys.map(key => new ASCIITableHeader(key))
-
-    val rows: Array[Array[String]] = genotypes.map(g => Array[String](
-      g.getContigName(),
-      g.getStart().toString,
-      g.getEnd().toString,
-      g.getVariant().getReferenceAllele(),
-      g.getVariant().getAlternateAllele(),
-      g.getAlleles().toString,
-      g.getSampleId()
-    ) ++ keys.map(key => Option(g.getVariantCallingAnnotations().getAttributes().get(key)).getOrElse(""))).toArray
-
-    println("\nGenotype Format Fields\n" + new ASCIITable(header, rows).toString)
-  }
-
-  /**
-   * Print genotype filter values for genotypes in the specified rdd up to the limit.
-   *
-   * @param rdd GenotypeRDD.
-   * @param limit Number of genotypes to print genotype filter values for. Defaults to 10.
-   */
-  def printGenotypeFilters(rdd: GenotypeRDD, limit: Int = 10): Unit = {
-    printGenotypeFilters(rdd.rdd.take(limit), rdd.headerLines)
-  }
-
-  /**
-   * Print genotype filter values for the specified genotypes.
-   *
-   * @param rdd GenotypeRDD.
-   * @param headerLines Sequence of VCF header lines.
-   */
-  def printGenotypeFilters(genotypes: Seq[Genotype], headerLines: Seq[VCFHeaderLine]): Unit = {
-    println("Filter Header Lines")
-    headerLines.filter(line => line.isInstanceOf[VCFFilterHeaderLine]).foreach(println)
-
-    val header = genotypeHeaders ++ Array(
-      new ASCIITableHeader("Genotype Filters Applied"),
-      new ASCIITableHeader("Genotype Filters Passed"),
-      new ASCIITableHeader("Genotype Filters Failed")
-    )
-
-    val rows: Array[Array[String]] = genotypes.map(g => Array[String](
-      g.getContigName(),
-      g.getStart().toString,
-      g.getEnd().toString,
-      g.getVariant().getReferenceAllele(),
-      g.getVariant().getAlternateAllele(),
-      g.getAlleles().toString,
-      g.getSampleId(),
-      g.getVariantCallingAnnotations().getFiltersApplied().toString,
-      g.getVariantCallingAnnotations().getFiltersPassed().toString,
-      g.getVariantCallingAnnotations().getFiltersFailed().toString
-    )).toArray
-
-    println("\nGenotype Filters\n" + new ASCIITable(header, rows).toString)
   }
 
   /**
