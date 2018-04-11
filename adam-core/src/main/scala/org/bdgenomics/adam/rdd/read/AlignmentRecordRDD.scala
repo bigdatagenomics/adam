@@ -280,6 +280,42 @@ case class DatasetBoundAlignmentRecordRDD private[rdd] (
     newProcessingSteps: Seq[ProcessingStep]): AlignmentRecordRDD = {
     copy(processingSteps = newProcessingSteps)
   }
+
+  override def filterByMapq(minimumMapq: Int): AlignmentRecordRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("mapq") >= minimumMapq))
+  }
+
+  override def filterUnalignedReads(): AlignmentRecordRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("readMapped")))
+  }
+
+  override def filterUnpairedReads(): AlignmentRecordRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("readPaired")))
+  }
+
+  override def filterDuplicateReads(): AlignmentRecordRDD = {
+    transformDataset(dataset => dataset.filter(!dataset.col("duplicateRead")))
+  }
+
+  override def filterToPrimaryAlignments(): AlignmentRecordRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("primaryAlignment")))
+  }
+
+  override def filterToRecordGroup(recordGroupName: String): AlignmentRecordRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("recordGroupName") === recordGroupName))
+  }
+
+  override def filterToRecordGroups(recordGroupNames: Seq[String]): AlignmentRecordRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("recordGroupName") isin (recordGroupNames: _*)))
+  }
+
+  override def filterToSample(recordGroupSample: String): AlignmentRecordRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("recordGroupSample") === recordGroupSample))
+  }
+
+  override def filterToSamples(recordGroupSamples: Seq[String]): AlignmentRecordRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("recordGroupSample") isin (recordGroupSamples: _*)))
+  }
 }
 
 case class RDDBoundAlignmentRecordRDD private[rdd] (
@@ -427,7 +463,6 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
    * Convert this set of reads into fragments.
    *
    * Assumes that reads are sorted by readname.
-   * *
    *
    * @return Returns a FragmentRDD where all reads have been grouped together by
    *   the original sequence fragment they come from.
@@ -1527,5 +1562,91 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
         }
       })
     })
+  }
+
+  /**
+   * Filter this AlignmentRecordRDD by mapping quality.
+   *
+   * @param minimumMapq Minimum mapping quality to filter by, inclusive.
+   * @return AlignmentRecordRDD filtered by mapping quality.
+   */
+  def filterByMapq(minimumMapq: Int): AlignmentRecordRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getMapq).exists(_ >= minimumMapq)))
+  }
+
+  /**
+   * Filter unaligned reads from this AlignmentRecordRDD.
+   *
+   * @return AlignmentRecordRDD filtered to remove unaligned reads.
+   */
+  def filterUnalignedReads(): AlignmentRecordRDD = {
+    transform(rdd => rdd.filter(_.getReadMapped))
+  }
+
+  /**
+   * Filter unpaired reads from this AlignmentRecordRDD.
+   *
+   * @return AlignmentRecordRDD filtered to remove unpaired reads.
+   */
+  def filterUnpairedReads(): AlignmentRecordRDD = {
+    transform(rdd => rdd.filter(_.getReadPaired))
+  }
+
+  /**
+   * Filter duplicate reads from this AlignmentRecordRDD.
+   *
+   * @return AlignmentRecordRDD filtered to remove duplicate reads.
+   */
+  def filterDuplicateReads(): AlignmentRecordRDD = {
+    transform(rdd => rdd.filter(!_.getDuplicateRead))
+  }
+
+  /**
+   * Filter this AlignmentRecordRDD to primary alignments.
+   *
+   * @return AlignmentRecordRDD filtered to primary alignments.
+   */
+  def filterToPrimaryAlignments(): AlignmentRecordRDD = {
+    transform(rdd => rdd.filter(_.getPrimaryAlignment))
+  }
+
+  /**
+   * Filter this AlignmentRecordRDD by record group.
+   *
+   * @param recordGroupName Record group to filter by.
+   * @return AlignmentRecordRDD filtered by record group.
+   */
+  def filterToRecordGroup(recordGroupName: String): AlignmentRecordRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getRecordGroupName).exists(_ == recordGroupName)))
+  }
+
+  /**
+   * Filter this AlignmentRecordRDD by one or more record groups.
+   *
+   * @param recordGroupNames Sequence of record groups to filter by.
+   * @return AlignmentRecordRDD filtered by one or more record groups.
+   */
+  def filterToRecordGroups(recordGroupNames: Seq[String]): AlignmentRecordRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getRecordGroupName).exists(recordGroupNames.contains(_))))
+  }
+
+  /**
+   * Filter this AlignmentRecordRDD by sample.
+   *
+   * @param recordGroupSample Sample to filter by.
+   * @return AlignmentRecordRDD filtered by sample.
+   */
+  def filterToSample(recordGroupSample: String): AlignmentRecordRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getRecordGroupSample).exists(_ == recordGroupSample)))
+  }
+
+  /**
+   * Filter this AlignmentRecordRDD by one or more samples.
+   *
+   * @param recordGroupSamples Sequence of samples to filter by.
+   * @return AlignmentRecordRDD filtered by one or more samples.
+   */
+  def filterToSamples(recordGroupSamples: Seq[String]): AlignmentRecordRDD = {
+    transform(rdd => rdd.filter(g => Option(g.getRecordGroupSample).exists(recordGroupSamples.contains(_))))
   }
 }

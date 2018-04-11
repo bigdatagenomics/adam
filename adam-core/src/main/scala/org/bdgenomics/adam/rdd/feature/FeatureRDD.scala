@@ -315,6 +315,34 @@ case class DatasetBoundFeatureRDD private[rdd] (
       .withColumnRenamed("score", "count")
       .as[Coverage], sequences)
   }
+
+  override def filterByFeatureType(featureType: String): FeatureRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("featureType").eqNullSafe(featureType)))
+  }
+
+  override def filterToGene(geneId: String): FeatureRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("geneId").eqNullSafe(geneId)))
+  }
+
+  override def filterToTranscript(transcriptId: String): FeatureRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("transcriptId").eqNullSafe(transcriptId)))
+  }
+
+  override def filterToExon(exonId: String): FeatureRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("exonId").eqNullSafe(exonId)))
+  }
+
+  override def filterByScore(minimumScore: Double): FeatureRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("score").geq(minimumScore)))
+  }
+
+  override def filterToParent(parentId: String): FeatureRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("parentIds").contains(parentId)))
+  }
+
+  override def filterByAttribute(key: String, value: String): FeatureRDD = {
+    transformDataset(dataset => dataset.filter(dataset.col("attributes").getItem(key).eqNullSafe(value)))
+  }
 }
 
 case class RDDBoundFeatureRDD private[rdd] (
@@ -426,6 +454,77 @@ sealed abstract class FeatureRDD extends AvroGenomicDataset[Feature, FeatureProd
    * @return CoverageRDD containing RDD of Coverage.
    */
   def toCoverage(): CoverageRDD
+
+  /**
+   * Filter this FeatureRDD by feature type.
+   *
+   * @param featureType Feature type to filter by.
+   * @return FeatureRDD filtered by the specified feature type.
+   */
+  def filterByFeatureType(featureType: String): FeatureRDD = {
+    transform(rdd => rdd.filter(f => Option(f.getFeatureType).exists(_.equals(featureType))))
+  }
+
+  /**
+   * Filter this FeatureRDD by gene.
+   *
+   * @param geneId Gene to filter by.
+   * @return FeatureRDD filtered by the specified gene.
+   */
+  def filterToGene(geneId: String): FeatureRDD = {
+    transform(rdd => rdd.filter(f => Option(f.getGeneId).exists(_.equals(geneId))))
+  }
+
+  /**
+   * Filter this FeatureRDD by transcript.
+   *
+   * @param transcriptId Transcript to filter by.
+   * @return FeatureRDD filtered by the specified transcript.
+   */
+  def filterToTranscript(transcriptId: String): FeatureRDD = {
+    transform(rdd => rdd.filter(f => Option(f.getTranscriptId).exists(_.equals(transcriptId))))
+  }
+
+  /**
+   * Filter this FeatureRDD by exon.
+   *
+   * @param exonId Exon to filter by.
+   * @return FeatureRDD filtered by the specified exon.
+   */
+  def filterToExon(exonId: String): FeatureRDD = {
+    transform(rdd => rdd.filter(f => Option(f.getExonId).exists(_.equals(exonId))))
+  }
+
+  /**
+   * Filter this FeatureRDD by score.
+   *
+   * @param minimumScore Minimum score to filter by, inclusive.
+   * @return FeatureRDD filtered by the specified minimum score.
+   */
+  def filterByScore(minimumScore: Double): FeatureRDD = {
+    transform(rdd => rdd.filter(f => Option(f.getScore).exists(_ >= minimumScore)))
+  }
+
+  /**
+   * Filter this FeatureRDD by parent.
+   *
+   * @param parentId Parent to filter by.
+   * @return FeatureRDD filtered by the specified parent.
+   */
+  def filterToParent(parentId: String): FeatureRDD = {
+    transform(rdd => rdd.filter(f => Option(f.getParentIds).exists(_.contains(parentId))))
+  }
+
+  /**
+   * Filter this FeatureRDD by attribute.
+   *
+   * @param key Attribute key to filter by.
+   * @param value Attribute value to filter by.
+   * @return FeatureRDD filtered by the specified attribute.
+   */
+  def filterByAttribute(key: String, value: String): FeatureRDD = {
+    transform(rdd => rdd.filter(f => Option(f.getAttributes.get(key)).exists(_.equals(value))))
+  }
 
   /**
    * @param newRdd The RDD to replace the underlying RDD with.
