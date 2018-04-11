@@ -67,7 +67,7 @@ import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
-import scala.math.min
+import scala.math.{ floor => mathFloor, min }
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.util.Try
@@ -3293,12 +3293,16 @@ trait DatasetBoundGenomicDataset[T, U <: Product, V <: GenomicDataset[T, U, V]] 
   private def referenceRegionsToDatasetQueryString(regions: Iterable[ReferenceRegion]): String = {
 
     if (Try(dataset("positionBin")).isSuccess) {
-      regions.map(r =>
-        s"(contigName=\'${r.referenceName}\' and positionBin >= " +
-          s"\'${(scala.math.floor(r.start / optPartitionBinSize.get).toLong) - optLookbackPartitions.get}\'" +
-          s" and positionBin < \'${(scala.math.floor(r.end / optPartitionBinSize.get).toLong + 1)}\'" +
-          s" and (end > ${r.start} and start < ${r.end}))"
-      ).mkString(" or ")
+
+      regions.map(r => {
+        val startBin = (mathFloor(r.start / optPartitionBinSize.get).toLong) - optLookbackPartitions.get
+        val endBin = min(Int.MaxValue.toLong, (mathFloor(r.end / optPartitionBinSize.get).toLong + 1)).toInt
+
+        (s"(contigName=\'${r.referenceName}\' and positionBin >= " +
+          s"\'${startBin}\'" +
+          s" and positionBin < \'${endBin}\'" +
+          s" and (end > ${r.start} and start < ${r.end}))")
+      }).mkString(" or ")
     } else { // if no positionBin field is found then construct query without bin optimization
       regions.map(r =>
         s"(contigName=\'${r.referenceName} \' " +
