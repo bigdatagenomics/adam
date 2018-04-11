@@ -663,6 +663,10 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(rdd3.dataset.count === 2)
     assert(rdd3.rdd.count === 2)
 
+    // ADAM-1967: ensure that ReferenceRegion.all works
+    assert(sc.loadPartitionedParquetAlignments(outputPath,
+      List(ReferenceRegion.all("1"))).dataset.count === 2)
+
     //test explicit transform to Alignment Record Product
     val rdd = rrdd.transformDataset(ds => {
       import ds.sqlContext.implicits._
