@@ -34,11 +34,11 @@ object FASTQInFormatter extends InFormatterCompanion[AlignmentRecord, AlignmentR
   /**
    * Builds an FASTQInFormatter to write FASTQ.
    *
-   * @param gRdd GenomicRDD of AlignmentRecords. Used to get HadoopConfiguration.
+   * @param gDataset GenomicDataset of AlignmentRecords. Used to get HadoopConfiguration.
    * @return Returns a new Single FASTQ InFormatter.
    */
-  def apply(gRdd: AlignmentRecordRDD): FASTQInFormatter = {
-    new FASTQInFormatter(gRdd.rdd.context.hadoopConfiguration)
+  def apply(gDataset: AlignmentRecordRDD): FASTQInFormatter = {
+    new FASTQInFormatter(gDataset.rdd.context.hadoopConfiguration)
   }
 }
 

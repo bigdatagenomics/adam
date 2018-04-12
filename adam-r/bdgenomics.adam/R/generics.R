@@ -316,34 +316,34 @@ setGeneric("realignIndels",
 
 #### Coverage operations ####
 
-#' The CoverageRDD class is used to manipulate read coverage counts.
+#' The CoverageDataset class is used to manipulate read coverage counts.
 #' 
-#' @name CoverageRDD
+#' @name CoverageDataset
 NULL
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @param ... additional argument(s).
 #' @export
 setGeneric("collapse",
            function(ardd, ...) { standardGeneric("collapse") })
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @export
 setGeneric("toFeatures",
            function(ardd) { standardGeneric("toFeatures") })
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @export
 setGeneric("coverage",
            function(ardd, ...) { standardGeneric("coverage") })
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @export
-#' @aliases aggregatedCoverage,CoverageRDD-method
+#' @aliases aggregatedCoverage,CoverageDataset-method
 setGeneric("aggregatedCoverage",
            function(ardd, ...) { standardGeneric("aggregatedCoverage") })
 
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @export
 setGeneric("flatten",
            function(ardd) { standardGeneric("flatten") })

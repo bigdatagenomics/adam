@@ -45,7 +45,7 @@ class FastqRecordConverterSuite extends FunSuite with PrivateMethodTester {
         ("@desc", false)
       )
     ) // not exception raised
-    assert(converter.readNameSuffixAndIndexOfPairMustMatch(readName, isFirstOfPair) === ())
+    converter.readNameSuffixAndIndexOfPairMustMatch(readName, isFirstOfPair)
   }
 
   test("test parseReadInFastq, read suffix removal") {

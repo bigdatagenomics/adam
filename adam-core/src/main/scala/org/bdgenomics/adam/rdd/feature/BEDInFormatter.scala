@@ -30,19 +30,19 @@ import org.bdgenomics.utils.misc.Logging
 /**
  * InFormatter companion that builds a BEDInFormatter to write features in BED format to a pipe.
  */
-object BEDInFormatter extends InFormatterCompanion[Feature, FeatureProduct, FeatureRDD, BEDInFormatter] {
+object BEDInFormatter extends InFormatterCompanion[Feature, FeatureProduct, FeatureDataset, BEDInFormatter] {
 
   /**
-   * Apply method for building the BEDInFormatter from a FeatureRDD.
+   * Apply method for building the BEDInFormatter from a FeatureDataset.
    *
-   * @param fRdd FeatureRDD to build from.
+   * @param fRdd FeatureDataset to build from.
    */
-  def apply(fRdd: FeatureRDD): BEDInFormatter = {
+  def apply(fRdd: FeatureDataset): BEDInFormatter = {
     BEDInFormatter()
   }
 }
 
-case class BEDInFormatter private () extends InFormatter[Feature, FeatureProduct, FeatureRDD, BEDInFormatter] {
+case class BEDInFormatter private () extends InFormatter[Feature, FeatureProduct, FeatureDataset, BEDInFormatter] {
   protected val companion = BEDInFormatter
 
   /**
@@ -56,7 +56,7 @@ case class BEDInFormatter private () extends InFormatter[Feature, FeatureProduct
 
     // write the features
     iter.foreach(f => {
-      writer.write(FeatureRDD.toBed(f))
+      writer.write(FeatureDataset.toBed(f))
       writer.newLine()
     })
 

@@ -230,9 +230,9 @@ class GenomicDataset(object):
 
         if destClass is NucleotideContigFragmentRDD:
             return "ContigsDatasetConverter"
-        elif destClass is CoverageRDD:
+        elif destClass is CoverageDataset:
             return "CoverageDatasetConverter"
-        elif destClass is FeatureRDD:
+        elif destClass is FeatureDataset:
             return "FeaturesDatasetConverter"
         elif destClass is FragmentRDD:
             return "FragmentDatasetConverter"
@@ -880,19 +880,19 @@ class AlignmentRecordRDD(GenomicDataset):
 
     def toCoverage(self, collapse = True):
         """
-        Converts this set of reads into a corresponding CoverageRDD.
+        Converts this set of reads into a corresponding CoverageDataset.
 
         :param bool collapse: Determines whether to merge adjacent coverage
         elements with the same score to a single coverage observation.
         :return: Returns an RDD with observed coverage.
-        :rtype: bdgenomics.adam.rdd.CoverageRDD
+        :rtype: bdgenomics.adam.rdd.CoverageDataset
         """
 
-        coverageRDD = CoverageRDD(self._jvmRdd.toCoverage(), self.sc)
+        coverage = CoverageDataset(self._jvmRdd.toCoverage(), self.sc)
         if (collapse):
-            return coverageRDD.collapse()
+            return coverage.collapse()
         else:
-            return coverageRDD
+            return coverage
 
 
     def save(self, filePath, isSorted = False):
@@ -1184,23 +1184,24 @@ class AlignmentRecordRDD(GenomicDataset):
                                   self.sc)
 
 
-class CoverageRDD(GenomicDataset):
+class CoverageDataset(GenomicDataset):
     """
-    Wraps an GenomicDatset with Coverage metadata and functions.
+    Wraps an GenomicDataset with Coverage metadata and functions.
     """
+
 
     def _replaceRdd(self, newRdd):
 
-        return CoverageRDD(newRdd, self.sc)
+        return CoverageDataset(newRdd, self.sc)
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python CoverageRDD from a JVM CoverageRDD.
+        Constructs a Python CoverageDataset from a JVM CoverageDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM CoverageRDD.
+        :param jvmRdd: Py4j handle to the underlying JVM CoverageDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
@@ -1229,21 +1230,21 @@ class CoverageRDD(GenomicDataset):
         record Coverage("chr1", 1, 20, 3.0).
 
         :return: An RDD with merged tuples of adjacent sites with same coverage.
-        :rtype: bdgenomics.adam.rdd.CoverageRDD
+        :rtype: bdgenomics.adam.rdd.CoverageDataset
         """
 
-        return CoverageRDD(self._jvmRdd.collapse(), self.sc)
+        return CoverageDataset(self._jvmRdd.collapse(), self.sc)
 
 
     def toFeatures(self):
         """
-        Converts CoverageRDD to FeatureRDD.
+        Converts CoverageDataset to FeatureDataset.
 
-        :return: Returns a FeatureRDD from CoverageRDD.
-        :rtype: bdgenomics.adam.rdd.FeatureRDD
+        :return: Returns a FeatureDataset from CoverageDataset.
+        :rtype: bdgenomics.adam.rdd.FeatureDataset
         """
 
-        return FeatureRDD(self._jvmRdd.toFeatures(), self.sc)
+        return FeatureDataset(self._jvmRdd.toFeatures(), self.sc)
 
 
     def coverage(self, bpPerBin = 1):
@@ -1255,11 +1256,11 @@ class CoverageRDD(GenomicDataset):
         of each bin is the coverage of the first base pair in that bin.
 
         :param int bpPerBin: Number of bases to combine to one bin.
-        :return: Returns a sparsified CoverageRDD.
-        :rtype: bdgenomics.adam.rdd.CoverageRDD
+        :return: Returns a sparsified CoverageDataset.
+        :rtype: bdgenomics.adam.rdd.CoverageDataset
         """
 
-        return CoverageRDD(self._jvmRdd.coverage(bpPerBin), self.sc)
+        return CoverageDataset(self._jvmRdd.coverage(bpPerBin), self.sc)
 
 
     def aggregatedCoverage(self, bpPerBin = 1):
@@ -1271,11 +1272,11 @@ class CoverageRDD(GenomicDataset):
         of each bin is the average coverage of the bases in that bin.
 
         :param int bpPerBin: Number of bases to combine to one bin.
-        :return: Returns a sparsified CoverageRDD.
-        :rtype: bdgenomics.adam.rdd.CoverageRDD
+        :return: Returns a sparsified CoverageDataset.
+        :rtype: bdgenomics.adam.rdd.CoverageDataset
         """
 
-        return CoverageRDD(self._jvmRdd.aggregatedCoverage(bpPerBin), self.sc)
+        return CoverageDataset(self._jvmRdd.aggregatedCoverage(bpPerBin), self.sc)
 
 
     def flatten(self):
@@ -1284,11 +1285,11 @@ class CoverageRDD(GenomicDataset):
 
         The opposite operation of collapse.
 
-        :return: New CoverageRDD of flattened coverage.
-        :rtype: bdgenomics.adam.rdd.CoverageRDD
+        :return: New CoverageDataset of flattened coverage.
+        :rtype: bdgenomics.adam.rdd.CoverageDataset
         """
 
-        return CoverageRDD(self._jvmRdd.flatten(), self.sc)
+        return CoverageDataset(self._jvmRdd.flatten(), self.sc)
 
 
     def _inferConversionFn(self, destClass):
@@ -1296,23 +1297,23 @@ class CoverageRDD(GenomicDataset):
         return "org.bdgenomics.adam.api.java.CoverageTo%s" % self._destClassSuffix(destClass)
 
 
-class FeatureRDD(GenomicDataset):
+class FeatureDataset(GenomicDataset):
     """
-    Wraps an GenomicDatset with Feature metadata and functions.
+    Wraps an GenomicDataset with Feature metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
 
-        return FeatureRDD(newRdd, self.sc)
+        return FeatureDataset(newRdd, self.sc)
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python FeatureRDD from a JVM FeatureRDD.
+        Constructs a Python FeatureDataset from a JVM FeatureDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM FeatureRDD.
+        :param jvmRdd: Py4j handle to the underlying JVM FeatureDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
@@ -1341,13 +1342,13 @@ class FeatureRDD(GenomicDataset):
 
     def toCoverage(self):
         """
-        Converts the FeatureRDD to a CoverageRDD.
+        Converts the FeatureDataset to a CoverageDataset.
 
-        :return: Returns a new CoverageRDD.
-        :rtype: bdgenomics.adam.rdd.CoverageRDD.
+        :return: Returns a new CoverageDataset.
+        :rtype: bdgenomics.adam.rdd.CoverageDataset.
         """
 
-        return CoverageRDD(self._jvmRdd.toCoverage(), self.sc)
+        return CoverageDataset(self._jvmRdd.toCoverage(), self.sc)
 
 
     def _inferConversionFn(self, destClass):

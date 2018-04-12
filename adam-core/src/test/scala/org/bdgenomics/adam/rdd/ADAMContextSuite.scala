@@ -390,10 +390,10 @@ class ADAMContextSuite extends ADAMFunSuite {
 
   sparkTest("read a HLA fasta from GRCh38") {
     val inputPath = testFile("HLA_DQB1_05_01_01_02.fa")
-    val gRdd = sc.loadFasta(inputPath, 10000L)
-    assert(gRdd.sequences.records.size === 1)
-    assert(gRdd.sequences.records.head.name === "HLA-DQB1*05:01:01:02")
-    val fragments = gRdd.rdd.collect
+    val gDataset = sc.loadFasta(inputPath, 10000L)
+    assert(gDataset.sequences.records.size === 1)
+    assert(gDataset.sequences.records.head.name === "HLA-DQB1*05:01:01:02")
+    val fragments = gDataset.rdd.collect
     assert(fragments.size === 1)
     assert(fragments.head.getContigName === "HLA-DQB1*05:01:01:02")
   }
@@ -725,11 +725,11 @@ class ADAMContextSuite extends ADAMFunSuite {
     val sd = sc.loadSequenceDictionary(sdPath)
 
     val path = testFile("gencode.v7.annotation.trunc10.bed") // uses "chr1"
-    val featureRdd = sc.sc.loadFeatures(path, optSequenceDictionary = Some(sd))
-    val features: RDD[Feature] = featureRdd.rdd
+    val featureDs = sc.sc.loadFeatures(path, optSequenceDictionary = Some(sd))
+    val features: RDD[Feature] = featureDs.rdd
     assert(features.count === 10)
 
-    val sequences = featureRdd.sequences
+    val sequences = featureDs.sequences
     assert(sequences.records.size === 93)
     assert(sequences("chr1").isDefined)
     assert(sequences("chr1").get.length === 249250621L)
@@ -742,11 +742,11 @@ class ADAMContextSuite extends ADAMFunSuite {
     val sd = sc.loadSequenceDictionary(sdPath)
 
     val path = testFile("dvl1.200.bed") // uses "1"
-    val featureRdd = sc.sc.loadFeatures(path, optSequenceDictionary = Some(sd))
-    val features: RDD[Feature] = featureRdd.rdd
+    val featureDs = sc.sc.loadFeatures(path, optSequenceDictionary = Some(sd))
+    val features: RDD[Feature] = featureDs.rdd
     assert(features.count === 197)
 
-    val sequences = featureRdd.sequences
+    val sequences = featureDs.sequences
     assert(sequences.records.size === 93)
     assert(sequences("chr1").isDefined)
     assert(sequences("chr1").get.length === 249250621L)

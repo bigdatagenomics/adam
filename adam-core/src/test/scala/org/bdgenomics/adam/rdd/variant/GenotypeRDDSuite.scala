@@ -32,7 +32,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
-import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
+import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.sql.{
@@ -351,14 +351,14 @@ class GenotypeRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("load parquet to sql, save, re-read from avro") {
-    def testMetadata(gRdd: GenotypeRDD) {
-      val sequenceRdd = gRdd.addSequence(SequenceRecord("aSequence", 1000L))
+    def testMetadata(gDataset: GenotypeRDD) {
+      val sequenceRdd = gDataset.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
-      val headerRdd = gRdd.addHeaderLine(new VCFHeaderLine("ABC", "123"))
+      val headerRdd = gDataset.addHeaderLine(new VCFHeaderLine("ABC", "123"))
       assert(headerRdd.headerLines.exists(_.getKey == "ABC"))
 
-      val sampleRdd = gRdd.addSample(Sample.newBuilder
+      val sampleRdd = gDataset.addSample(Sample.newBuilder
         .setSampleId("aSample")
         .build)
       assert(sampleRdd.samples.exists(_.getSampleId == "aSample"))
@@ -419,14 +419,14 @@ class GenotypeRDDSuite extends ADAMFunSuite {
   sparkTest("transform genotypes to coverage rdd") {
     val genotypes = sc.loadGenotypes(testFile("small.vcf"))
 
-    def checkSave(coverage: CoverageRDD) {
+    def checkSave(coverage: CoverageDataset) {
       val tempPath = tmpLocation(".bed")
       coverage.save(tempPath, false, false)
 
       assert(sc.loadCoverage(tempPath).rdd.count === 18)
     }
 
-    val coverage: CoverageRDD = genotypes.transmute[Coverage, Coverage, CoverageRDD](
+    val coverage: CoverageDataset = genotypes.transmute[Coverage, Coverage, CoverageDataset](
       (rdd: RDD[Genotype]) => {
         rdd.map(GenotypeRDDSuite.covFn)
       })
@@ -436,7 +436,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val coverageDs: CoverageRDD = genotypes.transmuteDataset[Coverage, Coverage, CoverageRDD](
+    val coverageDs: CoverageDataset = genotypes.transmuteDataset[Coverage, Coverage, CoverageDataset](
       (ds: Dataset[GenotypeProduct]) => {
         ds.map(r => GenotypeRDDSuite.covFn(r.toAvro))
       })
@@ -447,14 +447,14 @@ class GenotypeRDDSuite extends ADAMFunSuite {
   sparkTest("transform genotypes to feature rdd") {
     val genotypes = sc.loadGenotypes(testFile("small.vcf"))
 
-    def checkSave(features: FeatureRDD) {
+    def checkSave(features: FeatureDataset) {
       val tempPath = tmpLocation(".bed")
       features.save(tempPath, false, false)
 
       assert(sc.loadFeatures(tempPath).rdd.count === 18)
     }
 
-    val features: FeatureRDD = genotypes.transmute[Feature, FeatureProduct, FeatureRDD](
+    val features: FeatureDataset = genotypes.transmute[Feature, FeatureProduct, FeatureDataset](
       (rdd: RDD[Genotype]) => {
         rdd.map(GenotypeRDDSuite.featFn)
       })
@@ -464,7 +464,7 @@ class GenotypeRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featureDs: FeatureRDD = genotypes.transmuteDataset[Feature, FeatureProduct, FeatureRDD](
+    val featureDs: FeatureDataset = genotypes.transmuteDataset[Feature, FeatureProduct, FeatureDataset](
       (ds: Dataset[GenotypeProduct]) => {
         ds.map(r => {
           FeatureProduct.fromAvro(

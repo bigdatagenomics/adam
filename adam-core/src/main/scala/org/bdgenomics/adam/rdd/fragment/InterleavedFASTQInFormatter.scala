@@ -34,11 +34,11 @@ object InterleavedFASTQInFormatter extends InFormatterCompanion[Fragment, Fragme
   /**
    * Builds an InterleavedFASTQInFormatter to write Interleaved FASTQ.
    *
-   * @param gRdd GenomicRDD of Fragments. Used to get HadoopConfiguration.
+   * @param gDataset GenomicDataset of Fragments. Used to get HadoopConfiguration.
    * @return Returns a new Interleaved FASTQ InFormatter.
    */
-  def apply(gRdd: FragmentRDD): InterleavedFASTQInFormatter = {
-    new InterleavedFASTQInFormatter(gRdd.rdd.context.hadoopConfiguration)
+  def apply(gDataset: FragmentRDD): InterleavedFASTQInFormatter = {
+    new InterleavedFASTQInFormatter(gDataset.rdd.context.hadoopConfiguration)
   }
 }
 

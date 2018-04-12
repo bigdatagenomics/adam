@@ -39,7 +39,7 @@ import org.bdgenomics.adam.models.{
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
-import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
+import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.sql.{
@@ -412,14 +412,14 @@ class VariantContextRDDSuite extends ADAMFunSuite {
   sparkTest("transform variant contexts to coverage rdd") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
-    def checkSave(coverage: CoverageRDD) {
+    def checkSave(coverage: CoverageDataset) {
       val tempPath = tmpLocation(".bed")
       coverage.save(tempPath, false, false)
 
       assert(sc.loadCoverage(tempPath).rdd.count === 6)
     }
 
-    val coverage: CoverageRDD = variantContexts.transmute[Coverage, Coverage, CoverageRDD](
+    val coverage: CoverageDataset = variantContexts.transmute[Coverage, Coverage, CoverageDataset](
       (rdd: RDD[VariantContext]) => {
         rdd.map(VariantRDDSuite.covFn)
       })
@@ -430,14 +430,14 @@ class VariantContextRDDSuite extends ADAMFunSuite {
   sparkTest("transform variant contexts to feature rdd") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
-    def checkSave(features: FeatureRDD) {
+    def checkSave(features: FeatureDataset) {
       val tempPath = tmpLocation(".bed")
       features.save(tempPath, false, false)
 
       assert(sc.loadFeatures(tempPath).rdd.count === 6)
     }
 
-    val features: FeatureRDD = variantContexts.transmute[Feature, FeatureProduct, FeatureRDD](
+    val features: FeatureDataset = variantContexts.transmute[Feature, FeatureProduct, FeatureDataset](
       (rdd: RDD[VariantContext]) => {
         rdd.map(VariantRDDSuite.featFn)
       })

@@ -22,7 +22,7 @@ import org.apache.spark.api.java.JavaSparkContext
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
-import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
+import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.variant.{
@@ -200,7 +200,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load features into a FeatureRDD (java-friendly method).
+   * Load features into a FeatureDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bed as BED6/12 format,
@@ -220,14 +220,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load features from.
    *   Globs/directories are supported, although file extension must be present
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
-  def loadFeatures(pathName: java.lang.String): FeatureRDD = {
+  def loadFeatures(pathName: java.lang.String): FeatureDataset = {
     ac.loadFeatures(pathName)
   }
 
   /**
-   * Load features into a FeatureRDD (java-friendly method).
+   * Load features into a FeatureDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bed as BED6/12 format,
@@ -249,15 +249,15 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param stringency The validation stringency to use when validating BED6/12, GFF3,
    *   GTF/GFF2, NarrowPeak, or IntervalList formats.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadFeatures(pathName: java.lang.String,
-                   stringency: ValidationStringency): FeatureRDD = {
+                   stringency: ValidationStringency): FeatureDataset = {
     ac.loadFeatures(pathName, stringency = stringency)
   }
 
   /**
-   * Load features into a FeatureRDD and convert to a CoverageRDD (java-friendly method).
+   * Load features into a FeatureDataset and convert to a CoverageDataset (java-friendly method).
    * Coverage is stored in the score field of Feature.
    *
    * Loads path names ending in:
@@ -278,14 +278,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load features from.
    *   Globs/directories are supported, although file extension must be present
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
-   * @return Returns a FeatureRDD converted to a CoverageRDD.
+   * @return Returns a FeatureDataset converted to a CoverageDataset.
    */
-  def loadCoverage(pathName: java.lang.String): CoverageRDD = {
+  def loadCoverage(pathName: java.lang.String): CoverageDataset = {
     ac.loadCoverage(pathName)
   }
 
   /**
-   * Load features into a FeatureRDD and convert to a CoverageRDD (java-friendly method).
+   * Load features into a FeatureDataset and convert to a CoverageDataset (java-friendly method).
    * Coverage is stored in the score field of Feature.
    *
    * Loads path names ending in:
@@ -308,10 +308,10 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   for BED6/12, GFF3, GTF/GFF2, NarrowPeak, or IntervalList formats.
    * @param stringency The validation stringency to use when validating BED6/12, GFF3,
    *   GTF/GFF2, NarrowPeak, or IntervalList formats.
-   * @return Returns a FeatureRDD converted to a CoverageRDD.
+   * @return Returns a FeatureDataset converted to a CoverageDataset.
    */
   def loadCoverage(pathName: java.lang.String,
-                   stringency: ValidationStringency): CoverageRDD = {
+                   stringency: ValidationStringency): CoverageDataset = {
     ac.loadCoverage(pathName,
       stringency = stringency)
   }

@@ -50,32 +50,32 @@ AlignmentRecordRDD <- function(jrdd) {
 
 #' A class that wraps an RDD of genomic coverage data with helpful metadata.
 #'
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #' @slot jrdd The Java RDD of Coverage that this class wraps.
 #' 
 #' @export
-setClass("CoverageRDD",
+setClass("CoverageDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-CoverageRDD <- function(jrdd) {
-    new("CoverageRDD", jrdd = jrdd)
+CoverageDataset <- function(jrdd) {
+    new("CoverageDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of genomic features with helpful metadata.
 #'
-#' @rdname FeatureRDD
+#' @rdname FeatureDataset
 #' @slot jrdd The Java RDD of Features that this class wraps.
 #' 
 #' @export
-setClass("FeatureRDD",
+setClass("FeatureDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-FeatureRDD <- function(jrdd) {
-    new("FeatureRDD", jrdd = jrdd)
+FeatureDataset <- function(jrdd) {
+    new("FeatureDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of read pairs grouped by sequencing fragment with helpful metadata.
@@ -375,9 +375,9 @@ setMethod("destClassSuffix",
           function(destClass) {
               if (destClass == "NucleotideContigFragmentRDD") {
                   "ContigsDatasetConverter"
-              } else if (destClass == "CoverageRDD") {
+              } else if (destClass == "CoverageDataset") {
                   "CoverageDatasetConverter"
-              } else if (destClass == "FeatureRDD") {
+              } else if (destClass == "FeatureDataset") {
                   "FeaturesDatasetConverter"
               } else if (destClass == "FragmentRDD") {
                   "FragmentDatasetConverter"
@@ -825,7 +825,7 @@ setMethod("saveAsSam",
                                            isSorted))
           })
 
-#' Converts this set of reads into a corresponding CoverageRDD.
+#' Converts this set of reads into a corresponding CoverageDataset.
 #'
 #' @param ardd The RDD to apply this to.
 #' @param collapse Determines whether to merge adjacent coverage elements with
@@ -838,7 +838,7 @@ setMethod("saveAsSam",
 setMethod("toCoverage",
           signature(ardd = "AlignmentRecordRDD"),
           function(ardd, collapse = TRUE) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "toCoverage", collapse))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "toCoverage", collapse))
           })
 
 #' Saves this RDD to disk, with the type identified by the extension.
@@ -1009,7 +1009,7 @@ setMethod("realignIndels",
 #'
 #' @export
 setMethod("save",
-          signature(ardd = "CoverageRDD", filePath = "character"),
+          signature(ardd = "CoverageDataset", filePath = "character"),
           function(ardd, filePath, asSingleFile = FALSE) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath, asSingleFile))
           })
@@ -1027,22 +1027,22 @@ setMethod("save",
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("collapse", signature(ardd = "CoverageRDD"),
+setMethod("collapse", signature(ardd = "CoverageDataset"),
           function(ardd) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "collapse"))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "collapse"))
           })
 
-#' Converts CoverageRDD to FeatureRDD.
+#' Converts CoverageDataset to FeatureDataset.
 #'
 #' @param ardd The RDD to apply this to.
-#' @return Returns a FeatureRDD from a CoverageRDD.
+#' @return Returns a FeatureDataset from a CoverageDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toFeatures", signature(ardd = "CoverageRDD"),
+setMethod("toFeatures", signature(ardd = "CoverageDataset"),
           function(ardd) {
-              FeatureRDD(sparkR.callJMethod(ardd@jrdd, "toFeatures"))
+              FeatureDataset(sparkR.callJMethod(ardd@jrdd, "toFeatures"))
           })
 
 #' Gets coverage overlapping specified ReferenceRegion.
@@ -1053,14 +1053,14 @@ setMethod("toFeatures", signature(ardd = "CoverageRDD"),
 #'
 #' @param ardd The RDD to apply this to.
 #' @param bpPerBin Number of bases to combine to one bin.
-#' @return Returns a sparsified CoverageRDD.
+#' @return Returns a sparsified CoverageDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("coverage", signature(ardd = "CoverageRDD"),
+setMethod("coverage", signature(ardd = "CoverageDataset"),
           function(ardd, bpPerBin = 1) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "coverage", bpPerBin))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "coverage", bpPerBin))
           })
 
 #' Gets coverage overlapping specified ReferenceRegion.
@@ -1071,16 +1071,16 @@ setMethod("coverage", signature(ardd = "CoverageRDD"),
 #'
 #' @param ardd The RDD to apply this to.
 #' @param bpPerBin Number of bases to combine to one bin.
-#' @return Returns a sparsified CoverageRDD.
+#' @return Returns a sparsified CoverageDataset.
 #'
-#' @rdname CoverageRDD
+#' @rdname CoverageDataset
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("aggregatedCoverage", signature(ardd = "CoverageRDD"),
+setMethod("aggregatedCoverage", signature(ardd = "CoverageDataset"),
           function(ardd, bpPerBin = 1) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "aggregatedCoverage", bpPerBin))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "aggregatedCoverage", bpPerBin))
           })
 
 #' Gets flattened RDD of coverage, with coverage mapped to each base pair.
@@ -1088,18 +1088,18 @@ setMethod("aggregatedCoverage", signature(ardd = "CoverageRDD"),
 #' The opposite operation of collapse.
 #'
 #' @param ardd The RDD to apply this to.
-#' @return New CoverageRDD of flattened coverage.
+#' @return New CoverageDataset of flattened coverage.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("flatten", signature(ardd = "CoverageRDD"),
+setMethod("flatten", signature(ardd = "CoverageDataset"),
           function(ardd) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "flatten"))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "flatten"))
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "FeatureRDD",
+          signature(ardd = "FeatureDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.FeaturesTo",
@@ -1107,10 +1107,10 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "FeatureRDD",
+          signature(ardd = "FeatureDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              FeatureRDD(rdd)
+              FeatureDataset(rdd)
           })
 
 #' Saves coverage, autodetecting the file type from the extension.
@@ -1130,24 +1130,24 @@ setMethod("replaceRdd",
 #'
 #' @export
 setMethod("save",
-          signature(ardd = "FeatureRDD", filePath = "character"),
+          signature(ardd = "FeatureDataset", filePath = "character"),
           function(ardd, filePath,
                    asSingleFile = FALSE, disableFastConcat = FALSE) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath,
                                            asSingleFile, disableFastConcat))
           })
 
-#' Converts the FeatureRDD to a CoverageRDD.
+#' Converts the FeatureDataset to a CoverageDataset.
 #'
 #' @param ardd The RDD to apply this to.
-#' @return Returns a new CoverageRDD.
+#' @return Returns a new CoverageDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toCoverage", signature(ardd = "FeatureRDD"),
+setMethod("toCoverage", signature(ardd = "FeatureDataset"),
           function(ardd) {
-              CoverageRDD(sparkR.callJMethod(ardd@jrdd, "toCoverage"))
+              CoverageDataset(sparkR.callJMethod(ardd@jrdd, "toCoverage"))
           })
 
 setMethod("inferConversionFn",

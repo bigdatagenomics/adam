@@ -44,9 +44,9 @@ import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd._
 import org.bdgenomics.adam.rdd.feature.{
-  CoverageRDD,
-  DatasetBoundCoverageRDD,
-  RDDBoundCoverageRDD
+  CoverageDataset,
+  DatasetBoundCoverageDataset,
+  RDDBoundCoverageDataset
 }
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
@@ -334,7 +334,7 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
     sqlContext.createDataset(rdd.map(AlignmentRecordProduct.fromAvro))
   }
 
-  override def toCoverage(): CoverageRDD = {
+  override def toCoverage(): CoverageDataset = {
     val covCounts =
       rdd.filter(r => {
         val readMapped = r.getReadMapped
@@ -352,7 +352,7 @@ case class RDDBoundAlignmentRecordRDD private[rdd] (
       }).reduceByKey(_ + _)
         .map(r => Coverage(r._1._2, r._2.toDouble, Option(r._1._1)))
 
-    RDDBoundCoverageRDD(covCounts, sequences, recordGroups.toSamples, None)
+    RDDBoundCoverageDataset(covCounts, sequences, recordGroups.toSamples, None)
   }
 
   def replaceSequences(
@@ -475,11 +475,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
   }
 
   /**
-   * Converts this set of reads into a corresponding CoverageRDD.
+   * Converts this set of reads into a corresponding CoverageDataset.
    *
-   * @return CoverageRDD containing mapped RDD of Coverage.
+   * @return CoverageDataset containing mapped RDD of Coverage.
    */
-  def toCoverage(): CoverageRDD = {
+  def toCoverage(): CoverageDataset = {
     import dataset.sqlContext.implicits._
     val covCounts = dataset.toDF
       .where($"readMapped")
@@ -505,7 +505,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
       .withColumnRenamed("sum(count)", "count")
       .as[Coverage]
 
-    DatasetBoundCoverageRDD(covCounts, sequences, recordGroups.toSamples)
+    DatasetBoundCoverageDataset(covCounts, sequences, recordGroups.toSamples)
   }
 
   /**

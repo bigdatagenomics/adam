@@ -21,7 +21,7 @@ from bdgenomics.adam.adamContext import ADAMContext
 from bdgenomics.adam.test import SparkTestCase
 
 
-class FeatureRDDTest(SparkTestCase):
+class FeatureDatasetTest(SparkTestCase):
 
     
     def test_round_trip_gtf(self):

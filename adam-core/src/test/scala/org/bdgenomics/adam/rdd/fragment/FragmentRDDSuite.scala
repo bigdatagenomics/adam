@@ -27,7 +27,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
-import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
+import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
   AlignmentRecordRDDSuite,
@@ -349,8 +349,8 @@ class FragmentRDDSuite extends ADAMFunSuite {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
-      val rgRdd = fRdd.addRecordGroup(RecordGroup("test", "aRg"))
-      assert(rgRdd.recordGroups("aRg").sample === "test")
+      val rgDataset = fRdd.addRecordGroup(RecordGroup("test", "aRg"))
+      assert(rgDataset.recordGroups("aRg").sample === "test")
     }
 
     val inputPath = testFile("small.sam")
@@ -413,14 +413,14 @@ class FragmentRDDSuite extends ADAMFunSuite {
   sparkTest("transform fragments to coverage rdd") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
-    def checkSave(coverage: CoverageRDD) {
+    def checkSave(coverage: CoverageDataset) {
       val tempPath = tmpLocation(".bed")
       coverage.save(tempPath, false, false)
 
       assert(sc.loadCoverage(tempPath).rdd.count === 20)
     }
 
-    val coverage: CoverageRDD = fragments.transmute[Coverage, Coverage, CoverageRDD](
+    val coverage: CoverageDataset = fragments.transmute[Coverage, Coverage, CoverageDataset](
       (rdd: RDD[Fragment]) => {
         rdd.map(AlignmentRecordRDDSuite.covFn)
       })
@@ -430,7 +430,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val coverageDs: CoverageRDD = fragments.transmuteDataset[Coverage, Coverage, CoverageRDD](
+    val coverageDs: CoverageDataset = fragments.transmuteDataset[Coverage, Coverage, CoverageDataset](
       (ds: Dataset[FragmentProduct]) => {
         ds.map(r => AlignmentRecordRDDSuite.covFn(r.toAvro))
       })
@@ -441,14 +441,14 @@ class FragmentRDDSuite extends ADAMFunSuite {
   sparkTest("transform fragments to feature rdd") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
-    def checkSave(features: FeatureRDD) {
+    def checkSave(features: FeatureDataset) {
       val tempPath = tmpLocation(".bed")
       features.saveAsBed(tempPath)
 
       assert(sc.loadFeatures(tempPath).rdd.count === 20)
     }
 
-    val features: FeatureRDD = fragments.transmute[Feature, FeatureProduct, FeatureRDD](
+    val features: FeatureDataset = fragments.transmute[Feature, FeatureProduct, FeatureDataset](
       (rdd: RDD[Fragment]) => {
         rdd.map(AlignmentRecordRDDSuite.featFn)
       })
@@ -458,7 +458,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: FeatureRDD = fragments.transmuteDataset[Feature, FeatureProduct, FeatureRDD](
+    val featuresDs: FeatureDataset = fragments.transmuteDataset[Feature, FeatureProduct, FeatureDataset](
       (ds: Dataset[FragmentProduct]) => {
         ds.map(r => {
           FeatureProduct.fromAvro(

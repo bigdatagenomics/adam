@@ -33,11 +33,11 @@ object Tab5InFormatter extends InFormatterCompanion[Fragment, FragmentProduct, F
   /**
    * Builds an Tab5InFormatter to write Bowtie tab5 format.
    *
-   * @param gRdd GenomicRDD of Fragments. Used to get HadoopConfiguration.
+   * @param gDataset GenomicDataset of Fragments. Used to get HadoopConfiguration.
    * @return Returns a new Tab6InFormatter.
    */
-  def apply(gRdd: FragmentRDD): Tab5InFormatter = {
-    new Tab5InFormatter(gRdd.rdd.context.hadoopConfiguration)
+  def apply(gDataset: FragmentRDD): Tab5InFormatter = {
+    new Tab5InFormatter(gDataset.rdd.context.hadoopConfiguration)
   }
 }
 

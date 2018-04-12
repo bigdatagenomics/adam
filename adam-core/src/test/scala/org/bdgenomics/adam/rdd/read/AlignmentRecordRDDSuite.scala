@@ -41,7 +41,7 @@ import org.bdgenomics.adam.rdd.{
   TestSaveArgs
 }
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
-import org.bdgenomics.adam.rdd.feature.{ CoverageRDD, FeatureRDD }
+import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
@@ -216,12 +216,12 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
 
     // get pileup at position 30
     val pointCoverage = reads.filterByOverlappingRegion(ReferenceRegion("artificial", 30, 31)).rdd.count
-    def testCoverage(coverage: CoverageRDD) {
+    def testCoverage(coverage: CoverageDataset) {
       assert(coverage.rdd.filter(r => r.start == 30).first.count == pointCoverage)
     }
 
-    val coverageRdd = reads.toCoverage()
-    testCoverage(coverageRdd)
+    val coverage = reads.toCoverage()
+    testCoverage(coverage)
 
     // test dataset path
     val readsDs = reads.transformDataset(ds => ds)
@@ -250,8 +250,8 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val inputPath = testFile("artificial.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
 
-    // repartition reads to 1 partition to acheive maximal merging of coverage
-    val coverage: CoverageRDD = reads.transform(_.repartition(1))
+    // repartition reads to 1 partition to achieve maximal merging of coverage
+    val coverage: CoverageDataset = reads.transform(_.repartition(1))
       .toCoverage()
       .sort()
       .collapse()
@@ -669,8 +669,8 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
-      val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
-      assert(rgRdd.recordGroups("aRg").sample === "test")
+      val rgDataset = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
+      assert(rgDataset.recordGroups("aRg").sample === "test")
     }
 
     val inputPath = testFile("small.sam")
@@ -705,8 +705,8 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
       val sequenceRdd = arRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
-      val rgRdd = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
-      assert(rgRdd.recordGroups("aRg").sample === "test")
+      val rgDataset = arRdd.addRecordGroup(RecordGroup("test", "aRg"))
+      assert(rgDataset.recordGroups("aRg").sample === "test")
     }
 
     val inputPath = testFile("multi_chr.sam")
@@ -1157,7 +1157,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
         Some(ReferenceRegion("chr1", 40L, 50L), ReferenceRegion("chr2", 20L, 30L)),
         Some(ReferenceRegion("chr2", 40L, 50L), ReferenceRegion("chr2", 40L, 50L)))))
 
-    val features = FeatureRDD(sc.parallelize(Seq(Feature.newBuilder
+    val features = FeatureDataset(sc.parallelize(Seq(Feature.newBuilder
       .setContigName("chr2")
       .setStart(20L)
       .setEnd(50L)
@@ -1472,14 +1472,14 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("transform reads to coverage rdd") {
     val reads = sc.loadAlignments(testFile("small.sam"))
 
-    def checkSave(coverage: CoverageRDD) {
+    def checkSave(coverage: CoverageDataset) {
       val tempPath = tmpLocation(".bed")
       coverage.save(tempPath, false, false)
 
       assert(sc.loadCoverage(tempPath).rdd.count === 20)
     }
 
-    val coverage: CoverageRDD = reads.transmute[Coverage, Coverage, CoverageRDD](
+    val coverage: CoverageDataset = reads.transmute[Coverage, Coverage, CoverageDataset](
       (rdd: RDD[AlignmentRecord]) => {
         rdd.map(AlignmentRecordRDDSuite.covFn)
       })
@@ -1489,7 +1489,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val coverageDs: CoverageRDD = reads.transmuteDataset[Coverage, Coverage, CoverageRDD](
+    val coverageDs: CoverageDataset = reads.transmuteDataset[Coverage, Coverage, CoverageDataset](
       (ds: Dataset[AlignmentRecordProduct]) => {
         ds.map(r => AlignmentRecordRDDSuite.covFn(r.toAvro))
       })
@@ -1500,14 +1500,14 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("transform reads to feature rdd") {
     val reads = sc.loadAlignments(testFile("small.sam"))
 
-    def checkSave(features: FeatureRDD) {
+    def checkSave(features: FeatureDataset) {
       val tempPath = tmpLocation(".bed")
       features.saveAsBed(tempPath)
 
       assert(sc.loadFeatures(tempPath).rdd.count === 20)
     }
 
-    val features: FeatureRDD = reads.transmute[Feature, FeatureProduct, FeatureRDD](
+    val features: FeatureDataset = reads.transmute[Feature, FeatureProduct, FeatureDataset](
       (rdd: RDD[AlignmentRecord]) => {
         rdd.map(AlignmentRecordRDDSuite.featFn)
       })
@@ -1517,7 +1517,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: FeatureRDD = reads.transmuteDataset[Feature, FeatureProduct, FeatureRDD](
+    val featuresDs: FeatureDataset = reads.transmuteDataset[Feature, FeatureProduct, FeatureDataset](
       (ds: Dataset[AlignmentRecordProduct]) => {
         ds.map(r => {
           FeatureProduct.fromAvro(
@@ -1643,7 +1643,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(htsjdkPg.getPreviousProgramGroupId === "ppg")
   }
 
-  sparkTest("GenomicRDD.sort does not fail on unmapped reads") {
+  sparkTest("GenomicDataset.sort does not fail on unmapped reads") {
     val inputPath = testFile("unmapped.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     assert(reads.rdd.count === 200)
@@ -1652,7 +1652,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     assert(sorted.rdd.count === 102)
   }
 
-  sparkTest("GenomicRDD.sortLexicographically does not fail on unmapped reads") {
+  sparkTest("GenomicDataset.sortLexicographically does not fail on unmapped reads") {
     val inputPath = testFile("unmapped.sam")
     val reads: AlignmentRecordRDD = sc.loadAlignments(inputPath)
     assert(reads.rdd.count === 200)

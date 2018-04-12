@@ -42,15 +42,15 @@ object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContex
   /**
    * Apply method for building the VCFInFormatter from a VariantContextRDD.
    *
-   * @param gRdd VariantContextRDD to build VCF header from.
+   * @param gDataset VariantContextRDD to build VCF header from.
    * @return A constructed VCFInFormatter with all needed metadata to write a
    *   VCF header.
    */
-  def apply(gRdd: VariantContextRDD): VCFInFormatter = {
-    VCFInFormatter(gRdd.sequences,
-      gRdd.samples.map(_.getSampleId),
-      gRdd.headerLines,
-      gRdd.rdd.context.hadoopConfiguration)
+  def apply(gDataset: VariantContextRDD): VCFInFormatter = {
+    VCFInFormatter(gDataset.sequences,
+      gDataset.samples.map(_.getSampleId),
+      gDataset.headerLines,
+      gDataset.rdd.context.hadoopConfiguration)
   }
 }
 

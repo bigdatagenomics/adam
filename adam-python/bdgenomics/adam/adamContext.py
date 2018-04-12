@@ -27,8 +27,8 @@ adamContext
 """
 
 from bdgenomics.adam.rdd import AlignmentRecordRDD, \
-    CoverageRDD, \
-    FeatureRDD, \
+    CoverageDataset, \
+    FeatureDataset, \
     FragmentRDD, \
     GenotypeRDD, \
     NucleotideContigFragmentRDD, \
@@ -120,7 +120,7 @@ class ADAMContext(object):
     def loadCoverage(self, filePath,
                      stringency=STRICT):
         """
-        Load features into a FeatureRDD and convert to a CoverageRDD.
+        Load features into a FeatureDataset and convert to a CoverageDataset.
         Coverage is stored in the score field of Feature.
 
         Loads path names ending in:
@@ -139,13 +139,13 @@ class ADAMContext(object):
         :param str filePath: The path to load coverage data from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns an RDD containing coverage.
-        :rtype: bdgenomics.adam.rdd.CoverageRDD
+        :rtype: bdgenomics.adam.rdd.CoverageDataset
         """
 
         adamRdd = self.__jac.loadCoverage(filePath,
                                           _toJava(stringency, self._jvm))
 
-        return CoverageRDD(adamRdd, self._sc)
+        return CoverageDataset(adamRdd, self._sc)
 
 
     def loadContigFragments(self, filePath):
@@ -193,7 +193,7 @@ class ADAMContext(object):
 
     def loadFeatures(self, filePath, stringency=STRICT):
         """
-        Load features into a FeatureRDD.
+        Load features into a FeatureDataset.
 
         Loads path names ending in:
         * .bed as BED6/12 format,
@@ -211,13 +211,13 @@ class ADAMContext(object):
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns an RDD containing features.
-        :rtype: bdgenomics.adam.rdd.FeatureRDD
+        :rtype: bdgenomics.adam.rdd.FeatureDataset
         """
 
         adamRdd = self.__jac.loadFeatures(filePath,
                                           _toJava(stringency, self._jvm))
 
-        return FeatureRDD(adamRdd, self._sc)
+        return FeatureDataset(adamRdd, self._sc)
 
 
     def loadGenotypes(self, filePath, stringency=STRICT):

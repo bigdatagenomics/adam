@@ -145,899 +145,900 @@ private case class LocatableReferenceRegion(rr: ReferenceRegion) extends Locatab
 object ADAMContext {
 
   // conversion functions for pipes
-  implicit def contigsToContigsConversionFn(gRdd: NucleotideContigFragmentRDD,
+  implicit def contigsToContigsConversionFn(gDataset: NucleotideContigFragmentRDD,
                                             rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
     // hijack the transform function to discard the old RDD
-    gRdd.transform(oldRdd => rdd)
+    gDataset.transform(oldRdd => rdd)
   }
 
   implicit def contigsToCoverageConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
-    rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: NucleotideContigFragmentRDD,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def contigsToCoverageDatasetConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
-    ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: NucleotideContigFragmentRDD,
+    ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def contigsToFeaturesConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
-    rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: NucleotideContigFragmentRDD,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, None, Seq.empty[Sample])
   }
 
   implicit def contigsToFeaturesDatasetConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
-    ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: NucleotideContigFragmentRDD,
+    ds: Dataset[FeatureProduct]): FeatureDataset = {
+    new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def contigsToFragmentsConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def contigsToFragmentsDatasetConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
     new DatasetBoundFragmentRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   implicit def contigsToAlignmentRecordsConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def contigsToAlignmentRecordsDatasetConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
     new DatasetBoundAlignmentRecordRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   implicit def contigsToGenotypesConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentRDD,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def contigsToGenotypesDatasetConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentRDD,
     ds: Dataset[GenotypeProduct]): GenotypeRDD = {
     new DatasetBoundGenotypeRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def contigsToVariantsConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentRDD,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def contigsToVariantsDatasetConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentRDD,
     ds: Dataset[VariantProduct]): VariantRDD = {
     new DatasetBoundVariantRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def contigsToVariantContextConversionFn(
-    gRdd: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentRDD,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def coverageToContigsConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gRdd.sequences, None)
+    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
   }
 
   implicit def coverageToContigsDatasetConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gRdd.sequences)
+    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
   }
 
-  implicit def coverageToCoverageConversionFn(gRdd: CoverageRDD,
-                                              rdd: RDD[Coverage]): CoverageRDD = {
+  implicit def coverageToCoverageConversionFn(gDataset: CoverageDataset,
+                                              rdd: RDD[Coverage]): CoverageDataset = {
     // hijack the transform function to discard the old RDD
-    gRdd.transform(oldRdd => rdd)
+    gDataset.transform(oldRdd => rdd)
   }
 
   implicit def coverageToFeaturesConversionFn(
-    gRdd: CoverageRDD,
-    rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: CoverageDataset,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, gDataset.samples, None)
   }
 
   implicit def coverageToFeaturesDatasetConversionFn(
-    gRdd: CoverageRDD,
-    ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: CoverageDataset,
+    ds: Dataset[FeatureProduct]): FeatureDataset = {
+    new DatasetBoundFeatureDataset(ds, gDataset.sequences, gDataset.samples)
   }
 
   implicit def coverageToFragmentsConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def coverageToFragmentsDatasetConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
     new DatasetBoundFragmentRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   implicit def coverageToAlignmentRecordsConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def coverageToAlignmentRecordsDatasetConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
     new DatasetBoundAlignmentRecordRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   implicit def coverageToGenotypesConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def coverageToGenotypesDatasetConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     ds: Dataset[GenotypeProduct]): GenotypeRDD = {
     new DatasetBoundGenotypeRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def coverageToVariantsConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def coverageToVariantsDatasetConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     ds: Dataset[VariantProduct]): VariantRDD = {
     new DatasetBoundVariantRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def coverageToVariantContextConversionFn(
-    gRdd: CoverageRDD,
+    gDataset: CoverageDataset,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def featuresToContigsConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gRdd.sequences, None)
+    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
   }
 
   implicit def featuresToContigsDatasetConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gRdd.sequences)
+    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
   }
 
   implicit def featuresToCoverageConversionFn(
-    gRdd: FeatureRDD,
-    rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: FeatureDataset,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, gDataset.samples, None)
   }
 
   implicit def featuresToCoverageDatasetConversionFn(
-    gRdd: FeatureRDD,
-    ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: FeatureDataset,
+    ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, gDataset.sequences, gDataset.samples)
   }
 
-  implicit def featuresToFeaturesConversionFn(gRdd: FeatureRDD,
-                                              rdd: RDD[Feature]): FeatureRDD = {
+  implicit def featuresToFeaturesConversionFn(gDataset: FeatureDataset,
+                                              rdd: RDD[Feature]): FeatureDataset = {
     // hijack the transform function to discard the old RDD
-    gRdd.transform(oldRdd => rdd)
+    gDataset.transform(oldRdd => rdd)
   }
 
   implicit def featuresToFragmentsConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def featuresToFragmentsDatasetConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
     new DatasetBoundFragmentRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   implicit def featuresToAlignmentRecordsConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def featuresToAlignmentRecordsDatasetConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
     new DatasetBoundAlignmentRecordRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   implicit def featuresToGenotypesConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def featuresToGenotypesDatasetConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     ds: Dataset[GenotypeProduct]): GenotypeRDD = {
     new DatasetBoundGenotypeRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def featuresToVariantsConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def featuresToVariantsDatasetConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     ds: Dataset[VariantProduct]): VariantRDD = {
     new DatasetBoundVariantRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def featuresToVariantContextConversionFn(
-    gRdd: FeatureRDD,
+    gDataset: FeatureDataset,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def fragmentsToContigsConversionFn(
-    gRdd: FragmentRDD,
+    gDataset: FragmentRDD,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gRdd.sequences, None)
+    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
   }
 
   implicit def fragmentsToContigsDatasetConversionFn(
-    gRdd: FragmentRDD,
+    gDataset: FragmentRDD,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gRdd.sequences)
+    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
   }
 
   implicit def fragmentsToCoverageConversionFn(
-    gRdd: FragmentRDD,
-    rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: FragmentRDD,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def fragmentsToCoverageDatasetConversionFn(
-    gRdd: FragmentRDD,
-    ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: FragmentRDD,
+    ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def fragmentsToFeaturesConversionFn(
-    gRdd: FragmentRDD,
-    rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: FragmentRDD,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def fragmentsToFeaturesDatasetConversionFn(
-    gRdd: FragmentRDD,
-    ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: FragmentRDD,
+    ds: Dataset[FeatureProduct]): FeatureDataset = {
+    new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
-  implicit def fragmentsToFragmentsConversionFn(gRdd: FragmentRDD,
+  implicit def fragmentsToFragmentsConversionFn(gDataset: FragmentRDD,
                                                 rdd: RDD[Fragment]): FragmentRDD = {
     // hijack the transform function to discard the old RDD
-    gRdd.transform(oldRdd => rdd)
+    gDataset.transform(oldRdd => rdd)
   }
 
   implicit def fragmentsToAlignmentRecordsConversionFn(
-    gRdd: FragmentRDD,
+    gDataset: FragmentRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
-      gRdd.sequences,
-      gRdd.recordGroups,
-      gRdd.processingSteps,
+      gDataset.sequences,
+      gDataset.recordGroups,
+      gDataset.processingSteps,
       None)
   }
 
   implicit def fragmentsToAlignmentRecordsDatasetConversionFn(
-    gRdd: FragmentRDD,
+    gDataset: FragmentRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
     new DatasetBoundAlignmentRecordRDD(ds,
-      gRdd.sequences,
-      gRdd.recordGroups,
-      gRdd.processingSteps)
+      gDataset.sequences,
+      gDataset.recordGroups,
+      gDataset.processingSteps)
   }
 
   implicit def fragmentsToGenotypesConversionFn(
-    gRdd: FragmentRDD,
+    gDataset: FragmentRDD,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
-      gRdd.sequences,
-      gRdd.recordGroups.toSamples,
+      gDataset.sequences,
+      gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def fragmentsToGenotypesDatasetConversionFn(
-    gRdd: FragmentRDD,
+    gDataset: FragmentRDD,
     ds: Dataset[GenotypeProduct]): GenotypeRDD = {
     new DatasetBoundGenotypeRDD(ds,
-      gRdd.sequences,
-      gRdd.recordGroups.toSamples,
+      gDataset.sequences,
+      gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def fragmentsToVariantsConversionFn(
-    gRdd: FragmentRDD,
+    gDataset: FragmentRDD,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def fragmentsToVariantsDatasetConversionFn(
-    gRdd: FragmentRDD,
+    gDataset: FragmentRDD,
     ds: Dataset[VariantProduct]): VariantRDD = {
     new DatasetBoundVariantRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def fragmentsToVariantContextConversionFn(
-    gRdd: FragmentRDD,
+    gDataset: FragmentRDD,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
-      gRdd.sequences,
-      gRdd.recordGroups.toSamples,
+      gDataset.sequences,
+      gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def genericToContigsConversionFn[Y <: GenericGenomicDataset[_, _]](
-    gRdd: Y,
+    gDataset: Y,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gRdd.sequences, None)
+    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
   }
 
   implicit def genericToCoverageConversionFn[Y <: GenericGenomicDataset[_, _]](
-    gRdd: Y,
-    rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: Y,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genericToFeatureConversionFn[Y <: GenericGenomicDataset[_, _]](
-    gRdd: Y,
-    rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: Y,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genericToFragmentsConversionFn[Y <: GenericGenomicDataset[_, _]](
-    gRdd: Y,
+    gDataset: Y,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def genericToAlignmentRecordsConversionFn[Y <: GenericGenomicDataset[_, _]](
-    gRdd: Y,
+    gDataset: Y,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def genericToGenotypesConversionFn[Y <: GenericGenomicDataset[_, _]](
-    gRdd: Y,
+    gDataset: Y,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def genericToVariantsConversionFn[Y <: GenericGenomicDataset[_, _]](
-    gRdd: Y,
+    gDataset: Y,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def genericToVariantContextsConversionFn[Y <: GenericGenomicDataset[_, _]](
-    gRdd: Y,
+    gDataset: Y,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     new RDDBoundVariantContextRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def alignmentRecordsToContigsConversionFn(
-    gRdd: AlignmentRecordRDD,
+    gDataset: AlignmentRecordRDD,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gRdd.sequences, None)
+    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
   }
 
   implicit def alignmentRecordsToContigsDatasetConversionFn(
-    gRdd: AlignmentRecordRDD,
+    gDataset: AlignmentRecordRDD,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gRdd.sequences)
+    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
   }
 
   implicit def alignmentRecordsToCoverageConversionFn(
-    gRdd: AlignmentRecordRDD,
-    rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: AlignmentRecordRDD,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def alignmentRecordsToCoverageDatasetConversionFn(
-    gRdd: AlignmentRecordRDD,
-    ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: AlignmentRecordRDD,
+    ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def alignmentRecordsToFeaturesConversionFn(
-    gRdd: AlignmentRecordRDD,
-    rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: AlignmentRecordRDD,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def alignmentRecordsToFeaturesDatasetConversionFn(
-    gRdd: AlignmentRecordRDD,
-    ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: AlignmentRecordRDD,
+    ds: Dataset[FeatureProduct]): FeatureDataset = {
+    new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def alignmentRecordsToFragmentsConversionFn(
-    gRdd: AlignmentRecordRDD,
+    gDataset: AlignmentRecordRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
-      gRdd.sequences,
-      gRdd.recordGroups,
-      gRdd.processingSteps,
+      gDataset.sequences,
+      gDataset.recordGroups,
+      gDataset.processingSteps,
       None)
   }
 
   implicit def alignmentRecordsToFragmentsDatasetConversionFn(
-    gRdd: AlignmentRecordRDD,
+    gDataset: AlignmentRecordRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
     new DatasetBoundFragmentRDD(ds,
-      gRdd.sequences,
-      gRdd.recordGroups,
-      gRdd.processingSteps)
+      gDataset.sequences,
+      gDataset.recordGroups,
+      gDataset.processingSteps)
   }
 
-  implicit def alignmentRecordsToAlignmentRecordsConversionFn(gRdd: AlignmentRecordRDD,
+  implicit def alignmentRecordsToAlignmentRecordsConversionFn(gDataset: AlignmentRecordRDD,
                                                               rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     // hijack the transform function to discard the old RDD
-    gRdd.transform(oldRdd => rdd)
+    gDataset.transform(oldRdd => rdd)
   }
 
   implicit def alignmentRecordsToGenotypesConversionFn(
-    gRdd: AlignmentRecordRDD,
+    gDataset: AlignmentRecordRDD,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
-      gRdd.sequences,
-      gRdd.recordGroups.toSamples,
+      gDataset.sequences,
+      gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def alignmentRecordsToGenotypesDatasetConversionFn(
-    gRdd: AlignmentRecordRDD,
+    gDataset: AlignmentRecordRDD,
     ds: Dataset[GenotypeProduct]): GenotypeRDD = {
     new DatasetBoundGenotypeRDD(ds,
-      gRdd.sequences,
-      gRdd.recordGroups.toSamples,
+      gDataset.sequences,
+      gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def alignmentRecordsToVariantsConversionFn(
-    gRdd: AlignmentRecordRDD,
+    gDataset: AlignmentRecordRDD,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
   }
 
   implicit def alignmentRecordsToVariantsDatasetConversionFn(
-    gRdd: AlignmentRecordRDD,
+    gDataset: AlignmentRecordRDD,
     ds: Dataset[VariantProduct]): VariantRDD = {
     new DatasetBoundVariantRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def alignmentRecordsToVariantContextConversionFn(
-    gRdd: AlignmentRecordRDD,
+    gDataset: AlignmentRecordRDD,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
-      gRdd.sequences,
-      gRdd.recordGroups.toSamples,
+      gDataset.sequences,
+      gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def genotypesToContigsConversionFn(
-    gRdd: GenotypeRDD,
+    gDataset: GenotypeRDD,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gRdd.sequences, None)
+    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
   }
 
   implicit def genotypesToContigsDatasetConversionFn(
-    gRdd: GenotypeRDD,
+    gDataset: GenotypeRDD,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gRdd.sequences)
+    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
   }
 
   implicit def genotypesToCoverageConversionFn(
-    gRdd: GenotypeRDD,
-    rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: GenotypeRDD,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genotypesToCoverageDatasetConversionFn(
-    gRdd: GenotypeRDD,
-    ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: GenotypeRDD,
+    ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def genotypesToFeaturesConversionFn(
-    gRdd: GenotypeRDD,
-    rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: GenotypeRDD,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genotypesToFeaturesDatasetConversionFn(
-    gRdd: GenotypeRDD,
-    ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: GenotypeRDD,
+    ds: Dataset[FeatureProduct]): FeatureDataset = {
+    new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
+>>>>>>> e467d382... Complete refactoring GenomicRDD to GenomicDataset.
   }
 
   implicit def genotypesToFragmentsConversionFn(
-    gRdd: GenotypeRDD,
+    gDataset: GenotypeRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def genotypesToFragmentsDatasetConversionFn(
-    gRdd: GenotypeRDD,
+    gDataset: GenotypeRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
     new DatasetBoundFragmentRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   implicit def genotypesToAlignmentRecordsConversionFn(
-    gRdd: GenotypeRDD,
+    gDataset: GenotypeRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def genotypesToAlignmentRecordsDatasetConversionFn(
-    gRdd: GenotypeRDD,
+    gDataset: GenotypeRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
     new DatasetBoundAlignmentRecordRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
-  implicit def genotypesToGenotypesConversionFn(gRdd: GenotypeRDD,
+  implicit def genotypesToGenotypesConversionFn(gDataset: GenotypeRDD,
                                                 rdd: RDD[Genotype]): GenotypeRDD = {
     // hijack the transform function to discard the old RDD
-    gRdd.transform(oldRdd => rdd)
+    gDataset.transform(oldRdd => rdd)
   }
 
   implicit def genotypesToVariantsConversionFn(
-    gRdd: GenotypeRDD,
+    gDataset: GenotypeRDD,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
-      gRdd.sequences,
-      gRdd.headerLines,
+      gDataset.sequences,
+      gDataset.headerLines,
       None)
   }
 
   implicit def genotypesToVariantsDatasetConversionFn(
-    gRdd: GenotypeRDD,
+    gDataset: GenotypeRDD,
     ds: Dataset[VariantProduct]): VariantRDD = {
     new DatasetBoundVariantRDD(ds,
-      gRdd.sequences,
-      gRdd.headerLines)
+      gDataset.sequences,
+      gDataset.headerLines)
   }
 
   implicit def genotypesToVariantContextConversionFn(
-    gRdd: GenotypeRDD,
+    gDataset: GenotypeRDD,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
-      gRdd.sequences,
-      gRdd.samples,
-      gRdd.headerLines)
+      gDataset.sequences,
+      gDataset.samples,
+      gDataset.headerLines)
   }
 
   implicit def variantsToContigsConversionFn(
-    gRdd: VariantRDD,
+    gDataset: VariantRDD,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gRdd.sequences, None)
+    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
   }
 
   implicit def variantsToContigsDatasetConversionFn(
-    gRdd: VariantRDD,
+    gDataset: VariantRDD,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gRdd.sequences)
+    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
   }
 
   implicit def variantsToCoverageConversionFn(
-    gRdd: VariantRDD,
-    rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: VariantRDD,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantsToCoverageDatasetConversionFn(
-    gRdd: VariantRDD,
-    ds: Dataset[Coverage]): CoverageRDD = {
-    new DatasetBoundCoverageRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: VariantRDD,
+    ds: Dataset[Coverage]): CoverageDataset = {
+    new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def variantsToFeaturesConversionFn(
-    gRdd: VariantRDD,
-    rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: VariantRDD,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantsToFeaturesDatasetConversionFn(
-    gRdd: VariantRDD,
-    ds: Dataset[FeatureProduct]): FeatureRDD = {
-    new DatasetBoundFeatureRDD(ds, gRdd.sequences, Seq.empty[Sample])
+    gDataset: VariantRDD,
+    ds: Dataset[FeatureProduct]): FeatureDataset = {
+    new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def variantsToFragmentsConversionFn(
-    gRdd: VariantRDD,
+    gDataset: VariantRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def variantsToFragmentsDatasetConversionFn(
-    gRdd: VariantRDD,
+    gDataset: VariantRDD,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
     new DatasetBoundFragmentRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   implicit def variantsToAlignmentRecordsConversionFn(
-    gRdd: VariantRDD,
+    gDataset: VariantRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def variantsToAlignmentRecordsDatasetConversionFn(
-    gRdd: VariantRDD,
+    gDataset: VariantRDD,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
     new DatasetBoundAlignmentRecordRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
   }
 
   implicit def variantsToGenotypesConversionFn(
-    gRdd: VariantRDD,
+    gDataset: VariantRDD,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
-      gRdd.headerLines,
+      gDataset.headerLines,
       None)
   }
 
   implicit def variantsToGenotypesDatasetConversionFn(
-    gRdd: VariantRDD,
+    gDataset: VariantRDD,
     ds: Dataset[GenotypeProduct]): GenotypeRDD = {
     new DatasetBoundGenotypeRDD(ds,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
-      gRdd.headerLines)
+      gDataset.headerLines)
   }
 
-  implicit def variantsToVariantsConversionFn(gRdd: VariantRDD,
+  implicit def variantsToVariantsConversionFn(gDataset: VariantRDD,
                                               rdd: RDD[Variant]): VariantRDD = {
     // hijack the transform function to discard the old RDD
-    gRdd.transform(oldRdd => rdd)
+    gDataset.transform(oldRdd => rdd)
   }
 
   implicit def variantsToVariantContextConversionFn(
-    gRdd: VariantRDD,
+    gDataset: VariantRDD,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       Seq.empty,
-      gRdd.headerLines)
+      gDataset.headerLines)
   }
 
   implicit def variantContextsToContigsConversionFn(
-    gRdd: VariantContextRDD,
+    gDataset: VariantContextRDD,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gRdd.sequences, None)
+    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
   }
 
   implicit def variantContextsToCoverageConversionFn(
-    gRdd: VariantContextRDD,
-    rdd: RDD[Coverage]): CoverageRDD = {
-    new RDDBoundCoverageRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: VariantContextRDD,
+    rdd: RDD[Coverage]): CoverageDataset = {
+    new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantContextsToFeaturesConversionFn(
-    gRdd: VariantContextRDD,
-    rdd: RDD[Feature]): FeatureRDD = {
-    new RDDBoundFeatureRDD(rdd, gRdd.sequences, Seq.empty[Sample], None)
+    gDataset: VariantContextRDD,
+    rdd: RDD[Feature]): FeatureDataset = {
+    new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantContextsToFragmentsConversionFn(
-    gRdd: VariantContextRDD,
+    gDataset: VariantContextRDD,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def variantContextsToAlignmentRecordsConversionFn(
-    gRdd: VariantContextRDD,
+    gDataset: VariantContextRDD,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
-      gRdd.sequences,
+      gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
       None)
   }
 
   implicit def variantContextsToGenotypesConversionFn(
-    gRdd: VariantContextRDD,
+    gDataset: VariantContextRDD,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
-      gRdd.sequences,
-      gRdd.samples,
-      gRdd.headerLines,
+      gDataset.sequences,
+      gDataset.samples,
+      gDataset.headerLines,
       None)
   }
 
   implicit def variantContextsToVariantsConversionFn(
-    gRdd: VariantContextRDD,
+    gDataset: VariantContextRDD,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
-      gRdd.sequences,
-      gRdd.headerLines,
+      gDataset.sequences,
+      gDataset.headerLines,
       None)
   }
 
-  implicit def variantContextsToVariantContextsConversionFn(gRdd: VariantContextRDD,
+  implicit def variantContextsToVariantContextsConversionFn(gDataset: VariantContextRDD,
                                                             rdd: RDD[VariantContext]): VariantContextRDD = {
     // hijack the transform function to discard the old RDD
-    gRdd.transform(oldRdd => rdd)
+    gDataset.transform(oldRdd => rdd)
   }
 
   // Add ADAM Spark context methods
@@ -2562,7 +2563,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   /**
    * Load paired unaligned alignment records grouped by sequencing fragment
-   * from paired FASTQ files into an FragmentRDD.
+   * from paired FASTQ files into an FragmentDataset.
    *
    * Fragments represent all of the reads from a single sequenced fragment as
    * a single object, which is a useful representation for some tasks.
@@ -2578,7 +2579,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   validation. Defaults to StorageLevel.MEMORY_ONLY.
    * @param stringency The validation stringency to use when validating paired FASTQ format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a FragmentRDD containing the paired reads grouped by
+   * @return Returns a FragmentDataset containing the paired reads grouped by
    *   sequencing fragment.
    */
   def loadPairedFastqAsFragments(
@@ -2586,13 +2587,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName2: String,
     optRecordGroup: Option[String] = None,
     persistLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
-    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentRDD = LoadPairedFastqFragments.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentDataset = LoadPairedFastqFragments.time {
 
     loadPairedFastq(pathName1, pathName2, optRecordGroup, persistLevel, stringency).toFragments()
   }
 
   /**
-   * Load features into a FeatureRDD and convert to a CoverageRDD.
+   * Load features into a FeatureDataset and convert to a CoverageDataset.
    * Coverage is stored in the score field of Feature.
    *
    * Loads path names ending in:
@@ -2628,7 +2629,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param stringency The validation stringency to use when validating BED6/12, GFF3,
    *   GTF/GFF2, NarrowPeak, or IntervalList formats. Defaults to ValidationStringency.STRICT.
-   * @return Returns a FeatureRDD converted to a CoverageRDD.
+   * @return Returns a FeatureDataset converted to a CoverageDataset.
    */
   def loadCoverage(
     pathName: String,
@@ -2636,7 +2637,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optMinPartitions: Option[Int] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): CoverageRDD = LoadCoverage.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): CoverageDataset = LoadCoverage.time {
 
     loadFeatures(pathName,
       optSequenceDictionary = optSequenceDictionary,
@@ -2647,7 +2648,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in Parquet + Avro format into a FeatureRDD and convert to a CoverageRDD.
+   * Load a path name in Parquet + Avro format into a FeatureDataset and convert to a CoverageDataset.
    * Coverage is stored in the score field of Feature.
    *
    * @param pathName The path name to load features from.
@@ -2655,19 +2656,19 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param optPredicate An optional pushdown predicate to use when reading Parquet + Avro.
    *   Defaults to None.
    * @param forceRdd Forces loading the RDD.
-   * @return Returns a FeatureRDD converted to a CoverageRDD.
+   * @return Returns a FeatureDataset converted to a CoverageDataset.
    */
   def loadParquetCoverage(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
-    forceRdd: Boolean = false): CoverageRDD = {
+    forceRdd: Boolean = false): CoverageDataset = {
 
     if (optPredicate.isEmpty && !forceRdd) {
       // convert avro to sequence dictionary
       val sd = loadAvroSequenceDictionary(pathName)
       val samples = loadAvroSamples(pathName)
 
-      new ParquetUnboundCoverageRDD(sc, pathName, sd, samples)
+      new ParquetUnboundCoverageDataset(sc, pathName, sd, samples)
     } else {
       val coverageFields = Projection(FeatureField.contigName,
         FeatureField.start,
@@ -2682,7 +2683,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in GFF3 format into a FeatureRDD.
+   * Load a path name in GFF3 format into a FeatureDataset.
    *
    * @param pathName The path name to load features in GFF3 format from.
    *   Globs/directories are supported.
@@ -2691,24 +2692,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating GFF3 format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadGff3(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadGff3.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadGff3.time {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GFF3Parser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records))(FeatureRDD(records, _, Seq.empty))
+      .fold(FeatureDataset(records))(FeatureDataset(records, _, Seq.empty))
   }
 
   /**
-   * Load a path name in GTF/GFF2 format into a FeatureRDD.
+   * Load a path name in GTF/GFF2 format into a FeatureDataset.
    *
    * @param pathName The path name to load features in GTF/GFF2 format from.
    *   Globs/directories are supported.
@@ -2717,24 +2718,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating GTF/GFF2 format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadGtf(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadGtf.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadGtf.time {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new GTFParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records))(FeatureRDD(records, _, Seq.empty))
+      .fold(FeatureDataset(records))(FeatureDataset(records, _, Seq.empty))
   }
 
   /**
-   * Load a path name in BED6/12 format into a FeatureRDD.
+   * Load a path name in BED6/12 format into a FeatureDataset.
    *
    * @param pathName The path name to load features in BED6/12 format from.
    *   Globs/directories are supported.
@@ -2743,24 +2744,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating BED6/12 format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadBed(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadBed.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadBed.time {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new BEDParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records))(FeatureRDD(records, _, Seq.empty))
+      .fold(FeatureDataset(records))(FeatureDataset(records, _, Seq.empty))
   }
 
   /**
-   * Load a path name in NarrowPeak format into a FeatureRDD.
+   * Load a path name in NarrowPeak format into a FeatureDataset.
    *
    * @param pathName The path name to load features in NarrowPeak format from.
    *   Globs/directories are supported.
@@ -2769,24 +2770,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating NarrowPeak format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadNarrowPeak(
     pathName: String,
     optSequenceDictionary: Option[SequenceDictionary] = None,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadNarrowPeak.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadNarrowPeak.time {
 
     val records = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .flatMap(new NarrowPeakParser().parse(_, stringency))
     if (Metrics.isRecording) records.instrument() else records
 
     optSequenceDictionary
-      .fold(FeatureRDD(records))(FeatureRDD(records, _, Seq.empty))
+      .fold(FeatureDataset(records))(FeatureDataset(records, _, Seq.empty))
   }
 
   /**
-   * Load a path name in IntervalList format into a FeatureRDD.
+   * Load a path name in IntervalList format into a FeatureDataset.
    *
    * @param pathName The path name to load features in IntervalList format from.
    *   Globs/directories are supported.
@@ -2794,12 +2795,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   not set, falls back to the configured Spark default parallelism. Defaults to None.
    * @param stringency The validation stringency to use when validating IntervalList format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadIntervalList(
     pathName: String,
     optMinPartitions: Option[Int] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadIntervalList.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadIntervalList.time {
 
     val parsedLines = sc.textFile(pathName, optMinPartitions.getOrElse(sc.defaultParallelism))
       .map(new IntervalListParser().parseWithHeader(_, stringency))
@@ -2807,11 +2808,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       parsedLines.flatMap(_._2))
 
     if (Metrics.isRecording) records.instrument() else records
-    FeatureRDD(records, seqDict, Seq.empty)
+    FeatureDataset(records, seqDict, Seq.empty)
   }
 
   /**
-   * Load a path name in Parquet + Avro format into a FeatureRDD.
+   * Load a path name in Parquet + Avro format into a FeatureDataset.
    *
    * @param pathName The path name to load features from.
    *   Globs/directories are supported.
@@ -2819,31 +2820,30 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadParquetFeatures(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): FeatureRDD = {
+    optProjection: Option[Schema] = None): FeatureDataset = {
 
     val sd = loadAvroSequenceDictionary(pathName)
     val samples = loadAvroSamples(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundFeatureRDD(sc, pathName, sd, samples)
+        ParquetUnboundFeatureDataset(sc, pathName, sd, samples)
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[Feature](pathName, optPredicate, optProjection)
-
-        new RDDBoundFeatureRDD(rdd, sd, samples, optPartitionMap = extractPartitionMap(pathName))
+        new RDDBoundFeatureDataset(rdd, sd, samples, optPartitionMap = extractPartitionMap(pathName))
       }
     }
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet format into a FeatureRDD.
+   * Load a path name with range binned partitioned Parquet format into a FeatureDataset.
    *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
@@ -2851,15 +2851,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *   region when using the filterByOverlappingRegions function on the returned dataset.
    *   Defaults to one partition.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadPartitionedParquetFeatures(pathName: String,
                                      regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                     optLookbackPartitions: Option[Int] = Some(1)): FeatureRDD = {
+                                     optLookbackPartitions: Option[Int] = Some(1)): FeatureDataset = {
 
     val partitionedBinSize = getPartitionBinSize(pathName)
     val features = loadParquetFeatures(pathName)
-    val featureDatasetBound = DatasetBoundFeatureRDD(features.dataset,
+    val featureDatasetBound = DatasetBoundFeatureDataset(features.dataset,
       features.sequences,
       features.samples,
       isPartitioned = true,
@@ -2972,7 +2972,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load features into a FeatureRDD.
+   * Load features into a FeatureDataset.
    *
    * Loads path names ending in:
    * * .bed as BED6/12 format,
@@ -3007,7 +3007,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param stringency The validation stringency to use when validating BED6/12, GFF3,
    *   GTF/GFF2, NarrowPeak, or IntervalList formats. Defaults to ValidationStringency.STRICT.
-   * @return Returns a FeatureRDD.
+   * @return Returns a FeatureDataset.
    */
   def loadFeatures(
     pathName: String,
@@ -3015,7 +3015,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optMinPartitions: Option[Int] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureRDD = LoadFeatures.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FeatureDataset = LoadFeatures.time {
 
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isBedExt(trimmedPathName)) {

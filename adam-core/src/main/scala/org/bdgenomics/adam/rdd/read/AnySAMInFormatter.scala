@@ -40,22 +40,22 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
                               converter: AlignmentRecordConverter): T
 
   /**
-   * Makes an AnySAMInFormatter from a GenomicRDD of AlignmentRecords.
+   * Makes an AnySAMInFormatter from a GenomicDataset of AlignmentRecords.
    *
-   * @param gRdd AlignmentRecordRDD with reference build and record group info.
+   * @param gDataset AlignmentRecordRDD with reference build and record group info.
    * @return Returns an InFormatter that extends AnySAMInFormatter.
    */
-  def apply(gRdd: AlignmentRecordRDD): T = {
+  def apply(gDataset: AlignmentRecordRDD): T = {
 
     // make a converter
     val arc = new AlignmentRecordConverter
 
     // build a header and set the sort order
-    val header = arc.createSAMHeader(gRdd.sequences, gRdd.recordGroups)
+    val header = arc.createSAMHeader(gDataset.sequences, gDataset.recordGroups)
     header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
 
     // construct the in formatter
-    makeFormatter(SAMFileHeaderWritable(header), gRdd.recordGroups, arc)
+    makeFormatter(SAMFileHeaderWritable(header), gDataset.recordGroups, arc)
   }
 }
 

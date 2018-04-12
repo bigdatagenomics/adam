@@ -150,7 +150,7 @@ setMethod("loadFragments",
               FragmentRDD(jrdd)
           })
 
-#' Load features into a FeatureRDD.
+#' Load features into a FeatureDataset.
 #'
 #' Loads path names ending in:
 #' * .bed as BED6/12 format,
@@ -181,10 +181,10 @@ setMethod("loadFeatures",
                                          "loadFeatures",
                                          filePath,
                                          jStringency)
-              FeatureRDD(jrdd)
+              FeatureDataset(jrdd)
           })
 
-#' Load features into a FeatureRDD and convert to a CoverageRDD.
+#' Load features into a FeatureDataset and convert to a CoverageDataset.
 #' Coverage is stored in the score field of Feature.
 #'
 #' Loads path names ending in:
@@ -216,7 +216,7 @@ setMethod("loadCoverage",
                                          "loadCoverage",
                                          filePath,
                                          jStringency)
-              CoverageRDD(jrdd)
+              CoverageDataset(jrdd)
           })
 
 #' Load genotypes into a GenotypeRDD.
