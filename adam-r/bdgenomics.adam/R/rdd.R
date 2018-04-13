@@ -109,17 +109,17 @@ GenotypeRDD <- function(jrdd) {
 
 #' A class that wraps an RDD of contigs with helpful metadata.
 #'
-#' @rdname NucleotideContigFragmentRDD
+#' @rdname NucleotideContigFragmentDataset
 #' @slot jrdd The Java RDD of contigs that this class wraps.
 #' 
 #' @export
-setClass("NucleotideContigFragmentRDD",
+setClass("NucleotideContigFragmentDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-NucleotideContigFragmentRDD <- function(jrdd) {
-    new("NucleotideContigFragmentRDD", jrdd = jrdd)
+NucleotideContigFragmentDataset <- function(jrdd) {
+    new("NucleotideContigFragmentDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of variants with helpful metadata.
@@ -373,7 +373,7 @@ setMethod("inferConversionFn",
 setMethod("destClassSuffix",
           signature(destClass = "character"),
           function(destClass) {
-              if (destClass == "NucleotideContigFragmentRDD") {
+              if (destClass == "NucleotideContigFragmentDataset") {
                   "ContigsDatasetConverter"
               } else if (destClass == "CoverageDataset") {
                   "CoverageDatasetConverter"
@@ -1265,7 +1265,7 @@ setMethod("toVariantContexts", signature(ardd = "GenotypeRDD"),
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "NucleotideContigFragmentRDD",
+          signature(ardd = "NucleotideContigFragmentDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.ContigsTo",
@@ -1273,10 +1273,10 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "NucleotideContigFragmentRDD",
+          signature(ardd = "NucleotideContigFragmentDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              NucleotideContigFragmentRDD(rdd)
+              NucleotideContigFragmentDataset(rdd)
           })
 
 #' Save nucleotide contig fragments as Parquet or FASTA.
@@ -1290,7 +1290,7 @@ setMethod("replaceRdd",
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("save", signature(ardd = "NucleotideContigFragmentRDD", filePath = "character"),
+setMethod("save", signature(ardd = "NucleotideContigFragmentDataset", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath))
           })
@@ -1307,9 +1307,9 @@ setMethod("save", signature(ardd = "NucleotideContigFragmentRDD", filePath = "ch
 #'
 #' @export
 setMethod("flankAdjacentFragments",
-          signature(ardd = "NucleotideContigFragmentRDD", flankLength = "numeric"),
+          signature(ardd = "NucleotideContigFragmentDataset", flankLength = "numeric"),
           function(ardd, flankLength) {
-              NucleotideContigFragmentRDD(sparkR.callJMethod(ardd@jrdd,
+              NucleotideContigFragmentDataset(sparkR.callJMethod(ardd@jrdd,
                                                              "flankAdjacentFragments",
                                                              flankLength))
           })

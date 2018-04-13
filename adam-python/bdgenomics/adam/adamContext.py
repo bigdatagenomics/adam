@@ -31,7 +31,7 @@ from bdgenomics.adam.rdd import AlignmentRecordRDD, \
     FeatureDataset, \
     FragmentRDD, \
     GenotypeRDD, \
-    NucleotideContigFragmentRDD, \
+    NucleotideContigFragmentDataset, \
     VariantRDD
 from bdgenomics.adam.stringency import STRICT, _toJava
 
@@ -150,7 +150,7 @@ class ADAMContext(object):
 
     def loadContigFragments(self, filePath):
         """
-        Load nucleotide contig fragments into a NucleotideContigFragmentRDD.
+        Load nucleotide contig fragments into a NucleotideContigFragmentDataset.
 
         If the path name has a .fa/.fasta extension, load as FASTA format.
         Else, fall back to Parquet + Avro.
@@ -160,12 +160,12 @@ class ADAMContext(object):
 
         :param str filePath: The path to load the file from.
         :return: Returns an RDD containing sequence fragments.
-        :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentRDD
+        :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentDataset
         """
 
         adamRdd = self.__jac.loadContigFragments(filePath)
 
-        return NucleotideContigFragmentRDD(adamRdd, self._sc)
+        return NucleotideContigFragmentDataset(adamRdd, self._sc)
 
 
     def loadFragments(self, filePath, stringency=STRICT):

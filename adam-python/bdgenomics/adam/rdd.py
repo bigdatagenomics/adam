@@ -228,7 +228,7 @@ class GenomicDataset(object):
 
     def _destClassSuffix(self, destClass):
 
-        if destClass is NucleotideContigFragmentRDD:
+        if destClass is NucleotideContigFragmentDataset:
             return "ContigsDatasetConverter"
         elif destClass is CoverageDataset:
             return "CoverageDatasetConverter"
@@ -1479,23 +1479,23 @@ class GenotypeRDD(VCFSupportingGenomicDataset):
         return "org.bdgenomics.adam.api.java.GenotypesTo%s" % self._destClassSuffix(destClass)
 
 
-class NucleotideContigFragmentRDD(GenomicDataset):
+class NucleotideContigFragmentDataset(GenomicDataset):
     """
-    Wraps an GenomicDatset with Nucleotide Contig Fragment metadata and functions.
+    Wraps an GenomicDataset with Nucleotide Contig Fragment metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
 
-        return NucleotideContigFragmentRDD(newRdd, self.sc)
+        return NucleotideContigFragmentDataset(newRdd, self.sc)
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python NucleotideContigFragmentRDD from a JVM
-        NucleotideContigFragmentRDD. Should not be called from user code;
+        Constructs a Python NucleotideContigFragmentDataset from a JVM
+        NucleotideContigFragmentDataset. Should not be called from user code;
         instead, go through bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM NucleotideContigFragmentRDD.
+        :param jvmRdd: Py4j handle to the underlying JVM NucleotideContigFragmentDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
@@ -1525,11 +1525,10 @@ class NucleotideContigFragmentRDD(GenomicDataset):
         :param int flankLength: The length to extend adjacent records by.
         :return: Returns the RDD, with all adjacent fragments extended with
         flanking sequence.
-        :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentRDD
+        :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentDataset
         """
 
-        return NucleotideContigFragmentRDD(self._jvmRdd.flankAdjacentFragments(flankLength),
-                                           self.sc)
+        return NucleotideContigFragmentDataset(self._jvmRdd.flankAdjacentFragments(flankLength), self.sc)
 
 
     def countKmers(self, kmerLength):

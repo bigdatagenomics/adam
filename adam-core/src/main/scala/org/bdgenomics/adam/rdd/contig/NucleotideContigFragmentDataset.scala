@@ -73,16 +73,16 @@ private[adam] class NucleotideContigFragmentArraySerializer extends IntervalArra
   }
 }
 
-object NucleotideContigFragmentRDD extends Serializable {
+object NucleotideContigFragmentDataset extends Serializable {
 
   /**
-   * Builds a NucleotideContigFragmentRDD when no sequence dictionary is given.
+   * Builds a NucleotideContigFragmentDataset when no sequence dictionary is given.
    *
    * @param rdd Underlying RDD. We recompute the sequence dictionary from
    *   this RDD.
-   * @return Returns a new NucleotideContigFragmentRDD.
+   * @return Returns a new NucleotideContigFragmentDataset.
    */
-  private[rdd] def apply(rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
+  private[rdd] def apply(rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
 
     // get sequence dictionary
     val sd = new SequenceDictionary(rdd.flatMap(ncf => {
@@ -95,27 +95,27 @@ object NucleotideContigFragmentRDD extends Serializable {
       .collect
       .toVector)
 
-    NucleotideContigFragmentRDD(rdd, sd)
+    NucleotideContigFragmentDataset(rdd, sd)
   }
 
   /**
-   * Builds a NucleotideContigFragmentRDD without a partition map.
+   * Builds a NucleotideContigFragmentDataset without a partition map.
    *
    * @param rdd The underlying NucleotideContigFragment RDD.
    * @param sequences The sequence dictionary for the RDD.
-   * @return A new NucleotideContigFragmentRDD.
+   * @return A new NucleotideContigFragmentDataset.
    */
   def apply(rdd: RDD[NucleotideContigFragment],
-            sequences: SequenceDictionary): NucleotideContigFragmentRDD = {
+            sequences: SequenceDictionary): NucleotideContigFragmentDataset = {
 
-    RDDBoundNucleotideContigFragmentRDD(rdd, sequences, None)
+    RDDBoundNucleotideContigFragmentDataset(rdd, sequences, None)
   }
 }
 
-case class ParquetUnboundNucleotideContigFragmentRDD private[rdd] (
+case class ParquetUnboundNucleotideContigFragmentDataset private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
-    sequences: SequenceDictionary) extends NucleotideContigFragmentRDD {
+    sequences: SequenceDictionary) extends NucleotideContigFragmentDataset {
 
   protected lazy val optPartitionMap = sc.extractPartitionMap(parquetFilename)
 
@@ -130,18 +130,18 @@ case class ParquetUnboundNucleotideContigFragmentRDD private[rdd] (
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): NucleotideContigFragmentRDD = {
+    newSequences: SequenceDictionary): NucleotideContigFragmentDataset = {
     copy(sequences = newSequences)
   }
 }
 
-case class DatasetBoundNucleotideContigFragmentRDD private[rdd] (
+case class DatasetBoundNucleotideContigFragmentDataset private[rdd] (
   dataset: Dataset[NucleotideContigFragmentProduct],
   sequences: SequenceDictionary,
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
-  override val optLookbackPartitions: Option[Int] = Some(1)) extends NucleotideContigFragmentRDD
-    with DatasetBoundGenomicDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD] {
+  override val optLookbackPartitions: Option[Int] = Some(1)) extends NucleotideContigFragmentDataset
+    with DatasetBoundGenomicDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset] {
 
   lazy val rdd: RDD[NucleotideContigFragment] = dataset.rdd.map(_.toAvro)
 
@@ -162,7 +162,7 @@ case class DatasetBoundNucleotideContigFragmentRDD private[rdd] (
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): NucleotideContigFragmentRDD = {
+    newSequences: SequenceDictionary): NucleotideContigFragmentDataset = {
     copy(sequences = newSequences)
   }
 }
@@ -173,10 +173,10 @@ case class DatasetBoundNucleotideContigFragmentRDD private[rdd] (
  * @param rdd Underlying RDD
  * @param sequences Sequence dictionary computed from rdd
  */
-case class RDDBoundNucleotideContigFragmentRDD private[rdd] (
+case class RDDBoundNucleotideContigFragmentDataset private[rdd] (
     rdd: RDD[NucleotideContigFragment],
     sequences: SequenceDictionary,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends NucleotideContigFragmentRDD {
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]]) extends NucleotideContigFragmentDataset {
 
   /**
    * A SQL Dataset of contig fragments.
@@ -188,12 +188,12 @@ case class RDDBoundNucleotideContigFragmentRDD private[rdd] (
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): NucleotideContigFragmentRDD = {
+    newSequences: SequenceDictionary): NucleotideContigFragmentDataset = {
     copy(sequences = newSequences)
   }
 }
 
-sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD] {
+sealed abstract class NucleotideContigFragmentDataset extends AvroGenomicDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset] {
 
   protected val productFn = NucleotideContigFragmentProduct.fromAvro(_)
   protected val unproductFn = (c: NucleotideContigFragmentProduct) => c.toAvro
@@ -215,22 +215,22 @@ sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicDataset[Nuc
     FragmentConverter.convertRdd(rdd)
   }
 
-  def union(rdds: NucleotideContigFragmentRDD*): NucleotideContigFragmentRDD = {
-    val iterableRdds = rdds.toSeq
-    NucleotideContigFragmentRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
-      iterableRdds.map(_.sequences).fold(sequences)(_ ++ _))
+  def union(datasets: NucleotideContigFragmentDataset*): NucleotideContigFragmentDataset = {
+    val iterableDatasets = datasets.toSeq
+    NucleotideContigFragmentDataset(rdd.context.union(rdd, iterableDatasets.map(_.rdd): _*),
+      iterableDatasets.map(_.sequences).fold(sequences)(_ ++ _))
   }
 
   /**
    * Replaces the underlying RDD with a new RDD.
    *
-   * @param newRdd The RDD to use for the new NucleotideContigFragmentRDD.
-   * @return Returns a new NucleotideContigFragmentRDD where the underlying RDD
+   * @param newRdd The RDD to use for the new NucleotideContigFragmentDataset.
+   * @return Returns a new NucleotideContigFragmentDataset where the underlying RDD
    *   has been replaced.
    */
   protected def replaceRdd(newRdd: RDD[NucleotideContigFragment],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(newRdd, sequences, newPartitionMap)
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): NucleotideContigFragmentDataset = {
+    new RDDBoundNucleotideContigFragmentDataset(newRdd, sequences, newPartitionMap)
   }
 
   /**
@@ -244,16 +244,16 @@ sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicDataset[Nuc
   }
 
   /**
-   * Applies a function that transforms the underlying RDD into a new RDD using
+   * Applies a function that transforms the underlying Dataset into a new Dataset using
    * the Spark SQL API.
    *
-   * @param tFn A function that transforms the underlying RDD as a Dataset.
-   * @return A new RDD where the RDD of genomic data has been replaced, but the
+   * @param tFn A function that transforms the underlying Dataset as a Dataset.
+   * @return A new genomic dataset where the Dataset of genomic data has been replaced, but the
    *   metadata (sequence dictionary, and etc) is copied without modification.
    */
   def transformDataset(
-    tFn: Dataset[NucleotideContigFragmentProduct] => Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    DatasetBoundNucleotideContigFragmentRDD(tFn(dataset), sequences)
+    tFn: Dataset[NucleotideContigFragmentProduct] => Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
+    DatasetBoundNucleotideContigFragmentDataset(tFn(dataset), sequences)
   }
 
   /**
@@ -322,10 +322,10 @@ sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicDataset[Nuc
   /**
    * Merge fragments by contig name.
    *
-   * @return Returns a NucleotideContigFragmentRDD containing a single fragment
+   * @return Returns a NucleotideContigFragmentDataset containing a single fragment
    *   per contig.
    */
-  def mergeFragments(): NucleotideContigFragmentRDD = {
+  def mergeFragments(): NucleotideContigFragmentDataset = {
 
     def merge(first: NucleotideContigFragment, second: NucleotideContigFragment): NucleotideContigFragment = {
       val merged = NucleotideContigFragment.newBuilder(first)
@@ -443,29 +443,29 @@ sealed abstract class NucleotideContigFragmentRDD extends AvroGenomicDataset[Nuc
   }
 
   /**
-   * For all adjacent records in the RDD, we extend the records so that the adjacent
+   * For all adjacent records in the genomic dataset, we extend the records so that the adjacent
    * records now overlap by _n_ bases, where _n_ is the flank length.
    *
    * Java friendly variant.
    *
    * @param flankLength The length to extend adjacent records by.
-   * @return Returns the RDD, with all adjacent fragments extended with flanking sequence.
+   * @return Returns the genomic dataset, with all adjacent fragments extended with flanking sequence.
    */
   def flankAdjacentFragments(
-    flankLength: java.lang.Integer): NucleotideContigFragmentRDD = {
+    flankLength: java.lang.Integer): NucleotideContigFragmentDataset = {
     val flank: Int = flankLength
     flankAdjacentFragments(flank)
   }
 
   /**
-   * For all adjacent records in the RDD, we extend the records so that the adjacent
+   * For all adjacent records in the genomic dataset, we extend the records so that the adjacent
    * records now overlap by _n_ bases, where _n_ is the flank length.
    *
    * @param flankLength The length to extend adjacent records by.
-   * @return Returns the RDD, with all adjacent fragments extended with flanking sequence.
+   * @return Returns the genomic dataset, with all adjacent fragments extended with flanking sequence.
    */
   def flankAdjacentFragments(
-    flankLength: Int): NucleotideContigFragmentRDD = {
+    flankLength: Int): NucleotideContigFragmentDataset = {
     replaceRdd(FlankReferenceFragments(rdd,
       sequences,
       flankLength))

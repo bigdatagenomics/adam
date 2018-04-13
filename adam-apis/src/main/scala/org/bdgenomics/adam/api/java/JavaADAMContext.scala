@@ -21,7 +21,7 @@ import htsjdk.samtools.ValidationStringency
 import org.apache.spark.api.java.JavaSparkContext
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
@@ -132,7 +132,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load nucleotide contig fragments into a NucleotideContigFragmentRDD (java-friendly method).
+   * Load nucleotide contig fragments into a NucleotideContigFragmentDataset (java-friendly method).
    *
    * If the path name has a .fa/.fasta extension, load as FASTA format.
    * Else, fall back to Parquet + Avro.
@@ -145,9 +145,9 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load nucleotide contig fragments from.
    *   Globs/directories are supported, although file extension must be present
    *   for FASTA format.
-   * @return Returns a NucleotideContigFragmentRDD.
+   * @return Returns a NucleotideContigFragmentDataset.
    */
-  def loadContigFragments(pathName: java.lang.String): NucleotideContigFragmentRDD = {
+  def loadContigFragments(pathName: java.lang.String): NucleotideContigFragmentDataset = {
     ac.loadContigFragments(pathName)
   }
 

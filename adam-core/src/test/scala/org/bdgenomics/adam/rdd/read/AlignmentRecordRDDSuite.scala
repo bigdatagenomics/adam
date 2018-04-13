@@ -40,7 +40,7 @@ import org.bdgenomics.adam.rdd.{
   ADAMContext,
   TestSaveArgs
 }
-import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentRDD
+import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentRDD
 import org.bdgenomics.adam.rdd.variant.{
@@ -1441,14 +1441,14 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
   sparkTest("transform reads to contig rdd") {
     val reads = sc.loadAlignments(testFile("small.sam"))
 
-    def checkSave(ncRdd: NucleotideContigFragmentRDD) {
+    def checkSave(ncRdd: NucleotideContigFragmentDataset) {
       val tempPath = tmpLocation(".fa")
       ncRdd.saveAsFasta(tempPath)
 
       assert(sc.loadContigFragments(tempPath).rdd.count.toInt === 20)
     }
 
-    val features: NucleotideContigFragmentRDD = reads.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD](
+    val features: NucleotideContigFragmentDataset = reads.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
       (rdd: RDD[AlignmentRecord]) => {
         rdd.map(AlignmentRecordRDDSuite.ncfFn)
       })
@@ -1458,7 +1458,7 @@ class AlignmentRecordRDDSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val featuresDs: NucleotideContigFragmentRDD = reads.transmuteDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentRDD](
+    val featuresDs: NucleotideContigFragmentDataset = reads.transmuteDataset[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
       (ds: Dataset[AlignmentRecordProduct]) => {
         ds.map(r => {
           NucleotideContigFragmentProduct.fromAvro(

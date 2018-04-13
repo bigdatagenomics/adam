@@ -98,7 +98,7 @@ setMethod("loadAlignments",
               AlignmentRecordRDD(jrdd)
           })
 
-#' Load nucleotide contig fragments into a NucleotideContigFragmentRDD.
+#' Load nucleotide contig fragments into a NucleotideContigFragmentDataset.
 #'
 #' If the path name has a .fa/.fasta extension, load as FASTA format.
 #' Else, fall back to Parquet + Avro.
@@ -108,7 +108,7 @@ setMethod("loadAlignments",
 #'
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
-#' @return Returns an RDD containing sequence fragments.
+#' @return Returns a genomic dataset containing nucleotide contig fragments.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -117,7 +117,7 @@ setMethod("loadContigFragments",
           signature(ac = "ADAMContext", filePath = "character"),
           function(ac, filePath) {
               jrdd <- sparkR.callJMethod(ac@jac, "loadContigFragments", filePath)
-              NucleotideContigFragmentRDD(jrdd)
+              NucleotideContigFragmentDataset(jrdd)
           })
 
 #' Load fragments into a FragmentRDD.

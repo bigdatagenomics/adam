@@ -45,7 +45,7 @@ import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import scala.collection.mutable.ListBuffer
 
-object NucleotideContigFragmentRDDSuite extends Serializable {
+object NucleotideContigFragmentDatasetSuite extends Serializable {
 
   def covFn(ncf: NucleotideContigFragment): Coverage = {
     Coverage(ncf.getContigName,
@@ -101,9 +101,9 @@ object NucleotideContigFragmentRDDSuite extends Serializable {
   }
 }
 
-class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
+class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
 
-  sparkTest("union two ncf rdds together") {
+  sparkTest("union two ncf genomic datasets together") {
     val fragments1 = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 10000L)
     val fragments2 = sc.loadFasta(testFile("artificial.fa"))
     val union = fragments1.union(fragments2)
@@ -112,7 +112,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("round trip a ncf to parquet") {
-    def testMetadata(fRdd: NucleotideContigFragmentRDD) {
+    def testMetadata(fRdd: NucleotideContigFragmentDataset) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
@@ -143,7 +143,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("round trip a ncf to partitioned parquet") {
-    def testMetadata(fRdd: NucleotideContigFragmentRDD) {
+    def testMetadata(fRdd: NucleotideContigFragmentDataset) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
@@ -195,7 +195,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setContigLength(900L)
       .build()
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(ctg0, ctg1)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(ctg0, ctg1)))
 
     assert(rdd.sequences.containsReferenceName("chr0"))
     val chr0 = rdd.sequences("chr0").get
@@ -219,7 +219,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .build()
     val region = ReferenceRegion(fragment).get
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment)))
 
     assert(rdd.extract(region) === "ACTGTAC")
   }
@@ -238,7 +238,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .build()
     val region = new ReferenceRegion("chr1", 1L, 6L)
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment)))
 
     assert(rdd.extract(region) === "CTGTA")
   }
@@ -279,7 +279,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     val region0 = ReferenceRegion(fragment0).get
     val region1 = ReferenceRegion(fragment1).get.merge(ReferenceRegion(fragment2).get)
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0,
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment0,
       fragment1,
       fragment2)))
 
@@ -317,7 +317,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val dic = new SequenceDictionary(Vector(record))
     val frags = sc.parallelize(dnas2fragments(dnas))
-    val fragments = NucleotideContigFragmentRDD(frags, dic)
+    val fragments = NucleotideContigFragmentDataset(frags, dic)
 
     val byRegion = fragments.rdd.keyBy(ReferenceRegion(_))
 
@@ -369,7 +369,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     val region0 = new ReferenceRegion("chr1", 1L, 6L)
     val region1 = new ReferenceRegion("chr2", 3L, 9L)
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0,
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment0,
       fragment1,
       fragment2)))
 
@@ -392,7 +392,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       fragments += frag
     }
     var passed = true
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(fragments.toList))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(fragments.toList))
     try {
       val result = rdd.extract(new ReferenceRegion("chr1", 0L, 1000L))
     } catch {
@@ -411,7 +411,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(1)
       .build
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
@@ -434,7 +434,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(1)
       .build
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
@@ -458,7 +458,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(null)
       .build
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
@@ -482,7 +482,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(1)
       .build
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
@@ -506,7 +506,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(null)
       .build
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment)))
 
     def validate(fileName: String) {
       val fastaLines = scala.io.Source.fromFile(new File(fileName + "/part-00000")).getLines().toSeq
@@ -549,7 +549,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(3)
       .build
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0, fragment1, fragment2)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment0, fragment1, fragment2)))
 
     val outputDir = Files.createTempDir()
     val outputFastaFile = outputDir.getAbsolutePath + "/test.fa"
@@ -592,7 +592,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(3)
       .build
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment0,
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment0,
       fragment1,
       fragment2)))
 
@@ -622,7 +622,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(null)
       .build
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment)))
     val merged = rdd.mergeFragments()
 
     assert(merged.rdd.count == 1L)
@@ -641,7 +641,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(1)
       .build
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment)))
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment)))
     val merged = rdd.mergeFragments()
 
     assert(merged.rdd.count == 1L)
@@ -682,7 +682,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       .setFragments(2)
       .build()
 
-    val rdd = NucleotideContigFragmentRDD(sc.parallelize(List(fragment2,
+    val rdd = NucleotideContigFragmentDataset(sc.parallelize(List(fragment2,
       fragment1,
       fragment0)))
     val merged = rdd.mergeFragments()
@@ -711,7 +711,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
     assert(sequences.rdd.count() === 4)
   }
 
-  sparkTest("transform contigs to coverage rdd") {
+  sparkTest("transform contigs to coverage genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
     def checkSave(coverage: CoverageDataset) {
@@ -723,7 +723,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val coverage = contigs.transmute[Coverage, Coverage, CoverageDataset](
       (rdd: RDD[NucleotideContigFragment]) => {
-        rdd.map(NucleotideContigFragmentRDDSuite.covFn)
+        rdd.map(NucleotideContigFragmentDatasetSuite.covFn)
       })
 
     checkSave(coverage)
@@ -733,13 +733,13 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val coverageDs: CoverageDataset = contigs.transmuteDataset[Coverage, Coverage, CoverageDataset](
       (ds: Dataset[NucleotideContigFragmentProduct]) => {
-        ds.map(r => NucleotideContigFragmentRDDSuite.covFn(r.toAvro))
+        ds.map(r => NucleotideContigFragmentDatasetSuite.covFn(r.toAvro))
       })
 
     checkSave(coverageDs)
   }
 
-  sparkTest("transform contigs to feature rdd") {
+  sparkTest("transform contigs to feature genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
     def checkSave(features: FeatureDataset) {
@@ -751,7 +751,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val features: FeatureDataset = contigs.transmute[Feature, FeatureProduct, FeatureDataset](
       (rdd: RDD[NucleotideContigFragment]) => {
-        rdd.map(NucleotideContigFragmentRDDSuite.featFn)
+        rdd.map(NucleotideContigFragmentDatasetSuite.featFn)
       })
 
     checkSave(features)
@@ -763,14 +763,14 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       (ds: Dataset[NucleotideContigFragmentProduct]) => {
         ds.map(r => {
           FeatureProduct.fromAvro(
-            NucleotideContigFragmentRDDSuite.featFn(r.toAvro))
+            NucleotideContigFragmentDatasetSuite.featFn(r.toAvro))
         })
       })
 
     checkSave(featuresDs)
   }
 
-  sparkTest("transform contigs to fragment rdd") {
+  sparkTest("transform contigs to fragment genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
     def checkSave(fragments: FragmentRDD) {
@@ -782,7 +782,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val fragments: FragmentRDD = contigs.transmute[Fragment, FragmentProduct, FragmentRDD](
       (rdd: RDD[NucleotideContigFragment]) => {
-        rdd.map(NucleotideContigFragmentRDDSuite.fragFn)
+        rdd.map(NucleotideContigFragmentDatasetSuite.fragFn)
       })
 
     checkSave(fragments)
@@ -794,14 +794,14 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       (ds: Dataset[NucleotideContigFragmentProduct]) => {
         ds.map(r => {
           FragmentProduct.fromAvro(
-            NucleotideContigFragmentRDDSuite.fragFn(r.toAvro))
+            NucleotideContigFragmentDatasetSuite.fragFn(r.toAvro))
         })
       })
 
     checkSave(fragmentsDs)
   }
 
-  sparkTest("transform contigs to read rdd") {
+  sparkTest("transform contigs to read genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
     def checkSave(reads: AlignmentRecordRDD) {
@@ -813,7 +813,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val reads: AlignmentRecordRDD = contigs.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD](
       (rdd: RDD[NucleotideContigFragment]) => {
-        rdd.map(NucleotideContigFragmentRDDSuite.readFn)
+        rdd.map(NucleotideContigFragmentDatasetSuite.readFn)
       })
 
     checkSave(reads)
@@ -825,14 +825,14 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       (ds: Dataset[NucleotideContigFragmentProduct]) => {
         ds.map(r => {
           AlignmentRecordProduct.fromAvro(
-            NucleotideContigFragmentRDDSuite.readFn(r.toAvro))
+            NucleotideContigFragmentDatasetSuite.readFn(r.toAvro))
         })
       })
 
     checkSave(readsDs)
   }
 
-  sparkTest("transform contigs to genotype rdd") {
+  sparkTest("transform contigs to genotype genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
     def checkSave(genotypes: GenotypeRDD) {
@@ -844,7 +844,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val genotypes: GenotypeRDD = contigs.transmute[Genotype, GenotypeProduct, GenotypeRDD](
       (rdd: RDD[NucleotideContigFragment]) => {
-        rdd.map(NucleotideContigFragmentRDDSuite.genFn)
+        rdd.map(NucleotideContigFragmentDatasetSuite.genFn)
       })
 
     checkSave(genotypes)
@@ -856,14 +856,14 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       (ds: Dataset[NucleotideContigFragmentProduct]) => {
         ds.map(r => {
           GenotypeProduct.fromAvro(
-            NucleotideContigFragmentRDDSuite.genFn(r.toAvro))
+            NucleotideContigFragmentDatasetSuite.genFn(r.toAvro))
         })
       })
 
     checkSave(genotypesDs)
   }
 
-  sparkTest("transform contigs to variant rdd") {
+  sparkTest("transform contigs to variant genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
     def checkSave(variants: VariantRDD) {
@@ -875,7 +875,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val variants: VariantRDD = contigs.transmute[Variant, VariantProduct, VariantRDD](
       (rdd: RDD[NucleotideContigFragment]) => {
-        rdd.map(NucleotideContigFragmentRDDSuite.varFn)
+        rdd.map(NucleotideContigFragmentDatasetSuite.varFn)
       })
 
     checkSave(variants)
@@ -887,14 +887,14 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
       (ds: Dataset[NucleotideContigFragmentProduct]) => {
         ds.map(r => {
           VariantProduct.fromAvro(
-            NucleotideContigFragmentRDDSuite.varFn(r.toAvro))
+            NucleotideContigFragmentDatasetSuite.varFn(r.toAvro))
         })
       })
 
     checkSave(variantsDs)
   }
 
-  sparkTest("transform contigs to variant context rdd") {
+  sparkTest("transform contigs to variant context genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
     def checkSave(variantContexts: VariantContextRDD) {
@@ -903,7 +903,7 @@ class NucleotideContigFragmentRDDSuite extends ADAMFunSuite {
 
     val variantContexts: VariantContextRDD = contigs.transmute[VariantContext, VariantContextProduct, VariantContextRDD](
       (rdd: RDD[NucleotideContigFragment]) => {
-        rdd.map(NucleotideContigFragmentRDDSuite.vcFn)
+        rdd.map(NucleotideContigFragmentDatasetSuite.vcFn)
       })
 
     checkSave(variantContexts)

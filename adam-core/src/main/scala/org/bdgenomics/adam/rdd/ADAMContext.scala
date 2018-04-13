@@ -53,10 +53,10 @@ import org.bdgenomics.adam.projections.{
   Projection
 }
 import org.bdgenomics.adam.rdd.contig.{
-  DatasetBoundNucleotideContigFragmentRDD,
-  NucleotideContigFragmentRDD,
-  ParquetUnboundNucleotideContigFragmentRDD,
-  RDDBoundNucleotideContigFragmentRDD
+  DatasetBoundNucleotideContigFragmentDataset,
+  NucleotideContigFragmentDataset,
+  ParquetUnboundNucleotideContigFragmentDataset,
+  RDDBoundNucleotideContigFragmentDataset
 }
 import org.bdgenomics.adam.rdd.feature._
 import org.bdgenomics.adam.rdd.fragment.{
@@ -145,38 +145,38 @@ private case class LocatableReferenceRegion(rr: ReferenceRegion) extends Locatab
 object ADAMContext {
 
   // conversion functions for pipes
-  implicit def contigsToContigsConversionFn(gDataset: NucleotideContigFragmentRDD,
-                                            rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
+  implicit def contigsToContigsConversionFn(gDataset: NucleotideContigFragmentDataset,
+                                            rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
     // hijack the transform function to discard the old RDD
     gDataset.transform(oldRdd => rdd)
   }
 
   implicit def contigsToCoverageConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
     new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def contigsToCoverageDatasetConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
     new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def contigsToFeaturesConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     rdd: RDD[Feature]): FeatureDataset = {
     new RDDBoundFeatureDataset(rdd, gDataset.sequences, None, Seq.empty[Sample])
   }
 
   implicit def contigsToFeaturesDatasetConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
     new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def contigsToFragmentsConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     rdd: RDD[Fragment]): FragmentRDD = {
     new RDDBoundFragmentRDD(rdd,
       gDataset.sequences,
@@ -186,7 +186,7 @@ object ADAMContext {
   }
 
   implicit def contigsToFragmentsDatasetConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     ds: Dataset[FragmentProduct]): FragmentRDD = {
     new DatasetBoundFragmentRDD(ds,
       gDataset.sequences,
@@ -195,7 +195,7 @@ object ADAMContext {
   }
 
   implicit def contigsToAlignmentRecordsConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
       gDataset.sequences,
@@ -205,7 +205,7 @@ object ADAMContext {
   }
 
   implicit def contigsToAlignmentRecordsDatasetConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
     new DatasetBoundAlignmentRecordRDD(ds,
       gDataset.sequences,
@@ -214,7 +214,7 @@ object ADAMContext {
   }
 
   implicit def contigsToGenotypesConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
       gDataset.sequences,
@@ -224,7 +224,7 @@ object ADAMContext {
   }
 
   implicit def contigsToGenotypesDatasetConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     ds: Dataset[GenotypeProduct]): GenotypeRDD = {
     new DatasetBoundGenotypeRDD(ds,
       gDataset.sequences,
@@ -233,7 +233,7 @@ object ADAMContext {
   }
 
   implicit def contigsToVariantsConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
       gDataset.sequences,
@@ -242,7 +242,7 @@ object ADAMContext {
   }
 
   implicit def contigsToVariantsDatasetConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     ds: Dataset[VariantProduct]): VariantRDD = {
     new DatasetBoundVariantRDD(ds,
       gDataset.sequences,
@@ -250,7 +250,7 @@ object ADAMContext {
   }
 
   implicit def contigsToVariantContextConversionFn(
-    gDataset: NucleotideContigFragmentRDD,
+    gDataset: NucleotideContigFragmentDataset,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
       gDataset.sequences,
@@ -260,14 +260,14 @@ object ADAMContext {
 
   implicit def coverageToContigsConversionFn(
     gDataset: CoverageDataset,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
+    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
+    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def coverageToContigsDatasetConversionFn(
     gDataset: CoverageDataset,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
+    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
+    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def coverageToCoverageConversionFn(gDataset: CoverageDataset,
@@ -373,14 +373,14 @@ object ADAMContext {
 
   implicit def featuresToContigsConversionFn(
     gDataset: FeatureDataset,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
+    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
+    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def featuresToContigsDatasetConversionFn(
     gDataset: FeatureDataset,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
+    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
+    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def featuresToCoverageConversionFn(
@@ -486,14 +486,14 @@ object ADAMContext {
 
   implicit def fragmentsToContigsConversionFn(
     gDataset: FragmentRDD,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
+    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
+    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def fragmentsToContigsDatasetConversionFn(
     gDataset: FragmentRDD,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
+    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
+    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def fragmentsToCoverageConversionFn(
@@ -592,8 +592,8 @@ object ADAMContext {
 
   implicit def genericToContigsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
+    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
+    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def genericToCoverageConversionFn[Y <: GenericGenomicDataset[_, _]](
@@ -659,14 +659,14 @@ object ADAMContext {
 
   implicit def alignmentRecordsToContigsConversionFn(
     gDataset: AlignmentRecordRDD,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
+    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
+    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def alignmentRecordsToContigsDatasetConversionFn(
     gDataset: AlignmentRecordRDD,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
+    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
+    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def alignmentRecordsToCoverageConversionFn(
@@ -765,14 +765,14 @@ object ADAMContext {
 
   implicit def genotypesToContigsConversionFn(
     gDataset: GenotypeRDD,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
+    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
+    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def genotypesToContigsDatasetConversionFn(
     gDataset: GenotypeRDD,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
+    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
+    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def genotypesToCoverageConversionFn(
@@ -872,14 +872,14 @@ object ADAMContext {
 
   implicit def variantsToContigsConversionFn(
     gDataset: VariantRDD,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
+    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
+    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def variantsToContigsDatasetConversionFn(
     gDataset: VariantRDD,
-    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentRDD = {
-    new DatasetBoundNucleotideContigFragmentRDD(ds, gDataset.sequences)
+    ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
+    new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def variantsToCoverageConversionFn(
@@ -980,8 +980,8 @@ object ADAMContext {
 
   implicit def variantContextsToContigsConversionFn(
     gDataset: VariantContextRDD,
-    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentRDD = {
-    new RDDBoundNucleotideContigFragmentRDD(rdd, gDataset.sequences, None)
+    rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
+    new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def variantContextsToCoverageConversionFn(
@@ -2494,17 +2494,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load nucleotide contig fragments from FASTA into a NucleotideContigFragmentRDD.
+   * Load nucleotide contig fragments from FASTA into a NucleotideContigFragmentDataset.
    *
    * @param pathName The path name to load nucleotide contig fragments from.
    *   Globs/directories are supported.
    * @param maximumLength Maximum fragment length. Defaults to 10000L. Values greater
    *   than 1e9 should be avoided.
-   * @return Returns a NucleotideContigFragmentRDD.
+   * @return Returns a NucleotideContigFragmentDataset.
    */
   def loadFasta(
     pathName: String,
-    maximumLength: Long = 10000L): NucleotideContigFragmentRDD = LoadFasta.time {
+    maximumLength: Long = 10000L): NucleotideContigFragmentDataset = LoadFasta.time {
 
     val fastaData: RDD[(LongWritable, Text)] = sc.newAPIHadoopFile(
       pathName,
@@ -2520,7 +2520,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val fragmentRdd = FastaConverter(remapData, maximumLength)
       .cache()
 
-    NucleotideContigFragmentRDD(fragmentRdd)
+    NucleotideContigFragmentDataset(fragmentRdd)
   }
 
   /**
@@ -2871,7 +2871,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in Parquet + Avro format into a NucleotideContigFragmentRDD.
+   * Load a path name in Parquet + Avro format into a NucleotideContigFragmentDataset.
    *
    * @param pathName The path name to load nucleotide contig fragments from.
    *   Globs/directories are supported.
@@ -2879,23 +2879,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
-   * @return Returns a NucleotideContigFragmentRDD.
+   * @return Returns a NucleotideContigFragmentDataset.
    */
   def loadParquetContigFragments(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): NucleotideContigFragmentRDD = {
+    optProjection: Option[Schema] = None): NucleotideContigFragmentDataset = {
 
     val sd = loadAvroSequenceDictionary(pathName)
 
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundNucleotideContigFragmentRDD(
+        ParquetUnboundNucleotideContigFragmentDataset(
           sc, pathName, sd)
       }
       case (_, _) => {
         val rdd = loadParquet[NucleotideContigFragment](pathName, optPredicate, optProjection)
-        new RDDBoundNucleotideContigFragmentRDD(rdd,
+        new RDDBoundNucleotideContigFragmentDataset(rdd,
           sd,
           optPartitionMap = extractPartitionMap(pathName))
       }
@@ -2903,7 +2903,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet format into a NucleotideContigFragmentRDD.
+   * Load a path name with range binned partitioned Parquet format into a NucleotideContigFragmentDataset.
    *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
@@ -2911,15 +2911,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *   region when using the filterByOverlappingRegions function on the returned dataset.
    *   Defaults to one partition.
-   * @return Returns a NucleotideContigFragmentRDD.
+   * @return Returns a NucleotideContigFragmentDataset.
    */
   def loadPartitionedParquetContigFragments(pathName: String,
                                             regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                            optLookbackPartitions: Option[Int] = Some(1)): NucleotideContigFragmentRDD = {
+                                            optLookbackPartitions: Option[Int] = Some(1)): NucleotideContigFragmentDataset = {
 
     val partitionedBinSize = getPartitionBinSize(pathName)
     val contigs = loadParquetContigFragments(pathName)
-    val contigsDatasetBound = DatasetBoundNucleotideContigFragmentRDD(contigs.dataset,
+    val contigsDatasetBound = DatasetBoundNucleotideContigFragmentDataset(contigs.dataset,
       contigs.sequences,
       isPartitioned = true,
       Some(partitionedBinSize),
@@ -3113,7 +3113,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load nucleotide contig fragments into a NucleotideContigFragmentRDD.
+   * Load nucleotide contig fragments into a NucleotideContigFragmentDataset.
    *
    * If the path name has a .fa/.fasta extension, load as FASTA format.
    * Else, fall back to Parquet + Avro.
@@ -3133,13 +3133,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
-   * @return Returns a NucleotideContigFragmentRDD.
+   * @return Returns a NucleotideContigFragmentDataset.
    */
   def loadContigFragments(
     pathName: String,
     maximumLength: Long = 10000L,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): NucleotideContigFragmentRDD = LoadContigFragments.time {
+    optProjection: Option[Schema] = None): NucleotideContigFragmentDataset = LoadContigFragments.time {
 
     val trimmedPathName = trimExtensionIfCompressed(pathName)
     if (isFastaExt(trimmedPathName)) {

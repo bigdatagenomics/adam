@@ -382,12 +382,12 @@ setGeneric("toVariants",
 
 #### NucleotideContigFragment operations ####
 
-#' The NucleotideContigFragmentRDD class is used to manipulate contigs.
+#' The NucleotideContigFragmentDataset class is used to manipulate contigs.
 #' 
-#' @name NucleotideContigFragmentRDD
+#' @name NucleotideContigFragmentDataset
 NULL
 
-#' @rdname NucleotideContigFragmentRDD
+#' @rdname NucleotideContigFragmentDataset
 #' @param ardd The RDD to apply this to.
 #' @param flankLength The length to extend adjacent records by.
 #' @export
