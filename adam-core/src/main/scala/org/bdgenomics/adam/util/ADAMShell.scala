@@ -26,12 +26,12 @@ import htsjdk.variant.vcf.{
 }
 import org.apache.spark.SparkContext
 import org.bdgenomics.adam.models.VariantContext
-import org.bdgenomics.adam.rdd.feature.FeatureRDD
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.feature.FeatureDataset
+import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.adam.rdd.variant.{
-  GenotypeRDD,
-  VariantRDD,
-  VariantContextRDD
+  GenotypeDataset,
+  VariantDataset,
+  VariantContextDataset
 }
 import org.bdgenomics.formats.avro.{
   AlignmentRecord,
@@ -59,14 +59,14 @@ object ADAMShell {
   )
 
   /**
-   * Print attribute values for alignment records in the specified rdd up to the limit.
+   * Print attribute values for alignment records in the specified AlignmentRecordDataset up to the limit.
    *
-   * @param rdd AlignmentRecordRDD.
+   * @param alignments AlignmentRecordDataset.
    * @param keys Sequence of attribute keys.
    * @param limit Number of alignment records to print attribute values for. Defaults to 10.
    */
-  def printAlignmentAttributes(rdd: AlignmentRecordRDD, keys: Seq[String], limit: Int = 10): Unit = {
-    printAlignmentAttributes(rdd.rdd.take(limit), keys)
+  def printAlignmentAttributes(alignments: AlignmentRecordDataset, keys: Seq[String], limit: Int = 10): Unit = {
+    printAlignmentAttributes(alignments.rdd.take(limit), keys)
   }
 
   private def findMatchingAttribute(key: String, attributes: String): String = {
@@ -107,14 +107,14 @@ object ADAMShell {
   )
 
   /**
-   * Print attribute values for features in the specified rdd up to the limit.
+   * Print attribute values for features in the specified FeatureDataset up to the limit.
    *
-   * @param rdd FeatureRDD.
+   * @param features FeatureDataset.
    * @param keys Sequence of attribute keys.
    * @param limit Number of features to print attribute values for. Defaults to 10.
    */
-  def printFeatureAttributes(rdd: FeatureRDD, keys: Seq[String], limit: Int = 10): Unit = {
-    printFeatureAttributes(rdd.rdd.take(limit), keys)
+  def printFeatureAttributes(features: FeatureDataset, keys: Seq[String], limit: Int = 10): Unit = {
+    printFeatureAttributes(features.rdd.take(limit), keys)
   }
 
   /**
@@ -141,14 +141,14 @@ object ADAMShell {
   }
 
   /**
-   * Print VCF FORMAT field attributes for genotypes in the specified rdd up to the limit.
+   * Print VCF FORMAT field attributes for genotypes in the specified GenotypeDataset up to the limit.
    *
-   * @param rdd GenotypeRDD.
+   * @param genotypes GenotypeDataset.
    * @param keys Sequence of VCF FORMAT field attribute keys.
    * @param limit Number of genotypes to print VCF FORMAT field attribute values for. Defaults to 10.
    */
-  def printFormatFields(rdd: GenotypeRDD, keys: Seq[String], limit: Int = 10): Unit = {
-    printFormatFields(rdd.rdd.take(limit), keys, rdd.headerLines)
+  def printFormatFields(genotypes: GenotypeDataset, keys: Seq[String], limit: Int = 10): Unit = {
+    printFormatFields(genotypes.rdd.take(limit), keys, genotypes.headerLines)
   }
 
   /** Genotype headers. */
@@ -189,19 +189,19 @@ object ADAMShell {
   }
 
   /**
-   * Print genotype filter values for genotypes in the specified rdd up to the limit.
+   * Print genotype filter values for genotypes in the specified GenotypeDataset up to the limit.
    *
-   * @param rdd GenotypeRDD.
+   * @param genotypes GenotypeDataset.
    * @param limit Number of genotypes to print genotype filter values for. Defaults to 10.
    */
-  def printGenotypeFilters(rdd: GenotypeRDD, limit: Int = 10): Unit = {
-    printGenotypeFilters(rdd.rdd.take(limit), rdd.headerLines)
+  def printGenotypeFilters(genotypes: GenotypeDataset, limit: Int = 10): Unit = {
+    printGenotypeFilters(genotypes.rdd.take(limit), genotypes.headerLines)
   }
 
   /**
    * Print genotype filter values for the specified genotypes.
    *
-   * @param rdd GenotypeRDD.
+   * @param genotypes Sequence of genotypes.
    * @param headerLines Sequence of VCF header lines.
    */
   def printGenotypeFilters(genotypes: Seq[Genotype], headerLines: Seq[VCFHeaderLine]): Unit = {
@@ -231,9 +231,9 @@ object ADAMShell {
   }
 
   /**
-   * Print attribute values for the specified features.
+   * Print attribute values for the specified samples.
    *
-   * @param alignments Sequence of features.
+   * @param samples Sequence of samples.
    * @param keys Sequence of attribute keys.
    */
   def printSampleAttributes(samples: Seq[Sample], keys: Seq[String]): Unit = {
@@ -251,13 +251,13 @@ object ADAMShell {
   }
 
   /**
-   * Print filter values for variants in the specified rdd up to the limit.
+   * Print filter values for variants in the specified VariantDataset up to the limit.
    *
-   * @param rdd VariantRDD.
+   * @param variants VariantDataset.
    * @param limit Number of variants to print filter values for. Defaults to 10.
    */
-  def printVariantFilters(rdd: VariantRDD, limit: Int = 10): Unit = {
-    printVariantFilters(rdd.rdd.take(limit), rdd.headerLines)
+  def printVariantFilters(variants: VariantDataset, limit: Int = 10): Unit = {
+    printVariantFilters(variants.rdd.take(limit), variants.headerLines)
   }
 
   /** Variant headers. */
@@ -300,14 +300,14 @@ object ADAMShell {
   }
 
   /**
-   * Print VCF INFO field attributes for variants in the specified rdd up to the limit.
+   * Print VCF INFO field attributes for variants in the specified VariantDataset up to the limit.
    *
-   * @param rdd VariantRDD.
+   * @param variants VariantDataset.
    * @param keys Sequence of VCF INFO field attribute keys.
    * @param limit Number of variants to print VCF INFO field attribute values for. Defaults to 10.
    */
-  def printInfoFields(rdd: VariantRDD, keys: Seq[String], limit: Int = 10): Unit = {
-    printInfoFields(rdd.rdd.take(limit), keys, rdd.headerLines)
+  def printInfoFields(variants: VariantDataset, keys: Seq[String], limit: Int = 10): Unit = {
+    printInfoFields(variants.rdd.take(limit), keys, variants.headerLines)
   }
 
   /**

@@ -44,9 +44,9 @@ import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.rdd.variant.{
-  GenotypeRDD,
-  VariantRDD,
-  VariantContextRDD,
+  GenotypeDataset,
+  VariantDataset,
+  VariantContextDataset,
   VCFOutFormatter
 }
 import org.bdgenomics.adam.sql.{
@@ -1059,7 +1059,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     implicit val tFormatter = SAMInFormatter
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
-    val pipedRdd: VariantContextRDD = ardd.pipe[VariantContext, VariantContextProduct, VariantContextRDD, SAMInFormatter](Seq("/bin/bash", "$0", tempPath, "$1"),
+    val pipedRdd: VariantContextDataset = ardd.pipe[VariantContext, VariantContextProduct, VariantContextDataset, SAMInFormatter](Seq("/bin/bash", "$0", tempPath, "$1"),
       files = Seq(scriptPath, vcfPath))
     val newRecords = pipedRdd.rdd.count
     assert(newRecords === 6)
@@ -1562,14 +1562,14 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
   sparkTest("transform reads to genotype genomic dataset") {
     val reads = sc.loadAlignments(testFile("small.sam"))
 
-    def checkSave(genotypes: GenotypeRDD) {
+    def checkSave(genotypes: GenotypeDataset) {
       val tempPath = tmpLocation(".adam")
       genotypes.saveAsParquet(tempPath)
 
       assert(sc.loadGenotypes(tempPath).rdd.count === 20)
     }
 
-    val genotypes: GenotypeRDD = reads.transmute[Genotype, GenotypeProduct, GenotypeRDD](
+    val genotypes: GenotypeDataset = reads.transmute[Genotype, GenotypeProduct, GenotypeDataset](
       (rdd: RDD[AlignmentRecord]) => {
         rdd.map(AlignmentRecordDatasetSuite.genFn)
       })
@@ -1579,7 +1579,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val genotypesDs: GenotypeRDD = reads.transmuteDataset[Genotype, GenotypeProduct, GenotypeRDD](
+    val genotypesDs: GenotypeDataset = reads.transmuteDataset[Genotype, GenotypeProduct, GenotypeDataset](
       (ds: Dataset[AlignmentRecordProduct]) => {
         ds.map(r => {
           GenotypeProduct.fromAvro(
@@ -1593,14 +1593,14 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
   sparkTest("transform reads to variant genomic dataset") {
     val reads = sc.loadAlignments(testFile("small.sam"))
 
-    def checkSave(variants: VariantRDD) {
+    def checkSave(variants: VariantDataset) {
       val tempPath = tmpLocation(".adam")
       variants.saveAsParquet(tempPath)
 
       assert(sc.loadVariants(tempPath).rdd.count === 20)
     }
 
-    val variants: VariantRDD = reads.transmute[Variant, VariantProduct, VariantRDD](
+    val variants: VariantDataset = reads.transmute[Variant, VariantProduct, VariantDataset](
       (rdd: RDD[AlignmentRecord]) => {
         rdd.map(AlignmentRecordDatasetSuite.varFn)
       })
@@ -1610,7 +1610,7 @@ class AlignmentRecordDatasetSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val variantsDs: VariantRDD = reads.transmuteDataset[Variant, VariantProduct, VariantRDD](
+    val variantsDs: VariantDataset = reads.transmuteDataset[Variant, VariantProduct, VariantDataset](
       (ds: Dataset[AlignmentRecordProduct]) => {
         ds.map(r => {
           VariantProduct.fromAvro(

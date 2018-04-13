@@ -61,7 +61,7 @@ setGeneric("loadGenotypes",
 setGeneric("loadVariants",
            function(ac, filePath, ...) { standardGeneric("loadVariants") })
 
-#### RDD operations ####
+#### Genomic dataset operations ####
 
 #' The GenomicDataset is the base class that all genomic datatypes extend from in ADAM.
 #' 
@@ -398,17 +398,17 @@ setGeneric("flankAdjacentFragments",
 
 #### Variant operations ####
 
-#' The VariantContextRDD class is used to manipulate VCF-styled data.
+#' The VariantContextDataset class is used to manipulate VCF-styled data.
 #'
 #' Each element in a VariantContext genomic dataset corresponds to a VCF line. This
-#' differs from the GenotypeRDD, where each element represents the genotype
-#' of a single sample at a single site, or a VariantRDD, which represents
+#' differs from the GenotypeDataset, where each element represents the genotype
+#' of a single sample at a single site, or a VariantDataset, which represents
 #' just the variant of interest.
 #' 
-#' @name VariantContextRDD
+#' @name VariantContextDataset
 NULL
 
-#' @rdname VariantContextRDD
+#' @rdname VariantContextDataset
 #' @param ardd The genomic dataset to apply this to.
 #' @param filePath Path to save VCF to.
 #' @param ... additional argument(s).

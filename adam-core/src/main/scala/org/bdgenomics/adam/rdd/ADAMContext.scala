@@ -215,8 +215,8 @@ object ADAMContext {
 
   implicit def contigsToGenotypesConversionFn(
     gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[Genotype]): GenotypeRDD = {
-    new RDDBoundGenotypeRDD(rdd,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
@@ -225,8 +225,8 @@ object ADAMContext {
 
   implicit def contigsToGenotypesDatasetConversionFn(
     gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[GenotypeProduct]): GenotypeRDD = {
-    new DatasetBoundGenotypeRDD(ds,
+    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    new DatasetBoundGenotypeDataset(ds,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
@@ -234,8 +234,8 @@ object ADAMContext {
 
   implicit def contigsToVariantsConversionFn(
     gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[Variant]): VariantRDD = {
-    new RDDBoundVariantRDD(rdd,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
@@ -243,16 +243,16 @@ object ADAMContext {
 
   implicit def contigsToVariantsDatasetConversionFn(
     gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[VariantProduct]): VariantRDD = {
-    new DatasetBoundVariantRDD(ds,
+    ds: Dataset[VariantProduct]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def contigsToVariantContextConversionFn(
     gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(rdd,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
@@ -328,8 +328,8 @@ object ADAMContext {
 
   implicit def coverageToGenotypesConversionFn(
     gDataset: CoverageDataset,
-    rdd: RDD[Genotype]): GenotypeRDD = {
-    new RDDBoundGenotypeRDD(rdd,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
@@ -338,8 +338,8 @@ object ADAMContext {
 
   implicit def coverageToGenotypesDatasetConversionFn(
     gDataset: CoverageDataset,
-    ds: Dataset[GenotypeProduct]): GenotypeRDD = {
-    new DatasetBoundGenotypeRDD(ds,
+    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    new DatasetBoundGenotypeDataset(ds,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
@@ -347,8 +347,8 @@ object ADAMContext {
 
   implicit def coverageToVariantsConversionFn(
     gDataset: CoverageDataset,
-    rdd: RDD[Variant]): VariantRDD = {
-    new RDDBoundVariantRDD(rdd,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
@@ -356,16 +356,16 @@ object ADAMContext {
 
   implicit def coverageToVariantsDatasetConversionFn(
     gDataset: CoverageDataset,
-    ds: Dataset[VariantProduct]): VariantRDD = {
-    new DatasetBoundVariantRDD(ds,
+    ds: Dataset[VariantProduct]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def coverageToVariantContextConversionFn(
     gDataset: CoverageDataset,
-    rdd: RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(rdd,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
@@ -441,8 +441,8 @@ object ADAMContext {
 
   implicit def featuresToGenotypesConversionFn(
     gDataset: FeatureDataset,
-    rdd: RDD[Genotype]): GenotypeRDD = {
-    new RDDBoundGenotypeRDD(rdd,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
@@ -451,8 +451,8 @@ object ADAMContext {
 
   implicit def featuresToGenotypesDatasetConversionFn(
     gDataset: FeatureDataset,
-    ds: Dataset[GenotypeProduct]): GenotypeRDD = {
-    new DatasetBoundGenotypeRDD(ds,
+    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    new DatasetBoundGenotypeDataset(ds,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
@@ -460,8 +460,8 @@ object ADAMContext {
 
   implicit def featuresToVariantsConversionFn(
     gDataset: FeatureDataset,
-    rdd: RDD[Variant]): VariantRDD = {
-    new RDDBoundVariantRDD(rdd,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
@@ -469,16 +469,16 @@ object ADAMContext {
 
   implicit def featuresToVariantsDatasetConversionFn(
     gDataset: FeatureDataset,
-    ds: Dataset[VariantProduct]): VariantRDD = {
-    new DatasetBoundVariantRDD(ds,
+    ds: Dataset[VariantProduct]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def featuresToVariantContextConversionFn(
     gDataset: FeatureDataset,
-    rdd: RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(rdd,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines)
@@ -547,8 +547,8 @@ object ADAMContext {
 
   implicit def fragmentsToGenotypesConversionFn(
     gDataset: FragmentDataset,
-    rdd: RDD[Genotype]): GenotypeRDD = {
-    new RDDBoundGenotypeRDD(rdd,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
       gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines,
@@ -557,8 +557,8 @@ object ADAMContext {
 
   implicit def fragmentsToGenotypesDatasetConversionFn(
     gDataset: FragmentDataset,
-    ds: Dataset[GenotypeProduct]): GenotypeRDD = {
-    new DatasetBoundGenotypeRDD(ds,
+    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    new DatasetBoundGenotypeDataset(ds,
       gDataset.sequences,
       gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
@@ -566,8 +566,8 @@ object ADAMContext {
 
   implicit def fragmentsToVariantsConversionFn(
     gDataset: FragmentDataset,
-    rdd: RDD[Variant]): VariantRDD = {
-    new RDDBoundVariantRDD(rdd,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
@@ -575,16 +575,16 @@ object ADAMContext {
 
   implicit def fragmentsToVariantsDatasetConversionFn(
     gDataset: FragmentDataset,
-    ds: Dataset[VariantProduct]): VariantRDD = {
-    new DatasetBoundVariantRDD(ds,
+    ds: Dataset[VariantProduct]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def fragmentsToVariantContextConversionFn(
     gDataset: FragmentDataset,
-    rdd: RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(rdd,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
       gDataset.sequences,
       gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
@@ -630,8 +630,8 @@ object ADAMContext {
 
   implicit def genericToGenotypesConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
-    rdd: RDD[Genotype]): GenotypeRDD = {
-    new RDDBoundGenotypeRDD(rdd,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
@@ -640,8 +640,8 @@ object ADAMContext {
 
   implicit def genericToVariantsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
-    rdd: RDD[Variant]): VariantRDD = {
-    new RDDBoundVariantRDD(rdd,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
@@ -649,8 +649,8 @@ object ADAMContext {
 
   implicit def genericToVariantContextsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
-    rdd: RDD[VariantContext]): VariantContextRDD = {
-    new RDDBoundVariantContextRDD(rdd,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    new RDDBoundVariantContextDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       DefaultHeaderLines.allHeaderLines,
@@ -720,8 +720,8 @@ object ADAMContext {
 
   implicit def alignmentRecordsToGenotypesConversionFn(
     gDataset: AlignmentRecordDataset,
-    rdd: RDD[Genotype]): GenotypeRDD = {
-    new RDDBoundGenotypeRDD(rdd,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
       gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines,
@@ -730,8 +730,8 @@ object ADAMContext {
 
   implicit def alignmentRecordsToGenotypesDatasetConversionFn(
     gDataset: AlignmentRecordDataset,
-    ds: Dataset[GenotypeProduct]): GenotypeRDD = {
-    new DatasetBoundGenotypeRDD(ds,
+    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    new DatasetBoundGenotypeDataset(ds,
       gDataset.sequences,
       gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
@@ -739,8 +739,8 @@ object ADAMContext {
 
   implicit def alignmentRecordsToVariantsConversionFn(
     gDataset: AlignmentRecordDataset,
-    rdd: RDD[Variant]): VariantRDD = {
-    new RDDBoundVariantRDD(rdd,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines,
       None)
@@ -748,60 +748,60 @@ object ADAMContext {
 
   implicit def alignmentRecordsToVariantsDatasetConversionFn(
     gDataset: AlignmentRecordDataset,
-    ds: Dataset[VariantProduct]): VariantRDD = {
-    new DatasetBoundVariantRDD(ds,
+    ds: Dataset[VariantProduct]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds,
       gDataset.sequences,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def alignmentRecordsToVariantContextConversionFn(
     gDataset: AlignmentRecordDataset,
-    rdd: RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(rdd,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
       gDataset.sequences,
       gDataset.recordGroups.toSamples,
       DefaultHeaderLines.allHeaderLines)
   }
 
   implicit def genotypesToContigsConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
     new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def genotypesToContigsDatasetConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
     new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def genotypesToCoverageConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
     new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genotypesToCoverageDatasetConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
     new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def genotypesToFeaturesConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     rdd: RDD[Feature]): FeatureDataset = {
     new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def genotypesToFeaturesDatasetConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
     new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
 >>>>>>> e467d382... Complete refactoring GenomicRDD to GenomicDataset.
   }
 
   implicit def genotypesToFragmentsConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
@@ -811,7 +811,7 @@ object ADAMContext {
   }
 
   implicit def genotypesToFragmentsDatasetConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     ds: Dataset[FragmentProduct]): FragmentDataset = {
     new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
@@ -820,7 +820,7 @@ object ADAMContext {
   }
 
   implicit def genotypesToAlignmentRecordsConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
@@ -830,7 +830,7 @@ object ADAMContext {
   }
 
   implicit def genotypesToAlignmentRecordsDatasetConversionFn(
-    gDataset: GenotypeRDD,
+    gDataset: GenotypeDataset,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
@@ -838,76 +838,76 @@ object ADAMContext {
       Seq.empty)
   }
 
-  implicit def genotypesToGenotypesConversionFn(gDataset: GenotypeRDD,
-                                                rdd: RDD[Genotype]): GenotypeRDD = {
+  implicit def genotypesToGenotypesConversionFn(gDataset: GenotypeDataset,
+                                                rdd: RDD[Genotype]): GenotypeDataset = {
     // hijack the transform function to discard the old RDD
     gDataset.transform(oldRdd => rdd)
   }
 
   implicit def genotypesToVariantsConversionFn(
-    gDataset: GenotypeRDD,
-    rdd: RDD[Variant]): VariantRDD = {
-    new RDDBoundVariantRDD(rdd,
+    gDataset: GenotypeDataset,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
       gDataset.sequences,
       gDataset.headerLines,
       None)
   }
 
   implicit def genotypesToVariantsDatasetConversionFn(
-    gDataset: GenotypeRDD,
-    ds: Dataset[VariantProduct]): VariantRDD = {
-    new DatasetBoundVariantRDD(ds,
+    gDataset: GenotypeDataset,
+    ds: Dataset[VariantProduct]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds,
       gDataset.sequences,
       gDataset.headerLines)
   }
 
   implicit def genotypesToVariantContextConversionFn(
-    gDataset: GenotypeRDD,
-    rdd: RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(rdd,
+    gDataset: GenotypeDataset,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
       gDataset.sequences,
       gDataset.samples,
       gDataset.headerLines)
   }
 
   implicit def variantsToContigsConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
     new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def variantsToContigsDatasetConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
     new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def variantsToCoverageConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
     new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantsToCoverageDatasetConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
     new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def variantsToFeaturesConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     rdd: RDD[Feature]): FeatureDataset = {
     new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantsToFeaturesDatasetConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
     new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def variantsToFragmentsConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
@@ -917,7 +917,7 @@ object ADAMContext {
   }
 
   implicit def variantsToFragmentsDatasetConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     ds: Dataset[FragmentProduct]): FragmentDataset = {
     new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
@@ -926,7 +926,7 @@ object ADAMContext {
   }
 
   implicit def variantsToAlignmentRecordsConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
@@ -936,7 +936,7 @@ object ADAMContext {
   }
 
   implicit def variantsToAlignmentRecordsDatasetConversionFn(
-    gDataset: VariantRDD,
+    gDataset: VariantDataset,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
@@ -945,9 +945,9 @@ object ADAMContext {
   }
 
   implicit def variantsToGenotypesConversionFn(
-    gDataset: VariantRDD,
-    rdd: RDD[Genotype]): GenotypeRDD = {
-    new RDDBoundGenotypeRDD(rdd,
+    gDataset: VariantDataset,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       gDataset.headerLines,
@@ -955,49 +955,49 @@ object ADAMContext {
   }
 
   implicit def variantsToGenotypesDatasetConversionFn(
-    gDataset: VariantRDD,
-    ds: Dataset[GenotypeProduct]): GenotypeRDD = {
-    new DatasetBoundGenotypeRDD(ds,
+    gDataset: VariantDataset,
+    ds: Dataset[GenotypeProduct]): GenotypeDataset = {
+    new DatasetBoundGenotypeDataset(ds,
       gDataset.sequences,
       Seq.empty,
       gDataset.headerLines)
   }
 
-  implicit def variantsToVariantsConversionFn(gDataset: VariantRDD,
-                                              rdd: RDD[Variant]): VariantRDD = {
+  implicit def variantsToVariantsConversionFn(gDataset: VariantDataset,
+                                              rdd: RDD[Variant]): VariantDataset = {
     // hijack the transform function to discard the old RDD
     gDataset.transform(oldRdd => rdd)
   }
 
   implicit def variantsToVariantContextConversionFn(
-    gDataset: VariantRDD,
-    rdd: RDD[VariantContext]): VariantContextRDD = {
-    VariantContextRDD(rdd,
+    gDataset: VariantDataset,
+    rdd: RDD[VariantContext]): VariantContextDataset = {
+    VariantContextDataset(rdd,
       gDataset.sequences,
       Seq.empty,
       gDataset.headerLines)
   }
 
   implicit def variantContextsToContigsConversionFn(
-    gDataset: VariantContextRDD,
+    gDataset: VariantContextDataset,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
     new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def variantContextsToCoverageConversionFn(
-    gDataset: VariantContextRDD,
+    gDataset: VariantContextDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
     new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantContextsToFeaturesConversionFn(
-    gDataset: VariantContextRDD,
+    gDataset: VariantContextDataset,
     rdd: RDD[Feature]): FeatureDataset = {
     new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def variantContextsToFragmentsConversionFn(
-    gDataset: VariantContextRDD,
+    gDataset: VariantContextDataset,
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
@@ -1007,7 +1007,7 @@ object ADAMContext {
   }
 
   implicit def variantContextsToAlignmentRecordsConversionFn(
-    gDataset: VariantContextRDD,
+    gDataset: VariantContextDataset,
     rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
@@ -1017,9 +1017,9 @@ object ADAMContext {
   }
 
   implicit def variantContextsToGenotypesConversionFn(
-    gDataset: VariantContextRDD,
-    rdd: RDD[Genotype]): GenotypeRDD = {
-    new RDDBoundGenotypeRDD(rdd,
+    gDataset: VariantContextDataset,
+    rdd: RDD[Genotype]): GenotypeDataset = {
+    new RDDBoundGenotypeDataset(rdd,
       gDataset.sequences,
       gDataset.samples,
       gDataset.headerLines,
@@ -1027,16 +1027,16 @@ object ADAMContext {
   }
 
   implicit def variantContextsToVariantsConversionFn(
-    gDataset: VariantContextRDD,
-    rdd: RDD[Variant]): VariantRDD = {
-    new RDDBoundVariantRDD(rdd,
+    gDataset: VariantContextDataset,
+    rdd: RDD[Variant]): VariantDataset = {
+    new RDDBoundVariantDataset(rdd,
       gDataset.sequences,
       gDataset.headerLines,
       None)
   }
 
-  implicit def variantContextsToVariantContextsConversionFn(gDataset: VariantContextRDD,
-                                                            rdd: RDD[VariantContext]): VariantContextRDD = {
+  implicit def variantContextsToVariantContextsConversionFn(gDataset: VariantContextDataset,
+                                                            rdd: RDD[VariantContext]): VariantContextDataset = {
     // hijack the transform function to discard the old RDD
     gDataset.transform(oldRdd => rdd)
   }
@@ -1514,7 +1514,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param stringency The validation stringency to use when validating the
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
-   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
@@ -1596,7 +1596,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load indexed BAM formatted alignment records from.
    *   Globs/directories are supported.
    * @param viewRegion The ReferenceRegion we are filtering on.
-   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
@@ -1616,7 +1616,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param viewRegions Iterable of ReferenceRegion we are filtering on.
    * @param stringency The validation stringency to use when validating the
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
-   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
@@ -1878,7 +1878,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
-   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
@@ -1911,11 +1911,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-<<<<<<< HEAD
-   * Load a path name with range binned partitioned Parquet format into an AlignmentRecordRDD.
-=======
-   * Load a path name with range binned partitioned Parquet + Avro format into an AlignmentRecordDataset.
->>>>>>> abc17661... Refactor AlignmentRecordRDD to AlignmentRecordDataset.
+   * Load a path name with range binned partitioned Parquet format into an AlignmentRecordDataset.
    *
    * @note The sequence dictionary is read from an Avro file stored at
    *   pathName/_seqdict.avro and the record group dictionary is read from an
@@ -1926,15 +1922,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
-<<<<<<< HEAD
    *   region when using the filterByOverlappingRegions function on the returned dataset.
    *   Defaults to one partition.
-   * @return Returns an AlignmentRecordRDD.
-=======
-   *         region when using the filterByOverlappingRegions function on the returned dataset.
-   *         Defaults to one partition.
    * @return Returns an AlignmentRecordDataset.
->>>>>>> abc17661... Refactor AlignmentRecordRDD to AlignmentRecordDataset.
    */
   def loadPartitionedParquetAlignments(pathName: String,
                                        regions: Iterable[ReferenceRegion] = Iterable.empty,
@@ -2041,12 +2031,8 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     pathName1: String,
     pathName2: String,
     optRecordGroup: Option[String] = None,
-<<<<<<< HEAD
     persistLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadPairedFastq.time {
-=======
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadPairedFastq.time {
->>>>>>> abc17661... Refactor AlignmentRecordRDD to AlignmentRecordDataset.
 
     val reads1 = loadUnpairedFastq(
       pathName1,
@@ -2165,17 +2151,17 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load variant context records from VCF into a VariantContextRDD.
+   * Load variant context records from VCF into a VariantContextDataset.
    *
    * @param pathName The path name to load VCF variant context records from.
    *   Globs/directories are supported.
    * @param stringency The validation stringency to use when validating VCF format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a VariantContextRDD.
+   * @return Returns a VariantContextDataset.
    */
   def loadVcf(
     pathName: String,
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextRDD = LoadVcf.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextDataset = LoadVcf.time {
 
     // load records from VCF
     val records = readVcfRecords(pathName, None)
@@ -2187,14 +2173,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val (sd, samples, headers) = loadVcfMetadata(pathName)
 
     val vcc = VariantContextConverter(headers, stringency, sc.hadoopConfiguration)
-    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
+    VariantContextDataset(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
       VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
   }
 
   /**
-   * Load variant context records from VCF into a VariantContextRDD.
+   * Load variant context records from VCF into a VariantContextDataset.
    *
    * Only converts the core Genotype/Variant fields, and the fields set in the
    * requested projection. Core variant fields include:
@@ -2220,13 +2206,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   fields listed above.
    * @param stringency The validation stringency to use when validating VCF format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a VariantContextRDD.
+   * @return Returns a VariantContextDataset.
    */
   def loadVcfWithProjection(
     pathName: String,
     infoFields: Set[String],
     formatFields: Set[String],
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextRDD = LoadVcf.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantContextDataset = LoadVcf.time {
 
     // load records from VCF
     val records = readVcfRecords(pathName, None)
@@ -2254,41 +2240,41 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       }
       case _ => None
     }), stringency, sc.hadoopConfiguration)
-    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
+    VariantContextDataset(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
       VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
   }
 
   /**
-   * Load variant context records from VCF indexed by tabix (tbi) into a VariantContextRDD.
+   * Load variant context records from VCF indexed by tabix (tbi) into a VariantContextDataset.
    *
    * @param pathName The path name to load VCF variant context records from.
    *   Globs/directories are supported.
    * @param viewRegion ReferenceRegion we are filtering on.
-   * @return Returns a VariantContextRDD.
+   * @return Returns a VariantContextDataset.
    */
   // todo: add stringency with default if possible
   def loadIndexedVcf(
     pathName: String,
-    viewRegion: ReferenceRegion): VariantContextRDD = {
+    viewRegion: ReferenceRegion): VariantContextDataset = {
     loadIndexedVcf(pathName, Iterable(viewRegion))
   }
 
   /**
-   * Load variant context records from VCF indexed by tabix (tbi) into a VariantContextRDD.
+   * Load variant context records from VCF indexed by tabix (tbi) into a VariantContextDataset.
    *
    * @param pathName The path name to load VCF variant context records from.
    *   Globs/directories are supported.
    * @param viewRegions Iterator of ReferenceRegions we are filtering on.
    * @param stringency The validation stringency to use when validating VCF format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a VariantContextRDD.
+   * @return Returns a VariantContextDataset.
    */
   def loadIndexedVcf(
     pathName: String,
     viewRegions: Iterable[ReferenceRegion],
-    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): VariantContextRDD = LoadIndexedVcf.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): VariantContextDataset = LoadIndexedVcf.time {
 
     // load records from VCF
     val records = readVcfRecords(pathName, Some(viewRegions))
@@ -2300,14 +2286,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     val (sd, samples, headers) = loadVcfMetadata(pathName)
 
     val vcc = VariantContextConverter(headers, stringency, sc.hadoopConfiguration)
-    VariantContextRDD(records.flatMap(p => vcc.convert(p._2.get)),
+    VariantContextDataset(records.flatMap(p => vcc.convert(p._2.get)),
       sd,
       samples,
       VariantContextConverter.cleanAndMixInSupportedLines(headers, stringency, log))
   }
 
   /**
-   * Load a path name in Parquet + Avro format into a GenotypeRDD.
+   * Load a path name in Parquet + Avro format into a GenotypeDataset.
    *
    * @param pathName The path name to load genotypes from.
    *   Globs/directories are supported.
@@ -2315,12 +2301,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
-   * @return Returns a GenotypeRDD.
+   * @return Returns a GenotypeDataset.
    */
   def loadParquetGenotypes(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): GenotypeRDD = {
+    optProjection: Option[Schema] = None): GenotypeDataset = {
 
     // load header lines
     val headers = loadHeaderLines(pathName)
@@ -2333,20 +2319,20 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundGenotypeRDD(sc, pathName, sd, samples, headers)
+        ParquetUnboundGenotypeDataset(sc, pathName, sd, samples, headers)
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[Genotype](pathName, optPredicate, optProjection)
 
-        new RDDBoundGenotypeRDD(rdd, sd, samples, headers,
+        new RDDBoundGenotypeDataset(rdd, sd, samples, headers,
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet format into a GenotypeRDD.
+   * Load a path name with range binned partitioned Parquet format into a GenotypeDataset.
    *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
@@ -2354,15 +2340,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *   region when using the filterByOverlappingRegions function on the returned dataset.
    *   Defaults to one partition.
-   * @return Returns a GenotypeRDD.
+   * @return Returns a GenotypeDataset.
    */
   def loadPartitionedParquetGenotypes(pathName: String,
                                       regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                      optLookbackPartitions: Option[Int] = Some(1)): GenotypeRDD = {
+                                      optLookbackPartitions: Option[Int] = Some(1)): GenotypeDataset = {
 
     val partitionedBinSize = getPartitionBinSize(pathName)
     val genotypes = loadParquetGenotypes(pathName)
-    val genotypesDatasetBound = DatasetBoundGenotypeRDD(genotypes.dataset,
+    val genotypesDatasetBound = DatasetBoundGenotypeDataset(genotypes.dataset,
       genotypes.sequences,
       genotypes.samples,
       genotypes.headerLines,
@@ -2375,14 +2361,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in VCF or Parquet + Avro format into a VariantContextRDD.
+   * Load a path name in VCF or Parquet format into a VariantContextDataset.
    *
    * @param pathName The path name to load variant context records from.
    *   Globs/directories are supported.
-   * @return Returns a VariantContextRDD.
+   * @return Returns a VariantContextDataset.
    */
   def loadVariantContexts(
-    pathName: String): VariantContextRDD = {
+    pathName: String): VariantContextDataset = {
 
     if (isVcfExt(pathName)) {
       loadVcf(pathName)
@@ -2392,14 +2378,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in Parquet + Avro format into a VariantContextRDD.
+   * Load a path name in Parquet + Avro format into a VariantContextDataset.
    *
    * @param pathName The path name to load variant context records from.
    *   Globs/directories are supported.
-   * @return Returns a VariantContextRDD.
+   * @return Returns a VariantContextDataset.
    */
   def loadParquetVariantContexts(
-    pathName: String): VariantContextRDD = {
+    pathName: String): VariantContextDataset = {
 
     // load header lines
     val headers = loadHeaderLines(pathName)
@@ -2414,11 +2400,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     import sqlContext.implicits._
     val ds = sqlContext.read.parquet(pathName).as[VariantContextProduct]
 
-    new DatasetBoundVariantContextRDD(ds, sd, samples, headers)
+    new DatasetBoundVariantContextDataset(ds, sd, samples, headers)
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet format into a VariantContextRDD.
+   * Load a path name with range binned partitioned Parquet format into a VariantContextDataset.
    *
    * @param pathName The path name to load variant context records from.
    *   Globs/directories are supported.
@@ -2426,15 +2412,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *   region when using the filterByOverlappingRegions function on the returned dataset.
    *   Defaults to one partition.
-   * @return Returns a VariantContextRDD.
+   * @return Returns a VariantContextDataset.
    */
   def loadPartitionedParquetVariantContexts(pathName: String,
                                             regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                            optLookbackPartitions: Option[Int] = Some(1)): VariantContextRDD = {
+                                            optLookbackPartitions: Option[Int] = Some(1)): VariantContextDataset = {
 
     val partitionedBinSize = getPartitionBinSize(pathName)
     val variantContexts = loadParquetVariantContexts(pathName)
-    val variantContextsDatasetBound = DatasetBoundVariantContextRDD(variantContexts.dataset,
+    val variantContextsDatasetBound = DatasetBoundVariantContextDataset(variantContexts.dataset,
       variantContexts.sequences,
       variantContexts.samples,
       variantContexts.headerLines,
@@ -2447,7 +2433,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in Parquet + Avro format into a VariantRDD.
+   * Load a path name in Parquet format into a VariantDataset.
    *
    * @param pathName The path name to load variants from.
    *   Globs/directories are supported.
@@ -2455,12 +2441,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
-   * @return Returns a VariantRDD.
+   * @return Returns a VariantDataset.
    */
   def loadParquetVariants(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): VariantRDD = {
+    optProjection: Option[Schema] = None): VariantDataset = {
 
     val sd = loadAvroSequenceDictionary(pathName)
 
@@ -2469,18 +2455,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     (optPredicate, optProjection) match {
       case (None, None) => {
-        new ParquetUnboundVariantRDD(sc, pathName, sd, headers)
+        new ParquetUnboundVariantDataset(sc, pathName, sd, headers)
       }
       case _ => {
         val rdd = loadParquet[Variant](pathName, optPredicate, optProjection)
-        new RDDBoundVariantRDD(rdd, sd, headers,
+        new RDDBoundVariantDataset(rdd, sd, headers,
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
   }
 
   /**
-   * Load a path name with range binned partitioned Parquet format into a VariantRDD.
+   * Load a path name with range binned partitioned Parquet format into a VariantDataset.
    *
    * @param pathName The path name to load alignment records from.
    *   Globs/directories are supported.
@@ -2488,15 +2474,15 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
    *   region when using the filterByOverlappingRegions function on the returned dataset.
    *   Defaults to one partition.
-   * @return Returns a VariantRDD.
+   * @return Returns a VariantDataset.
    */
   def loadPartitionedParquetVariants(pathName: String,
                                      regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                     optLookbackPartitions: Option[Int] = Some(1)): VariantRDD = {
+                                     optLookbackPartitions: Option[Int] = Some(1)): VariantDataset = {
 
     val partitionedBinSize = getPartitionBinSize(pathName)
     val variants = loadParquetVariants(pathName)
-    val variantsDatasetBound = DatasetBoundVariantRDD(variants.dataset,
+    val variantsDatasetBound = DatasetBoundVariantDataset(variants.dataset,
       variants.sequences,
       variants.headerLines,
       isPartitioned = true,
@@ -3169,7 +3155,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load genotypes into a GenotypeRDD.
+   * Load genotypes into a GenotypeDataset.
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -3186,13 +3172,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param stringency The validation stringency to use when validating VCF format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a GenotypeRDD.
+   * @return Returns a GenotypeDataset.
    */
   def loadGenotypes(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeRDD = LoadGenotypes.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): GenotypeDataset = LoadGenotypes.time {
 
     if (isVcfExt(pathName)) {
       log.info(s"Loading $pathName as VCF and converting to Genotypes.")
@@ -3204,7 +3190,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load variants into a VariantRDD.
+   * Load variants into a VariantDataset.
    *
    * If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
    * Else, fall back to Parquet + Avro.
@@ -3220,13 +3206,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param stringency The validation stringency to use when validating VCF format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a VariantRDD.
+   * @return Returns a VariantDataset.
    */
   def loadVariants(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): VariantRDD = LoadVariants.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): VariantDataset = LoadVariants.time {
 
     if (isVcfExt(pathName)) {
       log.info(s"Loading $pathName as VCF and converting to Variants.")
@@ -3272,7 +3258,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param stringency The validation stringency to use when validating BAM/CRAM/SAM or FASTQ formats.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the genomic dataset of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */

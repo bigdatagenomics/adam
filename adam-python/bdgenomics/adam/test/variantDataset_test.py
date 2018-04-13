@@ -21,7 +21,7 @@ from bdgenomics.adam.adamContext import ADAMContext
 from bdgenomics.adam.test import SparkTestCase
 
 
-class VariantRDDTest(SparkTestCase):
+class VariantDatasetTest(SparkTestCase):
 
     
     def test_vcf_round_trip(self):

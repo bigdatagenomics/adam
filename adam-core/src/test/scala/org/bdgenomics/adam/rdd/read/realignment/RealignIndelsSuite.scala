@@ -33,7 +33,7 @@ import org.bdgenomics.adam.models.{
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
-import org.bdgenomics.adam.rdd.variant.VariantRDD
+import org.bdgenomics.adam.rdd.variant.VariantDataset
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceFile }
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Variant }
@@ -225,7 +225,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReferenceAllele("AGGGGGGGGGG")
       .setAlternateAllele("A")
       .build
-    val variantRdd = VariantRDD(sc.parallelize(Seq(indel)),
+    val variantRdd = VariantDataset(sc.parallelize(Seq(indel)),
       artificialReadsRdd.sequences, DefaultHeaderLines.allHeaderLines)
     val knowns = ConsensusGenerator.fromKnownIndels(variantRdd)
     val artificialRealignedReadsCollected = artificialRealignedReads(cg = knowns)
@@ -253,7 +253,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setReferenceAllele("AGGGGGGGGGG")
       .setAlternateAllele("A")
       .build
-    val variantRdd = VariantRDD(sc.parallelize(Seq(indel)),
+    val variantRdd = VariantDataset(sc.parallelize(Seq(indel)),
       artificialReadsRdd.sequences, DefaultHeaderLines.allHeaderLines)
     val knowns = ConsensusGenerator.fromKnownIndels(variantRdd)
     val union = ConsensusGenerator.union(knowns, ConsensusGenerator.fromReads)

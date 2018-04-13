@@ -74,10 +74,10 @@ private[adam] class VariantArraySerializer extends IntervalArraySerializer[Refer
   }
 }
 
-object VariantRDD extends Serializable {
+object VariantDataset extends Serializable {
 
   /**
-   * Builds a VariantRDD without a partition map.
+   * Builds a VariantDataset without a partition map.
    *
    * @param rdd The underlying Variant RDD.
    * @param sequences The sequence dictionary for the RDD.
@@ -86,9 +86,9 @@ object VariantRDD extends Serializable {
    */
   def apply(rdd: RDD[Variant],
             sequences: SequenceDictionary,
-            headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): VariantRDD = {
+            headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines): VariantDataset = {
 
-    new RDDBoundVariantRDD(rdd, sequences, headerLines, None)
+    new RDDBoundVariantDataset(rdd, sequences, headerLines, None)
   }
 
   /**
@@ -101,16 +101,16 @@ object VariantRDD extends Serializable {
    */
   def apply(ds: Dataset[VariantProduct],
             sequences: SequenceDictionary,
-            headerLines: Seq[VCFHeaderLine]): VariantRDD = {
-    new DatasetBoundVariantRDD(ds, sequences, headerLines)
+            headerLines: Seq[VCFHeaderLine]): VariantDataset = {
+    new DatasetBoundVariantDataset(ds, sequences, headerLines)
   }
 }
 
-case class ParquetUnboundVariantRDD private[rdd] (
+case class ParquetUnboundVariantDataset private[rdd] (
     @transient private val sc: SparkContext,
     private val parquetFilename: String,
     sequences: SequenceDictionary,
-    @transient headerLines: Seq[VCFHeaderLine]) extends VariantRDD {
+    @transient headerLines: Seq[VCFHeaderLine]) extends VariantDataset {
 
   lazy val rdd: RDD[Variant] = {
     sc.loadParquet(parquetFilename)
@@ -125,23 +125,23 @@ case class ParquetUnboundVariantRDD private[rdd] (
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): VariantRDD = {
+    newSequences: SequenceDictionary): VariantDataset = {
     copy(sequences = newSequences)
   }
 
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantRDD = {
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantDataset = {
     copy(headerLines = newHeaderLines)
   }
 }
 
-case class DatasetBoundVariantRDD private[rdd] (
+case class DatasetBoundVariantDataset private[rdd] (
   dataset: Dataset[VariantProduct],
   sequences: SequenceDictionary,
   @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
   override val isPartitioned: Boolean = true,
   override val optPartitionBinSize: Option[Int] = Some(1000000),
-  override val optLookbackPartitions: Option[Int] = Some(1)) extends VariantRDD
-    with DatasetBoundGenomicDataset[Variant, VariantProduct, VariantRDD] {
+  override val optLookbackPartitions: Option[Int] = Some(1)) extends VariantDataset
+    with DatasetBoundGenomicDataset[Variant, VariantProduct, VariantDataset] {
 
   protected lazy val optPartitionMap = None
 
@@ -162,16 +162,16 @@ case class DatasetBoundVariantRDD private[rdd] (
   }
 
   override def transformDataset(
-    tFn: Dataset[VariantProduct] => Dataset[VariantProduct]): VariantRDD = {
+    tFn: Dataset[VariantProduct] => Dataset[VariantProduct]): VariantDataset = {
     copy(dataset = tFn(dataset))
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): VariantRDD = {
+    newSequences: SequenceDictionary): VariantDataset = {
     copy(sequences = newSequences)
   }
 
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantRDD = {
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantDataset = {
     copy(headerLines = newHeaderLines)
   }
 
@@ -216,11 +216,11 @@ case class DatasetBoundVariantRDD private[rdd] (
   }
 }
 
-case class RDDBoundVariantRDD private[rdd] (
+case class RDDBoundVariantDataset private[rdd] (
     rdd: RDD[Variant],
     sequences: SequenceDictionary,
     @transient headerLines: Seq[VCFHeaderLine] = DefaultHeaderLines.allHeaderLines,
-    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends VariantRDD {
+    optPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None) extends VariantDataset {
 
   /**
    * A SQL Dataset of reads.
@@ -232,16 +232,16 @@ case class RDDBoundVariantRDD private[rdd] (
   }
 
   def replaceSequences(
-    newSequences: SequenceDictionary): VariantRDD = {
+    newSequences: SequenceDictionary): VariantDataset = {
     copy(sequences = newSequences)
   }
 
-  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantRDD = {
+  def replaceHeaderLines(newHeaderLines: Seq[VCFHeaderLine]): VariantDataset = {
     copy(headerLines = newHeaderLines)
   }
 }
 
-sealed abstract class VariantRDD extends AvroGenomicDataset[Variant, VariantProduct, VariantRDD] with VCFSupportingGenomicDataset[Variant, VariantProduct, VariantRDD] {
+sealed abstract class VariantDataset extends AvroGenomicDataset[Variant, VariantProduct, VariantDataset] with VCFSupportingGenomicDataset[Variant, VariantProduct, VariantDataset] {
 
   protected val productFn = VariantProduct.fromAvro(_)
   protected val unproductFn = (v: VariantProduct) => v.toAvro
@@ -273,9 +273,9 @@ sealed abstract class VariantRDD extends AvroGenomicDataset[Variant, VariantProd
     IntervalArray(rdd, VariantArray.apply(_, _))
   }
 
-  def union(rdds: VariantRDD*): VariantRDD = {
+  def union(rdds: VariantDataset*): VariantDataset = {
     val iterableRdds = rdds.toSeq
-    VariantRDD(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
+    VariantDataset(rdd.context.union(rdd, iterableRdds.map(_.rdd): _*),
       iterableRdds.map(_.sequences).fold(sequences)(_ ++ _),
       (headerLines ++ iterableRdds.flatMap(_.headerLines)).distinct)
   }
@@ -289,15 +289,15 @@ sealed abstract class VariantRDD extends AvroGenomicDataset[Variant, VariantProd
    *   metadata (sequence dictionary, and etc) is copied without modification.
    */
   def transformDataset(
-    tFn: Dataset[VariantProduct] => Dataset[VariantProduct]): VariantRDD = {
-    DatasetBoundVariantRDD(tFn(dataset), sequences, headerLines)
+    tFn: Dataset[VariantProduct] => Dataset[VariantProduct]): VariantDataset = {
+    DatasetBoundVariantDataset(tFn(dataset), sequences, headerLines)
   }
 
   /**
-   * @return Returns this VariantRDD as a VariantContextRDD.
+   * @return Returns this VariantDataset as a VariantContextDataset.
    */
-  def toVariantContexts(): VariantContextRDD = {
-    new RDDBoundVariantContextRDD(rdd.map(VariantContext(_)),
+  def toVariantContexts(): VariantContextDataset = {
+    new RDDBoundVariantContextDataset(rdd.map(VariantContext(_)),
       sequences,
       Seq.empty[Sample],
       headerLines,
@@ -410,11 +410,11 @@ sealed abstract class VariantRDD extends AvroGenomicDataset[Variant, VariantProd
 
   /**
    * @param newRdd An RDD to replace the underlying RDD with.
-   * @return Returns a new VariantRDD with the underlying RDD replaced.
+   * @return Returns a new VariantDataset with the underlying RDD replaced.
    */
   protected def replaceRdd(newRdd: RDD[Variant],
-                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantRDD = {
-    RDDBoundVariantRDD(newRdd, sequences, headerLines, newPartitionMap)
+                           newPartitionMap: Option[Array[Option[(ReferenceRegion, ReferenceRegion)]]] = None): VariantDataset = {
+    RDDBoundVariantDataset(newRdd, sequences, headerLines, newPartitionMap)
   }
 
   /**

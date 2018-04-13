@@ -29,9 +29,9 @@ import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.adam.rdd.variant.{
-  VariantRDD,
-  GenotypeRDD,
-  VariantContextRDD
+  VariantDataset,
+  GenotypeDataset,
+  VariantContextDataset
 }
 import org.bdgenomics.adam.sql.{
   AlignmentRecord => AlignmentRecordProduct,
@@ -70,17 +70,17 @@ trait ToAlignmentRecordDatasetConversion[T, U <: Product, V <: GenomicDataset[T,
   val yTag: TypeTag[AlignmentRecordProduct] = typeTag[AlignmentRecordProduct]
 }
 
-trait ToGenotypeDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDatasetConversion[T, U, V, Genotype, GenotypeProduct, GenotypeRDD] {
+trait ToGenotypeDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDatasetConversion[T, U, V, Genotype, GenotypeProduct, GenotypeDataset] {
 
   val yTag: TypeTag[GenotypeProduct] = typeTag[GenotypeProduct]
 }
 
-trait ToVariantDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDatasetConversion[T, U, V, Variant, VariantProduct, VariantRDD] {
+trait ToVariantDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDatasetConversion[T, U, V, Variant, VariantProduct, VariantDataset] {
 
   val yTag: TypeTag[VariantProduct] = typeTag[VariantProduct]
 }
 
-trait ToVariantContextDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDatasetConversion[T, U, V, VariantContext, VariantContextProduct, VariantContextRDD] {
+trait ToVariantContextDatasetConversion[T, U <: Product, V <: GenomicDataset[T, U, V]] extends GenomicDatasetConversion[T, U, V, VariantContext, VariantContextProduct, VariantContextDataset] {
 
   val yTag: TypeTag[VariantContextProduct] = typeTag[VariantContextProduct]
 }
@@ -115,14 +115,14 @@ final class ContigsToAlignmentRecordsDatasetConverter extends ToAlignmentRecordD
 
 final class ContigsToGenotypesDatasetConverter extends ToGenotypeDatasetConversion[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset] {
 
-  def call(v1: NucleotideContigFragmentDataset, v2: Dataset[GenotypeProduct]): GenotypeRDD = {
+  def call(v1: NucleotideContigFragmentDataset, v2: Dataset[GenotypeProduct]): GenotypeDataset = {
     ADAMContext.contigsToGenotypesDatasetConversionFn(v1, v2)
   }
 }
 
 final class ContigsToVariantsDatasetConverter extends ToVariantDatasetConversion[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset] {
 
-  def call(v1: NucleotideContigFragmentDataset, v2: Dataset[VariantProduct]): VariantRDD = {
+  def call(v1: NucleotideContigFragmentDataset, v2: Dataset[VariantProduct]): VariantDataset = {
     ADAMContext.contigsToVariantsDatasetConversionFn(v1, v2)
   }
 }
@@ -157,14 +157,14 @@ final class CoverageToAlignmentRecordsDatasetConverter extends ToAlignmentRecord
 
 final class CoverageToGenotypesDatasetConverter extends ToGenotypeDatasetConversion[Coverage, Coverage, CoverageDataset] {
 
-  def call(v1: CoverageDataset, v2: Dataset[GenotypeProduct]): GenotypeRDD = {
+  def call(v1: CoverageDataset, v2: Dataset[GenotypeProduct]): GenotypeDataset = {
     ADAMContext.coverageToGenotypesDatasetConversionFn(v1, v2)
   }
 }
 
 final class CoverageToVariantsDatasetConverter extends ToVariantDatasetConversion[Coverage, Coverage, CoverageDataset] {
 
-  def call(v1: CoverageDataset, v2: Dataset[VariantProduct]): VariantRDD = {
+  def call(v1: CoverageDataset, v2: Dataset[VariantProduct]): VariantDataset = {
     ADAMContext.coverageToVariantsDatasetConversionFn(v1, v2)
   }
 }
@@ -199,14 +199,14 @@ final class FeaturesToAlignmentRecordsDatasetConverter extends ToAlignmentRecord
 
 final class FeaturesToGenotypesDatasetConverter extends ToGenotypeDatasetConversion[Feature, FeatureProduct, FeatureDataset] {
 
-  def call(v1: FeatureDataset, v2: Dataset[GenotypeProduct]): GenotypeRDD = {
+  def call(v1: FeatureDataset, v2: Dataset[GenotypeProduct]): GenotypeDataset = {
     ADAMContext.featuresToGenotypesDatasetConversionFn(v1, v2)
   }
 }
 
 final class FeaturesToVariantsDatasetConverter extends ToVariantDatasetConversion[Feature, FeatureProduct, FeatureDataset] {
 
-  def call(v1: FeatureDataset, v2: Dataset[VariantProduct]): VariantRDD = {
+  def call(v1: FeatureDataset, v2: Dataset[VariantProduct]): VariantDataset = {
     ADAMContext.featuresToVariantsDatasetConversionFn(v1, v2)
   }
 }
@@ -241,14 +241,14 @@ final class FragmentsToAlignmentRecordsDatasetConverter extends ToAlignmentRecor
 
 final class FragmentsToGenotypesDatasetConverter extends ToGenotypeDatasetConversion[Fragment, FragmentProduct, FragmentDataset] {
 
-  def call(v1: FragmentDataset, v2: Dataset[GenotypeProduct]): GenotypeRDD = {
+  def call(v1: FragmentDataset, v2: Dataset[GenotypeProduct]): GenotypeDataset = {
     ADAMContext.fragmentsToGenotypesDatasetConversionFn(v1, v2)
   }
 }
 
 final class FragmentsToVariantsDatasetConverter extends ToVariantDatasetConversion[Fragment, FragmentProduct, FragmentDataset] {
 
-  def call(v1: FragmentDataset, v2: Dataset[VariantProduct]): VariantRDD = {
+  def call(v1: FragmentDataset, v2: Dataset[VariantProduct]): VariantDataset = {
     ADAMContext.fragmentsToVariantsDatasetConversionFn(v1, v2)
   }
 }
@@ -283,98 +283,98 @@ final class AlignmentRecordsToFragmentsDatasetConverter extends ToFragmentDatase
 
 final class AlignmentRecordsToGenotypesDatasetConverter extends ToGenotypeDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
 
-  def call(v1: AlignmentRecordDataset, v2: Dataset[GenotypeProduct]): GenotypeRDD = {
+  def call(v1: AlignmentRecordDataset, v2: Dataset[GenotypeProduct]): GenotypeDataset = {
     ADAMContext.alignmentRecordsToGenotypesDatasetConversionFn(v1, v2)
   }
 }
 
 final class AlignmentRecordsToVariantsDatasetConverter extends ToVariantDatasetConversion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset] {
 
-  def call(v1: AlignmentRecordDataset, v2: Dataset[VariantProduct]): VariantRDD = {
+  def call(v1: AlignmentRecordDataset, v2: Dataset[VariantProduct]): VariantDataset = {
     ADAMContext.alignmentRecordsToVariantsDatasetConversionFn(v1, v2)
   }
 }
 
-final class GenotypesToContigsDatasetConverter extends ToContigDatasetConversion[Genotype, GenotypeProduct, GenotypeRDD] {
+final class GenotypesToContigsDatasetConverter extends ToContigDatasetConversion[Genotype, GenotypeProduct, GenotypeDataset] {
 
-  def call(v1: GenotypeRDD, v2: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
+  def call(v1: GenotypeDataset, v2: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
     ADAMContext.genotypesToContigsDatasetConversionFn(v1, v2)
   }
 }
 
-final class GenotypesToCoverageDatasetConverter extends ToCoverageDatasetConversion[Genotype, GenotypeProduct, GenotypeRDD] {
+final class GenotypesToCoverageDatasetConverter extends ToCoverageDatasetConversion[Genotype, GenotypeProduct, GenotypeDataset] {
 
-  def call(v1: GenotypeRDD, v2: Dataset[Coverage]): CoverageDataset = {
+  def call(v1: GenotypeDataset, v2: Dataset[Coverage]): CoverageDataset = {
     ADAMContext.genotypesToCoverageDatasetConversionFn(v1, v2)
   }
 }
 
-final class GenotypesToFeaturesDatasetConverter extends ToFeatureDatasetConversion[Genotype, GenotypeProduct, GenotypeRDD] {
+final class GenotypesToFeaturesDatasetConverter extends ToFeatureDatasetConversion[Genotype, GenotypeProduct, GenotypeDataset] {
 
-  def call(v1: GenotypeRDD, v2: Dataset[FeatureProduct]): FeatureDataset = {
+  def call(v1: GenotypeDataset, v2: Dataset[FeatureProduct]): FeatureDataset = {
     ADAMContext.genotypesToFeaturesDatasetConversionFn(v1, v2)
   }
 }
 
-final class GenotypesToFragmentsDatasetConverter extends ToFragmentDatasetConversion[Genotype, GenotypeProduct, GenotypeRDD] {
+final class GenotypesToFragmentsDatasetConverter extends ToFragmentDatasetConversion[Genotype, GenotypeProduct, GenotypeDataset] {
 
-  def call(v1: GenotypeRDD, v2: Dataset[FragmentProduct]): FragmentDataset = {
+  def call(v1: GenotypeDataset, v2: Dataset[FragmentProduct]): FragmentDataset = {
     ADAMContext.genotypesToFragmentsDatasetConversionFn(v1, v2)
   }
 }
 
-final class GenotypesToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Genotype, GenotypeProduct, GenotypeRDD] {
+final class GenotypesToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Genotype, GenotypeProduct, GenotypeDataset] {
 
-  def call(v1: GenotypeRDD, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+  def call(v1: GenotypeDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     ADAMContext.genotypesToAlignmentRecordsDatasetConversionFn(v1, v2)
   }
 }
 
-final class GenotypesToVariantsDatasetConverter extends ToVariantDatasetConversion[Genotype, GenotypeProduct, GenotypeRDD] {
+final class GenotypesToVariantsDatasetConverter extends ToVariantDatasetConversion[Genotype, GenotypeProduct, GenotypeDataset] {
 
-  def call(v1: GenotypeRDD, v2: Dataset[VariantProduct]): VariantRDD = {
+  def call(v1: GenotypeDataset, v2: Dataset[VariantProduct]): VariantDataset = {
     ADAMContext.genotypesToVariantsDatasetConversionFn(v1, v2)
   }
 }
 
-final class VariantsToContigsDatasetConverter extends ToContigDatasetConversion[Variant, VariantProduct, VariantRDD] {
+final class VariantsToContigsDatasetConverter extends ToContigDatasetConversion[Variant, VariantProduct, VariantDataset] {
 
-  def call(v1: VariantRDD, v2: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
+  def call(v1: VariantDataset, v2: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
     ADAMContext.variantsToContigsDatasetConversionFn(v1, v2)
   }
 }
 
-final class VariantsToCoverageDatasetConverter extends ToCoverageDatasetConversion[Variant, VariantProduct, VariantRDD] {
+final class VariantsToCoverageDatasetConverter extends ToCoverageDatasetConversion[Variant, VariantProduct, VariantDataset] {
 
-  def call(v1: VariantRDD, v2: Dataset[Coverage]): CoverageDataset = {
+  def call(v1: VariantDataset, v2: Dataset[Coverage]): CoverageDataset = {
     ADAMContext.variantsToCoverageDatasetConversionFn(v1, v2)
   }
 }
 
-final class VariantsToFeaturesDatasetConverter extends ToFeatureDatasetConversion[Variant, VariantProduct, VariantRDD] {
+final class VariantsToFeaturesDatasetConverter extends ToFeatureDatasetConversion[Variant, VariantProduct, VariantDataset] {
 
-  def call(v1: VariantRDD, v2: Dataset[FeatureProduct]): FeatureDataset = {
+  def call(v1: VariantDataset, v2: Dataset[FeatureProduct]): FeatureDataset = {
     ADAMContext.variantsToFeaturesDatasetConversionFn(v1, v2)
   }
 }
 
-final class VariantsToFragmentsDatasetConverter extends ToFragmentDatasetConversion[Variant, VariantProduct, VariantRDD] {
+final class VariantsToFragmentsDatasetConverter extends ToFragmentDatasetConversion[Variant, VariantProduct, VariantDataset] {
 
-  def call(v1: VariantRDD, v2: Dataset[FragmentProduct]): FragmentDataset = {
+  def call(v1: VariantDataset, v2: Dataset[FragmentProduct]): FragmentDataset = {
     ADAMContext.variantsToFragmentsDatasetConversionFn(v1, v2)
   }
 }
 
-final class VariantsToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Variant, VariantProduct, VariantRDD] {
+final class VariantsToAlignmentRecordsDatasetConverter extends ToAlignmentRecordDatasetConversion[Variant, VariantProduct, VariantDataset] {
 
-  def call(v1: VariantRDD, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+  def call(v1: VariantDataset, v2: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
     ADAMContext.variantsToAlignmentRecordsDatasetConversionFn(v1, v2)
   }
 }
 
-final class VariantsToGenotypesDatasetConverter extends ToGenotypeDatasetConversion[Variant, VariantProduct, VariantRDD] {
+final class VariantsToGenotypesDatasetConverter extends ToGenotypeDatasetConversion[Variant, VariantProduct, VariantDataset] {
 
-  def call(v1: VariantRDD, v2: Dataset[GenotypeProduct]): GenotypeRDD = {
+  def call(v1: VariantDataset, v2: Dataset[GenotypeProduct]): GenotypeDataset = {
     ADAMContext.variantsToGenotypesDatasetConversionFn(v1, v2)
   }
 }

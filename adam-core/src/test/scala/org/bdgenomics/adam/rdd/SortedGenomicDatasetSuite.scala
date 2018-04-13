@@ -22,7 +22,7 @@ import org.bdgenomics.adam.models.{ SequenceRecord, SequenceDictionary, Referenc
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.adam.rdd.feature.FeatureDataset
-import org.bdgenomics.adam.rdd.variant.GenotypeRDD
+import org.bdgenomics.adam.rdd.variant.GenotypeDataset
 import org.bdgenomics.formats.avro._
 import org.bdgenomics.utils.misc.SparkFunSuite
 import scala.collection.mutable.ListBuffer
@@ -231,7 +231,7 @@ class SortedGenomicDatasetSuite extends SparkFunSuite {
     }
 
     val genotypes =
-      GenotypeRDD(sc.parallelize(genotypeBuilder),
+      GenotypeDataset(sc.parallelize(genotypeBuilder),
         sd, Seq(), DefaultHeaderLines.allHeaderLines)
         .sortLexicographically(storePartitionMap = true, partitions = 2)
     genotypes.rdd.mapPartitionsWithIndex((idx, iter) => {

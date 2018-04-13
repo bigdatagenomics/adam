@@ -28,9 +28,9 @@ import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.adam.rdd.variant.{
-  GenotypeRDD,
-  VariantRDD,
-  VariantContextRDD
+  GenotypeDataset,
+  VariantDataset,
+  VariantContextDataset
 }
 import org.bdgenomics.adam.sql.{
   AlignmentRecord => AlignmentRecordProduct,
@@ -835,14 +835,14 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
   sparkTest("transform contigs to genotype genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
-    def checkSave(genotypes: GenotypeRDD) {
+    def checkSave(genotypes: GenotypeDataset) {
       val tempPath = tmpLocation(".adam")
       genotypes.saveAsParquet(tempPath)
 
       assert(sc.loadGenotypes(tempPath).rdd.count === 8)
     }
 
-    val genotypes: GenotypeRDD = contigs.transmute[Genotype, GenotypeProduct, GenotypeRDD](
+    val genotypes: GenotypeDataset = contigs.transmute[Genotype, GenotypeProduct, GenotypeDataset](
       (rdd: RDD[NucleotideContigFragment]) => {
         rdd.map(NucleotideContigFragmentDatasetSuite.genFn)
       })
@@ -852,7 +852,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val genotypesDs: GenotypeRDD = contigs.transmuteDataset[Genotype, GenotypeProduct, GenotypeRDD](
+    val genotypesDs: GenotypeDataset = contigs.transmuteDataset[Genotype, GenotypeProduct, GenotypeDataset](
       (ds: Dataset[NucleotideContigFragmentProduct]) => {
         ds.map(r => {
           GenotypeProduct.fromAvro(
@@ -866,14 +866,14 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
   sparkTest("transform contigs to variant genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
-    def checkSave(variants: VariantRDD) {
+    def checkSave(variants: VariantDataset) {
       val tempPath = tmpLocation(".adam")
       variants.saveAsParquet(tempPath)
 
       assert(sc.loadVariants(tempPath).rdd.count === 8)
     }
 
-    val variants: VariantRDD = contigs.transmute[Variant, VariantProduct, VariantRDD](
+    val variants: VariantDataset = contigs.transmute[Variant, VariantProduct, VariantDataset](
       (rdd: RDD[NucleotideContigFragment]) => {
         rdd.map(NucleotideContigFragmentDatasetSuite.varFn)
       })
@@ -883,7 +883,7 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
 
-    val variantsDs: VariantRDD = contigs.transmuteDataset[Variant, VariantProduct, VariantRDD](
+    val variantsDs: VariantDataset = contigs.transmuteDataset[Variant, VariantProduct, VariantDataset](
       (ds: Dataset[NucleotideContigFragmentProduct]) => {
         ds.map(r => {
           VariantProduct.fromAvro(
@@ -897,11 +897,11 @@ class NucleotideContigFragmentDatasetSuite extends ADAMFunSuite {
   sparkTest("transform contigs to variant context genomic dataset") {
     val contigs = sc.loadFasta(testFile("HLA_DQB1_05_01_01_02.fa"), 1000L)
 
-    def checkSave(variantContexts: VariantContextRDD) {
+    def checkSave(variantContexts: VariantContextDataset) {
       assert(variantContexts.rdd.count === 8)
     }
 
-    val variantContexts: VariantContextRDD = contigs.transmute[VariantContext, VariantContextProduct, VariantContextRDD](
+    val variantContexts: VariantContextDataset = contigs.transmute[VariantContext, VariantContextProduct, VariantContextDataset](
       (rdd: RDD[NucleotideContigFragment]) => {
         rdd.map(NucleotideContigFragmentDatasetSuite.vcFn)
       })

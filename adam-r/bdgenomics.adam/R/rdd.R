@@ -94,17 +94,17 @@ FragmentDataset <- function(jrdd) {
 
 #' A class that wraps an RDD of genotypes with helpful metadata.
 #'
-#' @rdname GenotypeRDD
+#' @rdname GenotypeDataset
 #' @slot jrdd The Java RDD of Genotypes that this class wraps.
 #' 
 #' @export
-setClass("GenotypeRDD",
+setClass("GenotypeDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-GenotypeRDD <- function(jrdd) {
-    new("GenotypeRDD", jrdd = jrdd)
+GenotypeDataset <- function(jrdd) {
+    new("GenotypeDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of contigs with helpful metadata.
@@ -124,32 +124,32 @@ NucleotideContigFragmentDataset <- function(jrdd) {
 
 #' A class that wraps an RDD of variants with helpful metadata.
 #'
-#' @rdname VariantRDD
+#' @rdname VariantDataset
 #' @slot jrdd The Java RDD of Variants that this class wraps.
 #' 
 #' @export
-setClass("VariantRDD",
+setClass("VariantDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-VariantRDD <- function(jrdd) {
-    new("VariantRDD", jrdd = jrdd)
+VariantDataset <- function(jrdd) {
+    new("VariantDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of both variants and genotypes with helpful metadata.
 #'
-#' @rdname VariantContextRDD
+#' @rdname VariantContextDataset
 #' @slot jrdd The Java RDD of VariantContexts that this class wraps.
 #' 
 #' @export
-setClass("VariantContextRDD",
+setClass("VariantContextDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
 #' @importFrom methods new
-VariantContextRDD <- function(jrdd) {
-    new("VariantContextRDD", jrdd = jrdd)
+VariantContextDataset <- function(jrdd) {
+    new("VariantContextDataset", jrdd = jrdd)
 }
 
 #'
@@ -383,9 +383,9 @@ setMethod("destClassSuffix",
                   "FragmentDatasetConverter"
               } else if (destClass == "AlignmentRecordDataset") {
                   "AlignmentRecordDatasetConverter"
-              } else if (destClass == "GenotypeRDD") {
+              } else if (destClass == "GenotypeDataset") {
                   "GenotypeDatasetConverter"
-              } else if (destClass == "VariantRDD") {
+              } else if (destClass == "VariantDataset") {
                   "VariantDatasetConverter"
               } else {
                   stop(paste("No conversion method known for",
@@ -941,7 +941,7 @@ setMethod("markDuplicates",
 #'
 #' @export
 setMethod("recalibrateBaseQualities",
-          signature(ardd = "AlignmentRecordDataset", knownSnps = "VariantRDD", validationStringency = "character"),
+          signature(ardd = "AlignmentRecordDataset", knownSnps = "VariantDataset", validationStringency = "character"),
           function(ardd, knownSnps, validationStringency) {
               stringency <- sparkR.callJStatic("htsjdk.samtools.ValidationStringency", "valueOf", validationStringency)
               AlignmentRecordDataset(sparkR.callJMethod(ardd@jrdd, "recalibrateBaseQualities", knownSnps@jrdd, stringency))
@@ -1206,7 +1206,7 @@ setMethod("save", signature(ardd = "FragmentDataset", filePath = "character"),
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "GenotypeRDD",
+          signature(ardd = "GenotypeDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.GenotypesTo",
@@ -1214,10 +1214,10 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "GenotypeRDD",
+          signature(ardd = "GenotypeDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              GenotypeRDD(rdd)
+              GenotypeDataset(rdd)
           })
 
 #' Saves this genomic dataset of genotypes to disk as Parquet.
@@ -1228,7 +1228,7 @@ setMethod("replaceRdd",
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("saveAsParquet", signature(ardd = "GenotypeRDD", filePath = "character"),
+setMethod("saveAsParquet", signature(ardd = "GenotypeDataset", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
           })
@@ -1241,14 +1241,14 @@ setMethod("saveAsParquet", signature(ardd = "GenotypeRDD", filePath = "character
 #'
 #' @param dedupe If true, drops variants described in more than one genotype
 #'   record.
-#' @return Returns the variants described by this GenotypeRDD.
+#' @return Returns the variants described by this GenotypeDataset.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toVariants", signature(ardd = "GenotypeRDD"),
+setMethod("toVariants", signature(ardd = "GenotypeDataset"),
           function(ardd, dedupe=FALSE) {
-              VariantRDD(sparkR.callJMethod(ardd@jrdd, "toVariants", dedupe))
+              VariantDataset(sparkR.callJMethod(ardd@jrdd, "toVariants", dedupe))
           })
 
 #' Converts this genomic dataset of Genotypes to VariantContexts.
@@ -1259,9 +1259,9 @@ setMethod("toVariants", signature(ardd = "GenotypeRDD"),
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toVariantContexts", signature(ardd = "GenotypeRDD"),
+setMethod("toVariantContexts", signature(ardd = "GenotypeDataset"),
           function(ardd) {
-              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
+              VariantContextDataset(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
           })
 
 setMethod("inferConversionFn",
@@ -1315,7 +1315,7 @@ setMethod("flankAdjacentFragments",
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "VariantRDD",
+          signature(ardd = "VariantDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.VariantsTo",
@@ -1323,10 +1323,10 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "VariantRDD",
+          signature(ardd = "VariantDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              VariantRDD(rdd)
+              VariantDataset(rdd)
           })
 
 #' Saves this genomic dataset of variants to disk as Parquet.
@@ -1337,7 +1337,7 @@ setMethod("replaceRdd",
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("saveAsParquet", signature(ardd = "VariantRDD", filePath = "character"),
+setMethod("saveAsParquet", signature(ardd = "VariantDataset", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "saveAsParquet", filePath))
           })
@@ -1350,19 +1350,19 @@ setMethod("saveAsParquet", signature(ardd = "VariantRDD", filePath = "character"
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toVariantContexts", signature(ardd = "VariantRDD"),
+setMethod("toVariantContexts", signature(ardd = "VariantDataset"),
           function(ardd) {
-              VariantContextRDD(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
+              VariantContextDataset(sparkR.callJMethod(ardd@jrdd, "toVariantContexts"))
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "VariantContextRDD",
+          signature(ardd = "VariantContextDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              VariantContextRDD(rdd)
+              VariantContextDataset(rdd)
           })
 
-#' Saves this genomic dataset of variant contexts to disk as VCF
+#' Saves this genomic dataset of variant contexts to disk as VCF.
 #'
 #' @param ardd The genomic dataset to apply this to.
 #' @param filePath Path to save VCF to.
@@ -1377,7 +1377,7 @@ setMethod("replaceRdd",
 #' @importFrom SparkR sparkR.callJMethod sparkR.callJStatic
 #'
 #' @export
-setMethod("saveAsVcf", signature(ardd = "VariantContextRDD", filePath = "character"),
+setMethod("saveAsVcf", signature(ardd = "VariantContextDataset", filePath = "character"),
           function(ardd,
                    filePath,
                    asSingleFile = TRUE,

@@ -51,7 +51,7 @@ import org.bdgenomics.adam.rdd.feature.{
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.adam.rdd.variant.VariantRDD
+import org.bdgenomics.adam.rdd.variant.VariantDataset
 import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.adam.serialization.AvroSerializer
 import org.bdgenomics.adam.util.{ FileMerger, ReferenceFile }
@@ -1037,7 +1037,7 @@ sealed abstract class AlignmentRecordDataset extends AvroRecordGroupGenomicDatas
    * @return Returns a genomic dataset of recalibrated reads.
    */
   def recalibrateBaseQualities(
-    knownSnps: VariantRDD,
+    knownSnps: VariantDataset,
     minAcceptableQuality: java.lang.Integer,
     storageLevel: StorageLevel): AlignmentRecordDataset = {
     val snpTable = SnpTable(knownSnps)

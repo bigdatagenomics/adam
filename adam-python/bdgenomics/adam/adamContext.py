@@ -30,9 +30,9 @@ from bdgenomics.adam.rdd import AlignmentRecordDataset, \
     CoverageDataset, \
     FeatureDataset, \
     FragmentDataset, \
-    GenotypeRDD, \
+    GenotypeDataset, \
     NucleotideContigFragmentDataset, \
-    VariantRDD
+    VariantDataset
 from bdgenomics.adam.stringency import STRICT, _toJava
 
 
@@ -221,7 +221,7 @@ class ADAMContext(object):
 
     def loadGenotypes(self, filePath, stringency=STRICT):
         """
-        Load genotypes into a GenotypeRDD.
+        Load genotypes into a GenotypeDataset.
 
         If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
         Else, fall back to Parquet + Avro.
@@ -229,18 +229,18 @@ class ADAMContext(object):
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns a genomic dataset containing genotypes.
-        :rtype: bdgenomics.adam.rdd.GenotypeRDD
+        :rtype: bdgenomics.adam.rdd.GenotypeDataset
         """
 
         adamRdd = self.__jac.loadGenotypes(filePath,
                                            _toJava(stringency, self._jvm))
 
-        return GenotypeRDD(adamRdd, self._sc)
+        return GenotypeDataset(adamRdd, self._sc)
 
 
     def loadVariants(self, filePath, stringency=STRICT):
         """
-        Load variants into a VariantRDD.
+        Load variants into a VariantDataset.
 
         If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
         Else, fall back to Parquet + Avro.
@@ -248,10 +248,10 @@ class ADAMContext(object):
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns a genomic dataset containing variants.
-        :rtype: bdgenomics.adam.rdd.VariantRDD
+        :rtype: bdgenomics.adam.rdd.VariantDataset
         """
 
         adamRdd = self.__jac.loadVariants(filePath,
                                           _toJava(stringency, self._jvm))
 
-        return VariantRDD(adamRdd, self._sc)
+        return VariantDataset(adamRdd, self._sc)

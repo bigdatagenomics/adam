@@ -238,9 +238,9 @@ class GenomicDataset(object):
             return "FragmentDatasetConverter"
         elif destClass is AlignmentRecordDataset:
             return "AlignmentRecordDatasetConverter"
-        elif destClass is GenotypeRDD:
+        elif destClass is GenotypeDataset:
             return "GenotypeDatasetConverter"
-        elif destClass is VariantRDD:
+        elif destClass is VariantDataset:
             return "VariantDatasetConverter"
         else:
             raise ValueError("No conversion method known for %s." % destClass)
@@ -1011,7 +1011,7 @@ class AlignmentRecordDataset(GenomicDataset):
         Runs base quality score recalibration on a set of reads. Uses a table of
         known SNPs to mask true variation during the recalibration process.
 
-        :param bdgenomics.adam.rdd.VariantRDD knownSnps: A table of known SNPs to mask valid variants.
+        :param bdgenomics.adam.rdd.VariantDataset knownSnps: A table of known SNPs to mask valid variants.
         :param bdgenomics.adam.stringency validationStringency:
         """
         return AlignmentRecordDataset(self._jvmRdd.recalibrateBaseQualities(knownSnps._jvmRdd,
@@ -1065,7 +1065,7 @@ class AlignmentRecordDataset(GenomicDataset):
 
         Generates consensuses from prior called INDELs.
 
-        :param bdgenomics.adam.rdd.VariantRDD knownIndels: An RDD of previously
+        :param bdgenomics.adam.rdd.VariantDataset knownIndels: An RDD of previously
         called INDEL variants.
         :param bool isSorted: If the input data is sorted, setting this
         parameter to true avoids a second sort.
@@ -1413,23 +1413,23 @@ class FragmentDataset(GenomicDataset):
         return "org.bdgenomics.adam.api.java.FragmentsTo%s" % self._destClassSuffix(destClass)
 
 
-class GenotypeRDD(VCFSupportingGenomicDataset):
+class GenotypeDataset(VCFSupportingGenomicDataset):
     """
     Wraps an GenomicDataset with Genotype metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
 
-        return GenotypeRDD(newRdd, self.sc)
+        return GenotypeDataset(newRdd, self.sc)
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python GenotypeRDD from a JVM GenotypeRDD.
+        Constructs a Python GenotypeDataset from a JVM GenotypeDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM GenotypeRDD.
+        :param jvmRdd: Py4j handle to the underlying JVM GenotypeDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
@@ -1452,7 +1452,7 @@ class GenotypeRDD(VCFSupportingGenomicDataset):
         """
 
         vcs = self._jvmRdd.toVariantContexts()
-        return VariantContextRDD(vcs, self.sc)
+        return VariantContextDataset(vcs, self.sc)
 
 
     def toVariants(self, dedupe=False):
@@ -1464,10 +1464,9 @@ class GenotypeRDD(VCFSupportingGenomicDataset):
 
         :param bool dedupe: If true, drops variants described in more than one
         genotype record.
-        :return: Returns the variants described by this GenotypeRDD.
+        :return: Returns the variants described by this GenotypeDataset.
         """
-
-        return VariantRDD(self._jvmRdd.toVariants(dedupe), self.sc)
+        return VariantDataset(self._jvmRdd.toVariants(dedupe), self.sc)
 
 
     def _inferConversionFn(self, destClass):
@@ -1544,23 +1543,23 @@ class NucleotideContigFragmentDataset(GenomicDataset):
         return "org.bdgenomics.adam.api.java.ContigsTo%s" % self._destClassSuffix(destClass)
 
 
-class VariantRDD(VCFSupportingGenomicDataset):
+class VariantDataset(VCFSupportingGenomicDataset):
     """
     Wraps an GenomicDataset with Variant metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
 
-        return VariantRDD(newRdd, self.sc)
+        return VariantDataset(newRdd, self.sc)
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python VariantRDD from a JVM VariantRDD.
+        Constructs a Python VariantDataset from a JVM VariantDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM VariantRDD.
+        :param jvmRdd: Py4j handle to the underlying JVM VariantDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
@@ -1573,7 +1572,7 @@ class VariantRDD(VCFSupportingGenomicDataset):
         """
 
         vcs = self._jvmRdd.toVariantContexts()
-        return VariantContextRDD(vcs, self.sc)
+        return VariantContextDataset(vcs, self.sc)
 
 
     def saveAsParquet(self, filePath):
@@ -1590,24 +1589,24 @@ class VariantRDD(VCFSupportingGenomicDataset):
 
         return "org.bdgenomics.adam.api.java.VariantsTo%s" % self._destClassSuffix(destClass)
 
-
-class VariantContextRDD(VCFSupportingGenomicDataset):
+    
+class VariantContextDataset(VCFSupportingGenomicDataset):
     """
     Wraps an GenomicDataset with Variant Context metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
 
-        return VariantContextRDD(newRdd, self.sc)
+        return VariantContextDataset(newRdd, self.sc)
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python VariantContextRDD from a JVM VariantContextRDD.
+        Constructs a Python VariantContextDataset from a JVM VariantContextDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM VariantContextRDD.
+        :param jvmRdd: Py4j handle to the underlying JVM VariantContextDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 

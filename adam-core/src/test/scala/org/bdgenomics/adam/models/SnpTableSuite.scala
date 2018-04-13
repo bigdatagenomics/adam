@@ -18,7 +18,7 @@
 package org.bdgenomics.adam.models
 
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variant.VariantRDD
+import org.bdgenomics.adam.rdd.variant.VariantDataset
 import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro.Variant
 
@@ -65,7 +65,7 @@ class SnpTableSuite extends ADAMFunSuite {
       })
   }
 
-  def lookUpVariants(rdd: VariantRDD): SnpTable = {
+  def lookUpVariants(rdd: VariantDataset): SnpTable = {
     val table = SnpTable(rdd)
     val variants = rdd.rdd.collect
 

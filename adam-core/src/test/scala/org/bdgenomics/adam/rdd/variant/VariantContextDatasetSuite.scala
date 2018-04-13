@@ -55,11 +55,11 @@ import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
 
-class VariantContextRDDSuite extends ADAMFunSuite {
+class VariantContextDatasetSuite extends ADAMFunSuite {
 
   val tempDir = Files.createTempDir()
 
-  def variants: VariantContextRDD = {
+  def variants: VariantContextDataset = {
     val contig = Contig.newBuilder.setContigName("chr11")
       .setContigLength(249250621L)
       .build
@@ -79,7 +79,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
       .setAlleles(List(GenotypeAllele.REF, GenotypeAllele.ALT))
       .build
 
-    VariantContextRDD(sc.parallelize(List(
+    VariantContextDataset(sc.parallelize(List(
       VariantContext(v0, Seq(g0))), 1),
       SequenceDictionary.fromAvro(Seq(contig)), Seq(Sample.newBuilder()
         .setSampleId("NA12878")
@@ -99,7 +99,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     assert(vc1.rdd.count === 6)
   }
 
-  sparkTest("union two variant context rdds together") {
+  sparkTest("union two variant context genomic datasets together") {
     val vc1 = sc.loadVcf(testFile("gvcf_dir/gvcf_multiallelic.g.vcf"))
     val vc2 = sc.loadVcf(testFile("small.vcf"))
     val union = vc1.union(vc2)
@@ -217,13 +217,13 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("don't lose any variants when piping as VCF") {
     val smallVcf = testFile("small.vcf")
-    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+    val rdd: VariantContextDataset = sc.loadVcf(smallVcf)
     val records = rdd.rdd.count
 
     implicit val tFormatter = VCFInFormatter
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
-    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter](Seq("tee", "/dev/null"))
+    val pipedRdd: VariantContextDataset = rdd.pipe[VariantContext, VariantContextProduct, VariantContextDataset, VCFInFormatter](Seq("tee", "/dev/null"))
       .transform(_.cache())
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
@@ -232,13 +232,13 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("pipe works with empty partitions") {
     val smallVcf = testFile("small.addctg.vcf")
-    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+    val rdd: VariantContextDataset = sc.loadVcf(smallVcf)
     val records = rdd.rdd.count
 
     implicit val tFormatter = VCFInFormatter
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration)
 
-    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter](Seq("tee", "/dev/null"))
+    val pipedRdd: VariantContextDataset = rdd.pipe[VariantContext, VariantContextProduct, VariantContextDataset, VCFInFormatter](Seq("tee", "/dev/null"))
       .transform(_.cache())
     val newRecords = pipedRdd.rdd.count
     assert(records === newRecords)
@@ -247,14 +247,14 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("don't lose any non-default VCF header lines or attributes when piping as VCF") {
     val freebayesVcf = testFile("NA12878.chr22.tiny.freebayes.vcf")
-    val rdd: VariantContextRDD = sc.loadVcf(freebayesVcf)
+    val rdd: VariantContextDataset = sc.loadVcf(freebayesVcf)
 
     val accumulator: CollectionAccumulator[VCFHeaderLine] = sc.collectionAccumulator("headerLines")
 
     implicit val tFormatter = VCFInFormatter
     implicit val uFormatter = new VCFOutFormatter(sc.hadoopConfiguration, Some(accumulator))
 
-    val pipedRdd: VariantContextRDD = rdd.pipe[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter](Seq("tee", "/dev/null"))
+    val pipedRdd: VariantContextDataset = rdd.pipe[VariantContext, VariantContextProduct, VariantContextDataset, VCFInFormatter](Seq("tee", "/dev/null"))
 
     // check for freebayes-specific VCF INFO keys
     val variant = pipedRdd.toVariants.rdd.first
@@ -336,7 +336,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("test metadata") {
-    def testMetadata(vRdd: VariantContextRDD) {
+    def testMetadata(vRdd: VariantContextDataset) {
       val sequenceRdd = vRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
@@ -354,7 +354,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("save sharded bgzip vcf") {
     val smallVcf = testFile("bqsr1.vcf")
-    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+    val rdd: VariantContextDataset = sc.loadVcf(smallVcf)
     val outputPath = tmpFile("bqsr1.vcf.bgz")
     rdd.transform(_.repartition(4)).saveAsVcf(outputPath,
       asSingleFile = false,
@@ -367,7 +367,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("save bgzip vcf as single file") {
     val smallVcf = testFile("small.vcf")
-    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+    val rdd: VariantContextDataset = sc.loadVcf(smallVcf)
     val outputPath = tmpFile("small.vcf.bgz")
     rdd.saveAsVcf(outputPath,
       asSingleFile = true,
@@ -380,7 +380,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
   sparkTest("can't save file with non-vcf extension") {
     val smallVcf = testFile("small.vcf")
-    val rdd: VariantContextRDD = sc.loadVcf(smallVcf)
+    val rdd: VariantContextDataset = sc.loadVcf(smallVcf)
 
     intercept[IllegalArgumentException] {
       rdd.saveAsVcf("small.bcf",
@@ -391,7 +391,7 @@ class VariantContextRDDSuite extends ADAMFunSuite {
     }
   }
 
-  sparkTest("transform variant contexts to contig rdd") {
+  sparkTest("transform variant contexts to contig genomic dataset") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
     def checkSave(contigs: NucleotideContigFragmentDataset) {
@@ -403,13 +403,13 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     val contigs: NucleotideContigFragmentDataset = variantContexts.transmute[NucleotideContigFragment, NucleotideContigFragmentProduct, NucleotideContigFragmentDataset](
       (rdd: RDD[VariantContext]) => {
-        rdd.map(VariantRDDSuite.ncfFn)
+        rdd.map(VariantDatasetSuite.ncfFn)
       })
 
     checkSave(contigs)
   }
 
-  sparkTest("transform variant contexts to coverage rdd") {
+  sparkTest("transform variant contexts to coverage genomic dataset") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
     def checkSave(coverage: CoverageDataset) {
@@ -421,13 +421,13 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     val coverage: CoverageDataset = variantContexts.transmute[Coverage, Coverage, CoverageDataset](
       (rdd: RDD[VariantContext]) => {
-        rdd.map(VariantRDDSuite.covFn)
+        rdd.map(VariantDatasetSuite.covFn)
       })
 
     checkSave(coverage)
   }
 
-  sparkTest("transform variant contexts to feature rdd") {
+  sparkTest("transform variant contexts to feature genomic dataset") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
     def checkSave(features: FeatureDataset) {
@@ -439,13 +439,13 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     val features: FeatureDataset = variantContexts.transmute[Feature, FeatureProduct, FeatureDataset](
       (rdd: RDD[VariantContext]) => {
-        rdd.map(VariantRDDSuite.featFn)
+        rdd.map(VariantDatasetSuite.featFn)
       })
 
     checkSave(features)
   }
 
-  sparkTest("transform variant contexts to fragment rdd") {
+  sparkTest("transform variant contexts to fragment genomic dataset") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
     def checkSave(fragments: FragmentDataset) {
@@ -457,13 +457,13 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     val fragments: FragmentDataset = variantContexts.transmute[Fragment, FragmentProduct, FragmentDataset](
       (rdd: RDD[VariantContext]) => {
-        rdd.map(VariantRDDSuite.fragFn)
+        rdd.map(VariantDatasetSuite.fragFn)
       })
 
     checkSave(fragments)
   }
 
-  sparkTest("transform variant contexts to read rdd") {
+  sparkTest("transform variant contexts to read genomic dataset") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
     def checkSave(reads: AlignmentRecordDataset) {
@@ -475,41 +475,41 @@ class VariantContextRDDSuite extends ADAMFunSuite {
 
     val reads: AlignmentRecordDataset = variantContexts.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset](
       (rdd: RDD[VariantContext]) => {
-        rdd.map(VariantRDDSuite.readFn)
+        rdd.map(VariantDatasetSuite.readFn)
       })
 
     checkSave(reads)
   }
 
-  sparkTest("transform variant contexts to genotype rdd") {
+  sparkTest("transform variant contexts to genotype genomic dataset") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
-    def checkSave(genotypes: GenotypeRDD) {
+    def checkSave(genotypes: GenotypeDataset) {
       val tempPath = tmpLocation(".adam")
       genotypes.saveAsParquet(tempPath)
 
       assert(sc.loadGenotypes(tempPath).rdd.count === 6)
     }
 
-    val genotypes: GenotypeRDD = variantContexts.transmute[Genotype, GenotypeProduct, GenotypeRDD](
+    val genotypes: GenotypeDataset = variantContexts.transmute[Genotype, GenotypeProduct, GenotypeDataset](
       (rdd: RDD[VariantContext]) => {
-        rdd.map(VariantRDDSuite.genFn)
+        rdd.map(VariantDatasetSuite.genFn)
       })
 
     checkSave(genotypes)
   }
 
-  sparkTest("transform variant contexts to variant rdd") {
+  sparkTest("transform variant contexts to variant genomic dataset") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
-    def checkSave(variants: VariantRDD) {
+    def checkSave(variants: VariantDataset) {
       val tempPath = tmpLocation(".adam")
       variants.saveAsParquet(tempPath)
 
       assert(sc.loadVariants(tempPath).rdd.count === 6)
     }
 
-    val variants: VariantRDD = variantContexts.transmute[Variant, VariantProduct, VariantRDD](
+    val variants: VariantDataset = variantContexts.transmute[Variant, VariantProduct, VariantDataset](
       (rdd: RDD[VariantContext]) => {
         rdd.map(_.variant.variant)
       })

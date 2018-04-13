@@ -219,7 +219,7 @@ setMethod("loadCoverage",
               CoverageDataset(jrdd)
           })
 
-#' Load genotypes into a GenotypeRDD.
+#' Load genotypes into a GenotypeDataset.
 #'
 #' If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
 #' Else, fall back to Parquet + Avro.
@@ -240,10 +240,10 @@ setMethod("loadGenotypes",
                                          "loadGenotypes",
                                          filePath,
                                          jStringency)
-              GenotypeRDD(jrdd)
+              GenotypeDataset(jrdd)
           })
 
-#' Load variants into a VariantRDD.
+#' Load variants into a VariantDataset.
 #'
 #' If the path name has a .vcf/.vcf.gz/.vcf.bgz extension, load as VCF format.
 #' Else, fall back to Parquet + Avro.
@@ -264,5 +264,5 @@ setMethod("loadVariants",
                                          "loadVariants",
                                          filePath,
                                          jStringency)
-              VariantRDD(jrdd)
+              VariantDataset(jrdd)
           })

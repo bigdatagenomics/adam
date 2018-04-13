@@ -37,16 +37,16 @@ import scala.collection.JavaConversions._
 /**
  * InFormatter companion that builds a VCFInFormatter to write VCF to a pipe.
  */
-object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter] {
+object VCFInFormatter extends InFormatterCompanion[VariantContext, VariantContextProduct, VariantContextDataset, VCFInFormatter] {
 
   /**
-   * Apply method for building the VCFInFormatter from a VariantContextRDD.
+   * Apply method for building the VCFInFormatter from a VariantContextDataset.
    *
-   * @param gDataset VariantContextRDD to build VCF header from.
+   * @param gDataset VariantContextDataset to build VCF header from.
    * @return A constructed VCFInFormatter with all needed metadata to write a
    *   VCF header.
    */
-  def apply(gDataset: VariantContextRDD): VCFInFormatter = {
+  def apply(gDataset: VariantContextDataset): VCFInFormatter = {
     VCFInFormatter(gDataset.sequences,
       gDataset.samples.map(_.getSampleId),
       gDataset.headerLines,
@@ -58,7 +58,7 @@ case class VCFInFormatter private (
     sequences: SequenceDictionary,
     samples: Seq[String],
     headerLines: Seq[VCFHeaderLine],
-    @transient val conf: Configuration) extends InFormatter[VariantContext, VariantContextProduct, VariantContextRDD, VCFInFormatter] {
+    @transient val conf: Configuration) extends InFormatter[VariantContext, VariantContextProduct, VariantContextDataset, VCFInFormatter] {
 
   protected val companion = VCFInFormatter
 
