@@ -66,11 +66,11 @@ import org.bdgenomics.adam.rdd.fragment.{
   RDDBoundFragmentDataset
 }
 import org.bdgenomics.adam.rdd.read.{
-  AlignmentRecordRDD,
-  DatasetBoundAlignmentRecordRDD,
+  AlignmentRecordDataset,
+  DatasetBoundAlignmentRecordDataset,
   RepairPartitions,
-  ParquetUnboundAlignmentRecordRDD,
-  RDDBoundAlignmentRecordRDD
+  ParquetUnboundAlignmentRecordDataset,
+  RDDBoundAlignmentRecordDataset
 }
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
@@ -196,8 +196,8 @@ object ADAMContext {
 
   implicit def contigsToAlignmentRecordsConversionFn(
     gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -206,8 +206,8 @@ object ADAMContext {
 
   implicit def contigsToAlignmentRecordsDatasetConversionFn(
     gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds,
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -309,8 +309,8 @@ object ADAMContext {
 
   implicit def coverageToAlignmentRecordsConversionFn(
     gDataset: CoverageDataset,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -319,8 +319,8 @@ object ADAMContext {
 
   implicit def coverageToAlignmentRecordsDatasetConversionFn(
     gDataset: CoverageDataset,
-    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds,
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -422,8 +422,8 @@ object ADAMContext {
 
   implicit def featuresToAlignmentRecordsConversionFn(
     gDataset: FeatureDataset,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -432,8 +432,8 @@ object ADAMContext {
 
   implicit def featuresToAlignmentRecordsDatasetConversionFn(
     gDataset: FeatureDataset,
-    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds,
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -528,8 +528,8 @@ object ADAMContext {
 
   implicit def fragmentsToAlignmentRecordsConversionFn(
     gDataset: FragmentDataset,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
       gDataset.recordGroups,
       gDataset.processingSteps,
@@ -538,8 +538,8 @@ object ADAMContext {
 
   implicit def fragmentsToAlignmentRecordsDatasetConversionFn(
     gDataset: FragmentDataset,
-    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds,
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
       gDataset.recordGroups,
       gDataset.processingSteps)
@@ -620,8 +620,8 @@ object ADAMContext {
 
   implicit def genericToAlignmentRecordsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -658,43 +658,43 @@ object ADAMContext {
   }
 
   implicit def alignmentRecordsToContigsConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
     new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def alignmentRecordsToContigsDatasetConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
     new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def alignmentRecordsToCoverageConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
     new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def alignmentRecordsToCoverageDatasetConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
     new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def alignmentRecordsToFeaturesConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     rdd: RDD[Feature]): FeatureDataset = {
     new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def alignmentRecordsToFeaturesDatasetConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
     new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def alignmentRecordsToFragmentsConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     rdd: RDD[Fragment]): FragmentDataset = {
     new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
@@ -704,7 +704,7 @@ object ADAMContext {
   }
 
   implicit def alignmentRecordsToFragmentsDatasetConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     ds: Dataset[FragmentProduct]): FragmentDataset = {
     new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
@@ -712,14 +712,14 @@ object ADAMContext {
       gDataset.processingSteps)
   }
 
-  implicit def alignmentRecordsToAlignmentRecordsConversionFn(gDataset: AlignmentRecordRDD,
-                                                              rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
+  implicit def alignmentRecordsToAlignmentRecordsConversionFn(gDataset: AlignmentRecordDataset,
+                                                              rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
     // hijack the transform function to discard the old RDD
     gDataset.transform(oldRdd => rdd)
   }
 
   implicit def alignmentRecordsToGenotypesConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
       gDataset.sequences,
@@ -729,7 +729,7 @@ object ADAMContext {
   }
 
   implicit def alignmentRecordsToGenotypesDatasetConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     ds: Dataset[GenotypeProduct]): GenotypeRDD = {
     new DatasetBoundGenotypeRDD(ds,
       gDataset.sequences,
@@ -738,7 +738,7 @@ object ADAMContext {
   }
 
   implicit def alignmentRecordsToVariantsConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
       gDataset.sequences,
@@ -747,7 +747,7 @@ object ADAMContext {
   }
 
   implicit def alignmentRecordsToVariantsDatasetConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     ds: Dataset[VariantProduct]): VariantRDD = {
     new DatasetBoundVariantRDD(ds,
       gDataset.sequences,
@@ -755,7 +755,7 @@ object ADAMContext {
   }
 
   implicit def alignmentRecordsToVariantContextConversionFn(
-    gDataset: AlignmentRecordRDD,
+    gDataset: AlignmentRecordDataset,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
       gDataset.sequences,
@@ -821,8 +821,8 @@ object ADAMContext {
 
   implicit def genotypesToAlignmentRecordsConversionFn(
     gDataset: GenotypeRDD,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -831,8 +831,8 @@ object ADAMContext {
 
   implicit def genotypesToAlignmentRecordsDatasetConversionFn(
     gDataset: GenotypeRDD,
-    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds,
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -927,8 +927,8 @@ object ADAMContext {
 
   implicit def variantsToAlignmentRecordsConversionFn(
     gDataset: VariantRDD,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -937,8 +937,8 @@ object ADAMContext {
 
   implicit def variantsToAlignmentRecordsDatasetConversionFn(
     gDataset: VariantRDD,
-    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
-    new DatasetBoundAlignmentRecordRDD(ds,
+    ds: Dataset[AlignmentRecordProduct]): AlignmentRecordDataset = {
+    new DatasetBoundAlignmentRecordDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -1008,8 +1008,8 @@ object ADAMContext {
 
   implicit def variantContextsToAlignmentRecordsConversionFn(
     gDataset: VariantContextRDD,
-    rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
-    new RDDBoundAlignmentRecordRDD(rdd,
+    rdd: RDD[AlignmentRecord]): AlignmentRecordDataset = {
+    new RDDBoundAlignmentRecordDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -1504,7 +1504,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load alignment records from BAM/CRAM/SAM into an AlignmentRecordRDD.
+   * Load alignment records from BAM/CRAM/SAM into an AlignmentRecordDataset.
    *
    * This reads the sequence and record group dictionaries from the BAM/CRAM/SAM file
    * header. SAMRecords are read from the file and converted to the
@@ -1514,13 +1514,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param stringency The validation stringency to use when validating the
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadBam(
     pathName: String,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadBam.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadBam.time {
 
     val path = new Path(pathName)
     val bamFiles = getFsAndFiles(path)
@@ -1583,7 +1583,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
 
-    AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p._2.get)),
+    AlignmentRecordDataset(records.map(p => samRecordConverter.convert(p._2.get)),
       seqDict,
       readGroups,
       programs)
@@ -1596,14 +1596,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param pathName The path name to load indexed BAM formatted alignment records from.
    *   Globs/directories are supported.
    * @param viewRegion The ReferenceRegion we are filtering on.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   // todo: add stringency with default if possible
   def loadIndexedBam(
     pathName: String,
-    viewRegion: ReferenceRegion): AlignmentRecordRDD = {
+    viewRegion: ReferenceRegion): AlignmentRecordDataset = {
     loadIndexedBam(pathName, Iterable(viewRegion))
   }
 
@@ -1616,14 +1616,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    * @param viewRegions Iterable of ReferenceRegion we are filtering on.
    * @param stringency The validation stringency to use when validating the
    *   BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadIndexedBam(
     pathName: String,
     viewRegions: Iterable[ReferenceRegion],
-    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): AlignmentRecordRDD = LoadIndexedBam.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT)(implicit s: DummyImplicit): AlignmentRecordDataset = LoadIndexedBam.time {
 
     val path = new Path(pathName)
 
@@ -1697,7 +1697,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     if (Metrics.isRecording) records.instrument() else records
     val samRecordConverter = new SAMRecordConverter
-    AlignmentRecordRDD(records.map(p => samRecordConverter.convert(p._2.get)),
+    AlignmentRecordDataset(records.map(p => samRecordConverter.convert(p._2.get)),
       seqDict,
       readGroups,
       programs)
@@ -1865,7 +1865,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in Parquet + Avro format into an AlignmentRecordRDD.
+   * Load a path name in Parquet + Avro format into an AlignmentRecordDataset.
    *
    * @note The sequence dictionary is read from an Avro file stored at
    *   pathName/_seqdict.avro and the record group dictionary is read from an
@@ -1878,14 +1878,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
   def loadParquetAlignments(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): AlignmentRecordRDD = {
+    optProjection: Option[Schema] = None): AlignmentRecordDataset = {
 
     // convert avro to sequence dictionary
     val sd = loadAvroSequenceDictionary(pathName)
@@ -1898,20 +1898,24 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd, pgs)
+        ParquetUnboundAlignmentRecordDataset(sc, pathName, sd, rgd, pgs)
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[AlignmentRecord](pathName, optPredicate, optProjection)
 
-        RDDBoundAlignmentRecordRDD(rdd, sd, rgd, pgs,
+        RDDBoundAlignmentRecordDataset(rdd, sd, rgd, pgs,
           optPartitionMap = extractPartitionMap(pathName))
       }
     }
   }
 
   /**
+<<<<<<< HEAD
    * Load a path name with range binned partitioned Parquet format into an AlignmentRecordRDD.
+=======
+   * Load a path name with range binned partitioned Parquet + Avro format into an AlignmentRecordDataset.
+>>>>>>> abc17661... Refactor AlignmentRecordRDD to AlignmentRecordDataset.
    *
    * @note The sequence dictionary is read from an Avro file stored at
    *   pathName/_seqdict.avro and the record group dictionary is read from an
@@ -1922,17 +1926,23 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Globs/directories are supported.
    * @param regions Optional list of genomic regions to load.
    * @param optLookbackPartitions Number of partitions to lookback to find beginning of an overlapping
+<<<<<<< HEAD
    *   region when using the filterByOverlappingRegions function on the returned dataset.
    *   Defaults to one partition.
    * @return Returns an AlignmentRecordRDD.
+=======
+   *         region when using the filterByOverlappingRegions function on the returned dataset.
+   *         Defaults to one partition.
+   * @return Returns an AlignmentRecordDataset.
+>>>>>>> abc17661... Refactor AlignmentRecordRDD to AlignmentRecordDataset.
    */
   def loadPartitionedParquetAlignments(pathName: String,
                                        regions: Iterable[ReferenceRegion] = Iterable.empty,
-                                       optLookbackPartitions: Option[Int] = Some(1)): AlignmentRecordRDD = {
+                                       optLookbackPartitions: Option[Int] = Some(1)): AlignmentRecordDataset = {
 
     val partitionBinSize = getPartitionBinSize(pathName)
     val reads = loadParquetAlignments(pathName)
-    val alignmentsDatasetBound = DatasetBoundAlignmentRecordRDD(reads.dataset,
+    val alignmentsDatasetBound = DatasetBoundAlignmentRecordDataset(reads.dataset,
       reads.sequences,
       reads.recordGroups,
       reads.processingSteps,
@@ -1945,7 +1955,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load unaligned alignment records from interleaved FASTQ into an AlignmentRecordRDD.
+   * Load unaligned alignment records from interleaved FASTQ into an AlignmentRecordDataset.
    *
    * In interleaved FASTQ, the two reads from a paired sequencing protocol are
    * interleaved in a single file. This is a zipped representation of the
@@ -1953,10 +1963,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param pathName The path name to load unaligned alignment records from.
    *   Globs/directories are supported.
-   * @return Returns an unaligned AlignmentRecordRDD.
+   * @return Returns an unaligned AlignmentRecordDataset.
    */
   def loadInterleavedFastq(
-    pathName: String): AlignmentRecordRDD = LoadInterleavedFastq.time {
+    pathName: String): AlignmentRecordDataset = LoadInterleavedFastq.time {
 
     val job = HadoopUtil.newJob(sc)
     val conf = ContextUtil.getConfiguration(job)
@@ -1974,11 +1984,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
-    AlignmentRecordRDD.unaligned(records.flatMap(fastqRecordConverter.convertPair))
+    AlignmentRecordDataset.unaligned(records.flatMap(fastqRecordConverter.convertPair))
   }
 
   /**
-   * Load unaligned alignment records from (possibly paired) FASTQ into an AlignmentRecordRDD.
+   * Load unaligned alignment records from (possibly paired) FASTQ into an AlignmentRecordDataset.
    *
    * @see loadPairedFastq
    * @see loadUnpairedFastq
@@ -1991,13 +2001,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   records. Defaults to None.
    * @param stringency The validation stringency to use when validating (possibly paired) FASTQ format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns an unaligned AlignmentRecordRDD.
+   * @return Returns an unaligned AlignmentRecordDataset.
    */
   def loadFastq(
     pathName1: String,
     optPathName2: Option[String],
     optRecordGroup: Option[String] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadFastq.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadFastq.time {
 
     optPathName2.fold({
       loadUnpairedFastq(pathName1,
@@ -2012,7 +2022,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load unaligned alignment records from paired FASTQ into an AlignmentRecordRDD.
+   * Load unaligned alignment records from paired FASTQ into an AlignmentRecordDataset.
    *
    * @param pathName1 The path name to load the first set of unaligned alignment records from.
    *   Globs/directories are supported.
@@ -2025,14 +2035,18 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   validation. Defaults to StorageLevel.MEMORY_ONLY.
    * @param stringency The validation stringency to use when validating paired FASTQ format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns an unaligned AlignmentRecordRDD.
+   * @return Returns an unaligned AlignmentRecordDataset.
    */
   def loadPairedFastq(
     pathName1: String,
     pathName2: String,
     optRecordGroup: Option[String] = None,
+<<<<<<< HEAD
     persistLevel: Option[StorageLevel] = Some(StorageLevel.MEMORY_ONLY),
     stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadPairedFastq.time {
+=======
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadPairedFastq.time {
+>>>>>>> abc17661... Refactor AlignmentRecordRDD to AlignmentRecordDataset.
 
     val reads1 = loadUnpairedFastq(
       pathName1,
@@ -2064,11 +2078,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       case ValidationStringency.SILENT =>
     }
 
-    AlignmentRecordRDD.unaligned(reads1.rdd ++ reads2.rdd)
+    AlignmentRecordDataset.unaligned(reads1.rdd ++ reads2.rdd)
   }
 
   /**
-   * Load unaligned alignment records from unpaired FASTQ into an AlignmentRecordRDD.
+   * Load unaligned alignment records from unpaired FASTQ into an AlignmentRecordDataset.
    *
    * @param pathName The path name to load unaligned alignment records from.
    *   Globs/directories are supported.
@@ -2080,14 +2094,14 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   records. Defaults to None.
    * @param stringency The validation stringency to use when validating unpaired FASTQ format.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns an unaligned AlignmentRecordRDD.
+   * @return Returns an unaligned AlignmentRecordDataset.
    */
   def loadUnpairedFastq(
     pathName: String,
     setFirstOfPair: Boolean = false,
     setSecondOfPair: Boolean = false,
     optRecordGroup: Option[String] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadUnpairedFastq.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadUnpairedFastq.time {
 
     val job = HadoopUtil.newJob(sc)
     val conf = ContextUtil.getConfiguration(job)
@@ -2106,7 +2120,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
-    AlignmentRecordRDD.unaligned(records.map(
+    AlignmentRecordDataset.unaligned(records.map(
       fastqRecordConverter.convertRead(
         _,
         optRecordGroup.map(recordGroup =>
@@ -3224,7 +3238,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load alignment records into an AlignmentRecordRDD.
+   * Load alignment records into an AlignmentRecordDataset.
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -3258,7 +3272,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param stringency The validation stringency to use when validating BAM/CRAM/SAM or FASTQ formats.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns an AlignmentRecordRDD which wraps the RDD of alignment records,
+   * @return Returns an AlignmentRecordDataset which wraps the RDD of alignment records,
    *   sequence dictionary representing contigs the alignment records may be aligned to,
    *   and the record group dictionary for the alignment records if one is available.
    */
@@ -3268,7 +3282,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optRecordGroup: Option[String] = None,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordRDD = LoadAlignments.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): AlignmentRecordDataset = LoadAlignments.time {
 
     // need this to pick up possible .bgz extension
     sc.hadoopConfiguration.setStrings("io.compression.codecs",
@@ -3286,7 +3300,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       loadFastq(pathName, optPathName2, optRecordGroup, stringency)
     } else if (isFastaExt(trimmedPathName)) {
       log.info(s"Loading $pathName as FASTA and converting to AlignmentRecords.")
-      AlignmentRecordRDD.unaligned(loadFasta(pathName, maximumLength = 10000L).toReads)
+      AlignmentRecordDataset.unaligned(loadFasta(pathName, maximumLength = 10000L).toReads)
     } else {
       log.info(s"Loading $pathName as Parquet of AlignmentRecords.")
       loadParquetAlignments(pathName, optPredicate = optPredicate, optProjection = optProjection)

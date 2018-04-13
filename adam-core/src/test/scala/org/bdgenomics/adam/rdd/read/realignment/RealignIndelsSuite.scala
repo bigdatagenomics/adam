@@ -32,7 +32,7 @@ import org.bdgenomics.adam.models.{
   SequenceRecord
 }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.adam.rdd.variant.VariantRDD
 import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.util.{ ADAMFunSuite, ReferenceFile }
@@ -40,7 +40,7 @@ import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Variant }
 
 class RealignIndelsSuite extends ADAMFunSuite {
 
-  def artificialReadsRdd: AlignmentRecordRDD = {
+  def artificialReadsRdd: AlignmentRecordDataset = {
     val path = testFile("artificial.sam")
     sc.loadAlignments(path)
   }
@@ -541,7 +541,7 @@ class RealignIndelsSuite extends ADAMFunSuite {
       .setMapq(45)
       .build
 
-    val rdd = AlignmentRecordRDD(sc.parallelize(Seq(insRead,
+    val rdd = AlignmentRecordDataset(sc.parallelize(Seq(insRead,
       extRead,
       ovlRead,
       ovsRead,

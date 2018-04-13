@@ -41,7 +41,7 @@ import org.bdgenomics.adam.rdd.TestSaveArgs
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
 import org.bdgenomics.adam.rdd.fragment.FragmentDataset
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset
 import org.bdgenomics.adam.sql.{
   AlignmentRecord => AlignmentRecordProduct,
   Feature => FeatureProduct,
@@ -466,14 +466,14 @@ class VariantContextRDDSuite extends ADAMFunSuite {
   sparkTest("transform variant contexts to read rdd") {
     val variantContexts = sc.loadVcf(testFile("small.vcf"))
 
-    def checkSave(reads: AlignmentRecordRDD) {
+    def checkSave(reads: AlignmentRecordDataset) {
       val tempPath = tmpLocation(".adam")
       reads.saveAsParquet(tempPath)
 
       assert(sc.loadAlignments(tempPath).rdd.count === 6)
     }
 
-    val reads: AlignmentRecordRDD = variantContexts.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD](
+    val reads: AlignmentRecordDataset = variantContexts.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset](
       (rdd: RDD[VariantContext]) => {
         rdd.map(VariantRDDSuite.readFn)
       })

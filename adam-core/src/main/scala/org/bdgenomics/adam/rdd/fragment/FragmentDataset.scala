@@ -36,7 +36,7 @@ import org.bdgenomics.adam.rdd.{
   JavaSaveArgs
 }
 import org.bdgenomics.adam.rdd.read.{
-  AlignmentRecordRDD,
+  AlignmentRecordDataset,
   BinQualities,
   MarkDuplicates,
   QualityScoreBin
@@ -321,14 +321,14 @@ sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Frag
    *
    * @return Returns this genomic dataset converted back to reads.
    */
-  def toReads(): AlignmentRecordRDD = {
+  def toReads(): AlignmentRecordDataset = {
     val converter = new AlignmentRecordConverter
 
     // convert the fragments to reads
     val newRdd = rdd.flatMap(converter.convertFragment)
 
     // are we aligned?
-    AlignmentRecordRDD(newRdd,
+    AlignmentRecordDataset(newRdd,
       sequences,
       recordGroups,
       processingSteps)
@@ -364,7 +364,7 @@ sealed abstract class FragmentDataset extends AvroRecordGroupGenomicDataset[Frag
    * @return Fragments whose quality scores are binned.
    */
   def binQualityScores(bins: Seq[QualityScoreBin]): FragmentDataset = {
-    AlignmentRecordRDD.validateBins(bins)
+    AlignmentRecordDataset.validateBins(bins)
     BinQualities(this, bins)
   }
 

@@ -19,13 +19,13 @@
 
 from bdgenomics.adam.adamContext import ADAMContext
 from bdgenomics.adam.models import ReferenceRegion
-from bdgenomics.adam.rdd import AlignmentRecordRDD, CoverageDataset
+from bdgenomics.adam.rdd import AlignmentRecordDataset, CoverageDataset
 from bdgenomics.adam.test import SparkTestCase
 
 from pyspark.sql.types import DoubleType
 from  pyspark.storagelevel import StorageLevel
 
-class AlignmentRecordRDDTest(SparkTestCase):
+class AlignmentRecordDatasetTest(SparkTestCase):
 
 
     def test_save_sorted_sam(self):

@@ -34,7 +34,7 @@ import org.bdgenomics.formats.avro.AlignmentRecord
  *
  * @tparam T The type of the underlying InFormatter.
  */
-trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, T] {
+trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterCompanion[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, T] {
   protected def makeFormatter(header: SAMFileHeaderWritable,
                               recordGroups: RecordGroupDictionary,
                               converter: AlignmentRecordConverter): T
@@ -42,10 +42,10 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
   /**
    * Makes an AnySAMInFormatter from a GenomicDataset of AlignmentRecords.
    *
-   * @param gDataset AlignmentRecordRDD with reference build and record group info.
+   * @param gDataset AlignmentRecordDataset with reference build and record group info.
    * @return Returns an InFormatter that extends AnySAMInFormatter.
    */
-  def apply(gDataset: AlignmentRecordRDD): T = {
+  def apply(gDataset: AlignmentRecordDataset): T = {
 
     // make a converter
     val arc = new AlignmentRecordConverter
@@ -64,7 +64,7 @@ trait AnySAMInFormatterCompanion[T <: AnySAMInFormatter[T]] extends InFormatterC
  *
  * @tparam T The recursive type of the class that implements this trait.
  */
-trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD, T] {
+trait AnySAMInFormatter[T <: AnySAMInFormatter[T]] extends InFormatter[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordDataset, T] {
 
   /**
    * A serializable form of the SAM File Header.

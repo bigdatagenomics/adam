@@ -118,8 +118,8 @@ private[rdd] object BinQualities extends Serializable {
    * @return Returns a new RDD of reads were the quality scores of the read
    *   bases have been binned.
    */
-  def apply(reads: AlignmentRecordRDD,
-            bins: Seq[QualityScoreBin]): AlignmentRecordRDD = {
+  def apply(reads: AlignmentRecordDataset,
+            bins: Seq[QualityScoreBin]): AlignmentRecordDataset = {
 
     reads.transform(rdd => {
       rdd.map(binRead(_, bins))

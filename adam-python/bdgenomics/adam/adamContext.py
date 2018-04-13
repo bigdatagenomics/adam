@@ -26,7 +26,7 @@ adamContext
    ADAMContext
 """
 
-from bdgenomics.adam.rdd import AlignmentRecordRDD, \
+from bdgenomics.adam.rdd import AlignmentRecordDataset, \
     CoverageDataset, \
     FeatureDataset, \
     FragmentDataset, \
@@ -58,7 +58,7 @@ class ADAMContext(object):
 
     def loadAlignments(self, filePath, stringency=STRICT):
         """
-        Load alignment records into an AlignmentRecordRDD.
+        Load alignment records into an AlignmentRecordDataset.
 
         Loads path names ending in:
         * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -74,14 +74,14 @@ class ADAMContext(object):
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing reads.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordRDD
+        :return: Returns a genomic dataset containing reads.
+        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
 
         adamRdd = self.__jac.loadAlignments(filePath,
                                             _toJava(stringency, self._jvm))
 
-        return AlignmentRecordRDD(adamRdd, self._sc)
+        return AlignmentRecordDataset(adamRdd, self._sc)
 
 
     def loadIndexedBam(self,
@@ -100,11 +100,11 @@ class ADAMContext(object):
         :param int stringency: The validation stringency to use when validating
         the BAM/CRAM/SAM format header. Defaults to ValidationStringency.STRICT.
 
-        :return Returns an AlignmentRecordRDD which wraps the RDD of alignment
+        :return Returns an AlignmentRecordDataset which wraps the RDD of alignment
         records, sequence dictionary representing contigs the alignment records
         may be aligned to, and the record group dictionary for the alignment
         records if one is available.
-        :rtype: bdgenomics.adam.rdd.AlignmentRecordRDD
+        :rtype: bdgenomics.adam.rdd.AlignmentRecordDataset
         """
 
         # translate reference regions into jvm types
@@ -113,8 +113,7 @@ class ADAMContext(object):
         adamRdd = self.__jac.loadIndexedBam(filePath,
                                             javaRrs,
                                             _toJava(stringency, self._jvm))
-
-        return AlignmentRecordRDD(adamRdd, self._sc)
+        return AlignmentRecordDataset(adamRdd, self._sc)
 
 
     def loadCoverage(self, filePath,
@@ -138,7 +137,7 @@ class ADAMContext(object):
 
         :param str filePath: The path to load coverage data from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing coverage.
+        :return: Returns a genomic dataset containing coverage.
         :rtype: bdgenomics.adam.rdd.CoverageDataset
         """
 
@@ -159,7 +158,7 @@ class ADAMContext(object):
         in Hadoop, which by default include .gz and .bz2, but can include more.
 
         :param str filePath: The path to load the file from.
-        :return: Returns an RDD containing sequence fragments.
+        :return: Returns a genomic dataset containing sequence fragments.
         :rtype: bdgenomics.adam.rdd.NucleotideContigFragmentDataset
         """
 
@@ -182,7 +181,7 @@ class ADAMContext(object):
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing sequenced fragments.
+        :return: Returns a genomic dataset containing sequenced fragments.
         :rtype: bdgenomics.adam.rdd.FragmentDataset
         """
 
@@ -210,7 +209,7 @@ class ADAMContext(object):
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing features.
+        :return: Returns a genomic dataset containing features.
         :rtype: bdgenomics.adam.rdd.FeatureDataset
         """
 
@@ -229,7 +228,7 @@ class ADAMContext(object):
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing genotypes.
+        :return: Returns a genomic dataset containing genotypes.
         :rtype: bdgenomics.adam.rdd.GenotypeRDD
         """
 
@@ -248,7 +247,7 @@ class ADAMContext(object):
 
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
-        :return: Returns an RDD containing variants.
+        :return: Returns a genomic dataset containing variants.
         :rtype: bdgenomics.adam.rdd.VariantRDD
         """
 

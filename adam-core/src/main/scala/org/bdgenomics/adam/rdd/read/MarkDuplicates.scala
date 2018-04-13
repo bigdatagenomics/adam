@@ -63,7 +63,7 @@ private[rdd] object MarkDuplicates extends Serializable with Logging {
     })
   }
 
-  def apply(rdd: AlignmentRecordRDD): RDD[AlignmentRecord] = {
+  def apply(rdd: AlignmentRecordDataset): RDD[AlignmentRecord] = {
 
     markBuckets(rdd.groupReadsByFragment(), rdd.recordGroups)
       .flatMap(_.allReads)

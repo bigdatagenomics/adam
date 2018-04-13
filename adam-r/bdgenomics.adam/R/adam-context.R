@@ -66,7 +66,7 @@ javaStringency <- function(stringency) {
 }
 
 
-#' Load alignment records into an AlignmentRecordRDD.
+#' Load alignment records into an AlignmentRecordDataset.
 #'
 #' Loads path names ending in:
 #' * .bam/.cram/.sam as BAM/CRAM/SAM format,
@@ -83,7 +83,7 @@ javaStringency <- function(stringency) {
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing reads.
+#' @return Returns a genomic dataset containing reads.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -95,7 +95,7 @@ setMethod("loadAlignments",
               jrdd <- sparkR.callJMethod(ac@jac,
                                          "loadAlignments",
                                          filePath, jStringency)
-              AlignmentRecordRDD(jrdd)
+              AlignmentRecordDataset(jrdd)
           })
 
 #' Load nucleotide contig fragments into a NucleotideContigFragmentDataset.
@@ -134,7 +134,7 @@ setMethod("loadContigFragments",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing sequence fragments.
+#' @return Returns a genomic dataset containing sequence fragments.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -168,7 +168,7 @@ setMethod("loadFragments",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing features.
+#' @return Returns a genomic dataset containing features.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -203,7 +203,7 @@ setMethod("loadFeatures",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing coverage.
+#' @return Returns a genomic dataset containing coverage.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -227,7 +227,7 @@ setMethod("loadCoverage",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing genotypes.
+#' @return Returns a genomic dataset containing genotypes.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
@@ -251,7 +251,7 @@ setMethod("loadGenotypes",
 #' @param ac The ADAMContext.
 #' @param filePath The path to load the file from.
 #' @param stringency The validation stringency to apply. Defaults to STRICT.
-#' @return Returns an RDD containing variants.
+#' @return Returns a genomic dataset containing variants.
 #'
 #' @importFrom SparkR sparkR.callJMethod
 #'
