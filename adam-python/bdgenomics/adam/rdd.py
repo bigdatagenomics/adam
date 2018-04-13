@@ -234,7 +234,7 @@ class GenomicDataset(object):
             return "CoverageDatasetConverter"
         elif destClass is FeatureDataset:
             return "FeaturesDatasetConverter"
-        elif destClass is FragmentRDD:
+        elif destClass is FragmentDataset:
             return "FragmentDatasetConverter"
         elif destClass is AlignmentRecordRDD:
             return "AlignmentRecordDatasetConverter"
@@ -870,12 +870,12 @@ class AlignmentRecordRDD(GenomicDataset):
         """
         Convert this set of reads into fragments.
 
-        :return: Returns a FragmentRDD where all reads have been grouped
+        :return: Returns a FragmentDataset where all reads have been grouped
         together by the original sequence fragment they come from.
-        :rtype: bdgenomics.adam.rdd.FragmentRDD
+        :rtype: bdgenomics.adam.rdd.FragmentDataset
         """
 
-        return FragmentRDD(self._jvmRdd.toFragments(), self.sc)
+        return FragmentDataset(self._jvmRdd.toFragments(), self.sc)
 
 
     def toCoverage(self, collapse = True):
@@ -1356,23 +1356,23 @@ class FeatureDataset(GenomicDataset):
         return "org.bdgenomics.adam.api.java.FeaturesTo%s" % self._destClassSuffix(destClass)
 
 
-class FragmentRDD(GenomicDataset):
+class FragmentDataset(GenomicDataset):
     """
-    Wraps an GenomicDatset with Fragment metadata and functions.
+    Wraps an GenomicDataset with Fragment metadata and functions.
     """
 
     def _replaceRdd(self, newRdd):
 
-        return FragmentRDD(newRdd, self.sc)
+        return FragmentDataset(newRdd, self.sc)
 
 
     def __init__(self, jvmRdd, sc):
         """
-        Constructs a Python FragmentRDD from a JVM FragmentRDD.
+        Constructs a Python FragmentDataset from a JVM FragmentDataset.
         Should not be called from user code; instead, go through
         bdgenomics.adamContext.ADAMContext.
 
-        :param jvmRdd: Py4j handle to the underlying JVM FragmentRDD.
+        :param jvmRdd: Py4j handle to the underlying JVM FragmentDataset.
         :param pyspark.context.SparkContext sc: Active Spark Context.
         """
 
@@ -1396,10 +1396,10 @@ class FragmentRDD(GenomicDataset):
 
         :return: A new RDD where reads have the duplicate read flag set.
         Duplicate reads are NOT filtered out.
-        :rtype: bdgenomics.adam.rdd.FragmentRDD
+        :rtype: bdgenomics.adam.rdd.FragmentDataset
         """
 
-        return FragmentRDD(self._jvmRdd.markDuplicates(), self.sc)
+        return FragmentDataset(self._jvmRdd.markDuplicates(), self.sc)
 
 
     def save(self, filePath):

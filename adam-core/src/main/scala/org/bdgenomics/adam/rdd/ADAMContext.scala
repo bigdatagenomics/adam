@@ -60,10 +60,10 @@ import org.bdgenomics.adam.rdd.contig.{
 }
 import org.bdgenomics.adam.rdd.feature._
 import org.bdgenomics.adam.rdd.fragment.{
-  DatasetBoundFragmentRDD,
-  FragmentRDD,
-  ParquetUnboundFragmentRDD,
-  RDDBoundFragmentRDD
+  DatasetBoundFragmentDataset,
+  FragmentDataset,
+  ParquetUnboundFragmentDataset,
+  RDDBoundFragmentDataset
 }
 import org.bdgenomics.adam.rdd.read.{
   AlignmentRecordRDD,
@@ -177,8 +177,8 @@ object ADAMContext {
 
   implicit def contigsToFragmentsConversionFn(
     gDataset: NucleotideContigFragmentDataset,
-    rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -187,8 +187,8 @@ object ADAMContext {
 
   implicit def contigsToFragmentsDatasetConversionFn(
     gDataset: NucleotideContigFragmentDataset,
-    ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds,
+    ds: Dataset[FragmentProduct]): FragmentDataset = {
+    new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -290,8 +290,8 @@ object ADAMContext {
 
   implicit def coverageToFragmentsConversionFn(
     gDataset: CoverageDataset,
-    rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -300,8 +300,8 @@ object ADAMContext {
 
   implicit def coverageToFragmentsDatasetConversionFn(
     gDataset: CoverageDataset,
-    ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds,
+    ds: Dataset[FragmentProduct]): FragmentDataset = {
+    new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -403,8 +403,8 @@ object ADAMContext {
 
   implicit def featuresToFragmentsConversionFn(
     gDataset: FeatureDataset,
-    rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -413,8 +413,8 @@ object ADAMContext {
 
   implicit def featuresToFragmentsDatasetConversionFn(
     gDataset: FeatureDataset,
-    ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds,
+    ds: Dataset[FragmentProduct]): FragmentDataset = {
+    new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -485,49 +485,49 @@ object ADAMContext {
   }
 
   implicit def fragmentsToContigsConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     rdd: RDD[NucleotideContigFragment]): NucleotideContigFragmentDataset = {
     new RDDBoundNucleotideContigFragmentDataset(rdd, gDataset.sequences, None)
   }
 
   implicit def fragmentsToContigsDatasetConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     ds: Dataset[NucleotideContigFragmentProduct]): NucleotideContigFragmentDataset = {
     new DatasetBoundNucleotideContigFragmentDataset(ds, gDataset.sequences)
   }
 
   implicit def fragmentsToCoverageConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     rdd: RDD[Coverage]): CoverageDataset = {
     new RDDBoundCoverageDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def fragmentsToCoverageDatasetConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     ds: Dataset[Coverage]): CoverageDataset = {
     new DatasetBoundCoverageDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
   implicit def fragmentsToFeaturesConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     rdd: RDD[Feature]): FeatureDataset = {
     new RDDBoundFeatureDataset(rdd, gDataset.sequences, Seq.empty[Sample], None)
   }
 
   implicit def fragmentsToFeaturesDatasetConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     ds: Dataset[FeatureProduct]): FeatureDataset = {
     new DatasetBoundFeatureDataset(ds, gDataset.sequences, Seq.empty[Sample])
   }
 
-  implicit def fragmentsToFragmentsConversionFn(gDataset: FragmentRDD,
-                                                rdd: RDD[Fragment]): FragmentRDD = {
+  implicit def fragmentsToFragmentsConversionFn(gDataset: FragmentDataset,
+                                                rdd: RDD[Fragment]): FragmentDataset = {
     // hijack the transform function to discard the old RDD
     gDataset.transform(oldRdd => rdd)
   }
 
   implicit def fragmentsToAlignmentRecordsConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     rdd: RDD[AlignmentRecord]): AlignmentRecordRDD = {
     new RDDBoundAlignmentRecordRDD(rdd,
       gDataset.sequences,
@@ -537,7 +537,7 @@ object ADAMContext {
   }
 
   implicit def fragmentsToAlignmentRecordsDatasetConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     ds: Dataset[AlignmentRecordProduct]): AlignmentRecordRDD = {
     new DatasetBoundAlignmentRecordRDD(ds,
       gDataset.sequences,
@@ -546,7 +546,7 @@ object ADAMContext {
   }
 
   implicit def fragmentsToGenotypesConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     rdd: RDD[Genotype]): GenotypeRDD = {
     new RDDBoundGenotypeRDD(rdd,
       gDataset.sequences,
@@ -556,7 +556,7 @@ object ADAMContext {
   }
 
   implicit def fragmentsToGenotypesDatasetConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     ds: Dataset[GenotypeProduct]): GenotypeRDD = {
     new DatasetBoundGenotypeRDD(ds,
       gDataset.sequences,
@@ -565,7 +565,7 @@ object ADAMContext {
   }
 
   implicit def fragmentsToVariantsConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     rdd: RDD[Variant]): VariantRDD = {
     new RDDBoundVariantRDD(rdd,
       gDataset.sequences,
@@ -574,7 +574,7 @@ object ADAMContext {
   }
 
   implicit def fragmentsToVariantsDatasetConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     ds: Dataset[VariantProduct]): VariantRDD = {
     new DatasetBoundVariantRDD(ds,
       gDataset.sequences,
@@ -582,7 +582,7 @@ object ADAMContext {
   }
 
   implicit def fragmentsToVariantContextConversionFn(
-    gDataset: FragmentRDD,
+    gDataset: FragmentDataset,
     rdd: RDD[VariantContext]): VariantContextRDD = {
     VariantContextRDD(rdd,
       gDataset.sequences,
@@ -610,8 +610,8 @@ object ADAMContext {
 
   implicit def genericToFragmentsConversionFn[Y <: GenericGenomicDataset[_, _]](
     gDataset: Y,
-    rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -695,8 +695,8 @@ object ADAMContext {
 
   implicit def alignmentRecordsToFragmentsConversionFn(
     gDataset: AlignmentRecordRDD,
-    rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
       gDataset.recordGroups,
       gDataset.processingSteps,
@@ -705,8 +705,8 @@ object ADAMContext {
 
   implicit def alignmentRecordsToFragmentsDatasetConversionFn(
     gDataset: AlignmentRecordRDD,
-    ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds,
+    ds: Dataset[FragmentProduct]): FragmentDataset = {
+    new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
       gDataset.recordGroups,
       gDataset.processingSteps)
@@ -802,8 +802,8 @@ object ADAMContext {
 
   implicit def genotypesToFragmentsConversionFn(
     gDataset: GenotypeRDD,
-    rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -812,8 +812,8 @@ object ADAMContext {
 
   implicit def genotypesToFragmentsDatasetConversionFn(
     gDataset: GenotypeRDD,
-    ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds,
+    ds: Dataset[FragmentProduct]): FragmentDataset = {
+    new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -908,8 +908,8 @@ object ADAMContext {
 
   implicit def variantsToFragmentsConversionFn(
     gDataset: VariantRDD,
-    rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -918,8 +918,8 @@ object ADAMContext {
 
   implicit def variantsToFragmentsDatasetConversionFn(
     gDataset: VariantRDD,
-    ds: Dataset[FragmentProduct]): FragmentRDD = {
-    new DatasetBoundFragmentRDD(ds,
+    ds: Dataset[FragmentProduct]): FragmentDataset = {
+    new DatasetBoundFragmentDataset(ds,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty)
@@ -998,8 +998,8 @@ object ADAMContext {
 
   implicit def variantContextsToFragmentsConversionFn(
     gDataset: VariantContextRDD,
-    rdd: RDD[Fragment]): FragmentRDD = {
-    new RDDBoundFragmentRDD(rdd,
+    rdd: RDD[Fragment]): FragmentDataset = {
+    new RDDBoundFragmentDataset(rdd,
       gDataset.sequences,
       RecordGroupDictionary.empty,
       Seq.empty,
@@ -2525,7 +2525,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
   /**
    * Load paired unaligned alignment records grouped by sequencing fragment
-   * from interleaved FASTQ into an FragmentRDD.
+   * from interleaved FASTQ into an FragmentDataset.
    *
    * In interleaved FASTQ, the two reads from a paired sequencing protocol are
    * interleaved in a single file. This is a zipped representation of the
@@ -2536,11 +2536,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *
    * @param pathName The path name to load unaligned alignment records from.
    *   Globs/directories are supported.
-   * @return Returns a FragmentRDD containing the paired reads grouped by
+   * @return Returns a FragmentDataset containing the paired reads grouped by
    *   sequencing fragment.
    */
   def loadInterleavedFastqAsFragments(
-    pathName: String): FragmentRDD = LoadInterleavedFastqFragments.time {
+    pathName: String): FragmentDataset = LoadInterleavedFastqFragments.time {
 
     val job = HadoopUtil.newJob(sc)
     val conf = ContextUtil.getConfiguration(job)
@@ -2558,7 +2558,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     // convert records
     val fastqRecordConverter = new FastqRecordConverter
-    FragmentRDD.fromRdd(records.map(fastqRecordConverter.convertFragment))
+    FragmentDataset.fromRdd(records.map(fastqRecordConverter.convertFragment))
   }
 
   /**
@@ -2930,7 +2930,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load a path name in Parquet + Avro format into a FragmentRDD.
+   * Load a path name in Parquet + Avro format into a FragmentDataset.
    *
    * @param pathName The path name to load fragments from.
    *   Globs/directories are supported.
@@ -2938,12 +2938,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param optProjection An option projection schema to use when reading Parquet + Avro.
    *   Defaults to None.
-   * @return Returns a FragmentRDD.
+   * @return Returns a FragmentDataset.
    */
   def loadParquetFragments(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
-    optProjection: Option[Schema] = None): FragmentRDD = {
+    optProjection: Option[Schema] = None): FragmentDataset = {
 
     // convert avro to sequence dictionary
     val sd = loadAvroSequenceDictionary(pathName)
@@ -2956,13 +2956,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
 
     (optPredicate, optProjection) match {
       case (None, None) => {
-        ParquetUnboundFragmentRDD(sc, pathName, sd, rgd, pgs)
+        ParquetUnboundFragmentDataset(sc, pathName, sd, rgd, pgs)
       }
       case (_, _) => {
         // load from disk
         val rdd = loadParquet[Fragment](pathName, optPredicate, optProjection)
 
-        new RDDBoundFragmentRDD(rdd,
+        new RDDBoundFragmentDataset(rdd,
           sd,
           rgd,
           pgs,
@@ -3294,7 +3294,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
   }
 
   /**
-   * Load fragments into a FragmentRDD.
+   * Load fragments into a FragmentDataset.
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -3319,13 +3319,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    *   Defaults to None.
    * @param stringency The validation stringency to use when validating BAM/CRAM/SAM or FASTQ formats.
    *   Defaults to ValidationStringency.STRICT.
-   * @return Returns a FragmentRDD.
+   * @return Returns a FragmentDataset.
    */
   def loadFragments(
     pathName: String,
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None,
-    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentRDD = LoadFragments.time {
+    stringency: ValidationStringency = ValidationStringency.STRICT): FragmentDataset = LoadFragments.time {
 
     // need this to pick up possible .bgz extension
     sc.hadoopConfiguration.setStrings("io.compression.codecs",

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.adam.rdd.read
 
-import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.formats.avro.{ AlignmentRecord, Fragment }
 import scala.collection.JavaConversions._
 
@@ -134,8 +134,8 @@ private[rdd] object BinQualities extends Serializable {
    * @return Returns a new RDD of fragments were the quality scores of the fragment
    *   bases have been binned.
    */
-  def apply(fragments: FragmentRDD,
-            bins: Seq[QualityScoreBin]): FragmentRDD = {
+  def apply(fragments: FragmentDataset,
+            bins: Seq[QualityScoreBin]): FragmentDataset = {
 
     fragments.transform(rdd => {
       rdd.map(binFragment(_, bins))

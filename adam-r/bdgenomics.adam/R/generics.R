@@ -350,12 +350,12 @@ setGeneric("flatten",
 
 #### Fragment operations ####
 
-#' The FragmentRDD class is used to manipulate paired reads.
+#' The FragmentDataset class is used to manipulate paired reads.
 #' 
-#' @name FragmentRDD
+#' @name FragmentDataset
 NULL
 
-#' @rdname FragmentRDD
+#' @rdname FragmentDataset
 #' @param ardd The RDD to apply this to.
 #' @export
 setGeneric("toReads",

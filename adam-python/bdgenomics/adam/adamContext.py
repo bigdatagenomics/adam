@@ -29,7 +29,7 @@ adamContext
 from bdgenomics.adam.rdd import AlignmentRecordRDD, \
     CoverageDataset, \
     FeatureDataset, \
-    FragmentRDD, \
+    FragmentDataset, \
     GenotypeRDD, \
     NucleotideContigFragmentDataset, \
     VariantRDD
@@ -170,7 +170,7 @@ class ADAMContext(object):
 
     def loadFragments(self, filePath, stringency=STRICT):
         """
-        Load fragments into a FragmentRDD.
+        Load fragments into a FragmentDataset.
 
         Loads path names ending in:
         * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -183,12 +183,12 @@ class ADAMContext(object):
         :param str filePath: The path to load the file from.
         :param stringency: The validation stringency to apply. Defaults to STRICT.
         :return: Returns an RDD containing sequenced fragments.
-        :rtype: bdgenomics.adam.rdd.FragmentRDD
+        :rtype: bdgenomics.adam.rdd.FragmentDataset
         """
 
         adamRdd = self.__jac.loadFragments(filePath, stringency)
 
-        return FragmentRDD(adamRdd, self._sc)
+        return FragmentDataset(adamRdd, self._sc)
 
 
     def loadFeatures(self, filePath, stringency=STRICT):

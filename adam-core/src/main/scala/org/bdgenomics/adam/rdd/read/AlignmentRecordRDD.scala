@@ -50,7 +50,7 @@ import org.bdgenomics.adam.rdd.feature.{
 }
 import org.bdgenomics.adam.rdd.read.realignment.RealignIndels
 import org.bdgenomics.adam.rdd.read.recalibration.BaseQualityRecalibration
-import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.rdd.variant.VariantRDD
 import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.adam.serialization.AvroSerializer
@@ -440,11 +440,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
   /**
    * Convert this set of reads into fragments.
    *
-   * @return Returns a FragmentRDD where all reads have been grouped together by
+   * @return Returns a FragmentDataset where all reads have been grouped together by
    *   the original sequence fragment they come from.
    */
-  def toFragments(): FragmentRDD = {
-    FragmentRDD(groupReadsByFragment().map(_.toFragment),
+  def toFragments(): FragmentDataset = {
+    FragmentDataset(groupReadsByFragment().map(_.toFragment),
       sequences,
       recordGroups,
       processingSteps)
@@ -464,11 +464,11 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
    *
    * Assumes that reads are sorted by readname.
    *
-   * @return Returns a FragmentRDD where all reads have been grouped together by
+   * @return Returns a FragmentDataset where all reads have been grouped together by
    *   the original sequence fragment they come from.
    */
-  private[rdd] def querynameSortedToFragments: FragmentRDD = {
-    FragmentRDD(locallyGroupReadsByFragment().map(_.toFragment),
+  private[rdd] def querynameSortedToFragments: FragmentDataset = {
+    FragmentDataset(locallyGroupReadsByFragment().map(_.toFragment),
       sequences,
       recordGroups,
       processingSteps)

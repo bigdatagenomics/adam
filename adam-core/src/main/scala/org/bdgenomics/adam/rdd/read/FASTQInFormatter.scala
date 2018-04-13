@@ -21,7 +21,7 @@ import java.io.OutputStream
 import org.apache.hadoop.conf.Configuration
 import org.bdgenomics.adam.converters.AlignmentRecordConverter
 import org.bdgenomics.adam.rdd.{ InFormatter, InFormatterCompanion }
-import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct }
 import org.bdgenomics.formats.avro.AlignmentRecord
 import org.bdgenomics.utils.misc.Logging

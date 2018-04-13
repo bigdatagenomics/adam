@@ -80,16 +80,16 @@ FeatureDataset <- function(jrdd) {
 
 #' A class that wraps an RDD of read pairs grouped by sequencing fragment with helpful metadata.
 #'
-#' @rdname FragmentRDD
+#' @rdname FragmentDataset
 #' @slot jrdd The Java RDD of Fragments that this class wraps.
 #' 
 #' @export
-setClass("FragmentRDD",
+setClass("FragmentDataset",
          slots = list(jrdd = "jobj"),
          contains = "GenomicDataset")
 
-FragmentRDD <- function(jrdd) {
-    new("FragmentRDD", jrdd = jrdd)
+FragmentDataset <- function(jrdd) {
+    new("FragmentDataset", jrdd = jrdd)
 }
 
 #' A class that wraps an RDD of genotypes with helpful metadata.
@@ -379,7 +379,7 @@ setMethod("destClassSuffix",
                   "CoverageDatasetConverter"
               } else if (destClass == "FeatureDataset") {
                   "FeaturesDatasetConverter"
-              } else if (destClass == "FragmentRDD") {
+              } else if (destClass == "FragmentDataset") {
                   "FragmentDatasetConverter"
               } else if (destClass == "AlignmentRecordRDD") {
                   "AlignmentRecordDatasetConverter"
@@ -774,7 +774,7 @@ setMethod("inferConversionFn",
 #' Convert this set of reads into fragments.
 #'
 #' @param ardd The RDD to apply this to.
-#' @return Returns a FragmentRDD where all reads have been grouped together by
+#' @return Returns a FragmentDataset where all reads have been grouped together by
 #' the original sequence fragment they come from.
 #'
 #' @importFrom SparkR sparkR.callJMethod
@@ -783,7 +783,7 @@ setMethod("inferConversionFn",
 setMethod("toFragments",
           signature(ardd = "AlignmentRecordRDD"),
           function(ardd) {
-              FragmentRDD(sparkR.callJMethod(ardd@jrdd, "toFragments"))
+              FragmentDataset(sparkR.callJMethod(ardd@jrdd, "toFragments"))
           })
 
 #' Saves this RDD to disk as a SAM/BAM/CRAM file.
@@ -1151,7 +1151,7 @@ setMethod("toCoverage", signature(ardd = "FeatureDataset"),
           })
 
 setMethod("inferConversionFn",
-          signature(ardd = "FragmentRDD",
+          signature(ardd = "FragmentDataset",
                     destClass = "character"),
           function(ardd, destClass) {
               paste0("org.bdgenomics.adam.api.java.FragmentsTo",
@@ -1159,10 +1159,10 @@ setMethod("inferConversionFn",
           })
 
 setMethod("replaceRdd",
-          signature(ardd = "FragmentRDD",
+          signature(ardd = "FragmentDataset",
                     rdd = "jobj"),
           function(ardd, rdd) {
-              FragmentRDD(rdd)
+              FragmentDataset(rdd)
           })
 
 #' Splits up the reads in a Fragment, and creates a new RDD.
@@ -1173,7 +1173,7 @@ setMethod("replaceRdd",
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("toReads", signature(ardd = "FragmentRDD"),
+setMethod("toReads", signature(ardd = "FragmentDataset"),
           function(ardd) {
               AlignmentRecordRDD(sparkR.callJMethod(ardd@jrdd, "toReads"))
           })
@@ -1187,9 +1187,9 @@ setMethod("toReads", signature(ardd = "FragmentRDD"),
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("markDuplicates", signature(ardd = "FragmentRDD"),
+setMethod("markDuplicates", signature(ardd = "FragmentDataset"),
           function(ardd) {
-              FragmentRDD(sparkR.callJMethod(ardd@jrdd, "markDuplicates"))
+              FragmentDataset(sparkR.callJMethod(ardd@jrdd, "markDuplicates"))
           })
 
 #' Saves fragments to Parquet.
@@ -1200,7 +1200,7 @@ setMethod("markDuplicates", signature(ardd = "FragmentRDD"),
 #' @importFrom SparkR sparkR.callJMethod
 #'
 #' @export
-setMethod("save", signature(ardd = "FragmentRDD", filePath = "character"),
+setMethod("save", signature(ardd = "FragmentDataset", filePath = "character"),
           function(ardd, filePath) {
               invisible(sparkR.callJMethod(ardd@jrdd, "save", filePath))
           })

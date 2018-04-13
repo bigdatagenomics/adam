@@ -23,7 +23,7 @@ import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.bdgenomics.adam.rdd.contig.NucleotideContigFragmentDataset
 import org.bdgenomics.adam.rdd.feature.{ CoverageDataset, FeatureDataset }
-import org.bdgenomics.adam.rdd.fragment.FragmentRDD
+import org.bdgenomics.adam.rdd.fragment.FragmentDataset
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.variant.{
   GenotypeRDD,
@@ -152,7 +152,7 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
   }
 
   /**
-   * Load fragments into a FragmentRDD (java-friendly method).
+   * Load fragments into a FragmentDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -168,14 +168,14 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    * @param pathName The path name to load fragments from.
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM and FASTQ formats.
-   * @return Returns a FragmentRDD.
+   * @return Returns a FragmentDataset.
    */
-  def loadFragments(pathName: java.lang.String): FragmentRDD = {
+  def loadFragments(pathName: java.lang.String): FragmentDataset = {
     ac.loadFragments(pathName)
   }
 
   /**
-   * Load fragments into a FragmentRDD (java-friendly method).
+   * Load fragments into a FragmentDataset (java-friendly method).
    *
    * Loads path names ending in:
    * * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -192,10 +192,10 @@ class JavaADAMContext(val ac: ADAMContext) extends Serializable {
    *   Globs/directories are supported, although file extension must be present
    *   for BAM/CRAM/SAM and FASTQ formats.
    * @param stringency The validation stringency to use when validating BAM/CRAM/SAM or FASTQ formats.
-   * @return Returns a FragmentRDD.
+   * @return Returns a FragmentDataset.
    */
   def loadFragments(pathName: java.lang.String,
-                    stringency: ValidationStringency): FragmentRDD = {
+                    stringency: ValidationStringency): FragmentDataset = {
     ac.loadFragments(pathName, stringency = stringency)
   }
 

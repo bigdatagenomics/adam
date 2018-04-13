@@ -52,7 +52,7 @@ import org.bdgenomics.adam.util.ADAMFunSuite
 import org.bdgenomics.formats.avro._
 import scala.collection.JavaConversions._
 
-object FragmentRDDSuite extends Serializable {
+object FragmentDatasetSuite extends Serializable {
 
   def readFn(f: Fragment): AlignmentRecord = {
     f.getAlignments.get(0)
@@ -63,11 +63,11 @@ object FragmentRDDSuite extends Serializable {
   }
 }
 
-class FragmentRDDSuite extends ADAMFunSuite {
+class FragmentDatasetSuite extends ADAMFunSuite {
 
   sparkTest("don't lose any reads when piping interleaved fastq to sam") {
     // write suffixes at end of reads
-    sc.hadoopConfiguration.setBoolean(FragmentRDD.WRITE_SUFFIXES, true)
+    sc.hadoopConfiguration.setBoolean(FragmentDataset.WRITE_SUFFIXES, true)
 
     val fragmentsPath = testFile("interleaved_fastq_sample1.ifq")
     val ardd = sc.loadFragments(fragmentsPath)
@@ -108,7 +108,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
 
   sparkTest("don't lose any reads when piping tab6 to sam") {
     // write suffixes at end of reads
-    sc.hadoopConfiguration.setBoolean(FragmentRDD.WRITE_SUFFIXES, true)
+    sc.hadoopConfiguration.setBoolean(FragmentDataset.WRITE_SUFFIXES, true)
 
     val fragmentsPath = testFile("interleaved_fastq_sample1.ifq")
     val ardd = sc.loadFragments(fragmentsPath)
@@ -173,8 +173,8 @@ class FragmentRDDSuite extends ADAMFunSuite {
     assert(jRdd.rdd.count === 5)
     assert(jRdd0.rdd.count === 5)
 
-    val joinedFragments: FragmentRDD = jRdd
-      .transmute[Fragment, FragmentProduct, FragmentRDD]((rdd: RDD[(Fragment, Feature)]) => {
+    val joinedFragments: FragmentDataset = jRdd
+      .transmute[Fragment, FragmentProduct, FragmentDataset]((rdd: RDD[(Fragment, Feature)]) => {
         rdd.map(_._1)
       })
     val tempPath = tmpLocation(".adam")
@@ -333,7 +333,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
     assert(qualityScoreCounts(10) === 7101)
   }
 
-  sparkTest("union two rdds of fragments together") {
+  sparkTest("union two genomic datasets of fragments together") {
     val reads1 = sc.loadAlignments(testFile("bqsr1.sam")).toFragments
     val reads2 = sc.loadAlignments(testFile("small.sam")).toFragments
     val union = reads1.union(reads2)
@@ -345,7 +345,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
   }
 
   sparkTest("load parquet to sql, save, re-read from avro") {
-    def testMetadata(fRdd: FragmentRDD) {
+    def testMetadata(fRdd: FragmentDataset) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
       assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
 
@@ -379,7 +379,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
     assert(rdd4.dataset.count === 20)
   }
 
-  sparkTest("transform fragments to contig rdd") {
+  sparkTest("transform fragments to contig genomic dataset") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
     def checkSave(ncRdd: NucleotideContigFragmentDataset) {
@@ -410,7 +410,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
     checkSave(featuresDs)
   }
 
-  sparkTest("transform fragments to coverage rdd") {
+  sparkTest("transform fragments to coverage genomic dataset") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
     def checkSave(coverage: CoverageDataset) {
@@ -438,7 +438,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
     checkSave(coverageDs)
   }
 
-  sparkTest("transform fragments to feature rdd") {
+  sparkTest("transform fragments to feature genomic dataset") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
     def checkSave(features: FeatureDataset) {
@@ -469,7 +469,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
     checkSave(featuresDs)
   }
 
-  sparkTest("transform fragments to read rdd") {
+  sparkTest("transform fragments to read genomic dataset") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
     def checkSave(reads: AlignmentRecordRDD) {
@@ -481,7 +481,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
 
     val reads: AlignmentRecordRDD = fragments.transmute[AlignmentRecord, AlignmentRecordProduct, AlignmentRecordRDD](
       (rdd: RDD[Fragment]) => {
-        rdd.map(FragmentRDDSuite.readFn)
+        rdd.map(FragmentDatasetSuite.readFn)
       })
 
     checkSave(reads)
@@ -493,14 +493,14 @@ class FragmentRDDSuite extends ADAMFunSuite {
       (ds: Dataset[FragmentProduct]) => {
         ds.map(r => {
           AlignmentRecordProduct.fromAvro(
-            FragmentRDDSuite.readFn(r.toAvro))
+            FragmentDatasetSuite.readFn(r.toAvro))
         })
       })
 
     checkSave(readDs)
   }
 
-  sparkTest("transform fragments to genotype rdd") {
+  sparkTest("transform fragments to genotype genomic dataset") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
     def checkSave(genotypes: GenotypeRDD) {
@@ -531,7 +531,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
     checkSave(genotypesDs)
   }
 
-  sparkTest("transform fragments to variant rdd") {
+  sparkTest("transform fragments to variant genomic dataset") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
     def checkSave(variants: VariantRDD) {
@@ -562,7 +562,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
     checkSave(variantsDs)
   }
 
-  sparkTest("transform fragments to variant context rdd") {
+  sparkTest("transform fragments to variant context genomic dataset") {
     val fragments = sc.loadFragments(testFile("small.sam"))
 
     def checkSave(variantContexts: VariantContextRDD) {
@@ -571,7 +571,7 @@ class FragmentRDDSuite extends ADAMFunSuite {
 
     val variantContexts: VariantContextRDD = fragments.transmute[VariantContext, VariantContextProduct, VariantContextRDD](
       (rdd: RDD[Fragment]) => {
-        rdd.map(FragmentRDDSuite.vcFn)
+        rdd.map(FragmentDatasetSuite.vcFn)
       })
 
     checkSave(variantContexts)

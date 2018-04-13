@@ -120,7 +120,7 @@ setMethod("loadContigFragments",
               NucleotideContigFragmentDataset(jrdd)
           })
 
-#' Load fragments into a FragmentRDD.
+#' Load fragments into a FragmentDataset.
 #'
 #' Loads path names ending in:
 #' * .bam/.cram/.sam as BAM/CRAM/SAM format and
@@ -147,7 +147,7 @@ setMethod("loadFragments",
                                          "loadFragments",
                                          filePath,
                                          jStringency)
-              FragmentRDD(jrdd)
+              FragmentDataset(jrdd)
           })
 
 #' Load features into a FeatureDataset.
