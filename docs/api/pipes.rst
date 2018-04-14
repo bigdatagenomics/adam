@@ -1,7 +1,7 @@
 Using ADAM's Pipe API
 ---------------------
 
-ADAM's ``GenomicRDD`` API provides support for piping the underlying
+ADAM's ``GenomicDataset`` API provides support for piping the underlying
 genomic data out to a single node process through the use of a ``pipe``
 API. This builds off of Apache Spark's ``RDD.pipe`` API. However,
 ``RDD.pipe`` prints the objects as strings to the pipe. ADAM's pipe API
@@ -22,7 +22,7 @@ The method signature of a pipe command is below:
 
 .. code:: scala
 
-    def pipe[X, Y <: GenomicRDD[X, Y], V <: InFormatter[T, U, V]](cmd: Seq[String],
+    def pipe[X, Y <: GenomicDataset[X, Y], V <: InFormatter[T, U, V]](cmd: Seq[String],
                                                                   files: Seq[String] = Seq.empty,
                                                                   environment: Map[String, String] = Map.empty,
                                                                   flankSize: Int = 0)(implicit tFormatterCompanion: InFormatterCompanion[T, U, V],
@@ -32,8 +32,8 @@ The method signature of a pipe command is below:
                                                                                       xManifest: ClassTag[X]): Y
 
 ``X`` is the type of the records that are returned (e.g., for reads,
-``AlignmentRecord``) and ``Y`` is the type of the ``GenomicRDD`` that is
-returned (e.g., for reads, ``AlignmentRecordRDD``). As explicit
+``AlignmentRecord``) and ``Y`` is the type of the ``GenomicDatset`` that is
+returned (e.g., for reads, ``AlignmentRecordDataset``). As explicit
 parameters, we take:
 
 -  ``cmd``: The command to run.
@@ -50,12 +50,12 @@ parameters, we take:
 Additionally, we take several important implicit parameters:
 
 -  ``tFormatter``: The ``InFormatter`` that converts the data that is
-   piped into the run command from the underlying ``GenomicRDD`` type.
+   piped into the run command from the underlying ``GenomicDataset`` type.
 -  ``xFormatter``: The ``OutFormatter`` that converts the data that is
    piped out of the run command back to objects for the output
-   ``GenomicRDD``.
+   ``GenomicDataset``.
 -  ``convFn``: A function that applies any necessary metadata
-   conversions and creates a new ``GenomicRDD``.
+   conversions and creates a new ``GenomicDataset``.
 
 The ``tManifest`` and ``xManifest`` implicit parameters are `Scala
 ClassTag <http://www.scala-lang.org/api/2.10.3/index.html#scala.reflect.ClassTag>`__\ s
@@ -67,45 +67,45 @@ reads can be saved to or read from BAM, CRAM, FASTQ, and SAM). The
 ``InFormatter`` and ``OutFormatter`` parameters specify the format that
 is being read into or out of the pipe. We support the following:
 
--  ``AlignmentRecordRDD``:
+-  ``AlignmentRecordDataset``:
 
    -  ``InFormatter``\ s: ``SAMInFormatter`` and ``BAMInFormatter`` write SAM or BAM out to a pipe.
    -  ``OutFormatter``: ``AnySAMOutFormatter`` supports reading SAM and BAM from a pipe, with the exact
       format autodetected from the stream.
    -  We do not support piping CRAM due to complexities around the reference-based compression.
 
--  ``FeatureRDD``:
+-  ``FeatureDataset``:
 
    -  ``InFormatter``\ s: ``BEDInFormatter``, ``GFF3InFormatter``, ``GTFInFormatter``, and ``NarrowPeakInFormatter``
       for writing features out to a pipe in BED, GFF3, GTF/GFF2, or NarrowPeak format, respectively.
    -  ``OutFormatter``\ s: ``BEDOutFormatter``, ``GFF3OutFormatter``, ``GTFOutFormatter``, and ``NarrowPeakInFormatter``
       for reading features in BED, GFF3, GTF/GFF2, or NarrowPeak format in from a pipe, respectively.
 
--  ``FragmentRDD``:
+-  ``FragmentDataset``:
 
    -  ``InFormatter``: ``InterleavedFASTQInFormatter`` writes FASTQ with the reads from a paired sequencing protocol
       interleaved in the FASTQ stream to a pipe.
 
--  ``VariantContextRDD``:
+-  ``VariantContextDataset``:
    -  ``InFormatter``: ``VCFInFormatter`` writes VCF to a pipe.
    -  ``OutFormatter``: ``VCFOutFormatter`` reads VCF from a pipe.
 
 The ``convFn`` implementations are provided as implicit values in the
 `ADAMContext <adamContext.html>`__. These conversion functions are needed
-to adapt the metadata stored in a single ``GenomicRDD`` to the type of a
-different ``GenomicRDD`` (e.g., if piping an ``AlignmentRecordRDD``
-through a command that returns a ``VariantContextRDD``, we will need to
-convert the ``AlignmentRecordRDD``\ s ``RecordGroupDictionary`` into an
-array of ``Sample``\ s for the ``VariantContextRDD``). We provide four
+to adapt the metadata stored in a single ``GenomicDataset`` to the type of a
+different ``GenomicDataset`` (e.g., if piping an ``AlignmentRecordDataset``
+through a command that returns a ``VariantContextDataset``, we will need to
+convert the ``AlignmentRecordDataset``\ s ``RecordGroupDictionary`` into an
+array of ``Sample``\ s for the ``VariantContextDataset``). We provide four
 implementations:
 
 -  ``ADAMContext.sameTypeConversionFn``: For piped commands that do not
-   change the type of the ``GenomicRDD`` (e.g., ``AlignmentRecordRDD`` →
-   ``AlignmentRecordRDD``).
+   change the type of the ``GenomicDataset`` (e.g., ``AlignmentRecordDataset`` →
+   ``AlignmentRecordDataset``).
 -  ``ADAMContext.readsToVCConversionFn``: For piped commands that go
-   from an ``AlignmentRecordRDD`` to a ``VariantContextRDD``.
+   from an ``AlignmentRecordDataset`` to a ``VariantContextDataset``.
 -  ``ADAMContext.fragmentsToReadsConversionFn``: For piped commands that
-   go from a ``FragmentRDD`` to an ``AlignmentRecordRDD``.
+   go from a ``FragmentDataset`` to an ``AlignmentRecordDataset``.
 
 To put everything together, here is an example command. Here, we will
 run a command ``my_variant_caller``, which accepts one argument
@@ -114,7 +114,7 @@ standard output:
 
 .. code:: scala
 
-    // import RDD load functions and conversion functions
+    // import genomic dataset load functions and conversion functions
     import org.bdgenomics.adam.rdd.ADAMContext._
 
     // import functionality for piping SAM into pipe
@@ -123,7 +123,7 @@ standard output:
     // import functionality for reading VCF from pipe
     import org.bdgenomics.adam.converters.DefaultHeaderLines
     import org.bdgenomics.adam.rdd.variant.{
-      VariantContextRDD,
+      VariantContextDataset,
       VCFOutFormatter
     }
 
@@ -138,9 +138,9 @@ standard output:
     implicit val uFormatter = new VCFOutFormatter(DefaultHeaderLines.allHeaderLines)
 
     // run the piped command
-    // providing the explicit return type (VariantContextRDD) will ensure that
+    // providing the explicit return type (VariantContextDataset) will ensure that
     // the correct implicit convFn is selected
-    val variantContexts: VariantContextRDD = reads.pipe(
+    val variantContexts: VariantContextDataset = reads.pipe(
       cmd = Seq("my_variant_caller", "-R", "$0"),
       files = Seq("hdfs://mynamenode/my/reference/genome.fa"))
 
@@ -185,15 +185,15 @@ To run the Scala example code above using Java, we would write:
     import java.util.List;
     import java.util.Map;
     import org.bdgenomics.adam.models.VariantContext
-    import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD;
+    import org.bdgenomics.adam.rdd.read.AlignmentRecordDataset;
     import org.bdgenomics.adam.rdd.read.SAMInFormatter;
-    import org.bdgenomics.adam.rdd.variant.VariantContextRDD;
+    import org.bdgenomics.adam.rdd.variant.VariantContextDataset;
     import org.bdgenomics.adam.rdd.variant.VCFOutFormatter;
     import org.bdgenomics.adam.api.java.AlignmentRecordToVariantContextConverter;
 
     class PipeRunner {
 
-      VariantContextRDD runPipe(AlignmentRecordRDD reads) {
+      VariantContextDataset runPipe(AlignmentRecordDataset reads) {
 
         List<String> cmd = new ArrayList<String>();
         cmd.add("my_variant_caller");
@@ -206,7 +206,7 @@ To run the Scala example code above using Java, we would write:
         Map<String, String> env = new HashMap<String, String>();
 
         return reads.pipe<VariantContext,
-                          VariantContextRDD,
+                          VariantContextDataset,
                           SAMInFormatter>(cmd,
                                           files,
                                           env,

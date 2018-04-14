@@ -53,8 +53,8 @@ architectures impose significant restrictions, including:
    query optimizations.
 
 At the core of ADAM, users use the `ADAMContext <../api/adamContext.html>`__ to
-load data as `GenomicRDDs <../api/genomicRdd.html>`__, which they can then
-manipulate. In the GenomicRDD class hierarchy, we provide several
+load data as `GenomicDatasets <../api/genomicDataset.html>`__, which they can then
+manipulate. In the GenomicDataset class hierarchy, we provide several
 classes that contain functionality that is applicable to all genomic
 datatypes, such as `coordinate-space joins <../api/joins.html>`__, the
 `pipe <../api/pipes.html>`__ API, and genomic metadata management.
