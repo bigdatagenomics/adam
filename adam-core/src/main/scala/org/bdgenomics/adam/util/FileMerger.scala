@@ -39,6 +39,14 @@ private[adam] object FileMerger extends Logging {
    */
   val BUFFER_SIZE_CONF = "org.bdgenomics.adam.rdd.FileMerger.bufferSize"
 
+  private def isHdfs(fs: FileSystem): Boolean = {
+    try {
+      fs.getScheme == "hdfs"
+    } catch {
+      case _: Throwable => false
+    }
+  }
+
   /**
    * Merges together sharded files, while preserving partition ordering.
    *
@@ -75,7 +83,7 @@ private[adam] object FileMerger extends Logging {
                  disableFastConcat: Boolean = false) {
 
     // if our file system is an hdfs mount, we can use the parallel merger
-    if (!disableFastConcat && (fs.getScheme == "hdfs")) {
+    if (!disableFastConcat && isHdfs(fs)) {
       ParallelFileMerger.mergeFiles(sc,
         outputPath,
         tailPath,
