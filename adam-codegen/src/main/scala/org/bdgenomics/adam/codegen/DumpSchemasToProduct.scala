@@ -67,20 +67,20 @@ class DumpSchemasToProduct extends Generator {
         val fieldSchema = field.schema
         val fieldType = fieldSchema.getType match {
           case Schema.Type.ARRAY => {
-            "Seq[%s]".format(getType(fieldSchema.getElementType()))
+            "Seq[%s] = Seq()".format(getType(fieldSchema.getElementType()))
           }
           case Schema.Type.MAP => {
-            "scala.collection.Map[String,%s]".format(getType(fieldSchema.getValueType()))
+            "scala.collection.Map[String,%s] = Map()".format(getType(fieldSchema.getValueType()))
           }
           case Schema.Type.UNION => {
-            "Option[%s]".format(getType(getUnionType(fieldSchema)))
+            "Option[%s] = None".format(getType(getUnionType(fieldSchema)))
           }
           case other => {
             throw new IllegalStateException("Unsupported type %s in field %s.".format(other, name))
           }
         }
         (name, fieldType)
-      }).toSeq
+      })
   }
 
   private def conversion(schema: Schema, mapFn: String): String = schema.getType match {
@@ -139,10 +139,10 @@ class DumpSchemasToProduct extends Generator {
     // get class name without package
     val classNameNoPackage = className.split('.').last
 
-    "\n%s\n\nclass %s (\n%s) extends Product {\n  def productArity: Int = %d\n  def productElement(i: Int): Any = i match {\n%s\n  }\n  def toAvro: %s = {\n%s\n  }\n  def canEqual(that: Any): Boolean = that match {\n    case %s => true\n    case _ => false\n  }\n}".format(
+    "\n%s\n\ncase class %s (\n%s) extends Product {\n  def productArity: Int = %d\n  def productElement(i: Int): Any = i match {\n%s\n  }\n  def toAvro: %s = {\n%s\n  }\n  def canEqual(that: Any): Boolean = that match {\n    case %s => true\n    case _ => false\n  }\n}".format(
       dumpObject(schema),
       classNameNoPackage,
-      fields(schema).map(p => "  val %s: %s".format(p._1, p._2)).mkString(",\n"),
+      fields(schema).map(p => "  %s: %s".format(p._1, p._2)).mkString(",\n"),
       schema.getFields().size,
       toMatch(fields(schema)),
       schema.getFullName,
@@ -195,12 +195,8 @@ class DumpSchemasToProduct extends Generator {
   }
 
   private def dumpObject(schema: Schema): String = {
-    "object %s extends Serializable {\n  def apply(\n%s): %s = {\n    new %s(\n%s)\n  }\n  def fromAvro(record: %s): %s = {\n    new %s (\n%s)\n  }\n}".format(
+    "object %s extends Serializable {\n  def fromAvro(record: %s): %s = {\n    new %s (\n%s)\n  }\n}".format(
       schema.getName,
-      fields(schema).map(p => "    %s: %s".format(p._1, p._2)).mkString(",\n"),
-      schema.getName,
-      schema.getName,
-      fields(schema).map(_._1).map(s => "      %s".format(s)).mkString(",\n"),
       schema.getFullName,
       schema.getName,
       schema.getName,
