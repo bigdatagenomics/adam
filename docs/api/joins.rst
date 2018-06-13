@@ -55,16 +55,21 @@ ADAM has a variety of region join types that you can perform on your
 data, and all are called in a similar way:
 
 -  Joins implemented across both shuffle and broadcast
--  Inner join
--  Right outer join
+
+   -  Inner join
+   -  Right outer join
+
 -  Shuffle-only joins
--  Full outer join
--  Inner join and group by left
--  Left outer join
--  Right outer join and group by left
+
+   -  Full outer join
+   -  Inner join and group by left
+   -  Left outer join
+   -  Right outer join and group by left
+
 -  Broadcast-only joins
--  Inner join and group by right
--  Right outer join and group by right
+
+   -  Inner join and group by right
+   -  Right outer join and group by right
 
 
 Given two RDDs
