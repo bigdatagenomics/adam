@@ -842,11 +842,11 @@ class FeatureRDDSuite extends ADAMFunSuite {
 @SQ	SN:chr1	LN:249250621
 @SQ	SN:chr2	LN:243199373
      */
-    assert(features.sequences.containsRefName("chr1"))
+    assert(features.sequences.containsReferenceName("chr1"))
     assert(features.sequences.apply("chr1").isDefined)
     assert(features.sequences.apply("chr1").get.length >= 249250621L)
 
-    assert(features.sequences.containsRefName("chr2"))
+    assert(features.sequences.containsReferenceName("chr2"))
     assert(features.sequences.apply("chr2").isDefined)
     assert(features.sequences.apply("chr2").get.length >= 243199373L)
   }
@@ -906,7 +906,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("load parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FeatureRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
 
     val inputPath = testFile("small.1.bed")
@@ -933,7 +933,7 @@ class FeatureRDDSuite extends ADAMFunSuite {
   sparkTest("load partitioned parquet to sql, save, re-read from avro") {
     def testMetadata(fRdd: FeatureRDD) {
       val sequenceRdd = fRdd.addSequence(SequenceRecord("aSequence", 1000L))
-      assert(sequenceRdd.sequences.containsRefName("aSequence"))
+      assert(sequenceRdd.sequences.containsReferenceName("aSequence"))
     }
 
     val inputPath = testFile("small.1.bed")
