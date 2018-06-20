@@ -1072,6 +1072,8 @@ private class NoPrefixFileFilter(private val prefix: String) extends PathFilter 
  * @param sc The SparkContext to wrap.
  */
 class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
+  @transient val spark = SQLContext.getOrCreate(sc).sparkSession
+  import spark.implicits._
 
   /**
    * @param samHeader The header to extract a sequence dictionary from.
