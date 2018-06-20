@@ -17,22 +17,21 @@
  */
 package org.bdgenomics.adam.rdd
 
-import htsjdk.samtools.{
-  SAMFormatException,
-  SAMProgramRecord,
-  ValidationStringency
-}
+import htsjdk.samtools.{ SAMFormatException, SAMProgramRecord, ValidationStringency }
 import java.io.{ File, FileNotFoundException }
+
 import com.google.common.io.Files
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
 import org.bdgenomics.adam.models._
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.util.PhredUtils._
 import org.bdgenomics.adam.util.ADAMFunSuite
+import org.bdgenomics.adam.sql.{ VariantContext => VCProduct }
 import org.bdgenomics.formats.avro._
 import org.seqdoop.hadoop_bam.CRAMInputFormat
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
@@ -759,5 +758,92 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(secondPg.head.getProgramName === "myProg")
     assert(secondPg.head.getCommandLine === "\"myProg 456\"")
     assert(secondPg.head.getVersion === "1.0.0")
+  }
+
+  sparkTest("load variant contexts from dataframe") {
+    val path = testFile("small.vcf")
+    val vcs = sc.loadVcf(path)
+    val outputDir = tmpLocation()
+    vcs.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadVariantContexts(df, outputDir)
+    assert(reloaded.sequences == vcs.sequences)
+    assert(reloaded.headerLines.toSet == vcs.headerLines.toSet)
+    assert(reloaded.samples == vcs.samples)
+    assert(reloaded.rdd.collect().map(VCProduct.fromModel).deep.sorted ==
+      vcs.rdd.collect().map(VCProduct.fromModel).deep.sorted)
+  }
+
+  sparkTest("load features from dataframe") {
+    val path = testFile("dvl1.200.bed")
+    val features = sc.loadFeatures(path)
+    val outputDir = tmpLocation()
+    features.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadFeatures(df, outputDir)
+    assert(reloaded.sequences == features.sequences)
+    assert(reloaded.rdd.collect().deep == features.rdd.collect().deep)
+  }
+
+  sparkTest("load contig fragments from dataframe") {
+    val inputPath = testFile("chr20.250k.fa.gz")
+    val contigFragments = sc.loadFasta(inputPath, 10000L)
+    val outputDir = tmpLocation()
+    contigFragments.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadContigFragments(df, outputDir)
+    assert(reloaded.sequences == contigFragments.sequences)
+    assert(reloaded.rdd.collect().deep == contigFragments.rdd.collect().deep)
+  }
+
+  sparkTest("load genotypes from dataframe") {
+    val path = testFile("small.vcf")
+    val gts = sc.loadGenotypes(path)
+    val outputDir = tmpLocation()
+    gts.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadGenotypes(df, outputDir)
+    assert(reloaded.sequences == gts.sequences)
+    assert(reloaded.headerLines.toSet == gts.headerLines.toSet)
+    assert(reloaded.samples == gts.samples)
+    assert(reloaded.rdd.collect().deep == gts.rdd.collect().deep)
+  }
+
+  sparkTest("load variants from dataframe") {
+    val path = testFile("gvcf_dir/gvcf_multiallelic.g.vcf")
+    val variants = sc.loadVcf(path).toVariants()
+    val outputDir = tmpLocation()
+    variants.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloadedVariants = sc.loadVariants(df, outputDir)
+    assert(reloadedVariants.sequences == variants.sequences)
+    assert(reloadedVariants.headerLines.toSet == variants.headerLines.toSet)
+    assert(reloadedVariants.rdd.collect().deep == variants.rdd.collect().deep)
+  }
+
+  sparkTest("load alignments from dataframe") {
+    val path = testFile("bqsr1-r1.fq")
+    val alignments = sc.loadAlignments(path)
+    val outputDir = tmpLocation()
+    alignments.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadAlignments(df, outputDir)
+    assert(reloaded.sequences == alignments.sequences)
+    assert(reloaded.recordGroups == alignments.recordGroups)
+    assert(reloaded.processingSteps == alignments.processingSteps)
+    assert(reloaded.rdd.collect().deep == alignments.rdd.collect().deep)
+  }
+
+  sparkTest("load fragments from dataframe") {
+    val path = testFile("sample1.query.sam")
+    val fragments = sc.loadFragments(path)
+    val outputDir = tmpLocation()
+    fragments.saveAsParquet(outputDir)
+    val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
+    val reloaded = sc.loadFragments(df, outputDir)
+    assert(reloaded.sequences == fragments.sequences)
+    assert(reloaded.recordGroups == fragments.recordGroups)
+    assert(reloaded.processingSteps == fragments.processingSteps)
+    assert(reloaded.rdd.collect().deep == fragments.rdd.collect().deep)
   }
 }

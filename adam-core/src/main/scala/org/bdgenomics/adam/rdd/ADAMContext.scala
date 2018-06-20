@@ -18,15 +18,10 @@
 package org.bdgenomics.adam.rdd
 
 import java.io.{ File, FileNotFoundException, InputStream }
+
 import htsjdk.samtools.{ SAMFileHeader, SAMProgramRecord, ValidationStringency }
 import htsjdk.samtools.util.Locatable
-import htsjdk.variant.vcf.{
-  VCFHeader,
-  VCFCompoundHeaderLine,
-  VCFFormatHeaderLine,
-  VCFHeaderLine,
-  VCFInfoHeaderLine
-}
+import htsjdk.variant.vcf.{ VCFCompoundHeaderLine, VCFFormatHeaderLine, VCFHeader, VCFHeaderLine, VCFInfoHeaderLine }
 import org.apache.avro.Schema
 import org.apache.avro.file.DataFileStream
 import org.apache.avro.generic.{ GenericDatumReader, GenericRecord, IndexedRecord }
@@ -42,66 +37,22 @@ import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.MetricsContext._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, SparkSession, SQLContext }
+import org.apache.spark.sql.{ DataFrame, Dataset, SQLContext, SparkSession }
 import org.bdgenomics.adam.converters._
 import org.bdgenomics.adam.instrumentation.Timers._
 import org.bdgenomics.adam.io._
 import org.bdgenomics.adam.models._
-import org.bdgenomics.adam.projections.{
-  FeatureField,
-  Projection
-}
-import org.bdgenomics.adam.rdd.contig.{
-  DatasetBoundNucleotideContigFragmentRDD,
-  NucleotideContigFragmentRDD,
-  ParquetUnboundNucleotideContigFragmentRDD,
-  RDDBoundNucleotideContigFragmentRDD
-}
+import org.bdgenomics.adam.projections.{ FeatureField, Projection }
+import org.bdgenomics.adam.rdd.contig.{ DatasetBoundNucleotideContigFragmentRDD, NucleotideContigFragmentRDD, ParquetUnboundNucleotideContigFragmentRDD, RDDBoundNucleotideContigFragmentRDD }
 import org.bdgenomics.adam.rdd.feature._
-import org.bdgenomics.adam.rdd.fragment.{
-  DatasetBoundFragmentRDD,
-  FragmentRDD,
-  ParquetUnboundFragmentRDD,
-  RDDBoundFragmentRDD
-}
-import org.bdgenomics.adam.rdd.read.{
-  AlignmentRecordRDD,
-  DatasetBoundAlignmentRecordRDD,
-  RepairPartitions,
-  ParquetUnboundAlignmentRecordRDD,
-  RDDBoundAlignmentRecordRDD
-}
+import org.bdgenomics.adam.rdd.fragment.{ DatasetBoundFragmentRDD, FragmentRDD, ParquetUnboundFragmentRDD, RDDBoundFragmentRDD }
+import org.bdgenomics.adam.rdd.read.{ AlignmentRecordRDD, DatasetBoundAlignmentRecordRDD, ParquetUnboundAlignmentRecordRDD, RDDBoundAlignmentRecordRDD, RepairPartitions }
 import org.bdgenomics.adam.rdd.variant._
 import org.bdgenomics.adam.rich.RichAlignmentRecord
-import org.bdgenomics.adam.sql.{
-  AlignmentRecord => AlignmentRecordProduct,
-  Feature => FeatureProduct,
-  Fragment => FragmentProduct,
-  Genotype => GenotypeProduct,
-  NucleotideContigFragment => NucleotideContigFragmentProduct,
-  Variant => VariantProduct,
-  VariantContext => VariantContextProduct
-}
+import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct, Feature => FeatureProduct, Fragment => FragmentProduct, Genotype => GenotypeProduct, NucleotideContigFragment => NucleotideContigFragmentProduct, Variant => VariantProduct, VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.FileExtensions._
-import org.bdgenomics.adam.util.{
-  GenomeFileReader,
-  ReferenceContigMap,
-  ReferenceFile,
-  SequenceDictionaryReader,
-  TwoBitFile
-}
-import org.bdgenomics.formats.avro.{
-  AlignmentRecord,
-  Contig,
-  Feature,
-  Fragment,
-  Genotype,
-  NucleotideContigFragment,
-  ProcessingStep,
-  RecordGroup => RecordGroupMetadata,
-  Sample,
-  Variant
-}
+import org.bdgenomics.adam.util.{ GenomeFileReader, ReferenceContigMap, ReferenceFile, SequenceDictionaryReader, TwoBitFile }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Feature, Fragment, Genotype, NucleotideContigFragment, ProcessingStep, Sample, Variant, RecordGroup => RecordGroupMetadata }
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
@@ -1120,7 +1071,13 @@ private class NoPrefixFileFilter(private val prefix: String) extends PathFilter 
  *
  * @param sc The SparkContext to wrap.
  */
-class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
+class ADAMContext(@transient val spark: SparkSession) extends Serializable with Logging {
+  import spark.implicits._
+  @transient val sc: SparkContext = spark.sparkContext
+
+  def this(sc: SparkContext) {
+    this(SQLContext.getOrCreate(sc).sparkSession)
+  }
 
   /**
    * @param samHeader The header to extract a sequence dictionary from.
@@ -1885,15 +1842,9 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     optPredicate: Option[FilterPredicate] = None,
     optProjection: Option[Schema] = None): AlignmentRecordRDD = {
 
-    // convert avro to sequence dictionary
     val sd = loadAvroSequenceDictionary(pathName)
-
-    // convert avro to sequence dictionary
     val rgd = loadAvroRecordGroupDictionary(pathName)
-
-    // load processing step descriptions
     val pgs = loadAvroPrograms(pathName)
-
     (optPredicate, optProjection) match {
       case (None, None) => {
         ParquetUnboundAlignmentRecordRDD(sc, pathName, sd, rgd, pgs)
@@ -2371,6 +2322,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  def loadVariantContexts(df: DataFrame, metadataPath: String): VariantContextRDD = {
+    val sd = loadAvroSequenceDictionary(metadataPath)
+    val samples = loadAvroSamples(metadataPath)
+    val headerLines = loadHeaderLines(metadataPath)
+    DatasetBoundVariantContextRDD(df.as[VariantContextProduct], sd, samples, headerLines)
+  }
+
   /**
    * Load a path name in Parquet + Avro format into a VariantContextRDD.
    *
@@ -2380,21 +2338,10 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
    */
   def loadParquetVariantContexts(
     pathName: String): VariantContextRDD = {
-
-    // load header lines
-    val headers = loadHeaderLines(pathName)
-
-    // load sequence info
-    val sd = loadAvroSequenceDictionary(pathName)
-
-    // load avro record group dictionary and convert to samples
-    val samples = loadAvroSamples(pathName)
-
     val sqlContext = SQLContext.getOrCreate(sc)
     import sqlContext.implicits._
-    val ds = sqlContext.read.parquet(pathName).as[VariantContextProduct]
-
-    new DatasetBoundVariantContextRDD(ds, sd, samples, headers)
+    val df = sqlContext.read.parquet(pathName)
+    loadVariantContexts(df, pathName)
   }
 
   /**
@@ -2890,6 +2837,7 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         ParquetUnboundFragmentRDD(sc, pathName, sd, rgd, pgs)
       }
       case (_, _) => {
+        val df = SQLContext.getOrCreate(sc)
         // load from disk
         val rdd = loadParquet[Fragment](pathName, optPredicate, optProjection)
 
@@ -2984,6 +2932,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
         optPredicate = optPredicate,
         optProjection = optProjection)
     }
+  }
+
+  def loadFeatures(df: DataFrame, metadataPath: String): FeatureRDD = {
+    val sd = loadAvroSequenceDictionary(metadataPath)
+    DatasetBoundFeatureRDD(df.as[FeatureProduct], sd)
   }
 
   /**
@@ -3085,6 +3038,11 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  def loadContigFragments(df: DataFrame, metadataPath: String): NucleotideContigFragmentRDD = {
+    val sd = loadAvroSequenceDictionary(metadataPath)
+    DatasetBoundNucleotideContigFragmentRDD(df.as[NucleotideContigFragmentProduct], sd)
+  }
+
   /**
    * Load genotypes into a GenotypeRDD.
    *
@@ -3120,6 +3078,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  def loadGenotypes(df: DataFrame, metadataPath: String): GenotypeRDD = {
+    val sd = loadAvroSequenceDictionary(metadataPath)
+    val samples = loadAvroSamples(metadataPath)
+    val headerLines = loadHeaderLines(metadataPath)
+    DatasetBoundGenotypeRDD(df.as[GenotypeProduct], sd, samples, headerLines)
+  }
+
   /**
    * Load variants into a VariantRDD.
    *
@@ -3152,6 +3117,12 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       log.info(s"Loading $pathName as Parquet containing Variants. Sequence dictionary for translation is ignored.")
       loadParquetVariants(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
+  }
+
+  def loadVariants(df: DataFrame, metadataPath: String): VariantRDD = {
+    val sd = loadAvroSequenceDictionary(metadataPath)
+    val headerLines = loadHeaderLines(metadataPath)
+    DatasetBoundVariantRDD(df.as[VariantProduct], sd, headerLines)
   }
 
   /**
@@ -3224,6 +3195,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
     }
   }
 
+  def loadAlignments(df: DataFrame, metadataPath: String): AlignmentRecordRDD = {
+    val sd = loadAvroSequenceDictionary(metadataPath)
+    val rgd = loadAvroRecordGroupDictionary(metadataPath)
+    val process = loadAvroPrograms(metadataPath)
+    new DatasetBoundAlignmentRecordRDD(df.as[AlignmentRecordProduct], sd, rgd, process)
+  }
+
   /**
    * Load fragments into a FragmentRDD.
    *
@@ -3280,6 +3258,13 @@ class ADAMContext(@transient val sc: SparkContext) extends Serializable with Log
       log.info(s"Loading $pathName as Parquet containing Fragments.")
       loadParquetFragments(pathName, optPredicate = optPredicate, optProjection = optProjection)
     }
+  }
+
+  def loadFragments(df: DataFrame, metadataPath: String): FragmentRDD = {
+    val sd = loadAvroSequenceDictionary(metadataPath)
+    val rgd = loadAvroRecordGroupDictionary(metadataPath)
+    val processingSteps = loadAvroPrograms(metadataPath)
+    DatasetBoundFragmentRDD(df.as[FragmentProduct], sd, rgd, processingSteps)
   }
 
   /**
