@@ -52,7 +52,7 @@ import org.bdgenomics.adam.rich.RichAlignmentRecord
 import org.bdgenomics.adam.sql.{ AlignmentRecord => AlignmentRecordProduct, Feature => FeatureProduct, Fragment => FragmentProduct, Genotype => GenotypeProduct, NucleotideContigFragment => NucleotideContigFragmentProduct, Variant => VariantProduct, VariantContext => VariantContextProduct }
 import org.bdgenomics.adam.util.FileExtensions._
 import org.bdgenomics.adam.util.{ GenomeFileReader, ReferenceContigMap, ReferenceFile, SequenceDictionaryReader, TwoBitFile }
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Contig, Feature, Fragment, Genotype, NucleotideContigFragment, ProcessingStep, Sample, Variant, RecordGroup => RecordGroupMetadata }
+import org.bdgenomics.formats.avro.{ RecordGroup => RecordGroupMetadata, _ }
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.io.LocalFileByteAccess
 import org.bdgenomics.utils.misc.{ HadoopUtil, Logging }
