@@ -770,8 +770,8 @@ class ADAMContextSuite extends ADAMFunSuite {
     assert(reloaded.sequences == vcs.sequences)
     assert(reloaded.headerLines.toSet == vcs.headerLines.toSet)
     assert(reloaded.samples == vcs.samples)
-    assert(reloaded.rdd.collect().map(VCProduct.fromModel).deep.sorted ==
-      vcs.rdd.collect().map(VCProduct.fromModel).deep.sorted)
+    assert(reloaded.rdd.collect().map(VCProduct.fromModel).deep ==
+      vcs.rdd.collect().map(VCProduct.fromModel).deep)
   }
 
   sparkTest("load features from dataframe") {
@@ -815,10 +815,10 @@ class ADAMContextSuite extends ADAMFunSuite {
     val outputDir = tmpLocation()
     variants.saveAsParquet(outputDir)
     val df = SQLContext.getOrCreate(sc).read.parquet(outputDir)
-    val reloadedVariants = sc.loadVariants(df, outputDir)
-    assert(reloadedVariants.sequences == variants.sequences)
-    assert(reloadedVariants.headerLines.toSet == variants.headerLines.toSet)
-    assert(reloadedVariants.rdd.collect().deep == variants.rdd.collect().deep)
+    val reloaded = sc.loadVariants(df, outputDir)
+    assert(reloaded.sequences == variants.sequences)
+    assert(reloaded.headerLines.toSet == variants.headerLines.toSet)
+    assert(reloaded.rdd.collect().deep == variants.rdd.collect().deep)
   }
 
   sparkTest("load alignments from dataframe") {

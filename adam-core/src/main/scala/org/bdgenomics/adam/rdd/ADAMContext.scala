@@ -1071,13 +1071,7 @@ private class NoPrefixFileFilter(private val prefix: String) extends PathFilter 
  *
  * @param sc The SparkContext to wrap.
  */
-class ADAMContext(@transient val spark: SparkSession) extends Serializable with Logging {
-  import spark.implicits._
-  @transient val sc: SparkContext = spark.sparkContext
-
-  def this(sc: SparkContext) {
-    this(SQLContext.getOrCreate(sc).sparkSession)
-  }
+class ADAMContext(@transient val sc: SparkContext) extends Serializable with Logging {
 
   /**
    * @param samHeader The header to extract a sequence dictionary from.
@@ -2339,7 +2333,6 @@ class ADAMContext(@transient val spark: SparkSession) extends Serializable with 
   def loadParquetVariantContexts(
     pathName: String): VariantContextRDD = {
     val sqlContext = SQLContext.getOrCreate(sc)
-    import sqlContext.implicits._
     val df = sqlContext.read.parquet(pathName)
     loadVariantContexts(df, pathName)
   }
@@ -2837,7 +2830,6 @@ class ADAMContext(@transient val spark: SparkSession) extends Serializable with 
         ParquetUnboundFragmentRDD(sc, pathName, sd, rgd, pgs)
       }
       case (_, _) => {
-        val df = SQLContext.getOrCreate(sc)
         // load from disk
         val rdd = loadParquet[Fragment](pathName, optPredicate, optProjection)
 
