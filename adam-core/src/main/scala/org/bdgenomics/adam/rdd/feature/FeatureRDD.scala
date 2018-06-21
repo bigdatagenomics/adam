@@ -290,7 +290,7 @@ case class DatasetBoundFeatureRDD private[rdd] (
                              pageSize: Int = 1 * 1024 * 1024,
                              compressCodec: CompressionCodecName = CompressionCodecName.GZIP,
                              disableDictionaryEncoding: Boolean = false) {
-    log.warn("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
+    log.info("Saving directly as Parquet from SQL. Options other than compression codec are ignored.")
     dataset.toDF()
       .write
       .format("parquet")
