@@ -424,7 +424,7 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype
   }
 
   /**
-   * Filter this GenotypeRDD by sample.
+   * Filter this GenotypeRDD by sample to those that match the specified sample.
    *
    * @param sampleId Sample to filter by.
    * return GenotypeRDD filtered by sample.
@@ -434,7 +434,7 @@ sealed abstract class GenotypeRDD extends MultisampleAvroGenomicDataset[Genotype
   }
 
   /**
-   * Filter this GenotypeRDD by one or more samples.
+   * Filter this GenotypeRDD by sample to those that match the specified samples.
    *
    * @param sampleIds Sequence of samples to filter by.
    * return GenotypeRDD filtered by one or more samples.

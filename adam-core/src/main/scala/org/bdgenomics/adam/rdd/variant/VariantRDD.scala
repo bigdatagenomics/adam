@@ -379,27 +379,27 @@ sealed abstract class VariantRDD extends AvroGenomicDataset[Variant, VariantProd
   }
 
   /**
-   * Filter this VariantRDD to single nucleotide variants (SNPs).
+   * Filter this VariantRDD to include only single nucleotide variants (SNPs).
    *
-   * @return VariantRDD filtered to single nucleotide variants (SNPs).
+   * @return VariantRDD filtered to include only single nucleotide variants (SNPs).
    */
   def filterToSingleNucleotideVariants() = {
     transform(rdd => rdd.filter(v => RichVariant(v).isSingleNucleotideVariant))
   }
 
   /**
-   * Filter this VariantRDD to multiple nucleotide variants (MNPs).
+   * Filter this VariantRDD to include only multiple nucleotide variants (MNPs).
    *
-   * @return VariantRDD filtered to multiple nucleotide variants (MNPs).
+   * @return VariantRDD filtered to include only multiple nucleotide variants (MNPs).
    */
   def filterToMultipleNucleotideVariants() = {
     transform(rdd => rdd.filter(v => RichVariant(v).isMultipleNucleotideVariant))
   }
 
   /**
-   * Filter this VariantRDD to insertions and deletions (indels).
+   * Filter this VariantRDD to include only insertions and deletions (indels).
    *
-   * @return VariantRDD filtered to insertions and deletions (indels).
+   * @return VariantRDD filtered to include only insertions and deletions (indels).
    */
   def filterToIndels() = {
     transform(rdd => rdd.filter(v => {

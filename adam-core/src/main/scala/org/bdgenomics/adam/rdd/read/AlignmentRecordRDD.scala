@@ -1602,16 +1602,16 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
   }
 
   /**
-   * Filter this AlignmentRecordRDD to primary alignments.
+   * Filter this AlignmentRecordRDD to include only primary alignments.
    *
-   * @return AlignmentRecordRDD filtered to primary alignments.
+   * @return AlignmentRecordRDD filtered to include only primary alignments.
    */
   def filterToPrimaryAlignments(): AlignmentRecordRDD = {
     transform(rdd => rdd.filter(_.getPrimaryAlignment))
   }
 
   /**
-   * Filter this AlignmentRecordRDD by record group.
+   * Filter this AlignmentRecordRDD by record group to those that match the specified record group.
    *
    * @param recordGroupName Record group to filter by.
    * @return AlignmentRecordRDD filtered by record group.
@@ -1621,7 +1621,7 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
   }
 
   /**
-   * Filter this AlignmentRecordRDD by one or more record groups.
+   * Filter this AlignmentRecordRDD by record group to those that match the specified record groups.
    *
    * @param recordGroupNames Sequence of record groups to filter by.
    * @return AlignmentRecordRDD filtered by one or more record groups.
@@ -1631,20 +1631,20 @@ sealed abstract class AlignmentRecordRDD extends AvroRecordGroupGenomicDataset[A
   }
 
   /**
-   * Filter this AlignmentRecordRDD by sample.
+   * Filter this AlignmentRecordRDD by sample to those that match the specified sample.
    *
    * @param recordGroupSample Sample to filter by.
-   * @return AlignmentRecordRDD filtered by sample.
+   * @return AlignmentRecordRDD filtered by the specified sample.
    */
   def filterToSample(recordGroupSample: String): AlignmentRecordRDD = {
     transform(rdd => rdd.filter(g => Option(g.getRecordGroupSample).exists(_ == recordGroupSample)))
   }
 
   /**
-   * Filter this AlignmentRecordRDD by one or more samples.
+   * Filter this AlignmentRecordRDD by sample to those that match the specified samples.
    *
    * @param recordGroupSamples Sequence of samples to filter by.
-   * @return AlignmentRecordRDD filtered by one or more samples.
+   * @return AlignmentRecordRDD filtered by the specified samples.
    */
   def filterToSamples(recordGroupSamples: Seq[String]): AlignmentRecordRDD = {
     transform(rdd => rdd.filter(g => Option(g.getRecordGroupSample).exists(recordGroupSamples.contains(_))))
